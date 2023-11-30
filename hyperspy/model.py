@@ -25,7 +25,7 @@ import warnings
 from contextlib import contextmanager
 from functools import partial
 
-import dill
+import cloudpickle
 import numpy as np
 import dask.array as da
 from dask.diagnostics import ProgressBar
@@ -71,6 +71,7 @@ _logger = logging.getLogger(__name__)
 
 _COMPONENTS = ALL_EXTENSIONS["components1D"]
 _COMPONENTS.update(ALL_EXTENSIONS["components1D"])
+EXSPY_HSPY_COMPONENTS = ("EELSArctan", "EELSCLEdge", "DoublePowerLaw", "Vignetting", "PESCoreLineShape", "SEE", "PESVoigt", "VolumePlasmonDrude")
 
 
 def _twinned_parameter(parameter):
@@ -123,13 +124,23 @@ def reconstruct_component(comp_dictionary, **init_args):
                 _COMPONENTS[_id]["module"]), _COMPONENTS[_id]["class"])
     elif "_class_dump" in comp_dictionary:
         # When a component is not registered using the extension mechanism,
-        # it is serialized using dill.
-        _class = dill.loads(comp_dictionary['_class_dump'])
+        # it is serialized using cloudpickle.
+        try:
+            _class = cloudpickle.loads(comp_dictionary['_class_dump'])
+        except TypeError:  # pragma: no cover
+            # https://github.com/cloudpipe/cloudpickle/blob/master/README.md
+            raise TypeError("Pickling is not (always) supported between python "
+                            "versions. As a result the custom class cannot be "
+                            "loaded. Consider adding a custom Component using the "
+                            "extension mechanism.")
     else:
+        # For component saved with hyperspy <2.0 and moved to exspy
+        if comp_dictionary["_id_name"] in EXSPY_HSPY_COMPONENTS:
+            comp_dictionary["package"] = "exspy"
         raise ImportError(
-            f'Loading the {comp_dictionary["class"]} component ' +
+            f'Loading the {comp_dictionary["_id_name"]} component ' +
             'failed because the component is provided by the ' +
-            f'{comp_dictionary["package"]} Python package, but ' +
+            f'`{comp_dictionary["package"]}` Python package, but ' +
             f'{comp_dictionary["package"]} is not installed.')
     return _class(**init_args)
 
@@ -271,9 +282,56 @@ class BaseModel(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __call__(self, non_convolved=False, onlyactive=False, component_list=None, binned=None):
+    def _get_current_data(self, onlyactive=False, component_list=None, binned=None):
         """Evaluate the model numerically. Implementation requested in all sub-classes"""
         raise NotImplementedError
+
+    @property
+    def convolved(self):
+        raise NotImplementedError("This model does not support convolution.")
+    
+    @convolved.setter
+    def convolved(self, value):
+        # This is for compatibility with model saved with HyperSpy < 2.0
+        if value:
+            raise NotImplementedError("This model does not support convolution.")
+        else:
+            _logger.warning(
+                "The `convolved` attribute is deprecated. It is only available in models that implement convolution.")
+
+    def set_signal_range_from_mask(self, mask):
+        """
+        Use the signal ranges as defined by the mask
+
+        Parameters
+        ----------
+        mask : numpy.ndarray of bool
+            A boolean array defining the signal range. Must be the same
+            shape as the reversed ``signal_shape``, i.e. ``signal_shape[::-1]``.
+            Where array values are ``True``, signal will be fitted, otherwise not.
+
+        See Also
+        --------
+        set_signal_range, add_signal_range,
+        remove_signal_range, reset_signal_range
+
+        Examples
+        --------
+        >>> s = hs.signals.Signal2D(np.random.rand(10, 10, 20))
+        >>> mask = (s.sum() > 5)
+        >>> m = s.create_model()
+        >>> m.set_signal_range_from_mask(mask.data)
+
+        """
+        if mask.dtype != bool:
+            raise ValueError(
+                "`mask` argument must be an array with boolean dtype."
+                )
+        if mask.shape != self.axes_manager._signal_shape_in_array:
+            raise ValueError(
+                "`mask` argument must have the same shape as `signal_shape`."
+                )
+        self._channel_switches[:] = mask
 
     def store(self, name=None):
         """Stores current model in the original signal
@@ -346,6 +404,10 @@ class BaseModel(list):
                         id_dict[tw].twin = id_dict[par['self']]
 
         if '_whitelist' in dic:
+            channel_switches = dic["_whitelist"].pop("channel_switches", None)
+            if channel_switches:
+                # Before channel_switches was privatised
+                dic["_whitelist"]["_channel_switches"] = channel_switches
             load_from_dictionary(self, dic)
 
     def __repr__(self):
@@ -520,9 +582,9 @@ class BaseModel(list):
 
         if not out_of_range_to_nan:
             # we want the full signal range, including outside the fitted
-            # range, we need to set all the channel_switches to True
-            channel_switches_backup = copy.copy(self.channel_switches)
-            self.channel_switches[:] = True
+            # range, we need to set all the _channel_switches to True
+            channel_switches_backup = copy.copy(self._channel_switches)
+            self._channel_switches[:] = True
 
         self._as_signal_iter(
             component_list=component_list,
@@ -531,8 +593,8 @@ class BaseModel(list):
         )
 
         if not out_of_range_to_nan:
-            # Restore the channel_switches, previously set
-            self.channel_switches[:] = channel_switches_backup
+            # Restore the _channel_switches, previously set
+            self._channel_switches[:] = channel_switches_backup
 
         return signal
 
@@ -567,8 +629,8 @@ class BaseModel(list):
             for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
-                    np.where(self.channel_switches)] = self.__call__(
-                    non_convolved=not self.convolved, onlyactive=True).ravel()
+                    np.where(self._channel_switches)] = self._get_current_data(
+                    onlyactive=True).ravel()
                 pbar.update(1)
 
     @property
@@ -895,27 +957,36 @@ class BaseModel(list):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(non_convolved=False, onlyactive=True)
+        s = self._get_current_data(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
         if out_of_range2nans is True:
             ns = np.empty(self.axis.axis.shape)
             ns.fill(np.nan)
-            ns[np.where(self.channel_switches)] = s
+            ns[np.where(self._channel_switches)] = s
             s = ns
         return s
 
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True, binned=self._binned)
+        to_return = self._get_current_data(onlyactive=True, binned=self._binned)
         return to_return
 
     @property
     def active_components(self):
         """List all nonlinear parameters."""
         return tuple([c for c in self if c.active])
+
+    def _convolve_component_values(self, component_values):
+        raise NotImplementedError("This  model does not support convolution")
+
+    def _compute_constant_term(self, component):
+        """Gets the value of any (non-free) constant term"""
+        signal_shape = self.axes_manager.signal_shape[::-1]
+        data = component._constant_term * np.ones(signal_shape)
+        return data.T[np.where(self._channel_switches)[::-1]].T
 
     def _linear_fit(self, optimizer="lstsq", calculate_errors=False,
                     only_current=True, weights=None, **kwargs):
@@ -997,7 +1068,7 @@ class BaseModel(list):
             if parameter._linear and parameter.free:
                 parameter.value = 1.0
 
-        channels_signal_shape = np.count_nonzero(self.channel_switches)
+        channels_signal_shape = np.count_nonzero(self._channel_switches)
         comp_values = np.zeros((n_parameters, channels_signal_shape))
         constant_term = np.zeros(channels_signal_shape)
 
@@ -1038,31 +1109,31 @@ class BaseModel(list):
                     p = twin_parameters_mapping[p]
 
                 index = parameters.index(p)
-                comp_value = self.__call__(
+                comp_value = self._get_current_data(
                     component_list=[component], binned=False
                     )
-                comp_constant_values = component._compute_constant_term()
+                comp_constant_values = self._compute_constant_term(component=component)
                 comp_values[index] += comp_value - comp_constant_values
                 constant_term += comp_constant_values
 
             else:
                 # No free parameters, so component is fixed.
-                constant_term += self.__call__(
+                constant_term += self._get_current_data(
                     component_list=[component], binned=False
                     )
 
         # Reshape what may potentially be Signal2D data into a long Signal1D
         # shape and an nD navigation shape to a 1D nav shape
-        channel_switches = np.where(self.channel_switches.ravel())[0]
+        _channel_switches = np.where(self._channel_switches.ravel())[0]
         if only_current:
-            target_signal = self.signal().ravel()[channel_switches]
+            target_signal = self.signal._get_current_data().ravel()[_channel_switches]
         else:
             sig_shape = self.axes_manager._signal_shape_in_array
             nav_shape = self.axes_manager._navigation_shape_in_array
             target_signal = self.signal.data.reshape(
                 (np.prod(nav_shape, dtype=int), ) +
                 (np.prod(sig_shape, dtype=int), )
-                )[:, channel_switches]
+                )[:, _channel_switches]
 
         if any([ax.is_binned for ax in signal_axes]):
             target_signal = target_signal / np.prod(
@@ -1161,7 +1232,7 @@ class BaseModel(list):
 
     def _get_variance(self, only_current=True):
         """
-        Return the variance taking into account the `channel_switches`.
+        Return the variance taking into account the `_channel_switches`.
         If only_current=True, the variance for the current navigation indices
         is returned, otherwise the variance for all navigation indices is
         returned.
@@ -1172,18 +1243,18 @@ class BaseModel(list):
                 if only_current:
                     variance = variance.data.__getitem__(
                         self.axes_manager._getitem_tuple
-                        )[np.where(self.channel_switches)]
+                        )[np.where(self._channel_switches)]
                 else:
                     variance = variance.data[..., np.where(
-                        self.channel_switches)[0]]
+                        self._channel_switches)[0]]
         else:
             variance = 1.0
         return variance
 
     def _calculate_chisq(self):
         variance = self._get_variance()
-        d = self(onlyactive=True, binned=self._binned).ravel() - self.signal(as_numpy=True)[
-            np.where(self.channel_switches)]
+        d = self._get_current_data(onlyactive=True, binned=self._binned).ravel() - self.signal._get_current_data(as_numpy=True)[
+            np.where(self._channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
@@ -1195,7 +1266,7 @@ class BaseModel(list):
         """:py:class:`~.signal.BaseSignal`: Reduced chi-squared.
         Calculated from ``self.chisq`` and ``self.dof``.
         """
-        tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
+        tmp = self.chisq / (- self.dof + self._channel_switches.sum() - 1)
         tmp.metadata.General.title = self.signal.metadata.General.title + \
             ' reduced chi-squared'
         return tmp
@@ -1435,7 +1506,7 @@ class BaseModel(list):
                 weights = None
 
             args = (
-                self.signal(as_numpy=True)[np.where(self.channel_switches)],
+                self.signal._get_current_data(as_numpy=True)[np.where(self._channel_switches)],
                 weights
                 )
 
@@ -1455,7 +1526,7 @@ class BaseModel(list):
                         self.p0[:],
                         parinfo=self.mpfit_parinfo,
                         functkw={
-                            "y": self.signal()[self.channel_switches],
+                            "y": self.signal._get_current_data()[self._channel_switches],
                             "weights": weights,
                         },
                         autoderivative=auto_deriv,
@@ -1554,8 +1625,8 @@ class BaseModel(list):
 
                 modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
                 mydata = odr.RealData(
-                    self.axis.axis[np.where(self.channel_switches)],
-                    self.signal()[np.where(self.channel_switches)],
+                    self.axis.axis[np.where(self._channel_switches)],
+                    self.signal._get_current_data()[np.where(self._channel_switches)],
                     sx=None,
                     sy=(1.0 / weights if weights is not None else None),
                 )
@@ -1783,6 +1854,11 @@ class BaseModel(list):
             # binning Not Implemented for Model2D
             self._binned = False
 
+        try:
+            convolved = self.convolved
+        except NotImplementedError:
+            convolved = False
+
         if linear_fitting:
             # Check that all non-free parameters don't change accross
             # the navigation dimension. If this is the case, we can fit the
@@ -1827,7 +1903,7 @@ class BaseModel(list):
                     "These components are:\n\t"
                     + "\n\t".join(str(c) for c in active_is_multidimensional)
                 )
-            elif self.convolved:
+            elif convolved:
                 warnings.warn(
                     "Using convolution is not supported when fitting the "
                     "dataset in a vectorized fashion. Fitting proceeds by "
@@ -1879,7 +1955,8 @@ class BaseModel(list):
                 # implementation, a more elegant implementation could be found
                 self._binned = None
                 return
-
+        # Fitting in a vectorized fashion is not supported. We iterate over the
+        # navigation indices and fit the dataset one by one.
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
             self.fetch_stored_values
@@ -2428,11 +2505,11 @@ class ModelSpecialSlicers(object):
         dims = (self.model.axes_manager.navigation_dimension,
                 self.model.axes_manager.signal_dimension)
         if self.isNavigation:
-            _model.channel_switches[:] = self.model.channel_switches
+            _model._channel_switches[:] = self.model._channel_switches
         else:
-            _model.channel_switches[:] = \
+            _model._channel_switches[:] = \
                 np.atleast_1d(
-                    self.model.channel_switches[
+                    self.model._channel_switches[
                         tuple(array_slices[-dims[1]:])])
 
         twin_dict = {}

@@ -1,2 +1,0 @@
-Fix docstring examples in `BaseSignal` class.
-Describe how to test docstring examples in developer guide.

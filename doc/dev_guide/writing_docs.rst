@@ -69,7 +69,7 @@ or
 
 .. code-block:: bash
 
-    $ pip install hyperspy[build-doc]
+    $ pip install hyperspy[doc]
 
 
 When writing documentation, the Python package `sphobjinv

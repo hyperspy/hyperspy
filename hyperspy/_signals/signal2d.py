@@ -46,8 +46,7 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
-    PARALLEL_ARG,
-    MAX_WORKERS_ARG,
+    NUM_WORKERS_ARG,
     LAZYSIGNAL_DOC,
 )
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
@@ -501,7 +500,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                         [yaxis._get_index(i) for i in roi[:2]])
 
         ref = None if reference == 'cascade' else \
-            self.__call__().copy()
+            self._get_current_data().copy()
         shifts = []
         nrows = None
         images_number = self.axes_manager._max_index + 1
@@ -517,8 +516,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                                ('shift', np.int32,
                                                 (2,))]))
             nshift, max_value = estimate_image_shift(
-                self(),
-                self(),
+                self._get_current_data(),
+                self._get_current_data(),
                 roi=roi,
                 sobel=sobel,
                 medfilter=medfilter,
@@ -612,8 +611,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         expand=False,
         interpolation_order=1,
         show_progressbar=None,
-        parallel=None,
-        max_workers=None,
+        num_workers=None,
         **kwargs,
     ):
         """Align the images in-place using :py:func:`scipy.ndimage.shift`.
@@ -643,7 +641,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
-        %s
         %s
         %s
         **kwargs :
@@ -741,8 +738,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             shift_image,
             shift=signal_shifts,
             show_progressbar=show_progressbar,
-            parallel=parallel,
-            max_workers=max_workers,
+            num_workers=num_workers,
             ragged=False,
             inplace=True,
             fill_value=fill_value,
@@ -768,7 +764,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 int(np.floor(_min1)) if _min1 < 0 else None,
                 int(np.ceil(_max1)) if _max1 > 0 else 0,
             )
-            self.crop_image(top, bottom, left, right)
+            self.crop_signal(top, bottom, left, right)
             shifts = -shifts
 
         self.events.data_changed.trigger(obj=self)
@@ -776,7 +772,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if return_shifts:
             return shifts
 
-    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
     def calibrate(
         self,
@@ -867,9 +863,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
         scale = length / old_length
         return scale
 
-    def crop_image(self, top=None, bottom=None,
-                   left=None, right=None, convert_units=False):
-        """Crops an image in place.
+    def crop_signal(self, top=None, bottom=None, left=None, right=None,
+                    convert_units=False):
+        """
+        Crops in signal space and in place.
 
         Parameters
         ----------
@@ -927,7 +924,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def find_peaks(self, method='local_max', interactive=True,
                    current_index=False, show_progressbar=None,
-                   parallel=None, max_workers=None, display=True, toolkit=None,
+                   num_workers=None, display=True, toolkit=None,
                    get_intensity=False,
                    **kwargs):
         """Find peaks in a 2D signal.
@@ -982,7 +979,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         get_intensity : bool
             If True, the intensity of the peak will be returned as an additional column,
             the last one.
-        %s
         %s
         %s
         %s
@@ -1043,16 +1039,16 @@ class Signal2D(BaseSignal, CommonSignal2D):
             pf2D = PeaksFinder2D(self, method=method, peaks=peaks, **kwargs)
             pf2D.gui(display=display, toolkit=toolkit)
         elif current_index:
-            peaks = method_func(self.__call__(), **kwargs)
+            peaks = method_func(self._get_current_data(), **kwargs)
         else:
             peaks = self.map(method_func, show_progressbar=show_progressbar,
-                             parallel=parallel, inplace=False, ragged=True,
-                             max_workers=max_workers, **kwargs)
+                             inplace=False, ragged=True,
+                             num_workers=num_workers, **kwargs)
             peaks.metadata.add_node("Peaks") # add information about the signal Axes
             peaks.metadata.Peaks.signal_axes = deepcopy(self.axes_manager.signal_axes)
         return peaks
 
-    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
                            DISPLAY_DT, TOOLKIT_DT)
 
 

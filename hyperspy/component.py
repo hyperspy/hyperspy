@@ -721,11 +721,12 @@ class Parameter(t.HasTraits):
 @add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
     __axes_manager = None
+    # setting dtype for t.Property(t.Bool) causes serialization error with cloudpickle
+    active = t.Property()
+    name = t.Property()
 
-    active = t.Property(t.CBool(True))
-    name = t.Property(t.Str(''))
-
-    def __init__(self, parameter_name_list, linear_parameter_list=None):
+    def __init__(self, parameter_name_list, linear_parameter_list=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.events = Events()
         self.events.active_changed = Event("""
             Event that triggers when the `Component.active` changes.
@@ -739,6 +740,11 @@ class Component(t.HasTraits):
                 The `Component` that the event belongs to
             active : bool
                 The new active state
+            convolved : bool
+                Whether the `Component` is convolved or not. This enables
+                not convolving individual `Component`s in models that
+                support convolution.
+
             """, arguments=["obj", 'active'])
         self.parameters = []
         self.init_parameters(parameter_name_list, linear_parameter_list)
@@ -801,6 +807,8 @@ class Component(t.HasTraits):
         return self._name
 
     def _set_name(self, value):
+        if not isinstance(value, str):
+            raise ValueError('Only string values are permitted')
         old_value = self._name
         if old_value == value:
             return
@@ -1048,24 +1056,13 @@ class Component(t.HasTraits):
                                                parameter.std,
                                                parameter.units))
 
-    def __call__(self):
-        """Returns the corresponding model for the current coordinates
-
-        Returns
-        -------
-        numpy array
-        """
-        axis = self.model.axis.axis[self.model.channel_switches]
-        component_array = self.function(axis)
-        return component_array
-
     def _component2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.model.__call__(component_list=[self])
+        s = self.model._get_current_data(component_list=[self])
         if not self.active:
             s.fill(np.nan)
         if old_axes_manager is not None:
@@ -1074,7 +1071,7 @@ class Component(t.HasTraits):
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
-            ns[self.model.channel_switches] = s
+            ns[self.model._channel_switches] = s
             s = ns
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
@@ -1219,8 +1216,8 @@ class Component(t.HasTraits):
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         from hyperspy.model import _COMPONENTS
         if self._id_name not in _COMPONENTS:
-            import dill
-            dic['_class_dump'] = dill.dumps(self.__class__)
+            import cloudpickle
+            dic['_class_dump'] = cloudpickle.dumps(self.__class__)
         return dic
 
     def _load_dictionary(self, dic):
@@ -1293,32 +1290,6 @@ class Component(t.HasTraits):
         Returns 0 for most components.
         """
         return 0
-
-    def _compute_constant_term(self):
-        """Gets the value of any (non-free) constant term, with convolution"""
-        model = self.model
-        if model.convolved and self.convolved:
-            data = convolve_component_values(self._constant_term, model=model)
-        else:
-            signal_shape = model.axes_manager.signal_shape[::-1]
-            data = self._constant_term * np.ones(signal_shape)
-        return data.T[np.where(model.channel_switches)[::-1]].T
-
-
-def convolve_component_values(component_values, model):
-    """
-    Convolve component with model convolution axis.
-
-    Multiply by np.ones in order to handle case where component_values is a
-    single constant
-    """
-
-    sig = component_values * np.ones(model.convolution_axis.shape)
-
-    ll = model.low_loss(model.axes_manager)
-    convolved = np.convolve(sig, ll, mode="valid")
-
-    return convolved
 
 
 def _get_scaling_factor(signal, axis, parameter):

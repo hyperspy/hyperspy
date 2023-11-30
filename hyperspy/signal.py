@@ -25,7 +25,6 @@ import inspect
 from itertools import product
 import logging
 import numbers
-from packaging.version import Version
 from pathlib import Path
 import warnings
 
@@ -40,6 +39,7 @@ import traits.api as t
 from tlz import concat
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import ensure_directory
+from scipy.interpolate import make_interp_spline
 
 from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
@@ -65,12 +65,12 @@ from hyperspy.misc.utils import (
     )
 from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
-from hyperspy.drawing.marker import markers_metadata_dict_to_markers
+from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
     CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, LAZY_OUTPUT_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -80,7 +80,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
-from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+from hyperspy.exceptions import LazyCupyConversion
 
 
 _logger = logging.getLogger(__name__)
@@ -2738,7 +2738,7 @@ class BaseSignal(FancySlicing,
             axes = []
         return axes
 
-    def __call__(self, axes_manager=None, fft_shift=False, as_numpy=False):
+    def _get_current_data(self, axes_manager=None, fft_shift=False, as_numpy=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
         indices = axes_manager._getitem_tuple
@@ -2804,7 +2804,7 @@ class BaseSignal(FancySlicing,
                 "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
-        self._plot.signal_data_function = partial(self.__call__, as_numpy=True)
+        self._plot.signal_data_function = partial(self._get_current_data, as_numpy=True)
 
         if self.metadata.has_item("Signal.quantity"):
             self._plot.quantity_label = self.metadata.Signal.quantity
@@ -2823,9 +2823,9 @@ class BaseSignal(FancySlicing,
 
         def get_static_explorer_wrapper(*args, **kwargs):
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
-                return abs(navigator(as_numpy=True))
+                return abs(navigator._get_current_data(as_numpy=True))
             else:
-                return navigator(as_numpy=True)
+                return navigator._get_current_data(as_numpy=True)
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             # Sum over all but the first navigation axis.
@@ -2839,8 +2839,8 @@ class BaseSignal(FancySlicing,
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
-            if np.issubdtype(navigator().dtype, np.complexfloating):
-                return abs(navigator(as_numpy=True))
+            if np.issubdtype(navigator._get_current_data().dtype, np.complexfloating):
+                return abs(navigator._get_current_data(as_numpy=True))
             else:
                 return navigator(as_numpy=True)
 
@@ -2853,11 +2853,7 @@ class BaseSignal(FancySlicing,
                 navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                if (self.axes_manager.navigation_axes[0].is_uniform and
-                        self.axes_manager.signal_axes[0].is_uniform):
-                    navigator = "data"
-                else:
-                    navigator = "spectrum"
+                navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()
@@ -2887,7 +2883,7 @@ class BaseSignal(FancySlicing,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            # check first if we have a signal to avoid comparion of signal with
+            # check first if we have a signal to avoid comparison of signal with
             # string
             if isinstance(navigator, BaseSignal):
                 def is_shape_compatible(navigation_shape, shape):
@@ -3110,6 +3106,68 @@ class BaseSignal(FancySlicing,
         self.events.data_changed.trigger(obj=self)
         if convert_units:
             self.axes_manager.convert_units(axis)
+
+    def interpolate_on_axis(self,
+                            new_axis,
+                            axis=0,
+                            inplace=False,
+                            degree=1):
+        """Replaces the given ``axis`` with the provided ``new_axis``
+        and interpolates data accordingly using
+        :py:func:`scipy.interpolate.make_interp_spline`.
+
+        Parameters
+        ----------
+        new_axis : UniformDataAxis, DataAxis or FunctionalDataAxis
+            Axis which replaces the one specified by the ``axis`` argument.
+            If this new axis exceeds the range of the old axis,
+            a warning is raised that the data will be extrapolated.
+        axis : int or str, default=0
+            Specifies the axis which will be replaced using the index of the
+            axis in the `axes_manager`. The axis can be specified using the index of the
+            axis in `axes_manager` or the axis name.
+        inplace : bool, default=False
+            If ``True`` the data of `self` is replaced by the result and
+            the axis is changed inplace. Otherwise `self` is not changed
+            and a new signal with the changes incorporated is returned.
+        degree: int, default=1
+            Specifies the B-Spline degree of the used interpolator.
+
+        Returns
+        -------
+        s : :py:class:`~.api.signals.BaseSignal` (or subclass)
+            A copy of the object with the axis exchanged and the data interpolated.
+            This only occurs when inplace is set to ``False``, otherwise nothing is returned.
+        """
+        old_axis = self.axes_manager[axis]
+        if old_axis.navigate != new_axis.navigate:
+            raise ValueError(
+                "The navigate attribute of new_axis differs from the to be replaced axis."
+            )
+        axis_idx = old_axis.index_in_array
+        if old_axis.low_value > new_axis.low_value or old_axis.high_value < new_axis.high_value:
+            _logger.warning(
+                "The specified new axis exceeds the range of the to be replaced old axis. "
+                "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
+            )
+
+        interpolator = make_interp_spline(
+            old_axis.axis,
+            self.data,
+            axis=axis_idx,
+            k=degree,
+        )
+        new_data = interpolator(new_axis.axis)
+
+        if inplace:
+            self.data = new_data
+            s = self
+        else:
+            s = self._deepcopy_with_new_data(new_data)
+
+        s.axes_manager.set_axis(new_axis, axis_idx)
+        if not inplace:
+            return s
 
     def swap_axes(self, axis1, axis2, optimize=False):
         """Swap two axes in the signal.
@@ -3698,7 +3756,7 @@ class BaseSignal(FancySlicing,
                 [0 for _ in self.axes_manager.navigation_axes]
                 )
             for _ in self.axes_manager:
-                yield self()
+                yield self._get_current_data()
             # restore original index
             self.axes_manager.indices = original_index
 
@@ -3712,7 +3770,7 @@ class BaseSignal(FancySlicing,
         """
         if self.axes_manager.navigation_size < 2:
             while True:
-                yield self()
+                yield self._get_current_data()
             return  # pragma: no cover
 
         self._make_sure_data_is_contiguous()
@@ -4733,10 +4791,10 @@ class BaseSignal(FancySlicing,
         self,
         function,
         show_progressbar=None,
-        parallel=None,
-        max_workers=None,
+        num_workers=None,
         inplace=True,
         ragged=None,
+        navigation_chunks=None,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
@@ -4777,6 +4835,11 @@ class BaseSignal(FancySlicing,
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
             the output signal will be ragged only if the original signal is ragged.
+        navigation_chunks : str, None, int or tuple of int, default ``None``
+            Set the navigation_chunks argument to a tuple of integers to split
+            the navigation axes into chunks. This can be useful to enable
+            using multiple cores with signals which are less that 100 MB.
+            This argument is passed to :py:meth:`~._signals.lazy.LazySignal.rechunk`.
         output_signal_size : None, tuple
             Since the size and dtype of the signal dimension of the output
             signal can be different from the input signal, this output signal
@@ -4790,7 +4853,6 @@ class BaseSignal(FancySlicing,
         output_dtype : None, NumPy dtype
             See docstring for output_signal_size for more information.
             Default None.
-        %s
         %s
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
@@ -4842,6 +4904,20 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
         >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)  # doctest: +SKIP
+
+        If you want some more control over computing a signal that isn't lazy
+        you can always set lazy_output to True and then compute the signal setting
+        the scheduler to 'threading', 'processes', 'single-threaded' or 'distributed'.
+
+        Additionally, you can set the navigation_chunks argument to a tuple of
+        integers to split the navigation axes into chunks. This can be useful if your
+        signal is less that 100 mb but you still want to use multiple cores.
+
+        >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
+        >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
+        >>> rotated = s.map(rotate, angle=s_angle, reshape=False, lazy_output=True, inplace=True
+        ...                 navigation_chunks=(2,2))
+        >>> rotated.compute(scheduler="single-threaded")
 
         Note
         ----
@@ -4914,12 +4990,20 @@ class BaseSignal(FancySlicing,
         # If the function has an `axes` or `axis` argument
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
-        if not ndkwargs and not lazy_output and (self.axes_manager.signal_dimension == 1 and
-                             "axis" in fargs):
+        # We use _map_all only when the user doesn't specify axis/axes
+        if (not ndkwargs
+            and not lazy_output
+            and self.axes_manager.signal_dimension == 1
+            and "axis" in fargs
+            and "axis" not in kwargs.keys()
+            ):
             kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
-
             result = self._map_all(function, inplace=inplace, **kwargs)
-        elif not ndkwargs and not lazy_output and "axes" in fargs and not parallel:
+        elif (not ndkwargs
+              and not lazy_output
+              and "axes" in fargs
+              and "axes" not in kwargs.keys()
+              ):
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
             result = self._map_all(function, inplace=inplace, **kwargs)
@@ -4935,9 +5019,10 @@ class BaseSignal(FancySlicing,
                 ragged=ragged,
                 inplace=inplace,
                 lazy_output=lazy_output,
-                max_workers=max_workers,
+                num_workers=num_workers,
                 output_dtype=output_dtype,
                 output_signal_size=output_signal_size,
+                navigation_chunks=navigation_chunks,
                 **kwargs, # function argument(s) (non-iterating)
             )
         if not inplace:
@@ -4945,25 +5030,29 @@ class BaseSignal(FancySlicing,
         else:
             self.events.data_changed.trigger(obj=self)
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, NUM_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """
         The function has to have either 'axis' or 'axes' keyword argument,
-        and hence support operating on the full dataset efficiently.
+        and hence support operating on the full dataset efficiently and remove
+        the signal axes.
         """
+        old_shape = self.data.shape
         newdata = function(self.data, **kwargs)
         if inplace:
             self.data = newdata
+            if self.data.shape != old_shape:
+                self.axes_manager.remove(self.axes_manager.signal_axes)
             self._lazy = False
             self._assign_subclass()
-            self.get_dimensions_from_data()
             return None
         else:
             sig = self._deepcopy_with_new_data(newdata)
+            if sig.data.shape != old_shape:
+                sig.axes_manager.remove(sig.axes_manager.signal_axes)
             sig._lazy = False
             sig._assign_subclass()
-            sig.get_dimensions_from_data()
             return sig
 
     def _map_iterate(
@@ -4976,7 +5065,8 @@ class BaseSignal(FancySlicing,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
-        max_workers=None,
+        num_workers=None,
+        navigation_chunks="auto",
         **kwargs,
     ):
         if lazy_output is None:
@@ -4984,6 +5074,7 @@ class BaseSignal(FancySlicing,
 
         if not self._lazy:
             s_input = self.as_lazy()
+            s_input.rechunk(nav_chunks=navigation_chunks)
         else:
             s_input = self
 
@@ -5081,7 +5172,7 @@ class BaseSignal(FancySlicing,
                     self.data,
                     dtype=mapped.dtype,
                     compute=True,
-                    num_workers=max_workers,
+                    num_workers=num_workers,
                 )
                 data_stored = True
             else:
@@ -5110,7 +5201,7 @@ class BaseSignal(FancySlicing,
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = sig.data.compute(num_workers=max_workers)
+            sig.data = sig.data.compute(num_workers=num_workers)
 
         if show_progressbar:
             pbar.unregister()
@@ -5176,9 +5267,9 @@ class BaseSignal(FancySlicing,
 
         if dc.metadata.has_item('Markers'):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
-            markers_dict = markers_metadata_dict_to_markers(
-                temp_marker_dict,
-                dc.axes_manager)
+            markers_dict = {}
+            for key in temp_marker_dict:
+                markers_dict[key] = markers_dict_to_markers(temp_marker_dict[key],)
             dc.metadata.Markers = markers_dict
         return dc
 
@@ -5469,17 +5560,15 @@ class BaseSignal(FancySlicing,
         metadata = self.metadata.deepcopy()
 
         # Check if marker update
-        if metadata.has_item('Markers'):
-            marker_name_list = metadata.Markers.keys()
-            markers_dict = metadata.Markers.__dict__
+        if self.metadata.has_item('Markers'):
+            markers_dict = self.metadata.Markers
+            marker_name_list = self.metadata.Markers.keys()
+            new_markers_dict = metadata.Markers
             for marker_name in marker_name_list:
-                marker = markers_dict[marker_name]['_dtb_value_']
-                if marker.auto_update:
-                    marker.axes_manager = self.axes_manager
-                    key_dict = {}
-                    for key in marker.data.dtype.names:
-                        key_dict[key] = marker.get_data_position(key)
-                    marker.set_data(**key_dict)
+                marker = markers_dict[marker_name]
+                new_marker = new_markers_dict[marker_name]
+                kwargs = marker.get_current_kwargs(only_variable_length=False)
+                new_marker.kwargs = kwargs
 
         class_ = assign_signal_subclass(
             dtype=self.data.dtype,
@@ -5488,15 +5577,17 @@ class BaseSignal(FancySlicing,
             lazy=False)
 
         cs = class_(
-            self(as_numpy=as_numpy),
+            self._get_current_data(as_numpy=as_numpy),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary())
 
+        # reinitialize the markers from dictionary
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
-            markers_dict = markers_metadata_dict_to_markers(
-                temp_marker_dict,
-                cs.axes_manager)
+            markers_dict = {}
+            for key, item in temp_marker_dict.items():
+                markers_dict[key] = markers_dict_to_markers(item)
+                markers_dict[key]._signal = cs
             cs.metadata.Markers = markers_dict
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):
@@ -5737,17 +5828,17 @@ class BaseSignal(FancySlicing,
         contains e.g. electron energy-loss spectroscopy data,
         photoemission spectroscopy data, etc.
 
-        When setting `signal_type` to a "known" type, HyperSpy converts the
+        When setting ``signal_type`` to a "known" type, HyperSpy converts the
         current signal to the most appropriate
-        :py:class:`hyperspy.signal.BaseSignal` subclass. Known signal types are
+        :py:class:`~.api.signals.BaseSignal` subclass. Known signal types are
         signal types that have a specialized
-        :py:class:`hyperspy.signal.BaseSignal` subclass associated, usually
+        :py:class:`~.api.signals.BaseSignal` subclass associated, usually
         providing specific features for the analysis of that type of signal.
 
         HyperSpy ships with a minimal set of known signal types. External
         packages can register extra signal types. To print a list of
         registered signal types in the current installation, call
-        :py:meth:`hyperspy.utils.print_known_signal_types`, and see
+        :py:func:`~.api.print_known_signal_types`, and see
         the developer guide for details on how to add new signal_types.
         A non-exhaustive list of HyperSpy extensions is also maintained
         here: https://github.com/hyperspy/hyperspy-extensions-list.
@@ -5766,7 +5857,7 @@ class BaseSignal(FancySlicing,
 
         See Also
         --------
-        * :py:meth:`hyperspy.utils.print_known_signal_types`
+        hyperspy.api.print_known_signal_types
 
         Examples
         --------
@@ -5780,14 +5871,14 @@ class BaseSignal(FancySlicing,
         +--------------------+---------------------+--------------------+----------+
         |    signal_type     |       aliases       |     class name     | package  |
         +--------------------+---------------------+--------------------+----------+
-        | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
-        |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
-        |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
-        |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
-        |      hologram      |                     |   HologramImage    | hyperspy |
+        | DielectricFunction | dielectric function | DielectricFunction |   exspy  |
+        |      EDS_SEM       |                     |   EDSSEMSpectrum   |   exspy  |
+        |      EDS_TEM       |                     |   EDSTEMSpectrum   |   exspy  |
+        |        EELS        |       TEM EELS      |    EELSSpectrum    |   exspy  |
+        |      hologram      |                     |   HologramImage    |  holospy |
         +--------------------+---------------------+--------------------+----------+
 
-        We can set the `signal_type` using the `signal_type`:
+        We can set the ``signal_type`` using the ``signal_type``:
 
         >>> s.set_signal_type("EELS")
         >>> s
@@ -5802,7 +5893,8 @@ class BaseSignal(FancySlicing,
         >>> s
         <EELSSpectrum, title: , dimensions: (|4)>
 
-        To set the `signal_type` to `undefined`, simply call the method without arguments:
+        To set the ``signal_type`` to "undefined", simply call the method without
+        arguments:
 
         >>> s.set_signal_type()
         >>> s
@@ -5990,31 +6082,34 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker_list, permanent=True)
 
         """
+        if not plot_marker and not permanent:
+            warnings.warn("`plot_marker=False` and `permanent=False` does nothing")
+            return
+
         if isiterable(marker):
             marker_list = marker
         else:
             marker_list = [marker]
         markers_dict = {}
+
         if permanent:
+            # Make a list of existing marker to check if this is not already
+            # added to the metadata.
             if not self.metadata.has_item('Markers'):
                 self.metadata.add_node('Markers')
             marker_object_list = []
             for marker_tuple in list(self.metadata.Markers):
                 marker_object_list.append(marker_tuple[1])
             name_list = self.metadata.Markers.keys()
+
         marker_name_suffix = 1
         for m in marker_list:
-            marker_data_shape = m._get_data_shape()[::-1]
-            if (not (len(marker_data_shape) == 0)) and (
-                    marker_data_shape != self.axes_manager.navigation_shape):
-                raise ValueError(
-                    "Navigation shape of the marker must be 0 or the "
-                    "inverse navigation shape as this signal. If the "
-                    "navigation dimensions for the signal is (2, 3), "
-                    "the marker dimension must be (3, 2).")
-            if (m.signal is not None) and (m.signal is not self):
+            if (m._signal is not None) and (m._signal is not self):
                 raise ValueError("Markers can not be added to several signals")
+
             m._plot_on_signal = plot_on_signal
+            m._signal = self
+
             if plot_marker:
                 if self._plot is None or not self._plot.is_active:
                     self.plot()
@@ -6022,28 +6117,29 @@ class BaseSignal(FancySlicing,
                     self._plot.signal_plot.add_marker(m)
                 else:
                     if self._plot.navigator_plot is None:
-                        self.plot()
+                        raise ValueError("Attempted to plot marker on navigator_plot when none is"
+                                         "active.")
                     self._plot.navigator_plot.add_marker(m)
                 m.plot(render_figure=False)
+
             if permanent:
                 for marker_object in marker_object_list:
                     if m is marker_object:
                         raise ValueError("Marker already added to signal")
-                name = m.name
+                name = m.name if m.name != "" else m.__class__.__name__
                 temp_name = name
+                # If it already exists in the list, add a suffix
                 while temp_name in name_list:
                     temp_name = name + str(marker_name_suffix)
                     marker_name_suffix += 1
                 m.name = temp_name
                 markers_dict[m.name] = m
-                m.signal = self
                 marker_object_list.append(m)
                 name_list.append(m.name)
-            if not plot_marker and not permanent:
-                _logger.warning(
-                    "plot_marker=False and permanent=False does nothing")
+
         if permanent:
             self.metadata.Markers.add_dictionary(markers_dict)
+
         if plot_marker and render_figure:
             self._render_figure()
 
@@ -6058,12 +6154,12 @@ class BaseSignal(FancySlicing,
         markers_dict = self.metadata.Markers.__dict__
         for marker_name in marker_name_list:
             marker = markers_dict[marker_name]['_dtb_value_']
-            if marker.plot_marker:
-                if marker._plot_on_signal:
-                    self._plot.signal_plot.add_marker(marker)
-                else:
-                    self._plot.navigator_plot.add_marker(marker)
-                marker.plot(render_figure=False)
+            if marker._plot_on_signal:
+                self._plot.signal_plot.add_marker(marker)
+            else:
+                self._plot.navigator_plot.add_marker(marker)
+            marker._signal = self
+            marker.plot(render_figure=False)
         self._render_figure()
 
     def add_poissonian_noise(self, keep_dtype=True, random_state=None):
@@ -6379,7 +6475,7 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import hyperspy.api as hs
-        >>> wave = hs.datasets.artificial_data.get_wave_image()
+        >>> wave = hs.data.wave_image()
         >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
 

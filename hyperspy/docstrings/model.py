@@ -19,7 +19,6 @@
 """Common docstring snippets for model.
 
 """
-from hyperspy.misc.eels.gosh_gos import _GOSH_DOI
 
 FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             The optimization algorithm used to perform the fitting.
@@ -102,32 +101,3 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             optimizer. For more information, read the docstring of the
             optimizer of your choice in :py:mod:`scipy.optimize`."""
 
-GOS_PARAMETER = \
-    """GOS : 'hydrogenic', 'gosh', 'Hartree-Slater'.
-            The GOS to use. Default is ``'gosh'``.
-        
-        gos_file_path : str, None
-            Only with GOS='gosh'. Specify the file path of the gosh file
-            to use. If None, use the file from doi:{}""".format(_GOSH_DOI)
-
-
-EELSMODEL_PARAMETERS = \
-    """ll : None or EELSSpectrum
-            If an EELSSpectrum is provided, it will be assumed that it is
-            a low-loss EELS spectrum, and it will be used to simulate the
-            effect of multiple scattering by convolving it with the EELS
-            spectrum.
-        auto_background : bool
-            If True, and if spectrum is an EELS instance adds automatically
-            a powerlaw to the model and estimate the parameters by the
-            two-area method.
-        auto_add_edges : bool
-            If True, and if spectrum is an EELS instance, it will automatically
-            add the ionization edges as defined in the
-            :class:`~.api.signals.EELSSpectrum` instance. Adding a new element to
-            the spectrum using the :meth:`~.api.signals.EELSSpectrum.add_elements`
-            method automatically add the corresponding ionisation edges to the model.
-        {}
-        dictionary : None or dict
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`~.model.BaseModel.as_dictionary`""".format(GOS_PARAMETER)

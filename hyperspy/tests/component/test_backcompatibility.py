@@ -19,6 +19,7 @@
 import pathlib
 import pytest
 
+from hyperspy.exceptions import VisibleDeprecationWarning
 import hyperspy.api as hs
 
 DIRPATH = pathlib.Path(__file__).parent / "data"
@@ -55,43 +56,78 @@ The reference files from hyperspy v1.4 have been created using:
     s.save(f'hs{version}_model.hspy', overwrite=True)
 """
 
+
 @pytest.mark.parametrize(("versionfile"), ("hs14_model.hspy", "hs15_model.hspy", "hs16_model.hspy"))
 def test_model_backcompatibility(versionfile):
-    s = hs.load(DIRPATH / versionfile)
-    m = s.models.restore('a')
+    try:
+        import exspy
+        with pytest.warns(VisibleDeprecationWarning):
+            # binned deprecated warning
+            s = hs.load(DIRPATH / versionfile)
 
-    assert len(m) == 5
+        m = s.models.restore('a')
 
-    g = m[0]
-    assert g.name == "Gaussian"
-    assert len(g.parameters) == 3
-    assert g.A.value == 13
-    assert g.centre.value == 9
-    assert g.sigma.value == 2
+        assert len(m) == 5
 
-    a = m[1]
-    assert a.name == "Arctan"
-    assert len(a.parameters) == 3
-    assert a.A.value == 5
-    assert a.k.value == 1.5
-    assert a.x0.value == 75.5
+        g = m[0]
+        assert g.name == "Gaussian"
+        assert len(g.parameters) == 3
+        assert g.A.value == 13
+        assert g.centre.value == 9
+        assert g.sigma.value == 2
 
-    a_eels = m[2]
-    assert len(a_eels.parameters) == 3
-    assert a_eels.A.value == 5
-    assert a_eels.k.value == 1.5
-    assert a_eels.x0.value == 22.5
+        a = m[1]
+        assert a.name == "Arctan"
+        assert len(a.parameters) == 3
+        assert a.A.value == 5
+        assert a.k.value == 1.5
+        assert a.x0.value == 75.5
 
-    p = m[3]
-    assert p.name == "Polynomial"
-    assert len(p.parameters) == 3
-    assert p.a0.value == 25.0
-    assert p.a1.value == -0.5
-    assert p.a2.value == 0.01
+        a_eels = m[2]
+        assert len(a_eels.parameters) == 3
+        assert a_eels.A.value == 5
+        assert a_eels.k.value == 1.5
+        assert a_eels.x0.value == 22.5
 
-    p = m[4]
-    assert len(p.parameters) == 8
-    assert p.area.value == 100.0
-    assert p.centre.value == 50.0
-    assert p.FWHM.value == 1.5
-    assert p.resolution.value == 0.0
+        p = m[3]
+        assert p.name == "Polynomial"
+        assert len(p.parameters) == 3
+        assert p.a0.value == 25.0
+        assert p.a1.value == -0.5
+        assert p.a2.value == 0.01
+
+        p = m[4]
+        assert len(p.parameters) == 8
+        assert p.area.value == 100.0
+        assert p.centre.value == 50.0
+        assert p.FWHM.value == 1.5
+        assert p.resolution.value == 0.0
+    except ImportError:
+        with pytest.warns(VisibleDeprecationWarning):
+            with pytest.raises(ImportError):
+                s = hs.load(DIRPATH / versionfile)
+                m = s.models.restore('a')
+
+
+def test_loading_components_exspy_not_installed():
+    try:
+        from exspy import components
+        exspy_installed = True
+    except ImportError:
+        exspy_installed = False
+
+    with pytest.warns(VisibleDeprecationWarning):
+        # warning is for old binning API
+        s = hs.load(DIRPATH / "hs16_model.hspy")
+
+    if not exspy_installed:
+        # This should raise an ImportError with
+        # a suitable error message
+        with pytest.raises(ImportError) as err:
+            m = s.models.restore('a')
+            assert "exspy is not installed" in str(err.value)
+    else:
+        # The model contains components using numexpr
+        pytest.importorskip("numexpr")
+        # This should work fine
+        m = s.models.restore('a')

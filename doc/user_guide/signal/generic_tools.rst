@@ -241,7 +241,7 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*5))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.datasets.ascent()]*5))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
@@ -270,7 +270,7 @@ using an external function can be more easily accomplished using the
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.datasets.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> image_stack.map(scipy.ndimage.rotate,
@@ -293,7 +293,7 @@ arguments as in the following example.
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.datasets.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
@@ -325,7 +325,7 @@ data (default, ``True``) or storing it to a new signal (``False``).
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.datasets.ascent()]*4))
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
     >>> result = image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles.T,
@@ -344,32 +344,6 @@ data (default, ``True``) or storing it to a new signal (``False``).
     (724, 724)
     (512, 512)
     (724, 724)
-
-.. _parallel-map-label:
-
-The execution can be sped up by passing ``parallel`` keyword to the
-:py:meth:`~.api.signals.BaseSignal.map` method:
-
-.. code-block:: python
-
-    >>> import time
-    >>> def slow_func(data):
-    ...     time.sleep(1.)
-    ...     return data + 1
-    >>> s = hs.signals.Signal1D(np.arange(40).reshape((20, 2)))
-    >>> s
-    <Signal1D, title: , dimensions: (20|2)>
-    >>> s.map(slow_func, parallel=False)
-    100%|██████████████████████████████████████| 20/20 [00:20<00:00,  1.00s/it]
-    >>> # some operations will be done in parallel:
-    >>> s.map(slow_func, parallel=True)
-    100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
-
-.. note::
-
-   HyperSpy implements *thread-based* parallelism for the :py:meth:`~.api.signals.BaseSignal.map`
-   method. You can control the number of threads that are created by passing an integer value
-   to the ``max_workers`` keyword argument. By default, it will use ``min(32, os.cpu_count())``.
 
 .. versionadded:: 1.4
     Iterating over signal using a parameter with no navigation dimension.
@@ -459,18 +433,18 @@ lazily:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum().as_lazy()
+    >>> s = hs.datasets.two_gaussians().as_lazy()
     >>> print(s)
-    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|1024)>
+    <LazySignal1D, title: Two Gaussians, dimensions: (|1024)>
     >>> print(s.rebin(scale=[2]))
-    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+    <LazySignal1D, title: Two Gaussians, dimensions: (|512)>
 
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum().as_lazy()
+    >>> s = hs.datasets.two_gaussians().as_lazy()
     >>> print(s.rebin(new_shape=[512]))
-    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+    <LazySignal1D, title: Two Gaussians, dimensions: (|512)>
 
 
 On the other hand, the following rebinning operation requires interpolation and
@@ -478,24 +452,24 @@ cannot be performed lazily:
 
 .. code-block:: python
 
-    >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
-    >>> spectrum.data[1, 2, 9] = 5
-    >>> print(spectrum)
-    <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
-    >>> print ('Sum = ', spectrum.data.sum())
+    >>> s = hs.signals.Signal1D(np.ones([4, 4, 10]))
+    >>> s.data[1, 2, 9] = 5
+    >>> print(s)
+    <Signal1D, title: , dimensions: (4, 4|10)>
+    >>> print ('Sum = ', s.data.sum())
     Sum =  164.0
     >>> scale = [0.5, 0.5, 5]
-    >>> test = spectrum.rebin(scale=scale)
-    >>> test2 = spectrum.rebin(new_shape=(8, 8, 2)) # Equivalent to the above
+    >>> test = s.rebin(scale=scale)
+    >>> test2 = s.rebin(new_shape=(8, 8, 2)) # Equivalent to the above
     >>> print(test)
-    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    <Signal1D, title: , dimensions: (8, 8|2)>
     >>> print(test2)
-    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    <Signal1D, title: , dimensions: (8, 8|2)>
     >>> print('Sum =', test.data.sum())
     Sum = 164.0
     >>> print('Sum =', test2.data.sum())
     Sum = 164.0
-    >>> spectrum.as_lazy().rebin(scale=scale)
+    >>> s.as_lazy().rebin(scale=scale)
     Traceback (most recent call last):
       File "<ipython-input-26-49bca19ebf34>", line 1, in <module>
         spectrum.as_lazy().rebin(scale=scale)
@@ -533,6 +507,32 @@ signal:
     >>> s4 = s.rebin(scale=(5, 2, 1))
     >>> print(s4.data.dtype)
     uint64
+
+
+Interpolate to a different axis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :py:meth:`~.api.signals.BaseSignal.interpolate_on_axis` method makes it possible to
+exchange any existing axis of a signal with a new axis,
+regardless of the signals dimension or the axes types.
+This is achieved by interpolating the data using :py:meth:`scipy.interpolate.make_interp_spline`
+from the old axis to the new axis. Replacing multiple axes can be done iteratively.
+
+.. code-block:: python
+
+    >>> from hyperspy.axes import UniformDataAxis, DataAxis
+    >>> x = {"offset": 0, "scale": 1, "size": 10, "name": "X", "navigate": True}
+    >>> e = {"offset": 0, "scale": 1, "size": 50, "name": "E", "navigate": False}
+    >>> s = hs.signals.Signal1D(np.random.random((10, 50)), axes=[x, e])
+    >>> s
+    <Signal1D, title: , dimensions: (10|50)>
+    >>> x_new = UniformDataAxis(offset=1.5, scale=0.8, size=7, name="X_NEW", navigate=True)
+    >>> e_new = DataAxis(axis=np.arange(8)**2, name="E_NEW", navigate=False)
+    >>> s2 = s.interpolate_on_axis(x_new, 0, inplace=False)
+    >>> s2
+    <Signal1D, title: , dimensions: (7|50)>
+    >>> s2.interpolate_on_axis(e_new, "E", inplace=True)
+    <Signal1D, title: , dimensions: (7|8)>
 
 
 .. _squeeze-label:
@@ -589,7 +589,7 @@ with same dimension.
 
 .. code-block:: python
 
-    >>> image = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> image = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 

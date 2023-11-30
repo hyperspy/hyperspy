@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
@@ -97,37 +97,23 @@ class ScalableFixedPattern(Component):
         self.xscale.free = value
         self.shift.free = value
 
-    def prepare_interpolator(self, kind='linear', fill_value=0, **kwargs):
+    def prepare_interpolator(self, **kwargs):
         """Prepare interpolation.
 
         Parameters
         ----------
         x : array
             The spectral axis of the fixed pattern
-        kind : str or int, optional
-            Specifies the kind of interpolation as a string
-            ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
-            or as an integer specifying the order of the spline interpolator
-            to use. Default is 'linear'.
-
-        fill_value : float, optional
-            If provided, then this value will be used to fill in for requested
-            points outside of the data range. If not provided, then the default
-            is NaN.
-
-        Notes
-        -----
-        Any extra keyword argument is passed to `scipy.interpolate.interp1d`
-
+        **kwargs : dict
+            Keywords argument are passed to
+            :py:func:`scipy.interpolate.make_interp_spline`
         """
 
-        self.f = interp1d(
+        self.f = make_interp_spline(
             self.signal.axes_manager.signal_axes[0].axis,
             self.signal.data.squeeze(),
-            kind=kind,
-            bounds_error=False,
-            fill_value=fill_value,
-            **kwargs)
+            **kwargs
+            )
 
     def _function(self, x, xscale, yscale, shift):
         if self.interpolate is True:

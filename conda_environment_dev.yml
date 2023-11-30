@@ -7,7 +7,8 @@ dependencies:
 - matplotlib-base=3.5.1
 - pytest
 - pytest-mpl
-- pytest-xdist
+# Regression introduced in https://github.com/pytest-dev/pytest-xdist/pull/778
+- pytest-xdist <3.5
 - pytest-rerunfailures
 - pytest-instafail
 - pooch

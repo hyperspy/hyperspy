@@ -10,10 +10,6 @@
    ComplexSignal
    ComplexSignal1D
    ComplexSignal2D
-   DielectricFunction
-   EDSSEMSpectrum
-   EDSTEMSpectrum
-   EELSSpectrum
    Signal1D
    Signal2D
 
@@ -26,9 +22,5 @@
    ComplexSignal
    ComplexSignal1D
    ComplexSignal2D
-   DielectricFunction
-   EDSSEMSpectrum
-   EDSTEMSpectrum
-   EELSSpectrum
    Signal1D
    Signal2D

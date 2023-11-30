@@ -39,7 +39,7 @@ class TestChiSquared:
         g = Gaussian()
         m.append(g)
         m.fit()
-        np.testing.assert_allclose(m.chisq(), 7.78966223)
+        np.testing.assert_allclose(m.chisq._get_current_data(), 7.78966223)
 
     def test_dof_with_fit(self):
         m = self.model
@@ -48,14 +48,14 @@ class TestChiSquared:
         m.extend((g, g1))
         g1.set_parameters_not_free('A')
         m.fit()
-        assert np.equal(m.dof(), 5)
+        assert np.equal(m.dof._get_current_data(), 5)
 
     def test_red_chisq_with_fit(self):
         m = self.model
         g = Gaussian()
         m.append(g)
         m.fit()
-        np.testing.assert_allclose(m.red_chisq(), 1.55793245)
+        np.testing.assert_allclose(m.red_chisq._get_current_data(), 1.55793245)
 
     def test_chisq(self):
         m = self.model
@@ -65,7 +65,7 @@ class TestChiSquared:
         g.centre.value = self.centre
         m.append(g)
         m._calculate_chisq()
-        np.testing.assert_allclose(m.chisq(), 7.78966223)
+        np.testing.assert_allclose(m.chisq._get_current_data(), 7.78966223)
 
     def test_dof_with_p0(self):
         m = self.model
@@ -75,7 +75,7 @@ class TestChiSquared:
         g1.set_parameters_not_free('A')
         m._set_p0()
         m._set_current_degrees_of_freedom()
-        assert np.equal(m.dof(), 5)
+        assert np.equal(m.dof._get_current_data(), 5)
 
     def test_red_chisq(self):
         m = self.model
@@ -87,7 +87,7 @@ class TestChiSquared:
         m._set_p0()
         m._set_current_degrees_of_freedom()
         m._calculate_chisq()
-        np.testing.assert_allclose(m.red_chisq(), 1.55793245)
+        np.testing.assert_allclose(m.red_chisq._get_current_data(), 1.55793245)
 
     def test_chisq_in_range(self):
         m = self.model
@@ -95,7 +95,7 @@ class TestChiSquared:
         m.append(g)
         m.set_signal_range(1, 7)
         m.fit()
-        np.testing.assert_allclose(m.red_chisq(), 2.20961562)
+        np.testing.assert_allclose(m.red_chisq._get_current_data(), 2.20961562)
 
     def test_chisq_with_inactive_components(self):
         m = self.model
@@ -105,7 +105,7 @@ class TestChiSquared:
         m.append(gin)
         gin.active = False
         m.fit()
-        np.testing.assert_allclose(m.chisq(), 7.78966223)
+        np.testing.assert_allclose(m.chisq._get_current_data(), 7.78966223)
 
     def test_dof_with_inactive_components(self):
         m = self.model
@@ -115,4 +115,4 @@ class TestChiSquared:
         m.append(gin)
         gin.active = False
         m.fit()
-        assert np.equal(m.dof(), 3)
+        assert np.equal(m.dof._get_current_data(), 3)

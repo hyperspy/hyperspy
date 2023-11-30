@@ -42,12 +42,15 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx_gallery.gen_gallery',
     'sphinx_copybutton',
+    "sphinx_favicon",
 ]
 
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
+    "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
+    "https://software.opensuse.org", # 400 Client Error: Bad Request for url
 ]
 
 linkcheck_exclude_documents = []
@@ -147,15 +150,12 @@ html_theme = 'pydata_sphinx_theme'
 # of the sidebar.
 html_logo = '_static/hyperspy_logo.png'
 
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-html_favicon = '_static/hyperspy.ico'
-
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+favicons = ["hyperspy.ico", ]
 
 html_theme_options = {
     "show_toc_level": 2,
@@ -182,7 +182,7 @@ html_theme_options = {
             "name": "Tutorial",
         },
     ],
-    "header_links_before_dropdown": 8,
+    "header_links_before_dropdown": 7,
     "switcher": {
         # Update when merged and released
         "json_url": "https://hyperspy.org/hyperspy-doc/dev/_static/switcher.json",
@@ -298,6 +298,7 @@ towncrier_draft_working_directory = ".."
 intersphinx_mapping = {
     'cupy': ('https://docs.cupy.dev/en/stable', None),
     'dask': ('https://docs.dask.org/en/latest', None),
+    'exspy': ('https://exspy.readthedocs.io/en/latest', None),
     'h5py': ('https://docs.h5py.org/en/stable', None),
     'holospy': ('https://holospy.readthedocs.io/en/latest', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable', None),
@@ -308,6 +309,7 @@ intersphinx_mapping = {
     'scipy': ('https://docs.scipy.org/doc/scipy', None),
     'skimage': ('https://scikit-image.org/docs/stable', None),
     'sklearn': ('https://scikit-learn.org/stable', None),
+    'traits': ('https://docs.enthought.com/traits/', None),
     'zarr': ('https://zarr.readthedocs.io/en/stable', None),
 }
 
@@ -324,13 +326,16 @@ sphinx_gallery_conf = {
 autodoc_default_options = {
     'show-inheritance': True,
 }
+toc_object_entries_show_parents = "hide"
 
 graphviz_output_format = "svg"
 
 # -- Sphinx-copybutton -----------
 
 
-copybutton_prompt_text = ">>> "
+copybutton_prompt_text = r'>>> |\.\.\. '
+copybutton_prompt_is_regexp = True
+
 
 def setup(app):
     app.add_css_file("custom-styles.css")

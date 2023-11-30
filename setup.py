@@ -34,17 +34,14 @@ if v[0] != 3:
 
 
 install_req = [
+    'cloudpickle',
     'dask[array]>=2021.3.1',
-    'dill',
     # included in stdlib since v3.8, but this required version requires Python 3.10
     # We can remove this requirement when the minimum supported version becomes Python 3.10
     'importlib-metadata>=3.6',
     'jinja2',
     'matplotlib>=3.1.3',
     'natsort',
-    # non-uniform axis requirement
-    'numba>=0.52',
-    'numexpr',
     'numpy>=1.20.0',
     'packaging',
     'pint>=0.10',
@@ -56,7 +53,7 @@ install_req = [
     'scikit-image>=0.18',
     'scipy>=1.5.0',
     'sympy>=1.6',
-    'rosettasciio',
+    'rosettasciio[hdf5]',
     'tqdm>=4.9.0',
     'traits>=4.5.0',
     ]
@@ -65,20 +62,23 @@ install_req = [
 extras_require = {
 	"ipython": ["IPython>7.0, !=8.0", "ipyparallel"],
     "learning": ["scikit-learn>=1.0.1"],
-    "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0", "ipympl"],
+    "speed":["numba", "numexpr"],
     # UPDATE BEFORE RELEASE
-    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets @ git+https://github.com/ericpre/hyperspy_gui_ipywidgets.git@hyperspy2.0",
+                    "ipympl"],
+    # UPDATE BEFORE RELEASE
+    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/ericpre/hyperspy_gui_traitsui.git@hyperspy2.0"],
     #"gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "tests": [
         "pytest>=3.6",
         "pytest-mpl",
-        "pytest-xdist",
+        "pytest-xdist<3.5",
         "pytest-rerunfailures",
         "pytest-instafail",
         ],
     "coverage":["pytest-cov"],
     # required to build the docs
-    "build-doc": [
+    "doc": [
         "pydata_sphinx_theme",
         "sphinx>=1.7",
         "sphinx-gallery",
@@ -86,6 +86,7 @@ extras_require = {
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier>=0.3.0a0",
         "sphinx-design",
+        "sphinx-favicon",
         "towncrier",
         ],
 }
@@ -94,7 +95,7 @@ extras_require = {
 # Don't include "tests" and "docs" requirements since "all" is designed to be
 # used for user installation.
 runtime_extras_require = {x: extras_require[x] for x in extras_require.keys()
-                          if x not in ["tests", "coverage", "build-doc"]}
+                          if x not in ["tests", "coverage", "doc"]}
 extras_require["all"] = list(itertools.chain(*list(
     runtime_extras_require.values())))
 
@@ -153,9 +154,8 @@ with update_version_when_dev() as version:
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
         packages=['hyperspy',
-                  'hyperspy.datasets',
+                  'hyperspy.data',
                   'hyperspy._components',
-                  'hyperspy.datasets',
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
@@ -166,7 +166,6 @@ with update_version_when_dev() as version:
                   'hyperspy.tests',
                   'hyperspy.tests.axes',
                   'hyperspy.tests.component',
-                  'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
                   'hyperspy.tests.learn',
                   'hyperspy.tests.model',
@@ -176,9 +175,6 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.misc',
                   'hyperspy.models',
                   'hyperspy.misc',
-                  'hyperspy.misc.eels',
-                  'hyperspy.misc.eds',
-                  'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.astropy',
@@ -196,23 +192,10 @@ with update_version_when_dev() as version:
         package_data={
             'hyperspy':
             [
-                'tests/drawing/*.png',
+                'tests/component/data/*.hspy',
                 'tests/drawing/data/*.hspy',
-                'tests/drawing/plot_signal/*.png',
-                'tests/drawing/plot_signal1d/*.png',
-                'tests/drawing/plot_signal2d/*.png',
-                'tests/drawing/plot_markers/*.png',
-                'tests/drawing/plot_model1d/*.png',
-                'tests/drawing/plot_model/*.png',
-                'tests/drawing/plot_roi/*.png',
                 'misc/dask_widgets/*.html.j2',
-                'misc/eds/example_signals/*.hspy',
-                'misc/holography/example_signals/*.hdf5',
-                'tests/drawing/plot_mva/*.png',
-                'tests/drawing/plot_widgets/*.png',
-                'tests/drawing/plot_signal_tools/*.png',
-                'tests/signals/data/test_find_peaks1D_ohaver.hdf5',
-                'tests/signals/data/*.hspy',
+                'tests/signals/data/*.hdf5',
                 'hyperspy_extension.yaml',
             ],
         },

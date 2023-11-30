@@ -18,13 +18,17 @@
 
 import pytest
 from unittest import mock
+import pathlib
 
 import numpy as np
 
+import hyperspy.api as hs
 from hyperspy.axes import AxesManager
 from hyperspy.component import Component, Parameter, _get_scaling_factor
 from hyperspy._signals.signal1d import Signal1D
 
+
+DIRPATH = pathlib.Path(__file__).parent / "data"
 
 class TestMultidimensionalActive:
 
@@ -230,19 +234,13 @@ class TestCallMethods:
         self.c = Component(["one", "two"])
         c = self.c
         c.model = mock.MagicMock()
-        c.model.__call__ = mock.MagicMock()
-        c.model.channel_switches = np.array([True, False, True])
+        c.model._get_current_data = mock.MagicMock()
+        c.model._channel_switches = np.array([True, False, True])
         c.model.axis.axis = np.array([0.1, 0.2, 0.3])
         c.function = mock.MagicMock()
         c.function.return_value = np.array([1.3, ])
         c.model.signal.axes_manager.signal_axes = [mock.MagicMock(), ]
         c.model.signal.axes_manager.signal_axes[0].scale = 2.
-
-    def test_call(self):
-        c = self.c
-        assert 1.3 == c()
-        np.testing.assert_array_equal(c.function.call_args[0][0],
-                                      np.array([0.1, 0.3]))
 
     def test_plotting_not_active_component(self):
         c = self.c
@@ -255,7 +253,7 @@ class TestCallMethods:
         c = self.c
         c.active = True
         c.model.signal.axes_manager[-1].is_binned = False
-        c.model.__call__.return_value = np.array([1.3])
+        c.model._get_current_data.return_value = np.array([1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
 
@@ -263,7 +261,7 @@ class TestCallMethods:
         c = self.c
         c.active = True
         c.model.signal.axes_manager[-1].is_binned = True
-        c.model.__call__.return_value = np.array([1.3])
+        c.model._get_current_data.return_value = np.array([1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
 
@@ -271,7 +269,7 @@ class TestCallMethods:
         c = self.c
         c.active = True
         c.model.signal.axes_manager[-1].is_binned = False
-        c.model.__call__.return_value = np.array([1.1, 1.3])
+        c.model._get_current_data.return_value = np.array([1.1, 1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=True)
         np.testing.assert_array_equal(res, np.array([1.1, np.nan, 1.3]))
 
@@ -304,3 +302,66 @@ def test_linear_parameter_initialisation():
     assert C.one._linear
     assert not C.two._linear
     assert not P._linear
+
+
+def test_set_name():
+    c = Component(['one', 'two'], ['one'])
+    c.name = 'test'
+    assert c.name == 'test'
+    assert c._name == 'test'
+
+
+def test_set_name_error():
+    c = Component(['one', 'two'], ['one'])
+    with pytest.raises(ValueError):
+        c.name = 1
+
+
+def test_loading_non_expression_custom_component(tmp_path):
+    # non-expression based custom component uses serialisation
+    # to save the components.
+
+    import hyperspy.api as hs
+    from hyperspy.component import Component
+
+    class CustomComponent(Component):
+
+        def __init__(self, p1=1, p2=2):
+            Component.__init__(self, ('p1', 'p2'))
+
+            self.p1.value = p1
+            self.p2.value = p2
+
+            self.p1.grad = self.grad_p1
+            self.p2.grad = self.grad_p2
+
+        def function(self, x):
+            p1 = self.p1.value
+            p2 = self.p2.value
+            return p1 + x * p2
+
+        def grad_p1(self, x):
+            return 0
+
+        def grad_p2(self, x):
+            return x
+
+    s = hs.signals.Signal1D(range(10))
+    m = s.create_model()
+
+    c = CustomComponent()
+    m.append(c)
+    m.store('a')
+
+    s.save(tmp_path / "hs2.0_custom_component.hspy")
+
+    s = hs.load(tmp_path / "hs2.0_custom_component.hspy")
+    _ = s.models.restore('a')
+
+
+def test_load_component_previous_python():
+    s = hs.load(DIRPATH / "hs2.0_custom_component.hspy")
+    import sys
+    if sys.version_info[0] == 3.11:
+        with pytest.raises(TypeError):
+            _ = s.models.restore('a')

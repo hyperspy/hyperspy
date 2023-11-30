@@ -92,8 +92,6 @@ class BlittedFigure(object):
 
     def add_marker(self, marker):
         marker.ax = self.ax
-        if marker.axes_manager is None:
-            marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 

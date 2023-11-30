@@ -23,7 +23,6 @@ from scipy.special import huber
 import traits.api as t
 
 import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_uniform_axis
 from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
@@ -115,8 +114,8 @@ class ComponentFit(SpanSelectorInSignal1D):
 
         # Restore the signal range
         if self.signal_range is not None:
-            self.model.channel_switches = (
-                self.model.backup_channel_switches.copy())
+            self.model._channel_switches = (
+                self.model._backup_channel_switches.copy())
 
         self.model.update_plot()
 
@@ -249,7 +248,7 @@ class Model1D(BaseModel):
     """
 
     def __init__(self, signal1D, dictionary=None):
-        super(Model1D, self).__init__()
+        super().__init__()
         self.signal = signal1D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
@@ -262,7 +261,7 @@ class Model1D(BaseModel):
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
             self._on_navigating, [])
-        self.channel_switches = np.array([True] * len(self.axis.axis))
+        self._channel_switches = np.array([True] * len(self.axis.axis))
         self.chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
@@ -273,23 +272,18 @@ class Model1D(BaseModel):
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self._low_loss = None
-        self.convolved = False
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
-            'channel_switches': None,
-            'convolved': None,
+            '_channel_switches': None,
             'free_parameters_boundaries': None,
-            'low_loss': ('sig', None),
             'chisq.data': None,
             'dof.data': None}
         self._slicing_whitelist = {
-            'channel_switches': 'isig',
-            'low_loss': 'inav',
+            '_channel_switches': 'isig',
             'chisq.data': 'inav',
             'dof.data': 'inav'}
 
@@ -305,45 +299,10 @@ class Model1D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Signal1D')
 
-    @property
-    def low_loss(self):
-        return self._low_loss
-
-    @low_loss.setter
-    def low_loss(self, value):
-        if value is not None:
-            if (value.axes_manager.navigation_shape !=
-                    self.signal.axes_manager.navigation_shape):
-                raise ValueError('The low-loss does not have the same '
-                                 'navigation dimension as the core-loss.')
-            if not value.axes_manager.signal_axes[0].is_uniform:
-                raise ValueError('Low loss convolution is not supported with '
-                                 'non-uniform signal axes.')
-            self._low_loss = value
-            self.set_convolution_axis()
-            self.convolved = True
-        else:
-            self._low_loss = value
-            self.convolution_axis = None
-            self.convolved = False
-
-    # Extend the list methods to call the _touch when the model is modified
-
-    def set_convolution_axis(self):
-        """
-        Creates an axis to use to generate the data of the model in the precise
-        scale to obtain the correct axis and origin after convolution with the
-        lowloss spectrum.
-        """
-        ll_axis = self.low_loss.axes_manager.signal_axes[0]
-        dimension = self.axis.size + ll_axis.size - 1
-        step = self.axis.scale
-        knot_position = ll_axis.size - ll_axis.value2index(0) - 1
-        self.convolution_axis = generate_uniform_axis(self.axis.offset, step,
-                                                     dimension, knot_position)
 
     def append(self, thing):
-        """Add component to Model.
+        """
+        Add component to Model.
 
         Parameters
         ----------
@@ -351,7 +310,7 @@ class Model1D(BaseModel):
         """
         cm = self.suspend_update if self._plot_active else dummy_context_manager
         with cm(update_on_resume=False):
-            super(Model1D, self).append(thing)
+            super().append(thing)
         if self._plot_components:
             self._plot_component(thing)
         if self._adjust_position_all:
@@ -372,32 +331,54 @@ class Model1D(BaseModel):
             if hasattr(thing, '_component_line'):
                 line = thing._component_line
                 line.close()
-        super(Model1D, self).remove(things)
+        super().remove(things)
         self._disconnect_parameters2update_plot(things)
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def __call__(self, non_convolved=False, onlyactive=False,
-                 component_list=None, binned=None, 
-                 ignore_channel_switches = False):
-        """Returns the corresponding model for the current coordinates
+    def _get_model_data(self, component_list=None, ignore_channel_switches=False):
+        """
+        Return the model data at the current position
+        
+        Parameters
+        ----------
+        component_list : list or None
+            If None, the model is constructed with all active components. Otherwise,
+            the model is constructed with the components in component_list.
+        
+        Returns:
+        --------
+        model_data: `ndarray`
+        """
+        if component_list is None:
+            component_list = self
+        slice_ = slice(None) if ignore_channel_switches else self._channel_switches
+        axis = self.axis.axis[slice_]
+        model_data = np.zeros(len(axis))
+        for component in component_list:
+            model_data += component.function(axis)
+        return model_data
+
+    def _get_current_data(self, onlyactive=False,
+                 component_list=None, binned=None,
+                 ignore_channel_switches=False):
+        """
+        Returns the corresponding model for the current coordinates
 
         Parameters
         ----------
-        non_convolved : bool
-            If True it will return the deconvolved model
         onlyactive : bool
             If True, only the active components will be used to build the
             model.
         component_list : list or None
-            If None, the sum of all the components is returned. If list, only
-            the provided components are returned
+            If None, the model is constructed with all active components. Otherwise,
+            the model is constructed with the components in component_list.
         binned : bool or None
             Specify whether the binned attribute of the signal axes needs to be
             taken into account.
         ignore_channel_switches: bool
-            If true, the entire signal axis are returned 
-            without checking channel_switches.
+            If true, the entire signal axis are returned
+            without checking _channel_switches.
 
         cursor: 1 or 2
 
@@ -415,29 +396,9 @@ class Model1D(BaseModel):
         if onlyactive:
             component_list = [
                 component for component in component_list if component.active]
-
-        if self.convolved is False or non_convolved is True:
-            slice_ = slice(None) if ignore_channel_switches else self.channel_switches
-            axis = self.axis.axis[slice_]
-            sum_ = np.zeros(len(axis))
-            for component in component_list:
-                sum_ += component.function(axis)
-            to_return = sum_
-
-        else:  # convolved
-            sum_convolved = np.zeros(len(self.convolution_axis))
-            sum_ = np.zeros(len(self.axis.axis))
-            for component in component_list:
-                if component.convolved:
-                    sum_convolved += component.function(self.convolution_axis)
-                else:
-                    sum_ += component.function(self.axis.axis)
-
-            to_return = sum_ + np.convolve(
-                self.low_loss(self.axes_manager),
-                sum_convolved, mode="valid")
-            to_return = to_return[self.channel_switches]
-
+        model_data = self._get_model_data(
+            component_list=component_list,
+            ignore_channel_switches=ignore_channel_switches)
         if binned is None:
             # use self.axis instead of self.signal.axes_manager[-1]
             # to avoid small overhead (~10 us) which isn't negligeable when
@@ -446,10 +407,10 @@ class Model1D(BaseModel):
 
         if binned:
             if self.axis.is_uniform:
-                to_return *= self.axis.scale
+                model_data *= self.axis.scale
             else:
-                to_return *= np.gradient(self.axis.axis)
-        return to_return
+                model_data *= np.gradient(self.axis.axis)
+        return model_data
 
     def _errfunc(self, param, y, weights=None):
         if weights is None:
@@ -458,7 +419,8 @@ class Model1D(BaseModel):
         return errfunc * weights
 
     def _set_signal_range_in_pixels(self, i1=None, i2=None):
-        """Use only the selected spectral range in the fitting routine.
+        """
+        Use only the selected spectral range in the fitting routine.
 
         Parameters
         ----------
@@ -470,16 +432,17 @@ class Model1D(BaseModel):
         To use the full energy range call the function without arguments.
         """
 
-        self.backup_channel_switches = copy.copy(self.channel_switches)
-        self.channel_switches[:] = False
+        self._backup_channel_switches = copy.copy(self._channel_switches)
+        self._channel_switches[:] = False
         if i2 is not None:
             i2 += 1
-        self.channel_switches[i1:i2] = True
+        self._channel_switches[i1:i2] = True
         self.update_plot(render_figure=True)
 
     def _parse_signal_range_values(self, x1=None, x2=None):
-        """Parse signal range values to be used by the `set_signal_range`,
-        `add_signal_range` and `remove_signal_range` and return sorted indices
+        """
+        Parse signal range values to be used by the `set_signal_range`,
+        `add_signal_range` and `remove_signal_range` and return sorted indices.
         """
         try:
             x1, x2 = x1
@@ -490,19 +453,26 @@ class Model1D(BaseModel):
 
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
-        """Use only the selected spectral range defined in its own units in the
+        """
+        Use only the selected spectral range defined in its own units in the
         fitting routine.
 
         Parameters
         ----------
         x1, x2 : None or float
+
+        See Also
+        --------
+        add_signal_range, remove_signal_range,
+        reset_signal_range, set_signal_range_from_mask
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._set_signal_range_in_pixels(*indices)
 
     def _remove_signal_range_in_pixels(self, i1=None, i2=None):
-        """Removes the data in the given range from the data range that
-        will be used by the fitting rountine
+        """
+        Removes the data in the given range from the data range that
+        will be used by the fitting rountine.
 
         Parameters
         ----------
@@ -510,28 +480,42 @@ class Model1D(BaseModel):
         """
         if i2 is not None:
             i2 += 1
-        self.channel_switches[i1:i2] = False
+        self._channel_switches[i1:i2] = False
         self.update_plot()
 
     @interactive_range_selector
     def remove_signal_range(self, x1=None, x2=None):
-        """Removes the data in the given range from the data range that
-        will be used by the fitting rountine
+        """
+        Removes the data in the given range from the data range that
+        will be used by the fitting rountine.
 
         Parameters
         ----------
         x1, x2 : None or float
+
+        See Also
+        --------
+        set_signal_range, add_signal_range,
+        reset_signal_range, set_signal_range_from_mask
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._remove_signal_range_in_pixels(*indices)
 
     def reset_signal_range(self):
-        """Resets the data range"""
+        """
+        Resets the data range
+
+        See Also
+        --------
+        set_signal_range, add_signal_range, set_signal_range_from_mask,
+        remove_signal_range
+        """
         self._set_signal_range_in_pixels()
 
     def _add_signal_range_in_pixels(self, i1=None, i2=None):
-        """Adds the data in the given range from the data range that
-        will be used by the fitting rountine
+        """
+        Adds the data in the given range from the data range that
+        will be used by the fitting rountine.
 
         Parameters
         ----------
@@ -539,24 +523,26 @@ class Model1D(BaseModel):
         """
         if i2 is not None:
             i2 += 1
-        self.channel_switches[i1:i2] = True
+        self._channel_switches[i1:i2] = True
         self.update_plot()
 
     @interactive_range_selector
     def add_signal_range(self, x1=None, x2=None):
-        """Adds the data in the given range from the data range that
-        will be used by the fitting rountine
+        """
+        Adds the data in the given range from the data range that
+        will be used by the fitting rountine.
 
         Parameters
         ----------
         x1, x2 : None or float
+
+        See Also
+        --------
+        set_signal_range, set_signal_range_from_mask,
+        reset_signal_range, remove_signal_range
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._add_signal_range_in_pixels(*indices)
-
-    def reset_the_signal_range(self):
-        self.channel_switches[:] = True
-        self.update_plot()
 
     def _check_analytical_jacobian(self):
         """Check all components have analytical gradients.
@@ -586,71 +572,28 @@ class Model1D(BaseModel):
         if weights is None:
             weights = 1.
 
-        if self.convolved is True:
-            counter = 0
-            grad = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    component.fetch_values_from_array(
-                        param[
-                            counter:counter +
-                            component._nfree_param],
-                        onlyfree=True)
+        axis = self.axis.axis[self._channel_switches]
+        counter = 0
+        grad = axis
+        for component in self:  # Cut the parameters list
+            if component.active:
+                component.fetch_values_from_array(
+                    param[
+                        counter:counter +
+                        component._nfree_param],
+                    onlyfree=True)
 
-                    if component.convolved:
-                        for parameter in component.free_parameters:
-                            par_grad = np.convolve(
-                                parameter.grad(self.convolution_axis),
-                                self.low_loss(self.axes_manager),
-                                mode="valid")
+                for parameter in component.free_parameters:
+                    par_grad = parameter.grad(axis)
+                    if parameter._twins:
+                        for par in parameter._twins:
+                            np.add(par_grad, par.grad(axis), par_grad)
 
-                            if parameter._twins:
-                                for par in parameter._twins:
-                                    np.add(par_grad, np.convolve(
-                                        par.grad(
-                                            self.convolution_axis),
-                                        self.low_loss(self.axes_manager),
-                                        mode="valid"), par_grad)
+                    grad = np.vstack((grad, par_grad))
 
-                            grad = np.vstack((grad, par_grad))
+                counter += component._nfree_param
 
-                    else:
-                        for parameter in component.free_parameters:
-                            par_grad = parameter.grad(self.axis.axis)
-
-                            if parameter._twins:
-                                for par in parameter._twins:
-                                    np.add(par_grad, par.grad(self.axis.axis), par_grad)
-
-                            grad = np.vstack((grad, par_grad))
-
-                    counter += component._nfree_param
-
-            to_return = grad[1:, self.channel_switches] * weights
-
-        else:
-            axis = self.axis.axis[self.channel_switches]
-            counter = 0
-            grad = axis
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    component.fetch_values_from_array(
-                        param[
-                            counter:counter +
-                            component._nfree_param],
-                        onlyfree=True)
-
-                    for parameter in component.free_parameters:
-                        par_grad = parameter.grad(axis)
-                        if parameter._twins:
-                            for par in parameter._twins:
-                                np.add(par_grad, par.grad(axis), par_grad)
-
-                        grad = np.vstack((grad, par_grad))
-
-                    counter += component._nfree_param
-
-            to_return = grad[1:, :] * weights
+        to_return = grad[1:, :] * weights
 
         if self.axis.is_binned:
             if self.axis.is_uniform:
@@ -704,24 +647,24 @@ class Model1D(BaseModel):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(non_convolved=False, onlyactive=True)
+        s = self._get_current_data(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
         if out_of_range2nans is True:
             ns = np.empty(self.axis.axis.shape)
             ns.fill(np.nan)
-            ns[np.where(self.channel_switches)] = s
+            ns[np.where(self._channel_switches)] = s
             s = ns
         return s
-    
+
     def _residual_for_plot(self,**kwargs):
         """From an model1D object, the original signal is subtracted
         by the model signal then returns the residual
         """
 
-        return self.signal.__call__() - self.__call__(ignore_channel_switches=True)
-    
+        return self.signal._get_current_data() - self._get_current_data(ignore_channel_switches=True)
+
     def plot(self, plot_components=False,plot_residual=False, **kwargs):
         """Plot the current spectrum to the screen and a map with a
         cursor to explore the SI.
@@ -755,7 +698,7 @@ class Model1D(BaseModel):
         self._model_line = l2
         self._plot = self.signal._plot
         self._connect_parameters2update_plot(self)
-        
+
         #Optional to plot the residual of (Signal - Model)
         if plot_residual:
             l3 = hyperspy.drawing.signal1d.Signal1DLine()
@@ -765,7 +708,7 @@ class Model1D(BaseModel):
             # Add the line to the figure
             _plot.signal_plot.add_line(l3)
             l3.plot()
-            # Quick access to _residual_line if needed 
+            # Quick access to _residual_line if needed
             self._residual_line = l3
 
 

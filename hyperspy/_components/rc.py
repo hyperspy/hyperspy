@@ -54,7 +54,7 @@ class RC(Expression):
 
     """
 
-    def __init__(self, Vmax=1., V0=0., tau=1., module="numexpr", **kwargs):
+    def __init__(self, Vmax=1., V0=0., tau=1., module=None, **kwargs):
         super().__init__(
             expression="V0 + Vmax * (1 - exp(-x / tau))",
             name="RC",

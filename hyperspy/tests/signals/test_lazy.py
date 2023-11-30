@@ -131,6 +131,9 @@ def test_as_array_fail():
     with pytest.raises(ValueError):
         to_array('asd', chunks=None)
 
+def test_as_array_fail_not_array():
+    with pytest.raises(ValueError):
+        to_array([], chunks=1)
 
 def test_ma_lazify():
     s = hs.signals.BaseSignal(
@@ -309,15 +312,15 @@ class TestGetTemporaryDaskChunk:
 
     def test_map_inplace_data_changing(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
-        s.__call__()
+        s._get_current_data()
         assert len(s._cache_dask_chunk.shape) == 4
         s.map(np.sum, axis=1, ragged=False, inplace=True)
-        s.__call__()
+        s._get_current_data()
         assert len(s._cache_dask_chunk.shape) == 3
 
     def test_clear_cache_dask_data_method(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
-        s.__call__()
+        s._get_current_data()
         s._clear_cache_dask_data()
         assert s._cache_dask_chunk is None
         assert s._cache_dask_chunk_slice is None

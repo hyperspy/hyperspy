@@ -7,10 +7,6 @@ Models
 .. autosummary::
    :nosignatures:
 
-   hyperspy.models.edsmodel
-   hyperspy.models.edssemmodel
-   hyperspy.models.edstemmodel
-   hyperspy.models.eelsmodel
    hyperspy.models.model1d
    hyperspy.models.model2d
    hyperspy.model
@@ -40,10 +36,6 @@ Parameter
    :hidden:
 
    basemodel
-   edsmodel
-   edssemmodel
-   edstemmodel
-   eelsmodel
    model1d
    model2d
    component

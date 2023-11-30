@@ -11,11 +11,11 @@ jobs:
       LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
     steps:
-      - uses: actions/checkout@v3.3.0
+      - uses: actions/checkout@v4
 
       - uses: ericpre/sphinx-action@latest_sphinx
         with:
-          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install .[build-doc]"
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install .[doc]"
           build-command: make html
           docs-folder: doc/
 
@@ -31,7 +31,7 @@ jobs:
     env:
       DOCS_PATH: ./doc/_build/html/
     steps:
-      - uses: actions/checkout@v3.3.0
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -43,7 +43,7 @@ jobs:
       - name: Install build docs
         shell: bash -l {0}
         run: |
-          pip install .[build-doc]
+          pip install .[doc]
 
       - name: Check links
         shell: bash -l {0}

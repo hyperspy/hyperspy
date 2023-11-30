@@ -35,7 +35,7 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
     X = axis.axis[i1:i2]
 
     if only_current is True:
-        data = signal()[i1:i2]
+        data = signal._get_current_data()[i1:i2]
         X_shape = (len(X),)
         i = 0
         centre_shape = (1,)
@@ -105,7 +105,7 @@ class Gaussian(Expression):
     ~._components.gaussianhf.GaussianHF
     """
 
-    def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
+    def __init__(self, A=1., sigma=1., centre=0., module=None, **kwargs):
         super().__init__(
             expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
                         / (2 * sigma**2))",

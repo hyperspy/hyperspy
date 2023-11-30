@@ -39,16 +39,6 @@ class Test1d:
     def test_as_signal1D(self):
         assert (self.s.data == self.s.as_signal1D(0).data).all()
 
-    def test_set_EELS(self):
-        s = self.s.as_signal1D(0)
-        s.set_signal_type("EELS")
-        assert s.metadata.Signal.signal_type == "EELS"
-        if s._lazy:
-            _class = _lazy_signals.LazyEELSSpectrum
-        else:
-            _class = signals.EELSSpectrum
-        assert isinstance(s, _class)
-
 
 @lazifyTestClass
 class Test2d:
@@ -71,19 +61,6 @@ class Test2d:
     def test_as_signal1D(self):
         assert (
             self.s.data.shape == self.s.as_signal1D(0).data.shape)
-
-    def test_s2EELS2im2s(self):
-        s = self.s.as_signal1D(0)
-        s.set_signal_type("EELS")
-        im = s.as_signal2D((1, 0))
-        assert im.metadata.Signal.signal_type == "EELS"
-        s = im.as_signal1D(0)
-        assert s.metadata.Signal.signal_type == "EELS"
-        if s._lazy:
-            _class = _lazy_signals.LazyEELSSpectrum
-        else:
-            _class = signals.EELSSpectrum
-        assert isinstance(s, _class)
 
 
 @lazifyTestClass

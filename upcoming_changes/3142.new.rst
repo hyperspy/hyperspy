@@ -1,4 +1,0 @@
-Changes to :meth:`~.api.signals.Signal2D.find_peaks`:
-- Lazy signals return lazy peaks signals
-- ``get_intensity`` argument added to get the intensity of the peaks
-- Signal axes saved in ``metadata.Peaks.signal_axes`` of the peaks signal.
