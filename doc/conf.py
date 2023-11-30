@@ -303,6 +303,7 @@ intersphinx_mapping = {
     'h5py': ('https://docs.h5py.org/en/stable', None),
     'holospy': ('https://holospy.readthedocs.io/en/latest', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable', None),
+    'ipyparallel': ('https://ipyparallel.readthedocs.io/en/latest', None),
     'mdp':('https://mdp-toolkit.github.io/', None),
     'matplotlib': ('https://matplotlib.org/stable', None),
     'numpy': ('https://numpy.org/doc/stable', None),
@@ -320,17 +321,32 @@ nitpicky = True
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
 nitpick_ignore_regex = (
 
-
-    ('py:obj', 'SignalDimensionError'), # Need to add to API reference?
-    ('py:obj', 'DataDimensionError'), # Need to add to API reference?
-    ('py:attr', 'api.signals.BaseSignal.learning_results'), # Need to make it a property
-    ('py:attr', 'api.signals.BaseSignal.axes_manager'), # Need to make it a property
-    ('py:attr', 'hyperspy._signals.lazy.LazySignal.navigator'), # Need to make it a property
-    ('py:attr', 'axes.BaseDataAxis.is_binned.*'), # Skip for now
-    ('py:attr', 'api.model.components1D.ScalableFixedPattern.*'), # Skip for now
-    ('py:attr', 'component.Parameter.*'), # Traits property not playing well
-    ('py:.*', 'api.preferences.*'), # Adding to the API reference not useful
-    ('py:mod', 'api.signals'), # Unclear why the link doesn't work
+    # No need to be added to the API: documented in subclass
+    ('py:class', 'hyperspy.misc.slicing.FancySlicing'),
+    ('py:class', 'hyperspy.learn.mva.MVA'),
+    ('py:class', 'hyperspy.signal.MVATools'),
+    ('py:class', 'hyperspy.samfire_utils.strategy.SamfireStrategy'),
+    ('py:class', '.*goodness_test'),
+    ('py:class', 'hyperspy.roi.BasePointROI'),
+    # Add exception to API
+    ('py:obj', 'SignalDimensionError'),
+    ('py:obj', 'DataDimensionError'),
+    # Need to be made a property
+    ('py:attr', 'api.signals.BaseSignal.learning_results'),
+    ('py:attr', 'api.signals.BaseSignal.axes_manager'),
+    ('py:attr', 'hyperspy._signals.lazy.LazySignal.navigator'),
+    # Skip for now
+    ('py:attr', 'axes.BaseDataAxis.is_binned.*'),
+    ('py:attr', 'api.model.components1D.ScalableFixedPattern.*'),
+    ('py:class', '.*HistogramTilePlot'),
+    ('py:class', '.*SquareCollection'),
+    ('py:class', '.*RectangleCollection'),
+    # Traits property not playing well
+    ('py:attr', 'component.Parameter.*'),
+    # Adding to the API reference not useful
+    ('py:.*', 'api.preferences.*'),
+    # Unknown
+    ('py:.*', 'has_pool'),
 )
 
 # -- Options for numpydoc extension -----------------------------------
@@ -351,6 +367,8 @@ numpydoc_xref_ignore = {
     "scheduler",
     "matplotlib",
     "color",
+    "line",
+    "style",
     "hyperspy",
     "widget",
     "strategy",

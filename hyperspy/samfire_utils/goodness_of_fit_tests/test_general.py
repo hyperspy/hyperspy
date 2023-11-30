@@ -23,6 +23,7 @@ class goodness_test(object):
 
     @property
     def tolerance(self):
+        """The tolerance."""
         return self._tolerance
 
     @tolerance.setter

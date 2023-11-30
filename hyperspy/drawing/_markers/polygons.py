@@ -31,7 +31,7 @@ class Polygons(Markers):
 
         Parameters
         ----------
-        verts : list of lists of lists or array of list of lists of lists
+        verts : list of numpy.ndarray or list of list
             The verts define the vertices of the polygons. Note that this can be
             a ragged list and as such it is not automatically cast to a numpy
             array as that would result in an array of objects.

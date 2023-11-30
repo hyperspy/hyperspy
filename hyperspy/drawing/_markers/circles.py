@@ -41,9 +41,9 @@ class Circles(Markers):
         Parameters
         ----------
         %s
-        sizes : array-like
+        sizes : numpy.ndarray
             The size of the circles in units defined by the argument units.
-        facecolors : matplotlib color or list of colors
+        facecolors : matplotlib color or list of color
             Set the facecolor(s) of the markers. It can be a color
             (all patches have same color), or a sequence of colors;
             if it is a sequence the patches will cycle through the sequence.

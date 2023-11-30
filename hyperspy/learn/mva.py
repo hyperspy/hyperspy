@@ -141,7 +141,8 @@ class MVA:
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [*].
-        algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
+        algorithm : str {``"SVD"``, ``"MLPCA"``, ``"sklearn_pca"``, ``"NMF"``, ``"sparse_pca"``,
+        ``"mini_batch_sparse_pca"``, ``"RPCA"``, ``"ORPCA"``, ``"ORNMF"``} or object, default ``"SVD"``
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -149,7 +150,7 @@ class MVA:
         output_dimension : None or int
             Number of components to keep/calculate.
             Default is None, i.e. ``min(data.shape)``.
-        centre : {None, "navigation", "signal"}, default None
+        centre : None or str {``"navigation"``, ``"signal"``}, default None
             * If None, the data is not centered prior to decomposition.
             * If "navigation", the data is centered along the navigation axis.
               Only used by the "SVD" algorithm.
@@ -158,23 +159,23 @@ class MVA:
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only used by the "SVD" algorithm.
-        navigation_mask : boolean numpy array or BaseSignal
+        navigation_mask : numpy.ndarray or :py:class:`~hyperspy.api.signals.BaseSignal`
             The navigation locations marked as True are not used in the
             decomposition.
-        signal_mask : boolean numpy array or BaseSignal
+        signal_mask : numpy.ndarray or :py:class:`~hyperspy.api.signals.BaseSignal`
             The signal locations marked as True are not used in the
             decomposition.
-        var_array : numpy array
+        var_array : numpy.ndarray
             Array of variance for the maximum likelihood PCA algorithm.
             Only used by the "MLPCA" algorithm.
-        var_func : None or function or numpy array, default None
-            * If None, ignored
-            * If function, applies the function to the data to obtain ``var_array``.
-              Only used by the "MLPCA" algorithm.
-            * If numpy array, creates ``var_array`` by applying a polynomial function
-              defined by the array of coefficients to the data. Only used by
-              the "MLPCA" algorithm.
-        reproject : {None, "signal", "navigation", "both"}, default None
+        var_func : None, callable or numpy.ndarray, default None
+            If None, ignored
+            If callable, applies the function to the data to obtain ``var_array``.
+            Only used by the "MLPCA" algorithm.
+            If numpy array, creates ``var_array`` by applying a polynomial function
+            defined by the array of coefficients to the data. Only used by
+            the "MLPCA" algorithm.
+        reproject : None or str {"signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
@@ -210,12 +211,12 @@ class MVA:
               data can then be restored by calling ``s.undo_treatments()``.
             * If ``False``, no copy is made. This can be beneficial for memory
               usage, but care must be taken since data will be overwritten.
-        **kwargs : extra keyword arguments
+        **kwargs : dict
             Any keyword arguments are passed to the decomposition algorithm.
 
         Returns
         -------
-        return_info : tuple(numpy array, numpy array) or sklearn.Estimator or None
+         tuple of numpy.ndarray or sklearn.base.BaseEstimator or None
             * If True and 'algorithm' in ['RPCA', 'ORPCA', 'ORNMF'], returns
               the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
             * If True and 'algorithm' is an sklearn Estimator, returns the
@@ -664,7 +665,8 @@ class MVA:
         number_of_components : int or None
             Number of principal components to pass to the BSS algorithm.
             If None, you must specify the ``comp_list`` argument.
-        algorithm : {"sklearn_fastica", "orthomax", "FastICA", "JADE", "CuBICA", "TDSEP", custom object}, default "sklearn_fastica"
+        algorithm : {``"sklearn_fastica"`` | ``"orthomax"`` | ``"FastICA"`` | ``"JADE"`` |
+        ``"CuBICA"`` | ``"TDSEP"``} or object, default "sklearn_fastica"
             The BSS algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -679,11 +681,11 @@ class MVA:
               and `navigation_dimension` is greater than 1, the differences are calculated
               across all navigation axes
             * Otherwise the axes can be specified in a list.
-        factors : :py:class:`~hyperspy.signal.BaseSignal` or numpy array
+        factors : :py:class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
             Factors to decompose. If None, the BSS is performed on the
             factors of a previous decomposition. If a Signal instance, the
             navigation dimension must be 1 and the size greater than 1.
-        comp_list : None or list or numpy array
+        comp_list : None or list or numpy.ndarray
             Choose the components to apply BSS to. Unlike ``number_of_components``,
             this argument permits non-contiguous components.
         mask : :py:class:`~hyperspy.signal.BaseSignal` or subclass
@@ -696,7 +698,7 @@ class MVA:
         reverse_component_criterion : {"factors", "loadings"}, default "factors"
             Use either the factors or the loadings to determine if the
             component needs to be reversed.
-        whiten_method : {"PCA", "ZCA", None}, default "PCA"
+        whiten_method : {``"PCA"`` | ``"ZCA"``} or None, default "PCA"
             How to whiten the data prior to blind source separation.
             If None, no whitening is applied. See :py:func:`~.learn.whitening.whiten_data`
             for more details.
@@ -710,15 +712,14 @@ class MVA:
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
-        **kwargs : extra keyword arguments
+        **kwargs : dict
             Any keyword arguments are passed to the BSS algorithm.
 
         Returns
         -------
-        return_info : sklearn.Estimator or None
-            * If True and 'algorithm' is an sklearn Estimator, returns the
+        None or subclass of sklearn.base.BaseEstimator
+            If True and 'algorithm' is an sklearn Estimator, returns the
               Estimator object.
-            * Otherwise, returns None
 
         See Also
         --------
@@ -1254,10 +1255,10 @@ class MVA:
 
         Parameters
         ----------
-        components : {None, int, list of ints}, default None
-            * If None, rebuilds signal instance from all components
-            * If int, rebuilds signal instance from components in range 0-given int
-            * If list of ints, rebuilds signal instance from only components in given list
+        components : None, int or list of int, default None
+            If None, rebuilds signal instance from all components
+            If int, rebuilds signal instance from components in range 0-given int
+            If list of ints, rebuilds signal instance from only components in given list
 
         Returns
         -------
@@ -1683,10 +1684,12 @@ class MVA:
 
         return mask
 
-    def _scale_data_for_clustering(self,
-                                  cluster_signal,
-                                  preprocessing="norm",
-                                  preprocessing_kwargs={},):
+    def _scale_data_for_clustering(
+            self,
+            cluster_signal,
+            preprocessing="norm",
+            preprocessing_kwargs=None
+        ):
         """Scale data for cluster analysis
 
         Results are stored in `learning_results`.
@@ -1707,7 +1710,7 @@ class MVA:
             You can also pass a cikit-learn preprocessing object
             See scaling methods in scikit-learn preprocessing for further
             details.
-        preprocessing_kwargs :
+        preprocessing_kwargs : None or dict
             Additional parameters passed to the cluster preprocessing algorithm.
             See sklearn.preprocessing preprocessing methods for further details
 
@@ -1723,6 +1726,8 @@ class MVA:
         no_of_features) scaled according to the selected algorithm
 
         """
+        if preprocessing_kwargs is None:
+            preprocessing_kwargs = {}
 
         preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(
             preprocessing, **preprocessing_kwargs
@@ -1944,7 +1949,7 @@ class MVA:
                          cluster_source,
                          source_for_centers=None,
                          preprocessing=None,
-                         preprocessing_kwargs={},
+                         preprocessing_kwargs=None,
                          number_of_components=None,
                          navigation_mask=None,
                          signal_mask=None,
@@ -1957,21 +1962,23 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : {"bss", "decomposition", "signal", BaseSignal}
+        cluster_source : str {``"bss"`` | ``"decomposition"`` | ``"signal"``}
+        or :py:class:`~hyperspy.api.signals.BaseSignal`
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
             if "signal" the signal data is used
             Note that using the signal or BaseSignal can be memory intensive
             and is only recommended if the Signal dimension is small
             BaseSignal must have the same navigation dimensions as the signal.
-        source_for_centers : {None,"decomposition","bss","signal",BaseSignal},
+        source_for_centers : None, str {``"decomposition"`` | ``"bss"`` | ``"signal"``}
+        or :py:class:`~hyperspy.api.signals.BaseSignal`
             default : None
             If None the cluster_source is used
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
             if "signal" the signal data is used
             BaseSignal must have the same navigation dimensions as the signal.
-        preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
+        preprocessing : str {``"standard"`` | ``"norm"`` | ``"minmax"``}, None or object
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
             the data to be clustered to similar scales. Standard preprocessing
@@ -1982,8 +1989,8 @@ class MVA:
             scale_method = import sklearn.processing.StandadScaler()
             preprocessing = scale_method
             See preprocessing methods in scikit-learn preprocessing for further
-            details.
-        preprocessing_kwargs : dict
+            details. If ``object``, must be :mod:`sklearn.preprocessing`-like.
+        preprocessing_kwargs : dict or None, default None
             Additional parameters passed to the supported sklearn preprocessing methods.
             See sklearn.preprocessing scaling methods for further details
         number_of_components : int, default None
@@ -1994,29 +2001,30 @@ class MVA:
             using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
             This applies to both bss and decomposition results.
-        navigation_mask : boolean numpy array
+        navigation_mask : numpy.ndarray of bool
             The navigation locations marked as True are not used.
-        signal_mask : boolean numpy array
+        signal_mask : numpy.ndarray of bool
             The signal locations marked as True are not used in the
             clustering for "signal" or Signals supplied as cluster source.
             This is not applied to decomposition results or source_for_centers
             (as it may be a different shape to the cluster source)
-        algorithm : { "kmeans" | "agglomerative" | "minibatchkmeans" | "spectralclustering"}
+        algorithm : {``"kmeans"`` | ``"agglomerative"`` | ``"minibatchkmeans"`` |
+        ``"spectralclustering"``}
             See scikit-learn documentation. Default "kmeans"
         return_info : bool, default False
             The result of the cluster analysis is stored internally. However,
             the cluster class used  contain a number of attributes.
             If True (the default is False)
             return the cluster object so the attributes can be accessed.
-        **kwargs : dict  optional, default - empty
+        **kwargs : dict
             Additional parameters passed to the clustering class for initialization.
-            For example, in case of the "kmeans" algorithm, `n_init` can be
+            For example, in case of the "kmeans" algorithm, ``n_init`` can be
             used to define the number of times the algorithm is restarted to
             optimize results.
 
         Other Parameters
         ----------------
-        n_clusters : int
+        int
             Number of clusters to find using the one of the pre-defined methods
             "kmeans","agglomerative","minibatchkmeans","spectralclustering"
             See sklearn.cluster for details
@@ -2029,9 +2037,9 @@ class MVA:
 
         Returns
         -------
+        None or object
             If ``'return_info'`` is True returns the Scikit-learn cluster object
-            used for clustering. Useful if you wish to
-            examine inertia or other outputs.
+            used for clustering. Useful if you wish to examine inertia or other outputs.
 
         """
         if import_sklearn.sklearn_installed is False:
@@ -2231,7 +2239,7 @@ class MVA:
                                     cluster_source,
                                     max_clusters=10,
                                     preprocessing=None,
-                                    preprocessing_kwargs={},
+                                    preprocessing_kwargs=None,
                                     number_of_components=None,
                                     navigation_mask=None,
                                     signal_mask=None,
@@ -2250,7 +2258,8 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : {"bss", "decomposition", "signal" or Signal}
+        cluster_source : str {"bss", "decomposition", "signal"}
+        or :py:class:`~hyperspy.api.signals.BaseSignal`
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
             if "signal" the signal data is used
@@ -2261,7 +2270,7 @@ class MVA:
         max_clusters : int, default 10
             Max number of clusters to use. The method will scan from 2 to
             max_clusters.
-        preprocessing : {"standard","norm","minmax" or sklearn-like preprocessing object}
+        preprocessing : str {"standard", "norm", "minmax"} or object
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
             the data to be clustered to similar scales. Standard preprocessing
@@ -2270,8 +2279,8 @@ class MVA:
             each measurement is scaled to length 1.
             You can also pass an instance of a sklearn preprocessing module.
             See preprocessing methods in scikit-learn preprocessing for further
-            details.
-        preprocessing_kwargs : dict, default empty
+            details. If ``object``, must be :mod:`sklearn.preprocessing`-like.
+        preprocessing_kwargs : dict or None, default None
             Additional parameters passed to the cluster preprocessing algorithm.
             See sklearn.preprocessing preprocessing methods for further details
         number_of_components : int, default None
@@ -2284,10 +2293,10 @@ class MVA:
         navigation_mask : boolean numpy array, default : None
             The navigation locations marked as True are not used in the
             clustering.
-        signal_mask : boolean numpy array, default : None
+        signal_mask : numpy.ndarray of bool, default None
             The signal locations marked as True are not used in the
             clustering. Applies to "signal" or Signal cluster sources only.
-        metric : {'elbow','silhouette','gap'} default 'gap'
+        metric : {``'elbow'`` | ``'silhouette'`` | ``'gap'``}, default 'gap'
             Use distance,silhouette analysis or gap statistics to estimate
             the optimal number of clusters.
             Gap is believed to be, overall, the best metric but it's also
@@ -2298,15 +2307,14 @@ class MVA:
             For gap the optimal k is the first k gap(k)>= gap(k+1)-std_error
             For silhouette the optimal k will be one of the "maxima" found with
             this method
-        n_ref :  int, default 4
+        n_ref : int, default 4
             Number of references to use in gap statistics method
             Gap statistics compares the results from clustering the data to
             clustering uniformly distributed data. As clustering has
             a random variation it is typically averaged n_ref times
             to get an statistical average
-        **kwargs : dict {}  default empty
+        **kwargs : dict
             Parameters passed to the clustering algorithm.
-
 
         Other Parameters
         ----------------
@@ -2318,8 +2326,8 @@ class MVA:
 
         Returns
         -------
-        best_k : int
-            Estimate of the best cluster size
+        int
+            Estimate of the best cluster size.
 
         See Also
         --------
@@ -2328,6 +2336,8 @@ class MVA:
         plot_cluster_signals, plot_cluster_labels
 
         """
+        if preprocessing_kwargs is None:
+            preprocessing_kwargs = {}
 
         if max_clusters < 2:
             raise ValueError("The max number of clusters, max_clusters, "
@@ -2365,16 +2375,17 @@ class MVA:
         try:
             # scale the data
             # scale the data before clustering
-            cluster_signal = \
-                self._get_cluster_signal(cluster_source,
-                                        number_of_components,
-                                        navigation_mask,
-                                        signal_mask,)
-            scaled_data = \
-                self._scale_data_for_clustering(
+            cluster_signal = self._get_cluster_signal(
+                cluster_source,
+                number_of_components,
+                navigation_mask,
+                signal_mask
+                )
+            scaled_data = self._scale_data_for_clustering(
                 cluster_signal=cluster_signal,
                 preprocessing=preprocessing,
-                preprocessing_kwargs=preprocessing_kwargs)
+                preprocessing_kwargs=preprocessing_kwargs
+                )
 
             # from 2 to max_clusters
             # cluster and calculate silhouette_score

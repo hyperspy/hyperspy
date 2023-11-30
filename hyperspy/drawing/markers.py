@@ -365,7 +365,7 @@ class Markers:
 
         Parameters
         ----------
-        indices : slice, int or array of ints
+        indices : slice, int or numpy.ndarray
             Indicate indices of sub-arrays to remove along the specified axis.
         keys : str, list of str or None
             Specify the key of the ``Markers.kwargs`` to remove. If ``None``,

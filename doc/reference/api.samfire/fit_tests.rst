@@ -10,3 +10,4 @@
 .. automodule:: hyperspy.api.samfire.fit_tests
    :members:
    :undoc-members:
+   :inherited-members:

@@ -1332,7 +1332,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        cluster_ids : None, int, or list of ints
+        cluster_ids : None, int or list of int
             if None, returns all clusters/centers.
             if int, returns clusters/centers with ids from 0 to
             given int.
@@ -1342,36 +1342,36 @@ class MVATools(object):
             The path to the folder where the file will be saved.
             If `None` the
             current folder is used by default.
-        center_prefix : string
+        center_prefix : str
             The prefix that any exported filenames for
             cluster centers
             begin with
-        center_format : string
+        center_format : str
             The extension of the format that you wish to save to. Default is
             "hspy". See `loading format` for more details.
-        label_prefix : string
+        label_prefix : str
             The prefix that any exported filenames for
             cluster labels
             begin with
-        label_format : string
+        label_format : str
             The extension of the format that you wish to save to. default
             is "hspy". The format determines the kind of output.
 
-                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
-                  plots are created using the plotting flags as below, and saved
-                  at 600 dpi. One plot is saved per loading.
-                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
-                  are saved in single files.  All loadings are contained in the
-                  one file.
-                * For spectral formats (``'msa'``), each loading is saved to a
-                  separate file.
+            * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+                plots are created using the plotting flags as below, and saved
+                at 600 dpi. One plot is saved per loading.
+            * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+                are saved in single files.  All loadings are contained in the
+                one file.
+            * For spectral formats (``'msa'``), each loading is saved to a
+                separate file.
 
-        multiple_files : bool
+        multiple_files : bool, default False
             If True, on exporting a file per center will
             be created. Otherwise only two files will be created, one for
             the centers and another for the membership. The default value can
             be chosen in the preferences.
-        save_figures : bool
+        save_figures : bool, default False
             If True the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
@@ -1386,15 +1386,16 @@ class MVATools(object):
             the axes_manager.  If False, plots are in pixels/channels.
         same_window : bool
             if True, plots each factor to the same window.
-        comp_label : string, the label that is either the plot title
+        comp_label : str
+            The label that is either the plot title
             (if plotting in separate windows) or the label in the legend
             (if plotting in the same window)
-        cmap : The colormap used for the factor image, or for peak
+        cmap : matplotlib.colors.Colormap
+            The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        per_row : int, the number of plots in each row, when the
-        same_window
-            parameter is True.
+        per_row : int
+            the number of plots in each row, when the ``same_window=True``.
         save_figures_format : str
             The image format extension.
 
@@ -1454,7 +1455,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int or list of int
             If None, returns all components/loadings.
             If an int, returns components/loadings with ids from 0 to the
             given value.
@@ -1954,7 +1955,7 @@ class MVATools(object):
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
-        cmap : matplotlib colormap
+        cmap : matplotlib.colors.Colormap
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -2245,7 +2246,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        data : :py:class:`numpy.ndarray`
+        data : numpy.ndarray
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
             List of either dictionaries or axes objects to define the axes (see
@@ -5273,7 +5274,7 @@ class BaseSignal(FancySlicing,
 
         See Also
         --------
-        :py:meth:`~hyperspy.signal.BaseSignal.deepcopy`
+        :py:meth:`~hyperspy.api.signals.BaseSignal.deepcopy`
         """
         try:
             backup_plot = self._plot
@@ -5315,7 +5316,7 @@ class BaseSignal(FancySlicing,
 
         See Also
         --------
-        :py:meth:`~hyperspy.signal.BaseSignal.copy`
+        :py:meth:`~hyperspy.api.signals.BaseSignal.copy`
         """
         return copy.deepcopy(self)
 
@@ -6035,20 +6036,20 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        marker : :py:mod:`hyperspy.drawing.marker` object or iterable
+        marker : :py:mod:`~hyperspy.api.plot.markers` object or iterable
             The marker or iterable (list, tuple, ...) of markers to add.
             See the :ref:`plot.markers` section in the User Guide if you want
             to add a large number of markers as an iterable, since this will
             be much faster. For signals with navigation dimensions,
             the markers can be made to change for different navigation
             indices. See the examples for info.
-        plot_on_signal : bool
-            If ``True`` (default), add the marker to the signal.
+        plot_on_signal : bool, default True
+            If ``True``, add the marker to the signal.
             If ``False``, add the marker to the navigator
-        plot_marker : bool
-            If ``True`` (default), plot the marker.
-        permanent : bool
-            If ``False`` (default), the marker will only appear in the current
+        plot_marker : bool, default True
+            If ``True``, plot the marker.
+        permanent : bool, default True
+            If ``False``, the marker will only appear in the current
             plot. If ``True``, the marker will be added to the
             `metadata.Markers` list, and be plotted with
             ``plot(plot_markers=True)``. If the signal is saved as a HyperSpy
@@ -6212,7 +6213,7 @@ class BaseSignal(FancySlicing,
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
             ``'float64'``.
-        random_state : None or int or Generator instance, default None
+        random_state : None, int or numpy.random.Generator, default None
             Seed for the random generator.
 
         Notes
@@ -6259,7 +6260,7 @@ class BaseSignal(FancySlicing,
         ----------
         std : float
             The standard deviation of the Gaussian noise.
-        random_state : None or int or Generator instance, default None
+        random_state : None, int or numpy.random.Generator, default None
             Seed for the random generator.
 
         Notes
@@ -6468,7 +6469,7 @@ class BaseSignal(FancySlicing,
     def T(self):
         """The transpose of the signal, with signal and navigation spaces
         swapped. Enables calling
-        :py:meth:`~hyperspy.signal.BaseSignal.transpose` with the default
+        :py:meth:`~hyperspy.api.signals.BaseSignal.transpose` with the default
         parameters as a property of a Signal.
         """
         return self.transpose()
