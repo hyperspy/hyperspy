@@ -1792,18 +1792,18 @@ def plot_roi_map(signal, rois=1):
     Returns
     -------
     all_sum : :class:`~.api.signals.BaseSignal`
-        Sum over all positions of the signal, the 'navigator' on which the ROIs
-        are added.
+        Sum over all positions (navigation dimensions) of the signal, corresponds to
+        the 'navigator' (in signal space) on which the ROIs are added.
     rois : list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
-        The ROIs that slice ``signal``
+        The ROI objects that slice ``signal``.
     roi_signals : :class:`~.api.signals.BaseSignal`
         Slices of ``signal`` corresponding to each ROI.
     roi_sums : :class:`~.api.signals.BaseSignal`
-        The summed ``roi_signals``
+        The summed ``roi_signals``.
 
     Examples
     --------
-    3D hyperspectral data:
+    **3D hyperspectral data:**
 
     For 3D hyperspectral data, the ROIs used will be instances of
     :class:`~.api.roi.SpanROI`. Therefore, these ROIs can be used to select
@@ -1813,7 +1813,7 @@ def plot_roi_map(signal, rois=1):
     region at each point in the hyperspectral map. Therefore, regions of the
     sample where this peak is bright will be bright in this map.
 
-    4D STEM:
+    **4D STEM:**
 
     For 4D STEM data, the ROIs used will be instances of
     :class:`~.api.roi.RectangularROI`. These ROIs can be used to select particular
