@@ -1770,14 +1770,14 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
 
 def plot_roi_map(signal, rois=1):
     """
-    Plot a ROI map of ``signal``.
+    Plot one or multiple ROI maps of a ``signal``.
 
-    Uses ROIs to select a regions of ``signal``'s signal axes.
+    Uses regions of interest (ROIs) to select ranges along the signal axis.
 
-    For each ROI, a plot is generated of the sum within this signal ROI
-    at each point in ``signal``'s navigator.
+    For each ROI, a plot is generated of the summed data values within
+    this signal ROI at each point in the ``signal``'s navigator.
 
-    The ROI can be moved interactively and the corresponding plots will
+    The ROIs can be moved interactively and the corresponding plots will
     update automatically.
 
     Arguments
@@ -1792,12 +1792,12 @@ def plot_roi_map(signal, rois=1):
     Returns
     -------
     all_sum : :class:`~.api.signals.BaseSignal`
-        Sum over all positions of the signal, the 'navigator'on which the ROIs
+        Sum over all positions of the signal, the 'navigator' on which the ROIs
         are added.
     rois : list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
-        The ROIs that slice signal
+        The ROIs that slice ``signal``
     roi_signals : :class:`~.api.signals.BaseSignal`
-        Slices of ``signal`` according to each roi
+        Slices of ``signal`` corresponding to each ROI.
     roi_sums : :class:`~.api.signals.BaseSignal`
         The summed ``roi_signals``
 
@@ -1805,12 +1805,12 @@ def plot_roi_map(signal, rois=1):
     --------
     3D hyperspectral data:
 
-    For 3D hyperspectral data, the rois used will be instances of
-    :class:`~.api.roi.SpanROI`. Therefore these ROIs can be used to select
+    For 3D hyperspectral data, the ROIs used will be instances of
+    :class:`~.api.roi.SpanROI`. Therefore, these ROIs can be used to select
     particular spectral ranges, e.g. a particular peak.
 
     The map generated for a given ROI is therefore the sum of this spectral
-    region at each point in the hyperspectral map. Therefore regions of the
+    region at each point in the hyperspectral map. Therefore, regions of the
     sample where this peak is bright will be bright in this map.
 
     4D STEM:
@@ -1819,8 +1819,8 @@ def plot_roi_map(signal, rois=1):
     :class:`~.api.roi.RectangularROI`. These ROIs can be used to select particular
     regions in reciprocal space, e.g. a particular diffraction spot.
 
-    The map generated for a given ROI is therefore the intensity of this
-    region at each point in the scan. Therefore regions of the
+    The map generated for a given ROI is the intensity of this
+    region at each point in the scan. Therefore, regions of the
     scan where a particular spot is intense will appear bright.
     """
     sig_dims = len(signal.axes_manager.signal_axes)
