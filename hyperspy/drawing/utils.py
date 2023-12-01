@@ -35,6 +35,8 @@ from matplotlib.colors import LinearSegmentedColormap, BASE_COLORS, to_rgba
 import matplotlib.pyplot as plt
 from rsciio.utils import rgb_tools
 
+
+import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import to_numpy
 
@@ -1698,3 +1700,196 @@ def picker_kwargs(value, kwargs=None):
         kwargs['picker'] = value
 
     return kwargs
+
+
+def _create_span_roi_group(sig_ax, N):
+    """
+    Creates a set of `N` of :py:class:`~.roi.SpanROI`\\ s that sit along axis at sensible positions.
+
+    Arguments
+    ---------
+    sig_ax: DataAxis
+        The axis over which the ROI will be placed
+    N: int
+        The number of ROIs
+    """
+    axis = sig_ax.axis
+    ax_range = axis[-1] - axis[0]
+    span_width = ax_range / (2 * N)
+
+    spans = []
+
+    for i in range(N):
+        # create a span that has a unique range
+        span = hs.roi.SpanROI(
+            i * span_width + axis[0], (i + 1) * span_width + axis[0]
+        )
+
+        spans.append(span)
+
+    return spans
+
+
+def _create_rect_roi_group(sig_wax, sig_hax, N):
+    """
+    Creates a set of `N` :py:class:`~roi.RectangularROI`\\ s that sit along `waxis` and `haxis` at sensible positions.
+
+    Arguments
+    ---------
+    sig_wax: DataAxis
+        The width axis over which the ROI will be placed
+    sig_hax: DataAxis
+        The height axis over which the ROI will be placed
+    N: int
+        The number of ROIs
+    """
+    waxis = sig_wax.axis
+    haxis = sig_hax.axis
+
+    w_range = waxis[-1] - waxis[0]
+    h_range = haxis[-1] - haxis[0]
+
+    span_w_width = w_range / (2 * N)
+    span_h_width = h_range / (2 * N)
+
+    rects = []
+
+    for i in range(N):
+        # create a span that has a unique range
+        rect = hs.roi.RectangularROI(
+            left=i * span_w_width + waxis[0],
+            top=i * span_h_width + haxis[0],
+            right=(i + 1) * span_w_width + waxis[0],
+            bottom=(i + 1) * span_h_width + haxis[0]
+        )
+
+        rects.append(rect)
+
+    return rects
+
+
+def plot_roi_map(signal, rois=1):
+    """
+    Plot one or multiple ROI maps of a ``signal``.
+
+    Uses regions of interest (ROIs) to select ranges along the signal axis.
+
+    For each ROI, a plot is generated of the summed data values within
+    this signal ROI at each point in the ``signal``'s navigator.
+
+    The ROIs can be moved interactively and the corresponding plots will
+    update automatically.
+
+    Arguments
+    ---------
+    signal: :class:`~.api.signals.BaseSignal`
+        The signal to inspect.
+    rois: int, list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
+        ROIs that represent colour channels in map. Can either pass a list of
+        ROI objects, or an ``int``, ``N``, in which case ``N`` ROIs will
+        be created. Currently limited to a maximum of 3 ROIs.
+
+    Returns
+    -------
+    all_sum : :class:`~.api.signals.BaseSignal`
+        Sum over all positions (navigation dimensions) of the signal, corresponds to
+        the 'navigator' (in signal space) on which the ROIs are added.
+    rois : list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
+        The ROI objects that slice ``signal``.
+    roi_signals : :class:`~.api.signals.BaseSignal`
+        Slices of ``signal`` corresponding to each ROI.
+    roi_sums : :class:`~.api.signals.BaseSignal`
+        The summed ``roi_signals``.
+
+    Examples
+    --------
+    **3D hyperspectral data:**
+
+    For 3D hyperspectral data, the ROIs used will be instances of
+    :class:`~.api.roi.SpanROI`. Therefore, these ROIs can be used to select
+    particular spectral ranges, e.g. a particular peak.
+
+    The map generated for a given ROI is therefore the sum of this spectral
+    region at each point in the hyperspectral map. Therefore, regions of the
+    sample where this peak is bright will be bright in this map.
+
+    **4D STEM:**
+
+    For 4D STEM data, the ROIs used will be instances of
+    :class:`~.api.roi.RectangularROI`. These ROIs can be used to select particular
+    regions in reciprocal space, e.g. a particular diffraction spot.
+
+    The map generated for a given ROI is the intensity of this
+    region at each point in the scan. Therefore, regions of the
+    scan where a particular spot is intense will appear bright.
+    """
+    sig_dims = len(signal.axes_manager.signal_axes)
+    nav_dims = len(signal.axes_manager.navigation_axes)
+
+    if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
+        warnings.warn(("This function is only tested for signals with 1 or 2 "
+                       "signal and navigation dimensions, not"
+                       f" {sig_dims} signal and {nav_dims} navigation."))
+
+    if isinstance(rois, int):
+        if sig_dims == 1:
+            rois = _create_span_roi_group(
+                signal.axes_manager.signal_axes[0], rois
+            )
+        elif sig_dims == 2:
+            rois = _create_rect_roi_group(
+                *signal.axes_manager.signal_axes, rois
+            )
+        else:
+            raise ValueError(("Can only generate default ROIs for signals "
+                              f"with 1 or 2 signal dimensions, not {sig_dims}"
+                              ", try providing an explicit `rois` argument"))
+
+    if len(rois) > 3:
+        raise ValueError("Maximum number of spans is 3")
+
+    colors = ["red", "green", "blue"]
+    roi_signals = []
+    roi_sums = []
+
+    all_sum = signal.nansum()
+    all_sum.plot()
+
+    for i, roi in enumerate(rois):
+        color = colors[i]
+
+        # add it to the sum over all positions
+        roi.add_widget(all_sum, color=colors[i])
+
+        # create a signal that is the spectral slice of sig
+        roi_signal = hs.interactive(
+            roi,
+            signal=signal,
+            event=roi.events.changed,
+            axes=signal.axes_manager.signal_axes,
+        )
+        roi_signals.append(roi_signal)
+
+        # add up the roi sliced signals to one point per nav position
+        roi_sum = roi_signal.nansum(roi_signal.axes_manager.signal_axes)
+
+        # transpose shape to swap these points per nav into signal points
+        roi_sum = roi_sum.transpose(
+            signal_axes=roi_sum.axes_manager.navigation_dimension
+        )
+
+        roi_sums.append(roi_sum)
+
+        roi_sum.plot(cmap=f"{color.capitalize()}s")
+
+        # connect the span signal changing range to the value of span_sum
+        hs.interactive(
+            roi_signal.nansum,
+            event=roi_signal.axes_manager.events.any_axis_changed,
+            axis=roi_signal.axes_manager.signal_axes,
+            out=roi_sum,
+            recompute_out_event=None,
+        )
+
+    # return all ya bits for future messing around.
+    return all_sum, rois, roi_signals, roi_sums

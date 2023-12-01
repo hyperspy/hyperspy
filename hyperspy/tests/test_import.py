@@ -195,8 +195,9 @@ def test_dir_utils_plot():
         'markers',
         'plot_histograms',
         'plot_images',
+        'plot_roi_map',
         'plot_signals',
-        'plot_spectra',
+        'plot_spectra'
         ]
 
 

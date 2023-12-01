@@ -223,3 +223,42 @@ Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
     >>> tuple(roi)
     (2.0, 10.0, 0.0, 5.0)
     >>> im.align2D(roi=roi)
+
+
+Interactively Slicing Signal Dimensions
+---------------------------------------
+
+:func:`~.api.plot.plot_roi_map` is a function that allows you to
+interactively visualize the spatial variation of intensity in a Signal
+within a ROI of its signal axes. In other words, it shows maps of
+the integrated signal for custom ranges along the signal axis.
+
+To allow selection of the signal ROIs, a plot of the mean signal over all
+spatial positions is generated. Interactive ROIs can then be adjusted to the
+desired regions within this plot.
+
+For each ROI, a plot reflecting how the intensity of signal within this ROI
+varies over the spatial dimensions of the Signal object is also plotted.
+
+For Signal objects with 1 signal dimension :py:class:`~.roi.SpanROI`\ s are used
+and for 2 signal dimensions, :py:class:`~.roi.RectangularROI`\ s are used.
+
+In the example below, for a hyperspectral map with 2 navigation dimensions and
+1 signal dimension (i.e. a spectrum at each position in a 2D map),
+:py:class:`~.roi.SpanROI`\ s are used to select spectral regions of interest.
+For each spectral region of interest a plot is generated displaying the
+intensity within this region at each position in the map.
+
+.. code-block:: python
+
+    >>> import hyperpsy.api as hs
+    >>> from hyperspy.utils.plot import plot_roi_map
+    >>> sig = hs.load('mydata.sur')
+    >>> sig
+    <Signal1D, dimensions: (128, 128|1024)>
+    >>> plot_roi_map(sig, rois=2)
+
+
+.. image:: images/plot_roi_map_demo.gif
+  :width: 100%
+  :alt: Demo of plot_roi_map functionality.
