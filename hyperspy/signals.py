@@ -19,24 +19,24 @@
 """
 The Signal class and its specialized subclasses:
 
-    BaseSignal
-        For generic data with arbitrary signal_dimension. All other signal
-        classes inherit from this one. It should only be used with none of
-        the others is appropriated.
-    Signal1D
-        For generic data with signal_dimension equal 1, i.e. spectral data of
-        n-dimensions. The signal is unbinned by default.
-    Signal2D
-        For generic data with signal_dimension equal 2, i.e. image data of
-        n-dimensions. The signal is unbinned by default.
-    ComplexSignal
-        For generic complex data with arbitrary signal_dimension.
-    ComplexSignal1D
-        For generic complex data with signal_dimension equal 1, i.e. spectral
-        data of n-dimensions. The signal is unbinned by default.
-    ComplexSignal2D
-        For generic complex data with signal_dimension equal 2, i.e. image
-        data of n-dimensions. The signal is unbinned by default.
+BaseSignal
+    For generic data with arbitrary signal_dimension. All other signal
+    classes inherit from this one. It should only be used with none of
+    the others is appropriated.
+Signal1D
+    For generic data with signal_dimension equal 1, i.e. spectral data of
+    n-dimensions. The signal is unbinned by default.
+Signal2D
+    For generic data with signal_dimension equal 2, i.e. image data of
+    n-dimensions. The signal is unbinned by default.
+ComplexSignal
+    For generic complex data with arbitrary signal_dimension.
+ComplexSignal1D
+    For generic complex data with signal_dimension equal 1, i.e. spectral
+    data of n-dimensions. The signal is unbinned by default.
+ComplexSignal2D
+    For generic complex data with signal_dimension equal 2, i.e. image
+    data of n-dimensions. The signal is unbinned by default.
 """
 
 from hyperspy.extensions import EXTENSIONS as EXTENSIONS_

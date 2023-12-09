@@ -884,8 +884,7 @@ class MVATools(object):
 
         See Also
         --------
-        hyperspy.api.signals.BaseSignal.plot_decomposition_loadings,
-        hyperspy.api.signals.BaseSignal.plot_decomposition_results
+        plot_decomposition_loadings, plot_decomposition_results
 
         """
         if self.axes_manager.signal_dimension > 2:
@@ -1049,8 +1048,7 @@ class MVATools(object):
 
         See Also
         --------
-        hyperspy.api.signals.BaseSignal.plot_decomposition_factors,
-        hyperspy.api.signals.BaseSignal.plot_decomposition_results
+        plot_decomposition_factors, plot_decomposition_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -1738,20 +1736,16 @@ class MVATools(object):
             for details.
         loadings_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             See the `factors_navigator` parameter
-        factors_dim : int
+        factors_dim, loadings_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
             higher than two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2,
             the data can be viewed as spectra (or images) by setting this
             parameter to 1 (or 2). (The default is 2)
-        loadings_dim : int
-            See the ``factors_dim`` parameter
 
         See Also
         --------
-        hyperspy.api.signals.BaseSignal.plot_decomposition_factors,
-        hyperspy.api.signals.BaseSignal.plot_decomposition_loadings,
-        hyperspy.api.signals.BaseSignal.plot_bss_results
+        plot_decomposition_factors, plot_decomposition_loadings, plot_bss_results
 
         """
 
@@ -1890,7 +1884,7 @@ class MVATools(object):
 
         See Also
         --------
-        hyperspy.api.signals.BaseSignal.plot_cluster_labels
+        plot_cluster_labels
 
         """
         if self.axes_manager.signal_dimension > 2:
@@ -1973,8 +1967,7 @@ class MVATools(object):
 
         See Also
         --------
-        hyperspy.api.signals.BaseSignal.plot_cluster_signals,
-        hyperspy.api.signals.BaseSignal.plot_cluster_results
+        plot_cluster_signals, plot_cluster_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -2109,7 +2102,8 @@ class MVATools(object):
                              ):
         """Plot the cluster labels and centers.
 
-        Unlike `plot_cluster_labels` and `plot_cluster_signals`, this
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and 
+        :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_signals`, this
         method displays one component at a time.
         Therefore it provides a more compact visualization than then other
         two methods.  The labels and centers  are displayed in different
@@ -2119,17 +2113,18 @@ class MVATools(object):
 
         Parameters
         ----------
-        centers_navigator, labels_navigator : None, {"smart_auto",
-        "auto", "spectrum"} or :class:`~hyperspy.api.signals.BaseSignal`
-            "smart_auto" (default) displays sliders if the navigation
+        centers_navigator, labels_navigator : None, \
+        {``"smart_auto"`` | ``"auto"`` | ``"spectrum"``} or \
+        :class:`~hyperspy.api.signals.BaseSignal`, default ``"smart_auto"``
+            ``"smart_auto"`` displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see `plot` documentation for details.
-        labels_dim, centers_dims : int
+            see ``plot`` documentation for details.
+        labels_dim, centers_dims : int, default 2
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the clustering results when the
             centers or the labels have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
-            to 1(2). (Default 2)
+            to 1(2)
 
         See Also
         --------
@@ -4307,8 +4302,7 @@ class BaseSignal(FancySlicing,
 
         See Also
         --------
-        hyperspy.api.signals.BaseSignal.integrate1D,
-        hyperspy.api.signals.BaseSignal.integrate_simpson
+        integrate1D, integrate_simpson
 
         """
         # rechunk was a valid keyword up to HyperSpy 1.6

@@ -148,18 +148,19 @@ class ORNMF:
             Nuclear norm regularization parameter.
         kappa : float
             Step-size for projection solver.
-        method : {'PGD', 'RobustPGD', 'MomentumSGD'}, default 'PGD'
-            * 'PGD' - Proximal gradient descent
-            * 'RobustPGD' - Robust proximal gradient descent
-            * 'MomentumSGD' - Stochastic gradient descent with momentum
+        method : {``'PGD'``, ``'RobustPGD'``, ``'MomentumSGD'``}, default ``'PGD'``
+            * ``'PGD'`` - Proximal gradient descent
+            * ``'RobustPGD'`` - Robust proximal gradient descent
+            * ``'MomentumSGD'`` - Stochastic gradient descent with momentum
         subspace_learning_rate : float
-            Learning rate for the 'MomentumSGD' method. Should be a
+            Learning rate for the ``'MomentumSGD'`` method. Should be a
             float > 0.0
         subspace_momentum : float
-            Momentum parameter for 'MomentumSGD' method, should be
+            Momentum parameter for ``'MomentumSGD'`` method, should be
             a float between 0 and 1.
         random_state : None or int or RandomState, default None
             Used to initialize the subspace on the first iteration.
+            See :func:`numpy.random.default_rng` for more information.
 
         """
         self.n_features = None

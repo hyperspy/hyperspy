@@ -1122,7 +1122,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
         fast : bool
-            If True, perform an approximative estimaton of the parameters.
+            If True, perform an approximative estimation of the parameters.
             If False, the signal is fitted using non-linear least squares
             afterwards. This is slower compared to the estimation but
             often more accurate.
@@ -1368,31 +1368,29 @@ class Signal1D(BaseSignal, CommonSignal1D):
         values will neglect broad peaks (slope) and smaller features (amp),
         respectively.
 
-        
-
         Parameters
         ----------
         slope_thresh : float, default 0
             1st derivative threshold to count the peak;
             higher values will neglect broader features.
         amp_thresh : float, optional
-            intensity threshold below which peaks are ignored;
+            Intensity threshold below which peaks are ignored;
             higher values will neglect smaller features;
             default is set to 10%% of max(y).
         medfilt_radius : int, default 5
-            median filter window to apply to smooth the data
+            Median filter window to apply to smooth the data
             (see :func:`scipy.signal.medfilt`);
             if 0, no filter will be applied.
         peakgroup : int, default 10
-            number of points around the "top part" of the peak
-            that are taken to estimate the peak height.
+            Number of points around the "top part" of the peak
+            that is taken to estimate the peak height.
             For spikes or very narrow peaks, set `peakgroup` to 1 or 2;
             for broad or noisy peaks, make ``peakgroup`` larger to
             reduce the effect of noise.
         maxpeakn : int, default 5000
-            number of maximum detectable peaks.
+            Number of maximum detectable peaks.
         subchannel : bool, default True
-            default is set to True.
+            Whether to use subchannel precision or not.
         %s
 
         Returns

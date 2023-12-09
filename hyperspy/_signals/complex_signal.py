@@ -306,7 +306,7 @@ class ComplexSignal(BaseSignal):
         Returns
         -------
         :class:`~hyperspy.api.signals.Signal2D`
-            The argand diagram
+            The Argand diagram
 
         Examples
         --------

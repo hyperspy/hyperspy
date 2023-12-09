@@ -457,7 +457,7 @@ class Parameter(t.HasTraits):
     @property
     def ext_bounded(self):
         """
-        Similar to :attr:``ext_force_positive``, but in this case the bounds
+        Similar to :attr:`ext_force_positive`, but in this case the bounds
         are defined by bmin and bmax. It is a better idea to use
         an optimizer that supports bounding though.
         """

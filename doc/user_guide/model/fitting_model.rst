@@ -574,8 +574,8 @@ To disable this feature call
 
 .. versionadded:: 1.4 :meth:`~.api.signals.Signal1D.plot` keyword arguments
 
-All extra keyword argments are passes to the :meth:`~.api.signals.Signal1D.plot`
-method of the corresponing signal object. For example, the following plots the
+All extra keyword arguments are passed to the :meth:`~.api.signals.Signal1D.plot`
+method of the corresponding signal object. The following example plots the
 model signal figure but not its navigator:
 
 .. code-block:: python
@@ -598,7 +598,7 @@ This can be done by plotting the model and adjusting the parameters by hand.
 
 .. versionchanged:: 1.3
     All ``notebook_interaction`` methods renamed to :meth:`~.model.BaseModel.gui`.
-    The ``notebook_interaction`` methods was removed in 2.0.
+    The ``notebook_interaction`` methods were removed in 2.0.
 
 .. _notebook_interaction-label:
 

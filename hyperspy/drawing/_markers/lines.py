@@ -31,7 +31,7 @@ class Lines(Markers):
         Parameters
         ----------
         segments : numpy.ndarray
-            Must be with shape [n, 2, 2] ragged array with shape (n, 2, 3) at every navigation position
+            Must be with shape [n, 2, 2] ragged array with shape (n, 2, 3) at every navigation position.
             Defines the lines[[[x1,y1],[x2,y2]], ...] of the center of the ellipse.
         kwargs : dict
             Additional keyword arguments are passed to :class:`matplotlib.collections.LineCollection`.

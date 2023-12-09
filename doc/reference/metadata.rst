@@ -5,7 +5,7 @@ Metadata structure
 ******************
 
 The :class:`~.api.signals.BaseSignal` class stores metadata in the
-:attr:`~.api.signals.BaseSignal.metadata` attribute that has a tree structure. By
+:attr:`~.api.signals.BaseSignal.metadata` attribute, which has a tree structure. By
 convention, the node labels are capitalized and the leaves are not
 capitalized.
 

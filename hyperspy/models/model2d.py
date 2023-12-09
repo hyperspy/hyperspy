@@ -51,8 +51,8 @@ class Model2D(BaseModel):
     :mod:`~hyperspy.api.model.components2D` that are added to the model using
     :meth:`~hyperspy.model.BaseModel.append` or
     :meth:`~hyperspy.model.BaseModel.extend`. There are predifined components 
-    available in the in the :mod:`~hyperspy.api.model.components2D` module
-    and custom component can made using the :class:`~.api.model.components1D.Expression`.
+    available in the :mod:`~hyperspy.api.model.components2D` module
+    and custom components can made using the :class:`~.api.model.components1D.Expression`.
     If needed, new components can be created easily using the code of existing
     components as a template.
 

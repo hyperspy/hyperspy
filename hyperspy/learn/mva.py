@@ -1793,13 +1793,9 @@ class MVA:
 
         See Also
         --------
-        hyperspy.api.signals.BaseSignal.estimate_number_of_clusters,
-        hyperspy.api.signals.BaseSignal.cluster_analysis,
-        hyperspy.api.signals.BaseSignal.get_cluster_labels,
-        hyperspy.api.signals.BaseSignal.get_cluster_signals,
-        hyperspy.api.signals.BaseSignal.plot_cluster_results,
-        hyperspy.api.signals.BaseSignal.plot_cluster_signals,
-        hyperspy.api.signals.BaseSignal.plot_cluster_labels
+        estimate_number_of_clusters, cluster_analysis, get_cluster_labels,
+        get_cluster_signals, plot_cluster_results, plot_cluster_signals,
+        plot_cluster_labels
 
         """
         target = self.learning_results
@@ -1808,7 +1804,7 @@ class MVA:
             ydata = target.cluster_metric_data
         else:
             raise ValueError(
-                "Cluster metrics not estaimted, please run "
+                "Cluster metrics not estimated, please run "
                 "`estimate_number_of_clusters` first."
                 )
         if target.cluster_metric_index is not None:
@@ -1861,20 +1857,17 @@ class MVA:
         ----------
         cluster_source : str or BaseSignal
             "decomposition", "bss", "signal" or a Signal
-        number_of_components : int, optional
+        number_of_components : int, default None
             Number of components to use with decomposition sources.
-            The default is None.
-        navigation_mask : ndarray, optional
+        navigation_mask : ndarray, default None
             mask used to select regions of the cluster_source to use.
-            The default is None.
-        signal_mask : ndarray, optional
+        signal_mask : ndarray, default None
             mask used to select regions of the cluster_source signal.
             For decomposition or bss this is not used.
-            The default is None.
-        reproject : bool, optional
+        reproject : bool, default False
             If False the and the cluster_source is decomposition or bss
             the loadings are returned. If True the factor @ loadings result
-            is used. The default is False.
+            is used.
 
 
         Returns
@@ -1962,7 +1955,7 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : str {``"bss"`` | ``"decomposition"`` | ``"signal"``}
+        cluster_source : str {``"bss"`` | ``"decomposition"`` | ``"signal"``}\
         or :class:`~hyperspy.api.signals.BaseSignal`
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
@@ -1970,7 +1963,7 @@ class MVA:
             Note that using the signal or BaseSignal can be memory intensive
             and is only recommended if the Signal dimension is small
             BaseSignal must have the same navigation dimensions as the signal.
-        source_for_centers : None, str {``"decomposition"`` | ``"bss"`` | ``"signal"``}
+        source_for_centers : None, str {``"decomposition"`` | ``"bss"`` | ``"signal"``}\
         or :class:`~hyperspy.api.signals.BaseSignal`
             default : None
             If None the cluster_source is used
@@ -2008,8 +2001,7 @@ class MVA:
             clustering for "signal" or Signals supplied as cluster source.
             This is not applied to decomposition results or source_for_centers
             (as it may be a different shape to the cluster source)
-        algorithm : {``"kmeans"`` | ``"agglomerative"`` | ``"minibatchkmeans"`` |
-        ``"spectralclustering"``}
+        algorithm : {``"kmeans"`` | ``"agglomerative"`` | ``"minibatchkmeans"`` | ``"spectralclustering"``}
             See scikit-learn documentation. Default "kmeans"
         return_info : bool, default False
             The result of the cluster analysis is stored internally. However,
@@ -2026,7 +2018,7 @@ class MVA:
         ----------------
         int
             Number of clusters to find using the one of the pre-defined methods
-            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
+            "kmeans", "agglomerative", "minibatchkmeans", "spectralclustering"
             See sklearn.cluster for details
 
         See Also
@@ -2258,7 +2250,7 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : str {"bss", "decomposition", "signal"}
+        cluster_source : str {"bss", "decomposition", "signal"} \
         or :class:`~hyperspy.api.signals.BaseSignal`
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
@@ -2296,7 +2288,7 @@ class MVA:
         signal_mask : numpy.ndarray of bool, default None
             The signal locations marked as True are not used in the
             clustering. Applies to "signal" or Signal cluster sources only.
-        metric : {``'elbow'`` | ``'silhouette'`` | ``'gap'``}, default 'gap'
+        metric : {``'elbow'`` | ``'silhouette'`` | ``'gap'``}, default ``'gap'``
             Use distance,silhouette analysis or gap statistics to estimate
             the optimal number of clusters.
             Gap is believed to be, overall, the best metric but it's also
@@ -2322,7 +2314,6 @@ class MVA:
             Number of clusters to find using the one of the pre-defined methods
             "kmeans","agglomerative","minibatchkmeans","spectralclustering"
             See sklearn.cluster for details
-
 
         Returns
         -------

@@ -512,7 +512,7 @@ def orpca(
         or less.
     lambda1 : float, default 0.1
         Nuclear norm regularization parameter.
-    lambda2 : float, default 1.-
+    lambda2 : float, default 1.0
         Sparse error regularization parameter.
     method : {'CF', 'BCD', 'SGD', 'MomentumSGD'}, default 'BCD'
         * ``'CF'``  - Closed-form solver

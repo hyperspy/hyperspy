@@ -48,7 +48,7 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
               It does support bounds on parameters. See
               :func:`scipy.optimize.dual_annealing` for more
               details on available options. Requires ``scipy >= 1.2.0``.
-            * ``"SHGO"`` (simplicial homology global optimization" is a global
+            * ``"SHGO"`` (simplicial homology global optimization) is a global
               optimization method. It does support bounds on parameters. See
               :func:`scipy.optimize.shgo` for more details on available
               options. Requires ``scipy >= 1.2.0``.
@@ -78,7 +78,7 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
               up the optimization, since the gradient does not need to be estimated.
             * callable should be a function that returns the gradient vector.
             * None means that no gradient information is used or estimated. Not
-              available if ``optimizer`` is one of ``"lm"``, ``"trf"``, ``"dogbox"``.
+              available if ``optimizer`` is one of ``"lm"``, ``"trf"`` or ``"dogbox"``.
 
         bounded : bool, default False
             If True, performs bounded parameter optimization if

@@ -571,10 +571,11 @@ class BaseDataAxis(t.HasTraits):
         ----------
         value : float or numpy.ndarray
         rounding : callable
-            Handling of values intermediate between two axis points:
-            If ``rounding=round``, use round-half-away-from-zero strategy to find closest value.
-            If ``rounding=math.floor``, round to the next lower value.
-            If ``rounding=math.ceil``, round to the next higher value.
+            Handling of values between two axis points:
+            
+            - If ``rounding=round``, use round-half-away-from-zero strategy to find closest value.
+            - If ``rounding=math.floor``, round to the next lower value.
+            - If ``rounding=math.ceil``, round to the next higher value.
 
         Returns
         -------

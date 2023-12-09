@@ -77,7 +77,6 @@ class ScalableFixedPattern(Component):
     Methods
     -------
     prepare_interpolator
-        method to fine tune the interpolation
 
     """
 
@@ -112,7 +111,7 @@ class ScalableFixedPattern(Component):
         self.shift.free = value
 
     def prepare_interpolator(self, **kwargs):
-        """Prepare interpolation.
+        """Fine-tune the interpolation.
 
         Parameters
         ----------

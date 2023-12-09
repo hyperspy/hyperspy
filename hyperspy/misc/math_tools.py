@@ -182,7 +182,7 @@ def check_random_state(seed, lazy=False):
     Parameters
     ----------
     seed : None or int or numpy.random.RandomState or numpy.random.Generator or \
-        dask.array.random.RandomState or da.random.Generator
+        dask.array.random.RandomState or dask.array.random.Generator
 
         - If None, returns the random state singleton used by numpy.random or
           dask.array.random
@@ -196,7 +196,7 @@ def check_random_state(seed, lazy=False):
 
     Returns
     -------
-    np.random.Generator instance or np.random.Generator
+    np.random.Generator instance or dask.array.random.Generator
 
     """
     # Derived from `sklearn.utils.check_random_state`.

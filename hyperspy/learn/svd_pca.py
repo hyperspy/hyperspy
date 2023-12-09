@@ -235,7 +235,7 @@ def svd_pca(
     loadings : numpy.ndarray
     explained_variance : numpy.ndarray
     mean : numpy.ndarray or None
-        None is centre is None
+        None if centre is None
 
     """
     N, M = data.shape

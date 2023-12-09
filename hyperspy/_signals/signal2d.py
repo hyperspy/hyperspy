@@ -443,7 +443,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             as reference are limited to the given value.
         roi : tuple of int or float 
             Define the region of interest (left, right, top, bottom).
-            If int(float) the position is given axis index(value).
+            If int (float), the position is given by axis index (value).
             Note that ROIs can be used in place of a tuple.
         normalize_corr : bool, default False
             If True, use phase correlation to align the images, otherwise
@@ -619,7 +619,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         The images can be aligned using either user-provided shifts or
         by first estimating the shifts.
 
-        See :meth:`~.api.signals.Signal2D.estimate_shift2D`
+        See :meth:`~hyperspy.api.signals.Signal2D.estimate_shift2D`
         for more details on estimating image shifts.
 
         Parameters
@@ -633,17 +633,19 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts : None or numpy.ndarray
             The array of shifts must be in pixel units. The shape must be
             the navigation shape using numpy order convention. If ``None``
-            the shifts are estimated using ``estimate_shift2D``.
+            the shifts are estimated using
+            :meth:`~hyperspy.api.signals.Signal2D.estimate_shift2D`.
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
-            Overrides `crop`.
+            Overrides ``crop``.
         interpolation_order: int
             The order of the spline interpolation. Default is 1, linear
             interpolation.
         %s
         %s
         **kwargs : dict
-            Keyword arguments passed to :meth:`~.api.signals.Signal2D.estimate_shift2D`
+            Keyword arguments passed to
+            :meth:`~hyperspy.api.signals.Signal2D.estimate_shift2D`.
 
         Returns
         -------

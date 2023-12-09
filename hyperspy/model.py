@@ -2072,6 +2072,7 @@ class BaseModel(list):
         Parameters
         ----------
         filename : str
+            The file name of the file it is saved to.
 
         See Also
         --------
@@ -2080,7 +2081,7 @@ class BaseModel(list):
         Notes
         -----
         This method can be used to save the current state of the model in a way
-        that can be loaded back to recreate the it using
+        that can be loaded back to recreate it using
         :meth:`~hyperspy.model.BaseModel.load_parameters_from_file`.
         Actually, as of HyperSpy 0.8 this is the only way to do so.
         However, this is known to be brittle. For example see
@@ -2104,6 +2105,7 @@ class BaseModel(list):
         Parameters
         ----------
         filename : str
+            The file name of the file to load it from.
 
         See Also
         --------
