@@ -48,7 +48,7 @@ all the work that you do.
 
    >>> # Clear the memory
    >>> del s
-   >>> gc.collect()
+   >>> gc.collect() # doctest: +SKIP
 
 
 Running tests
