@@ -26,7 +26,7 @@ To obtain a scree plot for your dataset, run the
 
 .. code-block:: python
 
-   >>> s.plot_explained_variance_ratio(n=20)
+   >>> s.plot_explained_variance_ratio(n=20) # doctest: +SKIP
 
 .. figure::  ../images/screeplot.png
    :align:   center
@@ -53,7 +53,7 @@ Python uses zero-based indexing. To switch to a "number-based" (rather than
 
 .. code-block:: python
 
-   >>> s.plot_explained_variance_ratio(n=20, threshold=4, xaxis_type='number')
+   >>> s.plot_explained_variance_ratio(n=20, threshold=4, xaxis_type='number') # doctest: +SKIP
 
 .. figure::  ../images/screeplot2.png
    :align:   center

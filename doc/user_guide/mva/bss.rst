@@ -27,16 +27,35 @@ run the :meth:`~.api.signals.BaseSignal.blind_source_separation` method, for exa
 
 .. code-block:: python
 
-   >>> import numpy as np
-   >>> from hyperspy.signals import Signal1D
-
-   >>> s = Signal1D(np.random.randn(10, 10, 200))
+   >>> s = hs.signals.Signal1D(np.random.randn(10, 10, 200))
    >>> s.decomposition(output_dimension=3)
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=SVD
+      output_dimension=3
+      centre=None
 
    >>> s.blind_source_separation(number_of_components=3)
+    Blind source separation info:
+      number_of_components=3
+      algorithm=sklearn_fastica
+      diff_order=1
+      reverse_component_criterion=factors
+      whiten_method=PCA
+    scikit-learn estimator:
+    FastICA(tol=1e-10, whiten=False)
 
    # Perform only on the first and third components
    >>> s.blind_source_separation(comp_list=[0, 2])
+    Blind source separation info:
+      number_of_components=2
+      algorithm=sklearn_fastica
+      diff_order=1
+      reverse_component_criterion=factors
+      whiten_method=PCA
+    scikit-learn estimator:
+    FastICA(tol=1e-10, whiten=False)
+
 
 Available algorithms
 --------------------
@@ -87,13 +106,17 @@ often "simpler" to interpret than just PCA, since each componenthas a more discr
 
 .. code-block:: python
 
-   >>> import numpy as np
-   >>> from hyperspy.signals import Signal1D
-
-   >>> s = Signal1D(np.random.randn(10, 10, 200))
-   >>> s.decomposition(output_dimension=3)
+   >>> s = hs.signals.Signal1D(np.random.randn(10, 10, 200))
+   >>> s.decomposition(output_dimension=3, print_info=False)
 
    >>> s.blind_source_separation(number_of_components=3, algorithm="orthomax")
+    Blind source separation info:
+      number_of_components=3
+      algorithm=orthomax
+      diff_order=1
+      reverse_component_criterion=factors
+      whiten_method=PCA
+
 
 .. _mva.ica:
 
@@ -124,12 +147,7 @@ You can access the fitted estimator by passing ``return_info=True``.
    >>> from sklearn.decomposition import FastICA
 
    >>> pipe = Pipeline([("scaler", MinMaxScaler()), ("ica", FastICA())])
-   >>> out = s.blind_source_separation(number_of_components=3, algorithm=pipe, return_info=True)
+   >>> out = s.blind_source_separation(number_of_components=3, algorithm=pipe, return_info=True, print_info=False)
 
    >>> out
-   Pipeline(memory=None,
-            steps=[('scaler', MinMaxScaler(copy=True, feature_range=(0, 1))),
-                   ('ica', FastICA(algorithm='parallel', fun='logcosh', fun_args=None,
-                                   max_iter=200, n_components=3, random_state=None,
-                                   tol=0.0001, w_init=None, whiten=True))],
-            verbose=False)
+   Pipeline(steps=[('scaler', MinMaxScaler()), ('ica', FastICA())])

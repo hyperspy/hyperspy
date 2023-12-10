@@ -44,10 +44,10 @@ analysis to a separate file with the
 .. code-block:: python
 
    >>> # Save the result of the analysis
-   >>> s.learning_results.save('my_results.npz')
+   >>> s.learning_results.save('my_results.npz') # doctest: +SKIP
 
    >>> # Load back the results
-   >>> s.learning_results.load('my_results.npz')
+   >>> s.learning_results.load('my_results.npz') # doctest: +SKIP
 
 Export in different formats
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
