@@ -93,7 +93,7 @@ noise to it:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D(np.arange(100, 300, dtype='float32')))
+    >>> s = hs.signals.Signal1D(np.arange(100, 300, dtype='float32'))
     >>> s.add_gaussian_noise(std=100)
 
 To fit it, we create a model consisting of a
@@ -105,20 +105,20 @@ to the data.
     >>> m = s.create_model()
     >>> line = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
-    >>> m.fit()
+    >>> m.fit() # doctest: +SKIP
 
 Once the fit is complete, the optimized value of the parameters and their
 estimated standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
-    >>> line.a0.value
+    >>> line.a0.value # doctest: +SKIP
     0.9924615648843765
-    >>> line.a1.value
+    >>> line.a1.value # doctest: +SKIP
     103.67507406125888
-    >>> line.a0.std
+    >>> line.a0.std # doctest: +SKIP
     0.11771053738516088
-    >>> line.a1.std
+    >>> line.a1.std # doctest: +SKIP
     13.541061301257537
 
 .. warning::
@@ -148,14 +148,14 @@ Gaussian noise, and proceed to fit as in the previous example.
     >>> m = s.create_model()
     >>> line  = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
-    >>> m.fit()
-    >>> line.a0.value
+    >>> m.fit() # doctest: +SKIP
+    >>> line.a0.value # doctest: +SKIP
     -0.7262000522775925
-    >>> line.a1.value
+    >>> line.a1.value # doctest: +SKIP
     1.0086925334859176
-    >>> line.a0.std
+    >>> line.a0.std # doctest: +SKIP
     1.4141418570079
-    >>> line.a1.std
+    >>> line.a1.std # doctest: +SKIP
     0.008185019194679451
 
 Because the noise is heteroscedastic, the least squares optimizer estimation is
@@ -168,15 +168,16 @@ in most cases where there are a sufficient number of counts per pixel.
 
     >>> exp_val = hs.signals.Signal1D(np.arange(300)+1)
     >>> s.estimate_poissonian_noise_variance(expected_value=exp_val)
-    >>> line.estimate_parameters(s,10,250)
-    >>> m.fit()
-    >>> line.a0.value
+    >>> line.estimate_parameters(s, 10, 250)
+    True
+    >>> m.fit() # doctest: +SKIP
+    >>> line.a0.value # doctest: +SKIP
     -0.6666008600519397
-    >>> line.a1.value
+    >>> line.a1.value # doctest: +SKIP
     1.017145603577098
-    >>> line.a0.std
+    >>> line.a0.std # doctest: +SKIP
     0.8681360488613021
-    >>> line.a1.std
+    >>> line.a1.std # doctest: +SKIP
     0.010308732161043038
 
 
@@ -191,11 +192,11 @@ in most cases where there are a sufficient number of counts per pixel.
 
     .. code-block:: python
 
-        >>> m.signal.set_noise_variance(None)
-        >>> m.fit()  # This will now be an unweighted fit
-        >>> line.a0.value
+        >>> m.signal.set_noise_variance(None) # This will now be an unweighted fit 
+        >>> m.fit() # doctest: +SKIP
+        >>> line.a0.value # doctest: +SKIP
         -1.9711403542163477
-        >>> line.a1.value
+        >>> line.a1.value # doctest: +SKIP
         1.0258716193502546
 
 Poisson maximum likelihood estimation
@@ -209,10 +210,10 @@ such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
 
-   >>> m.fit(optimizer="Nelder-Mead", loss_function="ML-poisson")
-   >>> line.a0.value
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="ML-poisson") # doctest: +SKIP
+   >>> line.a0.value # doctest: +SKIP
    0.00025567973144090695
-   >>> line.a1.value
+   >>> line.a1.value # doctest: +SKIP
    1.0036866523183754
 
 Estimation of the parameter errors is not currently supported for Poisson
@@ -229,7 +230,7 @@ non-linear optimization algorithms:
 
 .. code-block:: python
 
-   >>> m.fit(optimizer="Nelder-Mead", loss_function="huber")
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="huber") # doctest: +SKIP
 
 Estimation of the parameter errors is not currently supported
 for the Huber loss function.
@@ -278,7 +279,7 @@ a custom loss function can be passed to the model:
     ...    return (difference**2).sum()
 
     >>> # We must use a general non-linear optimizer
-    >>> m.fit(optimizer='Nelder-Mead', loss_function=my_custom_function)
+    >>> m.fit(optimizer='Nelder-Mead', loss_function=my_custom_function) # doctest: +SKIP
 
 If the optimizer requires an analytical gradient function, it can be similarly
 passed, using the following signature:
@@ -317,7 +318,7 @@ passed, using the following signature:
     >>> # We must use a general non-linear optimizer again
     >>> m.fit(optimizer='L-BFGS-B',
     ...       loss_function=my_custom_function,
-    ...       grad=my_custom_gradient_function)
+    ...       grad=my_custom_gradient_function) # doctest: +SKIP
 
 Using gradient information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -345,15 +346,15 @@ Following the above examples:
     >>> m.append(line)
 
     >>> # Use a 2-point finite-difference scheme to estimate the gradient
-    >>> m.fit(grad="fd", fd_scheme="2-point")
+    >>> m.fit(grad="fd", fd_scheme="2-point") # doctest: +SKIP
 
     >>> # Use the analytical gradient
-    >>> m.fit(grad="analytical")
+    >>> m.fit(grad="analytical") # doctest: +SKIP
 
     >>> # Huber loss and Poisson MLE functions
     >>> # also support analytical gradients
-    >>> m.fit(grad="analytical", loss_function="huber")
-    >>> m.fit(grad="analytical", loss_function="ML-poisson")
+    >>> m.fit(grad="analytical", loss_function="huber") # doctest: +SKIP
+    >>> m.fit(grad="analytical", loss_function="ML-poisson") # doctest: +SKIP
 
 .. note::
 
@@ -389,8 +390,8 @@ on the ``centre`` parameter.
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7
     >>> g1.centre.bmax = 14
-    >>> m.fit(optimizer="lm", bounded=True)
-    >>> m.print_current_values()
+    >>> m.fit(optimizer="lm", bounded=True) # doctest: +SKIP
+    >>> m.print_current_values() # doctest: +SKIP
     Model1D:  histogram
     Gaussian: Gaussian
     Active: True
@@ -475,10 +476,10 @@ can about half an hour on a decent workstation. With a linear optimizer, it take
 .. code-block:: python
 
     >>> nav = hs.signals.Signal2D(np.random.random((300, 300))).T
-    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles() * nav
-    >>> m = s.create_model()
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles() * nav # doctest: +SKIP
+    >>> m = s.create_model() # doctest: +SKIP
 
-    >>> m.multifit(optimizer='lstsq')
+    >>> m.multifit(optimizer='lstsq') # doctest: +SKIP
 
 Standard errors for the parameters are by default not calculated when the dataset
 is fitted in vectorized fashion, because it has large memory requirement.
@@ -502,10 +503,8 @@ You can also access the object as the ``fit_output`` attribute:
 
 .. code-block:: python
 
-    >>> m.fit()
-    <scipy.optimize.OptimizeResult object>
-
-    >>> type(m.fit_output)
+    >>> m.fit() # doctest: +SKIP
+    >>> type(m.fit_output) # doctest: +SKIP
     <scipy.optimize.OptimizeResult object>
 
 You can also print this information using the
@@ -514,7 +513,7 @@ You can also print this information using the
 .. code-block:: python
 
     # Print the info to stdout
-    >>> m.fit(optimizer="L-BFGS-B", print_info=True)
+    >>> m.fit(optimizer="L-BFGS-B", print_info=True) # doctest: +SKIP
     Fit info:
       optimizer=L-BFGS-B
       loss_function=ls
@@ -665,14 +664,14 @@ signal and how the ``isig`` syntax can be used to define the signal range.
     >>> m.append(gt)
 
     >>> m.set_signal_range(-7, -3, -9, -1) # Set signal range
-    >>> m.fit()
+    >>> m.fit() # doctest: +SKIP
 
     >>> # Alternatively create a boolean signal of the same shape
     >>> # as the signal space of im
     >>> signal_mask = im > 0.01
 
     >>> m.set_signal_range_from_mask(signal_mask.data) # Set signal range
-    >>> m.fit()
+    >>> m.fit() # doctest: +SKIP
 
 .. _model.multidimensional-label:
 
