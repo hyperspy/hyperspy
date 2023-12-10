@@ -31,3 +31,7 @@ def add_np(doctest_namespace):
     doctest_namespace['np'] = np
     doctest_namespace['plt'] = plt
     doctest_namespace['hs'] = hs
+
+# Don't show progressbar since it contains the runtime which
+# will make the doctest fail
+hs.preferences.General.show_progressbar = False

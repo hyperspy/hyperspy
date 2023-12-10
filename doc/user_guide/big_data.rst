@@ -34,14 +34,19 @@ or similar), first wrap it in ``dask.array.Array`` as shown `here
 as normal and call ``as_lazy()``:
 
 .. code-block:: python
+    
+    >>> import h5py # doctest: +SKIP
+    >>> f = h5py.File("myfile.hdf5") # doctest: +SKIP
+    >>> data = f['/data/path'] # doctest: +SKIP
 
-    >>> import h5py
-    >>> f = h5py.File("myfile.hdf5")           # Load the file
-    >>> data = f['/data/path']                 # Get the data
-    >>> import dask.array as da                # Import dask to wrap
-    >>> chunks = (1000,100)                    # Chunk as appropriate
-    >>> x = da.from_array(data, chunks=chunks) # Wrap the data in dask
-    >>> s = hs.signals.Signal1D(x).as_lazy() # Create the lazy signal
+    Wrap the data in dask and chunk as appropriate
+
+    >>> import dask.array as da # doctest: +SKIP
+    >>> x = da.from_array(data, chunks=(1000, 100)) # doctest: +SKIP
+    
+    Create the lazy signal
+    
+    >>> s = hs.signals.Signal1D(x).as_lazy() # doctest: +SKIP
 
 
 Loading lazily
@@ -52,15 +57,18 @@ loading a 34.9 GB ``.blo`` file on a regular laptop might look like:
 
 .. code-block:: python
 
-    >>> s = hs.load("shish26.02-6.blo", lazy=True)
-    >>> s
+    >>> s = hs.load("shish26.02-6.blo", lazy=True)  # doctest: +SKIP
+    >>> s # doctest: +SKIP
     <LazySignal2D, title: , dimensions: (400, 333|512, 512)>
-    >>> s.data
+    >>> s.data # doctest: +SKIP
     dask.array<array-e..., shape=(333, 400, 512, 512), dtype=uint8, chunksize=(20, 12, 512, 512)>
-    >>> print(s.data.dtype, s.data.nbytes / 1e9)
+    >>> print(s.data.dtype, s.data.nbytes / 1e9) # doctest: +SKIP
     uint8 34.9175808
-    >>> s.change_dtype("float") # To be able to perform decomposition, etc.
-    >>> print(s.data.dtype, s.data.nbytes / 1e9)
+
+    Change dtype to perform decomposition, etc.
+
+    >>> s.change_dtype("float")  # doctest: +SKIP
+    >>> print(s.data.dtype, s.data.nbytes / 1e9) # doctest: +SKIP
     float64 279.3406464
 
 Loading the dataset in the original unsigned integer format would require
@@ -79,9 +87,12 @@ by passing the keyword argument ``close_file=True`` e.g.:
 
 .. code-block:: python
 
-    >>> s = hs.load("file.hspy", lazy=True)
-    >>> ssum = s.sum(axis=0)
-    >>> ssum.compute(close_file=True) # closes the file.hspy file
+    >>> s = hs.load("file.hspy", lazy=True) # doctest: +SKIP
+    >>> ssum = s.sum(axis=0) # doctest: +SKIP
+
+    Close the file
+
+    >>> ssum.compute(close_file=True)  # doctest: +SKIP
 
 
 Lazy stacking
@@ -93,13 +104,20 @@ lazily (both when loading or afterwards):
 
 .. code-block:: python
 
-    >>> siglist = hs.load("*.hdf5")
-    >>> s = hs.stack(siglist, lazy=True)
-    >>> # Or load lazily and stack afterwards:
-    >>> siglist = hs.load("*.hdf5", lazy=True)
-    >>> s = hs.stack(siglist) # no need to pass 'lazy', as signals already lazy
-    >>> # Or do everything in one go:
-    >>> s = hs.load("*.hdf5", lazy=True, stack=True)
+    >>> siglist = hs.load("*.hdf5") # doctest: +SKIP
+    >>> s = hs.stack(siglist, lazy=True) # doctest: +SKIP
+    
+    Or load lazily and stack afterwards:
+    
+    >>> siglist = hs.load("*.hdf5", lazy=True) # doctest: +SKIP
+
+    Make a stack, no need to pass 'lazy', as signals are already lazy
+
+    >>> s = hs.stack(siglist) # doctest: +SKIP
+    
+    Or do everything in one go:
+    
+    >>> s = hs.load("*.hdf5", lazy=True, stack=True) # doctest: +SKIP
 
 Casting signals as lazy
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -174,7 +192,7 @@ of 25:
     >>> import hyperspy.api as hs
     >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 200, 200))
     >>> s = hs.signals.Signal2D(data).as_lazy()
-    >>> s.plot()
+    >>> s.plot() # doctest: +SKIP
 
 In the example above, the calculation of the navigation is fast but the actual
 visualisation of the dataset is slow, each for each navigation index change,
@@ -189,7 +207,7 @@ harddrive when changing navigation indices:
 
     >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 1000, 1000))
     >>> s = hs.signals.Signal2D(data).as_lazy()
-    >>> s.plot()
+    >>> s.plot() # doctest: +SKIP
 
 This approach depends heavily on the chunking of the data and may not be
 always suitable. The :meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
@@ -205,8 +223,8 @@ dataset, since the rechunking only takes during the computation of the navigator
 
     >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 100, 100))
     >>> s = hs.signals.Signal2D(data).as_lazy()
-    >>> s.compute_navigator(chunks_number=5)
-    >>> s.plot()
+    >>> s.compute_navigator(chunks_number=5) # doctest: +SKIP
+    >>> s.plot() # doctest: +SKIP
 
 .. code-block:: python
 
@@ -243,26 +261,26 @@ signal using the :attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
     >>> s = hs.signals.Signal2D(data).as_lazy()
     >>> s
     <LazySignal2D, title: , dimensions: (100, 100|1000, 1000)>
-    >>> # for fastest results, just pick one signal space pixel
+    
+    For fastest results, just pick one signal space pixel
+    
     >>> nav = s.isig[500, 500]
-    >>> # Alternatively, sum as per default behaviour of non-lazy signal
-    >>> nav = s.sum(s.axes_manager.signal_axes)
-    >>> nav
+    
+    Alternatively, sum as per default behaviour of non-lazy signal
+    
+    >>> nav = s.sum(s.axes_manager.signal_axes) # doctest: +SKIP
+    >>> nav # doctest: +SKIP
     <LazySignal2D, title: , dimensions: (|100, 100)>
-    >>> # Compute the result
-    >>> nav.compute()
+    >>> nav.compute() # doctest: +SKIP
     [########################################] | 100% Completed | 13.1s
-    >>> s.navigator = nav
-    >>> s.plot()
+    >>> s.navigator = nav # doctest: +SKIP
+    >>> s.plot() # doctest: +SKIP
 
-Alternatively, it is possible to not have a navigator, and use sliders
-instead:
-
-.. code-block:: python
+    Alternatively, it is possible to not have a navigator, and use sliders instead
 
     >>> s
-    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
-    >>> s.plot(navigator='slider')
+    <LazySignal2D, title: , dimensions: (100, 100|1000, 1000)>
+    >>> s.plot(navigator='slider') # doctest: +SKIP
 
 .. versionadded:: 1.7
 
@@ -282,28 +300,31 @@ will be used.
 
 .. code-block:: python
 
-    >>> from dask_cuda import LocalCUDACluster
-    >>> from dask.distributed import Client
-    >>> cluster = LocalCUDACluster()
-    >>> client = Client(cluster)
+    >>> from dask_cuda import LocalCUDACluster # doctest: +SKIP
+    >>> from dask.distributed import Client # doctest: +SKIP
+    >>> cluster = LocalCUDACluster() # doctest: +SKIP
+    >>> client = Client(cluster) # doctest: +SKIP
 
 .. code-block:: python
 
-    >>> import hyperspy.api as hs
-    >>> import cupy as cp
+    >>> import cupy as cp # doctest: +SKIP
     >>> import dask.array as da
-    >>> # Create a dask array
+    
+    Create a dask array
+    
     >>> data = da.random.random(size=(20, 20, 100, 100))
-    >>> print(data)
-    ... dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64,
-    ... chunksize=(20, 20, 100, 100), chunktype=numpy.ndarray>
-    >>> # convert the dask chunks from numpy array to cupy array
-    >>> data = data.map_blocks(cp.asarray)
-    >>> print(data)
-    ... dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64,
-    ... chunksize=(20, 20, 100, 100), chunktype=cupy.ndarray>
-    >>> # Create the signal
-    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> data
+    dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64, chunksize=(20, 20, 100, 100), chunktype=numpy.ndarray>
+    
+    Convert the dask chunks from numpy array to cupy array
+    
+    >>> data = data.map_blocks(cp.asarray) # doctest: +SKIP
+    >>> data # doctest: +SKIP
+    dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64, chunksize=(20, 20, 100, 100), chunktype=cupy.ndarray>
+    
+    Create the signal
+    
+    >>> s = hs.signals.Signal2D(data).as_lazy() # doctest: +SKIP
 
 .. note::
     See the dask blog on `Richardson Lucy (RL) deconvolution <https://blog.dask.org/2020/11/12/deconvolution>`_
@@ -326,6 +347,10 @@ Practical tips
 
 Despite the limitations detailed below, most HyperSpy operations can be
 performed lazily. Important points are:
+
+- :ref:`big_data.chunking`
+- :ref:`compute_lazy_signals`
+- :ref:`lazy_operations_axes`
 
 .. _big_data.chunking:
 
@@ -351,12 +376,17 @@ The following example shows how to chunk one of the two navigation dimensions in
     (10, 200, 300)
 
     >>> s = hs.signals.Signal1D(data).as_lazy()
-    >>> s # Note the reversed order of navigation dimensions
-    <LazSignal1D, title: , dimensions: (200, 10|300)>
 
-    >>> s.save('chunked_signal.hspy', chunks=(10, 100, 300)) # Chunking first hyperspy dimension (second array dimension)
-    >>> s2 = hs.load('chunked_signal.hspy', lazy=True)
-    >>> s2.data.chunksize
+    Note the reversed order of navigation dimensions
+
+    >>> s
+    <LazySignal1D, title: , dimensions: (200, 10|300)>
+
+    Save data with chunking first hyperspy dimension (second array dimension)
+
+    >>> s.save('chunked_signal.zspy', chunks=(10, 100, 300)) # doctest: +SKIP
+    >>> s2 = hs.load('chunked_signal.zspy', lazy=True) # doctest: +SKIP
+    >>> s2.data.chunksize # doctest: +SKIP
     (10, 100, 300)
 
 To get the chunk size of given axes, the :meth:`~._signals.lazy.LazySignal.get_chunk_size`
@@ -390,16 +420,18 @@ notebook a helpful html representation is available.
 
 .. code-block:: python
 
-    >>> import numpy as np
-    >>> import hyperspy.api as hs
-    >>> data = np.zeros((20, 20, 10, 10, 10))
-    >>> s = hs.signals.Signal2D(data)
-    >>> s
+    >>> import dask.array as da
+    >>> data = da.zeros((20, 20, 10, 10, 10))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s # doctest: +SKIP
 
 .. figure:: images/chunks.png
 
 This helps to visualize the chunk structure and identify axes where the chunk spans the entire
 axis (bolded axes).
+
+
+.. _compute_lazy_signals:
 
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -412,12 +444,14 @@ signal) it has a :meth:`~._signals.lazy.LazySignal.compute` method:
 .. code-block:: python
 
     >>> s
-    <LazySignal2D, title: , dimensions: (|512, 512)>
-    >>> s.compute()
+    <LazySignal2D, title: , dimensions: (10, 20, 20|10, 10)>
+    >>> s.compute() # doctest: +SKIP
     [########################################] | 100% Completed |  0.1s
-    >>> s
-    <Signal2D, title: , dimensions: (|512, 512)>
+    >>> s # doctest: +SKIP
+    <Signal2D, title: , dimensions: (10, 20, 20|10, 10)>
 
+
+.. _lazy_operations_axes:
 
 Lazy operations that affect the axes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -456,8 +490,9 @@ recommended for general use.
     >>> import numpy as np
     >>> import dask.array as da
 
-    >>> # setting the scheduler to single-threaded globally
-    >>> dask.config.set(scheduler='single-threaded')
+    Set the scheduler to single-threaded globally
+    
+    >>> dask.config.set(scheduler='single-threaded') # doctest: +SKIP
 
 Alternatively, you can set the scheduler to single-threaded for a single function call by
 setting the ``scheduler`` keyword argument to ``'single-threaded'``.
@@ -467,10 +502,10 @@ duration of the plotting call by using the ``with dask.config.set`` context mana
 
 .. code-block:: python
 
-    >>> s.compute(scheduler="single-threaded")  # uses single-threaded scheduler
+    >>> s.compute(scheduler="single-threaded") # doctest: +SKIP
 
     >>> with dask.config.set(scheduler='single-threaded'):
-    >>>     s.plot()  # uses single-threaded scheduler to compute each chunk and then passes one chunk the memory
+    ...     s.plot() # doctest: +SKIP
 
 Single Machine Schedulers
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -486,13 +521,16 @@ Dask has two schedulers available for single machines.
 .. code-block:: python
 
     >>> import dask
-    >>> dask.config.set(scheduler='processes')  # overwrite default with multiprocessing scheduler
-    >>> # Any hyperspy code will now use the multiprocessing scheduler
-    >>> s.compute()  # uses multiprocessing scheduler
+    >>> dask.config.set(scheduler='processes') # doctest: +SKIP
+    
+    Any hyperspy code will now use the multiprocessing scheduler
+    
+    >>> s.compute()  # doctest: +SKIP
 
-    >>> dask.config.set(scheduler='threads')  # overwrite default with threading scheduler
-    >>> #   Any hyperspy code will now use the threading scheduler
-    >>> s.compute()  # uses threading scheduler
+    Change to threaded Scheduler, overwrite default
+
+    >>> dask.config.set(scheduler='threads') # doctest: +SKIP
+    >>> s.compute() # doctest: +SKIP
 
 
 Distributed Scheduler
@@ -507,42 +545,47 @@ the distributed scheduler.
 
 .. code-block:: python
 
-    >>> from dask.distributed import Client
-    >>> from dask.distributed import LocalCluster
+    >>> from dask.distributed import Client # doctest: +SKIP
+    >>> from dask.distributed import LocalCluster # doctest: +SKIP
     >>> import dask.array as da
     >>> import hyperspy.api as hs
 
-    >>> cluster = LocalCluster()
-    >>> client = Client(cluster)
-    >>> client
-    >>> # Any calculation will now use the distributed scheduler
-    >>> s # lazy signal
-    >>> s.plot()  # uses distributed scheduler to compute each chunk and then passes one chunk the memory
-    >>> s.compute()  # uses distributed scheduler
+    >>> cluster = LocalCluster() # doctest: +SKIP
+    >>> client = Client(cluster) # doctest: +SKIP
+    >>> client # doctest: +SKIP
+    
+    Any calculation will now use the distributed scheduler
+    
+    >>> s # doctest: +SKIP
+    >>> s.plot() # doctest: +SKIP
+    >>> s.compute() # doctest: +SKIP
 
 Running computation on remote cluster can be done easily using ``dask_jobqueue``
 
 .. code-block:: python
 
-    >>> from dask_jobqueue import SLURMCluster # or what ever scheduler you use
-    >>> from dask.distributed import Client
+    >>> from dask_jobqueue import SLURMCluster # doctest: +SKIP
+    >>> from dask.distributed import Client # doctest: +SKIP
     >>> cluster = SLURMCluster(cores=48,
-                               memory='120Gb',
-                               walltime="01:00:00",
-                               queue='research')
-    >>> cluster.scale(jobs=3) # get 3 nodes
-    >>> client = Client(cluster)
-    >>> client
+    ...                        memory='120Gb',
+    ...                        walltime="01:00:00",
+    ...                        queue='research') # doctest: +SKIP
+
+    Get 3 nodes
+
+    >>> cluster.scale(jobs=3) # doctest: +SKIP
+    >>> client = Client(cluster) # doctest: +SKIP
+    >>> client # doctest: +SKIP
 
 Any calculation will now use the distributed scheduler
 
 .. code-block:: python
 
-    >>> s = hs.datasets.two_gaussians()
+    >>> s = hs.data.two_gaussians()
     >>> repeated_data = da.repeat(da.array(s.data[np.newaxis, :]),10, axis=0)
     >>> s = hs.signals.Signal1D(repeated_data).as_lazy()
     >>> summed = s.map(np.sum, inplace=False)
-    >>> s.compute()
+    >>> s.compute() # doctest: +SKIP
 
 
 Limitations
@@ -566,7 +609,7 @@ practical terms the following fails with lazy signals:
 .. code-block:: python
 
     >>> s = hs.signals.BaseSignal([0]).as_lazy()
-    >>> s += 1
+    >>> s += 1 # doctest: +SKIP
     Traceback (most recent call last):
       File "<ipython-input-6-1bd1db4187be>", line 1, in <module>
         s += 1

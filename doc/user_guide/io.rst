@@ -27,7 +27,7 @@ image ``spam.jpg``, you can type:
 
 .. code-block:: python
 
-    >>> s = hs.load("spam.jpg")
+    >>> s = hs.load("spam.jpg") # doctest: +SKIP
 
 If loading was successful, the variable ``s`` contains a HyperSpy signal or any
 type of signal defined in one of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`, 
@@ -41,8 +41,8 @@ see :ref:`load_specify_signal_type-label` for more details.
 
    .. code-block:: python
 
-      >>> s = hs.load("spameggsandham.hspy")
-      >>> s
+      >>> s = hs.load("spameggsandham.hspy") # doctest: +SKIP
+      >>> s # doctest: +SKIP
       [<Signal1D, title: spam, dimensions: (32,32|1024)>,
        <Signal1D, title: eggs, dimensions: (32,32|1024)>,
        <Signal1D, title: ham, dimensions: (32,32|1024)>]
@@ -51,7 +51,7 @@ see :ref:`load_specify_signal_type-label` for more details.
 
    .. code-block:: python
 
-      >>> s[0]
+      >>> s[0] # doctest: +SKIP
       <Signal1D, title: spam, dimensions: (32,32|1024)>
 
 
@@ -68,7 +68,7 @@ allows to select a single file through your OS file manager, e.g.:
 .. code-block:: python
 
     >>> # This raises the load user interface
-    >>> s = hs.load()
+    >>> s = hs.load() # doctest: +SKIP
 
 It is also possible to load multiple files at once or even stack multiple
 files. For more details read :ref:`load-multiple-label`.
@@ -83,7 +83,7 @@ override this using the ``reader`` keyword:
 .. code-block:: python
 
     # Load a .hspy file with an unknown extension
-    >>> s = hs.load("filename.some_extension", reader="hspy")
+    >>> s = hs.load("filename.some_extension", reader="hspy") # doctest: +SKIP
 
 .. _load_specify_signal_type-label:
 
@@ -97,22 +97,22 @@ available on your local installation use:
 
 .. code-block:: python
 
-    >>> hs.print_known_signal_types()
+    >>> hs.print_known_signal_types() # doctest: +SKIP
 
 When loading data, the signal type can be specified by providing the ``signal_type``
 keyword, which has to correspond to one of the available subclasses of signal:
 
 .. code-block:: python
 
-    >>> s = hs.load("filename", signal_type="EELS")
+    >>> s = hs.load("filename", signal_type="EELS") # doctest: +SKIP
 
 If the loaded file contains several datasets, the :func:`~.api.load`
 function will return a list of the corresponding signals:
 
 .. code-block:: python
 
-    >>> s = hs.load("spameggsandham.hspy")
-    >>> s
+    >>> s = hs.load("spameggsandham.hspy") # doctest: +SKIP
+    >>> s # doctest: +SKIP
     [<Signal1D, title: spam, dimensions: (32,32|1024)>,
     <Signal1D, title: eggs, dimensions: (32,32|1024)>,
     <Signal1D, title: ham, dimensions: (32,32|1024)>]
@@ -146,8 +146,8 @@ To print the content of the attributes simply use:
 
 .. code-block:: python
 
-    >>> s.original_metadata
-    >>> s.metadata
+    >>> s.original_metadata # doctest: +SKIP
+    >>> s.metadata # doctest: +SKIP
 
 The :attr:`~.api.signals.BaseSignal.original_metadata` and
 :attr:`~.api.signals.BaseSignal.metadata` can be exported to text files
@@ -155,7 +155,7 @@ using the :meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
 
-    >>> s.original_metadata.export('parameters')
+    >>> s.original_metadata.export('parameters') # doctest: +SKIP
 
 .. _load_to_memory-label:
 
@@ -172,7 +172,7 @@ set ``lazy`` to ``True`` e.g.:
 
 .. code-block:: python
 
-    >>> s = hs.load("filename.hspy", lazy=True)
+    >>> s = hs.load("filename.hspy", lazy=True) # doctest: +SKIP
 
 More details on lazy evaluation support can be found in :ref:`big-data-label`.
 
@@ -192,20 +192,20 @@ functions, e.g.:
 
 .. code-block:: python
 
-    >>> s = hs.load(["file1.hspy", "file2.hspy"])
+    >>> s = hs.load(["file1.hspy", "file2.hspy"]) # doctest: +SKIP
 
 or by using `shell-style wildcards <https://docs.python.org/library/glob.html>`_:
 
 .. code-block:: python
 
-    >>> s = hs.load("file*.hspy")
+    >>> s = hs.load("file*.hspy") # doctest: +SKIP
 
 Alternatively, regular expression type character classes can be used such as
 ``[a-z]`` for lowercase letters or ``[0-9]`` for one digit integers:
 
 .. code-block:: python
 
-    >>> s = hs.load('file[0-9].hspy')
+    >>> s = hs.load('file[0-9].hspy') # doctest: +SKIP
 
 .. note::
 
@@ -220,7 +220,7 @@ Alternatively, regular expression type character classes can be used such as
         >>> # /home/data/afile[1x1].hspy
         >>> # /home/data/afile[1x2].hspy
 
-        >>> s = hs.load("/home/data/afile[*].hspy", escape_square_brackets=True)
+        >>> s = hs.load("/home/data/afile[*].hspy", escape_square_brackets=True) # doctest: +SKIP
 
 HyperSpy also supports ```pathlib.Path`` <https://docs.python.org/3/library/pathlib.html>`_
 objects, for example:
@@ -231,12 +231,12 @@ objects, for example:
     >>> from pathlib import Path
 
     >>> # Use pathlib.Path
-    >>> p = Path("/path/to/a/file.hspy")
-    >>> s = hs.load(p)
+    >>> p = Path("/path/to/a/file.hspy") # doctest: +SKIP
+    >>> s = hs.load(p) # doctest: +SKIP
 
     >>> # Use pathlib.Path.glob
-    >>> p = Path("/path/to/some/files/").glob("*.hspy")
-    >>> s = hs.load(p)
+    >>> p = Path("/path/to/some/files/").glob("*.hspy") # doctest: +SKIP
+    >>> s = hs.load(p) # doctest: +SKIP
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 by setting ``stack=True``, HyperSpy can be instructed to stack the data - given
@@ -247,18 +247,18 @@ per file must also match, or an error will be raised.
 
 .. code-block:: python
 
-    >>> ls
+    >>> ls # doctest: +SKIP
     CL1.raw  CL1.rpl  CL2.raw  CL2.rpl  CL3.raw  CL3.rpl  CL4.raw  CL4.rpl
     LL3.raw  LL3.rpl  shift_map-SI3.npy  hdf5/
-    >>> s = hs.load('*.rpl')
-    >>> s
+    >>> s = hs.load('*.rpl') # doctest: +SKIP
+    >>> s # doctest: +SKIP
     [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,
     <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>,
     <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>,
     <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>,
     <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
-    >>> s = hs.load('*.rpl', stack=True)
-    >>> s
+    >>> s = hs.load('*.rpl', stack=True) # doctest: +SKIP
+    >>> s # doctest: +SKIP
     <EELSSpectrum, title: mva, dimensions: (5, 64, 64, 1024)>
 
 .. _example-data-label:
@@ -271,7 +271,7 @@ HyperSpy is distributed with some example data that can be found in
 
 .. code-block:: python
 
-    >>> s = hs.datasets.two_gaussians()
+    >>> s = hs.data.two_gaussians()
     >>> s.plot()
 
 .. versionadded:: 1.4
@@ -300,13 +300,13 @@ default :external+rsciio:ref:`HSpy-HDF5 <hspy-format>` format:
 
 .. code-block:: python
 
-    >>> s.save('spectrum')
+    >>> s.save('spectrum') # doctest: +SKIP
 
 If you want to save to the :external+rsciio:ref:`ripple format <ripple-format>` instead, write:
 
 .. code-block:: python
 
-    >>> s.save('spectrum.rpl')
+    >>> s.save('spectrum.rpl') # doctest: +SKIP
 
 Some formats take extra arguments. See the corresponding pages at
 :external+rsciio:ref:`supported-formats` for more information.

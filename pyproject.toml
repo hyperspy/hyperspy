@@ -106,6 +106,7 @@ dev = [
     "hyperspy[tests]",
 ]
 doc = [
+    "IPython", # Needed in basic_usage.rst
     "numpydoc",
     "pydata_sphinx_theme",
     "setuptools_scm",
@@ -173,6 +174,7 @@ filterwarnings = [
 ]
 testpaths = ["hyperspy/tests"]
 xfail_strict = false
+doctest_optionflags = "NORMALIZE_WHITESPACE"
 
 [tool.setuptools.package-data]
 "*" = [
