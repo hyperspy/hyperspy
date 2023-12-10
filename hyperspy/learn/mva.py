@@ -40,7 +40,10 @@ from hyperspy.misc.utils import (
     is_hyperspy_signal,
     is_cupy_array,
     )
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.external.progressbar import progressbar
+from hyperspy.defaults_parser import preferences
+
 
 try:
     import mdp
@@ -1597,7 +1600,7 @@ class MVA:
         .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
-            
+
         """
         _logger.info("preprocessing the data to normalize Poissonian noise")
         with self.unfolded():
@@ -1788,7 +1791,7 @@ class MVA:
         return algorithm
 
     def plot_cluster_metric(self):
-        """Plot the cluster metrics calculated using the 
+        """Plot the cluster metrics calculated using the
         :meth:`~hyperspy.api.signals.BaseSignal.estimate_number_of_clusters` method
 
         See Also
@@ -2238,6 +2241,7 @@ class MVA:
                                     algorithm=None,
                                     metric="gap",
                                     n_ref=4,
+                                    show_progressbar=None,
                                     **kwargs):
         """Performs cluster analysis of a signal for cluster sizes ranging from
         n_clusters =2 to max_clusters ( default 12)
@@ -2304,7 +2308,8 @@ class MVA:
             Gap statistics compares the results from clustering the data to
             clustering uniformly distributed data. As clustering has
             a random variation it is typically averaged n_ref times
-            to get an statistical average
+            to get an statistical average.
+        %s
         **kwargs : dict
             Parameters passed to the clustering algorithm.
 
@@ -2327,6 +2332,9 @@ class MVA:
         plot_cluster_signals, plot_cluster_labels
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
+
         if preprocessing_kwargs is None:
             preprocessing_kwargs = {}
 
@@ -2381,40 +2389,43 @@ class MVA:
             # from 2 to max_clusters
             # cluster and calculate silhouette_score
             if metric == "elbow":
-                pbar = progressbar(total=len(k_range))
                 inertia = np.zeros(len(k_range))
+                with progressbar(
+                    total=len(k_range), disable=not show_progressbar, leave=True
+                ) as pbar:
+                    for i,k in enumerate(k_range):
+                        cluster_algorithm = self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                        alg = self._cluster_analysis(scaled_data,cluster_algorithm)
 
-                for i,k in enumerate(k_range):
-                    cluster_algorithm = self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
-                    alg = self._cluster_analysis(scaled_data,cluster_algorithm)
-
-                    D = self._distances_within_cluster(scaled_data,alg.labels_,summed=True)
-                    W = np.sum(D)
-                    inertia[i]= np.log(W)
-                    pbar.update(1)
-                    _logger.info(
-                        f"For n_clusters ={k}. "
-                        f"The distance metric is : {inertia[-1]}")
+                        D = self._distances_within_cluster(scaled_data,alg.labels_,summed=True)
+                        W = np.sum(D)
+                        inertia[i]= np.log(W)
+                        pbar.update(1)
+                        _logger.info(
+                            f"For n_clusters ={k}. "
+                            f"The distance metric is : {inertia[-1]}")
                 to_return = inertia
                 best_k = self.estimate_elbow_position(
                     to_return, log=False) + min_k
             elif metric == "silhouette":
                 k_range   = list(range(2, max_clusters+1))
-                pbar = progressbar(total=len(k_range))
                 silhouette_avg = []
-                for k in k_range:
-                    cluster_algorithm = \
-                        self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
-                    alg = self._cluster_analysis(scaled_data,cluster_algorithm)
-                    cluster_labels = alg.labels_
-                    silhouette_avg.append(
-                        import_sklearn.sklearn.metrics.silhouette_score(
-                        scaled_data,
-                        cluster_labels))
-                    pbar.update(1)
-                    _logger.info(
-                        f"For n_clusters={k} the average "
-                        f"silhouette_score is : {silhouette_avg[-1]}")
+                with progressbar(
+                    total=len(k_range), disable=not show_progressbar, leave=True
+                ) as pbar:
+                    for k in k_range:
+                        cluster_algorithm = \
+                            self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                        alg = self._cluster_analysis(scaled_data,cluster_algorithm)
+                        cluster_labels = alg.labels_
+                        silhouette_avg.append(
+                            import_sklearn.sklearn.metrics.silhouette_score(
+                            scaled_data,
+                            cluster_labels))
+                        pbar.update(1)
+                        _logger.info(
+                            f"For n_clusters={k} the average "
+                            f"silhouette_score is : {silhouette_avg[-1]}")
                 to_return = silhouette_avg
                 best_k = []
                 max_value = -1.0
@@ -2434,7 +2445,6 @@ class MVA:
                 data_inertia=np.zeros(len(k_range))
                 reference=np.zeros(scaled_data.shape)
                 local_inertia = np.zeros(n_ref)
-                pbar = progressbar(total=n_ref*len(k_range))
                 # only perform 1 pass of clustering
                 # otherwise std_dev isn't correct
                 for f_indx in range(scaled_data.shape[1]):
@@ -2442,36 +2452,39 @@ class MVA:
                     xmax = np.max(scaled_data[:,f_indx])
                     reference[:,f_indx]= np.linspace(xmin, xmax, endpoint=True, num=reference[:,0].size)
 
-                for o_indx,k in enumerate(k_range):
-                    # calculate the data metric
-                    if(algorithm=="kmeans"):
-                        kwargs['n_init'] = 1
-                    cluster_algorithm = \
-                        self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
-                    alg = self._cluster_analysis(scaled_data,
-                                                 cluster_algorithm)
-
-                    D = self._distances_within_cluster(scaled_data,alg.labels_,
-                                                 squared=True, summed=True)
-                    W = np.sum(D)
-                    data_inertia[o_indx]=np.log(W)
-                    # now do n_ref clusters for a uniform random distribution
-                    # to determine "gap" between data and random distribution
-
-                    for i_indx in range(n_ref):
-                        # initiate with a known seed to make the overall results
-                        # repeatable but still sampling different configurations
+                with progressbar(
+                    total=n_ref*len(k_range), disable=not show_progressbar, leave=True
+                ) as pbar:
+                    for o_indx,k in enumerate(k_range):
+                        # calculate the data metric
+                        if(algorithm=="kmeans"):
+                            kwargs['n_init'] = 1
                         cluster_algorithm = \
                             self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
-                        alg = self._cluster_analysis(reference,
+                        alg = self._cluster_analysis(scaled_data,
                                                      cluster_algorithm)
-                        D = self._distances_within_cluster(reference,alg.labels_,
-                                                 squared=True,summed=True)
+
+                        D = self._distances_within_cluster(scaled_data,alg.labels_,
+                                                     squared=True, summed=True)
                         W = np.sum(D)
-                        local_inertia[i_indx]=np.log(W)
-                        pbar.update(1)
-                    reference_inertia[o_indx]=np.mean(local_inertia)
-                    reference_std[o_indx] = np.std(local_inertia)
+                        data_inertia[o_indx]=np.log(W)
+                        # now do n_ref clusters for a uniform random distribution
+                        # to determine "gap" between data and random distribution
+
+                        for i_indx in range(n_ref):
+                            # initiate with a known seed to make the overall results
+                            # repeatable but still sampling different configurations
+                            cluster_algorithm = \
+                                self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                            alg = self._cluster_analysis(reference,
+                                                         cluster_algorithm)
+                            D = self._distances_within_cluster(reference,alg.labels_,
+                                                     squared=True,summed=True)
+                            W = np.sum(D)
+                            local_inertia[i_indx]=np.log(W)
+                            pbar.update(1)
+                        reference_inertia[o_indx]=np.mean(local_inertia)
+                        reference_std[o_indx] = np.std(local_inertia)
                 std_error = np.sqrt(1.0 + 1.0/n_ref)*reference_std
                 std_error = abs(std_error)
                 gap       = reference_inertia-data_inertia
@@ -2506,6 +2519,8 @@ class MVA:
                     if cluster_source.unfolded4clustering:
                         cluster_source.fold()
             self.learning_results.__dict__.update(target.__dict__)
+
+    estimate_number_of_clusters.__doc__ %= SHOW_PROGRESSBAR_ARG
 
     def estimate_elbow_position(self, explained_variance_ratio=None,log=True,
                                 max_points=20):
