@@ -18,11 +18,11 @@ implemented in ``cupy``.
 
 .. code-block:: python
 
-    >>> import cupy as cp
+    >>> import cupy as cp # doctest: +SKIP
     >>> # Create a cupy array (on GPU device)
-    >>> data = cp.random.random(size=(20, 20, 100, 100))
-    >>> s = hs.signals.Signal2D(data)
-    >>> type(s.data)
+    >>> data = cp.random.random(size=(20, 20, 100, 100)) # doctest: +SKIP
+    >>> s = hs.signals.Signal2D(data) # doctest: +SKIP
+    >>> type(s.data) # doctest: +SKIP
     ... cupy._core.core.ndarray
 
 Two convenience methods are available to transfer data between the host and
