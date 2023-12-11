@@ -5163,6 +5163,11 @@ class BaseSignal(FancySlicing,
         )
 
         axes_changed = len(new_axis) != 0 or len(adjust_chunks) != 0
+
+        if show_progressbar:
+            pbar = ProgressBar()
+            pbar.register()
+
         mapped = da.blockwise(
             process_function_blockwise,
             output_pattern,
@@ -5181,10 +5186,6 @@ class BaseSignal(FancySlicing,
         )
 
         data_stored = False
-
-        if show_progressbar:
-            pbar = ProgressBar()
-            pbar.register()
 
         if inplace:
             if (

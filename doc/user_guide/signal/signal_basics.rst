@@ -16,11 +16,11 @@ set when making the :class:`~.api.signals.BaseSignal` object.
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
-		        Name |   size |  index |  offset |   scale |  units
+                Name |   size |  index |  offset |   scale |  units
     ================ | ====== | ====== | ======= | ======= | ======
     ---------------- | ------ | ------ | ------- | ------- | ------
-	           Axis1 |     20 |        |       2 |     0.1 |      B
-	           Axis0 |     10 |        |       1 |     0.2 |      A
+               Axis1 |     20 |      0 |       2 |     0.1 |      B
+               Axis0 |     10 |      0 |       1 |     0.2 |      A
 
 This also applies to the :attr:`~.signals.BaseSignal.metadata`.
 
@@ -34,7 +34,7 @@ This also applies to the :attr:`~.signals.BaseSignal.metadata`.
     │   ├── name = A BaseSignal
     │   └── title = A BaseSignal title
     └── Signal
-	└── signal_type =
+	    └── signal_type =
 
 Instead of using a list of *axes dictionaries* ``[dict0, dict1]`` during signal
 initialization, you can also pass a list of *axes objects*: ``[axis0, axis1]``.
@@ -210,14 +210,14 @@ example:
 
 .. code-block:: python
 
-    >>> hs.print_known_signal_types()
+    >>> hs.print_known_signal_types() # doctest: +SKIP
     +--------------------+---------------------+--------------------+----------+
     |    signal_type     |       aliases       |     class name     | package  |
     +--------------------+---------------------+--------------------+----------+
-    | DielectricFunction | dielectric function | DielectricFunction | elexspy  |
-    |      EDS_SEM       |                     |   EDSSEMSpectrum   | elexspy  |
-    |      EDS_TEM       |                     |   EDSTEMSpectrum   | elexspy  |
-    |        EELS        |       TEM EELS      |    EELSSpectrum    | elexspy  |
+    | DielectricFunction | dielectric function | DielectricFunction |  exspy   |
+    |      EDS_SEM       |                     |   EDSSEMSpectrum   |  exspy   |
+    |      EDS_TEM       |                     |   EDSTEMSpectrum   |  exspy   |
+    |        EELS        |       TEM EELS      |    EELSSpectrum    |  exspy   |
     |      hologram      |                     |   HologramImage    | holospy  |
     +--------------------+---------------------+--------------------+----------+
 

@@ -28,7 +28,7 @@ features differ from numpy):
   + Support indexing with units.
   + Support indexing with relative coordinates i.e. 'rel0.5'
   + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
-    [...,z,y,x] (numpy)
+    [..., z, y, x] (numpy)
 
 * HyperSpy indexing does not:
 
@@ -83,7 +83,7 @@ middle of the axis.
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     >>> s.axes_manager[0].scale = 0.5
     >>> s.axes_manager[0].axis
-    array([ 0. ,  0.5,  1. ,  1.5,  2. ,  2.5,  3. ,  3.5,  4. ,  4.5])
+    array([0. , 0.5, 1. , 1.5, 2. , 2.5, 3. , 3.5, 4. , 4.5])
     >>> s.isig[0.5:4.].data
     array([1, 2, 3, 4, 5, 6, 7])
     >>> s.isig[0.5:4].data
@@ -106,7 +106,7 @@ then indexed using numpy indexing.
 
     >>> s = hs.signals.Signal1D(np.arange(10))
     >>> s
-    <Signal1D, title: , dimensions: (10,)>
+    <Signal1D, title: , dimensions: (|10)>
     >>> s.data
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     >>> si = s.isig[::2]
@@ -130,7 +130,7 @@ and signal axes using :attr:`~.api.signals.BaseSignal.isig`.
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Signal1D, title: , dimensions: (3, 2|4)>
-    >>> s.data
+    >>> s.data # doctest: +SKIP
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
         [ 8,  9, 10, 11]],
@@ -152,11 +152,11 @@ and signal axes using :attr:`~.api.signals.BaseSignal.isig`.
                 Name |   size |  index |  offset |   scale |  units
     ================ | ====== | ====== | ======= | ======= | ======
     ---------------- | ------ | ------ | ------- | ------- | ------
-                   t |      4 |        |       0 |       1 | <undefined>
+                   t |      4 |      0 |       0 |       1 | <undefined>
     >>> s.inav[0,0].isig[::-1].data
     array([3, 2, 1, 0])
     >>> s.isig[0]
-    <BaseSignal, title: , dimensions: (3, 2)>
+    <BaseSignal, title: , dimensions: (3, 2|)>
     >>> s.isig[0].axes_manager
     <Axes manager, axes: (3, 2|)>
                 Name |   size |  index |  offset |   scale |  units
@@ -176,7 +176,7 @@ further in the following:
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Signal1D, title: , dimensions: (3, 2|4)>
-    >>> s.data
+    >>> s.data # doctest: +SKIP
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
         [ 8,  9, 10, 11]],
@@ -198,9 +198,9 @@ further in the following:
                 Name |   size |  index |  offset |   scale |  units
     ================ | ====== | ====== | ======= | ======= | ======
     ---------------- | ------ | ------ | ------- | ------- | ------
-                   t |      4 |        |       0 |       1 | <undefined>
+                   t |      4 |      0 |       0 |       1 | <undefined>
     >>> s.isig[0]
-    <BaseSignal, title: , dimensions: (2, 3)>
+    <BaseSignal, title: , dimensions: (3, 2|)>
     >>> s.isig[0].axes_manager
     <Axes manager, axes: (3, 2|)>
                 Name |   size |  index |  offset |   scale |  units
@@ -221,7 +221,7 @@ dimensions respectively:
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Signal1D, title: , dimensions: (3, 2|4)>
-    >>> s.data
+    >>> s.data # doctest: +SKIP
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
         [ 8,  9, 10, 11]],

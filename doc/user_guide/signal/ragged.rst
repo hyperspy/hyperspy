@@ -18,7 +18,7 @@ Note that the array shape is (2, ):
 .. code-block:: python
 
     >>> arr.shape
-    (2, )
+    (2,)
 
 
 Numpy ragged array must have python ``object`` type to allow the variable length of
