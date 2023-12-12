@@ -2115,7 +2115,7 @@ class BaseModel(list):
         -----
         In combination with :meth:`~hyperspy.model.BaseModel.save_parameters2file`,
         this method can be used to recreate a model stored in a file. Actually,
-        before HyperSpy 0.8 this is the only way to do so.  However, this is known
+        before HyperSpy 0.8 this is the only way to do so. However, this is known
         to be brittle. For example see https://github.com/hyperspy/hyperspy/issues/341.
 
         """

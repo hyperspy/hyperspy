@@ -157,18 +157,13 @@ class Model1D(BaseModel):
     Methods
     -------
     fit_component
-        Fit just the given component in the given signal range, that can be
-        set interactively.
     enable_adjust_position
-        Enable interactive adjustment of the position of the components
-        that have a well defined position. Use after :meth`plot`.
     disable_adjust_position
-        Disable interactive adjustment of the position of the components
-        that have a well defined position. Use after :meth`plot`.
     plot
-        Plot the model and the data.
-    set_signal_range, remove_signal range, reset_signal_range, add signal_range.
-        Customize the signal range to fit.
+    set_signal_range
+    remove_signal_range
+    reset_signal_range
+    add_signal_range
         
     Examples
     --------
@@ -831,7 +826,7 @@ class Model1D(BaseModel):
         widget.events.moved.disconnect(self._on_widget_moved)
 
     def disable_adjust_position(self):
-        """Disables the interactive adjust position feature
+        """Disable the interactive adjust position feature
 
         See Also
         --------
@@ -865,7 +860,7 @@ class Model1D(BaseModel):
             cf.apply()
     fit_component.__doc__ = \
         """
-        Fit just the given component in the given signal range.
+        Fit the given component in the given signal range.
 
         This method is useful to obtain starting parameters for the
         components. Any keyword arguments are passed to the fit method.

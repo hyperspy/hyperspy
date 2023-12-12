@@ -1185,6 +1185,7 @@ class Component(t.HasTraits):
             If True, only sets a parameter not free if it is linear
         only_nonlinear : bool
             If True, only sets a parameter not free if it is nonlinear
+
         Examples
         --------
         >>> v1 = hs.model.components1D.Voigt()

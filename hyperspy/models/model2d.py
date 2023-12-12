@@ -65,11 +65,18 @@ class Model2D(BaseModel):
     It is possible to access the components in the model by their name or by
     the index in the model. An example is given at the end of this docstring.
 
+    Methods
+    -------
+    add_signal_range
+    remove_signal_range
+    reset_signal_range
+    set_signal_range
+
     Notes
     -----
-    Methods are not yet defined for plotting 2D models or using
-    gradient based optimisation methods.
-
+    Methods are not yet defined for plotting 2D models or using gradient based
+    optimisation methods.
+    
     See Also
     --------
     hyperspy.model.BaseModel, hyperspy.models.model1d.Model1D

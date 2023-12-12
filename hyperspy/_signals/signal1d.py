@@ -1441,7 +1441,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Parameters
         ----------
         factor : float, default 0.5
-            Value to estimate the FWHM. It must be  in interval [0, 1].
+            Normalized height (in interval [0, 1]) at which to estimate the
+            width. The default (0.5) estimates the FWHM.
         window : None or float
             The size of the window centred at the peak maximum
             used to perform the estimation.

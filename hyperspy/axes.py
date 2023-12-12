@@ -1698,7 +1698,7 @@ class AxesManager(t.HasTraits):
         Parameters
         ----------
         axis : :class:`~hyperspy.axes.BaseDataAxis`
-            The axis to replace the current axis with
+            The axis to replace the current axis with.
         index_in_axes_manager : int
             The index of the axis in current signal to replace
             with the axis passed in argument.
@@ -1894,8 +1894,8 @@ class AxesManager(t.HasTraits):
         same_units : bool
             If ``True``, force to keep the same units if the units of
             the axes differs. It only applies for the same kind of axis,
-            ``"navigation"`` or ``"signal"``. By default the converted units
-            of the first axis is used for all axes. If `False`, convert all
+            ``"navigation"`` or ``"signal"``. By default the converted unit
+            of the first axis is used for all axes. If ``False``, convert all
             axes individually.
         %s
 

@@ -267,15 +267,15 @@ Loading example data and data from online databases
 ---------------------------------------------------
 
 HyperSpy is distributed with some example data that can be found in
-:mod:`~.api.data`. The following example plots one of the example
-signals:
+:mod:`~.api.data`:
 
 .. code-block:: python
 
-    >>> hs.datasets.two_gaussians().plot()
+    >>> s = hs.datasets.two_gaussians()
+    >>> s.plot()
 
 .. versionadded:: 1.4
-    :mod:`~.api.data` (formelly ``hyperspy.api.datasets.artificial_data``)
+    :mod:`~.api.data` (formerly ``hyperspy.api.datasets.artificial_data``)
 
 There are also artificial datasets, which are made to resemble real
 experimental data.

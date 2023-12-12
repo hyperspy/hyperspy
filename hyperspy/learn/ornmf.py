@@ -403,15 +403,15 @@ def ornmf(
     Returns
     -------
     Xhat : numpy.ndarray
-        The non-negative matrix with shape (n_features x n_samples)
+        The non-negative matrix with shape (n_features x n_samples).
         Only returned if store_error is True.
     Ehat : numpy.ndarray
-        The sparse error matrix with shape (n_features x n_samples)
+        The sparse error matrix with shape (n_features x n_samples).
         Only returned if store_error is True.
     W : numpy.ndarray
-        The non-negative factors matrix with shape (n_features, rank)
+        The non-negative factors matrix with shape (n_features, rank).
     H : numpy.ndarray
-        The non-negative loadings matrix with shape (rank, n_samples)
+        The non-negative loadings matrix with shape (rank, n_samples).
 
     """
     X = X.T
