@@ -44,12 +44,12 @@ class Events:
 
         Examples
         --------
-        >>> with obj.events.suppress():
+        >>> with obj.events.suppress(): # doctest: +SKIP
         ...     # Any events triggered by assignments are prevented:
         ...     obj.val_a = a
         ...     obj.val_b = b
         >>> # Trigger one event instead:
-        >>> obj.events.values_changed.trigger()
+        >>> obj.events.values_changed.trigger() # doctest: +SKIP
 
         See Also
         --------
@@ -170,7 +170,7 @@ class Event:
         >>> e1 = Event()
         >>> e2 = Event(arguments=('arg1', ('arg2', None)))
         >>> e1.trigger(arg1=12, arg2=43, arg3='str', arg4=4.3)  # Can trigger with whatever
-        >>> e2.trigger(arg1=11, arg2=22, arg3=3.4)
+        >>> e2.trigger(arg1=11, arg2=22, arg3=3.4) # doctest: +SKIP
         Traceback (most recent call last):
             ...
         TypeError: trigger() got an unexpected keyword argument 'arg3'
@@ -245,13 +245,13 @@ class Event:
 
         Examples
         --------
-        >>> with obj.events.myevent.suppress():
+        >>> with obj.events.myevent.suppress(): # doctest: +SKIP
         ...     # These would normally both trigger myevent:
         ...     obj.val_a = a
         ...     obj.val_b = b
 
         Trigger manually once:
-        >>> obj.events.myevent.trigger()
+        >>> obj.events.myevent.trigger() # doctest: +SKIP
 
         See Also
         --------
@@ -276,12 +276,12 @@ class Event:
         Examples
         --------
 
-        >>> with obj.events.myevent.suppress_callback(f):
+        >>> with obj.events.myevent.suppress_callback(f): # doctest: +SKIP
         ...     # Events will trigger as normal, but `f` will not be called
         ...     obj.val_a = a
         ...     obj.val_b = b
         >>> # Here, `f` will be called as before:
-        >>> obj.events.myevent.trigger()
+        >>> obj.events.myevent.trigger() # doctest: +SKIP
 
         See Also
         --------
@@ -464,14 +464,14 @@ class EventSuppressor(object):
 
     Examples
     --------
-    >>> es = EventSuppressor((event1, callback1), (event1, callback2))
-    >>> es.add(event2, callback2)
-    >>> es.add(event3)
-    >>> es.add(events_container1)
-    >>> es.add(events_container2, callback1)
-    >>> es.add(event4, (events_container3, callback2))
-    >>>
-    >>> with es.suppress():
+    >>> es = EventSuppressor((event1, callback1), (event1, callback2)) # doctest: +SKIP
+    >>> es.add(event2, callback2) # doctest: +SKIP
+    >>> es.add(event3) # doctest: +SKIP
+    >>> es.add(events_container1) # doctest: +SKIP
+    >>> es.add(events_container2, callback1) # doctest: +SKIP
+    >>> es.add(event4, (events_container3, callback2)) # doctest: +SKIP
+
+    >>> with es.suppress(): # doctest: +SKIP
     ...     do_something()
     """
 

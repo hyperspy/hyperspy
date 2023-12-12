@@ -688,7 +688,7 @@ class Point2DROI(BasePointROI):
     >>> roi = hs.roi.Point2DROI(3, 5)
     >>> x, y = roi
     >>> print(x, y)
-    3 5
+    3.0 5.0
 
     """
     x, y = (t.CFloat(t.Undefined),) * 2
@@ -747,7 +747,7 @@ class SpanROI(BaseInteractiveROI):
     >>> roi = hs.roi.SpanROI(-3, 5)
     >>> left, right = roi
     >>> print(left, right)
-    3 5
+    -3.0 5.0
 
     """
     left, right = (t.CFloat(t.Undefined),) * 2
@@ -830,7 +830,7 @@ class RectangularROI(BaseInteractiveROI):
     >>> roi = hs.roi.RectangularROI(left=0, right=10, top=20, bottom=20.5)
     >>> left, right, top, bottom = roi
     >>> print(left, right, top, bottom)
-    0 10 20 20.5
+    0.0 10.0 20.0 20.5
     """
     top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -1281,8 +1281,7 @@ class Line2DROI(BaseInteractiveROI):
 
         Examples
         --------
-        >>> import hyperspy.api as hs
-        >>> hs.roi.Line2DROI(0., 0., 1., 2., 1)
+        >>> r = hs.roi.Line2DROI(0., 0., 1., 2.)
         >>> r.angle()
         63.43494882292201
         """
@@ -1337,19 +1336,6 @@ class Line2DROI(BaseInteractiveROI):
         numpy.ndarray
             The intensity profile along the scan line. The length of the
             profile is the ceil of the computed length of the scan line.
-
-        Examples
-        --------
-        >>> x = np.array([[1, 1, 1, 2, 2, 2]])
-        >>> img = np.vstack([np.zeros_like(x), x, x, x, np.zeros_like(x)])
-        >>> img
-        array([[0, 0, 0, 0, 0, 0],
-               [1, 1, 1, 2, 2, 2],
-               [1, 1, 1, 2, 2, 2],
-               [1, 1, 1, 2, 2, 2],
-               [0, 0, 0, 0, 0, 0]])
-        >>> profile_line(img, (2, 1), (2, 4))
-        array([ 1.,  1.,  2.,  2.])
 
         Notes
         -----

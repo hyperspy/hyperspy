@@ -1096,7 +1096,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     >>> dict0 = {'offset': 300, 'scale': 1, 'size': 500}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
-    >>> s.axes_manager[0].get_axis_dictionary()
+    >>> s.axes_manager[0].get_axis_dictionary() # doctest: +SKIP
     {'_type': 'UniformDataAxis',
      'name': <undefined>,
      'units': <undefined>,
