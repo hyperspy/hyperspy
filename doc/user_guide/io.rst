@@ -22,7 +22,7 @@ Basic usage
 -----------
 
 HyperSpy can read and write to multiple formats (see :external+rsciio:ref:`supported-formats`).
-To load data use the :py:func:`~.load` command. For example, to load the
+To load data use the :func:`~.load` command. For example, to load the
 image ``spam.jpg``, you can type:
 
 .. code-block:: python
@@ -35,7 +35,7 @@ see :ref:`load_specify_signal_type-label` for more details.
 
 .. note::
 
-   When the file contains several datasets, the :py:func:`~.io.load` function
+   When the file contains several datasets, the :func:`~.api.load` function
    will return a list of HyperSpy signals, instead of a single HyperSpy signal.
    Each signal can then be accessed using list indexation.
 
@@ -106,7 +106,7 @@ keyword, which has to correspond to one of the available subclasses of signal:
 
     >>> s = hs.load("filename", signal_type="EELS")
 
-If the loaded file contains several datasets, the :py:func:`~.io.load`
+If the loaded file contains several datasets, the :func:`~.api.load`
 function will return a list of the corresponding signals:
 
 .. code-block:: python
@@ -120,7 +120,7 @@ function will return a list of the corresponding signals:
 .. note::
 
     Note for python programmers: the data is stored in a numpy array
-    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
+    in the :attr:`~.api.signals.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
 Metadata
@@ -128,19 +128,19 @@ Metadata
 
 Most scientific file formats store some extra information about the data and the
 conditions under which it was acquired (metadata). HyperSpy reads most of them and
-stores them in the :py:attr:`~.signal.BaseSignal.original_metadata` attribute.
+stores them in the :attr:`~.api.signals.BaseSignal.original_metadata` attribute.
 Also, depending on the file format, a part of this information will be mapped by
-HyperSpy to the :py:attr:`~.signal.BaseSignal.metadata` attribute, where it can
+HyperSpy to the :attr:`~.api.signals.BaseSignal.metadata` attribute, where it can
 for example be used by routines operating on the signal. See the :ref:`metadata structure
 <metadata_structure>` for details.
 
 .. note::
 
     Extensive metadata can slow down loading and processing, and
-    loading the :py:attr:`~.signal.BaseSignal.original_metadata` can be disabled
-    using the ``load_original_metadata`` argument of the :py:func:`~.load`
+    loading the :attr:`~.api.signals.BaseSignal.original_metadata` can be disabled
+    using the ``load_original_metadata`` argument of the :func:`~.load`
     function. If this argument is set to `False`, the
-    :py:attr:`~.signal.BaseSignal.metadata` will still be populated.
+    :attr:`~.api.signals.BaseSignal.metadata` will still be populated.
 
 To print the content of the attributes simply use:
 
@@ -149,9 +149,9 @@ To print the content of the attributes simply use:
     >>> s.original_metadata
     >>> s.metadata
 
-The :py:attr:`~.signal.BaseSignal.original_metadata` and
-:py:attr:`~.signal.BaseSignal.metadata` can be exported to text files
-using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
+The :attr:`~.api.signals.BaseSignal.original_metadata` and
+:attr:`~.api.signals.BaseSignal.metadata` can be exported to text files
+using the :meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
 
@@ -267,47 +267,34 @@ Loading example data and data from online databases
 ---------------------------------------------------
 
 HyperSpy is distributed with some example data that can be found in
-:py:mod:`~api.datasets`. The following example plots one of the example
-signals:
+:mod:`~.api.data`:
 
 .. code-block:: python
 
-    >>> hs.datasets.two_gaussians().plot()
+    >>> s = hs.datasets.two_gaussians()
+    >>> s.plot()
 
 .. versionadded:: 1.4
-    :py:mod:`~.datasets.artificial_data`
+    :mod:`~.api.data` (formerly ``hyperspy.api.datasets.artificial_data``)
 
 There are also artificial datasets, which are made to resemble real
 experimental data.
 
 .. code-block:: python
 
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s = hs.data.atomic_resolution_image()
     >>> s.plot()
-
-.. _eelsdb-label:
-
-The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
-directly load spectra from `The EELS Database <https://eelsdb.eu>`_. For
-example, the following loads all the boron trioxide spectra currently
-available in the database:
-
-.. code-block:: python
-
-    >>> hs.datasets.eelsdb(formula="B2O3")
-    [<EELSSpectrum, title: Boron oxide, dimensions: (|520)>,
-     <EELSSpectrum, title: Boron oxide, dimensions: (|520)>]
 
 .. _saving_files:
 
 Saving
 ======
 
-To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
+To save data to a file use the :meth:`~.api.signals.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension, the default format
-(:external+rsciio:ref:`HSpy-HDF5 <hspy-format>`) is used. For example, if the :py:const:`s` variable
-contains the :py:class:`~.signal.BaseSignal` that you want to write to a file,
+(:external+rsciio:ref:`HSpy-HDF5 <hspy-format>`) is used. For example, if the ``s`` variable
+contains the :class:`~.api.signals.BaseSignal` that you want to write to a file,
 the following will write the data to a file called :file:`spectrum.hspy` in the
 default :external+rsciio:ref:`HSpy-HDF5 <hspy-format>` format:
 

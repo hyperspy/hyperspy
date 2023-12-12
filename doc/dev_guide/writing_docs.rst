@@ -49,7 +49,7 @@ how to use it with examples and links to the relevant code.
 
 When writing both the docstrings and user guide documentation, it is useful to
 have some data which the users can use themselves. Artificial
-datasets for this purpose can be found in `hyperspy.datasets.artificial_data`.
+datasets for this purpose can be found in :mod:`~.api.data`.
 
 Build the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -75,7 +75,7 @@ or
 When writing documentation, the Python package `sphobjinv
 <https://github.com/bskinn/sphobjinv>`_ can be useful for writing
 cross-references. For example, to find how to write a cross-reference to
-:py:meth:`hyperspy.signal.BaseSignal.set_signal_type`, use:
+:meth:`~.api.signals.BaseSignal.set_signal_type`, use:
 
 
 .. code-block:: bash
@@ -85,4 +85,4 @@ cross-references. For example, to find how to write a cross-reference to
 
   Name                                                      Score
   ---------------------------------------------------------  -------
-  :py:meth:`hyperspy.signal.BaseSignal.set_signal_type`      90
+  :meth:`hyperspy.signal.BaseSignal.set_signal_type`      90

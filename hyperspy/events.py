@@ -23,7 +23,7 @@ from functools import wraps   # Used in exec statement
 import re
 
 
-class Events(object):
+class Events:
 
     """
     Events container.
@@ -42,8 +42,8 @@ class Events(object):
         all callbacks of all events in the container. When the 'with' lock
         completes, the old suppression values will be restored.
 
-        Example
-        -------
+        Examples
+        --------
         >>> with obj.events.suppress():
         ...     # Any events triggered by assignments are prevented:
         ...     obj.val_a = a
@@ -51,7 +51,7 @@ class Events(object):
         >>> # Trigger one event instead:
         >>> obj.events.values_changed.trigger()
 
-        See also
+        See Also
         --------
         Event.suppress
         Event.suppress_callback
@@ -142,14 +142,17 @@ class Events(object):
         return "<hyperspy.events.Events: " + repr(self._events) + ">"
 
 
-class Event(object):
+class Event:
+
+    """
+    Events class
+
+    """
 
     def __init__(self, doc='', arguments=None):
         """
-        Create an Event object.
-
-        Arguments
-        ---------
+        Parameters
+        ----------
         doc : str
             Optional docstring for the new Event.
         arguments : iterable
@@ -157,8 +160,8 @@ class Event(object):
             element must either be an argument name, or a tuple containing
             the argument name and the argument's default value.
 
-        Example
-        -------
+        Examples
+        --------
         >>> from hyperspy.events import Event
         >>> Event()
         <hyperspy.events.Event: set()>
@@ -240,8 +243,8 @@ class Event(object):
         all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
 
-        Example
-        -------
+        Examples
+        --------
         >>> with obj.events.myevent.suppress():
         ...     # These would normally both trigger myevent:
         ...     obj.val_a = a
@@ -250,7 +253,7 @@ class Event(object):
         Trigger manually once:
         >>> obj.events.myevent.trigger()
 
-        See also
+        See Also
         --------
         suppress_callback
         Events.suppress
@@ -270,8 +273,8 @@ class Event(object):
         will trigger. When the 'with' lock completes, the old suppression value
         will be restored.
 
-        Example
-        -------
+        Examples
+        --------
 
         >>> with obj.events.myevent.suppress_callback(f):
         ...     # Events will trigger as normal, but `f` will not be called
@@ -280,7 +283,7 @@ class Event(object):
         >>> # Here, `f` will be called as before:
         >>> obj.events.myevent.trigger()
 
-        See also
+        See Also
         --------
         suppress
         Events.suppress
@@ -308,12 +311,12 @@ class Event(object):
         """
         Connects a function to the event.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         function : callable
             The function to call when the event triggers.
-        kwargs : {tuple or list, dictionary, 'all', 'auto'}, default "all"
-            If "all", all the trigger keyword arguments are passed to the
+        kwargs : tuple or list, dict, str {``'all' | ``'auto'``}, default ``"all"``
+            If ``"all"``, all the trigger keyword arguments are passed to the
             function. If a list or tuple of strings, only those keyword
             arguments that are in the tuple or list are passed. If empty,
             no keyword argument is passed. If dictionary, the keyword arguments
@@ -321,7 +324,7 @@ class Event(object):
             {"a" : "b"} maps the trigger argument "a" to the function argument
             "b".
 
-        See also
+        See Also
         --------
         disconnect
 
@@ -377,7 +380,7 @@ class Event(object):
             If True, returns the kwargs that would reconnect the function as
             it was.
 
-        See also
+        See Also
         --------
         connect
         suppress_callback
@@ -398,7 +401,7 @@ class Event(object):
         Otherwise it calls all the connected functions with the arguments as
         specified when connected.
 
-        See also
+        See Also
         --------
         suppress
         suppress_callback
@@ -459,8 +462,8 @@ class EventSuppressor(object):
       Events where it is connected.
     * Any iterable collection of the above target types
 
-    Example
-    -------
+    Examples
+    --------
     >>> es = EventSuppressor((event1, callback1), (event1, callback2))
     >>> es.add(event2, callback2)
     >>> es.add(event3)
@@ -540,7 +543,7 @@ class EventSuppressor(object):
         all events added. When the 'with' lock completes, the old suppression
         values will be restored.
 
-        See also
+        See Also
         --------
         Events.suppress
         Event.suppress

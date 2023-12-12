@@ -59,7 +59,7 @@ class Voigt(Expression):
 
 
     Parameters
-    -----------
+    ----------
     centre : float
         Location of the maximum of the peak.
     area : float
@@ -70,7 +70,7 @@ class Voigt(Expression):
         :math:`2 \sigma \sqrt{(2 \log(2))}` = FWHM of the Gaussian distribution.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Notes
     -----
@@ -124,21 +124,20 @@ class Voigt(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
         x2 : float
             Defines the right limit of the spectral range to use for the
             estimation.
-
         only_current : bool
             If False estimates the parameters for the full dataset.
 
         Returns
         -------
-         : bool
-            Exit status required for the :meth:`remove_background` function.
+        bool
+            Exit status required for the :meth:`~.api.signals.Signal1D.remove_background` function.
 
         Notes
         -----

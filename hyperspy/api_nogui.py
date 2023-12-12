@@ -40,30 +40,30 @@ All public packages, functions and classes are available in this module.
 
 Functions:
 
-    :py:func:`~.api_nogui.get_configuration_directory_path`
+    :func:`~.api.get_configuration_directory_path`
         Return the configuration directory path.
 
-    :py:func:`~.api.interactive`
+    :func:`~.api.interactive`
         Define operations that are automatically recomputed on event changes.
 
-    :py:func:`~.api.load`
+    :func:`~.api.load`
         Load data into BaseSignal instances from supported files.
 
-    :py:data:`~.api.preferences`
+    :data:`~.api.preferences`
         Preferences class instance to configure the default value of different
         parameters. It has a CLI and a GUI that can be started by execting its
         `gui` method i.e. `preferences.gui()`.
 
-    :py:func:`~.api.print_known_signal_types`
+    :func:`~.api.print_known_signal_types`
         Print all known `signal_type`.
 
-    :py:func:`~.api.set_log_level`
+    :func:`~.api.set_log_level`
         Convenience function to set HyperSpy's the log level.
 
-    :py:func:`~.api.stack`
+    :func:`~.api.stack`
         Stack several signals.
 
-    :py:func:`~.api.transpose`
+    :func:`~.api.transpose`
         Transpose a signal.
 
 The :mod:`~.api` package contains the following submodules/packages:
@@ -74,11 +74,7 @@ The :mod:`~.api` package contains the following submodules/packages:
         load data from supported file formats is more convenient to use the
         `load` function.
     :mod:`~.api.model`
-        Contains the :mod:`~utils.model` module with
-        components that can be used to create a model for curve fitting.
-    :mod:`~.api.material`
-        Useful functions for materials properties and elements database that
-        includes physical properties and X-rays and EELS energies.
+        Components that can be used to create a model for curve fitting.
     :mod:`~.api.plot`
         Plotting functions that operate on multiple signals.
     :mod:`~.api.data`

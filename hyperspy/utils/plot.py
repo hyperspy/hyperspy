@@ -31,10 +31,10 @@ plot_histograms
 plot_roi_map
     Plot a the spatial variation of a ROI within a `Signal`\ s signal axes.
 
-The :mod:`~.api.plot` module contains the following submodules:
+The :mod:`hyperspy.api.plot` module contains the following submodules:
 
-:mod:`~.api.markers`
-    Markers that can be added to :py:class:`~.signal.BaseSignal` figure.
+:mod:`hyperspy.api.plot.markers`
+    Markers that can be added to :class:`~.api.signals.BaseSignal` figure.
 
 """
 

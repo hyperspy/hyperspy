@@ -4,8 +4,8 @@
 Metadata structure
 ******************
 
-The :class:`~.signal.BaseSignal` class stores metadata in the
-:attr:`~.signal.BaseSignal.metadata` attribute that has a tree structure. By
+The :class:`~.api.signals.BaseSignal` class stores metadata in the
+:attr:`~.api.signals.BaseSignal.metadata` attribute, which has a tree structure. By
 convention, the node labels are capitalized and the leaves are not
 capitalized.
 
@@ -150,7 +150,7 @@ timestamp
 
     The timestamp of the computer running the data loading/saving process (in a
     timezone-aware format). The timestamp will be in ISO 8601 format, as
-    produced by the :py:meth:`datetime.date.isoformat`.
+    produced by the :meth:`datetime.date.isoformat`.
 
 
 .. _sample-metadata:
@@ -227,9 +227,9 @@ variance
     type: float or BaseSignal instance.
 
     The variance of the data. It can be a float when the noise is Gaussian or a
-    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic,
+    :class:`~.api.signals.BaseSignal` instance if the noise is heteroscedastic,
     in which case it must have the same dimensions as
-    :attr:`~.signal.BaseSignal.data`.
+    :attr:`~.api.signals.BaseSignal.data`.
 
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^
@@ -255,13 +255,13 @@ _Internal_parameters
 ====================
 
 This node is "private" and therefore is not displayed when printing the
-:attr:`~.signal.BaseSignal.metadata` attribute.
+:attr:`~.api.signals.BaseSignal.metadata` attribute.
 
 Stacking_history
 ----------------
 
-Generated when using :py:meth:`~.misc.utils.stack`. Used by
-:py:meth:`~.signal.BaseSignal.split`, to retrieve the former list of signal.
+Generated when using :func:`~.api.stack`. Used by
+:meth:`~.api.signals.BaseSignal.split`, to retrieve the former list of signal.
 
 step_sizes
     type: list of int
@@ -305,24 +305,24 @@ same functionality as the above would be:
 Adding items
 ------------
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
+:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
     Given a ``path`` and ``value``, easily set metadata items, creating any
     necessary nodes on the way.
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary`
+:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary`
     Add new items from a given ``dictionary``.
 
 
 Output metadata
 ---------------
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
     Given an ``item_path``, return the ``value`` of the metadata item.
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.as_dictionary`
+:meth:`~.misc.utils.DictionaryTreeBrowser.as_dictionary`
     Returns a dictionary representation of the metadata tree.
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.export`
+:meth:`~.misc.utils.DictionaryTreeBrowser.export`
     Saves the metadata tree in pretty tree printing format in a text file.
     Takes ``filename`` as parameter.
 
@@ -330,28 +330,28 @@ Output metadata
 Searching for keys
 ------------------
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
     Given an ``item_path``, returns ``True`` if the item exists anywhere
     in the metadata tree.
 
 Using the option ``full_path=False``, the functions
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item` and
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item` can also find items by
+:meth:`~.misc.utils.DictionaryTreeBrowser.has_item` and
+:meth:`~.misc.utils.DictionaryTreeBrowser.get_item` can also find items by
 their key in the metadata when the exact path is not known. By default, only
 an exact match of the search string with the item key counts. The additional
 setting ``wild=True`` allows to search for a case-insensitive substring of the
 item key. The search functionality also accepts item keys preceded by one or
 several nodes of the path (separated by the usual full stop).
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
     For ``full_path=False``, given a ``item_key``, returns ``True`` if the item
     exists anywhere in the metadata tree.
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
     For ``full_path=False, return_path=True``, returns the path or list of
     paths to any matching item(s).
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
     For ``full_path=False``, returns the value or list of values for any
     matching item(s). Setting ``return_path=True``, a tuple (value, path) is
     returned -- or lists of tuples for multiple occurences.

@@ -10,5 +10,8 @@ which are used by other classes, are documented here.
    :maxdepth: 2
 
    axes
+   events
+   machine_learning
    model/index
    signal/index
+   roi

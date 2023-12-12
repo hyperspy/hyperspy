@@ -56,11 +56,11 @@ class SplitVoigt(Component):
     :math:`centre`     centre
     ================= ===========
 
-    Note
+    Notes
     -----
     This is a voigt function in which the upstream and downstream variance or
     sigma is allowed to vary to create an asymmetric profile
-    In this case the voigt is a pseudo voigt- consisting of a
+    In this case the voigt is a pseudo voigt consisting of a
     mixed gaussian and lorentzian sum
 
     """
@@ -158,7 +158,7 @@ class SplitVoigt(Component):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.

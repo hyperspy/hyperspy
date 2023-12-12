@@ -90,7 +90,7 @@ class Gaussian(Expression):
         Location of the Gaussian maximum (peak position).
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Attributes
     ----------
@@ -100,9 +100,9 @@ class Gaussian(Expression):
         Convenience attribute to get and set the height.
 
 
-    See also
+    See Also
     --------
-    ~._components.gaussianhf.GaussianHF
+    GaussianHF
     """
 
     def __init__(self, A=1., sigma=1., centre=0., module=None, **kwargs):
@@ -133,7 +133,7 @@ class Gaussian(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.

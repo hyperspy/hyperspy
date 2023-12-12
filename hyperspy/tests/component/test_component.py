@@ -89,7 +89,8 @@ def test_update_number_free_parameters():
     assert c._nfree_param == 5
     # check that only the correct parameters are in the list _AND_ the list is
     # name-ordered
-    assert [c.three, c.two] == c.free_parameters
+    assert [c.three, c.two] == c._free_parameters
+    assert (c.three, c.two) == c.free_parameters
 
 
 class TestGeneralMethods:
@@ -105,7 +106,7 @@ class TestGeneralMethods:
         c = self.c
         c.one.export = mock.MagicMock()
         c.two.export = mock.MagicMock()
-        c.free_parameters = {c.two, }
+        c._free_parameters = {c.two, }
         call_args = {'folder': 'folder1',
                      'format': 'format1',
                      'save_std': 'save_std1'}
@@ -117,7 +118,7 @@ class TestGeneralMethods:
         c = self.c
         c.one.export = mock.MagicMock()
         c.two.export = mock.MagicMock()
-        c.free_parameters = {c.two, }
+        c._free_parameters = {c.two, }
         call_args = {'folder': 'folder1',
                      'format': 'format1',
                      'save_std': 'save_std1'}
@@ -130,7 +131,7 @@ class TestGeneralMethods:
         c.one.export = mock.MagicMock()
         c.two.export = mock.MagicMock()
         c.two.twin = c.one
-        c.free_parameters = {c.two, }
+        c._free_parameters = {c.two, }
         call_args = {'folder': 'folder1',
                      'format': 'format1',
                      'save_std': 'save_std1'}

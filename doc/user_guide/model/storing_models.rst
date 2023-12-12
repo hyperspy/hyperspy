@@ -4,13 +4,13 @@ Storing models
 --------------
 
 Multiple models can be stored in the same signal. In particular, when
-:py:meth:`~.model.BaseModel.store` is called, a full "frozen" copy of the model
-is stored in stored in the signal's :py:class:`~.signal.ModelManager`,
+:meth:`~.model.BaseModel.store` is called, a full "frozen" copy of the model
+is stored in stored in the signal's :class:`~.signal.ModelManager`,
 which can be accessed in the ``models`` attribute (i.e. ``s.models``)
 The stored models can be recreated at any time by calling
-:py:meth:`~.signal.ModelManager.restore` with the stored
+:meth:`~.signal.ModelManager.restore` with the stored
 model name as an argument. To remove a model from storage, simply call
-:py:meth:`~.signal.ModelManager.remove`.
+:meth:`~.signal.ModelManager.remove`.
 
 The stored models can be either given a name, or assigned one automatically.
 The automatic naming follows alphabetical scheme, with the sequence being (a,
@@ -23,10 +23,10 @@ b, ..., z, aa, ab, ..., az, ba, ...).
 
 .. WARNING::
 
-    Modifying a signal in-place (e.g. :py:meth:`~.signal.BaseSignal.map`,
-    :py:meth:`~.signal.BaseSignal.crop`,
-    :py:meth:`~._signals.signal1d.Signal1D.align1D`,
-    :py:meth:`~._signals.signal2d.Signal2D.align2D` and similar)
+    Modifying a signal in-place (e.g. :meth:`~.api.signals.BaseSignal.map`,
+    :meth:`~.api.signals.BaseSignal.crop`,
+    :meth:`~.api.signals.Signal1D.align1D`,
+    :meth:`~.api.signals.Signal2D.align2D` and similar)
     will invalidate all stored models. This is done intentionally.
 
 Current stored models can be listed by calling ``s.models``:
@@ -67,7 +67,7 @@ Current stored models can be listed by calling ``s.models``:
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To save a model, a convenience function :py:meth:`~.model.BaseModel.save` is
+To save a model, a convenience function :meth:`~.model.BaseModel.save` is
 provided, which stores the current model into its signal and saves the
 signal. As described in :ref:`storing_models-label`, more than just one
 model can be saved with one signal.
@@ -93,27 +93,27 @@ For older versions of HyperSpy (before 0.9), the instructions were as follows:
     To save a model:
 
     1. Save the parameter arrays to a file using
-       :py:meth:`~.model.BaseModel.save_parameters2file`.
+       :meth:`~.model.BaseModel.save_parameters2file`.
 
     2. Save all the commands that used to create the model to a file. This
        can be done in the form of an IPython notebook or a Python script.
 
     3. (Optional) Comment out or delete the fitting commands (e.g.
-       :py:meth:`~.model.BaseModel.multifit`).
+       :meth:`~.model.BaseModel.multifit`).
 
     To recreate the model:
 
     1. Execute the IPython notebook or Python script.
 
-    2. Use :py:meth:`~.model.BaseModel.load_parameters_from_file` to load
+    2. Use :meth:`~.model.BaseModel.load_parameters_from_file` to load
        back the parameter values and arrays.
 
 
 Exporting the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`~.model.BaseModel` :py:meth:`~.model.BaseModel.export_results`,
-:py:class:`~.component.Component` :py:meth:`~.component.Component.export` and
-:py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.export`
+The :class:`~.model.BaseModel` :meth:`~.model.BaseModel.export_results`,
+:class:`~.component.Component` :meth:`~.component.Component.export` and
+:class:`~.component.Parameter` :meth:`~.component.Parameter.export`
 methods can be used to export the result of the optimization in all supported
 formats.

@@ -8,12 +8,12 @@ ROIs can be defined to select part of any compatible signal and may be applied
 either to the navigation or to the signal axes. A number of different ROIs are
 available:
 
-* :py:class:`~.roi.Point1DROI`
-* :py:class:`~.roi.Point2DROI`
-* :py:class:`~.roi.SpanROI`
-* :py:class:`~.roi.RectangularROI`
-* :py:class:`~.roi.CircleROI`
-* :py:class:`~.roi.Line2DROI`
+* :class:`~.roi.Point1DROI`
+* :class:`~.roi.Point2DROI`
+* :class:`~.roi.SpanROI`
+* :class:`~.roi.RectangularROI`
+* :class:`~.roi.CircleROI`
+* :class:`~.roi.Line2DROI`
 
 Once created, an ROI can be applied to the signal:
 
@@ -32,7 +32,7 @@ Once created, an ROI can be applied to the signal:
 ROIs can also be used :ref:`interactively <interactive-label>` with widgets.
 The following example shows how to interactively apply ROIs to an image. Note
 that *it is necessary* to plot the signal onto which the widgets will be
-added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
+added before calling :meth:`~.roi.BaseInteractiveROI.interactive`.
 
 .. code-block:: python
 
@@ -131,7 +131,7 @@ order to increase responsiveness.
     signal range in functions taken a ``signal_range`` argument.
 
 
-All ROIs have a :meth:`gui` method that displays an user interface if
+All ROIs have a ``gui`` method that displays an user interface if
 a hyperspy GUI is installed (currently only works with the
 ``hyperspy_gui_ipywidgets`` GUI), enabling precise control of the ROI
 parameters:
@@ -203,16 +203,16 @@ ROIs can be used in place of slices when indexing. For example:
     >>> imc = im.isig[roi]
 
 .. versionadded:: 1.3
-    :meth:`gui` method.
+    ``gui`` method added, for example :meth:`~.api.roi.Point1DROI.gui`.
 
 .. versionadded:: 1.6
-    New :meth:`__getitem__` method for all ROIs.
+    New ``__getitem__`` method for all ROIs.
 
-In addition, all ROIs have a py:meth:`__getitem__` method that enables
+In addition, all ROIs have a ``__getitem__`` method that enables
 using them in place of tuples.
-For example, the method :py:meth:`~._signals.Signal2D.align2D` takes a ``roi``
+For example, the method :meth:`~.api.signals.Signal2D.align2D` takes a ``roi``
 argument with the left, right, top, bottom coordinates of the ROI.
-Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
+Handily, we can pass a :class:`~.roi.RectangularROI` ROI instead.
 
 .. code-block:: python
 

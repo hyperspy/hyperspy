@@ -66,7 +66,7 @@ class GaussianHF(Expression):
         Location of the gaussian maximum, also the mean position.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Attributes
     ----------
@@ -77,9 +77,9 @@ class GaussianHF(Expression):
         Convenience attribute to get, set the width and defined for
         compatibility with `Gaussian` component.
 
-    See also
+    See Also
     --------
-    ~._components.gaussian.Gaussian
+    Gaussian
 
     """
 
@@ -112,7 +112,7 @@ class GaussianHF(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.

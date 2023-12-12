@@ -105,13 +105,13 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
 
     Parameters
     ----------
-    a : numpy array
+    a : numpy.ndarray
         The array to rebin.
     %s
 
     Returns
     -------
-    numpy array
+    numpy.ndarray
 
     Examples
     --------

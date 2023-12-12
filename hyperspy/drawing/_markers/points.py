@@ -44,7 +44,7 @@ class Points(Markers):
             The size of the markers in display coordinate system.
         %s
         kwargs : dict
-            Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`
+            Keyword arguments are passed to :class:`matplotlib.collections.CircleCollection`
         """
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(

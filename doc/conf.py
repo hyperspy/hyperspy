@@ -30,6 +30,7 @@ sys.path.append('../')
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
+    'numpydoc',
     'sphinxcontrib.towncrier',
     'sphinx_design',
     'sphinx.ext.autodoc',
@@ -302,6 +303,8 @@ intersphinx_mapping = {
     'h5py': ('https://docs.h5py.org/en/stable', None),
     'holospy': ('https://holospy.readthedocs.io/en/latest', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable', None),
+    'ipyparallel': ('https://ipyparallel.readthedocs.io/en/latest', None),
+    'mdp':('https://mdp-toolkit.github.io/', None),
     'matplotlib': ('https://matplotlib.org/stable', None),
     'numpy': ('https://numpy.org/doc/stable', None),
     'python': ('https://docs.python.org/3', None),
@@ -313,6 +316,75 @@ intersphinx_mapping = {
     'zarr': ('https://zarr.readthedocs.io/en/stable', None),
 }
 
+# Check links to API when building documentation
+nitpicky = True
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
+nitpick_ignore_regex = (
+    # No need to be added to the API: documented in subclass
+    ('py:class', 'hyperspy.misc.slicing.FancySlicing'),
+    ('py:class', 'hyperspy.learn.mva.MVA'),
+    ('py:class', 'hyperspy.signal.MVATools'),
+    ('py:class', 'hyperspy.samfire_utils.strategy.SamfireStrategy'),
+    ('py:class', '.*goodness_test'),
+    ('py:class', 'hyperspy.roi.BasePointROI'),
+    # Add exception to API
+    ('py:obj', 'SignalDimensionError'),
+    ('py:obj', 'DataDimensionError'),
+    # Need to be made a property
+    ('py:attr', 'api.signals.BaseSignal.learning_results'),
+    ('py:attr', 'api.signals.BaseSignal.axes_manager'),
+    ('py:attr', 'hyperspy._signals.lazy.LazySignal.navigator'),
+    # Skip for now
+    ('py:attr', 'axes.BaseDataAxis.is_binned.*'),
+    ('py:attr', 'api.model.components1D.ScalableFixedPattern.*'),
+    ('py:class', '.*HistogramTilePlot'),
+    ('py:class', '.*SquareCollection'),
+    ('py:class', '.*RectangleCollection'),
+    # Traits property not playing well
+    ('py:attr', 'component.Parameter.*'),
+    # Adding to the API reference not useful
+    ('py:.*', 'api.preferences.*'),
+    # Unknown
+    ('py:.*', 'has_pool'),
+)
+
+# -- Options for numpydoc extension -----------------------------------
+
+numpydoc_show_class_members = False
+numpydoc_xref_param_type = True
+numpydoc_xref_ignore = {
+    "type",
+    "optional",
+    "default",
+    "of",
+    "or",
+    "auto",
+    "from_elements",
+    "all_alpha",
+    "subclass",
+    "dask",
+    "scheduler",
+    "matplotlib",
+    "color",
+    "line",
+    "style",
+    "hyperspy",
+    "widget",
+    "strategy",
+    "module",
+}
+
+# if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
+#     numpydoc_validation_checks = {"all", "ES01", "EX01", "GL02", "GL03", "SA01", "SS06"}
+
+autoclass_content = "both"
+
+autodoc_default_options = {
+    'show-inheritance': True,
+}
+toc_object_entries_show_parents = "hide"
+numpydoc_class_members_toctree = False
+
 # -- Sphinx-Gallery---------------
 
 # https://sphinx-gallery.github.io
@@ -322,11 +394,6 @@ sphinx_gallery_conf = {
     'filename_pattern': '.py',        # pattern to define which will be executed
     'ignore_pattern': '_sgskip.py',   # pattern to define which will not be executed
 }
-
-autodoc_default_options = {
-    'show-inheritance': True,
-}
-toc_object_entries_show_parents = "hide"
 
 graphviz_output_format = "svg"
 
@@ -339,3 +406,5 @@ copybutton_prompt_is_regexp = True
 
 def setup(app):
     app.add_css_file("custom-styles.css")
+
+tls_verify = False

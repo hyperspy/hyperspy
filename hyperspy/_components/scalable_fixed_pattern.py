@@ -45,25 +45,38 @@ class ScalableFixedPattern(Component):
     The fixed pattern is defined by a single spectrum which must be provided to
     the ScalableFixedPattern constructor, e.g.:
 
-    .. code-block:: ipython
+    .. code-block::
 
-        In [1]: s = load('my_spectrum.hspy')
-        In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
+        >>> s = load('my_spectrum.hspy')
+        >>> my_fixed_pattern = components.ScalableFixedPattern(s))
 
     Parameters
     ----------
-
-    yscale : Float
-    xscale : Float
-    shift : Float
-    interpolate : Bool
+    yscale : float
+        The scaling factor in y (intensity axis).
+    xscale : float
+        The scaling factor in x.
+    shift : float
+        The shift of the component
+    interpolate : bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
 
+    Attributes
+    ----------
+    yscale : :class:`~.component.Parameter`
+        The scaling factor in y (intensity axis).
+    xscale : :class:`~.component.Parameter`
+        The scaling factor in x.
+    shift : :class:`~.component.Parameter`
+        The shift of the component
+    interpolate : bool
+        If False no interpolation is performed and only a y-scaled spectrum is
+        returned.
+    
     Methods
     -------
-
-    prepare_interpolator : method to fine tune the interpolation
+    prepare_interpolator
 
     """
 
@@ -98,7 +111,7 @@ class ScalableFixedPattern(Component):
         self.shift.free = value
 
     def prepare_interpolator(self, **kwargs):
-        """Prepare interpolation.
+        """Fine-tune the interpolation.
 
         Parameters
         ----------
@@ -106,7 +119,7 @@ class ScalableFixedPattern(Component):
             The spectral axis of the fixed pattern
         **kwargs : dict
             Keywords argument are passed to
-            :py:func:`scipy.interpolate.make_interp_spline`
+            :func:`scipy.interpolate.make_interp_spline`
         """
 
         self.f = make_interp_spline(

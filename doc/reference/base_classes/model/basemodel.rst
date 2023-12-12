@@ -1,2 +1,11 @@
-.. automodule:: hyperspy.model
-   :members: BaseModel
+
+BaseModel
+"""""""""
+
+.. currentmodule:: hyperspy.model
+
+.. autoclass:: BaseModel
+   :members:
+
+.. autoclass:: ModelComponents
+   :members:

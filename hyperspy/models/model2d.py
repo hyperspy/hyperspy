@@ -47,65 +47,45 @@ class Model2D(BaseModel):
 
     """Model and data fitting for two dimensional signals.
 
-    A model is constructed as a linear combination of :mod:`components2D` that
-    are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predifined components available in the in the :mod:`components2D`
-    module. If needed, new components can be created easily using the code of
-    existing components as a template.
+    A model is constructed as a linear combination of
+    :mod:`~hyperspy.api.model.components2D` that are added to the model using
+    :meth:`~hyperspy.model.BaseModel.append` or
+    :meth:`~hyperspy.model.BaseModel.extend`. There are predifined components 
+    available in the :mod:`~hyperspy.api.model.components2D` module
+    and custom components can made using the :class:`~.api.model.components1D.Expression`.
+    If needed, new components can be created easily using the code of existing
+    components as a template.
 
-    Once defined, the model can be fitted to the data using :meth:`fit` or
-    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
-    the maximum number of iterations the new value of the component parameters
-    are stored in the components.
+    Once defined, the model can be fitted to the data using
+    :meth:`~hyperspy.model.BaseModel.fit` or :meth:`~hyperspy.model.BaseModel.multifit`.
+    Once the optimizer reaches the convergence criteria or the maximum number
+    of iterations the new value of the component parameters are stored in the
+    components.
 
     It is possible to access the components in the model by their name or by
     the index in the model. An example is given at the end of this docstring.
 
-    Note that methods are not yet defined for plotting 2D models or using
-    gradient based optimisation methods - these will be added soon.
-
-    Attributes
-    ----------
-
-    signal : Signal2D instance
-        It contains the data to fit.
-    chisq : A Signal of floats
-        Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A Signal of integers
-        Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : Signal instance
-        Reduced chi-squared.
-    components : `ModelComponents` instance
-        The components of the model are attributes of this class. This provides
-        a convinient way to access the model components when working in IPython
-        as it enables tab completion.
-
     Methods
     -------
+    add_signal_range
+    remove_signal_range
+    reset_signal_range
+    set_signal_range
 
-    append
-        Append one component to the model.
-    extend
-        Append multiple components to the model.
-    remove
-        Remove component from model.
-    fit, multifit
-        Fit the model to the data at the current position or the full dataset.
-
-    See also
+    Notes
+    -----
+    Methods are not yet defined for plotting 2D models or using gradient based
+    optimisation methods.
+    
+    See Also
     --------
-    Base Model
-    Model1D
-
-    Example
-    -------
-
-
+    hyperspy.model.BaseModel, hyperspy.models.model1d.Model1D
 
     """
+    _signal_dimension = 2
 
     def __init__(self, signal2D, dictionary=None):
-        super(Model2D, self).__init__()
+        super().__init__()
         self.signal = signal2D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
@@ -122,21 +102,19 @@ class Model2D(BaseModel):
         self._channel_switches = np.ones(
             self.axes_manager._signal_shape_in_array, dtype=bool
             )
-        self.chisq = signal2D._get_navigation_signal()
+        self._chisq = signal2D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = (
             self.signal.metadata.General.title + ' chi-squared')
-        self.dof = self.chisq._deepcopy_with_new_data(
+        self._dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(self.chisq.data, dtype='int'))
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self.components = ModelComponents(self)
+        self._components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
-        self.inav = ModelSpecialSlicers(self, True)
-        self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
             '_channel_switches': None,
             'free_parameters_boundaries': None,
@@ -146,17 +124,6 @@ class Model2D(BaseModel):
             '_channel_switches': 'isig',
             'chisq.data': 'inav',
             'dof.data': 'inav'}
-
-    @property
-    def signal(self):
-        return self._signal
-
-    @signal.setter
-    def signal(self, value):
-        if isinstance(value, Signal2D):
-            self._signal = value
-        else:
-            raise WrongObjectError(str(type(value)), 'Signal2D')
 
     def _get_current_data(self, onlyactive=False,
                  component_list=None, binned=None):
@@ -241,8 +208,8 @@ class Model2D(BaseModel):
 
         See Also
         --------
-        add_signal_range, remove_signal_range,
-        reset_signal_range, set_signal_range_from_mask
+        add_signal_range, remove_signal_range, reset_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         xaxis = self.axes_manager.signal_axes[0]
         yaxis = self.axes_manager.signal_axes[1]
@@ -283,8 +250,8 @@ class Model2D(BaseModel):
 
         See Also
         --------
-        set_signal_range, add_signal_range,
-        reset_signal_range, set_signal_range_from_mask
+        set_signal_range, add_signal_range, reset_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         xaxis = self.axes_manager.signal_axes[0]
         yaxis = self.axes_manager.signal_axes[1]
@@ -300,8 +267,8 @@ class Model2D(BaseModel):
 
         See Also
         --------
-        set_signal_range, add_signal_range, set_signal_range_from_mask,
-        remove_signal_range
+        set_signal_range, add_signal_range, remove_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         self._set_signal_range_in_pixels()
 
@@ -336,8 +303,8 @@ class Model2D(BaseModel):
 
         See Also
         --------
-        set_signal_range, set_signal_range_from_mask,
-        reset_signal_range, remove_signal_range
+        set_signal_range, reset_signal_range, remove_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         xaxis = self.axes_manager.signal_axes[0]
         yaxis = self.axes_manager.signal_axes[1]

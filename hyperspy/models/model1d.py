@@ -136,84 +136,40 @@ class Model1D(BaseModel):
 
     """Model and data fitting for one dimensional signals.
 
-    A model is constructed as a linear combination of :mod:`components` that
-    are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predifined components available in the in the :mod:`components`
-    module. If needed, new components can be created easily using the code of
-    existing components as a template.
+    A model is constructed as a linear combination of
+    :mod:`~hyperspy.api.model.components1D` that are added to the model using
+    :meth:`~hyperspy.model.BaseModel.append` or :meth:`~hyperspy.model.BaseModel.extend`.
+    There are many predifined components available in the
+    :mod:`~hyperspy.api.model.components1D` module. If needed, new
+    components can be created easily using the
+    :class:`~.api.model.components1D.Expression` component or by
+    using the code of existing components as a template.
 
-    Once defined, the model can be fitted to the data using :meth:`fit` or
-    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
-    the maximum number of iterations the new value of the component parameters
-    are stored in the components.
+    Once defined, the model can be fitted to the data using
+    :meth:`~hyperspy.model.BaseModel.fit` or
+    :meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
+    the convergence criteria or the maximum number of iterations the new value
+    of the component parameters are stored in the components.
 
     It is possible to access the components in the model by their name or by
     the index in the model. An example is given at the end of this docstring.
 
-    Attributes
-    ----------
-    signal : Signal1D instance
-        It contains the data to fit.
-    chisq : A Signal of floats
-        Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A Signal of integers
-        Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : Signal instance
-        Reduced chi-squared.
-    components : `ModelComponents` instance
-        The components of the model are attributes of this class. This provides
-        a convinient way to access the model components when working in IPython
-        as it enables tab completion.
-
     Methods
     -------
-    extend
-        Append multiple components to the model.
-    as_signal
-        Generate a Signal1D instance (possible multidimensional)
-        from the model.
-    store_current_values
-        Store the value of the parameters at the current position.
-    fetch_stored_values
-        fetch stored values of the parameters.
-    update_plot
-        Force a plot update. (In most cases the plot should update
-        automatically.)
-    set_signal_range, remove_signal range, reset_signal_range,
-    add signal_range.
-        Customize the signal range to fit.
-    fit, multifit
-        Fit the model to the data at the current position or the
-        full dataset.
-    save_parameters2file, load_parameters_from_file
-        Save/load the parameter values to/from a file.
-    enable_plot_components, disable_plot_components
-        Plot each component separately. (Use after `plot`.)
-    set_current_values_to
-        Set the current value of all the parameters of the given component as
-        the value for all the dataset.
-    export_results
-        Save the value of the parameters in separate files.
-    plot_results
-        Plot the value of all parameters at all positions.
-    print_current_values
-        Print the value of the parameters at the current position.
-    enable_adjust_position, disable_adjust_position
-        Enable/disable interactive adjustment of the position of the components
-        that have a well defined position. (Use after `plot`).
-    set_parameters_not_free, set_parameters_free
-        Fit the `free` status of several components and parameters at once.
-    set_parameters_value
-        Set the value of a parameter in components in a model to a specified
-        value.
-    as_dictionary
-        Exports the model to a dictionary that can be saved in a file.
-
+    fit_component
+    enable_adjust_position
+    disable_adjust_position
+    plot
+    set_signal_range
+    remove_signal_range
+    reset_signal_range
+    add_signal_range
+        
     Examples
     --------
     In the following example we create a histogram from a normal distribution
     and fit it with a gaussian component. It demonstrates how to create
-    a model from a :class:`~._signals.signal1d.Signal1D` instance, add
+    a model from a :class:`~.api.signals.Signal1D` instance, add
     components to it, adjust the value of the parameters of the components,
     fit the model to the data and access the components in the model.
 
@@ -245,11 +201,16 @@ class Model1D(BaseModel):
     >>> m["Gaussian"].centre.value
     -0.072121936813224569
 
+    See Also
+    --------
+    hyperspy.model.BaseModel, hyperspy.models.model2d.Model2D
+
     """
+    _signal_dimension = 1
 
     def __init__(self, signal1D, dictionary=None):
         super().__init__()
-        self.signal = signal1D
+        self._signal = signal1D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}
@@ -262,21 +223,19 @@ class Model1D(BaseModel):
         self.axes_manager.events.indices_changed.connect(
             self._on_navigating, [])
         self._channel_switches = np.array([True] * len(self.axis.axis))
-        self.chisq = signal1D._get_navigation_signal()
+        self._chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = (
             self.signal.metadata.General.title + ' chi-squared')
-        self.dof = self.chisq._deepcopy_with_new_data(
+        self._dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(self.chisq.data, dtype='int'))
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self.components = ModelComponents(self)
+        self._components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
-        self.inav = ModelSpecialSlicers(self, True)
-        self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
             '_channel_switches': None,
             'free_parameters_boundaries': None,
@@ -287,26 +246,14 @@ class Model1D(BaseModel):
             'chisq.data': 'inav',
             'dof.data': 'inav'}
 
-    @property
-    def signal(self):
-        return self._signal
-
-    @signal.setter
-    def signal(self, value):
-        from hyperspy._signals.signal1d import Signal1D
-        if isinstance(value, Signal1D):
-            self._signal = value
-        else:
-            raise WrongObjectError(str(type(value)), 'Signal1D')
-
-
     def append(self, thing):
         """
         Add component to Model.
 
         Parameters
         ----------
-        thing: `Component` instance.
+        thing : :class:`~.component.Component`
+            The component to add to the model.
         """
         cm = self.suspend_update if self._plot_active else dummy_context_manager
         with cm(update_on_resume=False):
@@ -318,6 +265,8 @@ class Model1D(BaseModel):
                                          self._adjust_position_all[1])
         if self._plot_active:
             self.signal._plot.signal_plot.update()
+
+    append.__doc__ = BaseModel.append.__doc__
 
     def remove(self, things):
         things = self._get_component(things)
@@ -463,8 +412,8 @@ class Model1D(BaseModel):
 
         See Also
         --------
-        add_signal_range, remove_signal_range,
-        reset_signal_range, set_signal_range_from_mask
+        add_signal_range, remove_signal_range, reset_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._set_signal_range_in_pixels(*indices)
@@ -495,8 +444,8 @@ class Model1D(BaseModel):
 
         See Also
         --------
-        set_signal_range, add_signal_range,
-        reset_signal_range, set_signal_range_from_mask
+        set_signal_range, add_signal_range, reset_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._remove_signal_range_in_pixels(*indices)
@@ -507,8 +456,7 @@ class Model1D(BaseModel):
 
         See Also
         --------
-        set_signal_range, add_signal_range, set_signal_range_from_mask,
-        remove_signal_range
+        set_signal_range, add_signal_range, remove_signal_range
         """
         self._set_signal_range_in_pixels()
 
@@ -538,8 +486,7 @@ class Model1D(BaseModel):
 
         See Also
         --------
-        set_signal_range, set_signal_range_from_mask,
-        reset_signal_range, remove_signal_range
+        set_signal_range, reset_signal_range, remove_signal_range
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._add_signal_range_in_pixels(*indices)
@@ -677,7 +624,7 @@ class Model1D(BaseModel):
             If True, add a residual line (Signal - Model) to the signal figure.
         **kwargs : dict
             All extra keyword arguements are passed to
-            :py:meth:`~._signals.signal1d.Signal1D.plot`
+            :meth:`~.api.signals.Signal1D.plot`
         """
 
         # If new coordinates are assigned
@@ -770,12 +717,16 @@ class Model1D(BaseModel):
                           component.active]:
             self._plot_component(component)
 
+    enable_plot_components.__doc__ = BaseModel.enable_plot_components.__doc__
+
     def disable_plot_components(self):
         self._plot_components = False
         if self._plot is None:  # pragma: no cover
             return
         for component in self:
             self._disable_plot_component(component)
+
+    disable_plot_components.__doc__ = BaseModel.disable_plot_components.__doc__
 
     def enable_adjust_position(
             self, components=None, fix_them=True, show_label=True):
@@ -784,23 +735,23 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        components : {None, list of components}
+        components : None, list of :class:`~.component.Component`
             If None, the position of all the active components of the
             model that has a well defined *x* position with a value
             in the axis range will get a position adjustment line.
             Otherwise the feature is added only to the given components.
             The components can be specified by name, index or themselves.
-        fix_them : bool
+        fix_them : bool, default True
             If True the position parameter of the components will be
             temporarily fixed until adjust position is disable.
             This can
             be useful to iteratively adjust the component positions and
             fit the model.
-        show_label : bool, optional
+        show_label : bool, default True
             If True, a label showing the component name is added to the
             plot next to the vertical line.
 
-        See also
+        See Also
         --------
         disable_adjust_position
 
@@ -875,9 +826,9 @@ class Model1D(BaseModel):
         widget.events.moved.disconnect(self._on_widget_moved)
 
     def disable_adjust_position(self):
-        """Disables the interactive adjust position feature
+        """Disable the interactive adjust position feature
 
-        See also
+        See Also
         --------
         enable_adjust_position
 
@@ -909,22 +860,22 @@ class Model1D(BaseModel):
             cf.apply()
     fit_component.__doc__ = \
         """
-        Fit just the given component in the given signal range.
+        Fit the given component in the given signal range.
 
         This method is useful to obtain starting parameters for the
         components. Any keyword arguments are passed to the fit method.
 
         Parameters
         ----------
-        component : component instance
+        component : :class:`~hyperspy.component.Component` 
             The component must be in the model, otherwise an exception
             is raised. The component can be specified by name, index or itself.
-        signal_range : {'interactive', (left_value, right_value), None}
-            If 'interactive' the signal range is selected using the span
-             selector on the spectrum plot. The signal range can also
-             be manually specified by passing a tuple of floats. If None
-             the current signal range is used. Note that ROIs can be used
-             in place of a tuple.
+        signal_range : str, tuple of None
+            If ``'interactive'`` the signal range is selected using the span
+            selector on the spectrum plot. The signal range can also
+            be manually specified by passing a tuple of floats (left, right).
+            If None the current signal range is used. Note that ROIs can be used
+            in place of a tuple.
         estimate_parameters : bool, default True
             If True will check if the component has an
             estimate_parameters function, and use it to estimate the

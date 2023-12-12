@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 """
-The :mod:`hyperspy.data` module includes synthetic data signal.
+The :mod:`hyperspy.api.data` module includes synthetic data signal.
 """
 
 from .artificial_data import (

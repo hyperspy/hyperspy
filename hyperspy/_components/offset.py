@@ -38,8 +38,9 @@ class Offset(Component):
     ============ =============
 
     Parameters
-    -----------
+    ----------
     offset : float
+        The offset to be fitted
 
     """
 
@@ -69,7 +70,7 @@ class Offset(Component):
 
         Parameters
         ----------
-        signal : BaseSignal instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.

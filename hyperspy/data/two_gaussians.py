@@ -36,7 +36,8 @@ def two_gaussians(add_noise=True, return_model=False):
 
     Returns
     -------
-    BaseSignal or (BaseSignal, BaseModel)
+    :class:`~.api.signals.BaseSignal` or tuple
+        Returns tuple when ``return_model=True``.
     """
 
     domain = 32 #size of the square domain

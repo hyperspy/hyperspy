@@ -69,20 +69,20 @@ class WidgetBase(object):
             The event triggers after the internal state of the widget has been
             updated.
 
-            Arguments:
+            Parameters
             ----------
-                widget:
-                    The widget that changed
+            widget :
+                The widget that changed
             """, arguments=['obj'])
         self.events.closed = Event(doc="""
             Event that triggers when the widget closed.
 
             The event triggers after the widget has already been closed.
 
-            Arguments:
+            Parameters
             ----------
-                widget:
-                    The widget that closed
+            widget :
+                The widget that closed
             """, arguments=['obj'])
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
@@ -332,10 +332,10 @@ class DraggableWidgetBase(WidgetBase):
             the widget was changed, so it is the responsibility of the user
             to suppress events as neccessary to avoid closed loops etc.
 
-            Arguments:
+            Parameters
             ----------
-                obj:
-                    The widget that was moved.
+            obj:
+                The widget that was moved.
             """, arguments=['obj'])
         self._snap_position = True
 
@@ -569,10 +569,10 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             the widget was changed, so it is the responsibility of the user
             to suppress events as neccessary to avoid closed loops etc.
 
-            Arguments:
+            Parameters
             ----------
-                obj:
-                    The widget that was resized.
+            obj:
+                The widget that was resized.
             """, arguments=['obj'])
         self.no_events_while_dragging = False
         self._drag_store = None

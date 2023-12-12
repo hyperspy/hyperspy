@@ -115,7 +115,7 @@ class SkewNormal(Expression):
 
 
     Parameters
-    -----------
+    ----------
     x0 : float
         Location of the peak position (not maximum, which is given by
         the `mode` property).
@@ -130,7 +130,7 @@ class SkewNormal(Expression):
         left skewed if shape<0.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Notes
     -----
@@ -171,7 +171,7 @@ class SkewNormal(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.

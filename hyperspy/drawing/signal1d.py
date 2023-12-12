@@ -277,9 +277,10 @@ class Signal1DLine(object):
         self.events.closed = Event("""
             Event that triggers when the line is closed.
 
-            Arguments:
-                obj:  Signal1DLine instance
-                    The instance that triggered the event.
+            Parameters
+            ----------
+            obj:  Signal1DLine instance
+                The instance that triggered the event.
             """, arguments=["obj"])
         self.sf_lines = None
         self.ax = None

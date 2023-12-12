@@ -47,7 +47,7 @@ class Polynomial(Expression):
     **kwargs
         Keyword arguments can be used to initialise the value of the
         parameters, i.e. a2=2, a1=3, a0=1. Extra keyword arguments are passed
-        to the :py:class:`~._components.expression.Expression` component.
+        to the :class:`~.api.model.components1D.Expression` component.
 
     """
 
@@ -70,7 +70,7 @@ class Polynomial(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.

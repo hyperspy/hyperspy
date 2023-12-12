@@ -54,7 +54,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
         (instead of 1). This is currently not used by any of the bin estimators,
         but may be in the future.
     **kwargs :
-        Passed to :py:func:`numpy.histogram`
+        Passed to :func:`numpy.histogram`
 
     Returns
     -------
@@ -66,7 +66,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
 
     See Also
     --------
-    * :py:func:`numpy.histogram`
+    * :func:`numpy.histogram`
 
     """
     if isinstance(a, da.Array):
@@ -134,7 +134,7 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
 
     %s
     **kwargs :
-        Passed to :py:func:`dask.histogram`
+        Passed to :func:`dask.array.histogram`
 
     Returns
     -------
@@ -146,8 +146,8 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
 
     See Also
     --------
-    * :py:func:`dask.histogram`
-    * :py:func:`numpy.histogram`
+    * :func:`dask.array.histogram`
+    * :func:`numpy.histogram`
 
     """
     if not isinstance(a, da.Array):

@@ -55,10 +55,10 @@ in the Signal2D subclass.
 Setting axis properties
 -----------------------
 
-The axes are managed and stored by the :py:class:`~.axes.AxesManager` class
-that is stored in the :py:attr:`~.signal.BaseSignal.axes_manager` attribute of
+The axes are managed and stored by the :class:`~.axes.AxesManager` class
+that is stored in the :attr:`~.api.signals.BaseSignal.axes_manager` attribute of
 the signal class. The individual axes can be accessed by indexing the
-:py:class:`~.axes.AxesManager`, e.g.:
+:class:`~.axes.AxesManager`, e.g.:
 
 .. code-block:: python
 
@@ -90,7 +90,7 @@ following commands will access the same axis:
     >>> s.axes_manager[-1]
     >>> s.axes_manager.signal_axes[0]
 
-The axis properties can be set by setting the :py:class:`~.axes.BaseDataAxis`
+The axis properties can be set by setting the :class:`~.axes.BaseDataAxis`
 attributes, e.g.:
 
 .. code-block:: python
@@ -113,7 +113,7 @@ name e.g.:
 
 
 It is also possible to set the axes properties using a GUI by calling the
-:py:meth:`~.axes.AxesManager.gui` method of the :py:class:`~.axes.AxesManager`
+:meth:`~.axes.AxesManager.gui` method of the :class:`~.axes.AxesManager`
 
 .. code-block:: python
 
@@ -127,7 +127,7 @@ It is also possible to set the axes properties using a GUI by calling the
    AxesManager ipywidgets GUI.
 
 or, for a specific axis, the respective method of e.g.
-:py:class:`~.axes.UniformDataAxis`:
+:class:`~.axes.UniformDataAxis`:
 
 .. code-block:: python
 
@@ -156,7 +156,7 @@ axes) you could use the navigation sliders:
 
 Alternatively, the "current position" can be changed programmatically by
 directly accessing the ``indices`` attribute of a signal's
-:py:class:`~.axes.AxesManager` or the ``index`` attribute of an individual
+:class:`~.axes.AxesManager` or the ``index`` attribute of an individual
 axis. This is particularly useful when trying to set
 a specific location at which to initialize a model's parameters to
 sensible values before performing a fit over an entire spectrum image. The
@@ -195,9 +195,9 @@ Types of data axes
 HyperSpy supports different *data axis types*, which differ in how the axis is
 defined:
 
-* :py:class:`~.axes.DataAxis` defined by an array ``axis``,
-* :py:class:`~.axes.FunctionalDataAxis` defined by a function ``expression`` or
-* :py:class:`~.axes.UniformDataAxis` defined by the initial value ``offset``
+* :class:`~.axes.DataAxis` defined by an array ``axis``,
+* :class:`~.axes.FunctionalDataAxis` defined by a function ``expression`` or
+* :class:`~.axes.UniformDataAxis` defined by the initial value ``offset``
   and spacing ``scale``.
 
 The main disambiguation is whether the
@@ -219,15 +219,15 @@ following table.
 
 .. table:: BaseDataAxis subclasses.
 
-    +-------------------------------------------------------------------+------------------------+-------------+
-    |                   BaseDataAxis subclass                           |  defining attributes   |  is_uniform |
-    +===================================================================+========================+=============+
-    |                :py:class:`~.axes.DataAxis`                        |         axis           |  False      |
-    +-------------------------------------------------------------------+------------------------+-------------+
-    |           :py:class:`~.axes.FunctionalDataAxis`                   |      expression        |  False      |
-    +-------------------------------------------------------------------+------------------------+-------------+
-    |             :py:class:`~.axes.UniformDataAxis`                    |    offset, scale       |  True       |
-    +-------------------------------------------------------------------+------------------------+-------------+
+    +----------------------------------------+------------------------+----------------+
+    |  BaseDataAxis subclass                 |  Defining attributes   | ``is_uniform`` |
+    +========================================+========================+================+
+    |  :class:`~.axes.DataAxis`              |         axis           |  False         |
+    +----------------------------------------+------------------------+----------------+
+    |  :class:`~.axes.FunctionalDataAxis`    |      expression        |  False         |
+    +----------------------------------------+------------------------+----------------+
+    |  :class:`~.axes.UniformDataAxis`       |    offset, scale       |  True          |
+    +----------------------------------------+------------------------+----------------+
 
 .. NOTE::
 
@@ -246,14 +246,14 @@ following table.
 Uniform data axis
 ^^^^^^^^^^^^^^^^^
 
-The most common case is the :py:class:`~.axes.UniformDataAxis`. Here, the axis
+The most common case is the :class:`~.axes.UniformDataAxis`. Here, the axis
 is defined by the ``offset``, ``scale`` and ``size`` parameters, which determine
 the `initial value`, `spacing` and `length`, respectively. The actual ``axis``
 array is automatically calculated from these three values. The ``UniformDataAxis``
 is a special case of the ``FunctionalDataAxis`` defined by the function
 ``scale * x + offset``.
 
-Sample dictionary for a :py:class:`~.axes.UniformDataAxis`:
+Sample dictionary for a :class:`~.axes.UniformDataAxis`:
 
 .. code-block:: python
 
@@ -268,7 +268,7 @@ Sample dictionary for a :py:class:`~.axes.UniformDataAxis`:
      'scale': 1.0,
      'offset': 300.0}
 
-Corresponding output of :py:class:`~.axes.AxesManager`:
+Corresponding output of :class:`~.axes.AxesManager`:
 
 .. code-block:: python
 
@@ -285,7 +285,7 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
 Functional data axis
 ^^^^^^^^^^^^^^^^^^^^
 
-Alternatively, a :py:class:`~.axes.FunctionalDataAxis` is defined based on an
+Alternatively, a :class:`~.axes.FunctionalDataAxis` is defined based on an
 ``expression`` that is evaluated to yield the axis points. The `expression`
 is a function defined as a ``string`` using the
 `SymPy <https://docs.sympy.org/latest/tutorial/intro.html>`_ text expression
@@ -294,13 +294,13 @@ expression, in this case ``a`` and ``b`` must be defined as additional
 attributes of the axis. The property ``is_uniform`` is automatically set to
 ``False``.
 
-``x`` itself is an instance of :py:class:`~.axes.BaseDataAxis`. By default,
-it will be a :py:class:`~.axes.UniformDataAxis` with ``offset = 0`` and
+``x`` itself is an instance of :class:`~.axes.BaseDataAxis`. By default,
+it will be a :class:`~.axes.UniformDataAxis` with ``offset = 0`` and
 ``scale = 1`` of the given ``size``. However, it can also be initialized with
 custom ``offset`` and ``scale`` values. Alternatively, it can be a non
-uniform :py:class:`~.axes.DataAxis`.
+uniform :class:`~.axes.DataAxis`.
 
-Sample dictionary for a :py:class:`~.axes.FunctionalDataAxis`:
+Sample dictionary for a :class:`~.axes.FunctionalDataAxis`:
 
 .. code-block:: python
 
@@ -323,7 +323,7 @@ Sample dictionary for a :py:class:`~.axes.FunctionalDataAxis`:
      'a': 100,
      'b': 10}
 
-Corresponding output of :py:class:`~.axes.AxesManager`:
+Corresponding output of :class:`~.axes.AxesManager`:
 
 .. code-block:: python
 
@@ -351,7 +351,7 @@ Initializing ``x`` with ``offset`` and ``scale``:
        19.52380952, 19.43396226, 19.34579439, 19.25925926, 19.17431193])
 
 
-Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
+Initializing ``x`` as non-uniform :class:`~.axes.DataAxis`:
 
 .. code-block:: python
 
@@ -364,7 +364,7 @@ Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
     >>> # the actual axis array
     >>> s.axes_manager[0].axis
     array([110.        ,  35.        ,  21.11111111,  16.25      ,
-        14.        ,  12.77777778,  12.04081633,  11.5625    ,
+        1.         ,  12.77777778,  12.04081633,  11.5625    ,
         11.2345679 ])
 
 Initializing ``x`` with ``offset`` and ``scale``:
@@ -375,12 +375,12 @@ Initializing ``x`` with ``offset`` and ``scale``:
 (non-uniform) Data axis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-A :py:class:`~.axes.DataAxis` is the most flexible type of axis. The axis
+A :class:`~.axes.DataAxis` is the most flexible type of axis. The axis
 points are directly given by an array named ``axis``. As this can be any
 array, the property ``is_uniform`` is automatically set to ``False``.
 
 
-Sample dictionary for a :py:class:`~.axes.DataAxis`:
+Sample dictionary for a :class:`~.axes.DataAxis`:
 
 .. code-block:: python
 
@@ -393,7 +393,7 @@ Sample dictionary for a :py:class:`~.axes.DataAxis`:
      'navigate': False,
      'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100, 121])}
 
-Corresponding output of :py:class:`~.axes.AxesManager`:
+Corresponding output of :class:`~.axes.AxesManager`:
 
 .. code-block:: python
 
@@ -453,14 +453,14 @@ Adding/Removing axes to/from a signal
 
 Usually, the axes are directly added to a signal during :ref:`signal
 initialization<signal_initialization>`. However, you may wish to add/remove
-axes from the :py:class:`~.axes.AxesManager` of a signal.
+axes from the :class:`~.axes.AxesManager` of a signal.
 
 Note that there is currently no consistency check whether a signal object has
 the right number of axes of the right dimensions. Most functions will however
 fail if you pass a signal object where the axes do not match the data
 dimensions and shape.
 
-You can *add a set of axes* to the :py:class:`~.axes.AxesManager` by passing either a list of
+You can *add a set of axes* to the :class:`~.axes.AxesManager` by passing either a list of
 axes dictionaries to ``axes_manager.create_axes()``:
 
 .. code-block:: python
@@ -478,7 +478,7 @@ or a list of axes objects:
     >>> axis1 = DataAxis(axis=np.arange(12)**2)
     >>> s.axes_manager.create_axes([axis0,axis1])
 
-*Remove an axis* from the :py:class:`~.axes.AxesManager` using ``remove()``, e.g. for the last axis:
+*Remove an axis* from the :class:`~.axes.AxesManager` using ``remove()``, e.g. for the last axis:
 
 .. code-block:: python
 
@@ -490,7 +490,7 @@ or a list of axes objects:
 Using quantity and converting units
 -----------------------------------
 
-The ``scale`` and the ``offset`` of each :py:class:`~.axes.UniformDataAxis` axis
+The ``scale`` and the ``offset`` of each :class:`~.axes.UniformDataAxis` axis
 can be set and retrieved as quantity.
 
 .. code-block:: python
@@ -526,12 +526,12 @@ manage the scale and offset quantities. The ``scale_as_quantity`` and
     2.5 nanometer
 
 
-The ``convert_units`` method of the :py:class:`~.axes.AxesManager` converts
+The ``convert_units`` method of the :class:`~.axes.AxesManager` converts
 units, which by default (no parameters provided) converts all axis units to an
 optimal unit to avoid using too large or small numbers.
 
 Each axis can also be converted individually using the ``convert_to_units``
-method of the :py:class:`~.axes.UniformDataAxis`:
+method of the :class:`~.axes.UniformDataAxis`:
 
 .. code-block:: python
 
@@ -605,10 +605,10 @@ fast.
 
 Iterating over the AxesManager
 ------------------------------
-One can iterate over the :py:class:`~.axes.AxesManager` to produce indices to
+One can iterate over the :class:`~.axes.AxesManager` to produce indices to
 the navigation axes. Each iteration will yield a new tuple of indices, sorted
-according to the iteration path specified in :py:attr:`~.axes.AxesManager.iterpath`.
-Setting the :py:attr:`~.axes.AxesManager.indices` property to a new index will
+according to the iteration path specified in :attr:`~.axes.AxesManager.iterpath`.
+Setting the :attr:`~.axes.AxesManager.indices` property to a new index will
 update the accompanying signal so that signal methods that operate at a specific
 navigation index will now use that index, like ``s.plot()``.
 
@@ -628,8 +628,8 @@ navigation index will now use that index, like ``s.plot()``.
     (2, 1)
 
 
-The :py:attr:`~.axes.AxesManager.iterpath` attribute specifies the strategy that
-the :py:class:`~.axes.AxesManager` should use to iterate over the navigation axes.
+The :attr:`~.axes.AxesManager.iterpath` attribute specifies the strategy that
+the :class:`~.axes.AxesManager` should use to iterate over the navigation axes.
 Two built-in strategies exist:
 
 - ``'serpentine'`` (default): starts at (0, 0), but when it reaches the final column
@@ -647,8 +647,8 @@ Two built-in strategies exist:
     >>> for index in s.axes_manager:
     ...     print(index)
 
-The :py:attr:`~.axes.AxesManager.iterpath` can also be set using the
-:py:meth:`~.axes.AxesManager.switch_iterpath` context manager:
+The :attr:`~.axes.AxesManager.iterpath` can also be set using the
+:meth:`~.axes.AxesManager.switch_iterpath` context manager:
 
 .. code-block:: python
 
@@ -658,7 +658,7 @@ The :py:attr:`~.axes.AxesManager.iterpath` can also be set using the
     ...         print(index)
 
 
-The :py:attr:`~.axes.AxesManager.iterpath` can also be set to be a specific list of indices, like [(0,0), (0,1)],
+The :attr:`~.axes.AxesManager.iterpath` can also be set to be a specific list of indices, like [(0,0), (0,1)],
 but can also be any generator of indices. Storing a high-dimensional set of
 indices as a list or array can take a significant amount of memory. By using a
 generator instead, one almost entirely removes such a memory footprint:

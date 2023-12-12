@@ -292,7 +292,7 @@ class ImagePlot(BlittedFigure):
             the figure size.
         **kwargs
             All keyword arguments are passed to
-            :py:func:`matplotlib.pyplot.figure`.
+            :func:`matplotlib.pyplot.figure`.
 
         """
         if "figsize" not in kwargs:
@@ -410,7 +410,7 @@ class ImagePlot(BlittedFigure):
         vmin, vmax : float or str
             `vmin` and `vmax` are used to normalise the displayed data.
         **kwargs : dict
-            The kwargs are passed to :py:func:`matplotlib.pyplot.imshow`.
+            The kwargs are passed to :func:`matplotlib.pyplot.imshow`.
 
         Raises
         ------

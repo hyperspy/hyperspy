@@ -56,7 +56,7 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
     ----------
     target : object
         must contain the (nested) attributes of the whitelist.keys()
-    whitelist : dictionary
+    whitelist : dict
         A dictionary, keys of which are used as attributes for exporting.
         Key 'self' is only available with tag 'id', when the id of the
         target is saved. The values are either None, or a tuple, where:
@@ -79,9 +79,9 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
         * 'sig': The targeted attribute is a signal, and will be converted to a
           dictionary if fullcopy=True
 
-    dic : dictionary
+    dict
         A dictionary where the object will be exported
-    fullcopy : bool
+    bool
         Copies of objects are stored, not references. If any found,
         functions will be pickled and signals converted to dictionaries
 
@@ -146,9 +146,9 @@ def load_from_dictionary(target, dic):
 
     Parameters
     ----------
-    target : object
+    target : obj
         must contain the (nested) attributes of the whitelist.keys()
-    dic : dictionary
+    dic : dict
         A dictionary, containing field '_whitelist', which is a dictionary
         with all keys that were exported, with values being flag strings.
         The convention of the flags is as follows:

@@ -66,7 +66,7 @@ def _fast_mean(X):  # pragma: no cover
 
     Parameters
     ----------
-    X : :py:class:`numpy.ndarray`
+    X : :class:`numpy.ndarray`
         Input array.
 
     Returns
@@ -89,7 +89,7 @@ def _fast_std(X):  # pragma: no cover
 
     Parameters
     ----------
-    X : :py:class:`numpy.ndarray`
+    X : :class:`numpy.ndarray`
         Input array.
 
     Returns
@@ -111,12 +111,12 @@ def clean_peaks(peaks):
 
     Parameters
     ----------
-    peaks : :py:class:`numpy.ndarray`
+    peaks : :class:`numpy.ndarray`
         Array of found peaks.
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray`
+    peaks : :class:`numpy.ndarray`
         Sorted array, first by `peaks[:,1]` (y-coordinate) then by `peaks[:,0]`
         (x-coordinate), of found peaks.
     NO_PEAKS : str
@@ -133,21 +133,21 @@ def clean_peaks(peaks):
 def find_local_max(z, **kwargs):
     """Method to locate positive peaks in an image by local maximum searching.
 
-    This function wraps :py:func:`skimage.feature.peak_local_max` function and
+    This function wraps :func:`skimage.feature.peak_local_max` function and
     sorts the results for consistency with other peak finding methods.
 
     Parameters
     ----------
-    z : :py:class:`numpy.ndarray`
+    z : :class:`numpy.ndarray`
         Array of image intensities.
     **kwargs : dict
         Keyword arguments to be passed to the
-        :py:func:`skimage.feature.peak_local_max` function.
+        :func:`skimage.feature.peak_local_max` function.
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    :class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     """
     peaks = peak_local_max(z, **kwargs)
@@ -169,8 +169,8 @@ def find_peaks_minmax(z, distance=5., threshold=10.):
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     """
     data_max = ndi.maximum_filter(z, distance)
@@ -200,8 +200,8 @@ def find_peaks_max(z, alpha=3., distance=10):
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     """
     # preallocate lots of peak storage
@@ -237,7 +237,7 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
 
     Parameters
     ----------
-    z : :py:class:`numpy.ndarray`
+    z : :class:`numpy.ndarray`
         Matrix of image intensities.
     grad_threshold : float
         The minimum gradient required to begin a peak search.
@@ -251,8 +251,8 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     Notes
     -----
@@ -285,12 +285,12 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
 
         Parameters
         ----------
-        image : :py:class:`numpy.ndarray`
+        image : :class:`numpy.ndarray`
             The image for which the gradient will be calculated.
 
         Returns
         -------
-        gradient_of_image : :py:class:`numpy.ndarray`
+        gradient_of_image : :class:`numpy.ndarray`
             The gradient of the image.
 
         """
@@ -339,7 +339,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
 
     Parameters
     ----------
-    z : :py:class:`numpy.ndarray`
+    z : :class:`numpy.ndarray`
         Array of image intensities.
     alpha : float
         Only maxima above `alpha * sigma` are found, where `sigma` is the
@@ -353,8 +353,8 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :class:`numpy.ndarray`
+        Peak pixel coordinates with with shape (n_peaks, 2).
 
     Notes
     -----
@@ -480,21 +480,21 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
                    threshold=0.2, overlap=0.5, exclude_border=False):
     """Method to locate peaks via the Difference of Gaussian Matrices method.
 
-    This function wraps :py:func:`skimage.feature.blob_dog` function and
+    This function wraps :func:`skimage.feature.blob_dog` function and
     sorts the results for consistency with other peak finding methods.
 
     Parameters
     ----------
-    z : :py:class:`numpy.ndarray`
+    z : :class:`numpy.ndarray`
         2-d array of intensities
     min_sigma, max_sigma, sigma_ratio, threshold, overlap, exclude_border :
         Additional parameters to be passed to the
-        :py:func:`skimage.feature.blob_dog` function
+        :func:`skimage.feature.blob_dog` function
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     Notes
     -----
@@ -524,21 +524,21 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
                    exclude_border=False):
     """Method to locate peaks via the Laplacian of Gaussian Matrices method.
 
-    This function wraps :py:func:`skimage.feature.blob_log` function and
+    This function wraps :func:`skimage.feature.blob_log` function and
     sorts the results for consistency with other peak finding methods.
 
     Parameters
     ----------
-    z : :py:class:`numpy.ndarray`
+    z : :class:`numpy.ndarray`
         Array of image intensities.
     min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale, exclude_border :
         Additional parameters to be passed to the
-        :py:func:`skimage.feature.blob_log` function.
+        :func:`skimage.feature.blob_log` function.
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     """
     z = z / np.max(z)
@@ -559,15 +559,15 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
 
 def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
     """Find peaks in the cross correlation between the image and a template by
-    using the :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax` function
+    using the :func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax` function
     to find the peaks on the cross correlation result obtained using the
-    :py:func:`skimage.feature.match_template` function.
+    :func:`skimage.feature.match_template` function.
 
     Parameters
     ----------
-    z : :py:class:`numpy.ndarray`
+    z : :class:`numpy.ndarray`
         Array of image intensities.
-    template : numpy.ndarray (square)
+    template : numpy.ndarray
         Array containing a single bright disc, similar to those to detect.
     distance : float
         Expected distance between peaks.
@@ -575,12 +575,12 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
         Minimum difference between maximum and minimum filtered images.
     **kwargs : dict
         Keyword arguments to be passed to the
-        :py:func:`skimage.feature.match_template` function.
+        :func:`skimage.feature.match_template` function.
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Array of peak coordinates.
+    peaks : :class:`numpy.ndarray`
+        Array of peak coordinates with shape (n_peaks, 2).
     """
     pad_input = kwargs.pop('pad_input', True)
     response_image = match_template(z, template, pad_input=pad_input, **kwargs)

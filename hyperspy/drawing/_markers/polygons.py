@@ -31,14 +31,14 @@ class Polygons(Markers):
 
         Parameters
         ----------
-        verts : list of lists of lists or array of list of lists of lists
+        verts : list of numpy.ndarray or list of list
             The verts define the vertices of the polygons. Note that this can be
             a ragged list and as such it is not automatically cast to a numpy
             array as that would result in an array of objects.
             In the form [[[x1,y1], [x2,y2], ... [xn, yn]],[[x1,y1], [x2,y2], ...[xm,ym]], ...].
         **kwargs : dict
             Additional keyword arguments are passed to
-            :py:class:`matplotlib.collections.PolyCollection`
+            :class:`matplotlib.collections.PolyCollection`
 
         Examples
         --------

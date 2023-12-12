@@ -4,7 +4,7 @@ Adding components to the model
 ------------------------------
 
 To print the current components in a model use
-:py:attr:`~.model.BaseModel.components`. A table with component number,
+:attr:`~.model.BaseModel.components`. A table with component number,
 attribute name, component name and component type will be printed:
 
 .. code-block:: python
@@ -17,18 +17,18 @@ attribute name, component name and component type will be printed:
 
 
 .. note:: Sometimes components may be created automatically. For example, if
-   the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
+   the :class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
    power-law background component may automatically be added to the model.
    Therefore, the table above may not all may empty on model creation.
 
 To add a component to the model, first we have to create an instance of the
 component.
 Once the instance has been created we can add the component to the model
-using the :py:meth:`~.model.BaseModel.append` and
-:py:meth:`~.model.BaseModel.extend` methods for one or more components
+using the :meth:`~.model.BaseModel.append` and
+:meth:`~.model.BaseModel.extend` methods for one or more components
 respectively.
 
-As an example, let's add several :py:class:`~._components.gaussian.Gaussian`
+As an example, let's add several :class:`~._components.gaussian.Gaussian`
 components to the model:
 
 .. code-block:: python
@@ -43,7 +43,7 @@ components to the model:
     >>> gaussian3 = hs.model.components1D.Gaussian() # Create a third gaussian
 
 
-We could use the :py:meth:`~.model.BaseModel.append` method twice to add the
+We could use the :meth:`~.model.BaseModel.append` method twice to add the
 two Gaussians, but when adding multiple components it is handier to use the
 extend method that enables adding a list of components at once.
 
@@ -105,7 +105,7 @@ index in the model.
 
 
 In addition, the components can be accessed in the
-:py:attr:`~.model.BaseModel.components` `Model` attribute. This is specially
+:attr:`~.model.BaseModel.components` `Model` attribute. This is specially
 useful when working in interactive data analysis with IPython because it
 enables tab completion.
 
@@ -129,7 +129,7 @@ switch it back on simply set the ``active`` attribute back to ``True``.
 In multi-dimensional signals it is possible to store the value of the
 ``active`` attribute at each navigation index.
 To enable this feature for a given component set the
-:py:attr:`~.component.Component.active_is_multidimensional` attribute to
+:attr:`~.component.Component.active_is_multidimensional` attribute to
 `True`.
 
 .. code-block:: python

@@ -155,10 +155,10 @@ class ComplexSignal(BaseSignal):
 
         Parameters
         ----------
-        dtype : str or dtype
+        dtype : str or numpy.dtype
             Typecode or data-type to which the array is cast. For complex signals only other
-            complex dtypes are allowed. If real valued properties are required use `real`,
-            `imag`, `amplitude` and `phase` instead.
+            complex dtypes are allowed. If real valued properties are required use ``real``,
+            ``imag``, ``amplitude`` and ``phase`` instead.
         """
         if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
@@ -172,13 +172,13 @@ class ComplexSignal(BaseSignal):
 
         Parameters
         ----------
-        wrap_around : bool or sequence of bool, optional
+        wrap_around : bool or iterable of bool, default False
             When an element of the sequence is  `True`, the unwrapping process
             will regard the edges along the corresponding axis of the image to be
             connected and use this connectivity to guide the phase unwrapping
             process. If only a single boolean is given, it will apply to all axes.
             Wrap around is not supported for 1D arrays.
-        seed : int, optional
+        seed : None or int, default None
             Unwrapping 2D or 3D images uses random initialization. This sets the
             seed of the PRNG to achieve deterministic behavior.
         %s
@@ -186,8 +186,8 @@ class ComplexSignal(BaseSignal):
 
         Returns
         -------
-        phase_image: :class:`~hyperspy._signals.BaseSignal` subclass
-            Unwrapped phase.
+        :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+            The unwrapped phase.
 
         Notes
         -----
@@ -269,17 +269,18 @@ class ComplexSignal(BaseSignal):
 
     @format_title('angle')
     def angle(self, deg=False):
-        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
+        r"""Return the angle (also known as phase or argument).
+        If the data is real, the angle is 0
         for positive values and :math:`2\pi` for negative values.
 
         Parameters
         ----------
-        deg : bool, optional
-            Return angle in degrees if True, radians if False (default).
+        deg : bool, default False
+            Return angle in degrees if True, radians if False.
 
         Returns
         -------
-        angle : HyperSpy signal
+        :class:`~hyperspy.api.signals.BaseSignal`
             The counterclockwise angle from the positive real axis on the complex plane,
             with dtype as numpy.float64.
 
@@ -291,23 +292,21 @@ class ComplexSignal(BaseSignal):
 
     def argand_diagram(self, size=[256, 256], range=None):
         """
-        Calculate and plot Argand diagram of complex signal
+        Calculate and plot Argand diagram of complex signal.
 
         Parameters
         ----------
-        size : [int, int], optional
-            Size of the Argand plot in pixels
-            (Default: [256, 256])
-        range : array_like, shape(2,2) or shape(2,) optional
-            The position of the edges of the diagram
-            (if not specified explicitly in the bins parameters): [[xmin, xmax], [ymin, ymax]].
-            All values outside of this range will be considered outliers and not tallied in the histogram.
-            (Default: None)
+        size : list of int, optional
+            Size of the Argand plot in pixels. Default is [256, 256].
+        range : None, numpy.ndarray, default None
+            The position of the edges of the diagram with shape (2, 2) or (2,).
+            All values outside of this range will be considered outliers and not
+            tallied in the histogram. If None use the mininum and maximum values.
 
         Returns
         -------
-        argand_diagram:
-            Argand diagram as Signal2D
+        :class:`~hyperspy.api.signals.Signal2D`
+            The Argand diagram
 
         Examples
         --------

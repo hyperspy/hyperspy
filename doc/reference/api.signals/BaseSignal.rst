@@ -6,4 +6,6 @@
 .. autoclass:: BaseSignal
    :members:
    :inherited-members:
-   
+
+   .. autoattribute:: isig
+   .. autoattribute:: inav

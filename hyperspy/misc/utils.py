@@ -49,14 +49,14 @@ def attrsetter(target, attrs, value):
 
     Parameters
     ----------
-        target : object
-        attrs : string
-            attributes, separated by periods (e.g.
-            'metadata.Signal.Noise_parameters.variance' )
-        value : object
+    target : object
+    attrs : string
+        attributes, separated by periods (e.g.
+        'metadata.Signal.Noise_parameters.variance' )
+    value : object
 
-    Example
-    -------
+    Examples
+    --------
     First create a signal and model pair:
 
     >>> s = hs.signals.Signal1D(np.arange(10))
@@ -71,7 +71,6 @@ def attrsetter(target, attrs, value):
 
     The behaviour is identical to
     >>> self.signal.data = np.arange(10) + 2
-
 
     """
     where = attrs.rfind(".")
@@ -600,24 +599,24 @@ class DictionaryTreeBrowser:
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by
             full stops (periods).
-        full_path : boolean
-            If `True` (default), the full path to the item has to be given. If
-            `False`, a search for the item key is performed (can include
+        full_path : bool, default True
+            If True, the full path to the item has to be given. If
+            False, a search for the item key is performed (can include
             additional nodes preceding they key separated by full stops).
-        wild : boolean
-            Only applies if `full_path=False`. If `True`, searches for any items
-            where `item` matches a substring of the item key (case insensitive).
-            Default is `False`.
-        return_path : boolean
-            Only applies if `full_path=False`. If `False` (default), a boolean
-            value is returned. If `True`, the full path to the item is returned,
+        wild : bool, default True
+            Only applies if ``full_path=False``. If True, searches for any items
+            where ``item`` matches a substring of the item key (case insensitive).
+            Default is ``False``.
+        return_path : bool, default False
+            Only applies if ``full_path=False``. If False, a boolean
+            value is returned. If True, the full path to the item is returned,
             a list of paths for multiple matches, or default value if it does
             not exist.
         default :
-            The value to return for path if the item does not exist (default is `None`).
+            The value to return for path if the item does not exist (default is ``None``).
 
         Examples
         --------
@@ -677,23 +676,22 @@ class DictionaryTreeBrowser:
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by
             full stops (periods)
-        full_path : boolean
-            If `True` (default), the full path to the item has to be given. If
-            `False`, a search for the item key is performed (can include
+        full_path : bool, default True
+            If True, the full path to the item has to be given. If
+            False, a search for the item key is performed (can include
             additional nodes preceding they key separated by full stops).
-        wild : boolean
-            Only applies if `full_path=False`. If `True`, searches for any items
-            where `item` matches a substring of the item key (case insensitive).
-            Default is `False`.
-        return_path : boolean
-            Only applies if `full_path=False`. Default `False`. If `True`,
-            returns an additional list of paths to the item(s) that match `key`.
-        default :
+        wild : bool
+            Only applies if ``full_path=False``. If True, searches for any items
+            where ``item`` matches a substring of the item key (case insensitive).
+            Default is False.
+        return_path : bool
+            Only applies if ``full_path=False``. Default False. If True,
+            returns an additional list of paths to the item(s) that match ``key``.
+        default : None or object, default None
             The value to return if the path or item does not exist.
-            (default is `None`).
 
         Examples
         --------
@@ -745,11 +743,11 @@ class DictionaryTreeBrowser:
         return self.has_item(item_path=item)
 
     def copy(self):
-        """Returns a shallow copy using :py:func:`copy.copy`."""
+        """Returns a shallow copy using :func:`copy.copy`."""
         return copy.copy(self)
 
     def deepcopy(self):
-        """Returns a deep copy using :py:func:`copy.deepcopy`."""
+        """Returns a deep copy using :func:`copy.deepcopy`."""
         return copy.deepcopy(self)
 
     def set_item(self, item_path, value):
@@ -900,10 +898,10 @@ def add_key_value(key, value):
 
 def swapelem(obj, i, j):
     """Swaps element having index i with element having index j in object obj
-    IN PLACE.
+    in place.
 
-    Example
-    -------
+    Examples
+    --------
     >>> L = ['a', 'b', 'c']
     >>> swapelem(L, 1, 2)
     >>> print(L)
@@ -932,7 +930,7 @@ def rollelem(a, index, to_index=0):
 
     Returns
     -------
-    res : list
+    list
         Output list.
 
     """
@@ -973,7 +971,8 @@ def find_subclasses(mod, cls):
 
     Returns
     -------
-    dictonary in which key, item = subclass name, subclass
+    dict
+        Dictionary in which key, item = subclass name, subclass
 
     """
     return dict(
@@ -1073,9 +1072,9 @@ def stack(
 
     Parameters
     ----------
-    signal_list : list of BaseSignal instances
+    signal_list : list of :class:`~.api.signals.BaseSignal`
         List of signals to stack.
-    axis : {None, int, str}
+    axis : None, int or str
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the signals are stacked over the
         axis given by its integer index or its name. The data must have the
@@ -1090,7 +1089,7 @@ def stack(
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-    lazy : {bool, None}
+    lazy : bool or None
         Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
     %s
@@ -1098,7 +1097,7 @@ def stack(
 
     Returns
     -------
-    signal : BaseSignal instance
+    :class:`~.api.signals.BaseSignal`
 
     Examples
     --------

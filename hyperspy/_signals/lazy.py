@@ -135,7 +135,7 @@ class LazySignal(BaseSignal):
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
     __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
-        ":py:class:`numpy.ndarray`", ":py:class:`dask.array.Array`"
+        ":class:`numpy.ndarray`", ":class:`dask.array.Array`"
         )
 
     def _repr_html_(self):
@@ -205,7 +205,7 @@ class LazySignal(BaseSignal):
             associated lazy signals inoperative.
         %s
         **kwargs : dict
-            Any other keyword arguments for :py:func:`dask.array.Array.compute`.
+            Any other keyword arguments for :meth:`dask.array.Array.compute`.
             For example `scheduler` or `num_workers`.
 
         Returns
@@ -279,7 +279,7 @@ class LazySignal(BaseSignal):
             -1 indicates the full size of the corresponding dimension.
             Default is -1 which automatically spans the full signal dimension
         **kwargs : dict
-            Any other keyword arguments for :py:func:`dask.array.rechunk`.
+            Any other keyword arguments for :func:`dask.array.rechunk`.
         """
         if not isinstance(sig_chunks, tuple):
             sig_chunks = (sig_chunks,)*len(self.axes_manager.signal_shape)
@@ -445,7 +445,7 @@ class LazySignal(BaseSignal):
 
         Parameters
         ----------
-        axis: None, DataAxis or tuple of data axes
+        axis: None, :class:`~.axes.DataAxis` or tuple of data axes
             The data axis that must not be broken into chunks when `rechunk`
             is `True`. If None, it defaults to the current signal axes.
         rechunk: bool, "dask_auto"
@@ -675,7 +675,7 @@ class LazySignal(BaseSignal):
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.trigger(obj=out) 
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
@@ -877,7 +877,9 @@ class LazySignal(BaseSignal):
     ):
         """Perform Incremental (Batch) decomposition on the data.
 
-        The results are stored in ``self.learning_results``.
+        The results are stored in the
+        :attr:`~.api.signals.BaseSignal.learning_results`
+        attribute.
 
         Read more in the :ref:`User Guide <big_data.decomposition>`.
 
@@ -899,10 +901,10 @@ class LazySignal(BaseSignal):
             the number of dask chunks to pass to the decomposition model.
             More chunks require more memory, but should run faster. Will be
             increased to contain at least ``output_dimension`` signals.
-        navigation_mask : {BaseSignal, numpy array, dask array}
+        navigation_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The navigation locations marked as True are not used in the
             decomposition. Not implemented for the 'SVD' algorithm.
-        signal_mask : {BaseSignal, numpy array, dask array}
+        signal_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The signal locations marked as True are not used in the
             decomposition. Not implemented for the 'SVD' algorithm.
         reproject : bool, default True
@@ -922,11 +924,8 @@ class LazySignal(BaseSignal):
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.decomposition` for non-lazy signals
-        * :py:func:`dask.array.linalg.svd`
-        * :py:class:`sklearn.decomposition.IncrementalPCA`
-        * :py:class:`~.learn.rpca.ORPCA`
-        * :py:class:`~.learn.ornmf.ORNMF`
+        dask.array.linalg.svd, sklearn.decomposition.IncrementalPCA,
+        hyperspy.learn.rpca.ORPCA, hyperspy.learn.ornmf.ORNMF
 
         """
         if get is None:
@@ -1214,8 +1213,8 @@ class LazySignal(BaseSignal):
         -------
         None.
 
-        Note
-        ----
+        Notes
+        -----
         The number of chunks will affect where the sum is taken. If the sum
         needs to be taken in the centre of the signal space (for example, in
         the case of diffraction pattern), the number of chunk needs to be an

@@ -41,16 +41,16 @@ class ParallelPool:
 
     Attributes
     ----------
-    pool: {ipyparallel.load_balanced_view, multiprocessing.Pool}
+    pool : :class:`ipyparallel.LoadBalancedView` or :class:`python:multiprocessing.pool.Pool`
         The pool object.
-    ipython_kwargs: dict
+    ipython_kwargs : dict
         The dictionary with Ipyparallel connection arguments.
-    timeout: float
+    timeout : float
         Timeout for either pool when waiting for results.
-    num_workers: int
+    num_workers : int
         The number of workers actually created (may be less than requested, but
         can't be more).
-    timestep: float
+    timestep : float
         Can be used as "ticks" to adjust CPU load when building upon this
         class.
 
@@ -63,14 +63,14 @@ class ParallelPool:
 
         Parameters
         ----------
-        num_workers: {None, int}
-            the (max) number of workers to create. If less are available,
+        num_workers : None or int, default None
+            The (max) number of workers to create. If less are available,
             smaller number is actually created.
-        ipyparallel: {None, bool}
-            which pool to set up. True - ipyparallel. False - multiprocessing.
+        ipyparallel : None or bool, default None
+            Which pool to set up. True - ipyparallel. False - multiprocessing.
             None - try ipyparallel, then multiprocessing if failed.
-        ipython_kwargs: {None, dict}
-            arguments that will be passed to the ipyparallel.Client when
+        ipython_kwargs : None or dict, default None
+            Arguments that will be passed to the ipyparallel.Client when
             creating. Not None implies ipyparallel=True.
         """
         if ipython_kwargs is None:
@@ -98,23 +98,17 @@ class ParallelPool:
 
     @property
     def is_ipyparallel(self):
-        """bool: Return ``True`` if the pool is ipyparallel-based else
-        ``False``
-        """
+        """Returns ``True`` if the pool is ipyparallel-based else ``False``."""
         return hasattr(self.pool, "client")
 
     @property
     def is_multiprocessing(self):
-        """bool: Return ``True`` if the pool is multiprocessing-based else
-        ``False``
-        """
+        """Returns ``True`` if the pool is multiprocessing-based else ``False``."""
         return isinstance(self.pool, Pool_type)
 
     @property
     def has_pool(self):
-        """bool: Return ``True`` if the pool is ready and set-up else
-        ``False``
-        """
+        """Returns ``True`` if the pool is ready and set-up else ``False``."""
         return self.is_ipyparallel or self.is_multiprocessing and self.pool._state == 0
 
     def _setup_ipyparallel(self):
@@ -139,8 +133,8 @@ class ParallelPool:
 
         Parameters
         ----------
-        ipyparallel: {None, bool}
-            if True, only tries to set up the ipyparallel pool. If False - only
+        ipyparallel : None or bool, default None
+            If True, only tries to set up the ipyparallel pool. If False - only
             the multiprocessing. If None, first tries ipyparallel, and it does
             not succeed, then multiprocessing.
         """
@@ -173,9 +167,9 @@ class ParallelPool:
 
         Parameters
         ----------
-        howlong: {None, float}
+        howlong : None or float
             How long the pool should sleep for in seconds. If None (default),
-            sleeps for "timestep"
+            sleeps for "timestep".
         """
         if howlong is None:
             howlong = self.timestep

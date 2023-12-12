@@ -55,49 +55,24 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
 @add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
 
-    """Model parameter
+    """The parameter of a component.
 
     Attributes
     ----------
+    bmin : float
+        The lower bound of the parameter.
+    bmax : float
+        The upper bound of the parameter.
+    ext_force_positive : bool
+    ext_bounded : bool
+    free : bool
+    map : numpy.ndarray
+    twin : None or Parameter
+    twin_function_expr : str
+    twin_inverse_function_expr : str
     value : float or array
         The value of the parameter for the current location. The value
         for other locations is stored in map.
-    bmin, bmax: float
-        Lower and upper bounds of the parameter value.
-    twin : {None, Parameter}
-        If it is not None, the value of the current parameter is
-        a function of the given Parameter. The function is by default
-        the identity function, but it can be defined by twin_function
-    twin_function_expr: str
-        Expression of the function that enables setting a functional
-        relationship between the parameter and its twin. If ``twin`` is not
-        ``None``, the parameter value is calculated as the output of calling the
-        twin function with the value of the twin parameter. The string is
-        parsed using sympy, so permitted values are any valid sympy expressions
-        of one variable. If the function is invertible the twin inverse function
-        is set automatically.
-    twin_inverse_function_expr : str
-        Expression of the function that enables setting the
-        value of the twin parameter. If ``twin`` is not
-        ``None``, its value is set to the output of calling the
-        twin inverse function with the value provided. The string is
-        parsed using sympy, so permitted values are any valid sympy expressions
-        of one variable.
-    ext_force_positive : bool
-        If True, the parameter value is set to be the absolute value
-        of the input value i.e. if we set Parameter.value = -3, the
-        value stored is 3 instead. This is useful to bound a value
-        to be positive in an optimization without actually using an
-        optimizer that supports bounding.
-    ext_bounded : bool
-        Similar to ext_force_positive, but in this case the bounds are
-        defined by bmin and bmax. It is a better idea to use
-        an optimizer that supports bounding though.
-
-    Methods
-    -------
-    connect, disconnect(function)
-        Call the functions connected when the value attribute changes.
 
     """
     __number_of_elements = 1
@@ -118,8 +93,8 @@ class Parameter(t.HasTraits):
     units = t.Str('')
     free = t.Property(t.CBool(True))
 
-    bmin = t.Property(NoneFloat(), label="Lower bounds")
-    bmax = t.Property(NoneFloat(), label="Upper bounds")
+    bmin = t.Property(NoneFloat(), label="Lower bound")
+    bmax = t.Property(NoneFloat(), label="Upper bound")
     _twin_function_expr = ""
     _twin_inverse_function_expr = ""
     _twin_function = None
@@ -137,8 +112,8 @@ class Parameter(t.HasTraits):
             The event triggers after the internal state of the `Parameter` has
             been updated.
 
-            Arguments
-            ---------
+            Parameters
+            ----------
             obj : Parameter
                 The `Parameter` that the event belongs to
             value : {float | array}
@@ -181,7 +156,7 @@ class Parameter(t.HasTraits):
               the dictionary. Has to match with the ``self._id_name``.
             * _whitelist: a dictionary, which keys are used as keywords to
               match with the parameter attributes. For more information see
-              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+              :func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from ``_whitelist.keys()``.
 
         Returns
@@ -211,6 +186,15 @@ class Parameter(t.HasTraits):
 
     @property
     def twin_function_expr(self):
+        """
+        Expression of the function that enables setting a functional
+        relationship between the parameter and its twin. If ``twin`` is not
+        ``None``, the parameter value is calculated as the output of calling the
+        twin function with the value of the twin parameter. The string is
+        parsed using sympy, so permitted values are any valid sympy expressions
+        of one variable. If the function is invertible the twin inverse function
+        is set automatically.
+        """
         return self._twin_function_expr
 
     @twin_function_expr.setter
@@ -248,6 +232,14 @@ class Parameter(t.HasTraits):
 
     @property
     def twin_inverse_function_expr(self):
+        """
+        Expression of the function that enables setting the
+        value of the twin parameter. If ``twin`` is not
+        ``None``, its value is set to the output of calling the
+        twin inverse function with the value provided. The string is
+        parsed using sympy, so permitted values are any valid sympy expressions
+        of one variable.
+        """
         if self.twin:
             return self._twin_inverse_function_expr
         else:
@@ -347,6 +339,7 @@ class Parameter(t.HasTraits):
 
     # Fix the parameter when coupled
     def _get_free(self):
+        """Whether the parameter is free or not."""
         if self.twin is None:
             return self._free
         else:
@@ -396,10 +389,17 @@ class Parameter(t.HasTraits):
             self.component._update_free_parameters()
 
     def _get_twin(self):
+        """
+        If it is not None, the value of the current parameter is
+        a function of the given Parameter. The function is by default
+        the identity function, but it can be defined by
+        :attr:`twin_function_expr`
+        """
         return self.__twin
     twin = property(_get_twin, _set_twin)
 
     def _get_bmin(self):
+        """The lower value of the bounds."""
         if self._number_of_elements == 1:
             return self._bounds[0]
         else:
@@ -416,6 +416,7 @@ class Parameter(t.HasTraits):
         self.trait_property_changed('bmin', old_value, arg)
 
     def _get_bmax(self):
+        """The higher value of the bounds."""
         if self._number_of_elements == 1:
             return self._bounds[1]
         else:
@@ -455,6 +456,11 @@ class Parameter(t.HasTraits):
 
     @property
     def ext_bounded(self):
+        """
+        Similar to :attr:`ext_force_positive`, but in this case the bounds
+        are defined by bmin and bmax. It is a better idea to use
+        an optimizer that supports bounding though.
+        """
         return self.__ext_bounded
 
     @ext_bounded.setter
@@ -466,6 +472,13 @@ class Parameter(t.HasTraits):
 
     @property
     def ext_force_positive(self):
+        """
+        If True, the parameter value is set to be the absolute value
+        of the input value i.e. if we set Parameter.value = -3, the
+        value stored is 3 instead. This is useful to bound a value
+        to be positive in an optimization without actually using an
+        optimizer that supports bounding.
+        """
         return self.__ext_force_positive
 
     @ext_force_positive.setter
@@ -478,7 +491,7 @@ class Parameter(t.HasTraits):
     def store_current_value_in_array(self):
         """Store the value and std attributes.
 
-        See also
+        See Also
         --------
         fetch, assign_current_value_to_all
 
@@ -584,16 +597,13 @@ class Parameter(t.HasTraits):
         field : {'values', 'std', 'is_set'}
             Field to return as signal.
 
-        Raises
-        ------
-        NavigationDimensionError
-            If the navigation dimension is 0
-
         """
         from hyperspy.signal import BaseSignal
 
-        s = BaseSignal(data=self.map[field],
-                       axes=self._axes_manager._get_navigation_axes_dicts())
+        s = BaseSignal(
+            data=self.map[field],
+            axes=self._axes_manager._get_navigation_axes_dicts()
+            )
         if self.component is not None and \
                 self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
@@ -628,8 +638,8 @@ class Parameter(t.HasTraits):
         **kwargs
             Any extra keyword arguments are passed to the signal plot.
 
-        Example
-        -------
+        Examples
+        --------
         >>> parameter.plot() #doctest: +SKIP
 
         Set the minimum and maximum displayed values
@@ -668,8 +678,9 @@ class Parameter(t.HasTraits):
             filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
         if save_std is True:
-            self.as_signal(field='std').save(append2pathname(
-                filename, '_std'))
+            self.as_signal(field='std').save(
+                append2pathname(filename, '_std')
+                )
 
     def as_dictionary(self, fullcopy=True):
         """Returns parameter as a dictionary, saving all attributes from
@@ -678,20 +689,21 @@ class Parameter(t.HasTraits):
 
         Parameters
         ----------
-        fullcopy : Bool (optional, False)
+        fullcopy : bool, optional False
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
         Returns
         -------
-        A dictionary, containing at least the following fields:
+        dict
+            A dictionary, containing at least the following fields:
 
             * _id_name: _id_name of the original parameter, used to create the
-              dictionary. Has to match with the self._id_name
+              dictionary. Has to match with the ``self._id_name``
             * _twins: a list of ids of the twins of the parameter
             * _whitelist: a dictionary, which keys are used as keywords to match
               with the parameter attributes. For more information see
-              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+              :func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
         """
@@ -718,14 +730,37 @@ class Parameter(t.HasTraits):
         return view
 
 
+COMPONENT_PARAMETERS_DOCSTRING = """Parameters
+        ----------
+        parameter_name_list : list
+            The list of parameter names.
+        linear_parameter_list : list, optional
+            The list of linear parameter. The default is None.
+        """
+
+
 @add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
+    """
+    The component of a model.
+
+    Attributes
+    ----------
+    active : bool
+    name : str
+    free_parameters : list
+    parameters : list
+    """
     __axes_manager = None
     # setting dtype for t.Property(t.Bool) causes serialization error with cloudpickle
     active = t.Property()
     name = t.Property()
 
     def __init__(self, parameter_name_list, linear_parameter_list=None, *args, **kwargs):
+        """
+        %s
+
+        """
         super().__init__(*args, **kwargs)
         self.events = Events()
         self.events.active_changed = Event("""
@@ -734,8 +769,8 @@ class Component(t.HasTraits):
             The event triggers after the internal state of the `Component` has
             been updated.
 
-            Arguments
-            ---------
+            Parameters
+            ----------
             obj : Component
                 The `Component` that the event belongs to
             active : bool
@@ -746,14 +781,14 @@ class Component(t.HasTraits):
                 support convolution.
 
             """, arguments=["obj", 'active'])
-        self.parameters = []
+        self._parameters = []
+        self._free_parameters = []
         self.init_parameters(parameter_name_list, linear_parameter_list)
         self._update_free_parameters()
         self.active = True
         self._active_array = None # only if active_is_multidimensional is True
         self.isbackground = False
         self.convolved = True
-        self.parameters = tuple(self.parameters)
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
@@ -769,6 +804,8 @@ class Component(t.HasTraits):
         self._slicing_order = ('active', 'active_is_multidimensional',
                                '_active_array',)
 
+    __init__.__doc__ %= COMPONENT_PARAMETERS_DOCSTRING
+
     _name = ''
     _active_is_multidimensional = False
     _active = True
@@ -776,10 +813,19 @@ class Component(t.HasTraits):
     @property
     def active_is_multidimensional(self):
         """In multidimensional signals it is possible to store the value of the
-        :py:attr:`~.component.Component.active` attribute at each navigation
-        index.
+        ``active`` attribute at each navigation index.
         """
         return self._active_is_multidimensional
+
+    @property
+    def free_parameters(self):
+        """The list of free parameters of the component."""
+        return tuple(self._free_parameters)
+
+    @property
+    def parameters(self):
+        """The list of parameters of the component."""
+        return tuple(self._parameters)
 
     @active_is_multidimensional.setter
     def active_is_multidimensional(self, value):
@@ -819,9 +865,9 @@ class Component(t.HasTraits):
                         "Another component already has "
                         "the name " + str(value))
             self._name = value
-            setattr(self.model.components, slugify(
+            setattr(self.model._components, slugify(
                 value, valid_variable_name=True), self)
-            self.model.components.__delattr__(
+            self.model._components.__delattr__(
                 slugify(old_value, valid_variable_name=True))
         else:
             self._name = value
@@ -868,16 +914,7 @@ class Component(t.HasTraits):
         """
         Initialise the parameters of the component.
 
-        Parameters
-        ----------
-        parameter_name_list : list
-            The list of parameter names.
-        linear_parameter_list : list, optional
-            The list of linear parameter. The default is None.
-
-        Returns
-        -------
-        None.
+        %s
 
         """
         if linear_parameter_list is None:
@@ -885,7 +922,7 @@ class Component(t.HasTraits):
 
         for name in parameter_name_list:
             parameter = Parameter()
-            self.parameters.append(parameter)
+            self._parameters.append(parameter)
             parameter.name = name
             if name in linear_parameter_list:
                 parameter._linear = True
@@ -895,6 +932,8 @@ class Component(t.HasTraits):
                 parameter.grad = getattr(self, 'grad_' + name)
             parameter.component = self
             self.add_trait(name, t.Instance(Parameter))
+    
+    init_parameters.__doc__ %= COMPONENT_PARAMETERS_DOCSTRING
 
     def _get_long_description(self):
         if self.name:
@@ -917,10 +956,12 @@ class Component(t.HasTraits):
         return text
 
     def _update_free_parameters(self):
-        self.free_parameters = sorted([par for par in self.parameters if
-                                       par.free], key=lambda x: x.name)
-        self._nfree_param = sum([par._number_of_elements for par in
-                                 self.free_parameters])
+        self._free_parameters = sorted(
+            [par for par in self.parameters if par.free], key=lambda x: x.name
+            )
+        self._nfree_param = sum(
+            [par._number_of_elements for par in self._free_parameters]
+            )
 
     def update_number_parameters(self):
         i = 0
@@ -1100,7 +1141,7 @@ class Component(t.HasTraits):
         >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
         >>> v1.set_parameters_free(linear=True)
 
-        See also
+        See Also
         --------
         set_parameters_not_free
         hyperspy.model.BaseModel.set_parameters_free
@@ -1144,6 +1185,7 @@ class Component(t.HasTraits):
             If True, only sets a parameter not free if it is linear
         only_nonlinear : bool
             If True, only sets a parameter not free if it is nonlinear
+
         Examples
         --------
         >>> v1 = hs.model.components1D.Voigt()
@@ -1152,7 +1194,7 @@ class Component(t.HasTraits):
         >>> v1.set_parameters_not_free(only_linear=True)
 
 
-        See also
+        See Also
         --------
         set_parameters_free
         hyperspy.model.BaseModel.set_parameters_free
@@ -1189,11 +1231,11 @@ class Component(t.HasTraits):
         """
         Returns component as a dictionary. For more information on method
         and conventions, see
-        :py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+        :meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
 
         Parameters
         ----------
-        fullcopy : Bool (optional, False)
+        fullcopy : bool, optional False
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
@@ -1205,9 +1247,9 @@ class Component(t.HasTraits):
             * parameters: a list of dictionaries of the parameters, one per
               component.
             * _whitelist: a dictionary with keys used as references saved
-              attributes, for more information, see
-              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys()
+              attributes, for more information, see :func:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
+            * any field from _whitelist.keys().
+
         """
         dic = {
             'parameters': [
@@ -1233,11 +1275,11 @@ class Component(t.HasTraits):
               dictionary. Has to match with the self._id_name
             * parameters: a list of dictionaries, one per parameter of the
               component (see
-              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              :meth:`~hyperspy.component.Parameter.as_dictionary`
               documentation for more details)
             * _whitelist: a dictionary, which keys are used as keywords to
               match with the parameter attributes. For more information see
-              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+              :func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from _whitelist.keys()
 
         Returns

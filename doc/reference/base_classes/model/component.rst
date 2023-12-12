@@ -1,3 +1,6 @@
+Component
+"""""""""
+
 .. currentmodule:: hyperspy.component
 
 .. autoclass:: Component

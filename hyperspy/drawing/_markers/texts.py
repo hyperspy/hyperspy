@@ -39,13 +39,13 @@ class Texts(Markers):
         %s
         sizes : array-like
             The size of the text in points.
-        facecolors : matplotlib color or list of colors
+        facecolors : (list of) matplotlib color
             Set the facecolor(s) of the markers. It can be a color
             (all patches have same color), or a sequence of colors;
             if it is a sequence the patches will cycle through the sequence.
             If c is 'none', the patch will not be filled.
         kwargs : dict
-            Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
+            Keyword arguments are passed to :class:`matplotlib.collections.CircleCollection`.
         """
         super().__init__(
             collection=TextCollection,

@@ -189,19 +189,18 @@ class BaseModel(list):
     dimensions.
 
     Models of one-dimensional signals should use the
-    :py:class:`~hyperspy.models.model1d` and models of two-dimensional signals
-    should use the :class:`~hyperspy.models.model2d`.
+    :class:`~hyperspy.models.model1d.Model1D` and models of two-dimensional signals
+    should use the :class:`~hyperspy.models.model2d.Model2D`.
 
     A model is constructed as a linear combination of
-    :py:mod:`~hyperspy._components` that are added to the model using the
-    :py:meth:`~hyperspy.model.BaseModel.append` or
-    :py:meth:`~hyperspy.model.BaseModel.extend`. There are many predefined
-    components available in the in the :py:mod:`~hyperspy._components`
-    module. If needed, new components can be created easily using the code of
-    existing components as a template.
+    :mod:`~.api.model.components1D` or :mod:`~.api.model.components2D`
+    that are added to the model using the :meth:`append` or :meth:`extend`.
+    If needed, new components can be created easily created using using
+    :class:`~.api.model.components1D.Expression` code of existing components
+    as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
-    :py:meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
+    :meth:`multifit`. Once the optimizer reaches
     the convergence criteria or the maximum number of iterations the new value
     of the component parameters are stored in the components.
 
@@ -210,50 +209,64 @@ class BaseModel(list):
 
     Attributes
     ----------
-
-    signal : BaseSignal instance
-        It contains the data to fit.
-    chisq : :py:class:`~.signal.BaseSignal` of float
-        Chi-squared of the signal (or np.nan if not yet fit)
-    dof : :py:class:`~.signal.BaseSignal` of int
-        Degrees of freedom of the signal (0 if not yet fit)
-    components : :py:class:`~.model.ModelComponents` instance
-        The components of the model are attributes of this class. This provides
-        a convenient way to access the model components when working in IPython
-        as it enables tab completion.
+    signal : :class:`~.api.signals.BaseSignal`
+    chisq : :class:`~.api.signals.BaseSignal`
+    red_chisq : :class:`~.api.signals.BaseSignal`
+    dof : :class:`~.api.signals.BaseSignal`
+    components : :class:`~.model.ModelComponents`
 
     Methods
     -------
-    set_signal_range, remove_signal range, reset_signal_range,
-    add signal_range.
+    append
+        Append one component to the model.
+    extend
+        Append multiple components to the model.
+    remove
+        Remove component from model.
+    set_signal_range_from_mask
         Customize the signal range to fit.
-    fit, multifit
-        Fit the model to the data at the current position or the
-        full dataset.
-    save_parameters2file, load_parameters_from_file
-        Save/load the parameter values to/from a file.
-    plot
-        Plot the model and the data.
-    enable_plot_components, disable_plot_components
-        Plot each component separately. (Use after `plot`.)
-    set_current_values_to
-        Set the current value of all the parameters of the given component as
-        the value for all the dataset.
-    enable_adjust_position, disable_adjust_position
-        Enable/disable interactive adjustment of the position of the components
-        that have a well defined position. (Use after `plot`).
-    fit_component
-        Fit just the given component in the given signal range, that can be
-        set interactively.
-    set_parameters_not_free, set_parameters_free
-        Fit the `free` status of several components and parameters at once.
-
-    See also
+    fit
+        Fit the model to the data at the current position.
+    multifit
+        Fit the model to the data at all navigation position.
+    store_current_values
+        Store the value of the parameters at the current position.
+    fetch_stored_values
+        fetch stored values of the parameters.
+    save_parameters2file
+        Save the parameter values to a file.
+    load_parameters_from_file
+        Load the parameter values from a file.
+    enable_plot_components
+        Plot each component separately. Use after :meth`plot`.
+    disable_plot_components
+        Disable plotting each component separately. Use after :meth`plot`.
+    set_parameters_not_free
+        Fix some parameters.
+    set_parameters_free
+        Free some parameters.
+    set_parameters_value
+        Set the value of a parameter in components in a model to a specified
+        value.
+    as_signal
+        Generate a Signal1D instance (possible multidimensional)
+        from the model.
+    export_results
+        Save the value of the parameters in separate files.
+    plot_results
+        Plot the value of all parameters at all positions.
+    print_current_values
+        Print the value of the parameters at the current position.
+    as_dictionary
+        Exports the model to a dictionary that can be saved in a file.
+        
+    See Also
     --------
-    :py:class:`~hyperspy.models.model1d.Model1D`
-    :py:class:`~hyperspy.models.model2d.Model2D`
+    hyperspy.models.model1d.Model1D, hyperspy.models.model2d.Model2D
 
     """
+    # Defined in subclass
+    _signal_dimension = None
 
     def __init__(self):
 
@@ -264,8 +277,8 @@ class BaseModel(list):
             The event triggers after the fitting step was finished, and only of
             at least one of the parameters changed.
 
-            Arguments
-            ---------
+            Parameters
+            ----------
             obj : Model
                 The Model that the event belongs to
             """, arguments=['obj'])
@@ -276,6 +289,8 @@ class BaseModel(list):
         # multifit(). Setting it to None ensures that the existing behaviour
         # is preserved.
         self._binned = None
+        self.inav = ModelSpecialSlicers(self, True)
+        self.isig = ModelSpecialSlicers(self, False)
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -287,9 +302,42 @@ class BaseModel(list):
         raise NotImplementedError
 
     @property
+    def signal(self):
+        """The signal data to fit."""
+        return self._signal
+
+    @signal.setter
+    def signal(self, value):
+        if value.axes_manager.signal_dimension == self._signal_dimension:
+            self._signal = value
+        else:
+            raise ValueError(
+                f"The signal must have a signal dimension of {self._signal_dimension}."
+                )
+
+    @property
+    def chisq(self):
+        """Chi-squared of the signal (or np.nan if not yet fit)."""
+        return self._chisq
+
+    @property
+    def dof(self):
+        """Degrees of freedom of the signal (0 if not yet fit)"""
+        return self._dof
+
+    @property
+    def components(self):
+        """The components of the model are attributes of this class.
+        
+        This provides a convenient way to access the model components
+        when working in IPython as it enables tab completion.
+        """
+        return self._components
+
+    @property
     def convolved(self):
         raise NotImplementedError("This model does not support convolution.")
-    
+
     @convolved.setter
     def convolved(self, value):
         # This is for compatibility with model saved with HyperSpy < 2.0
@@ -312,8 +360,10 @@ class BaseModel(list):
 
         See Also
         --------
-        set_signal_range, add_signal_range,
-        remove_signal_range, reset_signal_range
+        hyperspy.models.model1d.Model1D.set_signal_range,
+        hyperspy.models.model1d.Model1D.add_signal_range,
+        hyperspy.models.model1d.Model1D.remove_signal_range,
+        hyperspy.models.model1d.Model1D.reset_signal_range
 
         Examples
         --------
@@ -374,10 +424,10 @@ class BaseModel(list):
 
             * _whitelist: a dictionary with keys used as references of save
               attributes, for more information, see
-              :py:func:`~.misc.export_dictionary.load_from_dictionary`
+              :func:`~.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
               the model (see
-              :py:meth:`~.component.Parameter.as_dictionary`
+              :meth:`~.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
         """
@@ -441,7 +491,8 @@ class BaseModel(list):
 
         Parameters
         ----------
-        thing: `Component` instance.
+        thing : :class:`~hyperspy.component.Component`
+            The component to add to the model.
         """
         if not isinstance(thing, Component):
             raise ValueError(
@@ -468,7 +519,7 @@ class BaseModel(list):
         thing._create_arrays()
         list.append(self, thing)
         thing.model = self
-        setattr(self.components, slugify(name_string,
+        setattr(self._components, slugify(name_string,
                                          valid_variable_name=True), thing)
         if self._plot_active:
             self._connect_parameters2update_plot(components=[thing])
@@ -535,7 +586,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : list of HyperSpy components, optional
+        component_list : list of :class:`~hyperspy.component.Component`, optional
             If a list of components is given, only the components given in the
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
@@ -543,14 +594,15 @@ class BaseModel(list):
             If True the signal range outside of the fitted range is filled with
             nans. Default True.
         %s
-        out : {None, BaseSignal}
+        out : None or :class:`~hyperspy.api.signals.BaseSignal`
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
 
         Returns
         -------
-        BaseSignal : An instance of the same class as `BaseSignal`.
+        :class:`~hyperspy.api.signals.BaseSignal`
+            The model as a signal.
 
         Examples
         --------
@@ -729,6 +781,11 @@ class BaseModel(list):
         self._model_line = None
 
     def enable_plot_components(self):
+        """
+        Enable interactive adjustment of the position of the components
+        that have a well defined position. Use after
+        :meth:`~hyperspy.models.model1d.Model1D.plot`.
+        """
         if self._plot is None or self._plot_components:
             return
         for component in self.active_components:
@@ -736,6 +793,11 @@ class BaseModel(list):
         self._plot_components = True
 
     def disable_plot_components(self):
+        """
+        Disable interactive adjustment of the position of the components
+        that have a well defined position. Use after
+        :meth:`~hyperspy.models.model1d.Model1D.plot`.
+        """
         if self._plot is None:
             return
         if self._plot_components:
@@ -1013,17 +1075,17 @@ class BaseModel(list):
             Fit the current index only, instead of the whole navigation space.
         kwargs : dict, optional
             Keywords arguments are passed to
-            :py:func:`sklearn.linear_model.ridge_regression`.
+            :func:`sklearn.linear_model.ridge_regression`.
 
         Notes
         -----
         More linear optimizers can be added in the future, but note that in order
         to support simultaneous fitting across the dataset, the optimizer must
         support "two-dimensional y" - see the ``b`` parameter in
-        :py:func:`numpy.linalg.lstsq`.
+        :func:`numpy.linalg.lstsq`.
 
         Currently, the overhead in calculating the component data takes about
-        100 times longer than actually running :py:func:`np.linalg.lstsq`.
+        100 times longer than actually running :func:`np.linalg.lstsq`.
         That means that going pixel-by-pixel, calculating the component data
         each time is not faster than the normal nonlinear methods. Linear
         fitting is hence currently only useful for fitting a dataset in the
@@ -1271,7 +1333,8 @@ class BaseModel(list):
 
     @property
     def red_chisq(self):
-        """:py:class:`~.signal.BaseSignal`: Reduced chi-squared.
+        """The Reduced chi-squared.
+        
         Calculated from ``self.chisq`` and ``self.dof``.
         """
         tmp = self.chisq / (- self.dof + self._channel_switches.sum() - 1)
@@ -1350,7 +1413,7 @@ class BaseModel(list):
         -----
         The chi-squared and reduced chi-squared statistics, and the
         degrees of freedom, are computed automatically when fitting,
-        only when `loss_function="ls"`. They are stored as signals:
+        only when ``loss_function="ls"``. They are stored as signals:
         ``chisq``, ``red_chisq`` and ``dof``.
 
         If the attribute ``metada.Signal.Noise_properties.variance``
@@ -1368,8 +1431,7 @@ class BaseModel(list):
 
         See Also
         --------
-        * :py:meth:`~hyperspy.model.BaseModel.multifit`
-        * :py:meth:`~hyperspy.model.EELSModel.fit`
+        multifit, fit
 
         """
         cm = (
@@ -1807,19 +1869,19 @@ class BaseModel(list):
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
             interactive monitoring of the fitting (if in interactive mode).
-        iterpath : {None, "flyback", "serpentine"}, default None
-            If "flyback":
+        iterpath : {None, ``"flyback"``, ``"serpentine"``}, default None
+            If ``"flyback"``:
                 At each new row the index begins at the first column,
-                in accordance with the way :py:class:`numpy.ndindex` generates indices.
-            If "serpentine":
+                in accordance with the way :class:`numpy.ndindex` generates indices.
+            If ``"serpentine"``:
                 Iterate through the signal in a serpentine, "snake-game"-like
                 manner instead of beginning each new row at the first index.
                 Works for n-dimensional navigation space, not just 2D.
             If None:
-                Use the value of :py:attr:`~.axes.AxesManager.iterpath`.
-        **kwargs : keyword arguments
+                Use the value of :attr:`~.axes.AxesManager.iterpath`.
+        **kwargs : dict
             Any extra keyword argument will be passed to the fit method.
-            See the documentation for :py:meth:`~.model.BaseModel.fit`
+            See the documentation for :meth:`~hyperspy.model.BaseModel.fit`
             for a list of valid arguments.
 
         Returns
@@ -1828,7 +1890,7 @@ class BaseModel(list):
 
         See Also
         --------
-        * :py:meth:`~.model.BaseModel.fit`
+        fit
 
         """
         if show_progressbar is None:
@@ -2024,6 +2086,7 @@ class BaseModel(list):
         Parameters
         ----------
         filename : str
+            The file name of the file it is saved to.
 
         See Also
         --------
@@ -2032,8 +2095,9 @@ class BaseModel(list):
         Notes
         -----
         This method can be used to save the current state of the model in a way
-        that can be loaded back to recreate the it using `load_parameters_from
-        file`. Actually, as of HyperSpy 0.8 this is the only way to do so.
+        that can be loaded back to recreate it using
+        :meth:`~hyperspy.model.BaseModel.load_parameters_from_file`.
+        Actually, as of HyperSpy 0.8 this is the only way to do so.
         However, this is known to be brittle. For example see
         https://github.com/hyperspy/hyperspy/issues/341.
 
@@ -2049,12 +2113,13 @@ class BaseModel(list):
         np.savez(filename, **kwds)
 
     def load_parameters_from_file(self, filename):
-        """Loads the parameters array from  a binary file written with the
-        'save_parameters2file' function.
+        """Loads the parameters array from a binary file written with the
+        :meth:`~hyperspy.model.BaseModel.save_parameters2file` function.
 
         Parameters
-        ---------
+        ----------
         filename : str
+            The file name of the file to load it from.
 
         See Also
         --------
@@ -2062,10 +2127,10 @@ class BaseModel(list):
 
         Notes
         -----
-        In combination with `save_parameters2file`, this method can be used to
-        recreate a model stored in a file. Actually, before HyperSpy 0.8 this
-        is the only way to do so.  However, this is known to be brittle. For
-        example see https://github.com/hyperspy/hyperspy/issues/341.
+        In combination with :meth:`~hyperspy.model.BaseModel.save_parameters2file`,
+        this method can be used to recreate a model stored in a file. Actually,
+        before HyperSpy 0.8 this is the only way to do so. However, this is known
+        to be brittle. For example see https://github.com/hyperspy/hyperspy/issues/341.
 
         """
         f = np.load(filename)
@@ -2084,12 +2149,12 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : list of components, optional
+        component_list : list of :class:`~hyperspy.component.Component`, optional
             If a list of components is given, the operation will be performed
             only in the value of the parameters of the given components.
             The components can be specified by name, index or themselves.
             If ``None`` (default), the active components will be considered.
-        mask : boolean numpy array or None, optional
+        mask : numpy.ndarray of bool or None, optional
             The operation won't be performed where mask is True.
 
         """
@@ -2132,7 +2197,7 @@ class BaseModel(list):
             current folder is used by default.
         format : str
             The extension of the file format. It must be one of the
-            fileformats supported by HyperSpy. The default is "hspy".
+            fileformats supported by HyperSpy. The default is ``"hspy"``.
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
@@ -2158,7 +2223,6 @@ class BaseModel(list):
 
         Parameters
         ----------
-
         only_free : bool
             If True, only the value of the parameters that are free will be
             plotted.
@@ -2187,7 +2251,7 @@ class BaseModel(list):
             only parameters which are free will be printed.
         only_active : bool
             If True, only values of active components will be printed
-        component_list : None or list of components.
+        component_list : None or list of :class:`~hyperspy.component.Component`
             If None, print all components.
         """
         display(
@@ -2204,12 +2268,12 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : None, or list of hyperspy components, optional
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
             If None, will apply the function to all components in the model.
             If list of components, will apply the functions to the components
             in the list.  The components can be specified by name, index or
             themselves.
-        parameter_name_list : None or list of strings, optional
+        parameter_name_list : None or list of str, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
@@ -2224,12 +2288,13 @@ class BaseModel(list):
         >>> m.append(v1)
         >>> m.set_parameters_not_free()
 
-        >>> m.set_parameters_not_free(component_list=[v1],
-                                      parameter_name_list=['area','centre'])
+        >>> m.set_parameters_not_free(
+        ...     component_list=[v1], parameter_name_list=['area','centre']
+        ... )
         >>> m.set_parameters_not_free(only_linear=True)
 
 
-        See also
+        See Also
         --------
         set_parameters_free
         hyperspy.component.Component.set_parameters_free
@@ -2258,18 +2323,18 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : None, or list of hyperspy components, optional
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
             If None, will apply the function to all components in the model.
             If list of components, will apply the functions to the components
             in the list. The components can be specified by name, index or
             themselves.
-        parameter_name_list : None or list of strings, optional
+        parameter_name_list : None or list of str, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
-        only_linear : Bool
+        only_linear : bool
             If True, will only set parameters that are linear to not free.
-        only_nonlinear : Bool
+        only_nonlinear : bool
             If True, will only set parameters that are nonlinear to not free.
 
         Examples
@@ -2281,7 +2346,7 @@ class BaseModel(list):
                                   parameter_name_list=['area','centre'])
         >>> m.set_parameters_free(only_linear=True)
 
-        See also
+        See Also
         --------
         set_parameters_not_free
         hyperspy.component.Component.set_parameters_free
@@ -2314,13 +2379,14 @@ class BaseModel(list):
 
         Parameters
         ----------
-        parameter_name : string
+        parameter_name : str
             Name of the parameter whose value will be changed
-        value : number
+        value : float or int
             The new value of the parameter
-        component_list : list of hyperspy components, optional
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
             A list of components whose parameters will changed. The components
-            can be specified by name, index or themselves.
+            can be specified by name, index or themselves. If None, use all
+            components of the model.
         only_current : bool, default False
             If True, will only change the parameter value at the current
             position in the model.
@@ -2333,8 +2399,9 @@ class BaseModel(list):
         >>> m.extend([v1,v2])
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
-        >>> m.set_parameters_value('area', 5, component_list=[v1],
-                                   only_current=True)
+        >>> m.set_parameters_value(
+        ...    'area', 5, component_list=[v1], only_current=True
+        ... )
 
         """
 
@@ -2361,7 +2428,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fullcopy : bool (optional, True)
+        fullcopy : bool, optional True
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
@@ -2374,7 +2441,7 @@ class BaseModel(list):
               component
             * _whitelist: a dictionary with keys used as references for saved
               attributes, for more information, see
-              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+              :func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
         Examples
@@ -2413,16 +2480,15 @@ class BaseModel(list):
     def set_component_active_value(
             self, value, component_list=None, only_current=False):
         """
-        Sets the component 'active' parameter to a specified value
+        Sets the component ``'active'`` parameter to a specified value.
 
         Parameters
         ----------
         value : bool
-            The new value of the 'active' parameter
-        component_list : list of hyperspy components, optional
+            The new value of the ``'active'`` parameter
+        component_list : list of :class:`~hyperspy.component.Component`, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
-
         only_current : bool, default False
             If True, will only change the parameter value at the current
             position in the model.
@@ -2482,7 +2548,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        workers : {None, int}
+        workers : None or int
             the number of workers to initialise.
             If zero, all computations will be done serially.
             If None (default), will attempt to use (number-of-cores - 1),

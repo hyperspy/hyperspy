@@ -36,7 +36,9 @@ class CommonSignal1D:
 
         See Also
         --------
-        transpose, as_signal1D, as_signal2D, hs.transpose
+        hyperspy.api.signals.BaseSignal.as_signal2D,
+        hyperspy.api.signals.BaseSignal.transpose,
+        hyperspy.api.transpose
 
         Raises
         ------

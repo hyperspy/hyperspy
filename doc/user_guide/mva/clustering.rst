@@ -63,18 +63,18 @@ Clustering functions HyperSpy
 
 All HyperSpy signals have the following methods for clustering analysis:
 
-* :py:meth:`~.api.signals.BaseSignal.cluster_analysis`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_results`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_labels`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_signals`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_distances`
-* :py:meth:`~.api.signals.BaseSignal.get_cluster_signals`
-* :py:meth:`~.api.signals.BaseSignal.get_cluster_labels`
-* :py:meth:`~.api.signals.BaseSignal.get_cluster_distances`
-* :py:meth:`~.api.signals.BaseSignal.estimate_number_of_clusters`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_metric`
+* :meth:`~.api.signals.BaseSignal.cluster_analysis`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_results`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_labels`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_signals`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_distances`
+* :meth:`~.api.signals.BaseSignal.get_cluster_signals`
+* :meth:`~.api.signals.BaseSignal.get_cluster_labels`
+* :meth:`~.api.signals.BaseSignal.get_cluster_distances`
+* :meth:`~.api.signals.BaseSignal.estimate_number_of_clusters`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_metric`
 
-The :py:meth:`~.api.signals.BaseSignal.cluster_analysis` method can perform cluster
+The :meth:`~.api.signals.BaseSignal.cluster_analysis` method can perform cluster
 analysis using any :external+sklearn:ref:`scikit-learn clustering <clustering>`
 algorithms or any other object with a compatible API. This involves importing
 the relevant algorithm class from scikit-learn.
@@ -97,7 +97,7 @@ For example:
 
 is equivalent to:
 
-:py:meth:`~.api.signals.BaseSignal.cluster_analysis` computes the cluster labels. The
+:meth:`~.api.signals.BaseSignal.cluster_analysis` computes the cluster labels. The
 clusters areas with identical label are averaged to create a set of cluster
 centres. This averaging can be performed on the ``signal`` itself, the
 :ref:`BSS <mva.blind_source_separation>` or :ref:`decomposition <mva.decomposition>` results
@@ -125,7 +125,7 @@ under investigation.
 
 All pre-processing methods from (or compatible with) the
 :external+sklearn:ref:`scikit-learn pre-processing <preprocessing>` module can be passed
-to the ``scaling`` keyword of the :py:meth:`~.api.signals.BaseSignal.cluster_analysis`
+to the ``scaling`` keyword of the :meth:`~.api.signals.BaseSignal.cluster_analysis`
 method. For convenience, the following methods from scikit-learn are
 available as standard: ``standard`` , ``minmax`` and ``norm`` as
 standard. Briefly, ``norm`` treats the features as a vector and normalizes the
@@ -214,7 +214,7 @@ Examples
 Clustering using decomposition results
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Let's use the :py:func:`sklearn.datasets.make_blobs`
+Let's use the :func:`sklearn.datasets.make_blobs`
 function supplied by `scikit-learn` to make dummy data to see how clustering
 might work in practice.
 

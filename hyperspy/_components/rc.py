@@ -40,7 +40,7 @@ class RC(Expression):
 
 
     Parameters
-    -----------
+    ----------
     Vmax : float
         maximum voltage, asymptote of the function for
         :math:`\mathrm{lim}_{x\to\infty}`
@@ -50,7 +50,7 @@ class RC(Expression):
         tau=RC is the RC circuit time constant (voltage rise time)
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     """
 

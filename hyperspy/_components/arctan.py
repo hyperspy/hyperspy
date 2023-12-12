@@ -39,7 +39,7 @@ class Arctan(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A : float
         Amplitude parameter. :math:`\lim_{x\to -\infty}f(x)=-A` and
         :math:`\lim_{x\to\infty}f(x)=A`

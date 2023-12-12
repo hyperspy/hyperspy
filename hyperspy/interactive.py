@@ -37,17 +37,17 @@ class Interactive:
 
     Parameters
     ----------
-    f : function or method
+    f : callable
         A function that returns an object and that optionally can place the
         result in an object given through the ``out`` keyword.
-    event : {Event, "auto", None, iterable of events}
+    event : (list of) :class:`~hyperspy.events.Event`, str ("auto") or None
         Update the result of the operation when the event is triggered.
         If ``"auto"`` and ``f`` is a method of a Signal class instance its
         ``data_changed`` event is selected if the function takes an ``out``
         argument. If None, ``update`` is not connected to any event. The
         default is ``"auto"``. It is also possible to pass an iterable of
         events, in which case all the events are connected.
-    recompute_out_event : {Event, "auto", None, iterable of events}
+    recompute_out_event : (list of) :class:`~hyperspy.events.Event`, str ("auto") or None
         Optional argument. If supplied, this event causes a full
         recomputation of a new object. Both the data and axes of the new
         object are then copied over to the existing `out` object. Only
@@ -60,7 +60,7 @@ class Interactive:
         events, in which case all the events are connected.
     *args :
         Arguments to be passed to ``f``.
-    **kwargs :
+    **kwargs : dict
         Keyword arguments to be passed to ``f``.
 
     """
@@ -132,7 +132,7 @@ def interactive(f, event="auto", recompute_out_event="auto", *args, **kwargs):
 
     Returns
     -------
-    :py:class:`~hyperspy.signal.BaseSignal` or one of its subclass
+    :class:`~hyperspy.signal.BaseSignal` or subclass
         Signal updated with the operation result when a given event is
         triggered.
 

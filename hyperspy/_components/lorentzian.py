@@ -76,7 +76,7 @@ class Lorentzian(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A : float
         Area parameter, where :math:`A/(\gamma\pi)` is the maximum (height) of
         peak.
@@ -87,7 +87,7 @@ class Lorentzian(Expression):
         Location of the peak maximum.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
 
     For convenience the `fwhm` and `height` attributes can be used to get and set
@@ -128,7 +128,7 @@ class Lorentzian(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.

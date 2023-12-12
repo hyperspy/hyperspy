@@ -12,7 +12,7 @@ signals in the Signal1D class.
 Cropping
 --------
 
-The :py:meth:`~.api.signals.Signal1D.crop_signal` crops the
+The :meth:`~.api.signals.Signal1D.crop_signal` crops the
 the signal object along the signal axis (e.g. the spectral energy range)
 *in-place*. If no parameter is passed, a user interface
 appears in which to crop the one dimensional signal. For example:
@@ -57,7 +57,7 @@ Background removal
     ``zero_fill`` and ``plot_remainder`` keyword arguments and big speed
     improvements.
 
-The :py:meth:`~.api.signals.Signal1D.remove_background` method provides
+The :meth:`~.api.signals.Signal1D.remove_background` method provides
 background removal capabilities through both a CLI and a GUI. The GUI displays
 an interactive preview of the remainder after background subtraction. Currently,
 the following background types are supported: Doniach, Exponential, Gaussian,
@@ -88,7 +88,7 @@ Example of usage:
 Calibration
 -----------
 
-The :py:meth:`~.api.signals.Signal1D.calibrate` method provides a user
+The :meth:`~.api.signals.Signal1D.calibrate` method provides a user
 interface to calibrate the spectral axis.
 
 
@@ -99,8 +99,8 @@ The following methods use sub-pixel cross-correlation or user-provided shifts
 to align spectra. They support applying the same transformation to multiple
 files.
 
-* :py:meth:`~.api.signals.Signal1D.align1D`
-* :py:meth:`~.api.signals.Signal1D.shift1D`
+* :meth:`~.api.signals.Signal1D.align1D`
+* :meth:`~.api.signals.Signal1D.shift1D`
 
 
 .. _integrate_1D-label:
@@ -108,10 +108,10 @@ files.
 Integration
 -----------
 
-To integrate signals use the :py:meth:`~.api.signals.BaseSignal.integrate1D` method.
+To integrate signals use the :meth:`~.api.signals.BaseSignal.integrate1D` method.
 Possibly in combination with a :ref:`ROI-label` if interactivity is required.
 Otherwise, a signal subrange for integration can also be chosen with the
-:py:attr:`~.api.signals.BaseSignal.isig` method.
+:attr:`~.api.signals.BaseSignal.isig` method.
 
 .. code-block:: python
 
@@ -124,16 +124,16 @@ Data smoothing
 The following methods (that include user interfaces when no arguments are
 passed) can perform data smoothing with different algorithms:
 
-* :py:meth:`~.api.signals.Signal1D.smooth_lowess`
+* :meth:`~.api.signals.Signal1D.smooth_lowess`
   (requires ``statsmodels`` to be installed)
-* :py:meth:`~.api.signals.Signal1D.smooth_tv`
-* :py:meth:`~.api.signals.Signal1D.smooth_savitzky_golay`
+* :meth:`~.api.signals.Signal1D.smooth_tv`
+* :meth:`~.api.signals.Signal1D.smooth_savitzky_golay`
 
 
 Spike removal
 --------------
 
-:py:meth:`~.api.signals.Signal1D.spikes_removal_tool` provides an user
+:meth:`~.api.signals.Signal1D.spikes_removal_tool` provides an user
 interface to remove spikes from spectra. The ``derivative histogram`` allows to
 identify the appropriate threshold. It is possible to use this tool
 on a specific interval of the data by :ref:`slicing the data
@@ -167,7 +167,7 @@ Peak finding
 ------------
 
 A peak finding routine based on the work of T. O'Haver is available in HyperSpy
-through the :py:meth:`~.api.signals.Signal1D.find_peaks1D_ohaver`
+through the :meth:`~.api.signals.Signal1D.find_peaks1D_ohaver`
 method.
 
 
@@ -176,7 +176,7 @@ Estimate peak width
 
 For asymmetric peaks, `fitted functions <model.fitting>` may not provide
 an accurate description of the peak, in particular the peak width. The function
-:py:meth:`~.api.signals.Signal1D.estimate_peak_width`
+:meth:`~.api.signals.Signal1D.estimate_peak_width`
 determines the width of a peak at a certain fraction of its maximum value.
 
 
@@ -184,8 +184,8 @@ Other methods
 -------------
 
 * Interpolate the spectra in between two positions
-  :py:meth:`~.api.signals.Signal1D.interpolate_in_between`
+  :meth:`~.api.signals.Signal1D.interpolate_in_between`
 * Convolve the spectra with a gaussian
-  :py:meth:`~.api.signals.Signal1D.gaussian_filter`
+  :meth:`~.api.signals.Signal1D.gaussian_filter`
 * Apply a hanning taper to the spectra
-  :py:meth:`~.api.signals.Signal1D.hanning_taper`
+  :meth:`~.api.signals.Signal1D.hanning_taper`
