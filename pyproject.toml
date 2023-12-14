@@ -1,47 +1,207 @@
 [build-system]
-requires = ["setuptools>=40.8.0", "wheel", "cython"]
-build-backend = "setuptools.build_meta:__legacy__"
+requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
 
+[project]
+authors = [{name = "The HyperSpy Community"}]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "cloudpickle",
+    "dask[array]>=2021.3.1",
+    "importlib-metadata>=3.6",
+    "jinja2",
+    "matplotlib>=3.1.3",
+    "natsort",
+    "numpy>=1.20.0",
+    "packaging",
+    "pint>=0.10",
+    "pooch",
+    "prettytable>=2.3",
+    "python-dateutil>=2.5.0",
+    "pyyaml",
+    "requests",
+    "rosettasciio[hdf5]",
+    "scikit-image>=0.18",
+    "scipy>=1.5.0",
+    "sympy>=1.6",
+    "tqdm>=4.9.0",
+    "traits>=4.5.0",
+]
+description = "Multidimensional data analysis toolbox"
+dynamic = ["version"]
+keywords = [
+    "cathodoluminescence",
+    "CL",
+    "EBSD",
+    "EDX",
+    "EDS",
+    "EELS",
+    "EFTEM",
+    "ICA",
+    "PCA",
+    "PES",
+    "STEM",
+    "TEM",
+    "curve fitting",
+    "data analysis",
+    "electron backscatter diffraction",
+    "electron energy loss spectroscopy",
+    "electron microscopy",
+    "energy dispersive x-ray spectroscopy",
+    "x-ray energy dispersive spectroscopy",
+    "hyperspectral",
+    "hyperspectrum",
+    "hyperspy",
+    "machine learning",
+    "microscopy",
+    "model",
+    "multidimensional",
+    "numpy",
+    "off-axis electron holography",
+    "photoluminescence",
+    "PL",
+    "python",
+    "quantification",
+    "scipy",
+    "spectroscopy",
+    "spectrum image",
+]
+name = "hyperspy"
+readme = "README.rst"
+requires-python = ">=3.8"
+
+[project.license]
+file = "COPYING.txt"
+
+[project.optional-dependencies]
+all = [
+    "hyperspy[gui-jupyter]",
+    "hyperspy[gui-traitsui]",
+    "hyperspy[ipython]",
+    "hyperspy[learning]",
+    "hyperspy[speed]",
+]
+coverage = [
+    "pytest-cov",
+]
+dev = [
+    "black",
+    "hyperspy[all]",
+    "hyperspy[coverage]",
+    "hyperspy[doc]",
+    "hyperspy[tests]",
+]
+doc = [
+    "numpydoc",
+    "pydata_sphinx_theme",
+    "setuptools_scm",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "sphinx-favicon",
+    "sphinx-gallery",
+    "sphinx>=1.7",
+    "sphinxcontrib-mermaid",
+    "sphinxcontrib-towncrier>=0.3.0a0",
+    "towncrier",
+]
+gui-jupyter = [
+    "hyperspy_gui_ipywidgets>=2.0",
+    "ipympl",
+]
+gui-traitsui = [
+    "hyperspy_gui_traitsui>=2.0",
+]
+ipython = [
+    "IPython>7.0,!=8.0",
+    "ipyparallel",
+]
+learning = [
+    "scikit-learn>=1.0.1",
+]
+speed = [
+    "numba",
+    "numexpr",
+]
+tests = [
+    "pytest-instafail",
+    "pytest-mpl",
+    "pytest-rerunfailures",
+    "pytest-xdist",
+    "pytest>=3.6",
+    "setuptools_scm"
+]
+
+[project.urls]
+"Bug Reports" = "https://github.com/hyperspy/hyperspy/issues"
+Documentation = "https://hyperspy.org/hyperspy-doc/current/index.html"
+Conda-forge = "https://anaconda.org/conda-forge/hyperspy"
+Homepage = "https://hyperspy.org"
+Support = "https://gitter.im/hyperspy/hyperspy"
+Source = "https://github.com/hyperspy/hyperspy"
+
+[tool.coverage.report]
+precision = 2
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "examples/*",
+    "hyperspy/conftest.py",
+    "hyperspy/tests/*",
+    "setup.py",
+]
+source = ["hyperspy"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -n auto --dist loadfile"
+filterwarnings = [
+    "ignore:Matplotlib is currently using agg:UserWarning",
+]
+testpaths = ["hyperspy/tests"]
+xfail_strict = false
+
+[tool.setuptools.package-data]
+"*" = [
+    "hyperspy_extension.yaml",
+    "misc/dask_widgets/*.html.j2",
+]
+
+[tool.setuptools.packages.find]
+include = ["hyperspy*"]
+where = ["."]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.png"]
+
+[tool.setuptools_scm]
+# Presence enables setuptools_scm, the version will be determine at build time from git
 
 [tool.towncrier]
-package = "hyperspy"
-filename = "CHANGES.rst"
 directory = "upcoming_changes/"
-# see https://github.com/twisted/towncrier/issues/346
-#title_format = "v{version} ({project_date})"
+filename = "CHANGES.rst"
 issue_format = "`#{issue} <https://github.com/hyperspy/hyperspy/issues/{issue}>`_"
-
-  [[tool.towncrier.type]]
-  directory = "new"
-  name = "New features"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "bugfix"
-  name = "Bug Fixes"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "doc"
-  name = "Improved Documentation"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "deprecation"
-  name = "Deprecations"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "enhancements"
-  name = "Enhancements"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "api"
-  name = "API changes"
-  showcontent = true
-
-  [[tool.towncrier.type]]
-  directory = "maintenance"
-  name = "Maintenance"
-  showcontent = true
+package = "hyperspy"
+title_format = "{version} ({project_date})"
+type = [
+    { directory = "new", name = "New features", showcontent = true },
+    { directory = "enhancements", name = "Enhancements", showcontent = true },
+    { directory = "bugfix", name = "Bug Fixes", showcontent = true },
+    { directory = "api", name = "API changes", showcontent = true },
+    { directory = "deprecation", name = "Deprecations", showcontent = true },
+    { directory = "doc", name = "Improved Documentation", showcontent = true },
+    { directory = "maintenance", name = "Maintenance", showcontent = true },
+]

@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
-        PYTHON_VERSION: ['3.9', '3.10']
+        PYTHON_VERSION: ['3.9', '3.10', ]
         PIP_SELECTOR: ['[all, tests, coverage]']
         include:
           # test oldest supported version of main dependencies on python 3.8
@@ -26,10 +26,6 @@ jobs:
             DEPENDENCIES: dask[array]==2021.3.1 matplotlib==3.1.3 numba==0.52 numpy==1.20.0 scipy==1.5 scikit-image==0.18 scikit-learn==1.0.1
             LABEL: -oldest
           # test minimum requirement
-          - os: ubuntu
-            PYTHON_VERSION: '3.8'
-            PIP_SELECTOR: '[tests, coverage]'
-            LABEL: -minimum
           - os: ubuntu
             PYTHON_VERSION: '3.12'
             PIP_SELECTOR: '[tests, coverage]'
@@ -44,6 +40,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with: 
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch tags upstream
+        if: ${{ github.repository_owner != 'hyperspy' }}
+        # Needs to fetch the tags from upstream to get the
+        # correct version with setuptools_scm
+        run: |
+          git remote add upstream https://github.com/hyperspy/hyperspy.git
+          git fetch --prune --unshallow
+          git fetch upstream --tags
 
       - uses: actions/setup-python@v4
         name: Install Python

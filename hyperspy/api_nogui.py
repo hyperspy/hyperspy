@@ -29,7 +29,7 @@ from hyperspy.defaults_parser import preferences
 set_log_level(preferences.General.logging_level)
 
 from hyperspy import docstrings
-from hyperspy.Release import version as __version__
+from . import __version__
 
 
 __doc__ = """
