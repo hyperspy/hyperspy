@@ -522,8 +522,8 @@ Bug Fixes
 - Fix missing API documentation of several signal classes. (`#2957 <https://github.com/hyperspy/hyperspy/issues/2957>`_)
 - Fix two bugs in :py:meth:`~.api.signals.BaseSignal.decomposition`:
 
-   * The poisson noise normalization was not applied when giving a `signal_mask`
-   * An error was raised when applying a ``signal_mask`` on a signal with signal dimension larger than 1. (`#2964 <https://github.com/hyperspy/hyperspy/issues/2964>`_)
+  * The poisson noise normalization was not applied when giving a `signal_mask`
+  * An error was raised when applying a ``signal_mask`` on a signal with signal dimension larger than 1. (`#2964 <https://github.com/hyperspy/hyperspy/issues/2964>`_)
 
 
 Improved Documentation
@@ -920,10 +920,10 @@ API changes
 * The :py:meth:`~.api.signals.BaseSignal.get_histogram` ``bins`` keyword values
   have been renamed as follows for consistency with numpy:
 
-    * ``"scotts"`` -> ``"scott"``,
-    * ``"freedman"`` -> ``"fd"``
-*  Multiple changes to the syntax of the :py:meth:`~hyperspy.model.BaseModel.fit`
-   and :py:meth:`~hyperspy.model.BaseModel.multifit` methods:
+  * ``"scotts"`` -> ``"scott"``,
+  * ``"freedman"`` -> ``"fd"``
+* Multiple changes to the syntax of the :py:meth:`~hyperspy.model.BaseModel.fit`
+  and :py:meth:`~hyperspy.model.BaseModel.multifit` methods:
 
   * The ``fitter`` keyword has been renamed to ``optimizer``.
   * The values that the ``optimizer`` keyword take have been renamed
@@ -969,8 +969,8 @@ API changes
 * The :py:class:`~hyperspy.learn.svd_pca.svd_pca` constructor's ``centre`` keyword
   values have been renamed as follows:
 
-    * ``"trials"`` -> ``"navigation"``
-    * ``"variables"`` -> ``"signal"``
+  * ``"trials"`` -> ``"navigation"``
+  * ``"variables"`` -> ``"signal"``
 * The ``bounds`` keyword argument of the
   :py:meth:`~._signals.lazy.LazySignal.decomposition` is deprecated and will be removed.
 * Several syntax changes in the :py:meth:`~.api.signals.BaseSignal.decomposition` method:
@@ -1112,9 +1112,9 @@ NEW
 
 * Support for three new file formats:
 
-    * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :external+rsciio:ref:`emd_fei-format`.
-    * Reading Bruker's SPX format. See :external+rsciio:ref:`bruker-format`.
-    * Reading and writing the mrcz open format. See :external+rsciio:ref:`mrcz-format`.
+  * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :external+rsciio:ref:`emd_fei-format`.
+  * Reading Bruker's SPX format. See :external+rsciio:ref:`bruker-format`.
+  * Reading and writing the mrcz open format. See :external+rsciio:ref:`mrcz-format`.
 * New ``hyperspy.datasets.artificial_data`` module which contains functions for generating
   artificial data, for use in things like docstrings or for people to test
   HyperSpy functionalities. See :ref:`example-data-label`.
@@ -1129,11 +1129,11 @@ Enhancements
 
 * :py:func:`~.api.plot.plot_images` improvements (see :ref:`plot.images` for details):
 
-    * The ``cmap`` option of :py:func:`~.api.plot.plot_images`
-      supports iterable types, allowing the user to specify different colormaps
-      for the different images that are plotted by providing a list or other
-      generator.
-    * Clicking on an individual image updates it.
+  * The ``cmap`` option of :py:func:`~.api.plot.plot_images`
+    supports iterable types, allowing the user to specify different colormaps
+    for the different images that are plotted by providing a list or other
+    generator.
+  * Clicking on an individual image updates it.
 * New customizable keyboard shortcuts to navigate multi-dimensional datasets. See :ref:`visualization-label`.
 * The :py:meth:`~.api.signals.Signal1D.remove_background` method now operates much faster
   in multi-dimensional datasets and adds the options to interatively plot the remainder of the operation and
@@ -1219,10 +1219,10 @@ Enhancements
 * All functions that take a signal range can now take a :py:class:`~.roi.SpanROI`.
 * The following ROIs can now be used for indexing or slicing (see :ref:`here <roi-slice-label>` for details):
 
-    * :py:class:`~.api.roi.Point1DROI`
-    * :py:class:`~.api.roi.Point2DROI`
-    * :py:class:`~.api.roi.SpanROI`
-    * :py:class:`~.api.roi.RectangularROI`
+  * :py:class:`~.api.roi.Point1DROI`
+  * :py:class:`~.api.roi.Point2DROI`
+  * :py:class:`~.api.roi.SpanROI`
+  * :py:class:`~.api.roi.RectangularROI`
 
 
 API changes
@@ -1236,38 +1236,38 @@ API changes
   performing a decomposition. (Previously they would plot as many figures
   as available components, usually resulting in memory saturation):
 
-    * :py:meth:`~.api.signals.BaseSignal.plot_decomposition_results`.
-    * :py:meth:`~.api.signals.BaseSignal.plot_decomposition_factors`.
+  * :py:meth:`~.api.signals.BaseSignal.plot_decomposition_results`.
+  * :py:meth:`~.api.signals.BaseSignal.plot_decomposition_factors`.
 
 * The default extension when saving to HDF5 following HyperSpy's specification
   is now ``hspy`` instead of ``hdf5``. See :external+rsciio:ref:`hspy-format`.
 
 * The following methods are deprecated and will be removed in HyperSpy 2.0
 
-    * ``.axes.AxesManager.show``. Use :py:meth:`~.axes.AxesManager.gui`
-      instead.
-    * All ``notebook_interaction`` method. Use the equivalent ``gui`` method
-      instead.
-    * ``hyperspy.api.signals.Signal1D.integrate_in_range``.
-      Use :py:meth:`~.api.signals.BaseSignal.integrate1D` instead.
+  * ``.axes.AxesManager.show``. Use :py:meth:`~.axes.AxesManager.gui`
+    instead.
+  * All ``notebook_interaction`` method. Use the equivalent ``gui`` method
+    instead.
+  * ``hyperspy.api.signals.Signal1D.integrate_in_range``.
+    Use :py:meth:`~.api.signals.BaseSignal.integrate1D` instead.
 
 * The following items have been removed from
   :ref:`preferences <configuring-hyperspy-label>`:
 
-    * ``General.default_export_format``
-    * ``General.lazy``
-    * ``Model.default_fitter``
-    * ``Machine_learning.multiple_files``
-    * ``Machine_learning.same_window``
-    * ``Plot.default_style_to_compare_spectra``
-    * ``Plot.plot_on_load``
-    * ``Plot.pylab_inline``
-    * ``EELS.fine_structure_width``
-    * ``EELS.fine_structure_active``
-    * ``EELS.fine_structure_smoothing``
-    * ``EELS.synchronize_cl_with_ll``
-    * ``EELS.preedge_safe_window_width``
-    * ``EELS.min_distance_between_edges_for_fine_structure``
+  * ``General.default_export_format``
+  * ``General.lazy``
+  * ``Model.default_fitter``
+  * ``Machine_learning.multiple_files``
+  * ``Machine_learning.same_window``
+  * ``Plot.default_style_to_compare_spectra``
+  * ``Plot.plot_on_load``
+  * ``Plot.pylab_inline``
+  * ``EELS.fine_structure_width``
+  * ``EELS.fine_structure_active``
+  * ``EELS.fine_structure_smoothing``
+  * ``EELS.synchronize_cl_with_ll``
+  * ``EELS.preedge_safe_window_width``
+  * ``EELS.min_distance_between_edges_for_fine_structure``
 
 * New ``Preferences.GUIs`` section to enable/disable the installed GUI toolkits.
 
