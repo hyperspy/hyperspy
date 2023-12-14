@@ -764,10 +764,11 @@ class DataAxis(BaseDataAxis):
     >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
     {'_type': 'DataAxis',
-     'name': <undefined>,
-     'units': <undefined>,
-     'navigate': False,
-     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
+    'name': None,
+    'units': None,
+    'navigate': False,
+    'is_binned': False,
+    'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
     """
 
     def __init__(self,
@@ -905,20 +906,22 @@ class FunctionalDataAxis(BaseDataAxis):
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
     {'_type': 'FunctionalDataAxis',
-     'name': <undefined>,
-     'units': <undefined>,
-     'navigate': False,
-     'expression': 'a / (x + 1) + b',
-     'size': 500,
-     'x': {'_type': 'UniformDataAxis',
-      'name': <undefined>,
-      'units': <undefined>,
-      'navigate': <undefined>,
+    'name': None,
+    'units': None,
+    'navigate': False,
+    'is_binned': False,
+    'expression': 'a / (x + 1) + b',
+    'size': 500,
+    'x': {'_type': 'UniformDataAxis',
+      'name': None,
+      'units': None,
+      'navigate': False,
+      'is_binned': False,
       'size': 500,
       'scale': 1.0,
       'offset': 0.0},
-     'a': 100,
-     'b': 10}
+    'a': 100,
+    'b': 10}
     """
     def __init__(self,
                  expression,
@@ -1411,7 +1414,7 @@ class AxesManager(t.HasTraits):
          <undefined> |      3 |      0 |       0 |       1 | <undefined>
          <undefined> |      2 |      0 |       0 |       1 | <undefined>
     ---------------- | ------ | ------ | ------- | ------- | ------
-         <undefined> |      5 |        |       0 |       1 | <undefined>
+         <undefined> |      5 |      0 |       0 |       1 | <undefined>
     >>> s.axes_manager[0]
     <Unnamed 0th axis, size: 4, index: 0>
     >>> s.axes_manager[3j]
@@ -1425,31 +1428,30 @@ class AxesManager(t.HasTraits):
     <y axis, size: 3, index: 0>
     >>> for i in s.axes_manager:
     ...     print(i, s.axes_manager.indices)
-    ...
     (0, 0, 0) (0, 0, 0)
     (1, 0, 0) (1, 0, 0)
     (2, 0, 0) (2, 0, 0)
     (3, 0, 0) (3, 0, 0)
-    (0, 1, 0) (0, 1, 0)
-    (1, 1, 0) (1, 1, 0)
-    (2, 1, 0) (2, 1, 0)
     (3, 1, 0) (3, 1, 0)
+    (2, 1, 0) (2, 1, 0)
+    (1, 1, 0) (1, 1, 0)
+    (0, 1, 0) (0, 1, 0)
     (0, 2, 0) (0, 2, 0)
     (1, 2, 0) (1, 2, 0)
     (2, 2, 0) (2, 2, 0)
     (3, 2, 0) (3, 2, 0)
-    (0, 0, 1) (0, 0, 1)
-    (1, 0, 1) (1, 0, 1)
-    (2, 0, 1) (2, 0, 1)
-    (3, 0, 1) (3, 0, 1)
+    (3, 2, 1) (3, 2, 1)
+    (2, 2, 1) (2, 2, 1)
+    (1, 2, 1) (1, 2, 1)
+    (0, 2, 1) (0, 2, 1)
     (0, 1, 1) (0, 1, 1)
     (1, 1, 1) (1, 1, 1)
     (2, 1, 1) (2, 1, 1)
     (3, 1, 1) (3, 1, 1)
-    (0, 2, 1) (0, 2, 1)
-    (1, 2, 1) (1, 2, 1)
-    (2, 2, 1) (2, 2, 1)
-    (3, 2, 1) (3, 2, 1)
+    (3, 0, 1) (3, 0, 1)
+    (2, 0, 1) (2, 0, 1)
+    (1, 0, 1) (1, 0, 1)
+    (0, 0, 1) (0, 0, 1)
 
     """
 
@@ -1832,9 +1834,14 @@ class AxesManager(t.HasTraits):
         --------
         >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape([3, 2, 4]))
         >>> with s.axes_manager.switch_iterpath('serpentine'):
-        >>>     for indices in s.axes_manager:
-        >>>         print(indices)
-
+        ...     for indices in s.axes_manager:
+        ...         print(indices)
+        (0, 0)
+        (1, 0)
+        (1, 1)
+        (0, 1)
+        (0, 2)
+        (1, 2)
         """
         if iterpath is not None:
             original_iterpath = self._iterpath

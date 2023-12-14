@@ -172,7 +172,7 @@ def _escape_square_brackets(text):
     >>> path = "/home/data/afile[*].txt"
     >>> glob.glob(path)
     []
-    >>> glob.glob(_escape_square_brackets(path))
+    >>> glob.glob(_escape_square_brackets(path)) # doctest: +SKIP
     ['/home/data/afile[1x2].txt', '/home/data/afile[1x1].txt']
 
     """
@@ -362,44 +362,45 @@ def load(filenames=None,
     --------
     Loading a single file providing the signal type:
 
-    >>> d = hs.load('file.dm3', signal_type="EDS_TEM")
+    >>> d = hs.load('file.dm3', signal_type="EDS_TEM")  # doctest: +SKIP
 
     Loading multiple files:
 
-    >>> d = hs.load(['file1.hspy','file2.hspy'])
+    >>> d = hs.load(['file1.hspy','file2.hspy'])        # doctest: +SKIP
 
     Loading multiple files matching the pattern:
 
-    >>> d = hs.load('file*.hspy')
+    >>> d = hs.load('file*.hspy')                       # doctest: +SKIP
 
     Loading multiple files containing square brackets in the filename:
 
-    >>> d = hs.load('file[*].hspy', escape_square_brackets=True)
+    >>> d = hs.load('file[*].hspy', escape_square_brackets=True) # doctest: +SKIP
 
     Loading multiple files containing character classes (regular expression):
 
-    >>> d = hs.load('file[0-9].hspy')
+    >>> d = hs.load('file[0-9].hspy')                   # doctest: +SKIP
 
     Loading (potentially larger than the available memory) files lazily and
     stacking:
 
-    >>> s = hs.load('file*.blo', lazy=True, stack=True)
+    >>> s = hs.load('file*.blo', lazy=True, stack=True) # doctest: +SKIP
 
     Specify the file reader to use
 
-    >>> s = hs.load('a_nexus_file.h5', reader='nxs')
+    >>> s = hs.load('a_nexus_file.h5', reader='nxs')    # doctest: +SKIP
 
     Loading a file containing several datasets:
 
-    >>> s = hs.load("spameggsandham.nxs")
-    >>> s
+    >>> s = hs.load("spameggsandham.nxs")               # doctest: +SKIP
+    >>> s                                               # doctest: +SKIP
     [<Signal1D, title: spam, dimensions: (32,32|1024)>,
      <Signal1D, title: eggs, dimensions: (32,32|1024)>,
      <Signal1D, title: ham, dimensions: (32,32|1024)>]
-    >>> # Use list indexation to access single signal
-    >>> s[0]
+    
+    Use list indexation to access single signal
+    
+    >>> s[0]                                            # doctest: +SKIP
     <Signal1D, title: spam, dimensions: (32,32|1024)>
-
 
     """
 

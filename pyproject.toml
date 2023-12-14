@@ -174,7 +174,11 @@ filterwarnings = [
 ]
 testpaths = ["hyperspy/tests"]
 xfail_strict = false
-doctest_optionflags = "NORMALIZE_WHITESPACE"
+doctest_optionflags = [
+    "IGNORE_EXCEPTION_DETAIL",
+    "NORMALIZE_WHITESPACE",
+    "ELLIPSIS",
+]
 
 [tool.setuptools.package-data]
 "*" = [

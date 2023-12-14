@@ -3352,17 +3352,17 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        >>> spectrum = hs.signals.Signal1D(np.ones([4, 4, 10]))
         >>> spectrum.data[1, 2, 9] = 5
         >>> print(spectrum)
-        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        <Signal1D, title: , dimensions: (4, 4|10)>
         >>> print ('Sum =', sum(sum(sum(spectrum.data))))
         Sum = 164.0
 
         >>> scale = [2, 2, 5]
         >>> test = spectrum.rebin(scale)
         >>> print(test)
-        <EDSTEMSpectrum, title: , dimensions: (2, 2|5)>
+        <Signal1D, title: , dimensions: (2, 2|5)>
         >>> print('Sum =', sum(sum(sum(test.data))))
         Sum = 164.0
 
@@ -3390,7 +3390,7 @@ class BaseSignal(FancySlicing,
 
         >>> s4 = s.rebin(scale=(5, 2, 1))
         >>> print(s4.data.dtype)
-        uint64
+        uint32
 
         """
         # TODO: Adapt so that it works if a non_uniform_axis exists, but is not
@@ -4911,14 +4911,14 @@ class BaseSignal(FancySlicing,
 
         >>> import scipy.ndimage
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
-        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)  # doctest: +SKIP
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a Gaussian filter to all the images in the dataset. The signal
         parameter is variable:
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2, 5, 10)).T
-        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)  # doctest: +SKIP
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         Rotate the two signal dimensions, with different amount as a function
         of navigation index. Delay the calculation by getting the output
@@ -4928,7 +4928,7 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
         >>> s.map(rotate, angle=s_angle, reshape=False, lazy_output=True)
-        >>> s.compute()  # doctest: +SKIP
+        >>> s.compute()
 
         Rotate the two signal dimensions, with different amount as a function
         of navigation index. In addition, the output is returned as a new
@@ -4936,7 +4936,7 @@ class BaseSignal(FancySlicing,
 
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
-        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)  # doctest: +SKIP
+        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)
 
         If you want some more control over computing a signal that isn't lazy
         you can always set lazy_output to True and then compute the signal setting
@@ -4948,9 +4948,11 @@ class BaseSignal(FancySlicing,
 
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
-        >>> rotated = s.map(rotate, angle=s_angle, reshape=False, lazy_output=True, inplace=True
-        ...                 navigation_chunks=(2,2))
-        >>> rotated.compute(scheduler="single-threaded")
+        >>> s.map(
+        ...    rotate, angle=s_angle, reshape=False, lazy_output=True,
+        ...    inplace=True, navigation_chunks=(2,2)
+        ... )
+        >>> s.compute()
 
         """
         if lazy_output is None:
@@ -5899,7 +5901,7 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
         >>> s
         <Signal1D, title: , dimensions: (|4)>
-        >>> hs.print_known_signal_types()
+        >>> hs.print_known_signal_types()             # doctest: +SKIP
         +--------------------+---------------------+--------------------+----------+
         |    signal_type     |       aliases       |     class name     | package  |
         +--------------------+---------------------+--------------------+----------+
@@ -5912,17 +5914,17 @@ class BaseSignal(FancySlicing,
 
         We can set the ``signal_type`` using the ``signal_type``:
 
-        >>> s.set_signal_type("EELS")
-        >>> s
+        >>> s.set_signal_type("EELS")                 # doctest: +SKIP
+        >>> s                                         # doctest: +SKIP
         <EELSSpectrum, title: , dimensions: (|4)>
-        >>> s.set_signal_type("EDS_SEM")
-        >>> s
+        >>> s.set_signal_type("EDS_SEM")              # doctest: +SKIP
+        >>> s                                         # doctest: +SKIP
         <EDSSEMSpectrum, title: , dimensions: (|4)>
 
         or any of its aliases:
 
-        >>> s.set_signal_type("TEM EELS")
-        >>> s
+        >>> s.set_signal_type("TEM EELS")             # doctest: +SKIP
+        >>> s                                         # doctest: +SKIP
         <EELSSpectrum, title: , dimensions: (|4)>
 
         To set the ``signal_type`` to "undefined", simply call the method without
@@ -6053,52 +6055,24 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import skimage
-        >>> im = hs.signals.Signal2D(skimage.data.camera())
-        >>> m = hs.plot.markers.Rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
+        >>> im = hs.data.wave_image()
+        >>> m = hs.plot.markers.Rectangles(
+        ...    offsets=[(1.0, 1.5)], widths=(0.5,), heights=(0.7,)
+        ... )
         >>> im.add_marker(m)
-
-        Adding to a 1D signal, where the point will change
-        when the navigation index is changed:
-
-        >>> rng = np.random.default_rng(1)
-        >>> s = hs.signals.Signal1D(rng.random((3, 100)))
-        >>> marker = hs.plot.markers.Point((19, 10, 60), (0.2, 0.5, 0.9))
-        >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
         Add permanent marker:
 
         >>> rng = np.random.default_rng(1)
         >>> s = hs.signals.Signal2D(rng.random((100, 100)))
-        >>> marker = hs.plot.markers.Point(50, 60, color='red')
+        >>> marker = hs.plot.markers.Points(offsets=[(50, 60)])
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
-
-        Add permanent marker to signal with 2 navigation dimensions.
-        The signal has navigation dimensions (3, 2), as the dimensions
-        gets flipped compared to the output from :func:`numpy.random.random`.
-        To add a vertical line marker which changes for different navigation
-        indices, the list used to make the marker must be a nested list:
-        2 lists with 3 elements each (2 x 3):
-
-        >>> rng = np.random.default_rng(1)
-        >>> s = hs.signals.Signal1D(rng.random((2, 3, 10)))
-        >>> marker = hs.plot.markers.VerticalLine([[1, 3, 5], [2, 4, 6]])
-        >>> s.add_marker(marker, permanent=True)
-
-        Add permanent marker which changes with navigation position, and
-        do not add it to a current plot:
-
-        >>> rng = np.random.default_rng(1)
-        >>> s = hs.signals.Signal2D(rng.integers(10, size=(3, 100, 100)))
-        >>> marker = hs.plot.markers.Point((10, 30, 50), (30, 50, 60), color='red')
-        >>> s.add_marker(marker, permanent=True, plot_marker=False)
-        >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker:
 
         >>> rng = np.random.default_rng(1)
         >>> s = hs.signals.Signal2D(rng.integers(10, size=(100, 100)))
-        >>> marker = hs.plot.markers.Point(10, 60, color='red')
+        >>> marker = hs.plot.markers.Points(offsets=[(10, 60)])
         >>> marker.name = "point_marker"
         >>> s.add_marker(marker, permanent=True)
         >>> del s.metadata.Markers.point_marker
@@ -6108,8 +6082,8 @@ class BaseSignal(FancySlicing,
         >>> rng = np.random.default_rng(1)
         >>> s = hs.signals.Signal2D(rng.integers(10, size=(100, 100)))
         >>> marker_list = []
-        >>> for i in range(100):
-        ...     marker = hs.plot.markers.Point(random()*100, random()*100, color='red')
+        >>> for i in range(10):
+        ...     marker = hs.plot.markers.Points(rng.random(2))
         ...     marker_list.append(marker)
         >>> s.add_marker(marker_list, permanent=True)
 
