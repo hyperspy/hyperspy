@@ -123,8 +123,7 @@ class Markers:
 
         >>> from matplotlib.collections import PatchCollection
         >>> from matplotlib.patches import Circle
-        >>> import hyperspy.api as hs
-        >>> import numpy as np
+
         >>> m = hs.plot.markers.Markers(
         ...    collection=PatchCollection,
         ...    patches=[Circle((0, 0), 1)],
@@ -136,7 +135,6 @@ class Markers:
 
         Adding star "iterating" markers using :class:`matplotlib.collections.StarPolygonCollection`
 
-        >>> import hyperspy.api as hs
         >>> from matplotlib.collections import StarPolygonCollection
         >>> import numpy as np
         >>> rng = np.random.default_rng(0)
@@ -145,7 +143,9 @@ class Markers:
         >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
         >>> for ind in np.ndindex(offsets.shape):
         ...    offsets[ind] = rng.random((10, 2)) * 100
-        >>> # every other star has a size of 50/100
+
+        Every other star has a size of 50/100
+        
         >>> m = hs.plot.markers.Markers(
         ...    collection=StarPolygonCollection,
         ...    offsets=offsets,
@@ -155,21 +155,6 @@ class Markers:
         ...    )
         >>> s.plot()
         >>> s.add_marker(m)
-
-        Adding markers using PolyCollection using verts
-
-        >>> from matplotlib.collections import PolyCollection
-        >>> import hyperspy.api as hs
-        >>> import numpy as np
-        >>> m = hs.plot.markers.Markers(
-        ...    collection=PolyCollection,
-        ...    offsets=np.random.rand(10,2)*10,
-        ...    verts=np.array([[0,0], [0,1], [1,1], [1,0]]),
-        ...    color="red",
-        ...    )
-        >>>s = hs.signals.Signal2D(np.ones((10, 10, 10, 10)))
-        >>>s.plot()
-        >>>s.add_marker(m)
 
         """
         if isinstance(collection, str):
@@ -383,7 +368,8 @@ class Markers:
         >>> print(m)
         <Points, length: 2>
         >>> m.remove_items(indices=(1, ))
-        >>> print(len(m)) # is 1
+        >>> print(len(m))
+        1
 
         Remove a single item at specific navigation position for variable
         length markers:
@@ -406,6 +392,7 @@ class Markers:
         >>> m.remove_items(indices=[1, 2])
         >>> print(m)
         <Texts, length: 8>
+
         """
         if keys is None:
             keys = self._iterable_argument_keys + [self._position_key]
@@ -858,7 +845,7 @@ def dict2vector(data, keys, return_size=True, dtype=float):
 
     Multiple keys can be passed as well. For example to define a rectangle:
 
-    >>> dict2offsets(data,keys= [[["x1", "y1"], ["x2", "y2"]]])
+    >>> dict2vector(data, keys= [[["x1", "y1"], ["x2", "y2"]]])               # doctest: +SKIP
 
     In this example the keys will be unpacked to create a line segment
     """
