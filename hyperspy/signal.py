@@ -3389,7 +3389,7 @@ class BaseSignal(FancySlicing,
         the platform interger
 
         >>> s4 = s.rebin(scale=(5, 2, 1))
-        >>> print(s4.data.dtype)
+        >>> print(s4.data.dtype)                 # doctest: +SKIP
         uint32
 
         """

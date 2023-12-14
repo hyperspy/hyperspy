@@ -1158,12 +1158,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Using GUI, replaces spectrum s
 
         >>> s = hs.signals.Signal1D(range(1000))
-        >>> s.remove_background() #doctest: +SKIP
+        >>> s.remove_background()                                   #doctest: +SKIP
 
         Using command line, returns a Signal1D:
 
-        >>> s.remove_background(signal_range=(400,450),
-                                background_type='PowerLaw')
+        >>> s.remove_background(
+        ...    signal_range=(400,450), background_type='PowerLaw'
+        ... )
         <Signal1D, title: , dimensions: (|1000)>
 
         Using a full model to fit the background:
@@ -1173,9 +1174,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns background subtracted and the model:
 
-        >>> s.remove_background(signal_range=(400,450),
-                                fast=False,
-                                return_model=True)
+        >>> s.remove_background(
+        ...    signal_range=(400,450), fast=False, return_model=True
+        ... )
         (<Signal1D, title: , dimensions: (|1000)>, <Model1D>)
 
         Raises

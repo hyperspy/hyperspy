@@ -35,6 +35,7 @@ import matplotlib.pyplot as plt
 import pytest
 import numpy as np
 import matplotlib
+import dask.array as da
 import hyperspy.api as hs
 
 
@@ -50,6 +51,7 @@ def add_np(doctest_namespace):
     doctest_namespace['np'] = np
     doctest_namespace['plt'] = plt
     doctest_namespace['hs'] = hs
+    doctest_namespace['da'] = da
 
 
 @pytest.fixture
