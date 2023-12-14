@@ -75,8 +75,8 @@ class ScalableFixedPattern(Component):
     The fixed pattern is defined by a Signal1D of navigation 0 which must be
     provided to the ScalableFixedPattern constructor, e.g.:
     
-    >>> s = hs.load('data.hspy')
-    >>> my_fixed_pattern = hs.model.components1D.ScalableFixedPattern(s)
+    >>> s = hs.load('data.hspy') # doctest: +SKIP
+    >>> my_fixed_pattern = hs.model.components1D.ScalableFixedPattern(s) # doctest: +SKIP
     
     """
 
