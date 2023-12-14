@@ -13,7 +13,7 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. _changes_2.0:
 
-v2.0rc0 (2023-11-10)
+2.0rc0 (2023-11-10)
 ====================
 
 Release Highlights
@@ -376,7 +376,7 @@ Maintenance
 
 .. _changes_1.7.6:
 
-v1.7.6 (2023-11-17)
+1.7.6 (2023-11-17)
 ===================
 
 Bug Fixes
@@ -395,7 +395,7 @@ Maintenance
 
 .. _changes_1.7.5:
 
-v1.7.5 (2023-05-04)
+1.7.5 (2023-05-04)
 ===================
 
 Bug Fixes
@@ -422,7 +422,7 @@ Maintenance
 
 .. _changes_1.7.4:
 
-v1.7.4 (2023-03-16)
+1.7.4 (2023-03-16)
 ===================
 
 Bug Fixes
@@ -455,7 +455,7 @@ Maintenance
 
 .. _changes_1.7.3:
 
-v1.7.3 (2022-10-29)
+1.7.3 (2022-10-29)
 ===================
 
 Bug Fixes
@@ -475,7 +475,7 @@ Maintenance
 
 .. _changes_1.7.2:
 
-v1.7.2 (2022-09-17)
+1.7.2 (2022-09-17)
 ===================
 
 Bug Fixes
@@ -507,7 +507,7 @@ Maintenance
 
 .. _changes_1.7.1:
 
-v1.7.1 (2022-06-18)
+1.7.1 (2022-06-18)
 ===================
 
 Bug Fixes
@@ -541,7 +541,7 @@ Maintenance
 
 .. _changes_1.7.0:
 
-v1.7.0 (2022-04-26)
+1.7.0 (2022-04-26)
 ===================
 
 New features
@@ -643,7 +643,7 @@ Maintenance
 
 .. _changes_1.6.5:
 
-v1.6.5 (2021-10-28)
+1.6.5 (2021-10-28)
 ===================
 
 Bug Fixes
@@ -671,7 +671,7 @@ Enhancements
 
 .. _changes_1.6.4:
 
-v1.6.4 (2021-07-08)
+1.6.4 (2021-07-08)
 ===================
 
 Bug Fixes
@@ -703,7 +703,7 @@ Maintenance
 
 .. _changes_1.6.3:
 
-v1.6.3 (2021-06-10)
+1.6.3 (2021-06-10)
 ===================
 
 Bug Fixes
@@ -742,7 +742,7 @@ Maintenance
 
 .. _changes_1.6.2:
 
-v1.6.2 (2021-04-13)
+1.6.2 (2021-04-13)
 ===================
 
 This is a maintenance release that adds support for python 3.9 and includes
@@ -811,7 +811,7 @@ Maintenance
 
 .. _changes_1.6.1:
 
-v1.6.1 (2020-11-28)
+1.6.1 (2020-11-28)
 ===================
 
 This is a maintenance release that adds compatibility with h5py 3.0 and includes
@@ -823,7 +823,7 @@ for details.
 
 .. _changes_1.6:
 
-v1.6.0 (2020-08-05)
+1.6.0 (2020-08-05)
 ===================
 
 NEW
@@ -990,7 +990,7 @@ API changes
 .. _changes_1.5.2:
 
 
-v1.5.2 (2019-09-06)
+1.5.2 (2019-09-06)
 ===================
 
 This is a maintenance release that adds compatibility with Numpy 1.17 and Dask
@@ -1001,7 +1001,7 @@ for details.
 
 .. _changes_1.5.1:
 
-v1.5.1 (2019-07-28)
+1.5.1 (2019-07-28)
 ===================
 
 This is a maintenance release that fixes some regressions introduced in v1.5.
@@ -1011,7 +1011,7 @@ Follow the following links for details on all the `bugs fixed
 
 .. _changes_1.5:
 
-v1.5.0 (2019-07-27)
+1.5.0 (2019-07-27)
 ===================
 
 NEW
@@ -1069,7 +1069,7 @@ For developers
 
 .. _changes_1.4.2:
 
-v1.4.2 (2019-06-19)
+1.4.2 (2019-06-19)
 ===================
 
 This is a maintenance release. Among many other fixes and enhancements, this
@@ -1082,7 +1082,7 @@ and `enhancements
 
 .. _changes_1.4.1:
 
-v1.4.1 (2018-10-23)
+1.4.1 (2018-10-23)
 ===================
 
 This is a maintenance release. Follow the following links for details on all
@@ -1096,7 +1096,7 @@ This release fixes compatibility issues with Python 3.7.
 
 .. _changes_1.4:
 
-v1.4.0 (2018-09-02)
+1.4.0 (2018-09-02)
 ===================
 
 This is a minor release. Follow the following links for details on all
@@ -1149,7 +1149,7 @@ Enhancements
 
 .. _changes_1.3.2:
 
-v1.3.2 (2018-07-03)
+1.3.2 (2018-07-03)
 ===================
 
 This is a maintenance release. Follow the following links for details on all
@@ -1160,7 +1160,7 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 .. _changes_1.3.1:
 
-v1.3.1 (2018-04-19)
+1.3.1 (2018-04-19)
 ===================
 
 This is a maintenance release. Follow the following links for details on all
@@ -1175,7 +1175,7 @@ releases see https://github.com/hyperspy/hyperspy-bundle
 
 .. _changes_1.3:
 
-v1.3.0 (2017-05-27)
+1.3.0 (2017-05-27)
 ===================
 
 This is a minor release. Follow the following links for details on all
@@ -1284,7 +1284,7 @@ For developers
 
 .. _changes_1.2:
 
-v1.2.0 (2017-02-02)
+1.2.0 (2017-02-02)
 ===================
 
 This is a minor release. Follow the following links for details on all
@@ -1336,7 +1336,7 @@ For developers
 
 .. _changes_1.1.2:
 
-v1.1.2 (2079-01-12)
+1.1.2 (2079-01-12)
 ===================
 
 This is a maintenance release. Follow the following links for details on all
@@ -1347,7 +1347,7 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 .. _changes_1.1.1:
 
-v1.1.1 (2016-08-24)
+1.1.1 (2016-08-24)
 ===================
 
 This is a maintenance release. Follow the following link for details on all
@@ -1369,7 +1369,7 @@ Enhancements
 
 .. _changes_1.1:
 
-v1.1.0 (2016-08-03)
+1.1.0 (2016-08-03)
 ===================
 
 This is a minor release. Follow the following links for details on all
@@ -1395,7 +1395,7 @@ Enhancements
 
 
 
-v1.0.1 (2016-07-27)
+1.0.1 (2016-07-27)
 ===================
 
 This is a maintenance release. Follow the following links for details on all
@@ -1403,7 +1403,7 @@ the `bugs fixed
 <https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.0.1>`__.
 
 
-v1.0.0 (2016-07-14)
+1.0.0 (2016-07-14)
 ===================
 
 This is a major release. Here we only list the highlist. A detailed list of
@@ -1477,7 +1477,7 @@ API changes
 
 
 
-v0.8.5 (2016-07-02)
+0.8.5 (2016-07-02)
 ===================
 
 
@@ -1512,13 +1512,13 @@ deprecate ``as_signal1D``, ``as_signal2D``, ``to_spectrum`` and ``to_image``. Se
 <https://github.com/hyperspy/hyperspy/issues/943>`__ for details.
 
 
-v0.8.4 (2016-03-04)
+0.8.4 (2016-03-04)
 ===================
 
 This release adds support for Python 3 and drops support for Python 2. In all
-other respects it is identical to v0.8.3.
+other respects it is identical to 0.8.3.
 
-v0.8.3 (2016-03-04)
+0.8.3 (2016-03-04)
 ===================
 
 This is a maintenance release that includes fixes for multiple bugs, some
@@ -1545,14 +1545,14 @@ Follow the following links for details on all the `bugs fixed
 
 .. _changes_0.8.2:
 
-v0.8.2 (2015-08-13)
+0.8.2 (2015-08-13)
 ===================
 
-This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
+This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed 0.8.1 do not need to upgrade.
 
 .. _changes_0.8.1:
 
-v0.8.1 (2015-08-12)
+0.8.1 (2015-08-12)
 ===================
 
 This is a maintenance release. Follow the following links for details on all
@@ -1607,7 +1607,7 @@ API changes
 
 .. _changes_0.8:
 
-v0.8.0 (2015-04-07)
+0.8.0 (2015-04-07)
 ===================
 
 New features
@@ -1663,7 +1663,7 @@ API changes
     + ``update_patch_size`` -> ``_update_patch_size``
     + ``add_axes`` -> ``set_mpl_ax``
 
-v0.7.3 (2015-08-22)
+0.7.3 (2015-08-22)
 ===================
 
 This is a maintenance release. A list of fixed issues is available in the
@@ -1673,7 +1673,7 @@ in the github repository.
 
 .. _changes_0.7.2:
 
-v0.7.2 (2015-08-22)
+0.7.2 (2015-08-22)
 ===================
 
 This is a maintenance release. A list of fixed issues is available in the
@@ -1683,7 +1683,7 @@ in the github repository.
 
 .. _changes_0.7.1:
 
-v0.7.1 (2015-06-17)
+0.7.1 (2015-06-17)
 ===================
 
 This is a maintenance release. A list of fixed issues is available in the
@@ -1697,7 +1697,7 @@ New features
 
 * Add suspend/resume model plot updating. See :ref:`model.visualization`.
 
-v0.7.0 (2014-04-03)
+0.7.0 (2014-04-03)
 ===================
 
 New features
@@ -1840,7 +1840,7 @@ API changes
 
 .. _changes_0.6:
 
-v0.6.0 (2013-05-25)
+0.6.0 (2013-05-25)
 ===================
 
 New features
@@ -1924,7 +1924,7 @@ API changes
 
 .. _changes_0.5.1:
 
-v0.5.1 (2012-09-28)
+0.5.1 (2012-09-28)
 ===================
 
 New features
@@ -1957,7 +1957,7 @@ API changes
 
 .. _changes_0.5:
 
-v0.5.0 (2012-09-07)
+0.5.0 (2012-09-07)
 ===================
 
 New features
@@ -2019,7 +2019,7 @@ API changes
 
 .. _changes_0.4.1:
 
-v0.4.1 (2012-04-16)
+0.4.1 (2012-04-16)
 ===================
 
 New features
@@ -2050,7 +2050,7 @@ Syntax changes
 
 .. _changes_0.4:
 
-v0.4.0 (2012-02-29)
+0.4.0 (2012-02-29)
 ===================
 
 New features

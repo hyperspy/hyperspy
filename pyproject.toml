@@ -195,12 +195,13 @@ directory = "upcoming_changes/"
 filename = "CHANGES.rst"
 issue_format = "`#{issue} <https://github.com/hyperspy/hyperspy/issues/{issue}>`_"
 package = "hyperspy"
+title_format = "{version} ({project_date})"
 type = [
-    { directory = "api", name = "API changes", showcontent = true },
+    { directory = "new", name = "New features", showcontent = true },
+    { directory = "enhancements", name = "Enhancements", showcontent = true },
     { directory = "bugfix", name = "Bug Fixes", showcontent = true },
+    { directory = "api", name = "API changes", showcontent = true },
     { directory = "deprecation", name = "Deprecations", showcontent = true },
     { directory = "doc", name = "Improved Documentation", showcontent = true },
-    { directory = "enhancements", name = "Enhancements", showcontent = true },
     { directory = "maintenance", name = "Maintenance", showcontent = true },
-    { directory = "new", name = "New features", showcontent = true },
 ]
