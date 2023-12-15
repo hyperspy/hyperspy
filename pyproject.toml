@@ -172,7 +172,12 @@ addopts = "-ra -n auto --dist loadfile"
 filterwarnings = [
     "ignore:Matplotlib is currently using agg:UserWarning",
 ]
-testpaths = ["hyperspy/tests"]
+testpaths = ["hyperspy"]
+norecursedirs = [
+    "hyperspy/external/*",
+    "doc/auto_examples*",
+    "doc/_build/*"
+]
 xfail_strict = false
 doctest_optionflags = [
     "IGNORE_EXCEPTION_DETAIL",
