@@ -174,31 +174,37 @@ class Model1D(BaseModel):
     fit the model to the data and access the components in the model.
 
     >>> s = hs.signals.Signal1D(
-            np.random.normal(scale=2, size=10000)).get_histogram()
+    ...    np.random.normal(scale=2, size=10000)).get_histogram()
     >>> g = hs.model.components1D.Gaussian()
     >>> m = s.create_model()
     >>> m.append(g)
     >>> m.print_current_values()
-    Components	Parameter	Value
-    Gaussian
-                sigma	1.000000
-                A	1.000000
-                centre	0.000000
+    Model1D:  histogram
+    CurrentComponentValues: Gaussian
+    Active: True
+    Parameter Name |    Free |      Value |        Std |        Min |        Max | Linear
+    ============== | ======= | ========== | ========== | ========== | ========== | ======
+                 A |    True |        1.0 |       None |        0.0 |       None |   True
+            centre |    True |        0.0 |       None |       None |       None |  False
+             sigma |    True |        1.0 |       None |        0.0 |       None |  False
     >>> g.centre.value = 3
     >>> m.print_current_values()
-    Components	Parameter	Value
-    Gaussian
-                sigma	1.000000
-                A	1.000000
-                centre	3.000000
+    Model1D:  histogram
+    CurrentComponentValues: Gaussian
+    Active: True
+    Parameter Name |    Free |      Value |        Std |        Min |        Max | Linear
+    ============== | ======= | ========== | ========== | ========== | ========== | ======
+                 A |    True |        1.0 |       None |        0.0 |       None |   True
+            centre |    True |        3.0 |       None |       None |       None |  False
+             sigma |    True |        1.0 |       None |        0.0 |       None |  False
     >>> g.sigma.value
     1.0
-    >>> m.fit()
-    >>> g.sigma.value
+    >>> m.fit()                                       # doctest: +SKIP
+    >>> g.sigma.value                                 # doctest: +SKIP
     1.9779042300856682
-    >>> m[0].sigma.value
+    >>> m[0].sigma.value                              # doctest: +SKIP
     1.9779042300856682
-    >>> m["Gaussian"].centre.value
+    >>> m["Gaussian"].centre.value                    # doctest: +SKIP
     -0.072121936813224569
 
     See Also
@@ -895,14 +901,14 @@ class Model1D(BaseModel):
         --------
         Signal range set interactivly
 
-        >>> s = hs.signals.Signal1D([0,1,2,4,8,4,2,1,0])
+        >>> s = hs.signals.Signal1D([0, 1, 2, 4, 8, 4, 2, 1, 0])
         >>> m = s.create_model()
         >>> g1 = hs.model.components1D.Gaussian()
         >>> m.append(g1)
-        >>> m.fit_component(g1)
+        >>> m.fit_component(g1)                               # doctest: +SKIP
 
         Signal range set through direct input
 
-        >>> m.fit_component(g1, signal_range=(1,7))
+        >>> m.fit_component(g1, signal_range=(1, 7))
 
         """ % (DISPLAY_DT, TOOLKIT_DT)
