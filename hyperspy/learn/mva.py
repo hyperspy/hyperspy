@@ -1077,10 +1077,16 @@ class MVA:
 
         Examples
         --------
-        >>> s = hs.load('some_file')
-        >>> s.decomposition(True) # perform PCA
-        >>> s.reverse_decomposition_component(1) # reverse IC 1
-        >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
+        >>> s = hs.load('some_file')                             # doctest: +SKIP
+        >>> s.decomposition(True)                                # doctest: +SKIP
+
+        Reverse component 1  
+        
+        >>> s.reverse_decomposition_component(1)                 # doctest: +SKIP
+
+        Reverse components 0 and 2
+
+        >>> s.reverse_decomposition_component((0, 2))            # doctest: +SKIP
 
         """
         if hasattr(self.learning_results.factors, "compute"):
@@ -1106,11 +1112,17 @@ class MVA:
 
         Examples
         --------
-        >>> s = hs.load('some_file')
-        >>> s.decomposition(True) # perform PCA
-        >>> s.blind_source_separation(3)  # perform ICA on 3 PCs
-        >>> s.reverse_bss_component(1) # reverse IC 1
-        >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
+        >>> s = hs.load('some_file')                             # doctest: +SKIP
+        >>> s.decomposition(True)                                # doctest: +SKIP
+        >>> s.blind_source_separation(3)                         # doctest: +SKIP
+
+        Reverse component 1
+
+        >>> s.reverse_bss_component(1)                           # doctest: +SKIP
+
+        Reverse components 0 and 2
+
+        >>> s.reverse_bss_component((0, 2))                      # doctest: +SKIP
 
         """
         if hasattr(self.learning_results.bss_factors, "compute"):
@@ -1395,14 +1407,14 @@ class MVA:
         To generate a scree plot with customized symbols for signal vs.
         noise components and a modified cutoff threshold value:
 
-        >>> s = hs.load("some_spectrum_image")
-        >>> s.decomposition()
+        >>> s = hs.load("some_spectrum_image")                       # doctest: +SKIP
+        >>> s.decomposition()                                        # doctest: +SKIP
         >>> s.plot_explained_variance_ratio(
         ...    n=40,
         ...    threshold=0.005,
         ...    signal_fmt={'marker': 'v', 's': 150, 'c': 'pink'},
         ...    noise_fmt={'marker': '*', 's': 200, 'c': 'green'}
-        ...    )
+        ...    )                                                     # doctest: +SKIP
 
         See Also
         --------
