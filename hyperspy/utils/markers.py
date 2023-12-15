@@ -23,8 +23,8 @@ Examples
 
 >>> import skimage
 >>> im = hs.signals.Signal2D(skimage.data.camera())
->>> m = hs.plot.markers.Rectangle(
-...    offsets=offsets,
+>>> m = hs.plot.markers.Rectangles(
+...    offsets=[10, 15],
 ...    widths=(5,),
 ...    heights=(7,),
 ...    angles=(0,),

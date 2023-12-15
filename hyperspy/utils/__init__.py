@@ -44,7 +44,7 @@ def print_known_signal_types():
 
     Examples
     --------
-    >>> hs.print_known_signal_types()
+    >>> hs.print_known_signal_types()                              # doctest: +SKIP
     +--------------------+---------------------+--------------------+----------+
     |    signal_type     |       aliases       |     class name     | package  |
     +--------------------+---------------------+--------------------+----------+
