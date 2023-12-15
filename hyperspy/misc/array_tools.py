@@ -114,16 +114,18 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
     numpy.ndarray
 
     Examples
-    --------
-    >>> a=rand(6,4); b=rebin(a,scale=(3,2))
-    >>> a=rand(6); b=rebin(a,scale=(2,))
+    --------    
+    >>> a = np.random.random((6, 4))
+    >>> b = rebin(a, scale=(3, 2))
+    >>> b.shape
+    (2, 2)
 
     Notes
     -----
     Fast ``re_bin`` function Adapted from scipy cookbook
     If rebin function fails with error stating that the function is 'not binned
     and therefore cannot be rebinned', add binned to axes parameters with:
-    >>> s.axes_manager[axis].is_binned = True
+    >>> s.axes_manager[axis].is_binned = True                     # doctest: +SKIP
 
     """
     # Series of if statements to check that only one out of new_shape or scale
@@ -602,10 +604,11 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
     --------
     Making all the variables
 
-    >>> import dask.array as da
+
     >>> from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
     >>> data = da.random.random((128, 128, 256, 256), chunks=(32, 32, 32, 32))
     >>> s = hs.signals.Signal2D(data).as_lazy()
+
     >>> sig_dim = s.axes_manager.signal_dimension
     >>> nav_chunks = s.data.chunks[:-sig_dim]
     >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
@@ -623,7 +626,7 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
     Note the "inversion" of the axes here: the indices is given in (x, y),
     while the chunk_slice is given in (y, x).
 
-    >>> s.axes_manager.indices = (128, 70)
+    >>> s.axes_manager.indices = (127, 70)
     >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
     >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
     >>> print(chunk_slice)
