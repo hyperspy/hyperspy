@@ -50,7 +50,6 @@ jobs:
         # correct version with setuptools_scm
         run: |
           git remote add upstream https://github.com/hyperspy/hyperspy.git
-          git fetch --prune --unshallow
           git fetch upstream --tags
 
       - uses: actions/setup-python@v4
@@ -80,6 +79,10 @@ jobs:
       - name: Run test suite
         run: |
           pytest ${{ env.PYTEST_ARGS }} --cov=. --cov-report=xml
+
+      - name: Run doctest (Docstring)
+        run: |
+          pytest ${{ env.PYTEST_ARGS }} --doctest-modules --ignore=hyperspy/tests
 
       - name: Upload coverage to Codecov
         if: ${{ always() }}
