@@ -24,6 +24,13 @@ be exposed to the end-user (usually a function or class starting with an undersc
 should still be documented to the extent that future developers can understand
 what the function does.
 
+To test the code in the docstring:
+
+.. code:: bash
+    
+    pytest --doctest-modules --ignore=hyperspy/tests
+
+
 You can check your docstrings follow the convention by using the
 ``flake8-docstrings`` `extension <https://pypi.org/project/flake8-docstrings/>`_,
 like this:
@@ -70,6 +77,13 @@ or
 .. code-block:: bash
 
     $ pip install hyperspy[doc]
+
+
+To test the example codes in the user guide:
+
+.. code:: bash
+    
+    pytest doc --doctest-modules --doctest-glob="*.rst" -v
 
 
 When writing documentation, the Python package `sphobjinv
