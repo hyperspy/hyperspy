@@ -279,9 +279,9 @@ the extension of the filename.
     >>> d.save("example_processed.hspy") # doctest: +SKIP
 
 Some file formats are much better at maintaining the information about
-how you processed your data.  The preferred format in HyperSpy is hspy,
-which is based on the HDF5 format.  This format keeps the most information
-possible.
+how you processed your data. The preferred formats are
+:external+rsciio:ref:`hspy <hspy-format>` and :external+rsciio:ref:`zspy <zspy-format>`,
+because they are open formats and keep most information possible.
 
 There are optional flags that may be passed to the save function. See
 :ref:`saving_files` for more details.
@@ -458,7 +458,7 @@ using :func:`~.api.set_log_level` e.g.:
 
     >>> import hyperspy.api as hs
     >>> hs.set_log_level('INFO')
-    >>> hs.load(r'my_file.dm3') # doctest: +SKIP
+    >>> hs.load('my_file.dm3') # doctest: +SKIP
     INFO:hyperspy.io_plugins.digital_micrograph:DM version: 3
     INFO:hyperspy.io_plugins.digital_micrograph:size 4796607 B
     INFO:hyperspy.io_plugins.digital_micrograph:Is file Little endian? True

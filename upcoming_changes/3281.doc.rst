@@ -1,1 +1,1 @@
-Fix example code in docstring and user guide
+Activate checking of example code in docstring and user guide using ``doctest`` and fix errors in the code.

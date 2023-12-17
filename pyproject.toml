@@ -106,7 +106,7 @@ dev = [
     "hyperspy[tests]",
 ]
 doc = [
-    "IPython", # Needed in basic_usage.rst
+    "IPython", # Needed in testing code in basic_usage.rst
     "numpydoc",
     "pydata_sphinx_theme",
     "setuptools_scm",

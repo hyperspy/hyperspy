@@ -262,12 +262,16 @@ signal using the :attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
     >>> s
     <LazySignal2D, title: , dimensions: (100, 100|1000, 1000)>
     
-    For fastest results, just pick one signal space pixel
-    
+For fastest results, just pick one signal space pixel
+
+.. code-block:: python
+
     >>> nav = s.isig[500, 500]
     
-    Alternatively, sum as per default behaviour of non-lazy signal
-    
+Alternatively, sum as per default behaviour of non-lazy signal
+
+.. code-block:: python
+
     >>> nav = s.sum(s.axes_manager.signal_axes) # doctest: +SKIP
     >>> nav # doctest: +SKIP
     <LazySignal2D, title: , dimensions: (|100, 100)>
@@ -276,7 +280,9 @@ signal using the :attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
     >>> s.navigator = nav # doctest: +SKIP
     >>> s.plot() # doctest: +SKIP
 
-    Alternatively, it is possible to not have a navigator, and use sliders instead
+Alternatively, it is possible to not have a navigator, and use sliders instead
+
+.. code-block:: python
 
     >>> s
     <LazySignal2D, title: , dimensions: (100, 100|1000, 1000)>
