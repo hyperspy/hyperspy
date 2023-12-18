@@ -845,7 +845,7 @@ def dict2vector(data, keys, return_size=True, dtype=float):
 
     Multiple keys can be passed as well. For example to define a rectangle:
 
-    >>> dict2vector(data, keys= [[["x1", "y1"], ["x2", "y2"]]])               # doctest: +SKIP
+    >>> dict2vector(data, keys= [[["x1", "y1"], ["x2", "y2"]]]) # doctest: +SKIP
 
     In this example the keys will be unpacked to create a line segment
     """

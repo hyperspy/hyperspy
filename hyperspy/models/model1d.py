@@ -199,12 +199,12 @@ class Model1D(BaseModel):
              sigma |    True |        1.0 |       None |        0.0 |       None |  False
     >>> g.sigma.value
     1.0
-    >>> m.fit()                                       # doctest: +SKIP
-    >>> g.sigma.value                                 # doctest: +SKIP
+    >>> m.fit() # doctest: +SKIP
+    >>> g.sigma.value # doctest: +SKIP
     1.9779042300856682
-    >>> m[0].sigma.value                              # doctest: +SKIP
+    >>> m[0].sigma.value # doctest: +SKIP
     1.9779042300856682
-    >>> m["Gaussian"].centre.value                    # doctest: +SKIP
+    >>> m["Gaussian"].centre.value # doctest: +SKIP
     -0.072121936813224569
 
     See Also
@@ -905,7 +905,7 @@ class Model1D(BaseModel):
         >>> m = s.create_model()
         >>> g1 = hs.model.components1D.Gaussian()
         >>> m.append(g1)
-        >>> m.fit_component(g1)                               # doctest: +SKIP
+        >>> m.fit_component(g1) # doctest: +SKIP
 
         Signal range set through direct input
 

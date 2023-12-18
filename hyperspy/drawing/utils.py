@@ -316,7 +316,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     Specifying the navigator:
 
-    >>> hs.plot.plot_signals([s1, s2], navigator="slider")          # doctest: +SKIP
+    >>> hs.plot.plot_signals([s1, s2], navigator="slider") # doctest: +SKIP
 
     Specifying the navigator for each signal:
 
@@ -324,7 +324,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     >>> s_nav = hs.signals.Signal1D(np.ones((10)))
     >>> hs.plot.plot_signals(
     ...    [s1, s2, s3], navigator_list=["slider", None, s_nav]
-    ...    )                                                        # doctest: +SKIP
+    ...    ) # doctest: +SKIP
 
     """
 
@@ -1407,7 +1407,7 @@ def plot_spectra(
     To save the plot as a png-file
 
     >>> ax = hs.plot.plot_spectra(s)
-    >>> ax.figure.savefig("test.png")                                 # doctest: +SKIP
+    >>> ax.figure.savefig("test.png") # doctest: +SKIP
 
     Returns
     -------

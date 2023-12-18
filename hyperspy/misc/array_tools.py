@@ -125,7 +125,7 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
     Fast ``re_bin`` function Adapted from scipy cookbook
     If rebin function fails with error stating that the function is 'not binned
     and therefore cannot be rebinned', add binned to axes parameters with:
-    >>> s.axes_manager[axis].is_binned = True                     # doctest: +SKIP
+    >>> s.axes_manager[axis].is_binned = True # doctest: +SKIP
 
     """
     # Series of if statements to check that only one out of new_shape or scale

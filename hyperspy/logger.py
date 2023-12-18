@@ -48,7 +48,7 @@ def set_log_level(level):
 
     >>> import hyperspy.api as hs
     >>> hs.set_log_level('INFO')
-    >>> hs.load(r'my_file.dm3')                               # doctest: +SKIP
+    >>> hs.load('my_file.dm3') # doctest: +SKIP
     INFO:rsciio.digital_micrograph:DM version: 3
     INFO:rsciio.digital_micrograph:size 4796607 B
     INFO:rsciio.digital_micrograph:Is file Little endian? True
@@ -60,7 +60,7 @@ def set_log_level(level):
 
     >>> from hyperspy.logger import set_log_level
     >>> hs.set_log_level('DEBUG')
-    >>> import hyperspy.api as hs                             # doctest: +SKIP
+    >>> import hyperspy.api as hs # doctest: +SKIP
     DEBUG:hyperspy.gui:Loading hyperspy.gui
     DEBUG:hyperspy.gui:Current MPL backend: TkAgg
     DEBUG:hyperspy.gui:Current ETS toolkit: qt4

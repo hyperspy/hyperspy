@@ -3386,10 +3386,10 @@ class BaseSignal(FancySlicing,
 
         By default ``dtype=None``, the dtype is determined by the behaviour of
         numpy.sum, in this case, unsigned integer of the same precision as
-        the platform interger
+        the platform integer
 
         >>> s4 = s.rebin(scale=(5, 2, 1))
-        >>> print(s4.data.dtype)                 # doctest: +SKIP
+        >>> print(s4.data.dtype) # doctest: +SKIP
         uint32
 
         """
@@ -5901,7 +5901,7 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
         >>> s
         <Signal1D, title: , dimensions: (|4)>
-        >>> hs.print_known_signal_types()             # doctest: +SKIP
+        >>> hs.print_known_signal_types() # doctest: +SKIP
         +--------------------+---------------------+--------------------+----------+
         |    signal_type     |       aliases       |     class name     | package  |
         +--------------------+---------------------+--------------------+----------+
@@ -5914,17 +5914,17 @@ class BaseSignal(FancySlicing,
 
         We can set the ``signal_type`` using the ``signal_type``:
 
-        >>> s.set_signal_type("EELS")                 # doctest: +SKIP
-        >>> s                                         # doctest: +SKIP
+        >>> s.set_signal_type("EELS") # doctest: +SKIP
+        >>> s # doctest: +SKIP
         <EELSSpectrum, title: , dimensions: (|4)>
-        >>> s.set_signal_type("EDS_SEM")              # doctest: +SKIP
-        >>> s                                         # doctest: +SKIP
+        >>> s.set_signal_type("EDS_SEM") # doctest: +SKIP
+        >>> s # doctest: +SKIP
         <EDSSEMSpectrum, title: , dimensions: (|4)>
 
         or any of its aliases:
 
-        >>> s.set_signal_type("TEM EELS")             # doctest: +SKIP
-        >>> s                                         # doctest: +SKIP
+        >>> s.set_signal_type("TEM EELS") # doctest: +SKIP
+        >>> s # doctest: +SKIP
         <EELSSpectrum, title: , dimensions: (|4)>
 
         To set the ``signal_type`` to "undefined", simply call the method without

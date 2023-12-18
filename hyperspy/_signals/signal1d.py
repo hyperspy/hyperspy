@@ -1158,7 +1158,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Using GUI, replaces spectrum s
 
         >>> s = hs.signals.Signal1D(range(1000))
-        >>> s.remove_background()                                   #doctest: +SKIP
+        >>> s.remove_background() #doctest: +SKIP
 
         Using command line, returns a Signal1D:
 

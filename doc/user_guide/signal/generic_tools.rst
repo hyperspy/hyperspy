@@ -82,7 +82,7 @@ instances, for example:
     >>> np.exp(s)
     <Signal1D, title: exp(A), dimensions: (|2)>
     >>> np.exp(s).data
-    array([1.        , 2.71828183])
+    array([1. , 2.71828183])
     >>> np.power(s, 2)
     <Signal1D, title: power(A, 2), dimensions: (|2)>
     >>> np.add(s, s)
@@ -477,9 +477,7 @@ cannot be performed lazily:
 
 
 The ``dtype``  argument can be used to specify the ``dtype`` of the returned
-signal:
-
-.. code-block:: python
+signal::
 
     >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8))
     >>> print(s)
@@ -487,21 +485,21 @@ signal:
     >>> print(s.data.dtype)
     uint8
 
-    Use ``dtype=np.unit16`` to specify a dtype
+Use ``dtype=np.unit16`` to specify a dtype::
 
     >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
     >>> print(s2.data.dtype)
     uint16
 
-    Use ``dtype="same"`` to keep the same dtype
+Use ``dtype="same"`` to keep the same dtype::
 
     >>> s3 = s.rebin(scale=(5, 2, 1), dtype="same")
     >>> print(s3.data.dtype)
     uint8
 
-    By default ``dtype=None``, the dtype is determined by the behaviour of
-    numpy.sum, in this case, unsigned integer of the same precision as the
-    platform interger
+By default ``dtype=None``, the dtype is determined by the behaviour of
+numpy.sum, in this case, unsigned integer of the same precision as the
+platform interger::
 
     >>> s4 = s.rebin(scale=(5, 2, 1))
     >>> print(s4.data.dtype)

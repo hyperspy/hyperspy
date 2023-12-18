@@ -362,15 +362,15 @@ def load(filenames=None,
     --------
     Loading a single file providing the signal type:
 
-    >>> d = hs.load('file.dm3', signal_type="EDS_TEM")  # doctest: +SKIP
+    >>> d = hs.load('file.dm3', signal_type="EDS_TEM") # doctest: +SKIP
 
     Loading multiple files:
 
-    >>> d = hs.load(['file1.hspy','file2.hspy'])        # doctest: +SKIP
+    >>> d = hs.load(['file1.hspy','file2.hspy']) # doctest: +SKIP
 
     Loading multiple files matching the pattern:
 
-    >>> d = hs.load('file*.hspy')                       # doctest: +SKIP
+    >>> d = hs.load('file*.hspy') # doctest: +SKIP
 
     Loading multiple files containing square brackets in the filename:
 
@@ -378,7 +378,7 @@ def load(filenames=None,
 
     Loading multiple files containing character classes (regular expression):
 
-    >>> d = hs.load('file[0-9].hspy')                   # doctest: +SKIP
+    >>> d = hs.load('file[0-9].hspy')  # doctest: +SKIP
 
     Loading (potentially larger than the available memory) files lazily and
     stacking:
@@ -387,19 +387,19 @@ def load(filenames=None,
 
     Specify the file reader to use
 
-    >>> s = hs.load('a_nexus_file.h5', reader='nxs')    # doctest: +SKIP
+    >>> s = hs.load('a_nexus_file.h5', reader='nxs') # doctest: +SKIP
 
     Loading a file containing several datasets:
 
-    >>> s = hs.load("spameggsandham.nxs")               # doctest: +SKIP
-    >>> s                                               # doctest: +SKIP
+    >>> s = hs.load("spameggsandham.nxs") # doctest: +SKIP
+    >>> s # doctest: +SKIP
     [<Signal1D, title: spam, dimensions: (32,32|1024)>,
      <Signal1D, title: eggs, dimensions: (32,32|1024)>,
      <Signal1D, title: ham, dimensions: (32,32|1024)>]
     
     Use list indexation to access single signal
     
-    >>> s[0]                                            # doctest: +SKIP
+    >>> s[0] # doctest: +SKIP
     <Signal1D, title: spam, dimensions: (32,32|1024)>
 
     """

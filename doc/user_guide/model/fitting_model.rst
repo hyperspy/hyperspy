@@ -666,8 +666,9 @@ signal and how the ``isig`` syntax can be used to define the signal range.
     >>> m.set_signal_range(-7, -3, -9, -1) # Set signal range
     >>> m.fit() # doctest: +SKIP
 
-    >>> # Alternatively create a boolean signal of the same shape
-    >>> # as the signal space of im
+    Alternatively, create a boolean signal of the same shape
+    as the signal space of im
+    
     >>> signal_mask = im > 0.01
 
     >>> m.set_signal_range_from_mask(signal_mask.data) # Set signal range

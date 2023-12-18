@@ -1426,7 +1426,7 @@ define a plot of Ellipses using:
     ...                          angles=(10,), offsets=np.array([[0,0], [1,1]]))
     <Ellipses, length: 2>
 
-Alternatively if we want to make ellipses with different heights and widths we can pass multiple values to
+Alternatively, if we want to make ellipses with different heights and widths we can pass multiple values to
 heights, widths and angles.  In general these properties will be applied such that ``prop[i % len(prop)]`` so
 passing ``heights=(.1,.2,.3)`` will result in the ellipse at ``offsets[0]`` with a height of 0.1 the ellipse at
 ``offsets[1]`` with a height of 0.1, ellipse at ``offsets[2]`` has a height of 0.3 and the ellipse at ``offsets[3]`` has
