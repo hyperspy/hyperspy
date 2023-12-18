@@ -19,7 +19,7 @@ jobs:
           build-command: make html
           docs-folder: doc/
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: ./doc/_build/html/
           name: doc_build
