@@ -1,1 +1,0 @@
-Update warning of "beta" state in big data section to be more specific.

@@ -1,2 +1,0 @@
-Fix setting bounds for ``"trf"``, ``"dogbox"`` optimizer
-
