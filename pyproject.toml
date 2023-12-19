@@ -199,7 +199,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-# Presence enables setuptools_scm, the version will be determine at build time from git
+fallback_version = "2.1.dev0"
 
 [tool.towncrier]
 directory = "upcoming_changes/"
