@@ -10,15 +10,15 @@ set this attribute as in the following example where we set the variance to be
 
 .. code-block:: python
 
-    >>> s.metadata.Signal.set_item("Noise_properties.variance", 10)
+    >>> s.metadata.Signal.set_item("Noise_properties.variance", 10) # doctest: +SKIP
 
 You can also use the functions :meth:`~.api.signals.BaseSignal.set_noise_variance`
 and :meth:`~.api.signals.BaseSignal.get_noise_variance` for convenience:
 
 .. code-block:: python
 
-    >>> s.set_noise_variance(10)
-    >>> s.get_noise_variance()
+    >>> s.set_noise_variance(10) # doctest: +SKIP
+    >>> s.get_noise_variance() # doctest: +SKIP
     10
 
 For heteroscedastic noise the ``variance`` attribute must be a
@@ -48,23 +48,23 @@ model, for example:
 
 .. code-block:: python
 
-  >>> s = hs.signals.Spectrum(np.ones(100))
+  >>> s = hs.signals.Signal1D(np.ones(100))
   >>> s.add_poissonian_noise()
   >>> s.metadata
-  ├── General
-  │   └── title =
-  └── Signal
-      └── signal_type =
+    ├── General
+    │   └── title =
+    └── Signal
+        └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
   >>> s.metadata
-  ├── General
-  │   └── title =
-  └── Signal
-      ├── Noise_properties
-      │   ├── Variance_linear_model
-      │   │   ├── correlation_factor = 1
-      │   │   ├── gain_factor = 1
-      │   │   └── gain_offset = 0
-      │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
-      └── signal_type =
+    ├── General
+    │   └── title =
+    └── Signal
+        ├── Noise_properties
+        │   ├── Variance_linear_model
+        │   │   ├── correlation_factor = 1
+        │   │   ├── gain_factor = 1
+        │   │   └── gain_offset = 0
+        │   └── variance = <BaseSignal, title: Variance of , dimensions: (|100)>
+        └── signal_type =

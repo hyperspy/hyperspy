@@ -12,10 +12,11 @@ follows:
 
 .. code-block:: python
 
-  >>> real = s.real      # real is a new HS signal accessing the same data
-  >>> s.real = new_real  # new_real can be an array or signal
-  >>> imag = s.imag      # imag  is a new HS signal accessing the same data
-  >>> s.imag = new_imag  # new_imag can be an array or signal
+  >>> s = hs.signals.ComplexSignal1D(np.arange(100) + 1j * np.arange(100))
+  >>> real = s.real                   # real is a new HS signal accessing the same data
+  >>> s.real = np.random.random(100)  # new_real can be an array or signal
+  >>> imag = s.imag                   # imag  is a new HS signal accessing the same data
+  >>> s.imag = np.random.random(100)  # new_imag can be an array or signal
 
 It is important to note that `data` passed to the constructor of a
 :class:`~.api.signals.ComplexSignal` (or to a subclass), which

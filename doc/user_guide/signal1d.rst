@@ -19,7 +19,7 @@ appears in which to crop the one dimensional signal. For example:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.two_gaussians()
+    >>> s = hs.data.two_gaussians()
     >>> s.crop_signal(5, 15) # s is cropped in place
 
 Additionally, cropping in HyperSpy can be performed using the :ref:`Signal
@@ -28,14 +28,14 @@ to the 5.0-15.0 region:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.two_gaussians()
+    >>> s = hs.data.two_gaussians()
     >>> sc = s.isig[5.:15.] # s is not cropped, sc is a "cropped view" of s
 
 It is possible to crop interactively using :ref:`roi-label`. For example:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.two_gaussians()
+    >>> s = hs.data.two_gaussians()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> s.plot()
     >>> sc = roi.interactive(s)
@@ -73,8 +73,8 @@ Example of usage:
 
 .. code-block:: python
 
-    >>> s = exspy.data.EELS_MnFe(add_powerlaw=True)
-    >>> s.remove_background()
+    >>> s = exspy.data.EELS_MnFe(add_powerlaw=True) # doctest: +SKIP
+    >>> s.remove_background() # doctest: +SKIP
 
 .. figure::  images/signal_1d_remove_background.png
    :align:   center
@@ -115,7 +115,7 @@ Otherwise, a signal subrange for integration can also be chosen with the
 
 .. code-block:: python
 
-    >>> s.isig[0.2:0.5].integrate1D(axis=0)
+    >>> s.isig[0.2:0.5].integrate1D(axis=0) # doctest: +SKIP
 
 
 Data smoothing
@@ -143,7 +143,7 @@ indices 8 and 17:
 .. code-block:: python
 
    >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
-   >>> s.isig[8:17].spikes_removal_tool()
+   >>> s.isig[8:17].spikes_removal_tool() # doctest: +SKIP
 
 
 The options ``navigation_mask`` or ``signal_mask`` provide more flexibility in the
@@ -153,8 +153,12 @@ to be created manually:
 .. code-block:: python
 
    >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
-   >>> mask = (s.data > 50) & (s.data < 150)
-   >>> s.spikes_removal_tool(signal_mask=mask)
+   
+   To get a signal mask, get the mean over the navigation space
+
+   >>> s_mean = s.mean()
+   >>> mask = s_mean > 495
+   >>> s.spikes_removal_tool(signal_mask=mask) # doctest: +SKIP
 
 .. figure::  images/spikes_removal_tool.png
    :align:   center

@@ -66,8 +66,13 @@ the signal class. The individual axes can be accessed by indexing the
     >>> s
     <Signal1D, title: , dimensions: (20, 10|100)>
     >>> s.axes_manager
-    <Axes manager, axes: (<Unnamed 0th axis, size: 20, index: 0>, <Unnamed 1st
-    axis, size: 10, index: 0>|<Unnamed 2nd axis, size: 100>)>
+    <Axes manager, axes: (20, 10|100)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+         <undefined> |     20 |      0 |       0 |       1 | <undefined>
+         <undefined> |     10 |      0 |       0 |       1 | <undefined>
+    ---------------- | ------ | ------ | ------- | ------- | ------
+         <undefined> |    100 |      0 |       0 |       1 | <undefined>
     >>> s.axes_manager[0]
     <Unnamed 0th axis, size: 20, index: 0>
 
@@ -87,8 +92,11 @@ following commands will access the same axis:
 .. code-block:: python
 
     >>> s.axes_manager[2]
+    <Unnamed 2nd axis, size: 100>
     >>> s.axes_manager[-1]
+    <Unnamed 2nd axis, size: 100>
     >>> s.axes_manager.signal_axes[0]
+    <Unnamed 2nd axis, size: 100>
 
 The axis properties can be set by setting the :class:`~.axes.BaseDataAxis`
 attributes, e.g.:
@@ -117,7 +125,7 @@ It is also possible to set the axes properties using a GUI by calling the
 
 .. code-block:: python
 
-    >>> s.axes_manager.gui()
+    >>> s.axes_manager.gui() # doctest: +SKIP
 
 .. _axes_manager_gui_image:
 
@@ -131,7 +139,7 @@ or, for a specific axis, the respective method of e.g.
 
 .. code-block:: python
 
-    >>> s.axes_manager["X"].gui()
+    >>> s.axes_manager["X"].gui() # doctest: +SKIP
 
 .. _data_axis_gui_image:
 
@@ -145,7 +153,7 @@ axes) you could use the navigation sliders:
 
 .. code-block:: python
 
-    >>> s.axes_manager.gui_navigation_sliders()
+    >>> s.axes_manager.gui_navigation_sliders() # doctest: +SKIP
 
 .. _navigation_sliders_image:
 
@@ -260,24 +268,18 @@ Sample dictionary for a :class:`~.axes.UniformDataAxis`:
     >>> dict0 = {'offset': 300, 'scale': 1, 'size': 500}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'_type': 'UniformDataAxis',
-     'name': <undefined>,
-     'units': <undefined>,
-     'navigate': False,
-     'size': 500,
-     'scale': 1.0,
-     'offset': 300.0}
+    {'_type': 'UniformDataAxis', 'name': None, 'units': None, 'navigate': False, 'is_binned': False, 'size': 500, 'scale': 1.0, 'offset': 300.0}
 
 Corresponding output of :class:`~.axes.AxesManager`:
 
 .. code-block:: python
 
     >>> s.axes_manager
-    < Axes manager, axes: (|500) >
-                Name |   size |  offset |   scale |  units
-    ================ | ====== | ======= | ======= | ======
-    ---------------- | ------ | ------- | ------- | ------
-                     |    500 |     300 |       1 |
+    <Axes manager, axes: (|500)>
+                Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+         <undefined> |    500 |      0 |   3e+02 |       1 | <undefined> 
 
 
 .. _functional-data-axis:
@@ -307,32 +309,18 @@ Sample dictionary for a :class:`~.axes.FunctionalDataAxis`:
     >>> dict0 = {'expression': 'a / (x + 1) + b', 'a': 100, 'b': 10, 'size': 500}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'_type': 'FunctionalDataAxis',
-     'name': <undefined>,
-     'units': <undefined>,
-     'navigate': False,
-     'expression': 'a / (x + 1) + b',
-     'size': 500,
-     'x': {'_type': 'UniformDataAxis',
-      'name': <undefined>,
-      'units': <undefined>,
-      'navigate': <undefined>,
-      'size': 500,
-      'scale': 1.0,
-      'offset': 0.0},
-     'a': 100,
-     'b': 10}
+    {'_type': 'FunctionalDataAxis', 'name': None, 'units': None, 'navigate': False, 'is_binned': False, 'expression': 'a / (x + 1) + b', 'size': 500, 'x': {'_type': 'UniformDataAxis', 'name': None, 'units': None, 'navigate': False, 'is_binned': False, 'size': 500, 'scale': 1.0, 'offset': 0.0}, 'a': 100, 'b': 10}
 
 Corresponding output of :class:`~.axes.AxesManager`:
 
 .. code-block:: python
 
     >>> s.axes_manager
-    < Axes manager, axes: (|1000) >
-                Name |   size |           offset |            scale |  units
-    ================ | ====== | ================ | ================ | ======
-    ---------------- | ------ | ---------------- | ---------------- | ------
-                     |    500 | non-uniform axis | non-uniform axis |
+    <Axes manager, axes: (|500)>
+                Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+         <undefined> |    500 |      0 | non-uniform axis | <undefined> 
 
 
 Initializing ``x`` with ``offset`` and ``scale``:
@@ -364,8 +352,8 @@ Initializing ``x`` as non-uniform :class:`~.axes.DataAxis`:
     >>> # the actual axis array
     >>> s.axes_manager[0].axis
     array([110.        ,  35.        ,  21.11111111,  16.25      ,
-        1.         ,  12.77777778,  12.04081633,  11.5625    ,
-        11.2345679 ])
+            14.        ,  12.77777778,  12.04081633,  11.5625    ,
+            11.2345679 ])
 
 Initializing ``x`` with ``offset`` and ``scale``:
 
@@ -387,22 +375,18 @@ Sample dictionary for a :class:`~.axes.DataAxis`:
     >>> dict0 = {'axis': np.arange(12)**2}
     >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'_type': 'DataAxis',
-     'name': <undefined>,
-     'units': <undefined>,
-     'navigate': False,
-     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100, 121])}
+    {'_type': 'DataAxis', 'name': None, 'units': None, 'navigate': False, 'is_binned': False, 'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100, 121])}
 
 Corresponding output of :class:`~.axes.AxesManager`:
 
 .. code-block:: python
 
     >>> s.axes_manager
-    < Axes manager, axes: (|1000) >
-                Name |   size |           offset |            scale |  units
-    ================ | ====== | ================ | ================ | ======
-    ---------------- | ------ | ---------------- | ---------------- | ------
-                     |     12 | non-uniform axis | non-uniform axis |
+    <Axes manager, axes: (|12)>
+                Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+         <undefined> |     12 |      0 | non-uniform axis | <undefined> 
 
 
 .. _defining-axes:
@@ -436,13 +420,7 @@ method:
 .. code-block:: python
 
     >>> axis.get_axis_dictionary()
-    {'_type': 'UniformDataAxis',
-     'name': <undefined>,
-     'units': <undefined>,
-     'navigate': <undefined>,
-     'size': 20,
-     'scale': 0.5,
-     'offset': 10.0}
+    {'_type': 'UniformDataAxis', 'name': None, 'units': None, 'navigate': False, 'is_binned': False, 'size': 20, 'scale': 0.5, 'offset': 10.0}
 
 This dictionary can be used, for example, in the :ref:`initilization of a new
 signal<signal_initialization>`.
@@ -497,20 +475,15 @@ can be set and retrieved as quantity.
 
     >>> s = hs.signals.Signal1D(np.arange(10))
     >>> s.axes_manager[0].scale_as_quantity
-    1.0 dimensionless
+    <Quantity(1.0, 'dimensionless')>
     >>> s.axes_manager[0].scale_as_quantity = '2.5 µm'
     >>> s.axes_manager
     <Axes manager, axes: (|10)>
-                Name |   size |  index |  offset |   scale |  units
-    ================ | ====== | ====== | ======= | ======= | ======
-    ---------------- | ------ | ------ | ------- | ------- | ------
-         <undefined> |     10 |        |       0 |     2.5 |     µm
+                Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+         <undefined> |     10 |      0 |       0 |     2.5 |     µm 
     >>> s.axes_manager[0].offset_as_quantity = '2.5 nm'
-    <Axes manager, axes: (|10)>
-                Name |   size |  index |  offset |   scale |  units
-    ================ | ====== | ====== | ======= | ======= | ======
-    ---------------- | ------ | ------ | ------- | ------- | ------
-         <undefined> |     10 |        |     2.5 | 2.5e+03 |     nm
 
 
 Internally, HyperSpy uses the `pint <https://pint.readthedocs.io>`_ library to
@@ -521,9 +494,9 @@ manage the scale and offset quantities. The ``scale_as_quantity`` and
 
     >>> q = s.axes_manager[0].offset_as_quantity
     >>> type(q) # q is a pint quantity object
-    pint.quantity.build_quantity_class.<locals>.Quantity
+    <class 'pint.Quantity'>
     >>> q
-    2.5 nanometer
+    <Quantity(2.5, 'nanometer')>
 
 
 The ``convert_units`` method of the :class:`~.axes.AxesManager` converts
@@ -535,12 +508,12 @@ method of the :class:`~.axes.UniformDataAxis`:
 
 .. code-block:: python
 
-    >>> axis = hs.hyperspy.axes.DataAxis(size=10, scale=0.1, offset=10, units='mm')
+    >>> axis = hs.hyperspy.axes.UniformDataAxis(size=10, scale=0.1, offset=10, units='mm')
     >>> axis.scale_as_quantity
-    0.1 millimeter
+    <Quantity(0.1, 'millimeter')>
     >>> axis.convert_to_units('µm')
     >>> axis.scale_as_quantity
-    100.0 micrometer
+    <Quantity(100.0, 'micrometer')>
 
 
 .. _Axes_storage_ordering:
@@ -618,15 +591,13 @@ navigation index will now use that index, like ``s.plot()``.
     >>> s.axes_manager.iterpath # check current iteration path
     'serpentine'
     >>> for index in s.axes_manager:
-    ...     s.axes_manager.indices = i # s.plot() will change with this
     ...     print(index)
     (0, 0)
     (1, 0)
     (2, 0)
-    (0, 1)
-    (1, 1)
     (2, 1)
-
+    (1, 1)
+    (0, 1)
 
 The :attr:`~.axes.AxesManager.iterpath` attribute specifies the strategy that
 the :class:`~.axes.AxesManager` should use to iterate over the navigation axes.
@@ -646,6 +617,13 @@ Two built-in strategies exist:
     >>> s.axes_manager.iterpath = 'flyback'
     >>> for index in s.axes_manager:
     ...     print(index)
+    (0, 0)
+    (1, 0)
+    (2, 0)
+    (0, 1)
+    (1, 1)
+    (2, 1)
+
 
 The :attr:`~.axes.AxesManager.iterpath` can also be set using the
 :meth:`~.axes.AxesManager.switch_iterpath` context manager:
@@ -654,9 +632,14 @@ The :attr:`~.axes.AxesManager.iterpath` can also be set using the
 
     >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
     >>> with s.axes_manager.switch_iterpath('flyback'):
-    >>>     for index in s.axes_manager:
+    ...     for index in s.axes_manager:
     ...         print(index)
-
+    (0, 0)
+    (1, 0)
+    (2, 0)
+    (0, 1)
+    (1, 1)
+    (2, 1)
 
 The :attr:`~.axes.AxesManager.iterpath` can also be set to be a specific list of indices, like [(0,0), (0,1)],
 but can also be any generator of indices. Storing a high-dimensional set of
@@ -673,13 +656,13 @@ generator instead, one almost entirely removes such a memory footprint:
     (0, 1)
 
     >>> def reverse_flyback_generator():
-    >>>     for i in reversed(range(3)):
+    ...     for i in reversed(range(3)):
     ...         for j in reversed(range(2)):
     ...             yield (i,j)
 
     >>> s.axes_manager.iterpath = reverse_flyback_generator()
     >>> for index in s.axes_manager:
-    ...     print(index)
+    ...     print(index)    
     (2, 1)
     (2, 0)
     (1, 1)

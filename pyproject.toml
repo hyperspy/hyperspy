@@ -106,6 +106,7 @@ dev = [
     "hyperspy[tests]",
 ]
 doc = [
+    "IPython", # Needed in testing code in basic_usage.rst
     "numpydoc",
     "pydata_sphinx_theme",
     "setuptools_scm",
@@ -171,8 +172,18 @@ addopts = "-ra -n auto --dist loadfile"
 filterwarnings = [
     "ignore:Matplotlib is currently using agg:UserWarning",
 ]
-testpaths = ["hyperspy/tests"]
+testpaths = ["hyperspy"]
+norecursedirs = [
+    "hyperspy/external/*",
+    "doc/auto_examples*",
+    "doc/_build/*"
+]
 xfail_strict = false
+doctest_optionflags = [
+    "IGNORE_EXCEPTION_DETAIL",
+    "NORMALIZE_WHITESPACE",
+    "ELLIPSIS",
+]
 
 [tool.setuptools.package-data]
 "*" = [

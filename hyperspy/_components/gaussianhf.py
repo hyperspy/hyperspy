@@ -141,6 +141,7 @@ class GaussianHF(Expression):
         >>> s.axes_manager[-1].offset = -10
         >>> s.axes_manager[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
+        True
         """
 
         super()._estimate_parameters(signal)

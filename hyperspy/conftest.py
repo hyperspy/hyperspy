@@ -35,6 +35,7 @@ import matplotlib.pyplot as plt
 import pytest
 import numpy as np
 import matplotlib
+import dask.array as da
 import hyperspy.api as hs
 
 
@@ -43,6 +44,9 @@ matplotlib.rcParams['interactive'] = False
 hs.preferences.Plot.cmap_navigator = 'viridis'
 hs.preferences.Plot.cmap_signal = 'viridis'
 hs.preferences.Plot.pick_tolerance = 5.0
+# Don't show progressbar since it contains the runtime which
+# will make the doctest fail
+hs.preferences.General.show_progressbar = False
 
 
 @pytest.fixture(autouse=True)
@@ -50,6 +54,7 @@ def add_np(doctest_namespace):
     doctest_namespace['np'] = np
     doctest_namespace['plt'] = plt
     doctest_namespace['hs'] = hs
+    doctest_namespace['da'] = da
 
 
 @pytest.fixture

@@ -117,7 +117,7 @@ order to increase responsiveness.
    >>> im_roi = roi.interactive(im, color="red")
    >>> roi_hist = hs.interactive(im_roi.get_histogram,
    ...                           event=roi.events.changed,
-                                 bins=150, # Set number of bins for `get_histogram`
+   ...                           bins=150, # Set number of bins for `get_histogram`
    ...                           recompute_out_event=None)
    >>> roi_hist.plot()
 
@@ -139,7 +139,7 @@ parameters:
 .. code-block:: python
 
     >>> # continuing from above:
-    >>> roi.gui()
+    >>> roi.gui() # doctest: +SKIP
 
 .. figure::  images/roi_gui_control.gif
   :align:   center
@@ -156,6 +156,7 @@ parameters:
     >>> roi = hs.roi.Line2DROI(x1=144, y1=240, x2=306, y2=178, linewidth=0)
     >>> ima.plot()
     >>> roi.interactive(ima, color='red')
+    <BaseSignal, title: , dimensions: (|175)>
 
 .. figure::  images/roi_line2d.png
   :align:   center
@@ -164,7 +165,7 @@ parameters:
 .. code-block:: python
 
     >>> roi.angle(axis='vertical')
-    -100.97166759025453
+    110.94265054998827
 
 The default output of the method is in degrees, though radians can be selected
 as follows:
@@ -172,7 +173,7 @@ as follows:
 .. code-block:: python
 
     >>> roi.angle(axis='vertical', units='radians')
-    -1.7622880506791903
+    1.9363145329867932
 
 Conveniently, :meth:`~.roi.Line2DROI.angle` can be used to rotate an image to
 align selected features with respect to vertical or horizontal axis:
@@ -195,7 +196,7 @@ ROIs can be used in place of slices when indexing. For example:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.two_gaussians()
+    >>> s = hs.data.two_gaussians()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> sc = s.isig[roi]
     >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
@@ -218,11 +219,11 @@ Handily, we can pass a :class:`~.roi.RectangularROI` ROI instead.
 
     >>> import hyperspy.api as hs
     >>> import numpy as np
-    >>> im = hs.signals.Signal2D(np.random.random((10,30,30))
-    >>> roi = hs.roi.RectangularROI(left=2, right=10, top=0, bottom=5))
+    >>> im = hs.signals.Signal2D(np.random.random((10,30,30)))
+    >>> roi = hs.roi.RectangularROI(left=2, right=10, top=0, bottom=5)
     >>> tuple(roi)
     (2.0, 10.0, 0.0, 5.0)
-    >>> im.align2D(roi=roi)
+    >>> im.align2D(roi=roi) # doctest: +SKIP
 
 
 Interactively Slicing Signal Dimensions
@@ -251,12 +252,11 @@ intensity within this region at each position in the map.
 
 .. code-block:: python
 
-    >>> import hyperpsy.api as hs
-    >>> from hyperspy.utils.plot import plot_roi_map
-    >>> sig = hs.load('mydata.sur')
-    >>> sig
+    >>> import hyperpsy.api as hs # doctest: +SKIP
+    >>> sig = hs.load('mydata.sur') # doctest: +SKIP
+    >>> sig # doctest: +SKIP
     <Signal1D, dimensions: (128, 128|1024)>
-    >>> plot_roi_map(sig, rois=2)
+    >>> hs.plot.plot_roi_map(sig, rois=2) # doctest: +SKIP
 
 
 .. image:: images/plot_roi_map_demo.gif

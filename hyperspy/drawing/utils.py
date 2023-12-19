@@ -310,24 +310,21 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     Examples
     --------
 
-    >>> s_cl = hs.load("coreloss.dm3")
-    >>> s_ll = hs.load("lowloss.dm3")
-    >>> hs.plot.plot_signals([s_cl, s_ll])
+    >>> s1 = hs.signals.Signal1D(np.arange(100).reshape((10, 10)))
+    >>> s2 = hs.signals.Signal1D(np.arange(100).reshape((10, 10)) * -1)
+    >>> hs.plot.plot_signals([s1, s2])
 
     Specifying the navigator:
 
-    >>> s_cl = hs.load("coreloss.dm3")
-    >>> s_ll = hs.load("lowloss.dm3")
-    >>> hs.plot.plot_signals([s_cl, s_ll], navigator="slider")
+    >>> hs.plot.plot_signals([s1, s2], navigator="slider") # doctest: +SKIP
 
     Specifying the navigator for each signal:
 
-    >>> s_cl = hs.load("coreloss.dm3")
-    >>> s_ll = hs.load("lowloss.dm3")
-    >>> s_edx = hs.load("edx.dm3")
-    >>> s_adf = hs.load("adf.dm3")
+    >>> s3 = hs.signals.Signal1D(np.ones((10, 10)))
+    >>> s_nav = hs.signals.Signal1D(np.ones((10)))
     >>> hs.plot.plot_signals(
-            [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
+    ...    [s1, s2, s3], navigator_list=["slider", None, s_nav]
+    ...    ) # doctest: +SKIP
 
     """
 
@@ -1403,12 +1400,14 @@ def plot_spectra(
 
     Examples
     --------
-    >>> s = hs.load("some_spectra")
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape((10, 10)))
     >>> hs.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
+    <Axes: xlabel='<undefined> (<undefined>)'>
 
     To save the plot as a png-file
 
-    >>> hs.plot.plot_spectra(s).figure.savefig("test.png")
+    >>> ax = hs.plot.plot_spectra(s)
+    >>> ax.figure.savefig("test.png") # doctest: +SKIP
 
     Returns
     -------
@@ -1671,9 +1670,10 @@ def plot_histograms(signal_list,
     --------
     Histograms of two random chi-square distributions.
 
-    >>> img = hs.signals.Signal2D(np.random.chisquare(1,[10,10,100]))
-    >>> img2 = hs.signals.Signal2D(np.random.chisquare(2,[10,10,100]))
+    >>> img = hs.signals.Signal2D(np.random.chisquare(1, [10, 10, 100]))
+    >>> img2 = hs.signals.Signal2D(np.random.chisquare(2, [10, 10, 100]))
     >>> hs.plot.plot_histograms([img, img2], legend=['hist1', 'hist2'])
+    <Axes: xlabel='value (<undefined>)', ylabel='Intensity'>
 
     Returns
     -------

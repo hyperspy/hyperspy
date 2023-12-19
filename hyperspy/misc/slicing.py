@@ -175,7 +175,7 @@ class SpecialSlicers(object):
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         >>> s.axes_manager[0].scale = 0.5
         >>> s.axes_manager[0].axis
-        array([ 0. ,  0.5,  1. ,  1.5,  2. ,  2.5,  3. ,  3.5,  4. ,  4.5])
+        array([0. , 0.5, 1. , 1.5, 2. , 2.5, 3. , 3.5, 4. , 4.5])
         >>> s.isig[0.5:4.].data
         array([1, 2, 3, 4, 5, 6, 7])
         >>> s.isig[0.5:4].data

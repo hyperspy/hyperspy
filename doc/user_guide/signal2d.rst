@@ -19,11 +19,11 @@ advanced image alignment functionality.
 .. code-block:: python
 
     # Estimate shifts, then align the images
-    >>> shifts = s.estimate_shift2D()
-    >>> s.align2D(shifts=shifts)
+    >>> shifts = s.estimate_shift2D() # doctest: +SKIP
+    >>> s.align2D(shifts=shifts) # doctest: +SKIP
 
     # Estimate and align in a single step
-    >>> s.align2D()
+    >>> s.align2D() # doctest: +SKIP
 
 .. warning::
 
@@ -42,13 +42,13 @@ Sub-pixel accuracy can be achieved in two ways:
 .. code-block:: python
 
     # skimage upsampling method
-    >>> shifts = s.estimate_shift2D(sub_pixel_factor=20)
+    >>> shifts = s.estimate_shift2D(sub_pixel_factor=20) # doctest: +SKIP
 
     # stat method
-    >>> shifts = s.estimate_shift2D(reference="stat")
+    >>> shifts = s.estimate_shift2D(reference="stat") # doctest: +SKIP
 
     # combined upsampling and statistical method
-    >>> shifts = s.estimate_shift2D(reference="stat", sub_pixel_factor=20)
+    >>> shifts = s.estimate_shift2D(reference="stat", sub_pixel_factor=20) # doctest: +SKIP
 
 If you have a large stack of images, the image alignment is automatically done in
 parallel.
@@ -59,10 +59,10 @@ the scheduler of the :ref:`dask backend <dask_backends>`.
 .. code-block:: python
 
     # Estimate shifts
-    >>> shifts = s.estimate_shift2D()
+    >>> shifts = s.estimate_shift2D() # doctest: +SKIP
 
     # Align images in parallel using 4 threads
-    >>> s.align2D(shifts=shifts, num_workers=4)
+    >>> s.align2D(shifts=shifts, num_workers=4) # doctest: +SKIP
 
 .. _signal2D.crop:
 
@@ -74,8 +74,8 @@ image *in-place* e.g.:
 
 .. code-block:: python
 
-    >>> im = hs.datasets.example_signals.object_hologram()
-    >>> im.crop_signal(left=120, top=300, bottom=560) # im is cropped in-place
+    >>> im = hs.data.wave_image()
+    >>> im.crop_signal(left=0.5, top=0.7, bottom=2.0) # im is cropped in-place
 
 
 Cropping in HyperSpy is performed using the :ref:`Signal indexing
@@ -83,17 +83,17 @@ Cropping in HyperSpy is performed using the :ref:`Signal indexing
 
 .. code-block:: python
 
-    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> im = hs.data.wave_image()
     >>> # im is not cropped, imc is a "cropped view" of im
-    >>> imc = im.isig[120.:, 300.:560.]
+    >>> imc = im.isig[0.5:, 0.7:2.0]
 
 
 It is possible to crop interactively using :ref:`roi-label`. For example:
 
 .. code-block:: python
 
-    >>> im = hs.datasets.example_signals.object_hologram()
-    >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
+    >>> im = hs.data.wave_image()
+    >>> roi = hs.roi.RectangularROI()
     >>> im.plot()
     >>> imc = roi.interactive(im)
     >>> imc.plot()
@@ -117,7 +117,7 @@ set the scale by dragging a line across some feature of known size.
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.random.random((200, 200)))
-    >>> s.calibrate()
+    >>> s.calibrate() # doctest: +SKIP
 
 
 The same function can also be used non-interactively.
@@ -155,9 +155,9 @@ Maximum based peak finder
 
 .. code-block:: python
 
-    >>> s.find_peaks(method='local_max')
-    >>> s.find_peaks(method='max')
-    >>> s.find_peaks(method='minmax')
+    >>> s.find_peaks(method='local_max') # doctest: +SKIP
+    >>> s.find_peaks(method='max') # doctest: +SKIP
+    >>> s.find_peaks(method='minmax') # doctest: +SKIP
 
 These methods search for peaks using maximum (and minimum) values in the
 image. There all have a ``distance`` parameter to set the minimum distance
@@ -182,7 +182,7 @@ Zaeferrer peak finder
 
 .. code-block:: python
 
-    >>> s.find_peaks(method='zaefferer')
+    >>> s.find_peaks(method='zaefferer') # doctest: +SKIP
 
 This algorithm was developed by Zaefferer :ref:`[Zaefferer2000] <Zaefferer2000>`.
 It is based on a gradient threshold followed by a local maximum search within a square window,
@@ -198,7 +198,7 @@ Ball statistical peak finder
 
 .. code-block:: python
 
-    >>> s.find_peaks(method='stat')
+    >>> s.find_peaks(method='stat') # doctest: +SKIP
 
 Described by White :ref:`[White2009] <White2009>`, this method is based on finding points that
 have a statistically higher value than the surrounding areas, then iterating
@@ -214,8 +214,8 @@ Matrix based peak finding
 
 .. code-block:: python
 
-    >>> s.find_peaks(method='laplacian_of_gaussians')
-    >>> s.find_peaks(method='difference_of_gaussians')
+    >>> s.find_peaks(method='laplacian_of_gaussians') # doctest: +SKIP
+    >>> s.find_peaks(method='difference_of_gaussians') # doctest: +SKIP
 
 These methods are essentially wrappers around the
 Laplacian of Gaussian (:func:`skimage.feature.blob_log`) or the difference
@@ -231,7 +231,8 @@ Template matching
 
     >>> x, y = np.meshgrid(np.arange(-2, 2.5, 0.5), np.arange(-2, 2.5, 0.5))
     >>> template = hs.model.components2D.Gaussian2D().function(x, y)
-    >>> s.find_peaks(method='template_matching', template=template)
+    >>> s.find_peaks(method='template_matching', template=template, interactive=False)
+    <BaseSignal, title: , dimensions: (|ragged)>
 
 This method locates peaks in the cross correlation between the image and a
 template using the :func:`~.hyperspy.utils.peakfinders2D.find_peaks_xc` function. See
@@ -247,7 +248,7 @@ used to set to select the method and set the parameters interactively:
 
 .. code-block:: python
 
-    >>> s.find_peaks(interactive=True)
+    >>> s.find_peaks(interactive=True) # doctest: +SKIP
 
 
 Several widgets are available:

@@ -10,15 +10,17 @@ method, for example:
 
 .. code-block:: python
 
-   >>> import numpy as np
-   >>> from hyperspy.signals import Signal1D
-
-   >>> s = Signal1D(np.random.randn(10, 10, 200))
+   >>> s = hs.signals.Signal1D(np.random.randn(10, 10, 200))
    >>> s.decomposition()
+   Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=SVD
+      output_dimension=None
+      centre=None
 
    >>> # Load data from a file, then decompose
-   >>> s = hs.load("my_file.hspy")
-   >>> s.decomposition()
+   >>> s = hs.load("my_file.hspy") # doctest: +SKIP
+   >>> s.decomposition() # doctest: +SKIP
 
 .. note::
    The signal ``s`` must be multi-dimensional, *i.e.*
@@ -35,13 +37,13 @@ To reconstruct your denoised or reduced model, run the
 .. code-block:: python
 
    >>> # Use all components to reconstruct the model
-   >>> sc = s.get_decomposition_model()
+   >>> sc = s.get_decomposition_model() # doctest: +SKIP
 
    >>> # Use first 3 components to reconstruct the model
-   >>> sc = s.get_decomposition_model(3)
+   >>> sc = s.get_decomposition_model(3) # doctest: +SKIP
 
    >>> # Use components [0, 2] to reconstruct the model
-   >>> sc = s.get_decomposition_model([0, 2])
+   >>> sc = s.get_decomposition_model([0, 2]) # doctest: +SKIP
 
 Sometimes, it is useful to examine the residuals between your original data and
 the decomposition model. You can easily calculate and display the residuals,
@@ -50,7 +52,7 @@ object, which in the example above we have called ``sc``:
 
 .. code-block:: python
 
-   >>> (s - sc).plot()
+   >>> (s - sc).plot() # doctest: +SKIP
 
 You can perform operations on this new object ``sc`` later.
 It is a copy of the original ``s`` object, except that the data has
@@ -63,7 +65,7 @@ such that :math:`X \approx A B^T`.
 
 .. code-block:: python
 
-   >>> s.decomposition(output_dimension=3)
+   >>> s.decomposition(output_dimension=3) # doctest: +SKIP
 
 Some of the algorithms described below require ``output_dimension`` to be provided.
 
@@ -124,11 +126,13 @@ documentation for :func:`~.learn.svd_pca.svd_pca`.
 
 .. code-block:: python
 
-   >>> import numpy as np
-   >>> from hyperspy.signals import Signal1D
-
-   >>> s = Signal1D(np.random.randn(10, 10, 200))
+   >>> s = hs.signals.Signal1D(np.random.randn(10, 10, 200))
    >>> s.decomposition()
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=SVD
+      output_dimension=None
+      centre=None
 
 .. note::
    In some fields, including electron microscopy, this approach of applying an SVD
@@ -157,6 +161,13 @@ If you have `scikit-learn <https://scikit-learn.org/>`_ installed:
 .. code-block:: python
 
    >>> s.decomposition(algorithm="sklearn_pca")
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=sklearn_pca
+      output_dimension=None
+      centre=None
+    scikit-learn estimator:
+    PCA()
 
 You can also turn on centering with the default ``"SVD"`` algorithm via
 the ``"centre"`` argument:
@@ -165,17 +176,34 @@ the ``"centre"`` argument:
 
    # Subtract the mean along the navigation axis
    >>> s.decomposition(algorithm="SVD", centre="navigation")
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=SVD
+      output_dimension=None
+      centre=navigation
 
    # Subtract the mean along the signal axis
    >>> s.decomposition(algorithm="SVD", centre="signal")
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=SVD
+      output_dimension=None
+      centre=signal
 
 You can also use :class:`sklearn.decomposition.PCA` directly:
 
 .. code-block:: python
 
    >>> from sklearn.decomposition import PCA
-
    >>> s.decomposition(algorithm=PCA())
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=PCA()
+      output_dimension=None
+      centre=None
+    scikit-learn estimator:
+    PCA()
+
 
 .. _poissonian-noise-label:
 
@@ -193,10 +221,10 @@ To apply Poissonian noise normalization to your data:
 
 .. code-block:: python
 
-   >>> s.decomposition(normalize_poissonian_noise=True)
+   >>> s.decomposition(normalize_poissonian_noise=True) # doctest: +SKIP
 
    >>> # Because it is the first argument we could have simply written:
-   >>> s.decomposition(True)
+   >>> s.decomposition(True) # doctest: +SKIP
 
 .. warning::
    Poisson noise normalization cannot be used in combination with data
@@ -214,7 +242,7 @@ robust statistical treatment of non-Gaussian "heteroskedastic noise".
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="MLPCA")
+   >>> s.decomposition(algorithm="MLPCA") # doctest: +SKIP
 
 For more information, please read the method documentation for :func:`~.learn.mlpca.mlpca`.
 
@@ -256,6 +284,11 @@ that you explore the behaviour of different values.
 .. code-block:: python
 
    >>> s.decomposition(algorithm="RPCA", output_dimension=3, lambda1=0.1)
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=RPCA
+      output_dimension=3
+      centre=None
 
 HyperSpy also implements an *online* algorithm for RPCA developed by Feng et
 al. :ref:`[Feng2013] <Feng2013>`. This minimizes memory usage, making it
@@ -264,7 +297,7 @@ algorithm.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="ORPCA", output_dimension=3)
+   >>> s.decomposition(algorithm="ORPCA", output_dimension=3) # doctest: +SKIP
 
 The online RPCA implementation sets several default parameters that are
 usually suitable for most datasets, including the regularization parameter
@@ -275,7 +308,7 @@ the following code will train ORPCA using the first 32 samples of the data.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="ORPCA", output_dimension=3, training_samples=32)
+   >>> s.decomposition(algorithm="ORPCA", output_dimension=3, training_samples=32) # doctest: +SKIP
 
 Finally, online RPCA includes two alternatives methods to the default
 block-coordinate descent solver, which can again improve both the convergence
@@ -292,7 +325,7 @@ finding the correct minima. Usually a value between 1 and 2 works well:
    >>> s.decomposition(algorithm="ORPCA",
    ...                 output_dimension=3,
    ...                 method="SGD",
-   ...                 subspace_learning_rate=1.1)
+   ...                 subspace_learning_rate=1.1) # doctest: +SKIP
 
 You can also use Momentum Stochastic Gradient Descent (MomentumSGD),
 which typically improves the convergence properties of stochastic gradient
@@ -305,7 +338,7 @@ be a fraction between 0 and 1.
    ...                 output_dimension=3,
    ...                 method="MomentumSGD",
    ...                 subspace_learning_rate=1.1,
-   ...                 subspace_momentum=0.5)
+   ...                 subspace_momentum=0.5) # doctest: +SKIP
 
 Using the ``"SGD"`` or ``"MomentumSGD"`` methods enables the subspace,
 i.e. the underlying low-rank component, to be tracked as it changes
@@ -322,7 +355,7 @@ Another popular decomposition method is non-negative matrix factorization
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="NMF")
+   >>> s.decomposition(algorithm="NMF") # doctest: +SKIP
 
 Unlike PCA, NMF forces the components to be strictly non-negative, which can
 aid the physical interpretation of components for count data such as images,
@@ -353,7 +386,7 @@ As before, you can control the regularization applied via the parameter "lambda1
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="ORNMF", output_dimension=3, lambda1=0.1)
+   >>> s.decomposition(algorithm="ORNMF", output_dimension=3, lambda1=0.1) # doctest: +SKIP
 
 The MomentumSGD method  is useful for scenarios where the subspace, i.e. the
 underlying low-rank component, is changing over time.
@@ -364,7 +397,7 @@ underlying low-rank component, is changing over time.
    ...                 output_dimension=3,
    ...                 method="MomentumSGD",
    ...                 subspace_learning_rate=1.1,
-   ...                 subspace_momentum=0.5)
+   ...                 subspace_momentum=0.5) # doctest: +SKIP
 
 Both the default and MomentumSGD solvers assume an *l2*-norm minimization problem,
 which can still be sensitive to *very* heavily corrupted data. A more robust
@@ -372,7 +405,7 @@ alternative is available, although it is typically much slower.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="ORNMF", output_dimension=3, method="RobustPGD")
+   >>> s.decomposition(algorithm="ORNMF", output_dimension=3, method="RobustPGD") # doctest: +SKIP
 
 .. _mva.custom_decomposition:
 
@@ -394,11 +427,13 @@ You can access the fitted estimator by passing ``return_info=True``.
 
    >>> pipe = Pipeline([("scaler", MinMaxScaler()), ("PCA", PCA())])
    >>> out = s.decomposition(algorithm=pipe, return_info=True)
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=Pipeline(steps=[('scaler', MinMaxScaler()), ('PCA', PCA())])
+      output_dimension=None
+      centre=None
+    scikit-learn estimator:
+    Pipeline(steps=[('scaler', MinMaxScaler()), ('PCA', PCA())])
 
    >>> out
-   Pipeline(memory=None,
-            steps=[('scaler', MinMaxScaler(copy=True, feature_range=(0, 1))),
-                   ('PCA', PCA(copy=True, iterated_power='auto', n_components=None,
-                               random_state=None, svd_solver='auto', tol=0.0,
-                               whiten=False))],
-            verbose=False)
+   Pipeline(steps=[('scaler', MinMaxScaler()), ('PCA', PCA())])

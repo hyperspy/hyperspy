@@ -33,10 +33,11 @@ Current stored models can be listed by calling ``s.models``:
 
 .. code-block:: python
 
+    >>> s = hs.signals.Signal1D(np.arange(100))
     >>> m = s.create_model()
     >>> m.append(hs.model.components1D.Lorentzian())
     >>> m.store('myname')
-    >>> s.models
+    >>> s.models # doctest: +SKIP
     └── myname
         ├── components
         │   └── Lorentzian
@@ -45,7 +46,7 @@ Current stored models can be listed by calling ``s.models``:
 
     >>> m.append(hs.model.components1D.Exponential())
     >>> m.store() # assign model name automatically
-    >>> s.models
+    >>> s.models # doctest: +SKIP
     ├── a
     │   ├── components
     │   │   ├── Exponential
@@ -59,9 +60,9 @@ Current stored models can be listed by calling ``s.models``:
         └── dimensions = (|100)
     >>> m1 = s.models.restore('myname')
     >>> m1.components
-       # |      Attribute Name |       Component Name |       Component Type
-    ---- | ------------------- | -------------------- | --------------------
-       0 |          Lorentzian |           Lorentzian |           Lorentzian
+       # |      Attribute Name |      Component Name |      Component Type
+    ---- | ------------------- | ------------------- | -------------------
+       0 |          Lorentzian |          Lorentzian |          Lorentzian
 
 
 Saving and loading the result of the fit
@@ -76,9 +77,13 @@ model can be saved with one signal.
 
     >>> m = s.create_model()
     >>> # analysis and fitting goes here
-    >>> m.save('my_filename', 'model_name')
-    >>> l = hs.load('my_filename.hspy')
-    >>> m = l.models.restore('model_name') # or l.models.model_name.restore()
+    >>> m.save('my_filename', 'model_name') # doctest: +SKIP
+    >>> l = hs.load('my_filename.hspy') # doctest: +SKIP
+    >>> m = l.models.restore('model_name') # doctest: +SKIP
+
+    Alternatively
+
+    >>> m = l.models.model_name.restore() # doctest: +SKIP
 
 For older versions of HyperSpy (before 0.9), the instructions were as follows:
 

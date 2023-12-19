@@ -16,8 +16,8 @@ acquired by recording two signals in parallel in a FIB/SEM.
 
 .. code-block:: python
 
-    >>> s = hs.load('YourDataFilenameHere')
-    >>> s.plot()
+    >>> s = hs.load('YourDataFilenameHere') # doctest: +SKIP
+    >>> s.plot() # doctest: +SKIP
 
 if the object is single spectrum or an image one window will appear when
 calling the plot method.
@@ -196,8 +196,7 @@ Colorbar, scalebar and contrast controls are HyperSpy-specific, however
 
     >>> import scipy
     >>> img = hs.signals.Signal2D(scipy.datasets.ascent())
-    >>> img.plot(colorbar=True, scalebar=False,
-    ... 	 axes_ticks=True, cmap='RdYlBu_r')
+    >>> img.plot(colorbar=True, scalebar=False, axes_ticks=True, cmap='RdYlBu_r')
 
 
 .. figure::  images/custom_cmap.png
@@ -255,6 +254,7 @@ The following example shows the effect of centring the color map:
     >>> data2[data2 < 0] /= 4
     >>> im = hs.signals.Signal2D([data1, data2])
     >>> hs.plot.plot_images(im, cmap="RdBu", tight_layout=True)
+    [<Axes: title={'center': ' (0,)'}>, <Axes: title={'center': ' (1,)'}>]
 
 
 .. figure::  images/divergent_cmap.png
@@ -274,8 +274,8 @@ The same example with the feature disabled:
     >>> data2 = data1.copy()
     >>> data2[data2 < 0] /= 4
     >>> im = hs.signals.Signal2D([data1, data2])
-    >>> hs.plot.plot_images(im, centre_colormap=False,
-    ...                     cmap="RdBu", tight_layout=True)
+    >>> hs.plot.plot_images(im, centre_colormap=False, cmap="RdBu", tight_layout=True)
+    [<Axes: title={'center': ' (0,)'}>, <Axes: title={'center': ' (1,)'}>]
 
 
 .. figure::  images/divergent_cmap_no_centre.png
@@ -332,13 +332,13 @@ Data files used in the following examples can be downloaded using
 .. code-block:: python
 
     >>> #Download the data (130MB)
-    >>> from urllib.request import urlretrieve, urlopen
-    >>> from zipfile import ZipFile
+    >>> from urllib.request import urlretrieve, urlopen # doctest: +SKIP
+    >>> from zipfile import ZipFile # doctest: +SKIP
     >>> files = urlretrieve("https://www.dropbox.com/s/s7cx92mfh2zvt3x/"
     ...                     "HyperSpy_demos_EDX_SEM_files.zip?raw=1",
-    ...                     "./HyperSpy_demos_EDX_SEM_files.zip")
-    >>> with ZipFile("HyperSpy_demos_EDX_SEM_files.zip") as z:
-    >>>     z.extractall()
+    ...                     "./HyperSpy_demos_EDX_SEM_files.zip") # doctest: +SKIP
+    >>> with ZipFile("HyperSpy_demos_EDX_SEM_files.zip") as z: # doctest: +SKIP
+    ...     z.extractall()
 
 .. NOTE::
     See also the
@@ -354,8 +354,8 @@ instead of the 2D navigator as in the previous example.
 
 .. code-block:: python
 
-    >>> img = hs.load('Ni_superalloy_0*.tif', stack=True)
-    >>> img.plot(navigator='slider')
+    >>> img = hs.load('Ni_superalloy_0*.tif', stack=True) # doctest: +SKIP
+    >>> img.plot(navigator='slider') # doctest: +SKIP
 
 
 .. figure::  images/3D_image.png
@@ -370,8 +370,8 @@ plotted with sliders.
 
 .. code-block:: python
 
-    >>> s = hs.load('Ni_superalloy_0*.rpl', stack=True).as_signal1D(0)
-    >>> s.plot()
+    >>> s = hs.load('Ni_superalloy_0*.rpl', stack=True).as_signal1D(0) # doctest: +SKIP
+    >>> s.plot() # doctest: +SKIP
 
 
 .. figure::  images/3D_spectrum.png
@@ -386,12 +386,14 @@ can be used as an external signal for the navigator.
 
 .. code-block:: python
 
-    >>> im = hs.load('Ni_superalloy_0*.tif', stack=True)
-    >>> s = hs.load('Ni_superalloy_0*.rpl', stack=True).as_signal1D(0)
-    >>> dim = s.axes_manager.navigation_shape
-    >>> #Rebin the image
-    >>> im = im.rebin([dim[2], dim[0], dim[1]])
-    >>> s.plot(navigator=im)
+    >>> im = hs.load('Ni_superalloy_0*.tif', stack=True) # doctest: +SKIP
+    >>> s = hs.load('Ni_superalloy_0*.rpl', stack=True).as_signal1D(0) # doctest: +SKIP
+    >>> dim = s.axes_manager.navigation_shape # doctest: +SKIP
+    
+    Rebin the image
+    
+    >>> im = im.rebin([dim[2], dim[0], dim[1]]) # doctest: +SKIP
+    >>> s.plot(navigator=im) # doctest: +SKIP
 
 
 .. figure::  images/3D_spectrum_external.png
@@ -405,8 +407,8 @@ alternative display.
 
 .. code-block:: python
 
-    >>> imgSpec = hs.load('Ni_superalloy_0*.rpl', stack=True)
-    >>> imgSpec.plot(navigator='spectrum')
+    >>> imgSpec = hs.load('Ni_superalloy_0*.rpl', stack=True) # doctest: +SKIP
+    >>> imgSpec.plot(navigator='spectrum') # doctest: +SKIP
 
 
 .. figure::  images/3D_image_spectrum.png
@@ -420,9 +422,9 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
 .. code-block:: python
 
-    >>> imgSpec = hs.load('Ni_superalloy_0*.rpl', stack=True)
-    >>> specMax = imgSpec.max(-1).max(-1).max(-1).as_signal1D(0)
-    >>> imgSpec.plot(navigator=specMax)
+    >>> imgSpec = hs.load('Ni_superalloy_0*.rpl', stack=True) # doctest: +SKIP
+    >>> specMax = imgSpec.max(-1).max(-1).max(-1).as_signal1D(0) # doctest: +SKIP
+    >>> imgSpec.plot(navigator=specMax) # doctest: +SKIP
 
 
 .. figure::  images/3D_image_spectrum_external.png
@@ -443,9 +445,9 @@ Data files used in the following examples can be downloaded using
 
 .. code-block:: python
 
-    >>> from urllib.request import urlretrieve
-    >>> url = 'http://cook.msm.cam.ac.uk/~hyperspy/EDS_tutorial/'
-    >>> urlretrieve(url + 'Ni_La_intensity.hdf5', 'Ni_La_intensity.hdf5')
+    >>> from urllib.request import urlretrieve # doctest: +SKIP
+    >>> url = 'http://cook.msm.cam.ac.uk/~hyperspy/EDS_tutorial/' # doctest: +SKIP
+    >>> urlretrieve(url + 'Ni_La_intensity.hdf5', 'Ni_La_intensity.hdf5') # doctest: +SKIP
 
 .. NOTE::
     See also the
@@ -462,11 +464,11 @@ found in :external+exspy:ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. code-block:: python
 
-    >>> from mayavi import mlab
-    >>> ni = hs.load('Ni_La_intensity.hdf5')
-    >>> mlab.figure()
-    >>> mlab.contour3d(ni.data, contours=[85])
-    >>> mlab.outline(color=(0, 0, 0))
+    >>> from mayavi import mlab # doctest: +SKIP
+    >>> ni = hs.load('Ni_La_intensity.hdf5') # doctest: +SKIP
+    >>> mlab.figure() # doctest: +SKIP
+    >>> mlab.contour3d(ni.data, contours=[85]) # doctest: +SKIP
+    >>> mlab.outline(color=(0, 0, 0)) # doctest: +SKIP
 
 
 .. figure::  images/plot_3D_mayavi.png
@@ -523,7 +525,7 @@ different slices of a multidimensional image (a *hyperimage*):
     >>> image = hs.signals.Signal2D([scipy.datasets.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> image.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
-    >>> hs.plot.plot_images(image, tight_layout=True)
+    >>> hs.plot.plot_images(image, tight_layout=True) # doctest: +SKIP
 
 .. figure::  images/plot_images_defaults.png
   :align:   center
@@ -549,7 +551,7 @@ axes labels and the ticks are also disabled with `axes_decor`:
     >>> hs.plot.plot_images(
     ...     image, suptitle='Turning Ascent', axes_decor='off',
     ...     label=['Rotation {}$^\degree$'.format(angles.data[i]) for
-    ...            i in range(angles.data.shape[0])], colorbar=None)
+    ...            i in range(angles.data.shape[0])], colorbar=None) # doctest: +SKIP
 
 .. figure::  images/plot_images_custom-labels.png
   :align:   center
@@ -569,22 +571,26 @@ multiple individual ones:
     >>> import scipy
     >>> import numpy as np
     >>>
-    >>> # load red channel of raccoon as an image
+    
+    Load red channel of raccoon as an image
+
     >>> image0 = hs.signals.Signal2D(scipy.datasets.face()[:,:,0])
     >>> image0.metadata.General.title = 'Rocky Raccoon - R'
-    >>>
-    >>> # load ascent into a length 6 hyper-image
+    
+    Load ascent into a length 6 hyper-image
+
     >>> image1 = hs.signals.Signal2D([scipy.datasets.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(np.arange(10,70,10)).T
-    >>> image1.map(scipy.ndimage.rotate, angle=angles,
-    ...            show_progressbar=False, reshape=False)
+    >>> image1.map(scipy.ndimage.rotate, angle=angles, reshape=False)
     >>> image1.data = np.clip(image1.data, 0, 255)  # clip data to int range
-    >>>
-    >>> # load green channel of raccoon as an image
+    
+    Load green channel of raccoon as an image
+
     >>> image2 = hs.signals.Signal2D(scipy.datasets.face()[:,:,1])
     >>> image2.metadata.General.title = 'Rocky Raccoon - G'
     >>>
-    >>> # load rgb image of the raccoon
+    Load rgb image of the raccoon
+
     >>> rgb = hs.signals.Signal1D(scipy.datasets.face())
     >>> rgb.change_dtype("rgb8")
     >>> rgb.metadata.General.title = 'Raccoon - RGB'
@@ -595,7 +601,7 @@ multiple individual ones:
     ...     ax[0].name, ax[1].name = 'x', 'y'
     ...     ax[0].units, ax[1].units = 'mm', 'mm'
     >>> hs.plot.plot_images(images, tight_layout=True,
-    ...                     colorbar='single', labelwrap=20)
+    ...                     colorbar='single', labelwrap=20) # doctest: +SKIP
 
 .. figure::  images/plot_images_image-list.png
   :align:   center
@@ -610,13 +616,13 @@ are described in :ref:`[Rossouw2015] <Rossouw2015>`.
 .. code-block:: python
 
     >>> #Download the data (1MB)
-    >>> from urllib.request import urlretrieve, urlopen
-    >>> from zipfile import ZipFile
+    >>> from urllib.request import urlretrieve, urlopen # doctest: +SKIP
+    >>> from zipfile import ZipFile # doctest: +SKIP
     >>> files = urlretrieve("https://www.dropbox.com/s/ecdlgwxjq04m5mx/"
     ...                     "HyperSpy_demos_EDS_TEM_files.zip?raw=1",
-    ...                     "./HyperSpy_demos_EDX_TEM_files.zip")
+    ...                     "./HyperSpy_demos_EDX_TEM_files.zip") # doctest: +SKIP
     >>> with ZipFile("HyperSpy_demos_EDX_TEM_files.zip") as z:
-    >>>     z.extractall()
+    ...     z.extractall() # doctest: +SKIP
 
 Another example for this function is plotting EDS line intensities see
 :external+exspy:ref:`EDS chapter <get_lines_intensity>`. One can use the following commands
@@ -628,14 +634,14 @@ which is passed to :meth:`matplotlib.figure.Figure.subplots_adjust`.
 
 .. code-block:: python
 
-    >>> si_EDS = hs.load("core_shell.hdf5")
-    >>> im = si_EDS.get_lines_intensity()
+    >>> si_EDS = hs.load("core_shell.hdf5") # doctest: +SKIP
+    >>> im = si_EDS.get_lines_intensity() # doctest: +SKIP
     >>> hs.plot.plot_images(im,
     ...     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
     ...     colorbar='single', vmin='1th', vmax='99th', scalebar='all',
     ...     scalebar_color='black', suptitle_fontsize=16,
     ...     padding={'top':0.8, 'bottom':0.10, 'left':0.05,
-    ...              'right':0.85, 'wspace':0.20, 'hspace':0.10})
+    ...              'right':0.85, 'wspace':0.20, 'hspace':0.10}) # doctest: +SKIP
 
 .. figure::  images/plot_images_eds.png
   :align:   center
@@ -659,12 +665,12 @@ generator:
 
 .. code-block:: python
 
-    >>> si_EDS = hs.load("core_shell.hdf5")
-    >>> im = si_EDS.get_lines_intensity()
+    >>> si_EDS = hs.load("core_shell.hdf5") # doctest: +SKIP
+    >>> im = si_EDS.get_lines_intensity() # doctest: +SKIP
     >>> hs.plot.plot_images(im,
-    >>>    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
-    >>>    colorbar='multi', vmin='1th', vmax='99th', scalebar=[0],
-    >>>    scalebar_color='white', suptitle_fontsize=16)
+    ...    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
+    ...    colorbar='multi', vmin='1th', vmax='99th', scalebar=[0],
+    ...    scalebar_color='white', suptitle_fontsize=16) # doctest: +SKIP
 
 .. figure::  images/plot_images_eds_cmap_list.png
   :align:   center
@@ -686,37 +692,36 @@ __ plot.spectra_
 
 .. code-block:: python
 
-    >>> si_EDS = hs.load("core_shell.hdf5")
-    >>> si_EDS.change_dtype('float')
-    >>> si_EDS.decomposition(True, algorithm='NMF', output_dimension=3)
-    >>> factors = si_EDS.get_decomposition_factors()
+    >>> si_EDS = hs.load("core_shell.hdf5") # doctest: +SKIP
+    >>> si_EDS.change_dtype('float') # doctest: +SKIP
+    >>> si_EDS.decomposition(True, algorithm='NMF', output_dimension=3) # doctest: +SKIP
+    >>> factors = si_EDS.get_decomposition_factors() # doctest: +SKIP
     >>>
     >>> # the first factor is a very strong carbon background component, so we
     >>> # normalize factor intensities for easier qualitative comparison
     >>> for f in factors:
-    >>>     f.data /= f.data.max()
+    ...     f.data /= f.data.max() # doctest: +SKIP
     >>>
-    >>> loadings = si_EDS.get_decomposition_loadings()
+    >>> loadings = si_EDS.get_decomposition_loadings() # doctest: +SKIP
     >>>
-    >>> hs.plot.plot_spectra(factors.isig[:14.0], style='cascade',
-    >>>                      padding=-1)
+    >>> hs.plot.plot_spectra(factors.isig[:14.0], style='cascade', padding=-1) # doctest: +SKIP
     >>>
     >>> # add some lines to nicely label the peak positions
-    >>> plt.axvline(6.403, c='C2', ls=':', lw=0.5)
-    >>> plt.text(x=6.503, y=0.85, s='Fe-K$_\\alpha$', color='C2')
-    >>> plt.axvline(9.441, c='C1', ls=':', lw=0.5)
-    >>> plt.text(x=9.541, y=0.85, s='Pt-L$_\\alpha$', color='C1')
-    >>> plt.axvline(2.046, c='C1', ls=':', lw=0.5)
-    >>> plt.text(x=2.146, y=0.85, s='Pt-M', color='C1')
-    >>> plt.axvline(8.040, ymax=0.8, c='k', ls=':', lw=0.5)
-    >>> plt.text(x=8.14, y=0.35, s='Cu-K$_\\alpha$', color='k')
+    >>> plt.axvline(6.403, c='C2', ls=':', lw=0.5) # doctest: +SKIP
+    >>> plt.text(x=6.503, y=0.85, s='Fe-K$_\\alpha$', color='C2') # doctest: +SKIP
+    >>> plt.axvline(9.441, c='C1', ls=':', lw=0.5) # doctest: +SKIP
+    >>> plt.text(x=9.541, y=0.85, s='Pt-L$_\\alpha$', color='C1') # doctest: +SKIP
+    >>> plt.axvline(2.046, c='C1', ls=':', lw=0.5) # doctest: +SKIP
+    >>> plt.text(x=2.146, y=0.85, s='Pt-M', color='C1') # doctest: +SKIP
+    >>> plt.axvline(8.040, ymax=0.8, c='k', ls=':', lw=0.5) # doctest: +SKIP
+    >>> plt.text(x=8.14, y=0.35, s='Cu-K$_\\alpha$', color='k') # doctest: +SKIP
     >>>
     >>> hs.plot.plot_images(loadings, cmap='mpl_colors',
-    >>>             axes_decor='off', per_row=1,
-    >>>             label=['Background', 'Pt core', 'Fe shell'],
-    >>>             scalebar=[0], scalebar_color='white',
-    >>>             padding={'top': 0.95, 'bottom': 0.05,
-    >>>                      'left': 0.05, 'right':0.78})
+    ...             axes_decor='off', per_row=1,
+    ...             label=['Background', 'Pt core', 'Fe shell'],
+    ...             scalebar=[0], scalebar_color='white',
+    ...             padding={'top': 0.95, 'bottom': 0.05,
+    ...                      'left': 0.05, 'right':0.78}) # doctest: +SKIP
 
 
 .. figure::  images/plot_images_eds_cmap_factors_side_by_side.png
@@ -753,10 +758,10 @@ hex values.
 
 .. code-block:: python
 
-    >>> si_EDS = hs.load("core_shell.hdf5")
-    >>> im = si_EDS.get_lines_intensity()
+    >>> si_EDS = hs.load("core_shell.hdf5") # doctest: +SKIP
+    >>> im = si_EDS.get_lines_intensity() # doctest: +SKIP
     >>> hs.plot.plot_images(im,scalebar='all', overlay=True, suptitle=False,
-    >>>                     axes_decor='off')
+    ...                     axes_decor='off') # doctest: +SKIP
 
 .. figure::  images/plot_images_overlay.png
   :align:   center
@@ -799,7 +804,7 @@ legended line, a spectrum can be toggled on and off.
      ...         gaussians.append(gs)
      ...
      >>> hs.plot.plot_spectra(gaussians,legend='auto')
-     <matplotlib.axes.AxesSubplot object at 0x4c28c90>
+     <Axes: xlabel='<undefined> (<undefined>)', ylabel='Intensity'>
 
 
 .. figure::  images/plot_spectra_overlap.png
@@ -821,7 +826,7 @@ a file:
     >>> import scipy
     >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
     >>> cascade_plot = hs.plot.plot_spectra(s, style='cascade')
-    >>> cascade_plot.figure.savefig("cascade_plot.png")
+    >>> cascade_plot.figure.savefig("cascade_plot.png") # doctest: +SKIP
 
 .. figure::  images/plot_spectra_cascade.png
   :align:   center
@@ -845,7 +850,8 @@ and provide the legend labels:
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
     >>> linestyle_list = ['-', '--', '-.', ':', '-']
     >>> hs.plot.plot_spectra(s, style='cascade', color=color_list,
-    >>>                      linestyle=linestyle_list, legend='auto')
+    ...                      linestyle=linestyle_list, legend='auto')
+    <Axes: xlabel='<undefined> (<undefined>)'>
 
 .. figure::  images/plot_spectra_color.png
   :align:   center
@@ -870,15 +876,19 @@ generate a list of colors that follows a certain colormap:
     ...                                for i in range(len(s1))],
     ...                         ax=axarr[0],
     ...                         fig=fig)
+    <Axes: xlabel='<undefined> (<undefined>)'>
     >>> hs.plot.plot_spectra(s2,
     ...                         style='cascade',
     ...                         color=[plt.cm.summer(i/float(len(s1)-1))
     ...                                for i in range(len(s1))],
     ...                         ax=axarr[1],
     ...                         fig=fig)
+    <Axes: xlabel='<undefined> (<undefined>)'>
     >>> axarr[0].set_xlabel('RdBu (colormap)')
+    Text(0.5, 0, 'RdBu (colormap)')
     >>> axarr[1].set_xlabel('summer (colormap)')
-    >>> fig.canvas.draw()
+    Text(0.5, 0, 'summer (colormap)')
+
 
 .. figure::  images/plot_spectra_colormap.png
   :align:   center
@@ -894,6 +904,7 @@ There are also two other styles, "heatmap" and "mosaic":
     >>> import scipy
     >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
     >>> hs.plot.plot_spectra(s, style='heatmap')
+    <Axes: title={'center': ' Signal'}, xlabel='Unnamed 0th axis', ylabel='Spectra'>
 
 .. figure::  images/plot_spectra_heatmap.png
   :align:   center
@@ -907,6 +918,9 @@ There are also two other styles, "heatmap" and "mosaic":
     >>> import scipy
     >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:120:10])
     >>> hs.plot.plot_spectra(s, style='mosaic')
+    array([<Axes: ylabel='Intensity'>,
+           <Axes: xlabel='<undefined> (<undefined>)', ylabel='Intensity'>],
+          dtype=object)
 
 .. figure::  images/plot_spectra_mosaic.png
   :align:   center
@@ -950,9 +964,11 @@ directly to matplotlib.pyplot.figure as keyword arguments:
     ...     s, style='cascade', legend=legendtext, dpi=60,
     ...     facecolor='lightblue', frameon=True, num=5)
     >>> cascade_plot.set_xlabel("X-axis")
+    Text(0.5, 0, 'X-axis')
     >>> cascade_plot.set_ylabel("Y-axis")
+    Text(0, 0.5, 'Y-axis')
     >>> cascade_plot.set_title("Cascade plot")
-    >>> plt.draw()
+    Text(0.5, 1.0, 'Cascade plot')
 
 .. figure:: images/plot_spectra_kwargs.png
   :align:   center
@@ -969,9 +985,11 @@ the figure:
     >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
     >>> cascade_plot = hs.plot.plot_spectra(s)
     >>> cascade_plot.set_xlabel("An axis")
+    Text(0.5, 0, 'An axis')
     >>> cascade_plot.set_ylabel("Another axis")
+    Text(0, 0.5, 'Another axis')
     >>> cascade_plot.set_title("A title!")
-    >>> plt.draw()
+    Text(0.5, 1.0, 'A title!')
 
 .. figure::  images/plot_spectra_customize.png
   :align:   center
@@ -991,9 +1009,10 @@ and "overlap" styles:
     >>> s2 = hs.signals.Signal1D(scipy.datasets.ascent()[200:260:10])
     >>> hs.plot.plot_spectra(s1, style='cascade',
     ...                      color='blue', ax=axarr[0], fig=fig)
+    <Axes: xlabel='<undefined> (<undefined>)'>
     >>> hs.plot.plot_spectra(s2, style='cascade',
     ...                      color='red', ax=axarr[1], fig=fig)
-    >>> fig.canvas.draw()
+    <Axes: xlabel='<undefined> (<undefined>)'>
 
 .. figure::  images/plot_spectra_ax_argument.png
   :align:   center
@@ -1014,18 +1033,18 @@ be plotted interactively:
 
 .. code-block:: python
 
-    >>> import holospy as holo
-    >>> im0 = holo.datasets.Fe_needle_reference_hologram()
-    >>> im1 = holo.datasets.Fe_needle_hologram()
-    >>> im0.plot()
-    >>> im1.plot()
+    >>> import holospy as  # doctest: +SKIP
+    >>> im0 = holo.data.Fe_needle_reference_hologram() # doctest: +SKIP
+    >>> im1 = holo.data.Fe_needle_hologram() # doctest: +SKIP
+    >>> im0.plot() # doctest: +SKIP
+    >>> im1.plot() # doctest: +SKIP
     >>> # Create the ROI
-    >>> line_profile = hs.roi.Line2DROI(400, 250, 220, 600)
+    >>> line_profile = hs.roi.Line2DROI(400, 250, 220, 600) # doctest: +SKIP
     >>> # Obtain the signals to plot by "slicing" the signals with the ROI
-    >>> line0 = line_profile.interactive(im0)
-    >>> line1 = line_profile.interactive(im1)
+    >>> line0 = line_profile.interactive(im0) # doctest: +SKIP
+    >>> line1 = line_profile.interactive(im1) # doctest: +SKIP
     >>> # Plotting the profile on the same figure
-    >>> hs.plot.plot_spectra([line0, line1])
+    >>> hs.plot.plot_spectra([line0, line1]) # doctest: +SKIP
 
 .. figure::  images/interactive_profiles.gif
   :align:   center
@@ -1069,7 +1088,7 @@ To specify the navigator:
     >>> import scipy
     >>> s1 = hs.signals.Signal1D(scipy.datasets.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
-    >>> hs.plot.plot_signals([s1, s2], navigator="slider")
+    >>> hs.plot.plot_signals([s1, s2], navigator="slider") # doctest: +SKIP
 
 .. figure::  images/plot_signals_slider.png
   :align:   center
@@ -1088,7 +1107,7 @@ For example:
     >>> s1 = hs.signals.Signal1D(scipy.datasets.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> s3 = hs.signals.Signal1D(np.linspace(0,9,9).reshape([3,3]))
-    >>> hs.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
+    >>> hs.plot.plot_signals([s1, s2], navigator_list=["slider", s3]) # doctest: +SKIP
 
 .. figure::  images/plot_signals_navigator_list.png
   :align:   center
@@ -1104,10 +1123,9 @@ each plot:
 .. code-block:: python
 
     >>> import scipy
-    >>> s1 = hs.signals.Signal1D(scipy.datasets.face()).as_signal1D(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.datasets.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
-    >>> hs.plot.plot_signals([s1, s2], sync=False,
-    ...                      navigator_list=["slider", "slider"])
+    >>> hs.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"]) # doctest: +SKIP
 
 .. figure::  images/plot_signals_sync.png
   :align:   center
@@ -1265,7 +1283,7 @@ Or for a signal with 2 navigation axes:
     >>> marker_pos = np.array([[[5,1], [1,2]],[[2,9],[6,8]]])
     >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
     >>> for i in np.ndindex(s.axes_manager.navigation_shape):
-    >>>     offsets[i] = [marker_pos[i],]
+    ...     offsets[i] = [marker_pos[i],]
     >>> marker = hs.plot.markers.Points(offsets=offsets, sizes=10)
     >>> s.add_marker(marker, permanent=True)
 
@@ -1286,7 +1304,7 @@ This can be extended to 4 (or more) navigation dimensions:
     >>> for i in np.ndindex(s.axes_manager.navigation_shape):
     ...     offsets[i] = [[x[i],y[i]],]
     >>> marker = hs.plot.markers.Points(offsets=offsets, color='red', sizes=10)
-    >>> s.add_marker(marker, permanent=True)
+    >>> s.add_marker(marker, permanent=True) # doctest: +SKIP
 
 
 You can add a couple of different types of markers at the same time.
@@ -1331,9 +1349,9 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
     >>> s.add_marker(marker, plot_marker=False, permanent=True)
     >>> s.metadata.Markers
     └── Points = <Points (Points), length: 1>
-    >>> s.save("storing_marker.hspy")
-    >>> s1 = hs.load("storing_marker.hspy")
-    >>> s1.metadata.Markers
+    >>> s.save("storing_marker.hspy") # doctest: +SKIP
+    >>> s1 = hs.load("storing_marker.hspy") # doctest: +SKIP
+    >>> s1.metadata.Markers # doctest: +SKIP
     └── Points = <Points (Points), length: 1>
 
 Supported markers
@@ -1382,7 +1400,7 @@ with ``dtype=object``. Otherwise to set the parameter globally the kwarg can dir
 
 Additionally, if some ``**kwargs`` are shorter in length to some other parameter it will be cycled such that
 
->>> prop[i % len(prop)]
+>>> prop[i % len(prop)] # doctest: +SKIP
 
 where i is the ith element of the collection.
 
@@ -1405,9 +1423,10 @@ define a plot of Ellipses using:
     >>> import numpy as np
     >>> import hyperspy.api as hs
     >>> hs.plot.markers.Ellipses(heights=(.4,), widths=(1,),
-    ...                          angles=(10,), offsets = np.array([[0,0], [1,1]]))
+    ...                          angles=(10,), offsets=np.array([[0,0], [1,1]]))
+    <Ellipses, length: 2>
 
-Alternatively if we want to make ellipses with different heights and widths we can pass multiple values to
+Alternatively, if we want to make ellipses with different heights and widths we can pass multiple values to
 heights, widths and angles.  In general these properties will be applied such that ``prop[i % len(prop)]`` so
 passing ``heights=(.1,.2,.3)`` will result in the ellipse at ``offsets[0]`` with a height of 0.1 the ellipse at
 ``offsets[1]`` with a height of 0.1, ellipse at ``offsets[2]`` has a height of 0.3 and the ellipse at ``offsets[3]`` has
@@ -1429,13 +1448,13 @@ both the ``sizes`` and ``offsets`` kwargs are dynamic and change with each index
     >>> data = np.empty((2,2), dtype=object)
     >>> sizes = np.empty((2,2), dtype=object)
     >>> for i, ind in enumerate(np.ndindex((2,2))):
-    >>>     data[ind] = np.random.rand(i+1,2)*3 # dynamic positions
-    >>>     sizes[ind] = [(i+1)/10,]  # dynamic sizes
+    ...     data[ind] = np.random.rand(i+1,2)*3 # dynamic positions
+    ...     sizes[ind] = [(i+1)/10,]  # dynamic sizes
     >>> m = hs.plot.markers.Points(sizes=sizes, offsets=data, color="r", units="xy")
     >>> s = hs.signals.Signal2D(np.zeros((2,2,4,4)))
     >>> s.plot()
     >>> s.add_marker(m)
-    >>>
+
 
 The :class:`~.api.plot.markers.Markers` also has a class method :meth:`~.api.plot.markers.Markers.from_signal` which can
 be used to create a set of markers from the output of some map function.  In this case ``signal.data`` is mapped

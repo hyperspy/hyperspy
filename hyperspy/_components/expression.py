@@ -147,14 +147,16 @@ class Expression(Component):
     ... fwhm=1,
     ... x0=0,
     ... position="x0",)
+    <Gaussian (Expression component)>
 
     Substitutions for long or complicated expressions are separated by
     semicolumns:
 
     >>> expr = 'A*B/(A+B) ; A = sin(x)+one; B = cos(y) - two; y = tan(x)'
     >>> comp = hs.model.components1D.Expression(
-    ... expression=expr,
-    ... name='my function')
+    ...    expression=expr,
+    ...    name='my function'
+    ... )
     >>> comp.parameters
     (<Parameter one of my function component>,
      <Parameter two of my function component>)

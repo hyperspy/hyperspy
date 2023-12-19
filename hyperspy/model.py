@@ -547,16 +547,13 @@ class BaseModel(list):
 
         >>> s = hs.signals.Signal1D(np.empty(1))
         >>> m = s.create_model()
-        >>> g = hs.model.components1D.Gaussian()
-        >>> m.append(g)
+        >>> g1 = hs.model.components1D.Gaussian()
+        >>> g2 = hs.model.components1D.Gaussian()
+        >>> m.extend([g1, g2])
 
-        You could remove `g` like this
+        You could remove ``g1`` like this
 
-        >>> m.remove(g)
-
-        Like this:
-
-        >>> m.remove("Gaussian")
+        >>> m.remove(g1)
 
         Or like this:
 
@@ -2284,6 +2281,8 @@ class BaseModel(list):
 
         Examples
         --------
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
+        >>> m = s.create_model()
         >>> v1 = hs.model.components1D.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_not_free()
@@ -2339,11 +2338,15 @@ class BaseModel(list):
 
         Examples
         --------
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
+        >>> m = s.create_model()
         >>> v1 = hs.model.components1D.Voigt()
         >>> m.append(v1)
+
         >>> m.set_parameters_free()
-        >>> m.set_parameters_free(component_list=[v1],
-                                  parameter_name_list=['area','centre'])
+        >>> m.set_parameters_free(
+        ...    component_list=[v1], parameter_name_list=['area','centre']
+        ... )
         >>> m.set_parameters_free(only_linear=True)
 
         See Also
@@ -2394,9 +2397,12 @@ class BaseModel(list):
 
         Examples
         --------
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
+        >>> m = s.create_model()
         >>> v1 = hs.model.components1D.Voigt()
         >>> v2 = hs.model.components1D.Voigt()
         >>> m.extend([v1,v2])
+
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
         >>> m.set_parameters_value(
@@ -2446,10 +2452,10 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> s = signals.Signal1D(np.random.random((10,100)))
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
-        >>> l1 = components1d.Lorentzian()
-        >>> l2 = components1d.Lorentzian()
+        >>> l1 = hs.model.components1D.Lorentzian()
+        >>> l2 = hs.model.components1D.Lorentzian()
         >>> m.append(l1)
         >>> m.append(l2)
         >>> d = m.as_dictionary()
@@ -2496,13 +2502,17 @@ class BaseModel(list):
 
         Examples
         --------
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
+        >>> m = s.create_model()
         >>> v1 = hs.model.components1D.Voigt()
         >>> v2 = hs.model.components1D.Voigt()
         >>> m.extend([v1,v2])
+
         >>> m.set_component_active_value(False)
         >>> m.set_component_active_value(True, component_list=[v1])
-        >>> m.set_component_active_value(False, component_list=[v1],
-                                         only_current=True)
+        >>> m.set_component_active_value(
+        ...    False, component_list=[v1], only_current=True
+        ... )
 
         """
         if component_list is None:

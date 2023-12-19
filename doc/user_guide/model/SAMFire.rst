@@ -93,7 +93,7 @@ as follows:
 
 .. code-block:: python
 
-    >>> samf = m.create_samfire(workers=None, ipyparallel=False)
+    >>> samf = m.create_samfire(workers=None, ipyparallel=False) # doctest: +SKIP
 
 By default SAMFire will look for an `ipyparallel
 <https://ipyparallel.readthedocs.io/>`_ cluster for the
@@ -107,7 +107,7 @@ added to its ``strategies`` list:
 
 .. code-block:: python
 
-    >>> samf.strategies
+    >>> samf.strategies # doctest: +SKIP
       A |    # | Strategy
      -- | ---- | -------------------------
       x |    0 | Reduced chi squared strategy
@@ -132,7 +132,8 @@ data as follows:
 
 .. code-block:: python
 
-    >>> samf.metadata.goodness_test.tolerance = 0.3 # use a sensible value
+    >>> # use a sensible value
+    >>> samf.metadata.goodness_test.tolerance = 0.3  # doctest: +SKIP
 
 The SAMFire managed multi-dimensional fit can be started using the
 :meth:`~.samfire.Samfire.start` method. All keyword arguments are passed to
@@ -140,4 +141,4 @@ the underlying (i.e. usual) :meth:`~.model.BaseModel.fit` call:
 
 .. code-block:: python
 
-    >>> samf.start(optimizer='lm', bounded=True)
+    >>> samf.start(optimizer='lm', bounded=True) # doctest: +SKIP

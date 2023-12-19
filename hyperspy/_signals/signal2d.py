@@ -811,7 +811,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Examples
         --------
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
-        >>> s.calibrate()
+        >>> s.calibrate() # doctest: +SKIP
 
         Running non-interactively
 

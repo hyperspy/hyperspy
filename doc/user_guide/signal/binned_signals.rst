@@ -46,7 +46,7 @@ To change the default value:
 
 .. code-block:: python
 
-    >>> s.axes_manager[-1].is_binned = True
+    >>> s.axes_manager[-1].is_binned = True # doctest: +SKIP
 
 .. versionchanged:: 1.7 The ``binned`` attribute from the metadata has been
     replaced by the axis attributes ``is_binned``.

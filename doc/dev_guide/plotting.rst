@@ -33,10 +33,12 @@ Many times when annotating 1-D Plots you want to add markers which are relative 
 you may want to add a line which goes from [0,y] where y is the value at x.  To do this you can set the
 ``offset_transform`` to "relative" or the ``transfrom`` to relative.
 
->>> s = hs.signals.Signal1D(np.random.rand(3, 15))
->>> from matplotlib.collections import LineCollection
->>> m = hs.plot.markers.Lines(segments = [[[2,0],[2,1.0]]], transform = "relative")
->>> s.plot()
->>> s.add_marker(m)
+.. code::
+
+    >>> s = hs.signals.Signal1D(np.random.rand(3, 15))
+    >>> from matplotlib.collections import LineCollection
+    >>> m = hs.plot.markers.Lines(segments=[[[2,0],[2,1.0]]], transform = "relative")
+    >>> s.plot()
+    >>> s.add_marker(m)
 
 This marker will create a line at a value=2 which extends from 0 --> 1 and updates as the index changes.

@@ -1139,7 +1139,7 @@ class Component(t.HasTraits):
         >>> v1 = hs.model.components1D.Voigt()
         >>> v1.set_parameters_free()
         >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
-        >>> v1.set_parameters_free(linear=True)
+        >>> v1.set_parameters_free(only_linear=True)
 
         See Also
         --------

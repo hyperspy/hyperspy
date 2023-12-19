@@ -65,12 +65,9 @@ def attrsetter(target, attrs, value):
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     Now set the data of the model with attrsetter
-    >>> attrsetter(m, 'signal1D.data', np.arange(10)+2)
-    >>> self.signal.data
-    array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
-
-    The behaviour is identical to
-    >>> self.signal.data = np.arange(10) + 2
+    >>> attrsetter(m, 'signal.data', np.arange(10)+2)
+    >>> m.signal.data
+    array([ 2,  3,  4,  5,  6,  7,  8,  9, 10, 11])
 
     """
     where = attrs.rfind(".")
@@ -703,7 +700,7 @@ class DictionaryTreeBrowser:
         True
         >>> dict_browser.get_item('To.be.or', 'default_value')
         'default_value'
-        >>> dict_browser.get_nested_item('be')
+        >>> dict_browser.get_item('be', full_path=False)
         True
 
         """
@@ -1102,10 +1099,11 @@ def stack(
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Signal1D(data[:10]),
-    ...               hs.signals.Signal1D(data[10:])])
+    >>> s = hs.stack(
+    ...    [hs.signals.Signal1D(data[:10]), hs.signals.Signal1D(data[10:])]
+    ... )
     >>> s
-    <Signal1D, title: Stack of , dimensions: (2, 10)>
+    <Signal1D, title: Stack of , dimensions: (2|10)>
     >>> s.data
     array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
@@ -1289,17 +1287,18 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     Examples
     --------
 
-    >>> signal_iterable = [hs.signals.BaseSignal(np.random.random((2,)*(i+1)))
-                           for i in range(3)]
+    >>> signal_iterable = [
+    ...    hs.signals.BaseSignal(np.random.random((2,)*(i+1))) for i in range(3)
+    ... ]
     >>> signal_iterable
     [<BaseSignal, title: , dimensions: (|2)>,
      <BaseSignal, title: , dimensions: (|2, 2)>,
      <BaseSignal, title: , dimensions: (|2, 2, 2)>]
     >>> hs.transpose(*signal_iterable, signal_axes=1)
-    [<BaseSignal, title: , dimensions: (|2)>,
-     <BaseSignal, title: , dimensions: (2|2)>,
-     <BaseSignal, title: , dimensions: (2, 2|2)>]
-    >>> hs.transpose(signal1, signal2, signal3, signal_axes=["Energy"])
+    [<Signal1D, title: , dimensions: (|2)>,
+    <Signal1D, title: , dimensions: (2|2)>,
+    <Signal1D, title: , dimensions: (2, 2|2)>]
+
     """
     from hyperspy.signal import BaseSignal
 
@@ -1455,9 +1454,11 @@ def multiply(iterable):
 
     Equivalent of functools.reduce(operator.mul, iterable, 1).
 
-    >>> product([2**8, 2**30])
+    Example
+
+    >>> multiply([2**8, 2**30])
     274877906944
-    >>> product([])
+    >>> multiply([])
     1
 
     """
