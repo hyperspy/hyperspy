@@ -3,16 +3,6 @@
 Working with big data
 *********************
 
-.. warning:: All the features described in this chapter are in beta state.
-
-   Although most of them work as described, their operation may not always
-   be optimal, well-documented and/or consistent with their in-memory counterparts.
-
-   Therefore, although efforts will be taken to minimise major disruptions,
-   the syntax and features described here may change in patch and minor
-   HyperSpy releases. If you experience issues with HyperSpy's lazy features
-   please report them to the developers.
-
 .. versionadded:: 1.2
 
 HyperSpy makes it possible to analyse data larger than the available memory by
@@ -140,6 +130,11 @@ operations are only performed lazily, use the
 
 Machine learning
 ----------------
+
+.. warning:: The machine learning features are in beta state.
+
+   Although most of them work as described, their operation may not always
+   be optimal, well-documented and/or consistent with their in-memory counterparts.
 
 :ref:`mva.decomposition` algorithms for machine learning often perform
 large matrix manipulations, requiring significantly more memory than the data size.
@@ -541,6 +536,12 @@ Dask has two schedulers available for single machines.
 
 Distributed Scheduler
 ^^^^^^^^^^^^^^^^^^^^^
+
+.. warning:: Distributed computing is not supported for all file formats.
+
+   Distributed computing is limited to a few file formats, see the list of
+   :external+rsciio:ref:`supported file format <supported-formats>` in
+   RosettaSciIO documentation.
 
 The recommended way to use dask is with the distributed scheduler. This allows you to scale your computations
 to a cluster of machines. The distributed scheduler can be used on a single machine as well. ``dask-distributed``
