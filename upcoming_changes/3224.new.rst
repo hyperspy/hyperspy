@@ -1,1 +1,0 @@
-Added :func:`~.api.plot.plot_roi_map`. Allows interactively using a set of ROIs to select regions of the signal axes of a signal and visualise how the signal varies in this range spatially.

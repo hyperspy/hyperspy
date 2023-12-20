@@ -13,8 +13,8 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. _changes_2.0:
 
-2.0rc0 (2023-11-10)
-====================
+2.0 (2023-12-20)
+================
 
 Release Highlights
 ------------------
@@ -74,6 +74,7 @@ New features
   The following cases are covered: 2D-signal with arbitrary navigation-dimension, 1D-navigation and 1D-signal (linescan).
   Not covered are 2D-navigation images (still uses sliders). (`#3192 <https://github.com/hyperspy/hyperspy/issues/3192>`_)
 - New :meth:`~.api.signals.BaseSignal.interpolate_on_axis` method to switch one axis of a signal. The data is interpolated in the process. (`#3214 <https://github.com/hyperspy/hyperspy/issues/3214>`_)
+- Added :func:`~.api.plot.plot_roi_map`. Allows interactively using a set of ROIs to select regions of the signal axes of a signal and visualise how the signal varies in this range spatially. (`#3224 <https://github.com/hyperspy/hyperspy/issues/3224>`_)
 
 
 Bug Fixes
@@ -86,6 +87,18 @@ Bug Fixes
 - Fix keeping dtype in :py:meth:`~.api.signals.BaseSignal.rebin` when the endianess is specified in the dtype (`#3237 <https://github.com/hyperspy/hyperspy/issues/3237>`_)
 - Fix serialization error due to ``traits.api.Property`` not being serializable if a dtype is specified.
   See #3261 for more details. (`#3262 <https://github.com/hyperspy/hyperspy/issues/3262>`_)
+- Fix setting bounds for ``"trf"``, ``"dogbox"`` optimizer (`#3244 <https://github.com/hyperspy/hyperspy/issues/3244>`_)
+- Fix bugs in new marker implementation:
+
+  - Markers str representation fails if the marker isn't added to a signal
+  - make :meth:`~.api.plot.markers.Markers.from_signal` to work with all markers - it was only working with :class:`~.api.plot.markers.Points` (`#3270 <https://github.com/hyperspy/hyperspy/issues/3270>`_)
+- Documentation fixes:
+
+  - Fix cross-references in documentation and enable sphinx "nitpicky" when building documentation to check for broken links.
+  - Fix using mutable objects as default argument.
+  - Change some :class:`~.component.Component` attributes to properties in order to include their docstrings in the API reference. (`#3273 <https://github.com/hyperspy/hyperspy/issues/3273>`_)
+
+
 
 
 Improved Documentation
@@ -103,6 +116,9 @@ Improved Documentation
 - Fix docstring examples in :class:`~.api.signals.BaseSignal` class.
   Describe how to test docstring examples in developer guide. (`#3095 <https://github.com/hyperspy/hyperspy/issues/3095>`_)
 - Update intersphinx_mapping links of matplotlib, numpy and scipy. (`#3218 <https://github.com/hyperspy/hyperspy/issues/3218>`_)
+- Add examples on creating signal from tabular data or reading from a simple text file (`#3246 <https://github.com/hyperspy/hyperspy/issues/3246>`_)
+- Activate checking of example code in docstring and user guide using ``doctest`` and fix errors in the code. (`#3281 <https://github.com/hyperspy/hyperspy/issues/3281>`_)
+- Update warning of "beta" state in big data section to be more specific. (`#3282 <https://github.com/hyperspy/hyperspy/issues/3282>`_)
 
 
 Enhancements
@@ -372,6 +388,15 @@ Maintenance
 - Replace deprecated :mod:`scipy.misc` by :mod:`scipy.datasets` in documentation (`#3225 <https://github.com/hyperspy/hyperspy/issues/3225>`_)
 - Fix documentation version switcher (`#3228 <https://github.com/hyperspy/hyperspy/issues/3228>`_)
 - Replace deprecated :py:class:`scipy.interpolate.interp1d` with :py:func:`scipy.interpolate.make_interp_spline` (`#3233 <https://github.com/hyperspy/hyperspy/issues/3233>`_)
+- Add support for python 3.12 (`#3256 <https://github.com/hyperspy/hyperspy/issues/3256>`_)
+- Consolidate package metadata:
+
+  - use ``pyproject.toml`` only
+  - clean up unmaintained packaging files
+  - use ``setuptools_scm`` to define version
+  - add python 3.12 to test matrix (`#3268 <https://github.com/hyperspy/hyperspy/issues/3268>`_)
+- Pin pytest-xdist to 3.5 as a workaround for test suite failure on Azure Pipeline (`#3274 <https://github.com/hyperspy/hyperspy/issues/3274>`_)
+
 
 
 .. _changes_1.7.6:

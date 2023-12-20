@@ -1,4 +1,0 @@
-Fix bugs in new marker implementation:
-
-- Markers str representation fails if the marker isn't added to a signal
-- make :meth:`~.api.plot.markers.Markers.from_signal` to work with all markers - it was only working with :class:`~.api.plot.markers.Points`

@@ -1,1 +1,0 @@
-Pin pytest-xdist to 3.5 as a workaround for test suite failure on Azure Pipeline

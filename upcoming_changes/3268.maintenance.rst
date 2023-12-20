@@ -1,6 +1,0 @@
-Consolidate package metadata:
-
-- use ``pyproject.toml`` only
-- clean up unmaintained packaging files
-- use ``setuptools_scm`` to define version
-- add python 3.12 to test matrix
