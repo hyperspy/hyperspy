@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,7 +21,7 @@ import numpy as np
 from hyperspy.component import Component, _get_scaling_factor
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-from hyperspy.misc.utils import is_binned # remove in v2.0
+
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
@@ -56,11 +56,11 @@ class SplitVoigt(Component):
     :math:`centre`     centre
     ================= ===========
 
-    Note
+    Notes
     -----
     This is a voigt function in which the upstream and downstream variance or
     sigma is allowed to vary to create an asymmetric profile
-    In this case the voigt is a pseudo voigt- consisting of a
+    In this case the voigt is a pseudo voigt consisting of a
     mixed gaussian and lorentzian sum
 
     """
@@ -158,7 +158,7 @@ class SplitVoigt(Component):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -180,14 +180,15 @@ class SplitVoigt(Component):
         Examples
         --------
 
-        >>> g = hs.model.components1D.Gaussian()
-        >>> x = np.arange(-10,10, 0.01)
-        >>> data = np.zeros((32,32,2000))
-        >>> data[:] = g.function(x).reshape((1,1,2000))
-        >>> s = hs.signals.Signal1D({'data' : data})
-        >>> s.axes_manager.axes[-1].offset = -10
-        >>> s.axes_manager.axes[-1].scale = 0.01
-        >>> g.estimate_parameters(s, -10,10, False)
+        >>> g = hs.model.components1D.SplitVoigt()
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager[-1].offset = -10
+        >>> s.axes_manager[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
+        True
 
         """
         super()._estimate_parameters(signal)
@@ -201,18 +202,14 @@ class SplitVoigt(Component):
             self.sigma1.value = sigma
             self.sigma2.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.map['values'][:] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.sigma1.map['values'][:] = sigma

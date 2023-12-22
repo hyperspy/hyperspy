@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -25,7 +25,6 @@ import pytest
 import hyperspy.api as hs
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.models.model1d import Model1D
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
@@ -38,16 +37,12 @@ def get_components1d_name_list():
         obj = getattr(components1d, c_name)
         if inspect.isclass(obj) and issubclass(obj, Component):
             components1d_name_list.append(c_name)
-
-    # Remove EELSCLEdge, since it is tested elsewhere more appropriate
-    components1d_name_list.remove('EELSCLEdge')
     return components1d_name_list
 
 
 @pytest.mark.filterwarnings("ignore:invalid value encountered in true_divide:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered in true_divide:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:invalid value encountered in cos:RuntimeWarning")
-@pytest.mark.filterwarnings("ignore:The API of the")
 @pytest.mark.parametrize('component_name', get_components1d_name_list())
 def test_creation_components1d(component_name):
     s = hs.signals.Signal1D(np.zeros(1024))
@@ -59,6 +54,9 @@ def test_creation_components1d(component_name):
         kwargs['signal1D'] = s
     elif component_name == 'Expression':
         kwargs.update({'expression': "a*x+b", "name": "linear"})
+    elif component_name == 'Bleasdale':
+        # This component only works with numexpr.
+        pytest.importorskip("numexpr")
 
     component = getattr(components1d, component_name)(**kwargs)
     component.function(np.arange(1, 100))
@@ -107,10 +105,10 @@ class TestPowerLaw:
         np.testing.assert_allclose(g.A.map["values"][1], A_value)
         np.testing.assert_allclose(g.r.map["values"][1], r_value)
 
-    def test_EDS_missing_data(self):
+    def test_missing_data(self):
         g = hs.model.components1D.PowerLaw()
         s = self.m.as_signal()
-        s2 = hs.signals.EDSTEMSpectrum(s.data)
+        s2 = hs.signals.Signal1D(s.data)
         g.estimate_parameters(s2, None, None)
 
     def test_function_grad_cutoff(self):
@@ -129,37 +127,6 @@ class TestPowerLaw:
         with pytest.warns(UserWarning):
             hs.model.components1D.PowerLaw(compute_gradients=True)
 
-
-class TestDoublePowerLaw:
-
-    def setup_method(self, method):
-        s = hs.signals.Signal1D(np.zeros(1024))
-        s.axes_manager[0].offset = 100
-        s.axes_manager[0].scale = 0.1
-        m = s.create_model()
-        m.append(hs.model.components1D.DoublePowerLaw())
-        m[0].A.value = 1000
-        m[0].r.value = 4
-        m[0].ratio.value = 200
-        self.m = m
-
-    @pytest.mark.parametrize(("binned"), (True, False))
-    def test_fit(self, binned):
-        self.m.signal.axes_manager[-1].is_binned = binned
-        s = self.m.as_signal()
-        assert s.axes_manager[-1].is_binned == binned
-        g = hs.model.components1D.DoublePowerLaw()
-        # Fix the ratio parameter to test the fit
-        g.ratio.free = False
-        g.shift.free = False
-        g.origin.free = False
-        g.ratio.value = 200
-        m = s.create_model()
-        m.append(g)
-        m.fit_component(g, signal_range=(None, None))
-        np.testing.assert_allclose(g.A.value, 1000.0)
-        np.testing.assert_allclose(g.r.value, 4.0)
-        np.testing.assert_allclose(g.ratio.value, 200.)
 
 class TestOffset:
 
@@ -208,8 +175,7 @@ class TestOffset:
         assert o._constant_term == o.offset.value
 
 
-@pytest.mark.filterwarnings("ignore:The API of the `Polynomial` component")
-class TestDeprecatedPolynomial:
+class TestPolynomial:
 
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
@@ -225,92 +191,6 @@ class TestDeprecatedPolynomial:
         s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
         self.m_3d = s_3d.create_model()
         self.m_3d.append(hs.model.components1D.Polynomial(order=2))
-        # if same component is pased, axes_managers get mixed up, tests
-        # sometimes randomly fail
-        for _m in [self.m, self.m_2d, self.m_3d]:
-            _m[0].coefficients.value = coeff_values
-
-    def test_gradient(self):
-        c = self.m[0]
-        np.testing.assert_array_almost_equal(c.grad_coefficients(1),
-                                             np.array([[6, ], [4.5], [3.5]]))
-        assert c.grad_coefficients(np.arange(10)).shape == (3, 10)
-
-    @pytest.mark.parametrize(("uniform"), (True, False))
-    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-    def test_estimate_parameters(self, only_current, binned, uniform):
-        self.m.signal.axes_manager[-1].is_binned = binned
-        s = self.m.as_signal()
-        if not uniform:
-            s.axes_manager[-1].convert_to_non_uniform_axis()
-        assert s.axes_manager[-1].is_binned == binned
-        assert s.axes_manager[-1].is_uniform == uniform
-        g = hs.model.components1D.Polynomial(order=2)
-        g.estimate_parameters(s, None, None, only_current=only_current)
-        assert g._axes_manager[-1].is_binned == binned
-        np.testing.assert_allclose(g.coefficients.value[0], 0.5)
-        np.testing.assert_allclose(g.coefficients.value[1], 2)
-        np.testing.assert_allclose(g.coefficients.value[2], 3)
-
-    def test_2d_signal(self):
-        # This code should run smoothly, any exceptions should trigger failure
-        s = self.m_2d.as_signal()
-        model = Model1D(s)
-        p = hs.model.components1D.Polynomial(order=2)
-        model.append(p)
-        p.estimate_parameters(s, 0, 100, only_current=False)
-        np.testing.assert_allclose(p.coefficients.map['values'],
-                                   np.tile([0.5, 2, 3], (10, 1)))
-
-    @pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
-    def test_3d_signal(self):
-        # This code should run smoothly, any exceptions should trigger failure
-        s = self.m_3d.as_signal()
-        model = Model1D(s)
-        p = hs.model.components1D.Polynomial(order=2)
-        model.append(p)
-        p.estimate_parameters(s, 0, 100, only_current=False)
-        np.testing.assert_allclose(p.coefficients.map['values'],
-                                   np.tile([0.5, 2, 3], (2, 5, 1)))
-
-    @pytest.mark.filterwarnings("ignore:The API of the")
-    def test_conversion_dictionary_to_polynomial2(self):
-        from hyperspy._components.polynomial import convert_to_polynomial
-        s = hs.signals.Signal1D(np.zeros(1024))
-        s.axes_manager[0].offset = -5
-        s.axes_manager[0].scale = 0.01
-        poly = hs.model.components1D.Polynomial(order=2, legacy=True)
-        poly.coefficients.value = [1, 2, 3]
-        poly.coefficients.value = [1, 2, 3]
-        poly.coefficients._bounds = ((None, None), (10, 0.0), (None, None))
-        poly_dict = poly.as_dictionary(True)
-        poly2_dict = convert_to_polynomial(poly_dict)
-
-        poly2 = hs.model.components1D.Polynomial(order=2, legacy=False)
-        _ = poly2._load_dictionary(poly2_dict)
-        assert poly2.a2.value == 1
-        assert poly2.a2._bounds == (None, None)
-        assert poly2.a1.value == 2
-        assert poly2.a1._bounds == (10, 0.0)
-        assert poly2.a0.value == 3
-
-
-class TestPolynomial:
-
-    def setup_method(self, method):
-        s = hs.signals.Signal1D(np.zeros(1024))
-        s.axes_manager[0].offset = -5
-        s.axes_manager[0].scale = 0.01
-        m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(order=2, legacy=False))
-        coeff_values = (0.5, 2, 3)
-        self.m = m
-        s_2d = hs.signals.Signal1D(np.arange(1000).reshape(10, 100))
-        self.m_2d = s_2d.create_model()
-        self.m_2d.append(hs.model.components1D.Polynomial(order=2, legacy=False))
-        s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
-        self.m_3d = s_3d.create_model()
-        self.m_3d.append(hs.model.components1D.Polynomial(order=2, legacy=False))
         data = 50*np.ones(100)
         s_offset = hs.signals.Signal1D(data)
         self.m_offset = s_offset.create_model()
@@ -332,20 +212,23 @@ class TestPolynomial:
         s_2d = self.m_2d.signal
         s_2d.data += 100 * np.array([np.random.randint(50, size=10)]*100).T
         m_2d = s_2d.create_model()
-        m_2d.append(hs.model.components1D.Polynomial(order=1, legacy=False))
-        m_2d.multifit(iterpath='serpentine', grad='analytical')
+        m_2d.append(hs.model.components1D.Polynomial(order=1))
+        m_2d.multifit(grad='analytical')
         np.testing.assert_allclose(m_2d.red_chisq.data.sum(), 0.0, atol=1E-7)
 
     @pytest.mark.parametrize(("order"), (2, 12))
     @pytest.mark.parametrize(("uniform"), (True, False))
+    @pytest.mark.parametrize(("mapnone"), (True, False))
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-    def test_estimate_parameters(self,  only_current, binned, uniform, order):
+    def test_estimate_parameters(self, only_current, binned, uniform, order, mapnone):
         self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
         s.axes_manager[-1].is_binned = binned
         if not uniform:
             s.axes_manager[-1].convert_to_non_uniform_axis()
-        p = hs.model.components1D.Polynomial(order=order, legacy=False)
+        p = hs.model.components1D.Polynomial(order=order)
+        if mapnone:
+            p.parameters[0].map = None
         p.estimate_parameters(s, None, None, only_current=only_current)
         assert p._axes_manager[-1].is_binned == binned
         assert p._axes_manager[-1].is_uniform == uniform
@@ -356,13 +239,13 @@ class TestPolynomial:
     def test_zero_order(self):
         m = self.m_offset
         with pytest.raises(ValueError):
-            m.append(hs.model.components1D.Polynomial(order=0, legacy=False))
+            m.append(hs.model.components1D.Polynomial(order=0))
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_2d.as_signal()
         model = Model1D(s)
-        p = hs.model.components1D.Polynomial(order=2, legacy=False)
+        p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.a2.map['values'], 0.5)
@@ -373,7 +256,7 @@ class TestPolynomial:
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal()
         model = Model1D(s)
-        p = hs.model.components1D.Polynomial(order=2, legacy=False)
+        p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.a2.map['values'], 0.5)
@@ -383,7 +266,7 @@ class TestPolynomial:
     def test_function_nd(self):
         s = self.m.as_signal()
         s = hs.stack([s]*2)
-        p = hs.model.components1D.Polynomial(order=2, legacy=False)
+        p = hs.model.components1D.Polynomial(order=2)
         p.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
         np.testing.assert_allclose(p.function_nd(axis.axis), s.data)
@@ -451,10 +334,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 100) <= 0.1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 100)
 
     @pytest.mark.parametrize(("uniform"), (True, False))
     def test_both_binned(self, uniform):
@@ -468,10 +351,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 100) <= 0.1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 100)
 
     def test_pattern_unbinned_signal_binned(self):
         s = self.s
@@ -481,10 +364,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 1000) <= 1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 1000)
 
     def test_pattern_binned_signal_unbinned(self):
         s = self.s
@@ -494,10 +377,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 10) <= .1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 10)
 
     def test_function(self):
         s = self.s

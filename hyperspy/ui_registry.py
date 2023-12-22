@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-r"""Registry of user interface widgets.
+"""Registry of user interface widgets.
 
-Format {"tool_key" : {"toolkit" : <function(obj, display, **kwargs)>}}
+Format {"tool_key" : {"toolkit" : <function(obj, display, \*\*kwargs)>}}
 
 The ``tool_key`` is defined by the "model function" to which the widget provides
 and user interface. That function gets the widget function from this registry
@@ -31,10 +31,11 @@ widgets externally (usually for testing or customisation purposes).
 
 import importlib
 
-from hyperspy.extensions import ALL_EXTENSIONS
+from hyperspy.extensions import ALL_EXTENSIONS, _external_extensions
 
 
 UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["GUI"]["toolkeys"]}
+_EXTENSION_NAMES = [e.name for e in _external_extensions]
 
 TOOLKIT_REGISTRY = set()
 KNOWN_TOOLKITS = set(("ipywidgets", "traitsui"))
@@ -44,9 +45,11 @@ if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
     for toolkit, widgets in ALL_EXTENSIONS["GUI"]["widgets"].items():
         TOOLKIT_REGISTRY.add(toolkit)
         for toolkey, specs in widgets.items():
-            if not toolkey in UI_REGISTRY:
-                raise NameError("%s is not a registered toolkey" % toolkey)
-            UI_REGISTRY[toolkey][toolkit] = specs
+            # Skip toolkey if extension is not installed
+            if toolkey.split(".")[0] in _EXTENSION_NAMES + ["hyperspy"]:
+                if not toolkey in UI_REGISTRY:
+                    raise NameError(f"{toolkey} is not a registered toolkey")
+                UI_REGISTRY[toolkey][toolkit] = specs
 
 
 def _toolkits_to_string(toolkits):
@@ -169,7 +172,7 @@ DISPLAY_DT = """display : bool
             widgets container in a dictionary, usually for customisation or
             testing."""
 
-TOOLKIT_DT = """toolkit : str, iterable of strings or None
+TOOLKIT_DT = """toolkit : str, iterable of str or None
             If None (default), all available widgets are displayed or returned.
             If string, only the widgets of the selected toolkit are displayed
             if available. If an interable of toolkit strings, the widgets of

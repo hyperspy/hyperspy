@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,13 +20,13 @@
 import logging
 import types
 import warnings
+
 import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter, MaxNLocator
+import rsciio.utils.tools as io_tools
 
-import hyperspy.misc.io.tools as io_tools
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.ornmf import ornmf
 from hyperspy.learn.orthomax import orthomax
@@ -39,9 +39,11 @@ from hyperspy.misc.utils import (
     stack,
     is_hyperspy_signal,
     is_cupy_array,
-    get_numpy_kwargs,
     )
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.external.progressbar import progressbar
+from hyperspy.defaults_parser import preferences
+
 
 try:
     import mdp
@@ -141,8 +143,9 @@ class MVA:
         ----------
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
-            the approach described in [Keenan2004]_.
-        algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
+            the approach described in [*].
+        algorithm : str {``"SVD"``, ``"MLPCA"``, ``"sklearn_pca"``, ``"NMF"``, ``"sparse_pca"``,
+        ``"mini_batch_sparse_pca"``, ``"RPCA"``, ``"ORPCA"``, ``"ORNMF"``} or object, default ``"SVD"``
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
@@ -150,7 +153,7 @@ class MVA:
         output_dimension : None or int
             Number of components to keep/calculate.
             Default is None, i.e. ``min(data.shape)``.
-        centre : {None, "navigation", "signal"}, default None
+        centre : None or str {``"navigation"``, ``"signal"``}, default None
             * If None, the data is not centered prior to decomposition.
             * If "navigation", the data is centered along the navigation axis.
               Only used by the "SVD" algorithm.
@@ -159,23 +162,23 @@ class MVA:
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only used by the "SVD" algorithm.
-        navigation_mask : boolean numpy array or BaseSignal
+        navigation_mask : numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`
             The navigation locations marked as True are not used in the
             decomposition.
-        signal_mask : boolean numpy array or BaseSignal
+        signal_mask : numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`
             The signal locations marked as True are not used in the
             decomposition.
-        var_array : numpy array
+        var_array : numpy.ndarray
             Array of variance for the maximum likelihood PCA algorithm.
             Only used by the "MLPCA" algorithm.
-        var_func : None or function or numpy array, default None
-            * If None, ignored
-            * If function, applies the function to the data to obtain ``var_array``.
-              Only used by the "MLPCA" algorithm.
-            * If numpy array, creates ``var_array`` by applying a polynomial function
-              defined by the array of coefficients to the data. Only used by
-              the "MLPCA" algorithm.
-        reproject : {None, "signal", "navigation", "both"}, default None
+        var_func : None, callable or numpy.ndarray, default None
+            If None, ignored
+            If callable, applies the function to the data to obtain ``var_array``.
+            Only used by the "MLPCA" algorithm.
+            If numpy array, creates ``var_array`` by applying a polynomial function
+            defined by the array of coefficients to the data. Only used by
+            the "MLPCA" algorithm.
+        reproject : None or str {"signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
@@ -189,36 +192,34 @@ class MVA:
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
         svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
-            If auto:
-                The solver is selected by a default policy based on `data.shape` and
-                `output_dimension`: if the input data is larger than 500x500 and the
-                number of components to extract is lower than 80% of the smallest
-                dimension of the data, then the more efficient "randomized"
-                method is enabled. Otherwise the exact full SVD is computed and
-                optionally truncated afterwards.
-            If full:
-                run exact SVD, calling the standard LAPACK solver via
-                :py:func:`scipy.linalg.svd`, and select the components by postprocessing
-            If arpack:
-                use truncated SVD, calling ARPACK solver via
-                :py:func:`scipy.sparse.linalg.svds`. It requires strictly
-                `0 < output_dimension < min(data.shape)`
-            If randomized:
-                use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
-                to estimate a limited number of components
-             For cupy arrays, only "full" is supported.
+            * If ``"auto"``: the solver is selected by a default policy based on ``data.shape`` and
+              ``output_dimension``: if the input data is larger than 500x500 and the
+              number of components to extract is lower than 80% of the smallest
+              dimension of the data, then the more efficient ``"randomized"``
+              method is enabled. Otherwise the exact full SVD is computed and
+              optionally truncated afterwards.
+            * If ``"full"``: run exact SVD, calling the standard LAPACK solver via
+              :func:`scipy.linalg.svd`, and select the components by postprocessing
+            * If ``"arpack"``: use truncated SVD, calling ARPACK solver via
+              :func:`scipy.sparse.linalg.svds`. It strictly requires
+              ``0 < output_dimension < min(data.shape)``
+            * If ``"randomized"``: use truncated SVD, call
+              :func:`sklearn.utils.extmath.randomized_svd` to estimate a
+              limited number of components
+
+            For cupy arrays, only "full" is supported.
         copy : bool, default True
-            * If True, stores a copy of the data before any pre-treatments
+            * If ``True``, stores a copy of the data before any pre-treatments
               such as normalization in ``s._data_before_treatments``. The original
               data can then be restored by calling ``s.undo_treatments()``.
-            * If False, no copy is made. This can be beneficial for memory
+            * If ``False``, no copy is made. This can be beneficial for memory
               usage, but care must be taken since data will be overwritten.
-        **kwargs : extra keyword arguments
+        **kwargs : dict
             Any keyword arguments are passed to the decomposition algorithm.
 
         Returns
         -------
-        return_info : tuple(numpy array, numpy array) or sklearn.Estimator or None
+         tuple of numpy.ndarray or sklearn.base.BaseEstimator or None
             * If True and 'algorithm' in ['RPCA', 'ORPCA', 'ORNMF'], returns
               the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
             * If True and 'algorithm' is an sklearn Estimator, returns the
@@ -227,17 +228,14 @@ class MVA:
 
         References
         ----------
-        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
 
         See Also
         --------
-        * :py:meth:`~.signal.MVATools.plot_decomposition_factors`
-        * :py:meth:`~.signal.MVATools.plot_decomposition_loadings`
-        * :py:meth:`~.signal.MVATools.plot_decomposition_results`
-        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
-        * :py:meth:`~._signals.lazy.LazySignal.decomposition` for lazy signals
+        plot_decomposition_factors, plot_decomposition_loadings,
+        plot_decomposition_results, plot_explained_variance_ratio
 
         """
         if is_cupy_array(self.data):  # pragma: no cover
@@ -272,35 +270,6 @@ class MVA:
             raise AttributeError(
                 "It is not possible to decompose a dataset with navigation_size < 2"
             )
-
-        # Check for deprecated algorithm arguments
-        algorithms_deprecated = {
-            "fast_svd": "SVD",
-            "svd": "SVD",
-            "fast_mlpca": "MLPCA",
-            "mlpca": "MLPCA",
-            "nmf": "NMF",
-            "RPCA_GoDec": "RPCA",
-        }
-        new_algo = algorithms_deprecated.get(algorithm, None)
-        if new_algo:
-            if "fast" in algorithm:
-                warnings.warn(
-                    f"The algorithm name `{algorithm}` has been deprecated and will be "
-                    f"removed in HyperSpy 2.0. Please use `{new_algo}` along with the "
-                    "argument `svd_solver='randomized'` instead.",
-                    VisibleDeprecationWarning,
-                )
-                svd_solver = "randomized"
-            else:
-                warnings.warn(
-                    f"The algorithm name `{algorithm}` has been deprecated and will be "
-                    f"removed in HyperSpy 2.0. Please use `{new_algo}` instead.",
-                    VisibleDeprecationWarning,
-                )
-
-            # Update algorithm name
-            algorithm = new_algo
 
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [
@@ -350,16 +319,6 @@ class MVA:
             )
             normalize_poissonian_noise = False
 
-        # Check for deprecated polyfit
-        polyfit = kwargs.get("polyfit", False)
-        if polyfit:
-            warnings.warn(
-                "The `polyfit` argument has been deprecated and will be "
-                "removed in HyperSpy 2.0. Please use `var_func` instead.",
-                VisibleDeprecationWarning,
-            )
-            var_func = polyfit
-
         # Initialize return_info and print_info
         to_return = None
         to_print = [
@@ -369,8 +328,6 @@ class MVA:
             f"  output_dimension={output_dimension}",
             f"  centre={centre}",
         ]
-
-        from hyperspy.signal import BaseSignal
 
         self._check_navigation_mask(navigation_mask)
         self._check_signal_mask(signal_mask)
@@ -711,14 +668,15 @@ class MVA:
         number_of_components : int or None
             Number of principal components to pass to the BSS algorithm.
             If None, you must specify the ``comp_list`` argument.
-        algorithm : {"sklearn_fastica", "orthomax", "FastICA", "JADE", "CuBICA", "TDSEP", custom object}, default "sklearn_fastica"
+        algorithm : {``"sklearn_fastica"`` | ``"orthomax"`` | ``"FastICA"`` | ``"JADE"`` |
+        ``"CuBICA"`` | ``"TDSEP"``} or object, default "sklearn_fastica"
             The BSS algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
         diff_order : int, default 1
             Sometimes it is convenient to perform the BSS on the derivative of
             the signal. If ``diff_order`` is 0, the signal is not differentiated.
-        diff_axes : None or list of ints or strings
+        diff_axes : None, list of int, list of str
             * If None and `on_loadings` is False, when `diff_order` is greater than 1
               and `signal_dimension` is greater than 1, the differences are calculated
               across all signal axes
@@ -726,14 +684,14 @@ class MVA:
               and `navigation_dimension` is greater than 1, the differences are calculated
               across all navigation axes
             * Otherwise the axes can be specified in a list.
-        factors : :py:class:`~hyperspy.signal.BaseSignal` or numpy array
+        factors : :class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
             Factors to decompose. If None, the BSS is performed on the
             factors of a previous decomposition. If a Signal instance, the
             navigation dimension must be 1 and the size greater than 1.
-        comp_list : None or list or numpy array
+        comp_list : None or list or numpy.ndarray
             Choose the components to apply BSS to. Unlike ``number_of_components``,
             this argument permits non-contiguous components.
-        mask : :py:class:`~hyperspy.signal.BaseSignal` or subclass
+        mask : :class:`~hyperspy.signal.BaseSignal` or subclass
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
             (navigation shape) when `on_loadings` is False (True).
@@ -743,9 +701,9 @@ class MVA:
         reverse_component_criterion : {"factors", "loadings"}, default "factors"
             Use either the factors or the loadings to determine if the
             component needs to be reversed.
-        whiten_method : {"PCA", "ZCA", None}, default "PCA"
+        whiten_method : {``"PCA"`` | ``"ZCA"``} or None, default "PCA"
             How to whiten the data prior to blind source separation.
-            If None, no whitening is applied. See :py:func:`~.learn.whitening.whiten_data`
+            If None, no whitening is applied. See :func:`~.learn.whitening.whiten_data`
             for more details.
         return_info: bool, default False
             The result of the decomposition is stored internally. However,
@@ -757,21 +715,18 @@ class MVA:
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
-        **kwargs : extra keyword arguments
+        **kwargs : dict
             Any keyword arguments are passed to the BSS algorithm.
 
         Returns
         -------
-        return_info : sklearn.Estimator or None
-            * If True and 'algorithm' is an sklearn Estimator, returns the
+        None or subclass of sklearn.base.BaseEstimator
+            If True and 'algorithm' is an sklearn Estimator, returns the
               Estimator object.
-            * Otherwise, returns None
 
         See Also
         --------
-        * :py:meth:`~.signal.MVATools.plot_bss_factors`
-        * :py:meth:`~.signal.MVATools.plot_bss_loadings`
-        * :py:meth:`~.signal.MVATools.plot_bss_results`
+        plot_bss_factors, plot_bss_loadings, plot_bss_results
 
         """
         from hyperspy.signal import BaseSignal
@@ -1063,10 +1018,10 @@ class MVA:
         ----------
         target : {"factors", "loadings"}
             Normalize components based on the scale of either the factors or loadings.
-        function : numpy universal function, default np.sum
+        function : numpy callable, default numpy.sum
             Each target component is divided by the output of ``function(target)``.
             The function must return a scalar when operating on numpy arrays and
-            must have an `axis` argument.
+            must have an ``axis`` argument.
 
         """
         if target == "factors":
@@ -1090,10 +1045,10 @@ class MVA:
         ----------
         target : {"factors", "loadings"}
             Normalize components based on the scale of either the factors or loadings.
-        function : numpy universal function, default np.sum
+        function : numpy callable, default numpy.sum
             Each target component is divided by the output of ``function(target)``.
             The function must return a scalar when operating on numpy arrays and
-            must have an `axis` argument.
+            must have an ``axis`` argument.
 
         """
         if target == "factors":
@@ -1122,10 +1077,16 @@ class MVA:
 
         Examples
         --------
-        >>> s = hs.load('some_file')
-        >>> s.decomposition(True) # perform PCA
-        >>> s.reverse_decomposition_component(1) # reverse IC 1
-        >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
+        >>> s = hs.load('some_file') # doctest: +SKIP
+        >>> s.decomposition(True) # doctest: +SKIP
+
+        Reverse component 1  
+        
+        >>> s.reverse_decomposition_component(1) # doctest: +SKIP
+
+        Reverse components 0 and 2
+
+        >>> s.reverse_decomposition_component((0, 2)) # doctest: +SKIP
 
         """
         if hasattr(self.learning_results.factors, "compute"):
@@ -1151,11 +1112,17 @@ class MVA:
 
         Examples
         --------
-        >>> s = hs.load('some_file')
-        >>> s.decomposition(True) # perform PCA
-        >>> s.blind_source_separation(3)  # perform ICA on 3 PCs
-        >>> s.reverse_bss_component(1) # reverse IC 1
-        >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
+        >>> s = hs.load('some_file') # doctest: +SKIP
+        >>> s.decomposition(True) # doctest: +SKIP
+        >>> s.blind_source_separation(3) # doctest: +SKIP
+
+        Reverse component 1
+
+        >>> s.reverse_bss_component(1) # doctest: +SKIP
+
+        Reverse components 0 and 2
+
+        >>> s.reverse_bss_component((0, 2)) # doctest: +SKIP
 
         """
         if hasattr(self.learning_results.bss_factors, "compute"):
@@ -1284,14 +1251,14 @@ class MVA:
 
         Parameters
         ----------
-        components : {None, int, list of ints}, default None
+        components : None, int or list of int, default None
             * If None, rebuilds signal instance from all components
             * If int, rebuilds signal instance from components in range 0-given int
             * If list of ints, rebuilds signal instance from only components in given list
 
         Returns
         -------
-        Signal instance
+        :class:`~hyperspy.api.signals.BaseSignal` or subclass
             A model built from the given components.
 
         """
@@ -1303,14 +1270,14 @@ class MVA:
 
         Parameters
         ----------
-        components : {None, int, list of ints}, default None
-            * If None, rebuilds signal instance from all components
-            * If int, rebuilds signal instance from components in range 0-given int
-            * If list of ints, rebuilds signal instance from only components in given list
+        components : None, int or list of int, default None
+            If None, rebuilds signal instance from all components
+            If int, rebuilds signal instance from components in range 0-given int
+            If list of ints, rebuilds signal instance from only components in given list
 
         Returns
         -------
-        Signal instance
+        :class:`~hyperspy.api.signals.BaseSignal` or subclass
             A model built from the given components.
 
         """
@@ -1335,10 +1302,8 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.decomposition`
-        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
-        * :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`
-        * :py:meth:`~.learn.mva.MVA.get_decomposition_factors`
+        decomposition, plot_explained_variance_ratio,
+        get_decomposition_loadings, get_decomposition_factors
 
         """
         from hyperspy._signals.signal1d import Signal1D
@@ -1424,41 +1389,37 @@ class MVA:
         noise_fmt : dict
             Dictionary of matplotlib formatting values for the noise
             components
-        fig : matplotlib figure or None
+        fig : matplotlib.figure.Figure or None
             If None, a default figure will be created, otherwise will plot
             into fig
-        ax : matplotlib ax (subplot) or None
+        ax : matplotlib.axes.Axes or None
             If None, a default ax will be created, otherwise will plot into ax
         **kwargs
-            remaining keyword arguments are passed to ``matplotlib.figure()``
+            remaining keyword arguments are passed to :class:`matplotlib.figure.Figure`
 
         Returns
         -------
-        ax : matplotlib.axes
+        matplotlib.axes.Axes
             Axes object containing the scree plot
 
-        Example
-        -------
+        Examples
+        --------
         To generate a scree plot with customized symbols for signal vs.
         noise components and a modified cutoff threshold value:
 
-        >>> s = hs.load("some_spectrum_image")
-        >>> s.decomposition()
-        >>> s.plot_explained_variance_ratio(n=40,
-        >>>                                 threshold=0.005,
-        >>>                                 signal_fmt={'marker': 'v',
-        >>>                                             's': 150,
-        >>>                                             'c': 'pink'}
-        >>>                                 noise_fmt={'marker': '*',
-        >>>                                             's': 200,
-        >>>                                             'c': 'green'})
+        >>> s = hs.load("some_spectrum_image") # doctest: +SKIP
+        >>> s.decomposition() # doctest: +SKIP
+        >>> s.plot_explained_variance_ratio(
+        ...    n=40,
+        ...    threshold=0.005,
+        ...    signal_fmt={'marker': 'v', 's': 150, 'c': 'pink'},
+        ...    noise_fmt={'marker': '*', 's': 200, 'c': 'green'}
+        ...    ) # doctest: +SKIP
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.decomposition`
-        * :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
-        * :py:meth:`~.signal.MVATools.get_decomposition_loadings`
-        * :py:meth:`~.signal.MVATools.get_decomposition_factors`
+        decomposition, get_explained_variance_ratio, get_decomposition_loadings,
+        get_decomposition_factors
 
         """
         s = self.get_explained_variance_ratio()
@@ -1617,7 +1578,7 @@ class MVA:
 
         See Also
         --------
-        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        plot_explained_variance_ratio
 
         """
         target = self.learning_results
@@ -1637,7 +1598,7 @@ class MVA:
         """Normalize the signal under the assumption of Poisson noise.
 
         Scales the signal using to "normalize" the Poisson data for
-        subsequent decomposition analysis [Keenan2004]_.
+        subsequent decomposition analysis [*].
 
         Parameters
         ----------
@@ -1645,6 +1606,12 @@ class MVA:
             Optional mask applied in the navigation axis.
         signal_mask : {None, boolean numpy array}, default None
             Optional mask applied in the signal axis.
+
+        References
+        ----------
+        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
+            in the multivariate analysis of ToF-SIMS spectrum images", Surf.
+            Interface Anal 36(3) (2004): 203-212.
 
         """
         _logger.info("preprocessing the data to normalize Poissonian noise")
@@ -1732,10 +1699,12 @@ class MVA:
 
         return mask
 
-    def _scale_data_for_clustering(self,
-                                  cluster_signal,
-                                  preprocessing="norm",
-                                  preprocessing_kwargs={},):
+    def _scale_data_for_clustering(
+            self,
+            cluster_signal,
+            preprocessing="norm",
+            preprocessing_kwargs=None
+        ):
         """Scale data for cluster analysis
 
         Results are stored in `learning_results`.
@@ -1756,22 +1725,15 @@ class MVA:
             You can also pass a cikit-learn preprocessing object
             See scaling methods in scikit-learn preprocessing for further
             details.
-        preprocessing_kwargs :
+        preprocessing_kwargs : None or dict
             Additional parameters passed to the cluster preprocessing algorithm.
             See sklearn.preprocessing preprocessing methods for further details
 
-
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
-        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
-        * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
-        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-
+        clusters_analysis, estimate_number_of_clusters, get_cluster_labels,
+        get_cluster_signals, plot_cluster_metric, plot_cluster_results,
+        plot_cluster_signals, plot_cluster_labels
 
         Returns
         -------
@@ -1779,11 +1741,12 @@ class MVA:
         no_of_features) scaled according to the selected algorithm
 
         """
+        if preprocessing_kwargs is None:
+            preprocessing_kwargs = {}
 
-
-        preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(preprocessing,**preprocessing_kwargs)
-
-
+        preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(
+            preprocessing, **preprocessing_kwargs
+            )
 
         if preprocessing_algorithm is None:
             return cluster_signal
@@ -1813,19 +1776,19 @@ class MVA:
         ----------
         n_clusters : int
             Number of clusters to find.
-        scaled_data : numpy array - (number_of_samples,number_of_features)
-        algorithm: scikit learn clustering object
-        **kwargs
+        scaled_data : numpy.ndarray
+            Array with shape (number_of_samples, number_of_features)
+        algorithm : object from :mod:`sklearn.cluster`
+            The algorithm used for clustering.
+        **kwargs : dict
             Additional parameters passed to the clustering algorithm.
             This may include `n_init`, the number of times the algorithm is
             restarted to optimize results.
 
-
         Returns
         -------
-        alg
+        object from :mod:`sklearn.cluster`
             return the sklearn.cluster object
-
         """
 
         algorithm.fit(scaled_data)
@@ -1840,19 +1803,14 @@ class MVA:
         return algorithm
 
     def plot_cluster_metric(self):
-        """Plot the cluster metrics calculated
-           using evaluate_number_of_clusters method
+        """Plot the cluster metrics calculated using the
+        :meth:`~hyperspy.api.signals.BaseSignal.estimate_number_of_clusters` method
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
-        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
-        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-
+        estimate_number_of_clusters, cluster_analysis, get_cluster_labels,
+        get_cluster_signals, plot_cluster_results, plot_cluster_signals,
+        plot_cluster_labels
 
         """
         target = self.learning_results
@@ -1860,8 +1818,10 @@ class MVA:
         if target.cluster_metric_data is not None:
             ydata = target.cluster_metric_data
         else:
-            raise ValueError("Cluster metrics not evaluated "
-                             "please run evaluate_number_of_clusters first.")
+            raise ValueError(
+                "Cluster metrics not estimated, please run "
+                "`estimate_number_of_clusters` first."
+                )
         if target.cluster_metric_index is not None:
             xdata = target.cluster_metric_index
         fig = plt.figure()
@@ -1912,20 +1872,17 @@ class MVA:
         ----------
         cluster_source : str or BaseSignal
             "decomposition", "bss", "signal" or a Signal
-        number_of_components : int, optional
+        number_of_components : int, default None
             Number of components to use with decomposition sources.
-            The default is None.
-        navigation_mask : ndarray, optional
+        navigation_mask : ndarray, default None
             mask used to select regions of the cluster_source to use.
-            The default is None.
-        signal_mask : ndarray, optional
+        signal_mask : ndarray, default None
             mask used to select regions of the cluster_source signal.
             For decomposition or bss this is not used.
-            The default is None.
-        reproject : bool, optional
+        reproject : bool, default False
             If False the and the cluster_source is decomposition or bss
             the loadings are returned. If True the factor @ loadings result
-            is used. The default is False.
+            is used.
 
 
         Returns
@@ -2000,7 +1957,7 @@ class MVA:
                          cluster_source,
                          source_for_centers=None,
                          preprocessing=None,
-                         preprocessing_kwargs={},
+                         preprocessing_kwargs=None,
                          number_of_components=None,
                          navigation_mask=None,
                          signal_mask=None,
@@ -2013,21 +1970,23 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : {"bss", "decomposition", "signal", BaseSignal}
+        cluster_source : str {``"bss"`` | ``"decomposition"`` | ``"signal"``}\
+        or :class:`~hyperspy.api.signals.BaseSignal`
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
             if "signal" the signal data is used
             Note that using the signal or BaseSignal can be memory intensive
             and is only recommended if the Signal dimension is small
             BaseSignal must have the same navigation dimensions as the signal.
-        source_for_centers : {None,"decomposition","bss","signal",BaseSignal},
+        source_for_centers : None, str {``"decomposition"`` | ``"bss"`` | ``"signal"``}\
+        or :class:`~hyperspy.api.signals.BaseSignal`
             default : None
             If None the cluster_source is used
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
             if "signal" the signal data is used
             BaseSignal must have the same navigation dimensions as the signal.
-        preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
+        preprocessing : str {``"standard"`` | ``"norm"`` | ``"minmax"``}, None or object
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
             the data to be clustered to similar scales. Standard preprocessing
@@ -2038,8 +1997,8 @@ class MVA:
             scale_method = import sklearn.processing.StandadScaler()
             preprocessing = scale_method
             See preprocessing methods in scikit-learn preprocessing for further
-            details.
-        preprocessing_kwargs : dict
+            details. If ``object``, must be :mod:`sklearn.preprocessing`-like.
+        preprocessing_kwargs : dict or None, default None
             Additional parameters passed to the supported sklearn preprocessing methods.
             See sklearn.preprocessing scaling methods for further details
         number_of_components : int, default None
@@ -2050,50 +2009,44 @@ class MVA:
             using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
             This applies to both bss and decomposition results.
-        navigation_mask : boolean numpy array
+        navigation_mask : numpy.ndarray of bool
             The navigation locations marked as True are not used.
-        signal_mask : boolean numpy array
+        signal_mask : numpy.ndarray of bool
             The signal locations marked as True are not used in the
             clustering for "signal" or Signals supplied as cluster source.
             This is not applied to decomposition results or source_for_centers
             (as it may be a different shape to the cluster source)
-        algorithm : { "kmeans" | "agglomerative" | "minibatchkmeans" | "spectralclustering"}
+        algorithm : {``"kmeans"`` | ``"agglomerative"`` | ``"minibatchkmeans"`` | ``"spectralclustering"``}
             See scikit-learn documentation. Default "kmeans"
         return_info : bool, default False
             The result of the cluster analysis is stored internally. However,
             the cluster class used  contain a number of attributes.
             If True (the default is False)
             return the cluster object so the attributes can be accessed.
-        **kwargs : dict  optional, default - empty
+        **kwargs : dict
             Additional parameters passed to the clustering class for initialization.
-            For example, in case of the "kmeans" algorithm, `n_init` can be
+            For example, in case of the "kmeans" algorithm, ``n_init`` can be
             used to define the number of times the algorithm is restarted to
             optimize results.
 
         Other Parameters
         ----------------
-        n_clusters : int
+        int
             Number of clusters to find using the one of the pre-defined methods
-            "kmeans","agglomerative","minibatchkmeans","spectralclustering"
+            "kmeans", "agglomerative", "minibatchkmeans", "spectralclustering"
             See sklearn.cluster for details
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,
-        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
-        * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
-        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-
+        estimate_number_of_clusters, get_cluster_labels, get_cluster_signals,
+        get_cluster_distances, plot_cluster_metric, plot_cluster_results,
+        plot_cluster_signals, plot_cluster_labels
 
         Returns
         -------
-            If 'return_info' is True returns the Scikit-learn cluster object
-            used for clustering. Useful if you wish to
-            examine inertia or other outputs.
+        None or object
+            If ``'return_info'`` is True returns the Scikit-learn cluster object
+            used for clustering. Useful if you wish to examine inertia or other outputs.
 
         """
         if import_sklearn.sklearn_installed is False:
@@ -2293,13 +2246,14 @@ class MVA:
                                     cluster_source,
                                     max_clusters=10,
                                     preprocessing=None,
-                                    preprocessing_kwargs={},
+                                    preprocessing_kwargs=None,
                                     number_of_components=None,
                                     navigation_mask=None,
                                     signal_mask=None,
                                     algorithm=None,
                                     metric="gap",
                                     n_ref=4,
+                                    show_progressbar=None,
                                     **kwargs):
         """Performs cluster analysis of a signal for cluster sizes ranging from
         n_clusters =2 to max_clusters ( default 12)
@@ -2312,7 +2266,8 @@ class MVA:
 
         Parameters
         ----------
-        cluster_source : {"bss", "decomposition", "signal" or Signal}
+        cluster_source : str {"bss", "decomposition", "signal"} \
+        or :class:`~hyperspy.api.signals.BaseSignal`
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
             if "signal" the signal data is used
@@ -2323,7 +2278,7 @@ class MVA:
         max_clusters : int, default 10
             Max number of clusters to use. The method will scan from 2 to
             max_clusters.
-        preprocessing : {"standard","norm","minmax" or sklearn-like preprocessing object}
+        preprocessing : str {"standard", "norm", "minmax"} or object
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
             the data to be clustered to similar scales. Standard preprocessing
@@ -2332,8 +2287,8 @@ class MVA:
             each measurement is scaled to length 1.
             You can also pass an instance of a sklearn preprocessing module.
             See preprocessing methods in scikit-learn preprocessing for further
-            details.
-        preprocessing_kwargs : dict, default empty
+            details. If ``object``, must be :mod:`sklearn.preprocessing`-like.
+        preprocessing_kwargs : dict or None, default None
             Additional parameters passed to the cluster preprocessing algorithm.
             See sklearn.preprocessing preprocessing methods for further details
         number_of_components : int, default None
@@ -2346,10 +2301,10 @@ class MVA:
         navigation_mask : boolean numpy array, default : None
             The navigation locations marked as True are not used in the
             clustering.
-        signal_mask : boolean numpy array, default : None
+        signal_mask : numpy.ndarray of bool, default None
             The signal locations marked as True are not used in the
             clustering. Applies to "signal" or Signal cluster sources only.
-        metric : {'elbow','silhouette','gap'} default 'gap'
+        metric : {``'elbow'`` | ``'silhouette'`` | ``'gap'``}, default ``'gap'``
             Use distance,silhouette analysis or gap statistics to estimate
             the optimal number of clusters.
             Gap is believed to be, overall, the best metric but it's also
@@ -2360,15 +2315,15 @@ class MVA:
             For gap the optimal k is the first k gap(k)>= gap(k+1)-std_error
             For silhouette the optimal k will be one of the "maxima" found with
             this method
-        n_ref :  int, default 4
+        n_ref : int, default 4
             Number of references to use in gap statistics method
             Gap statistics compares the results from clustering the data to
             clustering uniformly distributed data. As clustering has
             a random variation it is typically averaged n_ref times
-            to get an statistical average
-        **kwargs : dict {}  default empty
+            to get an statistical average.
+        %s
+        **kwargs : dict
             Parameters passed to the clustering algorithm.
-
 
         Other Parameters
         ----------------
@@ -2377,24 +2332,23 @@ class MVA:
             "kmeans","agglomerative","minibatchkmeans","spectralclustering"
             See sklearn.cluster for details
 
-
         Returns
         -------
-        best_k : int
-            Estimate of the best cluster size
+        int
+            Estimate of the best cluster size.
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,
-        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
-        * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
-        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+        cluster_analysis, get_cluster_labels, get_cluster_signals,
+        get_cluster_distances, plot_cluster_metric, plot_cluster_results,
+        plot_cluster_signals, plot_cluster_labels
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
+
+        if preprocessing_kwargs is None:
+            preprocessing_kwargs = {}
 
         if max_clusters < 2:
             raise ValueError("The max number of clusters, max_clusters, "
@@ -2432,54 +2386,58 @@ class MVA:
         try:
             # scale the data
             # scale the data before clustering
-            cluster_signal = \
-                self._get_cluster_signal(cluster_source,
-                                        number_of_components,
-                                        navigation_mask,
-                                        signal_mask,)
-            scaled_data = \
-                self._scale_data_for_clustering(
+            cluster_signal = self._get_cluster_signal(
+                cluster_source,
+                number_of_components,
+                navigation_mask,
+                signal_mask
+                )
+            scaled_data = self._scale_data_for_clustering(
                 cluster_signal=cluster_signal,
                 preprocessing=preprocessing,
-                preprocessing_kwargs=preprocessing_kwargs)
+                preprocessing_kwargs=preprocessing_kwargs
+                )
 
             # from 2 to max_clusters
             # cluster and calculate silhouette_score
             if metric == "elbow":
-                pbar = progressbar(total=len(k_range))
                 inertia = np.zeros(len(k_range))
+                with progressbar(
+                    total=len(k_range), disable=not show_progressbar, leave=True
+                ) as pbar:
+                    for i,k in enumerate(k_range):
+                        cluster_algorithm = self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                        alg = self._cluster_analysis(scaled_data,cluster_algorithm)
 
-                for i,k in enumerate(k_range):
-                    cluster_algorithm = self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
-                    alg = self._cluster_analysis(scaled_data,cluster_algorithm)
-
-                    D = self._distances_within_cluster(scaled_data,alg.labels_,summed=True)
-                    W = np.sum(D)
-                    inertia[i]= np.log(W)
-                    pbar.update(1)
-                    _logger.info(
-                        f"For n_clusters ={k}. "
-                        f"The distance metric is : {inertia[-1]}")
+                        D = self._distances_within_cluster(scaled_data,alg.labels_,summed=True)
+                        W = np.sum(D)
+                        inertia[i]= np.log(W)
+                        pbar.update(1)
+                        _logger.info(
+                            f"For n_clusters ={k}. "
+                            f"The distance metric is : {inertia[-1]}")
                 to_return = inertia
                 best_k = self.estimate_elbow_position(
                     to_return, log=False) + min_k
             elif metric == "silhouette":
                 k_range   = list(range(2, max_clusters+1))
-                pbar = progressbar(total=len(k_range))
                 silhouette_avg = []
-                for k in k_range:
-                    cluster_algorithm = \
-                        self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
-                    alg = self._cluster_analysis(scaled_data,cluster_algorithm)
-                    cluster_labels = alg.labels_
-                    silhouette_avg.append(
-                        import_sklearn.sklearn.metrics.silhouette_score(
-                        scaled_data,
-                        cluster_labels))
-                    pbar.update(1)
-                    _logger.info(
-                        f"For n_clusters={k} the average "
-                        f"silhouette_score is : {silhouette_avg[-1]}")
+                with progressbar(
+                    total=len(k_range), disable=not show_progressbar, leave=True
+                ) as pbar:
+                    for k in k_range:
+                        cluster_algorithm = \
+                            self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                        alg = self._cluster_analysis(scaled_data,cluster_algorithm)
+                        cluster_labels = alg.labels_
+                        silhouette_avg.append(
+                            import_sklearn.sklearn.metrics.silhouette_score(
+                            scaled_data,
+                            cluster_labels))
+                        pbar.update(1)
+                        _logger.info(
+                            f"For n_clusters={k} the average "
+                            f"silhouette_score is : {silhouette_avg[-1]}")
                 to_return = silhouette_avg
                 best_k = []
                 max_value = -1.0
@@ -2499,7 +2457,6 @@ class MVA:
                 data_inertia=np.zeros(len(k_range))
                 reference=np.zeros(scaled_data.shape)
                 local_inertia = np.zeros(n_ref)
-                pbar = progressbar(total=n_ref*len(k_range))
                 # only perform 1 pass of clustering
                 # otherwise std_dev isn't correct
                 for f_indx in range(scaled_data.shape[1]):
@@ -2507,36 +2464,39 @@ class MVA:
                     xmax = np.max(scaled_data[:,f_indx])
                     reference[:,f_indx]= np.linspace(xmin, xmax, endpoint=True, num=reference[:,0].size)
 
-                for o_indx,k in enumerate(k_range):
-                    # calculate the data metric
-                    if(algorithm=="kmeans"):
-                        kwargs['n_init'] = 1
-                    cluster_algorithm = \
-                        self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
-                    alg = self._cluster_analysis(scaled_data,
-                                                 cluster_algorithm)
-
-                    D = self._distances_within_cluster(scaled_data,alg.labels_,
-                                                 squared=True, summed=True)
-                    W = np.sum(D)
-                    data_inertia[o_indx]=np.log(W)
-                    # now do n_ref clusters for a uniform random distribution
-                    # to determine "gap" between data and random distribution
-
-                    for i_indx in range(n_ref):
-                        # initiate with a known seed to make the overall results
-                        # repeatable but still sampling different configurations
+                with progressbar(
+                    total=n_ref*len(k_range), disable=not show_progressbar, leave=True
+                ) as pbar:
+                    for o_indx,k in enumerate(k_range):
+                        # calculate the data metric
+                        if(algorithm=="kmeans"):
+                            kwargs['n_init'] = 1
                         cluster_algorithm = \
                             self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
-                        alg = self._cluster_analysis(reference,
+                        alg = self._cluster_analysis(scaled_data,
                                                      cluster_algorithm)
-                        D = self._distances_within_cluster(reference,alg.labels_,
-                                                 squared=True,summed=True)
+
+                        D = self._distances_within_cluster(scaled_data,alg.labels_,
+                                                     squared=True, summed=True)
                         W = np.sum(D)
-                        local_inertia[i_indx]=np.log(W)
-                        pbar.update(1)
-                    reference_inertia[o_indx]=np.mean(local_inertia)
-                    reference_std[o_indx] = np.std(local_inertia)
+                        data_inertia[o_indx]=np.log(W)
+                        # now do n_ref clusters for a uniform random distribution
+                        # to determine "gap" between data and random distribution
+
+                        for i_indx in range(n_ref):
+                            # initiate with a known seed to make the overall results
+                            # repeatable but still sampling different configurations
+                            cluster_algorithm = \
+                                self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
+                            alg = self._cluster_analysis(reference,
+                                                         cluster_algorithm)
+                            D = self._distances_within_cluster(reference,alg.labels_,
+                                                     squared=True,summed=True)
+                            W = np.sum(D)
+                            local_inertia[i_indx]=np.log(W)
+                            pbar.update(1)
+                        reference_inertia[o_indx]=np.mean(local_inertia)
+                        reference_std[o_indx] = np.std(local_inertia)
                 std_error = np.sqrt(1.0 + 1.0/n_ref)*reference_std
                 std_error = abs(std_error)
                 gap       = reference_inertia-data_inertia
@@ -2572,6 +2532,8 @@ class MVA:
                         cluster_source.fold()
             self.learning_results.__dict__.update(target.__dict__)
 
+    estimate_number_of_clusters.__doc__ %= SHOW_PROGRESSBAR_ARG
+
     def estimate_elbow_position(self, explained_variance_ratio=None,log=True,
                                 max_points=20):
         """Estimate the elbow position of a scree plot curve.
@@ -2583,7 +2545,7 @@ class MVA:
         With a classic elbow scree plot, this line more or less
         defines a triangle. The elbow should be the point which
         is the furthest distance from this line. For more details,
-        see [Satopää2011]_.
+        see [1].
 
         Parameters
         ----------
@@ -2597,22 +2559,21 @@ class MVA:
 
         Returns
         -------
-        elbow position : int
-            Index of the elbow position in the input array. Due to
+        int
+            The index of the elbow position in the input array. Due to
             zero-based indexing, the number of significant components
             is `elbow_position + 1`.
 
         References
         ----------
-        .. [Satopää2011] V. Satopää, J. Albrecht, D. Irwin, and B. Raghavan.
+        .. [1] V. Satopää, J. Albrecht, D. Irwin, and B. Raghavan.
             "Finding a “Kneedle” in a Haystack: Detecting Knee Points in
             System Behavior,. 31st International Conference on Distributed
             Computing Systems Workshops, pp. 166-171, June 2011.
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
-        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        get_explained_variance_ratio, plot_explained_variance_ratio
 
         """
         if explained_variance_ratio is None:
@@ -2641,8 +2602,7 @@ class MVA:
             y1 = curve_values_adj[0]
             y2 = curve_values_adj[max_points]
 
-        kw = get_numpy_kwargs(self.data)
-        xs = np.arange(max_points, **kw)
+        xs = np.arange(max_points, like=self.data)
         if log:
             ys = np.log(curve_values_adj[:max_points])
         else:

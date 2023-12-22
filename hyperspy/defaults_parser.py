@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -24,34 +24,15 @@ from pathlib import Path
 
 import traits.api as t
 
-from hyperspy.misc.config_dir import config_path, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
 from hyperspy.ui_registry import add_gui_method
 
+
+config_path = Path("~/.hyperspy").expanduser()
+config_path.mkdir(parents=True, exist_ok=True)
 defaults_file = Path(config_path, 'hyperspyrc')
-eels_gos_files = Path(data_path, 'EELS_GOS.tar.gz')
 
 _logger = logging.getLogger(__name__)
-
-
-def guess_gos_path():
-    if os.name in ["nt", "dos"]:
-        # If DM is installed, use the GOS tables from the default
-        # installation
-        # location in windows
-        program_files = os.environ['PROGRAMFILES']
-        gos = 'Gatan\\DigitalMicrograph\\EELS Reference Data\\H-S GOS Tables'
-        gos_path = Path(program_files, gos)
-
-        # Else, use the default location in the .hyperspy forlder
-        if not gos_path.is_dir() and 'PROGRAMFILES(X86)' in os.environ:
-            program_files = os.environ['PROGRAMFILES(X86)']
-            gos_path = Path(program_files, gos)
-            if not gos_path.is_dir():
-                gos_path = Path(config_path, 'EELS_GOS')
-    else:
-        gos_path = Path(config_path, 'EELS_GOS')
-    return gos_path
 
 
 if defaults_file.is_file():
@@ -99,10 +80,6 @@ class GeneralConfig(t.HasTraits):
              'DictionaryTreeBrowser, but with double lines')
     logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
                            desc='the log level of all hyperspy modules.')
-    parallel = t.CBool(
-        True,
-        desc='Use parallel threads for computations by default.'
-    )
 
     nb_progressbar = t.CBool(
         True,
@@ -116,13 +93,6 @@ class GeneralConfig(t.HasTraits):
             turn_logging_off()
 
 
-class EELSConfig(t.HasTraits):
-    eels_gos_files_path = t.Directory(
-        guess_gos_path(),
-        label='GOS directory',
-        desc='The GOS files are required to create the EELS edge components')
-
-
 class GUIs(t.HasTraits):
     enable_ipywidgets_gui = t.CBool(
         True,
@@ -132,19 +102,15 @@ class GUIs(t.HasTraits):
         True,
         desc="Display traitsui user interface elements. "
         "Requires installing hyperspy_gui_traitsui.")
-    warn_if_guis_are_missing = t.CBool(
-        True,
-        desc="Not necessary anymore and deprecated.")
 
 
 class PlotConfig(t.HasTraits):
-    saturated_pixels = t.CFloat(0.,
-                                label='Saturated pixels (deprecated)',
-                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
-                                )
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy
+    widget_plot_style = t.Enum(
+        ['horizontal', 'vertical'],
+        label='Widget plot style: (only with ipympl)')
     cmap_navigator = t.Str('gray',
                            label='Color map navigator',
                            desc='Set the default color map for the navigator.',
@@ -177,32 +143,9 @@ class PlotConfig(t.HasTraits):
                               )
 
 
-class EDSConfig(t.HasTraits):
-    eds_mn_ka = t.CFloat(130.,
-                         label='Energy resolution at Mn Ka (eV)',
-                         desc='default value for FWHM of the Mn Ka peak in eV,'
-                         'This value is used as a first approximation'
-                         'of the energy resolution of the detector.')
-    eds_tilt_stage = t.CFloat(
-        0.,
-        label='Stage tilt',
-        desc='default value for the stage tilt in degree.')
-    eds_detector_azimuth = t.CFloat(
-        0.,
-        label='Azimuth angle',
-        desc='default value for the azimuth angle in degree. If the azimuth'
-        ' is zero, the detector is perpendicular to the tilt axis.')
-    eds_detector_elevation = t.CFloat(
-        35.,
-        label='Elevation angle',
-        desc='default value for the elevation angle in degree.')
-
-
 template = {
     'General': GeneralConfig(),
     'GUIs': GUIs(),
-    'EELS': EELSConfig(),
-    'EDS': EDSConfig(),
     'Plot': PlotConfig(),
 }
 
@@ -227,8 +170,6 @@ def config2template(template, config):
                 value = True
             elif value == 'False':
                 value = False
-            if name == 'fine_structure_smoothing':
-                value = float(value)
             config_dict[name] = value
         traited_class.trait_set(True, **config_dict)
 
@@ -271,8 +212,6 @@ config2template(template, config)
 
 @add_gui_method(toolkey="hyperspy.Preferences")
 class Preferences(t.HasTraits):
-    EELS = t.Instance(EELSConfig)
-    EDS = t.Instance(EDSConfig)
     General = t.Instance(GeneralConfig)
     GUIs = t.Instance(GUIs)
     Plot = t.Instance(PlotConfig)
@@ -284,8 +223,6 @@ class Preferences(t.HasTraits):
 
 
 preferences = Preferences(
-    EELS=template['EELS'],
-    EDS=template['EDS'],
     General=template['General'],
     GUIs=template['GUIs'],
     Plot=template['Plot'],

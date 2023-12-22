@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,10 +21,10 @@
 
 The model module contains the following submodules:
 
-:mod:`~.components1d`
+:mod:`hyperspy.api.model.components1D`
     1D components for HyperSpy model.
 
-:mod:`~.components2d`
+:mod:`hyperspy.api.model.components2D`
     2D components for HyperSpy model.
 
 """

@@ -1,0 +1,9 @@
+name: Package & Test
+
+on: [push, pull_request]
+
+jobs:
+  package_and_test:
+    name: Package and Test
+    # Use the "reusable workflow" from the hyperspy organisation
+    uses: hyperspy/.github/.github/workflows/package_and_test.yml@main

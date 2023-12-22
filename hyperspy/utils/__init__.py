@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -44,22 +44,22 @@ def print_known_signal_types():
 
     Examples
     --------
-    >>> hs.print_known_signal_types()
+    >>> hs.print_known_signal_types() # doctest: +SKIP
     +--------------------+---------------------+--------------------+----------+
     |    signal_type     |       aliases       |     class name     | package  |
     +--------------------+---------------------+--------------------+----------+
-    | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
-    |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
-    |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
-    |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
-    |      hologram      |                     |   HologramImage    | hyperspy |
+    | DielectricFunction | dielectric function | DielectricFunction |  exspy   |
+    |      EDS_SEM       |                     |   EDSSEMSpectrum   |  exspy   |
+    |      EDS_TEM       |                     |   EDSTEMSpectrum   |  exspy   |
+    |        EELS        |       TEM EELS      |    EELSSpectrum    |  exspy   |
+    |      hologram      |                     |   HologramImage    | holospy  |
     |      MySignal      |                     |      MySignal      | hspy_ext |
     +--------------------+---------------------+--------------------+----------+
 
     """
     from hyperspy.ui_registry import ALL_EXTENSIONS
     from prettytable import PrettyTable
-    from hyperspy.misc.utils import print_html
+    from hyperspy.misc.utils import display
     table = PrettyTable()
     table.field_names = [
         "signal_type",
@@ -76,15 +76,12 @@ def print_known_signal_types():
         package = sdict["module"].split(".")[0]
         table.add_row([sdict["signal_type"], aliases, sclass, package])
         table.sortby = "class name"
-    return print_html(f_text=table.get_string,
-                      f_html=table.get_html_string)
+    display(table)
 
 
 __all__ = [
-    'eds',
     'interactive',
     'markers',
-    'material',
     'model',
     'plot',
     'print_known_signal_types',

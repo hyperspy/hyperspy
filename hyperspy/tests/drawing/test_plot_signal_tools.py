@@ -1,4 +1,4 @@
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,8 +19,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from hyperspy.datasets.artificial_data import get_core_loss_eels_model
-from hyperspy import signals, components1d, datasets
+import hyperspy.api as hs
+from hyperspy import signals, components1d
 from hyperspy.signal_tools import (
     ImageContrastEditor,
     BackgroundRemoval,
@@ -82,7 +82,7 @@ def test_plot_BackgroundRemoval_change_background():
     br.background_type = 'Polynomial'
     assert isinstance(
         br.background_estimator,
-        type(components1d.Polynomial(legacy=False))
+        type(components1d.Polynomial())
         )
 
 
@@ -147,15 +147,16 @@ def test_plot_contrast_editor_norm(norm):
 
 
 def test_plot_contrast_editor_complex():
-    s = datasets.example_signals.object_hologram()
+    s = hs.data.wave_image(random_state=0)
+
     fft = s.fft(True)
     fft.plot(True, vmin=None, vmax=None)
     ceditor = ImageContrastEditor(fft._plot.signal_plot)
     assert ceditor.bins == 250
     np.testing.assert_allclose(ceditor._vmin, fft._plot.signal_plot._vmin)
     np.testing.assert_allclose(ceditor._vmax, fft._plot.signal_plot._vmax)
-    np.testing.assert_allclose(ceditor._vmin, 1.495977361e+3)
-    np.testing.assert_allclose(ceditor._vmax, 3.568838458887e+17)
+    np.testing.assert_allclose(ceditor._vmin, 0.2002909426101699)
+    np.testing.assert_allclose(ceditor._vmax, 1074314272.3907123)
 
 
 def test_plot_constrast_editor_setting_changed():
@@ -273,11 +274,11 @@ def test_span_selector_in_signal1d():
 
 
 def test_span_selector_in_signal1d_model():
-    m = get_core_loss_eels_model()
+    m = hs.data.two_gaussians().create_model()
     calibration_tool = SpanSelectorInSignal1D(m)
     assert len(m.signal._plot.signal_plot.ax_lines) == 2
     assert m.signal is calibration_tool.signal
-    calibration_tool.span_selector.extents = (420, 460)
+    calibration_tool.span_selector.extents = (40, 60)
     calibration_tool.span_selector_changed()
     calibration_tool.span_selector_switch(False)
     assert calibration_tool.span_selector is None

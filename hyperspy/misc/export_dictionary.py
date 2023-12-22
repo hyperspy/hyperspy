@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,7 +19,7 @@
 from operator import attrgetter
 from hyperspy.misc.utils import attrsetter
 from copy import deepcopy
-import dill
+import cloudpickle
 from dask.array import Array
 
 
@@ -48,14 +48,15 @@ def parse_flag_string(flags):
 
 
 def export_to_dictionary(target, whitelist, dic, fullcopy=True):
-    """ Exports attributes of target from whitelist.keys() to dictionary dic
+    """
+    Exports attributes of target from whitelist.keys() to dictionary dic
     All values are references only by default.
 
     Parameters
     ----------
     target : object
         must contain the (nested) attributes of the whitelist.keys()
-    whitelist : dictionary
+    whitelist : dict
         A dictionary, keys of which are used as attributes for exporting.
         Key 'self' is only available with tag 'id', when the id of the
         target is saved. The values are either None, or a tuple, where:
@@ -72,15 +73,15 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
         * 'fn': the targeted attribute is a function, and may be pickled. A
           tuple of (thing, value) will be exported to the dictionary,
           where thing is None if function is passed as-is, and True if
-          dill package is used to pickle the function, with the value as
+          cloudpickle package is used to pickle the function, with the value as
           the result of the pickle.
         * 'id': the id of the targeted attribute is exported (e.g. id(target.name))
         * 'sig': The targeted attribute is a signal, and will be converted to a
           dictionary if fullcopy=True
 
-    dic : dictionary
+    dict
         A dictionary where the object will be exported
-    fullcopy : bool
+    bool
         Copies of objects are stored, not references. If any found,
         functions will be pickled and signals converted to dictionaries
 
@@ -121,7 +122,7 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
                     value['data'] = deepcopy(value['data'])
         elif 'fn' in flags:
             if fullcopy:
-                value = (True, dill.dumps(value))
+                value = (True, cloudpickle.dumps(value))
             else:
                 value = (None, value)
         elif fullcopy:
@@ -139,26 +140,27 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
 
 
 def load_from_dictionary(target, dic):
-    """ Loads attributes of target to dictionary dic
+    """
+    Loads attributes of target to dictionary dic
     The attribute list is read from dic['_whitelist'].keys()
 
     Parameters
     ----------
-        target : object
-            must contain the (nested) attributes of the whitelist.keys()
-        dic : dictionary
-            A dictionary, containing field '_whitelist', which is a dictionary
-            with all keys that were exported, with values being flag strings.
-            The convention of the flags is as follows:
+    target : obj
+        must contain the (nested) attributes of the whitelist.keys()
+    dic : dict
+        A dictionary, containing field '_whitelist', which is a dictionary
+        with all keys that were exported, with values being flag strings.
+        The convention of the flags is as follows:
 
-            * 'init': object used for initialization of the target. Will be 
-              copied to the _whitelist after loading
-            * 'fn': the targeted attribute is a function, and may have been 
-              pickled (preferably with dill package).
-            * 'id': the id of the original object was exported and the 
-              attribute will not be set. The key has to be '_id_'
-            * 'sig': The targeted attribute was a signal, and may have been 
-              converted to a dictionary if fullcopy=True
+        * 'init': object used for initialization of the target. Will be
+          copied to the _whitelist after loading
+        * 'fn': the targeted attribute is a function, and may have been
+          pickled (preferably with cloudpickle package).
+        * 'id': the id of the original object was exported and the
+          attribute will not be set. The key has to be '_id_'
+        * 'sig': The targeted attribute was a signal, and may have been
+          converted to a dictionary if fullcopy=True
 
     """
     new_whitelist = {}
@@ -195,11 +197,11 @@ def reconstruct_object(flags, value):
             value._assign_subclass()
         return value
     if 'fn' in flags:
-        ifdill, thing = value
-        if ifdill is None:
+        ifcloudpickle, thing = value
+        if ifcloudpickle is None:
             return thing
-        if ifdill in [True, 'True', b'True']:
-            return dill.loads(thing)
+        if ifcloudpickle in [True, 'True', b'True']:
+            return cloudpickle.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")
     if isinstance(value, Array):

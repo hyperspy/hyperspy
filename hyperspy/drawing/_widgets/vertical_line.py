@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -44,6 +44,10 @@ class VerticalLineWidget(Widget1DBase):
         self._patch = [
             ax.axvline(self._pos[0], color=self.color, alpha=self.alpha, **kwargs)
             ]
+
+    def _onjumpclick(self, event):
+        if event.key == "shift" and event.inaxes and self.is_pointer:
+            self.position = (event.xdata,)
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

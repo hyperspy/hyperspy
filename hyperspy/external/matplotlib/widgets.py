@@ -510,7 +510,7 @@ class SpanSelector(_SelectorWidget):
             # visibility to False and extents to (v, v)
             # update will be called when setting the extents
             self.visible = False
-            self.extents = v, v
+            self._set_extents((v, v))
             # We need to set the visibility back, so the span selector will be
             # drawn when necessary (span width > 0)
             self.visible = True
@@ -609,7 +609,7 @@ class SpanSelector(_SelectorWidget):
             if vmin > vmax:
                 vmin, vmax = vmax, vmin
 
-        self.extents = vmin, vmax
+        self._set_extents((vmin, vmax))
 
         if self.onmove_callback is not None:
             self.onmove_callback(vmin, vmax)
@@ -679,6 +679,10 @@ class SpanSelector(_SelectorWidget):
 
     @extents.setter
     def extents(self, extents):
+        self._set_extents(extents)
+        self._selection_completed = True
+
+    def _set_extents(self, extents):
         # Update displayed shape
         if self.snap_values is not None:
             extents = tuple(self._snap(extents, self.snap_values))

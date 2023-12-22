@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,8 +21,6 @@ import logging
 import numpy as np
 
 from hyperspy._components.expression import Expression
-
-from hyperspy.misc.utils import get_numpy_kwargs
 
 _logger = logging.getLogger(__name__)
 
@@ -54,7 +52,7 @@ class PowerLaw(Expression):
         Location parameter.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Attributes
     ----------
@@ -63,7 +61,7 @@ class PowerLaw(Expression):
     """
 
     def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0,
-                 module="numexpr", compute_gradients=False, **kwargs):
+                 module=None, compute_gradients=False, **kwargs):
         super().__init__(
             expression="where(left_cutoff<x, A*(-origin + x)**-r, 0)",
             name="PowerLaw",
@@ -99,7 +97,7 @@ class PowerLaw(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -114,7 +112,8 @@ class PowerLaw(Expression):
 
         Returns
         -------
-        {bool, tuple of values}
+        bool
+            Exit status required for the :meth:`~.api.signals.Signal1D.remove_background` function.
 
         """
         super()._estimate_parameters(signal)
@@ -138,9 +137,8 @@ class PowerLaw(Expression):
         else:
             from hyperspy.signal import BaseSignal
             shape = s.data.shape[:-1]
-            kw = get_numpy_kwargs(s.data)
-            I1_s = BaseSignal(np.empty(shape, dtype='float', **kw))
-            I2_s = BaseSignal(np.empty(shape, dtype='float', **kw))
+            I1_s = BaseSignal(np.empty(shape, dtype='float', like=s.data))
+            I2_s = BaseSignal(np.empty(shape, dtype='float', like=s.data))
             # Use the `out` parameters to avoid doing the deepcopy
             s.isig[i1:i3].integrate1D(2j, out=I1_s)
             s.isig[i3:i2].integrate1D(2j, out=I2_s)

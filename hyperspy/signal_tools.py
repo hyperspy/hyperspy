@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -33,28 +33,27 @@ from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.axes import AxesManager, UniformDataAxis
 from hyperspy.drawing.widgets import Line2DWidget, VerticalLineWidget
+from hyperspy.drawing.markers import convert_positions
+from hyperspy.drawing._markers.circles import Circles
 from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
-from hyperspy.misc.test_utils import ignore_warning
-from hyperspy.misc.label_position import SpectrumLabelPosition
-from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.signal1d import Signal1DFigure
 from hyperspy.misc.array_tools import numba_histogram
 from hyperspy.misc.math_tools import check_random_state
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 _logger = logging.getLogger(__name__)
 
 
 class LineInSignal2D(t.HasTraits):
-    """Adds a vertical draggable line to a spectrum that reports its
+    """
+    Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     x0, y0, x1, y1 : floats
         Position of the line in scaled units.
     length : float
@@ -449,208 +448,6 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         self.last_calibration_stored = True
 
 
-@add_gui_method(toolkey="hyperspy.EELSSpectrum.print_edges_table")
-class EdgesRange(SpanSelectorInSignal1D):
-    units = t.Unicode()
-    edges_list = t.Tuple()
-    only_major = t.Bool()
-    order = t.Unicode('closest')
-    complementary = t.Bool(True)
-
-    def __init__(self, signal, active=None):
-        if signal.axes_manager.signal_dimension != 1:
-            raise SignalDimensionError(
-                signal.axes_manager.signal_dimension, 1)
-
-        if active is None:
-            super().__init__(signal)
-            self.active_edges = []
-        else:
-            # if active is provided, it is non-interactive mode
-            # so fix the active_edges and don't initialise the span selector
-            self.signal = signal
-            self.axis = self.signal.axes_manager.signal_axes[0]
-            self.active_edges = list(active)
-
-        self.active_complementary_edges = []
-        self.units = self.axis.units
-        self.slp = SpectrumLabelPosition(self.signal)
-        self.btns = []
-
-        self._get_edges_info_within_energy_axis()
-
-        self.signal.axes_manager.events.indices_changed.connect(
-            self._on_figure_changed, [])
-        self.signal._plot.signal_plot.events.closed.connect(
-            lambda: self.signal.axes_manager.events.indices_changed.disconnect(
-            self._on_figure_changed), [])
-
-    def _get_edges_info_within_energy_axis(self):
-        mid_energy = (self.axis.low_value + self.axis.high_value) / 2
-        rng = self.axis.high_value - self.axis.low_value
-        self.edge_all = np.asarray(get_edges_near_energy(mid_energy, rng,
-                                                         order=self.order))
-        info = get_info_from_edges(self.edge_all)
-
-        energy_all = []
-        relevance_all = []
-        description_all = []
-        for d in info:
-            onset = d['onset_energy (eV)']
-            relevance = d['relevance']
-            threshold = d['threshold']
-            edge_ = d['edge']
-            description = threshold + '. '*(threshold !='' and edge_ !='') + edge_
-
-            energy_all.append(onset)
-            relevance_all.append(relevance)
-            description_all.append(description)
-
-        self.energy_all = np.asarray(energy_all)
-        self.relevance_all = np.asarray(relevance_all)
-        self.description_all = np.asarray(description_all)
-
-    def _on_figure_changed(self):
-        self.slp._set_active_figure_properties()
-        self._plot_labels()
-        self.signal._plot.signal_plot.update()
-
-    def update_table(self):
-        figure_changed = self.slp._check_signal_figure_changed()
-        if figure_changed:
-            self._on_figure_changed()
-
-        if self.span_selector is not None:
-            energy_mask = (self.ss_left_value <= self.energy_all) & \
-                (self.energy_all <= self.ss_right_value)
-            if self.only_major:
-                relevance_mask = self.relevance_all == 'Major'
-            else:
-                relevance_mask = np.ones(len(self.edge_all), bool)
-
-            mask = energy_mask & relevance_mask
-            self.edges_list = tuple(self.edge_all[mask])
-            energy = tuple(self.energy_all[mask])
-            relevance = tuple(self.relevance_all[mask])
-            description = tuple(self.description_all[mask])
-        else:
-            self.edges_list = ()
-            energy, relevance, description = (), (), ()
-
-        self._keep_valid_edges()
-
-        return self.edges_list, energy, relevance, description
-
-    def _keep_valid_edges(self):
-        edge_all = list(self.signal._edge_markers.keys())
-        for edge in edge_all:
-            if (edge not in self.edges_list):
-                if edge in self.active_edges:
-                    self.active_edges.remove(edge)
-                elif edge in self.active_complementary_edges:
-                    self.active_complementary_edges.remove(edge)
-                self.signal.remove_EELS_edges_markers([edge])
-            elif (edge not in self.active_edges):
-                self.active_edges.append(edge)
-
-        self.on_complementary()
-        self._plot_labels()
-
-    def update_active_edge(self, change):
-        state = change['new']
-        edge = change['owner'].description
-
-        if state:
-            self.active_edges.append(edge)
-        else:
-            if edge in self.active_edges:
-                self.active_edges.remove(edge)
-            if edge in self.active_complementary_edges:
-                self.active_complementary_edges.remove(edge)
-            self.signal.remove_EELS_edges_markers([edge])
-
-        figure_changed = self.slp._check_signal_figure_changed()
-        if figure_changed:
-            self._on_figure_changed()
-        self.on_complementary()
-        self._plot_labels()
-
-    def on_complementary(self):
-        if self.complementary:
-            self.active_complementary_edges = \
-                self.signal.get_complementary_edges(self.active_edges,
-                                                    self.only_major)
-        else:
-            self.active_complementary_edges = []
-
-    def check_btn_state(self):
-        edges = [btn.description for btn in self.btns]
-        for btn in self.btns:
-            edge = btn.description
-            if btn.value is False:
-                if edge in self.active_edges:
-                    self.active_edges.remove(edge)
-                    self.signal.remove_EELS_edges_markers([edge])
-                if edge in self.active_complementary_edges:
-                    btn.value = True
-
-            if btn.value is True and self.complementary:
-                comp = self.signal.get_complementary_edges(self.active_edges,
-                                                           self.only_major)
-                for cedge in comp:
-                    if cedge in edges:
-                        pos = edges.index(cedge)
-                        self.btns[pos].value = True
-
-    def _plot_labels(self, active=None, complementary=None):
-        # plot selected and/or complementary edges
-        if active is None:
-            active = self.active_edges
-        if complementary is None:
-            complementary = self.active_complementary_edges
-
-        edges_on_signal = set(self.signal._edge_markers.keys())
-        edges_to_show = set(set(active).union(complementary))
-        edge_keep = edges_on_signal.intersection(edges_to_show)
-        edge_remove =  edges_on_signal.difference(edge_keep)
-        edge_add = edges_to_show.difference(edge_keep)
-
-        self._clear_markers(edge_remove)
-
-        # all edges to be shown on the signal
-        edge_dict = self.signal._get_edges(edges_to_show, ('Major', 'Minor'))
-        vm_new, tm_new = self.slp.get_markers(edge_dict)
-        for k, edge in enumerate(edge_dict.keys()):
-            v = vm_new[k]
-            t = tm_new[k]
-
-            if edge in edge_keep:
-                # update position of vertical line segment
-                self.signal._edge_markers[edge][0].data = v.data
-                self.signal._edge_markers[edge][0].update()
-
-                # update position of text box
-                self.signal._edge_markers[edge][1].data = t.data
-                self.signal._edge_markers[edge][1].update()
-            elif edge in edge_add:
-                # first argument as dictionary for consistency
-                self.signal.plot_edges_label({edge: edge_dict[edge]},
-                                             vertical_line_marker=[v],
-                                             text_marker=[t])
-
-    def _clear_markers(self, edges=None):
-        if edges is None:
-            edges = list(self.signal._edge_markers.keys())
-
-        self.signal.remove_EELS_edges_markers(list(edges))
-
-        for edge in edges:
-            if edge in self.active_edges:
-                self.active_edges.remove(edge)
-            if edge in self.active_complementary_edges:
-                self.active_complementary_edges.remove(edge)
-
-
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
@@ -838,7 +635,7 @@ class SmoothingSavitzkyGolay(Smoothing):
         super()._differential_order_changed(old, new)
 
     def diff_model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+        self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
@@ -846,7 +643,7 @@ class SmoothingSavitzkyGolay(Smoothing):
         return self.single_spectrum.data
 
     def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+        self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
@@ -883,7 +680,7 @@ class SmoothingLowess(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+        self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_lowess(
             smoothing_parameter=self.smoothing_parameter,
             number_of_iterations=self.number_of_iterations,
@@ -906,7 +703,7 @@ class SmoothingTV(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+        self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_tv(
             smoothing_parameter=self.smoothing_parameter,
             show_progressbar=False)
@@ -937,7 +734,7 @@ class ButterworthFilter(Smoothing):
     def model2plot(self, axes_manager=None):
         b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
-        smoothed = sp_signal.filtfilt(b, a, self.signal())
+        smoothed = sp_signal.filtfilt(b, a, self.signal._get_current_data())
         return smoothed
 
     def apply(self):
@@ -1390,28 +1187,6 @@ IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS = _IMAGE_CONTRAST_EDITOR_HELP.replace(
     "PERCENTILE", _PERCENTILE_IPYWIDGETS)
 
 
-@add_gui_method(toolkey="hyperspy.Signal1D.integrate_in_range")
-class IntegrateArea(SpanSelectorInSignal1D):
-    integrate = t.Button()
-
-    def apply(self):
-        integrated_spectrum = self.signal._integrate_in_range_commandline(
-            signal_range=(
-                self.ss_left_value,
-                self.ss_right_value)
-        )
-        # Replaces the original signal inplace with the new integrated spectrum
-        plot = False
-        if self.signal._plot and integrated_spectrum.axes_manager.shape != ():
-            self.signal._plot.close()
-            plot = True
-        self.signal.__init__(**integrated_spectrum._to_dictionary())
-        self.signal.transpose(signal_axes=[])
-
-        if plot is True:
-            self.signal.plot()
-
-
 @add_gui_method(toolkey="hyperspy.Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
@@ -1557,9 +1332,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.axis.axis[from_index:to_index])
             to_return = bg_array
 
-        if is_binned(self.signal) is True:
-        # in v2 replace by
-        #if self.axis.is_binned is True:
+        if self.axis.is_binned:
             if self.axis.is_uniform:
                 to_return *= self.axis.scale
             else:
@@ -1567,7 +1340,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         return to_return
 
     def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
-        return self.signal() - self.bg_line.line.get_ydata()
+        return self.signal._get_current_data() - self.bg_line.line.get_ydata()
 
     def span_selector_changed(self, *args, **kwargs):
         super().span_selector_changed()
@@ -1582,7 +1355,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def _fit(self):
         if not self._is_valid_range:
             return
-        # Set signal range here to set correctly the channel_switches for
+        # Set signal range here to set correctly the _channel_switches for
         # the chisq calculation when using fast
         self.model.set_signal_range(self.ss_left_value, self.ss_right_value)
         if self.fast:
@@ -1670,9 +1443,7 @@ def _get_background_estimator(background_type, polynomial_order=1):
         background_estimator = components1d.Offset()
         bg_line_range = 'full'
     elif background_type == 'polynomial':
-        with ignore_warning(message="The API of the `Polynomial` component"):
-            background_estimator = components1d.Polynomial(
-                 order=polynomial_order, legacy=False)
+        background_estimator = components1d.Polynomial(order=polynomial_order)
         bg_line_range = 'full'
     elif background_type == 'powerlaw':
         background_estimator = components1d.PowerLaw()
@@ -1687,8 +1458,7 @@ def _get_background_estimator(background_type, polynomial_order=1):
         background_estimator = components1d.SplitVoigt()
         bg_line_range = 'full'
     elif background_type == 'voigt':
-        with ignore_warning(message="The API of the `Voigt` component"):
-            background_estimator = components1d.Voigt(legacy=False)
+        background_estimator = components1d.Voigt()
         bg_line_range = 'full'
     else:
         raise ValueError(f"Background type '{background_type}' not recognized.")
@@ -1774,8 +1544,8 @@ class SpikesRemoval:
             _logger.info(f'Threshold value: {threshold}')
         self.argmax = None
         self.derivmax = None
-        self.kind = "linear"
-        self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
+        self.spline_order = 1
+        self._temp_mask = np.zeros(self.signal._get_current_data().shape, dtype='bool')
         self.index = 0
         self.threshold = threshold
         md = self.signal.metadata
@@ -1796,7 +1566,7 @@ class SpikesRemoval:
 
     def detect_spike(self):
         axis = self.signal.axes_manager.signal_axes[-1].axis
-        derivative = np.gradient(self.signal(), axis)
+        derivative = np.gradient(self.signal._get_current_data(), axis)
         if self.signal_mask is not None:
             derivative[self.signal_mask] = 0
         if self.argmax is not None:
@@ -1850,13 +1620,10 @@ class SpikesRemoval:
         return left, right
 
     def get_interpolated_spectrum(self, axes_manager=None):
-        data = self.signal().copy()
+        data = self.signal._get_current_data().copy()
         axis = self.signal.axes_manager.signal_axes[0]
         left, right = self.get_interpolation_range()
-        if self.kind == 'linear':
-            pad = 1
-        else:
-            pad = self.spline_order
+        pad = self.spline_order
         ileft = left - pad
         iright = right + pad
         ileft = np.clip(ileft, 0, len(data))
@@ -1879,7 +1646,7 @@ class SpikesRemoval:
             # Interpolate
             x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
             y = np.hstack((data[ileft:left], data[right:iright]))
-            intp = interpolate.interp1d(x, y, kind=self.kind)
+            intp = interpolate.make_interp_spline(x, y, k=self.spline_order)
             data[left:right] = intp(axis.axis[left:right])
 
         # Add noise
@@ -1903,23 +1670,17 @@ class SpikesRemoval:
     def remove_all_spikes(self):
         spike = self.find()
         while spike:
-            self.signal()[:] = self.get_interpolated_spectrum()
+            self.signal._get_current_data()[:] = self.get_interpolated_spectrum()
             spike = self.find()
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.spikes_removal_tool")
 class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
-    interpolator_kind = t.Enum(
-        'Linear',
-        'Spline',
-        default='Linear',
-        desc="the type of interpolation to use when\n"
-             "replacing the signal where a spike has been replaced")
     threshold = t.Float(400, desc="the derivative magnitude threshold above\n"
                         "which to find spikes")
     click_to_show_instructions = t.Button()
     show_derivative_histogram = t.Button()
-    spline_order = t.Range(1, 10, 3,
+    spline_order = t.Range(1, 10, 1,
                            desc="the order of the spline used to\n"
                            "connect the reconstructed data")
     interpolator = None
@@ -1989,7 +1750,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             return
         else:
             minimum = max(0, self.argmax - 50)
-            maximum = min(len(self.signal()) - 1, self.argmax + 50)
+            maximum = min(len(self.signal._get_current_data()) - 1, self.argmax + 50)
             thresh_label = DerivativeTextParameters(
                 text=r"$\mathsf{\delta}_\mathsf{max}=$",
                 color="black")
@@ -2023,7 +1784,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             self.mask_filling.remove()
         if self.signal_mask is not None:
             self.mask_filling = self.ax.fill_between(self.axis.axis,
-                                                     self.signal(), 0,
+                                                     self.signal._get_current_data(), 0,
                                                      where=self.signal_mask,
                                                      facecolor='blue',
                                                      alpha=0.5)
@@ -2040,17 +1801,11 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             self.interpolated_line = None
 
     def _spline_order_changed(self, old, new):
-        self.kind = self.spline_order
-        self.span_selector_changed()
+        if new != old:
+            self.spline_order = new
+            self.span_selector_changed()
 
     def _add_noise_changed(self, old, new):
-        self.span_selector_changed()
-
-    def _interpolator_kind_changed(self, old, new):
-        if new == 'linear':
-            self.kind = new
-        else:
-            self.kind = self.spline_order
         self.span_selector_changed()
 
     def create_interpolation_line(self):
@@ -2074,7 +1829,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
     def apply(self):
         if not self.interpolated_line:  # No spike selected
             return
-        self.signal()[:] = self.get_interpolated_spectrum()
+        self.signal._get_current_data()[:] = self.get_interpolated_spectrum()
         self.signal.events.data_changed.trigger(obj=self.signal)
         self.update_spectrum_line()
         self.interpolated_line.close()
@@ -2200,6 +1955,7 @@ class PeaksFinder2D(t.HasTraits):
 
         self.signal = signal
         self.peaks = peaks
+        self.markers = None
         if self.signal._plot is None or not self.signal._plot.is_active:
             self.signal.plot()
         if self.signal.axes_manager.navigation_size > 0:
@@ -2266,31 +2022,17 @@ class PeaksFinder2D(t.HasTraits):
         self.peaks.data = self.signal.find_peaks(method, current_index=True,
                                                  interactive=False,
                                                  **self._get_parameters(method))
-
     def _plot_markers(self):
-        if self.signal._plot is not None and self.signal._plot.is_active:
-            self.signal._plot.signal_plot.remove_markers(render_figure=True)
-        peaks_markers = self._peaks_to_marker()
-        self.signal.add_marker(peaks_markers, render_figure=True)
-
-    def _peaks_to_marker(self, markersize=20, add_numbers=True,
-                         color='red'):
-        # make marker_list for current index
-        from hyperspy.drawing._markers.point import Point
-
-        x_axis = self.signal.axes_manager.signal_axes[0]
-        y_axis = self.signal.axes_manager.signal_axes[1]
-
-        if np.isnan(self.peaks.data).all():
-            marker_list = []
+        offsets = self.peaks.data
+        offsets = convert_positions(offsets, self.signal.axes_manager.signal_axes)
+        if self.markers is None:
+            self.markers = Circles(offsets=offsets,
+                                   edgecolor='red',
+                                   facecolors="none",
+                                   sizes=20,
+                                   units="points")
         else:
-            marker_list = [Point(x=x_axis.index2value(int(round(x))),
-                                 y=y_axis.index2value(int(round(y))),
-                                 color=color,
-                                 size=markersize)
-                for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
-
-        return marker_list
+            self.markers.offsets = offsets
 
     def compute_navigation(self):
         method = self._normalise_method_name(self.method)

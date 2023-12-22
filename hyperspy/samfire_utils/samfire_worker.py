@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,7 +22,7 @@ import time
 import sys
 from itertools import combinations, product
 from queue import Empty
-import dill
+import cloudpickle
 import numpy as np
 import matplotlib
 
@@ -167,11 +167,11 @@ class Worker:
 
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
         if 'min_function' in self.fitting_kwargs:
-            self.fitting_kwargs['min_function'] = dill.loads(
+            self.fitting_kwargs['min_function'] = cloudpickle.loads(
                 self.fitting_kwargs['min_function'])
         if 'min_function_grad' in self.fitting_kwargs and isinstance(
                 self.fitting_kwargs['min_function_grad'], bytes):
-            self.fitting_kwargs['min_function_grad'] = dill.loads(
+            self.fitting_kwargs['min_function_grad'] = cloudpickle.loads(
                 self.fitting_kwargs['min_function_grad'])
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
@@ -239,7 +239,7 @@ class Worker:
         self.result_queue.put(to_send)
 
     def setup_test(self, test_string):
-        self.fit_test = dill.loads(test_string)
+        self.fit_test = cloudpickle.loads(test_string)
 
     def start_listening(self):
         self._listening = True

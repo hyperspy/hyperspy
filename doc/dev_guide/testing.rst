@@ -24,9 +24,9 @@ all the work that you do.
 **Useful testing hints:**
 
 * When comparing integers, it's fine to use ``==``
-* When comparing floats, be sure to use :py:meth:`np.testing.assert_allclose`
-  or :py:meth:`np.testing.assert_almost_equal`
-* :py:meth:`np.testing.assert_allclose` is also convenient for comparing
+* When comparing floats, be sure to use :func:`numpy.testing.assert_allclose`
+  or :func:`numpy.testing.assert_almost_equal`
+* :func:`numpy.testing.assert_allclose` is also convenient for comparing
   numpy arrays
 * The ``hyperspy.misc.test_utils.py`` contains a few useful functions for
   testing
@@ -48,7 +48,7 @@ all the work that you do.
 
    >>> # Clear the memory
    >>> del s
-   >>> gc.collect()
+   >>> gc.collect() # doctest: +SKIP
 
 
 Running tests
@@ -108,6 +108,17 @@ that all tests in a file run in the same worker.
     and format of the output of ``pytest`` to the console. We recommend installing
     `pytest-sugar <https://pypi.org/project/pytest-sugar/>`_ to produce
     nicer-looking output including an animated progressbar.
+
+To test docstring examples, assuming the current location is the HyperSpy root
+directory:
+
+.. code:: bash
+
+    # All
+    $ pytest --doctest-modules --ignore-glob=hyperspy/tests --pyargs hyperspy
+
+    # In a single file, like the signal.py file
+    $ pytest --doctest-modules hyperspy/signal.py
 
 
 Flaky tests

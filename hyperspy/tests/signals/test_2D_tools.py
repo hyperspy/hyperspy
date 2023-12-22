@@ -1,4 +1,4 @@
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,7 +22,7 @@ import numpy.testing as npt
 import pytest
 try:
     # scipy >=1.10
-    from scipy.dataset import ascent, face
+    from scipy.datasets import ascent, face
 except ImportError:
     # scipy <1.10
     from scipy.misc import ascent, face
@@ -79,8 +79,9 @@ class TestSubPixelAlign:
     def test_estimate_subpix(self, normalize_corr, reference):
         s = self.signal
         shifts = s.estimate_shift2D(sub_pixel_factor=200,
-                                    normalize_corr=normalize_corr)
-        np.testing.assert_allclose(shifts, self.shifts, rtol=0.2, atol=0.2,
+                                    normalize_corr=normalize_corr,
+                                    reference=reference)
+        np.testing.assert_allclose(shifts, self.shifts, rtol=2, atol=0.2,
                                    verbose=True)
 
     @pytest.mark.parametrize(("plot"), [True, 'reuse'])

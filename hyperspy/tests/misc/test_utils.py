@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,7 +18,9 @@
 
 import dask.array as da
 import numpy as np
+from prettytable import PrettyTable
 import pytest
+
 
 from hyperspy import signals
 from hyperspy.misc.utils import (
@@ -31,12 +33,11 @@ from hyperspy.misc.utils import (
     fsdict,
     closest_power_of_two,
     shorten_name,
-    is_binned,
     is_cupy_array,
     to_numpy,
-    get_array_module
+    get_array_module,
 )
-from hyperspy.exceptions import VisibleDeprecationWarning
+
 
 try:
     import cupy as cp
@@ -138,15 +139,6 @@ def test_shorten_name():
         shorten_name("And now for soemthing completely different.", 16)
         == "And now for so.."
     )
-
-
-# Can be removed in v2.0:
-def test_is_binned():
-    s = signals.Signal1D(np.zeros((5, 5)))
-    assert is_binned(s) == s.axes_manager[-1].is_binned
-    with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
-        s.metadata.set_item("Signal.binned", True)
-    assert is_binned(s) == s.metadata.Signal.binned
 
 
 @skip_cupy

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,12 +18,9 @@
 
 import dask.array as da
 import numpy as np
-from packaging.version import Version
-import sympy
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 sqrt2pi = np.sqrt(2 * np.pi)
@@ -34,7 +31,7 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     i1, i2 = axis.value_range_to_indices(x1, x2)
     X = axis.axis[i1:i2]
     if only_current is True:
-        data = signal()[i1:i2]
+        data = signal._get_current_data()[i1:i2]
         X_shape = (len(X),)
         i = 0
         x0_shape = (1,)
@@ -118,7 +115,7 @@ class SkewNormal(Expression):
 
 
     Parameters
-    -----------
+    ----------
     x0 : float
         Location of the peak position (not maximum, which is given by
         the `mode` property).
@@ -133,7 +130,7 @@ class SkewNormal(Expression):
         left skewed if shape<0.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Notes
     -----
@@ -143,9 +140,6 @@ class SkewNormal(Expression):
 
     def __init__(self, x0=0., A=1., scale=1., shape=0.,
                  module=['numpy', 'scipy'], **kwargs):
-        if Version(sympy.__version__) < Version("1.3"):
-            raise ImportError("The `SkewNormal` component requires "
-                              "SymPy >= 1.3")
         # We use `_shape` internally because `shape` is already taken in sympy
         # https://github.com/sympy/sympy/pull/20791
         super().__init__(
@@ -177,7 +171,7 @@ class SkewNormal(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -208,6 +202,7 @@ class SkewNormal(Expression):
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
+        True
         """
 
         super()._estimate_parameters(signal)
@@ -222,9 +217,7 @@ class SkewNormal(Expression):
             self.A.value = height * sqrt2pi
             self.scale.value = scale
             self.shape.value = shape
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.value /= scaling_factor
             return True
         else:
@@ -232,9 +225,7 @@ class SkewNormal(Expression):
                 self._create_arrays()
             self.A.map['values'][:] = height * sqrt2pi
 
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0

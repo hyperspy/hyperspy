@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -181,16 +181,14 @@ def check_random_state(seed, lazy=False):
 
     Parameters
     ----------
-    seed : None or int or np.random.RandomState or np.random.Generator or
-        dask.array.random.RandomState or da.random.Generator
-        If None:
-            Return the random state singleton used by
-            np.random or dask.array.random
-        If int:
-            Return a new random state instance seeded with ``seed``.
-        If np.random.RandomState, np.random.Generator,
-        dask.array.random.RandomState:
-            Return seed.
+    seed : None or int or numpy.random.RandomState or numpy.random.Generator or \
+        dask.array.random.RandomState or dask.array.random.Generator
+
+        - If None, returns the random state singleton used by numpy.random or
+          dask.array.random
+        - If int, returns a new random state instance seeded with ``seed``.
+        - If numpy.random.RandomState, numpy.random.Generator or
+          dask.array.random.RandomState, returns seed, `i.e.` the input.
     lazy : bool, default False
         If True, and seed is ``None`` or ``int``, return
         a dask.array.random.RandomState instance instead for dask < 2023.2.1,
@@ -198,7 +196,7 @@ def check_random_state(seed, lazy=False):
 
     Returns
     -------
-    np.random.Generator instance or
+    np.random.Generator instance or dask.array.random.Generator
 
     """
     # Derived from `sklearn.utils.check_random_state`.

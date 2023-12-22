@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -48,4 +48,8 @@ class HorizontalLineWidget(Widget1DBase):
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""
         if self.picked is True and event.inaxes:
+            self.position = (event.ydata,)
+
+    def _onjumpclick(self, event):
+        if event.key == "shift" and event.inaxes and self.is_pointer:
             self.position = (event.ydata,)

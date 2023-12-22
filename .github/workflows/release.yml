@@ -1,4 +1,9 @@
 name: Release
+# Reusable workflow are not supported with trusted publisher
+# https://github.com/pypa/gh-action-pypi-publish/issues/166
+# copy and paste
+# https://github.com/hyperspy/.github/blob/main/.github/workflows/release_pure_python.yml
+
 # This workflow builds the wheels "on tag".
 # If run from the hyperspy/hyperspy repository, the wheels will be uploaded to pypi ;
 # otherwise, the wheels will be available as a github artifact.
@@ -9,139 +14,42 @@ on:
     - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
-  create_release:
+  package_and_test:
+    name: Package and Test
+    # Use the "reusable workflow" from the hyperspy organisation
+    uses: hyperspy/.github/.github/workflows/package_and_test.yml@main
+
+  upload_to_pypi:
+    needs: [package_and_test]
+    runs-on: ubuntu-latest
+    name: Upload to pypi
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    steps:
+    - name: Download dist
+      uses: actions/download-artifact@v4
+
+    - name: Display downloaded files
+      run: |
+        ls -shR
+      working-directory: dist
+
+    - uses: pypa/gh-action-pypi-publish@release/v1
+      if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository_owner == 'hyperspy' }}
+      # See https://docs.pypi.org/trusted-publishers/using-a-publisher/
+
+  create_github_release:
+    # If zenodo is setup to create a DOI automatically on a GitHub release,
+    # this step will trigger the mining of the DOI
+    needs: upload_to_pypi
     permissions:
       contents: write
-    name: Create Release
+    name: Create GitHub Release
     runs-on: ubuntu-latest
-    outputs: 
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Create Release
-        id: create_release
+        if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository_owner == 'hyperspy' }}
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
-
-  build_wheels:
-    name: Wheels on ${{ matrix.os }}/py${{ matrix.python-version }}
-    needs: create_release
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v4
-        name: Install Python
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: What OS and Python version
-        run: |
-          uname -a
-          python --version
-          which python
-
-      - name: install build and twine
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build twine
-
-      - name: Build wheels
-        run: |
-          python -m build
-
-      - name: Display content dist folder
-        run: |
-          ls dist/
-
-      - name: Install and test distribution
-        env:
-          MPLBACKEND: agg
-        run: |
-          pip install --pre --find-links dist hyperspy[tests]==1.7.6
-          pytest --pyargs hyperspy -k "not test_navigation_shape_signal2D"
-
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./dist/*.whl
-
-      - name: Publish wheels to PyPI
-        if: github.repository_owner == 'hyperspy'
-        env:
-          # Github secret set in the hyperspy/hyperspy repository
-          # Not available from fork or pull request
-          # Secrets are not passed to workflows that are triggered by a pull request from a fork
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          twine upload dist/*.whl --verbose
-
-  build_wheels_linux:
-    name: Wheels on ubuntu-latest
-    needs: create_release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Build source distribution
-        run: |
-          pip install build
-          python -m build --sdist
-
-      - name: Build manylinux Python wheels
-        uses: RalfG/python-wheels-manylinux-build@ff8504699f7a33a08d3ff85b3c6d4e8f0e70462b
-        with:
-          python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311'
-          build-requirements: 'cython'
-
-      - name: Display content dist folder
-        run: |
-          ls dist/
-
-      - name: Install and test distribution
-        env:
-          MPLBACKEND: agg
-        run: |
-          pip install --pre --find-links dist hyperspy[tests]==1.7.6
-          pytest --pyargs hyperspy -k "not test_navigation_shape_signal2D"
-
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          path: |
-            ./dist/*-manylinux*.whl
-            ./sdist/*.tar.gz
-
-      - name: Publish wheels to PyPI
-        if: github.repository_owner == 'hyperspy'
-        env:
-          # Github secret set in the hyperspy/hyperspy repository
-          # Not available from fork or pull request
-          # Secrets are not passed to workflows that are triggered by a pull request from a fork
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          twine upload dist/*-manylinux*.whl --verbose 
-          twine upload dist/*.tar.gz --verbose 
-
-      # Don't use the pypa publish action for now as we need to filter the `linux` wheels
-      # With hyperspy 2.0, it will be noarch and the release workflow will refactor
-      # - name: Publish wheels to PyPI
-      #   if: github.repository_owner == 'hyperspy'
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     # Github secret set in the hyperspy/hyperspy repository
-      #     # Not available from fork or pull request
-      #     # Secrets are not passed to workflows that are triggered by a pull request from a fork
-      #     password: ${{ secrets.PYPI_API_TOKEN }}

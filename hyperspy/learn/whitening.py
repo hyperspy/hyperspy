@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -38,22 +38,22 @@ def whiten_data(X, centre=True, method="PCA", epsilon=1e-10):
 
     Parameters
     ----------
-    X : numpy array, shape (m, n)
-        The input data.
+    X : numpy,ndarray
+        The input data with shape (m, n).
     centre : bool, default True
         If True, centre the data along the features axis.
         If False, do not centre the data.
     method : {"PCA", "ZCA"}
         How to whiten the data. The default is PCA whitening.
-    epsilon : float
+    epsilon : float, default 1e-10
         Small floating-point value to avoid divide-by-zero errors.
 
     Returns
     -------
-    Y : numpy array, shape (m, n)
-        The centred and whitened data.
-    W : numpy array, shape (n, n)
-        The whitening matrix.
+    Y : numpy.ndarray
+        The centred and whitened data with shape (m, n).
+    W : numpy.ndarray
+        The whitening matrix with shape (n, n).
 
     References
     ----------

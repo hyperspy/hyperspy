@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -102,11 +102,11 @@ class TestParameterDictionary:
 
         rn = np.random.random()
         np.testing.assert_equal(
-            p.twin_function(rn),
-            self.par.twin_function(rn))
+            p._twin_function(rn),
+            self.par._twin_function(rn))
         np.testing.assert_equal(
-            p.twin_inverse_function(rn),
-            self.par.twin_inverse_function(rn))
+            p._twin_inverse_function(rn),
+            self.par._twin_inverse_function(rn))
 
     def test_invalid_name(self):
         d = self.par.as_dictionary()
@@ -166,10 +166,10 @@ class TestComponentDictionary:
 
         for pn, pc in zip(n.parameters, c.parameters):
             rn = np.random.random()
-            assert pn.twin_function(rn) == pc.twin_function(rn)
+            assert pn._twin_function(rn) == pc._twin_function(rn)
             assert (
-                pn.twin_inverse_function(rn) ==
-                pc.twin_inverse_function(rn))
+                pn._twin_inverse_function(rn) ==
+                pc._twin_inverse_function(rn))
             dn = pn.as_dictionary()
             del dn['self']
             dc = pc.as_dictionary()
@@ -199,7 +199,6 @@ class TestModelDictionary:
     def setup_method(self, method):
         s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
-        m.low_loss = (s + 3.0).deepcopy()
         self.model = m
         self.s = s
 
@@ -213,14 +212,11 @@ class TestModelDictionary:
         m = self.model
         d = m.as_dictionary()
 
-        print(d['low_loss'])
-        np.testing.assert_allclose(m.low_loss.data, d['low_loss']['data'])
         np.testing.assert_allclose(m.chisq.data, d['chisq.data'])
         np.testing.assert_allclose(m.dof.data, d['dof.data'])
         np.testing.assert_equal(
             d['free_parameters_boundaries'],
             m.free_parameters_boundaries)
-        assert d['convolved'] is m.convolved
 
         for num, c in enumerate(m):
             tmp = c.as_dictionary()
@@ -241,12 +237,9 @@ class TestModelDictionary:
         np.testing.assert_allclose(mo.chisq.data, mn.chisq.data)
         np.testing.assert_allclose(mo.dof.data, mn.dof.data)
 
-        np.testing.assert_allclose(mn.low_loss.data, mo.low_loss.data)
-
         np.testing.assert_equal(
             mn.free_parameters_boundaries,
             mo.free_parameters_boundaries)
-        assert mn.convolved is mo.convolved
         for i in range(len(mn)):
             assert mn[i]._id_name == mo[i]._id_name
             for po, pn in zip(mo[i].parameters, mn[i].parameters):

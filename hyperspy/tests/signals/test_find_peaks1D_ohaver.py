@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -28,12 +28,10 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 class TestFindPeaks1DOhaver:
     def setup_method(self, method):
         with pytest.warns(VisibleDeprecationWarning):
-            filepath = (
-                Path(__file__)
-                .resolve()
-                .parent.joinpath("data/test_find_peaks1D_ohaver.hdf5")
-            )
-            self.signal = load(filepath)
+            self.signal = load(
+                Path(__file__).parent / "data" / "test_find_peaks1D_ohaver.hdf5",
+                reader='hspy'
+                )
 
     def test_find_peaks1D_ohaver_high_amp_thres(self):
         signal1D = self.signal

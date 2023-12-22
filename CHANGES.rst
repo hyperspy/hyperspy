@@ -1,3 +1,5 @@
+.. _changelog:
+
 Changelog
 *********
 
@@ -8,8 +10,399 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
-Hyperspy 1.7.6 (2023-11-17)
-===========================
+
+.. _changes_2.0:
+
+2.0 (2023-12-20)
+================
+
+Release Highlights
+------------------
+- Hyperspy has split off some of the file reading/writing and domain specific functionalities into separate libraries!
+  
+  - `RosettaSciIO <https://hyperspy.org/rosettasciio>`_: A library for reading and writing scientific data files.
+    See `RosettaSciIO release notes <https://hyperspy.org/rosettasciio/changes.html>`_ for new features and supported formats.
+  - `exSpy <https://exspy.readthedocs.io>`_: A library for EELS and EDS analysis.
+    See `exSpy release notes <https://hyperspy.org/exspy/changes.html>`_ for new features.
+  - `HoloSpy <https://holospy.readthedocs.io>`_: A library for analysis of (off-axis) electron holography data.
+    See `HoloSpy release notes <https://holospy.readthedocs.io/en/latest/changes.html>`_ for new features.
+
+- The :py:mod:`~.api.plot.markers` API has been refactored
+
+  - Lazy markers are now supported
+  - Plotting many markers is now `much` faster
+  - Added :py:class:`~.api.plot.markers.Polygons` marker
+
+- The documentation has been restructured and improved!
+
+  - Short example scripts are now included in the documentation
+  - Improved guides for lazy computing as well as an improved developer guide
+
+- Plotting is easier and more consistent:
+
+  - Added horizontal figure layout choice when using the ``ipympl`` backend
+  - Changing navigation coordinates using the keyboard arrow-keys has been removed.
+    Use ``Crtl`` + ``Arrow`` instead.
+  - Jump to navigation position using ``shift`` + click in the navigator figure.
+
+- HyperSpy now works with Pyodide/Jupyterlite, checkout `hyperspy.org/jupyterlite-hyperspy <https://hyperspy.org/jupyterlite-hyperspy>`_!
+- The deprecated API has removed: see the list of API changes and removal in the :ref:`sections below <hyperspy_2.0_api_changes>`.
+
+New features
+------------
+
+- :py:meth:`~._signals.lazy.LazySignal.compute` will now pass keyword arguments to the dask :meth:`dask.array.Array.compute` method. This enables setting the scheduler and the number of computational workers. (`#2971 <https://github.com/hyperspy/hyperspy/issues/2971>`_)
+- Changes to :meth:`~.api.signals.BaseSignal.plot`:
+  
+  - Added horizontal figure layout choice when using the ``ipympl`` backend. The default layour can be set in the plot section of the preferences GUI. (`#3140 <https://github.com/hyperspy/hyperspy/issues/3140>`_)
+  
+- Changes to :meth:`~.api.signals.Signal2D.find_peaks`:
+  
+  - Lazy signals return lazy peak signals
+  - ``get_intensity`` argument added to get the intensity of the peaks
+  - The signal axes are now stored in the ``metadata.Peaks.signal_axes`` attribute of the peaks' signal. (`#3142 <https://github.com/hyperspy/hyperspy/issues/3142>`_)
+  
+- Change the logging output so that logging messages are not displayed in red, to avoid confusion with errors. (`#3173 <https://github.com/hyperspy/hyperspy/issues/3173>`_)
+- Added ``hyperspy.decorators.deprecated`` and ``hyperspy.decorators.deprecated_argument``:
+
+  - Provide consistent and clean deprecation
+  - Added a guide for deprecating code (`#3174 <https://github.com/hyperspy/hyperspy/issues/3174>`_)
+  
+- Add functionality to select navigation position using ``shift`` + click in the navigator. (`#3175 <https://github.com/hyperspy/hyperspy/issues/3175>`_)
+- Added a ``plot_residual`` to :py:meth:`~.models.model1d.Model1D.plot`. When ``True``, a residual line (Signal - Model) appears in the model figure. (`#3186 <https://github.com/hyperspy/hyperspy/issues/3186>`_)
+- Switch to :meth:`matplotlib.axes.Axes.pcolormesh` for image plots involving non-uniform axes.
+  The following cases are covered: 2D-signal with arbitrary navigation-dimension, 1D-navigation and 1D-signal (linescan).
+  Not covered are 2D-navigation images (still uses sliders). (`#3192 <https://github.com/hyperspy/hyperspy/issues/3192>`_)
+- New :meth:`~.api.signals.BaseSignal.interpolate_on_axis` method to switch one axis of a signal. The data is interpolated in the process. (`#3214 <https://github.com/hyperspy/hyperspy/issues/3214>`_)
+- Added :func:`~.api.plot.plot_roi_map`. Allows interactively using a set of ROIs to select regions of the signal axes of a signal and visualise how the signal varies in this range spatially. (`#3224 <https://github.com/hyperspy/hyperspy/issues/3224>`_)
+
+
+Bug Fixes
+---------
+
+- Improve syntax in the `io` module. (`#3091 <https://github.com/hyperspy/hyperspy/issues/3091>`_)
+- Fix behaviour of :py:class:`~.misc.utils.DictionaryTreeBrowser` setter with value of dictionary type (`#3094 <https://github.com/hyperspy/hyperspy/issues/3094>`_)
+- Avoid slowing down fitting by optimising attribute access of model. (`#3155 <https://github.com/hyperspy/hyperspy/issues/3155>`_)
+- Fix harmless error message when using multiple :class:`~.api.roi.RectangularROI`: check if resizer patches are drawn before removing them. Don't display resizers when adding the widget to the figure (widget in unselected state) for consistency with unselected state (`#3222 <https://github.com/hyperspy/hyperspy/issues/3222>`_)
+- Fix keeping dtype in :py:meth:`~.api.signals.BaseSignal.rebin` when the endianess is specified in the dtype (`#3237 <https://github.com/hyperspy/hyperspy/issues/3237>`_)
+- Fix serialization error due to ``traits.api.Property`` not being serializable if a dtype is specified.
+  See #3261 for more details. (`#3262 <https://github.com/hyperspy/hyperspy/issues/3262>`_)
+- Fix setting bounds for ``"trf"``, ``"dogbox"`` optimizer (`#3244 <https://github.com/hyperspy/hyperspy/issues/3244>`_)
+- Fix bugs in new marker implementation:
+
+  - Markers str representation fails if the marker isn't added to a signal
+  - make :meth:`~.api.plot.markers.Markers.from_signal` to work with all markers - it was only working with :class:`~.api.plot.markers.Points` (`#3270 <https://github.com/hyperspy/hyperspy/issues/3270>`_)
+- Documentation fixes:
+
+  - Fix cross-references in documentation and enable sphinx "nitpicky" when building documentation to check for broken links.
+  - Fix using mutable objects as default argument.
+  - Change some :class:`~.component.Component` attributes to properties in order to include their docstrings in the API reference. (`#3273 <https://github.com/hyperspy/hyperspy/issues/3273>`_)
+
+
+
+
+Improved Documentation
+----------------------
+
+- Restructure documentation:
+
+  - Improve structure of the API reference
+  - Improve introduction and overall structure of documentation
+  - Add gallery of examples (`#3050 <https://github.com/hyperspy/hyperspy/issues/3050>`_)
+
+- Add examples to the gallery to show how to use SpanROI and slice signal interactively (`#3221 <https://github.com/hyperspy/hyperspy/issues/3221>`_)
+- Add a section on keeping a clean and sensible commit history to the developer guide. (`#3064 <https://github.com/hyperspy/hyperspy/issues/3064>`_)
+- Replace ``sphinx.ext.imgmath`` by ``sphinx.ext.mathjax`` to fix the math rendering in the *ReadTheDocs* build (`#3084 <https://github.com/hyperspy/hyperspy/issues/3084>`_)
+- Fix docstring examples in :class:`~.api.signals.BaseSignal` class.
+  Describe how to test docstring examples in developer guide. (`#3095 <https://github.com/hyperspy/hyperspy/issues/3095>`_)
+- Update intersphinx_mapping links of matplotlib, numpy and scipy. (`#3218 <https://github.com/hyperspy/hyperspy/issues/3218>`_)
+- Add examples on creating signal from tabular data or reading from a simple text file (`#3246 <https://github.com/hyperspy/hyperspy/issues/3246>`_)
+- Activate checking of example code in docstring and user guide using ``doctest`` and fix errors in the code. (`#3281 <https://github.com/hyperspy/hyperspy/issues/3281>`_)
+- Update warning of "beta" state in big data section to be more specific. (`#3282 <https://github.com/hyperspy/hyperspy/issues/3282>`_)
+
+
+Enhancements
+------------
+
+- Add support for passing ``**kwargs`` to :py:meth:`~.api.signals.Signal2D.plot` when using heatmap style in :py:func:`~.api.plot.plot_spectra` . (`#3219 <https://github.com/hyperspy/hyperspy/issues/3219>`_)
+- Add support for pep 660 on editable installs for pyproject.toml based builds of extension (`#3252 <https://github.com/hyperspy/hyperspy/issues/3252>`_)
+- Make HyperSpy compatible with pyodide (hence JupyterLite):
+  
+  - Set ``numba`` and ``numexpr`` as optional dependencies.
+  - Replace ``dill`` by ``cloudpickle``.
+  - Fallback to dask synchronous scheduler when running on pyodide.
+  - Reduce packaging size to less than 1MB.
+  - Add packaging test on GitHub CI. (`#3255 <https://github.com/hyperspy/hyperspy/issues/3255>`_)
+
+.. _hyperspy_2.0_api_changes:
+
+API changes
+-----------
+
+- RosettaSciIO was split out of the `HyperSpy repository <https://github.com/hyperspy/hyperspy>`_ on July 23, 2022. The IO-plugins and related functions so far developed in HyperSpy were moved to the `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`__. (`#2972 <https://github.com/hyperspy/hyperspy/issues/2972>`_)
+- Extend the IO functions to accept alias names for format ``name`` as defined in RosettaSciIO. (`#3009 <https://github.com/hyperspy/hyperspy/issues/3009>`_)
+- Fix behaviour of :meth:`~hyperspy.model.BaseModel.print_current_values`, :meth:`~.component.Component.print_current_values`
+  and :func:`~.api.print_known_signal_types`, which were not printing when running from a script - they were only printing when running in notebook or qtconsole. Now all print_* functions behave consistently: they all print the output instead of returning an object (string or html). The :func:`IPython.display.display` will pick a suitable rendering when running in an "ipython" context, for example notebook, qtconsole. (`#3145 <https://github.com/hyperspy/hyperspy/issues/3145>`_)
+- The markers have been refactored - see the new :py:mod:`~.api.plot.markers` API and the :ref:`gallery of examples <gallery.markers>` for usage. The new :py:class:`~.api.plot.markers.Markers` uses :py:class:`matplotlib.collections.Collection`, is faster and more generic than the previous implementation and also supports lazy markers. Markers saved in HyperSpy files (``hspy``, ``zspy``) with HyperSpy < 2.0 are converted automatically when loading the file. (`#3148 <https://github.com/hyperspy/hyperspy/issues/3148>`_)
+- For all functions with the ``rechunk`` parameter, the default has been changed from ``True`` to ``False``. This means HyperSpy will not automatically try to change the chunking for lazy signals. The old behaviour could lead to a reduction in performance when working with large lazy datasets, for example 4D-STEM data. (`#3166 <https://github.com/hyperspy/hyperspy/issues/3166>`_)
+- Renamed ``Signal2D.crop_image`` to :meth:`~.api.signals.Signal2D.crop_signal` (`#3197 <https://github.com/hyperspy/hyperspy/issues/3197>`_)
+- Changes and improvement of the map function:
+
+  - Removes the ``parallel`` argument
+  - Replace the ``max_workers`` with the ``num_workers`` argument to be consistent with ``dask``
+  - Adds more documentation on setting the dask backend and how to use multiple cores
+  - Adds ``navigation_chunk`` argument for setting the chunks with a non-lazy signal
+  - Fix axes handling when the function to be mapped can be applied to the whole dataset - typically when it has the ``axis`` or ``axes`` keyword argument. (`#3198 <https://github.com/hyperspy/hyperspy/issues/3198>`_)
+  
+- Remove ``physics_tools`` since it is not used and doesn't fit in the scope of HyperSpy. (`#3235 <https://github.com/hyperspy/hyperspy/issues/3235>`_)
+- Improve the readability of the code by replacing the ``__call__`` method of some objects with the more explicit ``_get_current_data``.
+ 
+  - Rename ``__call__`` method of :py:class:`~.api.signals.BaseSignal` to ``_get_current_data``.
+  - Rename ``__call__`` method of  :py:class:`hyperspy.model.BaseModel`  to ``_get_current_data``.
+  - Remove ``__call__`` method of the :py:class:`hyperspy.component.Component` class. (`#3238 <https://github.com/hyperspy/hyperspy/issues/3238>`_)
+  
+- Rename ``hyperspy.api.datasets`` to :mod:`hyperspy.api.data` and simplify submodule structure:
+  
+  - ``hyperspy.api.datasets.artificial_data.get_atomic_resolution_tem_signal2d`` is renamed to :func:`hyperspy.api.data.atomic_resolution_image`
+  - ``hyperspy.api.datasets.artificial_data.get_luminescence_signal`` is renamed to :func:`hyperspy.api.data.luminescence_signal`
+  - ``hyperspy.api.datasets.artificial_data.get_wave_image`` is renamed to :func:`hyperspy.api.data.wave_image` (`#3253 <https://github.com/hyperspy/hyperspy/issues/3253>`_)
+
+
+API Removal
+-----------
+
+As the HyperSpy API evolves, some of its parts are occasionally reorganized or removed.
+When APIs evolve, the old API is deprecated and eventually removed in a major
+release. The functions and methods removed in HyperSpy 2.0 are listed below along
+with migration advises:
+
+Axes
+^^^^
+
+- ``AxesManager.show`` has been removed, use :py:meth:`~.axes.AxesManager.gui` instead.
+- ``AxesManager.set_signal_dimension`` has been removed, use :py:meth:`~.api.signals.BaseSignal.as_signal1D`,
+  :py:meth:`~.api.signals.BaseSignal.as_signal2D` or :py:meth:`~.api.signals.BaseSignal.transpose` of the signal instance instead.
+
+Components
+^^^^^^^^^^
+
+- The API of the :py:class:`~.api.model.components1D.Polynomial` has changed (it was deprecated in HyperSpy 1.5). The old API had a single parameters ``coefficients``, which has been replaced by ``a0``, ``a1``, etc.
+- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Arctan` has been removed, use :class:`exspy.components.EELSArctan` to use the old API.
+- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Voigt` has been removed, use :class:`exspy.components.PESVoigt` to use the old API.
+
+Data Visualization
+^^^^^^^^^^^^^^^^^^
+
+- The ``saturated_pixels`` keyword argument of :py:meth:`~.api.signals.Signal2D.plot` has been removed, use ``vmin`` and/or ``vmax`` instead.
+- The ``get_complex`` property of ``hyperspy.drawing.signal1d.Signal1DLine`` has been removed.
+- The keyword argument ``line_style`` of :py:func:`~.api.plot.plot_spectra` has been renamed to ``linestyle``.
+- Changing navigation coordinates using keyboard ``Arrow`` has been removed, use
+  ``Crtl`` + ``Arrow`` instead.
+- The ``markers`` submodules can not be imported from the :py:mod:`~.api` anymore, use :py:mod:`hyperspy.api.plot.markers`
+  directly, i.e. :class:`hyperspy.api.plot.markers.Arrows`, instead.
+- The creation of markers has changed to use their class name instead of aliases, for example,
+  use ``m = hs.plot.markers.Lines`` instead of ``m = hs.plot.markers.line_segment``.
+
+Loading and Saving data
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The following deprecated keyword arguments have been removed during the
+migration of the IO plugins to the `RosettaSciIO library
+<https://hyperspy.org/rosettasciio/changes.html>`_:
+
+- The arguments ``mmap_dir`` and ``load_to_memory`` of the :py:func:`~.api.load`
+  function have been removed, use the ``lazy`` argument instead.
+- :ref:`Bruker composite file (BCF) <bruker-format>`: The ``'spectrum'`` option for the
+  ``select_type`` parameter was removed. Use ``'spectrum_image'`` instead.
+- :ref:`Electron Microscopy Dataset (EMD) NCEM <emd_ncem-format>`: Using the
+  keyword ``dataset_name`` was removed, use ``dataset_path`` instead.
+- :ref:`NeXus data format <nexus-format>`: The ``dataset_keys``, ``dataset_paths``
+  and ``metadata_keys`` keywords were removed. Use ``dataset_key``, ``dataset_path``
+  and ``metadata_key`` instead.
+
+Machine Learning
+^^^^^^^^^^^^^^^^
+
+- The ``polyfit`` keyword argument has been removed. Use ``var_func`` instead.
+- The list of possible values for the ``algorithm`` argument of the :py:meth:`~.api.signals.BaseSignal.decomposition` method
+  has been changed according to the following table:
+
+  .. list-table:: Change of the ``algorithm`` argument
+     :widths: 25 75
+     :header-rows: 1
+
+     * - hyperspy < 2.0
+       - hyperspy >= 2.0
+     * - fast_svd
+       - SVD along with the argument svd_solver="randomized"
+     * - svd
+       - SVD
+     * - fast_mlpca
+       - MLPCA along with the argument svd_solver="randomized
+     * - mlpca
+       - MLPCA
+     * - nmf
+       - NMF
+     * - RPCA_GoDec
+       - RPCA
+
+- The argument ``learning_rate`` of the ``ORPCA`` algorithm has been renamed to ``subspace_learning_rate``.
+- The argument ``momentum`` of the ``ORPCA`` algorithm has been renamed to ``subspace_momentum``.
+- The list of possible values for the ``centre`` keyword argument of the :py:meth:`~.api.signals.BaseSignal.decomposition` method
+  when using the ``SVD`` algorithm has been changed according to the following table:
+
+  .. list-table:: Change of the ``centre`` argument
+     :widths: 50 50
+     :header-rows: 1
+
+     * - hyperspy < 2.0
+       - hyperspy >= 2.0
+     * - trials
+       - navigation
+     * - variables
+       - signal
+- For lazy signals, a possible value of the ``algorithm`` keyword argument of the
+  :py:meth:`~._signals.lazy.LazySignal.decomposition` method has been changed
+  from ``"ONMF"`` to ``"ORNMF"``.
+- Setting the ``metadata`` and ``original_metadata`` attribute of signals is removed, use
+  the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
+  :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods of the
+  ``metadata`` and ``original_metadata`` attribute instead.
+
+
+Model fitting
+^^^^^^^^^^^^^
+
+- The ``iterpath`` default value has changed from ``'flyback'`` to ``'serpentine'``.
+- Changes in the arguments of the :py:meth:`~hyperspy.model.BaseModel.fit` and :py:meth:`~hyperspy.model.BaseModel.multifit` methods:
+
+  - The ``fitter`` argument has been renamed to ``optimizer``.
+  - The list of possible values for the ``optimizer`` argument has been renamed according to the following table:
+
+    .. list-table:: Renaming of the ``optimizer`` argument
+       :widths: 50 50
+       :header-rows: 1
+
+       * - hyperspy < 2.0
+         - hyperspy >= 2.0
+       * - fmin
+         - Nelder-Mead
+       * - fmin_cg
+         - CG
+       * - fmin_ncg
+         - Newton-CG
+       * - fmin_bfgs
+         - Newton-BFGS
+       * - fmin_l_bfgs_b
+         - L-BFGS-B
+       * - fmin_tnc
+         - TNC
+       * - fmin_powell
+         - Powell
+       * - mpfit
+         - lm
+       * - leastsq
+         - lm
+
+    - ``loss_function="ml"`` has been renamed to ``loss_function="ML-poisson"``.
+    - ``grad=True`` has been changed to ``grad="analytical"``.
+    - The ``ext_bounding`` argument has been renamed to ``bounded``.
+    - The ``min_function`` argument has been removed, use the ``loss_function`` argument instead.
+    - The ``min_function_grad`` argument has been removed, use the ``grad`` argument instead.
+
+- The following :py:class:`~hyperspy.model.BaseModel` methods have been removed:
+
+  - ``hyperspy.model.BaseModel.set_boundaries``
+  - ``hyperspy.model.BaseModel.set_mpfit_parameters_info``
+
+- The arguments ``parallel`` and ``max_workers`` have been removed from the :py:meth:`~hyperspy.model.BaseModel.as_signal` methods.
+
+- Setting the ``metadata``  attribute of a :py:class:`~.samfire.Samfire` has been removed, use
+  the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
+  :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods of the
+  ``metadata`` attribute instead.
+
+- The deprecated ``twin_function`` and ``twin_inverse_function`` have been privatized.
+- Remove ``fancy`` argument of :meth:`~hyperspy.model.BaseModel.print_current_values` and :meth:`~.component.Component.print_current_values`,
+  which wasn't changing the output rendering.
+- The attribute ``channel_switches`` of :py:class:`~hyperspy.model.BaseModel` have been privatized, instead
+  use the :py:meth:`~hyperspy.model.BaseModel.set_signal_range_from_mask` or any other methods to 
+  set the signal range, such as :py:meth:`~.models.model1d.Model1D.set_signal_range`,
+  :py:meth:`~.models.model1d.Model1D.add_signal_range` or :py:meth:`~.models.model1d.Model1D.remove_signal_range`
+  and their :py:class:`~.models.model2d.Model2D` counterparts. 
+
+
+Signal
+^^^^^^
+
+- ``metadata.Signal.binned`` is removed, use the ``is_binned`` axis attribute
+  instead, e. g. ``s.axes_manager[-1].is_binned``.
+- Some possible values for the ``bins`` argument of the :py:meth:`~.api.signals.BaseSignal.get_histogram`
+  method have been changed according to the following table:
+
+  .. list-table:: Change of the ``bins`` argument
+     :widths: 50 50
+     :header-rows: 1
+
+     * - hyperspy < 2.0
+       - hyperspy >= 2.0
+     * - scotts
+       - scott
+     * - freedman
+       - fd
+
+- The ``integrate_in_range`` method has been removed, use :py:class:`~.roi.SpanROI`
+  followed by :py:meth:`~.api.signals.BaseSignal.integrate1D` instead.
+- The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.LazySignal.compute` method
+  has been removed, use ``show_progressbar`` instead.
+- The deprecated ``comp_label`` argument of the methods :py:meth:`~.api.signals.BaseSignal.plot_decomposition_loadings`,
+  :py:meth:`~.api.signals.BaseSignal.plot_decomposition_factors`, :py:meth:`~.api.signals.BaseSignal.plot_bss_loadings`,
+  :py:meth:`~.api.signals.BaseSignal.plot_bss_factors`, :py:meth:`~.api.signals.BaseSignal.plot_cluster_distances`,
+  :py:meth:`~.api.signals.BaseSignal.plot_cluster_labels` has been removed, use the ``title`` argument instead.
+- The :py:meth:`~.api.signals.BaseSignal.set_signal_type` now raises an error when passing
+  ``None`` to the ``signal_type`` argument. Use ``signal_type=""`` instead.
+- Passing an "iterating over navigation argument" to the :py:meth:`~.api.signals.BaseSignal.map`
+  method is removed, pass a HyperSpy signal with suitable navigation and signal shape instead.
+
+
+Signal2D
+^^^^^^^^
+
+- :meth:`~.api.signals.Signal2D.find_peaks` now returns lazy signals in case of lazy input signal.
+
+
+Preferences
+^^^^^^^^^^^
+
+- The ``warn_if_guis_are_missing`` HyperSpy preferences setting has been removed,
+  as it is not necessary anymore.
+
+
+Maintenance
+-----------
+
+- Pin third party GitHub actions and add maintenance guidelines on how to update them (`#3027 <https://github.com/hyperspy/hyperspy/issues/3027>`_)
+- Drop support for python 3.7, update oldest supported dependencies and simplify code accordingly (`#3144 <https://github.com/hyperspy/hyperspy/issues/3144>`_)
+- IPython and IParallel are now optional dependencies (`#3145 <https://github.com/hyperspy/hyperspy/issues/3145>`_)
+- Fix Numpy 1.25 deprecation: implicit array to scalar conversion in :py:meth:`~.signals.Signal2D.align2D` (`#3189 <https://github.com/hyperspy/hyperspy/issues/3189>`_)
+- Replace deprecated :mod:`scipy.misc` by :mod:`scipy.datasets` in documentation (`#3225 <https://github.com/hyperspy/hyperspy/issues/3225>`_)
+- Fix documentation version switcher (`#3228 <https://github.com/hyperspy/hyperspy/issues/3228>`_)
+- Replace deprecated :py:class:`scipy.interpolate.interp1d` with :py:func:`scipy.interpolate.make_interp_spline` (`#3233 <https://github.com/hyperspy/hyperspy/issues/3233>`_)
+- Add support for python 3.12 (`#3256 <https://github.com/hyperspy/hyperspy/issues/3256>`_)
+- Consolidate package metadata:
+
+  - use ``pyproject.toml`` only
+  - clean up unmaintained packaging files
+  - use ``setuptools_scm`` to define version
+  - add python 3.12 to test matrix (`#3268 <https://github.com/hyperspy/hyperspy/issues/3268>`_)
+- Pin pytest-xdist to 3.5 as a workaround for test suite failure on Azure Pipeline (`#3274 <https://github.com/hyperspy/hyperspy/issues/3274>`_)
+
+
+
+.. _changes_1.7.6:
+
+1.7.6 (2023-11-17)
+===================
 
 Bug Fixes
 ---------
@@ -21,17 +414,19 @@ Bug Fixes
 Maintenance
 -----------
 
-- Backport of 3189: fix Numpy1.25 deprecation: implicite array to scalar conversion in :py:meth:`~._signals.signal2d.Signal2D.align2D` (`#3243 <https://github.com/hyperspy/hyperspy/issues/3243>`_)
+- Backport of 3189: fix Numpy1.25 deprecation: implicite array to scalar conversion in :py:meth:`~.api.signals.Signal2D.align2D` (`#3243 <https://github.com/hyperspy/hyperspy/issues/3243>`_)
 - Pin pillow to <10.1 to avoid imageio error. (`#3251 <https://github.com/hyperspy/hyperspy/issues/3251>`_)
 
 
-Hyperspy 1.7.5 (2023-05-04)
-===========================
+.. _changes_1.7.5:
+
+1.7.5 (2023-05-04)
+===================
 
 Bug Fixes
 ---------
 
-- Fix plotting boolean array with :py:func:`~.drawing.utils.plot_images` (`#3118 <https://github.com/hyperspy/hyperspy/issues/3118>`_)
+- Fix plotting boolean array with :py:func:`~.api.plot.plot_images` (`#3118 <https://github.com/hyperspy/hyperspy/issues/3118>`_)
 - Fix test with scipy1.11 and update deprecated ``scipy.interpolate.interp2d`` in the test suite (`#3124 <https://github.com/hyperspy/hyperspy/issues/3124>`_)
 - Use intersphinx links to fix links to scikit-image documentation (`#3125 <https://github.com/hyperspy/hyperspy/issues/3125>`_)
 
@@ -50,14 +445,16 @@ Maintenance
 - Pin ``imageio`` to <2.28 (`#3138 <https://github.com/hyperspy/hyperspy/issues/3138>`_)
 
 
-Hyperspy 1.7.4 (2023-03-16)
-===========================
+.. _changes_1.7.4:
+
+1.7.4 (2023-03-16)
+===================
 
 Bug Fixes
 ---------
 
 - Fixes an array indexing bug when loading a .sur file format spectra series. (`#3060 <https://github.com/hyperspy/hyperspy/issues/3060>`_)
-- Speed up :py:func:`~.misc.utils.to_numpy` function to avoid slow down when used repeatedly, typically during fitting (`#3109 <https://github.com/hyperspy/hyperspy/issues/3109>`_)
+- Speed up ``to_numpy`` function to avoid slow down when used repeatedly, typically during fitting (`#3109 <https://github.com/hyperspy/hyperspy/issues/3109>`_)
 
 
 Improved Documentation
@@ -81,8 +478,10 @@ Maintenance
 - Fix checking links in documentation for domain, which aren't compatible with sphinx linkcheck (`#3108 <https://github.com/hyperspy/hyperspy/issues/3108>`_)
 
 
-Hyperspy 1.7.3 (2022-10-29)
-===========================
+.. _changes_1.7.3:
+
+1.7.3 (2022-10-29)
+===================
 
 Bug Fixes
 ---------
@@ -99,24 +498,26 @@ Maintenance
 - Fix getting random state dask for dask>=2022.10.0 (`#3049 <https://github.com/hyperspy/hyperspy/issues/3049>`_)
 
 
-Hyperspy 1.7.2 (2022-09-17)
-===========================
+.. _changes_1.7.2:
+
+1.7.2 (2022-09-17)
+===================
 
 Bug Fixes
 ---------
 
-- Fix some errors and remove unnecessary code identified by `LGTM 
+- Fix some errors and remove unnecessary code identified by `LGTM
   <https://lgtm.com/projects/g/hyperspy/hyperspy/>`_. (`#2977 <https://github.com/hyperspy/hyperspy/issues/2977>`_)
-- Fix error which occurs when guessing output size in the :py:meth:`~.signal.BaseSignal.map` function and using dask newer than 2022.7.1 (`#2981 <https://github.com/hyperspy/hyperspy/issues/2981>`_)
+- Fix error which occurs when guessing output size in the :py:meth:`~.api.signals.BaseSignal.map` function and using dask newer than 2022.7.1 (`#2981 <https://github.com/hyperspy/hyperspy/issues/2981>`_)
 - Fix display of x-ray lines when using log norm and the intensity at the line is 0 (`#2995 <https://github.com/hyperspy/hyperspy/issues/2995>`_)
-- Fix handling constant derivative in :py:meth:`~._signals.signal1D.Signal1D.spikes_removal_tool` (`#3005 <https://github.com/hyperspy/hyperspy/issues/3005>`_)
+- Fix handling constant derivative in :py:meth:`~.api.signals.Signal1D.spikes_removal_tool` (`#3005 <https://github.com/hyperspy/hyperspy/issues/3005>`_)
 - Fix removing horizontal or vertical line widget; regression introduced in hyperspy 1.7.0 (`#3008 <https://github.com/hyperspy/hyperspy/issues/3008>`_)
 
 
 Improved Documentation
 ----------------------
 
-- Add a note in the user guide to explain that when a file contains several datasets, :py:func:`~.io.load` returns a list of signals instead of a single signal and that list indexation can be used to access a single signal. (`#2975 <https://github.com/hyperspy/hyperspy/issues/2975>`_)
+- Add a note in the user guide to explain that when a file contains several datasets, :py:func:`~.api.load` returns a list of signals instead of a single signal and that list indexation can be used to access a single signal. (`#2975 <https://github.com/hyperspy/hyperspy/issues/2975>`_)
 
 
 Maintenance
@@ -129,29 +530,31 @@ Maintenance
 - Fix matplotlib ``SpanSelector`` import for matplotlib 3.6 (`#3016 <https://github.com/hyperspy/hyperspy/issues/3016>`_)
 
 
-Hyperspy 1.7.1 (2022-06-18)
-===========================
+.. _changes_1.7.1:
+
+1.7.1 (2022-06-18)
+===================
 
 Bug Fixes
 ---------
 
 - Fixes invalid file chunks when saving some signals to hspy/zspy formats. (`#2940 <https://github.com/hyperspy/hyperspy/issues/2940>`_)
 - Fix issue where a TIFF image from an FEI FIB/SEM navigation camera image would not be read due to missing metadata (`#2941 <https://github.com/hyperspy/hyperspy/issues/2941>`_)
-- Respect ``show_progressbar`` parameter in :py:meth:`~.signal.BaseSignal.map` (`#2946 <https://github.com/hyperspy/hyperspy/issues/2946>`_)
-- Fix regression in :py:meth:`~.models.model1d.Model1D.set_signal_range` which was raising an error when used interactively (`#2948 <https://github.com/hyperspy/hyperspy/issues/2948>`_)
-- Fix :py:class:`~.roi.SpanROI` regression: the output of :py:meth:`~.roi.BaseInteractiveROI.interactive` was not updated when the ROI was changed. Fix errors with updating limits when plotting empty slice of data. Improve docstrings and test coverage. (`#2952 <https://github.com/hyperspy/hyperspy/issues/2952>`_)
+- Respect ``show_progressbar`` parameter in :py:meth:`~.api.signals.BaseSignal.map` (`#2946 <https://github.com/hyperspy/hyperspy/issues/2946>`_)
+- Fix regression in :py:meth:`~hyperspy.models.model1d.Model1D.set_signal_range` which was raising an error when used interactively (`#2948 <https://github.com/hyperspy/hyperspy/issues/2948>`_)
+- Fix :py:class:`~.api.roi.SpanROI` regression: the output of :py:meth:`~.roi.BaseInteractiveROI.interactive` was not updated when the ROI was changed. Fix errors with updating limits when plotting empty slice of data. Improve docstrings and test coverage. (`#2952 <https://github.com/hyperspy/hyperspy/issues/2952>`_)
 - Fix stacking signals that contain their variance in metadata. Previously it was raising an error when specifying the stacking axis. (`#2954 <https://github.com/hyperspy/hyperspy/issues/2954>`_)
 - Fix missing API documentation of several signal classes. (`#2957 <https://github.com/hyperspy/hyperspy/issues/2957>`_)
-- Fix two bugs in :py:meth:`~.learn.mva.MVA.decomposition`:
+- Fix two bugs in :py:meth:`~.api.signals.BaseSignal.decomposition`:
 
-   * The poisson noise normalization was not applied when giving a `signal_mask`
-   * An error was raised when applying a ``signal_mask`` on a signal with signal dimension larger than 1. (`#2964 <https://github.com/hyperspy/hyperspy/issues/2964>`_)
+  * The poisson noise normalization was not applied when giving a `signal_mask`
+  * An error was raised when applying a ``signal_mask`` on a signal with signal dimension larger than 1. (`#2964 <https://github.com/hyperspy/hyperspy/issues/2964>`_)
 
 
 Improved Documentation
 ----------------------
 
-- Fix and complete docstrings of :py:meth:`~._signals.signal2d.Signal2D.align2D` and :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`. (`#2961 <https://github.com/hyperspy/hyperspy/issues/2961>`_)
+- Fix and complete docstrings of :py:meth:`~.api.signals.Signal2D.align2D` and :py:meth:`~.api.signals.Signal2D.estimate_shift2D`. (`#2961 <https://github.com/hyperspy/hyperspy/issues/2961>`_)
 
 
 Maintenance
@@ -161,26 +564,28 @@ Maintenance
 - Fix packaging of test suite and tweak tests to pass on different platform of blas implementation (`#2933 <https://github.com/hyperspy/hyperspy/issues/2933>`_)
 
 
-Hyperspy 1.7.0 (2022-04-26)
-===========================
+.. _changes_1.7.0:
+
+1.7.0 (2022-04-26)
+===================
 
 New features
 ------------
 
-- Add ``filter_zero_loss_peak`` argument to the :py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` method (`#1412 <https://github.com/hyperspy/hyperspy/issues/1412>`_)
-- Add :py:meth:`~._signals.signal2d.Signal2D.calibrate` method to :py:class:`~._signals.signal2d.Signal2D` signal, which allows for interactive calibration (`#1791 <https://github.com/hyperspy/hyperspy/issues/1791>`_)
-- Add :py:meth:`~._signals.eels.EELSSpectrum.vacuum_mask` method to :py:class:`~._signals.eels.EELSSpectrum` signal (`#2183 <https://github.com/hyperspy/hyperspy/issues/2183>`_)
+- Add ``filter_zero_loss_peak`` argument to the ``hyperspy._signals.eels.EELSSpectrum.spikes_removal_tool`` method (`#1412 <https://github.com/hyperspy/hyperspy/issues/1412>`_)
+- Add :py:meth:`~.api.signals.Signal2D.calibrate` method to :py:class:`~.api.signals.Signal2D` signal, which allows for interactive calibration (`#1791 <https://github.com/hyperspy/hyperspy/issues/1791>`_)
+- Add ``hyperspy._signals.eels.EELSSpectrum.vacuum_mask`` method to: ``hyperspy._signals.eels.EELSSpectrum`` signal (`#2183 <https://github.com/hyperspy/hyperspy/issues/2183>`_)
 - Support for :ref:`relative slicing <signal.indexing>` (`#2386 <https://github.com/hyperspy/hyperspy/issues/2386>`_)
 - Implement non-uniform axes, not all hyperspy functionalities support non-uniform axes, see this `tracking issue <https://github.com/hyperspy/hyperspy/issues/2398>`_ for progress. (`#2399 <https://github.com/hyperspy/hyperspy/issues/2399>`_)
 - Add (weighted) :ref:`linear least square fitting <linear_fitting-label>`. Close `#488 <https://github.com/hyperspy/hyperspy/issues/488>`_ and `#574 <https://github.com/hyperspy/hyperspy/issues/574>`_. (`#2422 <https://github.com/hyperspy/hyperspy/issues/2422>`_)
-- Support for reading :ref:`JEOL EDS data<jeol_format-label>` (`#2488 <https://github.com/hyperspy/hyperspy/issues/2488>`_)
+- Support for reading :external+rsciio:ref:`JEOL EDS data<jeol-format>` (`#2488 <https://github.com/hyperspy/hyperspy/issues/2488>`_)
 - Plot overlayed images - see :ref:`plotting several images<plot.images>` (`#2599 <https://github.com/hyperspy/hyperspy/issues/2599>`_)
 - Add initial support for :ref:`GPU computation<gpu_processing>` using cupy (`#2670 <https://github.com/hyperspy/hyperspy/issues/2670>`_)
 - Add ``height`` property to the :py:class:`~._components.gaussian2d.Gaussian2D` component (`#2688 <https://github.com/hyperspy/hyperspy/issues/2688>`_)
-- Support for reading and writing :ref:`TVIPS image stream data<tvips_format-label>` (`#2780 <https://github.com/hyperspy/hyperspy/issues/2780>`_)
-- Add in :ref:`zspy format<zspy-format>`: hspy specification with the zarr format. Particularly useful to speed up loading and :ref:`saving large datasets<big_data.saving>` by using concurrency. (`#2825 <https://github.com/hyperspy/hyperspy/issues/2825>`_)
-- Support for reading :ref:`DENSsolutions Impulse data<dens-format>` (`#2828 <https://github.com/hyperspy/hyperspy/issues/2828>`_)
-- Add lazy loading for :ref:`JEOL EDS data<jeol_format-label>` (`#2846 <https://github.com/hyperspy/hyperspy/issues/2846>`_)
+- Support for reading and writing :external+rsciio:ref:`TVIPS image stream data<tvips-format>` (`#2780 <https://github.com/hyperspy/hyperspy/issues/2780>`_)
+- Add in :external+rsciio:ref:`zspy format<zspy-format>`: hspy specification with the zarr format. Particularly useful to speed up loading and :ref:`saving large datasets<big_data.saving>` by using concurrency. (`#2825 <https://github.com/hyperspy/hyperspy/issues/2825>`_)
+- Support for reading :external+rsciio:ref:`DENSsolutions Impulse data<dens-format>` (`#2828 <https://github.com/hyperspy/hyperspy/issues/2828>`_)
+- Add lazy loading for :external+rsciio:ref:`JEOL EDS data<jeol-format>` (`#2846 <https://github.com/hyperspy/hyperspy/issues/2846>`_)
 - Add :ref:`html representation<lazy._repr_html_>` for lazy signals and the
   :py:meth:`~._signals.lazy.LazySignal.get_chunk_size` method to get the chunk size
   of given axes (`#2855 <https://github.com/hyperspy/hyperspy/issues/2855>`_)
@@ -191,16 +596,16 @@ New features
 Bug Fixes
 ---------
 
-- Signals with 1 value in the signal dimension will now be :py:class:`~.signal.BaseSignal` (`#2773 <https://github.com/hyperspy/hyperspy/issues/2773>`_)
-- :py:func:`~.misc.material.density_of_mixture` now throws a Value error when the density of an element is unknown (`#2775 <https://github.com/hyperspy/hyperspy/issues/2775>`_)
+- Signals with 1 value in the signal dimension will now be :py:class:`~.api.signals.BaseSignal` (`#2773 <https://github.com/hyperspy/hyperspy/issues/2773>`_)
+- :py:func:`exspy.material.density_of_mixture` now throws a Value error when the density of an element is unknown (`#2775 <https://github.com/hyperspy/hyperspy/issues/2775>`_)
 - Improve error message when performing Cliff-Lorimer quantification with a single line intensity (`#2822 <https://github.com/hyperspy/hyperspy/issues/2822>`_)
 - Fix bug for the hydrogenic gdos k edge (`#2859 <https://github.com/hyperspy/hyperspy/issues/2859>`_)
 - Fix bug in axes.UnitConversion: the offset value was initialized by units. (`#2864 <https://github.com/hyperspy/hyperspy/issues/2864>`_)
-- Fix bug where the :py:meth:`~.signal.BaseSignal.map` function wasn't operating properly when an iterating signal was larger than the input signal. (`#2878 <https://github.com/hyperspy/hyperspy/issues/2878>`_)
+- Fix bug where the :py:meth:`~.api.signals.BaseSignal.map` function wasn't operating properly when an iterating signal was larger than the input signal. (`#2878 <https://github.com/hyperspy/hyperspy/issues/2878>`_)
 - In case the Bruker defined XML element node at SpectrumRegion contains no information on the
   specific selected X-ray line (if there is only single line available), suppose it is 'Ka' line. (`#2881 <https://github.com/hyperspy/hyperspy/issues/2881>`_)
 - When loading Bruker Bcf, ``cutoff_at_kV=None`` does no cutoff (`#2898 <https://github.com/hyperspy/hyperspy/issues/2898>`_)
-- Fix bug where the :py:meth:`~.signal.BaseSignal.map` function wasn't operating properly when an iterating signal was not an array. (`#2903 <https://github.com/hyperspy/hyperspy/issues/2903>`_)
+- Fix bug where the :py:meth:`~.api.signals.BaseSignal.map` function wasn't operating properly when an iterating signal was not an array. (`#2903 <https://github.com/hyperspy/hyperspy/issues/2903>`_)
 - Fix bug for not saving ragged arrays with dimensions larger than 2 in the ragged dimension. (`#2906 <https://github.com/hyperspy/hyperspy/issues/2906>`_)
 - Fix bug with importing some spectra from eelsdb and add progress bar (`#2916 <https://github.com/hyperspy/hyperspy/issues/2916>`_)
 - Fix bug when the spikes_removal_tool would not work interactively for signal with 0-dimension navigation space. (`#2918 <https://github.com/hyperspy/hyperspy/issues/2918>`_)
@@ -209,7 +614,7 @@ Bug Fixes
 Deprecations
 ------------
 
-- Deprecate :py:meth:`~.axes.AxesManager.set_signal_dimension` in favour of using :py:meth:`~.signal.BaseSignal.as_signal1D`, :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead. (`#2830 <https://github.com/hyperspy/hyperspy/issues/2830>`_)
+- Deprecate ``hyperspy.axes.AxesManager.set_signal_dimension`` in favour of using :py:meth:`~.api.signals.BaseSignal.as_signal1D`, :py:meth:`~.api.signals.BaseSignal.as_signal2D` or :py:meth:`~.api.signals.BaseSignal.transpose` of the signal instance instead. (`#2830 <https://github.com/hyperspy/hyperspy/issues/2830>`_)
 
 
 Enhancements
@@ -221,19 +626,19 @@ Enhancements
 - Lazy signals now caches the current data chunk when using multifit and when plotting, improving performance. (`#2568 <https://github.com/hyperspy/hyperspy/issues/2568>`_)
 - Read cathodoluminescence metadata from digital micrograph files, amended in `PR #2894 <https://github.com/hyperspy/hyperspy/pull/2894>`_ (`#2590 <https://github.com/hyperspy/hyperspy/issues/2590>`_)
 - Add possibility to search/access nested items in DictionaryTreeBrowser (metadata) without providing full path to item. (`#2633 <https://github.com/hyperspy/hyperspy/issues/2633>`_)
-- Improve :py:meth:`~.signal.BaseSignal.map` function in :py:class:`~.signal.BaseSignal` by utilizing dask for both lazy and non-lazy signals. This includes adding a `lazy_output` parameter, meaning non-lazy signals now can output lazy results. See the :ref:`user guide<lazy_output-map-label>` for more information. (`#2703 <https://github.com/hyperspy/hyperspy/issues/2703>`_)
-- :ref:`NeXus<nexus-format>` file with more options when reading and writing (`#2725 <https://github.com/hyperspy/hyperspy/issues/2725>`_)
-- Add ``dtype`` argument to :py:meth:`~.signal.BaseSignal.rebin` (`#2764 <https://github.com/hyperspy/hyperspy/issues/2764>`_)
-- Add option to set output size when :ref:`exporting images<image-format>` (`#2791 <https://github.com/hyperspy/hyperspy/issues/2791>`_)
+- Improve :py:meth:`~.api.signals.BaseSignal.map` function in :py:class:`~.api.signals.BaseSignal` by utilizing dask for both lazy and non-lazy signals. This includes adding a `lazy_output` parameter, meaning non-lazy signals now can output lazy results. See the :ref:`user guide<lazy_output-map-label>` for more information. (`#2703 <https://github.com/hyperspy/hyperspy/issues/2703>`_)
+- :external+rsciio:ref:`NeXus<nexus-format>` file with more options when reading and writing (`#2725 <https://github.com/hyperspy/hyperspy/issues/2725>`_)
+- Add ``dtype`` argument to :py:meth:`~.api.signals.BaseSignal.rebin` (`#2764 <https://github.com/hyperspy/hyperspy/issues/2764>`_)
+- Add option to set output size when :external+rsciio:ref:`exporting images<image-format>` (`#2791 <https://github.com/hyperspy/hyperspy/issues/2791>`_)
 - Add :py:meth:`~.axes.AxesManager.switch_iterpath` context manager to switch iterpath (`#2795 <https://github.com/hyperspy/hyperspy/issues/2795>`_)
-- Add options not to close file (lazy signal only) and not to write dataset for hspy file format, see :ref:`hspy-format` for details (`#2797 <https://github.com/hyperspy/hyperspy/issues/2797>`_)
+- Add options not to close file (lazy signal only) and not to write dataset for hspy file format, see :external+rsciio:ref:`hspy-format` for details (`#2797 <https://github.com/hyperspy/hyperspy/issues/2797>`_)
 - Add Github workflow to run test suite of extension from a pull request. (`#2824 <https://github.com/hyperspy/hyperspy/issues/2824>`_)
-- Add :py:attr:`~.signal.BaseSignal.ragged` attribute to :py:class:`~.signal.BaseSignal` to clarify when a signal contains a ragged array. Fix inconsistency caused by ragged array and add a :ref:`ragged array<signal.ragged>` section to the user guide (`#2842 <https://github.com/hyperspy/hyperspy/issues/2842>`_)
+- Add :py:attr:`~.api.signals.BaseSignal.ragged` attribute to :py:class:`~.api.signals.BaseSignal` to clarify when a signal contains a ragged array. Fix inconsistency caused by ragged array and add a :ref:`ragged array<signal.ragged>` section to the user guide (`#2842 <https://github.com/hyperspy/hyperspy/issues/2842>`_)
 - Import hyperspy submodules lazily to speed up importing hyperspy. Fix autocompletion `signals` submodule (`#2850 <https://github.com/hyperspy/hyperspy/issues/2850>`_)
 - Add support for JEOL SightX tiff file (`#2862 <https://github.com/hyperspy/hyperspy/issues/2862>`_)
-- Add new markers :py:mod:`~.drawing._markers.arrow`, :py:mod:`~.drawing._markers.ellipse` and filled :py:mod:`~.drawing._markers.rectangle`. (`#2871 <https://github.com/hyperspy/hyperspy/issues/2871>`_)
+- Add new markers ``hyperspy.drawing._markers.arrow``, ``hyperspy.drawing._markers.ellipse`` and filled ``hyperspy.drawing._markers.rectangle``. (`#2871 <https://github.com/hyperspy/hyperspy/issues/2871>`_)
 - Add metadata about the file-reading and saving operations to the Signals
-  produced by :py:func:`~hyperspy.io.load` and :py:meth:`~.signal.BaseSignal.save`
+  produced by :py:func:`~.api.load` and :py:meth:`~.api.signals.BaseSignal.save`
   (see the :ref:`metadata structure <general-file-metadata>` section of the user guide) (`#2873 <https://github.com/hyperspy/hyperspy/issues/2873>`_)
 - expose Stage coordinates and rotation angle in metada for sem images in bcf reader. (`#2911 <https://github.com/hyperspy/hyperspy/issues/2911>`_)
 
@@ -244,9 +649,9 @@ API changes
 - ``metadata.Signal.binned`` is replaced by an axis parameter, e. g. ``axes_manager[-1].is_binned`` (`#2652 <https://github.com/hyperspy/hyperspy/issues/2652>`_)
 - * when loading Bruker bcf, ``cutoff_at_kV=None`` (default) applies no more automatic cutoff.
   * New acceptable values ``"zealous"`` and ``"auto"`` do automatic cutoff. (`#2910 <https://github.com/hyperspy/hyperspy/issues/2910>`_)
-- Deprecate the ability to directly set ``metadata`` and ``original_metadata`` Signal 
-  attributes in favor of using :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` 
-  and :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods or 
+- Deprecate the ability to directly set ``metadata`` and ``original_metadata`` Signal
+  attributes in favor of using :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
+  and :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods or
   specifying metadata when creating signals (`#2913 <https://github.com/hyperspy/hyperspy/issues/2913>`_)
 
 
@@ -261,24 +666,26 @@ Maintenance
 - Compress some tiff tests files to reduce package size (`#2926 <https://github.com/hyperspy/hyperspy/issues/2926>`_)
 
 
-v1.6.5 (2021-10-28)
+.. _changes_1.6.5:
+
+1.6.5 (2021-10-28)
 ===================
 
 Bug Fixes
 ---------
 
-- Suspend plotting during :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` call (`#2796 <https://github.com/hyperspy/hyperspy/issues/2796>`_)
-- make :py:meth:`~.signal.BaseSignal.add_marker` also check if the plot is not active before plotting signal (`#2799 <https://github.com/hyperspy/hyperspy/issues/2799>`_)
+- Suspend plotting during :meth:`exspy.models.EELSModel.smart_fit` call (`#2796 <https://github.com/hyperspy/hyperspy/issues/2796>`_)
+- make :py:meth:`~.api.signals.BaseSignal.add_marker` also check if the plot is not active before plotting signal (`#2799 <https://github.com/hyperspy/hyperspy/issues/2799>`_)
 - Fix irresponsive ROI added to a signal plot with a right hand side axis (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
-- Fix :py:func:`~.drawing.utils.plot_histograms` drawstyle following matplotlib API change (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
-- Fix incorrect :py:meth:`~.signal.BaseSignal.map` output size of lazy signal when input and output axes do not match (`#2837 <https://github.com/hyperspy/hyperspy/issues/2837>`_)
+- Fix :py:func:`~.api.plot.plot_histograms` drawstyle following matplotlib API change (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
+- Fix incorrect :py:meth:`~.api.signals.BaseSignal.map` output size of lazy signal when input and output axes do not match (`#2837 <https://github.com/hyperspy/hyperspy/issues/2837>`_)
 - Add support for latest h5py release (3.5) (`#2843 <https://github.com/hyperspy/hyperspy/issues/2843>`_)
 
 
 Deprecations
 ------------
 
-- Rename ``line_style`` to ``linestyle`` in :py:func:`~.drawing.utils.plot_spectra` to match matplotlib argument name (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
+- Rename ``line_style`` to ``linestyle`` in :py:func:`~.api.plot.plot_spectra` to match matplotlib argument name (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
 
 
 Enhancements
@@ -287,7 +694,9 @@ Enhancements
 - :py:meth:`~.roi.BaseInteractiveROI.add_widget` can now take a string or integer instead of tuple of string or integer (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
 
 
-v1.6.4 (2021-07-08)
+.. _changes_1.6.4:
+
+1.6.4 (2021-07-08)
 ===================
 
 Bug Fixes
@@ -296,7 +705,7 @@ Bug Fixes
 - Fix parsing EELS aperture label with unexpected value, for example 'Imaging' instead of '5 mm' (`#2772 <https://github.com/hyperspy/hyperspy/issues/2772>`_)
 - Lazy datasets can now be saved out as blockfiles (blo) (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
 - ComplexSignals can now be rebinned without error (`#2789 <https://github.com/hyperspy/hyperspy/issues/2789>`_)
-- Method :py:meth:`~._components.polynomial.Polynomial.estimate_parameters` of the :py:class:`~._components.polynomial.Polynomial` component now supports order
+- Method :py:meth:`~.api.model.components1D.Polynomial.estimate_parameters` of the :py:class:`~._components.polynomial.Polynomial` component now supports order
   greater than 10 (`#2790 <https://github.com/hyperspy/hyperspy/issues/2790>`_)
 - Update minimal requirement of dependency importlib_metadata from
   >= 1.6.0 to >= 3.6 (`#2793 <https://github.com/hyperspy/hyperspy/issues/2793>`_)
@@ -317,16 +726,18 @@ Maintenance
 - Fix image comparison failure with numpy 1.21.0 (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
 
 
-Hyperspy 1.6.3 (2021-06-10)
-===========================
+.. _changes_1.6.3:
+
+1.6.3 (2021-06-10)
+===================
 
 Bug Fixes
 ---------
 
 - Fix ROI snapping regression (`#2720 <https://github.com/hyperspy/hyperspy/issues/2720>`_)
-- Fix :py:meth:`~._signals.signal1d.Signal1D.shift1D`, :py:meth:`~._signals.signal1d.Signal1D.align1D` and :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` regression with navigation dimension larger than one (`#2729 <https://github.com/hyperspy/hyperspy/issues/2729>`_)
-- Fix disconnecting events when closing figure and :py:meth:`~._signals.signal1d.Signal1D.remove_background` is active (`#2734 <https://github.com/hyperspy/hyperspy/issues/2734>`_)
-- Fix :py:meth:`~.signal.BaseSignal.map` regression of lazy signal with navigation chunks of size of 1 (`#2748 <https://github.com/hyperspy/hyperspy/issues/2748>`_)
+- Fix :py:meth:`~.api.signals.Signal1D.shift1D`, :py:meth:`~.api.signals.Signal1D.align1D` and ``hyperspy._signals.eels.EELSSpectrum.align_zero_loss_peak`` regression with navigation dimension larger than one (`#2729 <https://github.com/hyperspy/hyperspy/issues/2729>`_)
+- Fix disconnecting events when closing figure and :py:meth:`~.api.signals.Signal1D.remove_background` is active (`#2734 <https://github.com/hyperspy/hyperspy/issues/2734>`_)
+- Fix :py:meth:`~.api.signals.BaseSignal.map` regression of lazy signal with navigation chunks of size of 1 (`#2748 <https://github.com/hyperspy/hyperspy/issues/2748>`_)
 - Fix unclear error message when reading a hspy file saved using blosc compression and ``hdf5plugin`` hasn't been imported previously (`#2760 <https://github.com/hyperspy/hyperspy/issues/2760>`_)
 - Fix saving ``navigator`` of lazy signal (`#2763 <https://github.com/hyperspy/hyperspy/issues/2763>`_)
 
@@ -339,7 +750,7 @@ Enhancements
   extensions and use them without restarting the python session (`#2709 <https://github.com/hyperspy/hyperspy/issues/2709>`_)
 - Don't import hyperspy extensions when registering extensions (`#2711 <https://github.com/hyperspy/hyperspy/issues/2711>`_)
 - Improve docstrings of various fitting methods (`#2724 <https://github.com/hyperspy/hyperspy/issues/2724>`_)
-- Improve speed of :py:meth:`~._signals.signal1d.Signal1D.shift1D` (`#2750 <https://github.com/hyperspy/hyperspy/issues/2750>`_)
+- Improve speed of :py:meth:`~.api.signals.Signal1D.shift1D` (`#2750 <https://github.com/hyperspy/hyperspy/issues/2750>`_)
 - Add support for recent EMPAD file; scanning size wasn't parsed. (`#2757 <https://github.com/hyperspy/hyperspy/issues/2757>`_)
 
 
@@ -356,8 +767,8 @@ Maintenance
 
 .. _changes_1.6.2:
 
-v1.6.2
-======
+1.6.2 (2021-04-13)
+===================
 
 This is a maintenance release that adds support for python 3.9 and includes
 numerous bug fixes and enhancements.
@@ -370,19 +781,19 @@ Bug Fixes
 
 * Fix disconnect event when closing navigator only plot (fixes `#996 <https://github.com/hyperspy/hyperspy/issues/996>`_), (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
 * Fix incorrect chunksize when saving EMD NCEM file and specifying chunks (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
-* Fix :py:meth:`~._signals.signal2d.Signal2D.find_peaks` GUIs call with laplacian/difference of gaussian methods (`#2622 <https://github.com/hyperspy/hyperspy/issues/2622>`_ and `#2647 <https://github.com/hyperspy/hyperspy/pull/2647>`_)
+* Fix :py:meth:`~.api.signals.Signal2D.find_peaks` GUIs call with laplacian/difference of gaussian methods (`#2622 <https://github.com/hyperspy/hyperspy/issues/2622>`_ and `#2647 <https://github.com/hyperspy/hyperspy/pull/2647>`_)
 * Fix various bugs with ``CircleWidget`` and ``Line2DWidget`` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
 * Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
 * Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
 * Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
-* Fix :py:meth:`~._signals.signal1d.Signal1D.align1D` returning zeros shifts (`#2675 <https://github.com/hyperspy/hyperspy/pull/2675>`_)
+* Fix :py:meth:`~.api.signals.Signal1D.align1D` returning zeros shifts (`#2675 <https://github.com/hyperspy/hyperspy/pull/2675>`_)
 * Fix finding dataset path for EMD NCEM file containing more than one dataset in a  group (`#2673 <https://github.com/hyperspy/hyperspy/pull/2673>`_)
 * Fix squeeze function for multiple zero-dimensional entries, improved docstring, added to user guide. (`#2676 <https://github.com/hyperspy/hyperspy/pull/2676>`_)
 * Fix error in Cliff-Lorimer quantification using absorption correction (`#2681 <https://github.com/hyperspy/hyperspy/pull/2681>`_)
 * Fix ``navigation_mask`` bug in decomposition when provided as numpy array (`#2679 <https://github.com/hyperspy/hyperspy/pull/2679>`_)
 * Fix closing image contrast tool and setting vmin/vmax values (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
 * Fix range widget with matplotlib 3.4 (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
-* Fix bug in :py:func:`~.interactive.interactive` with function returning `None`. Improve user guide example. (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
+* Fix bug in :py:func:`~.api.interactive` with function returning `None`. Improve user guide example. (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
 * Fix broken events when changing signal type `#2683 <https://github.com/hyperspy/hyperspy/pull/2683>`_
 * Fix setting offset in rebin: the offset was changed in the wrong axis (`#2690 <https://github.com/hyperspy/hyperspy/pull/2690>`_)
 * Fix reading XRF bruker file, close `#2689 <https://github.com/hyperspy/hyperspy/issues/2689>`_ (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
@@ -425,8 +836,8 @@ Maintenance
 
 .. _changes_1.6.1:
 
-v1.6.1
-======
+1.6.1 (2020-11-28)
+===================
 
 This is a maintenance release that adds compatibility with h5py 3.0 and includes
 numerous bug fixes and enhancements.
@@ -437,30 +848,30 @@ for details.
 
 .. _changes_1.6:
 
-v1.6
-====
+1.6.0 (2020-08-05)
+===================
 
 NEW
 ---
 
 * Support for the following file formats:
 
-  * :ref:`sur-format`
-  * :ref:`elid_format-label`
-  * :ref:`nexus-format`
-  * :ref:`usid-format`
-  * :ref:`empad-format`
-  * Prismatic EMD format, see :ref:`emd-format`
-* :meth:`~._signals.eels.EELSSpectrum.print_edges_near_energy` method
+  * :external+rsciio:ref:`digitalsurf-format`
+  * :external+rsciio:ref:`elid-format`
+  * :external+rsciio:ref:`nexus-format`
+  * :external+rsciio:ref:`usid-format`
+  * :external+rsciio:ref:`empad-format`
+  * Prismatic EMD format, see :external+rsciio:ref:`emd-format`
+* ``hyperspy._signals.eels.EELSSpectrum.print_edges_near_energy`` method
   that, if the `hyperspy-gui-ipywidgets package
   <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
   is installed, includes an
-  awesome interactive mode. See :ref:`eels_elemental_composition-label`.
+  awesome interactive mode. See :external+exspy:ref:`eels_elemental_composition-label`.
 * Model asymmetric line shape components:
 
   * :py:class:`~._components.doniach.Doniach`
   * :py:class:`~._components.split_voigt.SplitVoigt`
-* :ref:`EDS absorption correction <eds_absorption-label>`.
+* :external+exspy:ref:`EDS absorption correction <eds_absorption-label>`.
 * :ref:`Argand diagram for complex signals <complex.argand>`.
 * :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.
 * :ref:`cluster_analysis-label`.
@@ -468,7 +879,7 @@ NEW
 Enhancements
 ------------
 
-* The :py:meth:`~.signal.BaseSignal.get_histogram` now uses numpy's
+* The :py:meth:`~.api.signals.BaseSignal.get_histogram` now uses numpy's
   `np.histogram_bin_edges()
   <https://numpy.org/doc/stable/reference/generated/numpy.histogram_bin_edges.html>`_
   and supports all of its ``bins`` keyword values.
@@ -481,27 +892,27 @@ Enhancements
   * :py:class:`~._components.arctan.Arctan`
   * :py:class:`~._components.voigt.Voigt`
   * :py:class:`~._components.heaviside.HeavisideStep`
-* The model fitting :py:meth:`~.model.BaseModel.fit` and
-  :py:meth:`~.model.BaseModel.multifit` methods have been vastly improved. See
+* The model fitting :py:meth:`~hyperspy.model.BaseModel.fit` and
+  :py:meth:`~hyperspy.model.BaseModel.multifit` methods have been vastly improved. See
   :ref:`model.fitting` and the API changes section below.
 * New serpentine iteration path for multi-dimensional fitting.
   See :ref:`model.multidimensional-label`.
-* The :py:func:`~.drawing.utils.plot_spectra`  function now listens to
+* The :py:func:`~.api.plot.plot_spectra`  function now listens to
   events to update the figure automatically.
   See :ref:`this example <plot_profiles_interactive-label>`.
 * Improve thread-based parallelism. Add ``max_workers`` argument to the
-  :py:meth:`~.signal.BaseSignal.map` method, such that the user can directly
+  :py:meth:`~.api.signals.BaseSignal.map` method, such that the user can directly
   control how many threads they launch.
-* Many improvements to the :py:meth:`~.mva.MVA.decomposition` and
-  :py:meth:`~.mva.MVA.blind_source_separation` methods, including support for
+* Many improvements to the :py:meth:`~.api.signals.BaseSignal.decomposition` and
+  :py:meth:`~.api.signals.BaseSignal.blind_source_separation` methods, including support for
   scikit-learn like algorithms, better API and much improved documentation.
   See :ref:`ml-label` and the API changes section below.
 * Add option to calculate the absolute thickness to the EELS
-  :meth:`~._signals.eels.EELSSpectrum.estimate_thickness` method.
-  See :ref:`eels_thickness-label`.
+  ``hyperspy._signals.eels.EELSSpectrum.estimate_thickness`` method.
+  See :external+exspy:ref:`eels_thickness-label`.
 * Vastly improved performance and memory footprint of the
-  :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` method.
-* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method can
+  :py:meth:`~.api.signals.Signal2D.estimate_shift2D` method.
+* The :py:meth:`~.api.signals.Signal1D.remove_background` method can
   now remove Doniach, exponential, Lorentzian, skew normal,
   split Voigt and Voigt functions. Furthermore, it can return the background
   model that includes an estimation of the reduced chi-squared.
@@ -512,8 +923,8 @@ Enhancements
   ``vmin`` and ``vmax`` keywords now take values like ``vmin="30th"`` to
   clip the minimum value to the 30th percentile. See :ref:`signal.fft`
   for an example.
-* The :py:meth:`~._signals.signal1d.Signal1D.plot` and
-  :py:meth:`~._signals.signal2d.Signal2D.plot` methods take a new keyword
+* The :py:meth:`~.api.signals.Signal1D.plot` and
+  :py:meth:`~.api.signals.Signal2D.plot` methods take a new keyword
   argument ``autoscale``. See :ref:`plot.customize_images` for details.
 * The contrast editor and the decomposition methods can now operate on
   complex signals.
@@ -524,20 +935,20 @@ Enhancements
 API changes
 -----------
 
-* The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
+* The :py:meth:`~.api.signals.Signal2D.plot` keyword argument
   ``saturated_pixels`` is deprecated. Please use
   ``vmin`` and/or ``vmax`` instead.
-* The :py:func:`~.io.load` keyword argument ``dataset_name`` has been
+* The :py:func:`~.api.load` keyword argument ``dataset_name`` has been
   renamed to ``dataset_path``.
-* The :py:meth:`~.signal.BaseSignal.set_signal_type` method no longer takes
+* The :py:meth:`~.api.signals.BaseSignal.set_signal_type` method no longer takes
   ``None``. Use the empty string ``""`` instead.
-* The :py:meth:`~.signal.BaseSignal.get_histogram` ``bins`` keyword values
+* The :py:meth:`~.api.signals.BaseSignal.get_histogram` ``bins`` keyword values
   have been renamed as follows for consistency with numpy:
 
-    * ``"scotts"`` -> ``"scott"``,
-    * ``"freedman"`` -> ``"fd"``
-*  Multiple changes to the syntax of the :py:meth:`~.model.BaseModel.fit`
-   and :py:meth:`~.model.BaseModel.multifit` methods:
+  * ``"scotts"`` -> ``"scott"``,
+  * ``"freedman"`` -> ``"fd"``
+* Multiple changes to the syntax of the :py:meth:`~hyperspy.model.BaseModel.fit`
+  and :py:meth:`~hyperspy.model.BaseModel.multifit` methods:
 
   * The ``fitter`` keyword has been renamed to ``optimizer``.
   * The values that the ``optimizer`` keyword take have been renamed
@@ -569,26 +980,25 @@ API changes
   * The ``iterpath`` default will change from ``'flyback'`` to
     ``'serpentine'`` in HyperSpy version 2.0.
 
-* The following :py:class:`~.model.BaseModel` methods are now private:
+* The following :py:class:`~hyperspy.model.BaseModel` methods are now private:
 
-  * :py:meth:`~.model.BaseModel.set_boundaries`
-  * :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
-  * :py:meth:`~.model.BaseModel.set_boundaries`
+  * ``hyperspy.model.BaseModel.set_boundaries``
+  * ``hyperspy.model.BaseModel.set_mpfit_parameters_info``
 
 * The ``comp_label`` keyword of the machine learning plotting functions
   has been renamed to ``title``.
-* The :py:class:`~.learn.rpca.orpca` constructor's ``learning_rate``
+* The :py:class:`~hyperspy.learn.rpca.orpca` constructor's ``learning_rate``
   keyword has been renamed to ``subspace_learning_rate``
-* The :py:class:`~.learn.rpca.orpca` constructor's ``momentum``
+* The :py:class:`~hyperspy.learn.rpca.orpca` constructor's ``momentum``
   keyword has been renamed to ``subspace_momentum``
-* The :py:class:`~.learn.svd_pca.svd_pca` constructor's ``centre`` keyword
+* The :py:class:`~hyperspy.learn.svd_pca.svd_pca` constructor's ``centre`` keyword
   values have been renamed as follows:
 
-    * ``"trials"`` -> ``"navigation"``
-    * ``"variables"`` -> ``"signal"``
+  * ``"trials"`` -> ``"navigation"``
+  * ``"variables"`` -> ``"signal"``
 * The ``bounds`` keyword argument of the
-  :py:meth:`~._signals.lazy.decomposition` is deprecated and will be removed.
-* Several syntax changes in the :py:meth:`~.learn.mva.decomposition` method:
+  :py:meth:`~._signals.lazy.LazySignal.decomposition` is deprecated and will be removed.
+* Several syntax changes in the :py:meth:`~.api.signals.BaseSignal.decomposition` method:
 
   * Several ``algorithm`` keyword values have been renamed as follows:
 
@@ -605,8 +1015,8 @@ API changes
 .. _changes_1.5.2:
 
 
-v1.5.2
-======
+1.5.2 (2019-09-06)
+===================
 
 This is a maintenance release that adds compatibility with Numpy 1.17 and Dask
 2.3.0 and fixes a bug in the Bruker reader. See `the issue tracker
@@ -616,8 +1026,8 @@ for details.
 
 .. _changes_1.5.1:
 
-v1.5.1
-======
+1.5.1 (2019-07-28)
+===================
 
 This is a maintenance release that fixes some regressions introduced in v1.5.
 Follow the following links for details on all the `bugs fixed
@@ -626,8 +1036,8 @@ Follow the following links for details on all the `bugs fixed
 
 .. _changes_1.5:
 
-v1.5
-====
+1.5.0 (2019-07-27)
+===================
 
 NEW
 ---
@@ -635,8 +1045,8 @@ NEW
 * New method :py:meth:`hyperspy.component.Component.print_current_values`. See
   :ref:`the User Guide for details <Component.print_current_values>`.
 * New :py:class:`hyperspy._components.skew_normal.SkewNormal` component.
-* New :py:meth:`hyperspy.signal.BaseSignal.apply_apodization` method and
-  ``apodization`` keyword for :py:meth:`hyperspy.signal.BaseSignal.fft`. See
+* New :py:meth:`hyperspy.api.signals.BaseSignal.apply_apodization` method and
+  ``apodization`` keyword for :py:meth:`hyperspy.api.signals.BaseSignal.fft`. See
   :ref:`signal.fft` for details.
 * Estimation of number of significant components by the elbow method.
   See :ref:`mva.scree_plot`.
@@ -645,14 +1055,14 @@ Enhancements
 ------------
 
 * The contrast adjustment tool has been hugely improved. Test it by pressing the ``h`` key on any image.
-* The :ref:`Developer Guide <dev_guide-label>` has been extended, enhanced and divided into
+* The :ref:`Developer Guide <dev_guide>` has been extended, enhanced and divided into
   chapters.
 * Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
   automatically transposed when using
-  :py:func:`hyperspy.drawing.utils.plot_images`
-  or :py:func:`hyperspy.drawing.utils.plot_spectra` respectively. This is
+  :py:func:`hyperspy.api.plot.plot_images`
+  or :py:func:`hyperspy.api.plot.plot_spectra` respectively. This is
   specially relevant when plotting the result of EDS quantification. See
-  :ref:`eds-label` for examples.
+  :external+exspy:ref:`eds-label` for examples.
 * The following components have been rewritten using
   :py:class:`hyperspy._components.expression.Expression`, boosting their
   speeds among other benefits. Multiple issues have been fixed on the way.
@@ -664,14 +1074,14 @@ Enhancements
   * :py:class:`hyperspy._components.logistic.Logistic`
   * :py:class:`hyperspy._components.error_function.Erf`
   * :py:class:`hyperspy._components.gaussian2d.Gaussian2D`
-  * :py:class:`hyperspy._components.volume_plasmon_drude.VolumePlasmonDrude`
-  * :py:class:`hyperspy._components.eels_double_power_law.DoublePowerLaw`
-  * The :py:class:`hyperspy._components.polynomial_deprecated.Polynomial`
+  * :py:class:`exspy.components.VolumePlasmonDrude`
+  * :py:class:`exspy.components.DoublePowerLaw`
+  * The ``hyperspy._components.polynomial_deprecated.Polynomial``
     component will be deprecated in HyperSpy 2.0 in favour of the new
     :py:class:`hyperspy._components.polynomial.Polynomial` component, that is based on
     :py:class:`hyperspy._components.expression.Expression` and has an improved API. To
     start using the new component pass the ``legacy=False`` keyword to the
-    the :py:class:`hyperspy._components.polynomial_deprecated.Polynomial` component
+    the ``hyperspy._components.polynomial_deprecated.Polynomial`` component
     constructor.
 
 
@@ -684,8 +1094,8 @@ For developers
 
 .. _changes_1.4.2:
 
-v1.4.2
-======
+1.4.2 (2019-06-19)
+===================
 
 This is a maintenance release. Among many other fixes and enhancements, this
 release fixes compatibility issues with Matplotlib v 3.1. Follow the
@@ -697,8 +1107,8 @@ and `enhancements
 
 .. _changes_1.4.1:
 
-v1.4.1
-======
+1.4.1 (2018-10-23)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -711,8 +1121,8 @@ This release fixes compatibility issues with Python 3.7.
 
 .. _changes_1.4:
 
-v1.4
-====
+1.4.0 (2018-09-02)
+===================
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -727,14 +1137,14 @@ NEW
 
 * Support for three new file formats:
 
-    * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :ref:`emd_fei-format`.
-    * Reading Bruker's SPX format. See :ref:`spx-format`.
-    * Reading and writing the mrcz open format. See :ref:`mrcz-format`.
-* New :mod:`~.datasets.artificial_data` module which contains functions for generating
+  * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :external+rsciio:ref:`emd_fei-format`.
+  * Reading Bruker's SPX format. See :external+rsciio:ref:`bruker-format`.
+  * Reading and writing the mrcz open format. See :external+rsciio:ref:`mrcz-format`.
+* New ``hyperspy.datasets.artificial_data`` module which contains functions for generating
   artificial data, for use in things like docstrings or for people to test
   HyperSpy functionalities. See :ref:`example-data-label`.
-* New :meth:`~.signal.BaseSignal.fft` and :meth:`~.signal.BaseSignal.ifft` signal methods. See :ref:`signal.fft`.
-* New :meth:`~._signals.hologram_image.HologramImage.statistics` method to compute useful hologram parameters. See :ref:`holography.stats-label`.
+* New :meth:`~.api.signals.BaseSignal.fft` and :meth:`~.api.signals.BaseSignal.ifft` signal methods. See :ref:`signal.fft`.
+* New :meth:`holospy.signals.hologram_image.HologramImage.statistics` method to compute useful hologram parameters. See :external+holospy:ref:`holography.stats-label`.
 * Automatic axes units conversion and better units handling using `pint <https://pint.readthedocs.io/en/latest/>`__.
   See :ref:`quantity_and_converting_units`.
 * New :class:`~.roi.Line2DROI` :meth:`~.roi.Line2DROI.angle` method. See :ref:`roi-label` for details.
@@ -742,30 +1152,30 @@ NEW
 Enhancements
 ------------
 
-* :py:func:`~.drawing.utils.plot_images` improvements (see :ref:`plot.images` for details):
+* :py:func:`~.api.plot.plot_images` improvements (see :ref:`plot.images` for details):
 
-    * The ``cmap`` option of :py:func:`~.drawing.utils.plot_images`
-      supports iterable types, allowing the user to specify different colormaps
-      for the different images that are plotted by providing a list or other
-      generator.
-    * Clicking on an individual image updates it.
+  * The ``cmap`` option of :py:func:`~.api.plot.plot_images`
+    supports iterable types, allowing the user to specify different colormaps
+    for the different images that are plotted by providing a list or other
+    generator.
+  * Clicking on an individual image updates it.
 * New customizable keyboard shortcuts to navigate multi-dimensional datasets. See :ref:`visualization-label`.
-* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method now operates much faster
+* The :py:meth:`~.api.signals.Signal1D.remove_background` method now operates much faster
   in multi-dimensional datasets and adds the options to interatively plot the remainder of the operation and
   to set the removed background to zero. See :ref:`signal1D.remove_background` for details.
-* The  :py:meth:`~._signals.Signal2D.plot` method now takes a ``norm`` keyword that can be "linear", "log",
+* The  :py:meth:`~.api.signals.Signal2D.plot` method now takes a ``norm`` keyword that can be "linear", "log",
   "auto"  or a matplotlib norm. See :ref:`plot.customize_images` for details.
   Moreover, there are three new extra keyword
   arguments, ``fft_shift`` and ``power_spectrum``, that are useful when plotting fourier transforms. See
   :ref:`signal.fft`.
-* The :py:meth:`~._signals.signal2d.Signal2D.align2D` and :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+* The :py:meth:`~.api.signals.Signal2D.align2D` and :py:meth:`~.api.signals.Signal2D.estimate_shift2D`
   can operate with sub-pixel accuracy using skimage's upsampled matrix-multiplication DFT. See :ref:`signal2D.align`.
 
 
 .. _changes_1.3.2:
 
-v1.3.2
-======
+1.3.2 (2018-07-03)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -775,8 +1185,8 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 .. _changes_1.3.1:
 
-v1.3.1
-======
+1.3.1 (2018-04-19)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -790,8 +1200,8 @@ releases see https://github.com/hyperspy/hyperspy-bundle
 
 .. _changes_1.3:
 
-v1.3
-====
+1.3.0 (2017-05-27)
+===================
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -805,39 +1215,39 @@ and `new features
 
 NEW
 ---
-* :py:meth:`~.signal.BaseSignal.rebin` supports upscaling and rebinning to
+* :py:meth:`~.api.signals.BaseSignal.rebin` supports upscaling and rebinning to
   arbitrary sizes through linear interpolation. See :ref:`rebin-label`. It also runs faster if `numba <http://numba.pydata.org/>`__ is installed.
 * :py:attr:`~.axes.AxesManager.signal_extent` and :py:attr:`~.axes.AxesManager.navigation_extent` properties to easily get the extent of each space.
 * New IPywidgets Graphical User Interface (GUI) elements for the `Jupyter Notebook <http://jupyter.org>`__.
   See the new `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`__ package.
   It is not installed by default, see :ref:`install-label` for details.
-* All the :ref:`roi-label` now have a :meth:`gui` method to display a GUI if
+* All the :ref:`roi-label` now have a ``gui`` method to display a GUI if
   at least one of HyperSpy's GUI packgages are installed.
 
 Enhancements
 ------------
 * Creating many markers is now much faster.
 * New "Stage" metadata node. See :ref:`metadata_structure` for details.
-* The Brucker file reader now supports the new version of the format. See :ref:`bcf-format`.
+* The Brucker file reader now supports the new version of the format. See :external+rsciio:ref:`bruker-format`.
 * HyperSpy is now compatible with all matplotlib backends, including the nbagg which is
   particularly convenient for interactive data analysis in the
   `Jupyter Notebook <http://jupyter.org>`__ in combination with the new
   `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`__ package.
   See :ref:`importing_hyperspy-label`.
 * The ``vmin`` and ``vmax`` arguments of the
-  :py:func:`~.drawing.utils.plot_images` function now accept lists to enable
+  :py:func:`~.api.plot.plot_images` function now accept lists to enable
   setting these parameters for each plot individually.
-* The :py:meth:`~.signal.MVATools.plot_decomposition_results` and
-  :py:meth:`~.signal.MVATools.plot_bss_results` methods now makes a better
+* The :py:meth:`~.api.signals.BaseSignal.plot_decomposition_results` and
+  :py:meth:`~.api.signals.BaseSignal.plot_bss_results` methods now makes a better
   guess of the number of navigators (if any) required to visualise the
   components. (Previously they were always plotting four figures by default.)
 * All functions that take a signal range can now take a :py:class:`~.roi.SpanROI`.
 * The following ROIs can now be used for indexing or slicing (see :ref:`here <roi-slice-label>` for details):
 
-    * :py:class:`~.roi.Point1DROI`
-    * :py:class:`~.roi.Point2DROI`
-    * :py:class:`~.roi.SpanROI`
-    * :py:class:`~.roi.RectangularROI`
+  * :py:class:`~.api.roi.Point1DROI`
+  * :py:class:`~.api.roi.Point2DROI`
+  * :py:class:`~.api.roi.SpanROI`
+  * :py:class:`~.api.roi.RectangularROI`
 
 
 API changes
@@ -851,38 +1261,38 @@ API changes
   performing a decomposition. (Previously they would plot as many figures
   as available components, usually resulting in memory saturation):
 
-    * :py:meth:`~.signal.MVATools.plot_decomposition_results`.
-    * :py:meth:`~.signal.MVATools.plot_decomposition_factors`.
+  * :py:meth:`~.api.signals.BaseSignal.plot_decomposition_results`.
+  * :py:meth:`~.api.signals.BaseSignal.plot_decomposition_factors`.
 
 * The default extension when saving to HDF5 following HyperSpy's specification
-  is now ``hspy`` instead of ``hdf5``. See :ref:`hspy-format`.
+  is now ``hspy`` instead of ``hdf5``. See :external+rsciio:ref:`hspy-format`.
 
 * The following methods are deprecated and will be removed in HyperSpy 2.0
 
-    * :py:meth:`~.axes.AxesManager.show`. Use :py:meth:`~.axes.AxesManager.gui`
-      instead.
-    * All :meth:`notebook_interaction` method. Use the equivalent :meth:`gui` method
-      instead.
-    * :py:meth:`~._signals.signal1d.Signal1D.integrate_in_range`.
-      Use :py:meth:`~._signals.signal1d.Signal1D.integrate1D` instead.
+  * ``.axes.AxesManager.show``. Use :py:meth:`~.axes.AxesManager.gui`
+    instead.
+  * All ``notebook_interaction`` method. Use the equivalent ``gui`` method
+    instead.
+  * ``hyperspy.api.signals.Signal1D.integrate_in_range``.
+    Use :py:meth:`~.api.signals.BaseSignal.integrate1D` instead.
 
 * The following items have been removed from
   :ref:`preferences <configuring-hyperspy-label>`:
 
-    * ``General.default_export_format``
-    * ``General.lazy``
-    * ``Model.default_fitter``
-    * ``Machine_learning.multiple_files``
-    * ``Machine_learning.same_window``
-    * ``Plot.default_style_to_compare_spectra``
-    * ``Plot.plot_on_load``
-    * ``Plot.pylab_inline``
-    * ``EELS.fine_structure_width``
-    * ``EELS.fine_structure_active``
-    * ``EELS.fine_structure_smoothing``
-    * ``EELS.synchronize_cl_with_ll``
-    * ``EELS.preedge_safe_window_width``
-    * ``EELS.min_distance_between_edges_for_fine_structure``
+  * ``General.default_export_format``
+  * ``General.lazy``
+  * ``Model.default_fitter``
+  * ``Machine_learning.multiple_files``
+  * ``Machine_learning.same_window``
+  * ``Plot.default_style_to_compare_spectra``
+  * ``Plot.plot_on_load``
+  * ``Plot.pylab_inline``
+  * ``EELS.fine_structure_width``
+  * ``EELS.fine_structure_active``
+  * ``EELS.fine_structure_smoothing``
+  * ``EELS.synchronize_cl_with_ll``
+  * ``EELS.preedge_safe_window_width``
+  * ``EELS.min_distance_between_edges_for_fine_structure``
 
 * New ``Preferences.GUIs`` section to enable/disable the installed GUI toolkits.
 
@@ -892,15 +1302,15 @@ For developers
   been splitted into a separate package. See the new
   `hyperspy_gui_traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`__
   package.
-* The new :py:mod:`~.ui_registry` enables easy connection of external
+* The new ``hyperspy.ui_registry`` enables easy connection of external
   GUI elements to HyperSpy. This is the mechanism used to split the traitsui
   and ipywidgets GUI elements.
 
 
 .. _changes_1.2:
 
-v1.2
-====
+1.2.0 (2017-02-02)
+===================
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -914,13 +1324,13 @@ NEW
 ---
 
 * Lazy loading and evaluation. See :ref:`big-data-label`.
-* Parallel :py:meth:`~.signal.BaseSignal.map` and all the functions that use
+* Parallel :py:meth:`~.api.signals.BaseSignal.map` and all the functions that use
   it internally (a good fraction of HyperSpy's functionaly). See
   :ref:`map-label`.
-* :ref:`electron-holography-label` reconstruction.
-* Support for reading :ref:`edax-format` files.
-* New signal methods :py:meth:`~.signal.BaseSignal.indexmin` and
-  :py:meth:`~.signal.BaseSignal.valuemin`.
+* :external+holospy:ref:`electron-holography-label` reconstruction.
+* Support for reading :external+rsciio:ref:`edax-format` files.
+* New signal methods :py:meth:`~.api.signals.BaseSignal.indexmin` and
+  :py:meth:`~.api.signals.BaseSignal.valuemin`.
 
 Enhancements
 ------------
@@ -933,13 +1343,13 @@ Enhancements
 * Better support for EMD files.
 * The scree plot got a beauty treatment and some extra features. See
   :ref:`mva.scree_plot`.
-* :py:meth:`~.signal.BaseSignal.map` can now take functions that return
+* :py:meth:`~.api.signals.BaseSignal.map` can now take functions that return
   differently-shaped arrays or arbitrary objects, see :ref:`map-label`.
 * Add support for stacking multi-signal files. See :ref:`load-multiple-label`.
 * Markers can now be saved to hdf5 and creating many markers is easier and
   faster. See :ref:`plot.markers`.
 * Add option to save to HDF5 file using the ".hspy" extension instead of
-  ".hdf5". See :ref:`hspy-format`. This will be the default extension in
+  ".hdf5". See :external+rsciio:ref:`hspy-format`. This will be the default extension in
   HyperSpy 1.3.
 
 For developers
@@ -951,8 +1361,8 @@ For developers
 
 .. _changes_1.1.2:
 
-v1.1.2
-======
+1.1.2 (2079-01-12)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -962,8 +1372,8 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 .. _changes_1.1.1:
 
-v1.1.1
-======
+1.1.1 (2016-08-24)
+===================
 
 This is a maintenance release. Follow the following link for details on all
 the `bugs fixed
@@ -984,8 +1394,8 @@ Enhancements
 
 .. _changes_1.1:
 
-v1.1
-====
+1.1.0 (2016-08-03)
+===================
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -995,31 +1405,31 @@ NEW
 ---
 
 * :ref:`signal.transpose`.
-* :ref:`protochips-format` reader.
+* :external+rsciio:ref:`protochips-format` reader.
 
 Enhancements
 ------------
 
 
-* :py:meth:`~.model.BaseModel.fit` takes a new algorithm, the global optimizer
+* :py:meth:`~hyperspy.model.BaseModel.fit` takes a new algorithm, the global optimizer
   `differential evolution`.
-* :py:meth:`~.model.BaseModel.fit` algorithm, `leastsq`, inherits SciPy's bound
+* :py:meth:`~hyperspy.model.BaseModel.fit` algorithm, `leastsq`, inherits SciPy's bound
   constraints support (requires SciPy >= 0.17).
-* :py:meth:`~.model.BaseModel.fit` algorithm names changed to be consistent
+* :py:meth:`~hyperspy.model.BaseModel.fit` algorithm names changed to be consistent
   `scipy.optimze.minimize()` notation.
 
 
 
-v1.0.1
-======
+1.0.1 (2016-07-27)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
 <https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.0.1>`__.
 
 
-v1.0
-====
+1.0.0 (2016-07-14)
+===================
 
 This is a major release. Here we only list the highlist. A detailed list of
 changes `is available in github
@@ -1033,7 +1443,7 @@ NEW
 * Numpy ufuncs can now :ref:`operate on HyperSpy's signals <ufunc-label>`.
 * ComplexSignal and specialised subclasses to :ref:`operate on complex data <complex_data-label>`.
 * Events :ref:`logging <logger-label>`.
-* Query and :ref:`fetch spectra <eelsdb-label>` from `The EELS Database <https://eelsdb.eu/>`__.
+* Query and fetch spectr from :func:`exspy.data.eelsdb` from `The EELS Database <https://eelsdb.eu/>`__.
 * :ref:`interactive-label`.
 * :ref:`events-label`.
 
@@ -1048,25 +1458,25 @@ Model
 
 EDS
 ^^^
-* :ref:`Z-factors quantification <eds_quantification-label>`.
-* :ref:`Cross section quantification <eds_quantification-label>`.
-* :ref:`EDS curve fitting <eds_fitting-label>`.
-* X-ray :ref:`absorption coefficient database <eds_absorption_db-label>`.
+* :external+exspy:ref:`Z-factors quantification <eds_quantification-label>`.
+* :external+exspy:ref:`Cross section quantification <eds_quantification-label>`.
+* :external+exspy:ref:`EDS curve fitting <eds_fitting-label>`.
+* X-ray :external+exspy:ref:`absorption coefficient database <eds_absorption_db-label>`.
 
 IO
 ^^
 * Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`.
-* :ref:`Bruker's composite file (bcf) <bcf-format>` reading support.
-* :ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
-* :ref:`SEMPER unf <unf-format>` read and write support.
-* :ref:`DENS heat log <dens-format>` read support.
-* :ref:`NanoMegas blockfile <blockfile-format>` read and write support.
+* :external+rsciio:ref:`Bruker's composite file (bcf) <bruker-format>` reading support.
+* :external+rsciio:ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
+* :external+rsciio:ref:`SEMPER unf <semper-format>` read and write support.
+* :external+rsciio:ref:`DENS heat log <dens-format>` read support.
+* :external+rsciio:ref:`NanoMegas blockfile <blockfile-format>` read and write support.
 
 Enhancements
 ------------
 * More useful ``AxesManager`` repr string with html repr for Jupyter Notebook.
 * Better progress bar (`tqdm <https://github.com/noamraph/tqdm>`__).
-* Add support for :ref:`writing/reading scale and unit to tif files
+* Add support for :external+rsciio:ref:`writing/reading scale and unit to tif files
   <tiff-format>` to be read with ImageJ or DigitalMicrograph.
 
 Documentation
@@ -1076,24 +1486,24 @@ Documentation
 
   * :ref:`install-label`.
   * :ref:`ml-label`.
-  * :ref:`eds-label`.
-* New :ref:`dev_guide-label`.
+  * :external+exspy:ref:`eds-label`.
+* New :ref:`dev_guide`.
 
 
 API changes
 -----------
 
-* Split :ref:`components <model_components-label>` into `components1D` and `components2D`.
-* Remove `record_by` from metadata.
+* Split :ref:`components <model_components-label>` into ``components1D`` and ``components2D``.
+* Remove ``record_by`` from metadata.
 * Remove simulation classes.
-* The :py:class:`~._signals.signal1D.Signal1D`,
-  :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
+* The :py:class:`~.api.signals.Signal1D`,
+  ``hyperspy._signals.image.Signal2D`` and :py:class:`~.api.signals.BaseSignal`
   classes deprecated the old `Spectrum` `Image` and `Signal` classes.
 
 
 
-v0.8.5
-======
+0.8.5 (2016-07-02)
+===================
 
 
 This is a maintenance release. Follow the following links for details on all
@@ -1117,24 +1527,24 @@ New feature
 API changes
 -----------
 
-The new :py:class:`~.signal.BaseSignal`,
-:py:class:`~._signals.signal1d.Signal1D` and
-:py:class:`~._signals.signal2d.Signal2D` deprecate :py:class:`~.signal.Signal`,
-:py:class:`~._signals.signal1D.Signal1D` and :py:class:`~._signals.image.Signal2D`
-respectively. Also `as_signal1D`, `as_signal2D`, `to_signal1D` and `to_signal2D`
-deprecate `as_signal1D`, `as_signal2D`, `to_spectrum` and `to_image`. See `#963
+The new :py:class:`~.api.signals.BaseSignal`,
+:py:class:`~.api.signals.Signal1D` and
+:py:class:`~.api.signals.Signal2D` deprecate ``hyperspy.signal.Signal``,
+:py:class:`~.api.signals.Signal1D` and :py:class:`~.api.signals.Signal2D`
+respectively. Also ``as_signal1D``, ``as_signal2D```, ``to_signal1D`` and ``to_signal2D``
+deprecate ``as_signal1D``, ``as_signal2D``, ``to_spectrum`` and ``to_image``. See `#963
 <https://github.com/hyperspy/hyperspy/pull/963>`__ and `#943
 <https://github.com/hyperspy/hyperspy/issues/943>`__ for details.
 
 
-v0.8.4
-======
+0.8.4 (2016-03-04)
+===================
 
 This release adds support for Python 3 and drops support for Python 2. In all
-other respects it is identical to v0.8.3.
+other respects it is identical to 0.8.3.
 
-v0.8.3
-======
+0.8.3 (2016-03-04)
+===================
 
 This is a maintenance release that includes fixes for multiple bugs, some
 enhancements, new features and API changes. This is set to be the last HyperSpy
@@ -1160,15 +1570,15 @@ Follow the following links for details on all the `bugs fixed
 
 .. _changes_0.8.2:
 
-v0.8.2
-======
+0.8.2 (2015-08-13)
+===================
 
-This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
+This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed 0.8.1 do not need to upgrade.
 
 .. _changes_0.8.1:
 
-v0.8.1
-======
+0.8.1 (2015-08-12)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -1189,41 +1599,41 @@ New features
 * ``%hyperspy`` IPython magic to easily and transparently import HyperSpy, matplotlib and numpy when using IPython.
 * :py:class:`~._components.expression.Expression` model component to easily create analytical function components. More details
   :ref:`here <expression_component-label>`.
-* :py:meth:`~.signal.Signal.unfolded` context manager.
-* :py:meth:`~.signal.Signal.derivative` method.
+* ``hyperspy.signal.Signal.unfolded`` context manager.
+* ``hyperspy.signal.Signal.derivative`` method.
 * :ref:`syntax to access the components in the model <model_components-label>`
   that includes pretty printing of the components.
 
 API changes
 -----------
 
-* :py:mod:`~.hyperspy.hspy` is now deprecated in favour of the new
-  :py:mod:`~.hyperspy.api`. The new API renames and/or move several modules as
+* ``hyperspy.hspy`` is now deprecated in favour of the new
+  :py:mod:`hyperspy.api`. The new API renames and/or move several modules as
   folows:
 
-    * ``hspy.components`` -> ``api.model.components``
-    * ``hspy.utils``-> ``api``
-    * ``hspy.utils.markers`` ``api.plot.markers``
-    * ``hspy.utils.example_signals`` -> ``api.datasets.example_signals``
+    * ``hspy.components`` -> ``hyperspy.api.model.components``
+    * ``hspy.utils``-> ``hyperspy.api``
+    * ``hspy.utils.markers`` ``hyperspy.api.plot.markers``
+    * ``hspy.utils.example_signals`` -> ``hyperspy.api.datasets.example_signals``
 
 
-    In HyperSpy 0.8.1 the full content of :py:mod:`~.hyperspy.hspy` is still
+    In HyperSpy 0.8.1 the full content of ``hyperspy.hspy`` is still
     imported in the user namespace, but this can now be disabled in
     ``hs.preferences.General.import_hspy``. In Hyperspy 1.0 it will be
-    disabled by default and the :py:mod:`~.hyperspy.hspy` module will be fully
+    disabled by default and the ``hyperspy.hspy`` module will be fully
     removed in HyperSpy 0.10. We encourage all users to migrate to the new
     syntax. For more details see :ref:`importing_hyperspy-label`.
-* Indexing the :py:class:`~.signal.Signal` class is now deprecated. We encourage
+* Indexing the ``hyperspy.signal.Signal`` class is now deprecated. We encourage
   all users to use ``isig`` and ``inav`` instead for indexing.
-* :py:func:`~.hyperspy.hspy.create_model` is now deprecated in favour of the new
-  equivalent :py:meth:`~.signal.Signal.create_model` ``Signal`` method.
-* :py:meth:`~.signal.Signal.unfold_if_multidim` is deprecated.
+* ``hyperspy.hspy.create_model`` is now deprecated in favour of the new
+  equivalent ``hyperspy.signal.Signal.create_model`` ``Signal`` method.
+* ``hyperspy.signal.Signal.unfold_if_multidim`` is deprecated.
 
 
 .. _changes_0.8:
 
-v0.8
-====
+0.8.0 (2015-04-07)
+===================
 
 New features
 ------------
@@ -1231,7 +1641,7 @@ New features
 Core
 ^^^^
 
-* :py:meth:`~._signals.signal1D.Signal1D.spikes_removal_tool` displays derivative max value when used with
+* :py:meth:`~.api.signals.Signal1D.spikes_removal_tool` displays derivative max value when used with
   GUI.
 * Progress-bar can now be suppressed by passing ``show_progressbar`` argument to all functions that generate
   it.
@@ -1245,30 +1655,30 @@ IO
 Plotting
 ^^^^^^^^
 
-* New class,  :py:class:`~.drawing.marker.MarkerBase`, to plot markers with ``hspy.utils.plot.markers`` module.  See :ref:`plot.markers`.
-* New method to plot images with the :py:func:`~.drawing.utils.plot_images` function in  ``hspy.utils.plot.plot_images``. See :ref:`plot.images`.
-* Improved :py:meth:`~._signals.image.Signal2D.plot` method to customize the image. See :ref:`plot.customize_images`.
+* New class, ``hyperspy.drawing.marker.MarkerBase``, to plot markers with ``hspy.utils.plot.markers`` module.  See :ref:`plot.markers`.
+* New method to plot images with the :py:func:`~.api.plot.plot_images` function in  ``hspy.utils.plot.plot_images``. See :ref:`plot.images`.
+* Improved ``hyperspy._signals.image.Signal2D.plot`` method to customize the image. See :ref:`plot.customize_images`.
 
 EDS
 ^^^
 
-* New method for quantifying EDS TEM spectra using Cliff-Lorimer method, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`. See :ref:`eds_quantification-label`.
-* New method to estimate for background subtraction, :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`. See :ref:`eds_background_subtraction-label`.
-* New method to estimate the windows of integration, :py:meth:`~._signals.eds.EDSSpectrum.estimate_integration_windows`.
-* New specific :py:meth:`~._signals.eds.EDSSpectrum.plot` method, with markers to indicate the X-ray lines, the window of integration or/and the windows for background subtraction. See :ref:`eds_plot_markers-label`.
+* New method for quantifying EDS TEM spectra using Cliff-Lorimer method, ``hyperspy._signals.eds_tem.EDSTEMSpectrum.quantification``. See :external+exspy:external+exspy:ref:`eds_quantification-label`.
+* New method to estimate for background subtraction, ``hyperspy._signals.eds.EDSSpectrum.estimate_background_windows``. See :external+exspy:ref:`eds_background_subtraction-label`.
+* New method to estimate the windows of integration, ``hyperspy._signals.eds.EDSSpectrum.estimate_integration_windows``.
+* New specific ``hyperspy._signals.eds.EDSSpectrum.plot`` method, with markers to indicate the X-ray lines, the window of integration or/and the windows for background subtraction. See :external+exspy:ref:`eds_plot_markers-label`.
 * New examples of signal in the ``hspy.utils.example_signals`` module.
 
-  + :py:func:`~.misc.example_signals_loading.load_1D_EDS_SEM_spectrum`
-  + :py:func:`~.misc.example_signals_loading.load_1D_EDS_TEM_spectrum`
+  + ``hyperspy.misc.example_signals_loading.load_1D_EDS_SEM_spectrum``
+  + ``hyperspy.misc.example_signals_loading.load_1D_EDS_TEM_spectrum``
 
-* New method to mask the vaccum, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.vacuum_mask` and a specific :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.decomposition` method that incoroporate the vacuum mask
+* New method to mask the vaccum, ``hyperspy._signals.eds_tem.EDSTEMSpectrum.vacuum_mask`` and a specific ``hyperspy._signals.eds_tem.EDSTEMSpectrum.decomposition`` method that incoroporate the vacuum mask
 
 API changes
 -----------
 
-* :py:class:`~.component.Component` and :py:class:`~.component.Parameter` now inherit ``traits.api.HasTraits``
+* :py:class:`~hyperspy.component.Component` and :py:class:`~hyperspy.component.Parameter` now inherit ``traits.api.HasTraits``
   that enable ``traitsui`` to modify these objects.
-* :py:meth:`~.misc.utils.attrsetter` is added, behaving as the default python :py:meth:`setattr` with nested
+* ``hyperspy.misc.utils.attrsetter`` is added, behaving as the default python ``setattr`` with nested
   attributes.
 * Several widget functions were made internal and/or renamed:
     + ``add_patch_to`` -> ``_add_patch_to``
@@ -1278,8 +1688,8 @@ API changes
     + ``update_patch_size`` -> ``_update_patch_size``
     + ``add_axes`` -> ``set_mpl_ax``
 
-v0.7.3
-======
+0.7.3 (2015-08-22)
+===================
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.3 milestone
@@ -1288,8 +1698,8 @@ in the github repository.
 
 .. _changes_0.7.2:
 
-v0.7.2
-======
+0.7.2 (2015-08-22)
+===================
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.2 milestone
@@ -1298,8 +1708,8 @@ in the github repository.
 
 .. _changes_0.7.1:
 
-v0.7.1
-======
+0.7.1 (2015-06-17)
+===================
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.1 milestone
@@ -1312,8 +1722,8 @@ New features
 
 * Add suspend/resume model plot updating. See :ref:`model.visualization`.
 
-v0.7
-====
+0.7.0 (2014-04-03)
+===================
 
 New features
 ------------
@@ -1325,10 +1735,10 @@ Core
 * New Signal methods to transform between Signal subclasses. More information
   :ref:`here <transforming_signal-label>`.
 
-  + :py:meth:`~.signal.Signal.set_signal_type`
-  + :py:meth:`~.signal.Signal.set_signal_origin`
-  + :py:meth:`~.signal.Signal.as_signal2D`
-  + :py:meth:`~.signal.Signal.as_signal1D`
+  + ``hyperspy.signal.Signal.set_signal_type``
+  + ``hyperspy.signal.Signal.set_signal_origin``
+  + ``hyperspy.signal.Signal.as_signal2D``
+  + ``hyperspy.signal.Signal.as_signal1D``
 
 * The string representation of the Signal class now prints the shape of the
   data and includes a separator between the navigation and the signal axes e.g
@@ -1340,23 +1750,23 @@ Core
 * Added compatibility witn the the GTK and TK toolkits, although with no GUI
   features.
 * It is now possible to run HyperSpy in a headless system.
-* Added a CLI to :py:meth:`~.signal.Signal1DTools.remove_background`.
-* New :py:meth:`~.signal.Signal1DTools.estimate_peak_width` method to estimate
+* Added a CLI to ``hyperspy.signal.Signal1DTools.remove_background``.
+* New ``hyperspy.signal.Signal1DTools.estimate_peak_width`` method to estimate
   peak width.
 * New methods to integrate over one axis:
-  :py:meth:`~.signal.Signal.integrate1D` and
-  :py:meth:`~.signal.Signal1DTools.integrate_in_range`.
-* New :attr:`~signal.Signal.metadata` attribute, ``Signal.binned``. Several
+  ``hyperspy.signal.Signal.integrate1D`` and
+  ``hyperspy.signal.Signal1DTools.integrate_in_range``.
+* New ``hyperspy.signal.Signal.metadata`` attribute, ``Signal.binned``. Several
   methods behave differently on binned and unbinned signals.
   See :ref:`signal.binned`.
-* New :py:meth:`~.signal.Signal.map` method to easily transform the
+* New ``hyperspy.signal.Signal.map`` method to easily transform the
   data using a function that operates on individual signals. See
   :ref:`signal.iterator`.
-* New :py:meth:`~.signal.Signal.get_histogram` and
-  :py:meth:`~.signal.Signal.print_summary_statistics` methods.
-* The spikes removal tool has been moved to the :class:`~._signal.Signal1D`
+* New ``hyperspy.signal.Signal.get_histogram`` and
+  ``hyperspy.signal.Signal.print_summary_statistics`` methods.
+* The spikes removal tool has been moved to the :class:`~.api.signals.Signal1D`
   class so that it is available for all its subclasses.
-* The :py:meth:`~.signal.Signal.split` method now can automatically split back
+* The ``hyperspy.signal.Signal.split``` method now can automatically split back
   stacked signals into its original part. See :ref:`signal.stack_split`.
 
 IO
@@ -1371,14 +1781,14 @@ Plotting
 
 * Use the blitting capabilities of the different toolkits to
   speed up the plotting of images.
-* Added several extra options to the Signal :py:meth:`~.signal.Signal.plot`
+* Added several extra options to the Signal ``hyperspy.signal.Signal.plot``
   method to customize the navigator. See :ref:`visualization-label`.
 * Add compatibility with IPython's matplotlib inline plotting.
-* New function, :py:func:`~.drawing.utils.plot_spectra`, to plot several
+* New function, :py:func:`~.api.plot.plot_spectra`, to plot several
   spectra in the same figure. See :ref:`plot.spectra`.
-* New function, :py:func:`~.drawing.utils.plot_signals`, to plot several
+* New function, :py:func:`~.api.plot.plot_signals`, to plot several
   signals at the same time. See :ref:`plot.signals`.
-* New function, :py:func:`~.drawing.utils.plot_histograms`, to plot the histrograms
+* New function, :py:func:`~.api.plot.plot_histograms`, to plot the histrograms
   of several signals at the same time. See :ref:`plot.signals`.
 
 Curve fitting
@@ -1388,7 +1798,7 @@ Curve fitting
   computed automatically when fitting. See :ref:`model.fitting`.
 * New functionality to plot the individual components of a model. See
   :ref:`model.visualization`.
-* New method, :py:meth:`~.model.Model.fit_component`, to help setting the
+* New method, ``hyperspy.model.Model.fit_component``, to help setting the
   starting parameters. See :ref:`model.starting`.
 
 Machine learning
@@ -1397,49 +1807,49 @@ Machine learning
 * The PCA scree plot can now be easily obtained as a Signal. See
   :ref:`mva.scree_plot`.
 * The decomposition and blind source separation components can now be obtained
-  as :py:class:`~.signal.Signal` instances. See :ref:`mva.get_results`.
+  as ``hyperspy.signal.Signal`` instances. See :ref:`mva.get_results`.
 * New methods to plot the decomposition and blind source separation results
   that support n-dimensional loadings. See :ref:`mva.visualization`.
 
 Dielectric function
 ^^^^^^^^^^^^^^^^^^^
 
-* New :class:`~.signal.Signal` subclass,
-  :class:`~._signals.dielectric_function.DielectricFunction`.
+* New ``hyperspy.signal.Signal`` subclass,
+  ``hyperspy._signals.dielectric_function.DielectricFunction``.
 
 EELS
 ^^^^
 
 * New method,
-  :meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` to calculate
+  ``hyperspy._signals.eels.EELSSpectrum.kramers_kronig_analysis`` to calculate
   the dielectric function from low-loss electron energy-loss spectra based on
-  the Kramers-Kronig relations. See :ref:`eels.kk`.
+  the Kramers-Kronig relations. See :external+exspy:ref:`eels.kk`.
 * New method to align the zero-loss peak,
-  :meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak`.
+  ``hyperspy._signals.eels.EELSSpectrum.align_zero_loss_peak``.
 
 EDS
 ^^^
 
 * New signal, EDSSpectrum especialized in EDS data analysis, with subsignal
   for EDS with SEM and with TEM: EDSSEMSpectrum and EDSTEMSpectrum. See
-  :ref:`eds-label`.
+  :external+exspy:ref:`eds-label`.
 * New database of EDS lines available in the ``elements`` attribute of the
   ``hspy.utils.material`` module.
 * Adapted methods to calibrate the spectrum, the detector and the microscope.
-  See :ref:`eds_calibration-label`.
+  See :external+exspy:ref:`eds_calibration-label`.
 * Specific methods to describe the sample,
-  :py:meth:`~._signals.eds.EDSSpectrum.add_elements` and
-  :py:meth:`~._signals.eds.EDSSpectrum.add_lines`. See :ref:`eds_sample-label`
+  ``hyperspy._signals.eds.EDSSpectrum.add_elements`` and
+  ``hyperspy._signals.eds.EDSSpectrum.add_lines``. See :external+exspy:ref:`eds_sample-label`
 * New method to get the intensity of specific X-ray lines:
-  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. See
-  :ref:`eds_plot-label`
+  ``hyperspy._signals.eds.EDSSpectrum.get_lines_intensity``. See
+  :external+exspy:ref:`eds_plot-label`
 
 API changes
 -----------
 
 * hyperspy.misc has been reorganized. Most of the functions in misc.utils has
   been rellocated to specialized modules. misc.utils is no longer imported in
-  hyperspy.hspy. A new hyperspy.utils module is imported instead.
+  ``hyperspy.hspy``. A new ``hyperspy.utils`` module is imported instead.
 * Objects that have been renamed
 
   + ``hspy.elements`` -> ``utils.material.elements``.
@@ -1450,13 +1860,13 @@ API changes
 * The metadata has been reorganized. See :ref:`metadata_structure`.
 * The following signal methods now operate out-of-place:
 
-  + :py:meth:`~.signal.Signal.swap_axes`
-  + :py:meth:`~.signal.Signal.rebin`
+  + ``hyperspy.signal.Signal.swap_axes``
+  + ``hyperspy.signal.Signal.rebin``
 
 .. _changes_0.6:
 
-v0.6
-====
+0.6.0 (2013-05-25)
+===================
 
 New features
 ------------
@@ -1465,9 +1875,9 @@ New features
 * Most arithmetic and rich arithmetic operators work with signal.
   See :ref:`signal.operations`.
 * Much improved EELSSpectrum methods:
-  :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`,
-  :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity` and
-  :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`.
+  ``hyperspy._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre``,
+  ``hyperspy._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity`` and
+  ``hyperspy._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold``.
 
 * The axes can now be given using their name e.g. ``s.crop("x", 1,10)``
 * New syntax to specify position over axes: an integer specifies the indexes
@@ -1480,27 +1890,27 @@ New features
 * Add padding to fourier-log and fourier-ratio deconvolution to fix the
   wrap-around problem and increase its performance.
 * New
-  :py:meth:`~.components.eels_cl_edge.EELSCLEdge.get_fine_structure_as_spectrum`
+  ``hyperspy.components.eels_cl_edge.EELSCLEdge.get_fine_structure_as_spectrum``
   EELSCLEdge method.
-* New :py:class:`~.components.arctan.Arctan` model component.
+* New ``hyperspy.components.arctan.Arctan`` model component.
 * New
-  :py:meth:`~.model.Model.enable_adjust_position`
-  and :py:meth:`~.model.Model.disable_adjust_position`
+  ``hyperspy.model.Model.enable_adjust_position``
+  and ``hyperspy.model.Model.disable_adjust_position``
   to easily change the position of components using the mouse on the plot.
 * New Model methods
-  :py:meth:`~.model.Model.set_parameters_value`,
-  :py:meth:`~.model.Model.set_parameters_free` and
-  :py:meth:`~.model.Model.set_parameters_not_free`
+  ``hyperspy.model.Model.set_parameters_value``,
+  ``hyperspy.model.Model.set_parameters_free`` and
+  ``hyperspy.model.Model.set_parameters_not_free``
   to easily set several important component attributes of a list of components
   at once.
 * New
-  :py:func:`~.misc.utils.stack` function to stack signals.
+  :py:func:`~.api.stack` function to stack signals.
 * New Signal methods:
-  :py:meth:`~.signal.Signal.integrate_simpson`,
-  :py:meth:`~.signal.Signal.max`,
-  :py:meth:`~.signal.Signal.min`,
-  :py:meth:`~.signal.Signal.var`, and
-  :py:meth:`~.signal.Signal.std`.
+  ``hyperspy.signal.Signal.integrate_simpson``,
+  ``hyperspy.signal.Signal.max``,
+  ``hyperspy.signal.Signal.min``,
+  ``hyperspy.signal.Signal.var``, and
+  ``hyperspy.signal.Signal.std``.
 * New sliders window to easily navigate signals with navigation_dimension > 2.
 * The Ripple (rpl) reader can now read rpl files produced by INCA.
 
@@ -1539,8 +1949,8 @@ API changes
 
 .. _changes_0.5.1:
 
-v0.5.1
-======
+0.5.1 (2012-09-28)
+===================
 
 New features
 ------------
@@ -1572,8 +1982,8 @@ API changes
 
 .. _changes_0.5:
 
-v0.5
-====
+0.5.0 (2012-09-07)
+===================
 
 New features
 ------------
@@ -1634,13 +2044,13 @@ API changes
 
 .. _changes_0.4.1:
 
-v0.4.1
-======
+0.4.1 (2012-04-16)
+===================
 
 New features
 ------------
 
- * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`__.
+ * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <https://pypi.org/project/tifffile/>`_.
  * Improved UTF8 support.
  * Reduce the number of required libraries by making mdp and hdf5 not mandatory.
  * Improve the information returned by __repr__ of several objects.
@@ -1665,8 +2075,8 @@ Syntax changes
 
 .. _changes_0.4:
 
-v0.4
-====
+0.4.0 (2012-02-29)
+===================
 
 New features
 ------------

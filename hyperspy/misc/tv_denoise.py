@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -65,7 +65,7 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
     >>> mask = (x -22)**2 + (y - 20)**2 + (z - 17)**2 < 8**2
     >>> mask = mask.astype(float)
     >>> mask += 0.2*np.random.randn(*mask.shape)
-    >>> res = tv_denoise_3d(mask, weight=100)
+    >>> res = _tv_denoise_3d(mask, weight=100)
     """
     im_type = im.dtype
     if im_type is not float:
@@ -165,8 +165,8 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     ---------
     >>> import skimage
     >>> camera = skimage.data.camera().astype(float)
-    >>> camera += 0.5 * camera.std()*np.random.randn(*ascent.shape)
-    >>> denoised_camera = tv_denoise(camera, weight=60.0)
+    >>> camera += 0.5 * camera.std() * np.random.randn(*camera.shape)
+    >>> denoised_camera = _tv_denoise_2d(camera, weight=60.0)
     """
     im_type = im.dtype
     if im_type is not float:
@@ -256,12 +256,6 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
            applications, Journal of Mathematical Imaging and Vision,
            Springer, 2004, 20, 89-97.
 
-    Examples
-    ---------
-    >>> import skimage
-    >>> camera = skimage.data.camera().astype(float)
-    >>> camera += 0.5 * camera.std()*np.random.randn(*camera.shape)
-    >>> denoised_camera = tv_denoise(camera, weight=60.0)
     """
     im_type = im.dtype
     if im_type is not float:
@@ -355,17 +349,16 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     Examples
     ---------
-    >>> # 2D example using ascent
     >>> import skimage
     >>> camera = skimage.data.camera().astype(float)
-    >>> camera += 0.5 * camera.std()*np.random.randn(*camera.shape)
+    >>> camera += 0.5 * camera.std() * np.random.randn(*camera.shape)
     >>> denoised_camera = tv_denoise(camera, weight=60)
     >>> # 3D example on synthetic data
     >>> x, y, z = np.ogrid[0:40, 0:40, 0:40]
     >>> mask = (x -22)**2 + (y - 20)**2 + (z - 17)**2 < 8**2
     >>> mask = mask.astype(float)
-    >>> mask += 0.2*np.random.randn(*mask.shape)
-    >>> res = tv_denoise_3d(mask, weight=100)
+    >>> mask += 0.2 * np.random.randn(*mask.shape)
+    >>> res = tv_denoise(mask, weight=100)
     """
 
     if im.ndim == 2:

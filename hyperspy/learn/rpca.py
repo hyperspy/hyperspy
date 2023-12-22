@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,7 +23,6 @@ from itertools import chain
 import numpy as np
 import scipy.linalg
 
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.learn.svd_pca import svd_solve
 from hyperspy.misc.math_tools import check_random_state
@@ -53,8 +52,8 @@ def rpca_godec(
 
     Parameters
     ----------
-    X : numpy array, shape (n_features, n_samples)
-        The matrix of observations.
+    X : numpy.ndarray
+        The matrix of observations with shape (n_features, n_samples)
     rank : int
         The model dimensionality.
     lambda1 : None or float
@@ -66,16 +65,16 @@ def rpca_godec(
         Convergence tolerance
     maxiter : int, default 1000
         Maximum number of iterations
-    random_state : None or int or RandomState instance, default None
+    random_state : None, int or RandomState, default None
         Used to initialize the subspace on the first iteration.
 
     Returns
     -------
-    Xhat : numpy array, shape (n_features, n_samples)
-        The  low-rank matrix
-    Ehat : numpy array, shape (n_features, n_samples)
-        The sparse error matrix
-    U, S, V : numpy arrays
+    Xhat : numpy.ndarray
+        The low-rank matrix with shape (n_features, n_samples)
+    Ehat : numpy.ndarray
+        The sparse error matrix with shape (n_features, n_samples)
+    U, S, V : numpy.ndarray
         The results of an SVD on Xhat
 
     References
@@ -249,29 +248,29 @@ class ORPCA:
             The rank of the representation (number of components/factors)
         store_error : bool, default False
             If True, stores the sparse error matrix.
-        lambda1 : float
+        lambda1 : float, default 0.1
             Nuclear norm regularization parameter.
-        lambda2 : float
+        lambda2 : float, default 1.0
             Sparse error regularization parameter.
         method : {'CF', 'BCD', 'SGD', 'MomentumSGD'}, default 'BCD'
-            * 'CF'  - Closed-form solver
-            * 'BCD' - Block-coordinate descent
-            * 'SGD' - Stochastic gradient descent
-            * 'MomentumSGD' - Stochastic gradient descent with momentum
-        init : {'qr', 'rand', np.ndarray}, default 'qr'
-            * 'qr'   - QR-based initialization
-            * 'rand' - Random initialization
-            * np.ndarray if the shape [n_features x rank]
-        training_samples : int
+            * ``'CF'``  - Closed-form solver
+            * ``'BCD'`` - Block-coordinate descent
+            * ``'SGD'`` - Stochastic gradient descent
+            * ``'MomentumSGD'`` - Stochastic gradient descent with momentum
+        init : numpy.ndarray, {'qr', 'rand'}, default 'qr'
+            * ``'qr'``   - QR-based initialization
+            * ``'rand'`` - Random initialization
+            * numpy.ndarray if the shape (n_features x rank)
+        training_samples : int, default 10
             Specifies the number of training samples to use in
             the 'qr' initialization.
-        subspace_learning_rate : float
+        subspace_learning_rate : float, default 1.0
             Learning rate for the 'SGD' and 'MomentumSGD' methods.
             Should be a float > 0.0
-        subspace_momentum : float
+        subspace_momentum : float, default 0.5
             Momentum parameter for 'MomentumSGD' method, should be
             a float between 0 and 1.
-        random_state : None or int or RandomState instance, default None
+        random_state : None, int or RandomState, default None
             Used to initialize the subspace on the first iteration.
 
         """
@@ -363,10 +362,10 @@ class ORPCA:
 
         Parameters
         ----------
-        X : {numpy.ndarray, iterator}
-            [n_samples x n_features] matrix of observations
+        X : array-like
+            The matrix of observations with shape (n_samples, n_features)
             or an iterator that yields samples, each with n_features elements.
-        batch_size : {None, int}
+        batch_size : None or int
             If not None, learn the data in batches, each of batch_size samples
             or less.
 
@@ -437,10 +436,10 @@ class ORPCA:
 
         Parameters
         ----------
-        X : {numpy.ndarray, iterator}
-            [n_samples x n_features] matrix of observations
+        X : array-like
+            The matrix of observations with shape (n_samples, n_features)
             or an iterator that yields n_samples, each with n_features elements.
-        return_error : bool
+        return_error : bool, default False
             If True, returns the sparse error matrix as well. Otherwise only
             the weights (loadings)
 
@@ -499,8 +498,8 @@ def orpca(
 
     Parameters
     ----------
-    X : {numpy array, iterator}
-        [n_features x n_samples] matrix of observations
+    X : array-like
+        The matrix of observations with shape (n_features x n_samples)
         or an iterator that yields samples, each with n_features elements.
     rank : int
         The rank of the representation (number of components/factors)
@@ -508,57 +507,43 @@ def orpca(
         If True, stores the sparse error matrix.
     project : bool, default False
         If True, project the data X onto the learnt model.
-    batch_size : {None, int}, default None
+    batch_size : None, int, default None
         If not None, learn the data in batches, each of batch_size samples
         or less.
-    lambda1 : float
+    lambda1 : float, default 0.1
         Nuclear norm regularization parameter.
-    lambda2 : float
+    lambda2 : float, default 1.0
         Sparse error regularization parameter.
     method : {'CF', 'BCD', 'SGD', 'MomentumSGD'}, default 'BCD'
-        * 'CF'  - Closed-form solver
-        * 'BCD' - Block-coordinate descent
-        * 'SGD' - Stochastic gradient descent
-        * 'MomentumSGD' - Stochastic gradient descent with momentum
-    init : {'qr', 'rand', np.ndarray}, default 'qr'
-        * 'qr'   - QR-based initialization
-        * 'rand' - Random initialization
-        * np.ndarray if the shape [n_features x rank]
-    training_samples : int
+        * ``'CF'``  - Closed-form solver
+        * ``'BCD'`` - Block-coordinate descent
+        * ``'SGD'`` - Stochastic gradient descent
+        * ``'MomentumSGD'`` - Stochastic gradient descent with momentum
+    init : numpy.ndarray, {'qr', 'rand'}, default 'qr'
+        * ``'qr'``   - QR-based initialization
+        * ``'rand'`` - Random initialization
+        * numpyp.ndarray if the shape [n_features x rank]
+    training_samples : int, default 10
         Specifies the number of training samples to use in
         the 'qr' initialization.
-    subspace_learning_rate : float
+    subspace_learning_rate : float, default 1.0
         Learning rate for the 'SGD' and 'MomentumSGD' methods.
         Should be a float > 0.0
-    subspace_momentum : float
+    subspace_momentum : float, default 0.5
         Momentum parameter for 'MomentumSGD' method, should be
         a float between 0 and 1.
-    random_state : None or int or RandomState instance, default None
+    random_state : None or int or RandomState, default None
         Used to initialize the subspace on the first iteration.
 
     Returns
     -------
-    numpy arrays
+    numpy.ndarray
         * If project is True, returns the low-rank factors and loadings only
         * Otherwise, returns the low-rank and sparse error matrices, as well
           as the results of a singular value decomposition (SVD) applied to
           the low-rank matrix.
 
     """
-    if kwargs.get("learning_rate", False):
-        warnings.warn(
-            "The argument `learning_rate` has been deprecated and may "
-            "be removed in future. Please use `subspace_learning_rate` instead.",
-            VisibleDeprecationWarning,
-        )
-        subspace_learning_rate = kwargs["learning_rate"]
-    if kwargs.get("momentum", False):
-        warnings.warn(
-            "The argument `momentum` has been deprecated and may "
-            "be removed in future. Please use `subspace_momentum` instead.",
-            VisibleDeprecationWarning,
-        )
-        subspace_momentum = kwargs["momentum"]
 
     X = X.T
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,7 +20,7 @@ import numpy as np
 import logging
 
 from hyperspy._components.expression import Expression
-from hyperspy.misc.utils import is_binned # remove in v2.0
+
 
 _logger = logging.getLogger(__name__)
 
@@ -42,17 +42,17 @@ class Exponential(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A: float
         Maximum intensity
     tau: float
         Scale parameter (time constant)
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
     """
 
-    def __init__(self, A=1., tau=1., module="numexpr", **kwargs):
+    def __init__(self, A=1., tau=1., module=None, **kwargs):
         super().__init__(
             expression="A * exp(-x / tau)",
             name="Exponential",
@@ -71,7 +71,7 @@ class Exponential(Expression):
 
         Parameters
         ----------
-        signal : BaseSignal instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -146,9 +146,8 @@ class Exponential(Expression):
                                 'with a "divide by zero" error (likely log of '
                                 'a zero or negative value).')
                 return False
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+
+            if axis.is_binned:
                 if axis.is_uniform:
                     A /= axis.scale
                 else:

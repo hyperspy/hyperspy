@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,7 +21,6 @@ import numpy as np
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 class Offset(Component):
@@ -39,8 +38,9 @@ class Offset(Component):
     ============ =============
 
     Parameters
-    -----------
+    ----------
     offset : float
+        The offset to be fitted
 
     """
 
@@ -70,7 +70,7 @@ class Offset(Component):
 
         Parameters
         ----------
-        signal : BaseSignal instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -89,19 +89,15 @@ class Offset(Component):
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
-        if is_binned(signal):
-        # in v2 replace by
-        #if axis.is_binned:
+        if axis.is_binned:
             # using the mean of the gradient for non-uniform axes is a best
             # guess to the scaling of binned signals for the estimation
             scaling_factor = axis.scale if axis.is_uniform \
                              else np.mean(np.gradient(axis.axis), axis=-1)
 
         if only_current is True:
-            self.offset.value = signal()[i1:i2].mean()
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            self.offset.value = signal._get_current_data()[i1:i2].mean()
+            if axis.is_binned:
                 self.offset.value /= scaling_factor
             return True
         else:
@@ -112,9 +108,7 @@ class Offset(Component):
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[tuple(
                 gi)].mean(axis.index_in_array)
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.offset.map['values'] /= scaling_factor
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()

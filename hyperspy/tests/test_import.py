@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -39,10 +39,10 @@ def test_import_api_nogui():
         getattr(hyperspy.api_nogui, obj_name)
 
 
-def test_import_datasets():
-    import hyperspy.datasets
-    for obj_name in hyperspy.datasets.__all__:
-        getattr(hyperspy.datasets, obj_name)
+def test_import_data():
+    import hyperspy.data
+    for obj_name in hyperspy.data.__all__:
+        getattr(hyperspy.data, obj_name)
 
 
 def test_import_utils():
@@ -96,13 +96,10 @@ def test_dir_api():
     d = dir(hyperspy.api)
     assert d == [
         '__version__',
-        'datasets',
-        'eds',
+        'data',
         'get_configuration_directory_path',
         'interactive',
         'load',
-        'markers',
-        'material',
         'model',
         'plot',
         'preferences',
@@ -121,13 +118,10 @@ def test_dir_api_nogui():
     d = dir(hyperspy.api_nogui)
     assert d == [
         '__version__',
-        'datasets',
-        'eds',
+        'data',
         'get_configuration_directory_path',
         'interactive',
         'load',
-        'markers',
-        'material',
         'model',
         'plot',
         'preferences',
@@ -141,20 +135,23 @@ def test_dir_api_nogui():
         ]
 
 
-def test_dir_datasets():
-    import hyperspy.datasets
-    d = dir(hyperspy.datasets)
-    assert d == ['artificial_data', 'eelsdb', 'example_signals']
+def test_dir_data():
+    import hyperspy.data
+    d = dir(hyperspy.data)
+    assert d == [
+            'atomic_resolution_image',
+            'luminescence_signal',
+            "two_gaussians",
+            'wave_image',
+        ]
 
 
 def test_dir_utils():
     import hyperspy.utils
     d = dir(hyperspy.utils)
     assert d == [
-        'eds',
         'interactive',
         'markers',
-        'material',
         'model',
         'plot',
         'print_known_signal_types',
@@ -165,47 +162,21 @@ def test_dir_utils():
         ]
 
 
-def test_dir_utils_eds():
-    import hyperspy.utils.eds
-    d = dir(hyperspy.utils.eds)
-    assert d == [
-        'edx_cross_section_to_zeta',
-        'electron_range',
-        'get_xray_lines_near_energy',
-        'take_off_angle',
-        'xray_range',
-        'zeta_to_edx_cross_section',
-        ]
-
-
 def test_dir_utils_markers():
     import hyperspy.utils.markers
     d = dir(hyperspy.utils.markers)
-    assert d == [
-        'arrow',
-        'ellipse',
-        'horizontal_line',
-        'horizontal_line_segment',
-        'line_segment',
-        'point',
-        'rectangle',
-        'text',
-        'vertical_line',
-        'vertical_line_segment',
-        ]
-
-
-def test_dir_utils_materials():
-    import hyperspy.utils.material
-    d = dir(hyperspy.utils.material)
-    assert d == [
-        'atomic_to_weight',
-        'density_of_mixture',
-        'elements',
-        'mass_absorption_coefficient',
-        'mass_absorption_mixture',
-        'weight_to_atomic',
-        ]
+    assert d == ['Arrows',
+                 'Circles',
+                 'Ellipses',
+                 'HorizontalLines',
+                 'Lines',
+                 'Markers',
+                 'Points',
+                 'Polygons',
+                 'Rectangles',
+                 'Squares',
+                 'Texts',
+                 'VerticalLines']
 
 
 def test_dir_utils_model():
@@ -224,8 +195,9 @@ def test_dir_utils_plot():
         'markers',
         'plot_histograms',
         'plot_images',
+        'plot_roi_map',
         'plot_signals',
-        'plot_spectra',
+        'plot_spectra'
         ]
 
 
@@ -246,7 +218,37 @@ def test_dir_utils_samfire():
     import hyperspy.utils.samfire
     d = dir(hyperspy.utils.samfire)
     assert d == [
+        'SamfirePool',
         'fit_tests',
         'global_strategies',
         'local_strategies',
+        ]
+
+
+def test_dir_utils_samfire2():
+    import hyperspy.utils.samfire
+    d = dir(hyperspy.utils.samfire.fit_tests)
+    assert d == [
+        'AIC_test',
+        'AICc_test',
+        'BIC_test',
+        'red_chisq_test',
+        ]
+
+
+def test_dir_utils_samfire3():
+    import hyperspy.utils.samfire
+    d = dir(hyperspy.utils.samfire.global_strategies)
+    assert d == [
+        'GlobalStrategy',
+        'HistogramStrategy',
+        ]
+
+
+def test_dir_utils_samfire4():
+    import hyperspy.utils.samfire
+    d = dir(hyperspy.utils.samfire.local_strategies)
+    assert d == [
+        'LocalStrategy',
+        'ReducedChiSquaredStrategy',
         ]

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,13 +17,17 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from functools import wraps
+import logging
 import numpy as np
 import sympy
 
 import warnings
 
-from hyperspy.component import Component, convolve_component_values
+from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
+
+_logger = logging.getLogger(__name__)
 
 
 _CLASS_DOC = \
@@ -87,18 +91,19 @@ class Expression(Component):
         applicable. It enables interative adjustment of the position of the
         component in the model. For 2D components, a tuple must be passed
         with the name of the two parameters e.g. `("x0", "y0")`.
-    module : {"numpy", "numexpr", "scipy"}, default "numpy"
+    module : None or str {``"numpy"`` | ``"numexpr"`` | ``"scipy"``}, default "numpy"
         Module used to evaluate the function. numexpr is often faster but
         it supports fewer functions and requires installing numexpr.
+        If None, the "numexpr" will be used if installed.
     add_rotation : bool, default False
         This is only relevant for 2D components. If `True` it automatically
         adds `rotation_angle` parameter.
-    rotation_center : {None, tuple}
+    rotation_center : None or tuple
         If None, the rotation center is the center i.e. (0, 0) if `position`
         is not defined, otherwise the center is the coordinates specified
         by `position`. Alternatively a tuple with the (x, y) coordinates
         of the center can be provided.
-    rename_pars : dictionary
+    rename_pars : dict
         The desired name of a parameter may sometimes coincide with e.g.
         the name of a scientific function, what prevents using it in the
         `expression`. `rename_parameters` is a dictionary to map the name
@@ -114,18 +119,18 @@ class Expression(Component):
         parameters.
     check_parameter_linearity : bool
         If `True`, automatically check if each parameter is linear and set
-        its corresponding attribute accordingly. If `False`, the default is to 
+        its corresponding attribute accordingly. If `False`, the default is to
         set all parameters, except for those who are specified in
         ``linear_parameter_list``.
-        
-    **kwargs
+
+    **kwargs : dict
         Keyword arguments can be used to initialise the value of the
         parameters.
 
-    Note
-    ----
+    Notes
+    -----
     As of version 1.4, Sympy's lambdify function, that the
-    :py:class:`~._components.expression.Expression`
+    :class:`~.api.model.components1D.Expression`
     components uses internally, does not support the differentiation of
     some expressions, for example those containing a "where" condition.
     In such cases, the gradients can be set manually if required.
@@ -142,14 +147,16 @@ class Expression(Component):
     ... fwhm=1,
     ... x0=0,
     ... position="x0",)
+    <Gaussian (Expression component)>
 
     Substitutions for long or complicated expressions are separated by
     semicolumns:
 
     >>> expr = 'A*B/(A+B) ; A = sin(x)+one; B = cos(y) - two; y = tan(x)'
     >>> comp = hs.model.components1D.Expression(
-    ... expression=expr,
-    ... name='my function')
+    ...    expression=expr,
+    ...    name='my function'
+    ... )
     >>> comp.parameters
     (<Parameter one of my function component>,
      <Parameter two of my function component>)
@@ -161,6 +168,17 @@ class Expression(Component):
                  rename_pars={}, compute_gradients=True,
                  linear_parameter_list=None, check_parameter_linearity=True,
                  **kwargs):
+
+        if module is None:
+            try:
+                import numexpr
+                module = "numexpr"
+            except ImportError:
+                module = "numpy"
+                _logger.warning(
+                    "Numexpr is not installed, falling back to numpy, "
+                    "which is slower to calculate model."
+                )
 
         if linear_parameter_list is None:
             linear_parameter_list = []
@@ -224,13 +242,13 @@ class Expression(Component):
                 if p.name not in linear_parameter_list:
                     # _parsed_expr used "non public" parameter name and we
                     # need to use the correct parameter name by using
-                    # _rename_pars_inv 
+                    # _rename_pars_inv
                     p._linear = _check_parameter_linearity(
                         self._parsed_expr,
                         self._rename_pars_inv.get(p.name, p.name)
                         )
 
-    def compile_function(self, module="numpy", position=False):
+    def compile_function(self, module, position=False):
         """
         Compile the function and calculate the gradient automatically when
         possible.
@@ -379,7 +397,7 @@ class Expression(Component):
         Separate an expression into a group of lambdified functions
         that can compute the free parts of the expression, and a single
         lambdified function that computes the fixed parts of the expression
-        
+
         Used by the _compute_expression_part method.
         """
         expr = self._str_expression
@@ -420,15 +438,18 @@ class Expression(Component):
         model = self.model
         function = part['function']
         parameters = [para.value for para in part['parameters']]
-        
-        if model.convolved and self.convolved:
-            data = convolve_component_values(
-                function(model.convolution_axis, *parameters), model=model)
+        try:
+            model_convolved = model.convolved
+        except NotImplementedError:
+            model_convolved = False
+        if model_convolved and self.convolved:
+            data = model._convolve_component_values(
+                function(model.convolution_axis, *parameters))
         else:
             axes = [ax.axis for ax in model.axes_manager.signal_axes]
             mesh = np.meshgrid(*axes)
             data = function(*mesh, *parameters)
-            slice_ = np.where(model.channel_switches)
+            slice_ = np.where(model._channel_switches)
             if len(np.shape(data)) == 0:
                 # For calculation of constant term of the component
                 signal_shape = model.axes_manager._signal_shape_in_array
@@ -452,4 +473,3 @@ def _check_parameter_linearity(expr, name):
                       "determined automatically.", UserWarning)
         return False
     return True
-

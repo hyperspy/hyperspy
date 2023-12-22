@@ -29,7 +29,8 @@ doc/user_guide/_build/*
 doc/user_guide/.build/*
 setup/windows/requires/*
 setup/windows/reccomends/*
-doc/examples
+doc/auto_examples
+examples/io/*.msa
 doc/gh-pages
 doc/log.txt
 *Thumbs.db
@@ -56,3 +57,6 @@ hyperspy/tests/io/edax_files.zip
 tsconfig.json
 jsconfig.json
 *egg-info*
+*__pycache__*
+
+*sg_execution_times.rst

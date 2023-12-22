@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -68,8 +68,8 @@ class SamfirePool(ParallelPool):
     Attributes
     ----------
     has_pool : bool
-        Boolean if the pool is available and active
-    pool : {ipyparallel.load_balanced_view, multiprocessing.Pool}
+        Whether the pool is available and active
+    pool : :class:`ipyparallel.LoadBalancedView` or :class:`python:multiprocessing.pool.Pool`
         The pool object
     ipython_kwargs : dict
         The dictionary with Ipyparallel connection arguments.
@@ -91,7 +91,7 @@ class SamfirePool(ParallelPool):
     def __init__(self, **kwargs):
         """Creates a ParallelPool with additional methods for SAMFire. All
         arguments are passed to ParallelPool"""
-        super(SamfirePool, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.samf = None
         self.ping = {}
         self.pid = {}
@@ -116,8 +116,8 @@ class SamfirePool(ParallelPool):
 
         Parameters
         ----------
-        samfire : samfire
-            the SAMFire object that will be using the pool
+        samfire : :class:`~hyperspy.samfire.Samfire`
+            The SAMFire object that will be using the pool.
         """
         _logger.debug('starting prepare_workers')
         self.samf = samfire

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -124,7 +124,7 @@ def multi_kernel(
     import numpy as np
     import copy
     from hyperspy.utils.model_selection import AICc
-    import dill
+    import cloudpickle
 
     def generate_values_iterator(compnames, vals, turned_on_component_inds):
         turned_on_names = [compnames[i] for i in turned_on_component_inds]
@@ -148,7 +148,7 @@ def multi_kernel(
         result['current'] = cur_p._identity
         result_q.put((ind, result, True))
 
-    test = dill.loads(test_dict)
+    test = cloudpickle.loads(test_dict)
     cur_p = current_process()
     previous_switching = []
     comb = []

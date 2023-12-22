@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import pytest
 
 import numpy as np
 
@@ -23,6 +24,7 @@ from hyperspy.components1d import Bleasdale
 
 
 def test_function():
+    pytest.importorskip("numexpr")
     g = Bleasdale()
     g.a.value = 1
     g.b.value = 2
@@ -30,9 +32,16 @@ def test_function():
     assert g.function(-0.5) == 0
     assert g.function(0) == 1
     assert g.function(12) == 0.2
-    np.testing.assert_allclose(g.function(-.48),5)
+    np.testing.assert_allclose(g.function(-.48), 5)
     assert g.grad_a(0) == -0.5
     assert g.grad_b(0) == 0
     assert g.grad_c(0) == 0
     assert g.grad_a(-1) == 0
     assert g.grad_b(-1) == 0
+
+
+def test_module_error():
+    with pytest.raises(ValueError):
+        Bleasdale(module="numpy")
+    with pytest.raises(ValueError):
+        Bleasdale(module="scipy")

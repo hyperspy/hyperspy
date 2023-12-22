@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -40,7 +40,7 @@ class RC(Expression):
 
 
     Parameters
-    -----------
+    ----------
     Vmax : float
         maximum voltage, asymptote of the function for
         :math:`\mathrm{lim}_{x\to\infty}`
@@ -50,11 +50,11 @@ class RC(Expression):
         tau=RC is the RC circuit time constant (voltage rise time)
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     """
 
-    def __init__(self, Vmax=1., V0=0., tau=1., module="numexpr", **kwargs):
+    def __init__(self, Vmax=1., V0=0., tau=1., module=None, **kwargs):
         super().__init__(
             expression="V0 + Vmax * (1 - exp(-x / tau))",
             name="RC",

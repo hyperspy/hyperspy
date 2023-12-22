@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,9 +21,9 @@ from packaging.version import Version
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.datasets import artificial_data
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.misc.machine_learning.tools import amari
@@ -127,20 +127,22 @@ def test_orthomax(whiten_method):
     assert amari(W, A) < 0.5
 
     # Verify that we can change gamma for orthomax method
-    s = artificial_data.get_core_loss_eels_line_scan_signal()
+    s = hs.data.two_gaussians()
+    s.change_dtype('float64')
     s.decomposition()
     s.blind_source_separation(2, algorithm="orthomax", gamma=2)
 
 
 def test_no_decomposition_error():
-    s = artificial_data.get_core_loss_eels_line_scan_signal()
+    s = hs.data.two_gaussians()
 
     with pytest.raises(AttributeError, match="A decomposition must be performed"):
         s.blind_source_separation(2)
 
 
 def test_factors_error():
-    s = artificial_data.get_core_loss_eels_line_scan_signal()
+    s = hs.data.two_gaussians()
+    s.change_dtype('float64')
     s.decomposition()
 
     factors = s.get_decomposition_factors().data
@@ -157,14 +159,16 @@ def test_factors_error():
 @skip_sklearn
 @pytest.mark.parametrize("num_components", [None, 2])
 def test_num_components(num_components):
-    s = artificial_data.get_core_loss_eels_line_scan_signal()
+    s = hs.data.two_gaussians()
+    s.change_dtype('float64')
     s.decomposition(output_dimension=2)
     s.blind_source_separation(number_of_components=num_components)
 
 
 @skip_sklearn
 def test_components_list():
-    s = artificial_data.get_core_loss_eels_line_scan_signal()
+    s = hs.data.two_gaussians()
+    s.change_dtype('float64')
     s.decomposition(output_dimension=3)
     s.blind_source_separation(comp_list=[0, 2])
     assert s.learning_results.unmixing_matrix.shape == (2, 2)
@@ -172,7 +176,8 @@ def test_components_list():
 
 @skip_sklearn
 def test_num_components_error():
-    s = artificial_data.get_core_loss_eels_line_scan_signal()
+    s = hs.data.two_gaussians()
+    s.change_dtype('float64')
     s.decomposition()
     s.learning_results.output_dimension = None
 
@@ -183,7 +188,8 @@ def test_num_components_error():
 
 
 def test_algorithm_error():
-    s = artificial_data.get_core_loss_eels_line_scan_signal()
+    s = hs.data.two_gaussians()
+    s.change_dtype('float64')
     s.decomposition()
 
     with pytest.raises(ValueError, match="'algorithm' not recognised"):

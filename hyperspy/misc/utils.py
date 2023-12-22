@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -34,7 +34,7 @@ import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
@@ -49,14 +49,14 @@ def attrsetter(target, attrs, value):
 
     Parameters
     ----------
-        target : object
-        attrs : string
-            attributes, separated by periods (e.g.
-            'metadata.Signal.Noise_parameters.variance' )
-        value : object
+    target : object
+    attrs : string
+        attributes, separated by periods (e.g.
+        'metadata.Signal.Noise_parameters.variance' )
+    value : object
 
-    Example
-    -------
+    Examples
+    --------
     First create a signal and model pair:
 
     >>> s = hs.signals.Signal1D(np.arange(10))
@@ -65,13 +65,9 @@ def attrsetter(target, attrs, value):
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     Now set the data of the model with attrsetter
-    >>> attrsetter(m, 'signal1D.data', np.arange(10)+2)
-    >>> self.signal.data
-    array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
-
-    The behaviour is identical to
-    >>> self.signal.data = np.arange(10) + 2
-
+    >>> attrsetter(m, 'signal.data', np.arange(10)+2)
+    >>> m.signal.data
+    array([ 2,  3,  4,  5,  6,  7,  8,  9, 10, 11])
 
     """
     where = attrs.rfind(".")
@@ -188,27 +184,16 @@ def slugify(value, valid_variable_name=False):
 
 class DictionaryTreeBrowser:
 
-    """A class to comfortably browse a dictionary using a CLI.
+    """
+    A class to comfortably browse a dictionary using a CLI.
 
     In addition to accessing the values using dictionary syntax
     the class enables navigating  a dictionary that constains
     nested dictionaries as attribures of nested classes.
     Also it is an iterator over the (key, value) items. The
-    `__repr__` method provides pretty tree printing. Private
+    ``__repr__`` method provides pretty tree printing. Private
     keys, i.e. keys that starts with an underscore, are not
     printed, counted when calling len nor iterated.
-
-    Methods
-    -------
-    export : saves the dictionary in pretty tree printing format in a text
-        file.
-    keys : returns a list of non-private keys.
-    as_dictionary : returns a dictionary representation of the object.
-    set_item : easily set items, creating any necessary nodes on the way.
-    has_item: given a path, or part of a path, checks if the item exists.
-    get_item  given a path, or part of a path, return the value of the item.
-    add_node : add all non existing nodes in a given path.
-    add_dictionary: add new items from dictionary.
 
     Examples
     --------
@@ -247,15 +232,13 @@ class DictionaryTreeBrowser:
     """
 
     def __init__(self, dictionary=None, double_lines=False, lazy=True):
-        """When creating a DictionaryTreeBrowser lazily, the dictionary is
-        added to the `_lazy_attributes` attribute. The first time a lazy
-        attribute is called or the DictionaryTreeBrowser is printed, the
-        DictionaryTreeBrowser processes the lazy attributes with the
-        `process_lazy_attributes` method.
-        DictionaryTreeBrowser is lazy by default, using non-lazy instances
-        can be useful for debugging purposes.
-
-        """
+        # When creating a DictionaryTreeBrowser lazily, the dictionary is
+        # added to the `_lazy_attributes` attribute. The first time a lazy
+        # attribute is called or the DictionaryTreeBrowser is printed, the
+        # DictionaryTreeBrowser processes the lazy attributes with the
+        # `process_lazy_attributes` method.
+        # DictionaryTreeBrowser is lazy by default, using non-lazy instances
+        # can be useful for debugging purposes.
         self._lazy_attributes = {}
         self._double_lines = double_lines
 
@@ -272,7 +255,7 @@ class DictionaryTreeBrowser:
         for key, value in dictionary.items():
             if key == "_double_lines":
                 value = double_lines
-            self.__setattr__(key, value)
+            self._setattr(key, value, keep_existing=True)
 
     def process_lazy_attributes(self):
         """Run the DictionaryTreeBrowser machinery for the lazy attributes."""
@@ -293,14 +276,16 @@ class DictionaryTreeBrowser:
             self._process_dictionary(dictionary, double_lines)
 
     def export(self, filename, encoding="utf8"):
-        """Export the dictionary to a text file
+        """
+        Export the dictionary to a text file
 
         Parameters
         ----------
         filename : str
             The name of the file without the extension that is
             txt by default
-        encoding : valid encoding str
+        encoding : str
+            The encoding to be used.
 
         """
         self.process_lazy_attributes()
@@ -362,7 +347,7 @@ class DictionaryTreeBrowser:
         return string
 
     def _get_html_print_items(self, padding="", max_len=78, recursive_level=0):
-        """Recursive method that creates a html string for fancy display
+        """Recursive method that creates a html string for html display
         of metadata.
         """
         recursive_level += 1
@@ -464,16 +449,30 @@ class DictionaryTreeBrowser:
             return item
 
     def __setattr__(self, key, value):
+        self._setattr(key, value, keep_existing=False)
+
+    def _setattr(self, key, value, keep_existing=False):
+        """
+        Set the value of the given attribute `key`.
+
+        Parameters
+        ----------
+        key : str
+            The key attribute to be set.
+        value : object
+            The value to assign to the given `key` attribute.
+        keep_existing : bool, optional
+            If value is of dictionary type and the node already exists, keep
+            existing leaf of the node being set. The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
         if key in ["_double_lines", "_lazy_attributes"]:
             super().__setattr__(key, value)
             return
-        if key == "binned":
-            warnings.warn(
-                "Use of the `binned` attribute in metadata is "
-                "going to be deprecated in v2.0. Set the "
-                "`axis.is_binned` attribute instead. ",
-                VisibleDeprecationWarning,
-            )
 
         if key.startswith("_sig_"):
             key = key[5:]
@@ -482,7 +481,7 @@ class DictionaryTreeBrowser:
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            if slugified_key in self.__dict__.keys():
+            if slugified_key in self.__dict__.keys() and keep_existing:
                 self.__dict__[slugified_key]["_dtb_value_"].add_dictionary(
                     value, double_lines=self._double_lines
                 )
@@ -513,6 +512,7 @@ class DictionaryTreeBrowser:
         par_dict = {}
 
         from hyperspy.signal import BaseSignal
+        from hyperspy.axes import AxesManager
 
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -526,6 +526,26 @@ class DictionaryTreeBrowser:
                     key = "_sig_" + key
                 elif hasattr(item_["_dtb_value_"], "_to_dictionary"):
                     item = item_["_dtb_value_"]._to_dictionary()
+                elif isinstance(item_["_dtb_value_"], AxesManager):
+                    item = item_["_dtb_value_"]._get_axes_dicts()
+                    key = "_hspy_AxesManager_" + key
+                elif type(item_["_dtb_value_"]) in (list, tuple):
+                    signals = []
+                    container =  item_["_dtb_value_"]
+                    # Support storing signals in containers
+                    for i, item in enumerate(container):
+                        if isinstance(item, BaseSignal):
+                            signals.append(i)
+                    if signals:
+                        to_tuple = False
+                        if type(container) is tuple:
+                            container = list(container)
+                            to_tuple = True
+                        for i in signals:
+                            container[i] = {"_sig_" :container[i]._to_dictionary()}
+                        if to_tuple:
+                            container = tuple(container)
+                    item = container
                 else:
                     item = item_["_dtb_value_"]
                 par_dict.update({key: item})
@@ -567,7 +587,8 @@ class DictionaryTreeBrowser:
     def has_item(
         self, item_path, default=None, full_path=True, wild=False, return_path=False
     ):
-        """Given a path, return True if it exists. May also perform a search
+        """
+        Given a path, return True if it exists. May also perform a search
         whether an item exists and optionally returns the full path instead of
         boolean value.
 
@@ -575,24 +596,24 @@ class DictionaryTreeBrowser:
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by
             full stops (periods).
-        full_path : boolean
-            If `True` (default), the full path to the item has to be given. If
-            `False`, a search for the item key is performed (can include
+        full_path : bool, default True
+            If True, the full path to the item has to be given. If
+            False, a search for the item key is performed (can include
             additional nodes preceding they key separated by full stops).
-        wild : boolean
-            Only applies if `full_path=False`. If `True`, searches for any items
-            where `item` matches a substring of the item key (case insensitive).
-            Default is `False`.
-        return_path : boolean
-            Only applies if `full_path=False`. If `False` (default), a boolean
-            value is returned. If `True`, the full path to the item is returned,
+        wild : bool, default True
+            Only applies if ``full_path=False``. If True, searches for any items
+            where ``item`` matches a substring of the item key (case insensitive).
+            Default is ``False``.
+        return_path : bool, default False
+            Only applies if ``full_path=False``. If False, a boolean
+            value is returned. If True, the full path to the item is returned,
             a list of paths for multiple matches, or default value if it does
             not exist.
         default :
-            The value to return for path if the item does not exist (default is `None`).
+            The value to return for path if the item does not exist (default is ``None``).
 
         Examples
         --------
@@ -642,7 +663,8 @@ class DictionaryTreeBrowser:
     def get_item(
         self, item_path, default=None, full_path=True, wild=False, return_path=False
     ):
-        """Given a path, return it's value if it exists, or default value if
+        """
+        Given a path, return it's value if it exists, or default value if
         missing. May also perform a search whether an item key exists and then
         returns the value or a list of values for multiple occurences of the
         key -- optionally returns the full path(s) in addition to its value(s).
@@ -651,23 +673,22 @@ class DictionaryTreeBrowser:
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by
             full stops (periods)
-        full_path : boolean
-            If `True` (default), the full path to the item has to be given. If
-            `False`, a search for the item key is performed (can include
+        full_path : bool, default True
+            If True, the full path to the item has to be given. If
+            False, a search for the item key is performed (can include
             additional nodes preceding they key separated by full stops).
-        wild : boolean
-            Only applies if `full_path=False`. If `True`, searches for any items
-            where `item` matches a substring of the item key (case insensitive).
-            Default is `False`.
-        return_path : boolean
-            Only applies if `full_path=False`. Default `False`. If `True`,
-            returns an additional list of paths to the item(s) that match `key`.
-        default :
+        wild : bool
+            Only applies if ``full_path=False``. If True, searches for any items
+            where ``item`` matches a substring of the item key (case insensitive).
+            Default is False.
+        return_path : bool
+            Only applies if ``full_path=False``. Default False. If True,
+            returns an additional list of paths to the item(s) that match ``key``.
+        default : None or object, default None
             The value to return if the path or item does not exist.
-            (default is `None`).
 
         Examples
         --------
@@ -679,7 +700,7 @@ class DictionaryTreeBrowser:
         True
         >>> dict_browser.get_item('To.be.or', 'default_value')
         'default_value'
-        >>> dict_browser.get_nested_item('be')
+        >>> dict_browser.get_item('be', full_path=False)
         True
 
         """
@@ -719,20 +740,25 @@ class DictionaryTreeBrowser:
         return self.has_item(item_path=item)
 
     def copy(self):
+        """Returns a shallow copy using :func:`copy.copy`."""
         return copy.copy(self)
 
     def deepcopy(self):
+        """Returns a deep copy using :func:`copy.deepcopy`."""
         return copy.deepcopy(self)
 
     def set_item(self, item_path, value):
-        """Given the path and value, create the missing nodes in
-        the path and assign to the last one the value
+        """
+        iven the path and value, create the missing nodes in
+        the path and assign the given value.
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by a
-            full stops (periods)
+            full stop (periods)
+        value : object
+            The value to assign to the given path.
 
         Examples
         --------
@@ -821,6 +847,7 @@ def strlist2enumeration(lst):
         return "%s, " * (len(lst) - 2) % lst[:-2] + "%s and %s" % lst[-2:]
 
 
+
 def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     if not isinstance(stuff, (bytes, np.string_)):
         return stuff
@@ -831,6 +858,7 @@ def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     except BaseException:
         string = string.decode(encoding2, errors="ignore")
     return string
+
 
 
 def check_long_string(value, max_len):
@@ -867,10 +895,10 @@ def add_key_value(key, value):
 
 def swapelem(obj, i, j):
     """Swaps element having index i with element having index j in object obj
-    IN PLACE.
+    in place.
 
-    Example
-    -------
+    Examples
+    --------
     >>> L = ['a', 'b', 'c']
     >>> swapelem(L, 1, 2)
     >>> print(L)
@@ -899,7 +927,7 @@ def rollelem(a, index, to_index=0):
 
     Returns
     -------
-    res : list
+    list
         Output list.
 
     """
@@ -940,7 +968,8 @@ def find_subclasses(mod, cls):
 
     Returns
     -------
-    dictonary in which key, item = subclass name, subclass
+    dict
+        Dictionary in which key, item = subclass name, subclass
 
     """
     return dict(
@@ -1040,9 +1069,9 @@ def stack(
 
     Parameters
     ----------
-    signal_list : list of BaseSignal instances
+    signal_list : list of :class:`~.api.signals.BaseSignal`
         List of signals to stack.
-    axis : {None, int, str}
+    axis : None, int or str
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the signals are stacked over the
         axis given by its integer index or its name. The data must have the
@@ -1057,7 +1086,7 @@ def stack(
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-    lazy : {bool, None}
+    lazy : bool or None
         Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
     %s
@@ -1065,15 +1094,16 @@ def stack(
 
     Returns
     -------
-    signal : BaseSignal instance
+    :class:`~.api.signals.BaseSignal`
 
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Signal1D(data[:10]),
-    ...               hs.signals.Signal1D(data[10:])])
+    >>> s = hs.stack(
+    ...    [hs.signals.Signal1D(data[:10]), hs.signals.Signal1D(data[10:])]
+    ... )
     >>> s
-    <Signal1D, title: Stack of , dimensions: (2, 10)>
+    <Signal1D, title: Stack of , dimensions: (2|10)>
     >>> s.data
     array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
@@ -1082,14 +1112,6 @@ def stack(
     from hyperspy.signals import BaseSignal
     from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
     from numbers import Number
-
-    for k in [k for k in ["mmap", "mmap_dir"] if k in kwargs]:
-        lazy = True
-        warnings.warn(
-            f"'{k}' argument is deprecated and will be removed in "
-            "HyperSpy v2.0. Please use 'lazy=True' instead.",
-            VisibleDeprecationWarning,
-        )
 
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
@@ -1265,17 +1287,18 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     Examples
     --------
 
-    >>> signal_iterable = [hs.signals.BaseSignal(np.random.random((2,)*(i+1)))
-                           for i in range(3)]
+    >>> signal_iterable = [
+    ...    hs.signals.BaseSignal(np.random.random((2,)*(i+1))) for i in range(3)
+    ... ]
     >>> signal_iterable
     [<BaseSignal, title: , dimensions: (|2)>,
      <BaseSignal, title: , dimensions: (|2, 2)>,
      <BaseSignal, title: , dimensions: (|2, 2, 2)>]
     >>> hs.transpose(*signal_iterable, signal_axes=1)
-    [<BaseSignal, title: , dimensions: (|2)>,
-     <BaseSignal, title: , dimensions: (2|2)>,
-     <BaseSignal, title: , dimensions: (2, 2|2)>]
-    >>> hs.transpose(signal1, signal2, signal3, signal_axes=["Energy"])
+    [<Signal1D, title: , dimensions: (|2)>,
+    <Signal1D, title: , dimensions: (2|2)>,
+    <Signal1D, title: , dimensions: (2, 2|2)>]
+
     """
     from hyperspy.signal import BaseSignal
 
@@ -1330,8 +1353,7 @@ def process_function_blockwise(data,
     chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
     output_shape = chunk_nav_shape + tuple(output_signal_size)
     # Pre-allocating the output array
-    kw = get_numpy_kwargs(data)
-    output_array = np.empty(output_shape, dtype=dtype, **kw)
+    output_array = np.empty(output_shape, dtype=dtype, like=data)
     if len(args) == 0:
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
@@ -1432,9 +1454,11 @@ def multiply(iterable):
 
     Equivalent of functools.reduce(operator.mul, iterable, 1).
 
-    >>> product([2**8, 2**30])
+    Example
+
+    >>> multiply([2**8, 2**30])
     274877906944
-    >>> product([])
+    >>> multiply([])
     1
 
     """
@@ -1446,10 +1470,6 @@ def multiply(iterable):
 
 def iterable_not_string(thing):
     return isinstance(thing, Iterable) and not isinstance(thing, str)
-
-
-def deprecation_warning(msg):
-    warnings.warn(msg, VisibleDeprecationWarning)
 
 
 def add_scalar_axis(signal, lazy=None):
@@ -1491,19 +1511,6 @@ def get_object_package_info(obj):
     return dic
 
 
-def print_html(f_text, f_html):
-    """Print html version when in Jupyter Notebook"""
-
-    class PrettyText:
-        def __repr__(self):
-            return f_text()
-
-        def _repr_html_(self):
-            return f_html()
-
-    return PrettyText()
-
-
 def is_hyperspy_signal(input_object):
     """
     Check if an object is a Hyperspy Signal
@@ -1535,17 +1542,6 @@ def nested_dictionary_merge(dict1, dict2):
             nested_dictionary_merge(dict1[key], dict2[key])
         else:
             dict1[key] = dict2[key]
-
-
-def is_binned(signal, axis=-1):
-    """Backwards compatibility check utility for is_binned attribute.
-
-    Can be removed in v2.0.
-    """
-    if signal.metadata.has_item("Signal.binned"):
-        return signal.metadata.Signal.binned
-    else:
-        return signal.axes_manager[axis].is_binned
 
 
 def is_cupy_array(array):
@@ -1628,19 +1624,18 @@ def get_array_module(array):
     return module
 
 
-def get_numpy_kwargs(array):
+def display(obj):
     """
-    Convenience funtion to return a dictionary containing the `like` keyword
-    if numpy>=1.20.
+    Convenience funtion to display an obj using IPython rendering if
+    installed, otherwise, fall back to python ``print``
 
-    Note
-    ----
-    `like` keyword is an experimental feature introduced in numpy 1.20 and is
-    pending on acceptance of NEP 35
-
+    Parameters
+    ----------
+    obj : python object
+        Python object to be displayed
     """
-    kw = {}
-    if Version(np.__version__) >= Version("1.20"):
-         kw['like'] = array
-
-    return kw
+    try:
+        from IPython import display
+        display.display(obj)
+    except ImportError:
+        print(obj)

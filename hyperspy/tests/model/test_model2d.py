@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -104,26 +104,7 @@ class TestModel2D:
 
     def test_call(self):
         with pytest.raises(ValueError):
-            self.m(component_list=0)
-
-
-def test_Model2D_NotImplementedError_range():
-    im = hs.signals.Signal2D(np.ones((128, 128)))
-    m = im.create_model()
-    gt = hs.model.components2D.Gaussian2D(
-        centre_x=-4.5, centre_y=-4.5, sigma_x=0.5, sigma_y=1.5
-    )
-    m.append(gt)
-
-    for member_f in [
-        "_set_signal_range_in_pixels",
-        "_remove_signal_range_in_pixels",
-        "_add_signal_range_in_pixels",
-        "reset_the_signal_range",
-        "reset_signal_range",
-    ]:
-        with pytest.raises(NotImplementedError):
-            _ = getattr(m, member_f)()
+            self.m._get_current_data(component_list=0)
 
 
 def test_Model2D_NotImplementedError_fitting():
@@ -195,13 +176,125 @@ def test_channelswitches_mask():
                                           sigma_x=50,
                                           sigma_y=50)
     m.append(gt)
-    m.channel_switches = ~mask.data
+    m._channel_switches = ~mask.data
     m.fit()
 
-    assert not m.channel_switches[0, 0]
-    assert m.channel_switches[50, 50]
+    assert not m._channel_switches[0, 0]
+    assert m._channel_switches[50, 50]
 
     np.testing.assert_allclose(gt.centre_x.value, -5.)
     np.testing.assert_allclose(gt.centre_y.value, -5.)
     np.testing.assert_allclose(gt.sigma_x.value, 1.)
     np.testing.assert_allclose(gt.sigma_y.value, 2.)
+
+
+class TestModel2DSetSignalRange:
+    def setup_method(self, method):
+        s = hs.signals.Signal2D(np.random.rand(10, 10, 20))
+        s.axes_manager[-2].scale = 0.5
+        s.axes_manager[-1].scale = 0.5
+        m = s.create_model()
+        self.s = s
+        self.m = m
+
+    def test_set_signal_range_from_mask(self):
+        m = self.m
+        mask = np.ones((10, 20), dtype=bool)
+        mask[slice(1, 6), slice(15, 19)] = False
+        m.set_signal_range_from_mask(mask)
+        np.testing.assert_allclose(m._channel_switches, mask)
+
+    def test_set_signal_range_from_mask_error(self):
+        m = self.m
+        shape = m.signal.axes_manager.signal_shape
+        mask = np.ones(shape, dtype=bool)
+        with pytest.raises(ValueError):
+            m.set_signal_range_from_mask(mask)
+
+        mask = np.ones(shape)
+        with pytest.raises(ValueError):
+            m.set_signal_range_from_mask(mask)
+
+    def test_set_signal_range(self):
+        m = self.m
+        signal_shape = self.s.axes_manager._signal_shape_in_array
+        ch = m._channel_switches
+
+        m._set_signal_range_in_pixels(17, 19, 1, 3)
+        mask1 = np.zeros(signal_shape, dtype=bool)
+        mask1[slice(17, 20), slice(1, 4)] = True
+        np.testing.assert_allclose(ch, mask1)
+
+        m.reset_signal_range()
+        mask2 = np.ones(signal_shape, dtype=bool)
+        np.testing.assert_allclose(ch, mask2)
+
+        m.set_signal_range(8.5, 9.5, 0.5, 1.5)
+        np.testing.assert_allclose(ch, mask1)
+
+    def test_add_signal_range(self):
+        m = self.m
+        signal_shape = self.s.axes_manager.signal_shape[::-1]
+        ch = m._channel_switches
+
+        # Set all channel to zeros
+        zeros = np.zeros(signal_shape, dtype=bool)
+        m.set_signal_range_from_mask(zeros)
+        np.testing.assert_allclose(m._channel_switches, zeros)
+
+        m._add_signal_range_in_pixels(17, 19, 1, 3)
+        mask = np.zeros(signal_shape, dtype=bool)
+        mask[slice(17, 20), slice(1, 4)] = True
+        np.testing.assert_allclose(ch, mask)
+
+        m._add_signal_range_in_pixels(5, 6, 1, 3)
+        mask[slice(5, 7), slice(1, 4)] = True
+        np.testing.assert_allclose(ch, mask)
+
+        # Set all channel to zeros
+        zeros = np.zeros(signal_shape, dtype=bool)
+        m.set_signal_range_from_mask(zeros)
+        np.testing.assert_allclose(m._channel_switches, zeros)
+
+        m.add_signal_range(8.5, 9.5, 0.5, 1.5)
+        mask = np.zeros(signal_shape, dtype=bool)
+        mask[slice(17, 20), slice(1, 4)] = True
+        np.testing.assert_allclose(ch, mask)
+
+        m.add_signal_range(2.5, 3, 0.5, 1.5)
+        mask[slice(5, 7), slice(1, 4)] = True
+        np.testing.assert_allclose(ch, mask)
+
+    def test_remove_signal_range(self):
+        m = self.m
+        signal_shape = self.s.axes_manager.signal_shape[::-1]
+        ch = m._channel_switches
+
+        m._remove_signal_range_in_pixels(17, 19, 1, 3)
+        mask = np.ones(signal_shape, dtype=bool)
+        mask[slice(17, 20), slice(1, 4)] = False
+        np.testing.assert_allclose(ch, mask)
+
+        m._remove_signal_range_in_pixels(5, 6, 1, 3)
+        mask[slice(5, 7), slice(1, 4)] = False
+        np.testing.assert_allclose(ch, mask)
+
+        # Set all channel to ones
+        ones = np.ones(signal_shape, dtype=bool)
+        m.set_signal_range_from_mask(ones)
+        np.testing.assert_allclose(m._channel_switches, ones)
+
+        m.remove_signal_range(8.5, 9.5, 0.5, 1.5)
+        mask = np.ones(signal_shape, dtype=bool)
+        mask[slice(17, 20), slice(1, 4)] = False
+        np.testing.assert_allclose(ch, mask)
+
+        m.remove_signal_range(2.5, 3, 0.5, 1.5)
+        mask[slice(5, 7), slice(1, 4)] = False
+        np.testing.assert_allclose(ch, mask)
+
+    def test_initial_mask(self):
+        m = self.m
+        assert m._channel_switches.shape == (10, 20)
+
+

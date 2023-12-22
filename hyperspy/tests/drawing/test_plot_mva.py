@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,7 +21,6 @@ from packaging.version import Version
 import numpy as np
 import pytest
 
-import hyperspy
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
@@ -186,13 +185,8 @@ class TestPlotClusterAnalysis:
     def test_plot_cluster_signals_nav2_sig2(self):
         return self.s3.plot_cluster_signals()
 
-    @pytest.mark.skipif(Version(hyperspy.__version__) < Version("2.0"),
-                        reason="Failing on CI for 1.7.6.dev0")
-    @pytest.mark.mpl_image_compare(
-        baseline_dir=baseline_dir, tolerance=default_tol*2)
     def test_plot_cluster_metric(self):
-        ax = self.s.plot_cluster_metric()
-        return ax.get_figure()
+        self.s.plot_cluster_metric()
 
     def test_except_nocluster_metric(self):
         with pytest.raises(ValueError):

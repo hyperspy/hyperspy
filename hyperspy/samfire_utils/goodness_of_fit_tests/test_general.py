@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,6 +23,7 @@ class goodness_test(object):
 
     @property
     def tolerance(self):
+        """The tolerance."""
         return self._tolerance
 
     @tolerance.setter

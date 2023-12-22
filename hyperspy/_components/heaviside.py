@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -47,14 +47,14 @@ class HeavisideStep(Expression):
 
 
     Parameters
-    -----------
+    ----------
     n : float
         Location parameter defining the x position of the step.
     A : float
         Height parameter for x>n.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
     """
 
     def __init__(self, A=1., n=0., module="numpy", compute_gradients=True,

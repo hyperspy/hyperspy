@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,7 +20,7 @@ import logging
 from multiprocessing import cpu_count
 import warnings
 
-import dill
+import cloudpickle
 import numpy as np
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -85,16 +85,16 @@ class Samfire:
 
     Attributes
     ----------
-    model : Model instance
+    model : :class:`hyperspy.model.BaseModel` (or subclass)
         The complete model
     optional_components : list
         A list of components that can be switched off at some pixels if it
         returns a better Akaike's Information Criterion with correction (AICc)
     workers : int
         A number of processes that will perform the fitting parallely
-    pool : samfire_pool instance
+    pool : :class:`~.api.samfire.SamfirePool`
         A proxy object that manages either multiprocessing or ipyparallel pool
-    strategies : strategy list
+    strategies : list
         A list of strategies that will be used to select pixel fitting order
         and calculate required starting parameters. Strategies come in two
         "flavours" - local and global. Local strategies spread the starting
@@ -102,7 +102,7 @@ class Samfire:
         Global strategies look for clusters in parameter values, and suggests
         most frequent values. Global strategy do not depend on pixel fitting
         order, hence it is randomised.
-    metadata : dictionary
+    metadata : dict
         A dictionary for important samfire parameters
     active_strategy : strategy
         The currently active strategy from the strategies list
@@ -115,7 +115,7 @@ class Samfire:
     save_every : int
         When running, samfire saves results every time save_every good fits are
         found.
-    random_state : None or int or RandomState instance, default None
+    random_state : None or int or numpy.random.Generator, default None
         Random seed used to select the next pixels.
 
     """
@@ -172,17 +172,6 @@ class Samfire:
     def metadata(self):
         return self._metadata
 
-    @metadata.setter
-    def metadata(self, d):
-        warnings.warn(
-            "Setting the `metadata` attribute is deprecated and will be removed "
-            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
-            "of the `metadata` attribute instead."
-            )
-        if isinstance(d, dict):
-            d = DictionaryTreeBrowser(d)
-        self._metadata = d
-
     @property
     def active_strategy(self):
         return self.strategies[self._active_strategy_ind]
@@ -195,7 +184,7 @@ class Samfire:
         """Set up SAMFire - configure models, set up pool if necessary"""
         from hyperspy.samfire_utils.samfire_pool import SamfirePool
         self._figure = None
-        self.metadata._gt_dump = dill.dumps(self.metadata.goodness_test)
+        self.metadata._gt_dump = cloudpickle.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
 
         if hasattr(self.model, '_suspend_auto_fine_structure_width'):
@@ -219,15 +208,15 @@ class Samfire:
         ----------
         **kwargs : dict
             Any keyword arguments to be passed to
-            :py:meth:`~.model.BaseModel.fit`
+            :meth:`~.model.BaseModel.fit`
         """
         self._setup()
         if self._workers and self.pool is not None:
             self.pool.update_parameters()
         if 'min_function' in kwargs:
-            kwargs['min_function'] = dill.dumps(kwargs['min_function'])
+            kwargs['min_function'] = cloudpickle.dumps(kwargs['min_function'])
         if 'min_function_grad' in kwargs:
-            kwargs['min_function_grad'] = dill.dumps(
+            kwargs['min_function_grad'] = cloudpickle.dumps(
                 kwargs['min_function_grad'])
         self._args = kwargs
         num_of_strat = len(self.strategies)
@@ -255,7 +244,8 @@ class Samfire:
 
         Parameters
         ----------
-        strategy : strategy instance
+        strategy : strategy
+            The samfire strategy to use
         """
         self.strategies.append(strategy)
 
@@ -264,16 +254,17 @@ class Samfire:
 
         Parameters
         ----------
-        iterable : an iterable of strategy instances
+        iterable : iterable of strategy
+            The samfire strategies to use.
         """
         self.strategies.extend(iterable)
 
     def remove(self, thing):
-        """removes given strategy from the strategies list
+        """Remove given strategy from the strategies list
 
         Parameters
         ----------
-        thing : int or strategy instance
+        thing : int or strategy
             Strategy that is in current strategies list or its index.
         """
         self.strategies.remove(thing)
@@ -330,11 +321,11 @@ class Samfire:
 
         Parameters
         ----------
-        filename : {str, None}
+        filename : str, None, default None
             the filename. If None, a default value of ``backup_`` + signal_title
             is used.
-        on_count : bool
-            if True (default), only saves on the required count of steps
+        on_count : bool, default True
+            if True, only saves on the required count of steps
         """
         if filename is None:
             title = self.model.signal.metadata.General.title
@@ -353,12 +344,12 @@ class Samfire:
         ----------
         ind : tuple
             contains the index of the pixel of the results
-        results : {dict, None}
+        results : dict or None, default None
             dictionary of the results. If None, means we are updating in-place
-            (e.g. refreshing the marker or strategies)
-        isgood : {bool, None}
+            (e.g. refreshing the marker or strategies).
+        isgood : bool or None, default None
             if it is known if the results are good according to the
-            goodness-of-fit test. If None, the pixel is tested
+            goodness-of-fit test. If None, the pixel is tested.
         """
         if results is not None and (isgood is None or isgood):
             self._swap_dict_and_model(ind, results)
@@ -398,7 +389,7 @@ class Samfire:
 
         Parameters
         ----------
-        new_strat : {int | strategy}
+        new_strat : int or strategy
             index of the new strategy from the strategies list or the
             strategy object itself
         """
@@ -448,7 +439,7 @@ class Samfire:
 
         Parameters
         ----------
-        need_inds: int
+        need_inds : int
             the number of pixels to be returned in the generator
         """
         if need_inds:
@@ -469,8 +460,8 @@ class Samfire:
                         dat = var.data[ind + (...,)]
                         value_dict['variance.data'] = dat.compute(
                         ) if var._lazy else dat
-                if hasattr(self.model,
-                           'low_loss') and self.model.low_loss is not None:
+                if (hasattr(self.model, 'low_loss')
+                        and self.model.low_loss is not None):
                     dat = self.model.low_loss.data[ind + (...,)]
                     value_dict['low_loss.data'] = dat.compute(
                     ) if self.model.low_loss._lazy else dat

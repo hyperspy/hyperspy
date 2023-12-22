@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -34,11 +34,6 @@ subclass_cases = (
     testcase("float", 1000, "", "BaseSignal"),
     testcase("float", 1, "", "Signal1D"),
     testcase("float", 2, "", "Signal2D"),
-    testcase("float", 1, "EELS", "EELSSpectrum"),
-    testcase("float", 1, "EDS_SEM", "EDSSEMSpectrum"),
-    testcase("float", 1, "EDS_TEM", "EDSTEMSpectrum"),
-    testcase("complex", 1, "DielectricFunction", "DielectricFunction"),
-    testcase("complex", 1, "dielectric function", "DielectricFunction"),
     testcase("complex", 1000, "", "ComplexSignal"),
     testcase("complex", 1, "", "ComplexSignal1D"),
     testcase("complex", 2, "", "ComplexSignal2D"),
@@ -115,10 +110,6 @@ class TestConvertBaseSignal:
         assert isinstance(self.s, _lazy_signals.LazySignal)
         assert self.s._lazy
 
-    def test_set_signal_dimension_deprecation_warning(self):
-        with pytest.warns(VisibleDeprecationWarning):
-            self.s.axes_manager.set_signal_dimension(1)
-
     def test_base_to_1d(self):
         self.s.axes_manager._set_signal_dimension(1)
         self.s._assign_subclass()
@@ -139,44 +130,6 @@ class TestConvertBaseSignal:
         # If real data is required use `real`, `imag`, `amplitude` or `phase`!
 
 
-class TestConvertSignal1D:
-
-    def setup_method(self, method):
-        self.s = hs.signals.Signal1D([0, 1])
-
-    def test_lazy_to_eels_and_back(self):
-        self.s = self.s.as_lazy()
-        self.s.set_signal_type("EELS")
-        assert isinstance(self.s, _lazy_signals.LazyEELSSpectrum)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, _lazy_signals.LazySignal1D)
-
-    def test_signal1d_to_eels(self):
-        self.s.set_signal_type("EELS")
-        assert isinstance(self.s, hs.signals.EELSSpectrum)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.Signal1D)
-
-    def test_signal1d_to_eds_tem(self):
-        self.s.set_signal_type("EDS_TEM")
-        assert isinstance(self.s, hs.signals.EDSTEMSpectrum)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.Signal1D)
-
-    def test_signal1d_to_eds_sem(self):
-        self.s.set_signal_type("EDS_SEM")
-        assert isinstance(self.s, hs.signals.EDSSEMSpectrum)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.Signal1D)
-
-    def test_deprecated(self):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r"is deprecated. Use ",
-        ):
-            self.s.set_signal_type(None)
-
-
 class TestConvertComplexSignal:
 
     def setup_method(self, method):
@@ -191,18 +144,6 @@ class TestConvertComplexSignal:
         self.s.axes_manager._set_signal_dimension(2)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.ComplexSignal2D)
-
-
-class TestConvertComplexSignal1D:
-
-    def setup_method(self, method):
-        self.s = hs.signals.ComplexSignal1D([0, 1])
-
-    def test_complex_to_dielectric_function(self):
-        self.s.set_signal_type("DielectricFunction")
-        assert isinstance(self.s, hs.signals.DielectricFunction)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.ComplexSignal1D)
 
 
 def test_create_lazy_signal():

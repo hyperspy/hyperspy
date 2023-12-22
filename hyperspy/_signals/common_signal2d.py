@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,12 +31,11 @@ class CommonSignal2D:
 
         See Also
         --------
-        as_signal1D : a method for the same purpose with more options.
-        signals.Signal1D.to_signal1D : performs the inverse operation on one
-        dimensional signals.
-
-        as_signal2D, transpose, hs.transpose
+        hyperspy.api.signals.BaseSignal.as_signal1D,
+        hyperspy.api.signals.BaseSignal.transpose,
+        hyperspy.api.transpose
 
         """
         return self.as_signal1D(0 + 3j, optimize=optimize)
+
     to_signal1D.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))

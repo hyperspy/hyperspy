@@ -71,78 +71,10 @@ signals:
     dtype: complex
     lazy: True
     module: hyperspy._signals.complex_signal2d
-  HologramImage:
-    signal_type: hologram
-    signal_dimension: 2
-    dtype: real
-    lazy: False
-    module: hyperspy._signals.hologram_image
-  LazyHologramImage:
-    signal_type: hologram
-    signal_dimension: 2
-    dtype: real
-    lazy: True
-    module: hyperspy._signals.hologram_image
-  EELSSpectrum:
-    signal_type: EELS
-    signal_type_aliases:
-      - TEM EELS
-    signal_dimension: 1
-    dtype: real
-    lazy: False
-    module: hyperspy._signals.eels
-  LazyEELSSpectrum:
-    signal_type: EELS
-    signal_type_aliases:
-      - TEM EELS
-    signal_dimension: 1
-    dtype: real
-    lazy: True
-    module: hyperspy._signals.eels
-  EDSTEMSpectrum:
-    signal_type: EDS_TEM
-    signal_dimension: 1
-    dtype: real
-    lazy: False
-    module: hyperspy._signals.eds_tem
-  LazyEDSTEMSpectrum:
-    signal_type: EDS_TEM
-    signal_dimension: 1
-    dtype: real
-    lazy: True
-    module: hyperspy._signals.eds_tem
-  EDSSEMSpectrum:
-    signal_type: EDS_SEM
-    signal_dimension: 1
-    dtype: real
-    lazy: False
-    module: hyperspy._signals.eds_sem
-  LazyEDSSEMSpectrum:
-    signal_type: EDS_SEM
-    signal_dimension: 1
-    dtype: real
-    lazy: True
-    module: hyperspy._signals.eds_sem
-  DielectricFunction:
-    signal_type: DielectricFunction
-    signal_type_aliases:
-      - dielectric function
-    signal_dimension: 1
-    dtype: complex
-    lazy: False
-    module: hyperspy._signals.dielectric_function
-  LazyDielectricFunction:
-    signal_type: DielectricFunction
-    signal_type_aliases:
-      - dielectric function
-    signal_dimension: 1
-    dtype: complex
-    lazy: True
-    module: hyperspy._signals.dielectric_function
 
 components1D:
   Arctan:
-    module: hyperspy._components.eels_arctan
+    module: hyperspy._components.arctan
     class: Arctan
   Bleasdale:
     module: hyperspy._components.bleasdale
@@ -150,15 +82,6 @@ components1D:
   Doniach:
     module: hyperspy._components.doniach
     class: Doniach
-  DoublePowerLaw:
-    module: hyperspy._components.eels_double_power_law
-    class: DoublePowerLaw
-  EELSArctan:
-    module: hyperspy._components.eels_arctan
-    class: EELSArctan
-  EELSCLEdge:
-    module: hyperspy._components.eels_cl_edge
-    class: EELSCLEdge
   Erf:
     module: hyperspy._components.error_function
     class: Erf
@@ -186,16 +109,7 @@ components1D:
   Offset:
     module: hyperspy._components.offset
     class: Offset
-  PESCoreLineShape:
-    module: hyperspy._components.pes_core_line_shape
-    class: PESCoreLineShape
-  PESVoigt:
-    module: hyperspy._components.pes_voigt
-    class: PESVoigt
   Polynomial:
-    module: hyperspy._components.polynomial_deprecated
-    class: Polynomial
-  eab91275-88db-4855-917a-cdcbe7209592:
     module: hyperspy._components.polynomial
     class: Polynomial
   PowerLaw:
@@ -204,9 +118,6 @@ components1D:
   RC:
     module: hyperspy._components.rc
     class: RC
-  SEE:
-    module: hyperspy._components.pes_see
-    class: SEE
   ScalableFixedPattern:
     module: hyperspy._components.scalable_fixed_pattern
     class: ScalableFixedPattern
@@ -216,15 +127,9 @@ components1D:
   SplitVoigt:
     module: hyperspy._components.split_voigt
     class: SplitVoigt
-  Vignetting:
-    module: hyperspy._components.eels_vignetting
-    class: Vignetting
   Voigt:
-    module: hyperspy._components.pes_voigt
+    module: hyperspy._components.voigt
     class: Voigt
-  VolumePlasmonDrude:
-    module: hyperspy._components.volume_plasmon_drude
-    class: VolumePlasmonDrude
 
 components2D:
   Expression:
@@ -244,8 +149,6 @@ GUI:
     - hyperspy.AxesManager
     - hyperspy.Parameter
     - hyperspy.Component
-    - hyperspy.EELSCLEdge_Component
-    - hyperspy.EELSSpectrum.print_edges_table
     - hyperspy.ScalableFixedPattern_Component
     - hyperspy.Signal1D.calibrate
     - hyperspy.Signal1D.smooth_savitzky_golay
@@ -253,7 +156,6 @@ GUI:
     - hyperspy.Signal1D.smooth_total_variation
     - hyperspy.Signal1D.smooth_butterworth
     - hyperspy.Signal1D.contrast_editor
-    - hyperspy.Signal1D.integrate_in_range
     - hyperspy.Signal1D.remove_background
     - hyperspy.SimpleMessage
     - hyperspy.Signal1D.spikes_removal_tool
@@ -267,6 +169,3 @@ GUI:
     - hyperspy.Line2DROI
     - hyperspy.Model
     - hyperspy.Model1D.fit_component
-    - hyperspy.microscope_parameters_EELS
-    - hyperspy.microscope_parameters_EDS_TEM
-    - hyperspy.microscope_parameters_EDS_SEM

@@ -24,7 +24,14 @@ be exposed to the end-user (usually a function or class starting with an undersc
 should still be documented to the extent that future developers can understand
 what the function does.
 
-You can check your docstrings follow the convention by using the
+To test code of "examples" section in the docstring, run:
+
+.. code:: bash
+    
+    pytest --doctest-modules --ignore=hyperspy/tests
+
+
+You can check whether your docstrings follow the convention by using the
 ``flake8-docstrings`` `extension <https://pypi.org/project/flake8-docstrings/>`_,
 like this:
 
@@ -49,7 +56,15 @@ how to use it with examples and links to the relevant code.
 
 When writing both the docstrings and user guide documentation, it is useful to
 have some data which the users can use themselves. Artificial
-datasets for this purpose can be found in `hyperspy.datasets.artificial_data`.
+datasets for this purpose can be found in :mod:`~.api.data`.
+
+Example codes in the user guide can be tested using
+`doctest <https://docs.python.org/3/library/doctest.html>`_:
+
+.. code:: bash
+    
+    pytest doc --doctest-modules --doctest-glob="*.rst" -v
+
 
 Build the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -61,7 +76,7 @@ html format. See the ``make`` command documentation for more details.
 
 To install the documentation dependencies, run either
 
-.. code-block:: bash
+.. code-block:: bash    
 
     $ conda install hyperspy-dev
 
@@ -69,13 +84,13 @@ or
 
 .. code-block:: bash
 
-    $ pip install hyperspy[build-doc]
+    $ pip install hyperspy[doc]
 
 
 When writing documentation, the Python package `sphobjinv
 <https://github.com/bskinn/sphobjinv>`_ can be useful for writing
 cross-references. For example, to find how to write a cross-reference to
-:py:meth:`hyperspy.signal.BaseSignal.set_signal_type`, use:
+:meth:`~.api.signals.BaseSignal.set_signal_type`, use:
 
 
 .. code-block:: bash
@@ -85,4 +100,4 @@ cross-references. For example, to find how to write a cross-reference to
 
   Name                                                      Score
   ---------------------------------------------------------  -------
-  :py:meth:`hyperspy.signal.BaseSignal.set_signal_type`      90
+  :meth:`hyperspy.signal.BaseSignal.set_signal_type`      90

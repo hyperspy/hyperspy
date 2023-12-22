@@ -6,7 +6,7 @@
 # Analytica Chimica Acta 350, no. 3 (September 19, 1997): 341-352.
 #
 # Copyright 1997 Darren T. Andrews and Peter D. Wentzell
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -51,16 +51,16 @@ def mlpca(
 
     Parameters
     ----------
-    X : numpy array, shape (m, n)
-        Matrix of observations.
-    varX : numpy array
+    X : numpy.ndarray
+        Matrix of observations with shape (m, n).
+    varX : numpy.ndarray
         Matrix of variances associated with X
         (zeros for missing measurements).
     output_dimension : int
         The model dimensionality.
-    svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
+    svd_solver : {``"auto"``, ``"full"``, ``"arpack"``, ``"randomized"``}, default ``"auto"``
         If auto:
-            The solver is selected by a default policy based on `data.shape` and
+            The solver is selected by a default policy based on ``data.shape`` and
             `output_dimension`: if the input data is larger than 500x500 and the
             number of components to extract is lower than 80% of the smallest
             dimension of the data, then the more efficient "randomized"
@@ -68,13 +68,13 @@ def mlpca(
             optionally truncated afterwards.
         If full:
             run exact SVD, calling the standard LAPACK solver via
-            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+            :func:`scipy.linalg.svd`, and select the components by postprocessing
         If arpack:
             use truncated SVD, calling ARPACK solver via
-            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
+            :func:`scipy.sparse.linalg.svds`. It requires strictly
             `0 < output_dimension < min(data.shape)`
         If randomized:
-            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            use truncated SVD, calling :func:`sklearn.utils.extmath.randomized_svd`
             to estimate a limited number of components
     tol : float
         Tolerance of the stopping condition.
@@ -83,9 +83,9 @@ def mlpca(
 
     Returns
     -------
-    U, S, V: numpy array
+    numpy.ndarray
         The pseudo-SVD parameters.
-    s_obj : float
+    float
         Value of the objective function.
 
     References

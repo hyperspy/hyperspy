@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,7 +19,7 @@
 import copy
 import gc
 
-import dill
+import cloudpickle
 import numpy as np
 import pytest
 
@@ -190,15 +190,6 @@ class TestSamfireEmpty:
     def test_samfire_init_metadata(self):
         m = self.model
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        assert isinstance(samf.metadata, DictionaryTreeBrowser)
-        samf.stop()
-        del samf
-
-    def test_samfire_set_metadata_deprecation(self):
-        m = self.model
-        samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        with pytest.warns(UserWarning):
-            samf.metadata = samf.metadata.as_dictionary()
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
         samf.stop()
         del samf
@@ -478,7 +469,7 @@ class TestSamfireWorker:
         self.args = {}
         self.model_letter = 'sldkfjg'
         from hyperspy.samfire_utils.fit_tests import red_chisq_test as rct
-        self._gt_dump = dill.dumps(rct(tolerance=1.0))
+        self._gt_dump = cloudpickle.dumps(rct(tolerance=1.0))
         m_slice = m.inav[self.ind[::-1]]
         m_slice.store(self.model_letter)
         m_dict = m_slice.signal._to_dictionary(False)

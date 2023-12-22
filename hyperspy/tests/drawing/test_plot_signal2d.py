@@ -1,4 +1,4 @@
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -137,10 +137,11 @@ def test_plot_log_scale(percentile):
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_FFT(fft_shift):
-    s = hs.datasets.example_signals.object_hologram()
-    s2 = s.isig[:128, :128].fft()
-    s2.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
-    return s2._plot.signal_plot.figure
+    s = hs.data.wave_image(random_state=0)
+
+    s_fft = s.fft()
+    s_fft.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
+    return s_fft._plot.signal_plot.figure
 
 
 @pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
@@ -257,6 +258,28 @@ class TestPlotNonUniformAxis:
     def test_plot_non_uniform_nav(self):
         self.s.plot()
         return self.s._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_2s1n_sig(self):
+        self.s.plot()
+        return self.s._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_2s1n_update_sig(self):
+        s2 = self.s
+        s2.axes_manager[0].index += 1
+        s2.plot()
+        return s2._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_2s1n_update_nav(self):
+        s2 = self.s
+        s2.axes_manager[0].index += 1
+        s2.plot()
+        return s2._plot.navigator_plot.figure
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
@@ -609,6 +632,24 @@ def test_plot_autoscale_data_changed(autoscale):
     else:
         np.testing.assert_allclose(imf._vmin, _vmin)
         np.testing.assert_allclose(imf._vmax, _vmax)
+
+
+def test_plot_vmin_vmax_error():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    with pytest.raises(TypeError):
+        s.plot(vmin=[0])
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=np.array([0]))
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=(0, ))
+
+    with pytest.raises(TypeError):
+        s.plot(vmax=[100])
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=[0], vmax=[100])
 
 
 @pytest.mark.parametrize("axes_decor", ['all', 'off'])

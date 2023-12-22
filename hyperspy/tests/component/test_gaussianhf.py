@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -39,22 +39,23 @@ def test_function():
     assert g.function(2) == 1.5
     assert g.function(1) == 3
 
+
 def test_integral_as_signal():
     s = Signal1D(np.zeros((2, 3, 100)))
     g1 = GaussianHF(fwhm=3.33, centre=20.)
     h_ref = np.linspace(0.1, 3.0, s.axes_manager.navigation_size)
-    for d, h in zip(s._iterate_signal(), h_ref):
+    for d, h in zip(s._iterate_signal("flyback"), h_ref):
         g1.height.value = h
         d[:] = g1.function(s.axes_manager.signal_axes[0].axis)
     m = s.create_model()
     g2 = GaussianHF()
     m.append(g2)
     g2.estimate_parameters(s, 0, 100, True)
-    # HyperSpy 2.0: remove setting iterpath='serpentine'
-    m.multifit(iterpath='serpentine')
+    m.multifit()
     s_out = g2.integral_as_signal()
     ref = (h_ref * 3.33 * sqrt2pi / sigma2fwhm).reshape(s_out.data.shape)
     np.testing.assert_allclose(s_out.data, ref)
+
 
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("uniform"), (True, False))

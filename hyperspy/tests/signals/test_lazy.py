@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -131,6 +131,9 @@ def test_as_array_fail():
     with pytest.raises(ValueError):
         to_array('asd', chunks=None)
 
+def test_as_array_fail_not_array():
+    with pytest.raises(ValueError):
+        to_array([], chunks=1)
 
 def test_ma_lazify():
     s = hs.signals.BaseSignal(
@@ -149,17 +152,6 @@ def test_ma_lazify():
 def test_rechunk(signal, nav_chunks, sig_chunks):
     signal.rechunk(nav_chunks=nav_chunks,
                    sig_chunks=sig_chunks)
-
-
-def test_warning():
-    sig = _signal()
-
-    with pytest.warns(VisibleDeprecationWarning, match="progressbar"):
-        sig.compute(progressbar=False)
-
-    assert sig._lazy == False
-    thing = to_array(sig, chunks=None)
-    assert isinstance(thing, np.ndarray)
 
 
 class TestGetNavigationDimensionHostChunkSlice:
@@ -320,15 +312,15 @@ class TestGetTemporaryDaskChunk:
 
     def test_map_inplace_data_changing(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
-        s.__call__()
+        s._get_current_data()
         assert len(s._cache_dask_chunk.shape) == 4
         s.map(np.sum, axis=1, ragged=False, inplace=True)
-        s.__call__()
+        s._get_current_data()
         assert len(s._cache_dask_chunk.shape) == 3
 
     def test_clear_cache_dask_data_method(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
-        s.__call__()
+        s._get_current_data()
         s._clear_cache_dask_data()
         assert s._cache_dask_chunk is None
         assert s._cache_dask_chunk_slice is None
@@ -428,3 +420,10 @@ def test_get_chunk_size(signal):
     sig = _signal()
     chunk_size = sig.get_chunk_size(axes=0)
     chunk_size == ((2, 1, 3), )
+
+
+def test_compute_kwargs():
+    s = hs.signals.Signal2D(da.zeros((4, 8, 8), chunks=(2, 4, 4))).as_lazy()
+    s1 = s.deepcopy()
+    s1.compute(show_progressbar=False)
+    s.compute(scheduler="processes", num_workers=2, show_progressbar=False)

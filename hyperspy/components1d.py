@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,10 +22,6 @@ import importlib
 
 __all__ = [
     component for component, specs_ in _EXTENSIONS["components1D"].items()
-    # Don't add the new Polynomial to the API.
-    # To use it the old `Polynomial` has a `legacy` keyword.
-    # Remove in HyperSpy v2.0
-    if component != "eab91275-88db-4855-917a-cdcbe7209592"
     ]
 
 
@@ -44,9 +40,6 @@ _base_docstring = """
 
 Components that can be used to define a 1D model for e.g. curve fitting.
 
-There are some components that are only useful for one particular kind of signal
-and therefore their name are preceded by the signal name: eg. eels_cl_edge.
-
 Writing a new template is easy: see the user guide documentation on creating
 components.
 
@@ -62,7 +55,7 @@ def _generate_docstring(base_docstring):
         component = __getattr__(name)
         spec = _EXTENSIONS["components1D"][name]
         path = spec['module'].replace('hyperspy', '~')
-        line1 = f":py:class:`{path}.{name}`" + "\n"
+        line1 = f":class:`{path}.{name}`" + "\n"
         component_doc = component.__doc__ or "..."
         # Get the first line only
         component_doc = component_doc.split('\n')[0]

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,29 +31,9 @@ def test_image_binned_default():
     assert not s.axes_manager[-1].is_binned
 
 
-def test_dielectric_function_binned_default():
-    s = hs.signals.DielectricFunction([0])
-    assert not s.axes_manager[-1].is_binned
-
-
 def test_signal_binned_default():
     s = hs.signals.BaseSignal([0])
     assert not s.axes_manager[-1].is_binned
-
-
-def test_eels_spectrum_binned_default():
-    s = hs.signals.EELSSpectrum([0])
-    assert s.axes_manager[-1].is_binned
-
-
-def test_eds_tem_binned_default():
-    s = hs.signals.EDSTEMSpectrum([0])
-    assert s.axes_manager[-1].is_binned
-
-
-def test_eds_sem_binned_default():
-    s = hs.signals.EDSSEMSpectrum([0])
-    assert s.axes_manager[-1].is_binned
 
 
 class TestModelBinned:
@@ -68,8 +48,8 @@ class TestModelBinned:
 
     def test_unbinned(self):
         self.m.signal.axes_manager[-1].is_binned = False
-        assert self.m() == 1
+        assert self.m._get_current_data() == 1
 
     def test_binned(self):
         self.m.signal.axes_manager[-1].is_binned = True
-        assert self.m() == 0.1
+        assert self.m._get_current_data() == 0.1
