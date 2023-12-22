@@ -52,7 +52,7 @@ jobs:
           git remote add upstream https://github.com/hyperspy/hyperspy.git
           git fetch upstream --tags
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         name: Install Python
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
