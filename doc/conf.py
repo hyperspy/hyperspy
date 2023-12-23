@@ -161,6 +161,15 @@ html_static_path = ["_static"]
 
 favicons = ["hyperspy.ico", ]
 
+# For version switcher:
+# For development, we match to the dev version in `switcher.json`
+# for release version, we match to the minor increment
+import hyperspy
+_version = hyperspy.__version__
+version_match = "dev" if "dev" in _version else ".".join(_version.split(".")[:2])
+
+print("version_match:", version_match)
+
 html_theme_options = {
     "show_toc_level": 2,
     "github_url": "https://github.com/hyperspy/hyperspy",
@@ -190,7 +199,7 @@ html_theme_options = {
     "switcher": {
         # Update when merged and released
         "json_url": "https://hyperspy.org/hyperspy-doc/dev/_static/switcher.json",
-        "version_match": version,
+        "version_match": version_match,
     },
     "navbar_start": ["navbar-logo", "version-switcher"],
     "announcement": "HyperSpy API is changing in version 2.0, see the <a href='https://hyperspy.org/hyperspy-doc/current/changes.html'>release notes!</a>",
