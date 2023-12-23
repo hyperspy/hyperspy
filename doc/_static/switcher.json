@@ -1,12 +1,16 @@
 [
     {
-        "name": "v2.0 (dev)",
+        "name": "dev",
         "version": "2.0",
         "url": "https://hyperspy.org/hyperspy-doc/dev/"
     },
     {
-        "version": "1.7",
+        "version": "2.0",
         "url": "https://hyperspy.org/hyperspy-doc/current/"
+    },
+    {
+        "version": "1.7",
+        "url": "https://hyperspy.org/hyperspy-doc/v1.7/"
     },
     {
         "version": "1.6",
