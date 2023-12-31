@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
-        PYTHON_VERSION: ['3.9', '3.10']
+        PYTHON_VERSION: ['3.9', '3.10', ]
         PIP_SELECTOR: ['[all, tests, coverage]']
         include:
           # test oldest supported version of main dependencies on python 3.8
@@ -27,10 +27,10 @@ jobs:
             LABEL: -oldest
           # test minimum requirement
           - os: ubuntu
-            PYTHON_VERSION: '3.8'
+            PYTHON_VERSION: '3.12'
             PIP_SELECTOR: '[tests, coverage]'
             LABEL: -minimum
-          # Run coverage
+            # Run coverage
           - os: ubuntu
             PYTHON_VERSION: '3.8'
             PIP_SELECTOR: '[all, tests, coverage]'
@@ -39,7 +39,18 @@ jobs:
             PIP_SELECTOR: '[all, tests, coverage]'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with: 
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch tags upstream
+        if: ${{ github.repository_owner != 'hyperspy' }}
+        # Needs to fetch the tags from upstream to get the
+        # correct version with setuptools_scm
+        run: |
+          git remote add upstream https://github.com/hyperspy/hyperspy.git
+          git fetch upstream --tags
 
       - uses: actions/setup-python@v4
         name: Install Python
@@ -68,6 +79,10 @@ jobs:
       - name: Run test suite
         run: |
           pytest ${{ env.PYTEST_ARGS }} --cov=. --cov-report=xml
+
+      - name: Run doctest (Docstring)
+        run: |
+          pytest ${{ env.PYTEST_ARGS }} --doctest-modules --ignore=hyperspy/tests
 
       - name: Upload coverage to Codecov
         if: ${{ always() }}

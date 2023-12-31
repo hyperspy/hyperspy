@@ -86,7 +86,7 @@ def nearest_indices(shape, ind, radii):
     return par, center
 
 
-class SamfireStrategy(object):
+class SamfireStrategy:
     """A SAMFire strategy base class.
     """
 
@@ -196,13 +196,13 @@ class LocalStrategy(SamfireStrategy):
 
         Parameters
         ----------
-        overwrite : Bool
+        overwrite : bool
             If True, all but the given_pixels will be recalculated. Used when
             part of already calculated results has to be refreshed.
             If False, only use pixels with marker == -scale (by default -1) to
             propagate to pixels with marker >= 0. This allows "ignoring" pixels
             with marker < -scale (e.g. -2).
-        given_pixels : boolean numpy array
+        given_pixels : numpy.ndarray of bool
             Pixels with True value are assumed as correctly calculated.
         """
         marker = self.samf.metadata.marker
@@ -278,14 +278,14 @@ class LocalStrategy(SamfireStrategy):
 
         Returns
         -------
-        ans : numpy array
+        ans : numpy.ndarray
             the array of distances
         slices : tuple of slices
             slices to slice the original marker to get the correct part of the
             array
         centre : tuple
             the centre index in the sliced array
-        mask : boolean numpy array
+        mask : numpy.ndarray of bool
             a binary mask for the values to consider
         """
         radii = make_sure_ind(self.radii, len(ind))
@@ -412,14 +412,14 @@ class LocalStrategy(SamfireStrategy):
 
         Parameters
         ----------
-        fig : {Image, None}
+        fig : :class:`hyperspy.api.signals.Signal2D` or numpy.ndarray
             if an already plotted image, then updates. Otherwise creates a new
             one.
 
         Returns
         -------
-        fig: Image
-            the resulting image. If passed again, will be updated
+        :class:`hyperspy.api.signals.Signal2D`
+            The resulting 2D signal. If passed again, will be updated
             (computationally cheaper operation).
         """
         marker = self.samf.metadata.marker.copy()
@@ -527,7 +527,7 @@ class GlobalStrategy(SamfireStrategy):
 
         Parameters
         ----------
-        fig: {None, HistogramTilePlot}
+        fig : None of :class:`HistogramTilePlot`
             If given updates the plot.
         """
         from hyperspy.drawing.tiles import HistogramTilePlot

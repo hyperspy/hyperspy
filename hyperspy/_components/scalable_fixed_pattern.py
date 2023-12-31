@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
@@ -41,30 +41,43 @@ class ScalableFixedPattern(Component):
      :math:`x_0`  shift
     ============ =============
 
-
-    The fixed pattern is defined by a single spectrum which must be provided to
-    the ScalableFixedPattern constructor, e.g.:
-
-    .. code-block:: ipython
-
-        In [1]: s = load('my_spectrum.hspy')
-        In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
-
     Parameters
     ----------
-
-    yscale : Float
-    xscale : Float
-    shift : Float
-    interpolate : Bool
+    yscale : float
+        The scaling factor in y (intensity axis).
+    xscale : float
+        The scaling factor in x.
+    shift : float
+        The shift of the component
+    interpolate : bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
 
+    Attributes
+    ----------
+    yscale : :class:`~.component.Parameter`
+        The scaling factor in y (intensity axis).
+    xscale : :class:`~.component.Parameter`
+        The scaling factor in x.
+    shift : :class:`~.component.Parameter`
+        The shift of the component
+    interpolate : bool
+        If False no interpolation is performed and only a y-scaled spectrum is
+        returned.
+    
     Methods
     -------
+    prepare_interpolator
 
-    prepare_interpolator : method to fine tune the interpolation
+    Examples
+    --------
 
+    The fixed pattern is defined by a Signal1D of navigation 0 which must be
+    provided to the ScalableFixedPattern constructor, e.g.:
+    
+    >>> s = hs.load('data.hspy') # doctest: +SKIP
+    >>> my_fixed_pattern = hs.model.components1D.ScalableFixedPattern(s) # doctest: +SKIP
+    
     """
 
     def __init__(self, signal1D, yscale=1.0, xscale=1.0,
@@ -97,37 +110,23 @@ class ScalableFixedPattern(Component):
         self.xscale.free = value
         self.shift.free = value
 
-    def prepare_interpolator(self, kind='linear', fill_value=0, **kwargs):
-        """Prepare interpolation.
+    def prepare_interpolator(self, **kwargs):
+        """Fine-tune the interpolation.
 
         Parameters
         ----------
         x : array
             The spectral axis of the fixed pattern
-        kind : str or int, optional
-            Specifies the kind of interpolation as a string
-            ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
-            or as an integer specifying the order of the spline interpolator
-            to use. Default is 'linear'.
-
-        fill_value : float, optional
-            If provided, then this value will be used to fill in for requested
-            points outside of the data range. If not provided, then the default
-            is NaN.
-
-        Notes
-        -----
-        Any extra keyword argument is passed to `scipy.interpolate.interp1d`
-
+        **kwargs : dict
+            Keywords argument are passed to
+            :func:`scipy.interpolate.make_interp_spline`
         """
 
-        self.f = interp1d(
+        self.f = make_interp_spline(
             self.signal.axes_manager.signal_axes[0].axis,
             self.signal.data.squeeze(),
-            kind=kind,
-            bounds_error=False,
-            fill_value=fill_value,
-            **kwargs)
+            **kwargs
+            )
 
     def _function(self, x, xscale, yscale, shift):
         if self.interpolate is True:

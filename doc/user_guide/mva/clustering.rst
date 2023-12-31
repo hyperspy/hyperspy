@@ -63,26 +63,28 @@ Clustering functions HyperSpy
 
 All HyperSpy signals have the following methods for clustering analysis:
 
-* :py:meth:`~.api.signals.BaseSignal.cluster_analysis`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_results`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_labels`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_signals`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_distances`
-* :py:meth:`~.api.signals.BaseSignal.get_cluster_signals`
-* :py:meth:`~.api.signals.BaseSignal.get_cluster_labels`
-* :py:meth:`~.api.signals.BaseSignal.get_cluster_distances`
-* :py:meth:`~.api.signals.BaseSignal.estimate_number_of_clusters`
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_metric`
+* :meth:`~.api.signals.BaseSignal.cluster_analysis`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_results`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_labels`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_signals`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_distances`
+* :meth:`~.api.signals.BaseSignal.get_cluster_signals`
+* :meth:`~.api.signals.BaseSignal.get_cluster_labels`
+* :meth:`~.api.signals.BaseSignal.get_cluster_distances`
+* :meth:`~.api.signals.BaseSignal.estimate_number_of_clusters`
+* :meth:`~.api.signals.BaseSignal.plot_cluster_metric`
 
-The :py:meth:`~.api.signals.BaseSignal.cluster_analysis` method can perform cluster
+The :meth:`~.api.signals.BaseSignal.cluster_analysis` method can perform cluster
 analysis using any :external+sklearn:ref:`scikit-learn clustering <clustering>`
 algorithms or any other object with a compatible API. This involves importing
 the relevant algorithm class from scikit-learn.
 
 .. code-block:: python
 
-    >>> from sklearn.cluster import KMeans
-    >>> s.cluster_analysis(cluster_source="signal", algorithm=KMeans(n_clusters=3, n_init=8))
+    >>> from sklearn.cluster import KMeans # doctest: +SKIP
+    >>> s.cluster_analysis(
+    ...    cluster_source="signal", algorithm=KMeans(n_clusters=3, n_init=8)
+    ...    ) # doctest: +SKIP
 
 
 For convenience, the default algorithm is the ``kmeans`` algorithm and is imported
@@ -93,11 +95,13 @@ For example:
 
 .. code-block:: python
 
-    >>> s.cluster_analysis(cluster_source="signal", n_clusters=3, preprocessing="norm", algorithm="kmeans", n_init=8)
+    >>> s.cluster_analysis(
+    ...    cluster_source="signal", n_clusters=3, preprocessing="norm", algorithm="kmeans", n_init=8
+    ...    ) # doctest: +SKIP
 
 is equivalent to:
 
-:py:meth:`~.api.signals.BaseSignal.cluster_analysis` computes the cluster labels. The
+:meth:`~.api.signals.BaseSignal.cluster_analysis` computes the cluster labels. The
 clusters areas with identical label are averaged to create a set of cluster
 centres. This averaging can be performed on the ``signal`` itself, the
 :ref:`BSS <mva.blind_source_separation>` or :ref:`decomposition <mva.decomposition>` results
@@ -125,7 +129,7 @@ under investigation.
 
 All pre-processing methods from (or compatible with) the
 :external+sklearn:ref:`scikit-learn pre-processing <preprocessing>` module can be passed
-to the ``scaling`` keyword of the :py:meth:`~.api.signals.BaseSignal.cluster_analysis`
+to the ``scaling`` keyword of the :meth:`~.api.signals.BaseSignal.cluster_analysis`
 method. For convenience, the following methods from scikit-learn are
 available as standard: ``standard`` , ``minmax`` and ``norm`` as
 standard. Briefly, ``norm`` treats the features as a vector and normalizes the
@@ -151,14 +155,14 @@ above using the ``signal`` keyword argument:
 
 .. code-block:: python
 
-    >>> s.plot_cluster_labels(signal="centroid")
+    >>> s.plot_cluster_labels(signal="centroid") # doctest: +SKIP
 
 In addition, it is possible to plot the mean signal over the different
 clusters:
 
 .. code-block:: python
 
-    >>> s.plot_cluster_labels(signal="mean")
+    >>> s.plot_cluster_labels(signal="mean") # doctest: +SKIP
 
 
 Clustering with user defined algorithms
@@ -173,23 +177,25 @@ the data then applies a square root to enhances weaker features.
 .. code-block:: python
 
     >>> class PowerScaling(object):
-    >>>
-    >>>     def __init__(self,power=0.5):
-    >>>         self.power = power
-    >>>
-    >>>     def fit_transform(self,data):
-    >>>         norm = np.amax(data,axis=1)
-    >>>         scaled_data = data/norm[:,None]
-    >>>         scaled_data = scaled_data - np.min(scaled_data)+1.0e-8
-    >>>         scaled_data = scaled_data ** self.power
-    >>>         return scaled_data
+    ...
+    ...     def __init__(self,power=0.5):
+    ...         self.power = power
+    ...
+    ...     def fit_transform(self,data):
+    ...         norm = np.amax(data,axis=1)
+    ...         scaled_data = data/norm[:,None]
+    ...         scaled_data = scaled_data - np.min(scaled_data)+1.0e-8
+    ...         scaled_data = scaled_data ** self.power
+    ...         return scaled_data
 
 The PowerScaling class can then be passed to the cluster_analysis method for use.
 
 .. code-block:: python
 
-    >>> ps = PowerScaling()
-    >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=ps)
+    >>> ps = PowerScaling() # doctest: +SKIP
+    >>> s.cluster_analysis(
+    ...    cluster_source="decomposition", number_of_components=3, preprocessing=ps
+    ...    ) # doctest: +SKIP
 
 For user defined clustering algorithms the class must implementation
 ``fit`` and have a ``label_`` attribute that contains the clustering labels.
@@ -199,12 +205,12 @@ An example template would be:
 
 
     >>> class MyClustering(object):
-    >>>
-    >>>     def __init__(self):
-    >>>         self.labels_ = None
-    >>>
-    >>>     def fit_(self,X):
-    >>>         self.labels_ = do_something(X)
+    ...
+    ...     def __init__(self):
+    ...         self.labels_ = None
+    ...
+    ...     def fit_(self,X):
+    ...         self.labels_ = do_something(X)
 
 
 
@@ -214,25 +220,24 @@ Examples
 Clustering using decomposition results
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Let's use the :py:func:`sklearn.datasets.make_blobs`
+Let's use the :func:`sklearn.datasets.make_blobs`
 function supplied by `scikit-learn` to make dummy data to see how clustering
 might work in practice.
 
 .. code-block:: python
 
-    >>> import hyperspy.api as hs
     >>> from sklearn.datasets import make_blobs
     >>> data = make_blobs(
-    >>>         n_samples=1000,
-    >>>         n_features=100,
-    >>>         centers=3,
-    >>>         shuffle=False,
-    >>>         random_state=1)[0].reshape(50, 20, 100)
+    ...         n_samples=1000,
+    ...         n_features=100,
+    ...         centers=3,
+    ...         shuffle=False,
+    ...         random_state=1)[0].reshape(50, 20, 100)
     >>> s = hs.signals.Signal1D(data)
 
 .. code-block:: python
 
-    >>> hs.plot.plot_images(data.T)
+    >>> hs.plot.plot_images(s.T.inav[:9], axes_decor="off") # doctest: +SKIP
 
 
 .. image:: ../images/clustering_data.png
@@ -254,7 +259,13 @@ redundancies:
 .. code-block:: python
 
     >>> s.decomposition()
+    Decomposition info:
+      normalize_poissonian_noise=False
+      algorithm=SVD
+      output_dimension=None
+      centre=None
     >>> s.plot_explained_variance_ratio()
+    <Axes: title={'center': '\nPCA Scree Plot'}, xlabel='Principal component index', ylabel='Proportion of variance'>
 
 .. image:: ../images/clustering_scree_plot.png
 
@@ -263,7 +274,7 @@ to 3 components. Let's plot their loadings:
 
 .. code-block:: python
 
-    >>> s.plot_decomposition_loadings(comp_ids=3, axes_decor="off")
+    >>> s.plot_decomposition_loadings(comp_ids=3, axes_decor="off") # doctest: +SKIP
 
 .. image:: ../images/clustering_decomposition_loadings.png
 
@@ -275,7 +286,7 @@ not require any pre-processing for cluster analysis.
 .. code-block:: python
 
     >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=None)
-    >>> s.plot_cluster_labels(axes_decor="off")
+    >>> s.plot_cluster_labels(axes_decor="off") # doctest: +SKIP
 
 .. image:: ../images/clustering_labels.png
 
@@ -284,7 +295,7 @@ the ``cluster_labels``:
 
 .. code-block:: python
 
-    >>> s.learning_results.cluster_labels[0]
+    >>> s.learning_results.cluster_labels[0] # doctest: +SKIP
     array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -351,7 +362,9 @@ well-defined the clustering is.
 .. code-block:: python
 
     >>> s.estimate_number_of_clusters(cluster_source="decomposition", metric="gap")
+    3
     >>> s.plot_cluster_metric()
+    <Axes: xlabel='number of clusters', ylabel='gap_metric'>
 
 .. image:: ../images/clustering_Gap.png
 
@@ -360,9 +373,8 @@ results
 
 .. code-block:: python
 
-    >>> s.learning_results.number_of_clusters
+    >>> s.learning_results.number_of_clusters # doctest: +SKIP
     3
-
 
 
 Clustering using another signal as source
@@ -396,9 +408,8 @@ Let's start by creating a suitable synthetic dataset.
     ...     component.centre.map["is_set"][:] = True
     ...     component.centre.map["values"][:] += np.random.normal(size=(64, 64)) * 0.01
     >>> s = m.as_signal()
-    >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(),
-    >>> hs.plot.plot_images(stack, axes_decor="off", colorbar="single",
-    suptitle="")
+    >>> stack = [component.centre.as_signal() for component in m]
+    >>> hs.plot.plot_images(stack, axes_decor="off", colorbar="single", suptitle="") # doctest: +SKIP
 
 .. image:: ../images/clustering_gaussian_centres.png
 
@@ -411,18 +422,17 @@ proportionality relationship between the position of the peaks.
 
 .. code-block:: python
 
-    >>> stack = hs.stack([m.components.GaussianHF.centre.as_signal(),
-    m.components.GaussianHF_0.centre.as_signal()])
+    >>> stack = hs.stack([component.centre.as_signal() for component in m])
     >>> s.estimate_number_of_clusters(cluster_source=stack.T, preprocessing="norm")
     2
     >>> s.cluster_analysis(cluster_source=stack.T, source_for_centers=s, n_clusters=2, preprocessing="norm")
-    >>> s.plot_cluster_labels()
+    >>> s.plot_cluster_labels() # doctest: +SKIP
 
 .. image:: ../images/clustering_gaussian_centres_labels.png
 
 .. code-block:: python
 
-    >>> s.plot_cluster_signals(signal="mean")
+    >>> s.plot_cluster_signals(signal="mean") # doctest: +SKIP
 
 .. image:: ../images/clustering_gaussian_centres_mean.png
 
@@ -432,8 +442,8 @@ each cluster is not appropriate, since the clustering criterium
 is the ratio between the peaks positions. A better alternative
 is to plot the signals closest to the centroids:
 
-    >>> s.plot_cluster_signals(signal="centroid")
+.. code-block:: python
+
+    >>> s.plot_cluster_signals(signal="centroid") # doctest: +SKIP
 
 .. image:: ../images/clustering_gaussian_centres_centroid.png
-
-

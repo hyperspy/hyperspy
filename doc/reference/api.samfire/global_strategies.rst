@@ -7,3 +7,5 @@
 
 .. automodule:: hyperspy.api.samfire.global_strategies
    :members:
+   :inherited-members:
+

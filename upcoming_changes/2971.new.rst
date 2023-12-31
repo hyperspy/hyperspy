@@ -1,1 +1,0 @@
-:py:meth:`~._signals.lazy.LazySignal.compute` will now pass keyword arguments to the dask ``compute`` method. This enables the scheduler and the number of computational workers to be set.

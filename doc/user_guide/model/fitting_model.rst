@@ -6,7 +6,7 @@ Fitting the model to the data
 
 To fit the model to the data at the current coordinates (e.g. to fit one
 spectrum at a particular point in a spectrum-image), use
-:py:meth:`~.model.BaseModel.fit`. HyperSpy implements a number of
+:meth:`~.model.BaseModel.fit`. HyperSpy implements a number of
 different optimization approaches, each of which can have particular
 benefits and/or drawbacks depending on your specific application.
 A good approach to choosing an optimization approach is to ask yourself
@@ -30,37 +30,37 @@ whether the optimizers find a local or global optima.
 
 .. table:: Features of supported curve-fitting optimizers.
 
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | Optimizer                         | Bounds   | Gradients | Errors   | Loss function | Type   | Linear |
-    +===================================+==========+===========+==========+===============+========+========+
-    | ``"lm"`` (default)                |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"trf"``                         |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"dogbox"``                      |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"odr"``                         |  No      | Yes       | Yes      | Only ``"ls"`` | local  | No     |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"lstsq"``                       |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ridge_regression"``            |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | :py:func:`scipy.optimize.minimize`| Yes [2]_ | Yes [2]_  | No       | All           | local  | No     |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"Differential Evolution"``      |  Yes     | No        | No       | All           | global | No     |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"Dual Annealing"`` [3]_         |  Yes     | No        | No       | All           | global | No     |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"SHGO"`` [3]_                   |  Yes     | No        | No       | All           | global | No     |
-    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | Optimizer                       | Bounds   | Gradients | Errors   | Loss function | Type   | Linear |
+    +=================================+==========+===========+==========+===============+========+========+
+    | ``"lm"`` (default)              |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"trf"``                       |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"dogbox"``                    |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"odr"``                       |  No      | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"lstsq"``                     |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"ridge_regression"``          |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | :func:`scipy.optimize.minimize` | Yes [2]_ | Yes [2]_  | No       | All           | local  | No     |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"Differential Evolution"``    |  Yes     | No        | No       | All           | global | No     |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"Dual Annealing"`` [3]_       |  Yes     | No        | No       | All           | global | No     |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"SHGO"`` [3]_                 |  Yes     | No        | No       | All           | global | No     |
+    +---------------------------------+----------+-----------+----------+---------------+--------+--------+
 
 .. rubric:: Footnotes
 
-.. [1] Requires the :py:meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
+.. [1] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
        in most cases. See the documentation below on :ref:`linear least square fitting <linear_fitting-label>`
        for more info.
 
-.. [2] **All** of the fitting algorithms available in :py:func:`scipy.optimize.minimize` are currently
+.. [2] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
        supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
        please see the `SciPy documentation <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
@@ -93,7 +93,7 @@ noise to it:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D(np.arange(100, 300, dtype='float32')))
+    >>> s = hs.signals.Signal1D(np.arange(100, 300, dtype='float32'))
     >>> s.add_gaussian_noise(std=100)
 
 To fit it, we create a model consisting of a
@@ -105,20 +105,20 @@ to the data.
     >>> m = s.create_model()
     >>> line = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
-    >>> m.fit()
+    >>> m.fit() # doctest: +SKIP
 
 Once the fit is complete, the optimized value of the parameters and their
 estimated standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
-    >>> line.a0.value
+    >>> line.a0.value # doctest: +SKIP
     0.9924615648843765
-    >>> line.a1.value
+    >>> line.a1.value # doctest: +SKIP
     103.67507406125888
-    >>> line.a0.std
+    >>> line.a0.std # doctest: +SKIP
     0.11771053738516088
-    >>> line.a1.std
+    >>> line.a1.std # doctest: +SKIP
     13.541061301257537
 
 .. warning::
@@ -148,14 +148,14 @@ Gaussian noise, and proceed to fit as in the previous example.
     >>> m = s.create_model()
     >>> line  = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
-    >>> m.fit()
-    >>> line.a0.value
+    >>> m.fit() # doctest: +SKIP
+    >>> line.a0.value # doctest: +SKIP
     -0.7262000522775925
-    >>> line.a1.value
+    >>> line.a1.value # doctest: +SKIP
     1.0086925334859176
-    >>> line.a0.std
+    >>> line.a0.std # doctest: +SKIP
     1.4141418570079
-    >>> line.a1.std
+    >>> line.a1.std # doctest: +SKIP
     0.008185019194679451
 
 Because the noise is heteroscedastic, the least squares optimizer estimation is
@@ -168,15 +168,16 @@ in most cases where there are a sufficient number of counts per pixel.
 
     >>> exp_val = hs.signals.Signal1D(np.arange(300)+1)
     >>> s.estimate_poissonian_noise_variance(expected_value=exp_val)
-    >>> line.estimate_parameters(s,10,250)
-    >>> m.fit()
-    >>> line.a0.value
+    >>> line.estimate_parameters(s, 10, 250)
+    True
+    >>> m.fit() # doctest: +SKIP
+    >>> line.a0.value # doctest: +SKIP
     -0.6666008600519397
-    >>> line.a1.value
+    >>> line.a1.value # doctest: +SKIP
     1.017145603577098
-    >>> line.a0.std
+    >>> line.a0.std # doctest: +SKIP
     0.8681360488613021
-    >>> line.a1.std
+    >>> line.a1.std # doctest: +SKIP
     0.010308732161043038
 
 
@@ -187,15 +188,15 @@ in most cases where there are a sufficient number of counts per pixel.
     fit using the inverse of the noise variance as the weights.
     In this scenario, to then disable weighting, you will need to **unset**
     the attribute. You can achieve this with
-    :meth:`~.signal.BaseSignal.set_noise_variance`:
+    :meth:`~.api.signals.BaseSignal.set_noise_variance`:
 
     .. code-block:: python
 
-        >>> m.signal.set_noise_variance(None)
-        >>> m.fit()  # This will now be an unweighted fit
-        >>> line.a0.value
+        >>> m.signal.set_noise_variance(None) # This will now be an unweighted fit 
+        >>> m.fit() # doctest: +SKIP
+        >>> line.a0.value # doctest: +SKIP
         -1.9711403542163477
-        >>> line.a1.value
+        >>> line.a1.value # doctest: +SKIP
         1.0258716193502546
 
 Poisson maximum likelihood estimation
@@ -209,10 +210,10 @@ such as Nelder-Mead or L-BFGS-B:
 
 .. code-block:: python
 
-   >>> m.fit(optimizer="Nelder-Mead", loss_function="ML-poisson")
-   >>> line.a0.value
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="ML-poisson") # doctest: +SKIP
+   >>> line.a0.value # doctest: +SKIP
    0.00025567973144090695
-   >>> line.a1.value
+   >>> line.a1.value # doctest: +SKIP
    1.0036866523183754
 
 Estimation of the parameter errors is not currently supported for Poisson
@@ -229,7 +230,7 @@ non-linear optimization algorithms:
 
 .. code-block:: python
 
-   >>> m.fit(optimizer="Nelder-Mead", loss_function="huber")
+   >>> m.fit(optimizer="Nelder-Mead", loss_function="huber") # doctest: +SKIP
 
 Estimation of the parameter errors is not currently supported
 for the Huber loss function.
@@ -278,7 +279,7 @@ a custom loss function can be passed to the model:
     ...    return (difference**2).sum()
 
     >>> # We must use a general non-linear optimizer
-    >>> m.fit(optimizer='Nelder-Mead', loss_function=my_custom_function)
+    >>> m.fit(optimizer='Nelder-Mead', loss_function=my_custom_function) # doctest: +SKIP
 
 If the optimizer requires an analytical gradient function, it can be similarly
 passed, using the following signature:
@@ -317,7 +318,7 @@ passed, using the following signature:
     >>> # We must use a general non-linear optimizer again
     >>> m.fit(optimizer='L-BFGS-B',
     ...       loss_function=my_custom_function,
-    ...       grad=my_custom_gradient_function)
+    ...       grad=my_custom_gradient_function) # doctest: +SKIP
 
 Using gradient information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -345,20 +346,20 @@ Following the above examples:
     >>> m.append(line)
 
     >>> # Use a 2-point finite-difference scheme to estimate the gradient
-    >>> m.fit(grad="fd", fd_scheme="2-point")
+    >>> m.fit(grad="fd", fd_scheme="2-point") # doctest: +SKIP
 
     >>> # Use the analytical gradient
-    >>> m.fit(grad="analytical")
+    >>> m.fit(grad="analytical") # doctest: +SKIP
 
     >>> # Huber loss and Poisson MLE functions
     >>> # also support analytical gradients
-    >>> m.fit(grad="analytical", loss_function="huber")
-    >>> m.fit(grad="analytical", loss_function="ML-poisson")
+    >>> m.fit(grad="analytical", loss_function="huber") # doctest: +SKIP
+    >>> m.fit(grad="analytical", loss_function="ML-poisson") # doctest: +SKIP
 
 .. note::
 
     Analytical gradients are not yet implemented for the
-    :py:class:`~.models.model2d.Model2D` class.
+    :class:`~.models.model2d.Model2D` class.
 
 Bounded optimization
 ^^^^^^^^^^^^^^^^^^^^
@@ -389,8 +390,8 @@ on the ``centre`` parameter.
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7
     >>> g1.centre.bmax = 14
-    >>> m.fit(optimizer="lm", bounded=True)
-    >>> m.print_current_values()
+    >>> m.fit(optimizer="lm", bounded=True) # doctest: +SKIP
+    >>> m.print_current_values() # doctest: +SKIP
     Model1D:  histogram
     Gaussian: Gaussian
     Active: True
@@ -435,7 +436,7 @@ the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
     all nonlinear parameters to be ``free = False`` is to use ``m.set_parameters_not_free(only_nonlinear=True)``
 
 To check if a parameter is linear, use the model or component method
-:py:meth:`~hyperspy.model.BaseModel.print_current_values()`. For a component to be
+:meth:`~hyperspy.model.BaseModel.print_current_values()`. For a component to be
 considered linear, it can hold only one free parameter, and that parameter
 must be linear.
 
@@ -457,11 +458,11 @@ solve the problem as a linear regression problem! This can be done using two app
 
 There are two implementations of linear least squares fitting in hyperspy:
 
-- the ``'lstsq'`` optimizer, which uses :py:func:`numpy.linalg.lstsq`, or
-  :py:func:`dask.array.linalg.lstsq` for lazy signals.
+- the ``'lstsq'`` optimizer, which uses :func:`numpy.linalg.lstsq`, or
+  :func:`dask.array.linalg.lstsq` for lazy signals.
 - the ``'ridge_regression'`` optimizer, which supports regularization
-  (see :py:class:`sklearn.linear_model.Ridge` for arguments to pass to
-  :py:meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals.
+  (see :class:`sklearn.linear_model.Ridge` for arguments to pass to
+  :meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals.
 
 As for non-linear least squares fitting, :ref:`weighted least squares <weighted_least_squares-label>`
 is supported.
@@ -475,16 +476,16 @@ can about half an hour on a decent workstation. With a linear optimizer, it take
 .. code-block:: python
 
     >>> nav = hs.signals.Signal2D(np.random.random((300, 300))).T
-    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum() * nav
-    >>> m = s.create_model()
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles() * nav # doctest: +SKIP
+    >>> m = s.create_model() # doctest: +SKIP
 
-    >>> m.multifit(optimizer='lstsq')
+    >>> m.multifit(optimizer='lstsq') # doctest: +SKIP
 
 Standard errors for the parameters are by default not calculated when the dataset
 is fitted in vectorized fashion, because it has large memory requirement.
 If errors are required, either pass ``calculate_errors=True`` as an argument
-to :py:meth:`~hyperspy.model.BaseModel.multifit`, or rerun
-:py:meth:`~hyperspy.model.BaseModel.multifit` with a nonlinear optimizer,
+to :meth:`~hyperspy.model.BaseModel.multifit`, or rerun
+:meth:`~hyperspy.model.BaseModel.multifit` with a nonlinear optimizer,
 which should run fast since the parameters are already optimized.
 
 None of the linear optimizers currently support bounds.
@@ -494,7 +495,7 @@ Optimization results
 
 After fitting the model, details about the optimization
 procedure, including whether it finished successfully,
-are returned as :py:class:`scipy.optimize.OptimizeResult` object,
+are returned as :class:`scipy.optimize.OptimizeResult` object,
 according to the keyword argument ``return_info=True``.
 These details are often useful for diagnosing problems such
 as a poorly-fitted model or a convergence failure.
@@ -502,10 +503,8 @@ You can also access the object as the ``fit_output`` attribute:
 
 .. code-block:: python
 
-    >>> m.fit()
-    <scipy.optimize.OptimizeResult object>
-
-    >>> type(m.fit_output)
+    >>> m.fit() # doctest: +SKIP
+    >>> type(m.fit_output) # doctest: +SKIP
     <scipy.optimize.OptimizeResult object>
 
 You can also print this information using the
@@ -514,7 +513,7 @@ You can also print this information using the
 .. code-block:: python
 
     # Print the info to stdout
-    >>> m.fit(optimizer="L-BFGS-B", print_info=True)
+    >>> m.fit(optimizer="L-BFGS-B", print_info=True) # doctest: +SKIP
     Fit info:
       optimizer=L-BFGS-B
       loss_function=ls
@@ -554,7 +553,7 @@ computed automatically when fitting a (weighted) least-squares model
 Visualizing the model
 ^^^^^^^^^^^^^^^^^^^^^
 
-To visualise the result use the :py:meth:`~.model.BaseModel.plot` method:
+To visualise the result use the :meth:`~.models.model1d.Model1D.plot` method:
 
 .. code-block:: python
 
@@ -562,21 +561,21 @@ To visualise the result use the :py:meth:`~.model.BaseModel.plot` method:
 
 By default only the full model line is displayed in the plot. In addition, it
 is possible to display the individual components by calling
-:py:meth:`~.model.BaseModel.enable_plot_components` or directly using
-:py:meth:`~.model.BaseModel.plot`:
+:meth:`~.model.BaseModel.enable_plot_components` or directly using
+:meth:`~.models.model1d.Model1D.plot`:
 
 .. code-block:: python
 
     >>> m.plot(plot_components=True) # Visualise the results
 
 To disable this feature call
-:py:meth:`~.model.BaseModel.disable_plot_components`.
+:meth:`~.model.BaseModel.disable_plot_components`.
 
-.. versionadded:: 1.4 ``Signal1D.plot`` keyword arguments
+.. versionadded:: 1.4 :meth:`~.api.signals.Signal1D.plot` keyword arguments
 
-All extra keyword argments are passes to the :meth:`plot` method of the
-corresponing signal object. For example, the following plots the model signal
-figure but not its navigator:
+All extra keyword arguments are passed to the :meth:`~.api.signals.Signal1D.plot`
+method of the corresponding signal object. The following example plots the
+model signal figure but not its navigator:
 
 .. code-block:: python
 
@@ -584,9 +583,9 @@ figure but not its navigator:
 
 By default the model plot is automatically updated when any parameter value
 changes. It is possible to suspend this feature with
-:py:meth:`~.model.BaseModel.suspend_update`.
+:meth:`~.model.BaseModel.suspend_update`.
 
-.. To resume it use :py:meth:`~.model.BaseModel.resume_update`.
+.. To resume it use :meth:`~.model.BaseModel.resume_update`.
 
 .. _model.starting:
 
@@ -597,16 +596,16 @@ Non-linear optimization often requires setting sensible starting parameters.
 This can be done by plotting the model and adjusting the parameters by hand.
 
 .. versionchanged:: 1.3
-    All :meth:`notebook_interaction` methods renamed to :meth:`gui`. The
-    :meth:`notebook_interaction` methods will be removed in 2.0
+    All ``notebook_interaction`` methods renamed to :meth:`~.model.BaseModel.gui`.
+    The ``notebook_interaction`` methods were removed in 2.0.
 
 .. _notebook_interaction-label:
 
 If running in a Jupyter Notebook, interactive widgets can be used to
 conveniently adjust the parameter values by running
-:py:meth:`~.model.BaseModel.gui` for :py:class:`~.model.BaseModel`,
-:py:class:`~.component.Component` and
-:py:class:`~.component.Parameter`.
+:meth:`~.model.BaseModel.gui` for :class:`~.model.BaseModel`,
+:class:`~.component.Component` and
+:class:`~.component.Parameter`.
 
 .. figure::  ../images/notebook_widgets.png
     :align:   center
@@ -616,10 +615,10 @@ conveniently adjust the parameter values by running
     sliders to adjust current parameter values. Typing different minimum and
     maximum values changes the boundaries of the slider.
 
-Also, :py:meth:`~.models.model1d.Model1D.enable_adjust_position` provides an
+Also, :meth:`~.models.model1d.Model1D.enable_adjust_position` provides an
 interactive way of setting the position of the components with a
 well-defined position.
-:py:meth:`~.models.model1d.Model1D.disable_adjust_position` disables the tool.
+:meth:`~.models.model1d.Model1D.disable_adjust_position` disables the tool.
 
 .. figure::  ../images/model_adjust_position.png
     :align:   center
@@ -631,17 +630,14 @@ well-defined position.
 Exclude data from the fitting process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following :py:class:`~.model.BaseModel` methods can be used to exclude
+The following :class:`~.model.BaseModel` methods can be used to exclude
 undesired spectral channels from the fitting process:
 
-* :py:meth:`~.models.model1d.Model1D.set_signal_range`
-* :py:meth:`~.models.model1d.Model1D.remove_signal_range`
-* :py:meth:`~.models.model1d.Model1D.reset_signal_range`
-
-In 2D models, those methods are not implemented and the
-``m.channel_switches`` attribute of a model can be set using boolean arrays of the
-same shape as the data's signal, where ``True`` means that the datapoint
-will be used in the fitting routine.
+* :meth:`~.models.model1d.Model1D.set_signal_range`
+* :meth:`~.models.model1d.Model1D.add_signal_range`
+* :meth:`~.model.BaseModel.set_signal_range_from_mask`
+* :meth:`~.models.model1d.Model1D.remove_signal_range`
+* :meth:`~.models.model1d.Model1D.reset_signal_range`
 
 The example below shows how a boolean array can be easily created from the
 signal and how the ``isig`` syntax can be used to define the signal range.
@@ -667,14 +663,16 @@ signal and how the ``isig`` syntax can be used to define the signal range.
     >>> gt = hs.model.components2D.Gaussian2D()
     >>> m.append(gt)
 
-    >>> # Create a boolean signal of the same shape as the signal space of im
-    >>> # and with all values set to `False`.
-    >>> signal_mask = hs.signals.Signal2D(np.zeros_like(im(), dtype=bool))
-    >>> # Specify the signal range using the isig syntax
-    >>> signal_mask.isig[-7.:-3.,-9.:-1.] = True
+    >>> m.set_signal_range(-7, -3, -9, -1) # Set signal range
+    >>> m.fit() # doctest: +SKIP
 
-    >>> m.channel_switches = signal_mask.data # Set channel switches
-    >>> m.fit()
+    Alternatively, create a boolean signal of the same shape
+    as the signal space of im
+    
+    >>> signal_mask = im > 0.01
+
+    >>> m.set_signal_range_from_mask(signal_mask.data) # Set signal range
+    >>> m.fit() # doctest: +SKIP
 
 .. _model.multidimensional-label:
 
@@ -682,13 +680,13 @@ Fitting multidimensional datasets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To fit the model to all the elements of a multidimensional dataset, use
-:py:meth:`~.model.BaseModel.multifit`:
+:meth:`~.model.BaseModel.multifit`:
 
 .. code-block:: python
 
     >>> m.multifit() # warning: this can be a lengthy process on large datasets
 
-:py:meth:`~.model.BaseModel.multifit` fits the model at the first position,
+:meth:`~.model.BaseModel.multifit` fits the model at the first position,
 stores the result of the fit internally and move to the next position until
 reaching the end of the dataset.
 
@@ -699,13 +697,13 @@ reaching the end of the dataset.
     top-left pixel will typically be an empty signal).
 
     To get sensible starting parameters, you can do a single
-    :py:meth:`~.model.BaseModel.fit` after changing the active position
+    :meth:`~.model.BaseModel.fit` after changing the active position
     within the spectrum image (either using the plotting GUI or by directly
     modifying ``s.axes_manager.indices`` as in :ref:`Setting_axis_properties`).
 
     After doing this, you can initialize the model at every pixel to the
     values from the single pixel fit using ``m.assign_current_values_to_all()``,
-    and then use :py:meth:`~.model.BaseModel.multifit` to perform the fit over
+    and then use :meth:`~.model.BaseModel.multifit` to perform the fit over
     the entire spectrum image.
 
 .. versionadded:: 1.6 New optional fitting iteration path `"serpentine"`
@@ -721,7 +719,7 @@ navigation space will be at the last position of the previous frame.
 
 An alternative scan pattern would be the ``'flyback'`` scheme, where the map is
 iterated through row by row, always starting from the first index. This pattern
-can be explicitly set using the :py:meth:`~.model.BaseModel.multifit`
+can be explicitly set using the :meth:`~.model.BaseModel.multifit`
 ``iterpath='flyback'`` argument. However, the ``'serpentine'`` strategy is
 usually more robust, as it always moves on to a neighbouring pixel and the fitting
 procedure uses the fit result of the previous pixel as the starting point for the
@@ -743,14 +741,14 @@ the :ref:`Iterating AxesManager <iterating_axesmanager>` section.
 
 Sometimes one may like to store and fetch the value of the parameters at a
 given position manually. This is possible using
-:py:meth:`~.model.BaseModel.store_current_values` and
-:py:meth:`~.model.BaseModel.fetch_stored_values`.
+:meth:`~.model.BaseModel.store_current_values` and
+:meth:`~.model.BaseModel.fetch_stored_values`.
 
 Visualising the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`~.model.BaseModel` :py:meth:`~.model.BaseModel.plot_results`,
-:py:class:`~.component.Component` :py:meth:`~.component.Component.plot` and
-:py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.plot` methods
+The :class:`~.model.BaseModel` :meth:`~.model.BaseModel.plot_results`,
+:class:`~.component.Component` :meth:`~.component.Component.plot` and
+:class:`~.component.Parameter` :meth:`~.component.Parameter.plot` methods
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.

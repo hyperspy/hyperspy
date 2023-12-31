@@ -58,3 +58,5 @@ tsconfig.json
 jsconfig.json
 *egg-info*
 *__pycache__*
+
+*sg_execution_times.rst

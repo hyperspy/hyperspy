@@ -209,7 +209,7 @@ class Signal1DFigure(BlittedFigure):
             return  # Already closed
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        super(Signal1DFigure, self)._on_close()
+        super()._on_close()
         _logger.debug('Signal1DFigure Closed.')
 
     def update(self):
@@ -277,9 +277,10 @@ class Signal1DLine(object):
         self.events.closed = Event("""
             Event that triggers when the line is closed.
 
-            Arguments:
-                obj:  Signal1DLine instance
-                    The instance that triggered the event.
+            Parameters
+            ----------
+            obj:  Signal1DLine instance
+                The instance that triggered the event.
             """, arguments=["obj"])
         self.sf_lines = None
         self.ax = None

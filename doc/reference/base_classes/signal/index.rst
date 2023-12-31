@@ -1,12 +1,24 @@
 Signal
 ------
 
-API of signal classes, which are not part of the :mod:`hyperspy.api` namespace but are inherited in
-HyperSpy signals classes. These classes are not expected to be instantiated by users but their methods, 
-which are used by other classes, are documented here.
+API of signal classes, which are not part of the user-facing :mod:`hyperspy.api` namespace but are
+inherited in HyperSpy signals classes or used as attributes of signals. These classes are not
+expected to be instantiated by users but their methods, which are used by other classes,
+are documented here.
+
+ModelManager
+^^^^^^^^^^^^
+
+.. currentmodule:: hyperspy.signal
+
+.. autosummary::
+   :nosignatures:
+
+   ModelManager
 
 Common Signals
-""""""""""""""
+^^^^^^^^^^^^^^
+
 .. currentmodule:: hyperspy._signals.common_signal1d
 
 .. autosummary::
@@ -21,15 +33,9 @@ Common Signals
 
    CommonSignal2D
 
-.. currentmodule:: hyperspy._signals.eds
-
-.. autosummary::
-   :nosignatures:
-
-   EDSSpectrum
 
 Lazy Signals
-""""""""""""
+^^^^^^^^^^^^
 .. currentmodule:: hyperspy._signals.lazy
 
 .. autosummary::
@@ -45,35 +51,19 @@ Lazy Signals
    LazyComplexSignal
    LazyComplexSignal1D
    LazyComplexSignal2D
-   LazyDielectricFunction
-   LazyEDSSEMSpectrum
-   LazyEDSTEMSpectrum
-   LazyEELSSpectrum
    LazySignal1D
    LazySignal2D
-
-.. currentmodule:: hyperspy._signals.eds
-
-.. autosummary::
-   :nosignatures:
-
-   LazyEDSSpectrum
 
 .. toctree::
    :maxdepth: 2
    :hidden:
 
+   ModelManager
    CommonSignal1D
    CommonSignal2D
-   EDSSpectrum
    LazyComplexSignal
    LazyComplexSignal1D
    LazyComplexSignal2D
-   LazyDielectricFunction
-   LazyEDSSpectrum
-   LazyEDSSEMSpectrum
-   LazyEDSTEMSpectrum
-   LazyEELSSpectrum
    LazySignal
    LazySignal1D
    LazySignal2D

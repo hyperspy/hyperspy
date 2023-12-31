@@ -1,0 +1,13 @@
+name: Documentation
+
+on: [push, pull_request]
+
+jobs:
+  Build:
+    # Use the "reusable workflow" from the hyperspy organisation
+    uses: hyperspy/.github/.github/workflows/doc.yml@main
+    with:
+      # install with speed extra to avoid warnings
+      pip_extra_doc: 'doc,speed'
+      # graphviz is required to build mermaid graph
+      install_package_ubuntu: graphviz

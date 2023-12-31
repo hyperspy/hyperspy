@@ -18,10 +18,15 @@
 
 from functools import wraps
 import inspect
+import logging
 from typing import Callable, Optional, Union
 import warnings
 
 import numpy as np
+
+
+_logger = logging.getLogger(__name__)
+
 
 def lazify(func, **kwargs):
     from hyperspy.signal import BaseSignal
@@ -233,3 +238,26 @@ class deprecated_argument:
             return func(*args, **kwargs)
 
         return wrapped
+
+
+def jit_ifnumba(*args, **kwargs):
+    try:
+        import numba
+
+        if "nopython" not in kwargs:
+            kwargs["nopython"] = True
+        return numba.jit(*args, **kwargs)
+    except ImportError:
+
+        _logger.warning(
+            "Numba is not installed, falling back to "
+            "non-accelerated implementation."
+        )
+
+        def wrap1(func):
+            def wrap2(*args2, **kwargs2):
+                return func(*args2, **kwargs2)
+
+            return wrap2
+
+        return wrap1

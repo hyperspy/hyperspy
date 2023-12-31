@@ -25,9 +25,9 @@ data.
 
 Models can also be provided by external packages, but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
-the relevant :py:class:`hyperspy.signal.BaseSignal` subclass, see for example,
-the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.create_model` of the
-:py:class:`~._signals.eds_tem.EDSTEMSpectrum`.
+the relevant :class:`~.api.signals.BaseSignal` subclass, see for example,
+the :meth:`exspy.signals.EDSTEMSpectrum.create_model` of the
+:class:`exspy.signals.EDSTEMSpectrum`.
 
 It is good practice to add all packages that extend HyperSpy
 `to the list of known extensions
@@ -75,11 +75,11 @@ When and where to create a new ``BaseSignal`` subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy provides most of its functionality through the different
-:py:class:`hyperspy.signal.BaseSignal`
+:class:`~.api.signals.BaseSignal`
 subclasses. A HyperSpy "signal" is a class that contains data for analysis
 and functions to perform the analysis in the form of class methods. Functions
 that are useful for the analysis of most datasets are in the
-:py:class:`hyperspy.signal.BaseSignal` class. All other functions are in
+:class:`~.api.signals.BaseSignal` class. All other functions are in
 specialized subclasses.
 
 The flowchart below can help you decide where to add
@@ -146,7 +146,7 @@ for your function, you should consider creating your own.
 Registering a new BaseSignal subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To register a new :py:class:`hyperspy.signal.BaseSignal` subclass you must add it to the
+To register a new :class:`~.api.signals.BaseSignal` subclass you must add it to the
 ``hyperspy_extension.yaml`` file, as in the following example:
 
 .. code-block:: yaml
@@ -181,7 +181,7 @@ match for each sort of data.
 
 The optional ``signal_type_aliases`` are used to determine the most appropriate
 signal subclass when using
-:py:meth:`hyperspy.signal.BaseSignal.set_signal_type`.
+:meth:`~.api.signals.BaseSignal.set_signal_type`.
 For example, if the ``signal_type`` ``Electron Energy Loss Spectroscopy``
 has an ``EELS`` alias, setting the signal type to ``EELS`` will correctly assign
 the signal subclass with ``Electron Energy Loss Spectroscopy`` signal type.
@@ -194,7 +194,7 @@ Creating new HyperSpy model components
 When and where to create a new component
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HyperSpy provides the :py:class:`hyperspy._components.expression.Expression`
+HyperSpy provides the :class:`hyperspy._components.expression.Expression`
 component that enables easy creation of 1D and 2D components from
 mathematical expressions. Therefore, strictly speaking, we only need to
 create new components when they cannot be expressed as simple mathematical
@@ -205,7 +205,7 @@ HyperSpy itself (if they are of common interest) or to specialized external
 packages extending HyperSpy.
 
 The flowchart below can help you decide when and where to add
-a new hyperspy model :py:class:`hyperspy.component.Component`
+a new hyperspy model :class:`hyperspy.component.Component`
 for your function, should you consider creating your own.
 
 ..  This is the original mermaid code. It produces a nicer looking diagram
@@ -277,7 +277,7 @@ Registering new components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All new components must be a subclass of
-:py:class:`hyperspy._components.expression.Expression`. To register a new
+:class:`hyperspy._components.expression.Expression`. To register a new
 1D component add  it to the ``hyperspy_extension.yaml`` file as in the following
 example:
 
@@ -335,7 +335,7 @@ Registering toolkeys
 ^^^^^^^^^^^^^^^^^^^^
 To register a new toolkey:
 
-1. Declare a new toolkey, *e. g.* by adding the :py:func:`~.ui_registry.add_gui_method`
+1. Declare a new toolkey, *e. g.* by adding the ``hyperspy.ui_registry.add_gui_method``
    decorator to the function you want to assign a widget to.
 2. Register a new toolkey that you have declared in your package by adding it to
    the ``hyperspy_extension.yaml`` file, as in the following example:

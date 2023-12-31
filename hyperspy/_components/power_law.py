@@ -52,7 +52,7 @@ class PowerLaw(Expression):
         Location parameter.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Attributes
     ----------
@@ -61,7 +61,7 @@ class PowerLaw(Expression):
     """
 
     def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0,
-                 module="numexpr", compute_gradients=False, **kwargs):
+                 module=None, compute_gradients=False, **kwargs):
         super().__init__(
             expression="where(left_cutoff<x, A*(-origin + x)**-r, 0)",
             name="PowerLaw",
@@ -97,7 +97,7 @@ class PowerLaw(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -112,7 +112,8 @@ class PowerLaw(Expression):
 
         Returns
         -------
-        {bool, tuple of values}
+        bool
+            Exit status required for the :meth:`~.api.signals.Signal1D.remove_background` function.
 
         """
         super()._estimate_parameters(signal)

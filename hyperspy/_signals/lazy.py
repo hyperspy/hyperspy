@@ -39,6 +39,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import (
     _requires_linear_rebin,
     get_signal_chunk_slice,
+    _get_navigation_dimension_chunk_slice,
     )
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
@@ -57,6 +58,19 @@ try:
     TEMPLATE_PATHS.append(templates_path)
 except ModuleNotFoundError:
     _logger.info("Dask widgets not loaded (dask >=2021.11.1 is required)")
+
+
+def _get():
+    try:
+        get = dask.threaded.get
+    except AttributeError:  # pragma: no cover
+        # For pyodide
+        get = dask.get
+        _logger.warning(
+            "Dask scheduler with threads is not available in this environment. "
+            "Falling back to synchronous scheduler (single-threaded)."
+        )
+    return get
 
 
 def to_array(thing, chunks=None):
@@ -97,64 +111,7 @@ def to_array(thing, chunks=None):
             raise ValueError
 
 
-def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
-    """Get the slice necessary to get the dask data chunk containing the
-    navigation indices.
 
-    Parameters
-    ----------
-    navigation_indices : iterable
-    chunks : iterable
-
-    Returns
-    -------
-    chunk_slice : list of slices
-
-    Examples
-    --------
-    Making all the variables
-
-    >>> import dask.array as da
-    >>> from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
-    >>> data = da.random.random((128, 128, 256, 256), chunks=(32, 32, 32, 32))
-    >>> s = hs.signals.Signal2D(data).as_lazy()
-    >>> sig_dim = s.axes_manager.signal_dimension
-    >>> nav_chunks = s.data.chunks[:-sig_dim]
-    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
-
-    The navigation index here is (0, 0), giving us the slice which contains
-    this index.
-
-    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
-    >>> print(chunk_slice)
-    (slice(0, 32, None), slice(0, 32, None))
-    >>> data_chunk = data[chunk_slice]
-
-    Moving the navigator to a new position, by directly setting the indices.
-    Normally, this is done by moving the navigator while plotting the data.
-    Note the "inversion" of the axes here: the indices is given in (x, y),
-    while the chunk_slice is given in (y, x).
-
-    >>> s.axes_manager.indices = (128, 70)
-    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
-    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
-    >>> print(chunk_slice)
-    (slice(64, 96, None), slice(96, 128, None))
-    >>> data_chunk = data[chunk_slice]
-
-    """
-    chunk_slice_list = da.core.slices_from_chunks(chunks)
-    for chunk_slice in chunk_slice_list:
-        is_slice = True
-        for index_nav in range(len(navigation_indices)):
-            temp_slice = chunk_slice[index_nav]
-            nav = navigation_indices[index_nav]
-            if not (temp_slice.start <= nav < temp_slice.stop):
-                is_slice = False
-                break
-        if is_slice:
-            return chunk_slice
-    return False
 
 
 class LazySignal(BaseSignal):
@@ -178,7 +135,7 @@ class LazySignal(BaseSignal):
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
     __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
-        ":py:class:`numpy.ndarray`", ":py:class:`dask.array.Array`"
+        ":class:`numpy.ndarray`", ":class:`dask.array.Array`"
         )
 
     def _repr_html_(self):
@@ -248,7 +205,7 @@ class LazySignal(BaseSignal):
             associated lazy signals inoperative.
         %s
         **kwargs : dict
-            Any other keyword arguments for :py:func:`dask.array.Array.compute`.
+            Any other keyword arguments for :meth:`dask.array.Array.compute`.
             For example `scheduler` or `num_workers`.
 
         Returns
@@ -322,7 +279,7 @@ class LazySignal(BaseSignal):
             -1 indicates the full size of the corresponding dimension.
             Default is -1 which automatically spans the full signal dimension
         **kwargs : dict
-            Any other keyword arguments for :py:func:`dask.array.rechunk`.
+            Any other keyword arguments for :func:`dask.array.rechunk`.
         """
         if not isinstance(sig_chunks, tuple):
             sig_chunks = (sig_chunks,)*len(self.axes_manager.signal_shape)
@@ -488,7 +445,7 @@ class LazySignal(BaseSignal):
 
         Parameters
         ----------
-        axis: None, DataAxis or tuple of data axes
+        axis: None, :class:`~.axes.DataAxis` or tuple of data axes
             The data axis that must not be broken into chunks when `rechunk`
             is `True`. If None, it defaults to the current signal axes.
         rechunk: bool, "dask_auto"
@@ -718,7 +675,7 @@ class LazySignal(BaseSignal):
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.trigger(obj=out) 
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
@@ -825,7 +782,7 @@ class LazySignal(BaseSignal):
 
     def _block_iterator(self,
                         flat_signal=True,
-                        get=dask.threaded.get,
+                        get=None,
                         navigation_mask=None,
                         signal_mask=None):
         """A function that allows iterating lazy signal data by blocks,
@@ -839,9 +796,10 @@ class LazySignal(BaseSignal):
             optionally masked elements missing. If false, returns
             the equivalent of s.inav[{blocks}].data, where masked elements are
             set to np.nan or 0.
-        get : dask scheduler
-            the dask scheduler to use for computations;
-            default `dask.threaded.get`
+        get : dask scheduler or None
+            The dask scheduler to use for computations. If ``None``, 
+            ``dask.threaded.get` will be used if possible, otherwise
+            ``dask.get`` will be used, for example in pyodide interpreter.
         navigation_mask : {BaseSignal, numpy array, dask array}
             The navigation locations marked as True are not returned (flat) or
             set to NaN or 0.
@@ -850,6 +808,8 @@ class LazySignal(BaseSignal):
             to NaN or 0.
 
         """
+        if get is None:
+            get = _get()
         self._make_lazy()
         data = self._data_aligned_with_axes
         nav_chunks = data.chunks[:self.axes_manager.navigation_dimension]
@@ -909,7 +869,7 @@ class LazySignal(BaseSignal):
         output_dimension=None,
         signal_mask=None,
         navigation_mask=None,
-        get=dask.threaded.get,
+        get=None,
         num_chunks=None,
         reproject=True,
         print_info=True,
@@ -917,7 +877,9 @@ class LazySignal(BaseSignal):
     ):
         """Perform Incremental (Batch) decomposition on the data.
 
-        The results are stored in ``self.learning_results``.
+        The results are stored in the
+        :attr:`~.api.signals.BaseSignal.learning_results`
+        attribute.
 
         Read more in the :ref:`User Guide <big_data.decomposition>`.
 
@@ -931,17 +893,18 @@ class LazySignal(BaseSignal):
         output_dimension : int or None, default None
             Number of components to keep/calculate. If None, keep all
             (only valid for 'SVD' algorithm)
-        get : dask scheduler
-            the dask scheduler to use for computations;
-            default `dask.threaded.get`
+        get : dask scheduler or None
+            The dask scheduler to use for computations. If ``None``, 
+            ``dask.threaded.get` will be used if possible, otherwise
+            ``dask.get`` will be used, for example in pyodide interpreter.
         num_chunks : int or None, default None
             the number of dask chunks to pass to the decomposition model.
             More chunks require more memory, but should run faster. Will be
             increased to contain at least ``output_dimension`` signals.
-        navigation_mask : {BaseSignal, numpy array, dask array}
+        navigation_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The navigation locations marked as True are not used in the
             decomposition. Not implemented for the 'SVD' algorithm.
-        signal_mask : {BaseSignal, numpy array, dask array}
+        signal_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The signal locations marked as True are not used in the
             decomposition. Not implemented for the 'SVD' algorithm.
         reproject : bool, default True
@@ -961,13 +924,12 @@ class LazySignal(BaseSignal):
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.decomposition` for non-lazy signals
-        * :py:func:`dask.array.linalg.svd`
-        * :py:class:`sklearn.decomposition.IncrementalPCA`
-        * :py:class:`~.learn.rpca.ORPCA`
-        * :py:class:`~.learn.ornmf.ORNMF`
+        dask.array.linalg.svd, sklearn.decomposition.IncrementalPCA,
+        hyperspy.learn.rpca.ORPCA, hyperspy.learn.ornmf.ORNMF
 
         """
+        if get is None:
+            get = _get()
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
@@ -1251,8 +1213,8 @@ class LazySignal(BaseSignal):
         -------
         None.
 
-        Note
-        ----
+        Notes
+        -----
         The number of chunks will affect where the sum is taken. If the sum
         needs to be taken in the centre of the signal space (for example, in
         the case of diffraction pattern), the number of chunk needs to be an

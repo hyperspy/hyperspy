@@ -46,8 +46,7 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
-    PARALLEL_ARG,
-    MAX_WORKERS_ARG,
+    NUM_WORKERS_ARG,
     LAZYSIGNAL_DOC,
 )
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
@@ -158,27 +157,27 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     Parameters
     ----------
-    ref : 2D numpy.ndarray
-        Reference image
-    image : 2D numpy.ndarray
+    ref : numpy.ndarray
+        Reference image.
+    image : numpy.ndarray
         Image to register
-    roi : tuple of ints (top, bottom, left, right)
-         Define the region of interest
+    roi : tuple of int.
+        Define the region of interest (top, bottom, left, right)
     sobel : bool
         apply a sobel filter for edge enhancement
     medfilter :  bool
         apply a median filter for noise reduction
     hanning : bool
         Apply a 2d hanning filter
-    plot : bool or matplotlib.Figure
+    plot : bool or :class:`matplotlib.figure.Figure`
         If True, plots the images after applying the filters and the phase
         correlation. If a figure instance, the images will be plotted to the
         given figure.
-    reference : 'current' or 'cascade'
-        If 'current' (default) the image at the current
-        coordinates is taken as reference. If 'cascade' each image
+    reference : str
+        If ``'current'`` (default) the image at the current
+        coordinates is taken as reference. If ``'cascade'`` each image
         is aligned with the previous one.
-    dtype : str or dtype
+    dtype : str or numpy.dtype
         Typecode or data-type in which the calculations must be
         performed.
     normalize_corr : bool
@@ -390,13 +389,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Parameters
         ----------
-        dictionary : {None, dict}, optional
+        dictionary : None or dict, optional
             A dictionary to be used to recreate a model. Usually generated
-            using :meth:`hyperspy.model.as_dictionary`
+            using :meth:`hyperspy.model.BaseModel.as_dictionary`
 
         Returns
         -------
-        A Model class
+        hyperspy.models.model2d.Model2D
 
         """
         from hyperspy.models.model2d import Model2D
@@ -432,20 +431,20 @@ class Signal2D(BaseSignal, CommonSignal2D):
             of every image with all the rest is estimated and by
             performing statistical analysis on the result the
             translation is estimated.
-        correlation_threshold : {None, 'auto', float}
+        correlation_threshold : None, str or float
             This parameter is only relevant when reference='stat'.
             If float, the shift estimations with a maximum correlation
             value lower than the given value are not used to compute
             the estimated shifts. If 'auto' the threshold is calculated
             automatically as the minimum maximum correlation value
             of the automatically selected reference image.
-        chunk_size : {None, int}
+        chunk_size : None or int
             If int and reference='stat' the number of images used
             as reference are limited to the given value.
-        roi : tuple of ints or floats (left, right, top, bottom)
-            Define the region of interest. If int(float) the position
-            is given axis index(value). Note that ROIs can be used
-            in place of a tuple.
+        roi : tuple of int or float 
+            Define the region of interest (left, right, top, bottom).
+            If int (float), the position is given by axis index (value).
+            Note that ROIs can be used in place of a tuple.
         normalize_corr : bool, default False
             If True, use phase correlation to align the images, otherwise
             use cross correlation.
@@ -455,12 +454,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
             Apply a median filter for noise reduction
         hanning : bool, default True
             Apply a 2D hanning filter
-        plot : bool or 'reuse'
+        plot : bool or str
             If True plots the images after applying the filters and
             the phase correlation. If 'reuse', it will also plot the images,
             but it will only use one figure, and continuously update the images
             in that figure as it progresses through the stack.
-        dtype : str or dtype
+        dtype : str or numpy.dtype
             Typecode or data-type in which the calculations must be
             performed.
         %s
@@ -470,7 +469,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Returns
         -------
-        shifts : array
+        numpy.ndarray
             Estimated shifts in pixels.
 
         Notes
@@ -487,7 +486,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         See Also
         --------
-        * :py:meth:`~._signals.signal2d.Signal2D.align2D`
+        align2D
 
         """
         if show_progressbar is None:
@@ -501,7 +500,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                         [yaxis._get_index(i) for i in roi[:2]])
 
         ref = None if reference == 'cascade' else \
-            self.__call__().copy()
+            self._get_current_data().copy()
         shifts = []
         nrows = None
         images_number = self.axes_manager._max_index + 1
@@ -517,8 +516,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                                ('shift', np.int32,
                                                 (2,))]))
             nshift, max_value = estimate_image_shift(
-                self(),
-                self(),
+                self._get_current_data(),
+                self._get_current_data(),
                 roi=roi,
                 sobel=sobel,
                 medfilter=medfilter,
@@ -612,16 +611,15 @@ class Signal2D(BaseSignal, CommonSignal2D):
         expand=False,
         interpolation_order=1,
         show_progressbar=None,
-        parallel=None,
-        max_workers=None,
+        num_workers=None,
         **kwargs,
     ):
-        """Align the images in-place using :py:func:`scipy.ndimage.shift`.
+        """Align the images in-place using :func:`scipy.ndimage.shift`.
 
         The images can be aligned using either user-provided shifts or
         by first estimating the shifts.
 
-        See :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+        See :meth:`~hyperspy.api.signals.Signal2D.estimate_shift2D`
         for more details on estimating image shifts.
 
         Parameters
@@ -629,29 +627,29 @@ class Signal2D(BaseSignal, CommonSignal2D):
         crop : bool
             If True, the data will be cropped not to include regions
             with missing data
-        fill_value : int, float, nan
+        fill_value : int, float, np.nan
             The areas with missing data are filled with the given value.
-            Default is nan.
-        shifts : None or array.
+            Default is np.nan.
+        shifts : None or numpy.ndarray
             The array of shifts must be in pixel units. The shape must be
-            the navigation shape using numpy order convention. If `None`
+            the navigation shape using numpy order convention. If ``None``
             the shifts are estimated using
-            :py:meth:`~._signals.signal2D.estimate_shift2D`.
+            :meth:`~hyperspy.api.signals.Signal2D.estimate_shift2D`.
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
-            Overrides `crop`.
-        interpolation_order: int, default 1.
+            Overrides ``crop``.
+        interpolation_order: int
             The order of the spline interpolation. Default is 1, linear
             interpolation.
         %s
         %s
-        %s
-        **kwargs :
-            Keyword arguments passed to :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+        **kwargs : dict
+            Keyword arguments passed to
+            :meth:`~hyperspy.api.signals.Signal2D.estimate_shift2D`.
 
         Returns
         -------
-        shifts : np.array
+        numpy.ndarray
             The estimated shifts are returned only if ``shifts`` is None
 
         Raises
@@ -661,7 +659,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         See Also
         --------
-        * :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+        estimate_shift2D
 
         """
         self._check_signal_dimension_equals_two()
@@ -741,8 +739,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             shift_image,
             shift=signal_shifts,
             show_progressbar=show_progressbar,
-            parallel=parallel,
-            max_workers=max_workers,
+            num_workers=num_workers,
             ragged=False,
             inplace=True,
             fill_value=fill_value,
@@ -768,7 +765,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 int(np.floor(_min1)) if _min1 < 0 else None,
                 int(np.ceil(_max1)) if _max1 > 0 else 0,
             )
-            self.crop_image(top, bottom, left, right)
+            self.crop_signal(top, bottom, left, right)
             shifts = -shifts
 
         self.events.data_changed.trigger(obj=self)
@@ -776,7 +773,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if return_shifts:
             return shifts
 
-    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
     def calibrate(
         self,
@@ -796,7 +793,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Parameters
         ----------
-        x0, y0, x1, y1 : scalars, optional
+        x0, y0, x1, y1 : float, int, optional
             If interactive is False, these must be set. If given in floats
             the input will be in scaled axis values. If given in integers,
             the input will be in non-scaled pixel values. Similar to how
@@ -814,7 +811,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Examples
         --------
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
-        >>> s.calibrate()
+        >>> s.calibrate() # doctest: +SKIP
 
         Running non-interactively
 
@@ -867,13 +864,14 @@ class Signal2D(BaseSignal, CommonSignal2D):
         scale = length / old_length
         return scale
 
-    def crop_image(self, top=None, bottom=None,
-                   left=None, right=None, convert_units=False):
-        """Crops an image in place.
+    def crop_signal(self, top=None, bottom=None, left=None, right=None,
+                    convert_units=False):
+        """
+        Crops in signal space and in place.
 
         Parameters
         ----------
-        top, bottom, left, right : {int | float}
+        top, bottom, left, right : int or float
             If int the values are taken as indices. If float the values are
             converted to indices.
         convert_units : bool
@@ -881,9 +879,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If True, convert the signal units using the 'convert_to_units'
             method of the `axes_manager`. If False, does nothing.
 
-        See also
+        See Also
         --------
-        crop
+        hyperspy.api.signals.BaseSignal.crop
 
         """
         self._check_signal_dimension_equals_two()
@@ -927,7 +925,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def find_peaks(self, method='local_max', interactive=True,
                    current_index=False, show_progressbar=None,
-                   parallel=None, max_workers=None, display=True, toolkit=None,
+                   num_workers=None, display=True, toolkit=None,
                    get_intensity=False,
                    **kwargs):
         """Find peaks in a 2D signal.
@@ -943,34 +941,34 @@ class Signal2D(BaseSignal, CommonSignal2D):
              are:
 
              * 'local_max' - simple local maximum search using the
-               :py:func:`skimage.feature.peak_local_max` function
+               :func:`skimage.feature.peak_local_max` function
              * 'max' - simple local maximum search using the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_max`.
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_max`.
              * 'minmax' - finds peaks by comparing maximum filter results
                with minimum filter, calculates centers of mass. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax`
                function.
              * 'zaefferer' - based on gradient thresholding and refinement
                by local region of interest optimisation. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_zaefferer`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_zaefferer`
                function.
              * 'stat' - based on statistical refinement and difference with
                respect to mean intensity. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_stat`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_stat`
                function.
              * 'laplacian_of_gaussian' - a blob finder using the laplacian of
                Gaussian matrices approach. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
                function.
              * 'difference_of_gaussian' - a blob finder using the difference
                of Gaussian matrices approach. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_dog`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_dog`
                function.
              * 'template_matching' - A cross correlation peakfinder. This
                method requires providing a template with the ``template``
                parameter, which is used as reference pattern to perform the
                template matching to the signal. It uses the
-               :py:func:`skimage.feature.match_template` function and the peaks
+               :func:`skimage.feature.match_template` function and the peaks
                position are obtained by using `minmax` method on the
                template matching result.
 
@@ -986,7 +984,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         %s
         %s
         %s
-        %s
 
         **kwargs : dict
             Keywords parameters associated with above methods, see the
@@ -996,15 +993,15 @@ class Signal2D(BaseSignal, CommonSignal2D):
         -----
         As a convenience, the 'local_max' method accepts the 'distance' and
         'threshold' argument, which will be map to the 'min_distance' and
-        'threshold_abs' of the :py:func:`skimage.feature.peak_local_max`
+        'threshold_abs' of the :func:`skimage.feature.peak_local_max`
         function.
 
         Returns
         -------
-        peaks : :py:class:`~hyperspy.signal.BaseSignal` or numpy.ndarray if current_index=True
-            Array of shape `_navigation_shape_in_array` in which each cell
-            contains an array with dimensions (npeaks, 2) that contains
-            the `x, y` pixel coordinates of peaks found in each image sorted
+        peaks : :class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
+            numpy.ndarray if current_index=True.
+            Ragged signal with shape (npeaks, 2) that contains the `x, y`
+            pixel coordinates of peaks found in each image sorted
             first along `y` and then along `x`.
         """
         method_dict = {
@@ -1043,16 +1040,16 @@ class Signal2D(BaseSignal, CommonSignal2D):
             pf2D = PeaksFinder2D(self, method=method, peaks=peaks, **kwargs)
             pf2D.gui(display=display, toolkit=toolkit)
         elif current_index:
-            peaks = method_func(self.__call__(), **kwargs)
+            peaks = method_func(self._get_current_data(), **kwargs)
         else:
             peaks = self.map(method_func, show_progressbar=show_progressbar,
-                             parallel=parallel, inplace=False, ragged=True,
-                             max_workers=max_workers, **kwargs)
+                             inplace=False, ragged=True,
+                             num_workers=num_workers, **kwargs)
             peaks.metadata.add_node("Peaks") # add information about the signal Axes
             peaks.metadata.Peaks.signal_axes = deepcopy(self.axes_manager.signal_axes)
         return peaks
 
-    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
                            DISPLAY_DT, TOOLKIT_DT)
 
 

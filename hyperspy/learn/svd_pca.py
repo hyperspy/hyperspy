@@ -41,7 +41,7 @@ def svd_flip_signs(u, v, u_based_decision=True):
 
     Parameters
     ----------
-    u, v : numpy array
+    u, v : numpy.ndarray
         u and v are the outputs of a singular value decomposition.
     u_based_decision : bool, default True
         If True, use the columns of u as the basis for sign flipping.
@@ -50,7 +50,7 @@ def svd_flip_signs(u, v, u_based_decision=True):
 
     Returns
     -------
-    u, v : numpy array
+    u, v : numpy.ndarray
         Adjusted outputs with same dimensions as inputs.
 
     """
@@ -83,32 +83,32 @@ def svd_solve(
 
     Parameters
     ----------
-    data : numpy array, shape (m, n)
-        Input data array
+    data : numpy.ndarray
+        Input data array with shape (m, n)
     output_dimension : None or int
         Number of components to keep/calculate
     svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
-        If auto:
-            The solver is selected by a default policy based on `data.shape` and
-            `output_dimension`: if the input data is larger than 500x500 and the
-            number of components to extract is lower than 80% of the smallest
-            dimension of the data, then the more efficient "randomized"
-            method is enabled. Otherwise the exact full SVD is computed and
-            optionally truncated afterwards.
-        If full:
-            run exact SVD, calling the standard LAPACK solver via
-            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
-        If arpack:
-            use truncated SVD, calling ARPACK solver via
-            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
-            `0 < output_dimension < min(data.shape)`
-        If randomized:
-            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
-            to estimate a limited number of components
+        - If ``"auto"``:
+          The solver is selected by a default policy based on `data.shape` and
+          `output_dimension`: if the input data is larger than 500x500 and the
+          number of components to extract is lower than 80% of the smallest
+          dimension of the data, then the more efficient "randomized"
+          method is enabled. Otherwise the exact full SVD is computed and
+          optionally truncated afterwards.
+        - If ``"full"``:
+          Run exact SVD, calling the standard LAPACK solver via
+          :func:`scipy.linalg.svd`, and select the components by postprocessing
+        - If ``"arpack"``:
+          Use truncated SVD, calling ARPACK solver via
+          :func:`scipy.sparse.linalg.svds`. It requires strictly
+          `0 < output_dimension < min(data.shape)`
+        - If ``"randomized"``:
+          Use truncated SVD, calling :func:`sklearn.utils.extmath.randomized_svd`
+          to estimate a limited number of components
     svd_flip : bool, default True
         If True, adjusts the signs of the loadings and factors such that
         the loadings that are largest in absolute value are always positive.
-        See :py:func:`~.learn.svd_pca.svd_flip` for more details.
+        See :func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
     u_based_decision : bool, default True
         If True, and svd_flip is True, use the columns of u as the basis for sign-flipping.
         Otherwise, use the rows of v. The choice of which variable to base the
@@ -116,7 +116,7 @@ def svd_solve(
 
     Returns
     -------
-    U, S, V : numpy array
+    U, S, V : numpy.ndarray
         Output of SVD such that X = U*S*V.T
 
     """
@@ -210,31 +210,32 @@ def svd_pca(
             optionally truncated afterwards.
         If full:
             run exact SVD, calling the standard LAPACK solver via
-            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+            :func:`scipy.linalg.svd`, and select the components by postprocessing
         If arpack:
             use truncated SVD, calling ARPACK solver via
-            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
+            :func:`scipy.sparse.linalg.svds`. It requires strictly
             `0 < output_dimension < min(data.shape)`
         If randomized:
-            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            use truncated SVD, calling :func:`sklearn.utils.extmath.randomized_svd`
             to estimate a limited number of components
     centre : {None, "navigation", "signal"}, default None
         * If None, the data is not centered prior to decomposition.
-        * If "navigation", the data is centered along the navigation axis.
-        * If "signal", the data is centered along the signal axis.
+        * If ``"navigation"``, the data is centered along the navigation axis.
+        * If ``"signal"``, the data is centered along the signal axis.
     auto_transpose : bool, default True
         If True, automatically transposes the data to boost performance.
     svd_flip : bool, default True
         If True, adjusts the signs of the loadings and factors such that
         the loadings that are largest in absolute value are always positive.
-        See :py:func:`~.learn.svd_pca.svd_flip` for more details.
+        See :func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
 
     Returns
     -------
-    factors : numpy array
-    loadings : numpy array
-    explained_variance : numpy array
-    mean : numpy array or None (if centre is None)
+    factors : numpy.ndarray
+    loadings : numpy.ndarray
+    explained_variance : numpy.ndarray
+    mean : numpy.ndarray or None
+        None if centre is None
 
     """
     N, M = data.shape

@@ -107,10 +107,10 @@ Learning resources
     :link: auto_examples/index
     :link-type: doc
 
-    :octicon:`zap;2em;sd-text-info` Example
+    :octicon:`zap;2em;sd-text-info` Examples
     ^^^
 
-    Short examples illustrating simple tasks.
+    Gallery of short examples illustrating simple tasks that can be performed with HyperSpy.
 
   .. grid-item-card::
     :link: https://github.com/hyperspy/hyperspy-demos
@@ -153,7 +153,7 @@ articles citing HyperSpy. For an up to date list search for
 HyperSpy in a scientific database e.g. `Google Scholar
 <https://scholar.google.co.uk/scholar?q=hyperspy>`_.
 
-.. Warning::
+.. Note::
     Articles published before 2012 may mention the HyperSpy project under
     its old name, `EELSLab`.
 

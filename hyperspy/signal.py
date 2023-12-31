@@ -25,7 +25,6 @@ import inspect
 from itertools import product
 import logging
 import numbers
-from packaging.version import Version
 from pathlib import Path
 import warnings
 
@@ -40,6 +39,7 @@ import traits.api as t
 from tlz import concat
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import ensure_directory
+from scipy.interpolate import make_interp_spline
 
 from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
@@ -65,12 +65,12 @@ from hyperspy.misc.utils import (
     )
 from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
-from hyperspy.drawing.marker import markers_metadata_dict_to_markers
+from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
     CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, LAZY_OUTPUT_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -80,7 +80,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
-from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+from hyperspy.exceptions import LazyCupyConversion
 
 
 _logger = logging.getLogger(__name__)
@@ -233,12 +233,12 @@ class ModelManager(object):
 
         Parameters
         ----------
-        model : :py:class:`~hyperspy.model.BaseModel` (or subclass)
+        model : :class:`~hyperspy.model.BaseModel` (or subclass)
             The model to store in the signal
         name : str or None
             The name for the model to be stored with
 
-        See also
+        See Also
         --------
         remove
         restore
@@ -274,7 +274,7 @@ class ModelManager(object):
         name : str
             The name of the model to remove
 
-        See also
+        See Also
         --------
         restore
         store
@@ -293,7 +293,7 @@ class ModelManager(object):
         name : str
             The name of the model to restore and remove
 
-        See also
+        See Also
         --------
         restore
         store
@@ -313,7 +313,7 @@ class ModelManager(object):
         name : str
             The name of the model to restore
 
-        See also
+        See Also
         --------
         remove
         store
@@ -856,11 +856,11 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int or list of int
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
-            :py:meth:`~hyperspy.learn.mva.MVA.decomposition`. Otherwise it
-            raises a :py:exc:`ValueError`.
+            :meth:`~hyperspy.api.signals.BaseSignal.decomposition`. Otherwise it
+            raises a :exc:`ValueError`.
             If `comp_ids` is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
@@ -874,7 +874,7 @@ class MVATools(object):
         title : str
             Title of the matplotlib plot or label of the line in the legend
             when the dimension of factors is 1 and ``same_window`` is ``True``.
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
@@ -882,7 +882,7 @@ class MVATools(object):
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
 
-        See also
+        See Also
         --------
         plot_decomposition_loadings, plot_decomposition_results
 
@@ -936,7 +936,7 @@ class MVATools(object):
         Parameters
         ----------
 
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int, or list of int
             If `comp_ids` is ``None``, maps of all components will be
             returned. If it is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
@@ -951,7 +951,7 @@ class MVATools(object):
         title : str
             Title of the matplotlib plot or label of the line in the legend
             when the dimension of factors is 1 and ``same_window`` is ``True``.
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
@@ -959,7 +959,7 @@ class MVATools(object):
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
 
-        See also
+        See Also
         --------
         plot_bss_loadings, plot_bss_results
 
@@ -1006,11 +1006,11 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int, or list of int
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
-            :py:meth:`~hyperspy.learn.mva.MVA.decomposition`.
-            Otherwise it raises a :py:exc:`ValueError`.
+            :meth:`~hyperspy.api.signals.BaseSignal.decomposition`.
+            Otherwise it raises a :exc:`ValueError`.
             If `comp_ids` is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
@@ -1027,7 +1027,7 @@ class MVATools(object):
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the loadings images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
@@ -1046,7 +1046,7 @@ class MVATools(object):
             If ``None``, no axis decorations will be shown, but ticks/frame
             will.
 
-        See also
+        See Also
         --------
         plot_decomposition_factors, plot_decomposition_results
 
@@ -1111,8 +1111,8 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
-            If `comp_ids` is ``None``, maps of all components will be
+        comp_ids : None, int or list of int
+            If ``comp_ids=None``, maps of all components will be
             returned. If it is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
@@ -1129,7 +1129,7 @@ class MVATools(object):
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the loading image, or for peak
             characteristics,. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
@@ -1147,7 +1147,7 @@ class MVATools(object):
             If ``'off'``, all decorations and frame will be disabled
             If ``None``, no axis decorations will be shown, but ticks/frame will
 
-        See also
+        See Also
         --------
         plot_bss_factors, plot_bss_results
 
@@ -1207,12 +1207,11 @@ class MVATools(object):
                                      per_row=3,
                                      save_figures=False,
                                      save_figures_format='png'):
-        """Export results from a decomposition to any of the supported
-        formats.
+        """Export results from a decomposition to any of the supported formats.
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int or list of int
             If None, returns all components/loadings.
             If an int, returns components/loadings with ids from 0 to the
             given value.
@@ -1234,14 +1233,14 @@ class MVATools(object):
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
 
-                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
-                  plots are created using the plotting flags as below, and saved
-                  at 600 dpi. One plot is saved per loading.
-                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
-                  are saved in single files.  All loadings are contained in the
-                  one file.
-                * For spectral formats (``'msa'``), each loading is saved to a
-                  separate file.
+            * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+              plots are created using the plotting flags as below, and saved
+              at 600 dpi. One plot is saved per loading.
+            * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+              are saved in single files.  All loadings are contained in the
+              one file.
+            * For spectral formats (``'msa'``), each loading is saved to a
+              separate file.
 
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
@@ -1252,31 +1251,31 @@ class MVATools(object):
             If ``True`` the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
-        Note
-        ----
-        The following parameters are only used when ``save_figures = True``:
+        Notes
+        -----
+        The following parameters are only used when ``save_figures = True``
 
         Other Parameters
         ----------------
-        calibrate : :py:class:`bool`
+        calibrate : :class:`bool`
             If ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
-        same_window : :py:class:`bool`
+        same_window : :class:`bool`
             If ``True``, plots each factor to the same window.
-        comp_label : :py:class:`str`
+        comp_label : :class:`str`
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for images, such as factors, loadings, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
-        per_row : :py:class:`int`
+        per_row : :class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-        save_figures_format : :py:class:`str`
+        save_figures_format : :class:`str`
             The image format extension.
 
-        See also
+        See Also
         --------
         get_decomposition_factors, get_decomposition_loadings
         """
@@ -1331,7 +1330,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        cluster_ids : None, int, or list of ints
+        cluster_ids : None, int or list of int
             if None, returns all clusters/centers.
             if int, returns clusters/centers with ids from 0 to
             given int.
@@ -1341,41 +1340,43 @@ class MVATools(object):
             The path to the folder where the file will be saved.
             If `None` the
             current folder is used by default.
-        center_prefix : string
+        center_prefix : str
             The prefix that any exported filenames for
             cluster centers
             begin with
-        center_format : string
+        center_format : str
             The extension of the format that you wish to save to. Default is
             "hspy". See `loading format` for more details.
-        label_prefix : string
+        label_prefix : str
             The prefix that any exported filenames for
             cluster labels
             begin with
-        label_format : string
+        label_format : str
             The extension of the format that you wish to save to. default
             is "hspy". The format determines the kind of output.
 
-                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
-                  plots are created using the plotting flags as below, and saved
-                  at 600 dpi. One plot is saved per loading.
-                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
-                  are saved in single files.  All loadings are contained in the
-                  one file.
-                * For spectral formats (``'msa'``), each loading is saved to a
-                  separate file.
+            * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+                plots are created using the plotting flags as below, and saved
+                at 600 dpi. One plot is saved per loading.
+            * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+                are saved in single files.  All loadings are contained in the
+                one file.
+            * For spectral formats (``'msa'``), each loading is saved to a
+                separate file.
 
-        multiple_files : bool
+        multiple_files : bool, default False
             If True, on exporting a file per center will
             be created. Otherwise only two files will be created, one for
             the centers and another for the membership. The default value can
             be chosen in the preferences.
-        save_figures : bool
+        save_figures : bool, default False
             If True the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
-        Plotting options (for save_figures = True ONLY)
-        ----------------------------------------------
+        Other Parameters
+        ----------------
+        These parameters are plotting options and only used when
+        ``save_figures=True``.
 
         calibrate : bool
             if True, calibrates plots where calibration is available
@@ -1383,22 +1384,23 @@ class MVATools(object):
             the axes_manager.  If False, plots are in pixels/channels.
         same_window : bool
             if True, plots each factor to the same window.
-        comp_label : string, the label that is either the plot title
+        comp_label : str
+            The label that is either the plot title
             (if plotting in separate windows) or the label in the legend
             (if plotting in the same window)
-        cmap : The colormap used for the factor image, or for peak
+        cmap : matplotlib.colors.Colormap
+            The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        per_row : int, the number of plots in each row, when the
-        same_window
-            parameter is True.
+        per_row : int
+            the number of plots in each row, when the ``same_window=True``.
         save_figures_format : str
             The image format extension.
 
         See Also
         --------
         get_cluster_signals,
-        get_cluster_labels.
+        get_cluster_labels
 
         """
 
@@ -1451,7 +1453,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int or list of int
             If None, returns all components/loadings.
             If an int, returns components/loadings with ids from 0 to the
             given value.
@@ -1473,14 +1475,14 @@ class MVATools(object):
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
 
-                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
-                  plots are created using the plotting flags as below, and saved
-                  at 600 dpi. One plot is saved per loading.
-                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
-                  are saved in single files.  All loadings are contained in the
-                  one file.
-                * For spectral formats (``'msa'``), each loading is saved to a
-                  separate file.
+            * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+              plots are created using the plotting flags as below, and saved
+              at 600 dpi. One plot is saved per loading.
+            * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+              are saved in single files.  All loadings are contained in the
+              one file.
+            * For spectral formats (``'msa'``), each loading is saved to a
+              separate file.
 
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
@@ -1491,31 +1493,31 @@ class MVATools(object):
             If ``True``, the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
-        Note
-        ----
-        The following parameters are only used when ``save_figures = True``:
+        Notes
+        -----
+        The following parameters are only used when ``save_figures = True``
 
         Other Parameters
         ----------------
-        calibrate : :py:class:`bool`
+        calibrate : :class:`bool`
             If ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
-        same_window : :py:class:`bool`
+        same_window : :class:`bool`
             If ``True``, plots each factor to the same window.
-        comp_label : :py:class:`str`
+        comp_label : :class:`str`
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for images, such as factors, loadings, or
             for peak characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
-        per_row : :py:class:`int`
+        per_row : :class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-        save_figures_format : :py:class:`str`
+        save_figures_format : :class:`str`
             The image format extension.
 
-        See also
+        See Also
         --------
         get_bss_factors, get_bss_loadings
         """
@@ -1587,9 +1589,9 @@ class MVATools(object):
 
         Returns
         -------
-        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        signal : :class:`~hyperspy.signal.BaseSignal` (or subclass)
 
-        See also
+        See Also
         --------
         get_decomposition_factors, export_decomposition_results
 
@@ -1607,9 +1609,9 @@ class MVATools(object):
 
         Returns
         -------
-        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        signal : :class:`~hyperspy.signal.BaseSignal` (or subclass)
 
-        See also
+        See Also
         --------
         get_decomposition_loadings, export_decomposition_results
 
@@ -1627,9 +1629,9 @@ class MVATools(object):
 
         Returns
         -------
-        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        :class:`~hyperspy.signal.BaseSignal` (or subclass)
 
-        See also
+        See Also
         --------
         get_bss_factors, export_bss_results
 
@@ -1646,9 +1648,9 @@ class MVATools(object):
 
         Returns
         -------
-        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        :class:`~hyperspy.signal.BaseSignal` (or subclass)
 
-        See also
+        See Also
         --------
         get_bss_loadings, export_bss_results
 
@@ -1666,8 +1668,8 @@ class MVATools(object):
                          loadings_dim=2,):
         """Plot the blind source separation factors and loadings.
 
-        Unlike :py:meth:`~hyperspy.signal.MVATools.plot_bss_factors` and
-        :py:meth:`~hyperspy.signal.MVATools.plot_bss_loadings`,
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_factors` and
+        :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_loadings`,
         this method displays one component at a time. Therefore it provides a
         more compact visualization than then other two methods.
         The loadings and factors are displayed in different windows and each
@@ -1677,14 +1679,14 @@ class MVATools(object):
 
         Parameters
         ----------
-        factors_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        factors_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
-            :py:class:`~hyperspy.signal.BaseSignal` object.
+            :class:`~hyperspy.api.signals.BaseSignal` object.
             ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see the :py:meth:`~hyperspy.signal.BaseSignal.plot` documentation
+            see the :meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
             for details.
-        loadings_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        loadings_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             See the `factors_navigator` parameter
         factors_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
@@ -1695,7 +1697,7 @@ class MVATools(object):
         loadings_dim : int
             See the ``factors_dim`` parameter
 
-        See also
+        See Also
         --------
         plot_bss_factors, plot_bss_loadings, plot_decomposition_results
 
@@ -1715,8 +1717,8 @@ class MVATools(object):
                                    loadings_dim=2):
         """Plot the decomposition factors and loadings.
 
-        Unlike :py:meth:`~hyperspy.signal.MVATools.plot_decomposition_factors`
-        and :py:meth:`~hyperspy.signal.MVATools.plot_decomposition_loadings`,
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_factors`
+        and :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_loadings`,
         this method displays one component at a time. Therefore it provides a
         more compact visualization than then other two methods. The loadings
         and factors are displayed in different windows and each has its own
@@ -1725,28 +1727,25 @@ class MVATools(object):
 
         Parameters
         ----------
-        factors_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        factors_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
-            :py:class:`~hyperspy.signal.BaseSignal` object.
+            :class:`~hyperspy.api.signals.BaseSignal` object.
             ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see the :py:meth:`~hyperspy.signal.BaseSignal.plot` documentation
+            see the :meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
             for details.
-        loadings_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        loadings_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             See the `factors_navigator` parameter
-        factors_dim : int
+        factors_dim, loadings_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
             higher than two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2,
             the data can be viewed as spectra (or images) by setting this
             parameter to 1 (or 2). (The default is 2)
-        loadings_dim : int
-            See the ``factors_dim`` parameter
 
-        See also
+        See Also
         --------
-        plot_decomposition_factors, plot_decomposition_loadings,
-        plot_bss_results
+        plot_decomposition_factors, plot_decomposition_loadings, plot_bss_results
 
         """
 
@@ -1763,7 +1762,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        merged : bool
+        merged : bool, default False
             If False the cluster label signal has a navigation axes of length
             number_of_clusters and the signal along the the navigation
             direction is binary - 0 the point is not in the cluster, 1 it is
@@ -1778,7 +1777,8 @@ class MVATools(object):
 
         Returns
         -------
-        signal Hyperspy signal of cluster labels
+        :class:`~hyperspy.api.signals.BaseSignal`
+            The cluster labels
         """
         if self.learning_results.cluster_labels is None:
             raise RuntimeError(
@@ -1863,23 +1863,23 @@ class MVATools(object):
         Parameters
         ----------
         %s
-        cluster_ids : None, int, or list of ints
-            if None, returns maps of all clusters.
-            if int, returns maps of clusters with ids from 0 to given
+        cluster_ids : None, int, or list of int
+            If None, returns maps of all clusters.
+            If int, returns maps of clusters with ids from 0 to given
             int.
-            if list of ints, returns maps of clusters with ids in
+            If list of ints, returns maps of clusters with ids in
             given list.
-        calibrate :
-            if True, calibrates plots where calibration is available
+        calibrate : bool, default True
+            If True, calibrates plots where calibration is available
             from the axes_manager. If False, plots are in pixels/channels.
-        same_window : bool
-            if True, plots each center to the same window.  They are
+        same_window : bool, default True
+            If True, plots each center to the same window.  They are
             not scaled.
-        title : str
+        title : None or str, default None
             Title of the matplotlib plot or label of the line in the legend
             when the dimension of loadings is 1 and ``same_window`` is ``True``.
-        per_row : int
-            the number of plots in each row, when the same_window parameter is
+        per_row : int, default 3
+            The number of plots in each row, when the same_window parameter is
             True.
 
         See Also
@@ -1929,7 +1929,7 @@ class MVATools(object):
         Parameters
         ----------
 
-        cluster_ids : None, int, or list of ints
+        cluster_ids : None, int, or list of int
             if None (default), returns maps of all components using the
             number_of_cluster was defined when
             executing ``cluster``. Otherwise it raises a ValueError.
@@ -1949,7 +1949,7 @@ class MVATools(object):
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
-        cmap : matplotlib colormap
+        cmap : matplotlib.colors.Colormap
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -1958,7 +1958,7 @@ class MVATools(object):
         per_row : int
             the number of plots in each row, when the same_window
             parameter is True.
-        axes_decor : {'all', 'ticks', 'off', None}, optional
+        axes_decor : None or str {``'all'``, ``'ticks'``, ``'off'``}, default ``'all'``
             Controls how the axes are displayed on each image; default is 'all'
             If 'all', both ticks and axis labels will be shown
             If 'ticks', no axis labels will be shown, but ticks/labels will
@@ -1967,7 +1967,7 @@ class MVATools(object):
 
         See Also
         --------
-        plot_cluster_signals, plot_cluster_results.
+        plot_cluster_signals, plot_cluster_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -2021,7 +2021,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        cluster_ids : None, int, or list of ints
+        cluster_ids : None, int, or list of int
             if None (default), returns maps of all components using the
             number_of_cluster was defined when
             executing ``cluster``. Otherwise it raises a ValueError.
@@ -2041,7 +2041,7 @@ class MVATools(object):
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
-        cmap : matplotlib colormap
+        cmap : matplotlib.colors.Colormap
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -2050,7 +2050,7 @@ class MVATools(object):
         per_row : int
             the number of plots in each row, when the same_window
             parameter is True.
-        axes_decor : {'all', 'ticks', 'off', None}, optional
+        axes_decor : None or str {'all', 'ticks', 'off'}, optional
             Controls how the axes are displayed on each image; default is 'all'
             If 'all', both ticks and axis labels will be shown
             If 'ticks', no axis labels will be shown, but ticks/labels will
@@ -2102,7 +2102,8 @@ class MVATools(object):
                              ):
         """Plot the cluster labels and centers.
 
-        Unlike `plot_cluster_labels` and `plot_cluster_signals`, this
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and 
+        :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_signals`, this
         method displays one component at a time.
         Therefore it provides a more compact visualization than then other
         two methods.  The labels and centers  are displayed in different
@@ -2112,21 +2113,22 @@ class MVATools(object):
 
         Parameters
         ----------
-        centers_navigator, labels_navigator : {"smart_auto",
-        "auto", None, "spectrum", Signal}
-            "smart_auto" (default) displays sliders if the navigation
+        centers_navigator, labels_navigator : None, \
+        {``"smart_auto"`` | ``"auto"`` | ``"spectrum"``} or \
+        :class:`~hyperspy.api.signals.BaseSignal`, default ``"smart_auto"``
+            ``"smart_auto"`` displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see `plot` documentation for details.
-        labels_dim, centers_dims : int
+            see ``plot`` documentation for details.
+        labels_dim, centers_dims : int, default 2
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the clustering results when the
             centers or the labels have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
-            to 1(2). (Default 2)
+            to 1(2)
 
         See Also
         --------
-        plot_cluster_signals, plot_cluster_labels.
+        plot_cluster_signals, plot_cluster_labels
 
         """
         centers = self.get_cluster_signals()
@@ -2196,10 +2198,29 @@ class BaseSignal(FancySlicing,
                  MVATools,):
 
     """
+    
+    Attributes
+    ----------
+    ragged : bool
+        Whether the signal is ragged or not.
+    isig
+        Signal indexer/slicer.
+    inav
+        Navigation indexer/slicer.
+    metadata : hyperspy.misc.utils.DictionaryTreeBrowser
+        The metadata of the signal structured as documented in
+        :ref:`metadata_structure`.
+    original_metadata : hyperspy.misc.utils.DictionaryTreeBrowser
+        All metadata read when loading the data.
+
+        
+    Examples
+    --------
     General signal created from a numpy or cupy array.
 
     >>> data = np.ones((10, 10))
     >>> s = hs.signals.BaseSignal(data)
+
     """
 
     _dtype = "real"
@@ -2220,11 +2241,11 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        data : :py:class:`numpy.ndarray`
+        data : numpy.ndarray
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
             List of either dictionaries or axes objects to define the axes (see
-            the documentation of the :py:class:`~.axes.AxesManager`
+            the documentation of the :class:`~hyperspy.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -2265,7 +2286,8 @@ class BaseSignal(FancySlicing,
                 Note: The event only fires at certain specific times, not everytime
                 that the `BaseSignal.data` array changes values.
 
-                Arguments:
+                Parameters
+                ----------
                     obj: The signal that owns the data.
                 """, arguments=['obj'])
             self._load_dictionary(kwds)
@@ -2373,12 +2395,12 @@ class BaseSignal(FancySlicing,
                                 copy_learning_results=False):
         """Returns a deepcopy of itself replacing the data.
 
-        This method has an advantage over the default :py:func:`copy.deepcopy`
+        This method has an advantage over the default :func:`copy.deepcopy`
         in that it does not copy the data, which can save memory.
 
         Parameters
         ----------
-        data : None or :py:class:`numpy.ndarray`
+        data : None or :class:`numpy.ndarray`
         copy_variance : bool
             Whether to copy the variance of the signal to the new copy
         copy_navigator : bool
@@ -2388,7 +2410,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        ns : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        ns : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             The newly copied signal
 
         """
@@ -2429,7 +2451,7 @@ class BaseSignal(FancySlicing,
                 copy_learning_results=True):
         """
         Create a copy of the given Signal as a
-        :py:class:`~hyperspy._signals.lazy.LazySignal`.
+        :class:`~hyperspy._signals.lazy.LazySignal`.
 
         Parameters
         ----------
@@ -2445,7 +2467,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        res : :py:class:`~hyperspy._signals.lazy.LazySignal`
+        res : :class:`~hyperspy._signals.lazy.LazySignal`
             The same signal, converted to be lazy
         """
         res = self._deepcopy_with_new_data(
@@ -2475,8 +2497,8 @@ class BaseSignal(FancySlicing,
 
     @property
     def data(self):
-        """The underlying data structure as a :py:class:`numpy.ndarray` (or
-        :py:class:`dask.array.Array`, if the Signal is lazy)."""
+        """The underlying data structure as a :class:`numpy.ndarray` (or
+        :class:`dask.array.Array`, if the Signal is lazy)."""
         return self._data
 
     @data.setter
@@ -2500,6 +2522,7 @@ class BaseSignal(FancySlicing,
 
     @property
     def ragged(self):
+        """Whether the signal is ragged or not."""
         return self.axes_manager._ragged
 
     @ragged.setter
@@ -2562,7 +2585,7 @@ class BaseSignal(FancySlicing,
             * data: the signal data. It can be an array of any dimensions.
 
             * axes: a dictionary to define the axes (see the documentation of
-              the :py:class:`~hyperspy.axes.AxesManager` class for more details).
+              the :class:`~hyperspy.axes.AxesManager` class for more details).
             * attributes: a dictionary whose items are stored as attributes.
 
             * metadata: a dictionary containing a set of parameters that will
@@ -2659,7 +2682,7 @@ class BaseSignal(FancySlicing,
 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
-        and the axes. See :py:func:`numpy.squeeze` for more details.
+        and the axes. See :func:`numpy.squeeze` for more details.
 
         Returns
         -------
@@ -2738,7 +2761,7 @@ class BaseSignal(FancySlicing,
             axes = []
         return axes
 
-    def __call__(self, axes_manager=None, fft_shift=False, as_numpy=False):
+    def _get_current_data(self, axes_manager=None, fft_shift=False, as_numpy=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
         indices = axes_manager._getitem_tuple
@@ -2804,7 +2827,7 @@ class BaseSignal(FancySlicing,
                 "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
-        self._plot.signal_data_function = partial(self.__call__, as_numpy=True)
+        self._plot.signal_data_function = partial(self._get_current_data, as_numpy=True)
 
         if self.metadata.has_item("Signal.quantity"):
             self._plot.quantity_label = self.metadata.Signal.quantity
@@ -2823,9 +2846,9 @@ class BaseSignal(FancySlicing,
 
         def get_static_explorer_wrapper(*args, **kwargs):
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
-                return abs(navigator(as_numpy=True))
+                return abs(navigator._get_current_data(as_numpy=True))
             else:
-                return navigator(as_numpy=True)
+                return navigator._get_current_data(as_numpy=True)
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             # Sum over all but the first navigation axis.
@@ -2839,8 +2862,8 @@ class BaseSignal(FancySlicing,
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
-            if np.issubdtype(navigator().dtype, np.complexfloating):
-                return abs(navigator(as_numpy=True))
+            if np.issubdtype(navigator._get_current_data().dtype, np.complexfloating):
+                return abs(navigator._get_current_data(as_numpy=True))
             else:
                 return navigator(as_numpy=True)
 
@@ -2853,11 +2876,7 @@ class BaseSignal(FancySlicing,
                 navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                if (self.axes_manager.navigation_axes[0].is_uniform and
-                        self.axes_manager.signal_axes[0].is_uniform):
-                    navigator = "data"
-                else:
-                    navigator = "spectrum"
+                navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()
@@ -2887,7 +2906,7 @@ class BaseSignal(FancySlicing,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            # check first if we have a signal to avoid comparion of signal with
+            # check first if we have a signal to avoid comparison of signal with
             # string
             if isinstance(navigator, BaseSignal):
                 def is_shape_compatible(navigation_shape, shape):
@@ -3088,8 +3107,8 @@ class BaseSignal(FancySlicing,
             ``None`` the method crops from/to the low/high end of the axis.
         convert_units : bool
             Default is ``False``. If ``True``, convert the units using the
-            :py:meth:`~hyperspy.axes.AxesManager.convert_units` method
-            of the :py:class:`~hyperspy.axes.AxesManager`. If ``False``,
+            :meth:`~hyperspy.axes.AxesManager.convert_units` method
+            of the :class:`~hyperspy.axes.AxesManager`. If ``False``,
             does nothing.
         """
         axis = self.axes_manager[axis]
@@ -3111,6 +3130,69 @@ class BaseSignal(FancySlicing,
         if convert_units:
             self.axes_manager.convert_units(axis)
 
+    def interpolate_on_axis(self,
+                            new_axis,
+                            axis=0,
+                            inplace=False,
+                            degree=1):
+        """Replaces the given ``axis`` with the provided ``new_axis``
+        and interpolates data accordingly using
+        :func:`scipy.interpolate.make_interp_spline`.
+
+        Parameters
+        ----------
+        new_axis : :class:`hyperspy.axes.UniformDataAxis`, 
+        :class:`hyperspy.axes.DataAxis` or :class:`hyperspy.axes.FunctionalDataAxis`
+            Axis which replaces the one specified by the ``axis`` argument.
+            If this new axis exceeds the range of the old axis,
+            a warning is raised that the data will be extrapolated.
+        axis : int or str, default 0
+            Specifies the axis which will be replaced using the index of the
+            axis in the `axes_manager`. The axis can be specified using the index of the
+            axis in `axes_manager` or the axis name.
+        inplace : bool, default False
+            If ``True`` the data of `self` is replaced by the result and
+            the axis is changed inplace. Otherwise `self` is not changed
+            and a new signal with the changes incorporated is returned.
+        degree: int, default 1
+            Specifies the B-Spline degree of the used interpolator.
+
+        Returns
+        -------
+        :class:`~.api.signals.BaseSignal` (or subclass)
+            A copy of the object with the axis exchanged and the data interpolated.
+            This only occurs when inplace is set to ``False``, otherwise nothing is returned.
+        """
+        old_axis = self.axes_manager[axis]
+        if old_axis.navigate != new_axis.navigate:
+            raise ValueError(
+                "The navigate attribute of new_axis differs from the to be replaced axis."
+            )
+        axis_idx = old_axis.index_in_array
+        if old_axis.low_value > new_axis.low_value or old_axis.high_value < new_axis.high_value:
+            _logger.warning(
+                "The specified new axis exceeds the range of the to be replaced old axis. "
+                "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
+            )
+
+        interpolator = make_interp_spline(
+            old_axis.axis,
+            self.data,
+            axis=axis_idx,
+            k=degree,
+        )
+        new_data = interpolator(new_axis.axis)
+
+        if inplace:
+            self.data = new_data
+            s = self
+        else:
+            s = self._deepcopy_with_new_data(new_data)
+
+        s.axes_manager.set_axis(new_axis, axis_idx)
+        if not inplace:
+            return s
+
     def swap_axes(self, axis1, axis2, optimize=False):
         """Swap two axes in the signal.
 
@@ -3122,10 +3204,10 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A copy of the object with the axes swapped.
 
-        See also
+        See Also
         --------
         rollaxis
         """
@@ -3162,12 +3244,12 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             Output signal.
 
-        See also
+        See Also
         --------
-        :py:func:`numpy.roll`, swap_axes
+        :func:`numpy.roll`, swap_axes
 
         Examples
         --------
@@ -3250,7 +3332,7 @@ class BaseSignal(FancySlicing,
               out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
-        interpolation. Specify **either** `new_shape` or `scale`. Scale of 1
+        interpolation. Specify **either** ``new_shape`` or ``scale``. Scale of 1
         means no binning and scale less than one results in up-sampling.
 
         Parameters
@@ -3260,7 +3342,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        ~hyperspy.api.signals.BaseSignal
             The resulting cropped signal.
 
         Raises
@@ -3270,17 +3352,17 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        >>> spectrum = hs.signals.Signal1D(np.ones([4, 4, 10]))
         >>> spectrum.data[1, 2, 9] = 5
         >>> print(spectrum)
-        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        <Signal1D, title: , dimensions: (4, 4|10)>
         >>> print ('Sum =', sum(sum(sum(spectrum.data))))
         Sum = 164.0
 
         >>> scale = [2, 2, 5]
         >>> test = spectrum.rebin(scale)
         >>> print(test)
-        <EDSTEMSpectrum, title: , dimensions: (2, 2|5)>
+        <Signal1D, title: , dimensions: (2, 2|5)>
         >>> print('Sum =', sum(sum(sum(test.data))))
         Sum = 164.0
 
@@ -3290,7 +3372,7 @@ class BaseSignal(FancySlicing,
         >>> print(s.data.dtype)
         uint8
 
-        Use dtype=np.unit16 to specify a dtype
+        Use ``dtype=np.unit16`` to specify a dtype
 
         >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
         >>> print(s2.data.dtype)
@@ -3302,13 +3384,13 @@ class BaseSignal(FancySlicing,
         >>> print(s3.data.dtype)
         uint8
 
-        By default `dtype=None`, the dtype is determined by the behaviour of
+        By default ``dtype=None``, the dtype is determined by the behaviour of
         numpy.sum, in this case, unsigned integer of the same precision as
-        the platform interger
+        the platform integer
 
         >>> s4 = s.rebin(scale=(5, 2, 1))
-        >>> print(s4.data.dtype)
-        uint64
+        >>> print(s4.data.dtype) # doctest: +SKIP
+        uint32
 
         """
         # TODO: Adapt so that it works if a non_uniform_axis exists, but is not
@@ -3348,24 +3430,21 @@ class BaseSignal(FancySlicing,
 
     rebin.__doc__ %= (REBIN_ARGS, OUT_ARG)
 
-    def split(self,
-              axis='auto',
-              number_of_parts='auto',
-              step_sizes='auto'):
+    def split(self, axis='auto', number_of_parts='auto', step_sizes='auto'):
         """Splits the data into several signals.
 
         The split can be defined by giving the `number_of_parts`, a homogeneous
         step size, or a list of customized step sizes. By default (``'auto'``),
-        the function is the reverse of :py:func:`~hyperspy.misc.utils.stack`.
+        the function is the reverse of :func:`~hyperspy.api.stack`.
 
         Parameters
         ----------
         axis %s
             If ``'auto'`` and if the object has been created with
-            :py:func:`~hyperspy.misc.utils.stack` (and ``stack_metadata=True``),
+            :func:`~hyperspy.api.stack` (and ``stack_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
-            If it was not created with :py:func:`~hyperspy.misc.utils.stack`,
+            If it was not created with :func:`~hyperspy.api.stack`,
             the last navigation axis will be used.
         number_of_parts : str or int
             Number of parts in which the spectrum image will be split. The
@@ -3375,7 +3454,7 @@ class BaseSignal(FancySlicing,
             `number_of_parts` equals the length of the axis,
             `step_sizes` equals one, and the axis is suppressed from each
             sub-spectrum.
-        step_sizes : str, list (of ints), or int
+        step_sizes : str, list (of int), or int
             Size of the split parts. If ``'auto'``, the `step_sizes` equals one.
             If an int is given, the splitting is homogeneous.
 
@@ -3398,7 +3477,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        splitted : list
+        list of :class:`~hyperspy.api.signals.BaseSignal`
             A list of the split signals
 
         """
@@ -3491,7 +3570,7 @@ class BaseSignal(FancySlicing,
             The index of the axis over which all the rest of the axes (except
             the steady axes) will be unfolded
 
-        See also
+        See Also
         --------
         fold
 
@@ -3499,9 +3578,9 @@ class BaseSignal(FancySlicing,
         -----
         WARNING: this private function does not modify the signal subclass
         and it is intended for internal use only. To unfold use the public
-        :py:meth:`~hyperspy.signal.BaseSignal.unfold`,
-        :py:meth:`~hyperspy.signal.BaseSignal.unfold_navigation_space`,
-        :py:meth:`~hyperspy.signal.BaseSignal.unfold_signal_space` instead.
+        :meth:`~hyperspy.signal.BaseSignal.unfold`,
+        :meth:`~hyperspy.signal.BaseSignal.unfold_navigation_space`,
+        :meth:`~hyperspy.signal.BaseSignal.unfold_signal_space` instead.
         It doesn't make sense to perform an unfolding when `dim` < 2
 
         """
@@ -3559,8 +3638,8 @@ class BaseSignal(FancySlicing,
             Whether or not one of the axes needed unfolding (and that
             unfolding was performed)
 
-        Note
-        ----
+        Notes
+        -----
         It doesn't make sense to perform an unfolding when the total number
         of dimensions is < 2.
         """
@@ -3579,7 +3658,7 @@ class BaseSignal(FancySlicing,
         signal be unfolded for the scope of the `with` block, before
         automatically refolding when passing out of scope.
 
-        See also
+        See Also
         --------
         unfold, fold
 
@@ -3698,7 +3777,7 @@ class BaseSignal(FancySlicing,
                 [0 for _ in self.axes_manager.navigation_axes]
                 )
             for _ in self.axes_manager:
-                yield self()
+                yield self._get_current_data()
             # restore original index
             self.axes_manager.indices = original_index
 
@@ -3712,7 +3791,7 @@ class BaseSignal(FancySlicing,
         """
         if self.axes_manager.navigation_size < 2:
             while True:
-                yield self()
+                yield self._get_current_data()
             return  # pragma: no cover
 
         self._make_sure_data_is_contiguous()
@@ -3843,18 +3922,18 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        ~hyperspy.signal.BaseSignal
             A new Signal containing the sum of the provided Signal along the
             specified axes.
 
-        Note
-        ----
+        Notes
+        -----
         If you intend to calculate the numerical integral of an unbinned signal,
-        please use the :py:meth:`integrate1D` function instead. To avoid
-        erroneous misuse of the `sum` function as integral, it raises a warning
-        when working with an unbinned, non-uniform axis.
+        please use the :meth:`~.api.signals.BaseSignal.integrate1D` function
+        instead. To avoid erroneous misuse of the `sum` function as integral,
+        it raises a warning when working with an unbinned, non-uniform axis.
 
-        See also
+        See Also
         --------
         max, min, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
@@ -3897,11 +3976,11 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the maximum of the provided Signal over the
             specified axes
 
-        See also
+        See Also
         --------
         min, sum, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
@@ -3933,11 +4012,11 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the minimum of the provided Signal over the
             specified axes
 
-        See also
+        See Also
         --------
         max, sum, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
@@ -3969,11 +4048,11 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the mean of the provided Signal over the
             specified axes
 
-        See also
+        See Also
         --------
         max, min, sum, std, var, indexmax, indexmin, valuemax, valuemin
 
@@ -4005,11 +4084,11 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the standard deviation of the provided
             Signal over the specified axes
 
-        See also
+        See Also
         --------
         max, min, sum, mean, var, indexmax, indexmin, valuemax, valuemin
 
@@ -4041,11 +4120,11 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the variance of the provided Signal over the
             specified axes
 
-        See also
+        See Also
         --------
         max, min, sum, mean, std, indexmax, indexmin, valuemax, valuemin
 
@@ -4124,10 +4203,10 @@ class BaseSignal(FancySlicing,
     nanvar.__doc__ %= (NAN_FUNC.format('var'))
 
     def diff(self, axis, order=1, out=None, rechunk=False):
-        """Returns a signal with the `n`-th order discrete difference along
+        """Returns a signal with the ``n``-th order discrete difference along
         given axis. `i.e.` it calculates the difference between consecutive
-        values in the given axis: `out[n] = a[n+1] - a[n]`. See
-        :py:func:`numpy.diff` for more details.
+        values in the given axis: ``out[n] = a[n+1] - a[n]``. See
+        :func:`numpy.diff` for more details.
 
         Parameters
         ----------
@@ -4139,21 +4218,23 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses) or None
+        ~hyperspy.api.signals.BaseSignal or None
             Note that the size of the data on the given ``axis`` decreases by
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, the `x` dimension is N, ``der``'s `x` dimension is N - 2.
 
-        Note
-        ----
+        Notes
+        -----
         If you intend to calculate the numerical derivative, please use the
-        proper :py:meth:`derivative` function instead. To avoid erroneous
-        misuse of the `diff` function as derivative, it raises an error when
-        when working with a non-uniform axis.
+        proper :meth:`~hyperspy.api.signals.BaseSignal.derivative` function
+        instead. To avoid erroneous misuse of the ``diff`` function as derivative,
+        it raises an error when when working with a non-uniform axis.
 
-        See also
+        See Also
         --------
-        derivative, integrate1D, integrate_simpson
+        hyperspy.api.signals.BaseSignal.derivative,
+        hyperspy.api.signals.BaseSignal.integrate1D,
+        hyperspy.api.signals.BaseSignal.integrate_simpson
 
         Examples
         --------
@@ -4205,11 +4286,11 @@ class BaseSignal(FancySlicing,
             The order of the derivative.
         %s
         **kwargs : dict
-            All extra keyword arguments are passed to :py:func:`numpy.gradient`
+            All extra keyword arguments are passed to :func:`numpy.gradient`
 
         Returns
         -------
-        der : :py:class:`~hyperspy.signal.BaseSignal`
+        :class:`~hyperspy.api.signals.BaseSignal`
             Note that the size of the data on the given ``axis`` decreases by
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
@@ -4219,7 +4300,7 @@ class BaseSignal(FancySlicing,
         This function uses numpy.gradient to perform the derivative. See its
         documentation for implementation details.
 
-        See also
+        See Also
         --------
         integrate1D, integrate_simpson
 
@@ -4253,13 +4334,14 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the integral of the provided Signal along
             the specified axis.
 
-        See also
+        See Also
         --------
-        derivative, integrate1D
+        hyperspy.api.signals.BaseSignal.derivative,
+        hyperspy.api.signals.BaseSignal.integrate1D
 
         Examples
         --------
@@ -4304,14 +4386,14 @@ class BaseSignal(FancySlicing,
             If ``'hamming'`` or ``'tukey'``, applies Hamming or Tukey
             windows, respectively (default is ``False``).
         real_fft_only : bool, default False
-            If ``True`` and data is real-valued, uses :py:func:`numpy.fft.rfftn`
-            instead of :py:func:`numpy.fft.fftn`
+            If ``True`` and data is real-valued, uses :func:`numpy.fft.rfftn`
+            instead of :func:`numpy.fft.fftn`
         **kwargs : dict
-            other keyword arguments are described in :py:func:`numpy.fft.fftn`
+            other keyword arguments are described in :func:`numpy.fft.fftn`
 
         Returns
         -------
-        s : :py:class:`~hyperspy._signals.complex_signal.ComplexSignal`
+        s : :class:`~hyperspy._signals.complex_signal.ComplexSignal`
             A Signal containing the result of the FFT algorithm
 
         Raises
@@ -4329,10 +4411,10 @@ class BaseSignal(FancySlicing,
         >>> # Use following to plot power spectrum of `im`:
         >>> im.fft(shift=True, apodization=True).plot(power_spectrum=True)
 
-        Note
-        ----
+        Notes
+        -----
         Requires a uniform axis. For further information see the documentation
-        of :py:func:`numpy.fft.fftn`
+        of :func:`numpy.fft.fftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -4403,11 +4485,11 @@ class BaseSignal(FancySlicing,
             If ``True``, returns only the real part of the inverse FFT.
             If ``False``, returns all parts.
         **kwargs : dict
-            other keyword arguments are described in :py:func:`numpy.fft.ifftn`
+            other keyword arguments are described in :func:`numpy.fft.ifftn`
 
-        Return
-        ------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        Returns
+        -------
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A Signal containing the result of the inverse FFT algorithm
 
         Raises
@@ -4423,10 +4505,10 @@ class BaseSignal(FancySlicing,
         >>> imfft.ifft()
         <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>
 
-        Note
-        ----
+        Notes
+        -----
         Requires a uniform axis. For further information see the documentation
-        of :py:func:`numpy.fft.ifftn`
+        of :func:`numpy.fft.ifftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -4481,11 +4563,11 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the integral of the provided Signal along
             the specified axis.
 
-        See also
+        See Also
         --------
         integrate_simpson, derivative
 
@@ -4516,11 +4598,11 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the indices of the minimum along the
             specified axis. Note: the data `dtype` is always ``int``.
 
-        See also
+        See Also
         --------
         max, min, sum, mean, std, var, indexmax, valuemax, valuemin
 
@@ -4548,11 +4630,11 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the indices of the maximum along the
             specified axis. Note: the data `dtype` is always ``int``.
 
-        See also
+        See Also
         --------
         max, min, sum, mean, std, var, indexmin, valuemax, valuemin
 
@@ -4581,13 +4663,17 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the calibrated coordinate values of the
             maximum along the specified axis.
 
-        See also
+        See Also
         --------
-        max, min, sum, mean, std, var, indexmax, indexmin, valuemin
+        hyperspy.api.signals.BaseSignal.max, hyperspy.api.signals.BaseSignal.min,
+        hyperspy.api.signals.BaseSignal.sum, hyperspy.api.signals.BaseSignal.mean,
+        hyperspy.api.signals.BaseSignal.std, hyperspy.api.signals.BaseSignal.var,
+        hyperspy.api.signals.BaseSignal.indexmax, hyperspy.api.signals.BaseSignal.indexmin,
+        hyperspy.api.signals.BaseSignal.valuemin
 
         Examples
         --------
@@ -4621,13 +4707,17 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        :class:`~hyperspy.api.signals.BaseSignal` or subclass
             A new Signal containing the calibrated coordinate values of the
             minimum along the specified axis.
 
-        See also
+        See Also
         --------
-        max, min, sum, mean, std, var, indexmax, indexmin, valuemax
+        hyperspy.api.signals.BaseSignal.max, hyperspy.api.signals.BaseSignal.min,
+        hyperspy.api.signals.BaseSignal.sum, hyperspy.api.signals.BaseSignal.mean,
+        hyperspy.api.signals.BaseSignal.std, hyperspy.api.signals.BaseSignal.var,
+        hyperspy.api.signals.BaseSignal.indexmax, hyperspy.api.signals.BaseSignal.indexmin,
+        hyperspy.api.signals.BaseSignal.valuemax
 
         """
         idx = self.indexmin(axis)
@@ -4647,7 +4737,7 @@ class BaseSignal(FancySlicing,
         More sophisticated algorithms for determining the bins can be used
         by passing a string as the ``bins`` argument. Other than the ``'blocks'``
         and ``'knuth'`` methods, the available algorithms are the same as
-        :py:func:`numpy.histogram`.
+        :func:`numpy.histogram`.
 
         Note: The lazy version of the algorithm only supports ``"scott"``
         and ``"fd"`` as a string argument for ``bins``.
@@ -4663,18 +4753,17 @@ class BaseSignal(FancySlicing,
         %s
         **kwargs
             other keyword arguments (weight and density) are described in
-            :py:func:`numpy.histogram`.
+            :func:`numpy.histogram`.
 
         Returns
         -------
-        hist_spec : :py:class:`~hyperspy._signals.signal1d.Signal1D`
+        hist_spec : :class:`~.api.signals.Signal1D`
             A 1D spectrum instance containing the histogram.
 
-        See also
+        See Also
         --------
-        * print_summary_statistics
-        * :py:func:`numpy.histogram`
-        * :py:func:`dask.histogram`
+        hyperspy.api.signals.BaseSignal.print_summary_statistics,
+        numpy.histogram, dask.array.histogram
 
         Examples
         --------
@@ -4733,10 +4822,10 @@ class BaseSignal(FancySlicing,
         self,
         function,
         show_progressbar=None,
-        parallel=None,
-        max_workers=None,
+        num_workers=None,
         inplace=True,
         ragged=None,
+        navigation_chunks=None,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
@@ -4777,6 +4866,11 @@ class BaseSignal(FancySlicing,
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
             the output signal will be ragged only if the original signal is ragged.
+        navigation_chunks : str, None, int or tuple of int, default ``None``
+            Set the navigation_chunks argument to a tuple of integers to split
+            the navigation axes into chunks. This can be useful to enable
+            using multiple cores with signals which are less that 100 MB.
+            This argument is passed to :meth:`~._signals.lazy.LazySignal.rechunk`.
         output_signal_size : None, tuple
             Since the size and dtype of the signal dimension of the output
             signal can be different from the input signal, this output signal
@@ -4787,10 +4881,9 @@ class BaseSignal(FancySlicing,
             The most common reason for this failing is due to the signal size
             being different for different navigation positions. If this is the
             case, use ragged=True. None is default.
-        output_dtype : None, NumPy dtype
+        output_dtype : None, numpy.dtype
             See docstring for output_signal_size for more information.
             Default None.
-        %s
         %s
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
@@ -4803,11 +4896,13 @@ class BaseSignal(FancySlicing,
         such, most functions are not able to operate on the result and the data
         should be used directly.
 
-        This method is similar to Python's :py:func:`python:map` that can
-        also be utilized with a :py:class:`~hyperspy.signal.BaseSignal`
+        This method is similar to Python's :func:`python:map` that can
+        also be utilized with a :class:`~hyperspy.signal.BaseSignal`
         instance for similar purposes. However, this method has the advantage of
         being faster because it iterates the underlying numpy data array
-        instead of the :py:class:`~hyperspy.signal.BaseSignal`.
+        instead of the :class:`~hyperspy.signal.BaseSignal`.
+
+        Currently requires a uniform axis.
 
         Examples
         --------
@@ -4816,14 +4911,14 @@ class BaseSignal(FancySlicing,
 
         >>> import scipy.ndimage
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
-        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)  # doctest: +SKIP
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a Gaussian filter to all the images in the dataset. The signal
         parameter is variable:
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2, 5, 10)).T
-        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)  # doctest: +SKIP
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         Rotate the two signal dimensions, with different amount as a function
         of navigation index. Delay the calculation by getting the output
@@ -4833,7 +4928,7 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
         >>> s.map(rotate, angle=s_angle, reshape=False, lazy_output=True)
-        >>> s.compute()  # doctest: +SKIP
+        >>> s.compute()
 
         Rotate the two signal dimensions, with different amount as a function
         of navigation index. In addition, the output is returned as a new
@@ -4841,11 +4936,23 @@ class BaseSignal(FancySlicing,
 
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
-        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)  # doctest: +SKIP
+        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)
 
-        Note
-        ----
-        Currently requires a uniform axis.
+        If you want some more control over computing a signal that isn't lazy
+        you can always set lazy_output to True and then compute the signal setting
+        the scheduler to 'threading', 'processes', 'single-threaded' or 'distributed'.
+
+        Additionally, you can set the navigation_chunks argument to a tuple of
+        integers to split the navigation axes into chunks. This can be useful if your
+        signal is less that 100 mb but you still want to use multiple cores.
+
+        >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
+        >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
+        >>> s.map(
+        ...    rotate, angle=s_angle, reshape=False, lazy_output=True,
+        ...    inplace=True, navigation_chunks=(2,2)
+        ... )
+        >>> s.compute()
 
         """
         if lazy_output is None:
@@ -4914,12 +5021,20 @@ class BaseSignal(FancySlicing,
         # If the function has an `axes` or `axis` argument
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
-        if not ndkwargs and not lazy_output and (self.axes_manager.signal_dimension == 1 and
-                             "axis" in fargs):
+        # We use _map_all only when the user doesn't specify axis/axes
+        if (not ndkwargs
+            and not lazy_output
+            and self.axes_manager.signal_dimension == 1
+            and "axis" in fargs
+            and "axis" not in kwargs.keys()
+            ):
             kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
-
             result = self._map_all(function, inplace=inplace, **kwargs)
-        elif not ndkwargs and not lazy_output and "axes" in fargs and not parallel:
+        elif (not ndkwargs
+              and not lazy_output
+              and "axes" in fargs
+              and "axes" not in kwargs.keys()
+              ):
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
             result = self._map_all(function, inplace=inplace, **kwargs)
@@ -4935,9 +5050,10 @@ class BaseSignal(FancySlicing,
                 ragged=ragged,
                 inplace=inplace,
                 lazy_output=lazy_output,
-                max_workers=max_workers,
+                num_workers=num_workers,
                 output_dtype=output_dtype,
                 output_signal_size=output_signal_size,
+                navigation_chunks=navigation_chunks,
                 **kwargs, # function argument(s) (non-iterating)
             )
         if not inplace:
@@ -4945,25 +5061,29 @@ class BaseSignal(FancySlicing,
         else:
             self.events.data_changed.trigger(obj=self)
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, NUM_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """
         The function has to have either 'axis' or 'axes' keyword argument,
-        and hence support operating on the full dataset efficiently.
+        and hence support operating on the full dataset efficiently and remove
+        the signal axes.
         """
+        old_shape = self.data.shape
         newdata = function(self.data, **kwargs)
         if inplace:
             self.data = newdata
+            if self.data.shape != old_shape:
+                self.axes_manager.remove(self.axes_manager.signal_axes)
             self._lazy = False
             self._assign_subclass()
-            self.get_dimensions_from_data()
             return None
         else:
             sig = self._deepcopy_with_new_data(newdata)
+            if sig.data.shape != old_shape:
+                sig.axes_manager.remove(sig.axes_manager.signal_axes)
             sig._lazy = False
             sig._assign_subclass()
-            sig.get_dimensions_from_data()
             return sig
 
     def _map_iterate(
@@ -4976,7 +5096,8 @@ class BaseSignal(FancySlicing,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
-        max_workers=None,
+        num_workers=None,
+        navigation_chunks="auto",
         **kwargs,
     ):
         if lazy_output is None:
@@ -4984,6 +5105,7 @@ class BaseSignal(FancySlicing,
 
         if not self._lazy:
             s_input = self.as_lazy()
+            s_input.rechunk(nav_chunks=navigation_chunks)
         else:
             s_input = self
 
@@ -5043,6 +5165,11 @@ class BaseSignal(FancySlicing,
         )
 
         axes_changed = len(new_axis) != 0 or len(adjust_chunks) != 0
+
+        if show_progressbar:
+            pbar = ProgressBar()
+            pbar.register()
+
         mapped = da.blockwise(
             process_function_blockwise,
             output_pattern,
@@ -5062,10 +5189,6 @@ class BaseSignal(FancySlicing,
 
         data_stored = False
 
-        if show_progressbar:
-            pbar = ProgressBar()
-            pbar.register()
-
         if inplace:
             if (
                 not self._lazy
@@ -5081,7 +5204,7 @@ class BaseSignal(FancySlicing,
                     self.data,
                     dtype=mapped.dtype,
                     compute=True,
-                    num_workers=max_workers,
+                    num_workers=num_workers,
                 )
                 data_stored = True
             else:
@@ -5110,7 +5233,7 @@ class BaseSignal(FancySlicing,
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = sig.data.compute(num_workers=max_workers)
+            sig.data = sig.data.compute(num_workers=num_workers)
 
         if show_progressbar:
             pbar.unregister()
@@ -5142,13 +5265,13 @@ class BaseSignal(FancySlicing,
     def copy(self):
         """
         Return a "shallow copy" of this Signal using the
-        standard library's :py:func:`~copy.copy` function. Note: this will
+        standard library's :func:`~copy.copy` function. Note: this will
         return a copy of the signal, but it will not duplicate the underlying
         data in memory, and both Signals will reference the same data.
 
         See Also
         --------
-        :py:meth:`~hyperspy.signal.BaseSignal.deepcopy`
+        :meth:`~hyperspy.api.signals.BaseSignal.deepcopy`
         """
         try:
             backup_plot = self._plot
@@ -5168,7 +5291,7 @@ class BaseSignal(FancySlicing,
         #     copy.deepcopy(
         #         self.models._models.as_dictionary()))
 
-        # The Signal subclasses might change the view on init
+        # The Signal subclass might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,
                                 dc.axes_manager._axes):
@@ -5176,21 +5299,21 @@ class BaseSignal(FancySlicing,
 
         if dc.metadata.has_item('Markers'):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
-            markers_dict = markers_metadata_dict_to_markers(
-                temp_marker_dict,
-                dc.axes_manager)
+            markers_dict = {}
+            for key in temp_marker_dict:
+                markers_dict[key] = markers_dict_to_markers(temp_marker_dict[key],)
             dc.metadata.Markers = markers_dict
         return dc
 
     def deepcopy(self):
         """
         Return a "deep copy" of this Signal using the
-        standard library's :py:func:`~copy.deepcopy` function. Note: this means
+        standard library's :func:`~copy.deepcopy` function. Note: this means
         the underlying data structure will be duplicated in memory.
 
         See Also
         --------
-        :py:meth:`~hyperspy.signal.BaseSignal.copy`
+        :meth:`~hyperspy.api.signals.BaseSignal.copy`
         """
         return copy.deepcopy(self)
 
@@ -5199,7 +5322,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        dtype : str or :py:class:`numpy.dtype`
+        dtype : str or :class:`numpy.dtype`
             Typecode string or data-type to which the Signal's data array is
             cast. In addition to all the standard numpy :ref:`arrays.dtypes`,
             HyperSpy supports four extra dtypes for RGB images: ``'rgb8'``,
@@ -5298,7 +5421,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        expected_value : :py:data:`None` or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        expected_value : None or :class:`~hyperspy.signal.BaseSignal` (or subclass)
             If ``None``, the signal data is taken as the expected value. Note
             that this may be inaccurate where the value of `data` is small.
         gain_factor : None or float
@@ -5377,7 +5500,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        variance : None or float or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        variance : None or float or :class:`~hyperspy.signal.BaseSignal` (or subclass)
             Value or values of the noise variance. A value of None is
             equivalent to clearing the variance.
 
@@ -5418,7 +5541,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        variance : None or float or :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        variance : None or float or :class:`~hyperspy.signal.BaseSignal` (or subclass)
             Noise variance of the signal, if set.
             Otherwise returns None.
 
@@ -5431,7 +5554,7 @@ class BaseSignal(FancySlicing,
     def get_current_signal(self, auto_title=True, auto_filename=True,
                            as_numpy=False):
         """Returns the data at the current coordinates as a
-        :py:class:`~hyperspy.signal.BaseSignal` subclass.
+        :class:`~hyperspy.signal.BaseSignal` subclass.
 
         The signal subclass is the same as that of the current object. All the
         axes navigation attributes are set to ``False``.
@@ -5453,7 +5576,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        cs : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        cs : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             The data at the current coordinates as a Signal
 
         Examples
@@ -5469,17 +5592,15 @@ class BaseSignal(FancySlicing,
         metadata = self.metadata.deepcopy()
 
         # Check if marker update
-        if metadata.has_item('Markers'):
-            marker_name_list = metadata.Markers.keys()
-            markers_dict = metadata.Markers.__dict__
+        if self.metadata.has_item('Markers'):
+            markers_dict = self.metadata.Markers
+            marker_name_list = self.metadata.Markers.keys()
+            new_markers_dict = metadata.Markers
             for marker_name in marker_name_list:
-                marker = markers_dict[marker_name]['_dtb_value_']
-                if marker.auto_update:
-                    marker.axes_manager = self.axes_manager
-                    key_dict = {}
-                    for key in marker.data.dtype.names:
-                        key_dict[key] = marker.get_data_position(key)
-                    marker.set_data(**key_dict)
+                marker = markers_dict[marker_name]
+                new_marker = new_markers_dict[marker_name]
+                kwargs = marker.get_current_kwargs(only_variable_length=False)
+                new_marker.kwargs = kwargs
 
         class_ = assign_signal_subclass(
             dtype=self.data.dtype,
@@ -5488,15 +5609,17 @@ class BaseSignal(FancySlicing,
             lazy=False)
 
         cs = class_(
-            self(as_numpy=as_numpy),
+            self._get_current_data(as_numpy=as_numpy),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary())
 
+        # reinitialize the markers from dictionary
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
-            markers_dict = markers_metadata_dict_to_markers(
-                temp_marker_dict,
-                cs.axes_manager)
+            markers_dict = {}
+            for key, item in temp_marker_dict.items():
+                markers_dict[key] = markers_dict_to_markers(item)
+                markers_dict[key]._signal = cs
             cs.metadata.Markers = markers_dict
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):
@@ -5516,12 +5639,12 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        data : None or :py:class:`numpy.ndarray`, optional
+        data : None or :class:`numpy.ndarray`, optional
             If ``None``, the resulting Signal data is an array of the same
             `dtype` as the current one filled with zeros. If a numpy array,
             the array must have the correct dimensions.
 
-        dtype : :py:class:`numpy.dtype`, optional
+        dtype : :class:`numpy.dtype`, optional
             The desired data-type for the data array when `data` is ``None``,
             e.g., ``numpy.int8``.  The default is the data type of the current
             signal data.
@@ -5568,12 +5691,12 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        data : None or :py:class:`numpy.ndarray`, optional
+        data : None or :class:`numpy.ndarray`, optional
             If ``None``, the resulting Signal data is an array of the same
             `dtype` as the current one filled with zeros. If a numpy array,
             the array must have the correct dimensions.
 
-        dtype : :py:class:`numpy.dtype`, optional
+        dtype : :class:`numpy.dtype`, optional
             The desired data-type for the data array when `data` is ``None``,
             e.g., ``numpy.int8``.  The default is the data type of the current
             signal data.
@@ -5627,7 +5750,7 @@ class BaseSignal(FancySlicing,
         array and the data is made contiguous for efficient iteration over
         spectra. By default, the method ensures the data is stored optimally,
         hence often making a copy of the data. See
-        :py:meth:`~hyperspy.signal.BaseSignal.transpose` for a more general
+        :meth:`~hyperspy.api.signals.BaseSignal.transpose` for a more general
         method with more options.
 
         Parameters
@@ -5636,9 +5759,11 @@ class BaseSignal(FancySlicing,
         %s
         %s
 
-        See also
+        See Also
         --------
-        as_signal2D, transpose, :py:func:`hyperspy.misc.utils.transpose`
+        hyperspy.api.signals.BaseSignal.as_signal2D,
+        hyperspy.api.signals.BaseSignal.transpose,
+        hyperspy.api.transpose
 
         Examples
         --------
@@ -5664,8 +5789,7 @@ class BaseSignal(FancySlicing,
                             OPTIMIZE_ARG.replace('False', 'True'))
 
     def as_signal2D(self, image_axes, out=None, optimize=True):
-        """Convert a signal to image (
-        :py:class:`~hyperspy._signals.signal2d.Signal2D`).
+        """Convert a signal to a :class:`~hyperspy.api.signals.Signal2D`.
 
         The chosen image axes are moved to the last indices in the
         array and the data is made contiguous for efficient
@@ -5673,7 +5797,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        image_axes : tuple (of int, str or :py:class:`~hyperspy.axes.DataAxis`)
+        image_axes : tuple (of int, str or :class:`~hyperspy.axes.DataAxis`)
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. `X`, `Y`, `Z`... order.
         %s
@@ -5684,10 +5808,11 @@ class BaseSignal(FancySlicing,
         DataDimensionError
             When `data.ndim` < 2
 
-        See also
+        See Also
         --------
-        as_signal1D, transpose, :py:func:`hyperspy.misc.utils.transpose`
-
+        hyperspy.api.signals.BaseSignal.as_signal1D,
+        hyperspy.api.signals.BaseSignal.transpose,
+        hyperspy.api.transpose
 
         Examples
         --------
@@ -5737,17 +5862,17 @@ class BaseSignal(FancySlicing,
         contains e.g. electron energy-loss spectroscopy data,
         photoemission spectroscopy data, etc.
 
-        When setting `signal_type` to a "known" type, HyperSpy converts the
+        When setting ``signal_type`` to a "known" type, HyperSpy converts the
         current signal to the most appropriate
-        :py:class:`hyperspy.signal.BaseSignal` subclass. Known signal types are
+        :class:`~.api.signals.BaseSignal` subclass. Known signal types are
         signal types that have a specialized
-        :py:class:`hyperspy.signal.BaseSignal` subclass associated, usually
+        :class:`~.api.signals.BaseSignal` subclass associated, usually
         providing specific features for the analysis of that type of signal.
 
         HyperSpy ships with a minimal set of known signal types. External
         packages can register extra signal types. To print a list of
         registered signal types in the current installation, call
-        :py:meth:`hyperspy.utils.print_known_signal_types`, and see
+        :func:`~.api.print_known_signal_types`, and see
         the developer guide for details on how to add new signal_types.
         A non-exhaustive list of HyperSpy extensions is also maintained
         here: https://github.com/hyperspy/hyperspy-extensions-list.
@@ -5766,7 +5891,7 @@ class BaseSignal(FancySlicing,
 
         See Also
         --------
-        * :py:meth:`hyperspy.utils.print_known_signal_types`
+        hyperspy.api.print_known_signal_types
 
         Examples
         --------
@@ -5776,33 +5901,34 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
         >>> s
         <Signal1D, title: , dimensions: (|4)>
-        >>> hs.print_known_signal_types()
+        >>> hs.print_known_signal_types() # doctest: +SKIP
         +--------------------+---------------------+--------------------+----------+
         |    signal_type     |       aliases       |     class name     | package  |
         +--------------------+---------------------+--------------------+----------+
-        | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
-        |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
-        |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
-        |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
-        |      hologram      |                     |   HologramImage    | hyperspy |
+        | DielectricFunction | dielectric function | DielectricFunction |   exspy  |
+        |      EDS_SEM       |                     |   EDSSEMSpectrum   |   exspy  |
+        |      EDS_TEM       |                     |   EDSTEMSpectrum   |   exspy  |
+        |        EELS        |       TEM EELS      |    EELSSpectrum    |   exspy  |
+        |      hologram      |                     |   HologramImage    |  holospy |
         +--------------------+---------------------+--------------------+----------+
 
-        We can set the `signal_type` using the `signal_type`:
+        We can set the ``signal_type`` using the ``signal_type``:
 
-        >>> s.set_signal_type("EELS")
-        >>> s
+        >>> s.set_signal_type("EELS") # doctest: +SKIP
+        >>> s # doctest: +SKIP
         <EELSSpectrum, title: , dimensions: (|4)>
-        >>> s.set_signal_type("EDS_SEM")
-        >>> s
+        >>> s.set_signal_type("EDS_SEM") # doctest: +SKIP
+        >>> s # doctest: +SKIP
         <EDSSEMSpectrum, title: , dimensions: (|4)>
 
         or any of its aliases:
 
-        >>> s.set_signal_type("TEM EELS")
-        >>> s
+        >>> s.set_signal_type("TEM EELS") # doctest: +SKIP
+        >>> s # doctest: +SKIP
         <EELSSpectrum, title: , dimensions: (|4)>
 
-        To set the `signal_type` to `undefined`, simply call the method without arguments:
+        To set the ``signal_type`` to "undefined", simply call the method without
+        arguments:
 
         >>> s.set_signal_type()
         >>> s
@@ -5846,7 +5972,7 @@ class BaseSignal(FancySlicing,
            The number formatter to use for the output
         %s
 
-        See also
+        See Also
         --------
         get_histogram
 
@@ -5907,20 +6033,20 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        marker : :py:mod:`hyperspy.drawing.marker` object or iterable
+        marker : :mod:`~hyperspy.api.plot.markers` object or iterable
             The marker or iterable (list, tuple, ...) of markers to add.
             See the :ref:`plot.markers` section in the User Guide if you want
             to add a large number of markers as an iterable, since this will
             be much faster. For signals with navigation dimensions,
             the markers can be made to change for different navigation
             indices. See the examples for info.
-        plot_on_signal : bool
-            If ``True`` (default), add the marker to the signal.
+        plot_on_signal : bool, default True
+            If ``True``, add the marker to the signal.
             If ``False``, add the marker to the navigator
-        plot_marker : bool
-            If ``True`` (default), plot the marker.
-        permanent : bool
-            If ``False`` (default), the marker will only appear in the current
+        plot_marker : bool, default True
+            If ``True``, plot the marker.
+        permanent : bool, default True
+            If ``False``, the marker will only appear in the current
             plot. If ``True``, the marker will be added to the
             `metadata.Markers` list, and be plotted with
             ``plot(plot_markers=True)``. If the signal is saved as a HyperSpy
@@ -5929,52 +6055,24 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import skimage
-        >>> im = hs.signals.Signal2D(skimage.data.camera())
-        >>> m = hs.plot.markers.Rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
+        >>> im = hs.data.wave_image()
+        >>> m = hs.plot.markers.Rectangles(
+        ...    offsets=[(1.0, 1.5)], widths=(0.5,), heights=(0.7,)
+        ... )
         >>> im.add_marker(m)
-
-        Adding to a 1D signal, where the point will change
-        when the navigation index is changed:
-
-        >>> rng = np.random.default_rng(1)
-        >>> s = hs.signals.Signal1D(rng.random((3, 100)))
-        >>> marker = hs.plot.markers.Point((19, 10, 60), (0.2, 0.5, 0.9))
-        >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
         Add permanent marker:
 
         >>> rng = np.random.default_rng(1)
         >>> s = hs.signals.Signal2D(rng.random((100, 100)))
-        >>> marker = hs.plot.markers.Point(50, 60, color='red')
+        >>> marker = hs.plot.markers.Points(offsets=[(50, 60)])
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
-
-        Add permanent marker to signal with 2 navigation dimensions.
-        The signal has navigation dimensions (3, 2), as the dimensions
-        gets flipped compared to the output from :py:func:`numpy.random.random`.
-        To add a vertical line marker which changes for different navigation
-        indices, the list used to make the marker must be a nested list:
-        2 lists with 3 elements each (2 x 3):
-
-        >>> rng = np.random.default_rng(1)
-        >>> s = hs.signals.Signal1D(rng.random((2, 3, 10)))
-        >>> marker = hs.plot.markers.VerticalLine([[1, 3, 5], [2, 4, 6]])
-        >>> s.add_marker(marker, permanent=True)
-
-        Add permanent marker which changes with navigation position, and
-        do not add it to a current plot:
-
-        >>> rng = np.random.default_rng(1)
-        >>> s = hs.signals.Signal2D(rng.integers(10, size=(3, 100, 100)))
-        >>> marker = hs.plot.markers.Point((10, 30, 50), (30, 50, 60), color='red')
-        >>> s.add_marker(marker, permanent=True, plot_marker=False)
-        >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker:
 
         >>> rng = np.random.default_rng(1)
         >>> s = hs.signals.Signal2D(rng.integers(10, size=(100, 100)))
-        >>> marker = hs.plot.markers.Point(10, 60, color='red')
+        >>> marker = hs.plot.markers.Points(offsets=[(10, 60)])
         >>> marker.name = "point_marker"
         >>> s.add_marker(marker, permanent=True)
         >>> del s.metadata.Markers.point_marker
@@ -5984,37 +6082,40 @@ class BaseSignal(FancySlicing,
         >>> rng = np.random.default_rng(1)
         >>> s = hs.signals.Signal2D(rng.integers(10, size=(100, 100)))
         >>> marker_list = []
-        >>> for i in range(100):
-        ...     marker = hs.plot.markers.Point(random()*100, random()*100, color='red')
+        >>> for i in range(10):
+        ...     marker = hs.plot.markers.Points(rng.random(2))
         ...     marker_list.append(marker)
         >>> s.add_marker(marker_list, permanent=True)
 
         """
+        if not plot_marker and not permanent:
+            warnings.warn("`plot_marker=False` and `permanent=False` does nothing")
+            return
+
         if isiterable(marker):
             marker_list = marker
         else:
             marker_list = [marker]
         markers_dict = {}
+
         if permanent:
+            # Make a list of existing marker to check if this is not already
+            # added to the metadata.
             if not self.metadata.has_item('Markers'):
                 self.metadata.add_node('Markers')
             marker_object_list = []
             for marker_tuple in list(self.metadata.Markers):
                 marker_object_list.append(marker_tuple[1])
             name_list = self.metadata.Markers.keys()
+
         marker_name_suffix = 1
         for m in marker_list:
-            marker_data_shape = m._get_data_shape()[::-1]
-            if (not (len(marker_data_shape) == 0)) and (
-                    marker_data_shape != self.axes_manager.navigation_shape):
-                raise ValueError(
-                    "Navigation shape of the marker must be 0 or the "
-                    "inverse navigation shape as this signal. If the "
-                    "navigation dimensions for the signal is (2, 3), "
-                    "the marker dimension must be (3, 2).")
-            if (m.signal is not None) and (m.signal is not self):
+            if (m._signal is not None) and (m._signal is not self):
                 raise ValueError("Markers can not be added to several signals")
+
             m._plot_on_signal = plot_on_signal
+            m._signal = self
+
             if plot_marker:
                 if self._plot is None or not self._plot.is_active:
                     self.plot()
@@ -6022,28 +6123,29 @@ class BaseSignal(FancySlicing,
                     self._plot.signal_plot.add_marker(m)
                 else:
                     if self._plot.navigator_plot is None:
-                        self.plot()
+                        raise ValueError("Attempted to plot marker on navigator_plot when none is"
+                                         "active.")
                     self._plot.navigator_plot.add_marker(m)
                 m.plot(render_figure=False)
+
             if permanent:
                 for marker_object in marker_object_list:
                     if m is marker_object:
                         raise ValueError("Marker already added to signal")
-                name = m.name
+                name = m.name if m.name != "" else m.__class__.__name__
                 temp_name = name
+                # If it already exists in the list, add a suffix
                 while temp_name in name_list:
                     temp_name = name + str(marker_name_suffix)
                     marker_name_suffix += 1
                 m.name = temp_name
                 markers_dict[m.name] = m
-                m.signal = self
                 marker_object_list.append(m)
                 name_list.append(m.name)
-            if not plot_marker and not permanent:
-                _logger.warning(
-                    "plot_marker=False and permanent=False does nothing")
+
         if permanent:
             self.metadata.Markers.add_dictionary(markers_dict)
+
         if plot_marker and render_figure:
             self._render_figure()
 
@@ -6058,12 +6160,12 @@ class BaseSignal(FancySlicing,
         markers_dict = self.metadata.Markers.__dict__
         for marker_name in marker_name_list:
             marker = markers_dict[marker_name]['_dtb_value_']
-            if marker.plot_marker:
-                if marker._plot_on_signal:
-                    self._plot.signal_plot.add_marker(marker)
-                else:
-                    self._plot.navigator_plot.add_marker(marker)
-                marker.plot(render_figure=False)
+            if marker._plot_on_signal:
+                self._plot.signal_plot.add_marker(marker)
+            else:
+                self._plot.navigator_plot.add_marker(marker)
+            marker._signal = self
+            marker.plot(render_figure=False)
         self._render_figure()
 
     def add_poissonian_noise(self, keep_dtype=True, random_state=None):
@@ -6080,13 +6182,13 @@ class BaseSignal(FancySlicing,
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
             ``'float64'``.
-        random_state : None or int or Generator instance, default None
+        random_state : None, int or numpy.random.Generator, default None
             Seed for the random generator.
 
-        Note
-        ----
-        This method uses :py:func:`numpy.random.poisson`
-        (or :py:func:`dask.array.random.poisson` for lazy signals)
+        Notes
+        -----
+        This method uses :func:`numpy.random.poisson`
+        (or :func:`dask.array.random.poisson` for lazy signals)
         to generate the Poissonian noise.
 
         """
@@ -6121,19 +6223,19 @@ class BaseSignal(FancySlicing,
 
         The operation is performed in-place (*i.e.* the data of the signal
         is modified). This method requires the signal to have a float data type,
-        otherwise it will raise a :py:exc:`TypeError`.
+        otherwise it will raise a :exc:`TypeError`.
 
         Parameters
         ----------
         std : float
             The standard deviation of the Gaussian noise.
-        random_state : None or int or Generator instance, default None
+        random_state : None, int or numpy.random.Generator, default None
             Seed for the random generator.
 
-        Note
-        ----
-        This method uses :py:func:`numpy.random.normal` (or
-        :py:func:`dask.array.random.normal` for lazy signals)
+        Notes
+        -----
+        This method uses :func:`numpy.random.normal` (or
+        :func:`dask.array.random.normal` for lazy signals)
         to generate the noise.
 
         """
@@ -6176,8 +6278,8 @@ class BaseSignal(FancySlicing,
             The number (or indices) of axes to convert to navigation axes
         %s
 
-        Note
-        ----
+        Notes
+        -----
         With the exception of both axes parameters (`signal_axes` and
         `navigation_axes` getting iterables, generally one has to be ``None``
         (i.e. "floating"). The other one specifies either the required number
@@ -6185,9 +6287,9 @@ class BaseSignal(FancySlicing,
         If both are iterables, full control is given as long as all axes
         are assigned to one space only.
 
-        See also
+        See Also
         --------
-        T, as_signal2D, as_signal1D, :py:func:`hyperspy.misc.utils.transpose`
+        T, as_signal2D, as_signal1D
 
         Examples
         --------
@@ -6336,7 +6438,7 @@ class BaseSignal(FancySlicing,
     def T(self):
         """The transpose of the signal, with signal and navigation spaces
         swapped. Enables calling
-        :py:meth:`~hyperspy.signal.BaseSignal.transpose` with the default
+        :meth:`~hyperspy.api.signals.BaseSignal.transpose` with the default
         parameters as a property of a Signal.
         """
         return self.transpose()
@@ -6359,7 +6461,7 @@ class BaseSignal(FancySlicing,
         tukey_alpha : float, optional
             Only used if ``window='tukey'`` (default is 0.5). From the
             documentation of
-            :py:func:`scipy.signal.windows.tukey`:
+            :func:`scipy.signal.windows.tukey`:
 
                 - Shape parameter of the Tukey window, representing the
                   fraction of the window inside the cosine tapered region. If
@@ -6372,14 +6474,14 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        out : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses), optional
+        out : :class:`~hyperspy.signal.BaseSignal` (or subclass), optional
             If ``inplace=False``, returns the apodized signal of the same
             type as the provided Signal.
 
         Examples
         --------
         >>> import hyperspy.api as hs
-        >>> wave = hs.datasets.artificial_data.get_wave_image()
+        >>> wave = hs.data.wave_image()
         >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
 

@@ -28,11 +28,13 @@ plot_signals
     Plot multiple signals at the same time.
 plot_histograms
     Compute and plot the histograms of multiple signals in the same figure.
+plot_roi_map
+    Plot a the spatial variation of a ROI within a `Signal`\ s signal axes.
 
-The :mod:`~.api.plot` module contains the following submodules:
+The :mod:`hyperspy.api.plot` module contains the following submodules:
 
-:mod:`~.api.markers`
-    Markers that can be added to :py:class:`~.signal.BaseSignal` figure.
+:mod:`hyperspy.api.plot.markers`
+    Markers that can be added to :class:`~.api.signals.BaseSignal` figure.
 
 """
 
@@ -40,7 +42,8 @@ from hyperspy.drawing.utils import (
     plot_histograms,
     plot_images,
     plot_signals,
-    plot_spectra
+    plot_spectra,
+    plot_roi_map
     )
 from hyperspy.utils import markers
 
@@ -51,6 +54,7 @@ __all__ = [
     'plot_images',
     'plot_signals',
     'plot_spectra',
+    'plot_roi_map'
     ]
 
 

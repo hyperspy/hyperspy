@@ -18,7 +18,7 @@ Note that the array shape is (2, ):
 .. code-block:: python
 
     >>> arr.shape
-    (2, )
+    (2,)
 
 
 Numpy ragged array must have python ``object`` type to allow the variable length of
@@ -29,10 +29,10 @@ about the shape of the array.
 
 HyperSpy supports the use of ragged array with the following conditions:
 
-- The signal must be explicitly defined as being :py:attr:`~.api.signals.BaseSignal.ragged`, either when creating
+- The signal must be explicitly defined as being :attr:`~.api.signals.BaseSignal.ragged`, either when creating
   the signal or by changing the ragged attribute of the signal
 - The signal dimension is the variable length dimension of the array
-- The :py:attr:`~.api.signals.BaseSignal.isig` syntax is not supported
+- The :attr:`~.api.signals.BaseSignal.isig` syntax is not supported
 - Signal with ragged array can't be transposed
 - Signal with ragged array can't be plotted
 
@@ -77,14 +77,14 @@ To create a hyperspy signal of a numpy ragged array:
         (2, 2)
 
 In addition to the use of the keyword ``ragged`` when creating an hyperspy
-signal, the :py:attr:`~.api.signals.BaseSignal.ragged` attribute can also
+signal, the :attr:`~.api.signals.BaseSignal.ragged` attribute can also
 be set to specify whether the signal contains a ragged array or not.
 
 In the following example, an hyperspy signal is created without specifying that
 the array is ragged. In this case, the signal dimension is 2, which *can be*
 misleading, because each item contains a list of numbers. To provide a unambiguous
 representation of the fact that the signal contains a ragged array, the
-:py:attr:`~.api.signals.BaseSignal.ragged` attribute can be set to ``True``.
+:attr:`~.api.signals.BaseSignal.ragged` attribute can be set to ``True``.
 By doing so, the signal space will be described as "ragged" and the navigation shape
 will become the same as the shape of the ragged array:
 

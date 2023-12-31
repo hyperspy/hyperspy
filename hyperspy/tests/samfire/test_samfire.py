@@ -19,7 +19,7 @@
 import copy
 import gc
 
-import dill
+import cloudpickle
 import numpy as np
 import pytest
 
@@ -469,7 +469,7 @@ class TestSamfireWorker:
         self.args = {}
         self.model_letter = 'sldkfjg'
         from hyperspy.samfire_utils.fit_tests import red_chisq_test as rct
-        self._gt_dump = dill.dumps(rct(tolerance=1.0))
+        self._gt_dump = cloudpickle.dumps(rct(tolerance=1.0))
         m_slice = m.inav[self.ind[::-1]]
         m_slice.store(self.model_letter)
         m_dict = m_slice.signal._to_dictionary(False)

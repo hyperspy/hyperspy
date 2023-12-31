@@ -6,8 +6,8 @@ Indexing the model
 Often it is useful to consider only part of the model - for example at
 a particular location (i.e. a slice in the navigation space) or energy range
 (i.e. a slice in the signal space). This can be done using exactly the same
-syntax that we use for signal indexing (:ref:`signal.indexing`).
-:py:attr:`~.model.BaseModel.red_chisq` and :py:attr:`~.model.BaseModel.dof`
+syntax that we use for signal :ref:`indexing <signal.indexing>`.
+:attr:`~.model.BaseModel.red_chisq` and :attr:`~.model.BaseModel.dof`
 are automatically recomputed for the resulting slices.
 
 .. code-block:: python

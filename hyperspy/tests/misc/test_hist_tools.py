@@ -33,7 +33,7 @@ def generate_bad_toy_data():
     using the Freedman-Diaconis rule.
     """
     ax1 = np.exp(-np.abs(np.arange(-30, 100, 0.05)))
-    s1 = hs.signals.EELSSpectrum(ax1)
+    s1 = hs.signals.Signal1D(ax1)
     s1 = hs.stack([s1] * 2)
     return s1
 

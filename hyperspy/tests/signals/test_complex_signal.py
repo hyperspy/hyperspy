@@ -119,45 +119,39 @@ class TestComplexProperties:
             np.pi)
 
 
-@pytest.mark.parametrize('parallel,lazy', [(True, False),
-                                           (False, False),
-                                           (False, True)])
-def test_get_unwrapped_phase_1D(parallel, lazy):
+@pytest.mark.parametrize('lazy', (True, False))
+def test_get_unwrapped_phase_1D(lazy):
     phase = 6 * (1 - abs(np.indices((9,)) - 4) / 4)
     s = hs.signals.ComplexSignal1D(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
-    phase_unwrapped = s.unwrapped_phase(seed=42, parallel=parallel)
+    phase_unwrapped = s.unwrapped_phase(seed=42)
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')
     np.testing.assert_allclose(phase_unwrapped.data, phase)
 
 
-@pytest.mark.parametrize('parallel,lazy', [(True, False),
-                                           (False, False),
-                                           (False, True)])
-def test_get_unwrapped_phase_2D(parallel, lazy):
+@pytest.mark.parametrize('lazy', (True, False))
+def test_get_unwrapped_phase_2D(lazy):
     phase = 5 * (1 - abs(np.indices((9, 9)) - 4).sum(axis=0) / 8)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
-    phase_unwrapped = s.unwrapped_phase(seed=42, parallel=parallel)
+    phase_unwrapped = s.unwrapped_phase(seed=42)
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')
     np.testing.assert_allclose(phase_unwrapped.data, phase)
 
 
-@pytest.mark.parametrize('parallel,lazy', [(True, False),
-                                           (False, False),
-                                           (False, True)])
-def test_get_unwrapped_phase_3D(parallel, lazy):
+@pytest.mark.parametrize('lazy', (True, False))
+def test_get_unwrapped_phase_3D(lazy):
     phase = 4 * (1 - abs(np.indices((9, 9, 9)) - 4).sum(axis=0) / 12)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
-    phase_unwrapped = s.unwrapped_phase(seed=42, parallel=parallel)
+    phase_unwrapped = s.unwrapped_phase(seed=42)
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')

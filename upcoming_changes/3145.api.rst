@@ -1,2 +1,0 @@
-Fix behaviour of :meth:`~.model.BaseModel.print_current_values`, :meth:`~.component.Component.print_current_values`
-and :func:`~.api.print_known_signal_types`, which were not printing when running from a script - they were only printing when running in notebook or qtconsole. Now all print_* functions behave consistently: they all print the output instead of returning an object (string or html). The :func:`IPython.display.display` will pick a suitable rendering when running in an "ipython" context, for example notebook, qtconsole.

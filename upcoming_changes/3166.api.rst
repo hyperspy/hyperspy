@@ -1,1 +1,0 @@
-For all functions with the ``rechunk`` parameter, the default has been changed from ``True`` to ``False``. This means HyperSpy will not automatically try to change the chunking for lazy signals. The old behaviour could lead to a reduction in performance when working with large lazy datasets, for example 4D-STEM data.

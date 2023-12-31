@@ -29,7 +29,7 @@ from hyperspy.defaults_parser import preferences
 set_log_level(preferences.General.logging_level)
 
 from hyperspy import docstrings
-from hyperspy.Release import version as __version__
+from . import __version__
 
 
 __doc__ = """
@@ -40,55 +40,49 @@ All public packages, functions and classes are available in this module.
 
 Functions:
 
-    :py:func:`~.api_nogui.get_configuration_directory_path`
+    :func:`~.api.get_configuration_directory_path`
         Return the configuration directory path.
 
-    :py:func:`~.interactive.interactive`
+    :func:`~.api.interactive`
         Define operations that are automatically recomputed on event changes.
 
-    :py:func:`~.io.load`
+    :func:`~.api.load`
         Load data into BaseSignal instances from supported files.
 
-    :py:data:`~.defaults_parser.preferences`
+    :data:`~.api.preferences`
         Preferences class instance to configure the default value of different
         parameters. It has a CLI and a GUI that can be started by execting its
         `gui` method i.e. `preferences.gui()`.
 
-    :py:func:`~.utils.print_known_signal_types`
+    :func:`~.api.print_known_signal_types`
         Print all known `signal_type`.
 
-    :py:func:`~.logger.set_log_level`
+    :func:`~.api.set_log_level`
         Convenience function to set HyperSpy's the log level.
 
-    :py:func:`~.utils.stack`
+    :func:`~.api.stack`
         Stack several signals.
 
-    :py:func:`~.utils.transpose`
+    :func:`~.api.transpose`
         Transpose a signal.
 
-The :mod:`~hyperspy.api` package contains the following submodules/packages:
+The :mod:`~.api` package contains the following submodules/packages:
 
-    :mod:`~.signals`
+    :mod:`~.api.signals`
         `Signal` classes which are the core of HyperSpy. Use this modules to
         create `Signal` instances manually from numpy arrays. Note that to
         load data from supported file formats is more convenient to use the
         `load` function.
-    :mod:`~.utils.model`
-        Contains the :mod:`~utils.model` module with
-        components that can be used to create a model for curve fitting.
-    :mod:`~.utils.eds`
-        Functions for energy dispersive X-rays data analysis.
-    :mod:`~.utils.material`
-        Useful functions for materials properties and elements database that
-        includes physical properties and X-rays and EELS energies.
-    :mod:`~.utils.plot`
+    :mod:`~.api.model`
+        Components that can be used to create a model for curve fitting.
+    :mod:`~.api.plot`
         Plotting functions that operate on multiple signals.
-    :mod:`~.datasets`
-        Example datasets.
-    :mod:`~.utils.roi`
+    :mod:`~.api.data`
+        Synthetic datasets.
+    :mod:`~.api.roi`
         Region of interests (ROIs) that operate on `BaseSignal` instances and
         include widgets for interactive operation.
-    :mod:`~.utils.samfire`
+    :mod:`~.api.samfire`
         SAMFire utilities (strategies, Pool, fit convergence tests)
 
 
@@ -107,12 +101,10 @@ def get_configuration_directory_path():
 
 
 __all__ = [
-    'datasets',
-    'eds',
+    'data',
     'get_configuration_directory_path',
     'interactive',
     'load',
-    'material',
     'model',
     'plot',
     'preferences',
@@ -129,11 +121,9 @@ __all__ = [
 
 # mapping following the pattern: from value import key
 _import_mapping = {
-    'eds':'.utils',
     'interactive': '.utils',
     'load': '.io',
     'markers': '.utils',
-    'material': '.utils',
     'model': '.utils',
     'plot': '.utils',
     'print_known_signal_types': '.utils',

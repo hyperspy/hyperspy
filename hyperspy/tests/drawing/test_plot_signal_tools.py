@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from hyperspy import signals, components1d, datasets
+import hyperspy.api as hs
+from hyperspy import signals, components1d
 from hyperspy.signal_tools import (
     ImageContrastEditor,
     BackgroundRemoval,
@@ -146,7 +147,7 @@ def test_plot_contrast_editor_norm(norm):
 
 
 def test_plot_contrast_editor_complex():
-    s = datasets.artificial_data.get_wave_image(random_state=0)
+    s = hs.data.wave_image(random_state=0)
 
     fft = s.fft(True)
     fft.plot(True, vmin=None, vmax=None)
@@ -273,11 +274,11 @@ def test_span_selector_in_signal1d():
 
 
 def test_span_selector_in_signal1d_model():
-    m = datasets.artificial_data.get_core_loss_eels_model()
+    m = hs.data.two_gaussians().create_model()
     calibration_tool = SpanSelectorInSignal1D(m)
     assert len(m.signal._plot.signal_plot.ax_lines) == 2
     assert m.signal is calibration_tool.signal
-    calibration_tool.span_selector.extents = (420, 460)
+    calibration_tool.span_selector.extents = (40, 60)
     calibration_tool.span_selector_changed()
     calibration_tool.span_selector_switch(False)
     assert calibration_tool.span_selector is None

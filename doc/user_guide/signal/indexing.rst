@@ -3,9 +3,9 @@
 Indexing
 --------
 
-Indexing a :py:class:`~.api.signals.BaseSignal`  provides a powerful, convenient and
+Indexing a :class:`~.api.signals.BaseSignal`  provides a powerful, convenient and
 Pythonic way to access and modify its data. In HyperSpy indexing is achieved
-using :py:attr:`~.api.signals.BaseSignal.isig` and :py:attr:`~.api.signals.BaseSignal.inav`,
+using :attr:`~.api.signals.BaseSignal.isig` and :attr:`~.api.signals.BaseSignal.inav`,
 which allow the navigation and signal dimensions to be indexed independently.
 The idea is essentially to specify a subset of the data based on its position
 in the array and it is therefore essential to know the convention adopted for
@@ -28,7 +28,7 @@ features differ from numpy):
   + Support indexing with units.
   + Support indexing with relative coordinates i.e. 'rel0.5'
   + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
-    [...,z,y,x] (numpy)
+    [..., z, y, x] (numpy)
 
 * HyperSpy indexing does not:
 
@@ -38,7 +38,7 @@ features differ from numpy):
 The examples below illustrate a range of common indexing tasks.
 
 First consider indexing a single spectrum, which has only one signal dimension
-(and no navigation dimensions) so we use :py:attr:`~.api.signals.BaseSignal.isig`:
+(and no navigation dimensions) so we use :attr:`~.api.signals.BaseSignal.isig`:
 
 .. code-block:: python
 
@@ -83,7 +83,7 @@ middle of the axis.
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     >>> s.axes_manager[0].scale = 0.5
     >>> s.axes_manager[0].axis
-    array([ 0. ,  0.5,  1. ,  1.5,  2. ,  2.5,  3. ,  3.5,  4. ,  4.5])
+    array([0. , 0.5, 1. , 1.5, 2. , 2.5, 3. , 3.5, 4. , 4.5])
     >>> s.isig[0.5:4.].data
     array([1, 2, 3, 4, 5, 6, 7])
     >>> s.isig[0.5:4].data
@@ -96,7 +96,7 @@ middle of the axis.
     >>> s.isig[:'rel0.5'].data
     array([0, 1, 2, 3])
 
-Importantly the original :py:class:`~.api.signals.BaseSignal` and its "indexed self"
+Importantly the original :class:`~.api.signals.BaseSignal` and its "indexed self"
 share their data and, therefore, modifying the value of the data in one
 modifies the same value in the other. Note also that in the example below
 s.data is used to access the data as a numpy array directly and this array is
@@ -106,7 +106,7 @@ then indexed using numpy indexing.
 
     >>> s = hs.signals.Signal1D(np.arange(10))
     >>> s
-    <Signal1D, title: , dimensions: (10,)>
+    <Signal1D, title: , dimensions: (|10)>
     >>> s.data
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     >>> si = s.isig[::2]
@@ -122,15 +122,15 @@ then indexed using numpy indexing.
     array([0, 0, 0, 0, 0])
 
 Of course it is also possible to use the same syntax to index multidimensional
-data treating navigation axes using :py:attr:`~.api.signals.BaseSignal.inav`
-and signal axes using :py:attr:`~.api.signals.BaseSignal.isig`.
+data treating navigation axes using :attr:`~.api.signals.BaseSignal.inav`
+and signal axes using :attr:`~.api.signals.BaseSignal.isig`.
 
 .. code-block:: python
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Signal1D, title: , dimensions: (3, 2|4)>
-    >>> s.data
+    >>> s.data # doctest: +SKIP
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
         [ 8,  9, 10, 11]],
@@ -152,11 +152,11 @@ and signal axes using :py:attr:`~.api.signals.BaseSignal.isig`.
                 Name |   size |  index |  offset |   scale |  units
     ================ | ====== | ====== | ======= | ======= | ======
     ---------------- | ------ | ------ | ------- | ------- | ------
-                   t |      4 |        |       0 |       1 | <undefined>
+                   t |      4 |      0 |       0 |       1 | <undefined>
     >>> s.inav[0,0].isig[::-1].data
     array([3, 2, 1, 0])
     >>> s.isig[0]
-    <BaseSignal, title: , dimensions: (3, 2)>
+    <BaseSignal, title: , dimensions: (3, 2|)>
     >>> s.isig[0].axes_manager
     <Axes manager, axes: (3, 2|)>
                 Name |   size |  index |  offset |   scale |  units
@@ -176,7 +176,7 @@ further in the following:
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Signal1D, title: , dimensions: (3, 2|4)>
-    >>> s.data
+    >>> s.data # doctest: +SKIP
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
         [ 8,  9, 10, 11]],
@@ -198,9 +198,9 @@ further in the following:
                 Name |   size |  index |  offset |   scale |  units
     ================ | ====== | ====== | ======= | ======= | ======
     ---------------- | ------ | ------ | ------- | ------- | ------
-                   t |      4 |        |       0 |       1 | <undefined>
+                   t |      4 |      0 |       0 |       1 | <undefined>
     >>> s.isig[0]
-    <BaseSignal, title: , dimensions: (2, 3)>
+    <BaseSignal, title: , dimensions: (3, 2|)>
     >>> s.isig[0].axes_manager
     <Axes manager, axes: (3, 2|)>
                 Name |   size |  index |  offset |   scale |  units
@@ -221,7 +221,7 @@ dimensions respectively:
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Signal1D, title: , dimensions: (3, 2|4)>
-    >>> s.data
+    >>> s.data # doctest: +SKIP
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
         [ 8,  9, 10, 11]],

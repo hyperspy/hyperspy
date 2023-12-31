@@ -24,6 +24,7 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.drawing._markers.points import Points
 
 
 def _verify_test_sum_x_E(self, s):
@@ -323,6 +324,27 @@ def test_get_current_signal(lazy):
 
     cs = s.get_current_signal(auto_title=False)
     assert cs.metadata.General.title == 'A signal'
+    # just spoofing these parameters to test the auto_filename
+    s.tmp_parameters.filename = "test"
+    s.tmp_parameters.extension = "hspy"
+    s.tmp_parameters.folder = "test"
+    cs = s.get_current_signal(auto_title=False, auto_filename=True)
+    assert cs.tmp_parameters.filename == 'test_(1,)'
+
+
+def test_get_current_signal_with_markers():
+    data = np.arange(100)
+    s = signals.Signal1D(data.reshape((10, 10)))
+    s.metadata.General.title = 'A signal'
+    offsets = np.empty((10,), dtype=object)
+    for i in range(10):
+        offsets[i] = np.array([[i, i], ])
+    m = Points(offsets=offsets)
+    s.add_marker(m, permanent=True)
+    cs = s.get_current_signal()
+    assert len(cs.metadata.Markers) == 1
+    assert cs.metadata.Markers["Points"].kwargs["offsets"].shape == (1, 2)
+    assert cs.metadata.Markers["Points"]._signal is cs
 
 
 def test_to_host():

@@ -24,7 +24,7 @@ import hyperspy.api_nogui
 from hyperspy.api_nogui import __doc__, get_configuration_directory_path
 from hyperspy.defaults_parser import preferences
 from hyperspy.logger import set_log_level
-from hyperspy.Release import version as __version__
+from . import __version__
 
 
 _logger = logging.getLogger(__name__)

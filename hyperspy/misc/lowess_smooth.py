@@ -18,7 +18,8 @@ Statistical Association, September 1988, volume 83, number 403, pp. 596-610.
 # https://gist.github.com/agramfort/850437
 
 import numpy as np
-from numba import njit
+
+from hyperspy.decorators import jit_ifnumba
 
 
 def lowess(y, x, f=2.0 / 3.0, n_iter=3):
@@ -51,7 +52,7 @@ def lowess(y, x, f=2.0 / 3.0, n_iter=3):
     return _lowess(y, x, f, n_iter)
 
 
-@njit(cache=True, nogil=True)
+@jit_ifnumba(cache=True, nogil=True)
 def _lowess(y, x, f=2.0 / 3.0, n_iter=3):  # pragma: no cover
     """Lowess smoother requiring native endian datatype (for numba).
 

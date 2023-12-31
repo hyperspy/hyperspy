@@ -130,7 +130,6 @@ class Test3D:
         new_s = self.signal.rebin(new_shape=(4, 2, 6))
         assert new_s.data.shape == self.data.shape
 
-
     def test_rebin_no_variance(self):
         new_s = self.signal.rebin(scale=(2, 2, 1))
         with pytest.raises(AttributeError):
@@ -148,6 +147,19 @@ class Test3D:
             rebin(self.signal.data, scale=(3, 3, 1), new_shape=(1, 2, 6))
         with pytest.raises(ValueError):
             rebin(self.signal.data, scale=(2, 2, 2, 2))
+
+    @pytest.mark.parametrize("dtype", (int, float, ">u4", np.uint16, np.int32))
+    def test_rebin_dtype_same(self, dtype):
+        s = self.signal
+        s.data = s.data.astype(dtype)
+        new_s = s.rebin(scale=(2, 2, 1), dtype="same")
+        assert new_s.data.dtype.name == s.data.dtype.name
+
+    @pytest.mark.parametrize("dtype", (int, float, np.uint16, np.int32))
+    def test_rebin_dtype_specify(self, dtype):
+        s = self.signal
+        new_s = s.rebin(scale=(2, 2, 1), dtype=dtype)
+        assert new_s.data.dtype.name == np.dtype(dtype).name
 
     def test_swap_axes_simple(self):
         s = self.signal

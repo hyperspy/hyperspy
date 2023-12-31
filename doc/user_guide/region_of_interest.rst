@@ -8,12 +8,12 @@ ROIs can be defined to select part of any compatible signal and may be applied
 either to the navigation or to the signal axes. A number of different ROIs are
 available:
 
-* :py:class:`~.roi.Point1DROI`
-* :py:class:`~.roi.Point2DROI`
-* :py:class:`~.roi.SpanROI`
-* :py:class:`~.roi.RectangularROI`
-* :py:class:`~.roi.CircleROI`
-* :py:class:`~.roi.Line2DROI`
+* :class:`~.roi.Point1DROI`
+* :class:`~.roi.Point2DROI`
+* :class:`~.roi.SpanROI`
+* :class:`~.roi.RectangularROI`
+* :class:`~.roi.CircleROI`
+* :class:`~.roi.Line2DROI`
 
 Once created, an ROI can be applied to the signal:
 
@@ -32,12 +32,12 @@ Once created, an ROI can be applied to the signal:
 ROIs can also be used :ref:`interactively <interactive-label>` with widgets.
 The following example shows how to interactively apply ROIs to an image. Note
 that *it is necessary* to plot the signal onto which the widgets will be
-added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
+added before calling :meth:`~.roi.BaseInteractiveROI.interactive`.
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> import scipy
+    >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> rectangular_roi = hs.roi.RectangularROI(left=30, right=500,
     ...                                         top=200, bottom=400)
     >>> line_roi = hs.roi.Line2DROI(0, 0, 512, 512, 1)
@@ -78,8 +78,8 @@ can be plotted on a different signal altogether.
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> import scipy
+    >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> s = hs.signals.Signal1D(np.random.rand(512, 512, 512))
     >>> roi = hs.roi.RectangularROI(left=30, right=77, top=20, bottom=50)
     >>> s.plot() # plot signal to have where to display the widget
@@ -110,14 +110,14 @@ order to increase responsiveness.
 
 .. code-block:: python
 
-   >>> import scipy.misc
-   >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+   >>> import scipy
+   >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
    >>> im.plot()
    >>> roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
    >>> im_roi = roi.interactive(im, color="red")
    >>> roi_hist = hs.interactive(im_roi.get_histogram,
    ...                           event=roi.events.changed,
-                                 bins=150, # Set number of bins for `get_histogram`
+   ...                           bins=150, # Set number of bins for `get_histogram`
    ...                           recompute_out_event=None)
    >>> roi_hist.plot()
 
@@ -131,7 +131,7 @@ order to increase responsiveness.
     signal range in functions taken a ``signal_range`` argument.
 
 
-All ROIs have a :meth:`gui` method that displays an user interface if
+All ROIs have a ``gui`` method that displays an user interface if
 a hyperspy GUI is installed (currently only works with the
 ``hyperspy_gui_ipywidgets`` GUI), enabling precise control of the ROI
 parameters:
@@ -139,7 +139,7 @@ parameters:
 .. code-block:: python
 
     >>> # continuing from above:
-    >>> roi.gui()
+    >>> roi.gui() # doctest: +SKIP
 
 .. figure::  images/roi_gui_control.gif
   :align:   center
@@ -156,6 +156,7 @@ parameters:
     >>> roi = hs.roi.Line2DROI(x1=144, y1=240, x2=306, y2=178, linewidth=0)
     >>> ima.plot()
     >>> roi.interactive(ima, color='red')
+    <BaseSignal, title: , dimensions: (|175)>
 
 .. figure::  images/roi_line2d.png
   :align:   center
@@ -164,7 +165,7 @@ parameters:
 .. code-block:: python
 
     >>> roi.angle(axis='vertical')
-    -100.97166759025453
+    110.94265054998827
 
 The default output of the method is in degrees, though radians can be selected
 as follows:
@@ -172,7 +173,7 @@ as follows:
 .. code-block:: python
 
     >>> roi.angle(axis='vertical', units='radians')
-    -1.7622880506791903
+    1.9363145329867932
 
 Conveniently, :meth:`~.roi.Line2DROI.angle` can be used to rotate an image to
 align selected features with respect to vertical or horizontal axis:
@@ -195,7 +196,7 @@ ROIs can be used in place of slices when indexing. For example:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    >>> s = hs.data.two_gaussians()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> sc = s.isig[roi]
     >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
@@ -203,23 +204,61 @@ ROIs can be used in place of slices when indexing. For example:
     >>> imc = im.isig[roi]
 
 .. versionadded:: 1.3
-    :meth:`gui` method.
+    ``gui`` method added, for example :meth:`~.api.roi.Point1DROI.gui`.
 
 .. versionadded:: 1.6
-    New :meth:`__getitem__` method for all ROIs.
+    New ``__getitem__`` method for all ROIs.
 
-In addition the following all ROIs have a py:meth:`__getitem__` method that enables
+In addition, all ROIs have a ``__getitem__`` method that enables
 using them in place of tuples.
-For example, the method :py:meth:`~._signals.Signal2D.align2D` takes a ``roi``
+For example, the method :meth:`~.api.signals.Signal2D.align2D` takes a ``roi``
 argument with the left, right, top, bottom coordinates of the ROI.
-Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
+Handily, we can pass a :class:`~.roi.RectangularROI` ROI instead.
 
 .. code-block:: python
 
     >>> import hyperspy.api as hs
     >>> import numpy as np
-    >>> im = hs.signals.Signal2D(np.random.random((10,30,30))
-    >>> roi = hs.roi.RectangularROI(left=2, right=10, top=0, bottom=5))
+    >>> im = hs.signals.Signal2D(np.random.random((10,30,30)))
+    >>> roi = hs.roi.RectangularROI(left=2, right=10, top=0, bottom=5)
     >>> tuple(roi)
     (2.0, 10.0, 0.0, 5.0)
-    >>> im.align2D(roi=roi)
+    >>> im.align2D(roi=roi) # doctest: +SKIP
+
+
+Interactively Slicing Signal Dimensions
+---------------------------------------
+
+:func:`~.api.plot.plot_roi_map` is a function that allows you to
+interactively visualize the spatial variation of intensity in a Signal
+within a ROI of its signal axes. In other words, it shows maps of
+the integrated signal for custom ranges along the signal axis.
+
+To allow selection of the signal ROIs, a plot of the mean signal over all
+spatial positions is generated. Interactive ROIs can then be adjusted to the
+desired regions within this plot.
+
+For each ROI, a plot reflecting how the intensity of signal within this ROI
+varies over the spatial dimensions of the Signal object is also plotted.
+
+For Signal objects with 1 signal dimension :py:class:`~.roi.SpanROI`\ s are used
+and for 2 signal dimensions, :py:class:`~.roi.RectangularROI`\ s are used.
+
+In the example below, for a hyperspectral map with 2 navigation dimensions and
+1 signal dimension (i.e. a spectrum at each position in a 2D map),
+:py:class:`~.roi.SpanROI`\ s are used to select spectral regions of interest.
+For each spectral region of interest a plot is generated displaying the
+intensity within this region at each position in the map.
+
+.. code-block:: python
+
+    >>> import hyperpsy.api as hs # doctest: +SKIP
+    >>> sig = hs.load('mydata.sur') # doctest: +SKIP
+    >>> sig # doctest: +SKIP
+    <Signal1D, dimensions: (128, 128|1024)>
+    >>> hs.plot.plot_roi_map(sig, rois=2) # doctest: +SKIP
+
+
+.. image:: images/plot_roi_map_demo.gif
+  :width: 100%
+  :alt: Demo of plot_roi_map functionality.

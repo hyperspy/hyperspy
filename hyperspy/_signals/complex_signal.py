@@ -31,8 +31,7 @@ from hyperspy.docstrings.plot import (
 )
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
-    PARALLEL_ARG,
-    MAX_WORKERS_ARG,
+    NUM_WORKERS_ARG,
     LAZYSIGNAL_DOC,
 )
 from hyperspy.misc.utils import parse_quantity
@@ -156,10 +155,10 @@ class ComplexSignal(BaseSignal):
 
         Parameters
         ----------
-        dtype : str or dtype
+        dtype : str or numpy.dtype
             Typecode or data-type to which the array is cast. For complex signals only other
-            complex dtypes are allowed. If real valued properties are required use `real`,
-            `imag`, `amplitude` and `phase` instead.
+            complex dtypes are allowed. If real valued properties are required use ``real``,
+            ``imag``, ``amplitude`` and ``phase`` instead.
         """
         if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
@@ -168,28 +167,27 @@ class ComplexSignal(BaseSignal):
                 'Complex data can only be converted into other complex dtypes!')
 
     def unwrapped_phase(self, wrap_around=False, seed=None,
-                        show_progressbar=None, parallel=None, max_workers=None):
+                        show_progressbar=None, num_workers=None):
         """Return the unwrapped phase as an appropriate HyperSpy signal.
 
         Parameters
         ----------
-        wrap_around : bool or sequence of bool, optional
+        wrap_around : bool or iterable of bool, default False
             When an element of the sequence is  `True`, the unwrapping process
             will regard the edges along the corresponding axis of the image to be
             connected and use this connectivity to guide the phase unwrapping
             process. If only a single boolean is given, it will apply to all axes.
             Wrap around is not supported for 1D arrays.
-        seed : int, optional
+        seed : None or int, default None
             Unwrapping 2D or 3D images uses random initialization. This sets the
             seed of the PRNG to achieve deterministic behavior.
-        %s
         %s
         %s
 
         Returns
         -------
-        phase_image: :class:`~hyperspy._signals.BaseSignal` subclass
-            Unwrapped phase.
+        :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+            The unwrapped phase.
 
         Notes
         -----
@@ -204,16 +202,16 @@ class ComplexSignal(BaseSignal):
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
                   show_progressbar=show_progressbar, ragged=False,
-                  parallel=parallel, max_workers=max_workers)
+                  num_workers=num_workers)
         phase.metadata.General.title = f'unwrapped {phase.metadata.General.title}'
         return phase  # Now unwrapped!
 
-    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
-    def __call__(self, axes_manager=None, power_spectrum=False,
-                 fft_shift=False, as_numpy=None):
-        value = super().__call__(axes_manager=axes_manager,
-                                 fft_shift=fft_shift, as_numpy=as_numpy)
+    def _get_current_data(self, axes_manager=None, power_spectrum=False,
+                          fft_shift=False, as_numpy=None):
+        value = super()._get_current_data(axes_manager=axes_manager,
+                                          fft_shift=fft_shift, as_numpy=as_numpy)
         if power_spectrum:
             value = abs(value)**2
         return value
@@ -271,17 +269,18 @@ class ComplexSignal(BaseSignal):
 
     @format_title('angle')
     def angle(self, deg=False):
-        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
+        r"""Return the angle (also known as phase or argument).
+        If the data is real, the angle is 0
         for positive values and :math:`2\pi` for negative values.
 
         Parameters
         ----------
-        deg : bool, optional
-            Return angle in degrees if True, radians if False (default).
+        deg : bool, default False
+            Return angle in degrees if True, radians if False.
 
         Returns
         -------
-        angle : HyperSpy signal
+        :class:`~hyperspy.api.signals.BaseSignal`
             The counterclockwise angle from the positive real axis on the complex plane,
             with dtype as numpy.float64.
 
@@ -293,31 +292,29 @@ class ComplexSignal(BaseSignal):
 
     def argand_diagram(self, size=[256, 256], range=None):
         """
-        Calculate and plot Argand diagram of complex signal
+        Calculate and plot Argand diagram of complex signal.
 
         Parameters
         ----------
-        size : [int, int], optional
-            Size of the Argand plot in pixels
-            (Default: [256, 256])
-        range : array_like, shape(2,2) or shape(2,) optional
-            The position of the edges of the diagram
-            (if not specified explicitly in the bins parameters): [[xmin, xmax], [ymin, ymax]].
-            All values outside of this range will be considered outliers and not tallied in the histogram.
-            (Default: None)
+        size : list of int, optional
+            Size of the Argand plot in pixels. Default is [256, 256].
+        range : None, numpy.ndarray, default None
+            The position of the edges of the diagram with shape (2, 2) or (2,).
+            All values outside of this range will be considered outliers and not
+            tallied in the histogram. If None use the mininum and maximum values.
 
         Returns
         -------
-        argand_diagram:
-            Argand diagram as Signal2D
+        :class:`~hyperspy.api.signals.Signal2D`
+            The Argand diagram
 
         Examples
         --------
-        >>> import holospy as holo
-        >>> hologram = data.datasets.Fe_needle_hologram()
-        >>> ref = hs.datasets.Fe_needle_reference_hologram()
-        >>> w = hologram.reconstruct_phase(ref)
-        >>> w.argand_diagram(range=[-3, 3]).plot()
+        >>> import holospy as holo  # doctest: +SKIP
+        >>> hologram = holo.data.Fe_needle_hologram() # doctest: +SKIP
+        >>> ref = holo.data.Fe_needle_reference_hologram() # doctest: +SKIP
+        >>> w = hologram.reconstruct_phase(ref) # doctest: +SKIP
+        >>> w.argand_diagram(range=[-3, 3]).plot() # doctest: +SKIP
 
         """
         if self._lazy:

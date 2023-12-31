@@ -24,30 +24,34 @@ class Bleasdale(Expression):
 
     r"""Bleasdale function component.
 
-    Also called the Bleasdale-Nelder function. Originates from the description of the yield-density relationship in crop growth.
+    Also called the Bleasdale-Nelder function. Originates from
+    the description of the yield-density relationship in crop growth.
 
     .. math::
 
         f(x) = \left(a+b\cdot x\right)^{-1/c}
 
     Parameters
-    -----------
-        a : Float
+    ----------
+    a : float, default=1.0
+        The value of Parameter a.
+    b : float, default=1.0
+        The value of Parameter b.
+    c : float, default=1.0
+        The value of Parameter c.        
+    **kwargs
+        Extra keyword arguments are passed to
+        :class:`~.api.model.components1D.Expression`.
 
-        b : Float
-
-        c : Float
-
-        **kwargs
-            Extra keyword arguments are passed to the
-            :py:class:`~._components.expression.Expression` component.
-
+    Notes
+    -----
     For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
+
     """
 
-    def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
+    def __init__(self, a=1., b=1., c=1., module=None, **kwargs):
         super().__init__(
-            expression="where((a + b * x) > 0, (a + b * x) ** (-1 / c), 0)",
+            expression="where((a + b * x) > 0, pow(a + b * x, -1 / c), 0)",
             name="Bleasdale",
             a=a,
             b=b,
@@ -58,6 +62,12 @@ class Bleasdale(Expression):
             linear_parameter_list=['b'],
             check_parameter_linearity=False,
             **kwargs)
+        module = self._whitelist['module'][1]
+        if module in ("numpy", "scipy"):
+            # Issue with calculating component at 0...
+            raise ValueError(
+                f"{module} is not supported for this component, use numexpr instead."
+                )
 
     def grad_a(self, x):
         """

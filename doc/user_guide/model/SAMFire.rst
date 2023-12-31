@@ -93,7 +93,7 @@ as follows:
 
 .. code-block:: python
 
-    >>> samf = m.create_samfire(workers=None, ipyparallel=False)
+    >>> samf = m.create_samfire(workers=None, ipyparallel=False) # doctest: +SKIP
 
 By default SAMFire will look for an `ipyparallel
 <https://ipyparallel.readthedocs.io/>`_ cluster for the
@@ -107,7 +107,7 @@ added to its ``strategies`` list:
 
 .. code-block:: python
 
-    >>> samf.strategies
+    >>> samf.strategies # doctest: +SKIP
       A |    # | Strategy
      -- | ---- | -------------------------
       x |    0 | Reduced chi squared strategy
@@ -117,14 +117,14 @@ The currently active strategy is marked by an 'x' in the first column.
 
 If a new datapoint (i.e. pixel) is added manually, the "database" of the
 currently active strategy has to be refreshed using the
-:py:meth:`~.samfire.Samfire.refresh_database` call.
+:meth:`~.samfire.Samfire.refresh_database` call.
 
 The current strategy "database" can be plotted using the
-:py:meth:`~.samfire.Samfire.plot` method.
+:meth:`~.samfire.Samfire.plot` method.
 
 Whilst SAMFire is running, each pixel is checked by a ``goodness_test``,
 which is by default
-:py:class:`~.samfire_utils.goodness_of_fit_tests.red_chisq.red_chisq_test`,
+:class:`~.api.samfire.fit_tests.red_chisq_test`,
 checking the reduced chi-squared to be in the bounds of [0, 2].
 
 This tolerance can (and most likely should!) be changed appropriately for the
@@ -132,12 +132,13 @@ data as follows:
 
 .. code-block:: python
 
-    >>> samf.metadata.goodness_test.tolerance = 0.3 # use a sensible value
+    >>> # use a sensible value
+    >>> samf.metadata.goodness_test.tolerance = 0.3  # doctest: +SKIP
 
 The SAMFire managed multi-dimensional fit can be started using the
-:py:meth:`~.samfire.Samfire.start` method. All keyword arguments are passed to
-the underlying (i.e. usual) :py:meth:`~.model.BaseModel.fit` call:
+:meth:`~.samfire.Samfire.start` method. All keyword arguments are passed to
+the underlying (i.e. usual) :meth:`~.model.BaseModel.fit` call:
 
 .. code-block:: python
 
-    >>> samf.start(optimizer='lm', bounded=True)
+    >>> samf.start(optimizer='lm', bounded=True) # doctest: +SKIP

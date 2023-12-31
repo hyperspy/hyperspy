@@ -35,6 +35,8 @@ from matplotlib.colors import LinearSegmentedColormap, BASE_COLORS, to_rgba
 import matplotlib.pyplot as plt
 from rsciio.utils import rgb_tools
 
+
+import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import to_numpy
 
@@ -54,7 +56,7 @@ def contrast_stretching(data, vmin=None, vmax=None):
         For example, for a vmin of '1th', 1% of the lowest will be ignored to
         estimate the minimum value. Similarly, for a vmax value of '1th', 1%
         of the highest value will be ignored in the estimation of the maximum
-        value. See :py:func:`numpy.percentile` for more explanation.
+        value. See :func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
         If float of integer, keep this value as bounds.
 
@@ -122,12 +124,12 @@ def centre_colormap_values(vmin, vmax):
 
     Parameters
     ----------
-    vmin, vmax : scalar
+    vmin, vmax : float
         The range of data to display.
 
     Returns
     -------
-    cvmin, cvmax : scalar
+    float
         The values to obtain a centre colormap.
 
     """
@@ -195,8 +197,9 @@ def on_figure_window_close(figure, function):
     Parameters
     ----------
 
-    figure : mpl figure instance
-    function : function
+    figure : matplotlib.figure.Figure
+        The figure to close
+    function : callable
 
     """
     def function_wrapper(evt):
@@ -251,7 +254,7 @@ def subplot_parameters(fig):
 
     Parameters
     ----------
-    fig : mpl figure
+    fig : matplotlib.figure.Figure
 
     Returns
     -------
@@ -286,44 +289,42 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     Parameters
     ----------
-    signal_list : list of BaseSignal instances
+    signal_list : list of :class:`~.api.signals.BaseSignal`
         If sync is set to True, the signals must have the
         same navigation shape, but not necessarily the same signal shape.
-    sync : True, False, optional
+    sync : bool, optional
         If True (default), the signals will share navigation. All the signals
         must have the same navigation shape for this to work, but not
         necessarily the same signal shape.
-    navigator : 'auto', None, 'spectrum', 'slider', BaseSignal, optional
-        Default 'auto'. See signal.plot docstring for full description.
-    navigator_list : None, list of navigator arguments, optional
+    navigator : None, :class:`~.api.signals.BaseSignal` or str 
+    {``'auto'`` | ``'spectrum'`` | ``'slider'`` }, default ``"auto"``
+        See signal.plot docstring for full description.
+    navigator_list : None, list of :class:`~.api.signals.BaseSignal` or list of str, default None
         Set different navigator options for the signals. Must use valid
         navigator arguments: 'auto', None, 'spectrum', 'slider', or a
         HyperSpy Signal. The list must have the same size as signal_list.
-        If None (default), the argument specified in navigator will be used.
-    **kwargs
-        Any extra keyword arguments are passed to each signal `plot` method.
+        If None, the argument specified in navigator will be used.
+    **kwargs : dict
+        Any extra keyword arguments are passed to each signal ``plot`` method.
 
-    Example
-    -------
+    Examples
+    --------
 
-    >>> s_cl = hs.load("coreloss.dm3")
-    >>> s_ll = hs.load("lowloss.dm3")
-    >>> hs.plot.plot_signals([s_cl, s_ll])
+    >>> s1 = hs.signals.Signal1D(np.arange(100).reshape((10, 10)))
+    >>> s2 = hs.signals.Signal1D(np.arange(100).reshape((10, 10)) * -1)
+    >>> hs.plot.plot_signals([s1, s2])
 
     Specifying the navigator:
 
-    >>> s_cl = hs.load("coreloss.dm3")
-    >>> s_ll = hs.load("lowloss.dm3")
-    >>> hs.plot.plot_signals([s_cl, s_ll], navigator="slider")
+    >>> hs.plot.plot_signals([s1, s2], navigator="slider") # doctest: +SKIP
 
     Specifying the navigator for each signal:
 
-    >>> s_cl = hs.load("coreloss.dm3")
-    >>> s_ll = hs.load("lowloss.dm3")
-    >>> s_edx = hs.load("edx.dm3")
-    >>> s_adf = hs.load("adf.dm3")
+    >>> s3 = hs.signals.Signal1D(np.ones((10, 10)))
+    >>> s_nav = hs.signals.Signal1D(np.ones((10)))
     >>> hs.plot.plot_signals(
-            [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
+    ...    [s1, s2, s3], navigator_list=["slider", None, s_nav]
+    ...    ) # doctest: +SKIP
 
     """
 
@@ -510,21 +511,20 @@ def plot_images(images,
 
     Parameters
     ----------
-    images : list of Signal2D or BaseSignal
-        `images` should be a list of Signals to plot. For `BaseSignal` with
-        navigation dimensions 2 and signal dimension 0, the signal will be
-        transposed to form a `Signal2D`.
+    images : list of :class:`~.api.signals.Signal2D` or :class:`~.api.signals.BaseSignal`
+        `images` should be a list of Signals to plot. For
+        :class:`~.api.signals.BaseSignal` with navigation dimensions 2 and
+        signal dimension 0, the signal will be transposed to form a `Signal2D`.
         Multi-dimensional images will have each plane plotted as a separate
-        image.
-        If any of the signal shapes is not suitable, a ValueError will be
+        image. If any of the signal shapes is not suitable, a ValueError will be
         raised.
-    cmap : matplotlib colormap, list, 'mpl_colors', optional
+    cmap : None, (list of) matplotlib.colors.Colormap or str, default None
         The colormap used for the images, by default uses the setting
         ``color map signal`` from the plot preferences. A list of colormaps can
         also be provided, and the images will cycle through them. Optionally,
         the value ``'mpl_colors'`` will cause the cmap to loop through the
         default ``matplotlib`` colors (to match with the default output of the
-        :py:func:`~.drawing.utils.plot_spectra` method).
+        :func:`~.api.plot.plot_spectra` method).
         Note: if using more than one colormap, using the ``'single'``
         option for ``colorbar`` is disallowed.
     no_nans : bool, optional
@@ -568,7 +568,7 @@ def plot_images(images,
         If True, the centre of the color scheme is set to zero. This is
         particularly useful when using diverging color schemes. If 'auto'
         (default), diverging color schemes are automatically centred.
-    scalebar : None, 'all', list of ints, optional
+    scalebar : None, 'all', list of int, optional
         If None (or False), no scalebars will be added to the images.
         If 'all', scalebars will be added to all images.
         If list of ints, scalebars will be added to each image specified.
@@ -586,7 +586,7 @@ def plot_images(images,
         Otherwise, supply a dictionary with the spacing options as
         keywords and desired values as values.
         Values should be supplied as used in
-        :py:func:`matplotlib.pyplot.subplots_adjust`,
+        :func:`matplotlib.pyplot.subplots_adjust`,
         and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and
         'hspace' (height).
     tight_layout : bool, optional
@@ -608,7 +608,7 @@ def plot_images(images,
         encourage shortening of titles by auto-labeling, while larger
         values will require more overlap in titles before activing the
         auto-label code.
-    fig : mpl figure, optional
+    fig : matplotlib.figure.Figure, default None
         If set, the images will be plotted to an existing matplotlib figure.
     vmin, vmax: scalar, str, None
         If str, formatted as 'xth', use this value to calculate the percentage
@@ -617,17 +617,17 @@ def plot_images(images,
         estimate the minimum value. Similarly, for a vmax value of '1th', 1%
         of the highest value will be ignored in the estimation of the maximum
         value. It must be in the range [0, 100].
-        See :py:func:`numpy.percentile` for more explanation.
+        See :func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
         If float or integer, keep this value as bounds.
         Note: vmin is ignored when overlaying images.
     overlay : bool, optional
         If True, overlays the images with different colors rather than plotting
         each image as a subplot.
-    colors : 'auto', list of char, list of hex str, optional
+    colors : 'auto', list of str, optional
         If list, it must contains colors acceptable to matplotlib [1]_.
         If ``'auto'``, colors will be taken from matplotlib.colors.BASE_COLORS.
-    alphas : float or list of floats, optional
+    alphas : float or list of float, optional
         Float value or a list of floats corresponding to the alpha value of
         each color.
     legend_picking: bool, optional
@@ -635,7 +635,7 @@ def plot_images(images,
         the legended line. For ``overlay=True`` only.
     legend_loc : str, int, optional
         This parameter controls where the legend is placed on the figure
-        see the :py:func:`matplotlib.pyplot.legend` docstring for valid values
+        see the :func:`matplotlib.pyplot.legend` docstring for valid values
     pixel_size_factor : None, int or float, optional
         If ``None`` (default), the size of the figure is taken from the
         matplotlib ``rcParams``. Otherwise sets the size of the figure when
@@ -643,7 +643,7 @@ def plot_images(images,
         and therefore a greater number of pixels are used. This value will be
         ignored if a Figure is provided.
     **kwargs, optional
-        Additional keyword arguments passed to :py:func:`matplotlib.pyplot.imshow`.
+        Additional keyword arguments passed to :func:`matplotlib.pyplot.imshow`.
 
     Returns
     -------
@@ -924,8 +924,6 @@ def plot_images(images,
         colorbar = None
         warnings.warn("Sorry, colorbar is not implemented for RGB images.")
 
-
-
     def check_list_length(arg, arg_name):
         if isinstance(arg, (list, tuple)):
             if len(arg) != n:
@@ -1051,6 +1049,9 @@ def plot_images(images,
             axes_manager = ims.axes_manager
             if axes_manager.navigation_dimension > 0:
                 ims = ims._deepcopy_with_new_data(ims.data)
+                # Use flyback iterpath to get "natural",
+                # i.e. order the user would except
+                ims.axes_manager.iterpath = 'flyback'
             for j, im in enumerate(ims):
                 ax = f.add_subplot(rows, per_row, idx + 1)
                 axes_list.append(ax)
@@ -1338,76 +1339,79 @@ def plot_spectra(
 
     Parameters
     ----------
-    spectra : list of Signal1D or BaseSignal
+    spectra : list of :class:`~.api.signals.Signal1D` or :class:`~.api.signals.BaseSignal`
         Ordered spectra list of signal to plot. If `style` is "cascade" or
-        "mosaic", the spectra can have different size and axes. For `BaseSignal`
-        with navigation dimensions 1 and signal dimension 0, the signal will be
-        transposed to form a `Signal1D`.
-    style : 'overlap', 'cascade', 'mosaic', 'heatmap', optional
+        "mosaic", the spectra can have different size and axes.
+        For  :class:`~.api.signals.BaseSignal` with navigation dimensions 1
+        and signal dimension 0, the signal will be transposed to form a
+        :class:`~.api.signals.Signal1D`.
+    style : {``'overlap'`` | ``'cascade'`` | ``'mosaic'`` | ``'heatmap'``}, default 'overlap'
         The style of the plot: 'overlap' (default), 'cascade', 'mosaic', or
         'heatmap'.
-    color : None, matplotlib color, list of colors, optional
+    color : None or (list of) matplotlib color, default None
         Sets the color of the lines of the plots (no action on 'heatmap').
         For a list, if its length is less than the number of spectra to plot,
         the colors will be cycled. If `None` (default), use default matplotlib
         color cycle.
-    linestyle : {None, matplotlib line style, list of linestyles}, optional
+    linestyle : None or (list of) matplotlib line style, default None
         Sets the line style of the plots (no action on 'heatmap').
         The main line style are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
         spectra to plot, linestyle will be cycled.
         If `None`, use continuous lines (same as ``'-'``).
-    drawstyle : {'default', 'steps', 'steps-pre', 'steps-mid', 'steps-post'},
+    drawstyle : {``'default'`` | ``'steps'`` | ``'steps-pre'`` | ``'steps-mid'`` | ``'steps-post'``},
         default 'default'
         The drawstyle determines how the points are connected, no action with
         ``style='heatmap'``. See
-        :py:meth:`matplotlib.lines.Line2D.set_drawstyle` for more information.
+        :meth:`matplotlib.lines.Line2D.set_drawstyle` for more information.
         The ``'default'`` value is defined by matplotlib.
-    padding : float, optional, default 1.0
+    padding : float, default 1.0
         Option for "cascade". 1 guarantees that there is no overlapping.
         However, in many cases, a value between 0 and 1 can produce a tighter
         plot without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
-    legend: None, list of str, 'auto', optional
+    legend : None, list of str, ``'auto'``, default None
        If list of string, legend for 'cascade' or title for 'mosaic' is
        displayed. If 'auto', the title of each spectra (metadata.General.title)
        is used. Default None.
-    legend_picking: bool, optional
+    legend_picking : bool, default True
         If True (default), a spectrum can be toggled on and off by clicking on
         the legended line.
-    legend_loc : str, int, optional
+    legend_loc : str or int, optional
         This parameter controls where the legend is placed on the figure;
-        see the pyplot.legend docstring for valid values. Default 'upper right'.
-    fig : None, matplotlib figure, optional
+        see the pyplot.legend docstring for valid values. Default ``'upper right'``.
+    fig : None, matplotlib.figure.Figure, default None
         If None (default), a default figure will be created. Specifying `fig` will
         not work for the 'heatmap' style.
-    ax : none, matplotlib ax (subplot), optional
-        If None (default), a default ax will be created. Will not work for 'mosaic'
-        or 'heatmap' style.
-    auto_update : bool or None
+    ax : None, matplotlib.axes.Axes, default None
+        If None (default), a default ax will be created. Will not work for ``'mosaic'``
+        or ``'heatmap'`` style.
+    auto_update : bool or None, default None
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
         If None (default), update the plot only for style='overlap'.
-    **kwargs : dict, optional
+    **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 
-        - ``"overlap"`` or ``"cascade"``: arguments passed to :py:func:`matplotlib.pyplot.figure`
-        - ``"mosiac"``: arguments passed to :py:func:`matplotlib.pyplot.subplots`
-        - ``"heatmap"``: arguments  passed to :py:meth:`~.api.signals.Signal2D.plot`.
+        - ``"overlap"`` or ``"cascade"``: arguments passed to :func:`matplotlib.pyplot.figure`
+        - ``"mosiac"``: arguments passed to :func:`matplotlib.pyplot.subplots`
+        - ``"heatmap"``: arguments  passed to :meth:`~.api.signals.Signal2D.plot`.
 
-    Example
-    -------
-    >>> s = hs.load("some_spectra")
+    Examples
+    --------
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape((10, 10)))
     >>> hs.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
+    <Axes: xlabel='<undefined> (<undefined>)'>
 
     To save the plot as a png-file
 
-    >>> hs.plot.plot_spectra(s).figure.savefig("test.png")
+    >>> ax = hs.plot.plot_spectra(s)
+    >>> ax.figure.savefig("test.png") # doctest: +SKIP
 
     Returns
     -------
-    ax: matplotlib axes or list of matplotlib axes
+    :class:`matplotlib.axes.Axes` or list of :class:`matplotlib.axes.Axes`
         An array is returned when `style` is 'mosaic'.
 
     """
@@ -1567,9 +1571,8 @@ def animate_legend(fig=None, ax=None, plot_type='spectra'):
     ax:  {None, matplotlib.axes}, optional
         If None (Default), pick the current axes using "plt.gca".
 
-    Note
-    ----
-
+    Notes
+    -----
     Code inspired from legend_picking.py in the matplotlib gallery.
 
     """
@@ -1625,57 +1628,57 @@ def plot_histograms(signal_list,
     """Plot the histogram of every signal in the list in one figure.
 
     This function creates a histogram for each signal and plots the list with
-    the :py:func:`~.drawing.utils.plot_spectra` function.
+    the :func:`~.api.plot.plot_spectra` function.
 
     Parameters
     ----------
     signal_list : iterable
         Ordered list of spectra to plot. If ``style`` is ``"cascade"`` or
         ``"mosaic"``, the spectra can have different size and axes.
-    bins : {int, list, str}, optional
+    bins : int, list or str, optional
         If bins is a string, then it must be one of:
 
          - ``'knuth'`` : use Knuth's rule to determine bins,
          - ``'scott'`` : use Scott's rule to determine bins,
          - ``'fd'`` : use the Freedman-diaconis rule to determine bins,
          - ``'blocks'`` : use bayesian blocks for dynamic bin widths.
-    range_bins : {None, tuple}, optional
+    range_bins : None or tuple, optional
         The minimum and maximum range for the histogram. If not specified,
         it will be (``x.min()``, ``x.max()``).
-    color : {None, valid matplotlib color, list of colors}, optional
+    color : None, (list of) matplotlib color, optional
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
         If `None`, use default matplotlib color cycle.
-    linestyle: {None, valid matplotlib line style, list of line styles},
-        optional
+    linestyle : None, (list of) matplotlib line style, optional
         The main line styles are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
         spectra to plot, linestyle will be cycled.
         If `None`, use continuous lines (same as ``'-'``).
-    legend: {None, list of str, 'auto'}, optional
+    legend : None, list of str, ``'auto'``, default ``'auto'``
        Display a legend. If 'auto', the title of each spectra
        (metadata.General.title) is used.
-    legend_picking: bool, optional
+    legend_picking : bool, default True
         If True, a spectrum can be toggled on and off by clicking on
         the line in the legend.
-    fig : None, matplotlib figure, optional
+    fig : None, matplotlib.figure.Figure, default None
         If None (default), a default figure will be created.
     **kwargs
         other keyword arguments (weight and density) are described in
-        :py:func:`numpy.histogram`.
+        :func:`numpy.histogram`.
 
-    Example
-    -------
+    Examples
+    --------
     Histograms of two random chi-square distributions.
 
-    >>> img = hs.signals.Signal2D(np.random.chisquare(1,[10,10,100]))
-    >>> img2 = hs.signals.Signal2D(np.random.chisquare(2,[10,10,100]))
+    >>> img = hs.signals.Signal2D(np.random.chisquare(1, [10, 10, 100]))
+    >>> img2 = hs.signals.Signal2D(np.random.chisquare(2, [10, 10, 100]))
     >>> hs.plot.plot_histograms([img, img2], legend=['hist1', 'hist2'])
+    <Axes: xlabel='value (<undefined>)', ylabel='Intensity'>
 
     Returns
     -------
-    ax: matplotlib axes or list of matplotlib axes
-        An array is returned when `style` is 'mosaic'.
+    matplotlib.axes.Axes or list of matplotlib.axes.Axes
+        An array is returned when ``style='mosaic'``.
 
     """
     hists = []
@@ -1697,3 +1700,196 @@ def picker_kwargs(value, kwargs=None):
         kwargs['picker'] = value
 
     return kwargs
+
+
+def _create_span_roi_group(sig_ax, N):
+    """
+    Creates a set of `N` of :py:class:`~.roi.SpanROI`\\ s that sit along axis at sensible positions.
+
+    Arguments
+    ---------
+    sig_ax: DataAxis
+        The axis over which the ROI will be placed
+    N: int
+        The number of ROIs
+    """
+    axis = sig_ax.axis
+    ax_range = axis[-1] - axis[0]
+    span_width = ax_range / (2 * N)
+
+    spans = []
+
+    for i in range(N):
+        # create a span that has a unique range
+        span = hs.roi.SpanROI(
+            i * span_width + axis[0], (i + 1) * span_width + axis[0]
+        )
+
+        spans.append(span)
+
+    return spans
+
+
+def _create_rect_roi_group(sig_wax, sig_hax, N):
+    """
+    Creates a set of `N` :py:class:`~roi.RectangularROI`\\ s that sit along `waxis` and `haxis` at sensible positions.
+
+    Arguments
+    ---------
+    sig_wax: DataAxis
+        The width axis over which the ROI will be placed
+    sig_hax: DataAxis
+        The height axis over which the ROI will be placed
+    N: int
+        The number of ROIs
+    """
+    waxis = sig_wax.axis
+    haxis = sig_hax.axis
+
+    w_range = waxis[-1] - waxis[0]
+    h_range = haxis[-1] - haxis[0]
+
+    span_w_width = w_range / (2 * N)
+    span_h_width = h_range / (2 * N)
+
+    rects = []
+
+    for i in range(N):
+        # create a span that has a unique range
+        rect = hs.roi.RectangularROI(
+            left=i * span_w_width + waxis[0],
+            top=i * span_h_width + haxis[0],
+            right=(i + 1) * span_w_width + waxis[0],
+            bottom=(i + 1) * span_h_width + haxis[0]
+        )
+
+        rects.append(rect)
+
+    return rects
+
+
+def plot_roi_map(signal, rois=1):
+    """
+    Plot one or multiple ROI maps of a ``signal``.
+
+    Uses regions of interest (ROIs) to select ranges along the signal axis.
+
+    For each ROI, a plot is generated of the summed data values within
+    this signal ROI at each point in the ``signal``'s navigator.
+
+    The ROIs can be moved interactively and the corresponding plots will
+    update automatically.
+
+    Arguments
+    ---------
+    signal: :class:`~.api.signals.BaseSignal`
+        The signal to inspect.
+    rois: int, list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
+        ROIs that represent colour channels in map. Can either pass a list of
+        ROI objects, or an ``int``, ``N``, in which case ``N`` ROIs will
+        be created. Currently limited to a maximum of 3 ROIs.
+
+    Returns
+    -------
+    all_sum : :class:`~.api.signals.BaseSignal`
+        Sum over all positions (navigation dimensions) of the signal, corresponds to
+        the 'navigator' (in signal space) on which the ROIs are added.
+    rois : list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
+        The ROI objects that slice ``signal``.
+    roi_signals : :class:`~.api.signals.BaseSignal`
+        Slices of ``signal`` corresponding to each ROI.
+    roi_sums : :class:`~.api.signals.BaseSignal`
+        The summed ``roi_signals``.
+
+    Examples
+    --------
+    **3D hyperspectral data:**
+
+    For 3D hyperspectral data, the ROIs used will be instances of
+    :class:`~.api.roi.SpanROI`. Therefore, these ROIs can be used to select
+    particular spectral ranges, e.g. a particular peak.
+
+    The map generated for a given ROI is therefore the sum of this spectral
+    region at each point in the hyperspectral map. Therefore, regions of the
+    sample where this peak is bright will be bright in this map.
+
+    **4D STEM:**
+
+    For 4D STEM data, the ROIs used will be instances of
+    :class:`~.api.roi.RectangularROI`. These ROIs can be used to select particular
+    regions in reciprocal space, e.g. a particular diffraction spot.
+
+    The map generated for a given ROI is the intensity of this
+    region at each point in the scan. Therefore, regions of the
+    scan where a particular spot is intense will appear bright.
+    """
+    sig_dims = len(signal.axes_manager.signal_axes)
+    nav_dims = len(signal.axes_manager.navigation_axes)
+
+    if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
+        warnings.warn(("This function is only tested for signals with 1 or 2 "
+                       "signal and navigation dimensions, not"
+                       f" {sig_dims} signal and {nav_dims} navigation."))
+
+    if isinstance(rois, int):
+        if sig_dims == 1:
+            rois = _create_span_roi_group(
+                signal.axes_manager.signal_axes[0], rois
+            )
+        elif sig_dims == 2:
+            rois = _create_rect_roi_group(
+                *signal.axes_manager.signal_axes, rois
+            )
+        else:
+            raise ValueError(("Can only generate default ROIs for signals "
+                              f"with 1 or 2 signal dimensions, not {sig_dims}"
+                              ", try providing an explicit `rois` argument"))
+
+    if len(rois) > 3:
+        raise ValueError("Maximum number of spans is 3")
+
+    colors = ["red", "green", "blue"]
+    roi_signals = []
+    roi_sums = []
+
+    all_sum = signal.nansum()
+    all_sum.plot()
+
+    for i, roi in enumerate(rois):
+        color = colors[i]
+
+        # add it to the sum over all positions
+        roi.add_widget(all_sum, color=colors[i])
+
+        # create a signal that is the spectral slice of sig
+        roi_signal = hs.interactive(
+            roi,
+            signal=signal,
+            event=roi.events.changed,
+            axes=signal.axes_manager.signal_axes,
+        )
+        roi_signals.append(roi_signal)
+
+        # add up the roi sliced signals to one point per nav position
+        roi_sum = roi_signal.nansum(roi_signal.axes_manager.signal_axes)
+
+        # transpose shape to swap these points per nav into signal points
+        roi_sum = roi_sum.transpose(
+            signal_axes=roi_sum.axes_manager.navigation_dimension
+        )
+
+        roi_sums.append(roi_sum)
+
+        roi_sum.plot(cmap=f"{color.capitalize()}s")
+
+        # connect the span signal changing range to the value of span_sum
+        hs.interactive(
+            roi_signal.nansum,
+            event=roi_signal.axes_manager.events.any_axis_changed,
+            axis=roi_signal.axes_manager.signal_axes,
+            out=roi_sum,
+            recompute_out_event=None,
+        )
+
+    # return all ya bits for future messing around.
+    return all_sum, rois, roi_signals, roi_sums

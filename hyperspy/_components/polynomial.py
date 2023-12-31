@@ -47,11 +47,11 @@ class Polynomial(Expression):
     **kwargs
         Keyword arguments can be used to initialise the value of the
         parameters, i.e. a2=2, a1=3, a0=1. Extra keyword arguments are passed
-        to the :py:class:`~._components.expression.Expression` component.
+        to the :class:`~.api.model.components1D.Expression` component.
 
     """
 
-    def __init__(self, order=2, module="numexpr", **kwargs):
+    def __init__(self, order=2, module=None, **kwargs):
         if order == 0:
             raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
@@ -70,7 +70,7 @@ class Polynomial(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -98,7 +98,7 @@ class Polynomial(Expression):
 
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
-                                    signal()[i1:i2],
+                                    signal._get_current_data()[i1:i2],
                                     self.get_polynomial_order())
             if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):

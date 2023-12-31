@@ -25,7 +25,6 @@ import pytest
 import hyperspy.api as hs
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.models.model1d import Model1D
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
@@ -38,9 +37,6 @@ def get_components1d_name_list():
         obj = getattr(components1d, c_name)
         if inspect.isclass(obj) and issubclass(obj, Component):
             components1d_name_list.append(c_name)
-
-    # Remove EELSCLEdge, since it is tested elsewhere more appropriate
-    components1d_name_list.remove('EELSCLEdge')
     return components1d_name_list
 
 
@@ -58,6 +54,9 @@ def test_creation_components1d(component_name):
         kwargs['signal1D'] = s
     elif component_name == 'Expression':
         kwargs.update({'expression': "a*x+b", "name": "linear"})
+    elif component_name == 'Bleasdale':
+        # This component only works with numexpr.
+        pytest.importorskip("numexpr")
 
     component = getattr(components1d, component_name)(**kwargs)
     component.function(np.arange(1, 100))
@@ -106,10 +105,10 @@ class TestPowerLaw:
         np.testing.assert_allclose(g.A.map["values"][1], A_value)
         np.testing.assert_allclose(g.r.map["values"][1], r_value)
 
-    def test_EDS_missing_data(self):
+    def test_missing_data(self):
         g = hs.model.components1D.PowerLaw()
         s = self.m.as_signal()
-        s2 = hs.signals.EDSTEMSpectrum(s.data)
+        s2 = hs.signals.Signal1D(s.data)
         g.estimate_parameters(s2, None, None)
 
     def test_function_grad_cutoff(self):
@@ -128,37 +127,6 @@ class TestPowerLaw:
         with pytest.warns(UserWarning):
             hs.model.components1D.PowerLaw(compute_gradients=True)
 
-
-class TestDoublePowerLaw:
-
-    def setup_method(self, method):
-        s = hs.signals.Signal1D(np.zeros(1024))
-        s.axes_manager[0].offset = 100
-        s.axes_manager[0].scale = 0.1
-        m = s.create_model()
-        m.append(hs.model.components1D.DoublePowerLaw())
-        m[0].A.value = 1000
-        m[0].r.value = 4
-        m[0].ratio.value = 200
-        self.m = m
-
-    @pytest.mark.parametrize(("binned"), (True, False))
-    def test_fit(self, binned):
-        self.m.signal.axes_manager[-1].is_binned = binned
-        s = self.m.as_signal()
-        assert s.axes_manager[-1].is_binned == binned
-        g = hs.model.components1D.DoublePowerLaw()
-        # Fix the ratio parameter to test the fit
-        g.ratio.free = False
-        g.shift.free = False
-        g.origin.free = False
-        g.ratio.value = 200
-        m = s.create_model()
-        m.append(g)
-        m.fit_component(g, signal_range=(None, None))
-        np.testing.assert_allclose(g.A.value, 1000.0)
-        np.testing.assert_allclose(g.r.value, 4.0)
-        np.testing.assert_allclose(g.ratio.value, 200.)
 
 class TestOffset:
 
@@ -366,10 +334,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 100) <= 0.1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 100)
 
     @pytest.mark.parametrize(("uniform"), (True, False))
     def test_both_binned(self, uniform):
@@ -383,10 +351,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 100) <= 0.1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 100)
 
     def test_pattern_unbinned_signal_binned(self):
         s = self.s
@@ -396,10 +364,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 1000) <= 1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 1000)
 
     def test_pattern_binned_signal_unbinned(self):
         s = self.s
@@ -409,10 +377,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 10) <= .1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 10)
 
     def test_function(self):
         s = self.s

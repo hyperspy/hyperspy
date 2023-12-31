@@ -1,9 +1,9 @@
 """
-Creates a spectrum image and plots it
-=====================================
+Creates a spectrum image
+========================
 
 This example creates a spectrum image, i.e. navigation dimension 2 and
-signal dimension 1, and plots it
+signal dimension 1, and plots it.
 """
 
 import numpy as np

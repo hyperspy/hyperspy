@@ -44,15 +44,15 @@ def print_known_signal_types():
 
     Examples
     --------
-    >>> hs.print_known_signal_types()
+    >>> hs.print_known_signal_types() # doctest: +SKIP
     +--------------------+---------------------+--------------------+----------+
     |    signal_type     |       aliases       |     class name     | package  |
     +--------------------+---------------------+--------------------+----------+
-    | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
-    |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
-    |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
-    |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
-    |      hologram      |                     |   HologramImage    | hyperspy |
+    | DielectricFunction | dielectric function | DielectricFunction |  exspy   |
+    |      EDS_SEM       |                     |   EDSSEMSpectrum   |  exspy   |
+    |      EDS_TEM       |                     |   EDSTEMSpectrum   |  exspy   |
+    |        EELS        |       TEM EELS      |    EELSSpectrum    |  exspy   |
+    |      hologram      |                     |   HologramImage    | holospy  |
     |      MySignal      |                     |      MySignal      | hspy_ext |
     +--------------------+---------------------+--------------------+----------+
 
@@ -80,10 +80,8 @@ def print_known_signal_types():
 
 
 __all__ = [
-    'eds',
     'interactive',
     'markers',
-    'material',
     'model',
     'plot',
     'print_known_signal_types',

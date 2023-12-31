@@ -31,7 +31,7 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     i1, i2 = axis.value_range_to_indices(x1, x2)
     X = axis.axis[i1:i2]
     if only_current is True:
-        data = signal()[i1:i2]
+        data = signal._get_current_data()[i1:i2]
         X_shape = (len(X),)
         i = 0
         x0_shape = (1,)
@@ -115,7 +115,7 @@ class SkewNormal(Expression):
 
 
     Parameters
-    -----------
+    ----------
     x0 : float
         Location of the peak position (not maximum, which is given by
         the `mode` property).
@@ -130,7 +130,7 @@ class SkewNormal(Expression):
         left skewed if shape<0.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Notes
     -----
@@ -171,7 +171,7 @@ class SkewNormal(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -202,6 +202,7 @@ class SkewNormal(Expression):
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
+        True
         """
 
         super()._estimate_parameters(signal)

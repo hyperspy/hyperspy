@@ -142,6 +142,12 @@ class RangeWidget(ResizableDraggableWidgetBase):
 
     def _set_span_extents(self, left, right):
         self.span.extents = (left, right)
+        try:
+            # For https://github.com/matplotlib/matplotlib/pull/27409
+            self.span._selection_completed = True
+        except AttributeError:
+            # Remove when minimum matplotlib is > 3.8.2
+            pass
         # update internal state range widget
         self._span_changed()
 

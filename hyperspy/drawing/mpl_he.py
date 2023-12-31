@@ -68,8 +68,8 @@ class MPL_HyperExplorer(object):
             Title of the navigator. The default is None.
         **kwargs : dict
             The kwargs are passed to plot method of
-            :py:meth:`hyperspy.drawing.image.ImagePlot` or
-            :py:meth:`hyperspy.drawing.signal1d.Signal1DLine`.
+            :meth:`hyperspy.drawing.image.ImagePlot` or
+            :meth:`hyperspy.drawing.signal1d.Signal1DLine`.
 
         """
         if self.axes_manager.navigation_dimension == 0:

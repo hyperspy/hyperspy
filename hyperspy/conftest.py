@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from pathlib import Path
+
 try:
     # Set traits toolkit to work in a headless system
     # Capture error when toolkit is already previously set which typically
@@ -33,6 +35,7 @@ import matplotlib.pyplot as plt
 import pytest
 import numpy as np
 import matplotlib
+import dask.array as da
 import hyperspy.api as hs
 
 
@@ -41,10 +44,9 @@ matplotlib.rcParams['interactive'] = False
 hs.preferences.Plot.cmap_navigator = 'viridis'
 hs.preferences.Plot.cmap_signal = 'viridis'
 hs.preferences.Plot.pick_tolerance = 5.0
-
-# Set parallel to False by default, so only
-# those tests with parallel=True are run in parallel
-hs.preferences.General.parallel = False
+# Don't show progressbar since it contains the runtime which
+# will make the doctest fail
+hs.preferences.General.show_progressbar = False
 
 
 @pytest.fixture(autouse=True)
@@ -52,6 +54,7 @@ def add_np(doctest_namespace):
     doctest_namespace['np'] = np
     doctest_namespace['plt'] = plt
     doctest_namespace['hs'] = hs
+    doctest_namespace['da'] = da
 
 
 @pytest.fixture
@@ -77,3 +80,14 @@ except ImportError:
             "mpl_image_compare: dummy marker registration to allow running "
             "without the pytest-mpl plugin."
         )
+
+
+def pytest_configure(config):
+    # raise an error if the baseline images are not present
+    # which is the case when installing from a wheel
+    baseline_images_path = Path(__file__).parent / "tests" / "drawing" / "plot_signal"
+    if config.getoption("--mpl") and not baseline_images_path.exists():
+        raise ValueError(
+            "`--mpl` flag can't not be used because the "
+            "baseline images are not packaged."
+            )

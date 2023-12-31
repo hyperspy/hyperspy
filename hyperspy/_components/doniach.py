@@ -58,7 +58,7 @@ class Doniach(Expression):
     =============== ===========
 
     Parameters
-    -----------
+    ----------
     A : float
         Height
     sigma : float
@@ -69,9 +69,9 @@ class Doniach(Expression):
         Location of the maximum (peak position).
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
-    Note
+    Notes
     -----
     This is an asymmetric lineshape, originially design for xps but generally
     useful for fitting peaks with low side tails
@@ -113,7 +113,7 @@ class Doniach(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -140,6 +140,7 @@ class Doniach(Expression):
         >>> s.axes_manager[-1].offset = -10
         >>> s.axes_manager[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
+        True
         """
 
         super()._estimate_parameters(signal)

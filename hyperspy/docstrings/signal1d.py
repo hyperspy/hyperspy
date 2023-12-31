@@ -39,9 +39,9 @@ SPIKES_DIAGNOSIS_DOCSTRING = \
         %s
         **kwargs : dict
             Keyword arguments pass to
-            :py:meth:`~hyperspy.signal.signal.BaseSignal.get_histogram`
+            :meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
 
-        See also
+        See Also
         --------
         spikes_removal_tool
 
@@ -50,18 +50,17 @@ SPIKES_DIAGNOSIS_DOCSTRING = \
 SPIKES_REMOVAL_TOOL_DOCSTRING =\
         """Graphical interface to remove spikes from EELS spectra or 
         luminescence data. 
-        If non-interactive, it removes all spikes and returns a
-        `~hyperspy.signals._signal_tools.SpikesRemoval` object.
+        If non-interactive, it removes all spikes.
 
         Parameters
         ----------
         %s
         %s
-        threshold : 'auto' or int
-            if `int` set the threshold value use for the detecting the spikes.
-            If `auto`, determine the threshold value as being the first zero
+        threshold : ``'auto'`` or int
+            if ``int`` set the threshold value use for the detecting the spikes.
+            If ``"auto"``, determine the threshold value as being the first zero
             value in the histogram obtained from the
-            :py:meth:`~hyperspy.signals._signal1d.Signal1D.spikes_diagnosis`
+            :meth:`~hyperspy.api.signals.Signal1D.spikes_diagnosis`
             method.
         %s
         interactive : bool
@@ -69,16 +68,15 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
             If False, remove all the spikes automatically, which can
             introduce artefacts if used with signal containing peak-like 
             features. However, this can be mitigated by using the 
-            `signal_mask` argument to mask the signal of interest.
+            ``signal_mask`` argument to mask the signal of interest.
         %s
         %s
         **kwargs : dict
-            Keyword arguments pass to
-                :py:meth:`~hyperspy.signals._signal_tools.SpikesRemoval`
+            Keyword arguments pass to ``SpikesRemoval``.
 
-        See also
+        See Also
         --------
-        :py:meth:`~hyperspy.signals._signal1d.Signal1D.spikes_diagnosis`
+        :meth:`~hyperspy.api.signals.Signal1D.spikes_diagnosis`
 
         """
 

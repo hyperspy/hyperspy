@@ -24,9 +24,9 @@ all the work that you do.
 **Useful testing hints:**
 
 * When comparing integers, it's fine to use ``==``
-* When comparing floats, be sure to use :py:meth:`np.testing.assert_allclose`
-  or :py:meth:`np.testing.assert_almost_equal`
-* :py:meth:`np.testing.assert_allclose` is also convenient for comparing
+* When comparing floats, be sure to use :func:`numpy.testing.assert_allclose`
+  or :func:`numpy.testing.assert_almost_equal`
+* :func:`numpy.testing.assert_allclose` is also convenient for comparing
   numpy arrays
 * The ``hyperspy.misc.test_utils.py`` contains a few useful functions for
   testing
@@ -48,7 +48,7 @@ all the work that you do.
 
    >>> # Clear the memory
    >>> del s
-   >>> gc.collect()
+   >>> gc.collect() # doctest: +SKIP
 
 
 Running tests

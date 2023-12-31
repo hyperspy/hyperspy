@@ -114,22 +114,18 @@ class TestFindPeaks2D:
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('dataset_name', DATASETS_NAME)
-    @pytest.mark.parametrize('parallel', [True, False])
     @pytest.mark.parametrize('get_intensity', [True, False])
-    def test_find_peaks(self, method, dataset_name, parallel, get_intensity):
+    def test_find_peaks(self, method, dataset_name, get_intensity):
         if method == 'stat':
             pytest.importorskip("sklearn")
         dataset = getattr(self, dataset_name)
-        # Parallel is not used in `map` for lazy signal
-        if parallel and dataset._lazy:
-            pytest.skip("Parallel=True is ignored for lazy signal.")
 
         if method == 'template_matching':
-            peaks = dataset.find_peaks(method=method, parallel=parallel,
+            peaks = dataset.find_peaks(method=method,
                                        interactive=False, template=DISC,
                                        get_intensity=get_intensity)
         else:
-            peaks = dataset.find_peaks(method=method, parallel=parallel,
+            peaks = dataset.find_peaks(method=method,
                                        interactive=False,
                                        get_intensity=get_intensity)
         assert isinstance(peaks, BaseSignal)
@@ -170,10 +166,8 @@ class TestFindPeaks2D:
 
 
 
-    @pytest.mark.parametrize('parallel', [True, False])
-    def test_ordering_results(self, parallel):
-        peaks = self.sparse_nav2d_shifted.find_peaks(parallel=parallel,
-                                                     interactive=False)
+    def test_ordering_results(self):
+        peaks = self.sparse_nav2d_shifted.find_peaks(interactive=False)
 
         peaks0 = peaks.inav[0]
         if peaks0._lazy:
@@ -190,9 +184,8 @@ class TestFindPeaks2D:
                                           [29, 25]]))
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
-    @pytest.mark.parametrize('parallel', [True, False])
     @pytest.mark.parametrize("get_intensity", [True, False])
-    def test_gets_right_answer(self, method, parallel, get_intensity):
+    def test_gets_right_answer(self, method, get_intensity):
         if method == 'stat':
             pytest.importorskip("sklearn")
         ans = np.empty((1,), dtype=object)
@@ -204,11 +197,11 @@ class TestFindPeaks2D:
             disc = np.zeros((5, 5))
             disc[1:4, 1:4] = 0.5
             disc[2,2] = 1
-            peaks = self.ref.find_peaks(method=method, parallel=parallel,
+            peaks = self.ref.find_peaks(method=method,
                                         interactive=False, template=disc,
                                         get_intensity=get_intensity)
         else:
-            peaks = self.ref.find_peaks(method=method, parallel=parallel,
+            peaks = self.ref.find_peaks(method=method,
                                         interactive=False, get_intensity=get_intensity)
         np.testing.assert_allclose(peaks.data[0], ans[0])
 

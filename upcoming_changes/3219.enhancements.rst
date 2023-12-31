@@ -1,1 +1,0 @@
-Adding support for passing ``**kwargs`` to :py:meth:`~.api.signals.Signal2D.plot` when using heatmap style in :py:func:`~.api.plot.plot_spectra` .

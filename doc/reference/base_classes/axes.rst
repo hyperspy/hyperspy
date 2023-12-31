@@ -1,13 +1,15 @@
 Axes
 ----
 
+.. currentmodule:: hyperspy.axes
+
 .. autosummary::
-   hyperspy.axes.BaseDataAxis
-   hyperspy.axes.DataAxis
-   hyperspy.axes.FunctionalDataAxis
-   hyperspy.axes.UniformDataAxis
-   hyperspy.axes.AxesManager
-   hyperspy.axes.UnitConversion
+   BaseDataAxis
+   DataAxis
+   FunctionalDataAxis
+   UniformDataAxis
+   AxesManager
+   UnitConversion
 
 .. automodule:: hyperspy.axes
    :members: BaseDataAxis, DataAxis, FunctionalDataAxis, UniformDataAxis, AxesManager, UnitConversion

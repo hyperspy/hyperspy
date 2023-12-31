@@ -1,9 +1,8 @@
+:mod:`~hyperspy.api.model.components2D`
+---------------------------------------
+
 .. currentmodule:: hyperspy.api.model
 
-:mod:`components2D`
--------------------
+.. automodule:: hyperspy.api.model.components2D
 
-.. autoclass:: hyperspy.api.model.components2D.Expression
-   :noindex:
-
-.. autoclass:: hyperspy.api.model.components2D.Gaussian2D
+   .. autoclass:: Gaussian2D

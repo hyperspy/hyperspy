@@ -1,2 +1,0 @@
-Avoid slowing down fitting by optimising attribute access of model.
-

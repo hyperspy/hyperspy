@@ -32,8 +32,8 @@ from rsciio.utils.tools import ensure_directory
 from rsciio.utils.tools import overwrite as overwrite_method
 from rsciio import IO_PLUGINS
 
-from hyperspy import __version__ as hs_version
-from hyperspy.drawing.marker import markers_metadata_dict_to_markers
+from hyperspy.api import __version__ as hs_version
+from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.utils import strlist2enumeration, get_object_package_info
 from hyperspy.misc.utils import stack as stack_method
@@ -58,7 +58,7 @@ def _format_name_to_reader(format_name):
             return reader
         elif reader.get("name_aliases"):
             aliases = [s.lower() for s in reader["name_aliases"]]
-            if format_name.lower() in aliases: 
+            if format_name.lower() in aliases:
                 return reader
     raise ValueError("The `format_name` given does not match any format available.")
 
@@ -163,8 +163,8 @@ def _escape_square_brackets(text):
     str
         The escaped string
 
-    Example
-    -------
+    Examples
+    --------
     >>> # Say there are two files like this:
     >>> # /home/data/afile[1x1].txt
     >>> # /home/data/afile[1x2].txt
@@ -172,7 +172,7 @@ def _escape_square_brackets(text):
     >>> path = "/home/data/afile[*].txt"
     >>> glob.glob(path)
     []
-    >>> glob.glob(_escape_square_brackets(path))
+    >>> glob.glob(_escape_square_brackets(path)) # doctest: +SKIP
     ['/home/data/afile[1x2].txt', '/home/data/afile[1x1].txt']
 
     """
@@ -220,7 +220,7 @@ def load(filenames=None,
 
     Parameters
     ----------
-    filenames :  None, str, list(str), pathlib.Path, list(pathlib.Path)
+    filenames :  None, (list of) str or (list of) pathlib.Path, default None
         The filename to be loaded. If None, a window will open to select
         a file to load. If a valid filename is passed, that single
         file is loaded. If multiple file names are passed in
@@ -232,7 +232,7 @@ def load(filenames=None,
         by 'my_file' and have the '.msa' extension. Alternatively, regular
         expression type character classes can be used (e.g. ``[a-z]`` matches
         lowercase letters). See also the `escape_square_brackets` parameter.
-    signal_type : None, str, '', optional
+    signal_type : None, str, default None
         The acronym that identifies the signal type. May be any signal type
         provided by HyperSpy or by installed extensions as listed by
         `hs.print_known_signal_types()`. The value provided may determines the
@@ -242,13 +242,13 @@ def load(filenames=None,
         For example, for electron energy-loss spectroscopy use 'EELS'.
         If '' (empty string) the value is not read from the file and is
         considered undefined.
-    stack : bool, optional
+    stack : bool, default False
         Default False. If True and multiple filenames are passed, stacking all
         the data into a single object is attempted. All files must match
         in shape. If each file contains multiple (N) signals, N stacks will be
         created, with the requirement that each file contains the same number
         of signals.
-    stack_axis : None, int, str, optional
+    stack_axis : None, int or str, default None
         If None (default), the signals are stacked over a new axis. The data
         must have the same dimensions. Otherwise, the signals are stacked over
         the axis given by its integer index or its name. The data must have the
@@ -257,13 +257,12 @@ def load(filenames=None,
         The name of the new axis (default 'stack_element'), when `axis` is None.
         If an axis with this name already exists, it automatically appends '-i',
         where `i` are integers, until it finds a name that is not yet in use.
-    lazy : None, bool, optional
+    lazy : bool, default False
         Open the data lazily - i.e. without actually reading the data from the
-        disk until required. Allows opening arbitrary-sized datasets. The default
-        is False.
-    convert_units : bool, optional
+        disk until required. Allows opening arbitrary-sized datasets.
+    convert_units : bool, default False
         If True, convert the units using the `convert_to_units` method of
-        the `axes_manager`. If False (default), does nothing.
+        the `axes_manager`. If False, does nothing.
     escape_square_brackets : bool, default False
         If True, and ``filenames`` is a str containing square brackets,
         then square brackets are escaped before wildcard matching with
@@ -271,16 +270,16 @@ def load(filenames=None,
         character classes (e.g. ``[a-z]`` matches lowercase letters).
     %s
     %s Only used with ``stack=True``.
-    load_original_metadata : bool
+    load_original_metadata : bool, default True
         If ``True``, all metadata contained in the input file will be added
         to ``original_metadata``.
         This does not affect parsing the metadata to ``metadata``.
-    reader : None, str, custom file reader object, optional
+    reader : None, str, module, optional
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
         appropriate reader. If str, will select the appropriate file reader
-        from the list of available readers in HyperSpy. If a custom reader
-        object, it should implement the ``file_reader`` function, which returns
+        from the list of available readers in HyperSpy. If module, it must
+        implement the ``file_reader`` function, which returns
         a dictionary containing the data and metadata for conversion to
         a HyperSpy signal.
     print_info: bool, optional
@@ -357,50 +356,51 @@ def load(filenames=None,
 
     Returns
     -------
-    Signal instance or list of signal instances
+    (list of) :class:`~.api.signals.BaseSignal` or subclass
 
     Examples
     --------
     Loading a single file providing the signal type:
 
-    >>> d = hs.load('file.dm3', signal_type="EDS_TEM")
+    >>> d = hs.load('file.dm3', signal_type="EDS_TEM") # doctest: +SKIP
 
     Loading multiple files:
 
-    >>> d = hs.load(['file1.hspy','file2.hspy'])
+    >>> d = hs.load(['file1.hspy','file2.hspy']) # doctest: +SKIP
 
     Loading multiple files matching the pattern:
 
-    >>> d = hs.load('file*.hspy')
+    >>> d = hs.load('file*.hspy') # doctest: +SKIP
 
     Loading multiple files containing square brackets in the filename:
 
-    >>> d = hs.load('file[*].hspy', escape_square_brackets=True)
+    >>> d = hs.load('file[*].hspy', escape_square_brackets=True) # doctest: +SKIP
 
     Loading multiple files containing character classes (regular expression):
 
-    >>> d = hs.load('file[0-9].hspy')
+    >>> d = hs.load('file[0-9].hspy')  # doctest: +SKIP
 
     Loading (potentially larger than the available memory) files lazily and
     stacking:
 
-    >>> s = hs.load('file*.blo', lazy=True, stack=True)
+    >>> s = hs.load('file*.blo', lazy=True, stack=True) # doctest: +SKIP
 
     Specify the file reader to use
 
-    >>> s = hs.load('a_nexus_file.h5', reader='nxs')
+    >>> s = hs.load('a_nexus_file.h5', reader='nxs') # doctest: +SKIP
 
     Loading a file containing several datasets:
 
-    >>> s = hs.load("spameggsandham.nxs")
-    >>> s
+    >>> s = hs.load("spameggsandham.nxs") # doctest: +SKIP
+    >>> s # doctest: +SKIP
     [<Signal1D, title: spam, dimensions: (32,32|1024)>,
      <Signal1D, title: eggs, dimensions: (32,32|1024)>,
      <Signal1D, title: ham, dimensions: (32,32|1024)>]
-    >>> # Use list indexation to access single signal
-    >>> s[0]
+    
+    Use list indexation to access single signal
+    
+    >>> s[0] # doctest: +SKIP
     <Signal1D, title: spam, dimensions: (32,32|1024)>
-
 
     """
 
@@ -813,9 +813,9 @@ def dict2signal(signal_dict, lazy=False):
                 if value is not None:
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
-        signal.metadata.Markers = markers_metadata_dict_to_markers(
-            mp['Markers'],
-            axes_manager=signal.axes_manager)
+        for key in mp['Markers']:
+            signal.metadata.Markers[key] = markers_dict_to_markers(mp['Markers'][key])
+            signal.metadata.Markers[key]._signal = signal
 
     return signal
 

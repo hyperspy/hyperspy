@@ -1,6 +1,8 @@
 :mod:`hyperspy.api.signals`
 ---------------------------
 
+.. automodule:: hyperspy.api.signals
+
 .. currentmodule:: hyperspy.api.signals
 
 .. autosummary::
@@ -10,10 +12,6 @@
    ComplexSignal
    ComplexSignal1D
    ComplexSignal2D
-   DielectricFunction
-   EDSSEMSpectrum
-   EDSTEMSpectrum
-   EELSSpectrum
    Signal1D
    Signal2D
 
@@ -26,9 +24,5 @@
    ComplexSignal
    ComplexSignal1D
    ComplexSignal2D
-   DielectricFunction
-   EDSSEMSpectrum
-   EDSTEMSpectrum
-   EELSSpectrum
    Signal1D
    Signal2D

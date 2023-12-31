@@ -36,9 +36,10 @@ class BlittedFigure(object):
         self.events.closed = Event("""
             Event that triggers when the figure window is closed.
 
-            Arguments:
-                obj:  SpectrumFigure instances
-                    The instance that triggered the event.
+            Parameters
+            ----------
+            obj:  SpectrumFigure instances
+                The instance that triggered the event.
             """, arguments=["obj"])
         self.title = ""
         self.ax_markers = list()
@@ -92,8 +93,6 @@ class BlittedFigure(object):
 
     def add_marker(self, marker):
         marker.ax = self.ax
-        if marker.axes_manager is None:
-            marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 

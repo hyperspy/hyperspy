@@ -60,7 +60,7 @@ class Gaussian2D(Expression):
         between the `x` and the horizontal axis.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Attributes
     ----------
@@ -70,7 +70,7 @@ class Gaussian2D(Expression):
     """
 
     def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
-                 centre_y=0, module="numexpr", **kwargs):
+                 centre_y=0, module=None, **kwargs):
         super().__init__(
             expression="A * (1 / (sigma_x * sigma_y * 2 * pi)) * \
                        exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \

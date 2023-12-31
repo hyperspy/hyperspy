@@ -22,11 +22,11 @@ sometimes called a scree plot. For most datasets, the values in a scree plot
 will decay rapidly, eventually becoming a slowly descending line.
 
 To obtain a scree plot for your dataset, run the
-:py:meth:`~.api.signals.BaseSignal.plot_explained_variance_ratio` method:
+:meth:`~.api.signals.BaseSignal.plot_explained_variance_ratio` method:
 
 .. code-block:: python
 
-   >>> s.plot_explained_variance_ratio(n=20)
+   >>> s.plot_explained_variance_ratio(n=20) # doctest: +SKIP
 
 .. figure::  ../images/screeplot.png
    :align:   center
@@ -53,7 +53,7 @@ Python uses zero-based indexing. To switch to a "number-based" (rather than
 
 .. code-block:: python
 
-   >>> s.plot_explained_variance_ratio(n=20, threshold=4, xaxis_type='number')
+   >>> s.plot_explained_variance_ratio(n=20, threshold=4, xaxis_type='number') # doctest: +SKIP
 
 .. figure::  ../images/screeplot2.png
    :align:   center
@@ -73,7 +73,7 @@ is returned. As the index of the first component is zero, the number of
 significant PCA components is the elbow index position + 1. More details
 about the elbow-finding technique can be found in
 :ref:`[Satopää2011] <Satopää2011>`, and in the documentation for
-:py:meth:`~.api.signals.BaseSignal.estimate_elbow_position`.
+:meth:`~.api.signals.BaseSignal.estimate_elbow_position`.
 
 .. figure::  ../images/screeplot_elbow_method.png
    :align:   center
@@ -88,13 +88,13 @@ about the elbow-finding technique can be found in
 
 These options (together with many others), can be customized to
 develop a figure of your liking. See the documentation of
-:py:meth:`~.api.signals.BaseSignal.plot_explained_variance_ratio` for more details.
+:meth:`~.api.signals.BaseSignal.plot_explained_variance_ratio` for more details.
 
 Sometimes it can be useful to get the explained variance ratio as a spectrum.
 For example, to plot several scree plots obtained with
 different data pre-treatments in the same figure, you can combine
-:py:func:`~.api.plot.plot_spectra` with
-:py:meth:`~.api.signals.BaseSignal.get_explained_variance_ratio`.
+:func:`~.api.plot.plot_spectra` with
+:meth:`~.api.signals.BaseSignal.get_explained_variance_ratio`.
 
 .. _mva.plot_decomposition:
 
@@ -103,14 +103,14 @@ Decomposition plots
 
 HyperSpy provides a number of methods for visualizing the factors and loadings
 found by a decomposition analysis. To plot everything in a compact form,
-use :py:meth:`~.api.signals.BaseSignal.plot_decomposition_results`.
+use :meth:`~.api.signals.BaseSignal.plot_decomposition_results`.
 
 You can also plot the factors and loadings separately using the following
 methods. It is recommended that you provide the number of factors or loadings
 you wish to visualise, since the default is to plot all of them.
 
-* :py:meth:`~.api.signals.BaseSignal.plot_decomposition_factors`
-* :py:meth:`~.api.signals.BaseSignal.plot_decomposition_loadings`
+* :meth:`~.api.signals.BaseSignal.plot_decomposition_factors`
+* :meth:`~.api.signals.BaseSignal.plot_decomposition_loadings`
 
 .. _mva.plot_bss:
 
@@ -118,11 +118,11 @@ Blind source separation plots
 -----------------------------
 
 Visualizing blind source separation results is much the same as decomposition.
-You can use :py:meth:`~.api.signals.BaseSignal.plot_bss_results` for a compact display,
+You can use :meth:`~.api.signals.BaseSignal.plot_bss_results` for a compact display,
 or instead:
 
-* :py:meth:`~.api.signals.BaseSignal.plot_bss_factors`
-* :py:meth:`~.api.signals.BaseSignal.plot_bss_loadings`
+* :meth:`~.api.signals.BaseSignal.plot_bss_factors`
+* :meth:`~.api.signals.BaseSignal.plot_bss_loadings`
 
 .. _mva.get_results:
 
@@ -130,9 +130,9 @@ Clustering plots
 ----------------
 
 Visualizing cluster results is much the same as decomposition.
-You can use :py:meth:`~.api.signals.BaseSignal.plot_bss_results` for a compact display,
+You can use :meth:`~.api.signals.BaseSignal.plot_bss_results` for a compact display,
 or instead:
 
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_results`.
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_signals`.
-* :py:meth:`~.api.signals.BaseSignal.plot_cluster_labels`.
+* :meth:`~.api.signals.BaseSignal.plot_cluster_results`.
+* :meth:`~.api.signals.BaseSignal.plot_cluster_signals`.
+* :meth:`~.api.signals.BaseSignal.plot_cluster_labels`.

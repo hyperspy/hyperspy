@@ -56,11 +56,11 @@ class SplitVoigt(Component):
     :math:`centre`     centre
     ================= ===========
 
-    Note
+    Notes
     -----
     This is a voigt function in which the upstream and downstream variance or
     sigma is allowed to vary to create an asymmetric profile
-    In this case the voigt is a pseudo voigt- consisting of a
+    In this case the voigt is a pseudo voigt consisting of a
     mixed gaussian and lorentzian sum
 
     """
@@ -158,7 +158,7 @@ class SplitVoigt(Component):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -180,14 +180,15 @@ class SplitVoigt(Component):
         Examples
         --------
 
-        >>> g = hs.model.components1D.Gaussian()
-        >>> x = np.arange(-10,10, 0.01)
-        >>> data = np.zeros((32,32,2000))
-        >>> data[:] = g.function(x).reshape((1,1,2000))
-        >>> s = hs.signals.Signal1D({'data' : data})
-        >>> s.axes_manager.axes[-1].offset = -10
-        >>> s.axes_manager.axes[-1].scale = 0.01
-        >>> g.estimate_parameters(s, -10,10, False)
+        >>> g = hs.model.components1D.SplitVoigt()
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager[-1].offset = -10
+        >>> s.axes_manager[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
+        True
 
         """
         super()._estimate_parameters(signal)

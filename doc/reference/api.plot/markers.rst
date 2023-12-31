@@ -2,16 +2,18 @@
 --------------------------------
 
 .. autosummary::
-   hyperspy.api.plot.markers.Arrow
-   hyperspy.api.plot.markers.Ellipse
-   hyperspy.api.plot.markers.HorizontalLine
-   hyperspy.api.plot.markers.HorizontalLineSegment
-   hyperspy.api.plot.markers.LineSegment
-   hyperspy.api.plot.markers.Point
-   hyperspy.api.plot.markers.Rectangle
-   hyperspy.api.plot.markers.Text
-   hyperspy.api.plot.markers.VerticalLine
-   hyperspy.api.plot.markers.VerticalLineSegment
+   hyperspy.api.plot.markers.Arrows
+   hyperspy.api.plot.markers.Circles
+   hyperspy.api.plot.markers.Ellipses
+   hyperspy.api.plot.markers.HorizontalLines
+   hyperspy.api.plot.markers.Lines
+   hyperspy.api.plot.markers.Markers
+   hyperspy.api.plot.markers.Points
+   hyperspy.api.plot.markers.Polygons
+   hyperspy.api.plot.markers.Rectangles
+   hyperspy.api.plot.markers.Squares
+   hyperspy.api.plot.markers.Texts
+   hyperspy.api.plot.markers.VerticalLines
 
 .. automodule:: hyperspy.api.plot.markers
    :members:

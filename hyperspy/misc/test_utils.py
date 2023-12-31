@@ -62,8 +62,8 @@ def update_close_figure(check_data_changed_close=True):
 def assert_deep_almost_equal(actual, expected, *args, **kwargs):
     """Assert that two complex structures have almost equal contents.
     Compares lists, dicts and tuples recursively. Checks numeric values
-    using :py:func:`numpy.testing.assert_allclose` and
-    checks all other values with :py:func:`numpy.testing.assert_equal`.
+    using :func:`numpy.testing.assert_allclose` and
+    checks all other values with :func:`numpy.testing.assert_equal`.
     Accepts additional positional and keyword arguments and pass those
     intact to assert_allclose() (that's how you specify comparison
     precision).
@@ -75,12 +75,12 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
     expected: list, dict or tuple
         Expected values.
     *args :
-        Arguments are passed to :py:func:`numpy.testing.assert_allclose` or
-        :py:func:`assert_deep_almost_equal`.
+        Arguments are passed to :func:`numpy.testing.assert_allclose` or
+        :func:`assert_deep_almost_equal`.
     **kwargs :
         Keyword arguments are passed to
-        :py:func:`numpy.testing.assert_allclose` or
-        :py:func:`assert_deep_almost_equal`.
+        :func:`numpy.testing.assert_allclose` or
+        :func:`assert_deep_almost_equal`.
     """
     is_root = not "__trace" in kwargs
     trace = kwargs.pop("__trace", "ROOT")

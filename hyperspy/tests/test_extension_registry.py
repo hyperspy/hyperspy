@@ -30,15 +30,20 @@ hyperspy_signals = [
     'ComplexSignal',
     'ComplexSignal1D',
     'ComplexSignal2D',
-    'EELSSpectrum',
-    'EDSTEMSpectrum',
-    'EDSSEMSpectrum',
-    'DielectricFunction',
     ]
 
 
 for signal in hyperspy_signals:
     assert signal in signals.keys()
+
+try:
+    import exspy
+    assert 'EELSSpectrum' in signals.keys()
+    assert 'EDSTEMSpectrum' in signals.keys()
+    assert 'EDSSTEMSpectrum' in signals.keys()
+    assert 'DielectricFunction' in signals.keys()
+except:
+    pass
 
 try:
     import holospy
