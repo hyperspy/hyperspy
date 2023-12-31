@@ -106,6 +106,7 @@ dev = [
     "hyperspy[tests]",
 ]
 doc = [
+    "holospy", # example gallery
     "IPython", # Needed in testing code in basic_usage.rst
     "numpydoc",
     "pydata_sphinx_theme",
