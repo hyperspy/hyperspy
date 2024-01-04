@@ -465,7 +465,7 @@ class DataAxis(BaseDataAxis):
        of a DataAxis object will result in an error.
 
        The array can be indexed using direct references to objects in the axis array,
-       integer indexes or if `_is_increasing_order` is not None, float values.
+       integer indexes or if ``_is_increasing_order`` is not None, float values.
 
        As this can be any array, the property
        ``is_uniform`` is automatically set to ``False``.
@@ -482,7 +482,6 @@ class DataAxis(BaseDataAxis):
     low_index
     high_value
     low_value
-    _is_increasing_order
     index : int
         The current index for the axis. This is used for interactive plotting and
         model fitting
@@ -733,16 +732,18 @@ class DataAxis(BaseDataAxis):
 
         Parameters
         ----------
-        value : number or numpy array
-        rounding : function
+        value : float, int
+            The value to convert to index otherwise the closest index is returned
+            if not exact.
+        rounding : :std:term:`function`
                 Handling of values intermediate between two axis points:
-                If `rounding=round`, use round-half-away-from-zero strategy to find closest value.
-                If `rounding=math.floor`, round to the next lower value.
-                If `round=math.ceil`, round to the next higher value.
+                If ``rounding=round``, use round-half-away-from-zero strategy to find closest value.
+                If ``rounding=math.floor``, round to the next lower value.
+                If ``round=math.ceil``, round to the next higher value.
 
         Returns
         -------
-        index : integer or numpy array
+        int, numpy.ndarray
 
         Raises
         ------
@@ -1251,7 +1252,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
 
         Returns
         -------
-        int or numpy.ndarray
+            int or numpy.ndarray
 
         Raises
         ------
