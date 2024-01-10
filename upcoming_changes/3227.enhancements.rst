@@ -1,0 +1,1 @@
+Add an example to the gallery to show how to extract a line profile from an image using a Line2DROI

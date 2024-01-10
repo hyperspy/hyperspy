@@ -396,6 +396,9 @@ sphinx_gallery_conf = {
     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
     'filename_pattern': '.py',        # pattern to define which will be executed
     'ignore_pattern': '_sgskip.py',   # pattern to define which will not be executed
+    'compress_images': ('images', 'thumbnails'), # use optipng to reduce image file size
+    'notebook_images': 'https://hyperspy.org/hyperspy-doc/current/', # folder for loading images in gallery
+    "reference_url": {"hyperspy": None},
 }
 
 graphviz_output_format = "svg"

@@ -1021,38 +1021,6 @@ and "overlap" styles:
   Plotting on existing matplotlib axes.
 
 
-.. _plot_profiles_interactive-label:
-
-Plotting profiles interactively
--------------------------------
-
-Spectra or line profile can be plotted interactively on the same figure using
-the :func:`~.api.plot.plot_spectra` function. For example, profiles
-obtained from different Signal2D using the :class:`~.roi.Line2DROI` ROI can
-be plotted interactively:
-
-.. code-block:: python
-
-    >>> import holospy as  # doctest: +SKIP
-    >>> im0 = holo.data.Fe_needle_reference_hologram() # doctest: +SKIP
-    >>> im1 = holo.data.Fe_needle_hologram() # doctest: +SKIP
-    >>> im0.plot() # doctest: +SKIP
-    >>> im1.plot() # doctest: +SKIP
-    >>> # Create the ROI
-    >>> line_profile = hs.roi.Line2DROI(400, 250, 220, 600) # doctest: +SKIP
-    >>> # Obtain the signals to plot by "slicing" the signals with the ROI
-    >>> line0 = line_profile.interactive(im0) # doctest: +SKIP
-    >>> line1 = line_profile.interactive(im1) # doctest: +SKIP
-    >>> # Plotting the profile on the same figure
-    >>> hs.plot.plot_spectra([line0, line1]) # doctest: +SKIP
-
-.. figure::  images/interactive_profiles.gif
-  :align:   center
-  :width:   1024
-
-  Plotting profiles from different images interactively.
-
-
 .. _plot.signals:
 
 Plotting several signals

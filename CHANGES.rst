@@ -4,7 +4,7 @@ Changelog
 *********
 
 Changelog entries for the development version are available at
-https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
+https://hyperspy.readthedocs.io/en/latest/changes.html
 
 .. towncrier-draft-entries:: |release| [UNRELEASED]
 
@@ -899,7 +899,7 @@ Enhancements
   See :ref:`model.multidimensional-label`.
 * The :py:func:`~.api.plot.plot_spectra`  function now listens to
   events to update the figure automatically.
-  See :ref:`this example <plot_profiles_interactive-label>`.
+  See :ref:`this example <sphx_glr_auto_examples_region_of_interest_ExtractLineProfile.py>`.
 * Improve thread-based parallelism. Add ``max_workers`` argument to the
   :py:meth:`~.api.signals.BaseSignal.map` method, such that the user can directly
   control how many threads they launch.
