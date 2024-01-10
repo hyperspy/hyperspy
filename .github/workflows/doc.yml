@@ -10,4 +10,5 @@ jobs:
       # install with speed extra to avoid warnings
       pip_extra_doc: 'doc,speed'
       # graphviz is required to build mermaid graph
-      install_package_ubuntu: graphviz
+      # optipng is required to optimize thumbnail
+      install_package_ubuntu: graphviz optipng
