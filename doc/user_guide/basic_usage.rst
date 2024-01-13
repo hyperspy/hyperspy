@@ -129,12 +129,6 @@ associated to a given functions (docstring in Python jargon) and it is one of
 the many features of `IPython <https://ipython.readthedocs.io/>`_, which is the
 interactive python shell that HyperSpy uses under the hood.
 
-Please note that the documentation of the code is a work in progress, so not
-all the objects are documented yet.
-
-Up-to-date documentation is always available in `the HyperSpy website.
-<https://hyperspy.org/documentation.html>`_
-
 
 Autocompletion
 --------------

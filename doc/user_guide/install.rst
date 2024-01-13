@@ -143,9 +143,9 @@ solutions are:
 
 To learn more about the Anaconda eco-system:
 
-- Choose between `Anaconda or Miniconda <https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html#anaconda-or-miniconda>`_?
+- Choose between `Anaconda or Miniconda <https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html>`_?
 - Understanding `conda and pip <https://www.anaconda.com/blog/understanding-conda-and-pip>`_.
-- What is `conda-forge <https://conda-forge.org/#about>`__.
+- What is `conda-forge <https://conda-forge.org>`__.
 
 .. _install-with-pip:
 
