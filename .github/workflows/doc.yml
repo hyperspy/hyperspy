@@ -12,3 +12,19 @@ jobs:
       # graphviz is required to build mermaid graph
       # optipng is required to optimize thumbnail
       install_package_ubuntu: graphviz optipng
+
+  Push:
+    needs: Build
+    # Push only on the "RELEASE_next_minor" branch
+    if: ${{ github.repository_owner == 'hyperspy' && github.ref_name == 'RELEASE_next_minor' }}
+    permissions:
+      # needs write permission to push the docs to gh-pages
+      contents: write
+    # Use the "reusable workflow" from the hyperspy organisation
+    uses: hyperspy/.github/.github/workflows/push_doc.yml@main
+    with:
+      repository: 'hyperspy/hyperspy-doc'
+      output_path: 'dev'
+    secrets:
+      access_token: ${{ secrets.PAT_DOCUMENTATION }}
+    
