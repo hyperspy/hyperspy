@@ -21,15 +21,15 @@ from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
 
 
 class HistogramStrategy(GlobalStrategy):
-
-    def __init__(self, bins='fd'):
-        super().__init__('Histogram global strategy')
+    def __init__(self, bins="fd"):
+        super().__init__("Histogram global strategy")
         self.segmenter = HistogramSegmenter(bins)
 
+
 __all__ = [
-    'GlobalStrategy',
-    'HistogramStrategy',
-    ]
+    "GlobalStrategy",
+    "HistogramStrategy",
+]
 
 
 def __dir__():

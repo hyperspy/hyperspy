@@ -51,7 +51,7 @@ class Arctan(Expression):
 
     """
 
-    def __init__(self, A=1., k=1., x0=1., module=["numpy", "scipy"], **kwargs):
+    def __init__(self, A=1.0, k=1.0, x0=1.0, module=["numpy", "scipy"], **kwargs):
         # To be able to still read old file versions that contain this argument
         if "minimum_at_zero" in kwargs:
             del kwargs["minimum_at_zero"]

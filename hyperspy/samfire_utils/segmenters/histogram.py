@@ -28,7 +28,7 @@ class HistogramSegmenter(object):
     the starting parameter estimates.
     """
 
-    def __init__(self, bins='fd'):
+    def __init__(self, bins="fd"):
         self.database = None
         self.bins = bins
         self._min_points = 4
@@ -44,14 +44,12 @@ class HistogramSegmenter(object):
             for p_n, (hist, bin_edges) in comp.items():
                 # calculate frequent values
                 maxima_hist_ind = argrelextrema(
-                    np.append(
-                        0,
-                        hist),
-                    np.greater,
-                    mode='wrap')
-                middles_of_maxima = 0.5 * \
-                    (bin_edges[maxima_hist_ind] +
-                     bin_edges[([i - 1 for i in maxima_hist_ind[0]],)])
+                    np.append(0, hist), np.greater, mode="wrap"
+                )
+                middles_of_maxima = 0.5 * (
+                    bin_edges[maxima_hist_ind]
+                    + bin_edges[([i - 1 for i in maxima_hist_ind[0]],)]
+                )
                 comp_dict[p_n] = middles_of_maxima.tolist()
             freq[c_n] = comp_dict
         return freq
@@ -74,9 +72,7 @@ class HistogramSegmenter(object):
             comp_dict = {}
             for par_name, par in component.items():
                 if par.size <= self._min_points:
-                    comp_dict[par_name] = np.histogram(par,
-                                                       max(10,
-                                                           self._min_points))
+                    comp_dict[par_name] = np.histogram(par, max(10, self._min_points))
                 else:
                     comp_dict[par_name] = histogram(par, bins=self.bins)
             self.database[component_name] = comp_dict

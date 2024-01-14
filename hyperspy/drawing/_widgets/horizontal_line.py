@@ -23,8 +23,7 @@ from hyperspy.defaults_parser import preferences
 
 class HorizontalLineWidget(Widget1DBase):
 
-    """A draggable, horizontal line widget.
-    """
+    """A draggable, horizontal line widget."""
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
@@ -33,7 +32,7 @@ class HorizontalLineWidget(Widget1DBase):
 
     def _add_patch_to(self, ax):
         """Create and add the matplotlib patches to 'ax'"""
-        self.blit = hasattr(ax, 'hspy_fig') and ax.figure.canvas.supports_blit
+        self.blit = hasattr(ax, "hspy_fig") and ax.figure.canvas.supports_blit
         self._set_patch()
         for p in self.patch:
             p.set_animated(self.blit)
@@ -43,7 +42,7 @@ class HorizontalLineWidget(Widget1DBase):
         kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
         self._patch = [
             ax.axhline(self._pos[0], color=self.color, alpha=self.alpha, **kwargs)
-            ]
+        ]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

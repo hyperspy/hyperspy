@@ -27,7 +27,7 @@ def _format_string(val):
     return "{:6g}".format(val) if val is not None else ""
 
 
-class CurrentComponentValues():
+class CurrentComponentValues:
     """
     Convenience class that makes use of __repr__ methods for nice printing in
     the notebook of the properties of parameters of a component.
@@ -41,7 +41,7 @@ class CurrentComponentValues():
         If True: Helper for ``CurrentModelValues``. Only include active
         components in the view. Always shows values if used on an individual
         component.
-     """
+    """
 
     def __init__(self, component, only_free=False, only_active=False):
         self.name = component.name
@@ -54,39 +54,53 @@ class CurrentComponentValues():
     def __repr__(self):
         # Number of digits for each label for the terminal-style view.
         size = {
-            'name': 14,
-            'free': 7,
-            'value': 10,
-            'std': 10,
-            'bmin': 10,
-            'bmax': 10,
-            'linear':6,
+            "name": 14,
+            "free": 7,
+            "value": 10,
+            "std": 10,
+            "bmin": 10,
+            "bmax": 10,
+            "linear": 6,
         }
         # Using nested string formatting for flexibility in future updates
         signature = "{{:>{name}}} | {{:>{free}}} | {{:>{value}}} | {{:>{std}}} | {{:>{bmin}}} | {{:>{bmax}}} | {{:>{linear}}}".format(
-            **size)
+            **size
+        )
 
         if self.only_active:
             text = "{0}: {1}".format(self.__class__.__name__, self.name)
         else:
             text = "{0}: {1}\nActive: {2}".format(
-                self.__class__.__name__, self.name, self.active)
+                self.__class__.__name__, self.name, self.active
+            )
         text += "\n"
-        text += signature.format("Parameter Name",
-                                 "Free", "Value", "Std", "Min", "Max", "Linear")
+        text += signature.format(
+            "Parameter Name", "Free", "Value", "Std", "Min", "Max", "Linear"
+        )
         text += "\n"
-        text += signature.format("=" * size['name'], "=" * size['free'], "=" *
-                                 size['value'], "=" * size['std'], "=" * size['bmin'], "=" * size['bmax'], "=" * size['linear'],)
+        text += signature.format(
+            "=" * size["name"],
+            "=" * size["free"],
+            "=" * size["value"],
+            "=" * size["std"],
+            "=" * size["bmin"],
+            "=" * size["bmax"],
+            "=" * size["linear"],
+        )
         text += "\n"
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
-                free = para.free if para.twin is None else 'Twinned'
+                free = para.free if para.twin is None else "Twinned"
                 ln = para._linear
                 text += signature.format(
-                    para.name[:size['name']], str(free)[:size['free']],
-                    str(para.value)[:size['value']], str(para.std)[:size['std']],
-                    str(para.bmin)[:size['bmin']], str(para.bmax)[:size['bmax']],
-                    str(ln)[:size['linear']])
+                    para.name[: size["name"]],
+                    str(free)[: size["free"]],
+                    str(para.value)[: size["value"]],
+                    str(para.std)[: size["std"]],
+                    str(para.bmin)[: size["bmin"]],
+                    str(para.bmax)[: size["bmax"]],
+                    str(ln)[: size["linear"]],
+                )
                 text += "\n"
         return text
 
@@ -95,14 +109,15 @@ class CurrentComponentValues():
             text = "<p><b>{0}: {1}</b></p>".format(self.__class__.__name__, self.name)
         else:
             text = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
-                self.__class__.__name__, self.name, self.active)
+                self.__class__.__name__, self.name, self.active
+            )
 
         para_head = """<table style="width:100%"><tr><th>Parameter Name</th><th>Free</th>
             <th>Value</th><th>Std</th><th>Min</th><th>Max</th><th>Linear</th></tr>"""
         text += para_head
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
-                free = para.free if para.twin is None else 'Twinned'
+                free = para.free if para.twin is None else "Twinned"
                 linear = para._linear
                 value = _format_string(para.value)
                 std = _format_string(para.std)
@@ -111,12 +126,13 @@ class CurrentComponentValues():
 
                 text += """<tr><td>{0}</td><td>{1}</td><td>{2}</td>
                     <td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td></tr>""".format(
-                        para.name, free, value, std, bmin, bmax, linear)
+                    para.name, free, value, std, bmin, bmax, linear
+                )
         text += "</table>"
         return text
 
 
-class CurrentModelValues():
+class CurrentModelValues:
     """
     Convenience class that makes use of __repr__ methods for nice printing in
     the notebook of the properties of parameters in components in a model.
@@ -135,38 +151,43 @@ class CurrentModelValues():
         self.only_free = only_free
         self.only_active = only_active
         self.component_list = model if component_list is None else component_list
-        self.model_type = str(self.model.__class__).split("'")[1].split('.')[-1]
+        self.model_type = str(self.model.__class__).split("'")[1].split(".")[-1]
 
     def __repr__(self):
         text = "{}: {}\n".format(
-            self.model_type, self.model.signal.metadata.General.title)
+            self.model_type, self.model.signal.metadata.General.title
+        )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
-                    text += CurrentComponentValues(
-                        component=comp,
-                        only_free=self.only_free,
-                        only_active=self.only_active
-                        ).__repr__() + "\n"
+                    text += (
+                        CurrentComponentValues(
+                            component=comp,
+                            only_free=self.only_free,
+                            only_active=self.only_active,
+                        ).__repr__()
+                        + "\n"
+                    )
         return text
 
     def _repr_html_(self):
-
-        html = "<h4>{}: {}</h4>".format(self.model_type,
-                                        self.model.signal.metadata.General.title)
+        html = "<h4>{}: {}</h4>".format(
+            self.model_type, self.model.signal.metadata.General.title
+        )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
                     html += CurrentComponentValues(
                         component=comp,
                         only_free=self.only_free,
-                        only_active=self.only_active
-                        )._repr_html_()
+                        only_active=self.only_active,
+                    )._repr_html_()
         return html
 
 
-def _calculate_covariance(target_signal, coefficients, component_data,
-                         residual=None, lazy=False):
+def _calculate_covariance(
+    target_signal, coefficients, component_data, residual=None, lazy=False
+):
     """
     Calculate covariance matrix after having performed Linear Regression.
 
@@ -200,7 +221,7 @@ def _calculate_covariance(target_signal, coefficients, component_data,
         fit = coefficients * component_data.T
 
     if residual is None:
-        residual = ((target_signal - fit.sum(-1))**2).sum(-1)
+        residual = ((target_signal - fit.sum(-1)) ** 2).sum(-1)
 
     fit_dot = np.matmul(fit.swapaxes(-2, -1), fit)
 
@@ -212,7 +233,7 @@ def _calculate_covariance(target_signal, coefficients, component_data,
     else:
         inv_fit_dot = np.linalg.inv(fit_dot)
 
-    n = fit.shape[-2] # the signal axis length
+    n = fit.shape[-2]  # the signal axis length
     k = coefficients.shape[-1]  # the number of components
     covariance = (1 / (n - k)) * (residual * inv_fit_dot.T).T
     return covariance

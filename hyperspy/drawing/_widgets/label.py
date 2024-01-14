@@ -29,9 +29,9 @@ class LabelWidget(Widget1DBase):
     y-coordinate of the label is set to 0.9.
     """
 
-    def __init__(self, axes_manager, color='black', **kwargs):
+    def __init__(self, axes_manager, color="black", **kwargs):
         super(LabelWidget, self).__init__(axes_manager, color=color, **kwargs)
-        self._string = ''
+        self._string = ""
         self._snap_position = False
         if not self.axes:
             self._pos = np.array((0, 0.9))
@@ -46,8 +46,7 @@ class LabelWidget(Widget1DBase):
         self._string = value
         self._update_patch_string()
 
-    string = property(lambda s: s._get_string(),
-                      lambda s, v: s._set_string(v))
+    string = property(lambda s: s._get_string(), lambda s, v: s._set_string(v))
 
     def _set_position(self, position):
         try:
@@ -64,8 +63,7 @@ class LabelWidget(Widget1DBase):
         if len(self.axes) == 1:
             self._pos = np.array((self.axes[0].offset, 0.9))
         else:
-            self._pos = np.array((self.axes[0].offset,
-                                  self.axes[1].offset))
+            self._pos = np.array((self.axes[0].offset, self.axes[1].offset))
 
     def _validate_pos(self, pos):
         if len(self.axes) == 1:
@@ -91,18 +89,20 @@ class LabelWidget(Widget1DBase):
 
     def _set_patch(self):
         ax = self.ax
-        trans = transforms.blended_transform_factory(
-            ax.transData, ax.transAxes)
-        self._patch = [ax.text(
-            self._pos[0],
-            self._pos[1],
-            self.string,
-            color=self.color,
-            alpha=self.alpha,
-            transform=trans,
-            horizontalalignment='left',
-            bbox=self.bbox,
-            picker=True)]
+        trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+        self._patch = [
+            ax.text(
+                self._pos[0],
+                self._pos[1],
+                self.string,
+                color=self.color,
+                alpha=self.alpha,
+                transform=trans,
+                horizontalalignment="left",
+                bbox=self.bbox,
+                picker=True,
+            )
+        ]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

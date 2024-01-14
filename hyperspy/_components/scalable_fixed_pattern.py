@@ -64,7 +64,7 @@ class ScalableFixedPattern(Component):
     interpolate : bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
-    
+
     Methods
     -------
     prepare_interpolator
@@ -74,20 +74,18 @@ class ScalableFixedPattern(Component):
 
     The fixed pattern is defined by a Signal1D of navigation 0 which must be
     provided to the ScalableFixedPattern constructor, e.g.:
-    
+
     >>> s = hs.load('data.hspy') # doctest: +SKIP
     >>> my_fixed_pattern = hs.model.components1D.ScalableFixedPattern(s) # doctest: +SKIP
-    
+
     """
 
-    def __init__(self, signal1D, yscale=1.0, xscale=1.0,
-                 shift=0.0, interpolate=True):
-
-        Component.__init__(self, ['yscale', 'xscale', 'shift'], ['yscale'])
+    def __init__(self, signal1D, yscale=1.0, xscale=1.0, shift=0.0, interpolate=True):
+        Component.__init__(self, ["yscale", "xscale", "shift"], ["yscale"])
 
         self._position = self.shift
-        self._whitelist['signal1D'] = ('init,sig', signal1D)
-        self._whitelist['interpolate'] = None
+        self._whitelist["signal1D"] = ("init,sig", signal1D)
+        self._whitelist["interpolate"] = None
         self.signal = signal1D
         self.yscale.free = True
         self.yscale.value = yscale
@@ -125,8 +123,8 @@ class ScalableFixedPattern(Component):
         self.f = make_interp_spline(
             self.signal.axes_manager.signal_axes[0].axis,
             self.signal.data.squeeze(),
-            **kwargs
-            )
+            **kwargs,
+        )
 
     def _function(self, x, xscale, yscale, shift):
         if self.interpolate is True:
@@ -143,18 +141,15 @@ class ScalableFixedPattern(Component):
             return result
 
     def function(self, x):
-        return self._function(x, self.xscale.value, self.yscale.value,
-                              self.shift.value)
+        return self._function(x, self.xscale.value, self.yscale.value, self.shift.value)
 
     def function_nd(self, axis):
-        """%s
-
-        """
+        """%s"""
         if self._is_navigation_multidimensional:
             x = axis[np.newaxis, :]
-            xscale = self.xscale.map['values'][..., np.newaxis]
-            yscale = self.yscale.map['values'][..., np.newaxis]
-            shift = self.shift.map['values'][..., np.newaxis]
+            xscale = self.xscale.map["values"][..., np.newaxis]
+            yscale = self.yscale.map["values"][..., np.newaxis]
+            shift = self.shift.map["values"][..., np.newaxis]
             return self._function(x, xscale, yscale, shift)
         else:
             return self.function(axis)

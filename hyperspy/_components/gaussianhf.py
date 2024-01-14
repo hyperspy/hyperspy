@@ -83,8 +83,7 @@ class GaussianHF(Expression):
 
     """
 
-    def __init__(self, height=1., fwhm=1., centre=0., module=None,
-                 **kwargs):
+    def __init__(self, height=1.0, fwhm=1.0, centre=0.0, module=None, **kwargs):
         super().__init__(
             expression="height * exp(-(x - centre)**2 * 4 * log(2)/fwhm**2)",
             name="GaussianHF",
@@ -98,10 +97,10 @@ class GaussianHF(Expression):
         )
 
         # Boundaries
-        self.height.bmin = 0.
+        self.height.bmin = 0.0
         self.height.bmax = None
 
-        self.fwhm.bmin = 0.
+        self.fwhm.bmin = 0.0
         self.fwhm.bmax = None
 
         self.isbackground = False
@@ -146,8 +145,9 @@ class GaussianHF(Expression):
 
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
-                                                              only_current)
+        centre, height, sigma = _estimate_gaussian_parameters(
+            signal, x1, x2, only_current
+        )
         scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
@@ -160,14 +160,14 @@ class GaussianHF(Expression):
         else:
             if self.height.map is None:
                 self._create_arrays()
-            self.height.map['values'][:] = height
+            self.height.map["values"][:] = height
             if axis.is_binned:
-                self.height.map['values'][:] /= scaling_factor
-            self.height.map['is_set'][:] = True
-            self.fwhm.map['values'][:] = sigma * sigma2fwhm
-            self.fwhm.map['is_set'][:] = True
-            self.centre.map['values'][:] = centre
-            self.centre.map['is_set'][:] = True
+                self.height.map["values"][:] /= scaling_factor
+            self.height.map["is_set"][:] = True
+            self.fwhm.map["values"][:] = sigma * sigma2fwhm
+            self.fwhm.map["is_set"][:] = True
+            self.centre.map["values"][:] = centre
+            self.centre.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 
@@ -191,5 +191,4 @@ class GaussianHF(Expression):
         """
         Utility function to get gaussian integral as Signal1D
         """
-        return (self.height.as_signal() * self.fwhm.as_signal() *
-                sqrt2pi / sigma2fwhm)
+        return self.height.as_signal() * self.fwhm.as_signal() * sqrt2pi / sigma2fwhm

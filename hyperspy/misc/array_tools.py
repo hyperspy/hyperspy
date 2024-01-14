@@ -42,7 +42,7 @@ def get_array_memory_size_in_GiB(shape, dtype):
     """
     if not isinstance(dtype, np.dtype):
         dtype = np.dtype(dtype)
-    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2.0 ** 30
+    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2.0**30
 
 
 def are_aligned(shape1, shape2):
@@ -114,7 +114,7 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
     numpy.ndarray
 
     Examples
-    --------    
+    --------
     >>> a = np.random.random((6, 4))
     >>> b = rebin(a, scale=(3, 2))
     >>> b.shape
@@ -139,18 +139,17 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
         scale = []
         for i, _ in enumerate(a.shape):
             scale.append(a.shape[i] / new_shape[i])
-    if isinstance(dtype, str) and dtype != 'same':
+    if isinstance(dtype, str) and dtype != "same":
         raise ValueError(
-            '`dtype` argument needs to be None, a numpy dtype or '
-            'the string "same".'
-            )
+            "`dtype` argument needs to be None, a numpy dtype or " 'the string "same".'
+        )
 
     # check whether or not interpolation is needed.
     if _requires_linear_rebin(arr=a, scale=scale):
         _logger.debug("Using linear_bin")
         return _linear_bin(a, scale, crop, dtype=dtype)
     else:
-        if dtype == 'same':
+        if dtype == "same":
             dtype = a.dtype.name
         _logger.debug("Using standard rebin with lazy support")
         # if interpolation is not needed run fast re_bin function.
@@ -176,19 +175,21 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
             rshape = ()
             for athing in zip(new_shape, scale):
                 rshape += athing
-            return a.reshape(rshape).sum(axis=tuple(
-                2 * i + 1 for i in range(lenShape)), dtype=dtype)
+            return a.reshape(rshape).sum(
+                axis=tuple(2 * i + 1 for i in range(lenShape)), dtype=dtype
+            )
         else:
             try:
-                return da.coarsen(np.sum, a,
-                                  {i: int(f) for i, f in enumerate(scale)},
-                                  dtype=dtype)
+                return da.coarsen(
+                    np.sum, a, {i: int(f) for i, f in enumerate(scale)}, dtype=dtype
+                )
             # we provide slightly better error message in hyperspy context
             except ValueError:
                 raise ValueError(
                     "Rebinning does not align with data dask chunks. "
                     "Rebin fewer dimensions at a time to avoid this error"
                 )
+
 
 # Replacing space is necessary to get the correct indentation
 rebin.__doc__ %= REBIN_ARGS.replace("        ", "    ")
@@ -274,16 +275,17 @@ def _linear_bin(dat, scale, crop=True, dtype=None):
         )
 
     # Unsuported dtype value argument
-    dtype_str_same_integer = (isinstance(dtype, str) and dtype == 'same' and
-                              np.issubdtype(dat.dtype, np.integer))
-    dtype_interger = (not isinstance(dtype, str) and
-                      np.issubdtype(dtype, np.integer))
+    dtype_str_same_integer = (
+        isinstance(dtype, str)
+        and dtype == "same"
+        and np.issubdtype(dat.dtype, np.integer)
+    )
+    dtype_interger = not isinstance(dtype, str) and np.issubdtype(dtype, np.integer)
 
     if dtype_str_same_integer or dtype_interger:
         raise ValueError(
-            "Linear interpolation requires float dtype, change the "
-            "dtype argument."
-            )
+            "Linear interpolation requires float dtype, change the " "dtype argument."
+        )
 
     if np.issubdtype(dat.dtype, np.integer):
         # The _linear_bin function below requires a float dtype
@@ -331,7 +333,6 @@ def _linear_bin(dat, scale, crop=True, dtype=None):
         dat = result
 
     return result
-
 
 
 def numba_histogram(data, bins, ranges):
@@ -431,7 +432,9 @@ def numba_closest_index_round(axis_array, value_array):
     rtol = 1e-12
     machineepsilon = np.min(np.abs(np.diff(axis_array))) * rtol
     for i, v in enumerate(value_array.flat):
-        index_array.flat[i] = np.abs(axis_array - v + np.sign(v) * machineepsilon).argmin()
+        index_array.flat[i] = np.abs(
+            axis_array - v + np.sign(v) * machineepsilon
+        ).argmin()
     return index_array
 
 
@@ -504,23 +507,25 @@ def round_half_towards_zero(array, decimals=0):  # pragma: no cover
     rounded_array : ndarray
         An array of the same type as a, containing the rounded values.
     """
-    multiplier = 10 ** decimals
+    multiplier = 10**decimals
 
-    return np.where(array >= 0,
-                    np.ceil(array * multiplier - 0.5) / multiplier,
-                    np.floor(array * multiplier + 0.5) / multiplier
-                    )
+    return np.where(
+        array >= 0,
+        np.ceil(array * multiplier - 0.5) / multiplier,
+        np.floor(array * multiplier + 0.5) / multiplier,
+    )
 
 
-def get_value_at_index(array,
-                       indexes,
-                       real_index,
-                       factor=1.0,
-                       norm=None,
-                       minimum_intensity=None,
-                       start=None,
-                       stop=1.0,
-                       ):
+def get_value_at_index(
+    array,
+    indexes,
+    real_index,
+    factor=1.0,
+    norm=None,
+    minimum_intensity=None,
+    start=None,
+    stop=1.0,
+):
     """Get the value at the given index.
 
     Parameters
@@ -542,19 +547,19 @@ def get_value_at_index(array,
     real_index : 1D numpy array
         The real values for the indexes in calibrated units.
     """
-    if norm == 'log' and minimum_intensity is None:
-        raise ValueError('minimum_intensity must be provided when norm is log')
+    if norm == "log" and minimum_intensity is None:
+        raise ValueError("minimum_intensity must be provided when norm is log")
     factor = np.asarray(factor)
     intensities = array[indexes] * factor
-    stop_intensities = intensities*stop
+    stop_intensities = intensities * stop
     # set minimum_intensity so that zeros are not plotted causing errors
-    if norm == 'log':
+    if norm == "log":
         stop_intensities[stop_intensities < minimum_intensity] = minimum_intensity
     stop_ = np.stack((real_index, stop_intensities), axis=1)
     if start is not None:  # make lines from start to stop
-        start_intensities = intensities*start
+        start_intensities = intensities * start
         # set minimum_intensity so that zeros are not plotted causing errors
-        if norm == 'log':
+        if norm == "log":
             start_intensities[start_intensities < minimum_intensity] = minimum_intensity
         start_ = np.stack((real_index, start_intensities), axis=1)
         return np.stack((start_, stop_), axis=1)
@@ -580,12 +585,14 @@ def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
     rounded_array : ndarray
         An array of the same type as a, containing the rounded values.
     """
-    multiplier = 10 ** decimals
+    multiplier = 10**decimals
 
-    return np.where(array >= 0,
-                    np.floor(array * multiplier + 0.5) / multiplier,
-                    np.ceil(array * multiplier - 0.5) / multiplier
-                    )
+    return np.where(
+        array >= 0,
+        np.floor(array * multiplier + 0.5) / multiplier,
+        np.ceil(array * multiplier - 0.5) / multiplier,
+    )
+
 
 def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
     """Get the slice necessary to get the dask data chunk containing the

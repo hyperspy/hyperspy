@@ -39,16 +39,11 @@ from hyperspy.samfire_utils import (
     fit_tests,
     global_strategies,
     local_strategies,
-    )
+)
 from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
 
-__all__ = [
-    'fit_tests',
-    'global_strategies',
-    'local_strategies',
-    'SamfirePool'
-    ]
+__all__ = ["fit_tests", "global_strategies", "local_strategies", "SamfirePool"]
 
 
 def __dir__():

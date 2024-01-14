@@ -19,19 +19,17 @@
 from hyperspy.samfire_utils.goodness_of_fit_tests.information_theory import (
     AIC_test,
     AICc_test,
-    BIC_test
-    )
-from hyperspy.samfire_utils.goodness_of_fit_tests.red_chisq import (
-    red_chisq_test
-    )
+    BIC_test,
+)
+from hyperspy.samfire_utils.goodness_of_fit_tests.red_chisq import red_chisq_test
 
 
 __all__ = [
-    'AIC_test',
-    'AICc_test',
-    'BIC_test',
-    'red_chisq_test',
-    ]
+    "AIC_test",
+    "AICc_test",
+    "BIC_test",
+    "red_chisq_test",
+]
 
 
 def __dir__():

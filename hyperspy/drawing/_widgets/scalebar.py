@@ -20,11 +20,20 @@
 from hyperspy.misc.math_tools import closest_nice_number
 import numpy as np
 
-class ScaleBar(object):
 
-    def __init__(self, ax, units, pixel_size=None, color='white',
-                 position=None, max_size_ratio=0.25, lw=2, length=None,
-                 animated=False):
+class ScaleBar(object):
+    def __init__(
+        self,
+        ax,
+        units,
+        pixel_size=None,
+        color="white",
+        position=None,
+        max_size_ratio=0.25,
+        lw=2,
+        length=None,
+        animated=False,
+    ):
         """Add a scale bar to an image.
 
         Parameters
@@ -72,31 +81,31 @@ class ScaleBar(object):
 
     def get_units_string(self):
         if self.tex_bold is True:
-            if (self.units[0] and self.units[-1]) == '$':
-                return r'$\mathbf{%g\,%s}$' % \
-                    (self.length, self.units[1:-1])
+            if (self.units[0] and self.units[-1]) == "$":
+                return r"$\mathbf{%g\,%s}$" % (self.length, self.units[1:-1])
             else:
-                return r'$\mathbf{%g\,}$\textbf{%s}' % \
-                    (self.length, self.units)
+                return r"$\mathbf{%g\,}$\textbf{%s}" % (self.length, self.units)
         else:
-            return r'$%g\,$%s' % (self.length, self.units)
+            return r"$%g\,$%s" % (self.length, self.units)
 
     def calculate_line_position(self, pad=0.05):
-        return ((1 - pad) * self.xmin + pad * self.xmax,
-                (1 - pad) * self.ymin + pad * self.ymax)
+        return (
+            (1 - pad) * self.xmin + pad * self.xmax,
+            (1 - pad) * self.ymin + pad * self.ymax,
+        )
 
-    def calculate_text_position(self, pad=1 / 100.):
+    def calculate_text_position(self, pad=1 / 100.0):
         ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
         x2, y2 = x1 + self.length / ps, y1
 
-        self.text_position = ((x1 + x2) / 2.,
-                              y2 + (self.ymax - self.ymin) / ps * pad)
+        self.text_position = ((x1 + x2) / 2.0, y2 + (self.ymax - self.ymin) / ps * pad)
 
     def calculate_size(self, max_size_ratio=0.25):
         ps = self.pixel_size if self.pixel_size is not None else 1
-        size = closest_nice_number(np.abs(ps * (self.xmax - self.xmin) *
-                                   max_size_ratio))
+        size = closest_nice_number(
+            np.abs(ps * (self.xmax - self.xmin) * max_size_ratio)
+        )
         self.length = size
 
     def remove(self):
@@ -110,15 +119,16 @@ class ScaleBar(object):
         ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
         x2, y2 = x1 + self.length / ps, y1
-        self.line, = self.ax.plot([x1, x2], [y1, y2],
-                                  linestyle='-',
-                                  lw=line_width,
-                                  animated=self.animated)
-        self.text = self.ax.text(*self.text_position,
-                                 s=self.get_units_string(),
-                                 ha='center',
-                                 size='medium',
-                                 animated=self.animated)
+        (self.line,) = self.ax.plot(
+            [x1, x2], [y1, y2], linestyle="-", lw=line_width, animated=self.animated
+        )
+        self.text = self.ax.text(
+            *self.text_position,
+            s=self.get_units_string(),
+            ha="center",
+            size="medium",
+            animated=self.animated,
+        )
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
         self.ax.figure.canvas.draw_idle()

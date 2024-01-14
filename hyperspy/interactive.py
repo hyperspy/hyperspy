@@ -65,24 +65,21 @@ class Interactive:
 
     """
 
-
-    def __init__(self, f, event="auto",
-                 recompute_out_event="auto",
-                 *args, **kwargs):
-
+    def __init__(self, f, event="auto", recompute_out_event="auto", *args, **kwargs):
         from hyperspy.signal import BaseSignal
+
         self.f = f
         self.args = args
         self.kwargs = kwargs
-        _plot_kwargs = self.kwargs.pop('_plot_kwargs', None)
-        if 'out' in self.kwargs:
+        _plot_kwargs = self.kwargs.pop("_plot_kwargs", None)
+        if "out" in self.kwargs:
             self.f(*self.args, **self.kwargs)
-            self.out = self.kwargs.pop('out')
+            self.out = self.kwargs.pop("out")
         else:
             self.out = self.f(*self.args, **self.kwargs)
         # Reuse the `_plot_kwargs` for the roi if available
-        if _plot_kwargs and 'signal' in self.kwargs:
-            self.out._plot_kwargs = self.kwargs['signal']._plot_kwargs
+        if _plot_kwargs and "signal" in self.kwargs:
+            self.out._plot_kwargs = self.kwargs["signal"]._plot_kwargs
         try:
             fargs = list(inspect.signature(self.f).parameters.keys())
         except TypeError:
@@ -95,12 +92,14 @@ class Interactive:
             if event == "auto":
                 event = self.f.__self__.events.data_changed
             if recompute_out_event == "auto":
-                recompute_out_event = \
+                recompute_out_event = (
                     self.f.__self__.axes_manager.events.any_axis_changed
+                )
         else:
             event = None if event == "auto" else event
-            recompute_out_event = (None if recompute_out_event == "auto"
-                                   else recompute_out_event)
+            recompute_out_event = (
+                None if recompute_out_event == "auto" else recompute_out_event
+            )
         if recompute_out_event:
             _connect_events(recompute_out_event, self.recompute_out)
         if event:
@@ -119,8 +118,7 @@ class Interactive:
             self.out.data[:] = out.data[:]
         else:
             self.out.data = out.data
-        self.out.axes_manager.update_axes_attributes_from(
-            out.axes_manager._axes)
+        self.out.axes_manager.update_axes_attributes_from(out.axes_manager._axes)
         self.out.events.data_changed.trigger(self.out)
 
     def update(self):

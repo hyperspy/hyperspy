@@ -22,7 +22,7 @@
 import numpy as np
 
 
-def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
+def _tv_denoise_3d(im, weight=100, eps=2.0e-4, keep_type=False, n_iter_max=200):
     """
     Perform total-variation denoising on 3-D arrays
 
@@ -78,26 +78,26 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
     gz = np.zeros_like(im)
     i = 0
     while i < n_iter_max:
-        d = - px - py - pz
+        d = -px - py - pz
         d[1:] += px[:-1]
         d[:, 1:] += py[:, :-1]
         d[:, :, 1:] += pz[:, :, :-1]
 
         out = im + d
-        E = (d ** 2).sum()
+        E = (d**2).sum()
 
         gx[:-1] = np.diff(out, axis=0)
         gy[:, :-1] = np.diff(out, axis=1)
         gz[:, :, :-1] = np.diff(out, axis=2)
-        norm = np.sqrt(gx ** 2 + gy ** 2 + gz ** 2)
+        norm = np.sqrt(gx**2 + gy**2 + gz**2)
         E += weight * norm.sum()
         norm *= 0.5 / weight
-        norm += 1.
-        px -= 1. / 6. * gx
+        norm += 1.0
+        px -= 1.0 / 6.0 * gx
         px /= norm
-        py -= 1. / 6. * gy
+        py -= 1.0 / 6.0 * gy
         py /= norm
-        pz -= 1 / 6. * gz
+        pz -= 1 / 6.0 * gz
         pz /= norm
         E /= float(im.size)
         if i == 0:
@@ -115,7 +115,7 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
         return out
 
 
-def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
+def _tv_denoise_2d(im, weight=50, eps=2.0e-4, keep_type=False, n_iter_max=200):
     """
     Perform total-variation denoising
 
@@ -183,10 +183,10 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
         d[:, 1:] += py[:, :-1]
 
         out = im + d
-        E = (d ** 2).sum()
+        E = (d**2).sum()
         gx[:-1] = np.diff(out, axis=0)
         gy[:, :-1] = np.diff(out, axis=1)
-        norm = np.sqrt(gx ** 2 + gy ** 2)
+        norm = np.sqrt(gx**2 + gy**2)
         E += weight * norm.sum()
         norm *= 0.5 / weight
         norm += 1
@@ -210,7 +210,7 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
         return out
 
 
-def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
+def _tv_denoise_1d(im, weight=50, eps=2.0e-4, keep_type=False, n_iter_max=200):
     """
     Perform total-variation denoising
 
@@ -269,7 +269,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
         d[1:] += px[:-1]
 
         out = im + d
-        E = (d ** 2).sum()
+        E = (d**2).sum()
         gx[:-1] = np.diff(out)
         norm = abs(gx)
         E += weight * norm.sum()
@@ -293,7 +293,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
         return out
 
 
-def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
+def tv_denoise(im, weight=50, eps=2.0e-4, keep_type=False, n_iter_max=200):
     """
     Perform total-variation denoising on 2-d and 3-d images
 
@@ -366,5 +366,4 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     elif im.ndim == 3:
         return _tv_denoise_3d(im, weight, eps, keep_type, n_iter_max)
     else:
-        raise ValueError(
-            'only 2-d and 3-d images may be denoised with this function')
+        raise ValueError("only 2-d and 3-d images may be denoised with this function")

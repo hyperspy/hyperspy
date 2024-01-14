@@ -21,8 +21,7 @@
 """
 
 
-BASE_PLOT_DOCSTRING_PARAMETERS = \
-    """navigator : str, None, or :class:`~hyperspy.signal.BaseSignal` (or subclass).
+BASE_PLOT_DOCSTRING_PARAMETERS = """navigator : str, None, or :class:`~hyperspy.signal.BaseSignal` (or subclass).
         Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
 
             - If ``'auto'``:
@@ -81,8 +80,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
         """
 
 
-BASE_PLOT_DOCSTRING = \
-    """Plot the signal at the current coordinates.
+BASE_PLOT_DOCSTRING = """Plot the signal at the current coordinates.
 
         For multidimensional datasets an optional figure,
         the "navigator", with a cursor to navigate that data is
@@ -95,8 +93,7 @@ BASE_PLOT_DOCSTRING = \
         """
 
 
-PLOT1D_DOCSTRING = \
-    """norm : str, default ``'auto'``
+PLOT1D_DOCSTRING = """norm : str, default ``'auto'``
             The function used to normalize the data prior to plotting.
             Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``.
             If ``'auto'``, intensity is plotted on a linear scale except when
@@ -110,8 +107,7 @@ PLOT1D_DOCSTRING = \
         """
 
 
-PLOT2D_DOCSTRING = \
-    """colorbar : bool, optional
+PLOT2D_DOCSTRING = """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
         autoscale : str, optional
             The string must contain any combination of the ``'x'``, ``'y'`` and ``'v'``
@@ -169,8 +165,7 @@ PLOT2D_DOCSTRING = \
         """
 
 
-COMPLEX_DOCSTRING = \
-    """power_spectrum : bool, default False.
+COMPLEX_DOCSTRING = """power_spectrum : bool, default False.
             If True, plot the power spectrum instead of the actual signal, if
             False, plot the real and imaginary parts of the complex signal.
         representation : {``'cartesian'`` | ``'polar'``}
@@ -186,8 +181,7 @@ COMPLEX_DOCSTRING = \
         """
 
 
-PLOT2D_KWARGS_DOCSTRING = \
-    """**kwargs : dict
+PLOT2D_KWARGS_DOCSTRING = """**kwargs : dict
             Only when plotting an image: additional (optional) keyword
             arguments for :func:`matplotlib.pyplot.imshow`.
         """

@@ -210,6 +210,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
             signal.plot()
 
         from hyperspy.model import BaseModel
+
         if isinstance(signal, BaseModel):
             signal = signal.signal
 
@@ -219,9 +220,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
 
         self.span_selector_switch(on=True)
 
-        self.signal._plot.signal_plot.events.closed.connect(
-            self.disconnect, []
-            )
+        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
 
     def on_disabling_span_selector(self):
         self.disconnect()
@@ -237,13 +236,14 @@ class SpanSelectorInSignal1D(t.HasTraits):
                     ax=ax,
                     onselect=lambda *args, **kwargs: None,
                     onmove_callback=self.span_selector_changed,
-                    direction='horizontal',
+                    direction="horizontal",
                     interactive=True,
                     ignore_event_outside=True,
                     drag_from_anywhere=True,
-                    props={"alpha":0.25, "color":'r'},
-                    handle_props={"alpha":0.5, "color":'r'},
-                    useblit=ax.figure.canvas.supports_blit)
+                    props={"alpha": 0.25, "color": "r"},
+                    handle_props={"alpha": 0.5, "color": "r"},
+                    useblit=ax.figure.canvas.supports_blit,
+                )
                 self.connect()
 
         elif self.span_selector is not None:
@@ -281,8 +281,10 @@ class SpanSelectorInSignal1D(t.HasTraits):
 
     @property
     def _is_valid_range(self):
-        return (self.span_selector is not None and
-                not np.isnan([self.ss_left_value, self.ss_right_value]).any())
+        return (
+            self.span_selector is not None
+            and not np.isnan([self.ss_left_value, self.ss_right_value]).any()
+        )
 
     def _reset_span_selector_background(self):
         if self.span_selector is not None:
@@ -295,14 +297,18 @@ class SpanSelectorInSignal1D(t.HasTraits):
             self.span_selector_changed()
 
     def connect(self):
-        for event in [self.signal.events.data_changed,
-                      self.signal.axes_manager.events.indices_changed]:
+        for event in [
+            self.signal.events.data_changed,
+            self.signal.axes_manager.events.indices_changed,
+        ]:
             event.connect(self._reset_span_selector_background, [])
 
     def disconnect(self):
         function = self._reset_span_selector_background
-        for event in [self.signal.events.data_changed,
-                      self.signal.axes_manager.events.indices_changed]:
+        for event in [
+            self.signal.events.data_changed,
+            self.signal.axes_manager.events.indices_changed,
+        ]:
             if function in event.connected:
                 event.disconnect(function)
 
@@ -323,6 +329,7 @@ class LineInSignal1D(t.HasTraits):
         The color of the line. It automatically redraws the line.
 
     """
+
     position = t.Float()
     is_ok = t.Bool(False)
     on = t.Bool(False)
@@ -336,21 +343,23 @@ class LineInSignal1D(t.HasTraits):
 
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
-            raise SignalDimensionError(
-                signal.axes_manager.signal_dimension, 1)
+            raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
 
         self.signal = signal
         self.signal.plot()
         axis_dict = signal.axes_manager.signal_axes[0].get_axis_dictionary()
-        am = AxesManager([axis_dict, ])
+        am = AxesManager(
+            [
+                axis_dict,
+            ]
+        )
         am._axes[0].navigate = True
         # Set the position of the line in the middle of the spectral
         # range by default
         am._axes[0].index = int(round(am._axes[0].size / 2))
         self.axes_manager = am
-        self.axes_manager.events.indices_changed.connect(
-            self.update_position, [])
-        self.on_trait_change(self.switch_on_off, 'on')
+        self.axes_manager.events.indices_changed.connect(self.update_position, [])
+        self.on_trait_change(self.switch_on_off, "on")
 
     def draw(self):
         self.signal._plot.signal_plot.figure.canvas.draw_idle()
@@ -381,16 +390,20 @@ class LineInSignal1D(t.HasTraits):
         if self.on is False:
             return
 
-        self._line.patch.set_color((self.color.Red() / 255.,
-                                    self.color.Green() / 255.,
-                                    self.color.Blue() / 255.,))
+        self._line.patch.set_color(
+            (
+                self.color.Red() / 255.0,
+                self.color.Green() / 255.0,
+                self.color.Blue() / 255.0,
+            )
+        )
         self.draw()
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.calibrate")
 class Signal1DCalibration(SpanSelectorInSignal1D):
-    left_value = t.Float(t.Undefined, label='New left value')
-    right_value = t.Float(t.Undefined, label='New right value')
+    left_value = t.Float(t.Undefined, label="New left value")
+    right_value = t.Float(t.Undefined, label="New right value")
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
@@ -398,12 +411,11 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
     def __init__(self, signal):
         super().__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
-            raise SignalDimensionError(
-                signal.axes_manager.signal_dimension, 1)
+            raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
         if not isinstance(self.axis, UniformDataAxis):
             raise NotImplementedError(
                 "The calibration tool supports only uniform axes."
-                )
+            )
         self.units = self.axis.units
         self.scale = self.axis.scale
         self.offset = self.axis.offset
@@ -426,17 +438,20 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         lc = self.axis.value2index(self.ss_left_value)
         rc = self.axis.value2index(self.ss_right_value)
         self.offset, self.scale = self.axis.calibrate(
-            (self.left_value, self.right_value), (lc, rc),
-            modify_calibration=False)
+            (self.left_value, self.right_value), (lc, rc), modify_calibration=False
+        )
 
     def apply(self):
         if not self._is_valid_range:
-            _logger.warning("Select a range by clicking on the signal figure "
-                            "and dragging before pressing Apply.")
+            _logger.warning(
+                "Select a range by clicking on the signal figure "
+                "and dragging before pressing Apply."
+            )
             return
         elif self.left_value is t.Undefined or self.right_value is t.Undefined:
-            _logger.warning("Select the new left and right values before "
-                            "pressing apply.")
+            _logger.warning(
+                "Select the new left and right values before " "pressing apply."
+            )
             return
         axis = self.axis
         axis.scale = self.scale
@@ -469,11 +484,11 @@ class Smoothing(t.HasTraits):
         if hasattr(self, "line_color"):
             try:
                 # PyQt and WX
-                return np.array(self.line_color.Get()) / 255.
+                return np.array(self.line_color.Get()) / 255.0
             except AttributeError:
                 try:
                     # PySide
-                    return np.array(self.line_color.getRgb()) / 255.
+                    return np.array(self.line_color.getRgb()) / 255.0
                 except BaseException:
                     return matplotlib.colors.to_rgb(self.line_color_ipy)
         else:
@@ -494,15 +509,12 @@ class Smoothing(t.HasTraits):
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
         self.original_color = l1.line.get_color()
-        l1.set_line_properties(color=self.original_color,
-                               type='scatter')
+        l1.set_line_properties(color=self.original_color, type="scatter")
 
         l2 = drawing.signal1d.Signal1DLine()
         l2.data_function = self.model2plot
 
-        l2.set_line_properties(
-            color=self.line_color_rgb,
-            type='line')
+        l2.set_line_properties(color=self.line_color_rgb, type="line")
         # Add the line to the figure
         hse.signal_plot.add_line(l2)
         l2.plot()
@@ -517,16 +529,14 @@ class Smoothing(t.HasTraits):
             self.smooth_diff_line.update()
 
     def turn_diff_line_on(self, diff_order):
-
         self.signal._plot.signal_plot.create_right_axis()
         self.smooth_diff_line = drawing.signal1d.Signal1DLine()
         self.smooth_diff_line.axes_manager = self.signal.axes_manager
         self.smooth_diff_line.data_function = self.diff_model2plot
         self.smooth_diff_line.set_line_properties(
-            color=self.line_color_rgb,
-            type='line')
-        self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
-                                               ax='right')
+            color=self.line_color_rgb, type="line"
+        )
+        self.signal._plot.signal_plot.add_line(self.smooth_diff_line, ax="right")
 
     def _line_color_ipy_changed(self):
         if hasattr(self, "line_color"):
@@ -551,11 +561,9 @@ class Smoothing(t.HasTraits):
             self.smooth_diff_line.update(force_replot=False)
 
     def _line_color_changed(self, old, new):
-        self.smooth_line.line_properties = {
-            'color': self.line_color_rgb}
+        self.smooth_line.line_properties = {"color": self.line_color_rgb}
         if self.smooth_diff_line is not None:
-            self.smooth_diff_line.line_properties = {
-                'color': self.line_color_rgb}
+            self.smooth_diff_line.line_properties = {"color": self.line_color_rgb}
         try:
             # it seems that changing the properties can be done before the
             # first rendering event, which can cause issue with blitting
@@ -576,22 +584,18 @@ class Smoothing(t.HasTraits):
             if self.differential_order != 0:
                 self.turn_diff_line_off()
             self.smooth_line.close()
-            self.data_line.set_line_properties(
-                color=self.original_color,
-                type='line')
+            self.data_line.set_line_properties(color=self.original_color, type="line")
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.smooth_savitzky_golay")
 class SmoothingSavitzkyGolay(Smoothing):
-
     polynomial_order = t.Int(
         3,
         desc="The order of the polynomial used to fit the samples."
-             "`polyorder` must be less than `window_length`.")
+        "`polyorder` must be less than `window_length`.",
+    )
 
-    window_length = t.Int(
-        5,
-        desc="`window_length` must be a positive odd integer.")
+    window_length = t.Int(5, desc="`window_length` must be a positive odd integer.")
 
     increase_window_length = t.Button(orientation="horizontal", label="+")
     decrease_window_length = t.Button(orientation="horizontal", label="-")
@@ -613,14 +617,16 @@ class SmoothingSavitzkyGolay(Smoothing):
             self.window_length = nwl
         else:
             _logger.warning(
-                "The window length must be greater than the polynomial order")
+                "The window length must be greater than the polynomial order"
+            )
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
             _logger.warning(
-                "Polynomial order must be < window length. "
-                "Window length set to %i.", self.window_length)
+                "Polynomial order must be < window length. " "Window length set to %i.",
+                self.window_length,
+            )
         self.update_lines()
 
     def _window_length_changed(self, old, new):
@@ -631,7 +637,9 @@ class SmoothingSavitzkyGolay(Smoothing):
             self.polynomial_order += 1
             _logger.warning(
                 "Differential order must be <= polynomial order. "
-                "Polynomial order set to %i.", self.polynomial_order)
+                "Polynomial order set to %i.",
+                self.polynomial_order,
+            )
         super()._differential_order_changed(old, new)
 
     def diff_model2plot(self, axes_manager=None):
@@ -639,7 +647,8 @@ class SmoothingSavitzkyGolay(Smoothing):
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
-            differential_order=self.differential_order)
+            differential_order=self.differential_order,
+        )
         return self.single_spectrum.data
 
     def model2plot(self, axes_manager=None):
@@ -647,25 +656,27 @@ class SmoothingSavitzkyGolay(Smoothing):
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
-            differential_order=0)
+            differential_order=0,
+        )
         return self.single_spectrum.data
 
     def apply(self):
         self.signal.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
-            differential_order=self.differential_order)
+            differential_order=self.differential_order,
+        )
         self.signal._replot()
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.smooth_lowess")
 class SmoothingLowess(Smoothing):
-    smoothing_parameter = t.Range(low=0.001,
-                                  high=0.99,
-                                  value=0.1,
-                                  )
-    number_of_iterations = t.Range(low=1,
-                                   value=1)
+    smoothing_parameter = t.Range(
+        low=0.001,
+        high=0.99,
+        value=0.1,
+    )
+    number_of_iterations = t.Range(low=1, value=1)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -684,14 +695,16 @@ class SmoothingLowess(Smoothing):
         self.single_spectrum.smooth_lowess(
             smoothing_parameter=self.smoothing_parameter,
             number_of_iterations=self.number_of_iterations,
-            show_progressbar=False)
+            show_progressbar=False,
+        )
 
         return self.single_spectrum.data
 
     def apply(self):
         self.signal.smooth_lowess(
             smoothing_parameter=self.smoothing_parameter,
-            number_of_iterations=self.number_of_iterations)
+            number_of_iterations=self.number_of_iterations,
+        )
         self.signal._replot()
 
 
@@ -705,21 +718,20 @@ class SmoothingTV(Smoothing):
     def model2plot(self, axes_manager=None):
         self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_tv(
-            smoothing_parameter=self.smoothing_parameter,
-            show_progressbar=False)
+            smoothing_parameter=self.smoothing_parameter, show_progressbar=False
+        )
 
         return self.single_spectrum.data
 
     def apply(self):
-        self.signal.smooth_tv(
-            smoothing_parameter=self.smoothing_parameter)
+        self.signal.smooth_tv(smoothing_parameter=self.smoothing_parameter)
         self.signal._replot()
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.smooth_butterworth")
 class ButterworthFilter(Smoothing):
-    cutoff_frequency_ratio = t.Range(0.01, 1., 0.01)
-    type = t.Enum('low', 'high')
+    cutoff_frequency_ratio = t.Range(0.01, 1.0, 0.01)
+    type = t.Enum("low", "high")
     order = t.Int(2)
 
     def _cutoff_frequency_ratio_changed(self, old, new):
@@ -732,14 +744,12 @@ class ButterworthFilter(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
-                                self.type)
+        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio, self.type)
         smoothed = sp_signal.filtfilt(b, a, self.signal._get_current_data())
         return smoothed
 
     def apply(self):
-        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
-                                self.type)
+        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio, self.type)
         f = functools.partial(sp_signal.filtfilt, b, a)
         self.signal.map(f)
 
@@ -759,26 +769,35 @@ class ImageContrastEditor(t.HasTraits):
         desc="Number of bins used for the histogram.",
         auto_set=False,
         enter_set=True,
-        )
+    )
     gamma = t.Range(0.1, 3.0, 1.0)
     vmin_percentile = t.Range(0.0, 100.0, 0)
     vmax_percentile = t.Range(0.0, 100.0, 100)
 
-    norm = t.Enum(
-        'Linear',
-        'Power',
-        'Log',
-        'Symlog',
-        default='Linear')
-    linthresh = t.Range(0.0, 1.0, 0.01, exclude_low=True, exclude_high=False,
-                        desc="Range of value closed to zero, which are "
-                        f"linearly extrapolated. {mpl_help}")
-    linscale = t.Range(0.0, 10.0, 0.1, exclude_low=False, exclude_high=False,
-                       desc="Number of decades to use for each half of "
-                       f"the linear range. {mpl_help}")
-    auto = t.Bool(True,
-                  desc="Adjust automatically the display when changing "
-                  "navigator indices. Unselect to keep the same display.")
+    norm = t.Enum("Linear", "Power", "Log", "Symlog", default="Linear")
+    linthresh = t.Range(
+        0.0,
+        1.0,
+        0.01,
+        exclude_low=True,
+        exclude_high=False,
+        desc="Range of value closed to zero, which are "
+        f"linearly extrapolated. {mpl_help}",
+    )
+    linscale = t.Range(
+        0.0,
+        10.0,
+        0.1,
+        exclude_low=False,
+        exclude_high=False,
+        desc="Number of decades to use for each half of "
+        f"the linear range. {mpl_help}",
+    )
+    auto = t.Bool(
+        True,
+        desc="Adjust automatically the display when changing "
+        "navigator indices. Unselect to keep the same display.",
+    )
 
     def __init__(self, image):
         super().__init__()
@@ -795,11 +814,9 @@ class ImageContrastEditor(t.HasTraits):
         self.linthresh = self.image.linthresh
         self.linscale = self.image.linscale
         if self.image._vmin_percentile is not None:
-            self.vmin_percentile = float(
-                self.image._vmin_percentile.split('th')[0])
+            self.vmin_percentile = float(self.image._vmin_percentile.split("th")[0])
         if self.image._vmax_percentile is not None:
-            self.vmax_percentile = float(
-                self.image._vmax_percentile.split('th')[0])
+            self.vmax_percentile = float(self.image._vmax_percentile.split("th")[0])
 
         # Copy the original value to be used when resetting the display
         self.vmin_original = self._vmin
@@ -810,8 +827,8 @@ class ImageContrastEditor(t.HasTraits):
         self.vmin_percentile_original = self.vmin_percentile
         self.vmax_percentile_original = self.vmax_percentile
 
-        if self.image.norm == 'auto':
-            self.norm = 'Linear'
+        if self.image.norm == "auto":
+            self.norm = "Linear"
         else:
             self.norm = self.image.norm.capitalize()
         self.norm_original = copy.deepcopy(self.norm)
@@ -820,29 +837,32 @@ class ImageContrastEditor(t.HasTraits):
             self.ax,
             onselect=self._update_image_contrast,
             onmove_callback=self._update_image_contrast,
-            direction='horizontal',
+            direction="horizontal",
             interactive=True,
             ignore_event_outside=False,
             drag_from_anywhere=True,
-            props={"alpha":0.25, "color":'r'},
-            handle_props={"alpha":0.5, "color":'r'},
-            useblit=self.ax.figure.canvas.supports_blit)
+            props={"alpha": 0.25, "color": "r"},
+            handle_props={"alpha": 0.5, "color": "r"},
+            useblit=self.ax.figure.canvas.supports_blit,
+        )
 
         self.plot_histogram()
 
         if self.image.axes_manager is not None:
-            self.image.axes_manager.events.indices_changed.connect(
-                self._reset, [])
+            self.image.axes_manager.events.indices_changed.connect(self._reset, [])
             self.hspy_fig.events.closed.connect(
                 lambda: self.image.axes_manager.events.indices_changed.disconnect(
-                    self._reset), [])
+                    self._reset
+                ),
+                [],
+            )
 
             # Disconnect update image to avoid image flickering and reconnect
             # it when necessary in the close method.
             self.image.disconnect()
 
     def _init_plot(self):
-        figsize = matplotlib.rcParamsDefault.get('figure.figsize')
+        figsize = matplotlib.rcParamsDefault.get("figure.figsize")
         figsize = figsize[0], figsize[1] / 3
         self.hspy_fig = Signal1DFigure(figsize=figsize)
         self.ax = self.hspy_fig.ax
@@ -854,20 +874,19 @@ class ImageContrastEditor(t.HasTraits):
         if self._vmin == self._vmax:
             return
         self.image.gamma = new
-        self._reset(auto=False, indices_changed=False,
-                    update_histogram=False)
+        self._reset(auto=False, indices_changed=False, update_histogram=False)
         self.update_line()
 
     def _vmin_percentile_changed(self, old, new):
         if isinstance(new, str):
-            new = float(new.split('th')[0])
+            new = float(new.split("th")[0])
         self.image.vmin = f"{new}th"
         self._reset(auto=True, indices_changed=False)
         self._clear_span_selector()
 
     def _vmax_percentile_changed(self, old, new):
         if isinstance(new, str):
-            new = float(new.split('th')[0])
+            new = float(new.split("th")[0])
         self.image.vmax = f"{new}th"
         self._reset(auto=True, indices_changed=False)
         self._clear_span_selector()
@@ -884,36 +903,30 @@ class ImageContrastEditor(t.HasTraits):
 
     def _norm_changed(self, old, new):
         self.image.norm = new.lower()
-        self._reset(auto=False, indices_changed=False,
-                    update_histogram=False)
+        self._reset(auto=False, indices_changed=False, update_histogram=False)
         self.update_line()
 
     def _linthresh_changed(self, old, new):
         self.image.linthresh = new
-        self._reset(auto=False, indices_changed=False,
-                    update_histogram=False)
+        self._reset(auto=False, indices_changed=False, update_histogram=False)
 
     def _linscale_changed(self, old, new):
         self.image.linscale = new
-        self._reset(auto=False, indices_changed=False,
-                    update_histogram=False)
+        self._reset(auto=False, indices_changed=False, update_histogram=False)
 
     def update_span_selector_traits(self, *args, **kwargs):
-        self.ss_left_value, self.ss_right_value = sorted(
-            self._get_current_range())
+        self.ss_left_value, self.ss_right_value = sorted(self._get_current_range())
         self.update_line()
 
     def _update_image_contrast(self, *args, **kwargs):
         self.update_span_selector_traits(*args, **kwargs)
-        self._reset(auto=False, indices_changed=False,
-                    update_histogram=False)
+        self._reset(auto=False, indices_changed=False, update_histogram=False)
 
     def _get_data(self):
         return self.image._current_data
 
     def _get_histogram(self, data):
-        return numba_histogram(data, bins=self.bins,
-                               ranges=(self._vmin, self._vmax))
+        return numba_histogram(data, bins=self.bins, ranges=(self._vmin, self._vmax))
 
     def plot_histogram(self, max_num_bins=250):
         """Plot a histogram of the data.
@@ -955,21 +968,24 @@ class ImageContrastEditor(t.HasTraits):
         if self._vmin == self._vmax:
             return
 
-        if hasattr(self, 'hist'):
+        if hasattr(self, "hist"):
             self.hist.remove()
 
         self.xaxis = UniformDataAxis(
-            scale=(self._vmax-self._vmin) / self.bins,
+            scale=(self._vmax - self._vmin) / self.bins,
             offset=self._vmin,
-            size=self.bins
-            )
+            size=self.bins,
+        )
         self.hist_data = self._get_histogram(self._get_data())
 
         # We don't use blitting for the histogram because it will be part
         # included in the background
         self.hist = self.ax.fill_between(
-            self.xaxis.axis, self.hist_data, step="mid", color='C0',
-            )
+            self.xaxis.axis,
+            self.hist_data,
+            step="mid",
+            color="C0",
+        )
 
         self.ax.set_xlim(self._vmin, self._vmax)
         if self.hist_data.max() != 0:
@@ -989,7 +1005,7 @@ class ImageContrastEditor(t.HasTraits):
         self.hspy_fig.axis = self.xaxis
         self.line = drawing.signal1d.Signal1DLine()
         self.line.data_function = self._get_data_function
-        self.line.set_line_properties(color='C1', type='line')
+        self.line.set_line_properties(color="C1", type="line")
         # Add the line to the figure
         self.hspy_fig.add_line(self.line)
         self.line.plot()
@@ -1003,27 +1019,27 @@ class ImageContrastEditor(t.HasTraits):
         cmin, cmax = xaxis[0], xaxis[-1]
         max_hist = self.hist_data.max()
         if self.image.norm == "linear":
-            values = ((xaxis-cmin)/(cmax-cmin)) * max_hist
+            values = ((xaxis - cmin) / (cmax - cmin)) * max_hist
         elif self.image.norm == "symlog":
             v = self._sym_log_transform(xaxis)
-            values = (v-v[0]) / (v[-1]-v[0]) * max_hist
+            values = (v - v[0]) / (v[-1] - v[0]) * max_hist
         elif self.image.norm == "log":
             v = np.log(xaxis)
-            values = (v-v[0]) / (v[-1]-v[0]) * max_hist
+            values = (v - v[0]) / (v[-1] - v[0]) * max_hist
         else:
             # if "auto" or "power" use the self.gamma value
-            values = ((xaxis-cmin)/(cmax-cmin)) ** self.gamma * max_hist
+            values = ((xaxis - cmin) / (cmax - cmin)) ** self.gamma * max_hist
 
         return values
 
     def _sym_log_transform(self, arr):
         # adapted from matploltib.colors.SymLogNorm
         arr = arr.copy()
-        _linscale_adj = (self.linscale / (1.0 - np.e ** -1))
+        _linscale_adj = self.linscale / (1.0 - np.e**-1)
         with np.errstate(invalid="ignore"):
             masked = abs(arr) > self.linthresh
         sign = np.sign(arr[masked])
-        log = (_linscale_adj + np.log(abs(arr[masked]) / self.linthresh))
+        log = _linscale_adj + np.log(abs(arr[masked]) / self.linthresh)
         log *= sign * self.linthresh
         arr[masked] = log
         arr[~masked] *= _linscale_adj
@@ -1031,7 +1047,7 @@ class ImageContrastEditor(t.HasTraits):
         return arr
 
     def update_line(self):
-        if not hasattr(self, 'line') or self._vmin == self._vmax:
+        if not hasattr(self, "line") or self._vmin == self._vmax:
             return
         self._set_xaxis_line()
         self.line.update(render_figure=True)
@@ -1070,14 +1086,13 @@ class ImageContrastEditor(t.HasTraits):
 
     @property
     def _is_selector_visible(self):
-        if hasattr(self, 'span_selector'):
+        if hasattr(self, "span_selector"):
             return self.span_selector.artists[0].get_visible()
 
     def _get_current_range(self):
         # Get the range from the span selector if it is displayed otherwise
         # fallback to the _vmin/_vmax cache values
-        if (self._is_selector_visible and
-                np.diff(self.span_selector.extents) > 0):
+        if self._is_selector_visible and np.diff(self.span_selector.extents) > 0:
             # if we have a span selector, use it to set the display
             return self.span_selector.extents
         else:
@@ -1108,29 +1123,29 @@ class ImageContrastEditor(t.HasTraits):
             self._vmin, self._vmax = self.image._vmin, self.image._vmax
         else:
             vmin, vmax = self._get_current_range()
-            self.image.update(data_changed=indices_changed, auto_contrast=auto,
-                              vmin=vmin, vmax=vmax)
+            self.image.update(
+                data_changed=indices_changed, auto_contrast=auto, vmin=vmin, vmax=vmax
+            )
 
         if update_histogram and hasattr(self, "hist"):
             self.update_histogram()
             self.update_span_selector_traits()
 
     def _clear_span_selector(self):
-        if hasattr(self, 'span_selector'):
+        if hasattr(self, "span_selector"):
             self.span_selector.clear()
-        if hasattr(self, 'line'):
+        if hasattr(self, "line"):
             self.line.line.set_visible(False)
             self.hspy_fig.render_figure()
 
     def _show_help_fired(self):
         from pyface.message_dialog import information
-        _help = _IMAGE_CONTRAST_EDITOR_HELP.replace("PERCENTILE",
-                                                    _PERCENTILE_TRAITSUI)
-        _ = information(None, _help, title="Help"),
+
+        _help = _IMAGE_CONTRAST_EDITOR_HELP.replace("PERCENTILE", _PERCENTILE_TRAITSUI)
+        _ = (information(None, _help, title="Help"),)
 
 
-_IMAGE_CONTRAST_EDITOR_HELP = \
-"""
+_IMAGE_CONTRAST_EDITOR_HELP = """
 <h2>Image contrast editor</h2>
 <p>This tool provides controls to adjust the contrast of the image.</p>
 
@@ -1172,57 +1187,69 @@ the range selector.</p>
 
 """
 
-_PERCENTILE_TRAITSUI = \
-"""<p><b>vmin percentile</b>: The percentile value defining the number of
+_PERCENTILE_TRAITSUI = """<p><b>vmin percentile</b>: The percentile value defining the number of
 pixels left out of the lower bounds.</p>
 
 <p><b>vmax percentile</b>: The percentile value defining the number of
 pixels left out of the upper bounds.</p>"""
 
-_PERCENTILE_IPYWIDGETS = \
-"""<p><b>vmin/vmax percentile</b>: The percentile values defining the number of
+_PERCENTILE_IPYWIDGETS = """<p><b>vmin/vmax percentile</b>: The percentile values defining the number of
 pixels left out of the lower and upper bounds.</p>"""
 
 IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS = _IMAGE_CONTRAST_EDITOR_HELP.replace(
-    "PERCENTILE", _PERCENTILE_IPYWIDGETS)
+    "PERCENTILE", _PERCENTILE_IPYWIDGETS
+)
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
-        'Doniach',
-        'Exponential',
-        'Gaussian',
-        'Lorentzian',
-        'Offset',
-        'Polynomial',
-        'Power law',
-        'Skew normal',
-        'Split Voigt',
-        'Voigt',
-        default='Power law')
+        "Doniach",
+        "Exponential",
+        "Gaussian",
+        "Lorentzian",
+        "Offset",
+        "Polynomial",
+        "Power law",
+        "Skew normal",
+        "Split Voigt",
+        "Voigt",
+        default="Power law",
+    )
     polynomial_order = t.Range(1, 10)
-    fast = t.Bool(True,
-                  desc=("Perform a fast (analytic, but possibly less accurate)"
-                        " estimation of the background. Otherwise use "
-                        "non-linear least squares."))
+    fast = t.Bool(
+        True,
+        desc=(
+            "Perform a fast (analytic, but possibly less accurate)"
+            " estimation of the background. Otherwise use "
+            "non-linear least squares."
+        ),
+    )
     zero_fill = t.Bool(
         False,
-        desc=("Set all spectral channels lower than the lower \n"
-              "bound of the fitting range to zero (this is the \n"
-              "default behavior of Gatan's DigitalMicrograph). \n"
-              "Otherwise leave the pre-fitting region as-is \n"
-              "(useful for inspecting quality of background fit)."))
+        desc=(
+            "Set all spectral channels lower than the lower \n"
+            "bound of the fitting range to zero (this is the \n"
+            "default behavior of Gatan's DigitalMicrograph). \n"
+            "Otherwise leave the pre-fitting region as-is \n"
+            "(useful for inspecting quality of background fit)."
+        ),
+    )
     background_estimator = t.Instance(Component)
-    bg_line_range = t.Enum('from_left_range',
-                           'full',
-                           'ss_range',
-                           default='full')
+    bg_line_range = t.Enum("from_left_range", "full", "ss_range", default="full")
     red_chisq = t.Float(np.nan)
 
-    def __init__(self, signal, background_type='Power law', polynomial_order=2,
-                 fast=True, plot_remainder=True, zero_fill=False,
-                 show_progressbar=None, model=None):
+    def __init__(
+        self,
+        signal,
+        background_type="Power law",
+        polynomial_order=2,
+        fast=True,
+        plot_remainder=True,
+        zero_fill=False,
+        show_progressbar=None,
+        model=None,
+    ):
         super().__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
@@ -1239,15 +1266,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             figure.tight_layout(rect=[0, 0, 0.95, 1])
         if model is None:
             from hyperspy.models.model1d import Model1D
+
             model = Model1D(signal)
         self.model = model
         self.polynomial_order = polynomial_order
-        if background_type in ['Power Law', 'PowerLaw']:
-            background_type = 'Power law'
-        if background_type in ['Skew Normal', 'SkewNormal']:
-            background_type = 'Skew normal'
-        if background_type in ['Split voigt', 'SplitVoigt']:
-            background_type = 'Split Voigt'
+        if background_type in ["Power Law", "PowerLaw"]:
+            background_type = "Power law"
+        if background_type in ["Skew Normal", "SkewNormal"]:
+            background_type = "Skew normal"
+        if background_type in ["Split voigt", "SplitVoigt"]:
+            background_type = "Split Voigt"
         self.background_type = background_type
         self.zero_fill = zero_fill
         self.show_progressbar = show_progressbar
@@ -1269,12 +1297,14 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             for component in self.model:
                 self.model.remove(component)
         self.background_estimator, self.bg_line_range = _get_background_estimator(
-            self.background_type, self.polynomial_order)
+            self.background_type, self.polynomial_order
+        )
         if self.model is not None and len(self.model) == 0:
             self.model.append(self.background_estimator)
         if not self.fast and self._is_valid_range:
-            self.background_estimator.estimate_parameters(self.signal,
-                self.ss_left_value, self.ss_right_value, only_current=True)
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value, self.ss_right_value, only_current=True
+            )
 
     def _polynomial_order_changed(self, old, new):
         self.set_background_estimator()
@@ -1293,43 +1323,40 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def create_background_line(self):
         self.bg_line = drawing.signal1d.Signal1DLine()
         self.bg_line.data_function = self.bg_to_plot
-        self.bg_line.set_line_properties(
-            color='blue',
-            type='line',
-            scaley=False)
+        self.bg_line.set_line_properties(color="blue", type="line", scaley=False)
         self.signal._plot.signal_plot.add_line(self.bg_line)
-        self.bg_line.autoscale = ''
+        self.bg_line.autoscale = ""
         self.bg_line.plot()
 
     def create_remainder_line(self):
         self.rm_line = drawing.signal1d.Signal1DLine()
         self.rm_line.data_function = self.rm_to_plot
-        self.rm_line.set_line_properties(
-            color='green',
-            type='line',
-            scaley=False)
-        self.signal._plot.signal_plot.create_right_axis(color='green',
-                                                        adjust_layout=False)
-        self.signal._plot.signal_plot.add_line(self.rm_line, ax='right')
+        self.rm_line.set_line_properties(color="green", type="line", scaley=False)
+        self.signal._plot.signal_plot.create_right_axis(
+            color="green", adjust_layout=False
+        )
+        self.signal._plot.signal_plot.add_line(self.rm_line, ax="right")
         self.rm_line.plot()
 
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
-        if self.bg_line_range == 'from_left_range':
+        if self.bg_line_range == "from_left_range":
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = fill_with
             from_index = self.axis.value2index(self.ss_left_value)
             bg_array[from_index:] = self.background_estimator.function(
-                self.axis.axis[from_index:])
+                self.axis.axis[from_index:]
+            )
             to_return = bg_array
-        elif self.bg_line_range == 'full':
+        elif self.bg_line_range == "full":
             to_return = self.background_estimator.function(self.axis.axis)
-        elif self.bg_line_range == 'ss_range':
+        elif self.bg_line_range == "ss_range":
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = fill_with
             from_index = self.axis.value2index(self.ss_left_value)
             to_index = self.axis.value2index(self.ss_right_value)
             bg_array[from_index:] = self.background_estimator.function(
-                self.axis.axis[from_index:to_index])
+                self.axis.axis[from_index:to_index]
+            )
             to_return = bg_array
 
         if self.axis.is_binned:
@@ -1359,32 +1386,32 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         # the chisq calculation when using fast
         self.model.set_signal_range(self.ss_left_value, self.ss_right_value)
         if self.fast:
-            self.background_estimator.estimate_parameters(self.signal,
-                self.ss_left_value, self.ss_right_value, only_current=True)
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value, self.ss_right_value, only_current=True
+            )
             # Calculate chisq
             self.model._calculate_chisq()
         else:
             self.model.fit()
-        self.red_chisq = self.model.red_chisq.data[
-            self.model.axes_manager.indices]
+        self.red_chisq = self.model.red_chisq.data[self.model.axes_manager.indices]
 
     def _update_line(self):
         if self.bg_line is None:
             self.create_background_line()
         else:
-            self.bg_line.update(render_figure=not self.plot_remainder,
-                                update_ylimits=False)
+            self.bg_line.update(
+                render_figure=not self.plot_remainder, update_ylimits=False
+            )
         if self.plot_remainder:
             if self.rm_line is None:
                 self.create_remainder_line()
             else:
-                self.rm_line.update(render_figure=True,
-                                    update_ylimits=True)
+                self.rm_line.update(render_figure=True, update_ylimits=True)
 
     def apply(self):
         if not self._is_valid_range:
             return
-        return_model = (self.model is not None)
+        return_model = self.model is not None
         result = self.signal._remove_background_cli(
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_estimator=self.background_estimator,
@@ -1392,7 +1419,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             zero_fill=self.zero_fill,
             show_progressbar=self.show_progressbar,
             model=self.model,
-            return_model=return_model)
+            return_model=return_model,
+        )
         new_spectra = result[0] if return_model else result
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
@@ -1429,37 +1457,37 @@ def _get_background_estimator(background_type, polynomial_order=1):
         The range to draw the component (used in the BackgroundRemoval tool)
 
     """
-    background_type = background_type.lower().replace(' ', '')
-    if background_type == 'doniach':
+    background_type = background_type.lower().replace(" ", "")
+    if background_type == "doniach":
         background_estimator = components1d.Doniach()
-        bg_line_range = 'full'
-    elif background_type == 'gaussian':
+        bg_line_range = "full"
+    elif background_type == "gaussian":
         background_estimator = components1d.Gaussian()
-        bg_line_range = 'full'
-    elif background_type == 'lorentzian':
+        bg_line_range = "full"
+    elif background_type == "lorentzian":
         background_estimator = components1d.Lorentzian()
-        bg_line_range = 'full'
-    elif background_type == 'offset':
+        bg_line_range = "full"
+    elif background_type == "offset":
         background_estimator = components1d.Offset()
-        bg_line_range = 'full'
-    elif background_type == 'polynomial':
+        bg_line_range = "full"
+    elif background_type == "polynomial":
         background_estimator = components1d.Polynomial(order=polynomial_order)
-        bg_line_range = 'full'
-    elif background_type == 'powerlaw':
+        bg_line_range = "full"
+    elif background_type == "powerlaw":
         background_estimator = components1d.PowerLaw()
-        bg_line_range = 'from_left_range'
-    elif background_type == 'exponential':
+        bg_line_range = "from_left_range"
+    elif background_type == "exponential":
         background_estimator = components1d.Exponential()
-        bg_line_range = 'from_left_range'
-    elif background_type == 'skewnormal':
+        bg_line_range = "from_left_range"
+    elif background_type == "skewnormal":
         background_estimator = components1d.SkewNormal()
-        bg_line_range = 'full'
-    elif background_type == 'splitvoigt':
+        bg_line_range = "full"
+    elif background_type == "splitvoigt":
         background_estimator = components1d.SplitVoigt()
-        bg_line_range = 'full'
-    elif background_type == 'voigt':
+        bg_line_range = "full"
+    elif background_type == "voigt":
         background_estimator = components1d.Voigt()
-        bg_line_range = 'full'
+        bg_line_range = "full"
     else:
         raise ValueError(f"Background type '{background_type}' not recognized.")
 
@@ -1468,34 +1496,32 @@ def _get_background_estimator(background_type, polynomial_order=1):
 
 SPIKES_REMOVAL_INSTRUCTIONS = (
     "To remove spikes from the data:\n\n"
-
-    "   1. Click \"Show derivative histogram\" to "
+    '   1. Click "Show derivative histogram" to '
     "determine at what magnitude the spikes are present.\n"
     "   2. Enter a suitable threshold (lower than the "
     "lowest magnitude outlier in the histogram) in the "
-    "\"Threshold\" box, which will be the magnitude "
+    '"Threshold" box, which will be the magnitude '
     "from which to search. \n"
-    "   3. Click \"Find next\" to find the first spike.\n"
+    '   3. Click "Find next" to find the first spike.\n'
     "   4. If desired, the width and position of the "
     "boundaries used to replace the spike can be "
     "adjusted by clicking and dragging on the displayed "
     "plot.\n "
     "   5. View the spike (and the replacement data that "
-    "will be added) and click \"Remove spike\" in order "
+    'will be added) and click "Remove spike" in order '
     "to alter the data as shown. The tool will "
     "automatically find the next spike to replace.\n"
     "   6. Repeat this process for each spike throughout "
     "the dataset, until the end of the dataset is "
     "reached.\n"
-    "   7. Click \"OK\" when finished to close the spikes "
+    '   7. Click "OK" when finished to close the spikes '
     "removal tool.\n\n"
-
     "Note: Various settings can be configured in "
-    "the \"Advanced settings\" section. Hover the "
+    'the "Advanced settings" section. Hover the '
     "mouse over each parameter for a description of what "
     "it does."
-
-    "\n")
+    "\n"
+)
 
 
 @add_gui_method(toolkey="hyperspy.SimpleMessage")
@@ -1507,10 +1533,17 @@ class SimpleMessage(t.HasTraits):
 
 
 class SpikesRemoval:
-
-    def __init__(self, signal, navigation_mask=None, signal_mask=None,
-                 threshold='auto', default_spike_width=5, add_noise=True,
-                 max_num_bins=1000, random_state=None):
+    def __init__(
+        self,
+        signal,
+        navigation_mask=None,
+        signal_mask=None,
+        threshold="auto",
+        default_spike_width=5,
+        add_noise=True,
+        max_num_bins=1000,
+        random_state=None,
+    ):
         self.ss_left_value = np.nan
         self.ss_right_value = np.nan
         self.default_spike_width = default_spike_width
@@ -1518,38 +1551,40 @@ class SpikesRemoval:
         self.signal_mask = signal_mask
         self.navigation_mask = navigation_mask
         self.interpolated_line = None
-        self.coordinates = [coordinate for coordinate in
-                            signal.axes_manager._am_indices_generator()
-                            if (navigation_mask is None or not
-                                navigation_mask[coordinate[::-1]])]
+        self.coordinates = [
+            coordinate
+            for coordinate in signal.axes_manager._am_indices_generator()
+            if (navigation_mask is None or not navigation_mask[coordinate[::-1]])
+        ]
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         if len(self.coordinates) > 1:
             signal.axes_manager.indices = self.coordinates[0]
-        if threshold == 'auto':
+        if threshold == "auto":
             # Find the first zero of the spikes diagnosis plot
             hist = signal._spikes_diagnosis(
-                    signal_mask=signal_mask,
-                    navigation_mask=navigation_mask,
-                    max_num_bins=max_num_bins,
-                    show_plot=False,
-                    use_gui=False,
-                    )
+                signal_mask=signal_mask,
+                navigation_mask=navigation_mask,
+                max_num_bins=max_num_bins,
+                show_plot=False,
+                use_gui=False,
+            )
             zero_index = np.where(hist.data == 0)[0]
             if zero_index.shape[0] > 0:
                 index = zero_index[0]
             else:
                 index = hist.data.shape[0] - 1
             threshold = np.ceil(hist.axes_manager[0].index2value(index))
-            _logger.info(f'Threshold value: {threshold}')
+            _logger.info(f"Threshold value: {threshold}")
         self.argmax = None
         self.derivmax = None
         self.spline_order = 1
-        self._temp_mask = np.zeros(self.signal._get_current_data().shape, dtype='bool')
+        self._temp_mask = np.zeros(self.signal._get_current_data().shape, dtype="bool")
         self.index = 0
         self.threshold = threshold
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
+
         self._rng = check_random_state(random_state)
 
         if "Signal.Noise_properties" in md:
@@ -1573,7 +1608,7 @@ class SpikesRemoval:
             left, right = self.get_interpolation_range()
             # Don't search for spikes in the are where one has
             # been found next time `find` is called.
-            self._temp_mask[left:right + 1] = True
+            self._temp_mask[left : right + 1] = True
             derivative[self._temp_mask] = 0
         if abs(derivative.max()) >= self.threshold:
             self.argmax = derivative.argmax()
@@ -1587,8 +1622,9 @@ class SpikesRemoval:
         spike = self.detect_spike()
         with self.signal.axes_manager.events.indices_changed.suppress():
             while not spike and (
-                    (self.index < ncoordinates - 1 and back is False) or
-                    (self.index > 0 and back is True)):
+                (self.index < ncoordinates - 1 and back is False)
+                or (self.index > 0 and back is True)
+            ):
                 if back is False:
                     self.index += 1
                 else:
@@ -1605,7 +1641,7 @@ class SpikesRemoval:
 
     def get_interpolation_range(self):
         axis = self.signal.axes_manager.signal_axes[0]
-        if hasattr(self, 'span_selector') and self._is_valid_range:
+        if hasattr(self, "span_selector") and self._is_valid_range:
             left = axis.value2index(self.ss_left_value)
             right = axis.value2index(self.ss_right_value)
         else:
@@ -1653,17 +1689,20 @@ class SpikesRemoval:
         if self.add_noise is True:
             if self.noise_type == "white":
                 data[left:right] += self._rng.normal(
-                    scale=np.sqrt(self.noise_variance),
-                    size=right - left)
+                    scale=np.sqrt(self.noise_variance), size=right - left
+                )
             elif self.noise_type == "heteroscedastic":
                 noise_variance = self.noise_variance(
-                    axes_manager=self.signal.axes_manager)[left:right]
-                noise = [self._rng.normal(scale=np.sqrt(item))
-                         for item in noise_variance]
+                    axes_manager=self.signal.axes_manager
+                )[left:right]
+                noise = [
+                    self._rng.normal(scale=np.sqrt(item)) for item in noise_variance
+                ]
                 data[left:right] += noise
             else:
                 data[left:right] = self._rng.poisson(
-                    np.clip(data[left:right], 0, np.inf))
+                    np.clip(data[left:right], 0, np.inf)
+                )
 
         return data
 
@@ -1676,26 +1715,34 @@ class SpikesRemoval:
 
 @add_gui_method(toolkey="hyperspy.Signal1D.spikes_removal_tool")
 class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
-    threshold = t.Float(400, desc="the derivative magnitude threshold above\n"
-                        "which to find spikes")
+    threshold = t.Float(
+        400, desc="the derivative magnitude threshold above\n" "which to find spikes"
+    )
     click_to_show_instructions = t.Button()
     show_derivative_histogram = t.Button()
-    spline_order = t.Range(1, 10, 1,
-                           desc="the order of the spline used to\n"
-                           "connect the reconstructed data")
+    spline_order = t.Range(
+        1,
+        10,
+        1,
+        desc="the order of the spline used to\n" "connect the reconstructed data",
+    )
     interpolator = None
-    default_spike_width = t.Int(5,
-                                desc="the width over which to do the interpolation\n"
-                                "when removing a spike (this can be "
-                                "adjusted for each\nspike by clicking "
-                                     "and dragging on the display during\n"
-                                     "spike replacement)")
+    default_spike_width = t.Int(
+        5,
+        desc="the width over which to do the interpolation\n"
+        "when removing a spike (this can be "
+        "adjusted for each\nspike by clicking "
+        "and dragging on the display during\n"
+        "spike replacement)",
+    )
     index = t.Int(0)
-    add_noise = t.Bool(True,
-                       desc="whether to add noise to the interpolated\nportion"
-                       "of the spectrum. The noise properties defined\n"
-                       "in the Signal metadata are used if present,"
-                            "otherwise\nshot noise is used as a default")
+    add_noise = t.Bool(
+        True,
+        desc="whether to add noise to the interpolated\nportion"
+        "of the spectrum. The noise properties defined\n"
+        "in the Signal metadata are used if present,"
+        "otherwise\nshot noise is used as a default",
+    )
 
     def __init__(self, signal, max_num_bins=1000, **kwargs):
         SpanSelectorInSignal1D.__init__(self, signal=signal)
@@ -1712,8 +1759,8 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
-        _ = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
-                        title="Instructions"),
+
+        _ = (information(None, SPIKES_REMOVAL_INSTRUCTIONS, title="Instructions"),)
 
     def _show_derivative_histogram_fired(self):
         self.signal._spikes_diagnosis(
@@ -1722,7 +1769,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             max_num_bins=self.max_num_bins,
             show_plot=True,
             use_gui=True,
-            )
+        )
 
     def _reset_line(self):
         if self.interpolated_line is not None:
@@ -1736,7 +1783,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
 
         if spike is False:
             m = SimpleMessage()
-            m.text = 'End of dataset reached'
+            m.text = "End of dataset reached"
             try:
                 m.gui()
             except (NotImplementedError, ImportError):
@@ -1752,20 +1799,20 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             minimum = max(0, self.argmax - 50)
             maximum = min(len(self.signal._get_current_data()) - 1, self.argmax + 50)
             thresh_label = DerivativeTextParameters(
-                text=r"$\mathsf{\delta}_\mathsf{max}=$",
-                color="black")
-            self.ax.legend([thresh_label], [repr(int(self.derivmax))],
-                           handler_map={DerivativeTextParameters:
-                                        DerivativeTextHandler()},
-                           loc='best')
+                text=r"$\mathsf{\delta}_\mathsf{max}=$", color="black"
+            )
+            self.ax.legend(
+                [thresh_label],
+                [repr(int(self.derivmax))],
+                handler_map={DerivativeTextParameters: DerivativeTextHandler()},
+                loc="best",
+            )
             self.ax.set_xlim(
-                self.signal.axes_manager.signal_axes[0].index2value(
-                    minimum),
-                self.signal.axes_manager.signal_axes[0].index2value(
-                    maximum))
+                self.signal.axes_manager.signal_axes[0].index2value(minimum),
+                self.signal.axes_manager.signal_axes[0].index2value(maximum),
+            )
             if self.signal._plot.navigator_plot is not None:
-                self.signal._plot.pointer._set_indices(
-                    self.coordinates[self.index])
+                self.signal._plot.pointer._set_indices(self.coordinates[self.index])
             self.update_plot()
             self.create_interpolation_line()
 
@@ -1780,14 +1827,17 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
 
     def update_signal_mask(self):
-        if hasattr(self, 'mask_filling'):
+        if hasattr(self, "mask_filling"):
             self.mask_filling.remove()
         if self.signal_mask is not None:
-            self.mask_filling = self.ax.fill_between(self.axis.axis,
-                                                     self.signal._get_current_data(), 0,
-                                                     where=self.signal_mask,
-                                                     facecolor='blue',
-                                                     alpha=0.5)
+            self.mask_filling = self.ax.fill_between(
+                self.axis.axis,
+                self.signal._get_current_data(),
+                0,
+                where=self.signal_mask,
+                facecolor="blue",
+                alpha=0.5,
+            )
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -1811,12 +1861,10 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
     def create_interpolation_line(self):
         self.interpolated_line = drawing.signal1d.Signal1DLine()
         self.interpolated_line.data_function = self.get_interpolated_spectrum
-        self.interpolated_line.set_line_properties(
-            color='blue',
-            type='line')
+        self.interpolated_line.set_line_properties(color="blue", type="line")
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
         self.interpolated_line.auto_update = False
-        self.interpolated_line.autoscale = ''
+        self.interpolated_line.autoscale = ""
         self.interpolated_line.plot()
 
     def span_selector_changed(self, *args, **kwargs):
@@ -1841,49 +1889,50 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
 @add_gui_method(toolkey="hyperspy.Signal2D.find_peaks")
 class PeaksFinder2D(t.HasTraits):
     method = t.Enum(
-        'Local max',
-        'Max',
-        'Minmax',
-        'Zaefferer',
-        'Stat',
-        'Laplacian of Gaussian',
-        'Difference of Gaussian',
-        'Template matching',
-        default='Local Max')
+        "Local max",
+        "Max",
+        "Minmax",
+        "Zaefferer",
+        "Stat",
+        "Laplacian of Gaussian",
+        "Difference of Gaussian",
+        "Template matching",
+        default="Local Max",
+    )
     # For "Local max" method
     local_max_distance = t.Range(1, 20, value=3)
-    local_max_threshold = t.Range(0, 20., value=10)
+    local_max_threshold = t.Range(0, 20.0, value=10)
     # For "Max" method
-    max_alpha = t.Range(0, 6., value=3)
+    max_alpha = t.Range(0, 6.0, value=3)
     max_distance = t.Range(1, 20, value=10)
     # For "Minmax" method
-    minmax_distance = t.Range(0, 6., value=3)
-    minmax_threshold = t.Range(0, 20., value=10)
+    minmax_distance = t.Range(0, 6.0, value=3)
+    minmax_threshold = t.Range(0, 20.0, value=10)
     # For "Zaefferer" method
     zaefferer_grad_threshold = t.Range(0, 0.2, value=0.1)
     zaefferer_window_size = t.Range(2, 80, value=40)
-    zaefferer_distance_cutoff = t.Range(1, 100., value=50)
+    zaefferer_distance_cutoff = t.Range(1, 100.0, value=50)
     # For "Stat" method
-    stat_alpha = t.Range(0, 2., value=1)
+    stat_alpha = t.Range(0, 2.0, value=1)
     stat_window_radius = t.Range(5, 20, value=10)
     stat_convergence_ratio = t.Range(0, 0.1, value=0.05)
     # For "Laplacian of Gaussian" method
-    log_min_sigma = t.Range(0, 2., value=1)
-    log_max_sigma = t.Range(0, 100., value=50)
+    log_min_sigma = t.Range(0, 2.0, value=1)
+    log_max_sigma = t.Range(0, 100.0, value=50)
     log_num_sigma = t.Range(0, 20, value=10)
     log_threshold = t.Range(0, 0.4, value=0.2)
-    log_overlap = t.Range(0, 1., value=0.5)
+    log_overlap = t.Range(0, 1.0, value=0.5)
     log_log_scale = t.Bool(False)
     # For "Difference of Gaussian" method
-    dog_min_sigma = t.Range(0, 2., value=1)
-    dog_max_sigma = t.Range(0, 100., value=50)
+    dog_min_sigma = t.Range(0, 2.0, value=1)
+    dog_max_sigma = t.Range(0, 100.0, value=50)
     dog_sigma_ratio = t.Range(0, 3.2, value=1.6)
     dog_threshold = t.Range(0, 0.4, value=0.2)
-    dog_overlap = t.Range(0, 1., value=0.5)
+    dog_overlap = t.Range(0, 1.0, value=0.5)
     # For "Cross correlation" method
     xc_template = None
-    xc_distance = t.Range(0, 100., value=5.)
-    xc_threshold = t.Range(0, 10., value=0.5)
+    xc_distance = t.Range(0, 100.0, value=5.0)
+    xc_threshold = t.Range(0, 10.0, value=0.5)
 
     random_navigation_position = t.Button()
     compute_over_navigation_axes = t.Button()
@@ -1892,66 +1941,66 @@ class PeaksFinder2D(t.HasTraits):
 
     def __init__(self, signal, method, peaks=None, **kwargs):
         self._attribute_argument_mapping_local_max = {
-            'local_max_distance': 'min_distance',
-            'local_max_threshold': 'threshold_abs',
-            }
+            "local_max_distance": "min_distance",
+            "local_max_threshold": "threshold_abs",
+        }
         self._attribute_argument_mapping_max = {
-            'max_alpha': 'alpha',
-            'max_distance': 'distance',
-            }
+            "max_alpha": "alpha",
+            "max_distance": "distance",
+        }
         self._attribute_argument_mapping_local_minmax = {
-            'minmax_distance': 'distance',
-            'minmax_threshold': 'threshold',
-            }
+            "minmax_distance": "distance",
+            "minmax_threshold": "threshold",
+        }
         self._attribute_argument_mapping_local_zaefferer = {
-            'zaefferer_grad_threshold': 'grad_threshold',
-            'zaefferer_window_size': 'window_size',
-            'zaefferer_distance_cutoff': 'distance_cutoff',
-            }
+            "zaefferer_grad_threshold": "grad_threshold",
+            "zaefferer_window_size": "window_size",
+            "zaefferer_distance_cutoff": "distance_cutoff",
+        }
         self._attribute_argument_mapping_local_stat = {
-            'stat_alpha': 'alpha',
-            'stat_window_radius': 'window_radius',
-            'stat_convergence_ratio': 'convergence_ratio',
-            }
+            "stat_alpha": "alpha",
+            "stat_window_radius": "window_radius",
+            "stat_convergence_ratio": "convergence_ratio",
+        }
         self._attribute_argument_mapping_local_log = {
-            'log_min_sigma': 'min_sigma',
-            'log_max_sigma': 'max_sigma',
-            'log_num_sigma': 'num_sigma',
-            'log_threshold': 'threshold',
-            'log_overlap': 'overlap',
-            'log_log_scale': 'log_scale',
-            }
+            "log_min_sigma": "min_sigma",
+            "log_max_sigma": "max_sigma",
+            "log_num_sigma": "num_sigma",
+            "log_threshold": "threshold",
+            "log_overlap": "overlap",
+            "log_log_scale": "log_scale",
+        }
         self._attribute_argument_mapping_local_dog = {
-            'dog_min_sigma': 'min_sigma',
-            'dog_max_sigma': 'max_sigma',
-            'dog_sigma_ratio': 'sigma_ratio',
-            'dog_threshold': 'threshold',
-            'dog_overlap': 'overlap',
-            }
+            "dog_min_sigma": "min_sigma",
+            "dog_max_sigma": "max_sigma",
+            "dog_sigma_ratio": "sigma_ratio",
+            "dog_threshold": "threshold",
+            "dog_overlap": "overlap",
+        }
         self._attribute_argument_mapping_local_xc = {
-            'xc_template': 'template',
-            'xc_distance': 'distance',
-            'xc_threshold': 'threshold',
-            }
+            "xc_template": "template",
+            "xc_distance": "distance",
+            "xc_threshold": "threshold",
+        }
 
         self._attribute_argument_mapping_dict = {
-            'local_max': self._attribute_argument_mapping_local_max,
-            'max': self._attribute_argument_mapping_max,
-            'minmax': self._attribute_argument_mapping_local_minmax,
-            'zaefferer': self._attribute_argument_mapping_local_zaefferer,
-            'stat': self._attribute_argument_mapping_local_stat,
-            'laplacian_of_gaussian': self._attribute_argument_mapping_local_log,
-            'difference_of_gaussian': self._attribute_argument_mapping_local_dog,
-            'template_matching': self._attribute_argument_mapping_local_xc,
-            }
+            "local_max": self._attribute_argument_mapping_local_max,
+            "max": self._attribute_argument_mapping_max,
+            "minmax": self._attribute_argument_mapping_local_minmax,
+            "zaefferer": self._attribute_argument_mapping_local_zaefferer,
+            "stat": self._attribute_argument_mapping_local_stat,
+            "laplacian_of_gaussian": self._attribute_argument_mapping_local_log,
+            "difference_of_gaussian": self._attribute_argument_mapping_local_dog,
+            "template_matching": self._attribute_argument_mapping_local_xc,
+        }
 
         if signal.axes_manager.signal_dimension != 2:
-            raise SignalDimensionError(
-                signal.axes.signal_dimension, 2)
+            raise SignalDimensionError(signal.axes.signal_dimension, 2)
 
         self._set_parameters_observer()
-        self.on_trait_change(self.set_random_navigation_position,
-                             'random_navigation_position')
+        self.on_trait_change(
+            self.set_random_navigation_position, "random_navigation_position"
+        )
 
         self.signal = signal
         self.peaks = peaks
@@ -1961,22 +2010,25 @@ class PeaksFinder2D(t.HasTraits):
         if self.signal.axes_manager.navigation_size > 0:
             self.show_navigation_sliders = True
             self.signal.axes_manager.events.indices_changed.connect(
-                self._update_peak_finding, [])
+                self._update_peak_finding, []
+            )
             self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
         # Set initial parameters:
         # As a convenience, if the template argument is provided, we keep it
         # even if the method is different, to be able to use it later.
-        if 'template' in kwargs.keys():
-            self.xc_template = kwargs['template']
+        if "template" in kwargs.keys():
+            self.xc_template = kwargs["template"]
         if method is not None:
-            method_dict = {'local_max':'Local max',
-                           'max':'Max',
-                           'minmax':'Minmax',
-                           'zaefferer':'Zaefferer',
-                           'stat':'Stat',
-                           'laplacian_of_gaussian':'Laplacian of Gaussian',
-                           'difference_of_gaussian':'Difference of Gaussian',
-                           'template_matching':'Template matching'}
+            method_dict = {
+                "local_max": "Local max",
+                "max": "Max",
+                "minmax": "Minmax",
+                "zaefferer": "Zaefferer",
+                "stat": "Stat",
+                "laplacian_of_gaussian": "Laplacian of Gaussian",
+                "difference_of_gaussian": "Difference of Gaussian",
+                "template_matching": "Template matching",
+            }
             self.method = method_dict[method]
         self._parse_paramaters_initial_values(**kwargs)
         self._update_peak_finding()
@@ -1984,7 +2036,8 @@ class PeaksFinder2D(t.HasTraits):
     def _parse_paramaters_initial_values(self, **kwargs):
         # Get the attribute to argument mapping for the current method
         arg_mapping = self._attribute_argument_mapping_dict[
-            self._normalise_method_name(self.method)]
+            self._normalise_method_name(self.method)
+        ]
         for attr, arg in arg_mapping.items():
             if arg in kwargs.keys():
                 setattr(self, attr, kwargs[arg])
@@ -1996,7 +2049,7 @@ class PeaksFinder2D(t.HasTraits):
         self._plot_markers()
 
     def _method_changed(self, old, new):
-        if new == 'Template matching' and self.xc_template is None:
+        if new == "Template matching" and self.xc_template is None:
             raise RuntimeError('The "template" argument is required.')
         self._update_peak_finding(method=new)
 
@@ -2015,22 +2068,28 @@ class PeaksFinder2D(t.HasTraits):
         return {arg: getattr(self, attr) for attr, arg in arg_mapping.items()}
 
     def _normalise_method_name(self, method):
-        return method.lower().replace(' ', '_')
+        return method.lower().replace(" ", "_")
 
     def _find_peaks_current_index(self, method):
         method = self._normalise_method_name(method)
-        self.peaks.data = self.signal.find_peaks(method, current_index=True,
-                                                 interactive=False,
-                                                 **self._get_parameters(method))
+        self.peaks.data = self.signal.find_peaks(
+            method,
+            current_index=True,
+            interactive=False,
+            **self._get_parameters(method),
+        )
+
     def _plot_markers(self):
         offsets = self.peaks.data
         offsets = convert_positions(offsets, self.signal.axes_manager.signal_axes)
         if self.markers is None:
-            self.markers = Circles(offsets=offsets,
-                                   edgecolor='red',
-                                   facecolors="none",
-                                   sizes=20,
-                                   units="points")
+            self.markers = Circles(
+                offsets=offsets,
+                edgecolor="red",
+                facecolors="none",
+                sizes=20,
+                units="points",
+            )
         else:
             self.markers.offsets = offsets
 
@@ -2038,8 +2097,11 @@ class PeaksFinder2D(t.HasTraits):
         method = self._normalise_method_name(self.method)
         with self.signal.axes_manager.events.indices_changed.suppress():
             self.peaks.data = self.signal.find_peaks(
-                method, interactive=False, current_index=False,
-                **self._get_parameters(method))
+                method,
+                interactive=False,
+                current_index=False,
+                **self._get_parameters(method),
+            )
 
     def close(self):
         # remove markers
@@ -2055,23 +2117,20 @@ class PeaksFinder2D(t.HasTraits):
 
     def set_random_navigation_position(self):
         index = self._rng.integers(0, self.signal.axes_manager._max_index)
-        self.signal.axes_manager.indices = np.unravel_index(index,
-            tuple(self.signal.axes_manager._navigation_shape_in_array))[::-1]
+        self.signal.axes_manager.indices = np.unravel_index(
+            index, tuple(self.signal.axes_manager._navigation_shape_in_array)
+        )[::-1]
 
 
 # For creating a text handler in legend (to label derivative magnitude)
 class DerivativeTextParameters(object):
-
     def __init__(self, text, color):
         self.my_text = text
         self.my_color = color
 
 
 class DerivativeTextHandler(object):
-
     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
-        patch = mpl_text.Text(
-            text=orig_handle.my_text,
-            color=orig_handle.my_color)
+        patch = mpl_text.Text(text=orig_handle.my_text, color=orig_handle.my_color)
         handlebox.add_artist(patch)
         return patch

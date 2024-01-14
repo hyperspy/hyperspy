@@ -27,6 +27,7 @@ from copy import deepcopy
 from functools import partial
 
 from scipy import ndimage
+
 try:
     # For scikit-image >= 0.17.0
     from skimage.registration._phase_cross_correlation import _upsampled_dft
@@ -42,8 +43,11 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING,
-    PLOT2D_KWARGS_DOCSTRING)
+    BASE_PLOT_DOCSTRING,
+    BASE_PLOT_DOCSTRING_PARAMETERS,
+    PLOT2D_DOCSTRING,
+    PLOT2D_KWARGS_DOCSTRING,
+)
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
     NUM_WORKERS_ARG,
@@ -51,9 +55,16 @@ from hyperspy.docstrings.signal import (
 )
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
-        find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
-        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc,
-        _get_peak_position_and_intensity)
+    find_local_max,
+    find_peaks_max,
+    find_peaks_minmax,
+    find_peaks_zaefferer,
+    find_peaks_stat,
+    find_peaks_log,
+    find_peaks_dog,
+    find_peaks_xc,
+    _get_peak_position_and_intensity,
+)
 
 
 _logger = logging.getLogger(__name__)
@@ -95,8 +106,8 @@ def hanning2d(M, N):
 
 
 def sobel_filter(im):
-    sx = ndimage.sobel(im, axis=0, mode='constant')
-    sy = ndimage.sobel(im, axis=1, mode='constant')
+    sx = ndimage.sobel(im, axis=0, mode="constant")
+    sy = ndimage.sobel(im, axis=1, mode="constant")
     sob = np.hypot(sx, sy)
     return sob
 
@@ -122,7 +133,7 @@ def fft_correlation(in1, in2, normalize=False, real_only=False):
     size = s1 + s2 - 1
 
     # Calculate optimal FFT size
-    complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
+    complex_result = in1.dtype.kind == "c" or in2.dtype.kind == "c"
     fsize = [optimal_fft_size(a, not complex_result) for a in size]
 
     # For real-valued inputs, rfftn is ~2x faster than fftn
@@ -142,11 +153,19 @@ def fft_correlation(in1, in2, normalize=False, real_only=False):
     return ret, fprod
 
 
-def estimate_image_shift(ref, image, roi=None, sobel=True,
-                         medfilter=True, hanning=True, plot=False,
-                         dtype='float', normalize_corr=False,
-                         sub_pixel_factor=1,
-                         return_maxval=True):
+def estimate_image_shift(
+    ref,
+    image,
+    roi=None,
+    sobel=True,
+    medfilter=True,
+    hanning=True,
+    plot=False,
+    dtype="float",
+    normalize_corr=False,
+    sub_pixel_factor=1,
+    return_maxval=True,
+):
     """Estimate the shift in a image using phase correlation
 
     This method can only estimate the shift by comparing
@@ -214,7 +233,9 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     if roi is not None:
         top, bottom, left, right = roi
     else:
-        top, bottom, left, right = [None, ] * 4
+        top, bottom, left, right = [
+            None,
+        ] * 4
 
     # Select region of interest
     ref = ref[top:bottom, left:right]
@@ -234,20 +255,25 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             im[:] = sobel_filter(im)
 
     # If sub-pixel alignment not being done, use faster real-valued fft
-    real_only = (sub_pixel_factor == 1)
+    real_only = sub_pixel_factor == 1
 
     phase_correlation, image_product = fft_correlation(
-        ref, image, normalize=normalize_corr, real_only=real_only)
+        ref, image, normalize=normalize_corr, real_only=real_only
+    )
 
     # Estimate the shift by getting the coordinates of the maximum
-    argmax = np.unravel_index(np.argmax(phase_correlation),
-                              phase_correlation.shape)
-    threshold = (phase_correlation.shape[0] / 2 - 1,
-                 phase_correlation.shape[1] / 2 - 1)
-    shift0 = argmax[0] if argmax[0] < threshold[0] else  \
-        argmax[0] - phase_correlation.shape[0]
-    shift1 = argmax[1] if argmax[1] < threshold[1] else \
-        argmax[1] - phase_correlation.shape[1]
+    argmax = np.unravel_index(np.argmax(phase_correlation), phase_correlation.shape)
+    threshold = (phase_correlation.shape[0] / 2 - 1, phase_correlation.shape[1] / 2 - 1)
+    shift0 = (
+        argmax[0]
+        if argmax[0] < threshold[0]
+        else argmax[0] - phase_correlation.shape[0]
+    )
+    shift1 = (
+        argmax[1]
+        if argmax[1] < threshold[1]
+        else argmax[1] - phase_correlation.shape[1]
+    )
     max_val = phase_correlation.real.max()
     shifts = np.array((shift0, shift1))
 
@@ -260,19 +286,21 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         # Center of output array at dftshift + 1
         dftshift = np.fix(upsampled_region_size / 2.0)
         sub_pixel_factor = np.array(sub_pixel_factor, dtype=float)
-        normalization = (image_product.size * sub_pixel_factor ** 2)
+        normalization = image_product.size * sub_pixel_factor**2
         # Matrix multiply DFT around the current shift estimate
         sample_region_offset = dftshift - shifts * sub_pixel_factor
-        correlation = _upsampled_dft(image_product.conj(),
-                                     upsampled_region_size,
-                                     sub_pixel_factor,
-                                     sample_region_offset).conj()
+        correlation = _upsampled_dft(
+            image_product.conj(),
+            upsampled_region_size,
+            sub_pixel_factor,
+            sample_region_offset,
+        ).conj()
         correlation /= normalization
         # Locate maximum and map back to original pixel grid
-        maxima = np.array(np.unravel_index(
-            np.argmax(abs(correlation)),
-            correlation.shape),
-            dtype=float)
+        maxima = np.array(
+            np.unravel_index(np.argmax(abs(correlation)), correlation.shape),
+            dtype=float,
+        )
         maxima -= dftshift
         shifts = shifts + maxima / sub_pixel_factor
         max_val = correlation.real.max()
@@ -290,15 +318,14 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             fig, axarr = plt.subplots(1, 3)
         full_plot = len(axarr[0].images) == 0
         if full_plot:
-            axarr[0].set_title('Reference')
-            axarr[1].set_title('Image')
-            axarr[2].set_title('Phase correlation')
+            axarr[0].set_title("Reference")
+            axarr[1].set_title("Image")
+            axarr[2].set_title("Phase correlation")
             axarr[0].imshow(ref)
             axarr[1].imshow(image)
             d = (np.array(phase_correlation.shape) - 1) // 2
             extent = [-d[1], d[1], -d[0], d[0]]
-            axarr[2].imshow(np.fft.fftshift(phase_correlation),
-                            extent=extent)
+            axarr[2].imshow(np.fft.fftshift(phase_correlation), extent=extent)
             plt.show()
         else:
             axarr[0].images[0].set_data(ref)
@@ -323,32 +350,33 @@ class Signal2D(BaseSignal, CommonSignal2D):
     _signal_dimension = 2
 
     def __init__(self, *args, **kwargs):
-        if kwargs.get('ragged', False):
+        if kwargs.get("ragged", False):
             raise ValueError("Signal2D can't be ragged.")
         super().__init__(*args, **kwargs)
 
-    def plot(self,
-             navigator="auto",
-             plot_markers=True,
-             autoscale='v',
-             norm="auto",
-             vmin=None,
-             vmax=None,
-             gamma=1.0,
-             linthresh=0.01,
-             linscale=0.1,
-             scalebar=True,
-             scalebar_color="white",
-             axes_ticks=None,
-             axes_off=False,
-             axes_manager=None,
-             no_nans=False,
-             colorbar=True,
-             centre_colormap="auto",
-             min_aspect=0.1,
-             navigator_kwds={},
-             **kwargs
-             ):
+    def plot(
+        self,
+        navigator="auto",
+        plot_markers=True,
+        autoscale="v",
+        norm="auto",
+        vmin=None,
+        vmax=None,
+        gamma=1.0,
+        linthresh=0.01,
+        linscale=0.1,
+        scalebar=True,
+        scalebar_color="white",
+        axes_ticks=None,
+        axes_off=False,
+        axes_manager=None,
+        no_nans=False,
+        colorbar=True,
+        centre_colormap="auto",
+        min_aspect=0.1,
+        navigator_kwds={},
+        **kwargs,
+    ):
         """%s
         %s
         %s
@@ -356,9 +384,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         """
         for c in autoscale:
-            if c not in ['x', 'y', 'v']:
-                raise ValueError("`autoscale` only accepts 'x', 'y', 'v' as "
-                                 "valid characters.")
+            if c not in ["x", "y", "v"]:
+                raise ValueError(
+                    "`autoscale` only accepts 'x', 'y', 'v' as " "valid characters."
+                )
         super().plot(
             navigator=navigator,
             plot_markers=plot_markers,
@@ -379,10 +408,15 @@ class Signal2D(BaseSignal, CommonSignal2D):
             centre_colormap=centre_colormap,
             min_aspect=min_aspect,
             navigator_kwds=navigator_kwds,
-            **kwargs
+            **kwargs,
         )
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
-                     PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
+
+    plot.__doc__ %= (
+        BASE_PLOT_DOCSTRING,
+        BASE_PLOT_DOCSTRING_PARAMETERS,
+        PLOT2D_DOCSTRING,
+        PLOT2D_KWARGS_DOCSTRING,
+    )
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal
@@ -399,21 +433,24 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         """
         from hyperspy.models.model2d import Model2D
+
         return Model2D(self, dictionary=dictionary)
 
-    def estimate_shift2D(self,
-                         reference='current',
-                         correlation_threshold=None,
-                         chunk_size=30,
-                         roi=None,
-                         normalize_corr=False,
-                         sobel=True,
-                         medfilter=True,
-                         hanning=True,
-                         plot=False,
-                         dtype='float',
-                         show_progressbar=None,
-                         sub_pixel_factor=1):
+    def estimate_shift2D(
+        self,
+        reference="current",
+        correlation_threshold=None,
+        chunk_size=30,
+        roi=None,
+        normalize_corr=False,
+        sobel=True,
+        medfilter=True,
+        hanning=True,
+        plot=False,
+        dtype="float",
+        show_progressbar=None,
+        sub_pixel_factor=1,
+    ):
         """Estimate the shifts in an image using phase correlation.
 
         This method can only estimate the shift by comparing
@@ -441,7 +478,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         chunk_size : None or int
             If int and reference='stat' the number of images used
             as reference are limited to the given value.
-        roi : tuple of int or float 
+        roi : tuple of int or float
             Define the region of interest (left, right, top, bottom).
             If int (float), the position is given by axis index (value).
             Note that ROIs can be used in place of a tuple.
@@ -496,25 +533,29 @@ class Signal2D(BaseSignal, CommonSignal2D):
             # Get the indices of the roi
             yaxis = self.axes_manager.signal_axes[1]
             xaxis = self.axes_manager.signal_axes[0]
-            roi = tuple([xaxis._get_index(i) for i in roi[2:]] +
-                        [yaxis._get_index(i) for i in roi[:2]])
+            roi = tuple(
+                [xaxis._get_index(i) for i in roi[2:]]
+                + [yaxis._get_index(i) for i in roi[:2]]
+            )
 
-        ref = None if reference == 'cascade' else \
-            self._get_current_data().copy()
+        ref = None if reference == "cascade" else self._get_current_data().copy()
         shifts = []
         nrows = None
         images_number = self.axes_manager._max_index + 1
-        if plot == 'reuse':
+        if plot == "reuse":
             # Reuse figure for plots
             plot = plt.figure()
-        if reference == 'stat':
-            nrows = images_number if chunk_size is None else \
-                min(images_number, chunk_size)
-            pcarray = ma.zeros((nrows, self.axes_manager._max_index + 1,
-                                ),
-                               dtype=np.dtype([('max_value', float),
-                                               ('shift', np.int32,
-                                                (2,))]))
+        if reference == "stat":
+            nrows = (
+                images_number if chunk_size is None else min(images_number, chunk_size)
+            )
+            pcarray = ma.zeros(
+                (
+                    nrows,
+                    self.axes_manager._max_index + 1,
+                ),
+                dtype=np.dtype([("max_value", float), ("shift", np.int32, (2,))]),
+            )
             nshift, max_value = estimate_image_shift(
                 self._get_current_data(),
                 self._get_current_data(),
@@ -525,40 +566,47 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 normalize_corr=normalize_corr,
                 plot=plot,
                 dtype=dtype,
-                sub_pixel_factor=sub_pixel_factor)
-            np.fill_diagonal(pcarray['max_value'], max_value)
+                sub_pixel_factor=sub_pixel_factor,
+            )
+            np.fill_diagonal(pcarray["max_value"], max_value)
             pbar_max = nrows * images_number
         else:
             pbar_max = images_number
 
         # Main iteration loop. Fills the rows of pcarray when reference
         # is stat
-        with progressbar(total=pbar_max,
-                         disable=not show_progressbar,
-                         leave=True) as pbar:
+        with progressbar(
+            total=pbar_max, disable=not show_progressbar, leave=True
+        ) as pbar:
             for i1, im in enumerate(self._iterate_signal()):
-                if reference in ['current', 'cascade']:
+                if reference in ["current", "cascade"]:
                     if ref is None:
                         ref = im.copy()
-                        shift = np.array([0., 0.])
+                        shift = np.array([0.0, 0.0])
                     nshift, max_val = estimate_image_shift(
-                        ref, im, roi=roi, sobel=sobel, medfilter=medfilter,
-                        hanning=hanning, plot=plot,
-                        normalize_corr=normalize_corr, dtype=dtype,
-                        sub_pixel_factor=sub_pixel_factor)
-                    if reference == 'cascade':
+                        ref,
+                        im,
+                        roi=roi,
+                        sobel=sobel,
+                        medfilter=medfilter,
+                        hanning=hanning,
+                        plot=plot,
+                        normalize_corr=normalize_corr,
+                        dtype=dtype,
+                        sub_pixel_factor=sub_pixel_factor,
+                    )
+                    if reference == "cascade":
                         shift += nshift
                         ref = im.copy()
                     else:
                         shift = nshift
                     shifts.append(shift.copy())
                     pbar.update(1)
-                elif reference == 'stat':
+                elif reference == "stat":
                     if i1 == nrows:
                         break
                     # Iterate to fill the columns of pcarray
-                    for i2, im2 in enumerate(
-                            self._iterate_signal()):
+                    for i2, im2 in enumerate(self._iterate_signal()):
                         if i2 > i1:
                             nshift, max_value = estimate_image_shift(
                                 im,
@@ -570,29 +618,28 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                 normalize_corr=normalize_corr,
                                 plot=plot,
                                 dtype=dtype,
-                                sub_pixel_factor=sub_pixel_factor)
+                                sub_pixel_factor=sub_pixel_factor,
+                            )
                             pcarray[i1, i2] = max_value, nshift
                         del im2
                         pbar.update(1)
                     del im
-        if reference == 'stat':
+        if reference == "stat":
             # Select the reference image as the one that has the
             # higher max_value in the row
             sqpcarr = pcarray[:, :nrows]
-            sqpcarr['max_value'][:] = symmetrize(sqpcarr['max_value'])
-            sqpcarr['shift'][:] = antisymmetrize(sqpcarr['shift'])
-            ref_index = np.argmax(pcarray['max_value'].min(1))
+            sqpcarr["max_value"][:] = symmetrize(sqpcarr["max_value"])
+            sqpcarr["shift"][:] = antisymmetrize(sqpcarr["shift"])
+            ref_index = np.argmax(pcarray["max_value"].min(1))
             self.ref_index = ref_index
-            shifts = (pcarray['shift'] +
-                      pcarray['shift'][ref_index, :nrows][:, np.newaxis])
+            shifts = (
+                pcarray["shift"] + pcarray["shift"][ref_index, :nrows][:, np.newaxis]
+            )
             if correlation_threshold is not None:
-                if correlation_threshold == 'auto':
-                    correlation_threshold = \
-                        (pcarray['max_value'].min(0)).max()
-                    _logger.info("Correlation threshold = %1.2f",
-                                 correlation_threshold)
-                shifts[pcarray['max_value'] <
-                       correlation_threshold] = ma.masked
+                if correlation_threshold == "auto":
+                    correlation_threshold = (pcarray["max_value"].min(0)).max()
+                    _logger.info("Correlation threshold = %1.2f", correlation_threshold)
+                shifts[pcarray["max_value"] < correlation_threshold] = ma.masked
                 shifts.mask[ref_index, :] = False
 
             shifts = shifts.mean(0)
@@ -667,7 +714,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         for _axis in self.axes_manager.signal_axes:
             if not _axis.is_uniform:
                 raise NotImplementedError(
-                    "This operation is not implememented for non-uniform axes")
+                    "This operation is not implememented for non-uniform axes"
+                )
 
         return_shifts = False
 
@@ -748,8 +796,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if crop and not expand:
             max_shift = signal_shifts.max() - signal_shifts.min()
             if np.any(max_shift.data >= np.array(self.axes_manager.signal_shape)):
-                raise ValueError("Shift outside range of signal axes. Cannot crop signal." +
-                                  "Max shift:" + str(max_shift.data) + " shape" + str(self.axes_manager.signal_shape))
+                raise ValueError(
+                    "Shift outside range of signal axes. Cannot crop signal."
+                    + "Max shift:"
+                    + str(max_shift.data)
+                    + " shape"
+                    + str(self.axes_manager.signal_shape)
+                )
 
             # Crop the image to the valid size
             _min0 = signal_shifts.isig[0].min().data[0]
@@ -864,8 +917,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
         scale = length / old_length
         return scale
 
-    def crop_signal(self, top=None, bottom=None, left=None, right=None,
-                    convert_units=False):
+    def crop_signal(
+        self, top=None, bottom=None, left=None, right=None, convert_units=False
+    ):
         """
         Crops in signal space and in place.
 
@@ -885,14 +939,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         """
         self._check_signal_dimension_equals_two()
-        self.crop(self.axes_manager.signal_axes[1].index_in_axes_manager,
-                  top,
-                  bottom)
-        self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
-                  left,
-                  right)
+        self.crop(self.axes_manager.signal_axes[1].index_in_axes_manager, top, bottom)
+        self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager, left, right)
         if convert_units:
-            self.axes_manager.convert_units('signal')
+            self.axes_manager.convert_units("signal")
 
     def add_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear ramp to the signal.
@@ -915,19 +965,27 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
         if self._lazy:
-            ramp = offset * da.ones(self.data.shape, dtype=self.data.dtype,
-                                    chunks=self.data.chunks)
+            ramp = offset * da.ones(
+                self.data.shape, dtype=self.data.dtype, chunks=self.data.chunks
+            )
         else:
             ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp
 
-    def find_peaks(self, method='local_max', interactive=True,
-                   current_index=False, show_progressbar=None,
-                   num_workers=None, display=True, toolkit=None,
-                   get_intensity=False,
-                   **kwargs):
+    def find_peaks(
+        self,
+        method="local_max",
+        interactive=True,
+        current_index=False,
+        show_progressbar=None,
+        num_workers=None,
+        display=True,
+        toolkit=None,
+        get_intensity=False,
+        **kwargs,
+    ):
         """Find peaks in a 2D signal.
 
         Function to locate the positive peaks in an image using various, user
@@ -1005,52 +1063,68 @@ class Signal2D(BaseSignal, CommonSignal2D):
             first along `y` and then along `x`.
         """
         method_dict = {
-            'local_max': find_local_max,
-            'max': find_peaks_max,
-            'minmax': find_peaks_minmax,
-            'zaefferer': find_peaks_zaefferer,
-            'stat': find_peaks_stat,
-            'laplacian_of_gaussian':  find_peaks_log,
-            'difference_of_gaussian': find_peaks_dog,
-            'template_matching' : find_peaks_xc,
+            "local_max": find_local_max,
+            "max": find_peaks_max,
+            "minmax": find_peaks_minmax,
+            "zaefferer": find_peaks_zaefferer,
+            "stat": find_peaks_stat,
+            "laplacian_of_gaussian": find_peaks_log,
+            "difference_of_gaussian": find_peaks_dog,
+            "template_matching": find_peaks_xc,
         }
         # As a convenience, we map 'distance' to 'min_distance' and
         # 'threshold' to 'threshold_abs' when using the 'local_max' method to
         # match with the arguments of skimage.feature.peak_local_max.
-        if method == 'local_max':
-            if 'distance' in kwargs.keys():
-                kwargs['min_distance'] = kwargs.pop('distance')
-            if 'threshold' in kwargs.keys():
-                kwargs['threshold_abs'] = kwargs.pop('threshold')
+        if method == "local_max":
+            if "distance" in kwargs.keys():
+                kwargs["min_distance"] = kwargs.pop("distance")
+            if "threshold" in kwargs.keys():
+                kwargs["threshold_abs"] = kwargs.pop("threshold")
         if method in method_dict.keys():
             method_func = method_dict[method]
         else:
-            raise NotImplementedError(f"The method `{method}` is not "
-                                      "implemented. See documentation for "
-                                      "available implementations.")
+            raise NotImplementedError(
+                f"The method `{method}` is not "
+                "implemented. See documentation for "
+                "available implementations."
+            )
         if get_intensity:
-            method_func = partial(_get_peak_position_and_intensity, f=method_func, )
+            method_func = partial(
+                _get_peak_position_and_intensity,
+                f=method_func,
+            )
         if interactive:
             # Create a peaks signal with the same navigation shape as a
             # placeholder for the output
             axes_dict = self.axes_manager._get_axes_dicts(
-                self.axes_manager.navigation_axes)
-            peaks = BaseSignal(np.empty(self.axes_manager.navigation_shape),
-                               axes=axes_dict)
+                self.axes_manager.navigation_axes
+            )
+            peaks = BaseSignal(
+                np.empty(self.axes_manager.navigation_shape), axes=axes_dict
+            )
             pf2D = PeaksFinder2D(self, method=method, peaks=peaks, **kwargs)
             pf2D.gui(display=display, toolkit=toolkit)
         elif current_index:
             peaks = method_func(self._get_current_data(), **kwargs)
         else:
-            peaks = self.map(method_func, show_progressbar=show_progressbar,
-                             inplace=False, ragged=True,
-                             num_workers=num_workers, **kwargs)
-            peaks.metadata.add_node("Peaks") # add information about the signal Axes
+            peaks = self.map(
+                method_func,
+                show_progressbar=show_progressbar,
+                inplace=False,
+                ragged=True,
+                num_workers=num_workers,
+                **kwargs,
+            )
+            peaks.metadata.add_node("Peaks")  # add information about the signal Axes
             peaks.metadata.Peaks.signal_axes = deepcopy(self.axes_manager.signal_axes)
         return peaks
 
-    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
-                           DISPLAY_DT, TOOLKIT_DT)
+    find_peaks.__doc__ %= (
+        SHOW_PROGRESSBAR_ARG,
+        NUM_WORKERS_ARG,
+        DISPLAY_DT,
+        TOOLKIT_DT,
+    )
 
 
 class LazySignal2D(LazySignal, Signal2D):

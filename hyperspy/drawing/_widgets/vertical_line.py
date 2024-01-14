@@ -23,8 +23,7 @@ from hyperspy.defaults_parser import preferences
 
 class VerticalLineWidget(Widget1DBase):
 
-    """A draggable, vertical line widget.
-    """
+    """A draggable, vertical line widget."""
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
@@ -33,7 +32,7 @@ class VerticalLineWidget(Widget1DBase):
 
     def _add_patch_to(self, ax):
         """Create and add the matplotlib patches to 'ax'"""
-        self.blit = hasattr(ax, 'hspy_fig') and ax.figure.canvas.supports_blit
+        self.blit = hasattr(ax, "hspy_fig") and ax.figure.canvas.supports_blit
         self._set_patch()
         for p in self.patch:
             p.set_animated(self.blit)
@@ -43,7 +42,7 @@ class VerticalLineWidget(Widget1DBase):
         kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
         self._patch = [
             ax.axvline(self._pos[0], color=self.color, alpha=self.alpha, **kwargs)
-            ]
+        ]
 
     def _onjumpclick(self, event):
         if event.key == "shift" and event.inaxes and self.is_pointer:

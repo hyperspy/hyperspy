@@ -23,6 +23,7 @@ import warnings
 import numpy as np
 from unittest import mock
 
+
 @contextmanager
 def ignore_warning(message="", category=None):
     with warnings.catch_warnings():
@@ -122,10 +123,18 @@ def check_running_tests_in_CI():
     if "CI" in os.environ:
         return os.environ.get("CI")
 
-def mock_event(fig, canvas,
-               button=None, key=None,
-               xdata=None, ydata=None,
-               inaxes=True, artist=None, mouseevent=None):
+
+def mock_event(
+    fig,
+    canvas,
+    button=None,
+    key=None,
+    xdata=None,
+    ydata=None,
+    inaxes=True,
+    artist=None,
+    mouseevent=None,
+):
     event = mock.Mock()
     event.button = button
     event.key = key
@@ -134,7 +143,7 @@ def mock_event(fig, canvas,
     event.fig = fig
     event.canvas = canvas
     event.guiEvent = None
-    event.name = 'MockEvent'
+    event.name = "MockEvent"
     event.artist = artist
     event.mouseevent = mouseevent
     return event

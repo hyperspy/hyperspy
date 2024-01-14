@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.docstrings.markers import (OFFSET_DOCSTRING,
-                                         WIDTHS_DOCSTRING,
-                                         ANGLES_DOCSTRING,
-                                         UNITS_DOCSTRING,
-                                         )
+from hyperspy.docstrings.markers import (
+    OFFSET_DOCSTRING,
+    WIDTHS_DOCSTRING,
+    ANGLES_DOCSTRING,
+    UNITS_DOCSTRING,
+)
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.collections import SquareCollection
 
@@ -33,13 +34,7 @@ class Squares(Markers):
     _position_key = "offsets"
 
     def __init__(
-        self,
-        offsets,
-        widths,
-        angles=0,
-        offset_transform="data",
-        units="x",
-        **kwargs
+        self, offsets, widths, angles=0, offset_transform="data", units="x", **kwargs
     ):
         """
         Initialize the set of square Markers.
@@ -59,7 +54,8 @@ class Squares(Markers):
                 "The transform argument is not supported for Squares Markers. Instead, "
                 "use the offset_transform argument to specify the transform of the "
                 "offsets and use the ``units`` argument to specify transform of the "
-                "sizes.")
+                "sizes."
+            )
 
         super().__init__(
             collection=SquareCollection,
@@ -68,11 +64,12 @@ class Squares(Markers):
             angles=angles,
             offset_transform=offset_transform,
             units=units,
-            **kwargs
+            **kwargs,
         )
 
-    __init__.__doc__ %= (OFFSET_DOCSTRING,
-                         WIDTHS_DOCSTRING,
-                         ANGLES_DOCSTRING,
-                         UNITS_DOCSTRING,
-                         )
+    __init__.__doc__ %= (
+        OFFSET_DOCSTRING,
+        WIDTHS_DOCSTRING,
+        ANGLES_DOCSTRING,
+        UNITS_DOCSTRING,
+    )

@@ -69,8 +69,16 @@ class Gaussian2D(Expression):
         the two axes.
     """
 
-    def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
-                 centre_y=0, module=None, **kwargs):
+    def __init__(
+        self,
+        A=1.0,
+        sigma_x=1.0,
+        sigma_y=1.0,
+        centre_x=0.0,
+        centre_y=0,
+        module=None,
+        **kwargs,
+    ):
         super().__init__(
             expression="A * (1 / (sigma_x * sigma_y * 2 * pi)) * \
                        exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \
@@ -84,13 +92,14 @@ class Gaussian2D(Expression):
             position=("centre_x", "centre_y"),
             module=module,
             autodoc=False,
-            **kwargs)
+            **kwargs,
+        )
 
         # Boundaries
-        self.A.bmin = 0.
+        self.A.bmin = 0.0
 
-        self.sigma_x.bmin = 0.
-        self.sigma_y.bmin = 0.
+        self.sigma_x.bmin = 0.0
+        self.sigma_y.bmin = 0.0
 
         self.isbackground = False
         self.convolved = True
@@ -105,7 +114,6 @@ class Gaussian2D(Expression):
 
     @property
     def fwhm_y(self):
-
         return self.sigma_y.value * sigma2fwhm
 
     @fwhm_y.setter
@@ -143,8 +151,7 @@ class Gaussian2D(Expression):
 
     @property
     def ellipticity(self):
-        """float: Ratio between the major and minor axis.
-        """
+        """float: Ratio between the major and minor axis."""
         return self.sigma_major / self.sigma_minor
 
     @property

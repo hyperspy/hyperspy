@@ -25,6 +25,7 @@ from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
+
 class SplitVoigt(Component):
 
     r"""Split pseudo-Voigt component.
@@ -65,9 +66,8 @@ class SplitVoigt(Component):
 
     """
 
-    def __init__(self, A=1., sigma1=1., sigma2=1.0, fraction=0.0, centre=0.):
-        Component.__init__(
-            self, ('A', 'sigma1', 'sigma2', 'centre', 'fraction'))
+    def __init__(self, A=1.0, sigma1=1.0, sigma2=1.0, fraction=0.0, centre=0.0):
+        Component.__init__(self, ("A", "sigma1", "sigma2", "centre", "fraction"))
         self.A.value = A
         self.sigma1.value = sigma1
         self.sigma2.value = sigma2
@@ -88,11 +88,13 @@ class SplitVoigt(Component):
         self.convolved = True
 
     def _function(self, x, A, sigma1, sigma2, fraction, centre):
-        arg = (x - centre)
-        lor1 = (A / (1.0 + ((1.0 * arg) / sigma1) ** 2)) \
-            / (0.5 * np.pi * (sigma1 + sigma2))
-        lor2 = (A / (1.0 + ((1.0 * arg) / sigma2) ** 2)) \
-            / (0.5 * np.pi * (sigma1 + sigma2))
+        arg = x - centre
+        lor1 = (A / (1.0 + ((1.0 * arg) / sigma1) ** 2)) / (
+            0.5 * np.pi * (sigma1 + sigma2)
+        )
+        lor2 = (A / (1.0 + ((1.0 * arg) / sigma2) ** 2)) / (
+            0.5 * np.pi * (sigma1 + sigma2)
+        )
 
         prefactor = A / (sqrt2pi * 0.5 * (sigma1 + sigma2))
         gauss1 = prefactor * np.exp(-0.5 * arg * arg / (sigma1 * sigma1))
@@ -131,16 +133,14 @@ class SplitVoigt(Component):
         return self._function(x, A, sigma1, sigma2, fraction, centre)
 
     def function_nd(self, axis):
-        """%s
-
-        """
+        """%s"""
         if self._is_navigation_multidimensional:
             x = axis[np.newaxis, :]
-            A = self.A.map['values'][..., np.newaxis]
-            sigma1 = self.sigma1.map['values'][..., np.newaxis]
-            sigma2 = self.sigma2.map['values'][..., np.newaxis]
-            fraction = self.fraction.map['values'][..., np.newaxis]
-            centre = self.centre.map['values'][..., np.newaxis]
+            A = self.A.map["values"][..., np.newaxis]
+            sigma1 = self.sigma1.map["values"][..., np.newaxis]
+            sigma2 = self.sigma2.map["values"][..., np.newaxis]
+            fraction = self.fraction.map["values"][..., np.newaxis]
+            centre = self.centre.map["values"][..., np.newaxis]
         else:
             x = axis
             A = self.A.value
@@ -193,8 +193,9 @@ class SplitVoigt(Component):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
-                                                              only_current)
+        centre, height, sigma = _estimate_gaussian_parameters(
+            signal, x1, x2, only_current
+        )
         scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
@@ -208,16 +209,16 @@ class SplitVoigt(Component):
         else:
             if self.A.map is None:
                 self._create_arrays()
-            self.A.map['values'][:] = height * sigma * sqrt2pi
+            self.A.map["values"][:] = height * sigma * sqrt2pi
             if axis.is_binned:
-                self.A.map['values'][:] /= scaling_factor
-            self.A.map['is_set'][:] = True
-            self.sigma1.map['values'][:] = sigma
-            self.sigma1.map['is_set'][:] = True
-            self.sigma2.map['values'][:] = sigma
-            self.sigma2.map['is_set'][:] = True
-            self.centre.map['values'][:] = centre
-            self.centre.map['is_set'][:] = True
+                self.A.map["values"][:] /= scaling_factor
+            self.A.map["is_set"][:] = True
+            self.sigma1.map["values"][:] = sigma
+            self.sigma1.map["is_set"][:] = True
+            self.sigma2.map["values"][:] = sigma
+            self.sigma2.map["is_set"][:] = True
+            self.centre.map["values"][:] = centre
+            self.centre.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 

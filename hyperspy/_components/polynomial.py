@@ -54,13 +54,16 @@ class Polynomial(Expression):
     def __init__(self, order=2, module=None, **kwargs):
         if order == 0:
             raise ValueError("Polynomial of order 0 is not supported.")
-        coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
-                      range(order, -1, -1)]
-        expr = "+".join(["a{}*x**{}".format(c, o) for c, o in
-                         zip(coeff_list, range(order, -1, -1))])
+        coeff_list = [
+            "{}".format(o).zfill(len(list(str(order)))) for o in range(order, -1, -1)
+        ]
+        expr = "+".join(
+            ["a{}*x**{}".format(c, o) for c, o in zip(coeff_list, range(order, -1, -1))]
+        )
         name = "{} order Polynomial".format(ordinal(order))
-        super().__init__(expression=expr, name=name, module=module,
-             autodoc=False, **kwargs)
+        super().__init__(
+            expression=expr, name=name, module=module, autodoc=False, **kwargs
+        )
 
     def get_polynomial_order(self):
         return len(self.parameters) - 1
@@ -93,13 +96,18 @@ class Polynomial(Expression):
         if axis.is_binned:
             # using the mean of the gradient for non-uniform axes is a best
             # guess to the scaling of binned signals for the estimation
-            scaling_factor = axis.scale if axis.is_uniform \
-                             else np.mean(np.gradient(axis.axis), axis=-1)
+            scaling_factor = (
+                axis.scale
+                if axis.is_uniform
+                else np.mean(np.gradient(axis.axis), axis=-1)
+            )
 
         if only_current is True:
-            estimation = np.polyfit(axis.axis[i1:i2],
-                                    signal._get_current_data()[i1:i2],
-                                    self.get_polynomial_order())
+            estimation = np.polyfit(
+                axis.axis[i1:i2],
+                signal._get_current_data()[i1:i2],
+                self.get_polynomial_order(),
+            )
             if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim / scaling_factor
@@ -116,23 +124,24 @@ class Polynomial(Expression):
                 data = signal.data
                 # For polyfit the spectrum goes in the first axis
                 if axis.index_in_array > 0:
-                    data = data.T             # Unfolded, so simply transpose
-                fit = np.polyfit(axis.axis[i1:i2], data[i1:i2, ...],
-                                   self.get_polynomial_order())
+                    data = data.T  # Unfolded, so simply transpose
+                fit = np.polyfit(
+                    axis.axis[i1:i2], data[i1:i2, ...], self.get_polynomial_order()
+                )
                 if axis.index_in_array > 0:
-                    fit = fit.T       # Transpose back if needed
+                    fit = fit.T  # Transpose back if needed
                 # Shape needed to fit parameter.map:
-                cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
+                cmap_shape = nav_shape + (self.get_polynomial_order() + 1,)
                 fit = fit.reshape(cmap_shape)
 
                 if axis.is_binned:
                     for i, para in enumerate(self.parameters[::-1]):
-                        para.map['values'][:] = fit[..., i] / scaling_factor
-                        para.map['is_set'][:] = True
+                        para.map["values"][:] = fit[..., i] / scaling_factor
+                        para.map["is_set"][:] = True
                 else:
                     for i, para in enumerate(self.parameters[::-1]):
-                        para.map['values'][:] = fit[..., i]
-                        para.map['is_set'][:] = True
+                        para.map["values"][:] = fit[..., i]
+                        para.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 
@@ -142,16 +151,18 @@ def convert_to_polynomial(poly_dict):
     Convert the dictionary from the old to the new polynomial definition
     """
     _logger.info("Converting the polynomial to the new definition.")
-    coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order']))))
-                  for o in range(poly_dict['order'], -1, -1)]
+    coeff_list = [
+        "{}".format(o).zfill(len(list(str(poly_dict["order"]))))
+        for o in range(poly_dict["order"], -1, -1)
+    ]
     poly2_dict = dict(poly_dict)
-    coefficient_dict = poly_dict['parameters'][0]
-    poly2_dict['parameters'] = []
+    coefficient_dict = poly_dict["parameters"][0]
+    poly2_dict["parameters"] = []
     for i, coeff in enumerate(coeff_list):
         param_dict = dict(coefficient_dict)
-        param_dict['_id_name'] = 'a{}'.format(coeff)
-        for v in ['value', '_bounds']:
+        param_dict["_id_name"] = "a{}".format(coeff)
+        for v in ["value", "_bounds"]:
             param_dict[v] = coefficient_dict[v][i]
-        poly2_dict['parameters'].append(param_dict)
+        poly2_dict["parameters"].append(param_dict)
 
     return poly2_dict

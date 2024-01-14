@@ -90,7 +90,7 @@ class Voigt(Expression):
         gamma=0.2,
         sigma=0.1,
         module=["numpy", "scipy"],
-        **kwargs
+        **kwargs,
     ):
         # We use `gamma_` internally to workaround the use of the `gamma`
         # function in sympy

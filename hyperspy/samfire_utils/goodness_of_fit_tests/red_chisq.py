@@ -22,9 +22,8 @@ from hyperspy.samfire_utils.goodness_of_fit_tests.test_general import goodness_t
 
 
 class red_chisq_test(goodness_test):
-
     def __init__(self, tolerance):
-        self.name = 'Reduced chi-squared test'
+        self.name = "Reduced chi-squared test"
         self.expected = 1.0
         self.tolerance = tolerance
 

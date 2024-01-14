@@ -67,7 +67,7 @@ def set_log_level(level):
     DEBUG:hyperspy.gui:Current ETS toolkit set to: null
 
     """
-    logger = initialize_logger('hyperspy')
+    logger = initialize_logger("hyperspy")
     logger.setLevel(level)
 
 
@@ -81,6 +81,7 @@ class ColoredFormatter(logging.Formatter):
     https://github.com/herzog0/best_python_logger
     and this https://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output/56944256#56944256
     """
+
     grey = "\x1b[38;20m"
     yellow = "\x1b[33;20m"
     red = "\x1b[31;20m"
@@ -94,7 +95,7 @@ class ColoredFormatter(logging.Formatter):
         logging.INFO: green + format + reset,
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+        logging.CRITICAL: bold_red + format + reset,
     }
 
     def format(self, record):
@@ -104,7 +105,7 @@ class ColoredFormatter(logging.Formatter):
 
 
 def initialize_logger(*args):
-    """ Creates a pretty logging instance where the colors can be changed
+    """Creates a pretty logging instance where the colors can be changed
     via the ColoredFormatter class.  Any arguments passed to initialize_logger
     will be passed to `logging.getLogger`
 

@@ -23,7 +23,6 @@ from time import strftime
 from pathlib import Path
 
 
-
 def get_ipython():
     """Get the global InteractiveShell instance.
 
@@ -58,6 +57,7 @@ def turn_logging_on(verbose=1):
     if ip is None:
         return
     from IPython import __version__ as ipythonversion
+
     ipy_version = Version(ipythonversion)
     if ipy_version < Version("0.11"):
         if verbose == 1:
@@ -68,20 +68,23 @@ def turn_logging_on(verbose=1):
             print("Already logging to " + ip.logger.logfname)
         return
 
-    filename = Path.cwd().joinpath('hyperspy_log.py')
+    filename = Path.cwd().joinpath("hyperspy_log.py")
     new = not filename.is_file()
-    ip.logger.logstart(logfname=filename, logmode='append')
+    ip.logger.logstart(logfname=filename, logmode="append")
     if new:
         ip.logger.log_write(
             "#!/usr/bin/env python \n"
             "# ============================\n"
-            "# %s \n" % strftime('%Y-%m-%d') +
-            "# %s \n" % strftime('%H:%M') +
-            "# ============================\n")
+            "# %s \n"
+            % strftime("%Y-%m-%d")
+            + "# %s \n" % strftime("%H:%M")
+            + "# ============================\n"
+        )
     if verbose == 1:
         print("\nLogging is active")
-        print("The log is stored in the hyperspy_log.py file"
-              " in the current directory")
+        print(
+            "The log is stored in the hyperspy_log.py file" " in the current directory"
+        )
 
 
 def turn_logging_off():
@@ -89,6 +92,7 @@ def turn_logging_off():
     if ip is None:
         return
     from IPython import __version__ as ipythonversion
+
     ipy_version = Version(ipythonversion)
     if ipy_version < Version("0.11"):
         print("Logging is not supported by this version of IPython")

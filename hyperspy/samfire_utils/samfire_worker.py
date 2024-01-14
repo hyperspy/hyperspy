@@ -33,9 +33,9 @@ _logger = logging.getLogger(__name__)
 
 
 class Worker:
-
-    def __init__(self, identity, individual_queue=None, shared_queue=None,
-                 result_queue=None):
+    def __init__(
+        self, identity, individual_queue=None, shared_queue=None, result_queue=None
+    ):
         self.identity = identity
         self.individual_queue = individual_queue
         self.shared_queue = shared_queue
@@ -50,7 +50,7 @@ class Worker:
         self.parameters = {}
 
     def create_model(self, signal_dict, model_letter):
-        _logger.debug('Creating model in worker {}'.format(self.identity))
+        _logger.debug("Creating model in worker {}".format(self.identity))
         sig = BaseSignal(**signal_dict)
         sig._assign_subclass()
         self.model = sig.models[model_letter].restore()
@@ -60,8 +60,7 @@ class Worker:
             for par in component.parameters:
                 par.map = par.map.copy()
 
-        if self.model.signal.metadata.has_item(
-                'Signal.Noise_properties.variance'):
+        if self.model.signal.metadata.has_item("Signal.Noise_properties.variance"):
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var.data = var.data.copy()
@@ -73,16 +72,18 @@ class Worker:
         for k, v in dct.items():
             if isinstance(v, BaseSignal):
                 v.data = v.data.copy()
-                if k not in ['signal', 'image', 'spectrum'] and not \
-                   k.startswith('_'):
+                if k not in ["signal", "image", "spectrum"] and not k.startswith("_"):
                     self.parameters[k] = None
             if isinstance(v, np.ndarray):
                 dct[k] = v.copy()
 
     def set_optional_names(self, optional_names):
         self.optional_names = optional_names
-        _logger.debug('Setting optional names in worker {} to '
-                      '{}'.format(self.identity, self.optional_names))
+        _logger.debug(
+            "Setting optional names in worker {} to " "{}".format(
+                self.identity, self.optional_names
+            )
+        )
 
     def set_parameter_boundaries(self, received):
         for rec, comp in zip(received, self.model):
@@ -96,35 +97,37 @@ class Worker:
         for _comp_n, _comp in self.value_dict.items():
             for par_n, par in _comp.items():
                 if _comp_n not in turned_on_names:
-                    par = [None, ]
+                    par = [
+                        None,
+                    ]
                 if not isinstance(par, list):
-                    par = [par, ]
+                    par = [
+                        par,
+                    ]
                 tmp.append(par)
                 name_list.append((_comp_n, par_n))
         return name_list, product(*tmp)
 
     def set_values(self, name_list, iterator):
         for value_combination in iterator:
-            for (comp_name, parameter_name), value in zip(name_list,
-                                                          value_combination):
+            for (comp_name, parameter_name), value in zip(name_list, value_combination):
                 if value is None:
                     self.model[comp_name].active = False
                 else:
                     self.model[comp_name].active = True
                     try:
-                        getattr(self.model[comp_name],
-                                parameter_name).value = value
+                        getattr(self.model[comp_name], parameter_name).value = value
                     except BaseException:
                         e = sys.exc_info()[0]
-                        to_send = ('Error',
-                                   (self.identity,
-                                    'Setting {}.{} value to {}. '
-                                    'Caught:\n{}'.format(comp_name,
-                                                         parameter_name,
-                                                         value,
-                                                         e)
-                                    )
-                                   )
+                        to_send = (
+                            "Error",
+                            (
+                                self.identity,
+                                "Setting {}.{} value to {}. " "Caught:\n{}".format(
+                                    comp_name, parameter_name, value, e
+                                ),
+                            ),
+                        )
                         if self.result_queue is None:
                             return to_send
                         else:
@@ -144,9 +147,10 @@ class Worker:
 
     def generate_component_combinations(self):
         all_names = {component.name for component in self.model}
-        names_to_skip_generators = [combinations(self.optional_names, howmany)
-                                    for howmany in
-                                    range(len(self.optional_names) + 1)]
+        names_to_skip_generators = [
+            combinations(self.optional_names, howmany)
+            for howmany in range(len(self.optional_names) + 1)
+        ]
         names_to_skip = []
         for _gen in names_to_skip_generators:
             names_to_skip.extend(list(_gen))
@@ -163,24 +167,26 @@ class Worker:
         self.ind = ind
         self.value_dict = value_dict
 
-        self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
-        if 'min_function' in self.fitting_kwargs:
-            self.fitting_kwargs['min_function'] = cloudpickle.loads(
-                self.fitting_kwargs['min_function'])
-        if 'min_function_grad' in self.fitting_kwargs and isinstance(
-                self.fitting_kwargs['min_function_grad'], bytes):
-            self.fitting_kwargs['min_function_grad'] = cloudpickle.loads(
-                self.fitting_kwargs['min_function_grad'])
-        self.model.signal.data[:] = self.value_dict.pop('signal.data')
+        self.fitting_kwargs = self.value_dict.pop("fitting_kwargs", {})
+        if "min_function" in self.fitting_kwargs:
+            self.fitting_kwargs["min_function"] = cloudpickle.loads(
+                self.fitting_kwargs["min_function"]
+            )
+        if "min_function_grad" in self.fitting_kwargs and isinstance(
+            self.fitting_kwargs["min_function_grad"], bytes
+        ):
+            self.fitting_kwargs["min_function_grad"] = cloudpickle.loads(
+                self.fitting_kwargs["min_function_grad"]
+            )
+        self.model.signal.data[:] = self.value_dict.pop("signal.data")
 
-        if self.model.signal.metadata.has_item(
-                'Signal.Noise_properties.variance'):
+        if self.model.signal.metadata.has_item("Signal.Noise_properties.variance"):
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
-                var.data[:] = self.value_dict.pop('variance.data')
+                var.data[:] = self.value_dict.pop("variance.data")
 
-        if 'low_loss.data' in self.value_dict:
-            self.model.low_loss.data[:] = self.value_dict.pop('low_loss.data')
+        if "low_loss.data" in self.value_dict:
+            self.model.low_loss.data[:] = self.value_dict.pop("low_loss.data")
 
         for component_comb in self.generate_component_combinations():
             good_fit = self.fit(component_comb)
@@ -193,21 +199,26 @@ class Worker:
         return self.send_results()
 
     def _collect_values(self):
-        result = {component.name: {parameter.name: parameter.map.copy() for
-                                   parameter in component.parameters} for
-                  component in self.model if component.active}
+        result = {
+            component.name: {
+                parameter.name: parameter.map.copy()
+                for parameter in component.parameters
+            }
+            for component in self.model
+            if component.active
+        }
         return result
 
     def compare_models(self):
         new_AICc = AICc(self.model)
 
         AICc_test = new_AICc < (self._AICc_fraction * self.best_AICc)
-        AICc_absolute_test = abs(new_AICc - self.best_AICc) <= \
-            abs(self._AICc_fraction * self.best_AICc)
+        AICc_absolute_test = abs(new_AICc - self.best_AICc) <= abs(
+            self._AICc_fraction * self.best_AICc
+        )
         dof_test = len(self.model.p0) < self.best_dof
 
         if AICc_test or AICc_absolute_test and dof_test:
-
             self.best_values = self._collect_values()
             self.best_AICc = new_AICc
             self.best_dof = len(self.model.p0)
@@ -220,18 +231,17 @@ class Worker:
             for k in self.parameters.keys():
                 self.parameters[k] = getattr(self.model, k).data[0]
         if len(self.best_values):  # i.e. we have a good result
-            _logger.debug('we have a good result in worker '
-                          '{}'.format(self.identity))
-            result = {k + '.data': np.array(v) for k, v in
-                      self.parameters.items()}
-            result['components'] = self.best_values
+            _logger.debug("we have a good result in worker " "{}".format(self.identity))
+            result = {k + ".data": np.array(v) for k, v in self.parameters.items()}
+            result["components"] = self.best_values
             found_solution = True
         else:
-            _logger.debug("we don't have a good result in worker "
-                          "{}".format(self.identity))
+            _logger.debug(
+                "we don't have a good result in worker " "{}".format(self.identity)
+            )
             result = None
             found_solution = False
-        to_send = ('result', (self.identity, self.ind, result, found_solution))
+        to_send = ("result", (self.identity, self.ind, result, found_solution))
         if self.individual_queue is None:
             return to_send
         self.result_queue.put(to_send)
@@ -254,7 +264,7 @@ class Worker:
         getattr(self, function)(*arguments)
 
     def ping(self, message=None):
-        to_send = ('pong', (self.identity, os.getpid(), time.time(), message))
+        to_send = ("pong", (self.identity, os.getpid(), time.time(), message))
         if self.result_queue is None:
             return to_send
         self.result_queue.put(to_send)
@@ -276,13 +286,11 @@ class Worker:
             if time_diff >= self.timestep:
                 if not self.individual_queue.empty():
                     queue = self.individual_queue
-                elif (self.shared_queue is not None and not
-                      self.shared_queue.empty()):
+                elif self.shared_queue is not None and not self.shared_queue.empty():
                     queue = self.shared_queue
                 if queue is not None:
                     try:
-                        result = queue.get(block=True,
-                                           timeout=self.max_get_timeout)
+                        result = queue.get(block=True, timeout=self.max_get_timeout)
                         found_what_to_do = True
                         self.parse(result)
                     except Empty:
@@ -293,8 +301,9 @@ class Worker:
                 self.sleep()
 
 
-def create_worker(identity, individual_queue=None,
-                  shared_queue=None, result_queue=None):
+def create_worker(
+    identity, individual_queue=None, shared_queue=None, result_queue=None
+):
     w = Worker(identity, individual_queue, shared_queue, result_queue)
     if individual_queue is None:
         return w
