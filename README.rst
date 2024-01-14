@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-|Azure|_ |Github|_ |Drone|_ |rtd|_ |Codecov|_
+|Azure|_ |Github|_ |rtd|_ |Codecov|_
 
 |python_version|_ |pypi_version|_ |anaconda_cloud|_
 
@@ -9,11 +9,8 @@
 .. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
 .. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build?definitionId=1&_a=summary&view=branches
 
-.. |Github| image:: https://github.com/hyperspy/hyperspy/workflows/Tests/badge.svg
-.. _Github: https://github.com/hyperspy/hyperspy/actions?query=workflow%3ATests
-
-.. |Drone| image:: https://cloud.drone.io/api/badges/hyperspy/hyperspy/status.svg
-.. _Drone: https://cloud.drone.io/hyperspy/hyperspy
+.. |Github| image:: https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml/badge.svg
+.. _Github: https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml
 
 .. |Codecov| image:: https://codecov.io/gh/hyperspy/hyperspy/branch/RELEASE_next_minor/graph/badge.svg
 .. _Codecov: https://codecov.io/gh/hyperspy/hyperspy
