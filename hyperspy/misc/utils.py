@@ -17,7 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from operator import attrgetter
-import warnings
 import inspect
 import copy
 import types
@@ -28,13 +27,11 @@ import unicodedata
 from contextlib import contextmanager
 import importlib
 import logging
-from packaging.version import Version
 
 import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 

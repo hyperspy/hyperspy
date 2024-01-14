@@ -182,7 +182,7 @@ class MPL_HyperExplorer(object):
             if key in kwargs:
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
         backend = mpl.get_backend()
-        if not "ipympl" in backend and "plot_style" in kwargs:
+        if "ipympl" not in backend and "plot_style" in kwargs:
             warnings.warn("The `plot_style` keyword is only used when the `ipympl` or `widget`"
                           "plotting backends are used.")
         plot_style = kwargs.pop("plot_style", None)

@@ -1431,14 +1431,14 @@ def plot_spectra(
             This parameter controls where the legend is placed on the
             figure; see the pyplot.legend docstring for valid values.
         """
-        l = ax_.get_legend()
-        labels = [lb.get_text() for lb in list(l.get_texts())]
+        line = ax_.get_legend()
+        labels = [lb.get_text() for lb in list(line.get_texts())]
         # "legendHandles" is deprecated in matplotlib 3.7.0 in favour of
         # "legend_handles".
         if Version(mpl.__version__) >= Version("3.7"):
-            handles = l.legend_handles
+            handles = line.legend_handles
         else:
-            handles = l.legendHandles
+            handles = line.legendHandles
         ax_.legend(reversed(handles), reversed(labels), loc=legend_loc_)
 
     # Before v1.3 default would read the value from prefereces.

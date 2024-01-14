@@ -19,7 +19,7 @@
 import inspect
 from collections.abc import Iterable
 from contextlib import contextmanager
-from functools import wraps   # Used in exec statement
+from functools import wraps   # noqa: F401 Used in exec statement
 import re
 
 

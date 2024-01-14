@@ -1349,7 +1349,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         try:
             self._fit()
             self._update_line()
-        except:
+        except Exception:
             pass
 
     def _fit(self):

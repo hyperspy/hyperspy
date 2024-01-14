@@ -18,7 +18,6 @@
 
 import logging
 from multiprocessing import cpu_count
-import warnings
 
 import cloudpickle
 import numpy as np

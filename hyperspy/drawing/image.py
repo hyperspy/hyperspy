@@ -37,7 +37,6 @@ from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
 from hyperspy.misc.test_utils import ignore_warning
-from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)

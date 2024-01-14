@@ -866,7 +866,7 @@ class RectangularROI(BaseInteractiveROI):
         return {"left":self.left, "top":self.top, "right":self.right, "bottom":self.bottom}
 
     def is_valid(self):
-        return (not t.Undefined in tuple(self) and
+        return (t.Undefined not in tuple(self) and
                 self.right >= self.left and self.bottom >= self.top)
 
     def _top_changed(self, old, new):

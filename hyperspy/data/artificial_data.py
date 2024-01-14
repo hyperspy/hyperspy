@@ -21,7 +21,6 @@
 For use in things like docstrings or to test HyperSpy functionalities.
 
 """
-import functools
 
 import numpy as np
 

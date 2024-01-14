@@ -82,7 +82,7 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
         :func:`numpy.testing.assert_allclose` or
         :func:`assert_deep_almost_equal`.
     """
-    is_root = not "__trace" in kwargs
+    is_root = "__trace" not in kwargs
     trace = kwargs.pop("__trace", "ROOT")
     try:
         if isinstance(expected, (int, float, complex)):

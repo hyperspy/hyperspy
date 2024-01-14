@@ -24,7 +24,6 @@ import numpy as np
 import dask
 import dask.array as da
 from itertools import product
-from packaging.version import Version
 from rsciio.utils.tools import get_file_handle
 from rsciio.utils import rgb_tools
 
@@ -131,7 +130,7 @@ class LazySignal(BaseSignal):
         # the NumPy array originates from.
         self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
-        if not self._clear_cache_dask_data in self.events.data_changed.connected:
+        if self._clear_cache_dask_data not in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
     __init__.__doc__ = BaseSignal.__init__.__doc__.replace(

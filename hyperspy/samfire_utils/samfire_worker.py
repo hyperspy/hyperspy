@@ -22,11 +22,9 @@ import time
 import sys
 from itertools import combinations, product
 from queue import Empty
+
 import cloudpickle
 import numpy as np
-import matplotlib
-
-matplotlib.rcParams['backend'] = 'Agg'
 
 from hyperspy.signal import BaseSignal
 from hyperspy.utils.model_selection import AICc

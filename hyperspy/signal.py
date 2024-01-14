@@ -2555,7 +2555,7 @@ class BaseSignal(FancySlicing,
                     # As of numpy 1.20, it raises a VisibleDeprecationWarning
                     # and in the future, it will raise an error
                     data = np.array(self.data.tolist())
-            except:
+            except Exception:
                 raise ValueError(error)
 
             if data.dtype == object:
@@ -4419,7 +4419,7 @@ class BaseSignal(FancySlicing,
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
-        if apodization == True:
+        if apodization is True:
             apodization = 'hann'
 
         if apodization:

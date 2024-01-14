@@ -552,8 +552,8 @@ class Parameter(t.HasTraits):
         """
         if mask is None:
             mask = np.zeros(self.map.shape, dtype='bool')
-        self.map['values'][mask == False] = self.value
-        self.map['is_set'][mask == False] = True
+        self.map['values'][mask == 0] = self.value
+        self.map['is_set'][mask == 0] = True
 
     def _create_array(self):
         """Create the map array to store the information in

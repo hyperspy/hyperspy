@@ -47,7 +47,7 @@ if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
         for toolkey, specs in widgets.items():
             # Skip toolkey if extension is not installed
             if toolkey.split(".")[0] in _EXTENSION_NAMES + ["hyperspy"]:
-                if not toolkey in UI_REGISTRY:
+                if toolkey not in UI_REGISTRY:
                     raise NameError(f"{toolkey} is not a registered toolkey")
                 UI_REGISTRY[toolkey][toolkit] = specs
 

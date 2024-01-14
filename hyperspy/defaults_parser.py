@@ -235,7 +235,7 @@ if preferences.General.logger_on:
 
 def file_version(fname):
     with open(fname, 'r') as f:
-        for l in f.readlines():
-            if '__version__' in l:
-                return l[l.find('=') + 1:].strip()
+        for line in f.readlines():
+            if '__version__' in line:
+                return line[line.find('=') + 1:].strip()
     return '0'

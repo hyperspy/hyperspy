@@ -1616,7 +1616,7 @@ class AxesManager(t.HasTraits):
 
     @property
     def all_uniform(self):
-        if any([axis.is_uniform == False for axis in self._axes]):
+        if any([axis.is_uniform is False for axis in self._axes]):
             return False
         else:
             return True

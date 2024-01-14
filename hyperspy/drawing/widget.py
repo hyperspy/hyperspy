@@ -207,7 +207,7 @@ class WidgetBase(object):
                 # Introduced in matplotlib 3.6 and `pick_event` deprecated
                 event = PickEvent('pick_event', figure, mouseevent, self.patch[0])
                 figure.canvas.callbacks.process('pick_event', event)
-            except: # Deprecated in matplotlib 3.6
+            except Exception: # Deprecated in matplotlib 3.6
                 figure.canvas.pick_event(mouseevent, self.patch[0])
         self.picked = False
 
