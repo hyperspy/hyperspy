@@ -15,6 +15,8 @@ from datetime import datetime
 from importlib.metadata import version as get_version
 import sys
 
+import hyperspy
+
 
 sys.path.append('../')
 
@@ -63,7 +65,7 @@ linkcheck_exclude_documents = []
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54"
 
 try:
-    import sphinxcontrib.spelling
+    import sphinxcontrib.spelling # noqa: F401
     extensions.append('sphinxcontrib.spelling')
 except BaseException:
     pass
@@ -164,7 +166,6 @@ favicons = ["hyperspy.ico", ]
 # For version switcher:
 # For development, we match to the dev version in `switcher.json`
 # for release version, we match to the minor increment
-import hyperspy
 _version = hyperspy.__version__
 version_match = "dev" if "dev" in _version else ".".join(_version.split(".")[:2])
 
