@@ -1,5 +1,4 @@
-
-
+.. _ruff: https://docs.astral.sh/ruff
 .. _coding_style-label:
 
 Coding style
@@ -8,33 +7,19 @@ Coding style
 HyperSpy follows the Style Guide for Python Code - these are rules
 for code consistency that you can read all about in the `Python Style Guide
 <https://www.python.org/dev/peps/pep-0008/>`_. You can use the
-`black <https://github.com/psf/black>`_ code formatter to automatically
-fix the style of your code. You can install and run ``black`` by:
+`black <https://github.com/psf/black>`_ or `ruff`_ code formatter to automatically
+fix the style of your code using pre-commit hooks.
 
-.. code:: bash
+Linting error can be suppressed in the code using the ``# noqa`` marker,
+more information in the `ruff documentation <https://docs.astral.sh/ruff/linter/#error-suppression>`_.
 
-   pip install black
-   black /path/to/your/file.py
+Pre-commit hooks
+================
+Code linting and formatting is checked continuously using `ruff`_ pre-commit hooks.
 
-In Linux and MacOS you can run ``black`` automatically after each commit by
-adding a ``post-commit`` file to ``.git/hook/`` with the following content:
-
-.. code-block:: bash
-
-    #!/bin/sh
-    # From https://gist.github.com/temoto/6183235
-    FILES=$(git diff HEAD^ HEAD --name-only --diff-filter=ACM | grep -e '\.py$')
-    if [ -n "$FILES" ]; then
-        for f in $FILES
-        do
-            # black correction
-            black -v $f
-            git add $f
-        done
-    #git commit -m "Automatic style corrections courtesy of black"
-    GIT_COMMITTER_NAME="black" GIT_COMMITTER_EMAIL="black@email.com" git
-    commit --author="black <black@email.com>" -m "Automatic style
-    corrections courtesy of black"
+These can be run locally by using `pre-commit <https://pre-commit.com>`__.
+Alternatively, the comment ``pre-commit.ci autofix`` can be added to a PR to fix the formatting
+using `pre-commit.ci <https://pre-commit.ci>`_.
 
 Deprecations
 ============
@@ -64,4 +49,4 @@ A deprecation decorator should be placed right above the object signature to be 
 This will update the docstring, and print a visible deprecation warning telling
 the user to use the alternative function or argument.
 
-These deprecation wrappers are inspired by those in ``kikuchipy``
+These deprecation wrappers are inspired by those in ``kikuchipy``.
