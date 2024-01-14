@@ -23,14 +23,14 @@ import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 
 
-@pytest.mark.parametrize('lazy', (True, False))
+@pytest.mark.parametrize("lazy", (True, False))
 def test_setting_ragged_array(lazy):
-    s = hs.signals.Signal1D(np.arange(2*3*4*5).reshape(2, 3, 4, 5))
+    s = hs.signals.Signal1D(np.arange(2 * 3 * 4 * 5).reshape(2, 3, 4, 5))
     assert not s.ragged
-    assert s.axes_manager.signal_shape == (5, )
+    assert s.axes_manager.signal_shape == (5,)
     assert s.axes_manager.navigation_shape == (4, 3, 2)
-    assert s.axes_manager.signal_indices_in_array == (3, )
-    assert s.axes_manager.navigation_indices_in_array  == (2, 1, 0)
+    assert s.axes_manager.signal_indices_in_array == (3,)
+    assert s.axes_manager.navigation_indices_in_array == (2, 1, 0)
     with pytest.raises(ValueError):
         s.ragged = True
 
@@ -43,22 +43,21 @@ def test_setting_ragged_array(lazy):
     assert s.axes_manager.signal_shape == ()
     assert s.axes_manager.navigation_shape == (4, 3, 2)
     assert s.axes_manager.signal_indices_in_array == ()
-    assert s.axes_manager.navigation_indices_in_array  == (2, 1, 0)
+    assert s.axes_manager.navigation_indices_in_array == (2, 1, 0)
     if lazy:
         with pytest.raises(NotImplementedError):
             s.ragged = False
     else:
         s.ragged = False
         assert not s.ragged
-        assert s.axes_manager.signal_shape == (5, )
+        assert s.axes_manager.signal_shape == (5,)
         assert s.axes_manager.navigation_shape == (4, 3, 2)
-        assert s.axes_manager.signal_indices_in_array == (3, )
-        assert s.axes_manager.navigation_indices_in_array  == (2, 1, 0)
+        assert s.axes_manager.signal_indices_in_array == (3,)
+        assert s.axes_manager.navigation_indices_in_array == (2, 1, 0)
 
 
 @lazifyTestClass
 class TestRaggedArray:
-
     def setup_method(self, method):
         data = np.empty((3, 4), dtype=object)
         data.fill(np.array([10, 20]))
@@ -67,9 +66,8 @@ class TestRaggedArray:
 
     def test_axes_manager(self):
         s = self.s
-        class_ = 'LazySignal' if s._lazy else 'BaseSignal'
-        assert s.__repr__() == \
-            f"<{class_}, title: , dimensions: (4, 3|ragged)>"
+        class_ = "LazySignal" if s._lazy else "BaseSignal"
+        assert s.__repr__() == f"<{class_}, title: , dimensions: (4, 3|ragged)>"
 
     def test_transpose(self):
         with pytest.raises(RuntimeError):
@@ -121,7 +119,7 @@ def test_conversion_signal():
     data = np.empty((2, 3, 4), dtype=object)
     data.fill(np.array([10, 20, 30, 40, 50]))
     s = hs.signals.BaseSignal(data, ragged=True)
-    
+
     with pytest.raises(ValueError):
         s.axes_manager._set_signal_dimension(1)
 

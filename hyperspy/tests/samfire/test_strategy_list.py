@@ -21,13 +21,12 @@ from hyperspy.samfire import StrategyList
 
 
 class TestStrategyList:
-
     def setup_method(self, method):
         self.w1 = DictionaryTreeBrowser()
         self.w2 = DictionaryTreeBrowser()
 
         for w in [self.w1, self.w2]:
-            w.add_node('samf')
+            w.add_node("samf")
         self.samf = object()
         self.sl = StrategyList(self.samf)
 

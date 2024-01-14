@@ -25,7 +25,6 @@ from hyperspy.decorators import lazifyTestClass
 
 @lazifyTestClass
 class TestChiSquared:
-
     def setup_method(self, method):
         s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
@@ -46,7 +45,7 @@ class TestChiSquared:
         g = Gaussian()
         g1 = Gaussian()
         m.extend((g, g1))
-        g1.set_parameters_not_free('A')
+        g1.set_parameters_not_free("A")
         m.fit()
         assert np.equal(m.dof._get_current_data(), 5)
 
@@ -72,7 +71,7 @@ class TestChiSquared:
         g = Gaussian()
         g1 = Gaussian()
         m.extend((g, g1))
-        g1.set_parameters_not_free('A')
+        g1.set_parameters_not_free("A")
         m._set_p0()
         m._set_current_degrees_of_freedom()
         assert np.equal(m.dof._get_current_data(), 5)

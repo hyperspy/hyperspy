@@ -24,8 +24,7 @@ from hyperspy.signals import Signal1D
 
 
 class TestLinearRebin:
-
-    @pytest.mark.parametrize('dtype', ['<u2', 'u2', '>u2', '<f4', 'f4', '>f4', 'c8'])
+    @pytest.mark.parametrize("dtype", ["<u2", "u2", ">u2", "<f4", "f4", ">f4", "c8"])
     def test_linear_downsize(self, dtype):
         spectrum = Signal1D(np.ones([3, 5, 1], dtype=dtype))
         scale = (1.5, 2.5, 1)
@@ -36,7 +35,7 @@ class TestLinearRebin:
         res = spectrum.rebin(scale=scale, crop=False)
         np.testing.assert_allclose(res.data.sum(), spectrum.data.sum())
 
-    @pytest.mark.parametrize('dtype', ['<u2', 'u2', '>u2', '<f4', 'f4', '>f4', 'c8'])
+    @pytest.mark.parametrize("dtype", ["<u2", "u2", ">u2", "<f4", "f4", ">f4", "c8"])
     def test_linear_upsize(self, dtype):
         spectrum = Signal1D(np.ones([4, 5, 10], dtype=dtype))
         scale = [0.3, 0.2, 0.5]
@@ -57,8 +56,8 @@ class TestLinearRebin:
         np.testing.assert_allclose(
             res.data,
             [
-                [[2.]],
-                [[6.]],
+                [[2.0]],
+                [[6.0]],
             ],
         )
         for axis in res.axes_manager._axes:

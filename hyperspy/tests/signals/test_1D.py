@@ -41,9 +41,8 @@ class Test1D:
 
     @pytest.fixture
     def one_d_navigate(self):
-        return Signal1D(np.repeat(np.arange(0, 100, 1)[np.newaxis,:], 3, axis=0))
+        return Signal1D(np.repeat(np.arange(0, 100, 1)[np.newaxis, :], 3, axis=0))
 
     def test_integrate1D(self):
         integrated_signal = self.signal.integrate1D(axis=0)
         np.testing.assert_allclose(integrated_signal.data, 20, rtol=1e-6)
-

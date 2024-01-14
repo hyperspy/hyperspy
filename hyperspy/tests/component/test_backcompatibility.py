@@ -59,14 +59,16 @@ The reference files from hyperspy v1.4 have been created using:
 """
 
 
-@pytest.mark.parametrize(("versionfile"), ("hs14_model.hspy", "hs15_model.hspy", "hs16_model.hspy"))
+@pytest.mark.parametrize(
+    ("versionfile"), ("hs14_model.hspy", "hs15_model.hspy", "hs16_model.hspy")
+)
 def test_model_backcompatibility(versionfile):
     if EXSPY_SPEC is not None:
         with pytest.warns(VisibleDeprecationWarning):
             # binned deprecated warning
             s = hs.load(DIRPATH / versionfile)
 
-        m = s.models.restore('a')
+        m = s.models.restore("a")
 
         assert len(m) == 5
 
@@ -107,7 +109,7 @@ def test_model_backcompatibility(versionfile):
         with pytest.warns(VisibleDeprecationWarning):
             with pytest.raises(ImportError):
                 s = hs.load(DIRPATH / versionfile)
-                m = s.models.restore('a')
+                m = s.models.restore("a")
 
 
 def test_loading_components_exspy_not_installed():
@@ -119,10 +121,10 @@ def test_loading_components_exspy_not_installed():
         # This should raise an ImportError with
         # a suitable error message
         with pytest.raises(ImportError) as err:
-            _ = s.models.restore('a')
+            _ = s.models.restore("a")
             assert "exspy is not installed" in str(err.value)
     else:
         # The model contains components using numexpr
         pytest.importorskip("numexpr")
         # This should work fine
-        _ = s.models.restore('a')
+        _ = s.models.restore("a")

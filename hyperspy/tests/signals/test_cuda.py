@@ -33,11 +33,11 @@ class TestCupy:
     def setup_method(self, method):
         N = 100
         ndim = 3
-        data = cp.arange(N**ndim).reshape([N]*ndim)
+        data = cp.arange(N**ndim).reshape([N] * ndim)
         s = hs.signals.Signal1D(data)
         self.s = s
 
-    @pytest.mark.parametrize('as_numpy', [True, False, None])
+    @pytest.mark.parametrize("as_numpy", [True, False, None])
     def test_call_signal(self, as_numpy):
         s = self.s
         s2 = s._get_current_data(as_numpy=as_numpy)
@@ -54,13 +54,13 @@ class TestCupy:
         assert isinstance(sr.data, cp.ndarray)
         sr0 = cp.asnumpy(sr.inav[0, 0].data)
         np.testing.assert_allclose(np.nan_to_num(sr0), np.zeros_like(sr0))
-        assert sr.isig[0].nansum() == 4.360798E08
+        assert sr.isig[0].nansum() == 4.360798e08
 
     def test_as_signal(self):
         s = self.s
         _ = s.as_signal2D([0, 1])
 
-    @pytest.mark.parametrize('num_workers', [1, 2, None])
+    @pytest.mark.parametrize("num_workers", [1, 2, None])
     def test_map(self, num_workers):
         s = self.s
         data_ref = s.data.copy()
@@ -68,9 +68,13 @@ class TestCupy:
         def dummy_function(data):
             return data * 10
 
-        s.map(dummy_function, inplace=True, num_workers=num_workers,
-              output_signal_size=s.axes_manager.signal_shape,
-              output_dtype=s.data.dtype)
+        s.map(
+            dummy_function,
+            inplace=True,
+            num_workers=num_workers,
+            output_signal_size=s.axes_manager.signal_shape,
+            output_dtype=s.data.dtype,
+        )
 
         assert (s.data == data_ref * 10).all()
 
@@ -84,9 +88,12 @@ class TestCupy:
         def dummy_function(data):
             return data * 10
 
-        s.map(dummy_function, inplace=True,
-              output_signal_size=s.axes_manager.signal_shape,
-              output_dtype=s.data.dtype)
+        s.map(
+            dummy_function,
+            inplace=True,
+            output_signal_size=s.axes_manager.signal_shape,
+            output_dtype=s.data.dtype,
+        )
 
         assert isinstance(s.data, dask.array.Array)
         assert isinstance(s.data[0, 0, 0].compute(), cp.ndarray)
@@ -104,10 +111,10 @@ class TestCupy:
         hs.plot.plot_images(s_list, axes_decor=None)
         assert isinstance(s_list[0].data, cp.ndarray)
 
-        hs.plot.plot_images(s_list, axes_decor=None, colorbar='single')
+        hs.plot.plot_images(s_list, axes_decor=None, colorbar="single")
         assert isinstance(s_list[0].data, cp.ndarray)
 
-    @pytest.mark.parametrize('style', ['overlap', 'cascade', 'mosaic', 'heatmap'])
+    @pytest.mark.parametrize("style", ["overlap", "cascade", "mosaic", "heatmap"])
     def test_plot_spectra(self, style):
         s = self.s
         s2 = s.inav[:5, 0]
@@ -141,7 +148,7 @@ class TestCupy:
         m.fit()
 
 
-@pytest.mark.parametrize('lazy', [False, True])
+@pytest.mark.parametrize("lazy", [False, True])
 def test_to_device(lazy):
     data = np.arange(10)
     s = hs.signals.Signal1D(data)
@@ -169,11 +176,11 @@ def test_decomposition():
     with pytest.raises(TypeError):
         s.decomposition(algorithm="NMF")
     with pytest.raises(ValueError):
-        s.decomposition(algorithm="SVD", svd_solver='randomized')
+        s.decomposition(algorithm="SVD", svd_solver="randomized")
 
     s.decomposition()
     s.plot_explained_variance_ratio()
     s.plot_decomposition_loadings(3)
     s.plot_decomposition_factors(3)
 
-    s.blind_source_separation(2, algorithm='orthomax')
+    s.blind_source_separation(2, algorithm="orthomax")

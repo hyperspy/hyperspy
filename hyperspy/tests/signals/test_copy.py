@@ -30,4 +30,3 @@ def test_deepcopy():
     assert s.original_metadata.test == [0, 1]
     assert s_deepcopy.metadata.test == [0]
     assert s_deepcopy.original_metadata.test == [0]
-

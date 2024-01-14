@@ -491,9 +491,7 @@ def test_add_key_value():
 
     string = """<ul style="margin: 0px; list-style-position: outside;">
         <li style='margin-left:1em; padding-left: 0.5em'>{} = {}</li></ul>
-        """.format(
-        replace_html_symbols(key), replace_html_symbols(value)
-    )
+        """.format(replace_html_symbols(key), replace_html_symbols(value))
 
     assert (
         string

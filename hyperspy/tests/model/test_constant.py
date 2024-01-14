@@ -23,29 +23,20 @@ from hyperspy._signals.signal1d import Signal1D
 
 
 class TestLinearFitting:
-
     def setup_method(self, method):
         self.s = Signal1D(np.zeros((4, 5, 20)))
         self.m = self.s.create_model()
 
     def test_constant_term_without_model(self):
         expression = "a * x + b"
-        g = Expression(
-            expression,
-            name="test_constant",
-            a = 20.0,
-            b = 4.0)
+        g = Expression(expression, name="test_constant", a=20.0, b=4.0)
         assert g._constant_term == 0
         self.m.append(g)
         assert g._constant_term == 0
 
     def test_constant_from_expression(self):
         expression = "a * x + b"
-        g = Expression(
-            expression,
-            name="test_constant",
-            a = 20.0,
-            b = 4.0)
+        g = Expression(expression, name="test_constant", a=20.0, b=4.0)
         g.b.free = False
         assert g._constant_term == 4.0
         self.m.append(g)
@@ -53,12 +44,7 @@ class TestLinearFitting:
 
     def test_constant_from_expression2(self):
         expression = "A * exp(-(x-centre)**2/(2*sigma**2))"
-        h = Expression(
-            expression,
-            name="test_constant2",
-            A = 20.0,
-            centre = 4.0,
-            sigma = 1.0)
+        h = Expression(expression, name="test_constant2", A=20.0, centre=4.0, sigma=1.0)
         self.m.append(h)
 
         assert h._constant_term == 0

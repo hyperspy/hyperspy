@@ -26,7 +26,6 @@ from hyperspy.component import Parameter
 
 
 class Dummy:
-
     def __init__(self):
         self.value = 1
 
@@ -44,7 +43,6 @@ class DummyAxesManager:
 
 
 class TestParameterLen1:
-
     def setup_method(self, method):
         self.par = Parameter()
 
@@ -109,36 +107,39 @@ class TestParameterLen1:
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
-        assert self.par.map['values'][0] == 1
-        assert self.par.map['is_set'][0]
-        assert self.par.map['std'][0] == 0.1
+        assert self.par.map["values"][0] == 1
+        assert self.par.map["is_set"][0]
+        assert self.par.map["std"][0] == 0.1
 
     def test_map_size1(self):
         self.par._axes_manager = DummyAxesManager()
-        self.par._axes_manager.navigation_shape = [1, ]
+        self.par._axes_manager.navigation_shape = [
+            1,
+        ]
         self.par._create_array()
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
-        assert self.par.map['values'][0] == 1
-        assert self.par.map['is_set'][0]
-        assert self.par.map['std'][0] == 0.1
+        assert self.par.map["values"][0] == 1
+        assert self.par.map["is_set"][0]
+        assert self.par.map["std"][0] == 0.1
 
     def test_map_size2(self):
         self.par._axes_manager = DummyAxesManager()
-        self.par._axes_manager.navigation_shape = [2, ]
+        self.par._axes_manager.navigation_shape = [
+            2,
+        ]
         self.par._axes_manager.indices = (1,)
         self.par._create_array()
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
-        assert self.par.map['values'][1] == 1
-        assert self.par.map['is_set'][1]
-        assert self.par.map['std'][1] == 0.1
+        assert self.par.map["values"][1] == 1
+        assert self.par.map["is_set"][1]
+        assert self.par.map["std"][1] == 0.1
 
 
 class TestParameterLen2:
-
     def setup_method(self, method):
         self.par = Parameter()
         self.par._number_of_elements = 2
@@ -199,32 +200,36 @@ class TestParameterLen2:
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
         self.par.store_current_value_in_array()
-        assert tuple(self.par.map['values'][0]) == (1, 1)
-        assert self.par.map['is_set'][0]
-        assert tuple(self.par.map['std'][0]) == (0.1, 0.1)
+        assert tuple(self.par.map["values"][0]) == (1, 1)
+        assert self.par.map["is_set"][0]
+        assert tuple(self.par.map["std"][0]) == (0.1, 0.1)
 
     def test_map_size1(self):
         self.par._axes_manager = DummyAxesManager()
-        self.par._axes_manager.navigation_shape = [1, ]
+        self.par._axes_manager.navigation_shape = [
+            1,
+        ]
         self.par._create_array()
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
         self.par.store_current_value_in_array()
-        assert tuple(self.par.map['values'][0]) == (1, 1)
-        assert self.par.map['is_set'][0]
-        assert tuple(self.par.map['std'][0]) == (0.1, 0.1)
+        assert tuple(self.par.map["values"][0]) == (1, 1)
+        assert self.par.map["is_set"][0]
+        assert tuple(self.par.map["std"][0]) == (0.1, 0.1)
 
     def test_map_size2(self):
         self.par._axes_manager = DummyAxesManager()
-        self.par._axes_manager.navigation_shape = [2, ]
+        self.par._axes_manager.navigation_shape = [
+            2,
+        ]
         self.par._axes_manager.indices = (1,)
         self.par._create_array()
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
         self.par.store_current_value_in_array()
-        assert tuple(self.par.map['values'][1]) == (1, 1)
-        assert self.par.map['is_set'][1]
-        assert tuple(self.par.map['std'][1]) == (0.1, 0.1)
+        assert tuple(self.par.map["values"][1]) == (1, 1)
+        assert self.par.map["is_set"][1]
+        assert tuple(self.par.map["std"][1]) == (0.1, 0.1)
 
     def test_is_tuple(self):
         self.par.value = np.array((1, 2))
@@ -234,7 +239,6 @@ class TestParameterLen2:
 
 
 class TestParameterTwin:
-
     def setup_method(self, method):
         self.p1 = Parameter()
         self.p2 = Parameter()
@@ -270,7 +274,7 @@ class TestParameterTwin:
         assert p2._twin_inverse_function is not None
         assert p2._twin_inverse_sympy is not None
         assert p2.twin_inverse_function_expr == ""
-        
+
         p2.twin_inverse_function_expr = "x - 2"
         p2.twin = p1
         assert p1.value == p2.value - 2
@@ -295,7 +299,7 @@ class TestParameterTwin:
 
         p2.twin_function_expr = ""
         assert p2._twin_inverse_function is None
-        assert p2._twin_inverse_sympy is None       
+        assert p2._twin_inverse_sympy is None
 
     def test_setting_twin_function_error(self, caplog):
         with pytest.raises(ValueError):
@@ -307,7 +311,7 @@ class TestParameterTwin:
         assert self.p2._twin_inverse_function is None
 
         with caplog.at_level(logging.WARNING):
-            self.p2.twin_function_expr = 'abs(x) - 1'
+            self.p2.twin_function_expr = "abs(x) - 1"
 
         assert "is not invertible" in caplog.text
         assert self.p2._twin_inverse_sympy is None
@@ -320,8 +324,8 @@ class TestParameterTwin:
         p1, p2 = self.p1, self.p2
         p2.twin = p1
         with caplog.at_level(logging.WARNING):
-            p2.twin_function_expr = 'abs(x) - 1'
-        assert p2.twin_function_expr == 'abs(x) - 1'
+            p2.twin_function_expr = "abs(x) - 1"
+        assert p2.twin_function_expr == "abs(x) - 1"
         assert p2._twin_inverse_sympy is None
         assert p2._twin_inverse_function is None
         assert p2.twin_inverse_function_expr == ""
@@ -345,32 +349,37 @@ class TestParameterTwin:
 
 
 class TestGeneralMethods:
-
     def setup_method(self, method):
         self.par = Parameter()
         self.par._axes_manager = mock.MagicMock()
         self.par.map = np.array(
             [(a, b, c) for a, b, c in zip([1, 3, 5], [2, 4, 6], [0, 0, 0])],
-            dtype=[('values', 'float'), ('std', 'float'), ('is_set', bool)])
+            dtype=[("values", "float"), ("std", "float"), ("is_set", bool)],
+        )
 
     def test_as_signal(self):
         par = self.par
 
         # additional setup
         par._axes_manager._get_navigation_axes_dicts.return_value = [
-            {'name': 'one', 'navigate': True,
-             'offset': 0.0, 'scale':
-             1.0, 'size': 3,
-             'units': 'bar'}, ]
+            {
+                "name": "one",
+                "navigate": True,
+                "offset": 0.0,
+                "scale": 1.0,
+                "size": 3,
+                "units": "bar",
+            },
+        ]
         par._number_of_elements = 2
         par.component = mock.MagicMock()
         par.component.active_is_multidimensional = True
         par.component._active_array = np.array([1, 0, 1], dtype=bool)
 
         # testing
-        s = par.as_signal('std')
+        s = par.as_signal("std")
         np.testing.assert_array_equal(s.data, np.array([2, np.nan, 6]))
-        assert s.axes_manager[-1].name == 'one'
+        assert s.axes_manager[-1].name == "one"
         assert par._axes_manager._get_navigation_axes_dicts.called
         assert len(s.axes_manager._axes) == 2
         assert not s.axes_manager[-1].navigate
@@ -383,9 +392,9 @@ class TestGeneralMethods:
         par.value = 3.5
         par.std = 4.5
         par.store_current_value_in_array()
-        assert par.map['is_set'][1]
-        assert par.map['std'][1] == 4.5
-        assert par.map['values'][1] == 3.5
+        assert par.map["is_set"][1]
+        assert par.map["std"][1] == 4.5
+        assert par.map["values"][1] == 3.5
 
     def test_store_current_values_no_indices(self):
         par = self.par
@@ -393,6 +402,6 @@ class TestGeneralMethods:
         par.value = 3.5
         par.std = 4.5
         par.store_current_value_in_array()
-        assert par.map['is_set'][0]
-        assert par.map['std'][0] == 4.5
-        assert par.map['values'][0] == 3.5
+        assert par.map["is_set"][0]
+        assert par.map["std"][0] == 4.5
+        assert par.map["values"][0] == 3.5

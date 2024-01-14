@@ -28,5 +28,4 @@ def test_function():
     g.x0.value = 1
     np.testing.assert_allclose(g.function(0), -11.07148718)
     np.testing.assert_allclose(g.function(1), 0)
-    np.testing.assert_allclose(g.function(1e4), 10*np.pi/2,1e-4)
-
+    np.testing.assert_allclose(g.function(1e4), 10 * np.pi / 2, 1e-4)

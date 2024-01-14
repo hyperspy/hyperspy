@@ -47,6 +47,7 @@ def test_types_of_bins(bins):
     out = s2.get_histogram(bins)
     assert out.data.shape == (10,)
 
+
 def test_knuth_bad_data_set(caplog):
     s1 = generate_bad_toy_data()
     with caplog.at_level(logging.WARNING):

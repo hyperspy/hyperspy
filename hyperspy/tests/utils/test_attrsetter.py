@@ -21,9 +21,8 @@ from hyperspy.misc.utils import DictionaryTreeBrowser, attrsetter
 
 
 class DummyThing(object):
-
     def __init__(self):
-        self.name = 'Dummy'
+        self.name = "Dummy"
         self.another = None
 
     def multiply(self):
@@ -31,38 +30,40 @@ class DummyThing(object):
 
 
 class TestAttrSetter:
-
     def setup_method(self, method):
         tree = DictionaryTreeBrowser(
             {
-                "Node1": {"leaf11": 11,
-                          "Node11": {"leaf111": 111},
-                          },
-                "Node2": {"leaf21": 21,
-                          "Node21": {"leaf211": 211},
-                          },
-                "Leaf3": 3
-            })
+                "Node1": {
+                    "leaf11": 11,
+                    "Node11": {"leaf111": 111},
+                },
+                "Node2": {
+                    "leaf21": 21,
+                    "Node21": {"leaf211": 211},
+                },
+                "Leaf3": 3,
+            }
+        )
         self.tree = tree
         self.dummy = DummyThing()
 
     def test_dtb_settattr(self):
         t = self.tree
-        attrsetter(t, 'Node1.leaf11', 119)
+        attrsetter(t, "Node1.leaf11", 119)
         assert t.Node1.leaf11 == 119
-        attrsetter(t, 'Leaf3', 39)
+        attrsetter(t, "Leaf3", 39)
         assert t.Leaf3 == 39
 
     def test_wrong_item(self):
         t = self.tree
         with pytest.raises(AttributeError):
-            attrsetter(t, 'random.name.with.more.than.one', 13)
+            attrsetter(t, "random.name.with.more.than.one", 13)
 
     def test_dummy(self):
         d = self.dummy
         d.multiply()
-        attrsetter(d, 'another.name', 'New dummy')
-        assert d.another.name == 'New dummy'
+        attrsetter(d, "another.name", "New dummy")
+        assert d.another.name == "New dummy"
         d.another.multiply()
-        attrsetter(d, 'another.another.name', 'super New dummy')
-        assert d.another.another.name == 'super New dummy'
+        attrsetter(d, "another.another.name", "super New dummy")
+        assert d.another.another.name == "super New dummy"

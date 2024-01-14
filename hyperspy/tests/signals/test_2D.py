@@ -287,7 +287,8 @@ class Test2D:
             _ = self.signal.split(number_of_parts=2, step_sizes=2)
 
         with pytest.raises(
-            ValueError, match="The number of parts is greater than the axis size.",
+            ValueError,
+            match="The number of parts is greater than the axis size.",
         ):
             _ = self.signal.split(number_of_parts=1e9)
 
@@ -397,7 +398,7 @@ class Test2D:
         s.change_dtype("float64")
         kwargs = {}
         if s._lazy:
-            if Version(dask.__version__) < Version('2023.2.1'):
+            if Version(dask.__version__) < Version("2023.2.1"):
                 pytest.skip("dask.array.random.default_rng added in 2023.2.1")
             data = s.data.compute()
             from dask.array.random import default_rng
@@ -428,10 +429,11 @@ class Test2D:
         s = self.signal
         kwargs = {}
         if s._lazy:
-            if Version(dask.__version__) < Version('2023.2.1'):
+            if Version(dask.__version__) < Version("2023.2.1"):
                 pytest.skip("dask.array.random.default_rng added in 2023.2.1")
             data = s.data.compute()
             from dask.array.random import default_rng
+
             kwargs["chunks"] = s.data.chunks
             rng1 = default_rng(123)
             rng2 = default_rng(123)
@@ -445,9 +447,7 @@ class Test2D:
         if s._lazy:
             s.compute()
 
-        np.testing.assert_array_almost_equal(
-            s.data, rng2.poisson(lam=data, **kwargs)
-            )
+        np.testing.assert_array_almost_equal(s.data, rng2.poisson(lam=data, **kwargs))
         s.change_dtype("float64")
 
         s.add_poissonian_noise(keep_dtype=True, random_state=rng1)

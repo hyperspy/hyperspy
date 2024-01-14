@@ -29,7 +29,6 @@ from hyperspy.decorators import lazifyTestClass
 
 
 class TestFitOneComponent:
-
     def setup_method(self, method):
         g = Gaussian()
         g.A.value = 10000.0
@@ -42,7 +41,7 @@ class TestFitOneComponent:
         self.g = g
         self.axis = axis
 
-    @pytest.mark.parametrize("signal_range", [(4000, 6000), 'interactive'])
+    @pytest.mark.parametrize("signal_range", [(4000, 6000), "interactive"])
     def test_fit_component(self, signal_range):
         m = self.model
         axis = self.axis
@@ -51,13 +50,12 @@ class TestFitOneComponent:
         g1 = Gaussian()
         m.append(g1)
         cf = ComponentFit(m, g1, signal_range=signal_range)
-        if signal_range == 'interactive':
+        if signal_range == "interactive":
             cf.ss_left_value, cf.ss_right_value = (4000, 6000)
         cf._fit_fired()
-        np.testing.assert_allclose(g.function(axis),
-                                   g1.function(axis),
-                                   rtol=0.0,
-                                   atol=10e-3)
+        np.testing.assert_allclose(
+            g.function(axis), g1.function(axis), rtol=0.0, atol=10e-3
+        )
 
     def test_component_not_in_model(self):
         with pytest.raises(ValueError):
@@ -65,14 +63,13 @@ class TestFitOneComponent:
 
 
 def test_Component_fit_wrong_signal():
-    s = Signal2D(np.arange(2*3*4).reshape(2, 3, 4))
+    s = Signal2D(np.arange(2 * 3 * 4).reshape(2, 3, 4))
     m = s.create_model()
     with pytest.raises(SignalDimensionError):
         ComponentFit(m, Gaussian())
 
 
 class TestFitSeveralComponent:
-
     def setup_method(self, method):
         gs1 = Gaussian()
         gs1.A.value = 10000.0
@@ -90,9 +87,7 @@ class TestFitSeveralComponent:
         gs3.sigma.value = 100.0
 
         axis = np.arange(10000)
-        total_signal = (gs1.function(axis) +
-                        gs2.function(axis) +
-                        gs3.function(axis))
+        total_signal = gs1.function(axis) + gs2.function(axis) + gs3.function(axis)
 
         s = Signal1D(total_signal)
         m = s.create_model()
@@ -123,10 +118,9 @@ class TestFitSeveralComponent:
         g2.active = True
         g3.active = False
         m.fit_component(g1, signal_range=(4500, 5200), fit_independent=True)
-        np.testing.assert_allclose(self.gs1.function(axis),
-                                   g1.function(axis),
-                                   rtol=self.rtol,
-                                   atol=10e-3)
+        np.testing.assert_allclose(
+            self.gs1.function(axis), g1.function(axis), rtol=self.rtol, atol=10e-3
+        )
         assert g1.active
         assert g2.active
         assert not g3.active
@@ -140,10 +134,9 @@ class TestFitSeveralComponent:
         g2.A.free = False
         g2.sigma.free = False
         m.fit_component(g1, signal_range=(4500, 5200))
-        np.testing.assert_allclose(self.gs1.function(axis),
-                                   g1.function(axis),
-                                   rtol=self.rtol,
-                                   atol=10e-3)
+        np.testing.assert_allclose(
+            self.gs1.function(axis), g1.function(axis), rtol=self.rtol, atol=10e-3
+        )
 
         assert g1.A.free
         assert g1.sigma.free
@@ -165,14 +158,12 @@ class TestFitSeveralComponent:
         m.fit_component(g1, signal_range=(4500, 5200))
         m.fit_component(g2, signal_range=(1500, 2200))
         m.fit_component(g3, signal_range=(5800, 6150))
-        np.testing.assert_allclose(self.model.signal.data,
-                                   m._get_current_data(),
-                                   rtol=self.rtol,
-                                   atol=10e-3)
+        np.testing.assert_allclose(
+            self.model.signal.data, m._get_current_data(), rtol=self.rtol, atol=10e-3
+        )
 
 
 class TestFitSI:
-
     def setup_method(self, method):
         s = Signal1D(np.random.random((2, 2, 8)))
         m = s.create_model()
@@ -228,7 +219,7 @@ class TestStdWithMultipleFitters:
 
         self.g1, self.g2 = g1, g2
 
-    @pytest.mark.parametrize("optimizer", ['lm', 'lstsq', 'ridge_regression'])
+    @pytest.mark.parametrize("optimizer", ["lm", "lstsq", "ridge_regression"])
     def test_fitters(self, optimizer):
         if optimizer == "ridge_regression":
             pytest.importorskip("sklearn")

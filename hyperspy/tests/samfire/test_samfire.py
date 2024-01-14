@@ -31,7 +31,6 @@ N_WORKERS = 1
 
 
 class Mock_queue(object):
-
     def __init__(self):
         self.var = []
 
@@ -40,7 +39,6 @@ class Mock_queue(object):
 
 
 def generate_test_model():
-
     from hyperspy.signals import Signal1D
     from hyperspy.components1d import Gaussian, Lorentzian
     from scipy.ndimage import gaussian_filter
@@ -54,64 +52,58 @@ def generate_test_model():
 
     # do circle/domain
     cent = (domain // 2, domain // 2)
-    y, x = np.ogrid[-cent[0]:domain - cent[0], -cent[1]:domain - cent[1]]
+    y, x = np.ogrid[-cent[0] : domain - cent[0], -cent[1] : domain - cent[1]]
     mask = x * x + y * y <= radius * radius
     lor_map = None
     for blur in blurs:
-
         s = Signal1D(np.ones((domain, domain, n_im)))
         cent = tuple([int(0.5 * i) for i in s.data.shape[:-1]])
         m0 = s.create_model()
 
         gs01 = Lorentzian()
         m0.append(gs01)
-        gs01.gamma.map['values'][:] = 50
-        gs01.gamma.map['is_set'][:] = True
-        gs01.centre.map['values'][:] = 300
-        gs01.centre.map['values'][mask] = 400
-        gs01.centre.map['values'] = gaussian_filter(
-            gs01.centre.map['values'],
-            blur)
-        gs01.centre.map['is_set'][:] = True
-        gs01.A.map['values'][:] = 100 * \
-            rnd.rand(domain, domain) + 300000
-        gs01.A.map['values'][mask] *= 0.75
-        gs01.A.map['values'] = gaussian_filter(gs01.A.map['values'], blur)
-        gs01.A.map['is_set'][:] = True
+        gs01.gamma.map["values"][:] = 50
+        gs01.gamma.map["is_set"][:] = True
+        gs01.centre.map["values"][:] = 300
+        gs01.centre.map["values"][mask] = 400
+        gs01.centre.map["values"] = gaussian_filter(gs01.centre.map["values"], blur)
+        gs01.centre.map["is_set"][:] = True
+        gs01.A.map["values"][:] = 100 * rnd.rand(domain, domain) + 300000
+        gs01.A.map["values"][mask] *= 0.75
+        gs01.A.map["values"] = gaussian_filter(gs01.A.map["values"], blur)
+        gs01.A.map["is_set"][:] = True
 
         gs02 = Gaussian()
         m0.append(gs02)
-        gs02.sigma.map['values'][:] = 15
-        gs02.sigma.map['is_set'][:] = True
-        gs02.centre.map['values'][:] = 400
-        gs02.centre.map['values'][mask] = 300
-        gs02.centre.map['values'] = gaussian_filter(
-            gs02.centre.map['values'],
-            blur)
-        gs02.centre.map['is_set'][:] = True
-        gs02.A.map['values'][:] = 50000
-        gs02.A.map['is_set'][:] = True
+        gs02.sigma.map["values"][:] = 15
+        gs02.sigma.map["is_set"][:] = True
+        gs02.centre.map["values"][:] = 400
+        gs02.centre.map["values"][mask] = 300
+        gs02.centre.map["values"] = gaussian_filter(gs02.centre.map["values"], blur)
+        gs02.centre.map["is_set"][:] = True
+        gs02.A.map["values"][:] = 50000
+        gs02.A.map["is_set"][:] = True
 
         gs03 = Lorentzian()
         m0.append(gs03)
-        gs03.gamma.map['values'][:] = 20
-        gs03.gamma.map['is_set'][:] = True
-        gs03.centre.map['values'][:] = 100
-        gs03.centre.map['values'][mask] = 900
-        gs03.centre.map['is_set'][:] = True
-        gs03.A.map['values'][:] = 100 * \
-            rnd.rand(domain, domain) + 50000
-        gs03.A.map['values'][mask] *= 0.
-        gs03.A.map['is_set'][:] = True
+        gs03.gamma.map["values"][:] = 20
+        gs03.gamma.map["is_set"][:] = True
+        gs03.centre.map["values"][:] = 100
+        gs03.centre.map["values"][mask] = 900
+        gs03.centre.map["is_set"][:] = True
+        gs03.A.map["values"][:] = 100 * rnd.rand(domain, domain) + 50000
+        gs03.A.map["values"][mask] *= 0.0
+        gs03.A.map["is_set"][:] = True
 
         s11 = m0.as_signal()
         if total is None:
             total = s11.data.copy()
-            lor_map = gs01.centre.map['values'].copy()
+            lor_map = gs01.centre.map["values"].copy()
         else:
             total = np.concatenate((total, s11.data), axis=1)
             lor_map = np.concatenate(
-                (lor_map, gs01.centre.map['values'].copy()), axis=1)
+                (lor_map, gs01.centre.map["values"].copy()), axis=1
+            )
 
     s = Signal1D(total)
     s.data = rnd.poisson(lam=s.data) + 0.1
@@ -145,11 +137,10 @@ def generate_test_model():
 
 
 class TestSamfireEmpty:
-
     def setup_method(self, method):
         self.shape = (7, 15)
         n_im = 50
-        s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.)
+        s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.0)
         s.change_dtype(float)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
@@ -175,8 +166,7 @@ class TestSamfireEmpty:
     def test_samfire_init_marker(self):
         m = self.model
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        np.testing.assert_array_almost_equal(samf.metadata.marker,
-                                             np.zeros(self.shape))
+        np.testing.assert_array_almost_equal(samf.metadata.marker, np.zeros(self.shape))
         samf.stop()
         del samf
 
@@ -196,6 +186,7 @@ class TestSamfireEmpty:
 
     def test_samfire_init_strategy_list(self):
         from hyperspy.samfire import StrategyList
+
         m = self.model
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
         assert isinstance(samf.strategies, StrategyList)
@@ -205,8 +196,8 @@ class TestSamfireEmpty:
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
         from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
-        assert isinstance(samf.strategies[0],
-                          ReducedChiSquaredStrategy)
+
+        assert isinstance(samf.strategies[0], ReducedChiSquaredStrategy)
         assert isinstance(samf.strategies[1], HistogramStrategy)
         samf.stop()
         del samf
@@ -221,6 +212,7 @@ class TestSamfireEmpty:
     def test_samfire_init_default(self):
         m = self.model
         from multiprocessing import cpu_count
+
         samf = m.create_samfire(setup=False)
         assert samf._workers == cpu_count() - 1
         np.testing.assert_allclose(samf.metadata.marker, np.zeros(self.shape))
@@ -236,8 +228,7 @@ class TestSamfireEmpty:
         samf._enable_optional_components()
         assert m[0].active_is_multidimensional
         assert m[1].active_is_multidimensional
-        assert np.all([isinstance(a, int)
-                       for a in samf.optional_components])
+        assert np.all([isinstance(a, int) for a in samf.optional_components])
         np.testing.assert_equal(samf.optional_components, [0, 1])
         samf.stop()
         del samf
@@ -246,45 +237,44 @@ class TestSamfireEmpty:
         m = self.model
         for i in range(len(m)):
             for ip, p in enumerate(m[i].parameters):
-                p.map['values'][0, 0] = 3.0 + i + ip
-                p.map['std'][0, 0] = 2.44 + i + ip
-                p.map['is_set'][0, 0] = True
+                p.map["values"][0, 0] = 3.0 + i + ip
+                p.map["std"][0, 0] = 2.44 + i + ip
+                p.map["is_set"][0, 0] = True
         m[1].active_is_multidimensional = True
         m[1]._active_array[0, 0] = False
         assert m[1]._active_array[1, 0]
-        m.chisq.data[0, 0] = 1200.
-        m.dof.data[0, 0] = 1.
+        m.chisq.data[0, 0] = 1200.0
+        m.dof.data[0, 0] = 1.0
 
         small_m = m.inav[0, 0]
-        d = {'chisq.data': np.array(small_m.chisq.data[0]),
-             'dof.data': np.array(small_m.dof.data[0]),
-             'components': {component.name: {parameter.name: parameter.map for
-                                             parameter in component.parameters}
-                            for component in small_m if component.active}
-             }
+        d = {
+            "chisq.data": np.array(small_m.chisq.data[0]),
+            "dof.data": np.array(small_m.dof.data[0]),
+            "components": {
+                component.name: {
+                    parameter.name: parameter.map for parameter in component.parameters
+                }
+                for component in small_m
+                if component.active
+            },
+        }
 
         d = copy.deepcopy(d)
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
         samf._swap_dict_and_model((1, 0), d)
-        assert m.chisq.data[1, 0] == 1200.
-        assert m.dof.data[1, 0] == 1.
+        assert m.chisq.data[1, 0] == 1200.0
+        assert m.dof.data[1, 0] == 1.0
 
-        assert d['dof.data'] == 0.
-        assert np.isnan(d['chisq.data'])
+        assert d["dof.data"] == 0.0
+        assert np.isnan(d["chisq.data"])
 
         assert np.all(~m[1]._active_array[:2, 0])
         for c in m:
             if c.active:
                 for p in c.parameters:
-                    assert (
-                        p.map['values'][
-                            0, 0] == p.map['values'][
-                            1, 0])
-                    assert p.map['std'][0, 0] == p.map['std'][1, 0]
-                    assert (
-                        p.map['is_set'][
-                            0, 0] == p.map['is_set'][
-                            1, 0])
+                    assert p.map["values"][0, 0] == p.map["values"][1, 0]
+                    assert p.map["std"][0, 0] == p.map["std"][1, 0]
+                    assert p.map["is_set"][0, 0] == p.map["is_set"][1, 0]
 
         samf.stop()
         del samf
@@ -296,7 +286,7 @@ class TestSamfireEmpty:
         assert len(ans) == 0
         ind_list = [(1, 2), (0, 1), (3, 3), (4, 6)]
         for ind in ind_list:
-            samf.metadata.marker[ind] += 2.
+            samf.metadata.marker[ind] += 2.0
         ans = samf._next_pixels(10)
         assert len(ans) == 4
         for ind in ans:
@@ -304,7 +294,9 @@ class TestSamfireEmpty:
         for n, ind in enumerate(ind_list):
             samf.metadata.marker[ind] += n
         ans = samf._next_pixels(10)
-        assert ans == [(4, 6), ]
+        assert ans == [
+            (4, 6),
+        ]
         samf.stop()
         del samf
 
@@ -334,7 +326,10 @@ class TestSamfireEmpty:
         samf.stop()
         del samf
 
-@pytest.mark.xfail(reason="Sometimes the number of failed pixels > 3 when using multiprocessing. Unknown reason")
+
+@pytest.mark.xfail(
+    reason="Sometimes the number of failed pixels > 3 when using multiprocessing. Unknown reason"
+)
 def test_multiprocessed():
     """This test uses multiprocessing.pool rather than ipyparallel"""
     model, lor1, g, lor2 = generate_test_model()
@@ -344,15 +339,14 @@ def test_multiprocessed():
     model.fit()
     samf = model.create_samfire(workers=N_WORKERS, ipyparallel=False)
     samf.plot_every = np.nan
-    samf.strategies[0].radii = 1.
+    samf.strategies[0].radii = 1.0
     samf.strategies.remove(1)
     samf.optional_components = [model[2]]
     samf.start(bounded=True)
 
     # let at most 3 pixels to fail randomly.
     fitmask = samf.metadata.marker == -np.ones(shape)
-    print('number of pixels failed: {}'.format(
-          np.prod(shape) - np.sum(fitmask)))
+    print("number of pixels failed: {}".format(np.prod(shape) - np.sum(fitmask)))
     assert np.sum(fitmask) >= np.prod(shape) - 5
 
     for o_c, n_c in zip([g, lor1, lor2], model):
@@ -363,17 +357,17 @@ def test_multiprocessed():
                 mask = fitmask
 
             np.testing.assert_allclose(
-                p1.map['values'][mask],
-                p.map['values'][:7, :15][mask],
-                rtol=0.3)
+                p1.map["values"][mask], p.map["values"][:7, :15][mask], rtol=0.3
+            )
 
     samf.stop()
     del samf
     gc.collect()
 
+
 def test_create_worker_defaults():
-    worker = create_worker('worker')
-    assert worker.identity == 'worker'
+    worker = create_worker("worker")
+    assert worker.identity == "worker"
     assert worker.shared_queue is None
     assert worker.result_queue is None
     assert worker.individual_queue is None
@@ -384,7 +378,6 @@ def test_create_worker_defaults():
 
 
 class TestSamfireWorker:
-
     def setup_method(self, method):
         np.random.seed(17)
         ax = np.arange(250)
@@ -405,75 +398,78 @@ class TestSamfireWorker:
         l1.gamma.value = self.widths[2]
         l1.A.value = self.areas[2]
 
-        d = g.function(ax - self.centres[0]) + \
-            l0.function(ax - self.centres[1]) + \
-            l1.function(ax - self.centres[2])
+        d = (
+            g.function(ax - self.centres[0])
+            + l0.function(ax - self.centres[1])
+            + l1.function(ax - self.centres[2])
+        )
         s = hs.signals.Signal1D(np.array([d, d]))
         s.add_poissonian_noise()
         s.change_dtype(float)
-        s.metadata.Signal.set_item("Noise_properties.variance",
-                                   s.deepcopy() + 1.)
+        s.metadata.Signal.set_item("Noise_properties.variance", s.deepcopy() + 1.0)
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
-        m[-1].name = 'g1'
+        m[-1].name = "g1"
         m.append(hs.model.components1D.Lorentzian())
-        m[-1].name = 'l1'
+        m[-1].name = "l1"
         m.append(hs.model.components1D.Lorentzian())
-        m[-1].name = 'l2'
+        m[-1].name = "l2"
         m.append(hs.model.components1D.Gaussian())
-        m[-1].name = 'g2'
+        m[-1].name = "g2"
         m.append(hs.model.components1D.Gaussian())
-        m[-1].name = 'g3'
+        m[-1].name = "g3"
         m.append(hs.model.components1D.Lorentzian())
-        m[-1].name = 'l3'
+        m[-1].name = "l3"
 
         for c in m:
             c.active_is_multidimensional = True
 
-        vals = {'g1': {},
-                'g2': {},
-                'g3': {},
-                'l1': {},
-                'l2': {},
-                'l3': {},
-                }
+        vals = {
+            "g1": {},
+            "g2": {},
+            "g3": {},
+            "l1": {},
+            "l2": {},
+            "l3": {},
+        }
 
-        vals['g1']['centre'] = [50, 150]
-        vals['g1']['sigma'] = [5]
-        vals['g1']['A'] = [10000]
+        vals["g1"]["centre"] = [50, 150]
+        vals["g1"]["sigma"] = [5]
+        vals["g1"]["A"] = [10000]
 
-        vals['l1']['centre'] = [43]
-        vals['l1']['gamma'] = [25]
-        vals['l1']['A'] = [10000]
+        vals["l1"]["centre"] = [43]
+        vals["l1"]["gamma"] = [25]
+        vals["l1"]["A"] = [10000]
 
-        vals['l2']['centre'] = [125]
-        vals['l2']['gamma'] = [8]
-        vals['l2']['A'] = [10000]
+        vals["l2"]["centre"] = [125]
+        vals["l2"]["gamma"] = [8]
+        vals["l2"]["A"] = [10000]
 
-        vals['g2']['centre'] = [105]
-        vals['g2']['sigma'] = [20]
-        vals['g2']['A'] = [10000]
+        vals["g2"]["centre"] = [105]
+        vals["g2"]["sigma"] = [20]
+        vals["g2"]["A"] = [10000]
 
-        vals['l3']['centre'] = [185]
-        vals['l3']['gamma'] = [11]
-        vals['l3']['A'] = [10000]
+        vals["l3"]["centre"] = [185]
+        vals["l3"]["gamma"] = [11]
+        vals["l3"]["A"] = [10000]
 
-        vals['g3']['centre'] = [175]
-        vals['g3']['sigma'] = [12]
-        vals['g3']['A'] = [10000]
+        vals["g3"]["centre"] = [175]
+        vals["g3"]["sigma"] = [12]
+        vals["g3"]["A"] = [10000]
 
         self.vals = vals
         self.model = m
         self.q = Mock_queue()
         self.ind = (1,)
         self.args = {}
-        self.model_letter = 'sldkfjg'
+        self.model_letter = "sldkfjg"
         from hyperspy.samfire_utils.fit_tests import red_chisq_test as rct
+
         self._gt_dump = cloudpickle.dumps(rct(tolerance=1.0))
         m_slice = m.inav[self.ind[::-1]]
         m_slice.store(self.model_letter)
         m_dict = m_slice.signal._to_dictionary(False)
-        m_dict['models'] = m_slice.signal.models._models.as_dictionary()
+        m_dict["models"] = m_slice.signal.models._models.as_dictionary()
         self.model_dictionary = m_dict
         self.optional_comps = [1, 2, 3, 4, 5]
 
@@ -481,9 +477,10 @@ class TestSamfireWorker:
         gc.collect()
 
     def test_add_model(self):
-        worker = create_worker('worker')
+        worker = create_worker("worker")
         worker.create_model(self.model_dictionary, self.model_letter)
         from hyperspy.model import BaseModel
+
         assert isinstance(worker.model, BaseModel)
         for component in worker.model:
             assert not component.active_is_multidimensional
@@ -493,57 +490,59 @@ class TestSamfireWorker:
 
     @pytest.mark.xfail(reason="Sometimes fails - Unknown reason")
     def test_main_result(self):
-        worker = create_worker('worker')
+        worker = create_worker("worker")
         worker.create_model(self.model_dictionary, self.model_letter)
         worker.setup_test(self._gt_dump)
-        worker.set_optional_names({self.model[comp].name for comp in
-                                   self.optional_comps})
-        self.vals.update({
-            'signal.data': self.model.signal(),
-            'fitting_kwargs': {},
-            'variance.data':
-            self.model.signal.metadata.Signal.Noise_properties.variance()
-        })
-        keyword, (_id, _ind, result, found_solution) = \
-            worker.run_pixel(self.ind, self.vals)
-        assert _id == 'worker'
+        worker.set_optional_names(
+            {self.model[comp].name for comp in self.optional_comps}
+        )
+        self.vals.update(
+            {
+                "signal.data": self.model.signal(),
+                "fitting_kwargs": {},
+                "variance.data": self.model.signal.metadata.Signal.Noise_properties.variance(),
+            }
+        )
+        keyword, (_id, _ind, result, found_solution) = worker.run_pixel(
+            self.ind, self.vals
+        )
+        assert _id == "worker"
         assert _ind == self.ind
         assert found_solution
 
-        assert result['dof.data'][()] == 9
+        assert result["dof.data"][()] == 9
 
-        lor_components = [key for key in result['components'].keys() if
-                          key.find('l') == 0]
-        assert len(result['components']) == 3
+        lor_components = [
+            key for key in result["components"].keys() if key.find("l") == 0
+        ]
+        assert len(result["components"]) == 3
         assert len(lor_components) == 2
 
-        gauss_name = list(set(result['components'].keys()) -
-                          set(lor_components))[0]
+        gauss_name = list(set(result["components"].keys()) - set(lor_components))[0]
 
-        gauss = result['components'][gauss_name]
-        np.testing.assert_allclose(gauss['A'][0]['values'], self.areas[0],
-                                   rtol=0.05)
-        np.testing.assert_allclose(gauss['sigma'][0]['values'], self.widths[0],
-                                   rtol=0.05)
-        np.testing.assert_allclose(gauss['centre'][0]['values'],
-                                   self.centres[0], rtol=0.05)
+        gauss = result["components"][gauss_name]
+        np.testing.assert_allclose(gauss["A"][0]["values"], self.areas[0], rtol=0.05)
+        np.testing.assert_allclose(
+            gauss["sigma"][0]["values"], self.widths[0], rtol=0.05
+        )
+        np.testing.assert_allclose(
+            gauss["centre"][0]["values"], self.centres[0], rtol=0.05
+        )
 
-        lor1 = result['components'][lor_components[0]]
-        lor1_values = tuple(lor1[par][0]['values'] for par in ['A', 'gamma',
-                                                               'centre'])
-        lor2 = result['components'][lor_components[1]]
-        lor2_values = tuple(lor2[par][0]['values'] for par in ['A', 'gamma',
-                                                               'centre'])
+        lor1 = result["components"][lor_components[0]]
+        lor1_values = tuple(lor1[par][0]["values"] for par in ["A", "gamma", "centre"])
+        lor2 = result["components"][lor_components[1]]
+        lor2_values = tuple(lor2[par][0]["values"] for par in ["A", "gamma", "centre"])
 
         possible_values1 = (self.areas[1], self.widths[1], self.centres[1])
         possible_values2 = (self.areas[2], self.widths[2], self.centres[2])
 
-        assert (np.allclose(lor1_values, possible_values1, rtol=0.05)
-                or
-                np.allclose(lor1_values, possible_values2, rtol=0.05))
+        assert np.allclose(lor1_values, possible_values1, rtol=0.05) or np.allclose(
+            lor1_values, possible_values2, rtol=0.05
+        )
 
-        assert (np.allclose(lor2_values, possible_values1, rtol=0.05)
-                or
-                np.allclose(lor2_values, possible_values2, rtol=0.05))
+        assert np.allclose(lor2_values, possible_values1, rtol=0.05) or np.allclose(
+            lor2_values, possible_values2, rtol=0.05
+        )
 
         del worker

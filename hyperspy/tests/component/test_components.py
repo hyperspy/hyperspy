@@ -31,7 +31,6 @@ TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 
 def get_components1d_name_list():
-
     components1d_name_list = []
     for c_name in dir(components1d):
         obj = getattr(components1d, c_name)
@@ -40,21 +39,25 @@ def get_components1d_name_list():
     return components1d_name_list
 
 
-@pytest.mark.filterwarnings("ignore:invalid value encountered in true_divide:RuntimeWarning")
-@pytest.mark.filterwarnings("ignore:divide by zero encountered in true_divide:RuntimeWarning")
+@pytest.mark.filterwarnings(
+    "ignore:invalid value encountered in true_divide:RuntimeWarning"
+)
+@pytest.mark.filterwarnings(
+    "ignore:divide by zero encountered in true_divide:RuntimeWarning"
+)
 @pytest.mark.filterwarnings("ignore:invalid value encountered in cos:RuntimeWarning")
-@pytest.mark.parametrize('component_name', get_components1d_name_list())
+@pytest.mark.parametrize("component_name", get_components1d_name_list())
 def test_creation_components1d(component_name):
     s = hs.signals.Signal1D(np.zeros(1024))
     s.axes_manager[0].offset = 100
     s.axes_manager[0].scale = 0.01
 
     kwargs = {}
-    if component_name == 'ScalableFixedPattern':
-        kwargs['signal1D'] = s
-    elif component_name == 'Expression':
-        kwargs.update({'expression': "a*x+b", "name": "linear"})
-    elif component_name == 'Bleasdale':
+    if component_name == "ScalableFixedPattern":
+        kwargs["signal1D"] = s
+    elif component_name == "Expression":
+        kwargs.update({"expression": "a*x+b", "name": "linear"})
+    elif component_name == "Bleasdale":
         # This component only works with numexpr.
         pytest.importorskip("numexpr")
 
@@ -71,7 +74,6 @@ def test_creation_components1d(component_name):
 
 
 class TestPowerLaw:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = 100
@@ -115,7 +117,7 @@ class TestPowerLaw:
         pl = self.m[0]
         pl.left_cutoff.value = 105.0
         axis = self.s.axes_manager[0].axis
-        for attr in ['function', 'grad_A', 'grad_r', 'grad_origin']:
+        for attr in ["function", "grad_A", "grad_r", "grad_origin"]:
             values = getattr(pl, attr)((axis))
             np.testing.assert_allclose(values[:501], np.zeros((501)))
             assert getattr(pl, attr)((axis))[500] == 0
@@ -129,7 +131,6 @@ class TestPowerLaw:
 
 
 class TestOffset:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(10))
         s.axes_manager[0].scale = 0.01
@@ -176,7 +177,6 @@ class TestOffset:
 
 
 class TestPolynomial:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = -5
@@ -191,7 +191,7 @@ class TestPolynomial:
         s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
         self.m_3d = s_3d.create_model()
         self.m_3d.append(hs.model.components1D.Polynomial(order=2))
-        data = 50*np.ones(100)
+        data = 50 * np.ones(100)
         s_offset = hs.signals.Signal1D(data)
         self.m_offset = s_offset.create_model()
 
@@ -210,11 +210,11 @@ class TestPolynomial:
 
     def test_fitting(self):
         s_2d = self.m_2d.signal
-        s_2d.data += 100 * np.array([np.random.randint(50, size=10)]*100).T
+        s_2d.data += 100 * np.array([np.random.randint(50, size=10)] * 100).T
         m_2d = s_2d.create_model()
         m_2d.append(hs.model.components1D.Polynomial(order=1))
-        m_2d.multifit(grad='analytical')
-        np.testing.assert_allclose(m_2d.red_chisq.data.sum(), 0.0, atol=1E-7)
+        m_2d.multifit(grad="analytical")
+        np.testing.assert_allclose(m_2d.red_chisq.data.sum(), 0.0, atol=1e-7)
 
     @pytest.mark.parametrize(("order"), (2, 12))
     @pytest.mark.parametrize(("uniform"), (True, False))
@@ -248,9 +248,9 @@ class TestPolynomial:
         p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
-        np.testing.assert_allclose(p.a2.map['values'], 0.5)
-        np.testing.assert_allclose(p.a1.map['values'], 2)
-        np.testing.assert_allclose(p.a0.map['values'], 3)
+        np.testing.assert_allclose(p.a2.map["values"], 0.5)
+        np.testing.assert_allclose(p.a1.map["values"], 2)
+        np.testing.assert_allclose(p.a0.map["values"], 3)
 
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
@@ -259,13 +259,13 @@ class TestPolynomial:
         p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
-        np.testing.assert_allclose(p.a2.map['values'], 0.5)
-        np.testing.assert_allclose(p.a1.map['values'], 2)
-        np.testing.assert_allclose(p.a0.map['values'], 3)
+        np.testing.assert_allclose(p.a2.map["values"], 0.5)
+        np.testing.assert_allclose(p.a1.map["values"], 2)
+        np.testing.assert_allclose(p.a0.map["values"], 3)
 
     def test_function_nd(self):
         s = self.m.as_signal()
-        s = hs.stack([s]*2)
+        s = hs.stack([s] * 2)
         p = hs.model.components1D.Polynomial(order=2)
         p.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
@@ -273,7 +273,6 @@ class TestPolynomial:
 
 
 class TestGaussian:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = -5
@@ -310,12 +309,10 @@ class TestGaussian:
         np.testing.assert_allclose(g.function_nd(axis.axis) * factor, s2.data)
 
 
-
 class TestScalableFixedPattern:
-
     def setup_method(self, method):
-        s = hs.signals.Signal1D(np.linspace(0., 100., 10))
-        s1 = hs.signals.Signal1D(np.linspace(0., 1., 10))
+        s = hs.signals.Signal1D(np.linspace(0.0, 100.0, 10))
+        s1 = hs.signals.Signal1D(np.linspace(0.0, 1.0, 10))
         s.axes_manager[0].scale = 0.1
         s1.axes_manager[0].scale = 0.1
         self.s = s
@@ -388,7 +385,7 @@ class TestScalableFixedPattern:
         fp = hs.model.components1D.ScalableFixedPattern(s1, interpolate=False)
         m = s.create_model()
         m.append(fp)
-        m.fit(grad='analytical')
+        m.fit(grad="analytical")
         x = s.axes_manager[0].axis
         np.testing.assert_allclose(s.data, fp.function(x))
         np.testing.assert_allclose(fp.function(x), fp.function_nd(x))
@@ -400,19 +397,17 @@ class TestScalableFixedPattern:
         s_multi = hs.stack([s] * 3)
         m = s_multi.create_model()
         m.append(fp)
-        fp.yscale.map['values'] = [1.0, 0.5, 1.0]
-        fp.xscale.map['values'] = [1.0, 1.0, 0.75]
+        fp.yscale.map["values"] = [1.0, 0.5, 1.0]
+        fp.xscale.map["values"] = [1.0, 1.0, 0.75]
         results = fp.function_nd(s.axes_manager[0].axis)
         expected = np.array([s1.data * v for v in [1, 0.5, 0.75]])
         np.testing.assert_allclose(results, expected)
 
-    @pytest.mark.parametrize('interpolate', [True, False])
+    @pytest.mark.parametrize("interpolate", [True, False])
     def test_recreate_component(self, interpolate):
         s = self.s
         s1 = self.pattern
-        fp = hs.model.components1D.ScalableFixedPattern(
-            s1, interpolate=interpolate
-            )
+        fp = hs.model.components1D.ScalableFixedPattern(s1, interpolate=interpolate)
         assert fp.yscale._linear
         assert not fp.xscale._linear
         assert not fp.shift._linear
@@ -431,28 +426,33 @@ class TestScalableFixedPattern:
 
 
 class TestHeavisideStep:
-
     def setup_method(self, method):
         self.c = hs.model.components1D.HeavisideStep()
 
     def test_integer_values(self):
         c = self.c
-        np.testing.assert_array_almost_equal(c.function(np.array([-1, 0, 2])),
-                                             np.array([0, 0.5, 1]))
+        np.testing.assert_array_almost_equal(
+            c.function(np.array([-1, 0, 2])), np.array([0, 0.5, 1])
+        )
 
     def test_float_values(self):
         c = self.c
-        np.testing.assert_array_almost_equal(c.function(np.array([-0.5, 0.5, 2])),
-                                             np.array([0, 1, 1]))
+        np.testing.assert_array_almost_equal(
+            c.function(np.array([-0.5, 0.5, 2])), np.array([0, 1, 1])
+        )
 
     def test_not_sorted(self):
         c = self.c
-        np.testing.assert_array_almost_equal(c.function(np.array([3, -0.1, 0])),
-                                             np.array([1, 0, 0.5]))
+        np.testing.assert_array_almost_equal(
+            c.function(np.array([3, -0.1, 0])), np.array([1, 0, 0.5])
+        )
 
     def test_gradients(self):
         c = self.c
-        np.testing.assert_array_almost_equal(c.A.grad(np.array([3, -0.1, 0])),
-                                             np.array([1, 0, 0.5]))
+        np.testing.assert_array_almost_equal(
+            c.A.grad(np.array([3, -0.1, 0])), np.array([1, 0, 0.5])
+        )
+
+
 #        np.testing.assert_array_almost_equal(c.n.grad(np.array([3, -0.1, 0])),
 #                                             np.array([1, 1, 1]))

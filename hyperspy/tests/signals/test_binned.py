@@ -37,7 +37,6 @@ def test_signal_binned_default():
 
 
 class TestModelBinned:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D([1])
         s.axes_manager[0].scale = 0.1

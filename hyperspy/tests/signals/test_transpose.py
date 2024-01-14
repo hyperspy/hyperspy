@@ -138,7 +138,7 @@ def test_lazy_transpose_rechunks():
 
 
 def test_transpose_nav0_sig0():
-    s = BaseSignal([0.])
+    s = BaseSignal([0.0])
     assert s.axes_manager.signal_dimension == 0
     assert s.axes_manager.navigation_dimension == 0
     assert s.axes_manager.signal_axes[0].size == 1

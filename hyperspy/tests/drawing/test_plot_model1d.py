@@ -23,8 +23,8 @@ from hyperspy.components1d import Expression
 from hyperspy.signals import Signal1D
 
 DEFAULT_TOL = 2.0
-BASELINE_DIR = 'plot_model1d'
-STYLE_PYTEST_MPL = 'default'
+BASELINE_DIR = "plot_model1d"
+STYLE_PYTEST_MPL = "default"
 
 
 class TestModelPlot:
@@ -37,26 +37,30 @@ class TestModelPlot:
         self.m = m
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+    )
     def test_default_signal_plot(self):
         self.m.plot()
         return self.m._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+    )
     def test_plot_components(self):
         self.m.plot(plot_components=True)
         return self.m._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+    )
     def test_disable_plot_components(self):
         self.m.plot(plot_components=True)
         self.m.disable_plot_components()
         return self.m._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+    )
     def test_default_navigator_plot(self):
         self.m.plot()
         return self.m._plot.navigator_plot.figure

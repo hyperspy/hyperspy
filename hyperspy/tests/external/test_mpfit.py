@@ -179,4 +179,3 @@ def test_rosenbrock_error():
     m = mpfit(myfunctrosenbrock, p0, maxiter=1)
     assert m.status == 5
     np.testing.assert_allclose(m.params, p0, rtol=5e-7)
-

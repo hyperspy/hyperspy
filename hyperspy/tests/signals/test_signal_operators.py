@@ -27,7 +27,6 @@ from hyperspy.decorators import lazifyTestClass
 
 @lazifyTestClass
 class TestBinaryOperators:
-
     def setup_method(self, method):
         self.s1 = signals.Signal1D(np.ones((2, 3)))
         self.s2 = signals.Signal1D(np.ones((2, 3)))
@@ -140,7 +139,6 @@ class TestBinaryOperators:
 
 @lazifyTestClass
 class TestUnaryOperators:
-
     def setup_method(self, method):
         self.s1 = signals.Signal1D(np.array((1, -1, 4, -3)))
 

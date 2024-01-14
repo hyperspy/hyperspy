@@ -33,24 +33,23 @@ def test_hann_nth_order():
     with pytest.raises(ValueError):
         hann_window_nth_order(-1000, order=1)
     with pytest.raises(ValueError):
-        hann_window_nth_order(1000., order=1)
+        hann_window_nth_order(1000.0, order=1)
     with pytest.raises(ValueError):
         hann_window_nth_order(1000, order=-1)
     with pytest.raises(ValueError):
-        hann_window_nth_order(1000, order=1.)
+        hann_window_nth_order(1000, order=1.0)
 
 
 def _generate_parameters():
     parameters = []
     for lazy in [False, True]:
-        for window_type in ['hann', 'hamming', 'tukey']:
+        for window_type in ["hann", "hamming", "tukey"]:
             for inplace in [False, True]:
-                parameters.append([lazy,
-                               window_type, inplace])
+                parameters.append([lazy, window_type, inplace])
     return parameters
 
 
-@pytest.mark.parametrize('lazy, window_type, inplace', _generate_parameters())
+@pytest.mark.parametrize("lazy, window_type, inplace", _generate_parameters())
 def test_apodization(lazy, window_type, inplace):
     SIZE_NAV0 = 2
     SIZE_NAV1 = 3
@@ -59,18 +58,21 @@ def test_apodization(lazy, window_type, inplace):
     SIZE_SIG1 = 60
     SIZE_SIG2 = 70
 
-    ax_dict0 = {'size': SIZE_NAV0, 'navigate': True}
-    ax_dict1 = {'size': SIZE_SIG0, 'navigate': False}
-    ax_dict2 = {'size': SIZE_SIG1, 'navigate': False}
-    ax_dict3 = {'size': SIZE_SIG2, 'navigate': False}
+    ax_dict0 = {"size": SIZE_NAV0, "navigate": True}
+    ax_dict1 = {"size": SIZE_SIG0, "navigate": False}
+    ax_dict2 = {"size": SIZE_SIG1, "navigate": False}
+    ax_dict3 = {"size": SIZE_SIG2, "navigate": False}
 
     # 1. Test apodization for signal 1D, 2D, 3D:
     data = np.random.rand(SIZE_NAV0 * SIZE_NAV1 * SIZE_SIG0 * SIZE_NAV2).reshape(
-        (SIZE_NAV0, SIZE_NAV1, SIZE_NAV2, SIZE_SIG0))
+        (SIZE_NAV0, SIZE_NAV1, SIZE_NAV2, SIZE_SIG0)
+    )
     data2 = np.random.rand(SIZE_NAV0 * SIZE_NAV1 * SIZE_SIG0 * SIZE_SIG1).reshape(
-        (SIZE_NAV0, SIZE_NAV1, SIZE_SIG0, SIZE_SIG1))
+        (SIZE_NAV0, SIZE_NAV1, SIZE_SIG0, SIZE_SIG1)
+    )
     data3 = np.random.rand(SIZE_NAV0 * SIZE_SIG2 * SIZE_SIG0 * SIZE_SIG1).reshape(
-        (SIZE_NAV0, SIZE_SIG0, SIZE_SIG1, SIZE_SIG2))
+        (SIZE_NAV0, SIZE_SIG0, SIZE_SIG1, SIZE_SIG2)
+    )
     signal1d = Signal1D(data)
     signal2d = Signal2D(data2)
     signal3d = BaseSignal(data3, axes=[ax_dict0, ax_dict1, ax_dict2, ax_dict3])
@@ -78,7 +80,7 @@ def test_apodization(lazy, window_type, inplace):
         signal1d = signal1d.as_lazy()
         signal2d = signal2d.as_lazy()
         signal3d = signal3d.as_lazy()
-    if window_type == 'hann':
+    if window_type == "hann":
         window = np.hanning(SIZE_SIG0)
         window1 = np.hanning(SIZE_SIG1)
         window2 = np.hanning(SIZE_SIG2)
@@ -112,21 +114,25 @@ def test_apodization(lazy, window_type, inplace):
 
         for hann_order in 9 * (np.random.rand(5)) + 1:
             window = hann_window_nth_order(SIZE_SIG0, order=int(hann_order))
-            signal1d_a = signal1d.apply_apodization(window=window_type, hann_order=int(hann_order))
+            signal1d_a = signal1d.apply_apodization(
+                window=window_type, hann_order=int(hann_order)
+            )
             data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
             np.testing.assert_allclose(signal1d_a.data, data_a)
-    elif window_type == 'hamming':
+    elif window_type == "hamming":
         window = np.hamming(SIZE_SIG0)
         signal1d_a = signal1d.apply_apodization(window=window_type)
         data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
         np.testing.assert_allclose(signal1d_a.data, data_a)
-    elif window_type == 'tukey':
+    elif window_type == "tukey":
         for tukey_alpha in np.random.rand(5):
             window = tukey(SIZE_SIG0, alpha=tukey_alpha)
-            signal1d_a = signal1d.apply_apodization(window=window_type, tukey_alpha=tukey_alpha)
+            signal1d_a = signal1d.apply_apodization(
+                window=window_type, tukey_alpha=tukey_alpha
+            )
             data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
             np.testing.assert_allclose(signal1d_a.data, data_a)
 
     # 2. Test raises:
     with pytest.raises(ValueError):
-        signal1d.apply_apodization(window='hamm')
+        signal1d.apply_apodization(window="hamm")

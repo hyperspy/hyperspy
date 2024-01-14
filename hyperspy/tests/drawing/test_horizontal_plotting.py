@@ -23,35 +23,40 @@ import matplotlib
 ipympl = pytest.importorskip("ipympl")
 ipywidgets = pytest.importorskip("ipywidgets")
 
+
 class TestIPYMPL:
     def test_horizontal(self, capsys):
         matplotlib.use("module://ipympl.backend_nbagg")
         s = hs.signals.Signal2D(np.random.random((4, 4, 2, 2)))
         s.plot(plot_style="horizontal")
         captured = capsys.readouterr()
-        assert("HBox(children=(Canvas(" in captured.out)
+        assert "HBox(children=(Canvas(" in captured.out
 
-    def test_vertical(self,capsys):
+    def test_vertical(self, capsys):
         matplotlib.use("module://ipympl.backend_nbagg")
         s = hs.signals.Signal2D(np.random.random((4, 4, 2, 2)))
         s.plot(plot_style="vertical")
         captured = capsys.readouterr()
 
-        assert("VBox(children=(Canvas(" in captured.out)
+        assert "VBox(children=(Canvas(" in captured.out
 
-    def test_only_signal(self,capsys):
+    def test_only_signal(self, capsys):
         matplotlib.use("module://ipympl.backend_nbagg")
-        s = hs.signals.Signal2D(np.random.random(( 2, 2)))
+        s = hs.signals.Signal2D(np.random.random((2, 2)))
         s.plot()
         captured = capsys.readouterr()
-        assert("Canvas(toolbar=Toolbar(" in captured.out)
+        assert "Canvas(toolbar=Toolbar(" in captured.out
 
-    def test_warnings(self,):
+    def test_warnings(
+        self,
+    ):
         with pytest.warns(UserWarning):
-            s = hs.signals.Signal2D(np.random.random(( 4, 2, 2)))
+            s = hs.signals.Signal2D(np.random.random((4, 2, 2)))
             s.plot(plot_style="vertical")
 
-    def test_misspelling(self, ):
+    def test_misspelling(
+        self,
+    ):
         matplotlib.use("module://ipympl.backend_nbagg")
         with pytest.raises(ValueError):
             s = hs.signals.Signal2D(np.random.random((4, 2, 2)))

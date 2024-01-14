@@ -21,7 +21,8 @@ import pytest
 from hyperspy.signals import (
     Signal1D,
     Signal2D,
-    )
+)
+
 
 def test_signal():
     s = Signal1D([10, 10])
@@ -35,7 +36,8 @@ def test_signal():
     with pytest.raises(NotImplementedError):
         s.rebin(scale=[1])
     with pytest.raises(NotImplementedError):
-        s.split(number_of_parts=2,axis=0)
+        s.split(number_of_parts=2, axis=0)
+
 
 def test_signal1d():
     s = Signal1D(([0, 1]))

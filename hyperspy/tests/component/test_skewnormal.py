@@ -66,8 +66,9 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
         factor = np.gradient(axis.axis)
     else:
         factor = 1
-    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
-                                  only_current=only_current)
+    assert g2.estimate_parameters(
+        s, axis.low_value, axis.high_value, only_current=only_current
+    )
     assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor)
     assert abs(g2.x0.value - g1.x0.value) <= 0.002

@@ -305,24 +305,23 @@ class Test3D:
 
 @lazifyTestClass
 class TestRebinDtype:
-
     def setup_method(self, method):
         s = Signal1D(np.arange(100).reshape(2, 5, 10))
         self.s = s
 
-    @pytest.mark.parametrize('dtype', [None, np.float32])
+    @pytest.mark.parametrize("dtype", [None, np.float32])
     def test_rebin_dtype_interpolation(self, dtype):
         s = self.s
         if s._lazy:
-            pytest.skip('Liner interpolation not supported for lazy signal.')
+            pytest.skip("Liner interpolation not supported for lazy signal.")
         s.change_dtype(np.uint8)
         s2 = s.rebin(scale=(3, 3, 1), crop=False, dtype=dtype)
         if dtype != np.float16:
-            dtype = np.dtype('float')
+            dtype = np.dtype("float")
         assert s2.data.dtype == dtype
         assert s.sum() == s2.sum()
 
-    @pytest.mark.parametrize('dtype', ['same', np.uint16])
+    @pytest.mark.parametrize("dtype", ["same", np.uint16])
     def test_rebin_dtype_interpolation_same_integer(self, dtype):
         s = self.s
         if s._lazy:
@@ -337,9 +336,9 @@ class TestRebinDtype:
     def test_rebin_invalid_dtype_args(self):
         s = self.s
         with pytest.raises(ValueError):
-            _ = s.rebin(scale=(5, 2, 1), dtype='invalid_string')
+            _ = s.rebin(scale=(5, 2, 1), dtype="invalid_string")
 
-    @pytest.mark.parametrize('dtype', [None, 'same', np.uint16])
+    @pytest.mark.parametrize("dtype", [None, "same", np.uint16])
     def test_rebin_dtype(self, dtype):
         s = self.s
         s.change_dtype(np.uint8)
@@ -347,7 +346,7 @@ class TestRebinDtype:
         if dtype is None:
             # np.sum default uses platform (un)signed interger (input dependent)
             dtype = np.uint
-        elif dtype == 'same':
+        elif dtype == "same":
             dtype = s.data.dtype
         assert s2.data.dtype == dtype
         assert s.sum() == s2.sum()

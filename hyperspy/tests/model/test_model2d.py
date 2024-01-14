@@ -141,10 +141,14 @@ def test_Model2D_NotImplementedError_plot():
         with pytest.raises(NotImplementedError):
             _ = getattr(m, member_f)()
 
-    for member_f in ["_plot_component", "_connect_component_line",
-                     "_disconnect_component_line"]:
+    for member_f in [
+        "_plot_component",
+        "_connect_component_line",
+        "_disconnect_component_line",
+    ]:
         with pytest.raises(NotImplementedError):
             _ = getattr(m, member_f)(None)
+
 
 def test_channelswitches_mask():
     g = hs.model.components2D.Gaussian2D(
@@ -162,7 +166,7 @@ def test_channelswitches_mask():
     im.axes_manager[1].scale = scale
     im.axes_manager[1].offset = -10
 
-    mask = (im < 0.01)
+    mask = im < 0.01
 
     # Add another Gaussian to get different results if the mask is ignored
     g2 = hs.model.components2D.Gaussian2D(
@@ -171,10 +175,9 @@ def test_channelswitches_mask():
     im += hs.signals.Signal2D(g2.function(X, Y))
 
     m = im.create_model()
-    gt = hs.model.components2D.Gaussian2D(centre_x=0.0,
-                                          centre_y=0.0,
-                                          sigma_x=50,
-                                          sigma_y=50)
+    gt = hs.model.components2D.Gaussian2D(
+        centre_x=0.0, centre_y=0.0, sigma_x=50, sigma_y=50
+    )
     m.append(gt)
     m._channel_switches = ~mask.data
     m.fit()
@@ -182,10 +185,10 @@ def test_channelswitches_mask():
     assert not m._channel_switches[0, 0]
     assert m._channel_switches[50, 50]
 
-    np.testing.assert_allclose(gt.centre_x.value, -5.)
-    np.testing.assert_allclose(gt.centre_y.value, -5.)
-    np.testing.assert_allclose(gt.sigma_x.value, 1.)
-    np.testing.assert_allclose(gt.sigma_y.value, 2.)
+    np.testing.assert_allclose(gt.centre_x.value, -5.0)
+    np.testing.assert_allclose(gt.centre_y.value, -5.0)
+    np.testing.assert_allclose(gt.sigma_x.value, 1.0)
+    np.testing.assert_allclose(gt.sigma_y.value, 2.0)
 
 
 class TestModel2DSetSignalRange:
@@ -296,5 +299,3 @@ class TestModel2DSetSignalRange:
     def test_initial_mask(self):
         m = self.m
         assert m._channel_switches.shape == (10, 20)
-
-

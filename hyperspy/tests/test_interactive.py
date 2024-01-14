@@ -27,8 +27,7 @@ import hyperspy.api as hs
 from hyperspy.events import Event
 
 
-class TestInteractive():
-
+class TestInteractive:
     def setup_method(self, method):
         d = np.linspace(3, 10.5)
         d = np.tile(d, (3, 3, 1))
@@ -51,6 +50,7 @@ class TestInteractive():
 
         def sumf(axis):
             return s.sum(axis=axis)
+
         e = Event()
         ss = hs.interactive(sumf, e, axis=0)
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
@@ -120,13 +120,7 @@ class TestInteractive():
         s = self.s
         e1 = Event()
         e2 = Event()
-        ss = hs.interactive(
-            s.sum,
-            event=(
-                e1,
-                e2),
-            recompute_out_event=None,
-            axis=0)
+        ss = hs.interactive(s.sum, event=(e1, e2), recompute_out_event=None, axis=0)
         s.data[:] = 0
         e1.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
@@ -138,13 +132,7 @@ class TestInteractive():
         s = self.s
         e1 = Event()
         e2 = Event()
-        ss = hs.interactive(
-            s.sum,
-            event=None,
-            recompute_out_event=(
-                e1,
-                e2),
-            axis=0)
+        ss = hs.interactive(s.sum, event=None, recompute_out_event=(e1, e2), axis=0)
         s.data[:] = 0
         e1.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
@@ -154,7 +142,9 @@ class TestInteractive():
 
     def test_interactive_function_return_None(self):
         e = Event()
+
         def function_return_None():
-            print('function called')
+            print("function called")
+
         hs.interactive(function_return_None, e)
         e.trigger()

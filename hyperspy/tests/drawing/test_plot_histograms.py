@@ -20,9 +20,9 @@ import numpy as np
 
 
 def test_plot_histograms():
-    img = hs.signals.Signal2D(np.random.chisquare(1,[10,10,100]))
-    img2 = hs.signals.Signal2D(np.random.chisquare(2,[10,10,100]))
-    ax = hs.plot.plot_histograms([img, img2], legend=['hist1', 'hist2'])
+    img = hs.signals.Signal2D(np.random.chisquare(1, [10, 10, 100]))
+    img2 = hs.signals.Signal2D(np.random.chisquare(2, [10, 10, 100]))
+    ax = hs.plot.plot_histograms([img, img2], legend=["hist1", "hist2"])
     assert len(ax.lines) == 2
     l1 = ax.lines[0]
-    assert l1.get_drawstyle() == 'steps-mid'
+    assert l1.get_drawstyle() == "steps-mid"

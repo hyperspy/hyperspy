@@ -38,49 +38,69 @@ def compare_two_value_dicts(ans_r, ans):
 
 
 class TestHistogramSegmenter:
-
     def setup_method(self, method):
-        self.test_dict = {'one': {'A': np.array([10.])},
-                          'two': {'centre': np.array([0., 1.]),
-                                  'sigma': np.array([-3., 0., 3., 1., 1.5, 2.,
-                                                     3.0, 3.05, 3.1, 3.15, 4.,
-                                                     4., 5., 17., 30.])}
-                          }
+        self.test_dict = {
+            "one": {"A": np.array([10.0])},
+            "two": {
+                "centre": np.array([0.0, 1.0]),
+                "sigma": np.array(
+                    [
+                        -3.0,
+                        0.0,
+                        3.0,
+                        1.0,
+                        1.5,
+                        2.0,
+                        3.0,
+                        3.05,
+                        3.1,
+                        3.15,
+                        4.0,
+                        4.0,
+                        5.0,
+                        17.0,
+                        30.0,
+                    ]
+                ),
+            },
+        }
 
-        self.test_database = {'one': {'A': None},
-                              'two': {'centre': None, 'sigma': None}}
+        self.test_database = {
+            "one": {"A": None},
+            "two": {"centre": None, "sigma": None},
+        }
 
-        self.test_database['one']['A'] = np.histogram(
-            self.test_dict['one']['A'],
-            10)
-        self.test_database['two']['centre'] = np.histogram(
-            self.test_dict['two']['centre'],
-            10)
-        self.test_database['two']['sigma'] = histogram(
-            self.test_dict['two']['sigma'],
-            'blocks')
+        self.test_database["one"]["A"] = np.histogram(self.test_dict["one"]["A"], 10)
+        self.test_database["two"]["centre"] = np.histogram(
+            self.test_dict["two"]["centre"], 10
+        )
+        self.test_database["two"]["sigma"] = histogram(
+            self.test_dict["two"]["sigma"], "blocks"
+        )
         self.s = HistogramSegmenter()
 
     def test_init(self):
         s = self.s
         assert s.database is None
         assert s._min_points == 4
-        assert s.bins == 'fd'
+        assert s.bins == "fd"
 
     def test_most_frequent(self):
         s = self.s
         s.database = self.test_database
         freq = s.most_frequent()
-        res = {'one': {'A': np.array([10.05])},
-               'two': {'centre': np.array([0.05, 0.95]), 'sigma': np.array([0.75])}}
+        res = {
+            "one": {"A": np.array([10.05])},
+            "two": {"centre": np.array([0.05, 0.95]), "sigma": np.array([0.75])},
+        }
         assert compare_two_value_dicts(res, freq)
 
     def test_update(self):
         s = self.s
-        s.bins = 'blocks'
+        s.bins = "blocks"
         s.update(self.test_dict)
-        print('required:')
+        print("required:")
         print(self.test_database)
-        print('--------------------------------------\n calculated:')
+        print("--------------------------------------\n calculated:")
         print(s.database)
         assert compare_two_value_dicts(s.database, self.test_database)

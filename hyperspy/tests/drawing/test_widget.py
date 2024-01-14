@@ -25,25 +25,29 @@ from hyperspy.misc.test_utils import mock_event
 def test_get_step():
     s = signals.Signal1D(np.zeros((4, 4)))
     axis = s.axes_manager.navigation_axes[0]
-    step = widget.ResizableDraggableWidgetBase._get_step(s,s.axes_manager.navigation_axes[0])
-    assert(step == 1)
+    step = widget.ResizableDraggableWidgetBase._get_step(
+        s, s.axes_manager.navigation_axes[0]
+    )
+    assert step == 1
     axis.index = 3
-    step = widget.ResizableDraggableWidgetBase._get_step(s,s.axes_manager.navigation_axes[0])
-    assert(step == 1)
+    step = widget.ResizableDraggableWidgetBase._get_step(
+        s, s.axes_manager.navigation_axes[0]
+    )
+    assert step == 1
 
 
 def test_scalebar_remove():
     im = signals.Signal2D(-np.arange(10000).reshape([100, 100]))
     for ax in im.axes_manager.signal_axes:
         ax.scale = 1.2
-        ax.units = 'nm'
+        ax.units = "nm"
     im.plot()
     assert im._plot.signal_plot.ax.scalebar is not None
     im._plot.signal_plot.ax.scalebar.remove()
 
 
 def test_remove_widget_line():
-    s = signals.Signal1D(np.arange(10*25).reshape(10, 25))
+    s = signals.Signal1D(np.arange(10 * 25).reshape(10, 25))
     s.plot()
 
     ax = s._plot.navigator_plot.ax
@@ -56,7 +60,7 @@ def test_remove_widget_line():
     assert len(ax.lines) == 1
     assert len(s._plot.pointer.patch) == 1
 
-    im = signals.Signal2D(np.arange(10*25*25).reshape(10, 25, 25))
+    im = signals.Signal2D(np.arange(10 * 25 * 25).reshape(10, 25, 25))
     im.plot()
 
     ax = im._plot.navigator_plot.ax
@@ -71,9 +75,9 @@ def test_remove_widget_line():
 
 
 def test_calculate_size():
-    s = signals.Signal2D(np.arange(10000).reshape(10,10,10,10))
+    s = signals.Signal2D(np.arange(10000).reshape(10, 10, 10, 10))
 
-    #Test that scalebar.calculate_size passes only positive value to closest_nice_number
+    # Test that scalebar.calculate_size passes only positive value to closest_nice_number
     s.axes_manager[0].scale = -1
     s.plot()
 
@@ -90,7 +94,9 @@ def test_adding_removing_resizers_on_pick_event():
     shifty = 3
 
     rect_roi0 = roi.RectangularROI(xx2, yy2, xx1, yy1)
-    rect_roi1 = roi.RectangularROI(xx2 + shiftx , yy2 + shifty, xx1 + shiftx, yy1 + shifty)
+    rect_roi1 = roi.RectangularROI(
+        xx2 + shiftx, yy2 + shifty, xx1 + shiftx, yy1 + shifty
+    )
     s.plot()
 
     _ = rect_roi0.interactive(s)
@@ -105,11 +111,15 @@ def test_adding_removing_resizers_on_pick_event():
 
     # PickEvent on widget0
     mouseevent0 = mock_event(fig, fig.canvas, xdata=1, ydata=1, artist=widget0.patch[0])
-    pickevent0 = mock_event(fig, fig.canvas, artist=widget0.patch[0], mouseevent=mouseevent0)
+    pickevent0 = mock_event(
+        fig, fig.canvas, artist=widget0.patch[0], mouseevent=mouseevent0
+    )
 
     # PickEvent on widget1
     mouseevent1 = mock_event(fig, fig.canvas, xdata=6, ydata=4, artist=widget1.patch[0])
-    pickevent1 = mock_event(fig, fig.canvas, artist=widget1.patch[0], mouseevent=mouseevent1)
+    pickevent1 = mock_event(
+        fig, fig.canvas, artist=widget1.patch[0], mouseevent=mouseevent1
+    )
 
     # PickEvent outside widget0 and widget1
     mouseevent2 = mock_event(fig, fig.canvas, xdata=8, ydata=8)

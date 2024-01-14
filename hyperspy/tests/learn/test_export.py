@@ -22,7 +22,6 @@ from hyperspy import signals
 
 
 class TestMVAExport:
-
     def setup_method(self, method):
         s = signals.Signal1D(np.random.random((2, 3, 4, 5)))
         sa = s.axes_manager[-1]
@@ -41,11 +40,12 @@ class TestMVAExport:
         bss_factors = self.s.get_bss_factors()
         assert bss_factors.axes_manager[-1].scale == self.sa.scale
         assert bss_factors.axes_manager[-1].offset == self.sa.offset
-        assert (bss_factors.axes_manager.signal_shape ==
-                self.s.axes_manager.signal_shape)
+        assert bss_factors.axes_manager.signal_shape == self.s.axes_manager.signal_shape
 
     def test_get_bss_loadings(self):
         bss_loadings = self.s.get_bss_loadings()
         assert bss_loadings.axes_manager.navigation_dimension == 1
-        assert (bss_loadings.axes_manager.signal_shape ==
-                self.s.axes_manager.navigation_shape)
+        assert (
+            bss_loadings.axes_manager.signal_shape
+            == self.s.axes_manager.navigation_shape
+        )
