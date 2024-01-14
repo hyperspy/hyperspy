@@ -356,7 +356,7 @@ class TestFunctionalDataAxis:
         # Returns integer
         assert isinstance(self.axis.value2index(45), (int, np.integer))
         #Input None --> output None
-        assert self.axis.value2index(None) == None
+        assert self.axis.value2index(None) is None
         #NaN in --> error out
         with pytest.raises(ValueError):
             self.axis.value2index(np.nan)
@@ -490,7 +490,7 @@ class TestUniformDataAxis:
         #Endpoint right
         assert self.axis.value2index(10.9) == 9
         #Input None --> output None
-        assert self.axis.value2index(None) == None
+        assert self.axis.value2index(None) is None
         #NaN in --> error out
         with pytest.raises(ValueError):
             self.axis.value2index(np.nan)
@@ -691,10 +691,10 @@ class TestUniformDataAxis:
         ax.units = 'nm'
         # slicing by index
         assert ax._parse_value(5) == 5
-        assert type(ax._parse_value(5)) is int
+        assert isinstance(ax._parse_value(5), int)
         # slicing by calibrated value
         assert ax._parse_value(10.5) == 10.5
-        assert type(ax._parse_value(10.5)) is float
+        assert isinstance(ax._parse_value(10.5), float)
         # slicing by unit
         assert ax._parse_value('10.5nm') == 10.5
         np.testing.assert_almost_equal(ax._parse_value('10500pm'), 10.5)
@@ -762,7 +762,7 @@ def test_rounding_consistency_axis_type():
 @pytest.mark.parametrize('shift', (0.05, 0.025))
 def test_rounding_consistency_axis_type_half(shift):
 
-    axis = UniformDataAxis(size=20, scale=0.1, offset=-1.0);
+    axis = UniformDataAxis(size=20, scale=0.1, offset=-1.0)
     test_vals = axis.axis[:-1] + shift
 
     uaxis_indices = axis.value2index(test_vals)

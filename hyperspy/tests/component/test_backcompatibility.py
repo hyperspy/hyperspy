@@ -16,14 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import pathlib
+
 import pytest
 
 from hyperspy.exceptions import VisibleDeprecationWarning
 import hyperspy.api as hs
 
 DIRPATH = pathlib.Path(__file__).parent / "data"
-
+EXSPY_SPEC = importlib.util.find_spec("exspy")
 
 """
 The reference files from hyperspy v1.4 have been created using:
@@ -59,8 +61,7 @@ The reference files from hyperspy v1.4 have been created using:
 
 @pytest.mark.parametrize(("versionfile"), ("hs14_model.hspy", "hs15_model.hspy", "hs16_model.hspy"))
 def test_model_backcompatibility(versionfile):
-    try:
-        import exspy
+    if EXSPY_SPEC is not None:
         with pytest.warns(VisibleDeprecationWarning):
             # binned deprecated warning
             s = hs.load(DIRPATH / versionfile)
@@ -102,7 +103,7 @@ def test_model_backcompatibility(versionfile):
         assert p.centre.value == 50.0
         assert p.FWHM.value == 1.5
         assert p.resolution.value == 0.0
-    except ImportError:
+    else:
         with pytest.warns(VisibleDeprecationWarning):
             with pytest.raises(ImportError):
                 s = hs.load(DIRPATH / versionfile)
@@ -110,24 +111,18 @@ def test_model_backcompatibility(versionfile):
 
 
 def test_loading_components_exspy_not_installed():
-    try:
-        from exspy import components
-        exspy_installed = True
-    except ImportError:
-        exspy_installed = False
-
     with pytest.warns(VisibleDeprecationWarning):
         # warning is for old binning API
         s = hs.load(DIRPATH / "hs16_model.hspy")
 
-    if not exspy_installed:
+    if EXSPY_SPEC is None:
         # This should raise an ImportError with
         # a suitable error message
         with pytest.raises(ImportError) as err:
-            m = s.models.restore('a')
+            _ = s.models.restore('a')
             assert "exspy is not installed" in str(err.value)
     else:
         # The model contains components using numexpr
         pytest.importorskip("numexpr")
         # This should work fine
-        m = s.models.restore('a')
+        _ = s.models.restore('a')

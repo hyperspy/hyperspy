@@ -21,7 +21,6 @@ from pathlib import Path
 import numpy as np
 from matplotlib.transforms import (
     IdentityTransform,
-    Affine2D,
     CompositeGenericTransform,
 )
 import matplotlib.pyplot as plt
@@ -35,7 +34,6 @@ from hyperspy.misc.test_utils import update_close_figure
 from matplotlib.collections import (
     LineCollection,
     PolyCollection,
-    RegularPolyCollection,
     StarPolygonCollection,
 )
 from hyperspy.external.matplotlib.collections import (
@@ -266,18 +264,18 @@ class TestMarkers:
 
         marker_pos = [11, 19]
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
-        a = s.axes_manager.indices = (0, 1, 0)
+        s.axes_manager.indices = (0, 1, 0)
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[np.nan, np.nan]])
 
-        a = s.axes_manager.indices = (1, 0, 0)
+        s.axes_manager.indices = (1, 0, 0)
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[np.nan, np.nan]])
 
         # Go to end with last navigation axis at 0
-        a = s.axes_manager.indices = (3, 2, 0)
+        s.axes_manager.indices = (3, 2, 0)
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
 
         # Go to end with last navigation axis at 1
-        a = s.axes_manager.indices = (3, 2, 1)
+        s.axes_manager.indices = (3, 2, 1)
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
 
     def test_find_peaks0d(self):
@@ -422,7 +420,7 @@ class TestInitMarkers:
         with pytest.raises(AttributeError):
             col.plot()
 
-    def test_deepcopy(self, iterating_line_collection):
+    def test_deepcopy_iterating_line_collection(self, iterating_line_collection):
         it_2 = deepcopy(iterating_line_collection)
         assert it_2 is not iterating_line_collection
 
@@ -633,6 +631,27 @@ class TestsMarkersAddRemove:
         assert m.kwargs["texts"][1][2] == "new_text"
         assert m.kwargs["texts"][1][2] == "new_text"
 
+    def test_remove_items_iterable_navigation_indices2(self):
+        offsets = np.empty(4, dtype=object)
+        texts = np.empty(4, dtype=object)
+        for i in range(len(offsets)):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+            texts[i] = ['a' * (i+1)] * 2
+        m = Texts(offsets=offsets, texts=texts)
+
+        assert m._is_iterating
+        for nav_position in range(4):
+            assert len(m.kwargs["offsets"][nav_position]) == 2
+            assert len(m.kwargs["texts"][nav_position]) == 2
+        m.remove_items(1, navigation_indices=(1, ))
+
+        # marker removed only in nav coordinates (1, )
+        for nav_position in [0, 2, 3]:
+            assert len(m.kwargs["offsets"][nav_position]) == 2
+            assert len(m.kwargs["texts"][nav_position]) == 2
+        assert len(m.kwargs["offsets"][1]) == 1
+        assert len(m.kwargs["texts"][1]) == 1
+
     def test_remove_items(self):
         offsets = np.empty(2, dtype=object)
         texts = np.empty(2, dtype=object)
@@ -703,27 +722,6 @@ class TestsMarkersAddRemove:
         assert len(m) == 2
         with pytest.raises(ValueError):
             m.remove_items(1, navigation_indices=(1, ))
-
-    def test_remove_items_iterable_navigation_indices(self):
-        offsets = np.empty(4, dtype=object)
-        texts = np.empty(4, dtype=object)
-        for i in range(len(offsets)):
-            offsets[i] = np.array([[1, 1], [2, 2]])
-            texts[i] = ['a' * (i+1)] * 2
-        m = Texts(offsets=offsets, texts=texts)
-
-        assert m._is_iterating
-        for nav_position in range(4):
-            assert len(m.kwargs["offsets"][nav_position]) == 2
-            assert len(m.kwargs["texts"][nav_position]) == 2
-        m.remove_items(1, navigation_indices=(1, ))
-
-        # marker removed only in nav coordinates (1, )
-        for nav_position in [0, 2, 3]:
-            assert len(m.kwargs["offsets"][nav_position]) == 2
-            assert len(m.kwargs["texts"][nav_position]) == 2
-        assert len(m.kwargs["offsets"][1]) == 1
-        assert len(m.kwargs["texts"][1]) == 1
 
 
 class TestMarkersDictToMarkers:
@@ -889,7 +887,7 @@ class TestMarkersTransform:
 
     def test_unknown_tranform(self):
         with pytest.raises(ValueError):
-            markers = Points(
+            _ = Points(
                 offsets=[[1, 1], [4, 4]],
                 sizes=(10,),
                 color=("black",),
@@ -977,9 +975,9 @@ class TestLines:
 
     def test_horizontal_vertical_line_error(self, offsets):
         with pytest.raises(ValueError):
-            hor = HorizontalLines(offsets=offsets, transform="data")
+            _ = HorizontalLines(offsets=offsets, transform="data")
         with pytest.raises(ValueError):
-            vert = VerticalLines(offsets=offsets, transform="data")
+            _ = VerticalLines(offsets=offsets, transform="data")
 
 
 def test_marker_collection_close_render():

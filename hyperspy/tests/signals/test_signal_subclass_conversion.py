@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from hyperspy import _lazy_signals, signals
+from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import DataDimensionError
 from hyperspy.signals import BaseSignal

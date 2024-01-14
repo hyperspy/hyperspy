@@ -93,24 +93,24 @@ def test_separate_pseudocomponents():
 
 
 def test_separate_pseudocomponents_expression_rename_parameters():
-    l = hs.model.components1D.Lorentzian()
-    free, fixed = l._separate_pseudocomponents()
+    lorentzian = hs.model.components1D.Lorentzian()
+    free, fixed = lorentzian._separate_pseudocomponents()
     assert list(free.keys()) == ['A', 'centre', 'gamma']
     assert list(fixed.keys()) == ['function', 'parameters']
 
-    l.centre.free = False
-    l.gamma.free = False
+    lorentzian.centre.free = False
+    lorentzian.gamma.free = False
 
-    free, fixed = l._separate_pseudocomponents()
+    free, fixed = lorentzian._separate_pseudocomponents()
     assert list(free.keys()) == ['A']
     
 
 def test_linear_rename_parameters():
     # with the lorentzian component, the gamma component is rename
-    l = hs.model.components1D.Lorentzian()
-    assert l.A._linear
-    assert not l.gamma._linear
-    assert not l.centre._linear
+    lorentzian = hs.model.components1D.Lorentzian()
+    assert lorentzian.A._linear
+    assert not lorentzian.gamma._linear
+    assert not lorentzian.centre._linear
 
     g = hs.model.components1D.Expression(
             expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",

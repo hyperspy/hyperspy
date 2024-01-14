@@ -110,9 +110,9 @@ class TestAxesManager:
         assert am[-2].scale == am[-1].scale
 
     def test_all_uniform(self):
-        assert self.am.all_uniform == True
+        assert self.am.all_uniform is True
         self.am[-1].convert_to_non_uniform_axis()
-        assert self.am.all_uniform == False
+        assert self.am.all_uniform is False
 
     def test_get_axis(self):
         am = self.am
@@ -474,8 +474,8 @@ class TestIterPathScanPattern:
 
     def test_get_iterpath_size2(self):
         self.am.iterpath = generator()
-        assert self.am._get_iterpath_size() == None
-        assert self.am._get_iterpath_size(masked_elements = 1) == None
+        assert self.am._get_iterpath_size() is None
+        assert self.am._get_iterpath_size(masked_elements = 1) is None
 
     def test_get_iterpath_size3(self):
         self.am.iterpath =[(0,0,0), (0,0,1)]

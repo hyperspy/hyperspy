@@ -168,11 +168,11 @@ def test_get_value_at_index(start, norm, factor):
 
 def test_get_value_at_index_fail():
     with pytest.raises(ValueError):
-        lines = get_value_at_index(np.arange(1, 11, 1),
-                                   indexes=[3, 4],
-                                   real_index=[2, 3],
-                                   factor=0.1,
-                                   start=0,
-                                   stop=1.0,
-                                   norm="log",
-                                   minimum_intensity=None)
+        _ = get_value_at_index(np.arange(1, 11, 1),
+                                indexes=[3, 4],
+                                real_index=[2, 3],
+                                factor=0.1,
+                                start=0,
+                                stop=1.0,
+                                norm="log",
+                                minimum_intensity=None)

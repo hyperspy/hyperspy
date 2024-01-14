@@ -18,7 +18,6 @@
 
 from unittest import mock
 
-import logging
 import numpy as np
 import pytest
 from scipy.signal import savgol_filter

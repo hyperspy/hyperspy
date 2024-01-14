@@ -29,6 +29,26 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.utils import _get_block_pattern
 
 
+def identify_function(x):
+    return x
+
+
+def substract_function(a, b):
+    return a - b
+
+
+def add_function(a, b):
+    return a + b
+
+
+def power_function(x, e):
+    return x ** e
+
+
+def return_three_function(x):
+    return 3
+
+
 @lazifyTestClass(ragged=False)
 class TestSignal2D:
 
@@ -152,10 +172,10 @@ class TestSignal2D:
     @pytest.mark.parametrize('ragged', [True, False])
     def test_ragged(self, ragged):
         s = self.im
-        out = s.map(lambda x: x, inplace=False, ragged=ragged)
+        out = s.map(identify_function, inplace=False, ragged=ragged)
         assert out.axes_manager.navigation_shape == s.axes_manager.navigation_shape
         if ragged:
-            s.map(lambda x: x, inplace=True, ragged=ragged)
+            s.map(identify_function, inplace=True, ragged=ragged)
             for i in range(s.axes_manager.navigation_size):
                 np.testing.assert_allclose(s.data[i], out.data[i])
         else:
@@ -166,7 +186,7 @@ class TestSignal2D:
     @pytest.mark.parametrize('ragged', [True, False])
     def test_ragged_navigation_shape(self, ragged):
         s = hs.stack([self.im]*3)
-        out = s.map(lambda x: x, inplace=False, ragged=ragged)
+        out = s.map(identify_function, inplace=False, ragged=ragged)
         assert out.axes_manager.navigation_shape == s.axes_manager.navigation_shape
         assert out.data.shape[:2] == s.axes_manager.navigation_shape[::-1]
         assert out.ragged == ragged
@@ -195,7 +215,7 @@ class TestSignal1D:
         s = self.s
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(lambda A, B: A - B, B=s, ragged=self.ragged)
+        s.map(substract_function, b=s, ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.zeros_like(s.data))
         assert m.data_changed.called
 
@@ -203,8 +223,7 @@ class TestSignal1D:
         s = self.s
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(lambda A, B: A - B, B=s.inav[0],
-              ragged=self.ragged)
+        s.map(substract_function, b=s.inav[0], ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             ([[0., 0., 0.],
               [3., 3., 3.]])))
@@ -212,14 +231,15 @@ class TestSignal1D:
 
     def test_dtype(self, ):
         s = self.s
-        s.map(lambda data: np.sqrt(np.complex128(data)),
-              ragged=self.ragged)
+        def sqrt_function(data):
+            return np.sqrt(np.complex128(data))
+        s.map(sqrt_function, ragged=self.ragged)
         assert s.data.dtype is np.dtype('complex128')
 
     @pytest.mark.parametrize('ragged', [True, False])
     def test_ragged(self, ragged):
         s = self.s
-        out = s.map(lambda x: x, inplace=False, ragged=ragged)
+        out = s.map(identify_function, inplace=False, ragged=ragged)
         if ragged:
             for i in range(s.axes_manager.navigation_size):
                 np.testing.assert_allclose(s.data[i], out.data[i])
@@ -240,7 +260,7 @@ class TestSignal0D:
         s = self.s
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(lambda x, e: x ** e, e=2, ragged=self.ragged)
+        s.map(power_function, e=2, ragged=self.ragged)
         np.testing.assert_allclose(
             s.data, (np.arange(0., 6) ** 2).reshape((2, 3,)))
         assert m.data_changed.called
@@ -249,7 +269,7 @@ class TestSignal0D:
         s = self.s.inav[1, 1]
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.map(lambda x, e: x ** e, e=2, ragged=self.ragged)
+        s.map(power_function, e=2, ragged=self.ragged)
         np.testing.assert_allclose(s.data, self.s.inav[1, 1].data ** 2)
         #assert m.data_changed.called
 
@@ -332,7 +352,7 @@ def test_new_axes():
     assert isinstance(sl, hs.signals.BaseSignal)
     ax_names = {ax.name for ax in sl.axes_manager._axes}
     assert len(ax_names) == 1
-    assert not 'b' in ax_names
+    assert 'b' not in ax_names
     assert sl.axes_manager.navigation_dimension == 1
 
 
@@ -347,27 +367,25 @@ class TestLazyMap:
         iter_array = iter_array.rechunk(chunks)
         s_iter = hs.signals.BaseSignal(iter_array).T
         s_iter = s_iter.as_lazy()
-        f = lambda a, b: a + b
-        s_out = self.s.map(function=f, b=s_iter, inplace=False)
+        s_out = self.s.map(function=add_function, b=s_iter, inplace=False)
         np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
 
     def test_map_nav_size_error(self):
         iter_array, _ = da.meshgrid(range(12), range(10))
         s_iter = hs.signals.BaseSignal(iter_array).T
-        f = lambda a, b: a + b
         with pytest.raises(ValueError):
-            self.s.map(function=f, b=s_iter, inplace=False)
+            self.s.map(function=add_function, b=s_iter, inplace=False)
 
     def test_keep_navigation_chunks(self):
         s = self.s
-        s_out = s.map(lambda x: x, inplace=False, lazy_output=True)
+        s_out = s.map(identify_function, inplace=False, lazy_output=True)
         assert (s.get_chunk_size(s.axes_manager.navigation_axes) ==
                 s_out.get_chunk_size(s_out.axes_manager.navigation_axes))
 
     def test_keep_navigation_chunks_cropping(self):
         s = self.s
         s1 = s.inav[1:-2, 2:-1]
-        s_out = s1.map(lambda x: x, inplace=False, lazy_output=True)
+        s_out = s1.map(identify_function, inplace=False, lazy_output=True)
         assert (s1.get_chunk_size(s1.axes_manager.navigation_axes) ==
                 s_out.get_chunk_size(s_out.axes_manager.navigation_axes))
 
@@ -742,7 +760,7 @@ def test_singleton(ragged):
     sig = hs.signals.Signal2D(np.empty((3, 2)))
     sig.axes_manager[0].name = 'x'
     sig.axes_manager[1].name = 'y'
-    sig1 = sig.map(lambda x: 3, inplace=False, ragged=ragged)
+    sig1 = sig.map(return_three_function, inplace=False, ragged=ragged)
     sig2 = sig.map(np.sum, inplace=False, ragged=ragged)
     sig.map(np.sum, inplace=True, ragged=ragged)
     sig_list = (sig, sig1, sig2)
@@ -762,7 +780,7 @@ def test_lazy_singleton():
     sig = sig.as_lazy()
     sig.axes_manager[0].name = 'x'
     sig.axes_manager[1].name = 'y'
-    sig1 = sig.map(lambda x: 3, inplace=False, ragged=False)
+    sig1 = sig.map(return_three_function, inplace=False, ragged=False)
     sig2 = sig.map(np.sum, inplace=False, ragged=False)
     sig.map(np.sum, ragged=False, inplace=True)
     sig_list = [sig1, sig2, sig]
@@ -780,7 +798,7 @@ def test_lazy_singleton_ragged():
     sig = sig.as_lazy()
     sig.axes_manager[0].name = 'x'
     sig.axes_manager[1].name = 'y'
-    sig1 = sig.map(lambda x: 3, inplace=False, ragged=True)
+    sig1 = sig.map(return_three_function, inplace=False, ragged=True)
     sig2 = sig.map(np.sum, inplace=False, ragged=True)
     sig.map(np.sum, inplace=True, ragged=True)
     sig_list = (sig1, sig2, sig)
@@ -1056,7 +1074,7 @@ class TestCompareMapAllvsMapIterate:
             'reshape': False,
             'lazy_output': False,
         }
-        s_rot_not_par = s.map(**kwargs)
+        _ = s.map(**kwargs)
 
     @pytest.mark.parametrize(
         "shape", [(50, 50), (5, 50, 50), (3, 4, 50, 50), (3, 4, 5, 50, 50)]

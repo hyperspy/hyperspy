@@ -32,7 +32,7 @@ def test_create_figure():
     dummy_function = Mock()
     fig = create_figure(window_title="test title",
                         _on_figure_window_close=dummy_function)
-    assert isinstance(fig, matplotlib.figure.Figure) == True
+    assert isinstance(fig, matplotlib.figure.Figure) is True
     matplotlib.pyplot.close(fig)
     dummy_function.assert_called_once_with()
 

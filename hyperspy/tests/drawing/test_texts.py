@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from hyperspy.drawing._markers.texts import Texts
-from hyperspy._signals.signal2d import Signal2D, Signal1D
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy.misc.test_utils import update_close_figure
 
 

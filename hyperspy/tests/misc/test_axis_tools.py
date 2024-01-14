@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
 
 from hyperspy.axes import DataAxis, FunctionalDataAxis, UniformDataAxis
 from hyperspy.misc.axis_tools import check_axes_calibration

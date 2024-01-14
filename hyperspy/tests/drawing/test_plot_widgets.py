@@ -127,7 +127,7 @@ class TestPlotLine2DWidget():
         assert self.line2d.axes[1].scale == 1.2
         self.line2d.snap_size = True
         # snapping size with the different axes scale is not supported
-        assert self.line2d.snap_size == False
+        assert self.line2d.snap_size is False
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)

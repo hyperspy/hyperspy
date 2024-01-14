@@ -73,8 +73,8 @@ class TestExpression2D:
         g.sy.value = 1
         g.x0.value = 1
         g.y0.value = 1
-        l = np.linspace(-2, 2, 5)
-        x, y = np.meshgrid(l, l)
+        values = np.linspace(-2, 2, 5)
+        x, y = np.meshgrid(values, values)
         np.testing.assert_allclose(
             g.function(x, y),
             np.array([[6.68025544e-06, 8.55249949e-04, 6.49777231e-03,
@@ -112,8 +112,8 @@ class TestExpression2D:
         g.sy.value = .1
         g.x0.value = 0
         g.y0.value = 0
-        l = np.linspace(-2, 2, 5)
-        x, y = np.meshgrid(l, l)
+        values = np.linspace(-2, 2, 5)
+        x, y = np.meshgrid(values, values)
         np.testing.assert_allclose(
             g.function(x, y),
             np.array([[1.77220718e-208, 1.97005871e-181, 1.00498099e-181,
@@ -136,8 +136,8 @@ class TestExpression2D:
         g.sy.value = .1
         g.x0.value = 0
         g.y0.value = 0
-        l = np.linspace(-2, 2, 5)
-        x, y = np.meshgrid(l, l)
+        values = np.linspace(-2, 2, 5)
+        x, y = np.meshgrid(values, values)
         np.testing.assert_allclose(
             g.function(x, y),
             np.array([[9.64172248e-175, 5.46609733e-099, 5.03457536e-045,
@@ -156,8 +156,8 @@ class TestExpression2D:
         g = hs.model.components2D.Expression(
             GAUSSIAN2D_EXPR, "gaussian2d", add_rotation=True, module="numpy",
             sx=.5, sy=.1, x0=0, y0=0, rotation_angle=np.radians(45))
-        l = np.linspace(-2, 2, 5)
-        x, y = np.meshgrid(l, l)
+        values = np.linspace(-2, 2, 5)
+        x, y = np.meshgrid(values, values)
         np.testing.assert_allclose(
             g.function(x, y),
             np.array([[9.64172248e-175, 5.46609733e-099, 5.03457536e-045,
@@ -181,8 +181,8 @@ class TestExpression2D:
         g.sy.value = 1
         g.x0.value = 1
         g.y0.value = 1
-        l = np.linspace(-2, 2, 5)
-        x, y = np.meshgrid(l, l)
+        values = np.linspace(-2, 2, 5)
+        x, y = np.meshgrid(values, values)
         np.testing.assert_allclose(g.function(x, y), self.array0)
         np.testing.assert_allclose(
             g.grad_sx(x, y),
@@ -208,8 +208,8 @@ class TestExpression2D:
         g.sy.value = 1
         g.x0.value = 1
         g.y0.value = 1
-        l = np.linspace(-2, 2, 5)
-        x, y = np.meshgrid(l, l)
+        values = np.linspace(-2, 2, 5)
+        x, y = np.meshgrid(values, values)
         np.testing.assert_allclose(g.function_nd(x, y), self.array0)
 
     def test_no_function_nd_signal(self):
@@ -221,8 +221,8 @@ class TestExpression2D:
         g.sy.value = 1
         g.x0.value = 1
         g.y0.value = 1
-        l = np.arange(0, 3)
-        x, y = np.meshgrid(l, l)
+        values = np.arange(0, 3)
+        x, y = np.meshgrid(values, values)
         s = hs.signals.Signal2D(g.function(x, y))
         s2 = hs.stack([s]*2)
         m = s2.create_model()

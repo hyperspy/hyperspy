@@ -194,7 +194,7 @@ def test_EELSModel_saving(tmp_path):
     m.components.C_K.fine_structure_active = True
 
     m.save(tmp_path / 'tmp.hspy')
-    l = load(tmp_path / 'tmp.hspy')
-    assert hasattr(l.models, 'a')
-    n = l.models.restore('a')
+    s2 = load(tmp_path / 'tmp.hspy')
+    assert hasattr(s2.models, 'a')
+    n = s2.models.restore('a')
     assert n[0].fine_structure_width == 50

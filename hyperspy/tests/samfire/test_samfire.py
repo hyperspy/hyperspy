@@ -397,16 +397,16 @@ class TestSamfireWorker:
         g.sigma.value = self.widths[0]
         g.A.value = self.areas[0]
 
-        l = hs.model.components1D.Lorentzian()
-        l.gamma.value = self.widths[1]
-        l.A.value = self.areas[1]
+        l0 = hs.model.components1D.Lorentzian()
+        l0.gamma.value = self.widths[1]
+        l0.A.value = self.areas[1]
 
         l1 = hs.model.components1D.Lorentzian()
         l1.gamma.value = self.widths[2]
         l1.A.value = self.areas[2]
 
         d = g.function(ax - self.centres[0]) + \
-            l.function(ax - self.centres[1]) + \
+            l0.function(ax - self.centres[1]) + \
             l1.function(ax - self.centres[2])
         s = hs.signals.Signal1D(np.array([d, d]))
         s.add_poissonian_noise()

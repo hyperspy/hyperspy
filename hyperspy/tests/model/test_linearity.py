@@ -52,24 +52,24 @@ class TestModelLinearity:
         nonlinear_parameters = [p for c in self.m for p in c.parameters
                                 if not p._linear]
         assert len(nonlinear_parameters) == 2
-        l = [p for p in nonlinear_parameters if p in self.m._free_parameters]
-        assert len(l) == 0
+        _list = [p for p in nonlinear_parameters if p in self.m._free_parameters]
+        assert len(_list) == 0
 
     def test_model_parameters_inactive(self):
         self.g.active = False
         nonlinear_parameters = [p for c in self.m for p in c.parameters
                                 if not p._linear]
         assert len(nonlinear_parameters) == 2
-        l = [p for p in nonlinear_parameters if p in self.m._free_parameters]
-        assert len(l) == 0
+        _list = [p for p in nonlinear_parameters if p in self.m._free_parameters]
+        assert len(_list) == 0
 
     def test_model_parameters_set_inactive(self):
         self.m.set_component_active_value(False, [self.g])
         nonlinear_parameters = [p for c in self.m for p in c.parameters
                                 if not p._linear]
         assert len(nonlinear_parameters) == 2
-        l = [p for p in nonlinear_parameters if p in self.m._free_parameters]
-        assert len(l) == 0
+        _list = [p for p in nonlinear_parameters if p in self.m._free_parameters]
+        assert len(_list) == 0
 
 
 def test_sympy_linear_expression():

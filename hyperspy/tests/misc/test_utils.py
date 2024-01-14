@@ -18,7 +18,6 @@
 
 import dask.array as da
 import numpy as np
-from prettytable import PrettyTable
 import pytest
 
 
