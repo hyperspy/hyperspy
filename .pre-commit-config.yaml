@@ -7,7 +7,7 @@ repos:
       - id: ruff
         args: [ --fix ]
       # Run the formatter.
-      #- id: ruff-format
+      - id: ruff-format
 ci:
     # Don't run automatically on PRs, instead add the comment
     # "pre-commit.ci autofix" on a pull request to manually trigger auto-fixing 
