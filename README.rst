@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-|Azure|_ |Github|_ |rtd|_ |Codecov|_
+|Azure|_ |Github|_ |pre-commit|_ |rtd|_ |Codecov|_
 
 |python_version|_ |pypi_version|_ |anaconda_cloud|_
 
@@ -11,6 +11,9 @@
 
 .. |Github| image:: https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml/badge.svg
 .. _Github: https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml
+
+.. |pre-commit| image:: https://results.pre-commit.ci/badge/github/hyperspy/hyperspy/RELEASE_next_minor.svg
+.. _pre-commit: https://results.pre-commit.ci/latest/github/hyperspy/hyperspy/RELEASE_next_minor
 
 .. |Codecov| image:: https://codecov.io/gh/hyperspy/hyperspy/branch/RELEASE_next_minor/graph/badge.svg
 .. _Codecov: https://codecov.io/gh/hyperspy/hyperspy

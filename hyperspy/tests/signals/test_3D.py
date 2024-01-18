@@ -177,9 +177,9 @@ class Test3D:
                 cks[0],
                 cks[2],
             )
-        assert s.swap_axes(0, 2).axes_manager[0].navigate == True
+        assert s.swap_axes(0, 2).axes_manager[0].navigate is True
         s.axes_manager[2].is_binned = True
-        assert s.swap_axes(0, 2).axes_manager[2].is_binned == True
+        assert s.swap_axes(0, 2).axes_manager[2].is_binned is True
 
     def test_swap_axes_iteration(self):
         s = self.signal
@@ -344,7 +344,7 @@ class TestRebinDtype:
         s = self.s
         s.change_dtype(np.uint8)
         s2 = s.rebin(scale=(5, 2, 1), dtype=dtype)
-        if dtype == None:
+        if dtype is None:
             # np.sum default uses platform (un)signed interger (input dependent)
             dtype = np.uint
         elif dtype == 'same':

@@ -18,7 +18,6 @@
 
 import logging
 import math
-import os
 import warnings
 
 import numpy as np
@@ -45,7 +44,6 @@ from hyperspy.signal_tools import (
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
-from hyperspy.misc.array_tools import get_value_at_index
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import _get_background_estimator
 from hyperspy._signals.lazy import LazySignal
@@ -256,8 +254,6 @@ def _shift1D(data, **kwargs):
     be passed as a kwarg. """
     shift = kwargs.get('shift', 0.)
     original_axis = kwargs.get('original_axis', None)
-    fill_value = kwargs.get('fill_value', np.nan)
-    kind = kwargs.get('kind', 'linear')
 
     if np.isnan(shift) or shift == 0:
         return data

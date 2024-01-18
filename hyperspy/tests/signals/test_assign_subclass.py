@@ -25,7 +25,6 @@ import pytest
 import hyperspy.api as hs
 from hyperspy import _lazy_signals
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.io import assign_signal_subclass
 
 testcase = namedtuple('testcase', ['dtype', 'sig_dim', 'sig_type', 'cls'])

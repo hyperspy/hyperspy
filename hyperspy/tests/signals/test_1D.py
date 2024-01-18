@@ -23,9 +23,6 @@ import pytest
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signals import Signal1D
-from hyperspy.drawing.markers import Markers
-from hyperspy.drawing._markers.circles import Circles
-from matplotlib.collections import LineCollection
 
 
 @lazifyTestClass

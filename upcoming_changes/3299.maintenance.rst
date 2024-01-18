@@ -1,0 +1,1 @@
+Use ruff to lint code.

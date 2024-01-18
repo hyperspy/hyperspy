@@ -104,19 +104,19 @@ class TestNonUniformAxisCheck:
         # make sure we start from a clean state
 
     def test_io_nonuniform(self):
-        assert(self.s.axes_manager[0].is_uniform == False)
+        assert(self.s.axes_manager[0].is_uniform is False)
         self.s.save('tmp.hspy', overwrite = True)
         with pytest.raises(TypeError, match = "not supported for non-uniform"):
             self.s.save('tmp.msa', overwrite = True)
 
     def test_nonuniform_writer_characteristic(self):
         for plugin in IO_PLUGINS:
-            if not "non_uniform_axis" in plugin:
+            if "non_uniform_axis" not in plugin:
                 print(plugin.name + ' IO-plugin is missing the '
                       'characteristic `non_uniform_axis`')
 
     def test_nonuniform_error(self):
-        assert(self.s.axes_manager[0].is_uniform == False)
+        assert(self.s.axes_manager[0].is_uniform is False)
         incompatible_writers = [
             plugin["file_extensions"][plugin["default_extension"]]
             for plugin in IO_PLUGINS if (plugin["writes"] is True or

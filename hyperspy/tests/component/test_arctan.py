@@ -16,11 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import pytest
 import numpy as np
 
 from hyperspy.components1d import Arctan
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 def test_function():

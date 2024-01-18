@@ -17,7 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-import pytest
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
@@ -107,7 +106,7 @@ class TestModelIndexingClass:
     def setup_method(self, method):
         s = Signal1D([list(range(10))] * 3)
         m = s.create_model()
-        self.m = s.create_model()
+        self.m = m
 
     def test_model_class(self):
         m = self.m

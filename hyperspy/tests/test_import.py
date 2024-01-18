@@ -18,7 +18,7 @@
 
 
 def test_import_version():
-    from hyperspy import __version__
+    from hyperspy import __version__ # noqa: F401
 
 
 def test_import():

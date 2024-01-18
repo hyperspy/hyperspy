@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 from pathlib import Path
 
 try:
@@ -31,6 +32,8 @@ except ValueError:
 # pytest-mpl 0.7 already import pyplot, so setting the matplotlib backend to
 # 'agg' as early as we can is useless for testing.
 import matplotlib.pyplot as plt
+# Use matplotlib fixture to clean up figure, setup backend, etc.
+from matplotlib.testing.conftest import mpl_test_settings # noqa: F401
 
 import pytest
 import numpy as np
@@ -67,12 +70,10 @@ def setup_module(mod, pdb_cmdopt):
         import dask
         dask.set_options(get=dask.local.get_sync)
 
-from matplotlib.testing.conftest import mpl_test_settings
 
+pytest_mpl_spec = importlib.util.find_spec("pytest_mpl")
 
-try:
-    import pytest_mpl
-except ImportError:
+if pytest_mpl_spec is None:
     # Register dummy marker to allow running the test suite without pytest-mpl
     def pytest_configure(config):
         config.addinivalue_line(
@@ -80,14 +81,13 @@ except ImportError:
             "mpl_image_compare: dummy marker registration to allow running "
             "without the pytest-mpl plugin."
         )
-
-
-def pytest_configure(config):
-    # raise an error if the baseline images are not present
-    # which is the case when installing from a wheel
-    baseline_images_path = Path(__file__).parent / "tests" / "drawing" / "plot_signal"
-    if config.getoption("--mpl") and not baseline_images_path.exists():
-        raise ValueError(
-            "`--mpl` flag can't not be used because the "
-            "baseline images are not packaged."
-            )
+else:
+    def pytest_configure(config):
+        # raise an error if the baseline images are not present
+        # which is the case when installing from a wheel
+        baseline_images_path = Path(__file__).parent / "tests" / "drawing" / "plot_signal"
+        if config.getoption("--mpl") and not baseline_images_path.exists():
+            raise ValueError(
+                "`--mpl` flag can't not be used because the "
+                "baseline images are not packaged."
+                )

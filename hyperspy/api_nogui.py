@@ -23,13 +23,16 @@ import logging
 import importlib
 import sys
 
-_logger = logging.getLogger(__name__)
+
 from hyperspy.logger import set_log_level
 from hyperspy.defaults_parser import preferences
+
+# Need to run before other import to use the logger during import
+_logger = logging.getLogger(__name__)
 set_log_level(preferences.General.logging_level)
 
-from hyperspy import docstrings
-from . import __version__
+from hyperspy import docstrings # noqa: E402
+from . import __version__ # noqa: E402
 
 
 __doc__ = """
@@ -100,7 +103,7 @@ def get_configuration_directory_path():
     return hyperspy.misc.config_dir.config_path
 
 
-__all__ = [
+__all__ = [ # noqa: F822
     'data',
     'get_configuration_directory_path',
     'interactive',

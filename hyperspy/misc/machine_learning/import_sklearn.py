@@ -20,21 +20,22 @@
 Import sklearn.* and randomized_svd from scikit-learn
 """
 
+import importlib
 import warnings
 
+sklearn_spec = importlib.util.find_spec("sklearn")
 
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import sklearn
-        import sklearn.decomposition
-        import sklearn.cluster
-        import sklearn.preprocessing
-        import sklearn.metrics
-        from sklearn.utils.extmath import randomized_svd
-
-        sklearn_installed = True
-
-except ImportError:  # pragma: no cover
+if sklearn_spec is None:  # pragma: no cover
     randomized_svd = None
     sklearn_installed = False
+else:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import sklearn # noqa: F401
+        import sklearn.decomposition # noqa: F401
+        import sklearn.cluster # noqa: F401
+        import sklearn.preprocessing # noqa: F401
+        import sklearn.metrics # noqa: F401
+        from sklearn.utils.extmath import randomized_svd # noqa: F401
+
+        sklearn_installed = True

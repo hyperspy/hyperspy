@@ -56,7 +56,7 @@ class Ellipses(Markers):
         """
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(
-                f"The transform argument is not supported for Squares Markers. Instead, "
+                "The transform argument is not supported for Squares Markers. Instead, "
                 "use the offset_transform argument to specify the transform of the "
                 "offsets and use the ``units`` argument to specify transform of the "
                 "sizes.")

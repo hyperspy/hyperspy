@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
 
 from hyperspy.drawing import widget, widgets

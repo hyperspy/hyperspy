@@ -28,7 +28,6 @@ from hyperspy._signals.lazy import (
     to_array,
     _get_navigation_dimension_chunk_slice
     )
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 def _signal():
@@ -141,8 +140,8 @@ def test_ma_lazify():
             data=[
                 1, 2, 3], mask=[
                 0, 1, 0]))
-    l = s.as_lazy()
-    assert np.isnan(l.data[1].compute())
+    s2 = s.as_lazy()
+    assert np.isnan(s2.data[1].compute())
     ss = hs.stack([s, s])
     assert np.isnan(ss.data[:, 1]).all()
 

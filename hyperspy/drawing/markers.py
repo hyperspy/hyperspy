@@ -22,7 +22,7 @@ import logging
 from copy import deepcopy
 
 import matplotlib.collections as mpl_collections
-from matplotlib.transforms import Affine2D, IdentityTransform
+from matplotlib.transforms import IdentityTransform
 from matplotlib.patches import Patch
 
 import hyperspy

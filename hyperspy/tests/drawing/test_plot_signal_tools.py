@@ -94,8 +94,8 @@ def test_plot_BackgroundRemoval_close_figure():
     assert len(signal_plot.events.closed.connected) == 5
     assert len(s.axes_manager.events.indices_changed.connected) == 4
     s._plot.close()
-    assert not br._fit in s.axes_manager.events.indices_changed.connected
-    assert not br.disconnect in signal_plot.events.closed.connected
+    assert br._fit not in s.axes_manager.events.indices_changed.connected
+    assert br.disconnect not in signal_plot.events.closed.connected
 
 
 def test_plot_BackgroundRemoval_close_tool():
@@ -108,9 +108,9 @@ def test_plot_BackgroundRemoval_close_tool():
     assert len(signal_plot.events.closed.connected) == 5
     assert len(s.axes_manager.events.indices_changed.connected) == 4
     br.on_disabling_span_selector()
-    assert not br._fit in s.axes_manager.events.indices_changed.connected
+    assert br._fit not in s.axes_manager.events.indices_changed.connected
     s._plot.close()
-    assert not br.disconnect in signal_plot.events.closed.connected
+    assert br.disconnect not in signal_plot.events.closed.connected
 
 
 @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,

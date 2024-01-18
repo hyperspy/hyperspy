@@ -114,7 +114,7 @@ def reconstruct_component(comp_dictionary, **init_args):
             _logger.info("Legacy Voigt component converted to PESVoigt during file reading.")
     if (comp_dictionary['_id_name'] == "Arctan" and 'minimum_at_zero' in comp_dictionary):
         # in HyperSpy 1.6 the old Arctan component was moved to EELSArctan
-        if comp_dictionary['minimum_at_zero'] == True:
+        if comp_dictionary['minimum_at_zero'] is True:
             comp_dictionary['_id_name'] = "EELSArctan"
             _logger.info("Legacy Arctan component converted to EELSArctan during file reading.")
     _id = comp_dictionary['_id_name']

@@ -1895,7 +1895,7 @@ class MVA:
 
         toreturn=None
         # Is it a signal - i.e. BaseSignal
-        if type(cluster_source) is str and cluster_source=="signal":
+        if isinstance(cluster_source, str) and cluster_source=="signal":
             cluster_source = self
 
         if is_hyperspy_signal(cluster_source):
@@ -1943,7 +1943,7 @@ class MVA:
             data = cluster_source.data \
                 if cluster_source.axes_manager[0].index_in_array == 0 else cluster_source.data.T
             toreturn = data[:,signal_mask][navigation_mask,:]
-        elif type(cluster_source) is str:
+        elif isinstance(cluster_source, str):
             if cluster_source == "bss":
                 loadings = self.learning_results.bss_loadings
             else:
@@ -2147,10 +2147,8 @@ class MVA:
             self.learning_results.__dict__.update(target.__dict__)
             # if the cluster_source or source_for_centers is a signal
             # fold it back, if required, when finished
-            if (type(cluster_source) is str and \
-                cluster_source == "signal") or   \
-                (type(source_for_centers) is str and \
-                source_for_centers == "signal"):
+            if (isinstance(cluster_source, str) and cluster_source == "signal") or \
+                (isinstance(source_for_centers, str) and source_for_centers == "signal"):
                 if hasattr(self,"unfolded4clustering"):
                     if self.unfolded4clustering:
                         self.fold()
@@ -2520,8 +2518,7 @@ class MVA:
             return best_k
         finally:
             # fold
-            if (type(cluster_source) is str and \
-                cluster_source == "signal"):
+            if isinstance(cluster_source, str) is str and cluster_source == "signal":
                 if hasattr(self,"unfolded4clustering"):
                     if self.unfolded4clustering:
                         self.fold()

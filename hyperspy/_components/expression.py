@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 from functools import wraps
 import logging
 import numpy as np
@@ -170,15 +171,15 @@ class Expression(Component):
                  **kwargs):
 
         if module is None:
-            try:
-                import numexpr
-                module = "numexpr"
-            except ImportError:
+            numexpr_spec = importlib.util.find_spec("numexpr")
+            if numexpr_spec is None:
                 module = "numpy"
                 _logger.warning(
                     "Numexpr is not installed, falling back to numpy, "
                     "which is slower to calculate model."
-                )
+                )                
+            else:
+                module = "numexpr"
 
         if linear_parameter_list is None:
             linear_parameter_list = []

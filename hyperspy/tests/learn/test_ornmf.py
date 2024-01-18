@@ -77,7 +77,7 @@ class TestRNMF:
         compare_norms(W @ H, self.X)
 
     def test_no_method(self):
-        with pytest.raises(ValueError, match=f"'method' not recognised"):
+        with pytest.raises(ValueError, match="'method' not recognised"):
             _ = ornmf(self.X, self.rank, method="uniform")
 
     def test_subspace_tracking(self):
@@ -101,7 +101,7 @@ class TestRNMF:
         )
         compare_norms(W @ H, self.X)
 
-        with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
+        with pytest.raises(ValueError, match="must be a float between 0 and 1"):
             _ = ornmf(self.X, self.rank, method="MomentumSGD", subspace_momentum=1.9)
 
     @pytest.mark.parametrize("poisson", [True, False])

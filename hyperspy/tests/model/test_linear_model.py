@@ -779,16 +779,16 @@ def test_lorentzian():
     s = m_ref.as_signal()
 
     m = s.create_model()
-    l = hs.model.components1D.Lorentzian()
-    l.centre.value = l_ref.centre.value
-    m.append(l)
+    lorentzian = hs.model.components1D.Lorentzian()
+    lorentzian.centre.value = l_ref.centre.value
+    m.append(lorentzian)
     m.set_parameters_not_free(only_nonlinear=True)
     m.plot()
     m.fit(optimizer='lstsq')
 
-    np.testing.assert_allclose(l_ref.A.value, l.A.value)
-    np.testing.assert_allclose(l_ref.centre.value, l.centre.value)
-    np.testing.assert_allclose(l_ref.gamma.value, l.gamma.value)
+    np.testing.assert_allclose(l_ref.A.value, lorentzian.A.value)
+    np.testing.assert_allclose(l_ref.centre.value, lorentzian.centre.value)
+    np.testing.assert_allclose(l_ref.gamma.value, lorentzian.gamma.value)
     np.testing.assert_allclose(m.as_signal().data, s.data)
 
 

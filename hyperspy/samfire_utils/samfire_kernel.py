@@ -67,7 +67,7 @@ def single_kernel(model, ind, values, optional_components, _args, test):
             for (comp_n, par_n), val in zip(name_list, it):
                 try:
                     getattr(model[comp_n], par_n).value = val
-                except:
+                except Exception:
                     pass
             model.fit(**_args)
             # only perform iterations until we find a solution that we think is
@@ -108,7 +108,7 @@ def single_kernel(model, ind, values, optional_components, _args, test):
         for (comp_n, par_n), val in zip(best_names, best_values):
             try:
                 getattr(model[comp_n], par_n).value = val
-            except:
+            except Exception:
                 pass
         model.fit(**_args)
         return True
@@ -116,7 +116,6 @@ def single_kernel(model, ind, values, optional_components, _args, test):
 
 def multi_kernel(
         ind, m_dic, values, optional_components, _args, result_q, test_dict):
-    import hyperspy.api as hs
     from hyperspy.signal import Signal
     from multiprocessing import current_process
     from itertools import combinations, product
@@ -188,7 +187,7 @@ def multi_kernel(
             for (comp_n, par_n), val in zip(name_list, it):
                 try:
                     getattr(model[comp_n], par_n).value = val
-                except:
+                except Exception:
                     pass
             model.fit(**_args)
             # only perform iterations until we find a solution that we think is
@@ -231,7 +230,7 @@ def multi_kernel(
         for (comp_n, par_n), val in zip(best_names, best_values):
             try:
                 getattr(model[comp_n], par_n).value = val
-            except:
+            except Exception:
                 pass
         model.fit(**_args)
         send_good_results(model, previous_switching, cur_p, result_q, ind)

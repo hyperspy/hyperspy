@@ -16,9 +16,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+import importlib
 import os
-from shutil import copyfile
 from pathlib import Path
+from shutil import copyfile
 
 import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent, PickEvent
@@ -67,19 +68,20 @@ def _matplotlib_pick_event(figure, click, artist):
         # Introduced in matplotlib 3.6 and `pick_event` deprecated
         event = PickEvent('pick_event', figure, click, artist)
         figure.canvas.callbacks.process('pick_event', event)
-    except: # Deprecated in matplotlib 3.6
+    except Exception: # Deprecated in matplotlib 3.6
         figure.canvas.pick_event(figure.canvas, click, artist)
 
 
 @pytest.fixture
 def setup_teardown(request, scope="class"):
     plot_testing = request.config.getoption("--mpl")
-    try:
-        import pytest_mpl
+    pytest_mpl_spec = importlib.util.find_spec("pytest_mpl")
+
+    if pytest_mpl_spec is None:
+        mpl_generate_path_cmdopt = None
+    else:
         # This option is available only when pytest-mpl is installed
         mpl_generate_path_cmdopt = request.config.getoption("--mpl-generate-path")
-    except ImportError:
-        mpl_generate_path_cmdopt = None
 
     # SETUP
     # duplicate baseline images to match the test_name when the

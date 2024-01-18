@@ -185,6 +185,11 @@ doctest_optionflags = [
     "ELLIPSIS",
 ]
 
+[tool.ruff]
+exclude = [
+    "hyperspy/external/*",
+    ]
+
 [tool.setuptools.package-data]
 "*" = [
     "hyperspy_extension.yaml",

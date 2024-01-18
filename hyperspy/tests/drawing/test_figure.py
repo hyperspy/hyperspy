@@ -32,7 +32,7 @@ def _close_figure_matplotlib_event(figure):
         # Introduced in matplotlib 3.6 and `clost_event` deprecated
         event = CloseEvent('close_event', figure)
         figure.canvas.callbacks.process('close_event', event)
-    except: # Deprecated in matplotlib 3.6
+    except Exception: # Deprecated in matplotlib 3.6
         figure.canvas.close_event()
 
 
