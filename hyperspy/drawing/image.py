@@ -43,7 +43,6 @@ _logger = logging.getLogger(__name__)
 
 
 class ImagePlot(BlittedFigure):
-
     """Class to plot an image with the necessary machinery to update
     the image when the coordinates of an AxesManager change.
 
@@ -88,7 +87,7 @@ class ImagePlot(BlittedFigure):
         # Other attributes
         self.pixel_units = None
         self._colorbar = None
-        self.quantity_label = ''
+        self.quantity_label = ""
         self.figure = None
         self.ax = None
         self.title = title
@@ -104,11 +103,14 @@ class ImagePlot(BlittedFigure):
         self._vmin = None
         self._vmax = None
 
-        self._ylabel = ''
-        self._xlabel = ''
+        self._ylabel = ""
+        self._xlabel = ""
         self.plot_indices = True
         self._text = None
-        self._text_position = (0, 1.05,)
+        self._text_position = (
+            0,
+            1.05,
+        )
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -196,9 +198,12 @@ class ImagePlot(BlittedFigure):
         xaxis = self.xaxis
         yaxis = self.yaxis
 
-        if (xaxis.is_uniform and yaxis.is_uniform and
-                (xaxis.units == yaxis.units) and
-                (abs(xaxis.scale) == abs(yaxis.scale))):
+        if (
+            xaxis.is_uniform
+            and yaxis.is_uniform
+            and (xaxis.units == yaxis.units)
+            and (abs(xaxis.scale) == abs(yaxis.scale))
+        ):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
             self.pixel_units = xaxis.units
@@ -207,26 +212,28 @@ class ImagePlot(BlittedFigure):
             self._auto_axes_ticks = True
 
         # Signal2D labels
-        self._xlabel = '{}'.format(xaxis)
+        self._xlabel = "{}".format(xaxis)
         if xaxis.units is not Undefined:
-            self._xlabel += ' ({})'.format(xaxis.units)
+            self._xlabel += " ({})".format(xaxis.units)
 
-        self._ylabel = '{}'.format(yaxis)
+        self._ylabel = "{}".format(yaxis)
         if yaxis.units is not Undefined:
-            self._ylabel += ' ({})'.format(yaxis.units)
+            self._ylabel += " ({})".format(yaxis.units)
 
         # Calibrate the axes of the navigator image
         if xaxis.is_uniform and yaxis.is_uniform:
-            xaxis_half_px = xaxis.scale / 2.
-            yaxis_half_px = yaxis.scale / 2.
+            xaxis_half_px = xaxis.scale / 2.0
+            yaxis_half_px = yaxis.scale / 2.0
         else:
             xaxis_half_px = 0
             yaxis_half_px = 0
         # Calibrate the axes of the navigator image
-        self._extent = [xaxis.axis[0] - xaxis_half_px,
-                        xaxis.axis[-1] + xaxis_half_px,
-                        yaxis.axis[-1] + yaxis_half_px,
-                        yaxis.axis[0] - yaxis_half_px]
+        self._extent = [
+            xaxis.axis[0] - xaxis_half_px,
+            xaxis.axis[-1] + xaxis_half_px,
+            yaxis.axis[-1] + yaxis_half_px,
+            yaxis.axis[0] - yaxis_half_px,
+        ]
         self._calculate_aspect()
 
     def _calculate_aspect(self):
@@ -240,8 +247,8 @@ class ImagePlot(BlittedFigure):
                 factor = min_asp * xaxis.size / yaxis.size
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
-            elif yaxis.size / xaxis.size > min_asp ** -1:
-                factor = min_asp ** -1 * xaxis.size / yaxis.size
+            elif yaxis.size / xaxis.size > min_asp**-1:
+                factor = min_asp**-1 * xaxis.size / yaxis.size
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
         if xaxis.is_uniform and yaxis.is_uniform:
@@ -249,19 +256,16 @@ class ImagePlot(BlittedFigure):
         else:
             self._aspect = 1.0
 
-    def _calculate_vmin_max(self, data, auto_contrast=False,
-                            vmin=None, vmax=None):
+    def _calculate_vmin_max(self, data, auto_contrast=False, vmin=None, vmax=None):
         vminprovided = vmin
         vmaxprovided = vmax
         # Calculate vmin and vmax using `utils.contrast_stretching` when:
         # - auto_contrast is True
         # - self.vmin or self.vmax is of tpye str
-        if (auto_contrast and (isinstance(self.vmin, str) or
-            isinstance(self.vmax, str))):
+        if auto_contrast and (isinstance(self.vmin, str) or isinstance(self.vmax, str)):
             with ignore_warning(category=RuntimeWarning):
                 # In case of "All-NaN slices"
-                vmin, vmax = utils.contrast_stretching(
-                    data, self.vmin, self.vmax)
+                vmin, vmax = utils.contrast_stretching(data, self.vmin, self.vmax)
         else:
             vmin, vmax = self._vmin_numeric, self._vmax_numeric
         # provided vmin, vmax override the calculated value
@@ -296,15 +300,17 @@ class ImagePlot(BlittedFigure):
         """
         if "figsize" not in kwargs:
             if self.scalebar is True:
-                wfactor = 1.0 + plt.rcParams['font.size'] / 100
+                wfactor = 1.0 + plt.rcParams["font.size"] / 100
             else:
                 wfactor = 1
 
             height = abs(self._extent[3] - self._extent[2]) * self._aspect
             width = abs(self._extent[1] - self._extent[0])
-            figsize = np.array((width * wfactor, height)) * \
-                max(plt.rcParams['figure.figsize']) / \
-                max(width * wfactor, height)
+            figsize = (
+                np.array((width * wfactor, height))
+                * max(plt.rcParams["figure.figsize"])
+                / max(width * wfactor, height)
+            )
             kwargs["figsize"] = figsize.clip(min_size, max_size)
         if "disable_xyscale_keys" not in kwargs:
             kwargs["disable_xyscale_keys"] = True
@@ -320,7 +326,7 @@ class ImagePlot(BlittedFigure):
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
         if self.axes_off:
-            self.ax.axis('off')
+            self.ax.axis("off")
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.data_function_kwargs = data_function_kwargs
@@ -329,7 +335,7 @@ class ImagePlot(BlittedFigure):
             self.create_figure()
             self.create_axis()
 
-        if (not self.axes_manager or self.axes_manager.navigation_size == 0):
+        if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
             if self._text is not None:
@@ -339,11 +345,12 @@ class ImagePlot(BlittedFigure):
                 s=str(self.axes_manager.indices),
                 transform=self.ax.transAxes,
                 fontsize=12,
-                color='red',
-                animated=self.figure.canvas.supports_blit)
+                color="red",
+                animated=self.figure.canvas.supports_blit,
+            )
         for marker in self.ax_markers:
             marker.plot()
-        for attribute in ['vmin', 'vmax']:
+        for attribute in ["vmin", "vmax"]:
             if attribute in kwargs.keys():
                 setattr(self, attribute, kwargs.pop(attribute))
         self.update(data_changed=True, auto_contrast=True, **kwargs)
@@ -359,9 +366,9 @@ class ImagePlot(BlittedFigure):
         if self.colorbar:
             self._add_colorbar()
 
-        if hasattr(self.figure, 'tight_layout'):
+        if hasattr(self.figure, "tight_layout"):
             try:
-                if self.axes_ticks == 'off' and not self.colorbar:
+                if self.axes_ticks == "off" and not self.colorbar:
                     plt.subplots_adjust(0, 0, 1, 1)
                 else:
                     self.figure.tight_layout()
@@ -379,22 +386,22 @@ class ImagePlot(BlittedFigure):
         ims = self.ax.images if len(self.ax.images) else self.ax.collections
         self._colorbar = plt.colorbar(ims[0], ax=self.ax)
         self.set_quantity_label()
-        self._colorbar.set_label(
-            self.quantity_label, rotation=-90, va='bottom')
-        self._colorbar.ax.yaxis.set_animated(
-            self.figure.canvas.supports_blit)
+        self._colorbar.set_label(self.quantity_label, rotation=-90, va="bottom")
+        self._colorbar.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
 
     def _update_data(self):
         # self._current_data caches the displayed data.
-        data = self.data_function(axes_manager=self.axes_manager,
-                **self.data_function_kwargs)
+        data = self.data_function(
+            axes_manager=self.axes_manager, **self.data_function_kwargs
+        )
         # the colorbar of matplotlib ~< 3.2 doesn't support bool array
         if data.dtype == bool:
             data = data.astype(int)
         self._current_data = data
 
-    def update(self, data_changed=True, auto_contrast=None, vmin=None,
-               vmax=None, **kwargs):
+    def update(
+        self, data_changed=True, auto_contrast=None, vmin=None, vmax=None, **kwargs
+    ):
         """
         Parameters
         ----------
@@ -418,7 +425,7 @@ class ImagePlot(BlittedFigure):
             compatible with the selected ``norm``.
         """
         if auto_contrast is None:
-            auto_contrast = 'v' in self.autoscale
+            auto_contrast = "v" in self.autoscale
         if data_changed:
             # When working with lazy signals the following may reread the data
             # from disk unnecessarily, for example when updating the image just
@@ -449,11 +456,11 @@ class ImagePlot(BlittedFigure):
                 self.centre_colormap = False
         redraw_colorbar = False
 
-
         for marker in self.ax_markers:
             marker.update()
 
         if not self._is_rgb:
+
             def format_coord(x, y):
                 try:
                     col = self.xaxis.value2index(x)
@@ -466,15 +473,15 @@ class ImagePlot(BlittedFigure):
                 if col >= 0 and row >= 0:
                     z = data[row, col]
                     if np.isfinite(z):
-                        return f'x={x:1.4g}, y={y:1.4g}, intensity={z:1.4g}'
-                return f'x={x:1.4g}, y={y:1.4g}'
+                        return f"x={x:1.4g}, y={y:1.4g}, intensity={z:1.4g}"
+                return f"x={x:1.4g}, y={y:1.4g}"
+
             self.ax.format_coord = format_coord
 
             old_vmin, old_vmax = self._vmin, self._vmax
 
             if auto_contrast:
-                vmin, vmax = self._calculate_vmin_max(data, auto_contrast,
-                                                      vmin, vmax)
+                vmin, vmax = self._calculate_vmin_max(data, auto_contrast, vmin, vmax)
             else:
                 # use the value store internally when not explicitly defined
                 if vmin is None:
@@ -484,42 +491,48 @@ class ImagePlot(BlittedFigure):
 
             # If there is an image, any of the contrast bounds have changed and
             # the new contrast bounds are not the same redraw the colorbar.
-            if (ims and (old_vmin != vmin or old_vmax != vmax) and
-                    vmin != vmax):
+            if ims and (old_vmin != vmin or old_vmax != vmax) and vmin != vmax:
                 redraw_colorbar = True
                 ims[0].autoscale()
             if self.centre_colormap:
                 vmin, vmax = utils.centre_colormap_values(vmin, vmax)
 
-            if self.norm == 'auto' and self.gamma != 1.0:
-                self.norm = 'power'
+            if self.norm == "auto" and self.gamma != 1.0:
+                self.norm = "power"
             norm = copy.copy(self.norm)
-            if norm == 'power':
+            if norm == "power":
                 # with auto norm, we use the power norm when gamma differs from its
                 # default value.
                 norm = PowerNorm(self.gamma, vmin=vmin, vmax=vmax)
-            elif norm == 'log':
+            elif norm == "log":
                 if np.nanmax(data) <= 0:
-                    raise ValueError('All displayed data are <= 0 and can not '
-                                    'be plotted using `norm="log"`. '
-                                    'Use `norm="symlog"` to plot on a log scale.')
+                    raise ValueError(
+                        "All displayed data are <= 0 and can not "
+                        'be plotted using `norm="log"`. '
+                        'Use `norm="symlog"` to plot on a log scale.'
+                    )
                 if np.nanmin(data) <= 0:
                     vmin = np.nanmin(np.where(data > 0, data, np.inf))
 
                 norm = LogNorm(vmin=vmin, vmax=vmax)
-            elif norm == 'symlog':
-                sym_log_kwargs = {'linthresh':self.linthresh,
-                                  'linscale':self.linscale,
-                                  'vmin':vmin, 'vmax':vmax}
+            elif norm == "symlog":
+                sym_log_kwargs = {
+                    "linthresh": self.linthresh,
+                    "linscale": self.linscale,
+                    "vmin": vmin,
+                    "vmax": vmax,
+                }
                 if Version(matplotlib.__version__) >= Version("3.2"):
-                    sym_log_kwargs['base'] = 10
+                    sym_log_kwargs["base"] = 10
                 norm = SymLogNorm(**sym_log_kwargs)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
-            elif norm not in ['auto', 'linear']:
-                raise ValueError("`norm` parameter should be 'auto', 'linear', "
-                                "'log', 'symlog' or a matplotlib Normalize  "
-                                "instance or subclass.")
+            elif norm not in ["auto", "linear"]:
+                raise ValueError(
+                    "`norm` parameter should be 'auto', 'linear', "
+                    "'log', 'symlog' or a matplotlib Normalize  "
+                    "instance or subclass."
+                )
             else:
                 # set back to matplotlib default
                 norm = None
@@ -534,20 +547,20 @@ class ImagePlot(BlittedFigure):
             data = np.nan_to_num(data)
 
         if ims:  # the images have already been drawn previously
-            if len(self.ax.images): # imshow
+            if len(self.ax.images):  # imshow
                 ims[0].set_data(data)
-            else: # pcolormesh
+            else:  # pcolormesh
                 ims[0].set_array(data.ravel())
             # update extent:
-            if 'x' in self.autoscale:
+            if "x" in self.autoscale:
                 self._extent[0] = self.xaxis.axis[0] - self.xaxis.scale / 2
                 self._extent[1] = self.xaxis.axis[-1] + self.xaxis.scale / 2
                 self.ax.set_xlim(self._extent[:2])
-            if 'y' in self.autoscale:
+            if "y" in self.autoscale:
                 self._extent[2] = self.yaxis.axis[-1] + self.yaxis.scale / 2
                 self._extent[3] = self.yaxis.axis[0] - self.yaxis.scale / 2
                 self.ax.set_ylim(self._extent[2:])
-            if 'x' in self.autoscale or 'y' in self.autoscale:
+            if "x" in self.autoscale or "y" in self.autoscale:
                 ims[0].set_extent(self._extent)
             self._calculate_aspect()
             self.ax.set_aspect(self._aspect)
@@ -560,9 +573,7 @@ class ImagePlot(BlittedFigure):
                     self._colorbar.draw_all()
                 else:
                     self.figure.draw_without_rendering()
-                self._colorbar.solids.set_animated(
-                    self.figure.canvas.supports_blit
-                )
+                self._colorbar.solids.set_animated(self.figure.canvas.supports_blit)
             else:
                 ims[0].changed()
             self.render_figure()
@@ -570,9 +581,9 @@ class ImagePlot(BlittedFigure):
             new_args = {"animated": self.figure.canvas.supports_blit}
             if not self._is_rgb:
                 if norm is None:
-                    new_args.update({'vmin': vmin, 'vmax':vmax})
+                    new_args.update({"vmin": vmin, "vmax": vmax})
                 else:
-                    new_args['norm'] = norm
+                    new_args["norm"] = norm
             new_args.update(kwargs)
             if self.xaxis.is_uniform and self.yaxis.is_uniform:
                 # pcolormesh doesn't have extent and aspect as arguments
@@ -580,9 +591,7 @@ class ImagePlot(BlittedFigure):
                 new_args.update({"extent": self._extent, "aspect": self._aspect})
                 self.ax.imshow(data, **new_args)
             else:
-                self.ax.pcolormesh(
-                    self.xaxis.axis, self.yaxis.axis, data, **new_args
-                )
+                self.ax.pcolormesh(self.xaxis.axis, self.yaxis.axis, data, **new_args)
                 self.ax.invert_yaxis()
         if self.axes_ticks == "off":
             self.ax.set_axis_off()
@@ -595,11 +604,12 @@ class ImagePlot(BlittedFigure):
     def gui_adjust_contrast(self, display=True, toolkit=None):
         if self._is_rgb:
             raise NotImplementedError(
-                "Contrast adjustment of RGB images is not implemented")
+                "Contrast adjustment of RGB images is not implemented"
+            )
         ceditor = ImageContrastEditor(self)
         return ceditor.gui(display=display, toolkit=toolkit)
-    gui_adjust_contrast.__doc__ = \
-        """
+
+    gui_adjust_contrast.__doc__ = """
         Display widgets to adjust image contrast if available.
 
         Parameters
@@ -612,8 +622,7 @@ class ImagePlot(BlittedFigure):
     def connect(self):
         # in case the figure is not displayed
         if self.figure is not None:
-            self.figure.canvas.mpl_connect('key_press_event',
-                                            self.on_key_press)
+            self.figure.canvas.mpl_connect("key_press_event", self.on_key_press)
         if self.axes_manager:
             if self.update not in self.axes_manager.events.indices_changed.connected:
                 self.axes_manager.events.indices_changed.connect(self.update, [])
@@ -626,13 +635,13 @@ class ImagePlot(BlittedFigure):
                 self.axes_manager.events.indices_changed.disconnect(self.update)
 
     def on_key_press(self, event):
-        if event.key == 'h':
+        if event.key == "h":
             self.gui_adjust_contrast()
-        if event.key == 'l':
+        if event.key == "l":
             self.toggle_norm()
 
     def toggle_norm(self):
-        self.norm = 'linear' if self.norm == 'log' else 'log'
+        self.norm = "linear" if self.norm == "log" else "log"
         self.update(data_changed=False)
         if self.colorbar:
             self._colorbar.remove()
@@ -640,48 +649,49 @@ class ImagePlot(BlittedFigure):
             self.figure.canvas.draw_idle()
 
     def set_quantity_label(self):
-        if 'power_spectrum' in self.data_function_kwargs.keys():
-            if self.norm == 'log':
-                if 'FFT' in self.quantity_label:
+        if "power_spectrum" in self.data_function_kwargs.keys():
+            if self.norm == "log":
+                if "FFT" in self.quantity_label:
                     self.quantity_label = self.quantity_label.replace(
-                        'Power spectral density', 'FFT')
+                        "Power spectral density", "FFT"
+                    )
                 else:
-                    of = ' of ' if self.quantity_label else ''
-                    self.quantity_label = 'Power spectral density' + of + \
-                        self.quantity_label
+                    of = " of " if self.quantity_label else ""
+                    self.quantity_label = (
+                        "Power spectral density" + of + self.quantity_label
+                    )
             else:
                 self.quantity_label = self.quantity_label.replace(
-                    'Power spectral density of ', '')
+                    "Power spectral density of ", ""
+                )
                 self.quantity_label = self.quantity_label.replace(
-                    'Power spectral density', '')
+                    "Power spectral density", ""
+                )
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax
         self.update(data_changed=False, auto_contrast=True)
 
-    def optimize_colorbar(self,
-                          number_of_ticks=5,
-                          tolerance=5,
-                          step_prec_max=1):
+    def optimize_colorbar(self, number_of_ticks=5, tolerance=5, step_prec_max=1):
         vmin, vmax = self.vmin, self.vmax
         _range = vmax - vmin
         step = _range / (number_of_ticks - 1)
         step_oom = math_tools.order_of_magnitude(step)
 
         def optimize_for_oom(oom):
-            self.colorbar_step = math.floor(step / 10 ** oom) * 10 ** oom
-            self.colorbar_vmin = math.floor(vmin / 10 ** oom) * 10 ** oom
-            self.colorbar_vmax = self.colorbar_vmin + \
-                self.colorbar_step * (number_of_ticks - 1)
+            self.colorbar_step = math.floor(step / 10**oom) * 10**oom
+            self.colorbar_vmin = math.floor(vmin / 10**oom) * 10**oom
+            self.colorbar_vmax = self.colorbar_vmin + self.colorbar_step * (
+                number_of_ticks - 1
+            )
             self.colorbar_locs = (
-                np.arange(0, number_of_ticks) *
-                self.colorbar_step +
-                self.colorbar_vmin)
+                np.arange(0, number_of_ticks) * self.colorbar_step + self.colorbar_vmin
+            )
 
         def check_tolerance():
-            if abs(self.colorbar_vmax - vmax) / vmax > (
-                tolerance / 100.) or abs(self.colorbar_vmin - vmin
-                                         ) > (tolerance / 100.):
+            if abs(self.colorbar_vmax - vmax) / vmax > (tolerance / 100.0) or abs(
+                self.colorbar_vmin - vmin
+            ) > (tolerance / 100.0):
                 return True
             else:
                 return False

@@ -23,21 +23,21 @@ from hyperspy.roi import (
     Point1DROI,
     Point2DROI,
     RectangularROI,
-    SpanROI
-    )
+    SpanROI,
+)
 
 
 __doc__ = hyperspy.roi.__doc__
 
 
 __all__ = [
-    'CircleROI',
-    'Line2DROI',
-    'Point1DROI',
-    'Point2DROI',
-    'RectangularROI',
-    'SpanROI',
-    ]
+    "CircleROI",
+    "Line2DROI",
+    "Point1DROI",
+    "Point2DROI",
+    "RectangularROI",
+    "SpanROI",
+]
 
 
 def __dir__():

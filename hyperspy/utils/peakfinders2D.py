@@ -28,6 +28,7 @@ from hyperspy.misc.machine_learning import import_sklearn
 
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
+
 def _get_peak_position_and_intensity(X, f, **kwargs):
     """
     Take some function, f, and apply it to the 2d array X returning a list
@@ -51,8 +52,8 @@ def _get_peak_position_and_intensity(X, f, **kwargs):
     """
     peaks = f(X, **kwargs)
 
-    if np.any(np.isnan(peaks)): #handle no peaks
-        return np.array([[np.nan, np.nan,np.nan]])
+    if np.any(np.isnan(peaks)):  # handle no peaks
+        return np.array([[np.nan, np.nan, np.nan]])
     else:
         peaks_indices = np.round(peaks).astype(int)
         intensity = X[peaks_indices[:, 0], peaks_indices[:, 1]]
@@ -126,7 +127,7 @@ def clean_peaks(peaks):
     if len(peaks) == 0:
         return NO_PEAKS
     else:
-        ind = np.lexsort((peaks[:,0], peaks[:,1]))
+        ind = np.lexsort((peaks[:, 0], peaks[:, 1]))
         return peaks[ind]
 
 
@@ -154,7 +155,7 @@ def find_local_max(z, **kwargs):
     return clean_peaks(peaks)
 
 
-def find_peaks_minmax(z, distance=5., threshold=10.):
+def find_peaks_minmax(z, distance=5.0, threshold=10.0):
     """Method to locate the positive peaks in an image by comparing maximum
     and minimum filtered images.
 
@@ -174,18 +175,17 @@ def find_peaks_minmax(z, distance=5., threshold=10.):
 
     """
     data_max = ndi.maximum_filter(z, distance)
-    maxima = (z == data_max)
+    maxima = z == data_max
     data_min = ndi.minimum_filter(z, distance)
-    diff = ((data_max - data_min) > threshold)
+    diff = (data_max - data_min) > threshold
     maxima[diff == 0] = 0
     labeled, num_objects = ndi.label(maxima)
-    peaks = np.array(
-        ndi.center_of_mass(z, labeled, range(1, num_objects + 1)))
+    peaks = np.array(ndi.center_of_mass(z, labeled, range(1, num_objects + 1)))
 
     return clean_peaks(np.round(peaks).astype(int))
 
 
-def find_peaks_max(z, alpha=3., distance=10):
+def find_peaks_max(z, alpha=3.0, distance=10):
     """Method to locate positive peaks in an image by local maximum searching.
 
     Parameters
@@ -221,8 +221,9 @@ def find_peaks_max(z, alpha=3., distance=10):
             y = np.arange(j - distance, j + distance)
             xv, yv = np.meshgrid(x, y)
             # clip to handle peaks near image edge
-            image_temp[yv.clip(0, image_temp.shape[0] - 1),
-                       xv.clip(0, image_temp.shape[1] - 1)] = 0
+            image_temp[
+                yv.clip(0, image_temp.shape[0] - 1), xv.clip(0, image_temp.shape[1] - 1)
+            ] = 0
             peak_ct += 1
         else:
             break
@@ -230,8 +231,7 @@ def find_peaks_max(z, alpha=3., distance=10):
     return clean_peaks(peaks)
 
 
-def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
-                         distance_cutoff=50.):
+def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40, distance_cutoff=50.0):
     """Method to locate positive peaks in an image based on gradient
     thresholding and subsequent refinement within masked regions.
 
@@ -295,9 +295,9 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
 
         """
         gradient_of_image = np.gradient(image)
-        gradient_of_image = gradient_of_image[0] ** 2 + gradient_of_image[
-                                                            1] ** 2
+        gradient_of_image = gradient_of_image[0] ** 2 + gradient_of_image[1] ** 2
         return gradient_of_image
+
     # Check window size is appropriate.
     if window_size < 2:
         raise ValueError("`window_size` must be >= 2.")
@@ -312,13 +312,12 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
     coordinates = coordinates[(image_gradient >= grad_threshold).flatten()]
 
     # Compare against squared distance (avoids repeated sqrt calls)
-    distance_cutoff_sq = distance_cutoff ** 2
+    distance_cutoff_sq = distance_cutoff**2
 
     peaks = []
     for coordinate in coordinates:
         # Iterate over coordinates where the gradient is high enough.
-        b = box(coordinate[0], coordinate[1], window_size, z.shape[0],
-                z.shape[1])
+        b = box(coordinate[0], coordinate[1], window_size, z.shape[0], z.shape[1])
         p_old = (0, 0)
         p_new = get_max(z, b)
 
@@ -476,8 +475,15 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
     return clean_peaks(stat_peak_finder(z, convergence_ratio))
 
 
-def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
-                   threshold=0.2, overlap=0.5, exclude_border=False):
+def find_peaks_dog(
+    z,
+    min_sigma=1.0,
+    max_sigma=50.0,
+    sigma_ratio=1.6,
+    threshold=0.2,
+    overlap=0.5,
+    exclude_border=False,
+):
     """Method to locate peaks via the Difference of Gaussian Matrices method.
 
     This function wraps :func:`skimage.feature.blob_dog` function and
@@ -503,25 +509,42 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
 
     """
     z = z / np.max(z)
-    blobs = blob_dog(z, min_sigma=min_sigma, max_sigma=max_sigma,
-                     sigma_ratio=sigma_ratio, threshold=threshold,
-                     overlap=overlap, exclude_border=exclude_border)
+    blobs = blob_dog(
+        z,
+        min_sigma=min_sigma,
+        max_sigma=max_sigma,
+        sigma_ratio=sigma_ratio,
+        threshold=threshold,
+        overlap=overlap,
+        exclude_border=exclude_border,
+    )
     try:
         centers = np.round(blobs[:, :2]).astype(int)
     except IndexError:
         return NO_PEAKS
     clean_centers = []
     for center in centers:
-        if len(np.intersect1d(center, (0, 1) + z.shape + tuple(
-                        c - 1 for c in z.shape))) > 0:
+        if (
+            len(
+                np.intersect1d(center, (0, 1) + z.shape + tuple(c - 1 for c in z.shape))
+            )
+            > 0
+        ):
             continue
         clean_centers.append(center)
     return clean_peaks(np.array(clean_centers))
 
 
-def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
-                   threshold=0.2, overlap=0.5, log_scale=False,
-                   exclude_border=False):
+def find_peaks_log(
+    z,
+    min_sigma=1.0,
+    max_sigma=50.0,
+    num_sigma=10,
+    threshold=0.2,
+    overlap=0.5,
+    log_scale=False,
+    exclude_border=False,
+):
     """Method to locate peaks via the Laplacian of Gaussian Matrices method.
 
     This function wraps :func:`skimage.feature.blob_log` function and
@@ -544,14 +567,21 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     z = z / np.max(z)
     if isinstance(num_sigma, float):
         raise ValueError("`num_sigma` parameter should be an integer.")
-    blobs = blob_log(z, min_sigma=min_sigma, max_sigma=max_sigma,
-                     num_sigma=num_sigma, threshold=threshold, overlap=overlap,
-                     log_scale=log_scale, exclude_border=exclude_border)
+    blobs = blob_log(
+        z,
+        min_sigma=min_sigma,
+        max_sigma=max_sigma,
+        num_sigma=num_sigma,
+        threshold=threshold,
+        overlap=overlap,
+        log_scale=log_scale,
+        exclude_border=exclude_border,
+    )
     # Attempt to return only peak positions. If no peaks exist, return an
     # empty array.
     try:
         centers = np.round(blobs[:, :2]).astype(int)
-        ind = np.lexsort((centers[:,0], centers[:,1]))
+        ind = np.lexsort((centers[:, 0], centers[:, 1]))
     except IndexError:
         return NO_PEAKS
     return centers[ind]
@@ -582,10 +612,8 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
     peaks : :class:`numpy.ndarray`
         Array of peak coordinates with shape (n_peaks, 2).
     """
-    pad_input = kwargs.pop('pad_input', True)
+    pad_input = kwargs.pop("pad_input", True)
     response_image = match_template(z, template, pad_input=pad_input, **kwargs)
-    peaks = find_peaks_minmax(response_image,
-                              distance=distance,
-                              threshold=threshold)
+    peaks = find_peaks_minmax(response_image, distance=distance, threshold=threshold)
 
     return clean_peaks(peaks)

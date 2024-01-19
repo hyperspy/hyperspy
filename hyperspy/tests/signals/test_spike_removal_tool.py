@@ -60,9 +60,9 @@ def test_spikes_removal_tool():
 
 
 def test_spikes_removal_tool_navigation_dimension_0():
-    #Artificial Signal
+    # Artificial Signal
     s = Signal1D(np.ones(1234))
-    #Add a spike
+    # Add a spike
     s.data[333] = 5
     s.add_gaussian_noise(0.01, random_state=1)
     assert s.axes_manager.navigation_dimension == 0
@@ -101,12 +101,17 @@ def test_spikes_removal_tool_non_interactive_masking():
     s.data[0, 2, 29] += 1
     s.data[1, 2, 14] += 1
 
-    navigation_mask = np.zeros((2, 3), dtype='bool')
+    navigation_mask = np.zeros((2, 3), dtype="bool")
     navigation_mask[1, 0] = True
-    signal_mask = np.zeros((30,), dtype='bool')
+    signal_mask = np.zeros((30,), dtype="bool")
     signal_mask[28:] = True
-    s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=False,
-                          navigation_mask=navigation_mask, signal_mask=signal_mask)
+    s.spikes_removal_tool(
+        threshold=0.5,
+        interactive=False,
+        add_noise=False,
+        navigation_mask=navigation_mask,
+        signal_mask=signal_mask,
+    )
     np.testing.assert_almost_equal(s.data[1, 0, 1], 3, decimal=5)
     np.testing.assert_almost_equal(s.data[0, 2, 29], 2, decimal=5)
     np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)

@@ -62,19 +62,32 @@ from hyperspy.misc.utils import (
     slugify,
     to_numpy,
     underline,
-    )
+)
 from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
-    CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, LAZY_OUTPUT_ARG)
-from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
-                                      BASE_PLOT_DOCSTRING_PARAMETERS,
-                                      PLOT2D_KWARGS_DOCSTRING)
+    ONE_AXIS_PARAMETER,
+    MANY_AXIS_PARAMETER,
+    OUT_ARG,
+    NAN_FUNC,
+    OPTIMIZE_ARG,
+    RECHUNK_ARG,
+    SHOW_PROGRESSBAR_ARG,
+    NUM_WORKERS_ARG,
+    CLUSTER_SIGNALS_ARG,
+    HISTOGRAM_BIN_ARGS,
+    HISTOGRAM_MAX_BIN_ARGS,
+    LAZY_OUTPUT_ARG,
+)
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING,
+    PLOT1D_DOCSTRING,
+    BASE_PLOT_DOCSTRING_PARAMETERS,
+    PLOT2D_KWARGS_DOCSTRING,
+)
 from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -87,6 +100,7 @@ _logger = logging.getLogger(__name__)
 
 try:
     import cupy as cp
+
     CUPY_INSTALLED = True  # pragma: no cover
 except ImportError:
     CUPY_INSTALLED = False
@@ -94,9 +108,9 @@ except ImportError:
 
 def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
     for key in dic:
-        if key.startswith('_sig_'):
+        if key.startswith("_sig_"):
             signals.append((key, dic))
-        elif key.startswith('_hspy_AxesManager_'):
+        elif key.startswith("_hspy_AxesManager_"):
             axes_managers.append((key, dic))
         elif isinstance(dic[key], (list, tuple)):
             signals = []
@@ -111,8 +125,8 @@ def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
                 dic[key],
                 axes_managers=axes_managers,
                 signals=signals,
-                containers=containers
-                )
+                containers=containers,
+            )
 
 
 def _obj_in_dict2hspy(dic, lazy):
@@ -128,18 +142,16 @@ def _obj_in_dict2hspy(dic, lazy):
 
     """
     from hyperspy.io import dict2signal
+
     axes_managers, signals, containers = [], [], []
     _dic_get_hs_obj_paths(
-        dic,
-        axes_managers=axes_managers,
-        signals=signals,
-        containers=containers
-        )
+        dic, axes_managers=axes_managers, signals=signals, containers=containers
+    )
     for key, dic in axes_managers:
-        dic[key[len('_hspy_AxesManager_'):]] = AxesManager(dic[key])
+        dic[key[len("_hspy_AxesManager_") :]] = AxesManager(dic[key])
         del dic[key]
     for key, dic in signals:
-        dic[key[len('_sig_'):]] = dict2signal(dic[key], lazy=lazy)
+        dic[key[len("_sig_") :]] = dict2signal(dic[key], lazy=lazy)
         del dic[key]
     for dickey, signals_idx in containers:
         dic, key = dickey
@@ -156,11 +168,9 @@ def _obj_in_dict2hspy(dic, lazy):
 
 class ModelManager(object):
 
-    """Container for models
-    """
+    """Container for models"""
 
     class ModelStub(object):
-
         def __init__(self, mm, name):
             self._name = name
             self._mm = mm
@@ -169,8 +179,7 @@ class ModelManager(object):
             self.pop = lambda: mm.pop(self._name)
             self.restore.__doc__ = "Returns the stored model"
             self.remove.__doc__ = "Removes the stored model"
-            self.pop.__doc__ = \
-                "Returns the stored model and removes it from storage"
+            self.pop.__doc__ = "Returns the stored model and removes it from storage"
 
         def __repr__(self):
             return repr(self._mm._models[self._name])
@@ -183,30 +192,32 @@ class ModelManager(object):
     def _add_dictionary(self, dictionary=None):
         if dictionary is not None:
             for k, v in dictionary.items():
-                if k.startswith('_') or k in ['restore', 'remove']:
+                if k.startswith("_") or k in ["restore", "remove"]:
                     raise KeyError("Can't add dictionary with key '%s'" % k)
                 k = slugify(k, True)
                 self._models.set_item(k, v)
                 setattr(self, k, self.ModelStub(self, k))
 
     def _set_nice_description(self, node, names):
-        ans = {'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-               'dimensions': self._signal.axes_manager._get_dimension_str(),
-               }
+        ans = {
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "dimensions": self._signal.axes_manager._get_dimension_str(),
+        }
         node.add_dictionary(ans)
         for n in names:
-            node.add_node('components.' + n)
+            node.add_node("components." + n)
 
     def _save(self, name, dictionary):
-
-        _abc = 'abcdefghijklmnopqrstuvwxyz'
+        _abc = "abcdefghijklmnopqrstuvwxyz"
 
         def get_letter(models):
             howmany = len(models)
             if not howmany:
-                return 'a'
+                return "a"
             order = int(np.log(howmany) / np.log(26)) + 1
-            letters = [_abc, ] * order
+            letters = [
+                _abc,
+            ] * order
             for comb in product(*letters):
                 guess = "".join(comb)
                 if guess not in models.keys():
@@ -222,10 +233,10 @@ class ModelManager(object):
 
         self._models.add_node(name)
         node = self._models.get_item(name)
-        names = [c['name'] for c in dictionary['components']]
+        names = [c["name"] for c in dictionary["components"]]
         self._set_nice_description(node, names)
 
-        node.set_item('_dict', dictionary)
+        node.set_item("_dict", dictionary)
         setattr(self, name, self.ModelStub(self, name))
 
     def store(self, model, name=None):
@@ -248,22 +259,22 @@ class ModelManager(object):
         if model.signal is self._signal:
             self._save(name, model.as_dictionary())
         else:
-            raise ValueError("The model is created from a different signal, "
-                             "you should store it there")
+            raise ValueError(
+                "The model is created from a different signal, "
+                "you should store it there"
+            )
 
     def _check_name(self, name, existing=False):
         if not isinstance(name, str):
-            raise KeyError('Name has to be a string')
-        if name.startswith('_'):
+            raise KeyError("Name has to be a string")
+        if name.startswith("_"):
             raise KeyError('Name cannot start with "_" symbol')
-        if '.' in name:
+        if "." in name:
             raise KeyError('Name cannot contain dots (".")')
         name = slugify(name, True)
         if existing:
             if name not in self._models:
-                raise KeyError(
-                    "Model named '%s' is not currently stored" %
-                    name)
+                raise KeyError("Model named '%s' is not currently stored" % name)
         return name
 
     def remove(self, name):
@@ -321,7 +332,7 @@ class ModelManager(object):
 
         """
         name = self._check_name(name, True)
-        d = self._models.get_item(name + '._dict').as_dictionary()
+        d = self._models.get_item(name + "._dict").as_dictionary()
         return self._signal.create_model(dictionary=copy.deepcopy(d))
 
     def __repr__(self):
@@ -338,14 +349,23 @@ class ModelManager(object):
 class MVATools(object):
     # TODO: All of the plotting methods here should move to drawing
 
-    def _plot_factors_or_pchars(self, factors, comp_ids=None,
-                                calibrate=True, avg_char=False,
-                                same_window=True, comp_label='PC',
-                                img_data=None,
-                                plot_shifts=True, plot_char=4,
-                                cmap=plt.cm.gray, quiver_color='white',
-                                vector_scale=1,
-                                per_row=3, ax=None):
+    def _plot_factors_or_pchars(
+        self,
+        factors,
+        comp_ids=None,
+        calibrate=True,
+        avg_char=False,
+        same_window=True,
+        comp_label="PC",
+        img_data=None,
+        plot_shifts=True,
+        plot_char=4,
+        cmap=plt.cm.gray,
+        quiver_color="white",
+        vector_scale=1,
+        per_row=3,
+        ax=None,
+    ):
         """Plot components from PCA or ICA, or peak characteristics.
 
         Parameters
@@ -405,7 +425,7 @@ class MVATools(object):
         if comp_ids is None:
             comp_ids = range(factors.shape[1])
 
-        elif not hasattr(comp_ids, '__iter__'):
+        elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
 
         n = len(comp_ids)
@@ -429,7 +449,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
-                        plt.title('%s' % comp_label)
+                        plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
                 ax = sigdraw._plot_1D_component(
                     factors=factors,
@@ -438,27 +458,32 @@ class MVATools(object):
                     ax=ax,
                     calibrate=calibrate,
                     comp_label=comp_label,
-                    same_window=same_window)
+                    same_window=same_window,
+                )
                 if same_window:
-                    plt.legend(ncol=factors.shape[1] // 2, loc='best')
+                    plt.legend(ncol=factors.shape[1] // 2, loc="best")
             elif self.axes_manager.signal_dimension == 2:
                 if same_window:
                     ax = f.add_subplot(rows, per_row, i + 1)
                 else:
                     if i > 0:
                         f = plt.figure()
-                        plt.title('%s' % comp_label)
+                        plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
 
-                sigdraw._plot_2D_component(factors=factors,
-                                           idx=comp_ids[i],
-                                           axes_manager=self.axes_manager,
-                                           calibrate=calibrate, ax=ax,
-                                           cmap=cmap, comp_label=comp_label)
+                sigdraw._plot_2D_component(
+                    factors=factors,
+                    idx=comp_ids[i],
+                    axes_manager=self.axes_manager,
+                    calibrate=calibrate,
+                    ax=ax,
+                    cmap=cmap,
+                    comp_label=comp_label,
+                )
             if not same_window:
                 fig_list.append(f)
         if same_window:  # Main title for same window
-            title = '%s' % comp_label
+            title = "%s" % comp_label
             if self.axes_manager.signal_dimension == 1:
                 plt.title(title)
             else:
@@ -472,17 +497,26 @@ class MVATools(object):
         else:
             return f
 
-    def _plot_loadings(self, loadings, comp_ids, calibrate=True,
-                       same_window=True, comp_label=None,
-                       with_factors=False, factors=None,
-                       cmap=plt.cm.gray, no_nans=False, per_row=3,
-                       axes_decor='all'):
+    def _plot_loadings(
+        self,
+        loadings,
+        comp_ids,
+        calibrate=True,
+        same_window=True,
+        comp_label=None,
+        with_factors=False,
+        factors=None,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor="all",
+    ):
         if same_window is None:
             same_window = True
         if comp_ids is None:
             comp_ids = range(loadings.shape[0])
 
-        elif not hasattr(comp_ids, '__iter__'):
+        elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
 
         n = len(comp_ids)
@@ -506,7 +540,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
-                        plt.title('%s' % comp_label)
+                        plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
             elif self.axes_manager.navigation_dimension == 2:
                 if same_window:
@@ -514,17 +548,24 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
-                        plt.title('%s' % comp_label)
+                        plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
             sigdraw._plot_loading(
-                loadings, idx=comp_ids[i], axes_manager=self.axes_manager,
-                no_nans=no_nans, calibrate=calibrate, cmap=cmap,
-                comp_label=comp_label, ax=ax, same_window=same_window,
-                axes_decor=axes_decor)
+                loadings,
+                idx=comp_ids[i],
+                axes_manager=self.axes_manager,
+                no_nans=no_nans,
+                calibrate=calibrate,
+                cmap=cmap,
+                comp_label=comp_label,
+                ax=ax,
+                same_window=same_window,
+                axes_decor=axes_decor,
+            )
             if not same_window:
                 fig_list.append(f)
         if same_window:  # Main title for same window
-            title = '%s' % comp_label
+            title = "%s" % comp_label
             if self.axes_manager.navigation_dimension == 1:
                 plt.title(title)
             else:
@@ -536,45 +577,53 @@ class MVATools(object):
         if not same_window:
             if with_factors:
                 return fig_list, self._plot_factors_or_pchars(
-                    factors, comp_ids=comp_ids, calibrate=calibrate,
-                    same_window=same_window, comp_label=comp_label,
-                    per_row=per_row)
+                    factors,
+                    comp_ids=comp_ids,
+                    calibrate=calibrate,
+                    same_window=same_window,
+                    comp_label=comp_label,
+                    per_row=per_row,
+                )
             else:
                 return fig_list
         else:
             if self.axes_manager.navigation_dimension == 1:
-                plt.legend(ncol=loadings.shape[0] // 2, loc='best')
+                plt.legend(ncol=loadings.shape[0] // 2, loc="best")
                 animate_legend(f)
             if with_factors:
-                return f, self._plot_factors_or_pchars(factors,
-                                                       comp_ids=comp_ids,
-                                                       calibrate=calibrate,
-                                                       same_window=same_window,
-                                                       comp_label=comp_label,
-                                                       per_row=per_row)
+                return f, self._plot_factors_or_pchars(
+                    factors,
+                    comp_ids=comp_ids,
+                    calibrate=calibrate,
+                    same_window=same_window,
+                    comp_label=comp_label,
+                    per_row=per_row,
+                )
             else:
                 return f
 
-    def _export_factors(self,
-                        factors,
-                        folder=None,
-                        comp_ids=None,
-                        multiple_files=True,
-                        save_figures=False,
-                        save_figures_format='png',
-                        factor_prefix=None,
-                        factor_format=None,
-                        comp_label=None,
-                        cmap=plt.cm.gray,
-                        plot_shifts=True,
-                        plot_char=4,
-                        img_data=None,
-                        same_window=False,
-                        calibrate=True,
-                        quiver_color='white',
-                        vector_scale=1,
-                        no_nans=True, per_row=3):
-
+    def _export_factors(
+        self,
+        factors,
+        folder=None,
+        comp_ids=None,
+        multiple_files=True,
+        save_figures=False,
+        save_figures_format="png",
+        factor_prefix=None,
+        factor_format=None,
+        comp_label=None,
+        cmap=plt.cm.gray,
+        plot_shifts=True,
+        plot_char=4,
+        img_data=None,
+        same_window=False,
+        calibrate=True,
+        quiver_color="white",
+        vector_scale=1,
+        no_nans=True,
+        per_row=3,
+    ):
         from hyperspy._signals.signal2d import Signal2D
         from hyperspy._signals.signal1d import Signal1D
 
@@ -582,12 +631,12 @@ class MVATools(object):
             multiple_files = True
 
         if factor_format is None:
-            factor_format = 'hspy'
+            factor_format = "hspy"
 
         # Select the desired factors
         if comp_ids is None:
             comp_ids = range(factors.shape[1])
-        elif not hasattr(comp_ids, '__iter__'):
+        elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
         mask = np.zeros(factors.shape[1], dtype=np.bool)
         for idx in comp_ids:
@@ -596,25 +645,29 @@ class MVATools(object):
 
         if save_figures is True:
             plt.ioff()
-            fac_plots = self._plot_factors_or_pchars(factors,
-                                                     comp_ids=comp_ids,
-                                                     same_window=same_window,
-                                                     comp_label=comp_label,
-                                                     img_data=img_data,
-                                                     plot_shifts=plot_shifts,
-                                                     plot_char=plot_char,
-                                                     cmap=cmap,
-                                                     per_row=per_row,
-                                                     quiver_color=quiver_color,
-                                                     vector_scale=vector_scale)
+            fac_plots = self._plot_factors_or_pchars(
+                factors,
+                comp_ids=comp_ids,
+                same_window=same_window,
+                comp_label=comp_label,
+                img_data=img_data,
+                plot_shifts=plot_shifts,
+                plot_char=plot_char,
+                cmap=cmap,
+                per_row=per_row,
+                quiver_color=quiver_color,
+                vector_scale=vector_scale,
+            )
             for idx in range(len(comp_ids)):
-                filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx],
-                                           save_figures_format)
+                filename = "%s_%02i.%s" % (
+                    factor_prefix,
+                    comp_ids[idx],
+                    save_figures_format,
+                )
                 if folder is not None:
                     filename = Path(folder, filename)
                 ensure_directory(filename)
-                _args = {'dpi': 600,
-                         'format': save_figures_format}
+                _args = {"dpi": 600, "format": save_figures_format}
                 fac_plots[idx].savefig(filename, **_args)
             plt.ion()
 
@@ -624,104 +677,127 @@ class MVATools(object):
                 axes_dicts = []
                 axes = self.axes_manager.signal_axes[::-1]
                 shape = (axes[1].size, axes[0].size)
-                factor_data = np.rollaxis(
-                    factors.reshape((shape[0], shape[1], -1)), 2)
+                factor_data = np.rollaxis(factors.reshape((shape[0], shape[1], -1)), 2)
                 axes_dicts.append(axes[0].get_axis_dictionary())
                 axes_dicts.append(axes[1].get_axis_dictionary())
-                axes_dicts.append({'name': 'factor_index',
-                                   'scale': 1.,
-                                   'offset': 0.,
-                                   'size': int(factors.shape[1]),
-                                   'units': 'factor',
-                                   'index_in_array': 0, })
-                s = Signal2D(factor_data,
-                             axes=axes_dicts,
-                             metadata={
-                                 'General': {'title': '%s from %s' % (
-                                     factor_prefix,
-                                     self.metadata.General.title),
-                                 }})
-            elif self.axes_manager.signal_dimension == 1:
-                axes = [self.axes_manager.signal_axes[0].get_axis_dictionary(),
-                        {'name': 'factor_index',
-                         'scale': 1.,
-                         'offset': 0.,
-                         'size': int(factors.shape[1]),
-                         'units': 'factor',
-                         'index_in_array': 0,
-                         }]
-                axes[0]['index_in_array'] = 1
-                s = Signal1D(
-                    factors.T, axes=axes, metadata={
+                axes_dicts.append(
+                    {
+                        "name": "factor_index",
+                        "scale": 1.0,
+                        "offset": 0.0,
+                        "size": int(factors.shape[1]),
+                        "units": "factor",
+                        "index_in_array": 0,
+                    }
+                )
+                s = Signal2D(
+                    factor_data,
+                    axes=axes_dicts,
+                    metadata={
                         "General": {
-                            'title': '%s from %s' %
-                            (factor_prefix, self.metadata.General.title), }})
-            filename = '%ss.%s' % (factor_prefix, factor_format)
+                            "title": "%s from %s"
+                            % (factor_prefix, self.metadata.General.title),
+                        }
+                    },
+                )
+            elif self.axes_manager.signal_dimension == 1:
+                axes = [
+                    self.axes_manager.signal_axes[0].get_axis_dictionary(),
+                    {
+                        "name": "factor_index",
+                        "scale": 1.0,
+                        "offset": 0.0,
+                        "size": int(factors.shape[1]),
+                        "units": "factor",
+                        "index_in_array": 0,
+                    },
+                ]
+                axes[0]["index_in_array"] = 1
+                s = Signal1D(
+                    factors.T,
+                    axes=axes,
+                    metadata={
+                        "General": {
+                            "title": "%s from %s"
+                            % (factor_prefix, self.metadata.General.title),
+                        }
+                    },
+                )
+            filename = "%ss.%s" % (factor_prefix, factor_format)
             if folder is not None:
                 filename = Path(folder, filename)
             s.save(filename)
         else:  # Separate files
             if self.axes_manager.signal_dimension == 1:
-
-                axis_dict = self.axes_manager.signal_axes[0].\
-                    get_axis_dictionary()
-                axis_dict['index_in_array'] = 0
+                axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
+                axis_dict["index_in_array"] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal1D(factors[:, index],
-                                 axes=[axis_dict, ],
-                                 metadata={
-                                     "General": {'title': '%s from %s' % (
-                                         factor_prefix,
-                                         self.metadata.General.title),
-                                     }})
-                    filename = '%s-%i.%s' % (factor_prefix,
-                                             dim,
-                                             factor_format)
+                    s = Signal1D(
+                        factors[:, index],
+                        axes=[
+                            axis_dict,
+                        ],
+                        metadata={
+                            "General": {
+                                "title": "%s from %s"
+                                % (factor_prefix, self.metadata.General.title),
+                            }
+                        },
+                    )
+                    filename = "%s-%i.%s" % (factor_prefix, dim, factor_format)
                     if folder is not None:
                         filename = Path(folder, filename)
                     s.save(filename)
 
             if self.axes_manager.signal_dimension == 2:
                 axes = self.axes_manager.signal_axes
-                axes_dicts = [axes[0].get_axis_dictionary(),
-                              axes[1].get_axis_dictionary()]
-                axes_dicts[0]['index_in_array'] = 0
-                axes_dicts[1]['index_in_array'] = 1
+                axes_dicts = [
+                    axes[0].get_axis_dictionary(),
+                    axes[1].get_axis_dictionary(),
+                ]
+                axes_dicts[0]["index_in_array"] = 0
+                axes_dicts[1]["index_in_array"] = 1
 
                 factor_data = factors.reshape(
-                    self.axes_manager._signal_shape_in_array + [-1, ])
+                    self.axes_manager._signal_shape_in_array
+                    + [
+                        -1,
+                    ]
+                )
 
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    im = Signal2D(factor_data[..., index],
-                                  axes=axes_dicts,
-                                  metadata={
-                                      "General": {'title': '%s from %s' % (
-                                          factor_prefix,
-                                          self.metadata.General.title),
-                                      }})
-                    filename = '%s-%i.%s' % (factor_prefix,
-                                             dim,
-                                             factor_format)
+                    im = Signal2D(
+                        factor_data[..., index],
+                        axes=axes_dicts,
+                        metadata={
+                            "General": {
+                                "title": "%s from %s"
+                                % (factor_prefix, self.metadata.General.title),
+                            }
+                        },
+                    )
+                    filename = "%s-%i.%s" % (factor_prefix, dim, factor_format)
                     if folder is not None:
                         filename = Path(folder, filename)
                     im.save(filename)
 
-    def _export_loadings(self,
-                         loadings,
-                         folder=None,
-                         comp_ids=None,
-                         multiple_files=True,
-                         loading_prefix=None,
-                         loading_format="hspy",
-                         save_figures_format='png',
-                         comp_label=None,
-                         cmap=plt.cm.gray,
-                         save_figures=False,
-                         same_window=False,
-                         calibrate=True,
-                         no_nans=True,
-                         per_row=3):
-
+    def _export_loadings(
+        self,
+        loadings,
+        folder=None,
+        comp_ids=None,
+        multiple_files=True,
+        loading_prefix=None,
+        loading_format="hspy",
+        save_figures_format="png",
+        comp_label=None,
+        cmap=plt.cm.gray,
+        save_figures=False,
+        same_window=False,
+        calibrate=True,
+        no_nans=True,
+        per_row=3,
+    ):
         from hyperspy._signals.signal2d import Signal2D
         from hyperspy._signals.signal1d import Signal1D
 
@@ -729,11 +805,11 @@ class MVATools(object):
             multiple_files = True
 
         if loading_format is None:
-            loading_format = 'hspy'
+            loading_format = "hspy"
 
         if comp_ids is None:
             comp_ids = range(loadings.shape[0])
-        elif not hasattr(comp_ids, '__iter__'):
+        elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
         mask = np.zeros(loadings.shape[0], dtype=np.bool)
         for idx in comp_ids:
@@ -742,20 +818,26 @@ class MVATools(object):
 
         if save_figures is True:
             plt.ioff()
-            sc_plots = self._plot_loadings(loadings, comp_ids=comp_ids,
-                                           calibrate=calibrate,
-                                           same_window=same_window,
-                                           comp_label=comp_label,
-                                           cmap=cmap, no_nans=no_nans,
-                                           per_row=per_row)
+            sc_plots = self._plot_loadings(
+                loadings,
+                comp_ids=comp_ids,
+                calibrate=calibrate,
+                same_window=same_window,
+                comp_label=comp_label,
+                cmap=cmap,
+                no_nans=no_nans,
+                per_row=per_row,
+            )
             for idx in range(len(comp_ids)):
-                filename = '%s_%02i.%s' % (loading_prefix, comp_ids[idx],
-                                           save_figures_format)
+                filename = "%s_%02i.%s" % (
+                    loading_prefix,
+                    comp_ids[idx],
+                    save_figures_format,
+                )
                 if folder is not None:
                     filename = Path(folder, filename)
                 ensure_directory(filename)
-                _args = {'dpi': 600,
-                         'format': save_figures_format}
+                _args = {"dpi": 600, "format": save_figures_format}
                 sc_plots[idx].savefig(filename, **_args)
             plt.ion()
         elif multiple_files is False:
@@ -765,55 +847,69 @@ class MVATools(object):
                 shape = (axes[1].size, axes[0].size)
                 loading_data = loadings.reshape((-1, shape[0], shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
-                axes_dicts[0]['index_in_array'] = 1
+                axes_dicts[0]["index_in_array"] = 1
                 axes_dicts.append(axes[1].get_axis_dictionary())
-                axes_dicts[1]['index_in_array'] = 2
-                axes_dicts.append({'name': 'loading_index',
-                                   'scale': 1.,
-                                   'offset': 0.,
-                                   'size': int(loadings.shape[0]),
-                                   'units': 'factor',
-                                   'index_in_array': 0, })
-                s = Signal2D(loading_data,
-                             axes=axes_dicts,
-                             metadata={
-                                 "General": {'title': '%s from %s' % (
-                                     loading_prefix,
-                                     self.metadata.General.title),
-                                 }})
+                axes_dicts[1]["index_in_array"] = 2
+                axes_dicts.append(
+                    {
+                        "name": "loading_index",
+                        "scale": 1.0,
+                        "offset": 0.0,
+                        "size": int(loadings.shape[0]),
+                        "units": "factor",
+                        "index_in_array": 0,
+                    }
+                )
+                s = Signal2D(
+                    loading_data,
+                    axes=axes_dicts,
+                    metadata={
+                        "General": {
+                            "title": "%s from %s"
+                            % (loading_prefix, self.metadata.General.title),
+                        }
+                    },
+                )
             elif self.axes_manager.navigation_dimension == 1:
-                cal_axis = self.axes_manager.navigation_axes[0].\
-                    get_axis_dictionary()
-                cal_axis['index_in_array'] = 1
-                axes = [{'name': 'loading_index',
-                         'scale': 1.,
-                         'offset': 0.,
-                         'size': int(loadings.shape[0]),
-                         'units': 'comp_id',
-                         'index_in_array': 0, },
-                        cal_axis]
-                s = Signal2D(loadings,
-                             axes=axes,
-                             metadata={
-                                 "General": {'title': '%s from %s' % (
-                                     loading_prefix,
-                                     self.metadata.General.title),
-                                 }})
-            filename = '%ss.%s' % (loading_prefix, loading_format)
+                cal_axis = self.axes_manager.navigation_axes[0].get_axis_dictionary()
+                cal_axis["index_in_array"] = 1
+                axes = [
+                    {
+                        "name": "loading_index",
+                        "scale": 1.0,
+                        "offset": 0.0,
+                        "size": int(loadings.shape[0]),
+                        "units": "comp_id",
+                        "index_in_array": 0,
+                    },
+                    cal_axis,
+                ]
+                s = Signal2D(
+                    loadings,
+                    axes=axes,
+                    metadata={
+                        "General": {
+                            "title": "%s from %s"
+                            % (loading_prefix, self.metadata.General.title),
+                        }
+                    },
+                )
+            filename = "%ss.%s" % (loading_prefix, loading_format)
             if folder is not None:
                 filename = Path(folder, filename)
             s.save(filename)
         else:  # Separate files
             if self.axes_manager.navigation_dimension == 1:
-                axis_dict = self.axes_manager.navigation_axes[0].\
-                    get_axis_dictionary()
-                axis_dict['index_in_array'] = 0
+                axis_dict = self.axes_manager.navigation_axes[0].get_axis_dictionary()
+                axis_dict["index_in_array"] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal1D(loadings[index],
-                                 axes=[axis_dict, ])
-                    filename = '%s-%i.%s' % (loading_prefix,
-                                             dim,
-                                             loading_format)
+                    s = Signal1D(
+                        loadings[index],
+                        axes=[
+                            axis_dict,
+                        ],
+                    )
+                    filename = "%s-%i.%s" % (loading_prefix, dim, loading_format)
                     if folder is not None:
                         filename = Path(folder, filename)
                     s.save(filename)
@@ -823,33 +919,35 @@ class MVATools(object):
                 shape = (axes[0].size, axes[1].size)
                 loading_data = loadings.reshape((-1, shape[0], shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
-                axes_dicts[0]['index_in_array'] = 0
+                axes_dicts[0]["index_in_array"] = 0
                 axes_dicts.append(axes[1].get_axis_dictionary())
-                axes_dicts[1]['index_in_array'] = 1
+                axes_dicts[1]["index_in_array"] = 1
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal2D(loading_data[index, ...],
-                                 axes=axes_dicts,
-                                 metadata={
-                                     "General": {'title': '%s from %s' % (
-                                         loading_prefix,
-                                         self.metadata.General.title),
-                                     }})
-                    filename = '%s-%i.%s' % (loading_prefix,
-                                             dim,
-                                             loading_format)
+                    s = Signal2D(
+                        loading_data[index, ...],
+                        axes=axes_dicts,
+                        metadata={
+                            "General": {
+                                "title": "%s from %s"
+                                % (loading_prefix, self.metadata.General.title),
+                            }
+                        },
+                    )
+                    filename = "%s-%i.%s" % (loading_prefix, dim, loading_format)
                     if folder is not None:
                         filename = Path(folder, filename)
                     s.save(filename)
 
-    def plot_decomposition_factors(self,
-                                   comp_ids=None,
-                                   calibrate=True,
-                                   same_window=True,
-                                   title=None,
-                                   cmap=plt.cm.gray,
-                                   per_row=3,
-                                   **kwargs,
-                                   ):
+    def plot_decomposition_factors(
+        self,
+        comp_ids=None,
+        calibrate=True,
+        same_window=True,
+        title=None,
+        cmap=plt.cm.gray,
+        per_row=3,
+        **kwargs,
+    ):
         """Plot factors from a decomposition. In case of 1D signal axis, each
         factors line can be toggled on and off by clicking on their
         corresponding line in the legend.
@@ -888,13 +986,17 @@ class MVATools(object):
 
         """
         if self.axes_manager.signal_dimension > 2:
-            raise NotImplementedError("This method cannot plot factors of "
-                                      "signals of dimension higher than 2."
-                                      "You can use "
-                                      "`plot_decomposition_results` instead.")
+            raise NotImplementedError(
+                "This method cannot plot factors of "
+                "signals of dimension higher than 2."
+                "You can use "
+                "`plot_decomposition_results` instead."
+            )
         if self.learning_results.factors is None:
-            raise RuntimeError("No learning results found. A 'decomposition' "
-                               "needs to be performed first.")
+            raise RuntimeError(
+                "No learning results found. A 'decomposition' "
+                "needs to be performed first."
+            )
         if same_window is None:
             same_window = True
         if self.learning_results.factors is None:
@@ -906,18 +1008,22 @@ class MVATools(object):
             else:
                 raise ValueError(
                     "Please provide the number of components to plot via the "
-                    "`comp_ids` argument.")
+                    "`comp_ids` argument."
+                )
         if title is None:
-            title = self._get_plot_title('Decomposition factors of',
-                                         same_window=same_window)
+            title = self._get_plot_title(
+                "Decomposition factors of", same_window=same_window
+            )
 
-        return self._plot_factors_or_pchars(factors,
-                                            comp_ids=comp_ids,
-                                            calibrate=calibrate,
-                                            same_window=same_window,
-                                            comp_label=title,
-                                            cmap=cmap,
-                                            per_row=per_row)
+        return self._plot_factors_or_pchars(
+            factors,
+            comp_ids=comp_ids,
+            calibrate=calibrate,
+            same_window=same_window,
+            comp_label=title,
+            cmap=cmap,
+            per_row=per_row,
+        )
 
     def plot_bss_factors(
         self,
@@ -928,7 +1034,7 @@ class MVATools(object):
         cmap=plt.cm.gray,
         per_row=3,
         **kwargs,
-        ):
+    ):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking
         on their corresponding line in the legend.
@@ -965,41 +1071,47 @@ class MVATools(object):
 
         """
         if self.axes_manager.signal_dimension > 2:
-            raise NotImplementedError("This method cannot plot factors of "
-                                      "signals of dimension higher than 2."
-                                      "You can use "
-                                      "`plot_decomposition_results` instead.")
+            raise NotImplementedError(
+                "This method cannot plot factors of "
+                "signals of dimension higher than 2."
+                "You can use "
+                "`plot_decomposition_results` instead."
+            )
         if self.learning_results.bss_factors is None:
-            raise RuntimeError("No learning results found. A "
-                               "'blind_source_separation' needs to be "
-                               "performed first.")
+            raise RuntimeError(
+                "No learning results found. A "
+                "'blind_source_separation' needs to be "
+                "performed first."
+            )
 
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
         if title is None:
-            title = self._get_plot_title('BSS factors of',
-                                         same_window=same_window)
+            title = self._get_plot_title("BSS factors of", same_window=same_window)
 
-        return self._plot_factors_or_pchars(factors,
-                                            comp_ids=comp_ids,
-                                            calibrate=calibrate,
-                                            same_window=same_window,
-                                            comp_label=title,
-                                            per_row=per_row)
+        return self._plot_factors_or_pchars(
+            factors,
+            comp_ids=comp_ids,
+            calibrate=calibrate,
+            same_window=same_window,
+            comp_label=title,
+            per_row=per_row,
+        )
 
-    def plot_decomposition_loadings(self,
-                                    comp_ids=None,
-                                    calibrate=True,
-                                    same_window=True,
-                                    title=None,
-                                    with_factors=False,
-                                    cmap=plt.cm.gray,
-                                    no_nans=False,
-                                    per_row=3,
-                                    axes_decor='all',
-                                    **kwargs,
-                                    ):
+    def plot_decomposition_loadings(
+        self,
+        comp_ids=None,
+        calibrate=True,
+        same_window=True,
+        title=None,
+        with_factors=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor="all",
+        **kwargs,
+    ):
         """Plot loadings from a decomposition. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
@@ -1052,13 +1164,17 @@ class MVATools(object):
 
         """
         if self.axes_manager.navigation_dimension > 2:
-            raise NotImplementedError("This method cannot plot loadings of "
-                                      "dimension higher than 2."
-                                      "You can use "
-                                      "`plot_decomposition_results` instead.")
+            raise NotImplementedError(
+                "This method cannot plot loadings of "
+                "dimension higher than 2."
+                "You can use "
+                "`plot_decomposition_results` instead."
+            )
         if self.learning_results.loadings is None:
-            raise RuntimeError("No learning results found. A 'decomposition' "
-                               "needs to be performed first.")
+            raise RuntimeError(
+                "No learning results found. A 'decomposition' "
+                "needs to be performed first."
+            )
         if same_window is None:
             same_window = True
         if self.learning_results.loadings is None:
@@ -1075,11 +1191,13 @@ class MVATools(object):
             else:
                 raise ValueError(
                     "Please provide the number of components to plot via the "
-                    "`comp_ids` argument")
+                    "`comp_ids` argument"
+                )
 
         if title is None:
             title = self._get_plot_title(
-                'Decomposition loadings of', same_window=same_window)
+                "Decomposition loadings of", same_window=same_window
+            )
 
         return self._plot_loadings(
             loadings,
@@ -1091,20 +1209,22 @@ class MVATools(object):
             cmap=cmap,
             no_nans=no_nans,
             per_row=per_row,
-            axes_decor=axes_decor)
+            axes_decor=axes_decor,
+        )
 
-    def plot_bss_loadings(self,
-                          comp_ids=None,
-                          calibrate=True,
-                          same_window=True,
-                          title=None,
-                          with_factors=False,
-                          cmap=plt.cm.gray,
-                          no_nans=False,
-                          per_row=3,
-                          axes_decor='all',
-                          **kwargs,
-                          ):
+    def plot_bss_loadings(
+        self,
+        comp_ids=None,
+        calibrate=True,
+        same_window=True,
+        title=None,
+        with_factors=False,
+        cmap=plt.cm.gray,
+        no_nans=False,
+        per_row=3,
+        axes_decor="all",
+        **kwargs,
+    ):
         """Plot loadings from blind source separation results. In case of 1D
         navigation axis, each loading line can be toggled on and off by
         clicking on their corresponding line in the legend.
@@ -1153,19 +1273,22 @@ class MVATools(object):
 
         """
         if self.axes_manager.navigation_dimension > 2:
-            raise NotImplementedError("This method cannot plot loadings of "
-                                      "dimension higher than 2."
-                                      "You can use "
-                                      "`plot_bss_results` instead.")
+            raise NotImplementedError(
+                "This method cannot plot loadings of "
+                "dimension higher than 2."
+                "You can use "
+                "`plot_bss_results` instead."
+            )
         if self.learning_results.bss_loadings is None:
-            raise RuntimeError("No learning results found. A "
-                               "'blind_source_separation' needs to be "
-                               "performed first.")
+            raise RuntimeError(
+                "No learning results found. A "
+                "'blind_source_separation' needs to be "
+                "performed first."
+            )
         if same_window is None:
             same_window = True
         if title is None:
-            title = self._get_plot_title(
-                'BSS loadings of', same_window=same_window)
+            title = self._get_plot_title("BSS loadings of", same_window=same_window)
         loadings = self.learning_results.bss_loadings.T
         if with_factors:
             factors = self.learning_results.bss_factors
@@ -1181,32 +1304,36 @@ class MVATools(object):
             cmap=cmap,
             no_nans=no_nans,
             per_row=per_row,
-            axes_decor=axes_decor)
+            axes_decor=axes_decor,
+        )
 
-    def _get_plot_title(self, base_title='Loadings', same_window=True):
+    def _get_plot_title(self, base_title="Loadings", same_window=True):
         title_md = self.metadata.General.title
         title = "%s %s" % (base_title, title_md)
-        if title_md == '':  # remove the 'of' if 'title' is a empty string
-            title = title.replace(' of ', '')
+        if title_md == "":  # remove the 'of' if 'title' is a empty string
+            title = title.replace(" of ", "")
         if not same_window:
-            title = title.replace('loadings', 'loading')
+            title = title.replace("loadings", "loading")
         return title
 
-    def export_decomposition_results(self, comp_ids=None,
-                                     folder=None,
-                                     calibrate=True,
-                                     factor_prefix='factor',
-                                     factor_format="hspy",
-                                     loading_prefix='loading',
-                                     loading_format="hspy",
-                                     comp_label=None,
-                                     cmap=plt.cm.gray,
-                                     same_window=False,
-                                     multiple_files=True,
-                                     no_nans=True,
-                                     per_row=3,
-                                     save_figures=False,
-                                     save_figures_format='png'):
+    def export_decomposition_results(
+        self,
+        comp_ids=None,
+        folder=None,
+        calibrate=True,
+        factor_prefix="factor",
+        factor_format="hspy",
+        loading_prefix="loading",
+        loading_format="hspy",
+        comp_label=None,
+        cmap=plt.cm.gray,
+        same_window=False,
+        multiple_files=True,
+        no_nans=True,
+        per_row=3,
+        save_figures=False,
+        save_figures_format="png",
+    ):
         """Export results from a decomposition to any of the supported formats.
 
         Parameters
@@ -1282,49 +1409,56 @@ class MVATools(object):
 
         factors = self.learning_results.factors
         loadings = self.learning_results.loadings.T
-        self._export_factors(factors,
-                             folder=folder,
-                             comp_ids=comp_ids,
-                             calibrate=calibrate,
-                             multiple_files=multiple_files,
-                             factor_prefix=factor_prefix,
-                             factor_format=factor_format,
-                             comp_label=comp_label,
-                             save_figures=save_figures,
-                             cmap=cmap,
-                             no_nans=no_nans,
-                             same_window=same_window,
-                             per_row=per_row,
-                             save_figures_format=save_figures_format)
-        self._export_loadings(loadings,
-                              comp_ids=comp_ids, folder=folder,
-                              calibrate=calibrate,
-                              multiple_files=multiple_files,
-                              loading_prefix=loading_prefix,
-                              loading_format=loading_format,
-                              comp_label=comp_label,
-                              cmap=cmap,
-                              save_figures=save_figures,
-                              same_window=same_window,
-                              no_nans=no_nans,
-                              per_row=per_row)
+        self._export_factors(
+            factors,
+            folder=folder,
+            comp_ids=comp_ids,
+            calibrate=calibrate,
+            multiple_files=multiple_files,
+            factor_prefix=factor_prefix,
+            factor_format=factor_format,
+            comp_label=comp_label,
+            save_figures=save_figures,
+            cmap=cmap,
+            no_nans=no_nans,
+            same_window=same_window,
+            per_row=per_row,
+            save_figures_format=save_figures_format,
+        )
+        self._export_loadings(
+            loadings,
+            comp_ids=comp_ids,
+            folder=folder,
+            calibrate=calibrate,
+            multiple_files=multiple_files,
+            loading_prefix=loading_prefix,
+            loading_format=loading_format,
+            comp_label=comp_label,
+            cmap=cmap,
+            save_figures=save_figures,
+            same_window=same_window,
+            no_nans=no_nans,
+            per_row=per_row,
+        )
 
-    def export_cluster_results(self,
-                               cluster_ids=None,
-                               folder=None,
-                               calibrate=True,
-                               center_prefix='cluster_center',
-                               center_format="hspy",
-                               membership_prefix='cluster_label',
-                               membership_format="hspy",
-                               comp_label=None,
-                               cmap=plt.cm.gray,
-                               same_window=False,
-                               multiple_files=True,
-                               no_nans=True,
-                               per_row=3,
-                               save_figures=False,
-                               save_figures_format='png'):
+    def export_cluster_results(
+        self,
+        cluster_ids=None,
+        folder=None,
+        calibrate=True,
+        center_prefix="cluster_center",
+        center_format="hspy",
+        membership_prefix="cluster_label",
+        membership_format="hspy",
+        comp_label=None,
+        cmap=plt.cm.gray,
+        same_window=False,
+        multiple_files=True,
+        no_nans=True,
+        per_row=3,
+        save_figures=False,
+        save_figures_format="png",
+    ):
         """Export results from a cluster analysis to any of the supported
         formats.
 
@@ -1406,49 +1540,56 @@ class MVATools(object):
 
         factors = self.learning_results.cluster_centers.T
         loadings = self.learning_results.cluster_labels
-        self._export_factors(factors,
-                             folder=folder,
-                             comp_ids=cluster_ids,
-                             calibrate=calibrate,
-                             multiple_files=multiple_files,
-                             factor_prefix=center_prefix,
-                             factor_format=center_format,
-                             comp_label=comp_label,
-                             save_figures=save_figures,
-                             cmap=cmap,
-                             no_nans=no_nans,
-                             same_window=same_window,
-                             per_row=per_row,
-                             save_figures_format=save_figures_format)
-        self._export_loadings(loadings,
-                              comp_ids=cluster_ids,
-                              folder=folder,
-                              calibrate=calibrate,
-                              multiple_files=multiple_files,
-                              loading_prefix=membership_prefix,
-                              loading_format=membership_format,
-                              comp_label=comp_label,
-                              cmap=cmap,
-                              save_figures=save_figures,
-                              same_window=same_window,
-                              no_nans=no_nans,
-                              per_row=per_row)
+        self._export_factors(
+            factors,
+            folder=folder,
+            comp_ids=cluster_ids,
+            calibrate=calibrate,
+            multiple_files=multiple_files,
+            factor_prefix=center_prefix,
+            factor_format=center_format,
+            comp_label=comp_label,
+            save_figures=save_figures,
+            cmap=cmap,
+            no_nans=no_nans,
+            same_window=same_window,
+            per_row=per_row,
+            save_figures_format=save_figures_format,
+        )
+        self._export_loadings(
+            loadings,
+            comp_ids=cluster_ids,
+            folder=folder,
+            calibrate=calibrate,
+            multiple_files=multiple_files,
+            loading_prefix=membership_prefix,
+            loading_format=membership_format,
+            comp_label=comp_label,
+            cmap=cmap,
+            save_figures=save_figures,
+            same_window=same_window,
+            no_nans=no_nans,
+            per_row=per_row,
+        )
 
-    def export_bss_results(self,
-                           comp_ids=None,
-                           folder=None,
-                           calibrate=True,
-                           multiple_files=True,
-                           save_figures=False,
-                           factor_prefix='bss_factor',
-                           factor_format="hspy",
-                           loading_prefix='bss_loading',
-                           loading_format="hspy",
-                           comp_label=None, cmap=plt.cm.gray,
-                           same_window=False,
-                           no_nans=True,
-                           per_row=3,
-                           save_figures_format='png'):
+    def export_bss_results(
+        self,
+        comp_ids=None,
+        folder=None,
+        calibrate=True,
+        multiple_files=True,
+        save_figures=False,
+        factor_prefix="bss_factor",
+        factor_format="hspy",
+        loading_prefix="bss_loading",
+        loading_format="hspy",
+        comp_label=None,
+        cmap=plt.cm.gray,
+        same_window=False,
+        no_nans=True,
+        per_row=3,
+        save_figures_format="png",
+    ):
         """Export results from ICA to any of the supported formats.
 
         Parameters
@@ -1524,48 +1665,54 @@ class MVATools(object):
 
         factors = self.learning_results.bss_factors
         loadings = self.learning_results.bss_loadings.T
-        self._export_factors(factors,
-                             folder=folder,
-                             comp_ids=comp_ids,
-                             calibrate=calibrate,
-                             multiple_files=multiple_files,
-                             factor_prefix=factor_prefix,
-                             factor_format=factor_format,
-                             comp_label=comp_label,
-                             save_figures=save_figures,
-                             cmap=cmap,
-                             no_nans=no_nans,
-                             same_window=same_window,
-                             per_row=per_row,
-                             save_figures_format=save_figures_format)
+        self._export_factors(
+            factors,
+            folder=folder,
+            comp_ids=comp_ids,
+            calibrate=calibrate,
+            multiple_files=multiple_files,
+            factor_prefix=factor_prefix,
+            factor_format=factor_format,
+            comp_label=comp_label,
+            save_figures=save_figures,
+            cmap=cmap,
+            no_nans=no_nans,
+            same_window=same_window,
+            per_row=per_row,
+            save_figures_format=save_figures_format,
+        )
 
-        self._export_loadings(loadings,
-                              comp_ids=comp_ids,
-                              folder=folder,
-                              calibrate=calibrate,
-                              multiple_files=multiple_files,
-                              loading_prefix=loading_prefix,
-                              loading_format=loading_format,
-                              comp_label=comp_label,
-                              cmap=cmap,
-                              save_figures=save_figures,
-                              same_window=same_window,
-                              no_nans=no_nans,
-                              per_row=per_row,
-                              save_figures_format=save_figures_format)
+        self._export_loadings(
+            loadings,
+            comp_ids=comp_ids,
+            folder=folder,
+            calibrate=calibrate,
+            multiple_files=multiple_files,
+            loading_prefix=loading_prefix,
+            loading_format=loading_format,
+            comp_label=comp_label,
+            cmap=cmap,
+            save_figures=save_figures,
+            same_window=same_window,
+            no_nans=no_nans,
+            per_row=per_row,
+            save_figures_format=save_figures_format,
+        )
 
     def _get_loadings(self, loadings):
         if loadings is None:
             raise RuntimeError("No learning results found.")
         from hyperspy.api import signals
-        data = loadings.T.reshape(
-            (-1,) + self.axes_manager.navigation_shape[::-1])
+
+        data = loadings.T.reshape((-1,) + self.axes_manager.navigation_shape[::-1])
         if data.shape[0] > 1:
             signal = signals.BaseSignal(
                 data,
                 axes=(
-                    [{"size": data.shape[0], "navigate": True}] +
-                    self.axes_manager._get_navigation_axes_dicts()))
+                    [{"size": data.shape[0], "navigate": True}]
+                    + self.axes_manager._get_navigation_axes_dicts()
+                ),
+            )
             for axis in signal.axes_manager._axes[1:]:
                 axis.navigate = False
         else:
@@ -1577,8 +1724,9 @@ class MVATools(object):
             raise RuntimeError("No learning results found.")
         signal = self.__class__(
             factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
-            axes=[{"size": factors.shape[-1], "navigate": True}] +
-            self.axes_manager._get_signal_axes_dicts())
+            axes=[{"size": factors.shape[-1], "navigate": True}]
+            + self.axes_manager._get_signal_axes_dicts(),
+        )
         signal.set_signal_type(self.metadata.Signal.signal_type)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
@@ -1600,8 +1748,9 @@ class MVATools(object):
             raise RuntimeError("Run a decomposition first.")
         signal = self._get_loadings(self.learning_results.loadings)
         signal.axes_manager._axes[0].name = "Decomposition component index"
-        signal.metadata.General.title = "Decomposition loadings of " + \
-            self.metadata.General.title
+        signal.metadata.General.title = (
+            "Decomposition loadings of " + self.metadata.General.title
+        )
         return signal
 
     def get_decomposition_factors(self):
@@ -1620,8 +1769,9 @@ class MVATools(object):
             raise RuntimeError("Run a decomposition first.")
         signal = self._get_factors(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
-        signal.metadata.General.title = ("Decomposition factors of " +
-                                         self.metadata.General.title)
+        signal.metadata.General.title = (
+            "Decomposition factors of " + self.metadata.General.title
+        )
         return signal
 
     def get_bss_loadings(self):
@@ -1636,11 +1786,9 @@ class MVATools(object):
         get_bss_factors, export_bss_results
 
         """
-        signal = self._get_loadings(
-            self.learning_results.bss_loadings)
+        signal = self._get_loadings(self.learning_results.bss_loadings)
         signal.axes_manager[0].name = "BSS component index"
-        signal.metadata.General.title = ("BSS loadings of " +
-                                         self.metadata.General.title)
+        signal.metadata.General.title = "BSS loadings of " + self.metadata.General.title
         return signal
 
     def get_bss_factors(self):
@@ -1657,15 +1805,16 @@ class MVATools(object):
         """
         signal = self._get_factors(self.learning_results.bss_factors)
         signal.axes_manager[0].name = "BSS component index"
-        signal.metadata.General.title = ("BSS factors of " +
-                                         self.metadata.General.title)
+        signal.metadata.General.title = "BSS factors of " + self.metadata.General.title
         return signal
 
-    def plot_bss_results(self,
-                         factors_navigator="smart_auto",
-                         loadings_navigator="smart_auto",
-                         factors_dim=2,
-                         loadings_dim=2,):
+    def plot_bss_results(
+        self,
+        factors_navigator="smart_auto",
+        loadings_navigator="smart_auto",
+        factors_dim=2,
+        loadings_dim=2,
+    ):
         """Plot the blind source separation factors and loadings.
 
         Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_factors` and
@@ -1704,17 +1853,22 @@ class MVATools(object):
         """
         factors = self.get_bss_factors()
         loadings = self.get_bss_loadings()
-        _plot_x_results(factors=factors, loadings=loadings,
-                        factors_navigator=factors_navigator,
-                        loadings_navigator=loadings_navigator,
-                        factors_dim=factors_dim,
-                        loadings_dim=loadings_dim)
+        _plot_x_results(
+            factors=factors,
+            loadings=loadings,
+            factors_navigator=factors_navigator,
+            loadings_navigator=loadings_navigator,
+            factors_dim=factors_dim,
+            loadings_dim=loadings_dim,
+        )
 
-    def plot_decomposition_results(self,
-                                   factors_navigator="smart_auto",
-                                   loadings_navigator="smart_auto",
-                                   factors_dim=2,
-                                   loadings_dim=2):
+    def plot_decomposition_results(
+        self,
+        factors_navigator="smart_auto",
+        loadings_navigator="smart_auto",
+        factors_dim=2,
+        loadings_dim=2,
+    ):
         """Plot the decomposition factors and loadings.
 
         Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_factors`
@@ -1751,11 +1905,14 @@ class MVATools(object):
 
         factors = self.get_decomposition_factors()
         loadings = self.get_decomposition_loadings()
-        _plot_x_results(factors=factors, loadings=loadings,
-                        factors_navigator=factors_navigator,
-                        loadings_navigator=loadings_navigator,
-                        factors_dim=factors_dim,
-                        loadings_dim=loadings_dim)
+        _plot_x_results(
+            factors=factors,
+            loadings=loadings,
+            factors_navigator=factors_navigator,
+            loadings_navigator=loadings_navigator,
+            factors_dim=factors_dim,
+            loadings_dim=loadings_dim,
+        )
 
     def get_cluster_labels(self, merged=False):
         """Return cluster labels as a Signal.
@@ -1781,19 +1938,21 @@ class MVATools(object):
             The cluster labels
         """
         if self.learning_results.cluster_labels is None:
-            raise RuntimeError(
-                "Cluster analysis needs to be performed first.")
+            raise RuntimeError("Cluster analysis needs to be performed first.")
         if merged:
-            data = (np.arange(1, self.learning_results.number_of_clusters + 1)
-                    [:, np.newaxis] *
-                    self.learning_results.cluster_labels ).sum(0) - 1
+            data = (
+                np.arange(1, self.learning_results.number_of_clusters + 1)[
+                    :, np.newaxis
+                ]
+                * self.learning_results.cluster_labels
+            ).sum(0) - 1
             label_signal = self._get_loadings(data)
         else:
-            label_signal = self._get_loadings(
-                self.learning_results.cluster_labels.T)
+            label_signal = self._get_loadings(self.learning_results.cluster_labels.T)
             label_signal.axes_manager._axes[0].name = "Cluster index"
         label_signal.metadata.General.title = (
-            "Cluster labels of " + self.metadata.General.title)
+            "Cluster labels of " + self.metadata.General.title
+        )
         return label_signal
 
     def _get_cluster_signals_factors(self, signal):
@@ -1803,9 +1962,9 @@ class MVATools(object):
             members = self.learning_results.cluster_labels.sum(1, keepdims=True)
             cs = self.learning_results.cluster_sum_signals / members
         elif signal == "sum":
-            cs=self.learning_results.cluster_sum_signals
+            cs = self.learning_results.cluster_sum_signals
         elif signal == "centroid":
-            cs=self.learning_results.cluster_centroid_signals
+            cs = self.learning_results.cluster_centroid_signals
         return cs
 
     def get_cluster_signals(self, signal="mean"):
@@ -1822,11 +1981,13 @@ class MVATools(object):
         """
         cs = self._get_cluster_signals_factors(signal=signal)
         signal = self._get_factors(cs.T)
-        signal.axes_manager._axes[0].name="Cluster index"
+        signal.axes_manager._axes[0].name = "Cluster index"
         signal.metadata.General.title = (
-            f"Cluster {signal} signals of {self.metadata.General.title}")
+            f"Cluster {signal} signals of {self.metadata.General.title}"
+        )
         return signal
-    get_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
+
+    get_cluster_signals.__doc__ %= CLUSTER_SIGNALS_ARG
 
     def get_cluster_distances(self):
         """Euclidian distances to the centroid of each cluster
@@ -1845,10 +2006,10 @@ class MVATools(object):
             raise RuntimeError("Cluster analysis needs to be performed first.")
         distance_signal = self._get_loadings(self.learning_results.cluster_distances.T)
         distance_signal.axes_manager._axes[0].name = "Cluster index"
-        distance_signal.metadata.General.title = \
+        distance_signal.metadata.General.title = (
             "Cluster distances of " + self.metadata.General.title
+        )
         return distance_signal
-
 
     def plot_cluster_signals(
         self,
@@ -1857,7 +2018,8 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         title=None,
-        per_row=3):
+        per_row=3,
+    ):
         """Plot centers from a cluster analysis.
 
         Parameters
@@ -1888,8 +2050,10 @@ class MVATools(object):
 
         """
         if self.axes_manager.signal_dimension > 2:
-            raise NotImplementedError("This method cannot plot factors of "
-                                      "signals of dimension higher than 2.")
+            raise NotImplementedError(
+                "This method cannot plot factors of "
+                "signals of dimension higher than 2."
+            )
         cs = self._get_cluster_signals_factors(signal=signal)
         if same_window is None:
             same_window = True
@@ -1899,16 +2063,18 @@ class MVATools(object):
             cluster_ids = range(factors.shape[1])
 
         if title is None:
-            title = self._get_plot_title(
-                'Cluster centers of', same_window=same_window)
+            title = self._get_plot_title("Cluster centers of", same_window=same_window)
 
-        return self._plot_factors_or_pchars(factors,
-                                            comp_ids=cluster_ids,
-                                            calibrate=calibrate,
-                                            same_window=same_window,
-                                            comp_label=title,
-                                            per_row=per_row)
-    plot_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
+        return self._plot_factors_or_pchars(
+            factors,
+            comp_ids=cluster_ids,
+            calibrate=calibrate,
+            same_window=same_window,
+            comp_label=title,
+            per_row=per_row,
+        )
+
+    plot_cluster_signals.__doc__ %= CLUSTER_SIGNALS_ARG
 
     def plot_cluster_labels(
         self,
@@ -1919,9 +2085,10 @@ class MVATools(object):
         cmap=plt.cm.gray,
         no_nans=False,
         per_row=3,
-        axes_decor='all',
+        axes_decor="all",
         title=None,
-        **kwargs):
+        **kwargs,
+    ):
         """Plot cluster labels from a cluster analysis. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
@@ -1971,10 +2138,12 @@ class MVATools(object):
 
         """
         if self.axes_manager.navigation_dimension > 2:
-            raise NotImplementedError("This method cannot plot labels of "
-                                      "dimension higher than 2."
-                                      "You can use "
-                                      "`plot_cluster_results` instead.")
+            raise NotImplementedError(
+                "This method cannot plot labels of "
+                "dimension higher than 2."
+                "You can use "
+                "`plot_cluster_results` instead."
+            )
         if same_window is None:
             same_window = True
         labels = self.learning_results.cluster_labels.astype("uint")
@@ -1987,20 +2156,20 @@ class MVATools(object):
             cluster_ids = range(labels.shape[0])
 
         if title is None:
-            title = self._get_plot_title(
-                'Cluster labels of', same_window=same_window)
+            title = self._get_plot_title("Cluster labels of", same_window=same_window)
 
-        return self._plot_loadings(labels,
-                                   comp_ids=cluster_ids,
-                                   with_factors=with_centers,
-                                   factors=centers,
-                                   same_window=same_window,
-                                   comp_label=title,
-                                   cmap=cmap,
-                                   no_nans=no_nans,
-                                   per_row=per_row,
-                                   axes_decor=axes_decor)
-
+        return self._plot_loadings(
+            labels,
+            comp_ids=cluster_ids,
+            with_factors=with_centers,
+            factors=centers,
+            same_window=same_window,
+            comp_label=title,
+            cmap=cmap,
+            no_nans=no_nans,
+            per_row=per_row,
+            axes_decor=axes_decor,
+        )
 
     def plot_cluster_distances(
         self,
@@ -2011,9 +2180,10 @@ class MVATools(object):
         cmap=plt.cm.gray,
         no_nans=False,
         per_row=3,
-        axes_decor='all',
+        axes_decor="all",
         title=None,
-        **kwargs):
+        **kwargs,
+    ):
         """Plot the euclidian distances to the centroid of each cluster.
 
         In case of 1D navigation axis, each line can be toggled on and
@@ -2063,10 +2233,12 @@ class MVATools(object):
 
         """
         if self.axes_manager.navigation_dimension > 2:
-            raise NotImplementedError("This method cannot plot labels of "
-                                      "dimension higher than 2."
-                                      "You can use "
-                                      "`plot_cluster_results` instead.")
+            raise NotImplementedError(
+                "This method cannot plot labels of "
+                "dimension higher than 2."
+                "You can use "
+                "`plot_cluster_results` instead."
+            )
         if same_window is None:
             same_window = True
         distances = self.learning_results.cluster_distances
@@ -2080,26 +2252,29 @@ class MVATools(object):
 
         if title is None:
             title = self._get_plot_title(
-                'Cluster distances of', same_window=same_window)
+                "Cluster distances of", same_window=same_window
+            )
 
-        return self._plot_loadings(distances,
-                                   comp_ids=cluster_ids,
-                                   with_factors=with_centers,
-                                   factors=centers,
-                                   same_window=same_window,
-                                   comp_label=title,
-                                   cmap=cmap,
-                                   no_nans=no_nans,
-                                   per_row=per_row,
-                                   axes_decor=axes_decor)
+        return self._plot_loadings(
+            distances,
+            comp_ids=cluster_ids,
+            with_factors=with_centers,
+            factors=centers,
+            same_window=same_window,
+            comp_label=title,
+            cmap=cmap,
+            no_nans=no_nans,
+            per_row=per_row,
+            axes_decor=axes_decor,
+        )
 
-
-    def plot_cluster_results(self,
-                             centers_navigator="smart_auto",
-                             labels_navigator="smart_auto",
-                             centers_dim=2,
-                             labels_dim=2,
-                             ):
+    def plot_cluster_results(
+        self,
+        centers_navigator="smart_auto",
+        labels_navigator="smart_auto",
+        centers_dim=2,
+        labels_dim=2,
+    ):
         """Plot the cluster labels and centers.
 
         Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and 
@@ -2134,30 +2309,34 @@ class MVATools(object):
         centers = self.get_cluster_signals()
         distances = self.get_cluster_distances()
         self.get_cluster_labels(merged=True).plot()
-        _plot_x_results(factors=centers,
-                        loadings=distances,
-                        factors_navigator=centers_navigator,
-                        loadings_navigator=labels_navigator,
-                        factors_dim=centers_dim,
-                        loadings_dim=labels_dim)
+        _plot_x_results(
+            factors=centers,
+            loadings=distances,
+            factors_navigator=centers_navigator,
+            loadings_navigator=labels_navigator,
+            factors_dim=centers_dim,
+            loadings_dim=labels_dim,
+        )
 
 
-
-def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
-                    factors_dim, loadings_dim):
+def _plot_x_results(
+    factors, loadings, factors_navigator, loadings_navigator, factors_dim, loadings_dim
+):
     factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
     if loadings.axes_manager.signal_dimension > 2:
         loadings.axes_manager._set_signal_dimension(loadings_dim)
     if factors.axes_manager.signal_dimension > 2:
         factors.axes_manager._set_signal_dimension(factors_dim)
-    if (loadings_navigator == "smart_auto" and
-            loadings.axes_manager.navigation_dimension < 3):
+    if (
+        loadings_navigator == "smart_auto"
+        and loadings.axes_manager.navigation_dimension < 3
+    ):
         loadings_navigator = "slider"
     else:
         loadings_navigator = "auto"
-    if (factors_navigator == "smart_auto" and
-        (factors.axes_manager.navigation_dimension < 3 or
-         loadings_navigator is not None)):
+    if factors_navigator == "smart_auto" and (
+        factors.axes_manager.navigation_dimension < 3 or loadings_navigator is not None
+    ):
         factors_navigator = None
     else:
         factors_navigator = "auto"
@@ -2166,10 +2345,8 @@ def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
 
 
 class SpecialSlicersSignal(SpecialSlicers):
-
     def __setitem__(self, i, j):
-        """x.__setitem__(i, y) <==> x[i]=y
-        """
+        """x.__setitem__(i, y) <==> x[i]=y"""
         if isinstance(j, BaseSignal):
             j = j.data
         array_slices = self.obj._get_array_slices(i, self.isNavigation)
@@ -2180,7 +2357,6 @@ class SpecialSlicersSignal(SpecialSlicers):
 
 
 class BaseSetMetadataItems(t.HasTraits):
-
     def __init__(self, signal):
         for key, value in self.mapping.items():
             if signal.metadata.has_item(key):
@@ -2193,12 +2369,14 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
-class BaseSignal(FancySlicing,
-                 MVA,
-                 MVATools,):
+class BaseSignal(
+    FancySlicing,
+    MVA,
+    MVATools,
+):
 
     """
-    
+
     Attributes
     ----------
     ragged : bool
@@ -2213,7 +2391,7 @@ class BaseSignal(FancySlicing,
     original_metadata : hyperspy.misc.utils.DictionaryTreeBrowser
         All metadata read when loading the data.
 
-        
+
     Examples
     --------
     General signal created from a numpy or cupy array.
@@ -2267,16 +2445,17 @@ class BaseSignal(FancySlicing,
         # _assign_subclass method. Purposely not exposed as public API.
         # Its purpose is to avoid creating new attributes, which breaks events
         # and to reduce overhead when changing 'signal_type'.
-        if kwds.get('full_initialisation', True):
+        if kwds.get("full_initialisation", True):
             self._create_metadata()
             self.models = ModelManager(self)
             self.learning_results = LearningResults()
-            kwds['data'] = data
+            kwds["data"] = data
             self._plot = None
             self.inav = SpecialSlicersSignal(self, True)
             self.isig = SpecialSlicersSignal(self, False)
             self.events = Events()
-            self.events.data_changed = Event("""
+            self.events.data_changed = Event(
+                """
                 Event that triggers when the data has changed
 
                 The event trigger when the data is ready for consumption by any
@@ -2289,7 +2468,9 @@ class BaseSignal(FancySlicing,
                 Parameters
                 ----------
                     obj: The signal that owns the data.
-                """, arguments=['obj'])
+                """,
+                arguments=["obj"],
+            )
             self._load_dictionary(kwds)
 
         if self._signal_dimension >= 0:
@@ -2317,25 +2498,28 @@ class BaseSignal(FancySlicing,
             unfolded = "unfolded "
         else:
             unfolded = ""
-        string = '<'
+        string = "<"
         string += self.__class__.__name__
         string += ", title: %s" % self.metadata.General.title
         string += ", %sdimensions: %s" % (
             unfolded,
-            self.axes_manager._get_dimension_str())
+            self.axes_manager._get_dimension_str(),
+        )
 
-        string += '>'
+        string += ">"
 
         return string
 
     def _binary_operator_ruler(self, other, op_name):
-        exception_message = ("Invalid dimensions for this operation.")
+        exception_message = "Invalid dimensions for this operation."
         if isinstance(other, BaseSignal):
             # Both objects are signals
             oam = other.axes_manager
             sam = self.axes_manager
-            if sam.navigation_shape == oam.navigation_shape and \
-                    sam.signal_shape == oam.signal_shape:
+            if (
+                sam.navigation_shape == oam.navigation_shape
+                and sam.signal_shape == oam.signal_shape
+            ):
                 # They have the same signal shape.
                 # The signal axes are aligned but there is
                 # no guarantee that data axes area aligned so we make sure that
@@ -2347,8 +2531,7 @@ class BaseSignal(FancySlicing,
                     self.axes_manager._sort_axes()
                     return self
                 else:
-                    ns = self._deepcopy_with_new_data(
-                        getattr(sdata, op_name)(odata))
+                    ns = self._deepcopy_with_new_data(getattr(sdata, op_name)(odata))
                     ns.axes_manager._sort_axes()
                     return ns
             else:
@@ -2376,8 +2559,7 @@ class BaseSignal(FancySlicing,
                 getattr(self.data, op_name)(other)
                 return self
             else:
-                return self._deepcopy_with_new_data(
-                    getattr(self.data, op_name)(other))
+                return self._deepcopy_with_new_data(getattr(self.data, op_name)(other))
 
     def _unary_operator_ruler(self, op_name):
         return self._deepcopy_with_new_data(getattr(self.data, op_name)())
@@ -2390,9 +2572,13 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
 
-    def _deepcopy_with_new_data(self, data=None, copy_variance=False,
-                                copy_navigator=False,
-                                copy_learning_results=False):
+    def _deepcopy_with_new_data(
+        self,
+        data=None,
+        copy_variance=False,
+        copy_navigator=False,
+        copy_learning_results=False,
+    ):
         """Returns a deepcopy of itself replacing the data.
 
         This method has an advantage over the default :func:`copy.deepcopy`
@@ -2426,7 +2612,7 @@ class BaseSignal(FancySlicing,
             if not copy_variance and "Noise_properties" in self.metadata.Signal:
                 old_np = self.metadata.Signal.Noise_properties
                 del self.metadata.Signal.Noise_properties
-            if not copy_navigator and self.metadata.has_item('_HyperSpy.navigator'):
+            if not copy_navigator and self.metadata.has_item("_HyperSpy.navigator"):
                 old_navigator = self.metadata._HyperSpy.navigator
                 del self.metadata._HyperSpy.navigator
             if not copy_learning_results:
@@ -2447,8 +2633,9 @@ class BaseSignal(FancySlicing,
             if old_learning_results is not None:
                 self.learning_results = old_learning_results
 
-    def as_lazy(self, copy_variance=True, copy_navigator=True,
-                copy_learning_results=True):
+    def as_lazy(
+        self, copy_variance=True, copy_navigator=True, copy_learning_results=True
+    ):
         """
         Create a copy of the given Signal as a
         :class:`~hyperspy._signals.lazy.LazySignal`.
@@ -2474,8 +2661,8 @@ class BaseSignal(FancySlicing,
             self.data,
             copy_variance=copy_variance,
             copy_navigator=copy_navigator,
-            copy_learning_results=copy_learning_results
-            )
+            copy_learning_results=copy_learning_results,
+        )
         res._lazy = True
         res._assign_subclass()
         return res
@@ -2505,8 +2692,10 @@ class BaseSignal(FancySlicing,
     def data(self, value):
         # Object supporting __array_function__ protocol (NEP-18) or the
         # array API standard doesn't need to be cast to numpy array
-        if not (hasattr(value, '__array_function__') or
-                hasattr(value, '__array_namespace__')):
+        if not (
+            hasattr(value, "__array_function__")
+            or hasattr(value, "__array_namespace__")
+        ):
             value = np.asanyarray(value)
         self._data = np.atleast_1d(value)
 
@@ -2534,8 +2723,11 @@ class BaseSignal(FancySlicing,
         if value:
             if self.data.dtype != object:
                 raise ValueError("The array is not ragged.")
-            axes = [axis for axis in self.axes_manager.signal_axes
-                    if axis.index_in_array not in list(range(self.data.ndim))]
+            axes = [
+                axis
+                for axis in self.axes_manager.signal_axes
+                if axis.index_in_array not in list(range(self.data.ndim))
+            ]
             self.axes_manager.remove(axes)
             self.axes_manager._set_signal_dimension(0)
         else:
@@ -2545,7 +2737,7 @@ class BaseSignal(FancySlicing,
                     "counterpart is not supported. Make the required "
                     "non-ragged dask array manually and make a new lazy "
                     "signal."
-                    )
+                )
 
             error = "The signal can't be converted to a non-ragged signal."
             try:
@@ -2563,10 +2755,13 @@ class BaseSignal(FancySlicing,
 
             self.data = data
             # Add axes which were previously in the ragged dimension
-            axes = [idx for idx in range(self.data.ndim) if
-                    idx not in self.axes_manager.navigation_indices_in_array]
+            axes = [
+                idx
+                for idx in range(self.data.ndim)
+                if idx not in self.axes_manager.navigation_indices_in_array
+            ]
             for index in axes:
-                axis = {'index_in_array':index, 'size':self.data.shape[index]}
+                axis = {"index_in_array": index, "size": self.data.shape[index]}
                 self.axes_manager._append_axis(**axis)
             self.axes_manager._update_attributes()
 
@@ -2599,16 +2794,17 @@ class BaseSignal(FancySlicing,
               Overwrite the attributes['ragged'] entry
 
         """
-        self.data = file_data_dict['data']
+        self.data = file_data_dict["data"]
         oldlazy = self._lazy
-        attributes = file_data_dict.get('attributes', {})
-        ragged = file_data_dict.get('ragged')
+        attributes = file_data_dict.get("attributes", {})
+        ragged = file_data_dict.get("ragged")
         if ragged is not None:
-            attributes['ragged'] = ragged
-        if 'axes' not in file_data_dict:
-            file_data_dict['axes'] = self._get_undefined_axes_list(
-                attributes.get('ragged', False))
-        self.axes_manager = AxesManager(file_data_dict['axes'])
+            attributes["ragged"] = ragged
+        if "axes" not in file_data_dict:
+            file_data_dict["axes"] = self._get_undefined_axes_list(
+                attributes.get("ragged", False)
+            )
+        self.axes_manager = AxesManager(file_data_dict["axes"])
         # Setting `ragged` attributes requires the `axes_manager`
         for key, value in attributes.items():
             if hasattr(self, key):
@@ -2617,32 +2813,29 @@ class BaseSignal(FancySlicing,
                         setattr(getattr(self, key), k, v)
                 else:
                     setattr(self, key, value)
-        if 'models' in file_data_dict:
-            self.models._add_dictionary(file_data_dict['models'])
-        if 'metadata' not in file_data_dict:
-            file_data_dict['metadata'] = {}
+        if "models" in file_data_dict:
+            self.models._add_dictionary(file_data_dict["models"])
+        if "metadata" not in file_data_dict:
+            file_data_dict["metadata"] = {}
         else:
             # Get all hspy object back from their dictionary representation
             _obj_in_dict2hspy(file_data_dict["metadata"], lazy=self._lazy)
-        if 'original_metadata' not in file_data_dict:
-            file_data_dict['original_metadata'] = {}
+        if "original_metadata" not in file_data_dict:
+            file_data_dict["original_metadata"] = {}
 
-        self.original_metadata.add_dictionary(
-            file_data_dict['original_metadata'])
-        self.metadata.add_dictionary(
-            file_data_dict['metadata'])
+        self.original_metadata.add_dictionary(file_data_dict["original_metadata"])
+        self.metadata.add_dictionary(file_data_dict["metadata"])
         if "title" not in self.metadata.General:
-            self.metadata.General.title = ''
-        if (self._signal_type or not self.metadata.has_item("Signal.signal_type")):
+            self.metadata.General.title = ""
+        if self._signal_type or not self.metadata.has_item("Signal.signal_type"):
             self.metadata.Signal.signal_type = self._signal_type
         if "learning_results" in file_data_dict:
-            self.learning_results.__dict__.update(
-                file_data_dict["learning_results"])
+            self.learning_results.__dict__.update(file_data_dict["learning_results"])
         if self._lazy is not oldlazy:
             self._assign_subclass()
 
-# TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
-# np.log(s) -> da.log(s.data) wrapped.
+    # TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
+    # np.log(s) -> da.log(s.data) wrapped.
     def __array__(self, dtype=None):
         if dtype:
             return self.data.astype(dtype)
@@ -2650,7 +2843,6 @@ class BaseSignal(FancySlicing,
             return self.data
 
     def __array_wrap__(self, array, context=None):
-
         signal = self._deepcopy_with_new_data(array)
         if context is not None:
             # ufunc, argument of the ufunc, domain of the ufunc
@@ -2676,7 +2868,9 @@ class BaseSignal(FancySlicing,
                     title_strs.append(str(obj))
 
             signal.metadata.General.title = "%s(%s)" % (
-                uf.__name__, ", ".join(title_strs))
+                uf.__name__,
+                ", ".join(title_strs),
+            )
 
         return signal
 
@@ -2707,8 +2901,9 @@ class BaseSignal(FancySlicing,
         self.data = self.data.squeeze()
         return self
 
-    def _to_dictionary(self, add_learning_results=True, add_models=False,
-                       add_original_metadata=True):
+    def _to_dictionary(
+        self, add_learning_results=True, add_models=False, add_original_metadata=True
+    ):
         """Returns a dictionary that can be used to recreate the signal.
 
         All items but `data` are copies.
@@ -2731,33 +2926,36 @@ class BaseSignal(FancySlicing,
             The dictionary that can be used to recreate the signal
 
         """
-        dic = {'data': self.data,
-               'axes': self.axes_manager._get_axes_dicts(),
-               'metadata': copy.deepcopy(self.metadata.as_dictionary()),
-               'tmp_parameters': self.tmp_parameters.as_dictionary(),
-               'attributes': {'_lazy': self._lazy,
-                              'ragged': self.axes_manager._ragged},
-               }
+        dic = {
+            "data": self.data,
+            "axes": self.axes_manager._get_axes_dicts(),
+            "metadata": copy.deepcopy(self.metadata.as_dictionary()),
+            "tmp_parameters": self.tmp_parameters.as_dictionary(),
+            "attributes": {"_lazy": self._lazy, "ragged": self.axes_manager._ragged},
+        }
         if add_original_metadata:
-            dic['original_metadata'] = copy.deepcopy(
+            dic["original_metadata"] = copy.deepcopy(
                 self.original_metadata.as_dictionary()
-                )
-        if add_learning_results and hasattr(self, 'learning_results'):
-            dic['learning_results'] = copy.deepcopy(
-                self.learning_results.__dict__)
+            )
+        if add_learning_results and hasattr(self, "learning_results"):
+            dic["learning_results"] = copy.deepcopy(self.learning_results.__dict__)
         if add_models:
-            dic['models'] = self.models._models.as_dictionary()
+            dic["models"] = self.models._models.as_dictionary()
         return dic
 
     def _get_undefined_axes_list(self, ragged=False):
         """Returns default list of axes construct from the data array shape."""
         axes = []
         for s in self.data.shape:
-            axes.append({'size': int(s), })
+            axes.append(
+                {
+                    "size": int(s),
+                }
+            )
         # With ragged signal with navigation dimension 0 and signal dimension 0
         # we return an empty list to avoid getting a navigation axis of size 1,
         # which is incorrect, because it corresponds to the ragged dimension
-        if ragged and len(axes) == 1 and axes[0]['size'] == 1:
+        if ragged and len(axes) == 1 and axes[0]["size"] == 1:
             axes = []
         return axes
 
@@ -2778,14 +2976,13 @@ class BaseSignal(FancySlicing,
 
     @property
     def navigator(self):
-        return self.metadata.get_item('_HyperSpy.navigator')
+        return self.metadata.get_item("_HyperSpy.navigator")
 
     @navigator.setter
     def navigator(self, navigator):
-        self.metadata.set_item('_HyperSpy.navigator', navigator)
+        self.metadata.set_item("_HyperSpy.navigator", navigator)
 
-    def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
-             **kwargs):
+    def plot(self, navigator="auto", axes_manager=None, plot_markers=True, **kwargs):
         """%s
         %s
         %s
@@ -2795,10 +2992,12 @@ class BaseSignal(FancySlicing,
             raise RuntimeError("Plotting ragged signal is not supported.")
         if self._plot is not None:
             self._plot.close()
-        if 'power_spectrum' in kwargs:
+        if "power_spectrum" in kwargs:
             if not np.issubdtype(self.data.dtype, np.complexfloating):
-                raise ValueError('The parameter `power_spectrum` required a '
-                                 'signal with complex data type.')
+                raise ValueError(
+                    "The parameter `power_spectrum` required a "
+                    "signal with complex data type."
+                )
 
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -2824,7 +3023,8 @@ class BaseSignal(FancySlicing,
                 "Try e.g. 's.transpose(signal_axes=1).plot()' for "
                 "plotting as a 1D signal, or "
                 "'s.transpose(signal_axes=(1,2)).plot()' "
-                "for plotting as a 2D signal.")
+                "for plotting as a 2D signal."
+            )
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = partial(self._get_current_data, as_numpy=True)
@@ -2834,14 +3034,14 @@ class BaseSignal(FancySlicing,
         if self.metadata.General.title:
             title = self.metadata.General.title
             self._plot.signal_title = title
-        elif self.tmp_parameters.has_item('filename'):
+        elif self.tmp_parameters.has_item("filename"):
             self._plot.signal_title = self.tmp_parameters.filename
 
         def sum_wrapper(s, axis):
             with warnings.catch_warnings():
                 warnings.filterwarnings(
-                    "ignore", category=UserWarning, module='hyperspy'
-                    )
+                    "ignore", category=UserWarning, module="hyperspy"
+                )
                 return s.sum(axis)
 
         def get_static_explorer_wrapper(*args, **kwargs):
@@ -2853,14 +3053,13 @@ class BaseSignal(FancySlicing,
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             # Sum over all but the first navigation axis.
             am = self.axes_manager
-            navigator = sum_wrapper(
-                self, am.signal_axes + am.navigation_axes[1:]
-                )
+            navigator = sum_wrapper(self, am.signal_axes + am.navigation_axes[1:])
             return np.nan_to_num(to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
             navigator.axes_manager.indices = self.axes_manager.indices[
-                navigator.axes_manager.signal_dimension:]
+                navigator.axes_manager.signal_dimension :
+            ]
             navigator.axes_manager._update_attributes()
             if np.issubdtype(navigator._get_current_data().dtype, np.complexfloating):
                 return abs(navigator._get_current_data(as_numpy=True))
@@ -2870,12 +3069,16 @@ class BaseSignal(FancySlicing,
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
                 navigator = self.navigator
-            elif (self.axes_manager.navigation_dimension > 1 and
-                    np.any(np.array([not axis.is_uniform for axis in
-                                     self.axes_manager.navigation_axes]))):
+            elif self.axes_manager.navigation_dimension > 1 and np.any(
+                np.array(
+                    [not axis.is_uniform for axis in self.axes_manager.navigation_axes]
+                )
+            ):
                 navigator = "slider"
-            elif (self.axes_manager.navigation_dimension == 1 and
-                    self.axes_manager.signal_dimension == 1):
+            elif (
+                self.axes_manager.navigation_dimension == 1
+                and self.axes_manager.signal_dimension == 1
+            ):
                 navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:
                 if self.axes_manager.signal_dimension == 0:
@@ -2887,21 +3090,21 @@ class BaseSignal(FancySlicing,
                         recompute_out_event=self.axes_manager.events.any_axis_changed,
                         s=self,
                         axis=self.axes_manager.signal_axes,
-                        )
+                    )
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
                         f=navigator.as_signal1D,
                         event=navigator.events.data_changed,
                         recompute_out_event=navigator.axes_manager.events.any_axis_changed,
                         spectral_axis=0,
-                        )
+                    )
                 else:
                     navigator = interactive(
                         f=navigator.as_signal2D,
                         event=navigator.events.data_changed,
                         recompute_out_event=navigator.axes_manager.events.any_axis_changed,
                         image_axes=(0, 1),
-                        )
+                    )
             else:
                 navigator = None
         # Navigator properties
@@ -2909,39 +3112,50 @@ class BaseSignal(FancySlicing,
             # check first if we have a signal to avoid comparison of signal with
             # string
             if isinstance(navigator, BaseSignal):
+
                 def is_shape_compatible(navigation_shape, shape):
-                    return (navigation_shape == shape or
-                            navigation_shape[:2] == shape or
-                            (navigation_shape[0],) == shape
-                            )
+                    return (
+                        navigation_shape == shape
+                        or navigation_shape[:2] == shape
+                        or (navigation_shape[0],) == shape
+                    )
+
                 # Static navigator
-                if is_shape_compatible(axes_manager.navigation_shape,
-                                       navigator.axes_manager.signal_shape):
+                if is_shape_compatible(
+                    axes_manager.navigation_shape, navigator.axes_manager.signal_shape
+                ):
                     self._plot.navigator_data_function = get_static_explorer_wrapper
                 # Static transposed navigator
-                elif is_shape_compatible(axes_manager.navigation_shape,
-                                         navigator.axes_manager.navigation_shape):
+                elif is_shape_compatible(
+                    axes_manager.navigation_shape,
+                    navigator.axes_manager.navigation_shape,
+                ):
                     navigator = navigator.T
                     self._plot.navigator_data_function = get_static_explorer_wrapper
                 # Dynamic navigator
-                elif (axes_manager.navigation_shape ==
-                      navigator.axes_manager.signal_shape +
-                      navigator.axes_manager.navigation_shape):
+                elif (
+                    axes_manager.navigation_shape
+                    == navigator.axes_manager.signal_shape
+                    + navigator.axes_manager.navigation_shape
+                ):
                     self._plot.navigator_data_function = get_dynamic_explorer_wrapper
                 else:
                     raise ValueError(
                         "The dimensions of the provided (or stored) navigator "
-                        "are not compatible with this signal.")
+                        "are not compatible with this signal."
+                    )
             elif isinstance(navigator, str):
                 if navigator == "slider":
                     self._plot.navigator_data_function = "slider"
                 elif navigator == "data":
                     if np.issubdtype(self.data.dtype, np.complexfloating):
-                        self._plot.navigator_data_function = \
+                        self._plot.navigator_data_function = (
                             lambda axes_manager=None: to_numpy(abs(self.data))
+                        )
                     else:
-                        self._plot.navigator_data_function = \
+                        self._plot.navigator_data_function = (
                             lambda axes_manager=None: to_numpy(self.data)
+                        )
                 elif navigator == "spectrum":
                     self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             elif navigator is None:
@@ -2949,24 +3163,35 @@ class BaseSignal(FancySlicing,
             else:
                 raise ValueError(
                     'navigator must be one of "spectrum","auto", '
-                    '"slider", None, a Signal instance')
+                    '"slider", None, a Signal instance'
+                )
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
 
-        p = self._plot.signal_plot if self._plot.signal_plot else self._plot.navigator_plot
+        p = (
+            self._plot.signal_plot
+            if self._plot.signal_plot
+            else self._plot.navigator_plot
+        )
         p.events.closed.connect(
-            lambda: self.events.data_changed.disconnect(self.update_plot),
-            [])
+            lambda: self.events.data_changed.disconnect(self.update_plot), []
+        )
 
         if plot_markers:
-            if self.metadata.has_item('Markers'):
+            if self.metadata.has_item("Markers"):
                 self._plot_permanent_markers()
 
-    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
-                     PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
+    plot.__doc__ %= (
+        BASE_PLOT_DOCSTRING,
+        BASE_PLOT_DOCSTRING_PARAMETERS,
+        PLOT1D_DOCSTRING,
+        PLOT2D_KWARGS_DOCSTRING,
+    )
 
-    def save(self, filename=None, overwrite=None, extension=None, file_format=None, **kwds):
+    def save(
+        self, filename=None, overwrite=None, extension=None, file_format=None, **kwds
+    ):
         """Saves the signal in the specified format.
 
         The function gets the format from the specified extension (see
@@ -3042,18 +3267,19 @@ class BaseSignal(FancySlicing,
 
         """
         if filename is None:
-            if (self.tmp_parameters.has_item('filename') and
-                    self.tmp_parameters.has_item('folder')):
+            if self.tmp_parameters.has_item(
+                "filename"
+            ) and self.tmp_parameters.has_item("folder"):
                 filename = Path(
-                    self.tmp_parameters.folder,
-                    self.tmp_parameters.filename)
-                extension = (self.tmp_parameters.extension
-                             if not extension
-                             else extension)
-            elif self.metadata.has_item('General.original_filename'):
+                    self.tmp_parameters.folder, self.tmp_parameters.filename
+                )
+                extension = (
+                    self.tmp_parameters.extension if not extension else extension
+                )
+            elif self.metadata.has_item("General.original_filename"):
                 filename = self.metadata.General.original_filename
             else:
-                raise ValueError('File name not defined')
+                raise ValueError("File name not defined")
 
         if not isinstance(filename, MutableMapping):
             filename = Path(filename)
@@ -3115,13 +3341,12 @@ class BaseSignal(FancySlicing,
         i1, i2 = axis._get_index(start), axis._get_index(end)
         # To prevent an axis error, which may confuse users
         if i1 is not None and i2 is not None and not i1 != i2:
-            raise ValueError("The `start` and `end` values need to be "
-                             "different.")
+            raise ValueError("The `start` and `end` values need to be " "different.")
 
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
-            (slice(None),) * axis.index_in_array + (slice(i1, i2),
-                                                    Ellipsis)]
+            (slice(None),) * axis.index_in_array + (slice(i1, i2), Ellipsis)
+        ]
 
         axis.crop(i1, i2)
         self.get_dimensions_from_data()
@@ -3130,18 +3355,14 @@ class BaseSignal(FancySlicing,
         if convert_units:
             self.axes_manager.convert_units(axis)
 
-    def interpolate_on_axis(self,
-                            new_axis,
-                            axis=0,
-                            inplace=False,
-                            degree=1):
+    def interpolate_on_axis(self, new_axis, axis=0, inplace=False, degree=1):
         """Replaces the given ``axis`` with the provided ``new_axis``
         and interpolates data accordingly using
         :func:`scipy.interpolate.make_interp_spline`.
 
         Parameters
         ----------
-        new_axis : :class:`hyperspy.axes.UniformDataAxis`, 
+        new_axis : :class:`hyperspy.axes.UniformDataAxis`,
         :class:`hyperspy.axes.DataAxis` or :class:`hyperspy.axes.FunctionalDataAxis`
             Axis which replaces the one specified by the ``axis`` argument.
             If this new axis exceeds the range of the old axis,
@@ -3169,7 +3390,10 @@ class BaseSignal(FancySlicing,
                 "The navigate attribute of new_axis differs from the to be replaced axis."
             )
         axis_idx = old_axis.index_in_array
-        if old_axis.low_value > new_axis.low_value or old_axis.high_value < new_axis.high_value:
+        if (
+            old_axis.low_value > new_axis.low_value
+            or old_axis.high_value < new_axis.high_value
+        ):
             _logger.warning(
                 "The specified new axis exceeds the range of the to be replaced old axis. "
                 "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
@@ -3269,13 +3493,13 @@ class BaseSignal(FancySlicing,
         new_axes_indices = rollelem(
             [axis_.index_in_array for axis_ in self.axes_manager._axes],
             index=axis,
-            to_index=to_index)
+            to_index=to_index,
+        )
 
         s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
         s.axes_manager._axes = rollelem(
-            s.axes_manager._axes,
-            index=axis,
-            to_index=to_index)
+            s.axes_manager._axes, index=axis, to_index=to_index
+        )
         s.axes_manager._update_attributes()
         if optimize:
             s._make_sure_data_is_contiguous()
@@ -3285,9 +3509,7 @@ class BaseSignal(FancySlicing,
 
     @property
     def _data_aligned_with_axes(self):
-        """Returns a view of `data` with is axes aligned with the Signal axes.
-
-        """
+        """Returns a view of `data` with is axes aligned with the Signal axes."""
         if self.axes_manager.axes_are_aligned_with_data:
             return self.data
         else:
@@ -3300,22 +3522,26 @@ class BaseSignal(FancySlicing,
             return data
 
     def _validate_rebin_args_and_get_factors(self, new_shape=None, scale=None):
-
         if new_shape is None and scale is None:
             raise ValueError("One of new_shape, or scale must be specified")
         elif new_shape is not None and scale is not None:
             raise ValueError(
-                "Only one out of new_shape or scale should be specified. "
-                "Not both.")
+                "Only one out of new_shape or scale should be specified. " "Not both."
+            )
         elif new_shape:
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
             for axis in self.axes_manager._axes:
                 if axis.is_uniform is False:
                     raise NotImplementedError(
-                            "Rebinning of non-uniform axes is not yet implemented.")
-            new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
-                                           for axis in self.axes_manager._axes])
+                        "Rebinning of non-uniform axes is not yet implemented."
+                    )
+            new_shape_in_array = np.array(
+                [
+                    new_shape[axis.index_in_axes_manager]
+                    for axis in self.axes_manager._axes
+                ]
+            )
             factors = np.array(self.data.shape) / new_shape_in_array
         else:
             if len(scale) != len(self.data.shape):
@@ -3323,13 +3549,14 @@ class BaseSignal(FancySlicing,
             for axis in self.axes_manager._axes:
                 if axis.is_uniform is False:
                     raise NotImplementedError(
-                            "Rebinning of non-uniform axes is not yet implemented.")
-            factors = np.array([scale[axis.index_in_axes_manager]
-                                for axis in self.axes_manager._axes])
+                        "Rebinning of non-uniform axes is not yet implemented."
+                    )
+            factors = np.array(
+                [scale[axis.index_in_axes_manager] for axis in self.axes_manager._axes]
+            )
         return factors  # Factors are in array order
 
-    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
-              out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None, out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
         interpolation. Specify **either** ``new_shape`` or ``scale``. Scale of 1
@@ -3398,10 +3625,10 @@ class BaseSignal(FancySlicing,
         # linear grid
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
-            scale=scale,)
+            scale=scale,
+        )
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = array_rebin(
-            self.data, scale=factors, crop=crop, dtype=dtype)
+        data = array_rebin(self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
             if out._lazy:
@@ -3411,18 +3638,16 @@ class BaseSignal(FancySlicing,
         else:
             s.data = data
         s.get_dimensions_from_data()
-        for axis, axis_src in zip(s.axes_manager._axes,
-                                  self.axes_manager._axes):
+        for axis, axis_src in zip(s.axes_manager._axes, self.axes_manager._axes):
             factor = factors[axis.index_in_array]
             axis.scale = axis_src.scale * factor
             axis.offset = axis_src.offset + (factor - 1) * axis_src.scale / 2
-        if s.metadata.has_item('Signal.Noise_properties.variance'):
-            if isinstance(s.metadata.Signal.Noise_properties.variance,
-                          BaseSignal):
+        if s.metadata.has_item("Signal.Noise_properties.variance"):
+            if isinstance(s.metadata.Signal.Noise_properties.variance, BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape=new_shape, scale=scale, crop=crop, out=out,
-                    dtype=dtype)
+                    new_shape=new_shape, scale=scale, crop=crop, out=out, dtype=dtype
+                )
         if out is None:
             return s
         else:
@@ -3430,7 +3655,7 @@ class BaseSignal(FancySlicing,
 
     rebin.__doc__ %= (REBIN_ARGS, OUT_ARG)
 
-    def split(self, axis='auto', number_of_parts='auto', step_sizes='auto'):
+    def split(self, axis="auto", number_of_parts="auto", step_sizes="auto"):
         """Splits the data into several signals.
 
         The split can be defined by giving the `number_of_parts`, a homogeneous
@@ -3481,7 +3706,7 @@ class BaseSignal(FancySlicing,
             A list of the split signals
 
         """
-        if number_of_parts != 'auto' and step_sizes != 'auto':
+        if number_of_parts != "auto" and step_sizes != "auto":
             raise ValueError(
                 "You can define step_sizes or number_of_parts but not both."
             )
@@ -3489,35 +3714,35 @@ class BaseSignal(FancySlicing,
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
 
-        if axis == 'auto':
-            mode = 'auto'
-            if hasattr(self.metadata._HyperSpy, 'Stacking_history'):
+        if axis == "auto":
+            mode = "auto"
+            if hasattr(self.metadata._HyperSpy, "Stacking_history"):
                 stack_history = self.metadata._HyperSpy.Stacking_history
                 axis_in_manager = stack_history.axis
                 step_sizes = stack_history.step_sizes
             else:
-                axis_in_manager = self.axes_manager[-1 +
-                                                    1j].index_in_axes_manager
+                axis_in_manager = self.axes_manager[-1 + 1j].index_in_axes_manager
         else:
-            mode = 'manual'
+            mode = "manual"
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
 
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
         if self.axes_manager[axis].is_uniform is False:
             raise NotImplementedError(
-                    "Splitting of signals over a non-uniform axis is not implemented")
+                "Splitting of signals over a non-uniform axis is not implemented"
+            )
 
-        if number_of_parts == 'auto' and step_sizes == 'auto':
+        if number_of_parts == "auto" and step_sizes == "auto":
             step_sizes = 1
             number_of_parts = len_axis
-        elif step_sizes == 'auto':
+        elif step_sizes == "auto":
             if number_of_parts > shape[axis]:
-                raise ValueError(
-                    "The number of parts is greater than the axis size."
-                )
+                raise ValueError("The number of parts is greater than the axis size.")
 
-            step_sizes = ([shape[axis] // number_of_parts, ] * number_of_parts)
+            step_sizes = [
+                shape[axis] // number_of_parts,
+            ] * number_of_parts
 
         if isinstance(step_sizes, numbers.Integral):
             step_sizes = [step_sizes] * int(len_axis / step_sizes)
@@ -3525,37 +3750,36 @@ class BaseSignal(FancySlicing,
         splitted = []
         cut_index = np.array([0] + step_sizes).cumsum()
 
-        axes_dict = signal_dict['axes']
+        axes_dict = signal_dict["axes"]
         for i in range(len(cut_index) - 1):
-            axes_dict[axis]['offset'] = self.axes_manager._axes[
-                axis].index2value(cut_index[i])
-            axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i]
+            axes_dict[axis]["offset"] = self.axes_manager._axes[axis].index2value(
+                cut_index[i]
+            )
+            axes_dict[axis]["size"] = cut_index[i + 1] - cut_index[i]
             data = self.data[
-                (slice(None), ) * axis +
-                (slice(cut_index[i], cut_index[i + 1]), Ellipsis)]
-            signal_dict['data'] = data
-            splitted += self.__class__(**signal_dict),
+                (slice(None),) * axis
+                + (slice(cut_index[i], cut_index[i + 1]), Ellipsis)
+            ]
+            signal_dict["data"] = data
+            splitted += (self.__class__(**signal_dict),)
 
-        if number_of_parts == len_axis \
-                or step_sizes == [1] * len_axis:
+        if number_of_parts == len_axis or step_sizes == [1] * len_axis:
             for i, signal1D in enumerate(splitted):
                 signal1D.data = signal1D.data[
-                    signal1D.axes_manager._get_data_slice([(axis, 0)])]
+                    signal1D.axes_manager._get_data_slice([(axis, 0)])
+                ]
                 signal1D._remove_axis(axis_in_manager)
 
-        if mode == 'auto' and hasattr(
-                self.original_metadata, 'stack_elements'):
+        if mode == "auto" and hasattr(self.original_metadata, "stack_elements"):
             for i, spectrum in enumerate(splitted):
-                se = self.original_metadata.stack_elements['element' + str(i)]
-                spectrum._metadata = copy.deepcopy(se['metadata'])
-                spectrum._original_metadata = copy.deepcopy(
-                    se['original_metadata']
-                    )
+                se = self.original_metadata.stack_elements["element" + str(i)]
+                spectrum._metadata = copy.deepcopy(se["metadata"])
+                spectrum._original_metadata = copy.deepcopy(se["original_metadata"])
                 spectrum.metadata.General.title = se.metadata.General.title
 
         return splitted
 
-    split.__doc__ %= (ONE_AXIS_PARAMETER)
+    split.__doc__ %= ONE_AXIS_PARAMETER
 
     def _unfold(self, steady_axes, unfolded_axis):
         """Modify the shape of the data by specifying the axes whose
@@ -3602,13 +3826,13 @@ class BaseSignal(FancySlicing,
         new_shape[unfolded_axis] = -1
         self.data = self.data.reshape(new_shape)
         self.axes_manager = self.axes_manager.deepcopy()
-        uname = ''
-        uunits = ''
+        uname = ""
+        uunits = ""
         to_remove = []
         for axis, dim in zip(self.axes_manager._axes, new_shape):
             if dim == 1:
-                uname += ',' + str(axis)
-                uunits = ',' + str(axis.units)
+                uname += "," + str(axis)
+                uunits = "," + str(axis.units)
                 to_remove.append(axis)
         ua = self.axes_manager._axes[unfolded_axis]
         ua.name = str(ua) + uname
@@ -3694,12 +3918,11 @@ class BaseSignal(FancySlicing,
         else:
             needed_unfolding = True
             steady_axes = [
-                axis.index_in_array for axis in
-                self.axes_manager.signal_axes]
-            unfolded_axis = (
-                self.axes_manager.navigation_axes[0].index_in_array)
+                axis.index_in_array for axis in self.axes_manager.signal_axes
+            ]
+            unfolded_axis = self.axes_manager.navigation_axes[0].index_in_array
             self._unfold(steady_axes, unfolded_axis)
-            if self.metadata.has_item('Signal.Noise_properties.variance'):
+            if self.metadata.has_item("Signal.Noise_properties.variance"):
                 variance = self.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, BaseSignal):
                     variance.unfold_navigation_space()
@@ -3720,12 +3943,12 @@ class BaseSignal(FancySlicing,
         else:
             needed_unfolding = True
             steady_axes = [
-                axis.index_in_array for axis in
-                self.axes_manager.navigation_axes]
+                axis.index_in_array for axis in self.axes_manager.navigation_axes
+            ]
             unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
             self._unfold(steady_axes, unfolded_axis)
             self.metadata._HyperSpy.Folding.signal_unfolded = True
-            if self.metadata.has_item('Signal.Noise_properties.variance'):
+            if self.metadata.has_item("Signal.Noise_properties.variance"):
                 variance = self.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, BaseSignal):
                     variance.unfold_signal_space()
@@ -3744,16 +3967,18 @@ class BaseSignal(FancySlicing,
             folding.unfolded = False
             folding.signal_unfolded = False
             self._assign_subclass()
-            if self.metadata.has_item('Signal.Noise_properties.variance'):
+            if self.metadata.has_item("Signal.Noise_properties.variance"):
                 variance = self.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, BaseSignal):
                     variance.fold()
 
     def _make_sure_data_is_contiguous(self):
-        if self.data.flags['C_CONTIGUOUS'] is False:
-            _logger.info("{0!r} data is replaced by its optimized copy, see "
-                         "optimize parameter of ``Basesignal.transpose`` "
-                         "for more information.".format(self))
+        if self.data.flags["C_CONTIGUOUS"] is False:
+            _logger.info(
+                "{0!r} data is replaced by its optimized copy, see "
+                "optimize parameter of ``Basesignal.transpose`` "
+                "for more information.".format(self)
+            )
             self.data = np.ascontiguousarray(self.data, like=self.data)
 
     def _iterate_signal(self, iterpath=None):
@@ -3775,7 +4000,7 @@ class BaseSignal(FancySlicing,
         with self.axes_manager.switch_iterpath(iterpath):
             self.axes_manager.indices = tuple(
                 [0 for _ in self.axes_manager.navigation_axes]
-                )
+            )
             for _ in self.axes_manager:
                 yield self._get_current_data()
             # restore original index
@@ -3795,11 +4020,9 @@ class BaseSignal(FancySlicing,
             return  # pragma: no cover
 
         self._make_sure_data_is_contiguous()
-        axes = [axis.index_in_array for
-                axis in self.axes_manager.signal_axes]
+        axes = [axis.index_in_array for axis in self.axes_manager.signal_axes]
         if axes:
-            unfolded_axis = (
-                self.axes_manager.navigation_axes[0].index_in_array)
+            unfolded_axis = self.axes_manager.navigation_axes[0].index_in_array
             new_shape = [1] * len(self.data.shape)
             for axis in axes:
                 new_shape[axis] = self.data.shape[axis]
@@ -3817,7 +4040,7 @@ class BaseSignal(FancySlicing,
         Ni = data.shape[unfolded_axis]
         while True:
             getitem[unfolded_axis] = i
-            yield(data[tuple(getitem)])
+            yield (data[tuple(getitem)])
             i += 1
             i = 0 if i == Ni else i
 
@@ -3852,21 +4075,31 @@ class BaseSignal(FancySlicing,
         data = self.data.reshape(new_shape).squeeze()
 
         if out:
-            data = np.atleast_1d(function(data, axis=ar_axes[0],))
+            data = np.atleast_1d(
+                function(
+                    data,
+                    axis=ar_axes[0],
+                )
+            )
             if data.shape == out.data.shape:
                 out.data[:] = data
                 out.events.data_changed.trigger(obj=out)
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
-                    "`out` %s" % (data.shape, out.data.shape))
+                    "`out` %s" % (data.shape, out.data.shape)
+                )
         else:
-            s.data = function(data, axis=ar_axes[0],)
+            s.data = function(
+                data,
+                axis=ar_axes[0],
+            )
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def _apply_function_on_data_and_remove_axis(self, function, axes,
-                                                out=None, **kwargs):
+    def _apply_function_on_data_and_remove_axis(
+        self, function, axes, out=None, **kwargs
+    ):
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
@@ -3891,23 +4124,38 @@ class BaseSignal(FancySlicing,
         s = out or self._deepcopy_with_new_data(None)
 
         if np.ma.is_masked(self.data):
-            return self._ma_workaround(s=s, function=function, axes=axes,
-                                       ar_axes=ar_axes, out=out)
+            return self._ma_workaround(
+                s=s, function=function, axes=axes, ar_axes=ar_axes, out=out
+            )
         if out:
             if np_out:
-                function(self.data, axis=ar_axes, out=out.data,)
+                function(
+                    self.data,
+                    axis=ar_axes,
+                    out=out.data,
+                )
             else:
-                data = np.atleast_1d(function(self.data, axis=ar_axes,))
+                data = np.atleast_1d(
+                    function(
+                        self.data,
+                        axis=ar_axes,
+                    )
+                )
                 if data.shape == out.data.shape:
                     out.data[:] = data
                 else:
                     raise ValueError(
                         "The output shape %s does not match  the shape of "
-                        "`out` %s" % (data.shape, out.data.shape))
+                        "`out` %s" % (data.shape, out.data.shape)
+                    )
             out.events.data_changed.trigger(obj=out)
         else:
             s.data = np.atleast_1d(
-                function(self.data, axis=ar_axes,))
+                function(
+                    self.data,
+                    axis=ar_axes,
+                )
+            )
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
@@ -3955,13 +4203,17 @@ class BaseSignal(FancySlicing,
         if not np.iterable(axes):
             axes = (axes,)
         if any([not ax.is_uniform and not ax.is_binned for ax in axes]):
-            warnings.warn("You are summing over an unbinned, non-uniform axis. "
-                          "The result can not be used as an approximation of "
-                          "the integral of the signal. For this functionality, "
-                          "use integrate1D instead.")
+            warnings.warn(
+                "You are summing over an unbinned, non-uniform axis. "
+                "The result can not be used as an approximation of "
+                "the integral of the signal. For this functionality, "
+                "use integrate1D instead."
+            )
 
         return self._apply_function_on_data_and_remove_axis(
-            np.sum, axis, out=out, rechunk=rechunk)
+            np.sum, axis, out=out, rechunk=rechunk
+        )
+
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def max(self, axis=None, out=None, rechunk=False):
@@ -3997,7 +4249,9 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.max, axis, out=out, rechunk=rechunk)
+            np.max, axis, out=out, rechunk=rechunk
+        )
+
     max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def min(self, axis=None, out=None, rechunk=False):
@@ -4033,7 +4287,9 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.min, axis, out=out, rechunk=rechunk)
+            np.min, axis, out=out, rechunk=rechunk
+        )
+
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def mean(self, axis=None, out=None, rechunk=False):
@@ -4069,7 +4325,9 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.mean, axis, out=out, rechunk=rechunk)
+            np.mean, axis, out=out, rechunk=rechunk
+        )
+
     mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def std(self, axis=None, out=None, rechunk=False):
@@ -4105,7 +4363,9 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.std, axis, out=out, rechunk=rechunk)
+            np.std, axis, out=out, rechunk=rechunk
+        )
+
     std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def var(self, axis=None, out=None, rechunk=False):
@@ -4141,66 +4401,80 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.var, axis, out=out, rechunk=rechunk)
+            np.var, axis, out=out, rechunk=rechunk
+        )
+
     var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def nansum(self, axis=None, out=None, rechunk=False):
-        """%s
-        """
+        """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         axes = self.axes_manager[axis]
         if not np.iterable(axes):
             axes = (axes,)
         if any([not ax.is_uniform for ax in axes]):
-            warnings.warn("You are summing over a non-uniform axis. The result "
-                          "can not be used as an approximation of the "
-                          "integral of the signal. For this functionaliy, "
-                          "use integrate1D instead.")
+            warnings.warn(
+                "You are summing over a non-uniform axis. The result "
+                "can not be used as an approximation of the "
+                "integral of the signal. For this functionaliy, "
+                "use integrate1D instead."
+            )
         return self._apply_function_on_data_and_remove_axis(
-            np.nansum, axis, out=out, rechunk=rechunk)
-    nansum.__doc__ %= (NAN_FUNC.format('sum'))
+            np.nansum, axis, out=out, rechunk=rechunk
+        )
+
+    nansum.__doc__ %= NAN_FUNC.format("sum")
 
     def nanmax(self, axis=None, out=None, rechunk=False):
-        """%s
-        """
+        """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.nanmax, axis, out=out, rechunk=rechunk)
-    nanmax.__doc__ %= (NAN_FUNC.format('max'))
+            np.nanmax, axis, out=out, rechunk=rechunk
+        )
+
+    nanmax.__doc__ %= NAN_FUNC.format("max")
 
     def nanmin(self, axis=None, out=None, rechunk=False):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.nanmin, axis, out=out, rechunk=rechunk)
-    nanmin.__doc__ %= (NAN_FUNC.format('min'))
+            np.nanmin, axis, out=out, rechunk=rechunk
+        )
+
+    nanmin.__doc__ %= NAN_FUNC.format("min")
 
     def nanmean(self, axis=None, out=None, rechunk=False):
-        """%s """
+        """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.nanmean, axis, out=out, rechunk=rechunk)
-    nanmean.__doc__ %= (NAN_FUNC.format('mean'))
+            np.nanmean, axis, out=out, rechunk=rechunk
+        )
+
+    nanmean.__doc__ %= NAN_FUNC.format("mean")
 
     def nanstd(self, axis=None, out=None, rechunk=False):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.nanstd, axis, out=out, rechunk=rechunk)
-    nanstd.__doc__ %= (NAN_FUNC.format('std'))
+            np.nanstd, axis, out=out, rechunk=rechunk
+        )
+
+    nanstd.__doc__ %= NAN_FUNC.format("std")
 
     def nanvar(self, axis=None, out=None, rechunk=False):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
-            np.nanvar, axis, out=out, rechunk=rechunk)
-    nanvar.__doc__ %= (NAN_FUNC.format('var'))
+            np.nanvar, axis, out=out, rechunk=rechunk
+        )
+
+    nanvar.__doc__ %= NAN_FUNC.format("var")
 
     def diff(self, axis, order=1, out=None, rechunk=False):
         """Returns a signal with the ``n``-th order discrete difference along
@@ -4248,12 +4522,11 @@ class BaseSignal(FancySlicing,
         """
         if not self.axes_manager[axis].is_uniform:
             raise NotImplementedError(
-            "Performing a numerical difference on a non-uniform axis "
-            "is not implemented. Consider using `derivative` instead."
-        )
+                "Performing a numerical difference on a non-uniform axis "
+                "is not implemented. Consider using `derivative` instead."
+            )
         s = out or self._deepcopy_with_new_data(None)
-        data = np.diff(self.data, n=order,
-                       axis=self.axes_manager[axis].index_in_array)
+        data = np.diff(self.data, n=order, axis=self.axes_manager[axis].index_in_array)
         if out is not None:
             out.data[:] = data
         else:
@@ -4266,6 +4539,7 @@ class BaseSignal(FancySlicing,
             return s
         else:
             out.events.data_changed.trigger(obj=out)
+
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def derivative(self, axis, order=1, out=None, **kwargs):
@@ -4312,14 +4586,18 @@ class BaseSignal(FancySlicing,
         der_data = self.data
         while n:
             der_data = np.gradient(
-                der_data, self.axes_manager[axis].axis,
-                axis=self.axes_manager[axis].index_in_array, **kwargs)
+                der_data,
+                self.axes_manager[axis].axis,
+                axis=self.axes_manager[axis].index_in_array,
+                **kwargs,
+            )
             n -= 1
         if out:
             out.data = der_data
             out.events.data_changed.trigger(obj=out)
         else:
             return self._deepcopy_with_new_data(der_data)
+
     derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None, rechunk=False):
@@ -4354,8 +4632,7 @@ class BaseSignal(FancySlicing,
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        data = integrate.simps(y=self.data, x=axis.axis,
-                               axis=axis.index_in_array)
+        data = integrate.simps(y=self.data, x=axis.axis, axis=axis.index_in_array)
         if out is not None:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
@@ -4363,6 +4640,7 @@ class BaseSignal(FancySlicing,
             s.data = data
             s._remove_axis(axis.index_in_axes_manager)
             return s
+
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def fft(self, shift=False, apodization=False, real_fft_only=False, **kwargs):
@@ -4420,7 +4698,7 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
         if apodization is True:
-            apodization = 'hann'
+            apodization = "hann"
 
         if apodization:
             im_fft = self.apply_apodization(window=apodization, inplace=False)
@@ -4429,9 +4707,8 @@ class BaseSignal(FancySlicing,
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
         if any([not axs.is_uniform for axs in self.axes_manager[axes]]):
-            raise NotImplementedError(
-                    "Not implemented for non-uniform axes.")
-        use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
+            raise NotImplementedError("Not implemented for non-uniform axes.")
+        use_real_fft = real_fft_only and (self.data.dtype.kind != "c")
 
         if use_real_fft:
             fft_f = np.fft.rfftn
@@ -4439,29 +4716,30 @@ class BaseSignal(FancySlicing,
             fft_f = np.fft.fftn
 
         if shift:
-            im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-        else:
             im_fft = self._deepcopy_with_new_data(
-                fft_f(self.data, axes=axes, **kwargs))
+                np.fft.fftshift(fft_f(im_fft.data, axes=axes, **kwargs), axes=axes)
+            )
+        else:
+            im_fft = self._deepcopy_with_new_data(fft_f(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
-        im_fft.metadata.General.title = 'FFT of {}'.format(
-            im_fft.metadata.General.title)
-        im_fft.metadata.set_item('Signal.FFT.shifted', shift)
-        if hasattr(self.metadata.Signal, 'quantity'):
-            self.metadata.Signal.__delattr__('quantity')
+        im_fft.metadata.General.title = "FFT of {}".format(
+            im_fft.metadata.General.title
+        )
+        im_fft.metadata.set_item("Signal.FFT.shifted", shift)
+        if hasattr(self.metadata.Signal, "quantity"):
+            self.metadata.Signal.__delattr__("quantity")
 
         for axis in im_fft.axes_manager.signal_axes:
-            axis.scale = 1. / axis.size / axis.scale
+            axis.scale = 1.0 / axis.size / axis.scale
             axis.offset = 0.0
             try:
-                units = _ureg.parse_expression(str(axis.units))**(-1)
-                axis.units = '{:~}'.format(units.units)
+                units = _ureg.parse_expression(str(axis.units)) ** (-1)
+                axis.units = "{:~}".format(units.units)
             except UndefinedUnitError:
-                _logger.warning('Units are not set or cannot be recognized')
+                _logger.warning("Units are not set or cannot be recognized")
             if shift:
-                axis.offset = -axis.high_value / 2.
+                axis.offset = -axis.high_value / 2.0
         return im_fft
 
     def ifft(self, shift=None, return_real=True, **kwargs):
@@ -4516,34 +4794,38 @@ class BaseSignal(FancySlicing,
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
         if any([not axs.is_uniform for axs in self.axes_manager[axes]]):
-            raise NotImplementedError(
-                    "Not implemented for non-uniform axes.")
+            raise NotImplementedError("Not implemented for non-uniform axes.")
         if shift is None:
-            shift = self.metadata.get_item('Signal.FFT.shifted', False)
+            shift = self.metadata.get_item("Signal.FFT.shifted", False)
 
         if shift:
-            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
+            im_ifft = self._deepcopy_with_new_data(
+                np.fft.ifftn(
+                    np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs
+                )
+            )
         else:
-            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                self.data, axes=axes, **kwargs))
+            im_ifft = self._deepcopy_with_new_data(
+                np.fft.ifftn(self.data, axes=axes, **kwargs)
+            )
 
-        im_ifft.metadata.General.title = 'iFFT of {}'.format(
-            im_ifft.metadata.General.title)
-        if im_ifft.metadata.has_item('Signal.FFT'):
+        im_ifft.metadata.General.title = "iFFT of {}".format(
+            im_ifft.metadata.General.title
+        )
+        if im_ifft.metadata.has_item("Signal.FFT"):
             del im_ifft.metadata.Signal.FFT
 
         if return_real:
             im_ifft = im_ifft.real
 
         for axis in im_ifft.axes_manager.signal_axes:
-            axis.scale = 1. / axis.size / axis.scale
+            axis.scale = 1.0 / axis.size / axis.scale
             try:
                 units = _ureg.parse_expression(str(axis.units)) ** (-1)
-                axis.units = '{:~}'.format(units.units)
+                axis.units = "{:~}".format(units.units)
             except UndefinedUnitError:
-                _logger.warning('Units are not set or cannot be recognized')
-            axis.offset = 0.
+                _logger.warning("Units are not set or cannot be recognized")
+            axis.offset = 0.0
         return im_ifft
 
     def integrate1D(self, axis, out=None, rechunk=False):
@@ -4616,7 +4898,9 @@ class BaseSignal(FancySlicing,
 
         """
         return self._apply_function_on_data_and_remove_axis(
-            np.argmin, axis, out=out, rechunk=rechunk)
+            np.argmin, axis, out=out, rechunk=rechunk
+        )
+
     indexmin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def indexmax(self, axis, out=None, rechunk=False):
@@ -4648,7 +4932,9 @@ class BaseSignal(FancySlicing,
 
         """
         return self._apply_function_on_data_and_remove_axis(
-            np.argmax, axis, out=out, rechunk=rechunk)
+            np.argmax, axis, out=out, rechunk=rechunk
+        )
+
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def valuemax(self, axis, out=None, rechunk=False):
@@ -4693,6 +4979,7 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
+
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def valuemin(self, axis, out=None, rechunk=False):
@@ -4728,10 +5015,12 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
+
     valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def get_histogram(self, bins='fd', range_bins=None, max_num_bins=250, out=None,
-                      **kwargs):
+    def get_histogram(
+        self, bins="fd", range_bins=None, max_num_bins=250, out=None, **kwargs
+    ):
         """Return a histogram of the signal data.
 
         More sophisticated algorithms for determining the bins can be used
@@ -4775,14 +5064,11 @@ class BaseSignal(FancySlicing,
 
         """
         from hyperspy import signals
+
         data = self.data[~np.isnan(self.data)].flatten()
 
         hist, bin_edges = histogram(
-            data,
-            bins=bins,
-            max_num_bins=max_num_bins,
-            range=range_bins,
-            **kwargs
+            data, bins=bins, max_num_bins=max_num_bins, range=range_bins, **kwargs
         )
 
         if out is None:
@@ -4794,7 +5080,7 @@ class BaseSignal(FancySlicing,
             else:
                 hist_spec.data = hist
 
-        if isinstance(bins, str) and bins == 'blocks':
+        if isinstance(bins, str) and bins == "blocks":
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
                 "The option `bins='blocks'` is not fully supported in this "
@@ -4807,16 +5093,20 @@ class BaseSignal(FancySlicing,
             hist_spec.axes_manager[0].offset = bin_edges[0]
             hist_spec.axes_manager[0].size = hist.shape[-1]
 
-        hist_spec.axes_manager[0].name = 'value'
+        hist_spec.axes_manager[0].name = "value"
         hist_spec.axes_manager[0].is_binned = True
-        hist_spec.metadata.General.title = (self.metadata.General.title +
-                                            " histogram")
+        hist_spec.metadata.General.title = self.metadata.General.title + " histogram"
         if out is None:
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
 
-    get_histogram.__doc__ %= (HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, OUT_ARG, RECHUNK_ARG)
+    get_histogram.__doc__ %= (
+        HISTOGRAM_BIN_ARGS,
+        HISTOGRAM_MAX_BIN_ARGS,
+        OUT_ARG,
+        RECHUNK_ARG,
+    )
 
     def map(
         self,
@@ -5022,30 +5312,34 @@ class BaseSignal(FancySlicing,
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
         # We use _map_all only when the user doesn't specify axis/axes
-        if (not ndkwargs
+        if (
+            not ndkwargs
             and not lazy_output
             and self.axes_manager.signal_dimension == 1
             and "axis" in fargs
             and "axis" not in kwargs.keys()
-            ):
-            kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
+        ):
+            kwargs["axis"] = self.axes_manager.signal_axes[-1].index_in_array
             result = self._map_all(function, inplace=inplace, **kwargs)
-        elif (not ndkwargs
-              and not lazy_output
-              and "axes" in fargs
-              and "axes" not in kwargs.keys()
-              ):
-            kwargs['axes'] = tuple([axis.index_in_array for axis in
-                                    self.axes_manager.signal_axes])
+        elif (
+            not ndkwargs
+            and not lazy_output
+            and "axes" in fargs
+            and "axes" not in kwargs.keys()
+        ):
+            kwargs["axes"] = tuple(
+                [axis.index_in_array for axis in self.axes_manager.signal_axes]
+            )
             result = self._map_all(function, inplace=inplace, **kwargs)
         else:
             if show_progressbar is None:
                 from hyperspy.defaults_parser import preferences
+
                 show_progressbar = preferences.General.show_progressbar
             # Iteration over coordinates.
             result = self._map_iterate(
                 function,
-                iterating_kwargs=ndkwargs, # function argument(s) (iterating)
+                iterating_kwargs=ndkwargs,  # function argument(s) (iterating)
                 show_progressbar=show_progressbar,
                 ragged=ragged,
                 inplace=inplace,
@@ -5054,7 +5348,7 @@ class BaseSignal(FancySlicing,
                 output_dtype=output_dtype,
                 output_signal_size=output_signal_size,
                 navigation_chunks=navigation_chunks,
-                **kwargs, # function argument(s) (non-iterating)
+                **kwargs,  # function argument(s) (non-iterating)
             )
         if not inplace:
             return result
@@ -5136,8 +5430,10 @@ class BaseSignal(FancySlicing,
             output_signal_size is None or output_dtype is None
         )  # try to guess output dtype and sig size?
         if autodetermine and is_cupy_array(self.data):
-            raise ValueError('Autodetermination of `output_signal_size` and '
-                             '`output_dtype` is not supported for cupy array.')
+            raise ValueError(
+                "Autodetermination of `output_signal_size` and "
+                "`output_dtype` is not supported for cupy array."
+            )
 
         args, arg_keys = old_sig._get_iterating_kwargs(iterating_kwargs)
 
@@ -5153,7 +5449,10 @@ class BaseSignal(FancySlicing,
                 old_sig.inav[(0,) * len(os_am.navigation_shape)].data.compute()
             )
             temp_output_signal_size, temp_output_dtype = guess_output_signal_size(
-                test_data=test_data, function=function, ragged=ragged, **testing_kwargs,
+                test_data=test_data,
+                function=function,
+                ragged=ragged,
+                **testing_kwargs,
             )
             if output_signal_size is None:
                 output_signal_size = temp_output_signal_size
@@ -5248,10 +5547,13 @@ class BaseSignal(FancySlicing,
                 axes = iterating_kwargs[key].axes_manager.navigation_axes
                 if iterating_kwargs[key].get_chunk_size(axes) != nav_chunks:
                     iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
-                chunk_span = np.equal(iterating_kwargs[key].data.chunksize,
-                                      iterating_kwargs[key].data.shape)
+                chunk_span = np.equal(
+                    iterating_kwargs[key].data.chunksize,
+                    iterating_kwargs[key].data.shape,
+                )
                 chunk_span = [
-                    chunk_span[i] for i in iterating_kwargs[key].axes_manager.signal_indices_in_array
+                    chunk_span[i]
+                    for i in iterating_kwargs[key].axes_manager.signal_indices_in_array
                 ]
                 if not all(chunk_span):
                     iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
@@ -5293,15 +5595,16 @@ class BaseSignal(FancySlicing,
 
         # The Signal subclass might change the view on init
         # The following code just copies the original view
-        for oaxis, caxis in zip(self.axes_manager._axes,
-                                dc.axes_manager._axes):
+        for oaxis, caxis in zip(self.axes_manager._axes, dc.axes_manager._axes):
             caxis.navigate = oaxis.navigate
 
-        if dc.metadata.has_item('Markers'):
+        if dc.metadata.has_item("Markers"):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
             markers_dict = {}
             for key in temp_marker_dict:
-                markers_dict[key] = markers_dict_to_markers(temp_marker_dict[key],)
+                markers_dict[key] = markers_dict_to_markers(
+                    temp_marker_dict[key],
+                )
             dc.metadata.Markers = markers_dict
         return dc
 
@@ -5353,16 +5656,18 @@ class BaseSignal(FancySlicing,
             if dtype in rgb_tools.rgb_dtypes:
                 if self.axes_manager.signal_dimension != 1:
                     raise AttributeError(
-                        "Only 1D signals can be converted "
-                        "to RGB images.")
+                        "Only 1D signals can be converted " "to RGB images."
+                    )
                 if "8" in dtype and self.data.dtype.name != "uint8":
                     raise AttributeError(
                         "Only signals with dtype uint8 can be converted to "
-                        "rgb8 images")
+                        "rgb8 images"
+                    )
                 elif "16" in dtype and self.data.dtype.name != "uint16":
                     raise AttributeError(
                         "Only signals with dtype uint16 can be converted to "
-                        "rgb16 images")
+                        "rgb16 images"
+                    )
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager._set_signal_dimension(2)
@@ -5374,29 +5679,31 @@ class BaseSignal(FancySlicing,
             ddtype = self.data.dtype.fields["B"][0]
 
             if ddtype != dtype:
-                raise ValueError(
-                    "It is only possibile to change to %s." %
-                    ddtype)
+                raise ValueError("It is only possibile to change to %s." % ddtype)
             self.data = rgb_tools.rgbx2regular_array(self.data)
             self.axes_manager._append_axis(
                 size=self.data.shape[-1],
                 scale=1,
                 offset=0,
                 name="RGB index",
-                navigate=False,)
+                navigate=False,
+            )
             self.axes_manager._set_signal_dimension(1)
             self._assign_subclass()
             return
         else:
             self.data = self.data.astype(dtype)
         self._assign_subclass()
-    change_dtype.__doc__ %= (RECHUNK_ARG)
 
-    def estimate_poissonian_noise_variance(self,
-                                           expected_value=None,
-                                           gain_factor=None,
-                                           gain_offset=None,
-                                           correlation_factor=None):
+    change_dtype.__doc__ %= RECHUNK_ARG
+
+    def estimate_poissonian_noise_variance(
+        self,
+        expected_value=None,
+        gain_factor=None,
+        gain_offset=None,
+        correlation_factor=None,
+    ):
         r"""Estimate the Poissonian noise variance of the signal.
 
         The variance is stored in the
@@ -5447,12 +5754,10 @@ class BaseSignal(FancySlicing,
         if expected_value is None:
             expected_value = self
         dc = expected_value.data if expected_value._lazy else expected_value.data.copy()
-        if self.metadata.has_item(
-                "Signal.Noise_properties.Variance_linear_model"):
+        if self.metadata.has_item("Signal.Noise_properties.Variance_linear_model"):
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
         else:
-            self.metadata.add_node(
-                "Signal.Noise_properties.Variance_linear_model")
+            self.metadata.add_node("Signal.Noise_properties.Variance_linear_model")
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
 
         if gain_factor is None:
@@ -5476,19 +5781,20 @@ class BaseSignal(FancySlicing,
             raise ValueError("`gain_factor` must be positive.")
         if correlation_factor < 0:
             raise ValueError("`correlation_factor` must be positive.")
-        variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
-                                                            gain_offset,
-                                                            correlation_factor)
+        variance = self._estimate_poissonian_noise_variance(
+            dc, gain_factor, gain_offset, correlation_factor
+        )
 
-        variance = BaseSignal(variance, attributes={'_lazy': self._lazy})
+        variance = BaseSignal(variance, attributes={"_lazy": self._lazy})
         variance.axes_manager = self.axes_manager
-        variance.metadata.General.title = ("Variance of " + self.metadata.General.title)
+        variance.metadata.General.title = "Variance of " + self.metadata.General.title
 
         self.set_noise_variance(variance)
 
     @staticmethod
-    def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
-                                            correlation_factor):
+    def _estimate_poissonian_noise_variance(
+        dc, gain_factor, gain_offset, correlation_factor
+    ):
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
         return variance
@@ -5551,8 +5857,7 @@ class BaseSignal(FancySlicing,
 
         return None
 
-    def get_current_signal(self, auto_title=True, auto_filename=True,
-                           as_numpy=False):
+    def get_current_signal(self, auto_title=True, auto_filename=True, as_numpy=False):
         """Returns the data at the current coordinates as a
         :class:`~hyperspy.signal.BaseSignal` subclass.
 
@@ -5592,7 +5897,7 @@ class BaseSignal(FancySlicing,
         metadata = self.metadata.deepcopy()
 
         # Check if marker update
-        if self.metadata.has_item('Markers'):
+        if self.metadata.has_item("Markers"):
             markers_dict = self.metadata.Markers
             marker_name_list = self.metadata.Markers.keys()
             new_markers_dict = metadata.Markers
@@ -5606,15 +5911,17 @@ class BaseSignal(FancySlicing,
             dtype=self.data.dtype,
             signal_dimension=self.axes_manager.signal_dimension,
             signal_type=self._signal_type,
-            lazy=False)
+            lazy=False,
+        )
 
         cs = class_(
             self._get_current_data(as_numpy=as_numpy),
             axes=self.axes_manager._get_signal_axes_dicts(),
-            metadata=metadata.as_dictionary())
+            metadata=metadata.as_dictionary(),
+        )
 
         # reinitialize the markers from dictionary
-        if cs.metadata.has_item('Markers'):
+        if cs.metadata.has_item("Markers"):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
             markers_dict = {}
             for key, item in temp_marker_dict.items():
@@ -5622,15 +5929,16 @@ class BaseSignal(FancySlicing,
                 markers_dict[key]._signal = cs
             cs.metadata.Markers = markers_dict
 
-        if auto_filename is True and self.tmp_parameters.has_item('filename'):
-            cs.tmp_parameters.filename = (self.tmp_parameters.filename +
-                                          '_' +
-                                          str(self.axes_manager.indices))
+        if auto_filename is True and self.tmp_parameters.has_item("filename"):
+            cs.tmp_parameters.filename = (
+                self.tmp_parameters.filename + "_" + str(self.axes_manager.indices)
+            )
             cs.tmp_parameters.extension = self.tmp_parameters.extension
             cs.tmp_parameters.folder = self.tmp_parameters.folder
         if auto_title is True:
-            cs.metadata.General.title = (cs.metadata.General.title +
-                                         ' ' + str(self.axes_manager.indices))
+            cs.metadata.General.title = (
+                cs.metadata.General.title + " " + str(self.axes_manager.indices)
+            )
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs
 
@@ -5650,38 +5958,45 @@ class BaseSignal(FancySlicing,
             signal data.
         """
         if data is not None:
-            ref_shape = (self.axes_manager._navigation_shape_in_array
-                         if self.axes_manager.navigation_dimension != 0
-                         else (1,))
+            ref_shape = (
+                self.axes_manager._navigation_shape_in_array
+                if self.axes_manager.navigation_dimension != 0
+                else (1,)
+            )
             if data.shape != ref_shape:
                 raise ValueError(
-                    ("data.shape %s is not equal to the current navigation "
-                     "shape in array which is %s") %
-                    (str(data.shape), str(ref_shape)))
+                    (
+                        "data.shape %s is not equal to the current navigation "
+                        "shape in array which is %s"
+                    )
+                    % (str(data.shape), str(ref_shape))
+                )
         else:
             if dtype is None:
                 dtype = self.data.dtype
             if self.axes_manager.navigation_dimension == 0:
-                data = np.array([0, ], dtype=dtype)
+                data = np.array(
+                    [
+                        0,
+                    ],
+                    dtype=dtype,
+                )
             else:
                 data = np.zeros(
-                    self.axes_manager._navigation_shape_in_array,
-                    dtype=dtype)
+                    self.axes_manager._navigation_shape_in_array, dtype=dtype
+                )
         if self.axes_manager.navigation_dimension == 0:
             s = BaseSignal(data)
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy._signals.signal1d import Signal1D
-            s = Signal1D(data,
-                         axes=self.axes_manager._get_navigation_axes_dicts())
+
+            s = Signal1D(data, axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy._signals.signal2d import Signal2D
-            s = Signal2D(data,
-                         axes=self.axes_manager._get_navigation_axes_dicts())
+
+            s = Signal2D(data, axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = BaseSignal(
-                data,
-                axes=self.axes_manager._get_navigation_axes_dicts()
-                ).T
+            s = BaseSignal(data, axes=self.axes_manager._get_navigation_axes_dicts()).T
         if isinstance(data, da.Array):
             s = s.as_lazy()
         return s
@@ -5702,29 +6017,34 @@ class BaseSignal(FancySlicing,
             signal data.
         """
         if data is not None:
-            ref_shape = (self.axes_manager._signal_shape_in_array
-                         if self.axes_manager.signal_dimension != 0
-                         else (1,))
+            ref_shape = (
+                self.axes_manager._signal_shape_in_array
+                if self.axes_manager.signal_dimension != 0
+                else (1,)
+            )
             if data.shape != ref_shape:
                 raise ValueError(
                     "data.shape %s is not equal to the current signal shape in"
-                    " array which is %s" % (str(data.shape), str(ref_shape)))
+                    " array which is %s" % (str(data.shape), str(ref_shape))
+                )
         else:
             if dtype is None:
                 dtype = self.data.dtype
             if self.axes_manager.signal_dimension == 0:
-                data = np.array([0, ], dtype=dtype)
+                data = np.array(
+                    [
+                        0,
+                    ],
+                    dtype=dtype,
+                )
             else:
-                data = np.zeros(
-                    self.axes_manager._signal_shape_in_array,
-                    dtype=dtype)
+                data = np.zeros(self.axes_manager._signal_shape_in_array, dtype=dtype)
 
         if self.axes_manager.signal_dimension == 0:
             s = BaseSignal(data)
             s.set_signal_type(self.metadata.Signal.signal_type)
         else:
-            s = self.__class__(data,
-                               axes=self.axes_manager._get_signal_axes_dicts())
+            s = self.__class__(data, axes=self.axes_manager._get_signal_axes_dicts())
         if isinstance(data, da.Array):
             s = s.as_lazy()
         return s
@@ -5785,8 +6105,12 @@ class BaseSignal(FancySlicing,
             else:
                 out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
-    as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG,
-                            OPTIMIZE_ARG.replace('False', 'True'))
+
+    as_signal1D.__doc__ %= (
+        ONE_AXIS_PARAMETER,
+        OUT_ARG,
+        OPTIMIZE_ARG.replace("False", "True"),
+    )
 
     def as_signal2D(self, image_axes, out=None, optimize=True):
         """Convert a signal to a :class:`~hyperspy.api.signals.Signal2D`.
@@ -5828,7 +6152,8 @@ class BaseSignal(FancySlicing,
         """
         if self.data.ndim < 2:
             raise DataDimensionError(
-                "A Signal dimension must be >= 2 to be converted to a Signal2D")
+                "A Signal dimension must be >= 2 to be converted to a Signal2D"
+            )
         im = self.transpose(signal_axes=image_axes, optimize=optimize)
         if out is None:
             return im
@@ -5838,7 +6163,8 @@ class BaseSignal(FancySlicing,
             else:
                 out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
-    as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG.replace('False', 'True'))
+
+    as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG.replace("False", "True"))
 
     def _assign_subclass(self):
         mp = self.metadata
@@ -5848,7 +6174,8 @@ class BaseSignal(FancySlicing,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type,
-            lazy=self._lazy)
+            lazy=self._lazy,
+        )
         if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(self.data, full_initialisation=False)
@@ -5936,9 +6263,7 @@ class BaseSignal(FancySlicing,
 
         """
         if signal_type is None:
-            raise TypeError(
-                "The `signal_type` argument must be of string type."
-                )
+            raise TypeError("The `signal_type` argument must be of string type.")
 
         self.metadata.Signal.signal_type = signal_type
         # _assign_subclass takes care of matching aliases with their
@@ -5978,7 +6303,8 @@ class BaseSignal(FancySlicing,
 
         """
         _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics(
-            rechunk=rechunk)
+            rechunk=rechunk
+        )
         print(underline("Summary statistics"))
         print("mean:\t" + formatter % _mean)
         print("std:\t" + formatter % _std)
@@ -5988,7 +6314,8 @@ class BaseSignal(FancySlicing,
         print("median:\t" + formatter % _q2)
         print("Q3:\t" + formatter % _q3)
         print("max:\t" + formatter % _max)
-    print_summary_statistics.__doc__ %= (RECHUNK_ARG)
+
+    print_summary_statistics.__doc__ %= RECHUNK_ARG
 
     def _calculate_summary_statistics(self, **kwargs):
         data = self.data
@@ -6025,8 +6352,14 @@ class BaseSignal(FancySlicing,
         return rgb_tools.is_rgbx(self.data)
 
     def add_marker(
-            self, marker, plot_on_signal=True, plot_marker=True,
-            permanent=False, plot_signal=True, render_figure=True):
+        self,
+        marker,
+        plot_on_signal=True,
+        plot_marker=True,
+        permanent=False,
+        plot_signal=True,
+        render_figure=True,
+    ):
         """
         Add one or several markers to the signal or navigator plot and plot
         the signal, if not yet plotted (by default)
@@ -6101,8 +6434,8 @@ class BaseSignal(FancySlicing,
         if permanent:
             # Make a list of existing marker to check if this is not already
             # added to the metadata.
-            if not self.metadata.has_item('Markers'):
-                self.metadata.add_node('Markers')
+            if not self.metadata.has_item("Markers"):
+                self.metadata.add_node("Markers")
             marker_object_list = []
             for marker_tuple in list(self.metadata.Markers):
                 marker_object_list.append(marker_tuple[1])
@@ -6123,8 +6456,10 @@ class BaseSignal(FancySlicing,
                     self._plot.signal_plot.add_marker(m)
                 else:
                     if self._plot.navigator_plot is None:
-                        raise ValueError("Attempted to plot marker on navigator_plot when none is"
-                                         "active.")
+                        raise ValueError(
+                            "Attempted to plot marker on navigator_plot when none is"
+                            "active."
+                        )
                     self._plot.navigator_plot.add_marker(m)
                 m.plot(render_figure=False)
 
@@ -6149,7 +6484,7 @@ class BaseSignal(FancySlicing,
         if plot_marker and render_figure:
             self._render_figure()
 
-    def _render_figure(self, plot=['signal_plot', 'navigation_plot']):
+    def _render_figure(self, plot=["signal_plot", "navigation_plot"]):
         for p in plot:
             if hasattr(self._plot, p):
                 p = getattr(self._plot, p)
@@ -6159,7 +6494,7 @@ class BaseSignal(FancySlicing,
         marker_name_list = self.metadata.Markers.keys()
         markers_dict = self.metadata.Markers.__dict__
         for marker_name in marker_name_list:
-            marker = markers_dict[marker_name]['_dtb_value_']
+            marker = markers_dict[marker_name]["_dtb_value_"]
             if marker._plot_on_signal:
                 self._plot.signal_plot.add_marker(marker)
             else:
@@ -6265,8 +6600,7 @@ class BaseSignal(FancySlicing,
 
         self.events.data_changed.trigger(obj=self)
 
-    def transpose(self, signal_axes=None,
-                  navigation_axes=None, optimize=False):
+    def transpose(self, signal_axes=None, navigation_axes=None, optimize=False):
         """Transposes the signal to have the required signal and navigation
         axes.
 
@@ -6324,16 +6658,17 @@ class BaseSignal(FancySlicing,
         """
 
         if self.axes_manager.ragged:
-            raise RuntimeError("Signal with ragged dimension can't be "
-                               "transposed.")
+            raise RuntimeError("Signal with ragged dimension can't be " "transposed.")
 
         am = self.axes_manager
         ax_list = am._axes
         if isinstance(signal_axes, int):
             if navigation_axes is not None:
-                raise ValueError("The navigation_axes are not None, even "
-                                 "though just a number was given for "
-                                 "signal_axes")
+                raise ValueError(
+                    "The navigation_axes are not None, even "
+                    "though just a number was given for "
+                    "signal_axes"
+                )
             if len(ax_list) < signal_axes:
                 raise ValueError("Too many signal axes requested")
             if signal_axes < 0:
@@ -6347,28 +6682,32 @@ class BaseSignal(FancySlicing,
         elif iterable_not_string(signal_axes):
             signal_axes = tuple(am[ax] for ax in signal_axes)
             if navigation_axes is None:
-                navigation_axes = tuple(ax for ax in ax_list
-                                        if ax not in signal_axes)[::-1]
+                navigation_axes = tuple(ax for ax in ax_list if ax not in signal_axes)[
+                    ::-1
+                ]
             elif iterable_not_string(navigation_axes):
                 # want to keep the order
                 navigation_axes = tuple(am[ax] for ax in navigation_axes)
                 intersection = set(signal_axes).intersection(navigation_axes)
                 if len(intersection):
-                    raise ValueError("At least one axis found in both spaces:"
-                                     " {}".format(intersection))
+                    raise ValueError(
+                        "At least one axis found in both spaces:" " {}".format(
+                            intersection
+                        )
+                    )
                 if len(am._axes) != (len(signal_axes) + len(navigation_axes)):
-                    raise ValueError("Not all current axes were assigned to a "
-                                     "space")
+                    raise ValueError("Not all current axes were assigned to a " "space")
             else:
-                raise ValueError("navigation_axes has to be None or an iterable"
-                                 " when signal_axes is iterable")
+                raise ValueError(
+                    "navigation_axes has to be None or an iterable"
+                    " when signal_axes is iterable"
+                )
         elif signal_axes is None:
             if isinstance(navigation_axes, int):
                 if len(ax_list) < navigation_axes:
                     raise ValueError("Too many navigation axes requested")
                 if navigation_axes < 0:
-                    raise ValueError(
-                        "Can't have negative number of navigation axes")
+                    raise ValueError("Can't have negative number of navigation axes")
                 elif navigation_axes == 0:
                     navigation_axes = ()
                     signal_axes = ax_list[::-1]
@@ -6376,16 +6715,15 @@ class BaseSignal(FancySlicing,
                     signal_axes = ax_list[navigation_axes:][::-1]
                     navigation_axes = ax_list[:navigation_axes][::-1]
             elif iterable_not_string(navigation_axes):
-                navigation_axes = tuple(am[ax] for ax in
-                                        navigation_axes)
-                signal_axes = tuple(ax for ax in ax_list
-                                    if ax not in navigation_axes)[::-1]
+                navigation_axes = tuple(am[ax] for ax in navigation_axes)
+                signal_axes = tuple(ax for ax in ax_list if ax not in navigation_axes)[
+                    ::-1
+                ]
             elif navigation_axes is None:
                 signal_axes = am.navigation_axes
                 navigation_axes = am.signal_axes
             else:
-                raise ValueError(
-                    "The passed navigation_axes argument is not valid")
+                raise ValueError("The passed navigation_axes argument is not valid")
         else:
             raise ValueError("The passed signal_axes argument is not valid")
         # translate to axes idx from actual objects for variance
@@ -6395,12 +6733,12 @@ class BaseSignal(FancySlicing,
         signal_axes = signal_axes[::-1]
         navigation_axes = navigation_axes[::-1]
         # get data view
-        array_order = tuple(
-            ax.index_in_array for ax in navigation_axes)
+        array_order = tuple(ax.index_in_array for ax in navigation_axes)
         array_order += tuple(ax.index_in_array for ax in signal_axes)
         newdata = self.data.transpose(array_order)
-        res = self._deepcopy_with_new_data(newdata, copy_variance=True,
-                                           copy_learning_results=True)
+        res = self._deepcopy_with_new_data(
+            newdata, copy_variance=True, copy_learning_results=True
+        )
 
         # reconfigure the axes of the axesmanager:
         ram = res.axes_manager
@@ -6418,21 +6756,22 @@ class BaseSignal(FancySlicing,
 
         var = res.get_noise_variance()
         if isinstance(var, BaseSignal):
-            var = var.transpose(signal_axes=idx_sig,
-                                navigation_axes=idx_nav,
-                                optimize=optimize)
+            var = var.transpose(
+                signal_axes=idx_sig, navigation_axes=idx_nav, optimize=optimize
+            )
             res.set_noise_variance(var)
 
         if optimize:
             res._make_sure_data_is_contiguous()
-        if res.metadata.has_item('Markers'):
+        if res.metadata.has_item("Markers"):
             # The markers might fail if the navigation dimensions are changed
             # so the safest is simply to not carry them over from the
             # previous signal.
             del res.metadata.Markers
 
         return res
-    transpose.__doc__ %= (OPTIMIZE_ARG)
+
+    transpose.__doc__ %= OPTIMIZE_ARG
 
     @property
     def T(self):
@@ -6443,8 +6782,9 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
-    def apply_apodization(self, window='hann',
-                          hann_order=None, tukey_alpha=0.5, inplace=False):
+    def apply_apodization(
+        self, window="hann", hann_order=None, tukey_alpha=0.5, inplace=False
+    ):
         """
         Apply an `apodization window
         <https://mathworld.wolfram.com/ApodizationFunction.html>`_ to a Signal.
@@ -6485,18 +6825,25 @@ class BaseSignal(FancySlicing,
         >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
 
-        if window == 'hanning' or window == 'hann':
+        if window == "hanning" or window == "hann":
             if hann_order:
-                def window_function(
-                    m): return hann_window_nth_order(m, hann_order)
+
+                def window_function(m):
+                    return hann_window_nth_order(m, hann_order)
             else:
-                def window_function(m): return np.hanning(m)
-        elif window == 'hamming':
-            def window_function(m): return np.hamming(m)
-        elif window == 'tukey':
-            def window_function(m): return sp_signal.tukey(m, tukey_alpha)
+
+                def window_function(m):
+                    return np.hanning(m)
+        elif window == "hamming":
+
+            def window_function(m):
+                return np.hamming(m)
+        elif window == "tukey":
+
+            def window_function(m):
+                return sp_signal.tukey(m, tukey_alpha)
         else:
-            raise ValueError('Wrong type parameter value.')
+            raise ValueError("Wrong type parameter value.")
 
         windows_1d = []
 
@@ -6505,8 +6852,7 @@ class BaseSignal(FancySlicing,
         for axis, axis_index in zip(self.axes_manager.signal_axes, axes):
             if isinstance(self.data, da.Array):
                 chunks = self.data.chunks[axis_index]
-                window_da = da.from_array(window_function(axis.size),
-                                          chunks=(chunks, ))
+                window_da = da.from_array(window_function(axis.size), chunks=(chunks,))
                 windows_1d.append(window_da)
             else:
                 windows_1d.append(window_function(axis.size))
@@ -6521,7 +6867,8 @@ class BaseSignal(FancySlicing,
             # Iterate over all dimensions of the data
             for i in range(self.data.ndim):
                 if any(
-                        i == axes):  # If current dimension represents one of signal axis, all elements in window
+                    i == axes
+                ):  # If current dimension represents one of signal axis, all elements in window
                     # along current axis to be subscribed
                     slice_w.append(slice(None))
                 else:  # If current dimension is navigation one, new axis is absent in window and should be created
@@ -6553,17 +6900,25 @@ class BaseSignal(FancySlicing,
         """
         if isinstance(mask, BaseSignal):
             if mask.axes_manager.signal_dimension != 0:
-                raise ValueError("The navigation mask signal must have the "
-                                 "`signal_dimension` equal to 0.")
-            elif (mask.axes_manager.navigation_shape !=
-                  self.axes_manager.navigation_shape):
-                raise ValueError("The navigation mask signal must have the "
-                                 "same `navigation_shape` as the current "
-                                 "signal.")
+                raise ValueError(
+                    "The navigation mask signal must have the "
+                    "`signal_dimension` equal to 0."
+                )
+            elif (
+                mask.axes_manager.navigation_shape != self.axes_manager.navigation_shape
+            ):
+                raise ValueError(
+                    "The navigation mask signal must have the "
+                    "same `navigation_shape` as the current "
+                    "signal."
+                )
         if isinstance(mask, np.ndarray) and (
-                mask.shape != self.axes_manager.navigation_shape):
-            raise ValueError("The shape of the navigation mask array must "
-                             "match `navigation_shape`.")
+            mask.shape != self.axes_manager.navigation_shape
+        ):
+            raise ValueError(
+                "The shape of the navigation mask array must "
+                "match `navigation_shape`."
+            )
 
     def _check_signal_mask(self, mask):
         """
@@ -6586,16 +6941,21 @@ class BaseSignal(FancySlicing,
         """
         if isinstance(mask, BaseSignal):
             if mask.axes_manager.navigation_dimension != 0:
-                raise ValueError("The signal mask signal must have the "
-                                 "`navigation_dimension` equal to 0.")
-            elif (mask.axes_manager.signal_shape !=
-                  self.axes_manager.signal_shape):
-                raise ValueError("The signal mask signal must have the same "
-                                 "`signal_shape` as the current signal.")
+                raise ValueError(
+                    "The signal mask signal must have the "
+                    "`navigation_dimension` equal to 0."
+                )
+            elif mask.axes_manager.signal_shape != self.axes_manager.signal_shape:
+                raise ValueError(
+                    "The signal mask signal must have the same "
+                    "`signal_shape` as the current signal."
+                )
         if isinstance(mask, np.ndarray) and (
-                mask.shape != self.axes_manager.signal_shape):
-            raise ValueError("The shape of signal mask array must match "
-                             "`signal_shape`.")
+            mask.shape != self.axes_manager.signal_shape
+        ):
+            raise ValueError(
+                "The shape of signal mask array must match " "`signal_shape`."
+            )
 
     def to_device(self):
         """
@@ -6619,7 +6979,7 @@ class BaseSignal(FancySlicing,
             raise LazyCupyConversion
 
         if not CUPY_INSTALLED:
-            raise BaseException('cupy is required.')
+            raise BaseException("cupy is required.")
         else:  # pragma: no cover
             self.data = cp.asarray(self.data)
 
@@ -6688,11 +7048,11 @@ UNARY_OPERATORS = (
 )
 for name in ARITHMETIC_OPERATORS + INPLACE_OPERATORS + COMPARISON_OPERATORS:
     exec(
-        ("def %s(self, other):\n" % name) +
-        ("   return self._binary_operator_ruler(other, \'%s\')\n" %
-         name))
+        ("def %s(self, other):\n" % name)
+        + ("   return self._binary_operator_ruler(other, '%s')\n" % name)
+    )
     exec("%s.__doc__ = np.ndarray.%s.__doc__" % (name, name))
-    exec("setattr(BaseSignal, \'%s\', %s)" % (name, name))
+    exec("setattr(BaseSignal, '%s', %s)" % (name, name))
     # The following commented line enables the operators with swapped
     # operands. They should be defined only for commutative operators
     # but for simplicity we don't support this at all atm.
@@ -6703,7 +7063,7 @@ for name in ARITHMETIC_OPERATORS + INPLACE_OPERATORS + COMPARISON_OPERATORS:
 # Implement unary arithmetic operations
 for name in UNARY_OPERATORS:
     exec(
-        ("def %s(self):" % name) +
-        ("   return self._unary_operator_ruler(\'%s\')" % name))
+        ("def %s(self):" % name) + ("   return self._unary_operator_ruler('%s')" % name)
+    )
     exec("%s.__doc__ = int.%s.__doc__" % (name, name))
-    exec("setattr(BaseSignal, \'%s\', %s)" % (name, name))
+    exec("setattr(BaseSignal, '%s', %s)" % (name, name))

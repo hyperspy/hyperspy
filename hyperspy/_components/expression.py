@@ -31,8 +31,7 @@ from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 _logger = logging.getLogger(__name__)
 
 
-_CLASS_DOC = \
-    """%s component (created with Expression).
+_CLASS_DOC = """%s component (created with Expression).
 
 .. math::
 
@@ -58,12 +57,12 @@ def _fill_function_args_2d(fn):
 
 
 def _parse_substitutions(string):
-    splits = map(str.strip, string.split(';'))
+    splits = map(str.strip, string.split(";"))
     expr = sympy.sympify(next(splits))
     # We substitute one by one manually, as passing all at the same time does
     # not work as we want (substitutions inside other substitutions do not work)
     for sub in splits:
-        t = tuple(map(str.strip, sub.split('=')))
+        t = tuple(map(str.strip, sub.split("=")))
         expr = expr.subs(t[0], sympy.sympify(t[1]))
     return expr
 
@@ -164,12 +163,21 @@ class Expression(Component):
 
     """
 
-    def __init__(self, expression, name, position=None, module="numpy",
-                 autodoc=True, add_rotation=False, rotation_center=None,
-                 rename_pars={}, compute_gradients=True,
-                 linear_parameter_list=None, check_parameter_linearity=True,
-                 **kwargs):
-
+    def __init__(
+        self,
+        expression,
+        name,
+        position=None,
+        module="numpy",
+        autodoc=True,
+        add_rotation=False,
+        rotation_center=None,
+        rename_pars={},
+        compute_gradients=True,
+        linear_parameter_list=None,
+        check_parameter_linearity=True,
+        **kwargs,
+    ):
         if module is None:
             numexpr_spec = importlib.util.find_spec("numexpr")
             if numexpr_spec is None:
@@ -177,7 +185,7 @@ class Expression(Component):
                 _logger.warning(
                     "Numexpr is not installed, falling back to numpy, "
                     "which is slower to calculate model."
-                )                
+                )
             else:
                 module = "numexpr"
 
@@ -198,24 +206,22 @@ class Expression(Component):
             self.compile_function(module=module, position=rotation_center)
 
         # Initialise component
-        Component.__init__(
-            self, self._parameter_strings, linear_parameter_list
-            )
+        Component.__init__(self, self._parameter_strings, linear_parameter_list)
         # When creating components using Expression (for example GaussianHF)
         # we shouldn't add anything else to the _whitelist as the
         # component should be initizialized with its own kwargs.
         # An exception is "module"
-        self._whitelist['module'] = ('init', module)
+        self._whitelist["module"] = ("init", module)
         if self.__class__ is Expression:
-            self._whitelist['expression'] = ('init', expression)
-            self._whitelist['name'] = ('init', name)
-            self._whitelist['position'] = ('init', position)
-            self._whitelist['rename_pars'] = ('init', rename_pars)
-            self._whitelist['linear_parameter_list'] = ('init', linear_parameter_list)
-            self._whitelist['compute_gradients'] = ('init', compute_gradients)
+            self._whitelist["expression"] = ("init", expression)
+            self._whitelist["name"] = ("init", name)
+            self._whitelist["position"] = ("init", position)
+            self._whitelist["rename_pars"] = ("init", rename_pars)
+            self._whitelist["linear_parameter_list"] = ("init", linear_parameter_list)
+            self._whitelist["compute_gradients"] = ("init", compute_gradients)
             if self._is2D:
-                self._whitelist['add_rotation'] = ('init', self._add_rotation)
-                self._whitelist['rotation_center'] = ('init', rotation_center)
+                self._whitelist["add_rotation"] = ("init", self._add_rotation)
+                self._whitelist["rotation_center"] = ("init", rotation_center)
         self.name = name
 
         # Set the position parameter
@@ -229,14 +235,13 @@ class Expression(Component):
         # Set the initial value of the parameters
         if kwargs:
             for kwarg, value in kwargs.items():
-                setattr(getattr(self, kwarg), 'value', value)
+                setattr(getattr(self, kwarg), "value", value)
 
         if autodoc:
-            self.__doc__ = _CLASS_DOC % (
-                name, sympy.latex(self._parsed_expr))
+            self.__doc__ = _CLASS_DOC % (name, sympy.latex(self._parsed_expr))
 
         for parameter_name in linear_parameter_list:
-            setattr(getattr(self, parameter_name), '_linear', True)
+            setattr(getattr(self, parameter_name), "_linear", True)
 
         if check_parameter_linearity:
             for p in self.parameters:
@@ -245,9 +250,8 @@ class Expression(Component):
                     # need to use the correct parameter name by using
                     # _rename_pars_inv
                     p._linear = _check_parameter_linearity(
-                        self._parsed_expr,
-                        self._rename_pars_inv.get(p.name, p.name)
-                        )
+                        self._parsed_expr, self._rename_pars_inv.get(p.name, p.name)
+                    )
 
     def compile_function(self, module, position=False):
         """
@@ -260,14 +264,13 @@ class Expression(Component):
         except ValueError:
             pass
         else:
-            raise ValueError('Expression must contain a symbol, i.e. x, a, '
-                             'etc.')
+            raise ValueError("Expression must contain a symbol, i.e. x, a, " "etc.")
         expr = _parse_substitutions(self._str_expression)
         self._parsed_expr = expr
 
         # Extract x
         x = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
-        if not x: # Expression is just a parameter, no x -> Offset
+        if not x:  # Expression is just a parameter, no x -> Offset
             # lambdify doesn't support constant
             # https://github.com/sympy/sympy/issues/5642
             # x = [sympy.Symbol('x')]
@@ -283,52 +286,60 @@ class Expression(Component):
             position = position or (0, 0)
             rotx = sympy.sympify(
                 "{0} + (x - {0}) * cos(rotation_angle) - (y - {1}) *"
-                " sin(rotation_angle)"
-                .format(*position))
+                " sin(rotation_angle)".format(*position)
+            )
             roty = sympy.sympify(
                 "{1} + (x - {0}) * sin(rotation_angle) + (y - {1}) *"
-                "cos(rotation_angle)"
-                .format(*position))
+                "cos(rotation_angle)".format(*position)
+            )
             expr = expr.subs({"x": rotx, "y": roty}, simultaneous=False)
         rvars = sympy.symbols([s.name for s in expr.free_symbols], real=True)
         real_expr = expr.subs(
-            {orig: real_ for (orig, real_) in zip(expr.free_symbols, rvars)})
+            {orig: real_ for (orig, real_) in zip(expr.free_symbols, rvars)}
+        )
         # just replace with the assumption that all our variables are real
         expr = real_expr
 
         eval_expr = expr.evalf()
         # Extract parameters
-        variables = ("x", "y") if self._is2D else ("x", )
+        variables = ("x", "y") if self._is2D else ("x",)
         parameters = [
-            symbol for symbol in expr.free_symbols
-            if symbol.name not in variables]
+            symbol for symbol in expr.free_symbols if symbol.name not in variables
+        ]
         parameters.sort(key=lambda x: x.name)  # to have a reliable order
         # Create compiled function
         variables = [x, y] if self._is2D else [x]
-        self._f = sympy.utilities.lambdify(variables + parameters, eval_expr,
-                           modules=module, dummify=False)
+        self._f = sympy.utilities.lambdify(
+            variables + parameters, eval_expr, modules=module, dummify=False
+        )
 
         if self._is2D:
-            def f(x, y): return self._f(
-                x, y, *[p.value for p in self.parameters])
+
+            def f(x, y):
+                return self._f(x, y, *[p.value for p in self.parameters])
         else:
-            def f(x): return self._f(x, *[p.value for p in self.parameters])
+
+            def f(x):
+                return self._f(x, *[p.value for p in self.parameters])
+
         setattr(self, "function", f)
-        parnames = [self._rename_pars.get(symbol.name, symbol.name)
-                    for symbol in parameters]
+        parnames = [
+            self._rename_pars.get(symbol.name, symbol.name) for symbol in parameters
+        ]
         self._parameter_strings = parnames
 
         if self._compute_gradients:
             try:
-                ffargs = (_fill_function_args_2d if
-                          self._is2D else _fill_function_args)
+                ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
                 for p in parameters:
                     grad_expr = sympy.diff(eval_expr, p)
                     name = self._rename_pars.get(p.name, p.name)
-                    f_grad = sympy.utilities.lambdify(variables + parameters,
-                                      grad_expr.evalf(),
-                                      modules=module,
-                                      dummify=False)
+                    f_grad = sympy.utilities.lambdify(
+                        variables + parameters,
+                        grad_expr.evalf(),
+                        modules=module,
+                        dummify=False,
+                    )
                     grad_p = ffargs(f_grad).__get__(self, Expression)
                     if len(grad_expr.free_symbols) == 0:
                         # Vectorize in case of constant function
@@ -337,30 +348,36 @@ class Expression(Component):
                     setattr(self, f"grad_{name}", grad_p)
 
             except (SyntaxError, AttributeError):
-                warnings.warn("The gradients can not be computed with sympy.",
-                              UserWarning)
+                warnings.warn(
+                    "The gradients can not be computed with sympy.", UserWarning
+                )
 
     def function_nd(self, *args):
-        """%s
-
-        """
+        """%s"""
         if self._is2D:
             x, y = args[0], args[1]
             # navigation dimension is 0, f_nd same as f
             if not self._is_navigation_multidimensional:
                 return self.function(x, y)
             else:
-                return self._f(x[np.newaxis, ...], y[np.newaxis, ...],
-                               *[p.map['values'][..., np.newaxis, np.newaxis]
-                                 for p in self.parameters])
+                return self._f(
+                    x[np.newaxis, ...],
+                    y[np.newaxis, ...],
+                    *[
+                        p.map["values"][..., np.newaxis, np.newaxis]
+                        for p in self.parameters
+                    ],
+                )
         else:
             x = args[0]
             if not self._is_navigation_multidimensional:
                 return self.function(x)
             else:
-                return self._f(x[np.newaxis, ...],
-                               *[p.map['values'][..., np.newaxis]
-                                 for p in self.parameters])
+                return self._f(
+                    x[np.newaxis, ...],
+                    *[p.map["values"][..., np.newaxis] for p in self.parameters],
+                )
+
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
     @property
@@ -374,14 +391,13 @@ class Expression(Component):
         """
         free_linear_parameters = [
             # Use `_free` private attribute not to interfere with twin
-            self._rename_pars_inv.get(p.name, p.name) for p in self.parameters
+            self._rename_pars_inv.get(p.name, p.name)
+            for p in self.parameters
             if p._linear and p._free
-            ]
+        ]
 
         expr = sympy.sympify(self._str_expression)
-        args = [
-            sympy.sympify(arg, strict=False) for arg in free_linear_parameters
-            ]
+        args = [sympy.sympify(arg, strict=False) for arg in free_linear_parameters]
         constant_expr, _ = expr.as_independent(*args, as_Add=True)
 
         # Then replace symbols with value of each parameter
@@ -405,47 +421,56 @@ class Expression(Component):
         ex = sympy.sympify(expr)
         remaining_elements = ex.copy()
         free_pseudo_components = {}
-        variables = ("x", "y") if self._is2D else ("x", )
+        variables = ("x", "y") if self._is2D else ("x",)
 
         for para in self.free_parameters:
             name = self._rename_pars_inv.get(para.name, para.name)
             symbol = sympy.sympify(name, strict=False)
             element = ex.as_independent(symbol)[-1]
             remaining_elements -= element
-            element_names = \
-                set([str(p) for p in element.free_symbols]) - set(variables)
+            element_names = set([str(p) for p in element.free_symbols]) - set(variables)
             free_pseudo_components[para.name] = {
-                'function': sympy.utilities.lambdify(variables + tuple(element_names),
-                                     element, modules=self._module),
-                'parameters': [getattr(self, self._rename_pars.get(e, e))
-                               for e in element_names]
+                "function": sympy.utilities.lambdify(
+                    variables + tuple(element_names), element, modules=self._module
+                ),
+                "parameters": [
+                    getattr(self, self._rename_pars.get(e, e)) for e in element_names
+                ],
             }
 
-        element_names = \
-            set([str(p) for p in remaining_elements.free_symbols]) - \
-            set(variables)
+        element_names = set([str(p) for p in remaining_elements.free_symbols]) - set(
+            variables
+        )
 
         fixed_pseudo_components = {
-            'function': sympy.utilities.lambdify(variables + tuple(element_names),
-                                 remaining_elements, modules=self._module),
-            'parameters': [getattr(self, self._rename_pars.get(e, e))
-                           for e in element_names]
+            "function": sympy.utilities.lambdify(
+                variables + tuple(element_names),
+                remaining_elements,
+                modules=self._module,
+            ),
+            "parameters": [
+                getattr(self, self._rename_pars.get(e, e)) for e in element_names
+            ],
         }
 
-        return free_pseudo_components, fixed_pseudo_components,
+        return (
+            free_pseudo_components,
+            fixed_pseudo_components,
+        )
 
     def _compute_expression_part(self, part):
         """Compute the expression for a given value or map["values"]."""
         model = self.model
-        function = part['function']
-        parameters = [para.value for para in part['parameters']]
+        function = part["function"]
+        parameters = [para.value for para in part["parameters"]]
         try:
             model_convolved = model.convolved
         except NotImplementedError:
             model_convolved = False
         if model_convolved and self.convolved:
             data = model._convolve_component_values(
-                function(model.convolution_axis, *parameters))
+                function(model.convolution_axis, *parameters)
+            )
         else:
             axes = [ax.axis for ax in model.axes_manager.signal_axes]
             mesh = np.meshgrid(*axes)
@@ -470,7 +495,10 @@ def _check_parameter_linearity(expr, name):
     except AttributeError:
         # AttributeError occurs if the expression cannot be parsed
         # for instance some expressions with where.
-        warnings.warn(f"The linearity of the parameter `{name}` can't be "
-                      "determined automatically.", UserWarning)
+        warnings.warn(
+            f"The linearity of the parameter `{name}` can't be "
+            "determined automatically.",
+            UserWarning,
+        )
         return False
     return True

@@ -47,10 +47,8 @@ _logger = logging.getLogger(__name__)
 
 
 # Utility string:
-f_error_fmt = (
-    "\tFile %d:\n"
-    "\t\t%d signals\n"
-    "\t\tPath: %s")
+f_error_fmt = "\tFile %d:\n" "\t\t%d signals\n" "\t\tPath: %s"
+
 
 def _format_name_to_reader(format_name):
     for reader in IO_PLUGINS:
@@ -96,17 +94,21 @@ def _infer_file_reader(string):
             "Will attempt to load the file with the Python imaging library."
         )
 
-        reader, = [reader for reader in IO_PLUGINS if reader["name"].lower() == "image"]
+        (reader,) = [
+            reader for reader in IO_PLUGINS if reader["name"].lower() == "image"
+        ]
     elif len(rdrs) > 1:
         names = [rdr["name"] for rdr in rdrs]
         raise ValueError(
             f"There are multiple file readers that could read the file. "
             f"Please select one from the list below with the `reader` keyword. "
-            f"File readers for your file: {names}")
+            f"File readers for your file: {names}"
+        )
     else:
         reader = rdrs[0]
 
     return reader
+
 
 def _infer_file_writer(string):
     """Return a file reader from the plugins list based on the file extension.
@@ -125,14 +127,21 @@ def _infer_file_writer(string):
         The inferred file reader.
 
     """
-    plugins = [plugin for plugin in IO_PLUGINS if string.lower() in plugin["file_extensions"]]
+    plugins = [
+        plugin for plugin in IO_PLUGINS if string.lower() in plugin["file_extensions"]
+    ]
     writers = [plugin for plugin in plugins if plugin["writes"]]
     if not writers:
-        extensions = [plugin["file_extensions"][plugin["default_extension"]] for plugin in IO_PLUGINS if plugin["writes"]]
+        extensions = [
+            plugin["file_extensions"][plugin["default_extension"]]
+            for plugin in IO_PLUGINS
+            if plugin["writes"]
+        ]
         if not plugins:
             raise ValueError(
                 f"The .{string} extension does not correspond to any supported format. "
-                f"Supported file extensions are: {strlist2enumeration(extensions)}.")
+                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+            )
         else:
             raise ValueError(
                 "Writing to this format is not supported. "
@@ -144,11 +153,13 @@ def _infer_file_writer(string):
         raise ValueError(
             f"There are multiple file formats matching the extension of your file. "
             f"Please select one from the list below with the `format` keyword. "
-            f"File formats for your file: {names}")
+            f"File formats for your file: {names}"
+        )
     else:
         writer = writers[0]
 
     return writer
+
 
 def _escape_square_brackets(text):
     """Escapes pairs of square brackets in strings for glob.glob().
@@ -194,18 +205,20 @@ def _parse_path(arg):
     return fname
 
 
-def load(filenames=None,
-         signal_type=None,
-         stack=False,
-         stack_axis=None,
-         new_axis_name='stack_element',
-         lazy=False,
-         convert_units=False,
-         escape_square_brackets=False,
-         stack_metadata=True,
-         load_original_metadata=True,
-         show_progressbar=None,
-         **kwds):
+def load(
+    filenames=None,
+    signal_type=None,
+    stack=False,
+    stack_axis=None,
+    new_axis_name="stack_element",
+    lazy=False,
+    convert_units=False,
+    escape_square_brackets=False,
+    stack_metadata=True,
+    load_original_metadata=True,
+    show_progressbar=None,
+    **kwds,
+):
     """Load potentially multiple supported files into HyperSpy.
 
     Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
@@ -396,19 +409,20 @@ def load(filenames=None,
     [<Signal1D, title: spam, dimensions: (32,32|1024)>,
      <Signal1D, title: eggs, dimensions: (32,32|1024)>,
      <Signal1D, title: ham, dimensions: (32,32|1024)>]
-    
+
     Use list indexation to access single signal
-    
+
     >>> s[0] # doctest: +SKIP
     <Signal1D, title: spam, dimensions: (32,32|1024)>
 
     """
 
-    kwds['signal_type'] = signal_type
-    kwds['convert_units'] = convert_units
-    kwds['load_original_metadata'] = load_original_metadata
+    kwds["signal_type"] = signal_type
+    kwds["convert_units"] = convert_units
+    kwds["load_original_metadata"] = load_original_metadata
     if filenames is None:
         from hyperspy.signal_tools import Load
+
         load_ui = Load()
         get_gui(load_ui, toolkey="hyperspy.load")
         if load_ui.filename:
@@ -423,24 +437,30 @@ def load(filenames=None,
         if escape_square_brackets:
             filenames = _escape_square_brackets(filenames)
 
-        filenames = natsorted([f for f in glob.glob(filenames)
-                               if os.path.isfile(f) or (os.path.isdir(f) and
-                                                        os.path.splitext(f)[1] == '.zspy')])
+        filenames = natsorted(
+            [
+                f
+                for f in glob.glob(filenames)
+                if os.path.isfile(f)
+                or (os.path.isdir(f) and os.path.splitext(f)[1] == ".zspy")
+            ]
+        )
 
     elif isinstance(filenames, Path):
         pattern = filenames
         # Just convert to list for now, pathlib.Path not
         # fully supported in io_plugins
-        filenames = [f for f in [filenames]
-                     if f.is_file() or (f.is_dir() and ".zspy" in f.name)]
+        filenames = [
+            f for f in [filenames] if f.is_file() or (f.is_dir() and ".zspy" in f.name)
+        ]
 
     elif isgenerator(filenames):
         filenames = list(filenames)
 
     elif not isinstance(filenames, (list, tuple, MutableMapping)):
         raise ValueError(
-            'The filenames parameter must be a list, tuple, '
-            f'string or None, not {type(filenames)}'
+            "The filenames parameter must be a list, tuple, "
+            f"string or None, not {type(filenames)}"
         )
 
     if not filenames:
@@ -455,7 +475,7 @@ def load(filenames=None,
         filenames = [str(f) if isinstance(f, Path) else f for f in filenames]
 
     if len(filenames) > 1:
-        _logger.info('Loading individual files')
+        _logger.info("Loading individual files")
 
     if stack is True:
         # We are loading a stack!
@@ -477,15 +497,15 @@ def load(filenames=None,
                 if isinstance(obj, (list, tuple)):
                     if n != len(obj):
                         raise ValueError(
-                            "The number of sub-signals per file does not match:\n" +
-                            (f_error_fmt % (1, n, filenames[0])) +
-                            (f_error_fmt % (i, len(obj), filename))
+                            "The number of sub-signals per file does not match:\n"
+                            + (f_error_fmt % (1, n, filenames[0]))
+                            + (f_error_fmt % (i, len(obj), filename))
                         )
                 elif n != 1:
                     raise ValueError(
-                        "The number of sub-signals per file does not match:\n" +
-                        (f_error_fmt % (1, n, filenames[0])) +
-                        (f_error_fmt % (i, len(obj), filename))
+                        "The number of sub-signals per file does not match:\n"
+                        + (f_error_fmt % (1, n, filenames[0]))
+                        + (f_error_fmt % (i, len(obj), filename))
                     )
 
             # Append loaded signals to 2D list:
@@ -499,7 +519,7 @@ def load(filenames=None,
         # When each file had N signals, we create N stacks!
         objects = []
         for i in range(n):
-            signal = signals[i]   # Sublist, with len = len(filenames)
+            signal = signals[i]  # Sublist, with len = len(filenames)
             signal = stack_method(
                 signal,
                 axis=stack_axis,
@@ -509,18 +529,20 @@ def load(filenames=None,
                 show_progressbar=show_progressbar,
             )
             signal.metadata.General.title = Path(filenames[0]).parent.stem
-            _logger.info('Individual files loaded correctly')
+            _logger.info("Individual files loaded correctly")
             _logger.info(signal._summary())
             objects.append(signal)
     else:
         # No stack, so simply we load all signals in all files separately
-        objects = [load_single_file(filename, lazy=lazy, **kwds)
-                   for filename in filenames]
+        objects = [
+            load_single_file(filename, lazy=lazy, **kwds) for filename in filenames
+        ]
 
     if len(objects) == 1:
         objects = objects[0]
 
     return objects
+
 
 load.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
@@ -547,9 +569,9 @@ def load_single_file(filename, **kwds):
     # in case filename is a zarr store, we want to the path and not the store
     path = _parse_path(filename)
 
-    if (not os.path.isfile(path) and
-            not (os.path.isdir(path) and os.path.splitext(path)[1] == '.zspy')
-            ):
+    if not os.path.isfile(path) and not (
+        os.path.isdir(path) and os.path.splitext(path)[1] == ".zspy"
+    ):
         raise FileNotFoundError(f"File: {path} not found!")
 
     # File extension without "." separator
@@ -567,8 +589,7 @@ def load_single_file(filename, **kwds):
         pass
     else:
         raise ValueError(
-            "`reader` should be one of None, str, "
-            "or a custom file reader object"
+            "`reader` should be one of None, str, " "or a custom file reader object"
         )
 
     try:
@@ -584,51 +605,55 @@ def load_single_file(filename, **kwds):
 
 
 def load_with_reader(
-        filename,
-        reader,
-        signal_type=None,
-        convert_units=False,
-        load_original_metadata=True,
-        **kwds
-    ):
+    filename,
+    reader,
+    signal_type=None,
+    convert_units=False,
+    load_original_metadata=True,
+    **kwds,
+):
     """Load a supported file with a given reader."""
-    lazy = kwds.get('lazy', False)
+    lazy = kwds.get("lazy", False)
     if isinstance(reader, dict):
-        file_data_list = importlib.import_module(reader["api"]).file_reader(filename,
-                                                                        **kwds)
+        file_data_list = importlib.import_module(reader["api"]).file_reader(
+            filename, **kwds
+        )
     else:
         # We assume it is a module
         file_data_list = reader.file_reader(filename, **kwds)
     signal_list = []
 
     for signal_dict in file_data_list:
-        if 'metadata' in signal_dict:
+        if "metadata" in signal_dict:
             if "Signal" not in signal_dict["metadata"]:
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
-                signal_dict['metadata']["Signal"]['signal_type'] = signal_type
+                signal_dict["metadata"]["Signal"]["signal_type"] = signal_type
             signal = dict2signal(signal_dict, lazy=lazy)
-            signal = _add_file_load_save_metadata('load', signal, reader)
+            signal = _add_file_load_save_metadata("load", signal, reader)
             path = _parse_path(filename)
             folder, filename = os.path.split(os.path.abspath(path))
             filename, extension = os.path.splitext(filename)
             signal.tmp_parameters.folder = folder
             signal.tmp_parameters.filename = filename
-            signal.tmp_parameters.extension = extension.replace('.', '')
+            signal.tmp_parameters.extension = extension.replace(".", "")
             # original_filename and original_file are used to keep track of
             # where is the file which has been open lazily
             signal.tmp_parameters.original_folder = folder
             signal.tmp_parameters.original_filename = filename
-            signal.tmp_parameters.original_extension = extension.replace('.', '')
+            signal.tmp_parameters.original_extension = extension.replace(".", "")
             # test if binned attribute is still in metadata
-            if signal.metadata.has_item('Signal.binned'):
+            if signal.metadata.has_item("Signal.binned"):
                 for axis in signal.axes_manager.signal_axes:
                     axis.is_binned = signal.metadata.Signal.binned
                 del signal.metadata.Signal.binned
-                warnings.warn('Loading old file version. The binned attribute '
-                              'has been moved from metadata.Signal to '
-                              'axis.is_binned. Setting this attribute for all '
-                              'signal axes instead.', VisibleDeprecationWarning)
+                warnings.warn(
+                    "Loading old file version. The binned attribute "
+                    "has been moved from metadata.Signal to "
+                    "axis.is_binned. Setting this attribute for all "
+                    "signal axes instead.",
+                    VisibleDeprecationWarning,
+                )
             if convert_units:
                 signal.axes_manager.convert_units()
             if not load_original_metadata:
@@ -669,32 +694,44 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
     """
     # Check if parameter values are allowed:
     if np.issubdtype(dtype, np.complexfloating):
-        dtype = 'complex'
-    elif ('float' in dtype.name or 'int' in dtype.name or
-          'void' in dtype.name or 'bool' in dtype.name or
-          'object' in dtype.name):
-        dtype = 'real'
+        dtype = "complex"
+    elif (
+        "float" in dtype.name
+        or "int" in dtype.name
+        or "void" in dtype.name
+        or "bool" in dtype.name
+        or "object" in dtype.name
+    ):
+        dtype = "real"
     else:
         raise ValueError(f'Data type "{dtype.name}" not understood!')
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive integer")
 
-    signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
-               if value["lazy"] == lazy}
-    dtype_matches = {key: value for key, value in signals.items()
-                     if value["dtype"] == dtype}
-    dtype_dim_matches = {key: value for key, value in dtype_matches.items()
-                         if signal_dimension == value["signal_dimension"]}
-    dtype_dim_type_matches = {key: value for key, value in dtype_dim_matches.items()
-                              if signal_type == value["signal_type"] or
-                              "signal_type_aliases" in value and
-                              signal_type in value["signal_type_aliases"]}
+    signals = {
+        key: value
+        for key, value in ALL_EXTENSIONS["signals"].items()
+        if value["lazy"] == lazy
+    }
+    dtype_matches = {
+        key: value for key, value in signals.items() if value["dtype"] == dtype
+    }
+    dtype_dim_matches = {
+        key: value
+        for key, value in dtype_matches.items()
+        if signal_dimension == value["signal_dimension"]
+    }
+    dtype_dim_type_matches = {
+        key: value
+        for key, value in dtype_dim_matches.items()
+        if signal_type == value["signal_type"]
+        or "signal_type_aliases" in value
+        and signal_type in value["signal_type_aliases"]
+    }
 
     valid_signal_types = [v["signal_type"] for v in signals.values()]
     valid_signal_aliases = [
-        v["signal_type_aliases"]
-        for v in signals.values()
-        if "signal_type_aliases" in v
+        v["signal_type_aliases"] for v in signals.values() if "signal_type_aliases" in v
     ]
     valid_signal_aliases = [i for j in valid_signal_aliases for i in j]
     valid_signal_types.extend(valid_signal_aliases)
@@ -714,14 +751,19 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         # If the following dict is not empty, only signal_dimension and dtype match.
         # The dict should contain a general class for the given signal
         # dimension.
-        signal_dict = {key: value for key, value in dtype_dim_matches.items()
-                       if value["signal_type"] == ""}
+        signal_dict = {
+            key: value
+            for key, value in dtype_dim_matches.items()
+            if value["signal_type"] == ""
+        }
         if not signal_dict:
             # no signal_dimension match either, hence select the general subclass for
             # correct dtype
-            signal_dict = {key: value for key, value in dtype_matches.items()
-                           if value["signal_dimension"] == -1
-                           and value["signal_type"] == ""}
+            signal_dict = {
+                key: value
+                for key, value in dtype_matches.items()
+                if value["signal_dimension"] == -1 and value["signal_type"] == ""
+            }
     # Sanity check
     if len(signal_dict) > 1:
         _logger.warning(
@@ -737,7 +779,6 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         signal_class = getattr(importlib.import_module(value["module"]), key)
 
         return signal_class
-
 
 
 def dict2signal(signal_dict, lazy=False):
@@ -762,47 +803,50 @@ def dict2signal(signal_dict, lazy=False):
                 'currently installed. The signal will be loaded into a '
                 'generic HyperSpy signal. Consider installing '
                 f'{signal_dict["package"]} to load this dataset into its '
-                'original signal class.')
+                'original signal class.'
+            )
     signal_dimension = -1  # undefined
     signal_type = ""
     mp = signal_dict.get("metadata")
 
     if mp is not None:
         if "Signal" in mp and "record_by" in mp["Signal"]:
-            record_by = mp["Signal"]['record_by']
+            record_by = mp["Signal"]["record_by"]
             if record_by == "spectrum":
                 signal_dimension = 1
             elif record_by == "image":
                 signal_dimension = 2
-            del mp["Signal"]['record_by']
+            del mp["Signal"]["record_by"]
         if "Signal" in mp and "signal_type" in mp["Signal"]:
-            signal_type = mp["Signal"]['signal_type']
+            signal_type = mp["Signal"]["signal_type"]
     if "attributes" in signal_dict and "_lazy" in signal_dict["attributes"]:
         lazy = signal_dict["attributes"]["_lazy"]
     # "Estimate" signal_dimension from axes. It takes precedence over record_by
-    if ("axes" in signal_dict and
-        len(signal_dict["axes"]) == len(
-            [axis for axis in signal_dict["axes"] if "navigate" in axis])):
-            # If navigate is defined for all axes
+    if "axes" in signal_dict and len(signal_dict["axes"]) == len(
+        [axis for axis in signal_dict["axes"] if "navigate" in axis]
+    ):
+        # If navigate is defined for all axes
         signal_dimension = len(
-            [axis for axis in signal_dict["axes"] if not axis["navigate"]])
+            [axis for axis in signal_dict["axes"] if not axis["navigate"]]
+        )
     elif signal_dimension == -1:
         # If not defined, all dimension are categorised as signal
         signal_dimension = signal_dict["data"].ndim
-    signal = assign_signal_subclass(signal_dimension=signal_dimension,
-                                    signal_type=signal_type,
-                                    dtype=signal_dict['data'].dtype,
-                                    lazy=lazy)(**signal_dict)
+    signal = assign_signal_subclass(
+        signal_dimension=signal_dimension,
+        signal_type=signal_type,
+        dtype=signal_dict["data"].dtype,
+        lazy=lazy,
+    )(**signal_dict)
     if signal._lazy:
         signal._make_lazy()
-
 
     # This may happen when the signal dimension couldn't be matched with
     # any specialised subclass
     signal.axes_manager._set_signal_dimension(signal_dimension)
 
     if "post_process" in signal_dict:
-        for f in signal_dict['post_process']:
+        for f in signal_dict["post_process"]:
             signal = f(signal)
     if "mapping" in signal_dict:
         for opattr, (mpattr, function) in signal_dict["mapping"].items():
@@ -813,8 +857,8 @@ def dict2signal(signal_dict, lazy=False):
                 if value is not None:
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
-        for key in mp['Markers']:
-            signal.metadata.Markers[key] = markers_dict_to_markers(mp['Markers'][key])
+        for key in mp["Markers"]:
+            signal.metadata.Markers[key] = markers_dict_to_markers(mp["Markers"][key])
             signal.metadata.Markers[key]._signal = signal
 
     return signal
@@ -851,12 +895,12 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
     """
     writer = None
     if isinstance(filename, MutableMapping):
-        extension =".zspy"
+        extension = ".zspy"
         writer = _format_name_to_reader("ZSPY")
     else:
         filename = Path(filename).resolve()
         extension = filename.suffix
-        if extension == '':
+        if extension == "":
             if file_format:
                 writer = _format_name_to_reader(file_format)
                 extension = "." + writer["file_extensions"][writer["default_extension"]]
@@ -874,12 +918,14 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
     sd = signal.axes_manager.signal_dimension
     nd = signal.axes_manager.navigation_dimension
 
-
     if writer["writes"] is not True and [sd, nd] not in writer["writes"]:
-        compatible_writers = [plugin["name"] for plugin in IO_PLUGINS
-                      if plugin["writes"] is True or
-                      plugin["writes"] is not False and
-                      [sd, nd] in plugin["writes"]]
+        compatible_writers = [
+            plugin["name"]
+            for plugin in IO_PLUGINS
+            if plugin["writes"] is True
+            or plugin["writes"] is not False
+            and [sd, nd] in plugin["writes"]
+        ]
 
         raise TypeError(
             "This file format does not support this data. "
@@ -887,18 +933,23 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         )
 
     if not writer["non_uniform_axis"] and not signal.axes_manager.all_uniform:
-        compatible_writers = [plugin["name"] for plugin in IO_PLUGINS
-                      if plugin["non_uniform_axis"] is True]
-        raise TypeError("Writing to this format is not supported for "
-                      "non-uniform axes. Use one of the following "
-                      f"formats: {strlist2enumeration(compatible_writers)}"
+        compatible_writers = [
+            plugin["name"]
+            for plugin in IO_PLUGINS
+            if plugin["non_uniform_axis"] is True
+        ]
+        raise TypeError(
+            "Writing to this format is not supported for "
+            "non-uniform axes. Use one of the following "
+            f"formats: {strlist2enumeration(compatible_writers)}"
         )
 
     # Create the directory if it does not exist
     if not isinstance(filename, MutableMapping):
         ensure_directory(filename.parent)
-        is_file = filename.is_file() or (filename.is_dir() and
-                                         os.path.splitext(filename)[1] == '.zspy')
+        is_file = filename.is_file() or (
+            filename.is_dir() and os.path.splitext(filename)[1] == ".zspy"
+        )
 
         if overwrite is None:
             write = overwrite_method(filename)  # Ask what to do
@@ -907,45 +958,54 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         elif overwrite is False and is_file:
             write = False  # Don't write the file
         else:
-            raise ValueError("`overwrite` parameter can only be None, True or "
-                             "False.")
+            raise ValueError(
+                "`overwrite` parameter can only be None, True or " "False."
+            )
     else:
         write = True  # file does not exist (creating it)
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
-        signal = _add_file_load_save_metadata('save', signal, writer)
+        signal = _add_file_load_save_metadata("save", signal, writer)
         signal_dic = signal._to_dictionary(add_models=True)
         signal_dic["package_info"] = get_object_package_info(signal)
         if not isinstance(filename, MutableMapping):
             importlib.import_module(writer["api"]).file_writer(
-                str(filename), signal_dic, **kwds)
-            _logger.info(f'{filename} was created')
-            signal.tmp_parameters.set_item('folder', filename.parent)
-            signal.tmp_parameters.set_item('filename', filename.stem)
-            signal.tmp_parameters.set_item('extension', extension)
+                str(filename), signal_dic, **kwds
+            )
+            _logger.info(f"{filename} was created")
+            signal.tmp_parameters.set_item("folder", filename.parent)
+            signal.tmp_parameters.set_item("filename", filename.stem)
+            signal.tmp_parameters.set_item("extension", extension)
         else:
             importlib.import_module(writer["api"]).file_writer(
-                filename, signal_dic, **kwds)
+                filename, signal_dic, **kwds
+            )
             if hasattr(filename, "path"):
                 file = Path(filename.path).resolve()
-                signal.tmp_parameters.set_item('folder', file.parent)
-                signal.tmp_parameters.set_item('filename', file.stem)
-                signal.tmp_parameters.set_item('extension', extension)
+                signal.tmp_parameters.set_item("folder", file.parent)
+                signal.tmp_parameters.set_item("filename", file.stem)
+                signal.tmp_parameters.set_item("extension", extension)
 
 
 def _add_file_load_save_metadata(operation, signal, io_plugin):
     mdata_dict = {
-        'operation': operation,
-        'io_plugin': io_plugin["api"] if isinstance(io_plugin, dict) else io_plugin.__loader__.name,
-        'hyperspy_version': hs_version,
-        'timestamp': datetime.now().astimezone().isoformat()
+        "operation": operation,
+        "io_plugin": io_plugin["api"]
+        if isinstance(io_plugin, dict)
+        else io_plugin.__loader__.name,
+        "hyperspy_version": hs_version,
+        "timestamp": datetime.now().astimezone().isoformat(),
     }
     # get the largest integer key present under General.FileIO, returning 0
     # as default if none are present
     largest_index = max(
-        [int(i.replace('Number_', '')) + 1
-         for i in signal.metadata.get_item('General.FileIO', {}).keys()] + [0])
+        [
+            int(i.replace("Number_", "")) + 1
+            for i in signal.metadata.get_item("General.FileIO", {}).keys()
+        ]
+        + [0]
+    )
 
     signal.metadata.set_item(f"General.FileIO.{largest_index}", mdata_dict)
 

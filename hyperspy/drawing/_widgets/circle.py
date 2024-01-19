@@ -32,7 +32,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
     def __init__(self, axes_manager, **kwargs):
         super(CircleWidget, self).__init__(axes_manager, **kwargs)
         self.size_step = 1.0
-        self.size_snap_offset = (0.5 + 1e-8)
+        self.size_snap_offset = 0.5 + 1e-8
 
     def _set_axes(self, axes):
         super(CircleWidget, self)._set_axes(axes)
@@ -47,8 +47,13 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         snap_offset = self.size_snap_offset * self.axes[0].scale
         snap_spacing = self.axes[0].scale * self.size_step
         for i in range(2):
-            value[i] = max(0, (round((value[i] - snap_offset) / snap_spacing) *
-                               snap_spacing + snap_offset))
+            value[i] = max(
+                0,
+                (
+                    round((value[i] - snap_offset) / snap_spacing) * snap_spacing
+                    + snap_offset
+                ),
+            )
         return value
 
     def _set_size(self, value):
@@ -56,8 +61,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         change, if the value has changed.
         """
         # Override so that r_inner can be 0
-        value = np.minimum(value,
-                           [0.5 * ax.size * ax.scale for ax in self.axes])
+        value = np.minimum(value, [0.5 * ax.size * ax.scale for ax in self.axes])
         # Changed from base:
         min_sizes = np.array(((0.5 + 1e-8) * self.axes[0].scale, 0))
         value = np.maximum(value, min_sizes)
@@ -71,8 +75,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                 self._size_changed()
 
     def increase_size(self):
-        """Increment all sizes by one step. Applied via 'size' property.
-        """
+        """Increment all sizes by one step. Applied via 'size' property."""
         s = np.array(self.size)
         if self.size[1] > 0:
             s += self.size_step * self.axes[0].scale
@@ -81,8 +84,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         self.size = s
 
     def decrease_size(self):
-        """Decrement all sizes by one step. Applied via 'size' property.
-        """
+        """Decrement all sizes by one step. Applied via 'size' property."""
         s = np.array(self.size)
         if self.size[1] > 0:
             s -= self.size_step * self.axes[0].scale
@@ -106,34 +108,60 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         super(CircleWidget, self)._set_patch()
         xy = self._get_patch_xy()
         ro, ri = self.size
-        self._patch = [plt.Circle(
-            xy, radius=ro,
-            fill=False,
-            lw=self.border_thickness,
-            ec=self.color,
-            alpha=self.alpha,
-            picker=True,)]
+        self._patch = [
+            plt.Circle(
+                xy,
+                radius=ro,
+                fill=False,
+                lw=self.border_thickness,
+                ec=self.color,
+                alpha=self.alpha,
+                picker=True,
+            )
+        ]
         if ri > 0:
             self._patch.append(
                 plt.Circle(
-                    xy, radius=ri,
+                    xy,
+                    radius=ri,
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,
                     alpha=self.alpha,
-                    picker=True,))
+                    picker=True,
+                )
+            )
 
     def _validate_pos(self, value):
-        """Constrict the position within bounds.
-        """
-        value = (min(value[0], self.axes[0].high_value - self._size[0] +
-                     (0.5 + 1e-8) * self.axes[0].scale),
-                 min(value[1], self.axes[1].high_value - self._size[0] +
-                     (0.5 + 1e-8) * self.axes[1].scale))
-        value = (max(value[0], self.axes[0].low_value + self._size[0] -
-                     (0.5 + 1e-8) * self.axes[0].scale),
-                 max(value[1], self.axes[1].low_value + self._size[0] -
-                     (0.5 + 1e-8) * self.axes[1].scale))
+        """Constrict the position within bounds."""
+        value = (
+            min(
+                value[0],
+                self.axes[0].high_value
+                - self._size[0]
+                + (0.5 + 1e-8) * self.axes[0].scale,
+            ),
+            min(
+                value[1],
+                self.axes[1].high_value
+                - self._size[0]
+                + (0.5 + 1e-8) * self.axes[1].scale,
+            ),
+        )
+        value = (
+            max(
+                value[0],
+                self.axes[0].low_value
+                + self._size[0]
+                - (0.5 + 1e-8) * self.axes[0].scale,
+            ),
+            max(
+                value[1],
+                self.axes[1].low_value
+                + self._size[0]
+                - (0.5 + 1e-8) * self.axes[1].scale,
+            ),
+        )
         return super(CircleWidget, self)._validate_pos(value)
 
     def get_size_in_indices(self):
@@ -175,7 +203,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             self.draw_patch()
 
     def _onmousemove(self, event):
-        'on mouse motion move the patch if picked'
+        "on mouse motion move the patch if picked"
         if self.picked is True and event.inaxes:
             x = event.xdata
             y = event.ydata
@@ -195,17 +223,17 @@ class CircleWidget(Widget2DBase, ResizersMixin):
 
     def _get_resizer_pos(self):
         positions = []
-        indices = (0, 1) if len(self.size) > 1 else (0, )
+        indices = (0, 1) if len(self.size) > 1 else (0,)
         for i in indices:
             r = self._size[i]
             rsize = self._get_resizer_size() / 2
             rp = np.array(self._get_patch_xy())
-            p = rp - (r, 0) - rsize             # Left
+            p = rp - (r, 0) - rsize  # Left
             positions.append(p)
-            p = rp - (0, r) - rsize             # Top
+            p = rp - (0, r) - rsize  # Top
             positions.append(p)
-            p = rp + (r, 0) - rsize             # Right
+            p = rp + (r, 0) - rsize  # Right
             positions.append(p)
-            p = rp + (0, r) - rsize             # Bottom
+            p = rp + (0, r) - rsize  # Bottom
             positions.append(p)
         return positions

@@ -145,7 +145,7 @@ class Markers:
         ...    offsets[ind] = rng.random((10, 2)) * 100
 
         Every other star has a size of 50/100
-        
+
         >>> m = hs.plot.markers.Markers(
         ...    collection=StarPolygonCollection,
         ...    offsets=offsets,
@@ -163,16 +163,17 @@ class Markers:
             except AttributeError:
                 raise ValueError(
                     f"'{collection}' is not the name of a matplotlib collection class."
-                 )
+                )
 
         if not issubclass(collection, mpl_collections.Collection):
             raise ValueError(
                 f"{collection} is not a subclass of `matplotlib.collection.Collection`."
-                )
+            )
 
-        if ".".join(collection.__module__.split('.')[:2]) not in [
-            'matplotlib.collections', 'hyperspy.external'
-            ]:
+        if ".".join(collection.__module__.split(".")[:2]) not in [
+            "matplotlib.collections",
+            "hyperspy.external",
+        ]:
             # To be able to load a custom markers, we need to be able to instantiate
             # the class and the safe way to do that is to import from
             # `matplotlib.collections` or `hyperspy.external` (patched matplotlib collection)
@@ -194,8 +195,11 @@ class Markers:
         self.dask_kwargs = {}
         for key, value in self.kwargs.items():
             # Populate `_iterable_argument_keys`
-            if (isiterable(value) and not isinstance(value, str) and
-                    key != self._position_key):
+            if (
+                isiterable(value)
+                and not isinstance(value, str)
+                and key != self._position_key
+            ):
                 self._iterable_argument_keys.append(key)
 
             # Handling dask arrays
@@ -217,7 +221,7 @@ class Markers:
             if key in ["sizes", "color"] and (
                 not hasattr(value, "__len__") or isinstance(value, str)
             ):
-                self.kwargs[key] = (value, )
+                self.kwargs[key] = (value,)
 
         self._cache_dask_chunk_kwargs = {}
         self._cache_dask_chunk_kwargs_slice = {}
@@ -273,12 +277,14 @@ class Markers:
         if signal is not None:
             for key, value in self.kwargs.items():
                 nav_shape = value.shape if is_iterating(value) else ()
-                if (len(nav_shape) != 0 and
-                        nav_shape != signal.axes_manager.navigation_shape):
+                if (
+                    len(nav_shape) != 0
+                    and nav_shape != signal.axes_manager.navigation_shape
+                ):
                     raise ValueError(
                         "The shape of the variable length argument must match "
                         "the navigation shape of the signal."
-                        )
+                    )
         self.__signal = signal
 
     def _get_transform(self, attr="_transform"):
@@ -299,9 +305,7 @@ class Markers:
         arg_list = ["data", "axes", "xaxis", "yaxis", "display", "relative"]
         if value not in arg_list:
             str_ = ", ".join([f"`{v}`" for v in arg_list])
-            raise ValueError(
-                f"The transform must be one of {str_}."
-            )
+            raise ValueError(f"The transform must be one of {str_}.")
         setattr(self, attr, value)
         if self._collection is not None and self.ax is not None:
             getattr(self._collection, f"set{attr}")(getattr(self, attr[1:]))
@@ -340,7 +344,7 @@ class Markers:
             raise RuntimeError(
                 "Variable length markers must be added to a signal to provide "
                 "the numbers of markers at the current navigation coordinates."
-                )
+            )
 
         return self.get_current_kwargs()[self._position_key_to_set].shape[0]
 
@@ -398,29 +402,33 @@ class Markers:
             keys = self._iterable_argument_keys + [self._position_key]
             # keeps value actually in kwargs
         elif isinstance(keys, str):
-            keys = [keys, ]
+            keys = [
+                keys,
+            ]
 
         if navigation_indices and not self._is_iterating:
             raise ValueError(
                 "`navigation_indices` is only for variable length markers."
-                )
+            )
 
         for key in keys:
             value = self.kwargs[key]
             # Don't remove when it doesn't have the same length as the
             # position kwargs because it is a "cycling" argument
-            if (isiterable(value) and not isinstance(value, str) and
-                    len(value) == len(self.kwargs[self._position_key])):
+            if (
+                isiterable(value)
+                and not isinstance(value, str)
+                and len(value) == len(self.kwargs[self._position_key])
+            ):
                 if isinstance(value, np.ndarray) and value.dtype == object:
                     # when navigation_indices is not provided
-                    nav_iterator = (
-                        navigation_indices
-                        or np.ndindex(self.kwargs[self._position_key].shape)
-                        )
+                    nav_iterator = navigation_indices or np.ndindex(
+                        self.kwargs[self._position_key].shape
+                    )
                     for nav_indices in nav_iterator:
                         self.kwargs[key][nav_indices] = np.delete(
                             value[nav_indices], indices, axis=0
-                            )
+                        )
                 else:
                     self.kwargs[key] = np.delete(value, indices, axis=0)
         self._update()
@@ -469,18 +477,17 @@ class Markers:
         if navigation_indices and not self._is_iterating:
             raise ValueError(
                 "`navigation_indices` is only for variable length markers."
-                )
+            )
 
         for key, value in kwargs.items():
             if self.kwargs[key].dtype == object:
-                nav_iterator = (
-                    navigation_indices
-                    or np.ndindex(self.kwargs[self._position_key].shape)
-                    )
+                nav_iterator = navigation_indices or np.ndindex(
+                    self.kwargs[self._position_key].shape
+                )
                 for nav_indices in nav_iterator:
                     self.kwargs[key][nav_indices] = np.append(
                         self.kwargs[key][nav_indices], value, axis=0
-                        )
+                    )
             else:
                 self.kwargs[key] = np.append(self.kwargs[key], value, axis=0)
         self._update()
@@ -522,9 +529,9 @@ class Markers:
 
     def __repr__(self):
         if self.name:
-            text = '<%s (%s)' % (self.name, self.__class__.__name__)
+            text = "<%s (%s)" % (self.name, self.__class__.__name__)
         else:
-            text = '<%s' % self.__class__.__name__
+            text = "<%s" % self.__class__.__name__
 
         text += ", length: "
         if self._is_iterating:
@@ -621,7 +628,7 @@ class Markers:
             "ScalarMappable_array": self._ScalarMappable_array,
         }
         if class_name == "Markers":
-            marker_dict['collection'] = self._collection_class.__name__
+            marker_dict["collection"] = self._collection_class.__name__
 
         return marker_dict
 
@@ -705,8 +712,9 @@ class Markers:
     def update(self):
         """Update the markers on the plot."""
         if self._is_iterating or "relative" in [
-                self._offset_transform, self._transform
-                ]:
+            self._offset_transform,
+            self._transform,
+        ]:
             self._update()
 
     def _update(self):
@@ -718,7 +726,7 @@ class Markers:
         self._collection = self._collection_class(
             **self.get_current_kwargs(),
             offset_transform=self.offset_transform,
-            )
+        )
         self._collection.set_transform(self.transform)
 
     def plot(self, render_figure=True):
@@ -902,7 +910,7 @@ def markers_dict_to_markers(marker_dict):
     old markers API, typically for file saved with hyperspy < 2.0.
     """
     # hyperspy 1.x markers uses `marker_type`, 2.x uses name
-    markers_class = marker_dict.pop('class', marker_dict.pop('marker_type', None))
+    markers_class = marker_dict.pop("class", marker_dict.pop("marker_type", None))
     if markers_class is None:
         raise ValueError("Not a valid marker dictionary.")
 
@@ -910,62 +918,77 @@ def markers_dict_to_markers(marker_dict):
         # in hyperspy >= 2.0, all data and properties are in kwargs
         **marker_dict.pop("kwargs", {}),
         # in hyperspy < 2.0, "markers properties" are saved in `marker_properties`
-        **marker_dict.pop("marker_properties", {})
-        }
+        **marker_dict.pop("marker_properties", {}),
+    }
     # Parse old markers API: add relevant "data" to kwargs
     if "data" in marker_dict:
         if "Point" in markers_class:
             kwargs["offsets"], kwargs["sizes"] = dict2vector(
                 marker_dict["data"], keys=["x1", "y1"], return_size=True
-                )
-            kwargs['facecolors'] = kwargs['color']
-            kwargs['units'] = 'dots'
+            )
+            kwargs["facecolors"] = kwargs["color"]
+            kwargs["units"] = "dots"
             if "size" not in kwargs:
                 kwargs["size"] = 20
-            kwargs["size"] = kwargs["size"]/np.pi
+            kwargs["size"] = kwargs["size"] / np.pi
             markers_class = "Points"
         elif "HorizontalLineSegment" in markers_class:
             kwargs["segments"] = dict2vector(
-                marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
-                )
+                marker_dict["data"],
+                keys=[[["x1", "y1"], ["x2", "y1"]]],
+                return_size=False,
+            )
             markers_class = "Lines"
 
         elif "HorizontalLine" in markers_class:
             kwargs["offsets"] = dict2vector(
                 marker_dict["data"], keys=["y1"], return_size=False
-                )
+            )
             markers_class = "HorizontalLines"
 
         elif "VerticalLineSegment" in markers_class:
             kwargs["segments"] = dict2vector(
-                marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
-                )
+                marker_dict["data"],
+                keys=[[["x1", "y1"], ["x1", "y2"]]],
+                return_size=False,
+            )
             markers_class = "Lines"
         elif "VerticalLine" in markers_class:
             kwargs["offsets"] = dict2vector(
                 marker_dict["data"], keys=["x1"], return_size=False
-                )
+            )
             markers_class = "VerticalLines"
         elif "Line" in markers_class:
             kwargs["segments"] = dict2vector(
-                marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False
-                )
+                marker_dict["data"],
+                keys=[[["x1", "y1"], ["x2", "y2"]]],
+                return_size=False,
+            )
             markers_class = "Lines"
 
         elif "Arrow" in markers_class:
             # check if dx == x2 or dx == x2 - x1, etc.
-            vectors = dict2vector(marker_dict["data"], keys=["x1", "y1", "x2", "y2"],
-                                 return_size=False)
+            vectors = dict2vector(
+                marker_dict["data"], keys=["x1", "y1", "x2", "y2"], return_size=False
+            )
             if vectors.dtype == object:
                 offsets = np.empty(vectors.shape, dtype=object)
                 U = np.empty(vectors.shape, dtype=object)
                 V = np.empty(vectors.shape, dtype=object)
                 for i in np.ndindex(vectors.shape):
-                    offsets[i] = np.array([[vectors[i][0], vectors[i][1]], ])
+                    offsets[i] = np.array(
+                        [
+                            [vectors[i][0], vectors[i][1]],
+                        ]
+                    )
                     U[i] = np.array([vectors[i][0] - vectors[i][2]])
                     V[i] = np.array([vectors[i][1] - vectors[i][3]])
             else:
-                offsets = np.array([[vectors[0], vectors[1]],])
+                offsets = np.array(
+                    [
+                        [vectors[0], vectors[1]],
+                    ]
+                )
                 U = np.array([vectors[2] - vectors[0]])
                 V = np.array([vectors[3] - vectors[1]])
 
@@ -974,44 +997,63 @@ def markers_dict_to_markers(marker_dict):
             kwargs["V"] = V
             markers_class = "Arrows"
 
-
         elif "Rectangle" in markers_class:
             # check if dx == x2 or dx == x2 - x1, etc.
-            vectors = dict2vector(marker_dict["data"], keys=["x1", "y1", "x2", "y2"],
-                                 return_size=False)
+            vectors = dict2vector(
+                marker_dict["data"], keys=["x1", "y1", "x2", "y2"], return_size=False
+            )
             if vectors.dtype == object:
                 offsets = np.empty(vectors.shape, dtype=object)
                 widths = np.empty(vectors.shape, dtype=object)
                 heights = np.empty(vectors.shape, dtype=object)
                 for i in np.ndindex(vectors.shape):
-                    offsets[i] = [[(vectors[i][0]+vectors[i][2])/2, (vectors[i][1]+vectors[i][3])/2],]
-                    widths[i] = [np.abs(vectors[i][0] - vectors[i][2]),]
-                    heights[i] = [np.abs(vectors[i][1] - vectors[i][3]),]
+                    offsets[i] = [
+                        [
+                            (vectors[i][0] + vectors[i][2]) / 2,
+                            (vectors[i][1] + vectors[i][3]) / 2,
+                        ],
+                    ]
+                    widths[i] = [
+                        np.abs(vectors[i][0] - vectors[i][2]),
+                    ]
+                    heights[i] = [
+                        np.abs(vectors[i][1] - vectors[i][3]),
+                    ]
             else:
-                offsets = [[((vectors[0]+vectors[2])/2), ((vectors[1] + vectors[3]) / 2)],]
-                widths = [np.abs(vectors[0] - vectors[2]),]
-                heights = [np.abs(vectors[1] - vectors[3]),]
+                offsets = [
+                    [((vectors[0] + vectors[2]) / 2), ((vectors[1] + vectors[3]) / 2)],
+                ]
+                widths = [
+                    np.abs(vectors[0] - vectors[2]),
+                ]
+                heights = [
+                    np.abs(vectors[1] - vectors[3]),
+                ]
             kwargs["offsets"] = offsets
             kwargs["widths"] = widths
             kwargs["heights"] = heights
             fill = kwargs.pop("fill")
             if not fill:
-                kwargs['facecolor'] = 'none'
+                kwargs["facecolor"] = "none"
             markers_class = "Rectangles"
 
         elif "Ellipse" in markers_class:
             kwargs["offsets"] = dict2vector(
-                marker_dict["data"], keys=[["x1", "y1"], ], return_size=False
-                )
+                marker_dict["data"],
+                keys=[
+                    ["x1", "y1"],
+                ],
+                return_size=False,
+            )
             kwargs["widths"] = dict2vector(
                 marker_dict["data"], keys=["x2"], return_size=False
-                )
+            )
             kwargs["heights"] = dict2vector(
                 marker_dict["data"], keys=["y2"], return_size=False
-                )
+            )
             fill = kwargs.pop("fill")
             if not fill:
-                kwargs['facecolor'] = 'none'
+                kwargs["facecolor"] = "none"
             markers_class = "Ellipses"
 
         elif "Text" in markers_class:
@@ -1020,7 +1062,7 @@ def markers_dict_to_markers(marker_dict):
             )
             kwargs["texts"] = dict2vector(
                 marker_dict["data"], keys=["text"], return_size=False, dtype=str
-                )
+            )
             kwargs["verticalalignment"] = "bottom"
             kwargs["horizontalalignment"] = "left"
             markers_class = "Texts"
@@ -1030,7 +1072,4 @@ def markers_dict_to_markers(marker_dict):
     if "size" in kwargs:
         kwargs["sizes"] = kwargs.pop("size")
 
-
-    return getattr(hyperspy.utils.markers, markers_class)(
-        **marker_dict, **kwargs
-        )
+    return getattr(hyperspy.utils.markers, markers_class)(**marker_dict, **kwargs)

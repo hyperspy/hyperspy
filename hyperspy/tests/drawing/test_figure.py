@@ -30,9 +30,9 @@ from hyperspy.signals import Signal1D, Signal2D
 def _close_figure_matplotlib_event(figure):
     try:
         # Introduced in matplotlib 3.6 and `clost_event` deprecated
-        event = CloseEvent('close_event', figure)
-        figure.canvas.callbacks.process('close_event', event)
-    except Exception: # Deprecated in matplotlib 3.6
+        event = CloseEvent("close_event", figure)
+        figure.canvas.callbacks.process("close_event", event)
+    except Exception:  # Deprecated in matplotlib 3.6
         figure.canvas.close_event()
 
 
@@ -70,23 +70,29 @@ def test_close_figure_using_matplotlib():
 
 def test_close_figure_with_plotted_marker():
     s = Signal1D(np.arange(10))
-    m = Points(offsets=[[0, 0], ], color='red', sizes=100)
+    m = Points(
+        offsets=[
+            [0, 0],
+        ],
+        color="red",
+        sizes=100,
+    )
     s.add_marker(m)
     s.plot(True)
     s._plot.close()
     check_closing_plot(s)
 
 
-@pytest.mark.parametrize('navigator', ["auto", "slider", "spectrum"])
-@pytest.mark.parametrize('nav_dim', [1, 2])
-@pytest.mark.parametrize('sig_dim', [1, 2])
+@pytest.mark.parametrize("navigator", ["auto", "slider", "spectrum"])
+@pytest.mark.parametrize("nav_dim", [1, 2])
+@pytest.mark.parametrize("sig_dim", [1, 2])
 def test_close_figure(navigator, nav_dim, sig_dim):
-    total_dim = nav_dim*sig_dim
+    total_dim = nav_dim * sig_dim
     if sig_dim == 1:
         Signal = Signal1D
     elif sig_dim == 2:
         Signal = Signal2D
-    s = Signal(np.arange(pow(10, total_dim)).reshape([10]*total_dim))
+    s = Signal(np.arange(pow(10, total_dim)).reshape([10] * total_dim))
     s.plot(navigator=navigator)
     s._plot.close()
     check_closing_plot(s, check_data_changed_close=False)
@@ -100,11 +106,16 @@ def test_close_figure(navigator, nav_dim, sig_dim):
 
 
 def test_remove_markers():
-    s = Signal2D(np.arange(pow(10, 3)).reshape([10]*3))
+    s = Signal2D(np.arange(pow(10, 3)).reshape([10] * 3))
     s.plot()
-    m = Points(offsets=[[0, 0], ], color='red', sizes=100)
+    m = Points(
+        offsets=[
+            [0, 0],
+        ],
+        color="red",
+        sizes=100,
+    )
     s.add_marker(m)
     s._plot.signal_plot.remove_markers()
     assert len(s._plot.signal_plot.ax_markers) == 0
     assert m._collection is None  # Check that the collection is set to None
-

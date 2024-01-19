@@ -21,9 +21,7 @@ from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
 import importlib
 
 
-__all__ = [
-    component for component, specs_ in _EXTENSIONS["components2D"].items()
-    ]
+__all__ = [component for component, specs_ in _EXTENSIONS["components2D"].items()]
 
 
 def __dir__():
@@ -33,7 +31,7 @@ def __dir__():
 def __getattr__(name):
     if name in __all__:
         spec = _EXTENSIONS["components2D"][name]
-        return getattr(importlib.import_module(spec['module']), name)
+        return getattr(importlib.import_module(spec["module"]), name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -55,11 +53,11 @@ def _generate_docstring(base_docstring):
         # get the component class
         component = __getattr__(name)
         spec = _EXTENSIONS["components2D"][name]
-        path = spec['module'].replace('hyperspy', '~')
+        path = spec["module"].replace("hyperspy", "~")
         line1 = f":class:`{path}.{name}`" + "\n"
         component_doc = component.__doc__ or "..."
         # Get the first line only
-        component_doc = component_doc.split('\n')[0]
+        component_doc = component_doc.split("\n")[0]
         line2 = "    " + component_doc + "\n\n"
         base_docstring += line1 + line2
 

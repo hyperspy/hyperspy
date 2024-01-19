@@ -69,14 +69,11 @@ class Polygons(Markers):
         """
         if kwargs.setdefault("offset_transform", "display") != "display":
             raise ValueError(
-                 "The `offset_transform` argument is not supported for Polygons Markers. "
-                 "Instead, use the `transform` argument to specify the transform "
-                 "of the polygons."
-                 )
+                "The `offset_transform` argument is not supported for Polygons Markers. "
+                "Instead, use the `transform` argument to specify the transform "
+                "of the polygons."
+            )
 
         super().__init__(
-            collection=PolyCollection,
-            verts=verts,
-            transform=transform,
-            **kwargs
+            collection=PolyCollection, verts=verts, transform=transform, **kwargs
         )

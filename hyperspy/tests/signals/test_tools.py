@@ -51,9 +51,11 @@ def test_signal_iterator():
         for i, signal in enumerate(s):
             assert i == signal.data[0]
 
-@pytest.mark.parametrize('shape',
-                         [(2,1,1,6,8,7,1,1), (2,6,1,1,8,1,7,1),
-                         (1,1,2,6,8,1,1,7)])
+
+@pytest.mark.parametrize(
+    "shape",
+    [(2, 1, 1, 6, 8, 7, 1, 1), (2, 6, 1, 1, 8, 1, 7, 1), (1, 1, 2, 6, 8, 1, 1, 7)],
+)
 def test_squeeze(shape):
     s = signals.BaseSignal(np.random.random(shape))
     s2 = s.transpose(signal_axes=[0, 1, 2])
@@ -75,8 +77,9 @@ class TestDerivative:
 
     def test_derivative_data(self):
         der = self.s.derivative(axis=0, order=4)
-        np.testing.assert_allclose(der.data[4:-4], np.sin(
-            der.axes_manager[0].axis[4:-4]), atol=1e-2)
+        np.testing.assert_allclose(
+            der.data[4:-4], np.sin(der.axes_manager[0].axis[4:-4]), atol=1e-2
+        )
 
 
 def test_derivative():
@@ -85,12 +88,12 @@ def test_derivative():
     s = signals.Signal1D(data)
     s.axes_manager[0].scale = scale
     der = s.derivative(axis=0)
-    np.testing.assert_allclose(der.data, (data[2]-data[1])/scale)
+    np.testing.assert_allclose(der.data, (data[2] - data[1]) / scale)
 
 
 def test_derivative_non_uniform_axis():
     data = np.arange(1, 10)
-    axis_dict = {'axis': 1/data}
+    axis_dict = {"axis": 1 / data}
     s = signals.Signal1D(data, axes=[axis_dict])
     der = s.derivative(axis=0)
     np.testing.assert_allclose(der.data[:4], np.array([-2, -5, -10, -17]))
@@ -234,7 +237,12 @@ class TestOutArg:
         mask = s.data > 0.5
         s.data = np.arange(s.data.size).reshape(s.data.shape)
         s.data = np.ma.masked_array(s.data, mask=mask)
-        sr = s.mean(axis=("x", "z",))
+        sr = s.mean(
+            axis=(
+                "x",
+                "z",
+            )
+        )
         np.testing.assert_array_equal(
             sr.data.shape, [ax.size for ax in s.axes_manager[("y", "E")]]
         )
@@ -267,7 +275,12 @@ class TestOutArg:
             pytest.skip("LazySignals do not support masked arrays")
         mask = s.data > 0.5
         s.data = np.ma.masked_array(np.ones_like(s.data), mask=mask)
-        sr = s.sum(axis=("x", "z",))
+        sr = s.sum(
+            axis=(
+                "x",
+                "z",
+            )
+        )
         np.testing.assert_array_equal(sr.data.sum(), (~mask).sum())
 
     @pytest.mark.parametrize("mask", (True, False))
@@ -309,36 +322,40 @@ class TestOutArg:
             s.sum(axis=s.axes_manager._axes, out=ss)
 
 
-@pytest.mark.parametrize('lazy', [False, True])
+@pytest.mark.parametrize("lazy", [False, True])
 def test_get_current_signal(lazy):
     data = np.arange(100)
     s = signals.Signal1D(data.reshape((10, 10)))
-    s.metadata.General.title = 'A signal'
+    s.metadata.General.title = "A signal"
     if lazy:
         s = s.as_lazy()
 
     s.axes_manager.indices = (1,)
     cs = s.get_current_signal()
-    assert cs.metadata.General.title == 'A signal (1,)'
+    assert cs.metadata.General.title == "A signal (1,)"
     np.testing.assert_allclose(cs.data, np.arange(start=10, stop=20))
 
     cs = s.get_current_signal(auto_title=False)
-    assert cs.metadata.General.title == 'A signal'
+    assert cs.metadata.General.title == "A signal"
     # just spoofing these parameters to test the auto_filename
     s.tmp_parameters.filename = "test"
     s.tmp_parameters.extension = "hspy"
     s.tmp_parameters.folder = "test"
     cs = s.get_current_signal(auto_title=False, auto_filename=True)
-    assert cs.tmp_parameters.filename == 'test_(1,)'
+    assert cs.tmp_parameters.filename == "test_(1,)"
 
 
 def test_get_current_signal_with_markers():
     data = np.arange(100)
     s = signals.Signal1D(data.reshape((10, 10)))
-    s.metadata.General.title = 'A signal'
+    s.metadata.General.title = "A signal"
     offsets = np.empty((10,), dtype=object)
     for i in range(10):
-        offsets[i] = np.array([[i, i], ])
+        offsets[i] = np.array(
+            [
+                [i, i],
+            ]
+        )
     m = Points(offsets=offsets)
     s.add_marker(m, permanent=True)
     cs = s.get_current_signal()

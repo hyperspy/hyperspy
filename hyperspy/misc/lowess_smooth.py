@@ -54,14 +54,14 @@ def lowess(y, x, f=2.0 / 3.0, n_iter=3):
 
 @jit_ifnumba(cache=True, nogil=True)
 def _lowess(y, x, f=2.0 / 3.0, n_iter=3):  # pragma: no cover
-    """Lowess smoother requiring native endian datatype (for numba).
-
-    """
+    """Lowess smoother requiring native endian datatype (for numba)."""
     n = len(x)
     r = int(np.ceil(f * n))
     h = np.array([np.sort(np.abs(x - x[i]))[r] for i in range(n)])
-    w = np.minimum(1.0, np.maximum(np.abs((x.reshape((-1, 1)) - x.reshape((1, -1))) / h), 0.0))
-    w = (1 - w ** 3) ** 3
+    w = np.minimum(
+        1.0, np.maximum(np.abs((x.reshape((-1, 1)) - x.reshape((1, -1))) / h), 0.0)
+    )
+    w = (1 - w**3) ** 3
     yest = np.zeros(n)
     delta = np.ones(n)
 
@@ -81,8 +81,8 @@ def _lowess(y, x, f=2.0 / 3.0, n_iter=3):  # pragma: no cover
 
         residuals = y - yest
         s = np.median(np.abs(residuals))
-        #delta = np.clip(residuals / (6.0 * s), -1.0, 1.0)
+        # delta = np.clip(residuals / (6.0 * s), -1.0, 1.0)
         delta = np.minimum(1.0, np.maximum(residuals / (6.0 * s), -1.0))
-        delta = (1 - delta ** 2) ** 2
+        delta = (1 - delta**2) ** 2
 
     return yest

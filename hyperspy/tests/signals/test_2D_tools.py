@@ -20,6 +20,7 @@ from unittest import mock
 import numpy as np
 import numpy.testing as npt
 import pytest
+
 try:
     # scipy >=1.10
     from scipy.datasets import ascent, face
@@ -37,21 +38,30 @@ from hyperspy.signal_tools import LineInSignal2D, Signal2DCalibration
 def _generate_parameters():
     parameters = []
     for normalize_corr in [False, True]:
-        for reference in ['current', 'cascade', 'stat']:
+        for reference in ["current", "cascade", "stat"]:
             parameters.append([normalize_corr, reference])
     return parameters
 
 
 @lazifyTestClass
 class TestSubPixelAlign:
-
     def setup_method(self, method):
         ref_image = ascent()
         center = np.array((256, 256))
-        shifts = np.array([(0.0, 0.0), (4.3, 2.13), (1.65, 3.58),
-                           (-2.3, 2.9), (5.2, -2.1), (2.7, 2.9),
-                           (5.0, 6.8), (-9.1, -9.5), (-9.0, -9.9),
-                           (-6.3, -9.2)])
+        shifts = np.array(
+            [
+                (0.0, 0.0),
+                (4.3, 2.13),
+                (1.65, 3.58),
+                (-2.3, 2.9),
+                (5.2, -2.1),
+                (2.7, 2.9),
+                (5.0, 6.8),
+                (-9.1, -9.5),
+                (-9.0, -9.9),
+                (-6.3, -9.2),
+            ]
+        )
         s = hs.signals.Signal2D(np.zeros((10, 100, 100)))
         for i in range(10):
             # Apply each sup-pixel shift using FFT and InverseFFT
@@ -59,8 +69,9 @@ class TestSubPixelAlign:
             offset_image = np.fft.ifftn(offset_image).real
 
             # Crop central regions of shifted images to avoid wrap around
-            s.data[i, ...] = offset_image[center[0]:center[0] + 100,
-                                          center[1]:center[1] + 100]
+            s.data[i, ...] = offset_image[
+                center[0] : center[0] + 100, center[1] : center[1] + 100
+            ]
 
         self.signal = s
         self.shifts = shifts
@@ -72,25 +83,24 @@ class TestSubPixelAlign:
         s.align2D(shifts=shifts)
         # Compare by broadcasting
         np.testing.assert_allclose(s.data[4], s.data[0], rtol=0.5)
-        s.estimate_shift2D(reference='cascade', sub_pixel_factor=10)
+        s.estimate_shift2D(reference="cascade", sub_pixel_factor=10)
 
-    @pytest.mark.parametrize(("normalize_corr", "reference"),
-                             _generate_parameters())
+    @pytest.mark.parametrize(("normalize_corr", "reference"), _generate_parameters())
     def test_estimate_subpix(self, normalize_corr, reference):
         s = self.signal
-        shifts = s.estimate_shift2D(sub_pixel_factor=200,
-                                    normalize_corr=normalize_corr,
-                                    reference=reference)
-        np.testing.assert_allclose(shifts, self.shifts, rtol=2, atol=0.2,
-                                   verbose=True)
+        shifts = s.estimate_shift2D(
+            sub_pixel_factor=200, normalize_corr=normalize_corr, reference=reference
+        )
+        np.testing.assert_allclose(shifts, self.shifts, rtol=2, atol=0.2, verbose=True)
 
-    @pytest.mark.parametrize(("plot"), [True, 'reuse'])
+    @pytest.mark.parametrize(("plot"), [True, "reuse"])
     def test_estimate_subpix_plot(self, plot):
         # To avoid this function plotting many figures and holding the test, we
         # make sure the backend is set to `agg` in case it is set to something
         # else in the testing environment
         import matplotlib.pyplot as plt
-        plt.switch_backend('agg')
+
+        plt.switch_backend("agg")
         s = self.signal
         s.estimate_shift2D(sub_pixel_factor=200, plot=plot)
 
@@ -105,7 +115,6 @@ class TestSubPixelAlign:
 
 @lazifyTestClass
 class TestAlignTools:
-
     def setup_method(self, method):
         im = face(gray=True)
         self.ascent_offset = np.array((256, 256))
@@ -114,19 +123,33 @@ class TestAlignTools:
         self.offsets = np.array((-2, -3))
         izlp = []
         for ax, offset, scale in zip(
-                s.axes_manager.signal_axes, self.offsets, self.scales):
+            s.axes_manager.signal_axes, self.offsets, self.scales
+        ):
             ax.scale = scale
             ax.offset = offset
             izlp.append(ax.value2index(0))
         self.izlp = izlp
-        self.ishifts = np.array([(0, 0), (4, 2), (1, 3), (-2, 2), (5, -2),
-                                 (2, 2), (5, 6), (-9, -9), (-9, -9), (-6, -9)])
+        self.ishifts = np.array(
+            [
+                (0, 0),
+                (4, 2),
+                (1, 3),
+                (-2, 2),
+                (5, -2),
+                (2, 2),
+                (5, 6),
+                (-9, -9),
+                (-9, -9),
+                (-6, -9),
+            ]
+        )
         self.new_offsets = self.offsets - self.ishifts.min(0) * self.scales
         zlp_pos = self.ishifts + self.izlp
         for i in range(10):
             slices = self.ascent_offset - zlp_pos[i, ...]
-            s.data[i, ...] = im[slices[0]:slices[0] + 100,
-                                slices[1]:slices[1] + 100]
+            s.data[i, ...] = im[
+                slices[0] : slices[0] + 100, slices[1] : slices[1] + 100
+            ]
         self.signal = s
 
         # How image should be after successfull alignment
@@ -134,8 +157,10 @@ class TestAlignTools:
         smax = self.ishifts.max(0)
         offsets = self.ascent_offset + self.offsets / self.scales - smin
         size = np.array((100, 100)) - (smax - smin)
-        self.aligned = im[int(offsets[0]):int(offsets[0] + size[0]),
-                          int(offsets[1]):int(offsets[1] + size[1])]
+        self.aligned = im[
+            int(offsets[0]) : int(offsets[0] + size[0]),
+            int(offsets[1]) : int(offsets[1] + size[1]),
+        ]
 
     def test_estimate_shift(self):
         s = self.signal
@@ -179,7 +204,7 @@ class TestAlignTools:
         assert np.all(Nnan_data - Nnan <= 2)
 
         # Check alignment is correct
-        d_al = s.data[:, ds[0]:-ds[0], ds[1]:-ds[1]]
+        d_al = s.data[:, ds[0] : -ds[0], ds[1] : -ds[1]]
         assert np.all(d_al == self.aligned)
 
 
@@ -210,7 +235,7 @@ class TestGetSignal2DScale:
         assert scale1 == 4
 
     def test_diagonal(self):
-        length = (100 ** 2 + 50 ** 2) ** 0.5
+        length = (100**2 + 50**2) ** 0.5
         s = self.s1
         sa = s.axes_manager.signal_axes
         sa[0].scale, sa[1].scale = 0.5, 1.0

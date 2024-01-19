@@ -29,11 +29,11 @@ from .two_gaussians import two_gaussians
 
 
 __all__ = [
-    'atomic_resolution_image',
-    'luminescence_signal',
+    "atomic_resolution_image",
+    "luminescence_signal",
     "two_gaussians",
-    'wave_image',
-    ]
+    "wave_image",
+]
 
 
 def __dir__():

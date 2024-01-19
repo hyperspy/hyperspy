@@ -87,13 +87,16 @@ def test_lazy_reduce_rechunk():
     )
 
     for rm in reduce_methods:
-        assert rm(axis=0, rechunk=True).data.chunks == ((100,),)  # The data has been rechunked
+        assert rm(axis=0, rechunk=True).data.chunks == (
+            (100,),
+        )  # The data has been rechunked
         assert rm(axis=0, rechunk=False).data.chunks == (
             (2,) * 50,
         )  # The data has not been rechunked
         assert rm(axis=0).data.chunks == (
             (2,) * 50,
         )  # Default, which is not to rechunk
+
 
 def test_lazy_reduce_rechunk_same_values():
     data = np.arange(40).reshape(2, 2, 10)

@@ -51,6 +51,7 @@ class TestModelJacobians:
         assert m[0].centre.value == 2
         assert m[0].sigma.value == 2
 
+
 class TestModelCallMethod:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
@@ -67,7 +68,6 @@ class TestModelCallMethod:
         r2 = m._get_current_data(onlyactive=True)
         np.testing.assert_allclose(m[0].function(0) * 2, r1)
         np.testing.assert_allclose(m[0].function(0), r2)
-
 
     def test_call_method_binned(self):
         m = self.model
@@ -250,7 +250,6 @@ class TestModel1D:
         assert g.model is m
         assert g._axes_manager is m.axes_manager
         assert all([hasattr(p, "map") for p in g.parameters])
-
 
     def test_access_component_by_name(self):
         m = self.model

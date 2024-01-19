@@ -68,7 +68,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
             S = 0.0
             for _ in range(max_iter):  # pragma: no branch
                 Sold = S
-                Bsq = B ** 2
+                Bsq = B**2
                 U, S, V = svd(
                     A.T @ (d * B * Bsq - gamma * B * np.sum(Bsq, axis=0)),
                     full_matrices=False,
@@ -100,7 +100,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
                     vsum = v.sum()
 
                     numer = 2.0 * u.T @ v - 2.0 * gamma * usum * vsum * oo_d
-                    denom = u.T @ u - v.T @ v - gamma * (usum ** 2 - vsum ** 2) * oo_d
+                    denom = u.T @ u - v.T @ v - gamma * (usum**2 - vsum**2) * oo_d
 
                     theta = 0.25 * np.arctan2(numer, denom)
                     maxTheta = max(maxTheta, abs(theta))

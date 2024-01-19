@@ -23,24 +23,25 @@ from hyperspy.signals import Signal1D
 
 
 class TestRedChisq:
-
     def setup_method(self, method):
         self.shape = (7, 15)
         art_model = DictionaryTreeBrowser()
-        art_model.set_item('red_chisq.data', np.ones(self.shape))
+        art_model.set_item("red_chisq.data", np.ones(self.shape))
         art_model.red_chisq.data[3, 5] = 0.8
-        art_model.red_chisq.data[2, 5] = 2.
+        art_model.red_chisq.data[2, 5] = 2.0
         self.m = art_model
         # have to be imported here, as otherwise crashes nosetools
-        from hyperspy.samfire_utils.goodness_of_fit_tests.red_chisq import \
-            red_chisq_test as rct
+        from hyperspy.samfire_utils.goodness_of_fit_tests.red_chisq import (
+            red_chisq_test as rct,
+        )
+
         self.t = rct(0.9)
 
     def test_changing_tolerance(self):
         t = self.t
         t.tolerance = 1.0
         assert t.tolerance == 1.0
-        t.tolerance = -3.
+        t.tolerance = -3.0
         assert t.tolerance == 3
 
     def test_index(self):
@@ -56,7 +57,7 @@ class TestRedChisq:
 
     def test_map(self):
         t = self.t
-        mask = np.ones(self.shape, dtype='bool')
+        mask = np.ones(self.shape, dtype="bool")
         mask[2, 5] = False
         ans = t.map(self.m, mask)
         assert np.all(ans == mask)
@@ -66,18 +67,21 @@ class TestRedChisq:
 
 
 class TestInformationCriteria:
-
     def setup_method(self, method):
         m = Signal1D(np.arange(30).reshape((3, 10))).create_model()
         m.append(Lorentzian())
         m.multifit()
         self.m = m
         # have to be imported here, as otherwise crashes nosetools
-        from hyperspy.samfire_utils.goodness_of_fit_tests.information_theory \
-            import (AIC_test, AICc_test, BIC_test)
-        self.aic = AIC_test(0.)
-        self.aicc = AICc_test(0.)
-        self.bic = BIC_test(0.)
+        from hyperspy.samfire_utils.goodness_of_fit_tests.information_theory import (
+            AIC_test,
+            AICc_test,
+            BIC_test,
+        )
+
+        self.aic = AIC_test(0.0)
+        self.aicc = AICc_test(0.0)
+        self.bic = BIC_test(0.0)
 
     def test_index(self):
         ind = (0,)

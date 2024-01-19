@@ -33,21 +33,29 @@ def _get_shapes(am, ignore_axis):
             ignore_axis = am[ignore_axis]
         except ValueError:
             pass
-    sigsh = tuple(axis.size if (ignore_axis is None or axis is not
-                                ignore_axis)
-                  else 1 for axis in am.signal_axes) if am.signal_dimension != 0 else ()
+    sigsh = (
+        tuple(
+            axis.size if (ignore_axis is None or axis is not ignore_axis) else 1
+            for axis in am.signal_axes
+        )
+        if am.signal_dimension != 0
+        else ()
+    )
 
-    navsh = tuple(axis.size if (ignore_axis is None or axis is not
-                                ignore_axis)
-                  else 1 for axis in am.navigation_axes) if am.navigation_dimension != 0 else ()
+    navsh = (
+        tuple(
+            axis.size if (ignore_axis is None or axis is not ignore_axis) else 1
+            for axis in am.navigation_axes
+        )
+        if am.navigation_dimension != 0
+        else ()
+    )
     return sigsh, navsh
 
 
 def are_signals_aligned(*args, ignore_axis=None):
     if len(args) < 2:
-        raise ValueError(
-            "This function requires at least two signal instances"
-        )
+        raise ValueError("This function requires at least two signal instances")
 
     args = list(args)
     am = args.pop().axes_manager
@@ -57,8 +65,10 @@ def are_signals_aligned(*args, ignore_axis=None):
         amo = args.pop().axes_manager
         sigsho, navsho = _get_shapes(amo, ignore_axis)
 
-        if not (are_aligned(sigsh[::-1], sigsho[::-1]) and
-                are_aligned(navsh[::-1], navsho[::-1])):
+        if not (
+            are_aligned(sigsh[::-1], sigsho[::-1])
+            and are_aligned(navsh[::-1], navsho[::-1])
+        ):
             return False
     return True
 
@@ -129,9 +139,7 @@ def broadcast_signals(*args, ignore_axis=None):
     from hyperspy.signal import BaseSignal
 
     if len(args) < 2:
-        raise ValueError(
-            "This function requires at least two signal instances"
-            )
+        raise ValueError("This function requires at least two signal instances")
     if any([not isinstance(a, BaseSignal) for a in args]):
         raise ValueError("Arguments must be of signal type.")
     args = list(args)

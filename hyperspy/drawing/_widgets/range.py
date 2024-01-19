@@ -26,7 +26,7 @@ import numpy as np
 from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 from hyperspy.defaults_parser import preferences
 
-if Version(matplotlib.__version__) >= Version('3.6.0'):
+if Version(matplotlib.__version__) >= Version("3.6.0"):
     from matplotlib.widgets import SpanSelector
 else:
     from hyperspy.external.matplotlib.widgets import SpanSelector
@@ -48,7 +48,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
     will always stay within bounds.
     """
 
-    def __init__(self, axes_manager, ax=None, color='r', alpha=0.25, **kwargs):
+    def __init__(self, axes_manager, ax=None, color="r", alpha=0.25, **kwargs):
         # Parse all kwargs for the matplotlib SpanSelector
         self._SpanSelector_kwargs = {}
         for key in inspect.signature(SpanSelector).parameters.keys():
@@ -56,16 +56,19 @@ class RangeWidget(ResizableDraggableWidgetBase):
                 self._SpanSelector_kwargs[key] = kwargs.pop(key)
 
         self._SpanSelector_kwargs.update(
-            dict(onselect=lambda *args, **kwargs: None,
-                 interactive=True,
-                 onmove_callback=self._span_changed,
-                 drag_from_anywhere=True,
-                 ignore_event_outside=True,
-                 grab_range=preferences.Plot.pick_tolerance)
+            dict(
+                onselect=lambda *args, **kwargs: None,
+                interactive=True,
+                onmove_callback=self._span_changed,
+                drag_from_anywhere=True,
+                ignore_event_outside=True,
+                grab_range=preferences.Plot.pick_tolerance,
             )
-        self._SpanSelector_kwargs.setdefault('direction', 'horizontal')
-        super(RangeWidget, self).__init__(axes_manager, color=color, alpha=alpha,
-                                          **kwargs)
+        )
+        self._SpanSelector_kwargs.setdefault("direction", "horizontal")
+        super(RangeWidget, self).__init__(
+            axes_manager, color=color, alpha=alpha, **kwargs
+        )
         self.span = None
 
     def set_on(self, value, render_figure=True):
@@ -89,7 +92,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
     @color.setter
     def color(self, color):
         self._color = color
-        if getattr(self, 'span', None) is not None:
+        if getattr(self, "span", None) is not None:
             self.span.set_props(color=color)
             self.span.set_handle_props(color=color)
 
@@ -100,9 +103,9 @@ class RangeWidget(ResizableDraggableWidgetBase):
     @alpha.setter
     def alpha(self, alpha):
         self._alpha = alpha
-        if getattr(self, 'span', None) is not None:
+        if getattr(self, "span", None) is not None:
             self.span.set_props(alpha=alpha)
-            self.span.set_handle_props(alpha=min(1.0, alpha*2))
+            self.span.set_handle_props(alpha=min(1.0, alpha * 2))
 
     @property
     def patch(self):
@@ -128,10 +131,10 @@ class RangeWidget(ResizableDraggableWidgetBase):
     def _add_patch_to(self, ax):
         self.ax = ax
         self._SpanSelector_kwargs.update(
-            props={"alpha":self.alpha, "color":self.color},
-            handle_props={"alpha":min(1.0, self.alpha*2), "color":self.color},
+            props={"alpha": self.alpha, "color": self.color},
+            handle_props={"alpha": min(1.0, self.alpha * 2), "color": self.color},
             useblit=ax.figure.canvas.supports_blit,
-            )
+        )
         self.span = SpanSelector(ax, **self._SpanSelector_kwargs)
         self._set_span_extents(*self._get_range())
         self._patch = list(self.span.artists)
@@ -167,14 +170,14 @@ class RangeWidget(ResizableDraggableWidgetBase):
             return args[0]
         elif len(args) == 4:
             return args
-        elif len(kwargs) == 1 and 'bounds' in kwargs:
+        elif len(kwargs) == 1 and "bounds" in kwargs:
             return kwargs.values()[0]
         else:
-            x = kwargs.pop('x', kwargs.pop('left', self._pos[0]))
-            if 'right' in kwargs:
-                w = kwargs.pop('right') - x
+            x = kwargs.pop("x", kwargs.pop("left", self._pos[0]))
+            if "right" in kwargs:
+                w = kwargs.pop("right") - x
             else:
-                w = kwargs.pop('w', kwargs.pop('width', self._size[0]))
+                w = kwargs.pop("w", kwargs.pop("width", self._size[0]))
             return x, w
 
     def set_ibounds(self, *args, **kwargs):
@@ -218,7 +221,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
             axis = self.axes[0]
             if axis.is_uniform and w <= axis.scale:
                 w = axis.scale
-            x0, x1 = np.clip([x, x+w], axis.axis[0], axis.axis[-1])
+            x0, x1 = np.clip([x, x + w], axis.axis[0], axis.axis[-1])
             self._set_span_extents(x0, x1)
 
     def _update_patch_position(self):

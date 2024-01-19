@@ -26,25 +26,24 @@ from dask.array import Array
 def check_that_flags_make_sense(flags):
     # one of: fn, id, sig
     def do_error(f1, f2):
-        raise ValueError(
-            'The flags "%s" and "%s" are not compatible' %
-            (f1, f2))
-    if 'fn' in flags:
-        if 'id' in flags:
-            do_error('fn', 'id')
-        if 'sig' in flags:
-            do_error('fn', 'sig')
-    if 'id' in flags:
+        raise ValueError('The flags "%s" and "%s" are not compatible' % (f1, f2))
+
+    if "fn" in flags:
+        if "id" in flags:
+            do_error("fn", "id")
+        if "sig" in flags:
+            do_error("fn", "sig")
+    if "id" in flags:
         # fn done previously
-        if 'sig' in flags:
-            do_error('id', 'sig')
-        if 'init' in flags:
-            do_error('id', 'init')
+        if "sig" in flags:
+            do_error("id", "sig")
+        if "init" in flags:
+            do_error("id", "init")
     # all sig cases already covered
 
 
 def parse_flag_string(flags):
-    return flags.replace(' ', '').split(',')
+    return flags.replace(" ", "").split(",")
 
 
 def export_to_dictionary(target, whitelist, dic, fullcopy=True):
@@ -94,33 +93,33 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
             if fullcopy:
                 thing = deepcopy(thing)
             dic[key] = thing
-            whitelist_flags[key] = ''
+            whitelist_flags[key] = ""
             continue
 
         flags_str, value = value
         flags = parse_flag_string(flags_str)
         check_that_flags_make_sense(flags)
-        if key == 'self':
-            if 'id' not in flags:
-                raise ValueError(
-                    'Key "self" is only available with flag "id" given')
+        if key == "self":
+            if "id" not in flags:
+                raise ValueError('Key "self" is only available with flag "id" given')
             value = id(target)
         else:
-            if 'id' in flags:
+            if "id" in flags:
                 value = id(attrgetter(key)(target))
 
         # here value is either id(thing), or None (all others except 'init'),
         # or something for init
-        if 'init' not in flags and value is None:
+        if "init" not in flags and value is None:
             value = attrgetter(key)(target)
         # here value either id(thing), or an actual target to export
-        if 'sig' in flags:
+        if "sig" in flags:
             if fullcopy:
                 from hyperspy.signal import BaseSignal
+
                 if isinstance(value, BaseSignal):
                     value = value._to_dictionary()
-                    value['data'] = deepcopy(value['data'])
-        elif 'fn' in flags:
+                    value["data"] = deepcopy(value["data"])
+        elif "fn" in flags:
             if fullcopy:
                 value = (True, cloudpickle.dumps(value))
             else:
@@ -131,12 +130,12 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
         dic[key] = value
         whitelist_flags[key] = flags_str
 
-    if '_whitelist' not in dic:
-        dic['_whitelist'] = {}
+    if "_whitelist" not in dic:
+        dic["_whitelist"] = {}
     # the saved whitelist does not have any values, as they are saved in the
     # original dictionary. Have to restore then when loading from dictionary,
     # most notably all with 'init' flags!!
-    dic['_whitelist'].update(whitelist_flags)
+    dic["_whitelist"].update(whitelist_flags)
 
 
 def load_from_dictionary(target, dic):
@@ -164,12 +163,12 @@ def load_from_dictionary(target, dic):
 
     """
     new_whitelist = {}
-    for key, flags_str in dic['_whitelist'].items():
+    for key, flags_str in dic["_whitelist"].items():
         value = dic[key]
         flags = parse_flag_string(flags_str)
-        if 'id' not in flags:
+        if "id" not in flags:
             value = reconstruct_object(flags, value)
-            if 'init' in flags:
+            if "init" in flags:
                 new_whitelist[key] = (flags_str, value)
             else:
                 attrsetter(target, key, value)
@@ -177,30 +176,31 @@ def load_from_dictionary(target, dic):
                     new_whitelist[key] = (flags_str, None)
                 else:
                     new_whitelist[key] = None
-    if hasattr(target, '_whitelist'):
+    if hasattr(target, "_whitelist"):
         if isinstance(target._whitelist, dict):
             target._whitelist.update(new_whitelist)
     else:
-        attrsetter(target, '_whitelist', new_whitelist)
+        attrsetter(target, "_whitelist", new_whitelist)
 
 
 def reconstruct_object(flags, value):
-    """ Reconstructs the value (if necessary) after having saved it in a
+    """Reconstructs the value (if necessary) after having saved it in a
     dictionary
     """
     if not isinstance(flags, list):
         flags = parse_flag_string(flags)
-    if 'sig' in flags:
+    if "sig" in flags:
         if isinstance(value, dict):
             from hyperspy.signal import BaseSignal
+
             value = BaseSignal(**value)
             value._assign_subclass()
         return value
-    if 'fn' in flags:
+    if "fn" in flags:
         ifcloudpickle, thing = value
         if ifcloudpickle is None:
             return thing
-        if ifcloudpickle in [True, 'True', b'True']:
+        if ifcloudpickle in [True, "True", b"True"]:
             return cloudpickle.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")

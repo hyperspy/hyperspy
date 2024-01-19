@@ -37,10 +37,14 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
         x0_shape = (1,)
     else:
         i = axis.index_in_array
-        data_gi = [slice(None), ] * len(signal.data.shape)
+        data_gi = [
+            slice(None),
+        ] * len(signal.data.shape)
         data_gi[axis.index_in_array] = slice(i1, i2)
         data = signal.data[tuple(data_gi)]
-        X_shape = [1, ] * len(signal.data.shape)
+        X_shape = [
+            1,
+        ] * len(signal.data.shape)
         X_shape[axis.index_in_array] = data.shape[i]
         x0_shape = list(data.shape)
         x0_shape[i] = 1
@@ -48,13 +52,17 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     a1 = np.sqrt(2 / np.pi)
     b1 = (4 / np.pi - 1) * a1
     m1 = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
-    m2 = abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
-              / np.sum(data, i))
-    m3 = abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
-              / np.sum(data, i))
+    m2 = abs(
+        np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
+        / np.sum(data, i)
+    )
+    m3 = abs(
+        np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
+        / np.sum(data, i)
+    )
 
     x0 = m1 - a1 * (m3 / b1) ** (1 / 3)
-    scale = np.sqrt(m2 + a1 ** 2 * (m3 / b1) ** (2 / 3))
+    scale = np.sqrt(m2 + a1**2 * (m3 / b1) ** (2 / 3))
     delta = np.sqrt(1 / (a1**2 + m2 * (b1 / m3) ** (2 / 3)))
     shape = delta / np.sqrt(1 - delta**2)
 
@@ -66,20 +74,20 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
         if only_current is True or signal.axes_manager.navigation_dimension == 0:
             height = data.vindex[iheight].compute()
         elif signal.axes_manager.navigation_dimension == 1:
-            height = data.vindex[np.arange(signal.axes_manager.navigation_size),
-                                 iheight].compute()
+            height = data.vindex[
+                np.arange(signal.axes_manager.navigation_size), iheight
+            ].compute()
         else:
-            height = data.vindex[(*np.indices(signal.axes_manager.navigation_shape),
-                                  iheight)].compute()
+            height = data.vindex[
+                (*np.indices(signal.axes_manager.navigation_shape), iheight)
+            ].compute()
     else:
         if only_current is True or signal.axes_manager.navigation_dimension == 0:
             height = data[iheight]
         elif signal.axes_manager.navigation_dimension == 1:
-            height = data[np.arange(signal.axes_manager.navigation_size),
-                          iheight]
+            height = data[np.arange(signal.axes_manager.navigation_size), iheight]
         else:
-            height = data[(*np.indices(signal.axes_manager.navigation_shape),
-                           iheight)]
+            height = data[(*np.indices(signal.axes_manager.navigation_shape), iheight)]
 
     return x0, height, scale, shape
 
@@ -138,8 +146,9 @@ class SkewNormal(Expression):
     (position of maximum) are defined for convenience.
     """
 
-    def __init__(self, x0=0., A=1., scale=1., shape=0.,
-                 module=['numpy', 'scipy'], **kwargs):
+    def __init__(
+        self, x0=0.0, A=1.0, scale=1.0, shape=0.0, module=["numpy", "scipy"], **kwargs
+    ):
         # We use `_shape` internally because `shape` is already taken in sympy
         # https://github.com/sympy/sympy/pull/20791
         super().__init__(
@@ -159,7 +168,7 @@ class SkewNormal(Expression):
         )
 
         # Boundaries
-        self.A.bmin = 0.
+        self.A.bmin = 0.0
 
         self.scale.bmin = 0
 
@@ -209,7 +218,7 @@ class SkewNormal(Expression):
         axis = signal.axes_manager.signal_axes[0]
         x0, height, scale, shape = _estimate_skewnormal_parameters(
             signal, x1, x2, only_current
-            )
+        )
         scaling_factor = _get_scaling_factor(signal, axis, x0)
 
         if only_current is True:
@@ -223,17 +232,17 @@ class SkewNormal(Expression):
         else:
             if self.A.map is None:
                 self._create_arrays()
-            self.A.map['values'][:] = height * sqrt2pi
+            self.A.map["values"][:] = height * sqrt2pi
 
             if axis.is_binned:
-                self.A.map['values'] /= scaling_factor
-            self.A.map['is_set'][:] = True
-            self.x0.map['values'][:] = x0
-            self.x0.map['is_set'][:] = True
-            self.scale.map['values'][:] = scale
-            self.scale.map['is_set'][:] = True
-            self.shape.map['values'][:] = shape
-            self.shape.map['is_set'][:] = True
+                self.A.map["values"] /= scaling_factor
+            self.A.map["is_set"][:] = True
+            self.x0.map["values"][:] = x0
+            self.x0.map["is_set"][:] = True
+            self.scale.map["values"][:] = scale
+            self.scale.map["is_set"][:] = True
+            self.shape.map["values"][:] = shape
+            self.shape.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 
@@ -253,8 +262,12 @@ class SkewNormal(Expression):
     def skewness(self):
         """Skewness of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
-        return (4 - np.pi)/2 * (delta * np.sqrt(2/np.pi))**3 / (1 -
-                                                                2 * delta**2 / np.pi)**(3/2)
+        return (
+            (4 - np.pi)
+            / 2
+            * (delta * np.sqrt(2 / np.pi)) ** 3
+            / (1 - 2 * delta**2 / np.pi) ** (3 / 2)
+        )
 
     @property
     def mode(self):
@@ -265,6 +278,11 @@ class SkewNormal(Expression):
         if self.shape.value == 0:
             return self.x0.value
         else:
-            m0 = muz - self.skewness * sigmaz / 2 - np.sign(self.shape.value) \
-                / 2 * np.exp(- 2 * np.pi / abs(self.shape.value))
+            m0 = (
+                muz
+                - self.skewness * sigmaz / 2
+                - np.sign(self.shape.value)
+                / 2
+                * np.exp(-2 * np.pi / abs(self.shape.value))
+            )
             return self.x0.value + self.scale.value * m0

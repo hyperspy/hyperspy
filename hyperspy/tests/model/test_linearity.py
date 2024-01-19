@@ -25,13 +25,9 @@ from hyperspy._components.expression import _check_parameter_linearity
 
 
 class TestModelLinearity:
-
     def setup_method(self, method):
         np.random.seed(1)
-        s = Signal1D(
-            np.random.normal(
-                scale=2,
-                size=10000)).get_histogram()
+        s = Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
         self.g = Gaussian()
         m = s.create_model()
         m.append(self.g)
@@ -42,31 +38,35 @@ class TestModelLinearity:
         Model is not currently linear as Gaussian sigma and centre parameters
         are free
         """
-        nonlinear_parameters = [p for c in self.m for p in c.parameters
-                                if not p._linear]
+        nonlinear_parameters = [
+            p for c in self.m for p in c.parameters if not p._linear
+        ]
         assert len(nonlinear_parameters) > 0
 
     def test_model_linear(self):
         self.g.sigma.free = False
         self.g.centre.free = False
-        nonlinear_parameters = [p for c in self.m for p in c.parameters
-                                if not p._linear]
+        nonlinear_parameters = [
+            p for c in self.m for p in c.parameters if not p._linear
+        ]
         assert len(nonlinear_parameters) == 2
         _list = [p for p in nonlinear_parameters if p in self.m._free_parameters]
         assert len(_list) == 0
 
     def test_model_parameters_inactive(self):
         self.g.active = False
-        nonlinear_parameters = [p for c in self.m for p in c.parameters
-                                if not p._linear]
+        nonlinear_parameters = [
+            p for c in self.m for p in c.parameters if not p._linear
+        ]
         assert len(nonlinear_parameters) == 2
         _list = [p for p in nonlinear_parameters if p in self.m._free_parameters]
         assert len(_list) == 0
 
     def test_model_parameters_set_inactive(self):
         self.m.set_component_active_value(False, [self.g])
-        nonlinear_parameters = [p for c in self.m for p in c.parameters
-                                if not p._linear]
+        nonlinear_parameters = [
+            p for c in self.m for p in c.parameters if not p._linear
+        ]
         assert len(nonlinear_parameters) == 2
         _list = [p for p in nonlinear_parameters if p in self.m._free_parameters]
         assert len(_list) == 0
@@ -96,20 +96,20 @@ def test_gaussian_linear():
 
 def test_parameter_linearity():
     expr = "a*x**2 + b*x + c"
-    assert _check_parameter_linearity(expr, 'a')
-    assert _check_parameter_linearity(expr, 'b')
-    assert _check_parameter_linearity(expr, 'c')
+    assert _check_parameter_linearity(expr, "a")
+    assert _check_parameter_linearity(expr, "b")
+    assert _check_parameter_linearity(expr, "c")
 
     expr = "a*sin(b*x)"
-    assert _check_parameter_linearity(expr, 'a')
-    assert not _check_parameter_linearity(expr, 'b')
+    assert _check_parameter_linearity(expr, "a")
+    assert not _check_parameter_linearity(expr, "b")
 
     expr = "a*exp(-b*x)"
-    assert _check_parameter_linearity(expr, 'a')
-    assert not _check_parameter_linearity(expr, 'b')
-    
+    assert _check_parameter_linearity(expr, "a")
+    assert not _check_parameter_linearity(expr, "b")
+
     expr = "where(x > 10, a*sin(b*x), 0)"
     with pytest.warns(UserWarning):
-        _check_parameter_linearity(expr, 'a')
+        _check_parameter_linearity(expr, "a")
     with pytest.warns(UserWarning):
-        _check_parameter_linearity(expr, 'b')
+        _check_parameter_linearity(expr, "b")

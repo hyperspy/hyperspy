@@ -51,7 +51,7 @@ class Arrows(Markers):
             U=U,
             V=V,
             C=C,
-            **kwargs
+            **kwargs,
         )
         self._init_kwargs = dict(scale=scale, angles=angles, scale_units=scale_units)
 
@@ -75,7 +75,10 @@ class Arrows(Markers):
             )
 
     def update(self):
-        if self._is_iterating or "relative" in [self._offset_transform, self._transform]:
+        if self._is_iterating or "relative" in [
+            self._offset_transform,
+            self._transform,
+        ]:
             kwds = self.get_current_kwargs(only_variable_length=True)
             # in case 'U', 'V', 'C' are not position dependent
             kwds.setdefault("U", self.kwargs["U"])

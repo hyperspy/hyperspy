@@ -32,7 +32,6 @@ plt.style.use(STYLE_PYTEST_MPL)
 
 
 class TestTextCollection:
-
     @pytest.fixture
     def data(self):
         d = np.empty((3,), dtype=object)
@@ -49,10 +48,15 @@ class TestTextCollection:
 
         return d
 
-    @pytest.mark.parametrize("texts", (("test",),
-                                      "test",
-                                      ("test", "test"),
-                                      "ragged_text",))
+    @pytest.mark.parametrize(
+        "texts",
+        (
+            ("test",),
+            "test",
+            ("test", "test"),
+            "ragged_text",
+        ),
+    )
     @pytest.mark.parametrize("iter_data", ("lazy_data", "data"))
     def test_iterating_marker(self, texts, request, iter_data):
         data = request.getfixturevalue(iter_data)
@@ -62,7 +66,7 @@ class TestTextCollection:
         if ragged_texts:
             t = np.empty((3,), dtype=object)
             for i in np.ndindex(t.shape):
-                t[i] = ("test"+str(i),)
+                t[i] = ("test" + str(i),)
             texts = t
         markers = Texts(offsets=data, texts=texts)
         children_before = s._plot.signal_plot.ax.get_children()
@@ -77,15 +81,14 @@ class TestTextCollection:
     def test_text_marker_plot(self):
         s = Signal2D(np.ones((3, 5, 6)))
         s.data[:, :, ::2] = np.nan
-        markers = Texts(offsets=[[2., 3.]], texts=("test", ), sizes=(20,))
+        markers = Texts(offsets=[[2.0, 3.0]], texts=("test",), sizes=(20,))
         s.add_marker(markers, render_figure=True)
         return s._plot.signal_plot.figure
 
 
 def _test_text_collection_close():
     signal = Signal2D(np.ones((10, 10)))
-    markers = Texts(offsets=[[1, 1],
-                             [4, 4]], texts=("test",))
+    markers = Texts(offsets=[[1, 1], [4, 4]], texts=("test",))
     signal.add_marker(markers)
     return signal
 
@@ -97,9 +100,9 @@ def test_text_collection_close():
 
 def test_text_collection_close_render():
     s = Signal2D(np.ones((2, 10, 10)))
-    markers = Texts(offsets=[[1, 1],
-                             [4, 4]], texts=("test",),
-                    sizes=(10,), color = ("black",))
+    markers = Texts(
+        offsets=[[1, 1], [4, 4]], texts=("test",), sizes=(10,), color=("black",)
+    )
     s.plot()
     children_before = s._plot.signal_plot.ax.get_children()
     s.add_marker(markers, render_figure=True)

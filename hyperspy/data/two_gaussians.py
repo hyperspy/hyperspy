@@ -39,23 +39,29 @@ def two_gaussians(add_noise=True, return_model=False):
         Returns tuple when ``return_model=True``.
     """
 
-    domain = 32 #size of the square domain
+    domain = 32  # size of the square domain
     hfactor = 600
-    cent = (domain//2, domain//2)
-    y,x = np.ogrid[-cent[0]:domain-cent[0], -cent[1]:domain-cent[1]]
+    cent = (domain // 2, domain // 2)
+    y, x = np.ogrid[-cent[0] : domain - cent[0], -cent[1] : domain - cent[1]]
 
     def gaussian2d(x, y, A=1, x0=0, y0=0, sigmax=20, sigmay=10):
-        return A * np.exp(-((x-x0)**2 / 2 / sigmax ** 2 + (y-y0)**2 / 2 / sigmay ** 2))
+        return A * np.exp(
+            -((x - x0) ** 2 / 2 / sigmax**2 + (y - y0) ** 2 / 2 / sigmay**2)
+        )
 
-    center_narrow = 50 + 10 * np.sin(3 * np.pi * x / domain) * np.cos(4 * np.pi * y / domain)
-    center_wide = 50 + 10 * (-0.1 * np.sin(3 * np.pi * x / domain) * np.cos(4 * np.pi * y / domain))
+    center_narrow = 50 + 10 * np.sin(3 * np.pi * x / domain) * np.cos(
+        4 * np.pi * y / domain
+    )
+    center_wide = 50 + 10 * (
+        -0.1 * np.sin(3 * np.pi * x / domain) * np.cos(4 * np.pi * y / domain)
+    )
 
     r = np.sqrt(x**2 + y**2)
-    h_narrow = .5 * (.5 + np.sin(r)**2) * gaussian2d(x, y) *  hfactor
-    h_wide = (.5 + np.cos(r)**2) * gaussian2d(x, y) *  hfactor
+    h_narrow = 0.5 * (0.5 + np.sin(r) ** 2) * gaussian2d(x, y) * hfactor
+    h_wide = (0.5 + np.cos(r) ** 2) * gaussian2d(x, y) * hfactor
 
-    s = hs.signals.Signal1D(np.ones((domain,domain, 1024)))
-    s.metadata.General.title = 'Two Gaussians'
+    s = hs.signals.Signal1D(np.ones((domain, domain, 1024)))
+    s.metadata.General.title = "Two Gaussians"
     s.axes_manager[0].name = "x"
     s.axes_manager[0].units = "nm"
     s.axes_manager[1].name = "y"
@@ -70,19 +76,19 @@ def two_gaussians(add_noise=True, return_model=False):
     gs01.name = "wide"
     m.append(gs01)
     gs01.fwhm.value = 60
-    gs01.centre.map['values'][:] = center_wide
-    gs01.centre.map['is_set'][:] = True
-    gs01.height.map['values'][:] = h_wide
-    gs01.height.map['is_set'][:] = True
+    gs01.centre.map["values"][:] = center_wide
+    gs01.centre.map["is_set"][:] = True
+    gs01.height.map["values"][:] = h_wide
+    gs01.height.map["is_set"][:] = True
 
     gs02 = hs.model.components1D.GaussianHF()
     gs02.name = "narrow"
     m.append(gs02)
     gs02.fwhm.value = 6
-    gs02.centre.map['values'][:] = center_narrow
-    gs02.centre.map['is_set'][:] = True
-    gs02.height.map['values'][:] = h_narrow
-    gs02.height.map['is_set'][:] = True
+    gs02.centre.map["values"][:] = center_narrow
+    gs02.centre.map["is_set"][:] = True
+    gs02.height.map["values"][:] = h_narrow
+    gs02.height.map["is_set"][:] = True
     s.data = m.as_signal(show_progressbar=False).data
     s.change_dtype(np.int64)
     s.add_poissonian_noise(random_state=0)

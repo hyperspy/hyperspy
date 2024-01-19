@@ -23,10 +23,10 @@ from numpy import arange
 
 
 def test_check_axes_calibration():
-    axisDA1 = DataAxis(axis=arange(10)**2)
+    axisDA1 = DataAxis(axis=arange(10) ** 2)
     axisDA2 = DataAxis(axis=arange(10))
-    axisDA3 = DataAxis(axis=arange(10), units = 's')
-    axisDA4 = DataAxis(axis=arange(10), units = 'seconds')
+    axisDA3 = DataAxis(axis=arange(10), units="s")
+    axisDA4 = DataAxis(axis=arange(10), units="seconds")
     expression = "x ** power"
     axisFDA1 = FunctionalDataAxis(size=10, expression=expression, power=2)
     axisFDA2 = FunctionalDataAxis(size=12, expression=expression, power=2)

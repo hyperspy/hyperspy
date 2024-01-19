@@ -46,14 +46,11 @@ class Lines(Markers):
 
         if kwargs.setdefault("offset_transform", "display") != "display":
             raise ValueError(
-                 "The `offset_transform` argument is not supported for Lines Markers. "
-                 "Instead, use the `transform` argument to specify the transform "
-                 "of the lines."
-                 )
+                "The `offset_transform` argument is not supported for Lines Markers. "
+                "Instead, use the `transform` argument to specify the transform "
+                "of the lines."
+            )
 
         super().__init__(
-            collection=LineCollection,
-            segments=segments,
-            transform=transform,
-            **kwargs
+            collection=LineCollection, segments=segments, transform=transform, **kwargs
         )

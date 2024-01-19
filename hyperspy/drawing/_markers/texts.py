@@ -28,9 +28,7 @@ class Texts(Markers):
 
     _position_key = "offsets"
 
-    def __init__(
-        self, offsets, offset_transform="data", transform="display", **kwargs
-    ):
+    def __init__(self, offsets, offset_transform="data", transform="display", **kwargs):
         """
         Initialize the set of Circle Markers.
 
@@ -52,7 +50,7 @@ class Texts(Markers):
             offsets=offsets,
             offset_transform=offset_transform,
             transform=transform,
-            **kwargs
+            **kwargs,
         )
 
     __init__.__doc__ %= OFFSET_DOCSTRING

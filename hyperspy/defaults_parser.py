@@ -30,7 +30,7 @@ from hyperspy.ui_registry import add_gui_method
 
 config_path = Path("~/.hyperspy").expanduser()
 config_path.mkdir(parents=True, exist_ok=True)
-defaults_file = Path(config_path, 'hyperspyrc')
+defaults_file = Path(config_path, "hyperspyrc")
 
 _logger = logging.getLogger(__name__)
 
@@ -38,15 +38,15 @@ _logger = logging.getLogger(__name__)
 if defaults_file.is_file():
     # Remove config file if obsolated
     with open(defaults_file) as f:
-        if 'Not really' in f.readline():
-                # It is the old config file
+        if "Not really" in f.readline():
+            # It is the old config file
             defaults_file_exists = False
         else:
             defaults_file_exists = True
     if not defaults_file_exists:
         # It actually exists, but is an obsoleted unsupported version of it
         # so we delete it.
-        _logger.info('Removing obsoleted config file')
+        _logger.info("Removing obsoleted config file")
         os.remove(defaults_file)
 else:
     defaults_file_exists = False
@@ -62,29 +62,37 @@ else:
 class GeneralConfig(t.HasTraits):
     logger_on = t.CBool(
         False,
-        label='Automatic logging (requires IPython)',
-        desc='If enabled, HyperSpy will store a log in the current directory '
-        'of all the commands typed')
+        label="Automatic logging (requires IPython)",
+        desc="If enabled, HyperSpy will store a log in the current directory "
+        "of all the commands typed",
+    )
 
     show_progressbar = t.CBool(
         True,
-        label='Show progress bar',
-        desc='If enabled, show a progress bar when available')
+        label="Show progress bar",
+        desc="If enabled, show a progress bar when available",
+    )
 
     dtb_expand_structures = t.CBool(
         True,
-        label='Expand structures in DictionaryTreeBrowser',
-        desc='If enabled, when printing DictionaryTreeBrowser (e.g. '
-             'metadata), long lists and tuples will be expanded and any '
-             'dictionaries in them will be printed similar to '
-             'DictionaryTreeBrowser, but with double lines')
-    logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
-                           desc='the log level of all hyperspy modules.')
-
-    nb_progressbar = t.CBool(
-        True,
-        desc='Attempt to use ipywidgets progressbar'
+        label="Expand structures in DictionaryTreeBrowser",
+        desc="If enabled, when printing DictionaryTreeBrowser (e.g. "
+        "metadata), long lists and tuples will be expanded and any "
+        "dictionaries in them will be printed similar to "
+        "DictionaryTreeBrowser, but with double lines",
     )
+    logging_level = t.Enum(
+        [
+            "CRITICAL",
+            "ERROR",
+            "WARNING",
+            "INFO",
+            "DEBUG",
+        ],
+        desc="the log level of all hyperspy modules.",
+    )
+
+    nb_progressbar = t.CBool(True, desc="Attempt to use ipywidgets progressbar")
 
     def _logger_on_changed(self, old, new):
         if new is True:
@@ -97,11 +105,13 @@ class GUIs(t.HasTraits):
     enable_ipywidgets_gui = t.CBool(
         True,
         desc="Display ipywidgets in the Jupyter Notebook. "
-        "Requires installing hyperspy_gui_ipywidgets.")
+        "Requires installing hyperspy_gui_ipywidgets.",
+    )
     enable_traitsui_gui = t.CBool(
         True,
         desc="Display traitsui user interface elements. "
-        "Requires installing hyperspy_gui_traitsui.")
+        "Requires installing hyperspy_gui_traitsui.",
+    )
 
 
 class PlotConfig(t.HasTraits):
@@ -109,49 +119,81 @@ class PlotConfig(t.HasTraits):
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy
     widget_plot_style = t.Enum(
-        ['horizontal', 'vertical'],
-        label='Widget plot style: (only with ipympl)')
-    cmap_navigator = t.Str('gray',
-                           label='Color map navigator',
-                           desc='Set the default color map for the navigator.',
-                           )
-    cmap_signal = t.Str('gray',
-                        label='Color map signal',
-                        desc='Set the default color map for the signal plot.',
-                        )
-    dims_024_increase = t.Str('right',
-                              label='Navigate right'
-                              )
-    dims_024_decrease = t.Str('left',
-                              label='Navigate left',
-                              )
-    dims_135_increase = t.Str('down',
-                              label='Navigate down',
-                              )
-    dims_135_decrease = t.Str('up',
-                              label='Navigate up',
-                              )
-    modifier_dims_01 = t.Enum(['ctrl', 'alt', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
-                               'ctrl+alt+shift'], label='Modifier key for 1st and 2nd dimensions')  # 0 elem is default
-    modifier_dims_23 = t.Enum(['shift', 'alt', 'ctrl', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
-                               'ctrl+alt+shift'], label='Modifier key for 3rd and 4th dimensions')  # 0 elem is default
-    modifier_dims_45 = t.Enum(['alt', 'ctrl', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
-                               'ctrl+alt+shift'], label='Modifier key for 5th and 6th dimensions')  # 0 elem is default
-    pick_tolerance = t.CFloat(7.5,
-                              label='Pick tolerance',
-                              desc='The pick tolerance of ROIs in screen pixels.'
-                              )
+        ["horizontal", "vertical"], label="Widget plot style: (only with ipympl)"
+    )
+    cmap_navigator = t.Str(
+        "gray",
+        label="Color map navigator",
+        desc="Set the default color map for the navigator.",
+    )
+    cmap_signal = t.Str(
+        "gray",
+        label="Color map signal",
+        desc="Set the default color map for the signal plot.",
+    )
+    dims_024_increase = t.Str("right", label="Navigate right")
+    dims_024_decrease = t.Str(
+        "left",
+        label="Navigate left",
+    )
+    dims_135_increase = t.Str(
+        "down",
+        label="Navigate down",
+    )
+    dims_135_decrease = t.Str(
+        "up",
+        label="Navigate up",
+    )
+    modifier_dims_01 = t.Enum(
+        [
+            "ctrl",
+            "alt",
+            "shift",
+            "ctrl+alt",
+            "ctrl+shift",
+            "alt+shift",
+            "ctrl+alt+shift",
+        ],
+        label="Modifier key for 1st and 2nd dimensions",
+    )  # 0 elem is default
+    modifier_dims_23 = t.Enum(
+        [
+            "shift",
+            "alt",
+            "ctrl",
+            "ctrl+alt",
+            "ctrl+shift",
+            "alt+shift",
+            "ctrl+alt+shift",
+        ],
+        label="Modifier key for 3rd and 4th dimensions",
+    )  # 0 elem is default
+    modifier_dims_45 = t.Enum(
+        [
+            "alt",
+            "ctrl",
+            "shift",
+            "ctrl+alt",
+            "ctrl+shift",
+            "alt+shift",
+            "ctrl+alt+shift",
+        ],
+        label="Modifier key for 5th and 6th dimensions",
+    )  # 0 elem is default
+    pick_tolerance = t.CFloat(
+        7.5, label="Pick tolerance", desc="The pick tolerance of ROIs in screen pixels."
+    )
 
 
 template = {
-    'General': GeneralConfig(),
-    'GUIs': GUIs(),
-    'Plot': PlotConfig(),
+    "General": GeneralConfig(),
+    "GUIs": GUIs(),
+    "Plot": PlotConfig(),
 }
 
 
 # Set the enums defaults
-template['General'].logging_level = 'WARNING'
+template["General"].logging_level = "WARNING"
 # Defaults template definition ends ######################################
 
 
@@ -166,9 +208,9 @@ def config2template(template, config):
     for section, traited_class in template.items():
         config_dict = {}
         for name, value in config.items(section):
-            if value == 'True':
+            if value == "True":
                 value = True
-            elif value == 'False':
+            elif value == "False":
                 value = False
             config_dict[name] = value
         traited_class.trait_set(True, **config_dict)
@@ -202,7 +244,7 @@ if defaults_file_exists:
             rewrite = True
 
 if not defaults_file_exists or rewrite is True:
-    _logger.info('Writing the config file')
+    _logger.info("Writing the config file")
     with open(defaults_file, "w") as df:
         config.write(df)
 
@@ -219,13 +261,13 @@ class Preferences(t.HasTraits):
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
-        config.write(open(defaults_file, 'w'))
+        config.write(open(defaults_file, "w"))
 
 
 preferences = Preferences(
-    General=template['General'],
-    GUIs=template['GUIs'],
-    Plot=template['Plot'],
+    General=template["General"],
+    GUIs=template["GUIs"],
+    Plot=template["Plot"],
 )
 
 
@@ -234,8 +276,8 @@ if preferences.General.logger_on:
 
 
 def file_version(fname):
-    with open(fname, 'r') as f:
+    with open(fname, "r") as f:
         for line in f.readlines():
-            if '__version__' in line:
-                return line[line.find('=') + 1:].strip()
-    return '0'
+            if "__version__" in line:
+                return line[line.find("=") + 1 :].strip()
+    return "0"

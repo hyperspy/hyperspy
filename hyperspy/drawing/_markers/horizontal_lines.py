@@ -65,18 +65,16 @@ class HorizontalLines(Markers):
         >>> s.add_marker(m)
         """
 
-        if (kwargs.setdefault("offset_transform", "display") != "display" or
-                kwargs.setdefault("transform", "yaxis") != "yaxis"):
+        if (
+            kwargs.setdefault("offset_transform", "display") != "display"
+            or kwargs.setdefault("transform", "yaxis") != "yaxis"
+        ):
             raise ValueError(
                 "Setting 'offset_transform' or 'transform' argument is not "
                 "supported with the HorizontalLines markers."
             )
 
-        super().__init__(
-            collection=LineCollection,
-            offsets=offsets,
-            **kwargs
-        )
+        super().__init__(collection=LineCollection, offsets=offsets, **kwargs)
 
     def get_current_kwargs(self, only_variable_length=False):
         kwargs = super().get_current_kwargs(only_variable_length=only_variable_length)
@@ -84,5 +82,5 @@ class HorizontalLines(Markers):
         kwds = copy.deepcopy(kwargs)
         kwds[self._position_key_to_set] = np.array(
             [[[0, y], [1, y]] for y in kwds.pop(self._position_key)]
-            )
+        )
         return kwds

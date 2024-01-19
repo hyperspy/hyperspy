@@ -265,7 +265,7 @@ def svd_pca(
         **kwargs,
     )
 
-    explained_variance = S ** 2 / N
+    explained_variance = S**2 / N
 
     if auto_transpose is False:
         factors = V.T

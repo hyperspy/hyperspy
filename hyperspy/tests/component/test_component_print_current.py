@@ -23,11 +23,10 @@ from hyperspy.misc.model_tools import (
     _format_string,
     CurrentComponentValues,
     CurrentModelValues,
-    )
+)
 
 
 class TestSetParameters:
-
     def setup_method(self):
         model = hs.signals.Signal1D(np.arange(100)).create_model()
         p0 = hs.model.components1D.Polynomial(order=6)
@@ -55,25 +54,43 @@ class TestSetParameters:
     @pytest.mark.parametrize("only_free, only_active", [(True, False), (True, False)])
     def test_component_current_component_values(self, only_free, only_active):
         """Many decimals aren't printed, few decimals are"""
-        string_representation = str(CurrentComponentValues(self.component, only_free, only_active).__repr__())
-        html_representation = str(CurrentComponentValues(self.component, only_free, only_active)._repr_html_())
+        string_representation = str(
+            CurrentComponentValues(self.component, only_free, only_active).__repr__()
+        )
+        html_representation = str(
+            CurrentComponentValues(self.component, only_free, only_active)._repr_html_()
+        )
         assert "1.234" in string_representation
         assert "1.23456789012" not in string_representation
         assert "1.234" in html_representation
         assert "1.23456789012" not in html_representation
 
-    def test_component_current_component_values_only_free(self, only_free=True, only_active=False):
-        """"Parameters with free=False values should not be present in repr"""
-        string_representation = str(CurrentComponentValues(self.component_not_free, only_free, only_active).__repr__())
-        html_representation = str(CurrentComponentValues(self.component_not_free, only_free, only_active)._repr_html_())
+    def test_component_current_component_values_only_free(
+        self, only_free=True, only_active=False
+    ):
+        """ "Parameters with free=False values should not be present in repr"""
+        string_representation = str(
+            CurrentComponentValues(
+                self.component_not_free, only_free, only_active
+            ).__repr__()
+        )
+        html_representation = str(
+            CurrentComponentValues(
+                self.component_not_free, only_free, only_active
+            )._repr_html_()
+        )
         assert "9.87" not in string_representation
         assert "9.87" not in html_representation
 
     @pytest.mark.parametrize("only_free, only_active", [(True, False), (True, False)])
     def test_component_current_model_values(self, only_free, only_active):
         """Many decimals aren't printed, few decimals are"""
-        string_representation = str(CurrentModelValues(self.model, only_free, only_active).__repr__())
-        html_representation = str(CurrentModelValues(self.model, only_free, only_active)._repr_html_())
+        string_representation = str(
+            CurrentModelValues(self.model, only_free, only_active).__repr__()
+        )
+        html_representation = str(
+            CurrentModelValues(self.model, only_free, only_active)._repr_html_()
+        )
         assert "1.234" in string_representation
         assert "1.23456789012" not in string_representation
         assert "1.234" in html_representation
@@ -91,8 +108,14 @@ class TestSetParameters:
     @pytest.mark.parametrize("only_free, only_active", [(True, False), (True, False)])
     def test_component_current_model_values_comp_list(self, only_free, only_active):
         comp_list = [self.component, self.component_not_free, self.component_inactive]
-        string_representation = str(CurrentModelValues(self.model, only_free, only_active, comp_list).__repr__())
-        html_representation = str(CurrentModelValues(self.model, only_free, only_active, comp_list)._repr_html_())
+        string_representation = str(
+            CurrentModelValues(self.model, only_free, only_active, comp_list).__repr__()
+        )
+        html_representation = str(
+            CurrentModelValues(
+                self.model, only_free, only_active, comp_list
+            )._repr_html_()
+        )
         assert "1.234" in string_representation
         assert "1.23456789012" not in string_representation
         assert "1.234" in html_representation
@@ -116,16 +139,24 @@ class TestSetParameters:
 
     def test_zero_in_html_print(self):
         """Ensure parameters with value=0 are printed too"""
-        assert "<td>a1</td><td>True</td><td>     0</td>" in CurrentComponentValues(self.model[0])._repr_html_()
+        assert (
+            "<td>a1</td><td>True</td><td>     0</td>"
+            in CurrentComponentValues(self.model[0])._repr_html_()
+        )
 
     def test_zero_in_normal_print(self):
         """Ensure parameters with value=0 are printed too"""
-        assert "            a0 |    True |          0 |" in str(CurrentComponentValues(self.model[0]).__repr__)
+        assert "            a0 |    True |          0 |" in str(
+            CurrentComponentValues(self.model[0]).__repr__
+        )
 
     def test_twinned_in_print(self):
-        assert "             A | Twinned |" in str(CurrentComponentValues(self.model[2]).__repr__()).split('\n')[4]
+        assert (
+            "             A | Twinned |"
+            in str(CurrentComponentValues(self.model[2]).__repr__()).split("\n")[4]
+        )
 
     def test_related_tools(self):
         assert _format_string(None) == ""
-        assert _format_string(5) == '     5'
-        assert _format_string(5.123456789) == '5.12346'
+        assert _format_string(5) == "     5"
+        assert _format_string(5.123456789) == "5.12346"

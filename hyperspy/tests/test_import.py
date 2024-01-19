@@ -18,59 +18,68 @@
 
 
 def test_import_version():
-    from hyperspy import __version__ # noqa: F401
+    from hyperspy import __version__  # noqa: F401
 
 
 def test_import():
     import hyperspy
+
     for obj_name in hyperspy.__all__:
         getattr(hyperspy, obj_name)
 
 
 def test_import_api():
     import hyperspy.api
+
     for obj_name in hyperspy.api.__all__:
         getattr(hyperspy.api, obj_name)
 
 
 def test_import_api_nogui():
     import hyperspy.api_nogui
+
     for obj_name in hyperspy.api_nogui.__all__:
         getattr(hyperspy.api_nogui, obj_name)
 
 
 def test_import_data():
     import hyperspy.data
+
     for obj_name in hyperspy.data.__all__:
         getattr(hyperspy.data, obj_name)
 
 
 def test_import_utils():
     import hyperspy.utils
+
     for obj_name in hyperspy.utils.__all__:
         getattr(hyperspy.utils, obj_name)
 
 
 def test_import_components1D():
     import hyperspy.api as hs
+
     for obj_name in hs.model.components1D.__all__:
         getattr(hs.model.components1D, obj_name)
 
 
 def test_import_components2D():
     import hyperspy.api as hs
+
     for obj_name in hs.model.components2D.__all__:
         getattr(hs.model.components2D, obj_name)
 
 
 def test_import_signals():
     import hyperspy.api as hs
+
     for obj_name in hs.signals.__all__:
         getattr(hs.signals, obj_name)
 
 
 def test_import_attribute_error():
     import hyperspy
+
     try:
         hyperspy.inexisting_module
     except AttributeError:
@@ -79,6 +88,7 @@ def test_import_attribute_error():
 
 def test_import_api_attribute_error():
     import hyperspy.api
+
     try:
         hyperspy.api.inexisting_module
     except AttributeError:
@@ -87,168 +97,183 @@ def test_import_api_attribute_error():
 
 def test_dir():
     import hyperspy
+
     d = dir(hyperspy)
-    assert d == ['__version__', 'api']
+    assert d == ["__version__", "api"]
 
 
 def test_dir_api():
     import hyperspy.api
+
     d = dir(hyperspy.api)
     assert d == [
-        '__version__',
-        'data',
-        'get_configuration_directory_path',
-        'interactive',
-        'load',
-        'model',
-        'plot',
-        'preferences',
-        'print_known_signal_types',
-        'roi',
-        'samfire',
-        'set_log_level',
-        'signals',
-        'stack',
-        'transpose',
-        ]
+        "__version__",
+        "data",
+        "get_configuration_directory_path",
+        "interactive",
+        "load",
+        "model",
+        "plot",
+        "preferences",
+        "print_known_signal_types",
+        "roi",
+        "samfire",
+        "set_log_level",
+        "signals",
+        "stack",
+        "transpose",
+    ]
 
 
 def test_dir_api_nogui():
     import hyperspy.api_nogui
+
     d = dir(hyperspy.api_nogui)
     assert d == [
-        '__version__',
-        'data',
-        'get_configuration_directory_path',
-        'interactive',
-        'load',
-        'model',
-        'plot',
-        'preferences',
-        'print_known_signal_types',
-        'roi',
-        'samfire',
-        'set_log_level',
-        'signals',
-        'stack',
-        'transpose',
-        ]
+        "__version__",
+        "data",
+        "get_configuration_directory_path",
+        "interactive",
+        "load",
+        "model",
+        "plot",
+        "preferences",
+        "print_known_signal_types",
+        "roi",
+        "samfire",
+        "set_log_level",
+        "signals",
+        "stack",
+        "transpose",
+    ]
 
 
 def test_dir_data():
     import hyperspy.data
+
     d = dir(hyperspy.data)
     assert d == [
-            'atomic_resolution_image',
-            'luminescence_signal',
-            "two_gaussians",
-            'wave_image',
-        ]
+        "atomic_resolution_image",
+        "luminescence_signal",
+        "two_gaussians",
+        "wave_image",
+    ]
 
 
 def test_dir_utils():
     import hyperspy.utils
+
     d = dir(hyperspy.utils)
     assert d == [
-        'interactive',
-        'markers',
-        'model',
-        'plot',
-        'print_known_signal_types',
-        'roi',
-        'samfire',
-        'stack',
-        'transpose',
-        ]
+        "interactive",
+        "markers",
+        "model",
+        "plot",
+        "print_known_signal_types",
+        "roi",
+        "samfire",
+        "stack",
+        "transpose",
+    ]
 
 
 def test_dir_utils_markers():
     import hyperspy.utils.markers
+
     d = dir(hyperspy.utils.markers)
-    assert d == ['Arrows',
-                 'Circles',
-                 'Ellipses',
-                 'HorizontalLines',
-                 'Lines',
-                 'Markers',
-                 'Points',
-                 'Polygons',
-                 'Rectangles',
-                 'Squares',
-                 'Texts',
-                 'VerticalLines']
+    assert d == [
+        "Arrows",
+        "Circles",
+        "Ellipses",
+        "HorizontalLines",
+        "Lines",
+        "Markers",
+        "Points",
+        "Polygons",
+        "Rectangles",
+        "Squares",
+        "Texts",
+        "VerticalLines",
+    ]
 
 
 def test_dir_utils_model():
     import hyperspy.utils.model
+
     d = dir(hyperspy.utils.model)
     assert d == [
-        'components1D',
-        'components2D',
-        ]
+        "components1D",
+        "components2D",
+    ]
 
 
 def test_dir_utils_plot():
     import hyperspy.utils.plot
+
     d = dir(hyperspy.utils.plot)
     assert d == [
-        'markers',
-        'plot_histograms',
-        'plot_images',
-        'plot_roi_map',
-        'plot_signals',
-        'plot_spectra'
-        ]
+        "markers",
+        "plot_histograms",
+        "plot_images",
+        "plot_roi_map",
+        "plot_signals",
+        "plot_spectra",
+    ]
 
 
 def test_dir_utils_roi():
     import hyperspy.utils.roi
+
     d = dir(hyperspy.utils.roi)
     assert d == [
-        'CircleROI',
-        'Line2DROI',
-        'Point1DROI',
-        'Point2DROI',
-        'RectangularROI',
-        'SpanROI',
-        ]
+        "CircleROI",
+        "Line2DROI",
+        "Point1DROI",
+        "Point2DROI",
+        "RectangularROI",
+        "SpanROI",
+    ]
 
 
 def test_dir_utils_samfire():
     import hyperspy.utils.samfire
+
     d = dir(hyperspy.utils.samfire)
     assert d == [
-        'SamfirePool',
-        'fit_tests',
-        'global_strategies',
-        'local_strategies',
-        ]
+        "SamfirePool",
+        "fit_tests",
+        "global_strategies",
+        "local_strategies",
+    ]
 
 
 def test_dir_utils_samfire2():
     import hyperspy.utils.samfire
+
     d = dir(hyperspy.utils.samfire.fit_tests)
     assert d == [
-        'AIC_test',
-        'AICc_test',
-        'BIC_test',
-        'red_chisq_test',
-        ]
+        "AIC_test",
+        "AICc_test",
+        "BIC_test",
+        "red_chisq_test",
+    ]
 
 
 def test_dir_utils_samfire3():
     import hyperspy.utils.samfire
+
     d = dir(hyperspy.utils.samfire.global_strategies)
     assert d == [
-        'GlobalStrategy',
-        'HistogramStrategy',
-        ]
+        "GlobalStrategy",
+        "HistogramStrategy",
+    ]
 
 
 def test_dir_utils_samfire4():
     import hyperspy.utils.samfire
+
     d = dir(hyperspy.utils.samfire.local_strategies)
     assert d == [
-        'LocalStrategy',
-        'ReducedChiSquaredStrategy',
-        ]
+        "LocalStrategy",
+        "ReducedChiSquaredStrategy",
+    ]

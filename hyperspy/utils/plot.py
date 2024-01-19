@@ -43,19 +43,19 @@ from hyperspy.drawing.utils import (
     plot_images,
     plot_signals,
     plot_spectra,
-    plot_roi_map
-    )
+    plot_roi_map,
+)
 from hyperspy.utils import markers
 
 
 __all__ = [
-    'markers',
-    'plot_histograms',
-    'plot_images',
-    'plot_signals',
-    'plot_spectra',
-    'plot_roi_map'
-    ]
+    "markers",
+    "plot_histograms",
+    "plot_images",
+    "plot_signals",
+    "plot_spectra",
+    "plot_roi_map",
+]
 
 
 def __dir__():

@@ -30,8 +30,8 @@ class TestFindPeaks1DOhaver:
         with pytest.warns(VisibleDeprecationWarning):
             self.signal = load(
                 Path(__file__).parent / "data" / "test_find_peaks1D_ohaver.hdf5",
-                reader='hspy'
-                )
+                reader="hspy",
+            )
 
     def test_find_peaks1D_ohaver_high_amp_thres(self):
         signal1D = self.signal

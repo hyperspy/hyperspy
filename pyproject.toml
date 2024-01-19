@@ -188,6 +188,7 @@ doctest_optionflags = [
 [tool.ruff]
 exclude = [
     "hyperspy/external/*",
+    "examples",
     ]
 
 [tool.setuptools.package-data]

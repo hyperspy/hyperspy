@@ -22,40 +22,40 @@ from hyperspy.extensions import ALL_EXTENSIONS
 
 
 def test_signal_registry():
-    signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
-            if not value["lazy"]}
-
+    signals = {
+        key: value
+        for key, value in ALL_EXTENSIONS["signals"].items()
+        if not value["lazy"]
+    }
 
     hyperspy_signals = [
-        'BaseSignal',
-        'Signal1D',
-        'Signal2D',
-        'ComplexSignal',
-        'ComplexSignal1D',
-        'ComplexSignal2D',
-        ]
-
+        "BaseSignal",
+        "Signal1D",
+        "Signal2D",
+        "ComplexSignal",
+        "ComplexSignal1D",
+        "ComplexSignal2D",
+    ]
 
     for signal in hyperspy_signals:
         assert signal in signals.keys()
 
     exspy_spec = importlib.util.find_spec("exspy")
     if exspy_spec is not None:
-        assert 'EELSSpectrum' in signals.keys()
-        assert 'EDSTEMSpectrum' in signals.keys()
-        assert 'DielectricFunction' in signals.keys()
+        assert "EELSSpectrum" in signals.keys()
+        assert "EDSTEMSpectrum" in signals.keys()
+        assert "DielectricFunction" in signals.keys()
 
     holospy_spec = importlib.util.find_spec("holospy")
     if holospy_spec is not None:
-        assert 'HologramImage' in signals.keys()
+        assert "HologramImage" in signals.keys()
 
     lumispy_spec = importlib.util.find_spec("lumispy")
     if lumispy_spec is not None:
-        assert 'LumiSpectrum' in signals.keys()
-        assert 'CLSEMSpectrum' in signals.keys()
+        assert "LumiSpectrum" in signals.keys()
+        assert "CLSEMSpectrum" in signals.keys()
 
     pyxem_spec = importlib.util.find_spec("pyxem")
     if pyxem_spec is not None:
-        assert 'Diffraction2D' in signals.keys()
-        assert 'ElectronDiffraction2D' in signals.keys()
-            
+        assert "Diffraction2D" in signals.keys()
+        assert "ElectronDiffraction2D" in signals.keys()

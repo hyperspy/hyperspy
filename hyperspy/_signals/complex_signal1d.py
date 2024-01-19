@@ -31,6 +31,7 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+
 class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
 
     """Lazy signal class for complex 1-dimensional data."""

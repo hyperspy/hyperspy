@@ -31,7 +31,6 @@ from hyperspy.signal import BaseSignal
 
 @lazifyTestClass
 class TestAlignTools:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros((10, 100)))
         self.scale = 0.1
@@ -50,17 +49,13 @@ class TestAlignTools:
     def test_estimate_shift(self):
         s = self.signal
         eshifts = -1 * s.estimate_shift1D()
-        np.testing.assert_allclose(
-            eshifts, self.ishifts * self.scale, atol=1e-3)
+        np.testing.assert_allclose(eshifts, self.ishifts * self.scale, atol=1e-3)
 
     def test_shift1D(self):
         s = self.signal
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
-        s.shift1D(-
-                  1 *
-                  self.ishifts[:, np.newaxis] *
-                  self.scale)
+        s.shift1D(-1 * self.ishifts[:, np.newaxis] * self.scale)
         assert m.data_changed.called
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         np.testing.assert_allclose(s.data[:, i_zlp], 12)
@@ -84,8 +79,7 @@ class TestAlignTools:
         np.testing.assert_allclose(s.data[:, -1], 2)
         np.testing.assert_allclose(s.data[:, 0], 2)
         # Check that the calibration is correct
-        assert (
-            s.axes_manager._axes[1].offset == self.new_offset)
+        assert s.axes_manager._axes[1].offset == self.new_offset
         assert s.axes_manager._axes[1].scale == self.scale
 
     def test_align_expand(self):
@@ -105,22 +99,21 @@ class TestAlignTools:
 
 def test_align1D():
     scale = 0.1
-    g = hs.model.components1D.Gaussian(sigma=scale*5)
-    x = np.stack([np.linspace(-5, 5, 100)]*5)
-    s = hs.signals.Signal1D(g.function(x) + 1E5)
+    g = hs.model.components1D.Gaussian(sigma=scale * 5)
+    x = np.stack([np.linspace(-5, 5, 100)] * 5)
+    s = hs.signals.Signal1D(g.function(x) + 1e5)
     s.axes_manager[-1].scale = scale
     rng = np.random.default_rng(1)
     shifts = rng.random(size=len(s.axes_manager[0].axis)) * 2
     shifts[0] = 0
     s.shift1D(-shifts, show_progressbar=False)
-    s.axes_manager.indices = (0, )
+    s.axes_manager.indices = (0,)
     shifts2 = s.estimate_shift1D(show_progressbar=False)
     np.testing.assert_allclose(shifts, shifts2, rtol=0.5)
 
 
 @lazifyTestClass
 class TestShift1D:
-
     def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.arange(10))
         self.s.axes_manager[0].scale = 0.2
@@ -129,15 +122,13 @@ class TestShift1D:
         s = self.s
         shifts = BaseSignal([0.1])
         s.shift1D(shifts, crop=True)
-        np.testing.assert_allclose(s.axes_manager[0].axis,
-                                   np.arange(0.2, 2., 0.2))
+        np.testing.assert_allclose(s.axes_manager[0].axis, np.arange(0.2, 2.0, 0.2))
 
     def test_crop_right(self):
         s = self.s
         shifts = BaseSignal([-0.1])
         s.shift1D(shifts, crop=True)
-        np.testing.assert_allclose(s.axes_manager[0].axis,
-                                   np.arange(0., 1.8, 0.2))
+        np.testing.assert_allclose(s.axes_manager[0].axis, np.arange(0.0, 1.8, 0.2))
 
     def test_2D_nav_shift1D(self):
         sig = np.empty((3, 4, 10))
@@ -145,14 +136,13 @@ class TestShift1D:
         s = hs.signals.Signal1D(sig)
         s.axes_manager[0].scale = 0.2
         s.axes_manager[1].scale = 0.2
-        shifts = np.ones((3, 4))*0.1
+        shifts = np.ones((3, 4)) * 0.1
         s.shift1D(shifts, crop=True)
         np.testing.assert_allclose(s.data[0, 0, :], np.arange(0.9, 9))
 
 
 @lazifyTestClass
 class TestFindPeaks1D:
-
     def setup_method(self, method):
         x = np.arange(0, 50, 0.01)
         s = hs.signals.Signal1D(np.vstack((np.cos(x), np.sin(x))))
@@ -163,30 +153,31 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.signal.inav[0].find_peaks1D_ohaver()[0]
-        if isinstance(peaks,da.Array):
+        if isinstance(peaks, da.Array):
             peaks = peaks.compute()
         np.testing.assert_allclose(
-            peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4)
+            peaks["position"], self.peak_positions0, rtol=1e-5, atol=1e-4
+        )
 
     def test_two_spectra(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
         if isinstance(peaks, da.Array):
             peaks = peaks.compute()
         np.testing.assert_allclose(
-            peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4)
+            peaks["position"], self.peak_positions1, rtol=1e-5, atol=1e-4
+        )
 
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if isinstance(peaks,da.Array):
+        if isinstance(peaks, da.Array):
             peaks = peaks.compute()
-        np.testing.assert_allclose(
-            peaks['height'], 1.0, rtol=1e-5, atol=1e-4)
+        np.testing.assert_allclose(peaks["height"], 1.0, rtol=1e-5, atol=1e-4)
 
     def test_width(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
-        if isinstance(peaks,da.Array):
+        if isinstance(peaks, da.Array):
             peaks = peaks.compute()
-        np.testing.assert_allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
+        np.testing.assert_allclose(peaks["width"], 3.5758, rtol=1e-4, atol=1e-4)
 
     def test_n_peaks(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
@@ -198,20 +189,19 @@ class TestFindPeaks1D:
         for n in range(1, 10):
             peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)[1]
             if isinstance(peaks, da.Array):
-                peaks=peaks.compute()
+                peaks = peaks.compute()
             assert len(peaks) == min((8, n))
 
 
 @lazifyTestClass
 class TestInterpolateInBetween:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.arange(40).reshape((2, 20)))
         s.axes_manager.signal_axes[0].scale = 0.1
         s.isig[8:12] = 0
         self.s = s
 
-    @pytest.mark.parametrize('uniform', [True, False])
+    @pytest.mark.parametrize("uniform", [True, False])
     def test_single_spectrum(self, uniform):
         s = self.s.inav[0]
         m = mock.Mock()
@@ -222,7 +212,7 @@ class TestInterpolateInBetween:
         np.testing.assert_array_equal(s.data, np.arange(20))
         assert m.data_changed.called
 
-    @pytest.mark.parametrize('uniform', [True, False])
+    @pytest.mark.parametrize("uniform", [True, False])
     def test_single_spectrum_in_units(self, uniform):
         s = self.s.inav[0]
         if not uniform:
@@ -237,36 +227,34 @@ class TestInterpolateInBetween:
 
     def test_delta_int(self):
         s = self.s.inav[0]
-        s.change_dtype('float')
+        s.change_dtype("float")
         tmp = np.zeros(s.data.shape)
         tmp[12] = s.data[12]
-        s.data += tmp * 9.
-        s.interpolate_in_between(8, 12, delta=2, kind='cubic')
+        s.data += tmp * 9.0
+        s.interpolate_in_between(8, 12, delta=2, kind="cubic")
         print(s.data[8:12])
-        np.testing.assert_allclose(
-            s.data[8:12], np.array([44., 95.4, 139.6, 155.]))
+        np.testing.assert_allclose(s.data[8:12], np.array([44.0, 95.4, 139.6, 155.0]))
 
-    @pytest.mark.parametrize('uniform', [True, False])
+    @pytest.mark.parametrize("uniform", [True, False])
     def test_delta_float(self, uniform):
         s = self.s.inav[0]
-        s.change_dtype('float')
+        s.change_dtype("float")
         tmp = np.zeros(s.data.shape)
         tmp[12] = s.data[12]
-        s.data += tmp * 9.
+        s.data += tmp * 9.0
         if not uniform:
             s.axes_manager[0].convert_to_non_uniform_axis()
-        s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
+        s.interpolate_in_between(8, 12, delta=0.31, kind="cubic")
         print(s.data[8:12])
         np.testing.assert_allclose(
-            s.data[8:12], np.array([46.595205, 109.802805,
-                                    164.512803, 178.615201]),
+            s.data[8:12],
+            np.array([46.595205, 109.802805, 164.512803, 178.615201]),
             atol=1,
         )
 
 
 @lazifyTestClass
 class TestEstimatePeakWidth:
-
     def setup_method(self, method):
         scale = 0.1
         window = 2
@@ -280,22 +268,21 @@ class TestEstimatePeakWidth:
 
     def test_full_range(self):
         width, left, right = self.s.estimate_peak_width(
-            window=None,
-            return_interval=True)
-        np.testing.assert_allclose(width.data, 0.7065102,
-                                   rtol=self.rtol, atol=self.atol)
-        np.testing.assert_allclose(left.data, 1.6467449,
-                                   rtol=self.rtol, atol=self.atol)
-        np.testing.assert_allclose(right.data, 2.353255,
-                                   rtol=self.rtol, atol=self.atol)
+            window=None, return_interval=True
+        )
+        np.testing.assert_allclose(
+            width.data, 0.7065102, rtol=self.rtol, atol=self.atol
+        )
+        np.testing.assert_allclose(left.data, 1.6467449, rtol=self.rtol, atol=self.atol)
+        np.testing.assert_allclose(right.data, 2.353255, rtol=self.rtol, atol=self.atol)
         for t in (width, left, right):
             assert t.metadata.Signal.signal_type == ""
             assert t.axes_manager.signal_dimension == 0
 
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
-            window=0.5,
-            return_interval=True)
+            window=0.5, return_interval=True
+        )
         assert np.isnan(width.data).all()
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
@@ -314,8 +301,8 @@ class TestEstimatePeakWidth:
         s.shift1D(shifts)
         self.s = self.s.isig[10:] + s
         width, left, right = self.s.estimate_peak_width(
-            window=None,
-            return_interval=True)
+            window=None, return_interval=True
+        )
         assert np.isnan(width.data).all()
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
@@ -323,22 +310,17 @@ class TestEstimatePeakWidth:
 
 @lazifyTestClass(rtol=1e-4, atol=0.4)
 class TestSmoothing:
-
     def setup_method(self, method):
         n, m = 2, 100
-        self.s = hs.signals.Signal1D(
-            np.arange(
-                n * m,
-                dtype='float').reshape(
-                n,
-                m))
+        self.s = hs.signals.Signal1D(np.arange(n * m, dtype="float").reshape(n, m))
         self.s.add_gaussian_noise(0.1, random_state=1)
         self.rtol = 1e-7
         self.atol = 0
 
-    @pytest.mark.parametrize('dtype', ['<f4', 'f4', '>f4'])
+    @pytest.mark.parametrize("dtype", ["<f4", "f4", ">f4"])
     def test_lowess(self, dtype):
         from hyperspy.misc.lowess_smooth import lowess
+
         f = 0.5
         n_iter = 1
         self.rtol = 1e-5
@@ -349,22 +331,25 @@ class TestSmoothing:
                 y=data[i, :],
                 f=f,
                 n_iter=n_iter,
-                )
-        self.s.smooth_lowess(smoothing_parameter=f,
-                             number_of_iterations=n_iter,)
-        np.testing.assert_allclose(self.s.data, data,
-                                   rtol=self.rtol, atol=self.atol)
+            )
+        self.s.smooth_lowess(
+            smoothing_parameter=f,
+            number_of_iterations=n_iter,
+        )
+        np.testing.assert_allclose(self.s.data, data, rtol=self.rtol, atol=self.atol)
 
     def test_tv(self):
         weight = 1
-        data = np.asanyarray(self.s.data, dtype='float')
+        data = np.asanyarray(self.s.data, dtype="float")
         for i in range(data.shape[0]):
             data[i, :] = _tv_denoise_1d(
                 im=data[i, :],
-                weight=weight,)
-        self.s.smooth_tv(smoothing_parameter=weight,)
-        np.testing.assert_allclose(data, self.s.data,
-                                   rtol=self.rtol, atol=self.atol)
+                weight=weight,
+            )
+        self.s.smooth_tv(
+            smoothing_parameter=weight,
+        )
+        np.testing.assert_allclose(data, self.s.data, rtol=self.rtol, atol=self.atol)
 
     def test_savgol(self):
         window_length = 13
@@ -376,16 +361,18 @@ class TestSmoothing:
             polyorder=polyorder,
             deriv=deriv,
             delta=self.s.axes_manager[-1].scale,
-            axis=-1,)
+            axis=-1,
+        )
         self.s.smooth_savitzky_golay(
             window_length=window_length,
             polynomial_order=polyorder,
-            differential_order=deriv,)
+            differential_order=deriv,
+        )
         np.testing.assert_allclose(data, self.s.data)
 
 
-@pytest.mark.parametrize('lazy', [True, False])
-@pytest.mark.parametrize('offset', [3, 0])
+@pytest.mark.parametrize("lazy", [True, False])
+@pytest.mark.parametrize("offset", [3, 0])
 def test_hanning(lazy, offset):
     rng = np.random.default_rng(1)
     sig = hs.signals.Signal1D(rng.random(size=(5, 20)))
@@ -395,22 +382,21 @@ def test_hanning(lazy, offset):
     channels = 5
     hanning = np.hanning(channels * 2)
     data[..., :offset] = 0
-    data[..., offset:offset + channels] *= hanning[:channels]
+    data[..., offset : offset + channels] *= hanning[:channels]
     rl = None if offset == 0 else -offset
-    data[..., -offset - channels:rl] *= hanning[-channels:]
+    data[..., -offset - channels : rl] *= hanning[-channels:]
     if offset != 0:
         data[..., -offset:] = 0
 
-    assert channels == sig.hanning_taper(side='both', channels=channels,
-                                         offset=offset)
+    assert channels == sig.hanning_taper(side="both", channels=channels, offset=offset)
     np.testing.assert_allclose(data, sig.data)
 
 
-@pytest.mark.parametrize('float_data', [True, False])
+@pytest.mark.parametrize("float_data", [True, False])
 def test_hanning_wrong_type(float_data):
     sig = hs.signals.Signal1D(np.arange(100).reshape(5, 20))
     if float_data:
-        sig.change_dtype('float')
+        sig.change_dtype("float")
 
     if float_data:
         sig.hanning_taper()

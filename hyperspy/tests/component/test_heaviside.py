@@ -24,6 +24,6 @@ def test_function():
     g = HeavisideStep()
     g.A.value = 3
     g.n.value = 2
-    assert g.function(1) == 0.
+    assert g.function(1) == 0.0
     assert g.function(2) == 1.5
-    assert g.function(3) == 3.
+    assert g.function(3) == 3.0

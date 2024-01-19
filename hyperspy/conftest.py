@@ -24,6 +24,7 @@ try:
     # Capture error when toolkit is already previously set which typically
     # occurs when building the doc locally
     from traits.etsconfig.api import ETSConfig
+
     ETSConfig.toolkit = "null"
 except ValueError:
     # in case ETSConfig.toolkit was already set previously.
@@ -32,8 +33,9 @@ except ValueError:
 # pytest-mpl 0.7 already import pyplot, so setting the matplotlib backend to
 # 'agg' as early as we can is useless for testing.
 import matplotlib.pyplot as plt
+
 # Use matplotlib fixture to clean up figure, setup backend, etc.
-from matplotlib.testing.conftest import mpl_test_settings # noqa: F401
+from matplotlib.testing.conftest import mpl_test_settings  # noqa: F401
 
 import pytest
 import numpy as np
@@ -42,10 +44,10 @@ import dask.array as da
 import hyperspy.api as hs
 
 
-matplotlib.rcParams['figure.max_open_warning'] = 25
-matplotlib.rcParams['interactive'] = False
-hs.preferences.Plot.cmap_navigator = 'viridis'
-hs.preferences.Plot.cmap_signal = 'viridis'
+matplotlib.rcParams["figure.max_open_warning"] = 25
+matplotlib.rcParams["interactive"] = False
+hs.preferences.Plot.cmap_navigator = "viridis"
+hs.preferences.Plot.cmap_signal = "viridis"
 hs.preferences.Plot.pick_tolerance = 5.0
 # Don't show progressbar since it contains the runtime which
 # will make the doctest fail
@@ -54,10 +56,10 @@ hs.preferences.General.show_progressbar = False
 
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):
-    doctest_namespace['np'] = np
-    doctest_namespace['plt'] = plt
-    doctest_namespace['hs'] = hs
-    doctest_namespace['da'] = da
+    doctest_namespace["np"] = np
+    doctest_namespace["plt"] = plt
+    doctest_namespace["hs"] = hs
+    doctest_namespace["da"] = da
 
 
 @pytest.fixture
@@ -68,6 +70,7 @@ def pdb_cmdopt(request):
 def setup_module(mod, pdb_cmdopt):
     if pdb_cmdopt:
         import dask
+
         dask.set_options(get=dask.local.get_sync)
 
 
@@ -79,15 +82,18 @@ if pytest_mpl_spec is None:
         config.addinivalue_line(
             "markers",
             "mpl_image_compare: dummy marker registration to allow running "
-            "without the pytest-mpl plugin."
+            "without the pytest-mpl plugin.",
         )
 else:
+
     def pytest_configure(config):
         # raise an error if the baseline images are not present
         # which is the case when installing from a wheel
-        baseline_images_path = Path(__file__).parent / "tests" / "drawing" / "plot_signal"
+        baseline_images_path = (
+            Path(__file__).parent / "tests" / "drawing" / "plot_signal"
+        )
         if config.getoption("--mpl") and not baseline_images_path.exists():
             raise ValueError(
                 "`--mpl` flag can't not be used because the "
                 "baseline images are not packaged."
-                )
+            )

@@ -36,7 +36,7 @@ def make_sure_ind(inds, req_len=None):
     indices : tuple of floats
     """
     try:
-        number = len(inds)   # for error catching
+        number = len(inds)  # for error catching
         val = ()
         for i in inds:
             try:
@@ -87,8 +87,7 @@ def nearest_indices(shape, ind, radii):
 
 
 class SamfireStrategy:
-    """A SAMFire strategy base class.
-    """
+    """A SAMFire strategy base class."""
 
     samf = None
     close_plot = None
@@ -113,8 +112,7 @@ class SamfireStrategy:
         return self.name
 
     def remove(self):
-        """Removes this strategy from its SAMFire
-        """
+        """Removes this strategy from its SAMFire"""
         self.samf.strategies.remove(self)
 
 
@@ -137,8 +135,7 @@ class LocalStrategy(SamfireStrategy):
 
     @property
     def samf(self):
-        """The SAMFire that owns this strategy.
-        """
+        """The SAMFire that owns this strategy."""
         return self._samf
 
     @samf.setter
@@ -163,16 +160,14 @@ class LocalStrategy(SamfireStrategy):
             value.model = self.samf.model
 
     def clean(self):
-        """Purges the currently saved values.
-        """
+        """Purges the currently saved values."""
         self._untruncated = None
         self._mask_all = None
         self._radii_changed = True
 
     @property
     def radii(self):
-        """A tuple of >=0 floats that show the "radii of relevance"
-        """
+        """A tuple of >=0 floats that show the "radii of relevance" """
         return self._radii
 
     @radii.setter
@@ -186,8 +181,7 @@ class LocalStrategy(SamfireStrategy):
             self._radii = value
 
     def _update_database(self, ind, count):
-        """Dummy method for compatibility
-        """
+        """Dummy method for compatibility"""
         pass
 
     def refresh(self, overwrite, given_pixels=None):
@@ -222,16 +216,13 @@ class LocalStrategy(SamfireStrategy):
             if given_pixels is not None:
                 calc_pixels = np.logical_and(calc_pixels, given_pixels)
                 todo_pixels = np.logical_or(
-                    todo_pixels,
-                    np.logical_xor(
-                        marker == -
-                        scale,
-                        calc_pixels))
+                    todo_pixels, np.logical_xor(marker == -scale, calc_pixels)
+                )
 
         done_number = np.sum(calc_pixels)
         todo_number = np.sum(todo_pixels)
 
-        marker[todo_pixels] = 0.
+        marker[todo_pixels] = 0.0
         marker[calc_pixels] = -scale
 
         weights_all = self.decay_function(self.weight.map(calc_pixels))
@@ -242,8 +233,7 @@ class LocalStrategy(SamfireStrategy):
             for iindex in range(ind_list[0].size):
                 ind = [one_list[iindex] for one_list in ind_list]
 
-                distances, slices, _, mask = self._get_distance_array(
-                    shape, ind)
+                distances, slices, _, mask = self._get_distance_array(shape, ind)
 
                 mask = np.logical_and(mask, todo_pixels[slices])
 
@@ -256,8 +246,7 @@ class LocalStrategy(SamfireStrategy):
             for iindex in range(ind_list[0].size):
                 ind = [one_list[iindex] for one_list in ind_list]
 
-                distances, slices, centre, mask = self._get_distance_array(
-                    shape, ind)
+                distances, slices, centre, mask = self._get_distance_array(shape, ind)
 
                 mask = np.logical_and(mask, calc_pixels[slices])
 
@@ -290,31 +279,29 @@ class LocalStrategy(SamfireStrategy):
         """
         radii = make_sure_ind(self.radii, len(ind))
         # This should be unnecessary.......................
-        if self._untruncated is not None and self._untruncated.ndim != len(
-                ind):
+        if self._untruncated is not None and self._untruncated.ndim != len(ind):
             self._untruncated = None
             self._mask_all = None
-        if self._radii_changed or \
-           self._untruncated is None or \
-           self._mask_all is None:
+        if self._radii_changed or self._untruncated is None or self._mask_all is None:
             par = []
             for radius in radii:
                 radius_top = np.ceil(radius)
                 par.append(abs(np.arange(-radius_top, radius_top + 1)))
-            meshg = np.array(np.meshgrid(*par, indexing='ij'))
-            self._untruncated = np.sqrt(np.sum(meshg ** 2.0, axis=0))
-            distance_mask = np.array(
-                [c / float(radii[i]) for i, c in enumerate(meshg)])
-            self._mask_all = np.sum(distance_mask ** 2.0, axis=0)
+            meshg = np.array(np.meshgrid(*par, indexing="ij"))
+            self._untruncated = np.sqrt(np.sum(meshg**2.0, axis=0))
+            distance_mask = np.array([c / float(radii[i]) for i, c in enumerate(meshg)])
+            self._mask_all = np.sum(distance_mask**2.0, axis=0)
             self._radii_changed = False
 
         slices_return, centre = nearest_indices(shape, ind, np.ceil(radii))
 
         slices_temp = ()
         for radius, cent, _slice in zip(np.ceil(radii), centre, slices_return):
-            slices_temp += (slice(int(radius - cent),
-                                  int(_slice.stop - _slice.start +
-                                      radius - cent)),)
+            slices_temp += (
+                slice(
+                    int(radius - cent), int(_slice.stop - _slice.start + radius - cent)
+                ),
+            )
         ans = self._untruncated[slices_temp].copy()
         mask = self._mask_all[slices_temp].copy()
 
@@ -370,26 +357,17 @@ class LocalStrategy(SamfireStrategy):
         shape = marker.shape
         model = self.samf.model
 
-        distances, slices, _, mask_dist = self._get_distance_array(
-            shape, ind)
+        distances, slices, _, mask_dist = self._get_distance_array(shape, ind)
 
         # only use pixels that are calculated and "active"
-        mask_dist_calc = np.logical_and(
-            mask_dist,
-            marker[slices] == -
-            self.samf._scale)
+        mask_dist_calc = np.logical_and(mask_dist, marker[slices] == -self.samf._scale)
 
         distance_f = self.decay_function(distances)
-        weights_values = self.decay_function(
-            self.weight.map(
-                mask_dist_calc,
-                slices))
+        weights_values = self.decay_function(self.weight.map(mask_dist_calc, slices))
         ans = {}
         for component in model:
             if component.active_is_multidimensional:
-                mask = np.logical_and(
-                    component._active_array[slices],
-                    mask_dist_calc)
+                mask = np.logical_and(component._active_array[slices], mask_dist_calc)
             else:
                 if component.active:
                     mask = mask_dist_calc
@@ -401,9 +379,8 @@ class LocalStrategy(SamfireStrategy):
                 for par in component.parameters:
                     if par.free:
                         comp_dict[par.name] = np.average(
-                            par.map[slices][mask]['values'],
-                            weights=weight,
-                            axis=0)
+                            par.map[slices][mask]["values"], weights=weight, axis=0
+                        )
                 ans[component.name] = comp_dict
         return ans
 
@@ -425,14 +402,13 @@ class LocalStrategy(SamfireStrategy):
         marker = self.samf.metadata.marker.copy()
 
         if marker.ndim > 2:
-            marker = np.sum(
-                marker, tuple([i for i in range(0, marker.ndim - 2)]))
+            marker = np.sum(marker, tuple([i for i in range(0, marker.ndim - 2)]))
         elif marker.ndim < 2:
             marker = np.atleast_2d(marker)
 
         from hyperspy.signals import Signal2D
-        if not isinstance(
-                fig, Signal2D) or fig._plot.signal_plot.figure is None:
+
+        if not isinstance(fig, Signal2D) or fig._plot.signal_plot.figure is None:
             fig = Signal2D(marker)
             fig.plot()
             self.close_plot = fig._plot.signal_plot.close
@@ -452,16 +428,14 @@ class GlobalStrategy(SamfireStrategy):
     _saved_values = None
 
     def clean(self):
-        """Purges the currently saved values (not the database).
-        """
+        """Purges the currently saved values (not the database)."""
         self._saved_values = None
 
     def __init__(self, name):
         self.name = name
 
     def refresh(self, overwrite, given_pixels=None):
-        """Refreshes the database (i.e. constructs it again from scratch)
-        """
+        """Refreshes the database (i.e. constructs it again from scratch)"""
         scale = self.samf._scale
         mark = self.samf.metadata.marker
         mark = np.where(np.isnan(mark), np.inf, mark)
@@ -479,14 +453,12 @@ class GlobalStrategy(SamfireStrategy):
         self._update_database(None, 0)  # to force to update
 
     def _update_marker(self, ind):
-        """Updates the SAMFire marker in the given pixel
-        """
+        """Updates the SAMFire marker in the given pixel"""
         scale = self.samf._scale
         self.samf.metadata.marker[ind] = -scale
 
     def _package_values(self):
-        """Packages he current values to be sent to the segmenter
-        """
+        """Packages he current values to be sent to the segmenter"""
         model = self.samf.model
         mask_calc = self.samf.metadata.marker < 0
         ans = {}
@@ -502,7 +474,7 @@ class GlobalStrategy(SamfireStrategy):
             for par in component.parameters:
                 if par.free:
                     # only keeps active values and ravels
-                    component_dict[par.name] = par.map[mask]['values']
+                    component_dict[par.name] = par.map[mask]["values"]
             ans[component.name] = component_dict
         return ans
 
@@ -532,7 +504,7 @@ class GlobalStrategy(SamfireStrategy):
         """
         from hyperspy.drawing.tiles import HistogramTilePlot
 
-        kwargs = {'color': '#4C72B0'}
+        kwargs = {"color": "#4C72B0"}
         dbase = self.segmenter.database
         if dbase is None or not len(dbase):
             return fig

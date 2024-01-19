@@ -20,8 +20,7 @@
 
 """
 
-STACK_METADATA_ARG = \
-    """stack_metadata : {bool, int}
+STACK_METADATA_ARG = """stack_metadata : {bool, int}
         If integer, this value defines the index of the signal in the signal
         list, from which the ``metadata`` and ``original_metadata`` are taken.
         If ``True``, the ``original_metadata`` and ``metadata`` of each signals
@@ -31,8 +30,7 @@ STACK_METADATA_ARG = \
         If False, the ``metadata`` and ``original_metadata`` are not copied."""
 
 
-REBIN_ARGS = \
-    """new_shape : list (of float or int) or None
+REBIN_ARGS = """new_shape : list (of float or int) or None
             For each dimension specify the new_shape. This will internally be
             converted into a ``scale`` parameter.
         scale : list (of float or int) or None

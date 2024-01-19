@@ -57,7 +57,7 @@ class Logistic(Expression):
         :class:`~.api.model.components1D.Expression` component.
     """
 
-    def __init__(self, a=1., b=1., c=1., origin=0., module=None, **kwargs):
+    def __init__(self, a=1.0, b=1.0, c=1.0, origin=0.0, module=None, **kwargs):
         super().__init__(
             expression="a / (1 + b * exp(-c * (x - origin)))",
             name="Logistic",
@@ -68,7 +68,8 @@ class Logistic(Expression):
             position="origin",
             module=module,
             autodoc=False,
-            **kwargs)
+            **kwargs,
+        )
 
         # Boundaries
         self.isbackground = False

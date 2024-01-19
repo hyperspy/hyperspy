@@ -31,7 +31,7 @@ tiny = np.finfo(float).eps
 
 class Doniach(Expression):
 
-    r""" Doniach Sunjic lineshape component.
+    r"""Doniach Sunjic lineshape component.
 
     .. math::
         :nowrap:
@@ -81,8 +81,15 @@ class Doniach(Expression):
 
     """
 
-    def __init__(self, centre=0., A=1., sigma=1., alpha=0.5,
-                 module=["numpy", "scipy"], **kwargs):
+    def __init__(
+        self,
+        centre=0.0,
+        A=1.0,
+        sigma=1.0,
+        alpha=0.5,
+        module=["numpy", "scipy"],
+        **kwargs,
+    ):
         super().__init__(
             expression="A*cos(0.5*pi*alpha+\
             ((1.0 - alpha) * arctan( (x-centre+offset)/sigma) ) )\
@@ -145,8 +152,9 @@ class Doniach(Expression):
 
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
-                                                              only_current)
+        centre, height, sigma = _estimate_gaussian_parameters(
+            signal, x1, x2, only_current
+        )
         scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
@@ -159,13 +167,13 @@ class Doniach(Expression):
         else:
             if self.A.map is None:
                 self._create_arrays()
-            self.A.map['values'][:] = height * 1.3
+            self.A.map["values"][:] = height * 1.3
             if axis.is_binned:
-                self.A.map['values'][:] /= scaling_factor
-            self.A.map['is_set'][:] = True
-            self.sigma.map['values'][:] = sigma
-            self.sigma.map['is_set'][:] = True
-            self.centre.map['values'][:] = centre
-            self.centre.map['is_set'][:] = True
+                self.A.map["values"][:] /= scaling_factor
+            self.A.map["is_set"][:] = True
+            self.sigma.map["values"][:] = sigma
+            self.sigma.map["is_set"][:] = True
+            self.centre.map["values"][:] = centre
+            self.centre.map["is_set"][:] = True
             self.fetch_stored_values()
             return True

@@ -26,8 +26,8 @@ from hyperspy.drawing.widget import (
     ResizableDraggableWidgetBase,
     Widget2DBase,
     Widget1DBase,
-    ResizersMixin
-    )
+    ResizersMixin,
+)
 from hyperspy.drawing._widgets.horizontal_line import HorizontalLineWidget
 from hyperspy.drawing._widgets.vertical_line import VerticalLineWidget
 from hyperspy.drawing._widgets.label import LabelWidget

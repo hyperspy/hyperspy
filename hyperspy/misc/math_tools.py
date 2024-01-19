@@ -127,15 +127,22 @@ def hann_window_nth_order(m, order):
         window
     """
     if not isinstance(m, int) or m <= 0:
-        raise ValueError('Parameter m has to be positive integer greater than 0.')
+        raise ValueError("Parameter m has to be positive integer greater than 0.")
     if not isinstance(order, int) or order <= 0:
-        raise ValueError('Filter order has to be positive integer greater than 0.')
-    sin_arg = np.pi * (m - 1.) / m
-    cos_arg = 2. * np.pi / (m - 1.) * (np.arange(m))
+        raise ValueError("Filter order has to be positive integer greater than 0.")
+    sin_arg = np.pi * (m - 1.0) / m
+    cos_arg = 2.0 * np.pi / (m - 1.0) * (np.arange(m))
 
-    return m / (order * 2 * np.pi) * sum([(-1) ** i / i *
-                                          np.sin(i * sin_arg) * (np.cos(i * cos_arg) - 1)
-                                          for i in range(1, order + 1)])
+    return (
+        m
+        / (order * 2 * np.pi)
+        * sum(
+            [
+                (-1) ** i / i * np.sin(i * sin_arg) * (np.cos(i * cos_arg) - 1)
+                for i in range(1, order + 1)
+            ]
+        )
+    )
 
 
 def optimal_fft_size(target, real=False):
@@ -205,9 +212,9 @@ def check_random_state(seed, lazy=False):
     dask_version = Version(dask.__version__)
     if seed is None:
         if lazy:
-            if dask_version < Version('2022.10.0'):
+            if dask_version < Version("2022.10.0"):
                 return da.random._state
-            elif dask_version < Version('2023.2.1'):
+            elif dask_version < Version("2023.2.1"):
                 backend = da.backends.array_creation_dispatch.backend
                 if backend not in da.random._cached_random_states.keys():
                     # Need to initialise the backend
@@ -231,17 +238,16 @@ def check_random_state(seed, lazy=False):
         warnings.warn(
             "Support for RandomState generators have been deprecated and will be removed "
             " in HyperSpy 2.0, use `default_rng` instead.",
-            DeprecationWarning
-            )
+            DeprecationWarning,
+        )
         return seed
 
     if isinstance(seed, np.random.Generator):
         return seed
 
-    if (dask_version >= Version('2023.2.1')
-            and isinstance(seed, da.random.Generator)):
+    if dask_version >= Version("2023.2.1") and isinstance(seed, da.random.Generator):
         return seed
 
     raise ValueError(
         f"{seed} cannot be used to seed a RandomState or a Generator instance"
-        )
+    )

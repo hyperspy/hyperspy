@@ -36,7 +36,8 @@ else:
     __version__ = get_version(Path(__file__).parent.parent)
 
 
-__doc__ = """
+__doc__ = (
+    """
 HyperSpy: a multi-dimensional data analysis package for Python
 ==============================================================
 
@@ -51,13 +52,12 @@ needed for data analysis.
 
 More details in the :mod:`~hyperspy.api` docstring.
 
-""" % docstrings.START_HSPY
+"""
+    % docstrings.START_HSPY
+)
 
 
-__all__ = [
-    "api",
-    "__version__"
-    ]
+__all__ = ["api", "__version__"]
 
 
 def __dir__():
@@ -65,9 +65,9 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name in __all__: # pragma: no cover
+    if name in __all__:  # pragma: no cover
         # We can't get this block covered in the test suite because it is
         # already imported, when running the test suite.
         # If this is broken, a lot of things will be broken!
-        return importlib.import_module("." + name, 'hyperspy')
+        return importlib.import_module("." + name, "hyperspy")
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

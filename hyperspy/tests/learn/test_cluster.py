@@ -90,7 +90,9 @@ class TestCluster1D:
 
     def test_custom_algorithm(self):
         self.signal.cluster_analysis(
-            "signal", n_clusters=3, preprocessing="norm",
+            "signal",
+            n_clusters=3,
+            preprocessing="norm",
         )
         np.testing.assert_array_equal(
             self.signal.learning_results.cluster_labels.shape, (3, 35)
@@ -353,7 +355,6 @@ class TestClusterExceptions:
             match="The max number of clusters, max_clusters, "
             "must be specified and be >= 2.",
         ):
-
             self.s.estimate_number_of_clusters(
                 "signal",
                 max_clusters=max_clusters,

@@ -26,7 +26,6 @@ from hyperspy.decorators import lazifyTestClass
 
 @lazifyTestClass
 class TestComplexProperties:
-
     real_ref = np.arange(9).reshape((3, 3))
     imag_ref = np.arange(9).reshape((3, 3)) + 9
     comp_ref = real_ref + 1j * imag_ref
@@ -111,76 +110,67 @@ class TestComplexProperties:
 
     def test_angle(self):
         np.testing.assert_allclose(self.s.angle(deg=False), self.phase_ref)
-        np.testing.assert_allclose(
-            self.s.angle(
-                deg=True),
-            self.phase_ref *
-            180 /
-            np.pi)
+        np.testing.assert_allclose(self.s.angle(deg=True), self.phase_ref * 180 / np.pi)
 
 
-@pytest.mark.parametrize('lazy', (True, False))
+@pytest.mark.parametrize("lazy", (True, False))
 def test_get_unwrapped_phase_1D(lazy):
     phase = 6 * (1 - abs(np.indices((9,)) - 4) / 4)
     s = hs.signals.ComplexSignal1D(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
     phase_unwrapped = s.unwrapped_phase(seed=42)
-    assert (
-        phase_unwrapped.metadata.General.title ==
-        'unwrapped phase(Untitled Signal)')
+    assert phase_unwrapped.metadata.General.title == "unwrapped phase(Untitled Signal)"
     np.testing.assert_allclose(phase_unwrapped.data, phase)
 
 
-@pytest.mark.parametrize('lazy', (True, False))
+@pytest.mark.parametrize("lazy", (True, False))
 def test_get_unwrapped_phase_2D(lazy):
     phase = 5 * (1 - abs(np.indices((9, 9)) - 4).sum(axis=0) / 8)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
     phase_unwrapped = s.unwrapped_phase(seed=42)
-    assert (
-        phase_unwrapped.metadata.General.title ==
-        'unwrapped phase(Untitled Signal)')
+    assert phase_unwrapped.metadata.General.title == "unwrapped phase(Untitled Signal)"
     np.testing.assert_allclose(phase_unwrapped.data, phase)
 
 
-@pytest.mark.parametrize('lazy', (True, False))
+@pytest.mark.parametrize("lazy", (True, False))
 def test_get_unwrapped_phase_3D(lazy):
     phase = 4 * (1 - abs(np.indices((9, 9, 9)) - 4).sum(axis=0) / 12)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
     phase_unwrapped = s.unwrapped_phase(seed=42)
-    assert (
-        phase_unwrapped.metadata.General.title ==
-        'unwrapped phase(Untitled Signal)')
+    assert phase_unwrapped.metadata.General.title == "unwrapped phase(Untitled Signal)"
     np.testing.assert_allclose(phase_unwrapped.data, phase)
 
 
 def test_argand_diagram():
     # 0. Set up phase and amplitude and real and imaginary parts
-    amp = np.random.rand() * 10. * np.random.rand(64)
-    phase = np.random.rand(64) * 3. * np.pi
+    amp = np.random.rand() * 10.0 * np.random.rand(64)
+    phase = np.random.rand(64) * 3.0 * np.pi
     re = amp * np.cos(phase)
     im = amp * np.sin(phase)
 
     # 1. Test ComplexSignal1D
     s1d = hs.signals.ComplexSignal((amp * np.exp(1j * phase)))
-    s1d.metadata.General.title = 'Test signal'
-    s1d.metadata.Signal.quantity = 'Test quantity (Test units)'
+    s1d.metadata.General.title = "Test signal"
+    s1d.metadata.Signal.quantity = "Test quantity (Test units)"
     ap1d = s1d.argand_diagram(size=[7, 7])
     ap1_ref = np.histogram2d(re, im, bins=[7, 7])
     np.testing.assert_allclose(ap1d.data, ap1_ref[0].T)
-    assert ap1d.metadata.General.title == 'Argand diagram of Test signal'
+    assert ap1d.metadata.General.title == "Argand diagram of Test signal"
 
     # 2. Test ComplexSignal1D with specified range
     s2d = hs.signals.ComplexSignal((amp * np.exp(1j * phase)).reshape((4, 16)))
-    s2d.metadata.Signal.quantity = 'Test quantity (Test units)'
-    ap2d = s2d.argand_diagram(size=[7, 7], range=[-12., 13.])
-    ap2d_a = s2d.argand_diagram(size=[7, 7], range=[[-12., 11.], [-10., 13.]])
-    ap2_ref = np.histogram2d(re, im, bins=[7, 7], range=[[-12., 13.], [-12., 13.]])
-    ap2_ref_a = np.histogram2d(re, im, bins=[7, 7], range=[[-12., 11.], [-10., 13.]])
+    s2d.metadata.Signal.quantity = "Test quantity (Test units)"
+    ap2d = s2d.argand_diagram(size=[7, 7], range=[-12.0, 13.0])
+    ap2d_a = s2d.argand_diagram(size=[7, 7], range=[[-12.0, 11.0], [-10.0, 13.0]])
+    ap2_ref = np.histogram2d(re, im, bins=[7, 7], range=[[-12.0, 13.0], [-12.0, 13.0]])
+    ap2_ref_a = np.histogram2d(
+        re, im, bins=[7, 7], range=[[-12.0, 11.0], [-10.0, 13.0]]
+    )
 
     x_axis = ap2d_a.axes_manager.signal_axes[0]
     y_axis = ap2d_a.axes_manager.signal_axes[1]
@@ -188,18 +178,18 @@ def test_argand_diagram():
     np.testing.assert_allclose(ap2d.data, ap2_ref[0].T)
     np.testing.assert_allclose(ap2d_a.data, ap2_ref_a[0].T)
 
-    assert x_axis.offset == -12.
+    assert x_axis.offset == -12.0
     np.testing.assert_allclose(x_axis.scale, np.gradient(ap2_ref_a[2]))
 
-    assert y_axis.offset == -10.
+    assert y_axis.offset == -10.0
     np.testing.assert_allclose(y_axis.scale, np.gradient(ap2_ref_a[1]))
 
-    assert x_axis.units == 'Test units'
-    assert y_axis.units == 'Test units'
+    assert x_axis.units == "Test units"
+    assert y_axis.units == "Test units"
 
     # 3. Test raises:
     with pytest.raises(ValueError):
-        s1d.argand_diagram(range=[-12., 11., -10., 13.])
+        s1d.argand_diagram(range=[-12.0, 11.0, -10.0, 13.0])
     with pytest.raises(NotImplementedError):
         s1d = s1d.as_lazy()
         s1d.argand_diagram()
@@ -210,8 +200,8 @@ def test_change_dtype():
     imag_ref = np.arange(9).reshape((3, 3)) + 9
     comp_ref = real_ref + 1j * imag_ref
     s = hs.signals.ComplexSignal(comp_ref)
-    
+
     s.change_dtype(np.complex64)
     assert s.data.dtype is np.dtype(np.complex64)
     with pytest.raises(ValueError):
-        s.change_dtype(float)      
+        s.change_dtype(float)

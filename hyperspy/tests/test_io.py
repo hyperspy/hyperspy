@@ -96,42 +96,49 @@ class TestIOOverwriting:
     def teardown_method(self, method):
         self._clean_file()
 
-class TestNonUniformAxisCheck:
 
+class TestNonUniformAxisCheck:
     def setup_method(self, method):
-        axis = DataAxis(axis = 1/(np.arange(10)+1), navigate = False)
-        self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(), ))
+        axis = DataAxis(axis=1 / (np.arange(10) + 1), navigate=False)
+        self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(),))
         # make sure we start from a clean state
 
     def test_io_nonuniform(self):
-        assert(self.s.axes_manager[0].is_uniform is False)
-        self.s.save('tmp.hspy', overwrite = True)
-        with pytest.raises(TypeError, match = "not supported for non-uniform"):
-            self.s.save('tmp.msa', overwrite = True)
+        assert self.s.axes_manager[0].is_uniform is False
+        self.s.save("tmp.hspy", overwrite=True)
+        with pytest.raises(TypeError, match="not supported for non-uniform"):
+            self.s.save("tmp.msa", overwrite=True)
 
     def test_nonuniform_writer_characteristic(self):
         for plugin in IO_PLUGINS:
             if "non_uniform_axis" not in plugin:
-                print(plugin.name + ' IO-plugin is missing the '
-                      'characteristic `non_uniform_axis`')
+                print(
+                    plugin.name + " IO-plugin is missing the "
+                    "characteristic `non_uniform_axis`"
+                )
 
     def test_nonuniform_error(self):
-        assert(self.s.axes_manager[0].is_uniform is False)
+        assert self.s.axes_manager[0].is_uniform is False
         incompatible_writers = [
             plugin["file_extensions"][plugin["default_extension"]]
-            for plugin in IO_PLUGINS if (plugin["writes"] is True or
-                      plugin["writes"] is not False and [1, 0] in plugin["writes"])
-                      and not plugin["non_uniform_axis"]]
+            for plugin in IO_PLUGINS
+            if (
+                plugin["writes"] is True
+                or plugin["writes"] is not False
+                and [1, 0] in plugin["writes"]
+            )
+            and not plugin["non_uniform_axis"]
+        ]
         for ext in incompatible_writers:
-            with pytest.raises(TypeError, match = "not supported for non-uniform"):
-                filename = 'tmp.' + ext
-                self.s.save(filename, overwrite = True)
+            with pytest.raises(TypeError, match="not supported for non-uniform"):
+                filename = "tmp." + ext
+                self.s.save(filename, overwrite=True)
 
     def teardown_method(self):
-        if os.path.exists('tmp.hspy'):
-            os.remove('tmp.hspy')
-        if os.path.exists('tmp.msa'):
-            os.remove('tmp.msa')
+        if os.path.exists("tmp.hspy"):
+            os.remove("tmp.hspy")
+        if os.path.exists("tmp.msa"):
+            os.remove("tmp.msa")
 
 
 def test_glob_wildcards():
@@ -155,7 +162,10 @@ def test_glob_wildcards():
         t = hs.load(os.path.join(dirpath, "temp*.hspy"))
         assert len(t) == 2
 
-        t = hs.load(os.path.join(dirpath, "temp[*].hspy"), escape_square_brackets=True,)
+        t = hs.load(
+            os.path.join(dirpath, "temp[*].hspy"),
+            escape_square_brackets=True,
+        )
         assert len(t) == 2
 
         with pytest.raises(ValueError, match="No filename matches the pattern"):
@@ -182,7 +192,7 @@ def test_file_not_found_error():
         if os.path.exists(temp_fname):
             os.remove(temp_fname)
 
-        with pytest.raises(ValueError, match='No filename matches the pattern'):
+        with pytest.raises(ValueError, match="No filename matches the pattern"):
             _ = hs.load(temp_fname)
 
         with pytest.raises(FileNotFoundError):
@@ -298,42 +308,40 @@ def test_marker_save_load(tmp_path):
 
     s2.plot()
 
+
 def test_load_save_filereader_metadata(tmp_path):
     # tests that original FileReader metadata is correctly persisted and
     # appended through a save and load cycle
 
     fname = PATH.parent / "drawing" / "data" / "Cr_L_cl.hspy"
     s = hs.load(fname)
-    assert s.metadata.General.FileIO.Number_0.io_plugin == \
-           'rsciio.hspy'
-    assert s.metadata.General.FileIO.Number_0.operation == 'load'
+    assert s.metadata.General.FileIO.Number_0.io_plugin == "rsciio.hspy"
+    assert s.metadata.General.FileIO.Number_0.operation == "load"
     assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
 
     f = tmp_path / "temp"
     s.save(f)
     expected = {
-        '0': {
-            'io_plugin': 'rsciio.hspy',
-            'operation': 'load',
-            'hyperspy_version': hs_version
+        "0": {
+            "io_plugin": "rsciio.hspy",
+            "operation": "load",
+            "hyperspy_version": hs_version,
         },
-        '1': {
-            'io_plugin': 'rsciio.hspy',
-            'operation': 'save',
-            'hyperspy_version': hs_version
+        "1": {
+            "io_plugin": "rsciio.hspy",
+            "operation": "save",
+            "hyperspy_version": hs_version,
         },
-        '2': {
-            'io_plugin': 'rsciio.hspy',
-            'operation': 'load',
-            'hyperspy_version': hs_version
+        "2": {
+            "io_plugin": "rsciio.hspy",
+            "operation": "load",
+            "hyperspy_version": hs_version,
         },
     }
     del s.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
     del s.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
-    assert \
-        s.metadata.General.FileIO.Number_0.as_dictionary() == expected['0']
-    assert \
-        s.metadata.General.FileIO.Number_1.as_dictionary() == expected['1']
+    assert s.metadata.General.FileIO.Number_0.as_dictionary() == expected["0"]
+    assert s.metadata.General.FileIO.Number_1.as_dictionary() == expected["1"]
 
     t = hs.load(tmp_path / "temp.hspy")
     del t.metadata.General.FileIO.Number_0.timestamp  # runtime dependent

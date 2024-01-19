@@ -38,9 +38,8 @@ def AIC(model):
 
     model._set_p0()  # correctly set the parameters (numbers / values)
     lnL = model._poisson_likelihood_function(
-        model.p0,
-        model.axis.axis[
-            model._channel_switches])
+        model.p0, model.axis.axis[model._channel_switches]
+    )
     k = len(model.p0) + 1  # +1 for the variance
     return 2 * k - 2 * lnL
 
@@ -49,7 +48,7 @@ def AICc(model):
     _aic = AIC(model)
     n = model.axes_manager.signal_size
     k = len(model.p0) + 1
-    return _aic + (2. * k * (k + 1)) / (n - k - 1)
+    return _aic + (2.0 * k * (k + 1)) / (n - k - 1)
 
 
 def BIC(model):
@@ -69,9 +68,8 @@ def BIC(model):
 
     model._set_p0()  # correctly set the parameters (numbers / values)
     lnL = model._poisson_likelihood_function(
-        model.p0,
-        model.axis.axis[
-            model._channel_switches])
+        model.p0, model.axis.axis[model._channel_switches]
+    )
     n = model.axes_manager.signal_size
     k = len(model.p0) + 1
-    return k * np.log(n) - 2. * lnL
+    return k * np.log(n) - 2.0 * lnL

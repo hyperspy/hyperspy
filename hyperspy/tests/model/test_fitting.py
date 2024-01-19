@@ -50,7 +50,7 @@ def _create_toy_1d_gaussian_model(binned=True, weights=False, noise=False):
         Model1D for fitting
 
     """
-    v = 2.0 * np.exp(-((np.arange(10, 100, 0.1) - 50) ** 2) / (2 * 5.0 ** 2))
+    v = 2.0 * np.exp(-((np.arange(10, 100, 0.1) - 50) ** 2) / (2 * 5.0**2))
     s = hs.signals.Signal1D(v)
     s.axes_manager[0].scale = 0.1
     s.axes_manager[0].offset = 10
@@ -225,7 +225,10 @@ class TestModelFitBinnedScipyMinimize:
     )
     def test_fit_huber_delta(self, grad, delta, expected):
         self.m.fit(
-            optimizer="L-BFGS-B", loss_function="huber", grad=grad, huber_delta=delta,
+            optimizer="L-BFGS-B",
+            loss_function="huber",
+            grad=grad,
+            huber_delta=delta,
         )
         print(self.m.p0)
         self._check_model_values(self.m[0], expected, rtol=TOL)
@@ -267,12 +270,15 @@ def test_bounds_as_tuple():
     m._set_boundaries()
 
     assert m._bounds_as_tuple(transpose=False) == (
-        (200.0, 300.0), (40.0, 60.0), (4.5, 5.5)
-        )
+        (200.0, 300.0),
+        (40.0, 60.0),
+        (4.5, 5.5),
+    )
 
     assert m._bounds_as_tuple(transpose=True) == (
-        (200.0, 40.0, 4.5), (300.0, 60.0, 5.5)
-        )
+        (200.0, 40.0, 4.5),
+        (300.0, 60.0, 5.5),
+    )
 
 
 class TestModelFitBinnedGlobal:
@@ -319,8 +325,10 @@ class TestModelFitBinnedGlobal:
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     # See https://github.com/scipy/scipy/issues/14589
-    @pytest.mark.xfail(Version(scipy.__version__) < Version("1.9.3"),
-                        reason="Regression fixed in scipy 1.9.3.")
+    @pytest.mark.xfail(
+        Version(scipy.__version__) < Version("1.9.3"),
+        reason="Regression fixed in scipy 1.9.3.",
+    )
     def test_fit_shgo(self):
         pytest.importorskip("scipy", minversion="1.2.0")
         self.m.fit(optimizer="SHGO", loss_function="ls", bounded=True)
@@ -380,14 +388,14 @@ class TestModelScalarVariance:
     @pytest.mark.parametrize("std, expected", [(1, 72.514887), (10, 72.514887)])
     def test_std1_chisq(self, std, expected):
         self.s.add_gaussian_noise(std, random_state=1)
-        self.s.set_noise_variance(std ** 2)
+        self.s.set_noise_variance(std**2)
         self.m.fit()
         np.testing.assert_allclose(self.m.chisq.data, expected)
 
     @pytest.mark.parametrize("std, expected", [(1, 0.7399478), (10, 0.7399478)])
     def test_std1_red_chisq(self, std, expected):
         self.s.add_gaussian_noise(std, random_state=1)
-        self.s.set_noise_variance(std ** 2)
+        self.s.set_noise_variance(std**2)
         self.m.fit()
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
@@ -395,7 +403,7 @@ class TestModelScalarVariance:
     def test_std1_red_chisq_in_range(self, std, expected):
         self.m.set_signal_range(10, 50)
         self.s.add_gaussian_noise(std, random_state=1)
-        self.s.set_noise_variance(std ** 2)
+        self.s.set_noise_variance(std**2)
         self.m.fit()
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
@@ -581,10 +589,10 @@ class TestMultifit:
 
 def _generate():
     for i in range(3):
-        yield (i,i)
+        yield (i, i)
 
 
-class Test_multifit_iterpath():
+class Test_multifit_iterpath:
     def setup_method(self, method):
         data = np.ones((3, 3, 10))
         s = hs.signals.Signal1D(data)
@@ -596,11 +604,11 @@ class Test_multifit_iterpath():
         self.ax = ax
 
     def test_custom_iterpath(self):
-        indices = np.array([(0,0), (1,1), (2,2)])
+        indices = np.array([(0, 0), (1, 1), (2, 2)])
         self.ax.iterpath = indices
         self.m.multifit(iterpath=indices)
-        set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
-        np.testing.assert_array_equal(set_indices, indices[:,::-1])
+        set_indices = np.array(np.where(self.m[0].A.map["is_set"])).T
+        np.testing.assert_array_equal(set_indices, indices[:, ::-1])
 
     def test_model_generator(self):
         gen = _generate()
@@ -622,12 +630,12 @@ class TestMultiFitSignalVariance:
         std = 10
         s.add_gaussian_noise(std, random_state=1)
         s.add_poissonian_noise(random_state=1)
-        s.set_noise_variance(variance + std ** 2)
+        s.set_noise_variance(variance + std**2)
         m = s.create_model()
         m.append(hs.model.components1D.Polynomial(order=1))
         self.s = s
         self.m = m
-        self.var = (variance + std ** 2).data
+        self.var = (variance + std**2).data
 
     def test_std1_red_chisq(self):
         self.m.multifit()
@@ -668,6 +676,7 @@ def test_missing_analytical_gradient():
     m = s.create_model(auto_add_edges=False)
 
     from exspy.components import EELSCLEdge
+
     e1 = EELSCLEdge("Zr_L3")
     e1.intensity.bmin = 0
     e1.intensity.bmax = 0.1

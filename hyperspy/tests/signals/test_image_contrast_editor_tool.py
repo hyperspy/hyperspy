@@ -24,14 +24,13 @@ from hyperspy.signal_tools import ImageContrastEditor
 
 
 class TestContrastEditorTool:
-
     def setup_method(self, method):
-        s = hs.signals.Signal2D(np.arange(2*3*10*10).reshape(2, 3, 10, 10))
+        s = hs.signals.Signal2D(np.arange(2 * 3 * 10 * 10).reshape(2, 3, 10, 10))
         self.s = s
 
     def test_reset_vmin_vmax(self):
         s = self.s
-        s.plot(vmin='10th', vmax='99th')
+        s.plot(vmin="10th", vmax="99th")
 
         ceditor = ImageContrastEditor(s._plot.signal_plot)
         np.testing.assert_allclose(ceditor._vmin, 9.9)
@@ -45,7 +44,7 @@ class TestContrastEditorTool:
 
     def test_reset_span_selector(self):
         s = self.s
-        s.plot(vmin='10th', vmax='99th')
+        s.plot(vmin="10th", vmax="99th")
         ceditor = ImageContrastEditor(s._plot.signal_plot)
 
         ceditor.span_selector.extents = (20, 90)
@@ -65,7 +64,7 @@ class TestContrastEditorTool:
 
     def test_change_navigation_coordinate(self):
         s = self.s
-        s.plot(vmin='10th', vmax='99th')
+        s.plot(vmin="10th", vmax="99th")
         ceditor = ImageContrastEditor(s._plot.signal_plot)
 
         np.testing.assert_allclose(ceditor._vmin, 9.9)
@@ -77,7 +76,7 @@ class TestContrastEditorTool:
 
     def test_vmin_vmax_changed(self):
         s = self.s
-        s.plot(vmin='0th', vmax='100th')
+        s.plot(vmin="0th", vmax="100th")
 
         ceditor = ImageContrastEditor(s._plot.signal_plot)
         np.testing.assert_allclose(ceditor._vmin, 0.0)
@@ -90,7 +89,7 @@ class TestContrastEditorTool:
 
 
 def test_close_vmin_vmax():
-    data = np.random.random(10*10*10).reshape([10]*3)
+    data = np.random.random(10 * 10 * 10).reshape([10] * 3)
     s = hs.signals.Signal2D(data)
     s.plot()
 
@@ -101,7 +100,7 @@ def test_close_vmin_vmax():
 
     # Simulate selecting a range on the histogram
     ceditor.span_selector.extents = display_range
-    plt.pause(0.001) # in case, interactive backend is used
+    plt.pause(0.001)  # in case, interactive backend is used
     ceditor._update_image_contrast()
 
     # Need to use auto=False to pick up the current display when closing

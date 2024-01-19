@@ -31,11 +31,11 @@ if sklearn_spec is None:  # pragma: no cover
 else:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        import sklearn # noqa: F401
-        import sklearn.decomposition # noqa: F401
-        import sklearn.cluster # noqa: F401
-        import sklearn.preprocessing # noqa: F401
-        import sklearn.metrics # noqa: F401
-        from sklearn.utils.extmath import randomized_svd # noqa: F401
+        import sklearn  # noqa: F401
+        import sklearn.decomposition  # noqa: F401
+        import sklearn.cluster  # noqa: F401
+        import sklearn.preprocessing  # noqa: F401
+        import sklearn.metrics  # noqa: F401
+        from sklearn.utils.extmath import randomized_svd  # noqa: F401
 
         sklearn_installed = True

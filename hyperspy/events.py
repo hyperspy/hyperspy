@@ -19,7 +19,7 @@
 import inspect
 from collections.abc import Iterable
 from contextlib import contextmanager
-from functools import wraps   # noqa: F401 Used in exec statement
+from functools import wraps  # noqa: F401 Used in exec statement
 import re
 
 
@@ -73,13 +73,13 @@ class Events:
         Updates the doc to reflect the events that are contained
         """
         new_doc = self.__class__.__doc__
-        new_doc += '\n\tEvents:\n\t-------\n'
+        new_doc += "\n\tEvents:\n\t-------\n"
         for name, e in self._events.items():
-            edoc = inspect.getdoc(e) or ''
+            edoc = inspect.getdoc(e) or ""
             doclines = edoc.splitlines()
             e_short = doclines[0] if len(doclines) > 0 else edoc
-            new_doc += '\t%s :\n\t\t%s\n' % (name, e_short)
-        new_doc = new_doc.replace('\t', '    ')
+            new_doc += "\t%s :\n\t\t%s\n" % (name, e_short)
+        new_doc = new_doc.replace("\t", "    ")
         self.__doc__ = new_doc
 
     def __setattr__(self, name, value):
@@ -149,7 +149,7 @@ class Event:
 
     """
 
-    def __init__(self, doc='', arguments=None):
+    def __init__(self, doc="", arguments=None):
         """
         Parameters
         ----------
@@ -208,32 +208,30 @@ class Event:
                 defaults.append(arg[1])
                 arg = arg[0]
             elif len(defaults) > 0:
-                raise SyntaxError(
-                    "non-default argument follows default argument")
+                raise SyntaxError("non-default argument follows default argument")
             m = self._re_arg_name.match(arg)
             if m is None or m.end() != len(arg):
                 raise ValueError("Argument name invalid: %s" % arg)
-        arguments = [a[0] if isinstance(a, (tuple, list))
-                     else a for a in arguments]
+        arguments = [a[0] if isinstance(a, (tuple, list)) else a for a in arguments]
         # Create the dynamic code:
-        arglist = ', '.join(arguments)
-        arg_pass = ', '.join([a + '=' + a for a in arguments])
-        wrap_code = u"""
+        arglist = ", ".join(arguments)
+        arg_pass = ", ".join([a + "=" + a for a in arguments])
+        wrap_code = """
         @wraps(f)
         def trigger(self, %s):
             return f(%s)
         """ % (arglist, arg_pass)
-        wrap_code = wrap_code.replace("        ", "")      # Remove indentation
+        wrap_code = wrap_code.replace("        ", "")  # Remove indentation
         # Execute dynamic code:
         gl = dict(globals())
         gl.update(locals())
-        gl.update({'f': orig_f})    # Make sure it keeps the original!
+        gl.update({"f": orig_f})  # Make sure it keeps the original!
         exec(wrap_code, gl, locals())
-        new_f = locals()['trigger']
+        new_f = locals()["trigger"]
         # Replace the trigger function with the new one
         if defaults:
             new_f.__defaults__ = tuple(defaults)
-        new_f = new_f.__get__(self, self.__class__)     # Bind method to self
+        new_f = new_f.__get__(self, self.__class__)  # Bind method to self
         self.trigger = new_f
 
     @contextmanager
@@ -299,15 +297,14 @@ class Event:
 
     @property
     def connected(self):
-        """ Connected functions.
-        """
+        """Connected functions."""
         ret = set()
         ret.update(self._connected_all)
         ret.update(self._connected_some.keys())
         ret.update(self._connected_map.keys())
         return ret
 
-    def connect(self, function, kwargs='all'):
+    def connect(self, function, kwargs="all"):
         """
         Connects a function to the event.
 
@@ -332,9 +329,8 @@ class Event:
         if not callable(function):
             raise TypeError("Only callables can be registered")
         if function in self.connected:
-            raise ValueError("Function %s already connected to %s." %
-                             (function, self))
-        if kwargs == 'auto':
+            raise ValueError("Function %s already connected to %s." % (function, self))
+        if kwargs == "auto":
             spec = inspect.signature(function)
             _has_args = False
             _has_kwargs = False
@@ -347,11 +343,13 @@ class Event:
                 else:
                     _normal_params.append(name)
             if _has_args and not _has_kwargs:
-                raise NotImplementedError("Connecting to variable argument "
-                                          "functions is not supported in auto "
-                                          "connection mode.")
+                raise NotImplementedError(
+                    "Connecting to variable argument "
+                    "functions is not supported in auto "
+                    "connection mode."
+                )
             elif _has_kwargs:
-                kwargs = 'all'
+                kwargs = "all"
             else:
                 kwargs = _normal_params
         if kwargs == "all":
@@ -392,8 +390,9 @@ class Event:
         elif function in self._connected_map:
             self._connected_map.pop(function)
         else:
-            raise ValueError("The %s function is not connected to %s." %
-                             (function, self))
+            raise ValueError(
+                "The %s function is not connected to %s." % (function, self)
+            )
 
     def trigger(self, **kwargs):
         """
@@ -412,8 +411,7 @@ class Event:
         # Work on copies of collections of connected functions.
         # Take copies initially, to ensure that all functions connected when
         # event triggered are called.
-        connected_all = self._connected_all.difference(
-            self._suppressed_callbacks)
+        connected_all = self._connected_all.difference(self._suppressed_callbacks)
         connected_some = list(self._connected_some.items())
         connected_map = list(self._connected_map.items())
 
@@ -434,11 +432,12 @@ class Event:
 
     def __str__(self):
         if self.__doc__:
-            edoc = inspect.getdoc(self) or ''
+            edoc = inspect.getdoc(self) or ""
             doclines = edoc.splitlines()
             e_short = doclines[0] if len(doclines) > 0 else edoc
-            text = ("<hyperspy.events.Event: " + e_short + ": " +
-                    str(self.connected) + ">")
+            text = (
+                "<hyperspy.events.Event: " + e_short + ": " + str(self.connected) + ">"
+            )
         else:
             text = self.__repr__()
         return text
@@ -496,16 +495,17 @@ class EventSuppressor(object):
             self._cms.append(cm)
 
     def _is_tuple_target(self, candidate):
-        v = (isinstance(candidate, Iterable) and
-             not isinstance(candidate, Events) and
-             len(candidate) == 2 and
-             isinstance(candidate[0], (Event, Events)) and
-             callable(candidate[1]))
+        v = (
+            isinstance(candidate, Iterable)
+            and not isinstance(candidate, Events)
+            and len(candidate) == 2
+            and isinstance(candidate[0], (Event, Events))
+            and callable(candidate[1])
+        )
         return v
 
     def _is_target(self, candidate):
-        v = (isinstance(candidate, (Event, Events)) or
-             self._is_tuple_target(candidate))
+        v = isinstance(candidate, (Event, Events)) or self._is_tuple_target(candidate)
         return v
 
     def add(self, *to_suppress):
@@ -521,8 +521,11 @@ class EventSuppressor(object):
          - Any iterable collection of the above target types
         """
         # Remove useless layers of iterables:
-        while (isinstance(to_suppress, Iterable) and
-               not isinstance(to_suppress, Events) and len(to_suppress) == 1):
+        while (
+            isinstance(to_suppress, Iterable)
+            and not isinstance(to_suppress, Events)
+            and len(to_suppress) == 1
+        ):
             to_suppress = to_suppress[0]
         # If single target passed, add directly:
         if self._is_target(to_suppress):
@@ -554,7 +557,7 @@ class EventSuppressor(object):
         try:
             for cm in self._cms:
                 cm.__enter__()
-                cms.append(cm)                  # Only add entered CMs to list
+                cms.append(cm)  # Only add entered CMs to list
             yield
         finally:
             # Completed succefully or exception occured, unwind all
