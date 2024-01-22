@@ -49,6 +49,7 @@ from functools import partial
 
 import traits.api as t
 import numpy as np
+import collections.abc
 
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
@@ -149,7 +150,7 @@ class BaseROI(t.HasTraits):
         """
         Utility to get the value ranges that the ROI would select.
 
-        If the ROI is point base or is rectangluar in nature, these can be used
+        If the ROI is point base or is rectangular in nature, these can be used
         to slice a signal. Extracted from
         :meth:`~hyperspy.roi.BaseROI._make_slices` to ease implementation
         in inherited ROIs.
@@ -982,7 +983,7 @@ class RectangularROI(BaseInteractiveROI):
 class CircleROI(BaseInteractiveROI):
     """Selects a circular or annular region in a 2D space. The coordinates of
     the center of the circle are stored in the 'cx' and 'cy' attributes. The
-    radious in the `r` attribute. If an internal radius is defined using the
+    radius in the `r` attribute. If an internal radius is defined using the
     `r_inner` attribute, then an annular region is selected instead.
     `CircleROI` can be used in place of a tuple containing `(cx, cy, r)`, `(cx,
     cy, r, r_inner)` when `r_inner` is not `None`.
@@ -1449,6 +1450,372 @@ class Line2DROI(BaseInteractiveROI):
                 ax.size = len(profile)
                 ax.scale = length / len(profile)
             out.events.data_changed.trigger(out)
+
+
+class PolygonROI(BaseInteractiveROI):
+    """Selects polygonal regions in a 2D space. The coordinates of the
+    polygon vertices are given in the `polygons` attribute, which is a list
+    of lists, where each list defines an individual polygon with each entry
+    being a tuple (x, y) of a vertex's coordinates.
+    An edge runs from the final to the first point in each polygon list.
+    If a polygon self overlaps, the overlapping areas may be considered
+    outside of the polygon and masked away.
+    """
+
+    polygons = []
+    _ndim = 2
+
+    def __init__(self, polygons=None):
+
+        """
+        Parameters
+        ----------
+        polygons : list of lists of tuples
+            List of lists, where each inner list contains (x, y) values
+            of the vertices of a polygon. If a single polygon is desired,
+            a list of the (x, y) values can be given directly."""
+        super().__init__()
+
+        if polygons:
+            self.set_vertices(polygons)
+
+    @property
+    def parameters(self):
+        return {"polygons": self.polygons}
+
+    def __getitem__(self, *args, **kwargs):
+        _tuple = tuple(self.polygons)
+        return _tuple.__getitem__(*args, **kwargs)
+
+    def __repr__(self):
+        para = []
+        for name, value in self.parameters.items():
+            parastr = f"{name}=["
+            for polygon in value:
+                parastr += "("
+                parastr += ", ".join(f"({x:G}, {y:G})" for x, y in polygon)
+                parastr += "), "
+            parastr = parastr[:-2] + "]"
+            para.append(parastr)
+        return f"{self.__class__.__name__}({', '.join(para)})"
+
+    def is_valid(self):
+        """
+        The polygons are defined as valid if either there is none, or all
+        of them have at least three fully defined vertices.
+        """
+        return len(self.polygons) == 0 or all(
+            len(vertices) > 2
+            and all((None not in vertex and len(vertex) == 2) for vertex in vertices)
+            for vertices in self.polygons
+        )
+
+    def set_vertices(self, polygons):
+        """Sets the vertices of the polygons to the `polygons` argument,
+        where each vertex is to be given as (x, y). The list is set to
+        loop around, such that an edge runs from the first to the final
+        vertex in the list.
+
+        Parameters
+        ----------
+        polygons : list of lists of tuples
+            List of lists, where each inner list contains (x, y) values
+            of the vertices of a polygon. If a single polygon is desired,
+            a list of the (x, y) values can be given directly.
+        """
+        if (
+            len(polygons)
+            and len(polygons[0])
+            and not isinstance(polygons[0][0], collections.abc.Container)
+        ):
+            polygons = [polygons]
+        old_vertices = self.polygons
+        self.polygons = polygons
+        if not self.is_valid():
+            self.polygons = old_vertices
+            raise ValueError(
+                f"`polygons` is not a list of lists of fully defined two-dimensional points with\
+                    at least three entries:\n{polygons}"
+            )
+
+    def __call__(self, signal, inverted=False, out=None, axes=None):
+        if not self.is_valid():
+            raise ValueError(not_set_error_msg)
+
+        if axes is None and signal in self.signal_map:
+            axes = self.signal_map[signal][1]
+        else:
+            axes = self._parse_axes(axes, signal.axes_manager)
+
+        for axis in axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This ROI cannot operate on a non-uniform axis."
+                )
+        natax = signal.axes_manager._get_axes_in_natural_order()
+        if not inverted and len(self.polygons) > 0:
+            # Slice original data with a circumscribed rectangle
+            left = min(x for polygon in self.polygons for x, y in polygon)
+            right = (
+                max(x for polygon in self.polygons for x, y in polygon) + axes[0].scale
+            )
+            top = min(y for polygon in self.polygons for x, y in polygon)
+            bottom = (
+                max(y for polygon in self.polygons for x, y in polygon) + axes[1].scale
+            )
+        else:
+            # Do not slice if selection is to be inverted
+            left, right = axes[0].low_value, axes[0].high_value + axes[0].scale
+            top, bottom = axes[1].low_value, axes[1].high_value + axes[1].scale
+
+        ranges = [[left, right], [top, bottom]]
+        slices = self._make_slices(natax, axes, ranges)
+        ir = [slices[natax.index(axes[0])], slices[natax.index(axes[1])]]
+
+        mask = self.boolean_mask(axes=axes, xy_max=(right, bottom))
+
+        mask = mask[ir[1], ir[0]]
+        if not inverted:
+            mask = np.logical_not(mask)  # Masked out areas should be True
+
+        tiles = []
+        shape = []
+        chunks = []
+        for i in range(len(slices)):
+            if signal._lazy:
+                chunks.append(signal.data.chunks[i][0])
+            if i == natax.index(axes[0]):
+                thisshape = mask.shape[0]
+                tiles.append(thisshape)
+                shape.append(thisshape)
+            elif i == natax.index(axes[1]):
+                thisshape = mask.shape[1]
+                tiles.append(thisshape)
+                shape.append(thisshape)
+            else:
+                tiles.append(signal.axes_manager._axes[i].size)
+                shape.append(1)
+        mask = mask.reshape(shape)
+
+        nav_axes = [ax.navigate for ax in axes]
+        nav_dim = signal.axes_manager.navigation_dimension
+        if True in nav_axes:
+            if False in nav_axes:
+
+                slicer = signal.inav[slices[:nav_dim]].isig.__getitem__
+                slices = slices[nav_dim:]
+            else:
+                slicer = signal.inav.__getitem__
+                slices = slices[0:nav_dim]
+        else:
+            slicer = signal.isig.__getitem__
+            slices = slices[nav_dim:]
+            # slices = slices[::-1] # Slicing in signal axes is reversed
+
+        roi = slicer(slices, out=out)
+        roi = out or roi
+        if roi._lazy:
+            import dask.array as da
+
+            mask = da.from_array(mask, chunks=chunks)
+        mask = np.broadcast_to(mask, tiles)
+        # roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
+        roi.data = np.where(mask, np.nan, roi.data)
+        if out is None:
+            return roi
+        else:
+            out.events.data_changed.trigger(out)
+
+    def _rasterized_mask(
+        self, polygon_vertices, xy_max=None, xy_min=(0, 0), x_scale=1, y_scale=1
+    ):
+        """Utility function to rasterize a polygon into a boolean numpy
+            array. The interior of the polygon is `True`.
+
+        Parameters
+        ----------
+        xy_max : tuple, optional
+            The maximum x and y values that the rasterized mask covers, given in
+            the same coordinate space as the polygon vertices. The defaults are
+            the max values in the `vertices` member attribute.
+        xy_min : tuple, optional
+            The minimum x and y values that the mask covers, given in the same coordinate
+            space as the polygon vertices.
+        x_scale : float, optional
+            This gives the scale of the second axis of the signal. In other words,
+            how many units in coordinate space that corresponds to one step between
+            columns.
+        y_scale : float
+            This gives the scale of the second axis of the signal. In other words,
+            how many units in coordinate space that corresponds to one step between
+            rows.
+
+        Returns
+        -------
+        return_value : array
+            boolean numpy array of the rasterized polygon. The entire or parts of
+            the polygon ROI can be within this shape.
+        """
+
+        if not xy_max:
+            x_max = max(x for x, y in polygon_vertices)
+            y_max = max(y for x, y in polygon_vertices)
+            xy_max = (x_max, y_max)
+
+        min_index_x = round(xy_min[0] / x_scale)
+        min_index_y = round(xy_min[1] / y_scale)
+        max_index_x = round(xy_max[0] / x_scale)
+        max_index_y = round(xy_max[1] / y_scale)
+
+        mask = np.zeros(
+            (max_index_y - min_index_y + 1, max_index_x - min_index_x + 1), dtype=bool
+        )
+
+        for row in range(mask.shape[0]):
+            row_y = (min_index_y + row) * y_scale
+
+            intersections = []
+            for vertexind in range(len(polygon_vertices)):
+                x1, y1 = polygon_vertices[vertexind]
+                x2, y2 = polygon_vertices[(vertexind + 1) % len(polygon_vertices)]
+
+                # Only find intersection if line segment passes through row
+                if (y1 > row_y) != (y2 > row_y):
+                    intersection = x1 + (x2 - x1) * (row_y - y1) / (y2 - y1)
+                    intersections.append(intersection)
+                elif y1 == row_y:
+                    if y1 == y2:
+                        # Ensures edges parallel with row_y are included
+                        raster_start = round(x1 / x_scale) - min_index_x
+                        raster_end = round(x2 / x_scale) - min_index_x
+                        mask[row, raster_start : raster_end + 1] = True
+                    else:
+                        # Ensures vertices landing exactly on row_y are included
+                        mask[row, round(x1 / x_scale) - min_index_x] = True
+
+            intersections.sort()
+
+            for i in range(1, len(intersections), 2):
+                raster_start = round(intersections[i - 1] / x_scale) - min_index_x
+                raster_end = round(intersections[i] / x_scale) - min_index_x
+                mask[row, raster_start : raster_end + 1] = True
+
+        return mask
+
+    def boolean_mask(
+        self,
+        axes_manager=None,
+        axes=None,
+        xy_max=None,
+        xy_min=None,
+        x_scale=None,
+        y_scale=None,
+    ):
+        """Function to rasterize the polygon into a boolean numpy array. The
+            interior of the polygon is by default `True`.
+
+        Parameters
+        ----------
+        axes_manager : :py:class:`~hyperspy.axes.AxesManager`, optional
+            If supplied, the rasterization parameters not explicitly given will be
+            extracted from this. The axes can be given with the `axes` attribute.
+        axes : list, optional
+            List of the axes in `axes_manager` that are to be used as a basis for
+            the rasterization if other parameters aren't supplied.
+        xy_max : tuple, optional
+            The maximum x and y values that the rasterized mask covers, given in
+            the same coordinate space as the polygon vertices. The defaults are
+            the max values in the `vertices` member attribute.
+        xy_min : tuple, optional
+            The minimum x and y values that the mask covers, given in the same coordinate
+            space as the polygon vertices.
+        x_scale : float, optional
+            This gives the scale of the second axis of the signal. In other words,
+            how many units in coordinate space that corresponds to one step between
+            columns.
+        y_scale : float, optional
+            This gives the scale of the second axis of the signal. In other words,
+            how many units in coordinate space that corresponds to one step between
+            rows.
+
+        Returns
+        -------
+        return_value : array
+            boolean numpy array of the rasterized polygon. The entire or parts of
+            the polygon ROI can be within this shape.
+        """
+
+        # Get missing default values from `axes_manager` or `axes`
+        if axes_manager or axes:
+            axes = axes if not axes_manager else self._parse_axes(axes, axes_manager)
+
+            xy_max = xy_max if xy_max else (axes[0].high_value, axes[1].high_value)
+            xy_min = xy_min if xy_min else (axes[0].low_value, axes[1].low_value)
+
+            x_scale = x_scale if x_scale else axes[0].scale
+            y_scale = y_scale if y_scale else axes[1].scale
+
+        # Empty ROI
+        if not self.polygons or all(len(polygon) == 0 for polygon in self.polygons):
+            if xy_max:
+                min_index_x = round(xy_min[0] / x_scale)
+                min_index_y = round(xy_min[1] / y_scale)
+                max_index_x = round(xy_max[0] / x_scale)
+                max_index_y = round(xy_max[1] / y_scale)
+
+                mask = np.zeros(
+                    (max_index_y - min_index_y + 1, max_index_x - min_index_x + 1),
+                    dtype=bool,
+                )
+                return mask
+            return None
+
+        if not xy_max:
+            x_max = max(x for polygon in self.polygons for x, y in polygon) + x_scale
+            y_max = max(y for polygon in self.polygons for x, y in polygon) + y_scale
+            xy_max = (x_max, y_max)
+
+        complete_mask = self._rasterized_mask(
+            polygon_vertices=self.polygons[0],
+            xy_max=xy_max,
+            xy_min=xy_min,
+            x_scale=x_scale,
+            y_scale=y_scale,
+        )
+        for i in range(1, len(self.polygons)):
+            polygon_mask = self._rasterized_mask(
+                polygon_vertices=self.polygons[i],
+                xy_max=xy_max,
+                xy_min=xy_min,
+                x_scale=x_scale,
+                y_scale=y_scale,
+            )
+            complete_mask = np.logical_or(complete_mask, polygon_mask)
+
+        return complete_mask
+
+    def _get_widget_type(self, axes, signal):
+        return widgets.PolygonWidget
+
+    def _apply_roi2widget(self, widget):
+        """This function is responsible for applying the ROI geometry to the
+        widget. When this function is called, the widget's events are already
+        suppressed, so this should not be necessary for _apply_roi2widget to
+        handle.
+        """
+        widget.set_polygons(self.polygons)
+
+    def _set_default_values(self, signal, axes=None):
+        """When the ROI is called interactively with Undefined parameters,
+        use these values instead.
+        """
+        self.set_vertices([])
+
+    def _set_from_widget(self, widget):
+        """Sets the internal representation of the ROI from the passed widget,
+        without doing anything to events.
+        """
+        self.set_vertices(widget.get_polygons())
 
 
 def _get_central_half_limits_of_axis(ax):
