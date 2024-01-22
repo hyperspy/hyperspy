@@ -49,6 +49,13 @@ class TestModel2D:
         )
         self.m.append(gt)
 
+    def test_fail_to_set_axis(self):
+        s = hs.signals.Signal2D(np.empty((4,4)))
+        s.axes_manager[0].convert_to_non_uniform_axis()
+        s.axes_manager[0].axis = [1, 2, 0, 3]
+        with pytest.raises(ValueError):
+            s.create_model()
+
     def _check_model_values(self, model, expected, **kwargs):
         print(
             f"({self.m.p0[0]:.7f}, {self.m.p0[1]:.7f}, {self.m.p0[2]:.7f}, {self.m.p0[3]:.7f}, {self.m.p0[4]:.7f})"
