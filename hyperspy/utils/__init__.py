@@ -74,7 +74,7 @@ def print_known_signal_types(style=None):
         table.set_style(style)
     for sclass, sdict in ALL_EXTENSIONS["signals"].items():
         # skip lazy signals and non-data-type specific signals
-        if sdict["lazy"] or not sdict["signal_type"]:
+        if sdict["lazy"] or sdict.get("hidden", False) or not sdict["signal_type"]:
             continue
         aliases = (
             ", ".join(sdict["signal_type_aliases"])
