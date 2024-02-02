@@ -217,7 +217,11 @@ class MPL_HyperExplorer(object):
                 from ipywidgets.widgets import HBox, VBox
                 from IPython.display import display
 
-                if not self.navigator_plot:
+                if self.signal_plot is None and self.navigator_plot is not None:
+                    # in case the signal is navigation only
+                    display(self.navigator_plot.figure.canvas)
+                elif self.navigator_plot is None:
+                    # in case the signal is signal  only
                     display(self.signal_plot.figure.canvas)
                 elif plot_style == "horizontal":
                     display(
