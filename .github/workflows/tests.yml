@@ -4,8 +4,8 @@ on: [push, pull_request]
 
 jobs:
   run_test_site:
-    name: ${{ matrix.os }}-py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
-    runs-on: ${{ matrix.os }}-latest
+    name: ${{ matrix.os }}-${{ matrix.os_version }}-py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
+    runs-on: ${{ matrix.os }}-${{ matrix.os_version }}
     timeout-minutes: 30
     env:
       MPLBACKEND: agg
@@ -15,6 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
+        os_version: [latest]
         PYTHON_VERSION: ['3.9', '3.10', ]
         PIP_SELECTOR: ['[all, tests, coverage]']
         include:
@@ -35,6 +36,10 @@ jobs:
             PYTHON_VERSION: '3.8'
             PIP_SELECTOR: '[all, tests, coverage]'
           - os: ubuntu
+            PYTHON_VERSION: '3.11'
+            PIP_SELECTOR: '[all, tests, coverage]'
+          - os: macos
+            os_version: '13'
             PYTHON_VERSION: '3.11'
             PIP_SELECTOR: '[all, tests, coverage]'
 
