@@ -1,0 +1,1 @@
+Run test suite on osx arm64 on GitHub CI and speed running test suite using all available CPUs (3 or 4) instead of only 2.
