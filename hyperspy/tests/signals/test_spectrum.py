@@ -25,7 +25,6 @@ from hyperspy.decorators import lazifyTestClass
 
 @lazifyTestClass
 class Test2D:
-
     def setup_method(self, method):
         self.s = Signal1D(np.random.random((2, 3)))
 
@@ -39,7 +38,6 @@ class Test2D:
 
 @lazifyTestClass
 class Test3D:
-
     def setup_method(self, method):
         self.s = Signal1D(np.random.random((2, 3, 4)))
 
@@ -53,7 +51,6 @@ class Test3D:
 
 @lazifyTestClass
 class Test4D:
-
     def setup_method(self, method):
         self.s = Signal1D(np.random.random((2, 3, 4, 5)))
 

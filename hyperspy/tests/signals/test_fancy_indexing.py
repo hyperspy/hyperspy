@@ -26,7 +26,6 @@ from hyperspy import roi, signals
 
 @lazifyTestClass
 class Test1D:
-
     def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(10))
         self.data = self.signal.data.copy()
@@ -35,21 +34,19 @@ class Test1D:
         s = self.signal.isig[:]
         d = self.data
         np.testing.assert_array_equal(s.data, d)
-        assert (s.axes_manager._axes[0].offset ==
-                self.signal.axes_manager._axes[0].offset)
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale)
+        assert (
+            s.axes_manager._axes[0].offset == self.signal.axes_manager._axes[0].offset
+        )
+        assert s.axes_manager._axes[0].scale == self.signal.axes_manager._axes[0].scale
 
     def test_slice_out_of_range_interval_not_in_axis(self):
         with pytest.raises(IndexError):
-            self.signal.isig[20.:30.]
+            self.signal.isig[20.0:30.0]
 
     def test_slice_out_of_range_interval_in_axis(self):
-        s = self.signal.isig[-20.:100.]
-        assert (s.axes_manager[0].low_value ==
-                self.signal.axes_manager[0].low_value)
-        assert (s.axes_manager[0].high_value ==
-                self.signal.axes_manager[0].high_value)
+        s = self.signal.isig[-20.0:100.0]
+        assert s.axes_manager[0].low_value == self.signal.axes_manager[0].low_value
+        assert s.axes_manager[0].high_value == self.signal.axes_manager[0].high_value
         np.testing.assert_array_equal(s.data, self.signal.data)
 
     def test_reverse_slice(self):
@@ -57,15 +54,14 @@ class Test1D:
         d = self.data[-1:1:-1]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 9
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale * -1)
+        assert (
+            s.axes_manager._axes[0].scale
+            == self.signal.axes_manager._axes[0].scale * -1
+        )
 
     def test_slice_out_of_axis(self):
-        np.testing.assert_array_equal(
-            self.signal.isig[-1.:].data, self.signal.data)
-        np.testing.assert_array_equal(
-            self.signal.isig[
-                :11.].data, self.signal.data)
+        np.testing.assert_array_equal(self.signal.isig[-1.0:].data, self.signal.data)
+        np.testing.assert_array_equal(self.signal.isig[:11.0].data, self.signal.data)
 
     def test_step0_slice(self):
         with pytest.raises(ValueError):
@@ -88,26 +84,30 @@ class Test1D:
         d = self.data[1:-1]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 1
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale)
+        assert s.axes_manager._axes[0].scale == self.signal.axes_manager._axes[0].scale
 
     def test_signal_indexer_reverse_slice(self):
         s = self.signal.isig[-1:1:-1]
         d = self.data[-1:1:-1]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 9
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale * -1)
+        assert (
+            s.axes_manager._axes[0].scale
+            == self.signal.axes_manager._axes[0].scale * -1
+        )
 
     def test_signal_indexer_step2_slice(self):
         s = self.signal.isig[1:-1:2]
         d = self.data[1:-1:2]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 1
-        assert (np.sign(s.axes_manager._axes[0].scale) ==
-                np.sign(self.signal.axes_manager._axes[0].scale))
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale * 2.)
+        assert np.sign(s.axes_manager._axes[0].scale) == np.sign(
+            self.signal.axes_manager._axes[0].scale
+        )
+        assert (
+            s.axes_manager._axes[0].scale
+            == self.signal.axes_manager._axes[0].scale * 2.0
+        )
 
     def test_signal_indexer_index(self):
         s = self.signal.isig[3]
@@ -125,28 +125,27 @@ class Test1D:
 
     def test_units(self):
         self.signal.axes_manager[0].scale = 0.5
-        self.signal.axes_manager[0].units = 'µm'
-        s = self.signal.isig[:'4000.0 nm']
+        self.signal.axes_manager[0].units = "µm"
+        s = self.signal.isig[:"4000.0 nm"]
         assert_array_equal(s.data, self.data[:8])
-        s = self.signal.isig[:'4 µm']
+        s = self.signal.isig[:"4 µm"]
         assert_array_equal(s.data, self.data[:8])
 
     def test_units_error(self):
         self.signal.axes_manager[0].scale = 0.5
-        self.signal.axes_manager[0].units = 'µm'
+        self.signal.axes_manager[0].units = "µm"
         with pytest.raises(ValueError):
-            self.signal.isig[:'4000.0']
+            self.signal.isig[:"4000.0"]
             pytest.fail("should contains an units")
 
     def test_relative_slicing(self):
         s = self.signal
-        assert_array_equal(s.isig[:'rel0.5'].data, s.data[:4])
-        assert_array_equal(s.isig['rel0.0':'rel1.0'].data, s.data[:-1])
+        assert_array_equal(s.isig[:"rel0.5"].data, s.data[:4])
+        assert_array_equal(s.isig["rel0.0":"rel1.0"].data, s.data[:-1])
 
 
 @lazifyTestClass
 class Test2D:
-
     def setup_method(self, method):
         self.signal = signals.Signal2D(np.arange(24).reshape(6, 4))
         self.data = self.signal.data.copy()
@@ -166,7 +165,6 @@ class Test2D:
 
 @lazifyTestClass
 class Test3D_SignalDim0:
-
     def setup_method(self, method):
         self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4))).T
         self.data = self.signal.data.copy()
@@ -191,23 +189,19 @@ class Test3D_SignalDim0:
         np.testing.assert_array_equal(s.data, s.inav[:].data)
 
 
-@pytest.mark.parametrize('slice_', ((2, 1), (1,)))
+@pytest.mark.parametrize("slice_", ((2, 1), (1,)))
 def test_ragged_slicing(slice_):
     array_ragged = np.empty((2, 3), dtype=object)
     for iy, ix in np.ndindex(array_ragged.shape):
-        array_ragged[iy, ix] = np.random.randint(
-            0, 20, size=np.random.randint(2, 10)
-            )
+        array_ragged[iy, ix] = np.random.randint(0, 20, size=np.random.randint(2, 10))
 
     s = signals.BaseSignal(array_ragged, ragged=True)
     s_lazy = s.as_lazy()
-    np.testing.assert_allclose(s.inav[slice_].data[0],
-                               s_lazy.inav[slice_].data[0])
+    np.testing.assert_allclose(s.inav[slice_].data[0], s_lazy.inav[slice_].data[0])
 
 
 @lazifyTestClass
 class Test3D_Navigate_0_and_1:
-
     def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
@@ -218,8 +212,7 @@ class Test3D_Navigate_0_and_1:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[1].offset == 1
         assert s.axes_manager._axes[1].size == 1
-        assert (s.axes_manager._axes[1].scale ==
-                self.signal.axes_manager._axes[1].scale)
+        assert s.axes_manager._axes[1].scale == self.signal.axes_manager._axes[1].scale
 
     def test_1px_signal_indexer_slice(self):
         s = self.signal.isig[1:2]
@@ -227,8 +220,10 @@ class Test3D_Navigate_0_and_1:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager.signal_axes[0].offset == 1
         assert s.axes_manager.signal_axes[0].size == 1
-        assert (s.axes_manager.signal_axes[0].scale ==
-                self.signal.axes_manager.signal_axes[0].scale)
+        assert (
+            s.axes_manager.signal_axes[0].scale
+            == self.signal.axes_manager.signal_axes[0].scale
+        )
 
     def test_signal_indexer_slice_variance_signal(self):
         s1 = self.signal
@@ -236,7 +231,8 @@ class Test3D_Navigate_0_and_1:
         s1_1 = s1.isig[1:2]
         np.testing.assert_array_equal(
             s1.metadata.Signal.Noise_properties.variance.data[:, :, 1:2],
-            s1_1.metadata.Signal.Noise_properties.variance.data)
+            s1_1.metadata.Signal.Noise_properties.variance.data,
+        )
 
     def test_navigation_indexer_slice_variance_signal(self):
         s1 = self.signal
@@ -244,23 +240,26 @@ class Test3D_Navigate_0_and_1:
         s1_1 = s1.inav[1:2]
         np.testing.assert_array_equal(
             s1.metadata.Signal.Noise_properties.variance.data[:, 1:2],
-            s1_1.metadata.Signal.Noise_properties.variance.data)
+            s1_1.metadata.Signal.Noise_properties.variance.data,
+        )
 
     def test_signal_indexer_slice_variance_float(self):
         s1 = self.signal
         s1.metadata.set_item("Signal.Noise_properties.variance", 1.2)
         s1_1 = s1.isig[1:2]
         assert (
-            s1.metadata.Signal.Noise_properties.variance ==
-            s1_1.metadata.Signal.Noise_properties.variance)
+            s1.metadata.Signal.Noise_properties.variance
+            == s1_1.metadata.Signal.Noise_properties.variance
+        )
 
     def test_navigation_indexer_slice_variance_float(self):
         s1 = self.signal
         s1.metadata.set_item("Signal.Noise_properties.variance", 1.2)
         s1_1 = s1.inav[1:2]
         assert (
-            s1.metadata.Signal.Noise_properties.variance ==
-            s1_1.metadata.Signal.Noise_properties.variance)
+            s1.metadata.Signal.Noise_properties.variance
+            == s1_1.metadata.Signal.Noise_properties.variance
+        )
 
     def test_dimension_when_indexing(self):
         s = self.signal.inav[0]
@@ -273,7 +272,6 @@ class Test3D_Navigate_0_and_1:
 
 @lazifyTestClass
 class Test3D_Navigate_1:
-
     def setup_method(self, method):
         self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
@@ -287,8 +285,7 @@ class Test3D_Navigate_1:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[1].offset == 1
         assert s.axes_manager._axes[1].size == 1
-        assert (s.axes_manager._axes[1].scale ==
-                self.signal.axes_manager._axes[1].scale)
+        assert s.axes_manager._axes[1].scale == self.signal.axes_manager._axes[1].scale
 
     def test_1px_signal_indexer_slice(self):
         s = self.signal.isig[1:2]
@@ -296,8 +293,10 @@ class Test3D_Navigate_1:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager.signal_axes[0].offset == 1
         assert s.axes_manager.signal_axes[0].size == 1
-        assert (s.axes_manager.signal_axes[0].scale ==
-                self.signal.axes_manager.signal_axes[0].scale)
+        assert (
+            s.axes_manager.signal_axes[0].scale
+            == self.signal.axes_manager.signal_axes[0].scale
+        )
 
     def test_subclass_assignment(self):
         im = self.signal.as_signal2D((-2, -1))
@@ -306,7 +305,6 @@ class Test3D_Navigate_1:
 
 @lazifyTestClass
 class TestFloatArguments:
-
     def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(10))
         self.signal.axes_manager[0].scale = 0.5
@@ -318,48 +316,46 @@ class TestFloatArguments:
         d = self.data[1:-1]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 0.75
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale)
+        assert s.axes_manager._axes[0].scale == self.signal.axes_manager._axes[0].scale
 
     def test_float_end(self):
         s = self.signal.isig[1:4.75]
         d = self.data[1:-1]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 0.75
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale)
+        assert s.axes_manager._axes[0].scale == self.signal.axes_manager._axes[0].scale
 
     def test_float_both(self):
         s = self.signal.isig[0.75:4.75]
         d = self.data[1:-1]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 0.75
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale)
+        assert s.axes_manager._axes[0].scale == self.signal.axes_manager._axes[0].scale
 
     def test_float_step(self):
         s = self.signal.isig[::1.1]
         d = self.data[::2]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 0.25
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale * 2)
+        assert (
+            s.axes_manager._axes[0].scale == self.signal.axes_manager._axes[0].scale * 2
+        )
 
     def test_negative_float_step(self):
         s = self.signal.isig[::-1.1]
         d = self.data[::-2]
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 4.75
-        assert (s.axes_manager._axes[0].scale ==
-                self.signal.axes_manager._axes[0].scale * -2)
+        assert (
+            s.axes_manager._axes[0].scale
+            == self.signal.axes_manager._axes[0].scale * -2
+        )
 
 
 @lazifyTestClass
 class TestEllipsis:
-
     def setup_method(self, method):
-        self.signal = signals.Signal1D(np.arange(2 ** 5).reshape(
-            (2, 2, 2, 2, 2)))
+        self.signal = signals.Signal1D(np.arange(2**5).reshape((2, 2, 2, 2, 2)))
         self.data = self.signal.data.copy()
 
     def test_in_between(self):
@@ -379,7 +375,6 @@ class TestEllipsis:
 
 @lazifyTestClass
 class TestROISlicing:
-
     def setup_method(self, method):
         s = signals.Signal1D(np.random.random((10, 20, 1)))
         s.axes_manager[0].scale = 0.5
@@ -390,18 +385,15 @@ class TestROISlicing:
         s = self.s
         srx = roi.SpanROI(left=1.5, right=10)
         sry = roi.SpanROI(left=-1000, right=2)
-        assert_array_equal(s.inav[srx, :].data, s.inav[1.5:10., ].data)
-        assert_array_equal(
-            s.inav[
-                srx, sry].data, s.inav[
-                1.5:10., -1000.:2.].data)
+        assert_array_equal(s.inav[srx, :].data, s.inav[1.5:10.0,].data)
+        assert_array_equal(s.inav[srx, sry].data, s.inav[1.5:10.0, -1000.0:2.0].data)
 
     def test_rectangular_roi(self):
         s = self.s
         sr = roi.RectangularROI(left=1.5, right=10, top=-1000, bottom=2)
-        assert_array_equal(s.inav[sr].data, s.inav[1.5:10., -1000.:2.].data)
+        assert_array_equal(s.inav[sr].data, s.inav[1.5:10.0, -1000.0:2.0].data)
 
     def test_point2D_roi(self):
         s = self.s
         sr = roi.Point2DROI(x=1.5, y=10)
-        assert_array_equal(s.inav[sr].data, s.inav[1.5, 10.].data)
+        assert_array_equal(s.inav[sr].data, s.inav[1.5, 10.0].data)

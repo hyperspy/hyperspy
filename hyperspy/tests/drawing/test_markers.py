@@ -21,7 +21,6 @@ from pathlib import Path
 import numpy as np
 from matplotlib.transforms import (
     IdentityTransform,
-    Affine2D,
     CompositeGenericTransform,
 )
 import matplotlib.pyplot as plt
@@ -35,7 +34,6 @@ from hyperspy.misc.test_utils import update_close_figure
 from matplotlib.collections import (
     LineCollection,
     PolyCollection,
-    RegularPolyCollection,
     StarPolygonCollection,
 )
 from hyperspy.external.matplotlib.collections import (
@@ -151,8 +149,10 @@ class TestMarkers:
         return s._plot.navigator_plot.figure
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL,
-        filename='test_iterating_markers.png'
+        baseline_dir=BASELINE_DIR,
+        tolerance=DEFAULT_TOL,
+        style=STYLE_PYTEST_MPL,
+        filename="test_iterating_markers.png",
     )
     @pytest.mark.parametrize("iter_data", ("lazy_data", "data"))
     def test_iterating_markers(self, request, iter_data):
@@ -219,7 +219,7 @@ class TestMarkers:
             data[i] = np.ones((10, 2, 2)) * i
 
         signal = BaseSignal(data, ragged=True)
-        lines = Lines.from_signal(signal,key="segments", signal_axes=None)
+        lines = Lines.from_signal(signal, key="segments", signal_axes=None)
         s = Signal2D(np.ones((3, 5, 6)))
         s.add_marker(lines)
 
@@ -247,7 +247,7 @@ class TestMarkers:
         )
         img = np.zeros((2, 3, 4, 20, 20))
         img[:, :, :, rr, cc] = 1
-        img[:, 1 ,0] = 0
+        img[:, 1, 0] = 0
         img[:, 0, 1] = 0
         s = hs.signals.Signal2D(img)
         s.axes_manager.signal_axes[0].scale = 1.5
@@ -266,18 +266,22 @@ class TestMarkers:
 
         marker_pos = [11, 19]
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
-        a = s.axes_manager.indices = (0, 1, 0)
-        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[np.nan, np.nan]])
+        s.axes_manager.indices = (0, 1, 0)
+        np.testing.assert_array_equal(
+            col.get_current_kwargs()["offsets"], [[np.nan, np.nan]]
+        )
 
-        a = s.axes_manager.indices = (1, 0, 0)
-        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[np.nan, np.nan]])
+        s.axes_manager.indices = (1, 0, 0)
+        np.testing.assert_array_equal(
+            col.get_current_kwargs()["offsets"], [[np.nan, np.nan]]
+        )
 
         # Go to end with last navigation axis at 0
-        a = s.axes_manager.indices = (3, 2, 0)
+        s.axes_manager.indices = (3, 2, 0)
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
 
         # Go to end with last navigation axis at 1
-        a = s.axes_manager.indices = (3, 2, 1)
+        s.axes_manager.indices = (3, 2, 1)
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
 
     def test_find_peaks0d(self):
@@ -315,14 +319,14 @@ class TestMarkers:
         assert len(new_s.metadata["Markers"]) == num_col
 
     def test_deepcopy_signal_with_muultiple_markers_same_class(self):
-        markers_list = [Points(offsets=np.array([1, 2])*i) for i in range(3)]
+        markers_list = [Points(offsets=np.array([1, 2]) * i) for i in range(3)]
         num_markers = len(markers_list)
         s = Signal2D(np.zeros((2, 10, 10)))
         s.plot()
         [s.add_marker(m, permanent=True) for m in markers_list]
         s2 = deepcopy(s)
         assert len(s2.metadata["Markers"]) == num_markers
-        ref_name = ['Points', 'Points1', 'Points2']
+        ref_name = ["Points", "Points1", "Points2"]
         assert s.metadata.Markers.keys() == s2.metadata.Markers.keys() == ref_name
 
     def test_get_current_signal(self, collections):
@@ -422,7 +426,7 @@ class TestInitMarkers:
         with pytest.raises(AttributeError):
             col.plot()
 
-    def test_deepcopy(self, iterating_line_collection):
+    def test_deepcopy_iterating_line_collection(self, iterating_line_collection):
         it_2 = deepcopy(iterating_line_collection)
         assert it_2 is not iterating_line_collection
 
@@ -462,9 +466,7 @@ class TestInitMarkers:
 
     def test_rep(self):
         offsets = np.array([[1, 1], [2, 2]])
-        m = Markers(
-            offsets=offsets, verts=3, sizes=3, collection=PolyCollection
-        )
+        m = Markers(offsets=offsets, verts=3, sizes=3, collection=PolyCollection)
         assert m.__repr__() == "<Markers, length: 2>"
 
         m = Points(offsets=offsets)
@@ -510,9 +512,10 @@ class TestInitMarkers:
             (Texts, TextCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
             (Lines, LineCollection, {"segments": [[0, 0], [1, 1]]}),
             (
-                    Markers,
-                    StarPolygonCollection,
-                    {"collection": "StarPolygonCollection", "offsets": [[1, 1]]}),
+                Markers,
+                StarPolygonCollection,
+                {"collection": "StarPolygonCollection", "offsets": [[1, 1]]},
+            ),
         ),
     )
     def test_initialize_subclasses(self, subclass):
@@ -574,7 +577,6 @@ class TestInitMarkers:
 
 
 class TestsMarkersAddRemove:
-
     def test_add_items_variable(self):
         offsets = np.array([[1, 1], [2, 2]])
         m = Points(offsets=offsets)
@@ -589,18 +591,18 @@ class TestsMarkersAddRemove:
             offsets[i] = np.array([[1, 1], [2, 2]])
         m = Points(offsets=offsets)
         assert m._is_iterating
-        for offset in m.kwargs['offsets'].flat:
+        for offset in m.kwargs["offsets"].flat:
             assert offset.shape == (2, 2)
 
         m.add_items(offsets=np.array([[0, 1]]))
-        for offset in m.kwargs['offsets'].flat:
+        for offset in m.kwargs["offsets"].flat:
             assert offset.shape == (3, 2)
             np.testing.assert_allclose(offset[-1], [0, 1])
         assert len(m.kwargs["offsets"][0]) == 3
         assert m._is_iterating
 
         m.add_items(offsets=np.array([[0, 2]]))
-        for offset in m.kwargs['offsets'].flat:
+        for offset in m.kwargs["offsets"].flat:
             assert offset.shape == (4, 2)
             np.testing.assert_allclose(offset[-1], [0, 2])
 
@@ -609,36 +611,58 @@ class TestsMarkersAddRemove:
         texts = np.empty(4, dtype=object)
         for i in range(len(offsets)):
             offsets[i] = np.array([[1, 1], [2, 2]])
-            texts[i] = ['a' * (i+1)] * 2
+            texts[i] = ["a" * (i + 1)] * 2
         m = Texts(offsets=offsets, texts=texts)
 
         assert m._is_iterating
         for nav_position in range(4):
             assert len(m.kwargs["offsets"][nav_position]) == 2
             assert len(m.kwargs["texts"][nav_position]) == 2
-            assert m.kwargs["texts"][nav_position] == ['a' * (nav_position+1)]*2
+            assert m.kwargs["texts"][nav_position] == ["a" * (nav_position + 1)] * 2
         m.add_items(
-            offsets=np.array([[0, 1]]), texts=["new_text"],
-            navigation_indices=(1, ),
-            )
+            offsets=np.array([[0, 1]]),
+            texts=["new_text"],
+            navigation_indices=(1,),
+        )
 
         # marker added only in nav coordinates (1, )
         for nav_position in [0, 2, 3]:
             assert len(m.kwargs["offsets"][nav_position]) == 2
             assert len(m.kwargs["texts"][nav_position]) == 2
-            assert m.kwargs["texts"][nav_position] == ['a' * (nav_position+1)]*2
+            assert m.kwargs["texts"][nav_position] == ["a" * (nav_position + 1)] * 2
 
         assert len(m.kwargs["offsets"][1]) == 3
         assert len(m.kwargs["texts"][1]) == 3
         assert m.kwargs["texts"][1][2] == "new_text"
         assert m.kwargs["texts"][1][2] == "new_text"
 
+    def test_remove_items_iterable_navigation_indices2(self):
+        offsets = np.empty(4, dtype=object)
+        texts = np.empty(4, dtype=object)
+        for i in range(len(offsets)):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+            texts[i] = ["a" * (i + 1)] * 2
+        m = Texts(offsets=offsets, texts=texts)
+
+        assert m._is_iterating
+        for nav_position in range(4):
+            assert len(m.kwargs["offsets"][nav_position]) == 2
+            assert len(m.kwargs["texts"][nav_position]) == 2
+        m.remove_items(1, navigation_indices=(1,))
+
+        # marker removed only in nav coordinates (1, )
+        for nav_position in [0, 2, 3]:
+            assert len(m.kwargs["offsets"][nav_position]) == 2
+            assert len(m.kwargs["texts"][nav_position]) == 2
+        assert len(m.kwargs["offsets"][1]) == 1
+        assert len(m.kwargs["texts"][1]) == 1
+
     def test_remove_items(self):
         offsets = np.empty(2, dtype=object)
         texts = np.empty(2, dtype=object)
         for i in range(2):
             offsets[i] = np.array([[1, 1], [2, 2]])
-            texts[i] = ['a' * i] * 2
+            texts[i] = ["a" * i] * 2
         m = Texts(offsets=offsets, texts=texts)
         assert len(m.kwargs["offsets"][0]) == 2
         assert len(m.kwargs["texts"][0]) == 2
@@ -648,7 +672,7 @@ class TestsMarkersAddRemove:
 
     def test_remove_items_None(self):
         offsets = np.empty(2, dtype=object)
-        texts = ['a']
+        texts = ["a"]
         for i in range(2):
             offsets[i] = np.array([[1, 1], [2, 2]])
         m = Texts(offsets=offsets, texts=texts)
@@ -665,36 +689,41 @@ class TestsMarkersAddRemove:
         for i in range(len(offsets)):
             # 3 markers
             offsets[i] = np.array([[1, 1], [2, 2], [3, 3]])
-            texts[i] = ['a' * (i+1)] * 3
+            texts[i] = ["a" * (i + 1)] * 3
         m = Texts(offsets=offsets, texts=texts)
         for nav_indices in range(nav_length):
             assert len(m.kwargs["offsets"][nav_indices]) == 3
             assert len(m.kwargs["texts"][nav_indices]) == 3
-            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][0], [1, 1])
-            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][1], [2, 2])
-            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][2], [3, 3])
+            np.testing.assert_allclose(m.kwargs["offsets"][nav_indices][0], [1, 1])
+            np.testing.assert_allclose(m.kwargs["offsets"][nav_indices][1], [2, 2])
+            np.testing.assert_allclose(m.kwargs["offsets"][nav_indices][2], [3, 3])
         m.remove_items(indices=1)
         for nav_indices in range(nav_length):
             assert len(m.kwargs["offsets"][nav_indices]) == 2
             assert len(m.kwargs["texts"][nav_indices]) == 2
-            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][0], [1, 1])
-            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][1], [3, 3])
+            np.testing.assert_allclose(m.kwargs["offsets"][nav_indices][0], [1, 1])
+            np.testing.assert_allclose(m.kwargs["offsets"][nav_indices][1], [3, 3])
 
     def test_remove_items_slice(self):
-        offsets = np.stack([np.arange(0, 100, 10)]*2).T + np.array([5,]*2)
-        texts = np.array(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'f', 'h', 'i'])
+        offsets = np.stack([np.arange(0, 100, 10)] * 2).T + np.array(
+            [
+                5,
+            ]
+            * 2
+        )
+        texts = np.array(["a", "b", "c", "d", "e", "f", "g", "f", "h", "i"])
         m = Texts(offsets=offsets, texts=texts)
 
-        assert len(m.kwargs['offsets']) == 10
-        assert len(m.kwargs['texts']) == 10
+        assert len(m.kwargs["offsets"]) == 10
+        assert len(m.kwargs["texts"]) == 10
         m.remove_items(indices=[1, 2])
-        assert len(m.kwargs['offsets']) == 8
-        assert len(m.kwargs['texts']) == 8
+        assert len(m.kwargs["offsets"]) == 8
+        assert len(m.kwargs["texts"]) == 8
 
-        np.testing.assert_allclose(m.kwargs['offsets'][0], [5, 5])
-        np.testing.assert_allclose(m.kwargs['offsets'][1], [35, 35])
-        assert m.kwargs['texts'][0] == "a"
-        assert m.kwargs['texts'][1] == "d"
+        np.testing.assert_allclose(m.kwargs["offsets"][0], [5, 5])
+        np.testing.assert_allclose(m.kwargs["offsets"][1], [35, 35])
+        assert m.kwargs["texts"][0] == "a"
+        assert m.kwargs["texts"][1] == "d"
 
     def test_remove_items_navigation_indices(self):
         offsets = np.array([[1, 1], [2, 2]])
@@ -702,28 +731,7 @@ class TestsMarkersAddRemove:
         assert not m._is_iterating
         assert len(m) == 2
         with pytest.raises(ValueError):
-            m.remove_items(1, navigation_indices=(1, ))
-
-    def test_remove_items_iterable_navigation_indices(self):
-        offsets = np.empty(4, dtype=object)
-        texts = np.empty(4, dtype=object)
-        for i in range(len(offsets)):
-            offsets[i] = np.array([[1, 1], [2, 2]])
-            texts[i] = ['a' * (i+1)] * 2
-        m = Texts(offsets=offsets, texts=texts)
-
-        assert m._is_iterating
-        for nav_position in range(4):
-            assert len(m.kwargs["offsets"][nav_position]) == 2
-            assert len(m.kwargs["texts"][nav_position]) == 2
-        m.remove_items(1, navigation_indices=(1, ))
-
-        # marker removed only in nav coordinates (1, )
-        for nav_position in [0, 2, 3]:
-            assert len(m.kwargs["offsets"][nav_position]) == 2
-            assert len(m.kwargs["texts"][nav_position]) == 2
-        assert len(m.kwargs["offsets"][1]) == 1
-        assert len(m.kwargs["texts"][1]) == 1
+            m.remove_items(1, navigation_indices=(1,))
 
 
 class TestMarkersDictToMarkers:
@@ -804,7 +812,7 @@ class TestMarkersDictToMarkers:
     @pytest.mark.parametrize(
         "data", ("iter_data", "static_data", "static_and_iter_data")
     )
-    @pytest.mark.parametrize("marker_type", ("NotAValidMarker", ))
+    @pytest.mark.parametrize("marker_type", ("NotAValidMarker",))
     def test_marker_hs17_API_fail(self, request, marker_type, data):
         d = request.getfixturevalue(data)
         test_dict = {}
@@ -889,7 +897,7 @@ class TestMarkersTransform:
 
     def test_unknown_tranform(self):
         with pytest.raises(ValueError):
-            markers = Points(
+            _ = Points(
                 offsets=[[1, 1], [4, 4]],
                 sizes=(10,),
                 color=("black",),
@@ -925,8 +933,10 @@ class TestRelativeMarkers:
         segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
         segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
 
-        markers = Lines(segments=segments,shift=1/9, transform="relative")
-        texts = Texts(offsets=segments[:, 1], shift=1/9, texts="a", offset_transform="relative")
+        markers = Lines(segments=segments, shift=1 / 9, transform="relative")
+        texts = Texts(
+            offsets=segments[:, 1], shift=1 / 9, texts="a", offset_transform="relative"
+        )
         signal.plot()
         signal.add_marker(markers)
         signal.add_marker(texts)
@@ -936,6 +946,7 @@ class TestRelativeMarkers:
         assert segs[0][0][0] == 0
         assert segs[0][1][1] == 12
         assert offs[0][1] == 12
+
 
 class TestLines:
     @pytest.fixture
@@ -954,16 +965,16 @@ class TestLines:
         s.add_marker(vert)
         segments = vert.get_current_kwargs()["segments"]
         # Offsets --> segments for vertical lines
-        assert segments.shape == (1, 2, 2) # one line
+        assert segments.shape == (1, 2, 2)  # one line
         np.testing.assert_array_equal(segments, np.array([[[0, 0], [0, 1]]]))
 
         # change position to navigation coordinate (1, )
-        s.axes_manager.indices = (1, )
+        s.axes_manager.indices = (1,)
         segments = vert.get_current_kwargs()["segments"]
-        assert segments.shape == (2, 2, 2) # two lines
+        assert segments.shape == (2, 2, 2)  # two lines
         np.testing.assert_array_equal(
             segments, np.array([[[0, 0], [0, 1]], [[1, 0], [1, 1]]])
-            )
+        )
 
     def test_horizontal_line_collection(self, offsets):
         hor = HorizontalLines(offsets=offsets)
@@ -977,9 +988,9 @@ class TestLines:
 
     def test_horizontal_vertical_line_error(self, offsets):
         with pytest.raises(ValueError):
-            hor = HorizontalLines(offsets=offsets, transform="data")
+            _ = HorizontalLines(offsets=offsets, transform="data")
         with pytest.raises(ValueError):
-            vert = VerticalLines(offsets=offsets, transform="data")
+            _ = VerticalLines(offsets=offsets, transform="data")
 
 
 def test_marker_collection_close_render():
@@ -1060,15 +1071,20 @@ def test_polygons():
 
 def test_warning_logger():
     s = Signal2D(np.ones((10, 10)))
-    m = Points(offsets=[[1, 1],], sizes=10)
+    m = Points(
+        offsets=[
+            [1, 1],
+        ],
+        sizes=10,
+    )
     s.plot()
     with pytest.warns(UserWarning):
         s.add_marker(m, plot_marker=False, permanent=False)
 
 
 @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
-    )
+    baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
+)
 def test_load_old_markers():
     """
     File generated using
@@ -1117,18 +1133,18 @@ def test_load_old_markers():
 
 
 @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
-    )
+    baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
+)
 def test_colorbar_collection():
     s = Signal2D(np.ones((100, 100)))
     rng = np.random.default_rng(0)
-    sizes = rng.random((10, )) * 20 + 5
+    sizes = rng.random((10,)) * 20 + 5
     offsets = rng.random((10, 2)) * 100
     m = hs.plot.markers.Circles(
         sizes=sizes,
         offsets=offsets,
         linewidth=2,
-        )
+    )
 
     with pytest.raises(RuntimeError):
         m.plot_colorbar()
@@ -1137,18 +1153,16 @@ def test_colorbar_collection():
     s.add_marker(m)
     m.set_ScalarMappable_array(sizes.ravel() / 2)
     cbar = m.plot_colorbar()
-    cbar.set_label('Circle radius')
+    cbar.set_label("Circle radius")
     return s._plot.signal_plot.figure
 
 
 def test_collection_error():
     with pytest.raises(ValueError):
-        Markers(offsets=[[1, 1], [2, 2]],
-                collection="NotACollection")
+        Markers(offsets=[[1, 1], [2, 2]], collection="NotACollection")
 
     with pytest.raises(ValueError):
-        Markers(offsets=[[1, 1], [2, 2]],
-                collection=object)
+        Markers(offsets=[[1, 1], [2, 2]], collection=object)
 
     m = Points(offsets=[[1, 1], [2, 2]])
     with pytest.raises(ValueError):
@@ -1180,7 +1194,7 @@ def test_variable_length_markers_navigation_shape():
     nav_dim = 2
     rng = np.random.default_rng(0)
 
-    nav_shape = np.arange(10, 10*(nav_dim+1), step=10)
+    nav_shape = np.arange(10, 10 * (nav_dim + 1), step=10)
     data = np.ones(tuple(nav_shape) + (100, 100))
     s = hs.signals.Signal2D(data)
 

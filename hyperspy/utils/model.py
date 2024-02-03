@@ -34,9 +34,9 @@ import hyperspy.components2d as components2D
 
 
 __all__ = [
-    'components1D',
-    'components2D',
-    ]
+    "components1D",
+    "components2D",
+]
 
 
 def __dir__():

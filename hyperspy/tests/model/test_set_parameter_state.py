@@ -24,7 +24,6 @@ from hyperspy.components1d import Gaussian
 
 
 class TestSetParameterInModel:
-
     def setup_method(self, method):
         g1 = Gaussian()
         g2 = Gaussian()
@@ -88,7 +87,7 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_not_free(parameter_name_list=['A'])
+        m.set_parameters_not_free(parameter_name_list=["A"])
         assert not g1.A.free
         assert g1.sigma.free
         assert g1.centre.free
@@ -104,7 +103,7 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_not_free([g2], parameter_name_list=['A'])
+        m.set_parameters_not_free([g2], parameter_name_list=["A"])
         assert g1.A.free
         assert g1.sigma.free
         assert g1.centre.free
@@ -121,7 +120,7 @@ class TestSetParameterInModel:
         g2 = self.g2
         g3 = self.g3
         m.set_parameters_not_free()
-        m.set_parameters_free([g1], parameter_name_list=['centre'])
+        m.set_parameters_free([g1], parameter_name_list=["centre"])
         assert not g1.A.free
         assert not g1.sigma.free
         assert g1.centre.free

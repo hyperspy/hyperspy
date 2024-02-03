@@ -27,7 +27,7 @@ from hyperspy.misc import math_tools
 
 
 def test_isfloat_float():
-    assert math_tools.isfloat(3.)
+    assert math_tools.isfloat(3.0)
 
 
 def test_isfloat_int():
@@ -35,7 +35,7 @@ def test_isfloat_int():
 
 
 def test_isfloat_npfloat():
-    assert math_tools.isfloat(np.float32(3.))
+    assert math_tools.isfloat(np.float32(3.0))
 
 
 def test_isfloat_npint():
@@ -51,19 +51,19 @@ def test_random_state_deprecated():
     with pytest.warns(DeprecationWarning):
         assert isinstance(
             math_tools.check_random_state(np.random.RandomState(123)),
-            np.random.RandomState
-            )
+            np.random.RandomState,
+        )
 
 
-@pytest.mark.parametrize("seed", [None, 123, 'dask_supported'])
+@pytest.mark.parametrize("seed", [None, 123, "dask_supported"])
 def test_random_state_lazy(seed):
-    if Version(dask.__version__) < Version('2023.2.1'):
-        if seed == 'dask_supported':
+    if Version(dask.__version__) < Version("2023.2.1"):
+        if seed == "dask_supported":
             seed = da.random.RandomState(123)
         out = math_tools.check_random_state(seed, lazy=True)
         assert isinstance(out, da.random.RandomState)
     else:
-        if seed == 'dask_supported':
+        if seed == "dask_supported":
             seed = da.random.default_rng(123)
         out = math_tools.check_random_state(seed, lazy=True)
         assert isinstance(out, da.random.Generator)
@@ -73,8 +73,8 @@ def test_random_state_lazy_deprecated():
     with pytest.warns(DeprecationWarning):
         assert isinstance(
             math_tools.check_random_state(da.random.RandomState(123)),
-            da.random.RandomState
-            )
+            da.random.RandomState,
+        )
 
 
 def test_random_state_error():

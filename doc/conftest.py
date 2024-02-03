@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import matplotlib
+
 matplotlib.use("agg")
 
 import pytest
@@ -28,9 +29,10 @@ import numpy as np
 
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):
-    doctest_namespace['np'] = np
-    doctest_namespace['plt'] = plt
-    doctest_namespace['hs'] = hs
+    doctest_namespace["np"] = np
+    doctest_namespace["plt"] = plt
+    doctest_namespace["hs"] = hs
+
 
 # Don't show progressbar since it contains the runtime which
 # will make the doctest fail

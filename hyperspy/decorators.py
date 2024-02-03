@@ -35,7 +35,7 @@ def lazify(func, **kwargs):
     @wraps(func)
     def lazified_func(self, *args, **kwds):
         for k in self.__dict__.keys():
-            if not k.startswith('__'):
+            if not k.startswith("__"):
                 v = getattr(self, k)
                 if isinstance(v, BaseSignal):
                     v = v.as_lazy()
@@ -49,6 +49,7 @@ def lazify(func, **kwargs):
                         v.signal.axes_manager = am
         self.__dict__.update(kwargs)
         return func(self, *args, **kwds)
+
     return lazified_func
 
 
@@ -57,16 +58,16 @@ def lazifyTestClass(*args, **kwargs):
         original_class.lazify = lazify
         thelist = [k for k in original_class.__dict__.keys()]
         for thing in thelist:
-            if thing.startswith('test'):
-                if not thing.startswith('test_lazy'):
-                    newname = 'test_lazy' + thing[4:]
+            if thing.startswith("test"):
+                if not thing.startswith("test_lazy"):
+                    newname = "test_lazy" + thing[4:]
                     if newname not in thelist:
-                        newfunc = lazify(getattr(original_class, thing),
-                                         **kwargs)
+                        newfunc = lazify(getattr(original_class, thing), **kwargs)
                         newfunc.__name__ = newname
                         setattr(original_class, newname, newfunc)
 
         return original_class
+
     if len(args):
         return lazifyTest(*args)
     else:
@@ -86,12 +87,14 @@ def simple_decorator(decorator):
 
     This decorator was taken from:
     http://wiki.python.org/moin/PythonDecoratorLibrary"""
+
     def new_decorator(f):
         g = decorator(f)
         g.__name__ = f.__name__
         g.__doc__ = f.__doc__
         g.__dict__.update(f.__dict__)
         return g
+
     # Now a few lines needed to make simple_decorator itself
     # be a well-behaved decorator.
     new_decorator.__name__ = decorator.__name__
@@ -109,11 +112,10 @@ def interactive_range_selector(cm):
         if not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
-            get_gui(
-                range_selector,
-                toolkey="hyperspy.interactive_range_selector")
+            get_gui(range_selector, toolkey="hyperspy.interactive_range_selector")
         else:
             cm(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -223,7 +225,9 @@ class deprecated_argument:
                 )
                 if self.alternative is not None:
                     msg += f"Use `{self.alternative}` instead. "
-                    kwargs[self.alternative] = kwargs.pop(self.name) # replace with alternative kwarg
+                    kwargs[self.alternative] = kwargs.pop(
+                        self.name
+                    )  # replace with alternative kwarg
                 msg += f"See the documentation of `{func.__name__}()` for more details."
                 warnings.simplefilter(
                     action="always", category=np.VisibleDeprecationWarning
@@ -248,10 +252,8 @@ def jit_ifnumba(*args, **kwargs):
             kwargs["nopython"] = True
         return numba.jit(*args, **kwargs)
     except ImportError:
-
         _logger.warning(
-            "Numba is not installed, falling back to "
-            "non-accelerated implementation."
+            "Numba is not installed, falling back to " "non-accelerated implementation."
         )
 
         def wrap1(func):

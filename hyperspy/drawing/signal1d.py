@@ -35,8 +35,7 @@ _logger = logging.getLogger(__name__)
 
 class Signal1DFigure(BlittedFigure):
 
-    """
-    """
+    """ """
 
     def __init__(self, title="", **kwargs):
         super().__init__()
@@ -49,17 +48,18 @@ class Signal1DFigure(BlittedFigure):
         self.right_axes_manager = None
 
         # Labels
-        self.xlabel = ''
-        self.ylabel = ''
+        self.xlabel = ""
+        self.ylabel = ""
         self.title = title
         self.create_figure(**kwargs)
         self.create_axis()
 
         # Color cycles
         self._color_cycles = {
-            'line': utils.ColorCycle(),
-            'step': utils.ColorCycle(),
-            'scatter': utils.ColorCycle(), }
+            "line": utils.ColorCycle(),
+            "step": utils.ColorCycle(),
+            "scatter": utils.ColorCycle(),
+        }
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -68,7 +68,7 @@ class Signal1DFigure(BlittedFigure):
         self.ax.xaxis.set_animated(animated)
         self.ax.hspy_fig = self
 
-    def create_right_axis(self, color='black', adjust_layout=True):
+    def create_right_axis(self, color="black", adjust_layout=True):
         """
         Add an axis on the right hand side of the figure.
 
@@ -88,7 +88,7 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
-            self.right_ax.tick_params(axis='y', labelcolor=color)
+            self.right_ax.tick_params(axis="y", labelcolor=color)
             # Needs to set the zorder of the ax to get the mouse event for ax
             # See https://github.com/matplotlib/matplotlib/issues/10009
             self.ax.set_zorder(self.right_ax.get_zorder() + 1)
@@ -118,7 +118,7 @@ class Signal1DFigure(BlittedFigure):
         if adjust_layout:
             plt.tight_layout()
 
-    def add_line(self, line, ax='left', connect_navigation=False):
+    def add_line(self, line, ax="left", connect_navigation=False):
         """
         Add Signal1DLine to figure
 
@@ -139,13 +139,13 @@ class Signal1DFigure(BlittedFigure):
         None.
 
         """
-        if ax == 'left':
+        if ax == "left":
             line.ax = self.ax
             if line.axes_manager is None:
                 line.axes_manager = self.axes_manager
             self.ax_lines.append(line)
             line.sf_lines = self.ax_lines
-        elif ax == 'right':
+        elif ax == "right":
             line.ax = self.right_ax
             self.right_ax_lines.append(line)
             line.sf_lines = self.right_ax_lines
@@ -155,8 +155,8 @@ class Signal1DFigure(BlittedFigure):
             f = partial(line._auto_update_line, update_ylimits=True)
             line.axes_manager.events.indices_changed.connect(f, [])
             line.events.closed.connect(
-                lambda: line.axes_manager.events.indices_changed.disconnect(f),
-                [])
+                lambda: line.axes_manager.events.indices_changed.disconnect(f), []
+            )
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -166,8 +166,7 @@ class Signal1DFigure(BlittedFigure):
         else:
             rgba_color = mpl.colors.colorConverter.to_rgba(line.color)
             if rgba_color in self._color_cycles[line.type].color_cycle:
-                self._color_cycles[line.type].color_cycle.remove(
-                    rgba_color)
+                self._color_cycles[line.type].color_cycle.remove(rgba_color)
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.ax.set_xlabel(self.xlabel)
@@ -185,16 +184,16 @@ class Signal1DFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.plot(render_figure=False)
 
-        plt.xlim(min(x_axis_lower_lims, default=None),
-                 max(x_axis_upper_lims, default=None)
-                 )
+        plt.xlim(
+            min(x_axis_lower_lims, default=None), max(x_axis_upper_lims, default=None)
+        )
 
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
-            lambda: self.axes_manager.events.indices_changed.disconnect(
-                self.update), [])
+            lambda: self.axes_manager.events.indices_changed.disconnect(self.update), []
+        )
 
-        if hasattr(self.figure, 'tight_layout'):
+        if hasattr(self.figure, "tight_layout"):
             try:
                 self.figure.tight_layout()
             except BaseException:
@@ -204,13 +203,13 @@ class Signal1DFigure(BlittedFigure):
         self.render_figure()
 
     def _on_close(self):
-        _logger.debug('Closing Signal1DFigure.')
+        _logger.debug("Closing Signal1DFigure.")
         if self.figure is None:
             return  # Already closed
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
         super()._on_close()
-        _logger.debug('Signal1DFigure Closed.')
+        _logger.debug("Signal1DFigure Closed.")
 
     def update(self):
         """
@@ -224,8 +223,7 @@ class Signal1DFigure(BlittedFigure):
             for line in ax_lines:
                 # save on figure rendering and do it at the end
                 # don't update the y limits
-                line._auto_update_line(render_figure=False,
-                                       update_ylimits=False)
+                line._auto_update_line(render_figure=False, update_ylimits=False)
                 y_min = np.nanmin([y_min, line._y_min])
                 y_max = np.nanmax([y_max, line._y_max])
             ax.set_ylim(y_min, y_max)
@@ -274,14 +272,17 @@ class Signal1DLine(object):
 
     def __init__(self):
         self.events = Events()
-        self.events.closed = Event("""
+        self.events.closed = Event(
+            """
             Event that triggers when the line is closed.
 
             Parameters
             ----------
             obj:  Signal1DLine instance
                 The instance that triggered the event.
-            """, arguments=["obj"])
+            """,
+            arguments=["obj"],
+        )
         self.sf_lines = None
         self.ax = None
         # Data attributes
@@ -291,17 +292,20 @@ class Signal1DLine(object):
         self.axis = None
         self.axes_manager = None
         self._plot_imag = False
-        self.norm = 'linear'
+        self.norm = "linear"
 
         # Properties
         self.auto_update = True
-        self.autoscale = 'v'
+        self.autoscale = "v"
         self._y_min = np.nan
         self._y_max = np.nan
         self.line = None
         self.plot_indices = False
         self.text = None
-        self.text_position = (-0.1, 1.05,)
+        self.text_position = (
+            -0.1,
+            1.05,
+        )
         self._line_properties = {}
         self.type = "line"
 
@@ -311,13 +315,13 @@ class Signal1DLine(object):
 
     @line_properties.setter
     def line_properties(self, kwargs):
-        if 'type' in kwargs:
-            self.type = kwargs['type']
-            del kwargs['type']
+        if "type" in kwargs:
+            self.type = kwargs["type"]
+            del kwargs["type"]
 
-        if 'color' in kwargs:
-            color = kwargs['color']
-            del kwargs['color']
+        if "color" in kwargs:
+            color = kwargs["color"]
+            del kwargs["color"]
             self.color = color
 
         for key, item in kwargs.items():
@@ -339,23 +343,24 @@ class Signal1DLine(object):
     @type.setter
     def type(self, value):
         lp = {}
-        if value == 'scatter':
-            lp['marker'] = 'o'
-            lp['linestyle'] = 'None'
-            lp['markersize'] = 1
+        if value == "scatter":
+            lp["marker"] = "o"
+            lp["linestyle"] = "None"
+            lp["markersize"] = 1
 
-        elif value == 'line':
-            lp['linestyle'] = '-'
-            lp['marker'] = "None"
-            lp['drawstyle'] = "default"
-        elif value == 'step':
-            lp['drawstyle'] = 'steps-mid'
-            lp['marker'] = "None"
+        elif value == "line":
+            lp["linestyle"] = "-"
+            lp["marker"] = "None"
+            lp["drawstyle"] = "default"
+        elif value == "step":
+            lp["drawstyle"] = "steps-mid"
+            lp["marker"] = "None"
         else:
             raise ValueError(
                 "`type` must be one of "
-                "{\'scatter\', \'line\', \'step\'}"
-                "but %s was given" % value)
+                "{'scatter', 'line', 'step'}"
+                "but %s was given" % value
+            )
         self._type = value
         self.line_properties = lp
         if self.color is not None:
@@ -363,24 +368,24 @@ class Signal1DLine(object):
 
     @property
     def color(self):
-        if 'color' in self.line_properties:
-            return self.line_properties['color']
-        elif 'markeredgecolor' in self.line_properties:
-            return self.line_properties['markeredgecolor']
+        if "color" in self.line_properties:
+            return self.line_properties["color"]
+        elif "markeredgecolor" in self.line_properties:
+            return self.line_properties["markeredgecolor"]
         else:
             return None
 
     @color.setter
     def color(self, color):
-        if self._type == 'scatter':
+        if self._type == "scatter":
             self.set_line_properties(markeredgecolor=color)
-            if 'color' in self._line_properties:
-                del self._line_properties['color']
+            if "color" in self._line_properties:
+                del self._line_properties["color"]
         else:
-            if color is None and 'color' in self._line_properties:
-                del self._line_properties['color']
+            if color is None and "color" in self._line_properties:
+                del self._line_properties["color"]
             else:
-                self._line_properties['color'] = color
+                self._line_properties["color"] = color
             self.set_line_properties(markeredgecolor=None)
 
         if self.line is not None:
@@ -397,43 +402,54 @@ class Signal1DLine(object):
             self.line.remove()
 
         norm = self.norm
-        if norm == 'log':
+        if norm == "log":
             plot = self.ax.semilogy
-        elif (isinstance(norm, mpl.colors.Normalize) or
-              (inspect.isclass(norm) and issubclass(norm, mpl.colors.Normalize))
-              ):
-            raise ValueError("Matplotlib Normalize instance or subclass can "
-                             "be used for Signal2D only.")
+        elif isinstance(norm, mpl.colors.Normalize) or (
+            inspect.isclass(norm) and issubclass(norm, mpl.colors.Normalize)
+        ):
+            raise ValueError(
+                "Matplotlib Normalize instance or subclass can "
+                "be used for Signal2D only."
+            )
         elif norm not in ["auto", "linear"]:
-            raise ValueError("`norm` paramater should be 'auto', 'linear' or "
-                             "'log' for Signal1D.")
+            raise ValueError(
+                "`norm` paramater should be 'auto', 'linear' or " "'log' for Signal1D."
+            )
         else:
             plot = self.ax.plot
         # If axis is a DataAxis instance, take the axis attribute
-        axis = getattr(self.axis, 'axis', self.axis)
-        self.line, = plot(axis, data, **self.line_properties,
-                          animated=self.ax.figure.canvas.supports_blit)
+        axis = getattr(self.axis, "axis", self.axis)
+        (self.line,) = plot(
+            axis,
+            data,
+            **self.line_properties,
+            animated=self.ax.figure.canvas.supports_blit,
+        )
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
             if self.text is not None:
                 self.text.remove()
-            self.text = self.ax.text(*self.text_position,
-                                     s=str(self.axes_manager.indices),
-                                     transform=self.ax.transAxes,
-                                     fontsize=12,
-                                     color=self.line.get_color(),
-                                     animated=self.ax.figure.canvas.supports_blit)
+            self.text = self.ax.text(
+                *self.text_position,
+                s=str(self.axes_manager.indices),
+                transform=self.ax.transAxes,
+                fontsize=12,
+                color=self.line.get_color(),
+                animated=self.ax.figure.canvas.supports_blit,
+            )
         self._y_min, self._y_max = self.ax.get_ylim()
         self.ax.hspy_fig.render_figure()
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
-            ydata = self.data_function(axes_manager=self.axes_manager,
-                                       **self.data_function_kwargs).imag
+            ydata = self.data_function(
+                axes_manager=self.axes_manager, **self.data_function_kwargs
+            ).imag
         else:
-            ydata = self.data_function(axes_manager=self.axes_manager,
-                                       **self.data_function_kwargs).real
+            ydata = self.data_function(
+                axes_manager=self.axes_manager, **self.data_function_kwargs
+            ).real
         return ydata
 
     def _auto_update_line(self, update_ylimits=False, **kwargs):
@@ -443,15 +459,13 @@ class Signal1DLine(object):
 
         """
         if self.auto_update:
-            if 'render_figure' not in kwargs.keys():
+            if "render_figure" not in kwargs.keys():
                 # if markers are plotted, we don't render the figure now but
                 # once the markers have been updated
-                kwargs['render_figure'] = (
-                    len(self.ax.hspy_fig.ax_markers) == 0)
+                kwargs["render_figure"] = len(self.ax.hspy_fig.ax_markers) == 0
             self.update(self, update_ylimits=update_ylimits, **kwargs)
 
-    def update(self, force_replot=False, render_figure=True,
-               update_ylimits=False):
+    def update(self, force_replot=False, render_figure=True, update_ylimits=False):
         """Update the current spectrum figure
 
         Parameters
@@ -470,21 +484,20 @@ class Signal1DLine(object):
         """
         if force_replot is True:
             self.close()
-            self.plot(data_function_kwargs=self.data_function_kwargs,
-                      norm=self.norm)
+            self.plot(data_function_kwargs=self.data_function_kwargs, norm=self.norm)
 
         self._y_min, self._y_max = self.ax.get_ylim()
         ydata = self._get_data()
 
         # If axis is a DataAxis instance, take the axis attribute
-        axis = getattr(self.axis, 'axis', self.axis)
+        axis = getattr(self.axis, "axis", self.axis)
         if not np.array_equiv(self.line.get_xdata(), axis):
             self.line.set_data(axis, ydata)
         else:
             self.line.set_ydata(ydata)
 
         # Don't change xlim if axis has 0 length (unnecessary)
-        if 'x' in self.autoscale and len(axis) > 0:
+        if "x" in self.autoscale and len(axis) > 0:
             x_min, x_max = axis[0], axis[-1]
             if x_min == x_max:
                 # To avoid matplotlib UserWarning when calling `set_ylim`
@@ -492,13 +505,13 @@ class Signal1DLine(object):
             self.ax.set_xlim(x_min, x_max)
 
         # Don't change ymin if data has 0 length (unnecessary)
-        if 'v' in self.autoscale and len(ydata) > 0:
+        if "v" in self.autoscale and len(ydata) > 0:
             self.ax.relim()
             # Based on the current zoom of the x axis, find the corresponding
             # y range of data and calculate the y_min, y_max accordingly
             i1, i2 = np.searchsorted(axis, self.ax.get_xbound())
             # Make interval wider on both side and clip to allowed range
-            i1, i2 = np.clip((i1-1, i2+1), 0, len(ydata - 1))
+            i1, i2 = np.clip((i1 - 1, i2 + 1), 0, len(ydata - 1))
             ydata = ydata[i1:i2]
 
             with ignore_warning(category=RuntimeWarning):
@@ -537,7 +550,7 @@ class Signal1DLine(object):
             self.ax.hspy_fig.render_figure()
 
     def close(self):
-        _logger.debug('Closing `Signal1DLine`.')
+        _logger.debug("Closing `Signal1DLine`.")
         if self.line in self.ax.lines:
             self.line.remove()
         if self.text and self.text in self.ax.texts:
@@ -551,11 +564,10 @@ class Signal1DLine(object):
             self.ax.figure.canvas.draw_idle()
         except BaseException:
             pass
-        _logger.debug('`Signal1DLine` closed.')
+        _logger.debug("`Signal1DLine` closed.")
 
 
-def _plot_component(factors, idx, ax=None, cal_axis=None,
-                    comp_label='PC'):
+def _plot_component(factors, idx, ax=None, cal_axis=None, comp_label="PC"):
     if ax is None:
         ax = plt.gca()
     if cal_axis is not None:
@@ -563,14 +575,21 @@ def _plot_component(factors, idx, ax=None, cal_axis=None,
         plt.xlabel(cal_axis.units)
     else:
         x = np.arange(factors.shape[0])
-        plt.xlabel('Channel index')
-    ax.plot(x, factors[:, idx], label='%s %i' % (comp_label, idx))
+        plt.xlabel("Channel index")
+    ax.plot(x, factors[:, idx], label="%s %i" % (comp_label, idx))
     return ax
 
 
-def _plot_loading(loadings, idx, axes_manager, ax=None,
-                  comp_label='PC', no_nans=True, calibrate=True,
-                  cmap=plt.cm.gray):
+def _plot_loading(
+    loadings,
+    idx,
+    axes_manager,
+    ax=None,
+    comp_label="PC",
+    no_nans=True,
+    calibrate=True,
+    cmap=plt.cm.gray,
+):
     if ax is None:
         ax = plt.gca()
     if no_nans:
@@ -580,12 +599,18 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         # get calibration from a passed axes_manager
         shape = axes_manager._navigation_shape_in_array
         if calibrate:
-            extent = (axes_manager._axes[0].low_value,
-                      axes_manager._axes[0].high_value,
-                      axes_manager._axes[1].high_value,
-                      axes_manager._axes[1].low_value)
-        im = ax.imshow(loadings[idx].reshape(shape), cmap=cmap, extent=extent,
-                       interpolation='nearest')
+            extent = (
+                axes_manager._axes[0].low_value,
+                axes_manager._axes[0].high_value,
+                axes_manager._axes[1].high_value,
+                axes_manager._axes[1].low_value,
+            )
+        im = ax.imshow(
+            loadings[idx].reshape(shape),
+            cmap=cmap,
+            extent=extent,
+            interpolation="nearest",
+        )
         div = make_axes_locatable(ax)
         cax = div.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)
@@ -596,4 +621,4 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
             x = np.arange(axes_manager._axes[0].size)
         ax.step(x, loadings[idx])
     else:
-        raise ValueError('View not supported')
+        raise ValueError("View not supported")

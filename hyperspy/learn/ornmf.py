@@ -55,7 +55,7 @@ def _mrdivide(B, A):
 def _project(W):
     newW = W.copy()
     np.maximum(newW, 0, out=newW)
-    sumsq = np.sqrt(np.sum(W ** 2, axis=0))
+    sumsq = np.sqrt(np.sum(W**2, axis=0))
     np.maximum(sumsq, 1, out=sumsq)
     return _mrdivide(newW, np.diag(sumsq))
 

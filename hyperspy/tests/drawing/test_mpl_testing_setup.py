@@ -24,18 +24,21 @@ from hyperspy.misc.test_utils import check_running_tests_in_CI
 
 def test_mlp_agg_for_CI_testing():
     if check_running_tests_in_CI():
-        assert matplotlib.get_backend() == 'agg'
+        assert matplotlib.get_backend() == "agg"
+
 
 @pytest.fixture
 def mpl_cmdopt(request):
     return request.config.getoption("--mpl")
 
 
-@pytest.mark.xfail(reason="Check if plotting tests are working: if this test passes,"
-                   " it means that the image comparison of the plotting test are"
-                   " not working.",
-                   strict=True)
-@pytest.mark.mpl_image_compare(baseline_dir='', tolerance=2)
+@pytest.mark.xfail(
+    reason="Check if plotting tests are working: if this test passes,"
+    " it means that the image comparison of the plotting test are"
+    " not working.",
+    strict=True,
+)
+@pytest.mark.mpl_image_compare(baseline_dir="", tolerance=2)
 def test_plotting_test_working(mpl_cmdopt):
     # Skip if --mpl command line option is not present, because it will always
     # pass the image comparison test and, therefore, this test will always fail.

@@ -26,41 +26,46 @@ from hyperspy.drawing.image import ImagePlot
 from hyperspy.misc.test_utils import update_close_figure, check_closing_plot
 
 
-scalebar_color = 'blue'
+scalebar_color = "blue"
 default_tol = 2.0
-baseline_dir = 'plot_signal'
-style_pytest_mpl = 'default'
+baseline_dir = "plot_signal"
+style_pytest_mpl = "default"
 
 
 class _TestPlot:
-
-    def __init__(self, ndim, sdim, data_type='real'):
+    def __init__(self, ndim, sdim, data_type="real"):
         shape = np.arange(1, ndim + sdim + 1) * 5
         n = 1
         for i in shape:
             n *= i
         data = np.arange(n).reshape(shape)
-        title = 'Signal: %i, Navigator: %i' % (sdim, ndim)
-        dtype = ''
-        if 'complex' in data_type:
+        title = "Signal: %i, Navigator: %i" % (sdim, ndim)
+        dtype = ""
+        if "complex" in data_type:
             data = data + 1j * (data + 9)
-            title += ', complex'
-            dtype = 'Complex'
-        s = getattr(hs.signals, f'{dtype}Signal{sdim}D')(data)
+            title += ", complex"
+            dtype = "Complex"
+        s = getattr(hs.signals, f"{dtype}Signal{sdim}D")(data)
         if sdim == 1:
-            s.axes_manager = self._set_signal_axes(s.axes_manager, name='Energy',
-                                                   units='keV', scale=.5, offset=0.3)
+            s.axes_manager = self._set_signal_axes(
+                s.axes_manager, name="Energy", units="keV", scale=0.5, offset=0.3
+            )
         elif sdim == 2:
-            s.axes_manager = self._set_signal_axes(s.axes_manager, name='Reciprocal distance',
-                                                   units='1/nm', scale=1, offset=0.0)
+            s.axes_manager = self._set_signal_axes(
+                s.axes_manager,
+                name="Reciprocal distance",
+                units="1/nm",
+                scale=1,
+                offset=0.0,
+            )
         if ndim > 0:
-            s.axes_manager = self._set_navigation_axes(s.axes_manager, name='',
-                                                       units='nm', scale=1.0,
-                                                       offset=5.0)
+            s.axes_manager = self._set_navigation_axes(
+                s.axes_manager, name="", units="nm", scale=1.0, offset=5.0
+            )
         s.metadata.General.title = title
         # workaround to be able to access the figure in case of complex 2d
         # signals
-        if 'complex' in data_type and sdim == 2:
+        if "complex" in data_type and sdim == 2:
             real = s.real
             real.plot()
             self.real_plot = real._plot
@@ -70,16 +75,18 @@ class _TestPlot:
         self.signal = s
         self.sdim = sdim
 
-    def _set_navigation_axes(self, axes_manager, name=t.Undefined,
-                             units=t.Undefined, scale=1.0, offset=0.0):
+    def _set_navigation_axes(
+        self, axes_manager, name=t.Undefined, units=t.Undefined, scale=1.0, offset=0.0
+    ):
         for nav_axis in axes_manager.navigation_axes:
             nav_axis.units = units
             nav_axis.scale = scale
             nav_axis.offset = offset
         return axes_manager
 
-    def _set_signal_axes(self, axes_manager, name=t.Undefined,
-                         units=t.Undefined, scale=1.0, offset=0.0):
+    def _set_signal_axes(
+        self, axes_manager, name=t.Undefined, units=t.Undefined, scale=1.0, offset=0.0
+    ):
         for sig_axis in axes_manager.signal_axes:
             sig_axis.name = name
             sig_axis.units = units
@@ -92,10 +99,10 @@ def _generate_parameter():
     parameters = []
     for ndim in [0, 1, 2]:
         for sdim in [1, 2]:
-            for plot_type in ['nav', 'sig']:
+            for plot_type in ["nav", "sig"]:
                 # For complex 2D, there are 4 figures generated, some of these
                 # tests are redondants
-                for data_type in ['real', 'complex_real', 'complex_imag']:
+                for data_type in ["real", "complex_real", "complex_imag"]:
                     if ndim == 0 and plot_type == "nav":  # in this case, no nav figure
                         pass
                     else:
@@ -103,10 +110,12 @@ def _generate_parameter():
     return parameters
 
 
-@pytest.mark.parametrize(("ndim", "sdim", "plot_type", "data_type"),
-                         _generate_parameter())
+@pytest.mark.parametrize(
+    ("ndim", "sdim", "plot_type", "data_type"), _generate_parameter()
+)
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
 def test_plot_sig_nav(ndim, sdim, plot_type, data_type):
     test_plot = _TestPlot(ndim, sdim, data_type)
     test_plot.signal.plot()
@@ -115,7 +124,8 @@ def test_plot_sig_nav(ndim, sdim, plot_type, data_type):
 
 @pytest.mark.parametrize("sdim", [1, 2])
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
 def test_plot_data_changed_event(sdim):
     if sdim == 2:
         s = hs.signals.Signal2D(np.arange(25).reshape((5, 5)))
@@ -135,9 +145,9 @@ def _get_figure(test_plot, data_type, plot_type):
 
     if "complex" in data_type and test_plot.sdim == 2:
         if data_type == "complex_real":
-            plot_part = 'real_plot'
+            plot_part = "real_plot"
         elif data_type == "complex_imag":
-            plot_part = 'real_plot'
+            plot_part = "real_plot"
         fig = getattr(getattr(test_plot, plot_part), plot).figure
     else:
         fig = getattr(test_plot.signal._plot, plot).figure
@@ -200,12 +210,12 @@ def test_plot_close_cycle(sdim):
     s._plot.close()
 
 
-@pytest.mark.parametrize('autoscale', ['', 'x', 'xv', 'v'])
+@pytest.mark.parametrize("autoscale", ["", "x", "xv", "v"])
 @pytest.mark.parametrize("ndim", [1, 2])
 def test_plot_navigator_kwds(ndim, autoscale):
     test_plot_nav1d = _TestPlot(ndim=ndim, sdim=2, data_type="real")
     s = test_plot_nav1d.signal
-    s.plot(navigator_kwds={'norm':'log', 'autoscale':autoscale})
+    s.plot(navigator_kwds={"norm": "log", "autoscale": autoscale})
     if ndim == 1:
         assert isinstance(s._plot.navigator_plot, Signal1DFigure)
         plot = s._plot.navigator_plot.ax_lines[0]
@@ -214,7 +224,7 @@ def test_plot_navigator_kwds(ndim, autoscale):
         plot = s._plot.navigator_plot
         assert isinstance(plot, ImagePlot)
 
-    assert plot.norm == 'log'
+    assert plot.norm == "log"
     assert plot.autoscale == autoscale
     s._plot.close()
 
@@ -228,17 +238,17 @@ def test_plot_signal_dim0():
     check_closing_plot(s)
 
 
-@pytest.mark.parametrize('bool_value', [True, False])
+@pytest.mark.parametrize("bool_value", [True, False])
 @pytest.mark.parametrize("sdim", [1, 2])
 def test_data_function_kwargs(sdim, bool_value):
     test_plot_nav1d = _TestPlot(ndim=1, sdim=sdim, data_type="complex")
     s = test_plot_nav1d.signal
     s.plot(power_spectrum=bool_value, fft_shift=bool_value)
     if sdim == 1:
-        for key in ['power_spectrum', 'fft_shift']:
+        for key in ["power_spectrum", "fft_shift"]:
             assert s._plot.signal_data_function_kwargs[key] is bool_value
     else:
-        for key in ['power_spectrum', 'fft_shift']:
+        for key in ["power_spectrum", "fft_shift"]:
             assert s._plot_kwargs[key] is bool_value
 
 
@@ -249,7 +259,7 @@ def test_plot_power_spectrum():
 
     s = hs.signals.ComplexSignal1D(np.arange(100))
     s.plot(power_spectrum=True)
-    assert s._plot.signal_data_function_kwargs['power_spectrum'] is True
+    assert s._plot.signal_data_function_kwargs["power_spectrum"] is True
 
 
 @pytest.mark.parametrize("sdim", [1, 2])
@@ -259,14 +269,14 @@ def test_plot_slider(ndim, sdim):
     s = test_plot_nav1d.signal
     # Plot twice to check that the args of the second call are used.
     s.plot()
-    s.plot(navigator='slider')
+    s.plot(navigator="slider")
     assert s._plot.signal_plot is not None
     assert s._plot.navigator_plot is None
     s._plot.close()
     check_closing_plot(s, check_data_changed_close=False)
 
     if ndim > 1:
-        s.plot(navigator='spectrum')
+        s.plot(navigator="spectrum")
         assert s._plot.signal_plot is not None
         assert s._plot.navigator_plot is not None
         assert isinstance(s._plot.navigator_plot, Signal1DFigure)
@@ -310,7 +320,7 @@ def test_plot_autoscale(sdim):
     test_plot_nav1d = _TestPlot(ndim=1, sdim=sdim, data_type="real")
     s = test_plot_nav1d.signal
     with pytest.raises(ValueError):
-        s.plot(autoscale='xa')
+        s.plot(autoscale="xa")
 
     s.change_dtype(bool)
     s.plot()
@@ -323,11 +333,11 @@ def test_plot_complex_representation():
     s = hs.signals.ComplexSignal1D(comp_ref)
     s.plot()
     # change indices to trigger update
-    s.axes_manager.indices = (1, )    
-    s.plot(representation='polar', same_axes=True)
-    s.plot(representation='polar', same_axes=False)
+    s.axes_manager.indices = (1,)
+    s.plot(representation="polar", same_axes=True)
+    s.plot(representation="polar", same_axes=False)
     with pytest.raises(ValueError):
-        s.plot(representation='unsupported_argument')
+        s.plot(representation="unsupported_argument")
 
 
 def test_plot_signal_scalar():
@@ -336,7 +346,7 @@ def test_plot_signal_scalar():
     assert s._plot is None
 
 
-@pytest.mark.parametrize('lazy', [True, False])
+@pytest.mark.parametrize("lazy", [True, False])
 def test_plot_ragged_array(lazy):
     data = np.empty((2, 5), dtype=object)
     data.fill(np.array([10, 20]))

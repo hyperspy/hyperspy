@@ -20,12 +20,10 @@
 
 """
 
-CROP_PARAMETER_DOC = \
-    """crop : bool
+CROP_PARAMETER_DOC = """crop : bool
             If True automatically crop the signal axis at both ends if needed."""
 
-SPIKES_DIAGNOSIS_DOCSTRING = \
-        """Plots a histogram to help in choosing the threshold for
+SPIKES_DIAGNOSIS_DOCSTRING = """Plots a histogram to help in choosing the threshold for
         spikes removal.
 
         Parameters
@@ -47,8 +45,7 @@ SPIKES_DIAGNOSIS_DOCSTRING = \
 
         """
 
-SPIKES_REMOVAL_TOOL_DOCSTRING =\
-        """Graphical interface to remove spikes from EELS spectra or 
+SPIKES_REMOVAL_TOOL_DOCSTRING = """Graphical interface to remove spikes from EELS spectra or 
         luminescence data. 
         If non-interactive, it removes all spikes.
 
@@ -80,8 +77,7 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
 
         """
 
-MASK_ZERO_LOSS_PEAK_WIDTH = \
-        """zero_loss_peak_mask_width : None or float
+MASK_ZERO_LOSS_PEAK_WIDTH = """zero_loss_peak_mask_width : None or float
             If None, the zero loss peak is not masked, otherwise, use the
             provided value as width of the zero loss peak mask.
             Default is None."""

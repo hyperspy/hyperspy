@@ -23,10 +23,10 @@ from hyperspy.signal import _obj_in_dict2hspy, BaseSignal
 
 def test_obj_in_dict2hspy_signal():
     s_dict = BaseSignal([0, 1, 2])._to_dictionary()
-    d = {'_sig_signal': s_dict}
+    d = {"_sig_signal": s_dict}
     _obj_in_dict2hspy(d, False)
-    assert isinstance(d['signal'], BaseSignal)
-    np.testing.assert_allclose(d['signal'].data, [0, 1, 2])
+    assert isinstance(d["signal"], BaseSignal)
+    np.testing.assert_allclose(d["signal"].data, [0, 1, 2])
 
 
 def test_obj_in_dict2hspy_axes_manager():
@@ -50,10 +50,10 @@ def test_obj_in_dict2hspy_axes_manager():
     ]
 
     am = AxesManager(axes_list)
-    d = {'_hspy_AxesManager_am': am._get_axes_dicts()}
+    d = {"_hspy_AxesManager_am": am._get_axes_dicts()}
     _obj_in_dict2hspy(d, False)
-    assert isinstance(d['am'], AxesManager)
-    assert am[0].scale == d['am'][0].scale
+    assert isinstance(d["am"], AxesManager)
+    assert am[0].scale == d["am"][0].scale
 
 
 def test_signal_containers():
@@ -63,7 +63,7 @@ def test_signal_containers():
     s.metadata.signal_container = [s2, s3]
     s_dict = s.metadata.as_dictionary()
     _obj_in_dict2hspy(s_dict, False)
-    signal_container = s_dict['signal_container']
+    signal_container = s_dict["signal_container"]
     isinstance(signal_container[0], BaseSignal)
     np.testing.assert_allclose(signal_container[0].data, [4, 5, 6])
     isinstance(signal_container[1], BaseSignal)

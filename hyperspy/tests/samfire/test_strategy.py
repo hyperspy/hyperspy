@@ -26,7 +26,6 @@ from hyperspy.signals import Signal1D
 
 
 class someweight(object):
-
     def __init__(self):
         self.model = None
 
@@ -42,13 +41,13 @@ class someweight(object):
 
 def create_artificial_samfire(shape):
     artificial_samfire = DictionaryTreeBrowser()
-    artificial_samfire.add_node('running_pixels')
+    artificial_samfire.add_node("running_pixels")
     artificial_samfire.running_pixels = []
-    artificial_samfire.add_node('model')
-    artificial_samfire.add_node('metadata')
-    artificial_samfire.metadata.add_node('marker')
+    artificial_samfire.add_node("model")
+    artificial_samfire.add_node("metadata")
+    artificial_samfire.metadata.add_node("marker")
     artificial_samfire.metadata.marker = np.zeros(shape)
-    artificial_samfire.add_node('_scale')
+    artificial_samfire.add_node("_scale")
     artificial_samfire._scale = 1.0
     return artificial_samfire
 
@@ -61,22 +60,18 @@ def compare_two_value_dicts(ans_r, ans):
             for p, pv in v.items():
                 test = test and p in ans[k]
                 if test:
-                    np.testing.assert_allclose(
-                        np.array(pv),
-                        np.array(
-                            ans[k][p]))
+                    np.testing.assert_allclose(np.array(pv), np.array(ans[k][p]))
     return test
 
 
 class TestLocalSimple:
-
     def setup_method(self, method):
         self.shape = (5, 7)
-        self.s = LocalStrategy('test diffusion strategy')
+        self.s = LocalStrategy("test diffusion strategy")
         self.samf = create_artificial_samfire(self.shape)
 
         m = DictionaryTreeBrowser()
-        m.set_item('chisq.data', np.ones(self.shape) * 5.)
+        m.set_item("chisq.data", np.ones(self.shape) * 5.0)
 
         self.samf.model = m
 
@@ -108,14 +103,14 @@ class TestLocalSimple:
         assert s.radii is None
         assert s._radii_changed
         s._radii_changed = False
-        s.radii = 1.
+        s.radii = 1.0
         assert s.radii == (1.0, 1.0)
         assert s._radii_changed
 
     def test_clean(self):
         s = self.s
         s._untruncated = 12
-        s._mask_all = 2.
+        s._mask_all = 2.0
         s._radii_changed = False
         s.clean()
         assert s._untruncated is None
@@ -133,14 +128,14 @@ class TestLocalSimple:
         s.samf.metadata.marker[0, 1] = -1
         s.samf.model.chisq.data[0, 1] = 50
 
-        ans1 = np.array([[1.63810767e-03, -1.00000000e+00, 1.63810767e-03, 2.61027907e-23],
-                         [2.47875218e-03, -
-                          1.00000000e+00, 2.47875218e-03, 9.11881966e-04],
-                         [1.63810767e-03,
-                          2.47875218e-03,
-                          1.63810767e-03,
-                          0.00000000e+00],
-                         [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
+        ans1 = np.array(
+            [
+                [1.63810767e-03, -1.00000000e00, 1.63810767e-03, 2.61027907e-23],
+                [2.47875218e-03, -1.00000000e00, 2.47875218e-03, 9.11881966e-04],
+                [1.63810767e-03, 2.47875218e-03, 1.63810767e-03, 0.00000000e00],
+                [0.00000000e00, 0.00000000e00, 0.00000000e00, 0.00000000e00],
+            ]
+        )
 
         s.refresh(True, given_pixels=None)
         np.testing.assert_allclose(ans1, s.samf.metadata.marker[:4, :4])
@@ -149,9 +144,8 @@ class TestLocalSimple:
         given[0, 1] = False
         s.refresh(True, given_pixels=given)
         np.testing.assert_allclose(
-            s.samf.metadata.marker[
-                ~given][0],
-            0.011624353837970535)
+            s.samf.metadata.marker[~given][0], 0.011624353837970535
+        )
         assert np.all(s.samf.metadata.marker[given] == -1)
 
     def test_refresh_nooverwrite(self):
@@ -165,14 +159,14 @@ class TestLocalSimple:
         s.samf.metadata.marker[0, 1] = -1
         s.samf.model.chisq.data[0, 1] = 50
 
-        ans1 = np.array([[7.09547416e-23, -1.00000000e+00, 7.09547416e-23, 2.61027907e-23],
-                         [4.68911365e-23, -
-                          2.00000000e+00, 4.68911365e-23, 0.00000000e+00],
-                         [0.00000000e+00,
-                          0.00000000e+00,
-                          0.00000000e+00,
-                          0.00000000e+00],
-                         [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
+        ans1 = np.array(
+            [
+                [7.09547416e-23, -1.00000000e00, 7.09547416e-23, 2.61027907e-23],
+                [4.68911365e-23, -2.00000000e00, 4.68911365e-23, 0.00000000e00],
+                [0.00000000e00, 0.00000000e00, 0.00000000e00, 0.00000000e00],
+                [0.00000000e00, 0.00000000e00, 0.00000000e00, 0.00000000e00],
+            ]
+        )
 
         s.refresh(False, given_pixels=None)
         np.testing.assert_allclose(ans1, s.samf.metadata.marker[:4, :4])
@@ -190,90 +184,78 @@ class TestLocalSimple:
         # use floats intentionally, since it was broken at one point
         s.radii = (2.1, 1.9)
         ind = (0, 0)
-        distances, slices, centre, mask = s._get_distance_array(
-            self.shape, ind)
+        distances, slices, centre, mask = s._get_distance_array(self.shape, ind)
         assert centre == ind
         assert slices == (slice(0, 4, None), slice(0, 3, None))
-        tmp = np.array([[0., 1., np.nan],
-                        [1., 1.41421356, np.nan],
-                        [2., np.nan, np.nan],
-                        [np.nan, np.nan, np.nan]])
-        tmp_m = np.array([[False, True, False],
-                          [True, True, False],
-                          [True, False, False],
-                          [False, False, False]], dtype=bool)
+        tmp = np.array(
+            [
+                [0.0, 1.0, np.nan],
+                [1.0, 1.41421356, np.nan],
+                [2.0, np.nan, np.nan],
+                [np.nan, np.nan, np.nan],
+            ]
+        )
+        tmp_m = np.array(
+            [
+                [False, True, False],
+                [True, True, False],
+                [True, False, False],
+                [False, False, False],
+            ],
+            dtype=bool,
+        )
         assert np.all(tmp_m == mask)
         np.testing.assert_allclose(tmp[mask], distances[mask])
         assert not s._radii_changed
-        tmp_ma = np.array([[3.14884957, 2.31782464, 2.04081633, 2.31782464, 3.14884957],
-                           [2.01506272,
-                            1.18403779,
-                            0.90702948,
-                            1.18403779,
-                            2.01506272],
-                           [1.33479061,
-                            0.50376568,
-                            0.22675737,
-                            0.50376568,
-                            1.33479061],
-                           [1.10803324,
-                            0.27700831,
-                            0.,
-                            0.27700831,
-                            1.10803324],
-                           [1.33479061,
-                            0.50376568,
-                            0.22675737,
-                            0.50376568,
-                            1.33479061],
-                           [2.01506272,
-                            1.18403779,
-                            0.90702948,
-                            1.18403779,
-                            2.01506272],
-                           [3.14884957, 2.31782464, 2.04081633, 2.31782464, 3.14884957]])
+        tmp_ma = np.array(
+            [
+                [3.14884957, 2.31782464, 2.04081633, 2.31782464, 3.14884957],
+                [2.01506272, 1.18403779, 0.90702948, 1.18403779, 2.01506272],
+                [1.33479061, 0.50376568, 0.22675737, 0.50376568, 1.33479061],
+                [1.10803324, 0.27700831, 0.0, 0.27700831, 1.10803324],
+                [1.33479061, 0.50376568, 0.22675737, 0.50376568, 1.33479061],
+                [2.01506272, 1.18403779, 0.90702948, 1.18403779, 2.01506272],
+                [3.14884957, 2.31782464, 2.04081633, 2.31782464, 3.14884957],
+            ]
+        )
         np.testing.assert_allclose(s._mask_all, tmp_ma)
-        tmp_un = np.array([[3.60555128, 3.16227766, 3., 3.16227766, 3.60555128],
-                           [2.82842712,
-                            2.23606798,
-                            2.,
-                            2.23606798,
-                            2.82842712],
-                           [2.23606798,
-                            1.41421356,
-                            1.,
-                            1.41421356,
-                            2.23606798],
-                           [2., 1., 0., 1., 2.],
-                           [2.23606798,
-                            1.41421356,
-                            1.,
-                            1.41421356,
-                            2.23606798],
-                           [2.82842712,
-                            2.23606798,
-                            2.,
-                            2.23606798,
-                            2.82842712],
-                           [3.60555128, 3.16227766, 3., 3.16227766, 3.60555128]])
+        tmp_un = np.array(
+            [
+                [3.60555128, 3.16227766, 3.0, 3.16227766, 3.60555128],
+                [2.82842712, 2.23606798, 2.0, 2.23606798, 2.82842712],
+                [2.23606798, 1.41421356, 1.0, 1.41421356, 2.23606798],
+                [2.0, 1.0, 0.0, 1.0, 2.0],
+                [2.23606798, 1.41421356, 1.0, 1.41421356, 2.23606798],
+                [2.82842712, 2.23606798, 2.0, 2.23606798, 2.82842712],
+                [3.60555128, 3.16227766, 3.0, 3.16227766, 3.60555128],
+            ]
+        )
         np.testing.assert_allclose(s._untruncated, tmp_un)
 
         # now check that the stored values are used
         # mask:
         s._mask_all[0, 0] = 1.0
         ind = (4, 6)
-        distances, slices, centre, mask = s._get_distance_array(
-            self.shape, ind)
+        distances, slices, centre, mask = s._get_distance_array(self.shape, ind)
         assert centre == (3.0, 2.0)
         assert slices == (slice(1, 5, None), slice(4, 7, None))
-        tmp_m = np.array([[True, False, False],
-                          [False, False, True],
-                          [False, True, True],
-                          [False, True, False]], dtype=bool)
-        tmp = np.array([[3.60555128, np.nan, np.nan],
-                        [np.nan, np.nan, 2.],
-                        [np.nan, 1.41421356, 1.],
-                        [np.nan, 1., 0.]])
+        tmp_m = np.array(
+            [
+                [True, False, False],
+                [False, False, True],
+                [False, True, True],
+                [False, True, False],
+            ],
+            dtype=bool,
+        )
+        tmp = np.array(
+            [
+                [3.60555128, np.nan, np.nan],
+                [np.nan, np.nan, 2.0],
+                [np.nan, 1.41421356, 1.0],
+                [np.nan, 1.0, 0.0],
+            ]
+        )
         assert np.all(tmp_m == mask)
         np.testing.assert_allclose(tmp[mask], distances[mask])
         assert not s._radii_changed
@@ -282,18 +264,26 @@ class TestLocalSimple:
         # calculated again
         s._radii_changed = True
 
-        distances, slices, centre, mask = s._get_distance_array(
-            self.shape, ind)
+        distances, slices, centre, mask = s._get_distance_array(self.shape, ind)
         assert centre == (3.0, 2.0)
         assert slices == (slice(1, 5, None), slice(4, 7, None))
-        tmp_m = np.array([[False, False, False],
-                          [False, False, True],
-                          [False, True, True],
-                          [False, True, False]], dtype=bool)
-        tmp = np.array([[np.nan, np.nan, np.nan],
-                        [np.nan, np.nan, 2.],
-                        [np.nan, 1.41421356, 1.],
-                        [np.nan, 1., 0.]])
+        tmp_m = np.array(
+            [
+                [False, False, False],
+                [False, False, True],
+                [False, True, True],
+                [False, True, False],
+            ],
+            dtype=bool,
+        )
+        tmp = np.array(
+            [
+                [np.nan, np.nan, np.nan],
+                [np.nan, np.nan, 2.0],
+                [np.nan, 1.41421356, 1.0],
+                [np.nan, 1.0, 0.0],
+            ]
+        )
         assert np.all(tmp_m == mask)
         np.testing.assert_allclose(tmp[mask], distances[mask])
         assert not s._radii_changed
@@ -311,43 +301,40 @@ class TestLocalSimple:
 
         ind = (0, 0)
         s._update_marker(ind)
-        tmp_m1 = np.array([[-1.00000000e+00, -3.30000000e-01, 9.11881966e-04, 0.00000000e+00],
-                           [2.47875218e-03,
-                            1.63810767e-03,
-                            1.00000000e+02,
-                            0.00000000e+00],
-                           [0.00000000e+00,
-                            0.00000000e+00,
-                            0.00000000e+00,
-                            0.00000000e+00],
-                           [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
+        tmp_m1 = np.array(
+            [
+                [-1.00000000e00, -3.30000000e-01, 9.11881966e-04, 0.00000000e00],
+                [2.47875218e-03, 1.63810767e-03, 1.00000000e02, 0.00000000e00],
+                [0.00000000e00, 0.00000000e00, 0.00000000e00, 0.00000000e00],
+                [0.00000000e00, 0.00000000e00, 0.00000000e00, 0.00000000e00],
+            ]
+        )
         np.testing.assert_allclose(tmp_m1, s.samf.metadata.marker[:4, :4])
 
         ind = (1, 1)
         s.samf.running_pixels.append((1, 2))
         s.samf._scale = 13
         s._update_marker(ind)
-        tmp_m2 = np.array([[-1.00000000e+00, -3.30000000e-01, 2.54998964e-03, 0.00000000e+00],
-                           [4.95750435e-03, -
-                            1.30000000e+01, 0.00000000e+00, 9.11881966e-04],
-                           [1.63810767e-03,
-                            2.47875218e-03,
-                            1.63810767e-03,
-                            0.00000000e+00],
-                           [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00]])
+        tmp_m2 = np.array(
+            [
+                [-1.00000000e00, -3.30000000e-01, 2.54998964e-03, 0.00000000e00],
+                [4.95750435e-03, -1.30000000e01, 0.00000000e00, 9.11881966e-04],
+                [1.63810767e-03, 2.47875218e-03, 1.63810767e-03, 0.00000000e00],
+                [0.00000000e00, 0.00000000e00, 0.00000000e00, 0.00000000e00],
+            ]
+        )
         np.testing.assert_allclose(tmp_m2, s.samf.metadata.marker[:4, :4])
 
 
 class TestLocalWithModel:
-
     def setup_method(self, method):
         self.shape = (5, 7)
-        self.s = LocalStrategy('test diffusion strategy')
+        self.s = LocalStrategy("test diffusion strategy")
         self.samf = create_artificial_samfire(self.shape)
 
         m = Signal1D(np.empty(self.shape + (100,))).create_model()
         m.extend([Gaussian() for _ in range(3)])
-        m.chisq.data.fill(5.)
+        m.chisq.data.fill(5.0)
 
         self.samf.model = m
 
@@ -364,9 +351,9 @@ class TestLocalWithModel:
 
         samf.model[1].active_is_multidimensional = True
         samf.model[1]._active_array[0, 0] = False
-        samf.model[1].A.map['values'].fill(10.)
-        samf.model[1].centre.map['values'].fill(3.)
-        samf.model[1].centre.map['values'][0, 1] = 15.
+        samf.model[1].A.map["values"].fill(10.0)
+        samf.model[1].centre.map["values"].fill(3.0)
+        samf.model[1].centre.map["values"][0, 1] = 15.0
 
         samf.model[2].A.free = False
 
@@ -374,16 +361,14 @@ class TestLocalWithModel:
         assert d1 == {}
 
         samf.metadata.marker[0, 0] = -1
-        assert (
-            s.values(
-                (1, 0)) == {
-                'Gaussian_1': {
-                    'centre': 0.0, 'sigma': 0.0}})
+        assert s.values((1, 0)) == {"Gaussian_1": {"centre": 0.0, "sigma": 0.0}}
 
         samf.metadata.marker[1, 1] = -1
 
-        ans_r = {'Gaussian_0': {'A': 10.0, 'centre': 2.9999999999999996, 'sigma': 0.0},
-                 'Gaussian_1': {'centre': 0.0, 'sigma': 0.0}}
+        ans_r = {
+            "Gaussian_0": {"A": 10.0, "centre": 2.9999999999999996, "sigma": 0.0},
+            "Gaussian_1": {"centre": 0.0, "sigma": 0.0},
+        }
 
         ans = s.values((1, 0))
 
@@ -392,8 +377,10 @@ class TestLocalWithModel:
 
         samf.metadata.marker[0, 1] = -1
 
-        ans_r2 = {'Gaussian_0': {'A': 10.0, 'centre': 7.7748266350745405, 'sigma': 0.0},
-                  'Gaussian_1': {'centre': 0.0, 'sigma': 0.0}}
+        ans_r2 = {
+            "Gaussian_0": {"A": 10.0, "centre": 7.7748266350745405, "sigma": 0.0},
+            "Gaussian_1": {"centre": 0.0, "sigma": 0.0},
+        }
 
         ans2 = s.values((1, 0))
 
@@ -402,22 +389,21 @@ class TestLocalWithModel:
 
 
 class TestGlobalStrategy:
-
     def setup_method(self, method):
         # TODO: actually finish setup+ tests
         self.shape = (5, 7)
-        self.s = GlobalStrategy('test segmenter strategy')
+        self.s = GlobalStrategy("test segmenter strategy")
         self.samf = create_artificial_samfire(self.shape)
 
         m = Signal1D(np.empty(self.shape + (100,))).create_model()
         m.extend([Gaussian() for _ in range(3)])
-        m.chisq.data.fill(5.)
+        m.chisq.data.fill(5.0)
 
         self.samf.model = m
 
     def test_refresh_nooverwrite_nogiven(self):
         samf = self.samf
-        samf.set_item('update_every', np.nan)
+        samf.set_item("update_every", np.nan)
         s = self.s
         s.samf = samf
 
@@ -431,11 +417,11 @@ class TestGlobalStrategy:
 
     def test_refresh_nooverwrite_given(self):
         samf = self.samf
-        samf.set_item('update_every', np.nan)
+        samf.set_item("update_every", np.nan)
         s = self.s
         s.samf = samf
 
-        samf.metadata.marker.fill(3.)
+        samf.metadata.marker.fill(3.0)
         samf.metadata.marker[0, 0] = -1
         samf.metadata.marker[0, 1] = -2
 
@@ -448,7 +434,7 @@ class TestGlobalStrategy:
 
     def test_refresh_overwrite_nogiven(self):
         samf = self.samf
-        samf.set_item('update_every', np.nan)
+        samf.set_item("update_every", np.nan)
         s = self.s
         s.samf = samf
 
@@ -462,11 +448,11 @@ class TestGlobalStrategy:
 
     def test_refresh_overwrite_given(self):
         samf = self.samf
-        samf.set_item('update_every', np.nan)
+        samf.set_item("update_every", np.nan)
         s = self.s
         s.samf = samf
 
-        samf.metadata.marker.fill(3.)
+        samf.metadata.marker.fill(3.0)
         samf.metadata.marker[0, 0] = -1
         samf.metadata.marker[0, 1] = -2
 
@@ -489,7 +475,6 @@ class TestGlobalStrategy:
         assert np.all(samf.metadata.marker[mask] == 0)
 
     def test_package_values(self):
-
         s = self.s
         samf = self.samf
         s.samf = samf
@@ -497,17 +482,21 @@ class TestGlobalStrategy:
         samf.model[0].active = False
         samf.model[1].active_is_multidimensional = True
         samf.model[1]._active_array[0, 0] = False
-        samf.model[1].A.map['values'].fill(10.)
-        samf.model[1].centre.map['values'].fill(3.)
-        samf.model[1].centre.map['values'][0, 1] = 15.
-        samf.model[2].sigma.map['values'][0, 2] = 9.
+        samf.model[1].A.map["values"].fill(10.0)
+        samf.model[1].centre.map["values"].fill(3.0)
+        samf.model[1].centre.map["values"][0, 1] = 15.0
+        samf.model[2].sigma.map["values"][0, 2] = 9.0
 
         s.samf.metadata.marker[0, 0] = -100
 
-        ans_r1 = {'Gaussian_0': {'A': np.array([], dtype=float),
-                                 'centre': np.array([], dtype=float),
-                                 'sigma': np.array([], dtype=float)},
-                  'Gaussian_1': {'centre': np.array([0.]), 'sigma': np.array([0.])}}
+        ans_r1 = {
+            "Gaussian_0": {
+                "A": np.array([], dtype=float),
+                "centre": np.array([], dtype=float),
+                "sigma": np.array([], dtype=float),
+            },
+            "Gaussian_1": {"centre": np.array([0.0]), "sigma": np.array([0.0])},
+        }
 
         ans = s._package_values()
         t = compare_two_value_dicts(ans_r1, ans)
@@ -515,10 +504,17 @@ class TestGlobalStrategy:
 
         s.samf.metadata.marker[0, 2] = -100
 
-        ans_r2 = {'Gaussian_0': {'A': np.array([10.]),
-                                 'centre': np.array([3.]),
-                                 'sigma': np.array([0.])},
-                  'Gaussian_1': {'centre': np.array([0., 0.]), 'sigma': np.array([0., 9.])}}
+        ans_r2 = {
+            "Gaussian_0": {
+                "A": np.array([10.0]),
+                "centre": np.array([3.0]),
+                "sigma": np.array([0.0]),
+            },
+            "Gaussian_1": {
+                "centre": np.array([0.0, 0.0]),
+                "sigma": np.array([0.0, 9.0]),
+            },
+        }
 
         ans2 = s._package_values()
         t2 = compare_two_value_dicts(ans_r2, ans2)

@@ -18,7 +18,6 @@
 
 
 class goodness_test(object):
-
     _tolerance = None
 
     @property

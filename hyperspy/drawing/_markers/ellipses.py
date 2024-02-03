@@ -16,12 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.docstrings.markers import (OFFSET_DOCSTRING,
-                                         HEIGHTS_DOCSTRING,
-                                         WIDTHS_DOCSTRING,
-                                         ANGLES_DOCSTRING,
-                                         UNITS_DOCSTRING,
-                                         )
+from hyperspy.docstrings.markers import (
+    OFFSET_DOCSTRING,
+    HEIGHTS_DOCSTRING,
+    WIDTHS_DOCSTRING,
+    ANGLES_DOCSTRING,
+    UNITS_DOCSTRING,
+)
 
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.collections import EllipseCollection
@@ -40,7 +41,7 @@ class Ellipses(Markers):
         angles=0,
         offset_transform="data",
         units="xy",
-        **kwargs
+        **kwargs,
     ):
         """Initialize the set of Ellipse Markers.
 
@@ -56,10 +57,11 @@ class Ellipses(Markers):
         """
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(
-                f"The transform argument is not supported for Squares Markers. Instead, "
+                "The transform argument is not supported for Squares Markers. Instead, "
                 "use the offset_transform argument to specify the transform of the "
                 "offsets and use the ``units`` argument to specify transform of the "
-                "sizes.")
+                "sizes."
+            )
         super().__init__(
             collection=EllipseCollection,
             offsets=offsets,
@@ -68,12 +70,13 @@ class Ellipses(Markers):
             widths=widths,
             angles=angles,
             units=units,
-            **kwargs
+            **kwargs,
         )
 
-    __init__.__doc__ %= (OFFSET_DOCSTRING,
-                         HEIGHTS_DOCSTRING,
-                         WIDTHS_DOCSTRING,
-                         ANGLES_DOCSTRING,
-                         UNITS_DOCSTRING,
-                         )
+    __init__.__doc__ %= (
+        OFFSET_DOCSTRING,
+        HEIGHTS_DOCSTRING,
+        WIDTHS_DOCSTRING,
+        ANGLES_DOCSTRING,
+        UNITS_DOCSTRING,
+    )

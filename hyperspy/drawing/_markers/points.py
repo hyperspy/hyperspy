@@ -28,12 +28,7 @@ class Points(Markers):
     _position_key = "offsets"
 
     def __init__(
-        self,
-        offsets,
-        sizes=10,
-        offset_transform="data",
-        units="points",
-        **kwargs
+        self, offsets, sizes=10, offset_transform="data", units="points", **kwargs
     ):
         """Initialize the set of points Markers.
 
@@ -48,10 +43,11 @@ class Points(Markers):
         """
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(
-                f"The transform argument is not supported for Squares Markers. Instead, "
+                "The transform argument is not supported for Squares Markers. Instead, "
                 "use the offset_transform argument to specify the transform of the "
                 "offsets and use the ``units`` argument to specify transform of the "
-                "sizes.")
+                "sizes."
+            )
 
         super().__init__(
             collection=CircleCollection,
@@ -59,7 +55,7 @@ class Points(Markers):
             sizes=sizes,
             offset_transform=offset_transform,
             units=units,
-            **kwargs
+            **kwargs,
         )
 
-    __init__.__doc__ %= (OFFSET_DOCSTRING,UNITS_DOCSTRING)
+    __init__.__doc__ %= (OFFSET_DOCSTRING, UNITS_DOCSTRING)

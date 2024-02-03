@@ -29,7 +29,7 @@ from rsciio.utils.tools import incremental_filename, append2pathname
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
-    )
+)
 from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.model_tools import CurrentComponentValues
@@ -40,7 +40,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class NoneFloat(t.CFloat):   # Lazy solution, but usable
+class NoneFloat(t.CFloat):  # Lazy solution, but usable
     default_value = None
 
     def validate(self, object, name, value):
@@ -75,6 +75,7 @@ class Parameter(t.HasTraits):
         for other locations is stored in map.
 
     """
+
     __number_of_elements = 1
     __value = 0
     _free = True
@@ -90,7 +91,7 @@ class Parameter(t.HasTraits):
     # RangeEditor() as it works with bmin/bmax.
     value = t.Property(t.Either([t.CFloat(0), Array()]))
 
-    units = t.Str('')
+    units = t.Str("")
     free = t.Property(t.CBool(True))
 
     bmin = t.Property(NoneFloat(), label="Lower bound")
@@ -106,7 +107,8 @@ class Parameter(t.HasTraits):
     def __init__(self):
         self._twins = set()
         self.events = Events()
-        self.events.value_changed = Event("""
+        self.events.value_changed = Event(
+            """
             Event that triggers when the `Parameter.value` changes.
 
             The event triggers after the internal state of the `Parameter` has
@@ -118,31 +120,34 @@ class Parameter(t.HasTraits):
                 The `Parameter` that the event belongs to
             value : {float | array}
                 The new value of the parameter
-            """, arguments=["obj", 'value'])
+            """,
+            arguments=["obj", "value"],
+        )
         self.std = None
         self.component = None
         self.grad = None
-        self.name = ''
-        self.units = ''
+        self.name = ""
+        self.units = ""
         self._linear = False
         self.map = None
         self.model = None
-        self._whitelist = {'_id_name': None,
-                           'value': None,
-                           'std': None,
-                           'free': None,
-                           'units': None,
-                           'map': None,
-                           '_bounds': None,
-                           'ext_bounded': None,
-                           'name': None,
-                           '_linear':None,
-                           'ext_force_positive': None,
-                           'twin_function_expr': None,
-                           'twin_inverse_function_expr': None,
-                           'self': ('id', None),
-                           }
-        self._slicing_whitelist = {'map': 'inav'}
+        self._whitelist = {
+            "_id_name": None,
+            "value": None,
+            "std": None,
+            "free": None,
+            "units": None,
+            "map": None,
+            "_bounds": None,
+            "ext_bounded": None,
+            "name": None,
+            "_linear": None,
+            "ext_force_positive": None,
+            "twin_function_expr": None,
+            "twin_inverse_function_expr": None,
+            "self": ("id", None),
+        }
+        self._slicing_whitelist = {"map": "inav"}
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary.
@@ -166,19 +171,22 @@ class Parameter(t.HasTraits):
             setting up the correct twins
 
         """
-        if dictionary['_id_name'] == self._id_name:
+        if dictionary["_id_name"] == self._id_name:
             load_from_dictionary(self, dictionary)
-            return dictionary['self']
+            return dictionary["self"]
         else:
-            raise ValueError("_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
-                    \ndictionary['_id_name'] = %s" % (self._id_name, dictionary['_id_name']))
+            raise ValueError(
+                "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
+                    \ndictionary['_id_name'] = %s"
+                % (self._id_name, dictionary["_id_name"])
+            )
 
     def __repr__(self):
-        text = ''
-        text += 'Parameter %s' % self.name
+        text = ""
+        text += "Parameter %s" % self.name
         if self.component is not None:
-            text += ' of %s' % self.component._get_short_description()
-        text = '<' + text + '>'
+            text += " of %s" % self.component._get_short_description()
+        text = "<" + text + ">"
         return text
 
     def __len__(self):
@@ -228,7 +236,7 @@ class Parameter(t.HasTraits):
                     f"value of {self} will raise an AttributeError unless "
                     "you manually set ``twin_inverse_function_expr``. "
                     "Otherwise, set the value of its twin parameter instead."
-                    )
+                )
 
     @property
     def twin_inverse_function_expr(self):
@@ -255,16 +263,20 @@ class Parameter(t.HasTraits):
         if len(expr.free_symbols) > 1:
             raise ValueError("The expression must contain only one variable.")
         elif len(expr.free_symbols) == 0:
-            raise ValueError("The expression must contain one variable, "
-                             "it contains none.")
+            raise ValueError(
+                "The expression must contain one variable, " "it contains none."
+            )
         x = tuple(expr.free_symbols)[0]
         self.__twin_inverse_function = lambdify(x, expr.evalf())
         self._twin_inverse_function_expr = value
 
     @property
     def _twin_inverse_function(self):
-        if (self.twin_function_expr and self._twin_inverse_sympy and
-                not self.twin_inverse_function_expr):
+        if (
+            self.twin_function_expr
+            and self._twin_inverse_sympy
+            and not self.twin_inverse_function_expr
+        ):
             return lambda x: self._twin_inverse_sympy(x).pop()
         else:
             return self.__twin_inverse_function
@@ -285,16 +297,16 @@ class Parameter(t.HasTraits):
             # TypeError when calling. See issue #349.
             if len(value) != self._number_of_elements:
                 raise ValueError(
-                    "The length of the parameter must be ",
-                    self._number_of_elements)
+                    "The length of the parameter must be ", self._number_of_elements
+                )
             else:
                 if not isinstance(value, tuple):
                     value = tuple(value)
         except TypeError:
             if self._number_of_elements != 1:
                 raise ValueError(
-                    "The length of the parameter must be ",
-                    self._number_of_elements)
+                    "The length of the parameter must be ", self._number_of_elements
+                )
         old_value = self.__value
 
         if self.twin is not None:
@@ -305,7 +317,8 @@ class Parameter(t.HasTraits):
                 else:
                     raise AttributeError(
                         "This parameter has a twin function but its "
-                        "``twin_inverse_function_expr`` is not defined.")
+                        "``twin_inverse_function_expr`` is not defined."
+                    )
             else:
                 self.twin.value = value
                 return
@@ -323,19 +336,15 @@ class Parameter(t.HasTraits):
                 else:
                     self.__value = value
             else:
-                bmin = (self.bmin if self.bmin is not None
-                        else -np.inf)
-                bmax = (self.bmax if self.bmin is not None
-                        else np.inf)
+                bmin = self.bmin if self.bmin is not None else -np.inf
+                bmax = self.bmax if self.bmin is not None else np.inf
                 self.__value = np.clip(value, bmin, bmax)
 
-        if (self._number_of_elements != 1 and
-                not isinstance(self.__value, tuple)):
+        if self._number_of_elements != 1 and not isinstance(self.__value, tuple):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
-            self.events.value_changed.trigger(value=self.__value,
-                                              obj=self)
-        self.trait_property_changed('value', old_value, self.__value)
+            self.events.value_changed.trigger(value=self.__value, obj=self)
+        self.trait_property_changed("value", old_value, self.__value)
 
     # Fix the parameter when coupled
     def _get_free(self):
@@ -347,20 +356,23 @@ class Parameter(t.HasTraits):
 
     def _set_free(self, arg):
         if arg and self.twin:
-            raise ValueError(f"Parameter {self.name} can't be set free "
-                             "is twinned with {self.twin}.")
+            raise ValueError(
+                f"Parameter {self.name} can't be set free "
+                "is twinned with {self.twin}."
+            )
         old_value = self._free
         self._free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-        self.trait_property_changed('free', old_value, self._free)
+        self.trait_property_changed("free", old_value, self._free)
 
     def _on_twin_update(self, value, twin=None):
-        if (twin is not None
-                and hasattr(twin, 'events')
-                and hasattr(twin.events, 'value_changed')):
-            with twin.events.value_changed.suppress_callback(
-                    self._on_twin_update):
+        if (
+            twin is not None
+            and hasattr(twin, "events")
+            and hasattr(twin.events, "value_changed")
+        ):
+            with twin.events.value_changed.suppress_callback(self._on_twin_update):
                 self.events.value_changed.trigger(value=value, obj=self)
         else:
             self.events.value_changed.trigger(value=value, obj=self)
@@ -373,16 +385,14 @@ class Parameter(t.HasTraits):
                 twin_value = self.value
                 if self in self.twin._twins:
                     self.twin._twins.remove(self)
-                    self.twin.events.value_changed.disconnect(
-                        self._on_twin_update)
+                    self.twin.events.value_changed.disconnect(self._on_twin_update)
 
                 self.__twin = arg
                 self.value = twin_value
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                arg.events.value_changed.connect(self._on_twin_update,
-                                                 ["value"])
+                arg.events.value_changed.connect(self._on_twin_update, ["value"])
             self.__twin = arg
 
         if self.component is not None:
@@ -396,6 +406,7 @@ class Parameter(t.HasTraits):
         :attr:`twin_function_expr`
         """
         return self.__twin
+
     twin = property(_get_twin, _set_twin)
 
     def _get_bmin(self):
@@ -413,7 +424,7 @@ class Parameter(t.HasTraits):
             self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-        self.trait_property_changed('bmin', old_value, arg)
+        self.trait_property_changed("bmin", old_value, arg)
 
     def _get_bmax(self):
         """The higher value of the bounds."""
@@ -430,7 +441,7 @@ class Parameter(t.HasTraits):
             self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-        self.trait_property_changed('bmax', old_value, arg)
+        self.trait_property_changed("bmax", old_value, arg)
 
     @property
     def _number_of_elements(self):
@@ -442,8 +453,9 @@ class Parameter(t.HasTraits):
         if self.__number_of_elements == arg:
             return
         if arg < 1:
-            raise ValueError("Please provide an integer number equal "
-                             "or greater to 1")
+            raise ValueError(
+                "Please provide an integer number equal " "or greater to 1"
+            )
         self._bounds = ((self.bmin, self.bmax),) * arg
         self.__number_of_elements = arg
 
@@ -500,10 +512,10 @@ class Parameter(t.HasTraits):
         # If it is a single spectrum indices is ()
         if not indices:
             indices = (0,)
-        self.map['values'][indices] = self.value
-        self.map['is_set'][indices] = True
+        self.map["values"][indices] = self.value
+        self.map["is_set"][indices] = True
         if self.std is not None:
-            self.map['std'][indices] = self.std
+            self.map["std"][indices] = self.std
 
     def fetch(self):
         """Fetch the stored value and std attributes from the
@@ -522,9 +534,9 @@ class Parameter(t.HasTraits):
         # If it is a single spectrum indices is ()
         if not indices:
             indices = (0,)
-        if self.map['is_set'][indices]:
-            value = self.map['values'][indices]
-            std = self.map['std'][indices]
+        if self.map["is_set"][indices]:
+            value = self.map["values"][indices]
+            std = self.map["std"][indices]
             if isinstance(value, dArray):
                 value = value.compute()
             if isinstance(std, dArray):
@@ -551,9 +563,9 @@ class Parameter(t.HasTraits):
 
         """
         if mask is None:
-            mask = np.zeros(self.map.shape, dtype='bool')
-        self.map['values'][mask == False] = self.value
-        self.map['is_set'][mask == False] = True
+            mask = np.zeros(self.map.shape, dtype="bool")
+        self.map["values"][mask == 0] = self.value
+        self.map["is_set"][mask == 0] = True
 
     def _create_array(self):
         """Create the map array to store the information in
@@ -562,23 +574,26 @@ class Parameter(t.HasTraits):
         """
         shape = self._axes_manager._navigation_shape_in_array
         if not shape:
-            shape = [1, ]
+            shape = [
+                1,
+            ]
         # Shape-1 fields in dtypes won’t be collapsed to scalars in a future
         # numpy version (see release notes numpy 1.17.0)
         if self._number_of_elements > 1:
-            dtype_ = np.dtype([
-                ('values', 'float', self._number_of_elements),
-                ('std', 'float', self._number_of_elements),
-                ('is_set', 'bool')])
+            dtype_ = np.dtype(
+                [
+                    ("values", "float", self._number_of_elements),
+                    ("std", "float", self._number_of_elements),
+                    ("is_set", "bool"),
+                ]
+            )
         else:
-            dtype_ = np.dtype([
-                ('values', 'float'),
-                ('std', 'float'),
-                ('is_set', 'bool')])
-        if (self.map is None or self.map.shape != shape or
-                self.map.dtype != dtype_):
+            dtype_ = np.dtype(
+                [("values", "float"), ("std", "float"), ("is_set", "bool")]
+            )
+        if self.map is None or self.map.shape != shape or self.map.dtype != dtype_:
             self.map = np.zeros(shape, dtype_)
-            self.map['std'].fill(np.nan)
+            self.map["std"].fill(np.nan)
             # TODO: in the future this class should have access to
             # axes manager and should be able to fetch its own
             # values. Until then, the next line is necessary to avoid
@@ -586,7 +601,7 @@ class Parameter(t.HasTraits):
             # from the newly defined arrays
             self.std = None
 
-    def as_signal(self, field='values'):
+    def as_signal(self, field="values"):
         """Get a parameter map as a signal object.
 
         Please note that this method only works when the navigation
@@ -601,33 +616,30 @@ class Parameter(t.HasTraits):
         from hyperspy.signal import BaseSignal
 
         s = BaseSignal(
-            data=self.map[field],
-            axes=self._axes_manager._get_navigation_axes_dicts()
-            )
-        if self.component is not None and \
-                self.component.active_is_multidimensional:
+            data=self.map[field], axes=self._axes_manager._get_navigation_axes_dicts()
+        )
+        if self.component is not None and self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
 
-        s.metadata.General.title = ("%s parameter" % self.name
-                                    if self.component is None
-                                    else "%s parameter of %s component" %
-                                    (self.name, self.component.name))
+        s.metadata.General.title = (
+            "%s parameter" % self.name
+            if self.component is None
+            else "%s parameter of %s component" % (self.name, self.component.name)
+        )
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
             s.axes_manager._append_axis(
-                size=self._number_of_elements,
-                name=self.name,
-                navigate=True)
+                size=self._number_of_elements, name=self.name, navigate=True
+            )
         s._assign_subclass()
         if field == "values":
             # Add the variance if available
             std = self.as_signal(field="std")
             if not np.isnan(std.data).all():
-                std.data = std.data ** 2
+                std.data = std.data**2
                 std.metadata.General.title = "Variance"
-                s.metadata.set_item(
-                    "Signal.Noise_properties.variance", std)
+                s.metadata.set_item("Signal.Noise_properties.variance", std)
         return s
 
     def plot(self, **kwargs):
@@ -648,8 +660,7 @@ class Parameter(t.HasTraits):
         """
         self.as_signal().plot(**kwargs)
 
-    def export(self, folder=None, name=None, format="hspy",
-               save_std=False):
+    def export(self, folder=None, name=None, format="hspy", save_std=False):
         """Save the data to a file. All the arguments are optional.
 
         Parameters
@@ -672,15 +683,13 @@ class Parameter(t.HasTraits):
         if format is None:
             format = "hspy"
         if name is None:
-            name = self.component.name + '_' + self.name
-        filename = incremental_filename(slugify(name) + '.' + format)
+            name = self.component.name + "_" + self.name
+        filename = incremental_filename(slugify(name) + "." + format)
         if folder is not None:
             filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
         if save_std is True:
-            self.as_signal(field='std').save(
-                append2pathname(filename, '_std')
-                )
+            self.as_signal(field="std").save(append2pathname(filename, "_std"))
 
     def as_dictionary(self, fullcopy=True):
         """Returns parameter as a dictionary, saving all attributes from
@@ -707,7 +716,7 @@ class Parameter(t.HasTraits):
             * any field from _whitelist.keys()
 
         """
-        dic = {'_twins': [id(t) for t in self._twins]}
+        dic = {"_twins": [id(t) for t in self._twins]}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         return dic
 
@@ -718,15 +727,18 @@ class Parameter(t.HasTraits):
         # that configure/edit_traits will still work straight out of the box.
         # A whitelist controls which traits to include in this view.
         from traitsui.api import RangeEditor, View, Item
-        whitelist = ['bmax', 'bmin', 'free', 'name', 'std', 'units', 'value']
-        editable_traits = [trait for trait in self.editable_traits()
-                           if trait in whitelist]
-        if 'value' in editable_traits:
-            i = editable_traits.index('value')
+
+        whitelist = ["bmax", "bmin", "free", "name", "std", "units", "value"]
+        editable_traits = [
+            trait for trait in self.editable_traits() if trait in whitelist
+        ]
+        if "value" in editable_traits:
+            i = editable_traits.index("value")
             v = editable_traits.pop(i)
-            editable_traits.insert(i, Item(
-                v, editor=RangeEditor(low_name='bmin', high_name='bmax')))
-        view = View(editable_traits, buttons=['OK', 'Cancel'])
+            editable_traits.insert(
+                i, Item(v, editor=RangeEditor(low_name="bmin", high_name="bmax"))
+            )
+        view = View(editable_traits, buttons=["OK", "Cancel"])
         return view
 
 
@@ -751,19 +763,23 @@ class Component(t.HasTraits):
     free_parameters : list
     parameters : list
     """
+
     __axes_manager = None
     # setting dtype for t.Property(t.Bool) causes serialization error with cloudpickle
     active = t.Property()
     name = t.Property()
 
-    def __init__(self, parameter_name_list, linear_parameter_list=None, *args, **kwargs):
+    def __init__(
+        self, parameter_name_list, linear_parameter_list=None, *args, **kwargs
+    ):
         """
         %s
 
         """
         super().__init__(*args, **kwargs)
         self.events = Events()
-        self.events.active_changed = Event("""
+        self.events.active_changed = Event(
+            """
             Event that triggers when the `Component.active` changes.
 
             The event triggers after the internal state of the `Component` has
@@ -780,33 +796,39 @@ class Component(t.HasTraits):
                 not convolving individual `Component`s in models that
                 support convolution.
 
-            """, arguments=["obj", 'active'])
+            """,
+            arguments=["obj", "active"],
+        )
         self._parameters = []
         self._free_parameters = []
         self.init_parameters(parameter_name_list, linear_parameter_list)
         self._update_free_parameters()
         self.active = True
-        self._active_array = None # only if active_is_multidimensional is True
+        self._active_array = None  # only if active_is_multidimensional is True
         self.isbackground = False
         self.convolved = True
         self._id_name = self.__class__.__name__
-        self._id_version = '1.0'
+        self._id_version = "1.0"
         self._position = None
         self.model = None
-        self.name = ''
-        self._whitelist = {'_id_name': None,
-                           'name': None,
-                           'active_is_multidimensional': None,
-                           '_active_array': None,
-                           'active': None
-                           }
-        self._slicing_whitelist = {'_active_array': 'inav'}
-        self._slicing_order = ('active', 'active_is_multidimensional',
-                               '_active_array',)
+        self.name = ""
+        self._whitelist = {
+            "_id_name": None,
+            "name": None,
+            "active_is_multidimensional": None,
+            "_active_array": None,
+            "active": None,
+        }
+        self._slicing_whitelist = {"_active_array": "inav"}
+        self._slicing_order = (
+            "active",
+            "active_is_multidimensional",
+            "_active_array",
+        )
 
     __init__.__doc__ %= COMPONENT_PARAMETERS_DOCSTRING
 
-    _name = ''
+    _name = ""
     _active_is_multidimensional = False
     _active = True
 
@@ -830,14 +852,14 @@ class Component(t.HasTraits):
     @active_is_multidimensional.setter
     def active_is_multidimensional(self, value):
         if not isinstance(value, bool):
-            raise ValueError('Only boolean values are permitted')
+            raise ValueError("Only boolean values are permitted")
 
         if value == self.active_is_multidimensional:
             return
 
         if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
-                _logger.info('`navigation_size` < 2, skipping')
+                _logger.info("`navigation_size` < 2, skipping")
                 return
             # Store value at current position
             self._create_active_array()
@@ -854,7 +876,7 @@ class Component(t.HasTraits):
 
     def _set_name(self, value):
         if not isinstance(value, str):
-            raise ValueError('Only string values are permitted')
+            raise ValueError("Only string values are permitted")
         old_value = self._name
         if old_value == value:
             return
@@ -862,16 +884,18 @@ class Component(t.HasTraits):
             for component in self.model:
                 if value == component.name:
                     raise ValueError(
-                        "Another component already has "
-                        "the name " + str(value))
+                        "Another component already has " "the name " + str(value)
+                    )
             self._name = value
-            setattr(self.model._components, slugify(
-                value, valid_variable_name=True), self)
+            setattr(
+                self.model._components, slugify(value, valid_variable_name=True), self
+            )
             self.model._components.__delattr__(
-                slugify(old_value, valid_variable_name=True))
+                slugify(old_value, valid_variable_name=True)
+            )
         else:
             self._name = value
-        self.trait_property_changed('name', old_value, self._name)
+        self.trait_property_changed("name", old_value, self._name)
 
     @property
     def _axes_manager(self):
@@ -885,8 +909,7 @@ class Component(t.HasTraits):
 
     @property
     def _is_navigation_multidimensional(self):
-        if (self._axes_manager is None or not
-                self._axes_manager.navigation_dimension):
+        if self._axes_manager is None or not self._axes_manager.navigation_dimension:
             return False
         else:
             return True
@@ -908,7 +931,7 @@ class Component(t.HasTraits):
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
         self.events.active_changed.trigger(active=self._active, obj=self)
-        self.trait_property_changed('active', old_value, self._active)
+        self.trait_property_changed("active", old_value, self._active)
 
     def init_parameters(self, parameter_name_list, linear_parameter_list=None):
         """
@@ -928,40 +951,40 @@ class Component(t.HasTraits):
                 parameter._linear = True
             parameter._id_name = name
             setattr(self, name, parameter)
-            if hasattr(self, 'grad_' + name):
-                parameter.grad = getattr(self, 'grad_' + name)
+            if hasattr(self, "grad_" + name):
+                parameter.grad = getattr(self, "grad_" + name)
             parameter.component = self
             self.add_trait(name, t.Instance(Parameter))
-    
+
     init_parameters.__doc__ %= COMPONENT_PARAMETERS_DOCSTRING
 
     def _get_long_description(self):
         if self.name:
-            text = '%s (%s component)' % (self.name, self.__class__.__name__)
+            text = "%s (%s component)" % (self.name, self.__class__.__name__)
         else:
-            text = '%s component' % self.__class__.__name__
+            text = "%s component" % self.__class__.__name__
         return text
 
     def _get_short_description(self):
-        text = ''
+        text = ""
         if self.name:
             text += self.name
         else:
             text += self.__class__.__name__
-        text += ' component'
+        text += " component"
         return text
 
     def __repr__(self):
-        text = '<%s>' % self._get_long_description()
+        text = "<%s>" % self._get_long_description()
         return text
 
     def _update_free_parameters(self):
         self._free_parameters = sorted(
             [par for par in self.parameters if par.free], key=lambda x: x.name
-            )
+        )
         self._nfree_param = sum(
             [par._number_of_elements for par in self._free_parameters]
-            )
+        )
 
     def update_number_parameters(self):
         i = 0
@@ -990,21 +1013,28 @@ class Component(t.HasTraits):
         i = 0
         for parameter in sorted(parameters, key=lambda x: x.name):
             length = parameter._number_of_elements
-            parameter.value = (p[i] if length == 1 else p[i:i + length])
+            parameter.value = p[i] if length == 1 else p[i : i + length]
             if p_std is not None:
-                parameter.std = (p_std[i] if length == 1 else
-                                 tuple(p_std[i:i + length]))
+                parameter.std = (
+                    p_std[i] if length == 1 else tuple(p_std[i : i + length])
+                )
 
             i += length
 
     def _create_active_array(self):
         shape = self._axes_manager._navigation_shape_in_array
         if len(shape) == 1 and shape[0] == 0:
-            shape = [1, ]
-        if (not isinstance(self._active_array, np.ndarray)
-                or self._active_array.shape != shape):
-            _logger.debug(f'Creating _active_array for {self}.\n\tCurrent '
-                          f'array is:\n{self._active_array}')
+            shape = [
+                1,
+            ]
+        if (
+            not isinstance(self._active_array, np.ndarray)
+            or self._active_array.shape != shape
+        ):
+            _logger.debug(
+                f"Creating _active_array for {self}.\n\tCurrent "
+                f"array is:\n{self._active_array}"
+            )
             self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):
@@ -1023,13 +1053,14 @@ class Component(t.HasTraits):
             # functions.
             self.active = self.active
         if only_fixed is True:
-            parameters = (set(self.parameters) -
-                          set(self.free_parameters))
+            parameters = set(self.parameters) - set(self.free_parameters)
         else:
             parameters = self.parameters
-        parameters = [parameter for parameter in parameters
-                      if (parameter.twin is None or
-                          not isinstance(parameter.twin, Parameter))]
+        parameters = [
+            parameter
+            for parameter in parameters
+            if (parameter.twin is None or not isinstance(parameter.twin, Parameter))
+        ]
         for parameter in parameters:
             parameter.fetch()
 
@@ -1052,8 +1083,7 @@ class Component(t.HasTraits):
         for parameter in parameters:
             parameter.plot()
 
-    def export(self, folder=None, format="hspy", save_std=False,
-               only_free=True):
+    def export(self, folder=None, format="hspy", save_std=False, only_free=True):
         """Plot the value of the parameters of the model
 
         Parameters
@@ -1083,19 +1113,26 @@ class Component(t.HasTraits):
 
         parameters = [k for k in parameters if k.twin is None]
         for parameter in parameters:
-            parameter.export(folder=folder, format=format,
-                             save_std=save_std,)
+            parameter.export(
+                folder=folder,
+                format=format,
+                save_std=save_std,
+            )
 
     def summary(self):
         for parameter in self.parameters:
-            dim = len(parameter.map.squeeze().shape) if parameter.map \
-                is not None else 0
+            dim = len(parameter.map.squeeze().shape) if parameter.map is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print('%s = %s ± %s %s' % (parameter.name,
-                                               parameter.value,
-                                               parameter.std,
-                                               parameter.units))
+                    print(
+                        "%s = %s ± %s %s"
+                        % (
+                            parameter.name,
+                            parameter.value,
+                            parameter.std,
+                            parameter.units,
+                        )
+                    )
 
     def _component2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
@@ -1119,7 +1156,9 @@ class Component(t.HasTraits):
             self.fetch_stored_values()
         return s
 
-    def set_parameters_free(self, parameter_name_list=None, only_linear=False, only_nonlinear=False):
+    def set_parameters_free(
+        self, parameter_name_list=None, only_linear=False, only_nonlinear=False
+    ):
         """
         Sets parameters in a component to free.
 
@@ -1152,7 +1191,7 @@ class Component(t.HasTraits):
             raise ValueError(
                 "To set all parameters free, set both `only_linear` and "
                 "`only_nonlinear` to False."
-                )
+            )
 
         parameter_list = []
         if not parameter_name_list:
@@ -1170,8 +1209,9 @@ class Component(t.HasTraits):
             elif only_nonlinear and not _parameter._linear:
                 _parameter.free = True
 
-    def set_parameters_not_free(self, parameter_name_list=None,
-                                only_linear=False, only_nonlinear=False):
+    def set_parameters_not_free(
+        self, parameter_name_list=None, only_linear=False, only_nonlinear=False
+    ):
         """
         Sets parameters in a component to not free.
 
@@ -1204,7 +1244,8 @@ class Component(t.HasTraits):
         if only_linear and only_nonlinear:
             raise ValueError(
                 "To set all parameters not free, "
-                "set both only_linear and _nonlinear to False.")
+                "set both only_linear and _nonlinear to False."
+            )
 
         parameter_list = []
         if not parameter_name_list:
@@ -1251,15 +1292,15 @@ class Component(t.HasTraits):
             * any field from _whitelist.keys().
 
         """
-        dic = {
-            'parameters': [
-                p.as_dictionary(fullcopy) for p in self.parameters]}
+        dic = {"parameters": [p.as_dictionary(fullcopy) for p in self.parameters]}
         dic.update(get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         from hyperspy.model import _COMPONENTS
+
         if self._id_name not in _COMPONENTS:
             import cloudpickle
-            dic['_class_dump'] = cloudpickle.dumps(self.__class__)
+
+            dic["_class_dump"] = cloudpickle.dumps(self.__class__)
         return dic
 
     def _load_dictionary(self, dic):
@@ -1290,29 +1331,36 @@ class Component(t.HasTraits):
             correct twins.
         """
 
-        if dic['_id_name'] == self._id_name:
+        if dic["_id_name"] == self._id_name:
             # Restoring of polynomials saved with Hyperspy <v1.5
-            if (self._id_name == "Polynomial" and
-                    dic['parameters'][0]['_id_name'] == "coefficients"):
+            if (
+                self._id_name == "Polynomial"
+                and dic["parameters"][0]["_id_name"] == "coefficients"
+            ):
                 # in HyperSpy v1.5 the polynomial definition changed
                 # and the legacy option was removed in v2.0
                 from hyperspy._components.polynomial import convert_to_polynomial
+
                 dic = convert_to_polynomial(dic)
             load_from_dictionary(self, dic)
             id_dict = {}
-            for p in dic['parameters']:
-                idname = p['_id_name']
+            for p in dic["parameters"]:
+                idname = p["_id_name"]
                 if hasattr(self, idname):
                     par = getattr(self, idname)
                     t_id = par._load_dictionary(p)
                     id_dict[t_id] = par
                 else:
                     raise ValueError(
-                        "_id_name of parameters in component and dictionary do not match")
+                        "_id_name of parameters in component and dictionary do not match"
+                    )
             return id_dict
         else:
-            raise ValueError("_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
-                    \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+            raise ValueError(
+                "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
+                    \ndictionary['_id_name'] = %s"
+                % (self._id_name, dic["_id_name"])
+            )
 
     def print_current_values(self, only_free=False):
         """
@@ -1357,7 +1405,7 @@ def _get_scaling_factor(signal, axis, parameter):
         if axis.is_uniform:
             scaling_factor = axis.scale
         else:
-            parameter_idx  = axis.value2index(parameter)
+            parameter_idx = axis.value2index(parameter)
             scaling_factor = np.gradient(axis.axis)[parameter_idx]
     else:
         scaling_factor = 1

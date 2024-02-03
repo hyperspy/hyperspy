@@ -20,6 +20,7 @@ import numpy as np
 
 from hyperspy._components.expression import Expression
 
+
 class Bleasdale(Expression):
 
     r"""Bleasdale function component.
@@ -38,7 +39,7 @@ class Bleasdale(Expression):
     b : float, default=1.0
         The value of Parameter b.
     c : float, default=1.0
-        The value of Parameter c.        
+        The value of Parameter c.
     **kwargs
         Extra keyword arguments are passed to
         :class:`~.api.model.components1D.Expression`.
@@ -49,7 +50,7 @@ class Bleasdale(Expression):
 
     """
 
-    def __init__(self, a=1., b=1., c=1., module=None, **kwargs):
+    def __init__(self, a=1.0, b=1.0, c=1.0, module=None, **kwargs):
         super().__init__(
             expression="where((a + b * x) > 0, pow(a + b * x, -1 / c), 0)",
             name="Bleasdale",
@@ -59,15 +60,16 @@ class Bleasdale(Expression):
             module=module,
             autodoc=False,
             compute_gradients=False,
-            linear_parameter_list=['b'],
+            linear_parameter_list=["b"],
             check_parameter_linearity=False,
-            **kwargs)
-        module = self._whitelist['module'][1]
+            **kwargs,
+        )
+        module = self._whitelist["module"][1]
         if module in ("numpy", "scipy"):
             # Issue with calculating component at 0...
             raise ValueError(
                 f"{module} is not supported for this component, use numexpr instead."
-                )
+            )
 
     def grad_a(self, x):
         """
@@ -77,7 +79,7 @@ class Bleasdale(Expression):
         b = self.b.value
         c = self.c.value
 
-        return np.where((a + b * x) > 0, -(a + b * x) ** (-1 / c - 1) / c, 0)
+        return np.where((a + b * x) > 0, -((a + b * x) ** (-1 / c - 1)) / c, 0)
 
     def grad_b(self, x):
         """
@@ -87,8 +89,7 @@ class Bleasdale(Expression):
         b = self.b.value
         c = self.c.value
 
-        return np.where((a + b * x) > 0, -x * (a + b * x) ** (-1 / c - 1) / c
-               , 0)
+        return np.where((a + b * x) > 0, -x * (a + b * x) ** (-1 / c - 1) / c, 0)
 
     def grad_c(self, x):
         """
@@ -97,5 +98,6 @@ class Bleasdale(Expression):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        return np.where((a + b * x) > 0, np.log(a + b * x) / (c ** 2. *
-               (b * x + a) ** (1. / c)), 0)
+        return np.where(
+            (a + b * x) > 0, np.log(a + b * x) / (c**2.0 * (b * x + a) ** (1.0 / c)), 0
+        )

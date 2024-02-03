@@ -18,7 +18,6 @@
 
 import dask.array as da
 import numpy as np
-from prettytable import PrettyTable
 import pytest
 
 
@@ -41,6 +40,7 @@ from hyperspy.misc.utils import (
 
 try:
     import cupy as cp
+
     CUPY_INSTALLED = True
 except ImportError:
     CUPY_INSTALLED = False

@@ -50,8 +50,9 @@ class Erf(Expression):
         :class:`~.api.model.components1D.Expression` component.
     """
 
-    def __init__(self, A=1., sigma=1., origin=0., module=["numpy", "scipy"],
-                 **kwargs):
+    def __init__(
+        self, A=1.0, sigma=1.0, origin=0.0, module=["numpy", "scipy"], **kwargs
+    ):
         super().__init__(
             expression="A * erf((x - origin) / sqrt(2) / sigma) / 2",
             name="Erf",
@@ -64,7 +65,7 @@ class Erf(Expression):
         )
 
         # Boundaries
-        self.A.bmin = 0.
+        self.A.bmin = 0.0
 
         self.isbackground = False
         self.convolved = True

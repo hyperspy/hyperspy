@@ -17,7 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from operator import attrgetter
-import warnings
 import inspect
 import copy
 import types
@@ -28,13 +27,11 @@ import unicodedata
 from contextlib import contextmanager
 import importlib
 import logging
-from packaging.version import Version
 
 import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
@@ -531,7 +528,7 @@ class DictionaryTreeBrowser:
                     key = "_hspy_AxesManager_" + key
                 elif type(item_["_dtb_value_"]) in (list, tuple):
                     signals = []
-                    container =  item_["_dtb_value_"]
+                    container = item_["_dtb_value_"]
                     # Support storing signals in containers
                     for i, item in enumerate(container):
                         if isinstance(item, BaseSignal):
@@ -542,7 +539,7 @@ class DictionaryTreeBrowser:
                             container = list(container)
                             to_tuple = True
                         for i in signals:
-                            container[i] = {"_sig_" :container[i]._to_dictionary()}
+                            container[i] = {"_sig_": container[i]._to_dictionary()}
                         if to_tuple:
                             container = tuple(container)
                     item = container
@@ -847,7 +844,6 @@ def strlist2enumeration(lst):
         return "%s, " * (len(lst) - 2) % lst[:-2] + "%s and %s" % lst[-2:]
 
 
-
 def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     if not isinstance(stuff, (bytes, np.string_)):
         return stuff
@@ -858,7 +854,6 @@ def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     except BaseException:
         string = string.decode(encoding2, errors="ignore")
     return string
-
 
 
 def check_long_string(value, max_len):
@@ -888,9 +883,7 @@ def add_key_value(key, value):
     return """
     <ul style="margin: 0px; list-style-position: outside;">
     <li style='margin-left:1em; padding-left: 0.5em'>{} = {}</li></ul>
-    """.format(
-        replace_html_symbols(key), replace_html_symbols(value)
-    )
+    """.format(replace_html_symbols(key), replace_html_symbols(value))
 
 
 def swapelem(obj, i, j):
@@ -1256,7 +1249,8 @@ def stack(
             ]
         ):
             variance = stack(
-                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis_input,
+                [s.metadata.Signal.Noise_properties.variance for s in signal_list],
+                axis_input,
             )
             signal.metadata.set_item("Signal.Noise_properties.variance", variance)
     else:
@@ -1312,14 +1306,16 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     ]
 
 
-def process_function_blockwise(data,
-                               *args,
-                               function,
-                               nav_indexes=None,
-                               output_signal_size=None,
-                               output_dtype=None,
-                               arg_keys=None,
-                               **kwargs):
+def process_function_blockwise(
+    data,
+    *args,
+    function,
+    nav_indexes=None,
+    output_signal_size=None,
+    output_dtype=None,
+    arg_keys=None,
+    **kwargs,
+):
     """
     Convenience function for processing a function blockwise. By design, its
     output is used as an argument of the dask ``map_blocks`` so that the
@@ -1380,7 +1376,7 @@ def process_function_blockwise(data,
 
 
 def _get_block_pattern(args, output_shape):
-    """ Returns the block pattern used by the `blockwise` function for a
+    """Returns the block pattern used by the `blockwise` function for a
     set of arguments give a resulting output_shape
 
     Parameters
@@ -1413,10 +1409,7 @@ def _get_block_pattern(args, output_shape):
     return arg_pairs, adjust_chunks, new_axis, output_pattern
 
 
-def guess_output_signal_size(test_data,
-                             function,
-                             ragged,
-                             **kwargs):
+def guess_output_signal_size(test_data, function, ragged, **kwargs):
     """This function is for guessing the output signal shape and size.
     It will attempt to apply the function to some test data and then output
     the resulting signal shape and datatype.
@@ -1561,6 +1554,7 @@ def is_cupy_array(array):
     """
     try:
         import cupy as cp
+
         return isinstance(array, cp.ndarray)
     except ImportError:
         return False
@@ -1591,9 +1585,10 @@ def to_numpy(array):
         raise TypeError(
             "Implicit conversion of dask array to numpy array is not "
             "supported, conversion needs to be done explicitely."
-            )
+        )
     elif is_cupy_array(array):  # pragma: no cover
         import cupy as cp
+
         return cp.asnumpy(array)
     else:
         raise TypeError("Unsupported array type.")
@@ -1616,6 +1611,7 @@ def get_array_module(array):
     module = np
     try:
         import cupy as cp
+
         if isinstance(array, cp.ndarray):
             module = cp
     except ImportError:
@@ -1636,6 +1632,7 @@ def display(obj):
     """
     try:
         from IPython import display
+
         display.display(obj)
     except ImportError:
         print(obj)

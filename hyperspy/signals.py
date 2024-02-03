@@ -44,9 +44,8 @@ import importlib
 
 
 __all__ = [
-    signal_ for signal_, specs_ in EXTENSIONS_["signals"].items()
-    if not specs_["lazy"]
-    ]
+    signal_ for signal_, specs_ in EXTENSIONS_["signals"].items() if not specs_["lazy"]
+]
 
 
 def __dir__():
@@ -56,5 +55,5 @@ def __dir__():
 def __getattr__(name):
     if name in __all__:
         spec = EXTENSIONS_["signals"][name]
-        return getattr(importlib.import_module(spec['module']), name)
+        return getattr(importlib.import_module(spec["module"]), name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

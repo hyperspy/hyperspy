@@ -17,7 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-import pytest
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
@@ -26,18 +25,21 @@ from hyperspy.decorators import lazifyTestClass
 
 @lazifyTestClass
 class TestModelIndexing:
-
     def setup_method(self, method):
         np.random.seed(1)
-        axes = np.array([[100 * np.random.random() + np.arange(0., 600, 1)
-                          for i in range(3)] for j in range(4)])
+        axes = np.array(
+            [
+                [100 * np.random.random() + np.arange(0.0, 600, 1) for i in range(3)]
+                for j in range(4)
+            ]
+        )
         g = Gaussian()
-        g.A.value = 30000.
-        g.centre.value = 300.
-        g.sigma.value = 150.
+        g.A.value = 30000.0
+        g.centre.value = 300.0
+        g.sigma.value = 150.0
         data = g.function(axes)
         s = Signal1D(data)
-        s.axes_manager[-1].offset = -150.
+        s.axes_manager[-1].offset = -150.0
         s.axes_manager[-1].scale = 0.5
         s.add_gaussian_noise(2.0)
         m = s.create_model()
@@ -54,7 +56,7 @@ class TestModelIndexing:
         s = self.model.signal.isig[:300]
         m = self.model.isig[:300]
         m1 = self.model.isig[300:]
-        m2 = self.model.isig[:0.]
+        m2 = self.model.isig[:0.0]
         assert m1[0].A.ext_bounded is m[0].A.ext_bounded
         np.testing.assert_array_almost_equal(s.data, m.signal.data)
         np.testing.assert_array_almost_equal(s.data, m2.signal.data)
@@ -62,11 +64,12 @@ class TestModelIndexing:
         for ic, c in enumerate(m):
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 np.testing.assert_array_equal(p_old.map, p_new.map)
-        np.testing.assert_array_almost_equal(m.chisq.data + m1.chisq.data,
-                                             self.model.chisq.data)
+        np.testing.assert_array_almost_equal(
+            m.chisq.data + m1.chisq.data, self.model.chisq.data
+        )
 
         self.model._channel_switches[0] = False
-        m = self.model.isig[:-100.]
+        m = self.model.isig[:-100.0]
         assert not m._channel_switches[0]
         assert np.all(m._channel_switches[1:])
 
@@ -75,17 +78,15 @@ class TestModelIndexing:
         self.model[0].active = False
 
         m = self.model.inav[0::2, :]
-        np.testing.assert_array_equal(
-            m.chisq.data, self.model.chisq.data[:, 0::2])
+        np.testing.assert_array_equal(m.chisq.data, self.model.chisq.data[:, 0::2])
         np.testing.assert_array_equal(m.dof.data, self.model.dof.data[:, 0::2])
-        assert (m.inav[:2][0].A.ext_force_positive is
-                m[0].A.ext_force_positive)
+        assert m.inav[:2][0].A.ext_force_positive is m[0].A.ext_force_positive
         assert m.chisq.data.shape == (4, 2)
         assert not m[0]._active_array[0, 0]
         for ic, c in enumerate(m):
             np.testing.assert_equal(
-                c._active_array,
-                self.model[ic]._active_array[:, 0::2])
+                c._active_array, self.model[ic]._active_array[:, 0::2]
+            )
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 assert (p_old.map[:, 0::2] == p_new.map).all()
 
@@ -94,8 +95,7 @@ class TestModelIndexing:
         self.model.axes_manager.indices = (0, 0)
         self.model[0].active = False
         g = self.model[0]
-        g._slicing_order = ('_active_array', 'active_is_multidimensional',
-                            'active')
+        g._slicing_order = ("_active_array", "active_is_multidimensional", "active")
         assert not g._active_array[0, 0]
         m = self.model.inav[0:2, 0:2]
         assert m[0]._active_array[0, 0]
@@ -103,14 +103,12 @@ class TestModelIndexing:
 
 @lazifyTestClass
 class TestModelIndexingClass:
-
     def setup_method(self, method):
         s = Signal1D([list(range(10))] * 3)
         m = s.create_model()
-        self.m = s.create_model()
+        self.m = m
 
     def test_model_class(self):
         m = self.m
         assert isinstance(m, type(m.isig[1:]))
         assert isinstance(m, type(m.inav[1:]))
-

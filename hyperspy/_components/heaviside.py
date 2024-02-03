@@ -57,8 +57,7 @@ class HeavisideStep(Expression):
         :class:`~.api.model.components1D.Expression` component.
     """
 
-    def __init__(self, A=1., n=0., module="numpy", compute_gradients=True,
-                 **kwargs):
+    def __init__(self, A=1.0, n=0.0, module="numpy", compute_gradients=True, **kwargs):
         super().__init__(
             expression="A*heaviside(x-n,0.5)",
             name="HeavisideStep",
@@ -68,7 +67,8 @@ class HeavisideStep(Expression):
             module=module,
             autodoc=False,
             compute_gradients=compute_gradients,
-            **kwargs)
+            **kwargs,
+        )
 
         self.isbackground = True
         self.convolved = False

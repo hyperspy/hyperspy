@@ -33,16 +33,16 @@ class ReducedChiSquaredStrategy(LocalStrategy):
     """
 
     def __init__(self):
-        super().__init__('Reduced chi squared strategy')
+        super().__init__("Reduced chi squared strategy")
         self.weight = ReducedChiSquaredWeight()
-        self.radii = 3.
+        self.radii = 3.0
         self.decay_function = exp_decay
 
 
 __all__ = [
-    'LocalStrategy',
-    'ReducedChiSquaredStrategy',
-    ]
+    "LocalStrategy",
+    "ReducedChiSquaredStrategy",
+]
 
 
 def __dir__():

@@ -21,10 +21,10 @@ import importlib
 import logging
 
 import hyperspy.api_nogui
-from hyperspy.api_nogui import __doc__, get_configuration_directory_path
-from hyperspy.defaults_parser import preferences
-from hyperspy.logger import set_log_level
-from . import __version__
+from hyperspy.api_nogui import __doc__, get_configuration_directory_path  # noqa: F401
+from hyperspy.defaults_parser import preferences  # noqa: F401
+from hyperspy.logger import set_log_level  # noqa: F401
+from . import __version__  # noqa: F401
 
 
 _logger = logging.getLogger(__name__)
@@ -41,8 +41,8 @@ def __dir__():
 def __getattr__(name):
     if name in __all__:
         if name in _import_mapping.keys():
-            import_path = 'hyperspy' + _import_mapping.get(name)
+            import_path = "hyperspy" + _import_mapping.get(name)
             return getattr(importlib.import_module(import_path), name)
         else:
-            return importlib.import_module("." + name, 'hyperspy')
+            return importlib.import_module("." + name, "hyperspy")
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

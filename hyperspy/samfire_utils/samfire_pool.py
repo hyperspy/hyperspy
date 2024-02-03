@@ -34,7 +34,7 @@ def _walk_compute(athing):
         this = {}
         for key, val in athing.items():
             if isinstance(key, dar):
-                raise ValueError('Dask arrays should not be used as keys')
+                raise ValueError("Dask arrays should not be used as keys")
             value = _walk_compute(val)
             this[key] = value
         return this
@@ -43,14 +43,14 @@ def _walk_compute(athing):
     elif isinstance(athing, tuple):
         return tuple(_walk_compute(val) for val in athing)
     elif isinstance(athing, dar):
-        _logger.debug('found a dask array!')
+        _logger.debug("found a dask array!")
         return athing.compute()
     else:
         return athing
 
 
 class SamfirePool(ParallelPool):
-    """ Creates and manages a pool of SAMFire workers. For based on
+    """Creates and manages a pool of SAMFire workers. For based on
     ParallelPool - either creates processes using multiprocessing, or connects
     and sets up ipyparallel load_balanced_view.
 
@@ -107,7 +107,7 @@ class SamfirePool(ParallelPool):
         self._timestep = value
         if self.has_pool and self.is_multiprocessing:
             for this_queue in self.workers.values():
-                this_queue.put(('change_timestep', (value,)))
+                this_queue.put(("change_timestep", (value,)))
 
     def prepare_workers(self, samfire):
         """Given SAMFire object, populate the workers with the required
@@ -119,17 +119,17 @@ class SamfirePool(ParallelPool):
         samfire : :class:`~hyperspy.samfire.Samfire`
             The SAMFire object that will be using the pool.
         """
-        _logger.debug('starting prepare_workers')
+        _logger.debug("starting prepare_workers")
         self.samf = samfire
         mall = samfire.model
         model = mall.inav[mall.axes_manager.indices]
-        if model.signal.metadata.has_item('Signal.Noise_properties.variance'):
+        if model.signal.metadata.has_item("Signal.Noise_properties.variance"):
             var = model.signal.metadata.Signal.Noise_properties.variance
             if var._lazy:
                 var.compute()
-        model.store('z')
+        model.store("z")
         m_dict = model.signal._to_dictionary(False)
-        m_dict['models'] = model.signal.models._models.as_dictionary()
+        m_dict["models"] = model.signal.models._models.as_dictionary()
 
         m_dict = _walk_compute(m_dict)
 
@@ -137,37 +137,47 @@ class SamfirePool(ParallelPool):
 
         if self.is_ipyparallel:
             from ipyparallel import Reference as ipp_Reference
-            _logger.debug('preparing ipyparallel workers')
-            direct_view = self.pool.client[:self.num_workers]
+
+            _logger.debug("preparing ipyparallel workers")
+            direct_view = self.pool.client[: self.num_workers]
             direct_view.block = True
-            direct_view.execute("from hyperspy.samfire_utils.samfire_worker"
-                                " import create_worker")
-            direct_view.scatter('identity', range(self.num_workers),
-                                flatten=True)
-            direct_view.execute('worker = create_worker(identity)')
-            self.rworker = ipp_Reference('worker')
-            direct_view.apply(lambda worker, m_dict:
-                              worker.create_model(m_dict, 'z'), self.rworker,
-                              m_dict)
-            direct_view.apply(lambda worker, ts: worker.setup_test(ts),
-                              self.rworker, samfire.metadata._gt_dump)
-            direct_view.apply(lambda worker, on: worker.set_optional_names(on),
-                              self.rworker, optional_names)
+            direct_view.execute(
+                "from hyperspy.samfire_utils.samfire_worker" " import create_worker"
+            )
+            direct_view.scatter("identity", range(self.num_workers), flatten=True)
+            direct_view.execute("worker = create_worker(identity)")
+            self.rworker = ipp_Reference("worker")
+            direct_view.apply(
+                lambda worker, m_dict: worker.create_model(m_dict, "z"),
+                self.rworker,
+                m_dict,
+            )
+            direct_view.apply(
+                lambda worker, ts: worker.setup_test(ts),
+                self.rworker,
+                samfire.metadata._gt_dump,
+            )
+            direct_view.apply(
+                lambda worker, on: worker.set_optional_names(on),
+                self.rworker,
+                optional_names,
+            )
 
         if self.is_multiprocessing:
-            _logger.debug('preparing multiprocessing workers')
+            _logger.debug("preparing multiprocessing workers")
             manager = Manager()
             self.shared_queue = manager.Queue()
             self.result_queue = manager.Queue()
             for i in range(self.num_workers):
                 this_queue = manager.Queue()
                 self.workers[i] = this_queue
-                this_queue.put(('setup_test', (samfire.metadata._gt_dump,)))
-                this_queue.put(('create_model', (m_dict, 'z')))
-                this_queue.put(('set_optional_names', (optional_names,)))
-                self.pool.apply_async(create_worker, args=(i, this_queue,
-                                                           self.shared_queue,
-                                                           self.result_queue))
+                this_queue.put(("setup_test", (samfire.metadata._gt_dump,)))
+                this_queue.put(("create_model", (m_dict, "z")))
+                this_queue.put(("set_optional_names", (optional_names,)))
+                self.pool.apply_async(
+                    create_worker,
+                    args=(i, this_queue, self.shared_queue, self.result_queue),
+                )
 
     def update_parameters(self):
         """Updates various worker parameters.
@@ -177,25 +187,34 @@ class SamfirePool(ParallelPool):
             - Parameter boundaries
             - Goodness test"""
         samfire = self.samf
-        optional_names = {samfire.model[c].name for c in
-                          samfire.optional_components}
-        boundaries = tuple(tuple((par.bmin, par.bmax) for par in
-                                 comp.parameters) for comp in self.samf.model)
+        optional_names = {samfire.model[c].name for c in samfire.optional_components}
+        boundaries = tuple(
+            tuple((par.bmin, par.bmax) for par in comp.parameters)
+            for comp in self.samf.model
+        )
         if self.is_multiprocessing:
             for this_queue in self.workers.values():
-                this_queue.put(('set_optional_names', (optional_names,)))
-                this_queue.put(('setup_test', (samfire.metadata._gt_dump,)))
-                this_queue.put(('set_parameter_boundaries', (boundaries,)))
+                this_queue.put(("set_optional_names", (optional_names,)))
+                this_queue.put(("setup_test", (samfire.metadata._gt_dump,)))
+                this_queue.put(("set_parameter_boundaries", (boundaries,)))
         elif self.is_ipyparallel:
-            direct_view = self.pool.client[:self.num_workers]
+            direct_view = self.pool.client[: self.num_workers]
             direct_view.block = True
-            direct_view.apply(lambda worker, on: worker.set_optional_names(on),
-                              self.rworker, optional_names)
-            direct_view.apply(lambda worker, ts: worker.setup_test(ts),
-                              self.rworker, samfire.metadata._gt_dump)
-            direct_view.apply(lambda worker, ts:
-                              worker.set_parameter_boundaries(ts),
-                              self.rworker, boundaries)
+            direct_view.apply(
+                lambda worker, on: worker.set_optional_names(on),
+                self.rworker,
+                optional_names,
+            )
+            direct_view.apply(
+                lambda worker, ts: worker.setup_test(ts),
+                self.rworker,
+                samfire.metadata._gt_dump,
+            )
+            direct_view.apply(
+                lambda worker, ts: worker.set_parameter_boundaries(ts),
+                self.rworker,
+                boundaries,
+            )
 
     def ping_workers(self, timeout=None):
         """Ping the workers and record one-way trip time and the process_id
@@ -208,26 +227,30 @@ class SamfirePool(ParallelPool):
             ping. If None, the default timeout is used
         """
         if self.samf is None:
-            _logger.error('Have to add samfire to the pool first')
+            _logger.error("Have to add samfire to the pool first")
         else:
             if self.is_multiprocessing:
                 for _id, this_queue in self.workers.items():
-                    this_queue.put('ping')
+                    this_queue.put("ping")
                     self.ping[_id] = time.time()
             elif self.is_ipyparallel:
                 for i in range(self.num_workers):
                     direct_view = self.pool.client[i]
-                    self.results.append((direct_view.apply_async(lambda worker:
-                                                                 worker.ping(),
-                                                                 self.rworker),
-                                         i))
+                    self.results.append(
+                        (
+                            direct_view.apply_async(
+                                lambda worker: worker.ping(), self.rworker
+                            ),
+                            i,
+                        )
+                    )
                     self.ping[i] = time.time()
         time.sleep(0.5)
         self.collect_results(timeout)
 
     def __len__(self):
         if self.is_ipyparallel:
-            return self.pool.client.queue_status()['unassigned']
+            return self.pool.client.queue_status()["unassigned"]
         elif self.is_multiprocessing:
             return self.shared_queue.qsize()
 
@@ -239,17 +262,22 @@ class SamfirePool(ParallelPool):
         needed_number: {None, int}
             The number of jobs to add. If None (default), adds `need_pixels`
         """
+
         def test_func(worker, ind, value_dict):
             return worker.run_pixel(ind, value_dict)
+
         if needed_number is None:
             needed_number = self.need_pixels
         for ind, value_dict in self.samf.generate_values(needed_number):
             if self.is_multiprocessing:
-                self.shared_queue.put(('run_pixel', (ind, value_dict)))
+                self.shared_queue.put(("run_pixel", (ind, value_dict)))
             elif self.is_ipyparallel:
-                self.results.append((self.pool.apply_async(test_func,
-                                                           self.rworker, ind,
-                                                           value_dict), ind))
+                self.results.append(
+                    (
+                        self.pool.apply_async(test_func, self.rworker, ind, value_dict),
+                        ind,
+                    )
+                )
 
     def parse(self, value):
         """Parse the value returned from the workers.
@@ -268,24 +296,27 @@ class SamfirePool(ParallelPool):
               bool_if_result_converged))
         """
         if value is None:
-            keyword = 'Failed'
-            _logger.debug('Got None')
+            keyword = "Failed"
+            _logger.debug("Got None")
         else:
             keyword, the_rest = value
         samf = self.samf
-        if keyword == 'pong':
+        if keyword == "pong":
             _id, pid, pong_time, message = the_rest
             self.ping[_id] = pong_time - self.ping[_id]
             self.pid[_id] = pid
-            _logger.info('pong worker %s with time %g and message'
-                         '"%s"' % (str(_id), self.ping[_id], message))
-        elif keyword == 'Error':
+            _logger.info(
+                "pong worker %s with time %g and message"
+                '"%s"' % (str(_id), self.ping[_id], message)
+            )
+        elif keyword == "Error":
             _id, err_message = the_rest
-            _logger.error('Error in worker %s\n%s' % (str(_id), err_message))
-        elif keyword == 'result':
+            _logger.error("Error in worker %s\n%s" % (str(_id), err_message))
+        elif keyword == "result":
             _id, ind, result, isgood = the_rest
-            _logger.debug('Got result from pixel {} and it is good:'
-                          '{}'.format(ind, isgood))
+            _logger.debug(
+                "Got result from pixel {} and it is good:" "{}".format(ind, isgood)
+            )
             if ind in samf.running_pixels:
                 samf.running_pixels.remove(ind)
                 samf.update(ind, result, isgood)
@@ -293,8 +324,9 @@ class SamfirePool(ParallelPool):
                 samf.backup()
                 samf.log(ind, isgood, samf.count, _id)
         else:
-            _logger.error('Unusual return from some worker. The value '
-                          'is:\n%s' % str(value))
+            _logger.error(
+                "Unusual return from some worker. The value " "is:\n%s" % str(value)
+            )
 
     def collect_results(self, timeout=None):
         """Collects and parses all results, currently not processed due to
@@ -317,10 +349,11 @@ class SamfirePool(ParallelPool):
                     try:
                         result = res.get(timeout=timeout)
                     except TimeoutError:
-                        _logger.info('Ind {} failed to come back in {} '
-                                     'seconds. Assuming failed'.format(
-                                         ind, timeout))
-                        result = ('result', (-1, ind, None, False))
+                        _logger.info(
+                            "Ind {} failed to come back in {} "
+                            "seconds. Assuming failed".format(ind, timeout)
+                        )
+                        result = ("result", (-1, ind, None, False))
                     self.parse(result)
                     self.results.remove((res, ind))
                     found_something = True
@@ -329,13 +362,15 @@ class SamfirePool(ParallelPool):
         elif self.is_multiprocessing:
             while not self.result_queue.empty():
                 try:
-                    result = self.result_queue.get(block=True,
-                                                   timeout=timeout)
+                    result = self.result_queue.get(block=True, timeout=timeout)
                     self.parse(result)
                     found_something = True
                 except TimeoutError:
-                    _logger.info('Some ind failed to come back in {} '
-                                 'seconds.'.format(self.timeout))
+                    _logger.info(
+                        "Some ind failed to come back in {} " "seconds.".format(
+                            self.timeout
+                        )
+                    )
         return found_something
 
     @property
@@ -343,16 +378,17 @@ class SamfirePool(ParallelPool):
         """Returns the number of pixels that should be added to the processing
         queue. At most is equal to the number of workers.
         """
-        return min(self.samf.pixels_done * self.samf.metadata.marker.ndim,
-                   self.num_workers - len(self))
+        return min(
+            self.samf.pixels_done * self.samf.metadata.marker.ndim,
+            self.num_workers - len(self),
+        )
 
     @property
     def _not_too_long(self):
         """Returns bool if it has been too long after receiving the last
         result, probably meaning some of the workers timed out or hung.
         """
-        if not hasattr(self, '_last_time') or not isinstance(self._last_time,
-                                                             float):
+        if not hasattr(self, "_last_time") or not isinstance(self._last_time, float):
             self._last_time = time.time()
         return (time.time() - self._last_time) <= self.timeout
 
@@ -364,8 +400,9 @@ class SamfirePool(ParallelPool):
         Run the full procedure until no more pixels are left to run in the
         SAMFire.
         """
-        while self._not_too_long and (self.samf.pixels_left or
-                                      len(self.samf.running_pixels)):
+        while self._not_too_long and (
+            self.samf.pixels_left or len(self.samf.running_pixels)
+        ):
             # bool if got something
             new_result = self.collect_results()
             need_number = self.need_pixels
@@ -384,7 +421,7 @@ class SamfirePool(ParallelPool):
         """
         if self.is_multiprocessing:
             for queue in self.workers.values():
-                queue.put('stop_listening')
+                queue.put("stop_listening")
             self.pool.close()
             self.pool.terminate()
             self.pool.join()

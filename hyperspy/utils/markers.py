@@ -47,19 +47,20 @@ from hyperspy.drawing._markers.rectangles import Rectangles
 from hyperspy.drawing._markers.polygons import Polygons
 
 
-__all__ = ['Arrows',
-           'Circles',
-           'Ellipses',
-           'HorizontalLines',
-           'Lines',
-           'Markers',
-           'Points',
-           'Polygons',
-           'Rectangles',
-           'Squares',
-           'Texts',
-           'VerticalLines',
-           ]
+__all__ = [
+    "Arrows",
+    "Circles",
+    "Ellipses",
+    "HorizontalLines",
+    "Lines",
+    "Markers",
+    "Points",
+    "Polygons",
+    "Rectangles",
+    "Squares",
+    "Texts",
+    "VerticalLines",
+]
 
 
 def __dir__():

@@ -30,14 +30,13 @@ from hyperspy.io import load
 
 
 def clean_model_dictionary(d):
-    for c in d['components']:
-        for p in c['parameters']:
-            del p['self']
+    for c in d["components"]:
+        for p in c["parameters"]:
+            del p["self"]
     return d
 
 
 class TestModelStoring:
-
     def setup_method(self, method):
         s = Signal1D(range(100))
         m = s.create_model()
@@ -49,7 +48,7 @@ class TestModelStoring:
         m = self.m
         s = m.signal
         m.store()
-        assert s.models.a is s.models['a']
+        assert s.models.a is s.models["a"]
 
     def test_models_stub_methods(self):
         m = self.m
@@ -66,9 +65,9 @@ class TestModelStoring:
         assert s.models.remove.call_count == 1
         assert s.models.restore.call_count == 1
 
-        assert s.models.pop.call_args[0] == ('a',)
-        assert s.models.remove.call_args[0] == ('a',)
-        assert s.models.restore.call_args[0] == ('a',)
+        assert s.models.pop.call_args[0] == ("a",)
+        assert s.models.remove.call_args[0] == ("a",)
+        assert s.models.restore.call_args[0] == ("a",)
 
     def test_models_pop(self):
         m = self.m
@@ -76,32 +75,30 @@ class TestModelStoring:
         m.store()
         s.models.remove = mock.MagicMock()
         s.models.restore = mock.MagicMock()
-        s.models.pop('a')
+        s.models.pop("a")
         assert s.models.remove.call_count == 1
         assert s.models.restore.call_count == 1
-        assert s.models.remove.call_args[0] == ('a',)
-        assert s.models.restore.call_args[0] == ('a',)
+        assert s.models.remove.call_args[0] == ("a",)
+        assert s.models.restore.call_args[0] == ("a",)
 
     def test_model_store(self):
         m = self.m
         m.store()
         d = m.as_dictionary(True)
-        np.testing.assert_equal(
-            d,
-            m.signal.models._models.a._dict.as_dictionary())
+        np.testing.assert_equal(d, m.signal.models._models.a._dict.as_dictionary())
 
     def test_actually_stored(self):
         m = self.m
         m.store()
-        m[0].A.map['values'][0] += 13.33
+        m[0].A.map["values"][0] += 13.33
         m1 = m.signal.models.a.restore()
-        assert m[0].A.map['values'] != m1[0].A.map['values']
+        assert m[0].A.map["values"] != m1[0].A.map["values"]
 
     def test_models_restore_remove(self):
         m = self.m
         s = m.signal
-        m.store('a')
-        m1 = s.models.restore('a')
+        m.store("a")
+        m1 = s.models.restore("a")
         m2 = s.models.a.restore()
         d_o = clean_model_dictionary(m.as_dictionary())
         d_1 = clean_model_dictionary(m1.as_dictionary())
@@ -115,7 +112,7 @@ class TestModelStoring:
     def test_store_name_error1(self):
         s = self.m.signal
         with pytest.raises(KeyError):
-            s.models.restore('a')
+            s.models.restore("a")
 
     def test_store_name_error2(self):
         s = self.m.signal
@@ -125,50 +122,54 @@ class TestModelStoring:
     def test_store_name_error3(self):
         s = self.m.signal
         with pytest.raises(KeyError):
-            s.models.restore('_a')
+            s.models.restore("_a")
 
     def test_store_name_error4(self):
         s = self.m.signal
         with pytest.raises(KeyError):
-            s.models.restore('a._dict')
+            s.models.restore("a._dict")
 
     def test_store_name_error5(self):
         s = self.m.signal
-        self.m.store('b')
+        self.m.store("b")
         with pytest.raises(KeyError):
-            s.models.restore('a')
+            s.models.restore("a")
 
 
-@pytest.mark.parametrize('save_std', [True, False])
-@pytest.mark.parametrize('only_free', [True, False])
-@pytest.mark.parametrize('only_active', [True, False])
+@pytest.mark.parametrize("save_std", [True, False])
+@pytest.mark.parametrize("only_free", [True, False])
+@pytest.mark.parametrize("only_active", [True, False])
 def test_model_export(tmp_path, save_std, only_free, only_active):
     s = Signal1D(range(100))
     m = s.create_model()
     m.append(Gaussian())
     m.fit()
-    m.export_results(tmp_path, save_std=save_std, only_free=only_free,
-                     only_active=only_active)
+    m.export_results(
+        tmp_path, save_std=save_std, only_free=only_free, only_active=only_active
+    )
 
 
 class TestModelSaving:
-
     def setup_method(self, method):
         s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian(A=13))
-        m[-1].name = 'something'
+        m[-1].name = "something"
         m.append(GaussianHF(module="numpy"))
         m[-1].height.value = 3
-        m.append(Expression(name="Line", expression="a * x + b", a=1, c=0, rename_pars={"b": "c"}))
+        m.append(
+            Expression(
+                name="Line", expression="a * x + b", a=1, c=0, rename_pars={"b": "c"}
+            )
+        )
         self.m = m
 
     def test_save_and_load_model(self):
         m = self.m
-        m.save('tmp.hspy', overwrite=True)
-        s = load('tmp.hspy')
-        assert hasattr(s.models, 'a')
-        mr = s.models.restore('a')
+        m.save("tmp.hspy", overwrite=True)
+        s = load("tmp.hspy")
+        assert hasattr(s.models, "a")
+        mr = s.models.restore("a")
         assert mr.components.something.A.value == 13
         assert mr.components.GaussianHF.height.value == 3
         assert mr.components.Line.a.value == 1
@@ -176,8 +177,8 @@ class TestModelSaving:
         assert mr.components.Line.function(10) == 10
 
     def teardown_method(self, method):
-        gc.collect()        # Make sure any memmaps are closed first!
-        remove('tmp.hspy')
+        gc.collect()  # Make sure any memmaps are closed first!
+        remove("tmp.hspy")
 
 
 def test_EELSModel_saving(tmp_path):
@@ -193,8 +194,8 @@ def test_EELSModel_saving(tmp_path):
     m.components.C_K.fine_structure_width = 50
     m.components.C_K.fine_structure_active = True
 
-    m.save(tmp_path / 'tmp.hspy')
-    l = load(tmp_path / 'tmp.hspy')
-    assert hasattr(l.models, 'a')
-    n = l.models.restore('a')
+    m.save(tmp_path / "tmp.hspy")
+    s2 = load(tmp_path / "tmp.hspy")
+    assert hasattr(s2.models, "a")
+    n = s2.models.restore("a")
     assert n[0].fine_structure_width == 50

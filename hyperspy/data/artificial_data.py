@@ -21,7 +21,6 @@
 For use in things like docstrings or to test HyperSpy functionalities.
 
 """
-import functools
 
 import numpy as np
 
@@ -31,8 +30,7 @@ from hyperspy.misc.math_tools import check_random_state
 from hyperspy.axes import UniformDataAxis
 
 
-ADD_NOISE_DOCSTRING = \
-"""add_noise : bool
+ADD_NOISE_DOCSTRING = """add_noise : bool
         If True, add noise to the signal. See note to seed the noise to
         generate reproducible noise.
     random_state : None, int or numpy.random.Generator, default None
@@ -68,11 +66,13 @@ def atomic_resolution_image():
     return s
 
 
-def luminescence_signal(navigation_dimension=0,
-                        uniform=False,
-                        add_baseline=False,
-                        add_noise=True,
-                        random_state=None):
+def luminescence_signal(
+    navigation_dimension=0,
+    uniform=False,
+    add_baseline=False,
+    add_noise=True,
+    random_state=None,
+):
     """
     Get an artificial luminescence signal in wavelength scale (nm, uniform) or
     energy scale (eV, non-uniform), simulating luminescence data recorded with a
@@ -125,10 +125,10 @@ def luminescence_signal(navigation_dimension=0,
     :class:`~.api.signals.Signal1D`
     """
 
-    #Initialisation of random number generator
+    # Initialisation of random number generator
     random_state = check_random_state(random_state)
 
-    #Creating a uniform data axis, roughly similar to Horiba iHR320 with a 150 mm-1 grating
+    # Creating a uniform data axis, roughly similar to Horiba iHR320 with a 150 mm-1 grating
     nm_axis = UniformDataAxis(
         index_in_array=None,
         name="Wavelength",
@@ -138,16 +138,18 @@ def luminescence_signal(navigation_dimension=0,
         scale=0.54,
         offset=222.495,
         is_binned=False,
-        )
+    )
 
-    #Artificial luminescence peak
+    # Artificial luminescence peak
     gaussian_peak = components1d.Gaussian(A=5000, centre=375, sigma=25)
 
-    if navigation_dimension>=0:
-        #Generate empty data (ones)
-        data = np.ones([10 for i in range(navigation_dimension)]+[nm_axis.size])
-        #Generate spatial axes
-        spaxes = [UniformDataAxis(index_in_array=None,
+    if navigation_dimension >= 0:
+        # Generate empty data (ones)
+        data = np.ones([10 for i in range(navigation_dimension)] + [nm_axis.size])
+        # Generate spatial axes
+        spaxes = [
+            UniformDataAxis(
+                index_in_array=None,
                 name="X{:d}".format(i),
                 units="um",
                 navigate=False,
@@ -155,43 +157,50 @@ def luminescence_signal(navigation_dimension=0,
                 scale=2.1,
                 offset=0,
                 is_binned=False,
-                )  for i in range(navigation_dimension)]
-        #Generate empty signal
-        sig = signals.Signal1D(data,axes = spaxes + [nm_axis])
-        sig.metadata.General.title = '{:d}d-map Artificial Luminescence Signal'\
-                                        .format(navigation_dimension)
+            )
+            for i in range(navigation_dimension)
+        ]
+        # Generate empty signal
+        sig = signals.Signal1D(data, axes=spaxes + [nm_axis])
+        sig.metadata.General.title = "{:d}d-map Artificial Luminescence Signal".format(
+            navigation_dimension
+        )
     else:
-        raise ValueError("Value {:d} invalid as navigation dimension.".format(\
-                            navigation_dimension))
+        raise ValueError(
+            "Value {:d} invalid as navigation dimension.".format(navigation_dimension)
+        )
 
-    #Populating data array, possibly with noise and baseline
+    # Populating data array, possibly with noise and baseline
     sig.data *= gaussian_peak.function(nm_axis.axis)
     if add_noise:
-        sig.data += (random_state.uniform(size=sig.data.shape) - 0.5)*1.4
+        sig.data += (random_state.uniform(size=sig.data.shape) - 0.5) * 1.4
     if add_baseline:
-        data += 350.
+        data += 350.0
 
-    #if not uniform, transformation into non-uniform axis
+    # if not uniform, transformation into non-uniform axis
     if not uniform:
-        hc = 1239.84198 #nm/eV
-        #converting to non-uniform axis
-        sig.axes_manager.signal_axes[0].convert_to_functional_data_axis(\
-                                                              expression="a/x",
-                                                              name='Energy',
-                                                              units='eV',
-                                                              a=hc,
-                                                          )
-        #Reverting the orientation of signal axis to have increasing Energy
+        hc = 1239.84198  # nm/eV
+        # converting to non-uniform axis
+        sig.axes_manager.signal_axes[0].convert_to_functional_data_axis(
+            expression="a/x",
+            name="Energy",
+            units="eV",
+            a=hc,
+        )
+        # Reverting the orientation of signal axis to have increasing Energy
         sig = sig.isig[::-1]
-        #Jacobian transformation
+        # Jacobian transformation
         Eax = sig.axes_manager.signal_axes[0].axis
-        sig *= hc/Eax**2
+        sig *= hc / Eax**2
     return sig
 
-luminescence_signal.__doc__ %= (ADD_NOISE_DOCSTRING)
+
+luminescence_signal.__doc__ %= ADD_NOISE_DOCSTRING
 
 
-def wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, random_state=None):
+def wave_image(
+    angle=45, wavelength=10, shape=(256, 256), add_noise=True, random_state=None
+):
     """
     Returns a wave image generated using the sinus function.
 
@@ -215,9 +224,7 @@ def wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, random
     X, Y = np.meshgrid(x, y)
 
     angle = np.deg2rad(angle)
-    grating = np.sin(
-        2*np.pi*(X*np.cos(angle) + Y*np.sin(angle)) / wavelength
-    )
+    grating = np.sin(2 * np.pi * (X * np.cos(angle) + Y * np.sin(angle)) / wavelength)
     if add_noise:
         random_state = check_random_state(random_state)
 
@@ -225,9 +232,10 @@ def wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, random
 
     s = signals.Signal2D(grating)
     for axis in s.axes_manager.signal_axes:
-        axis.units = 'nm'
+        axis.units = "nm"
         axis.scale = 0.01
 
     return s
 
-wave_image.__doc__ %= (ADD_NOISE_DOCSTRING)
+
+wave_image.__doc__ %= ADD_NOISE_DOCSTRING

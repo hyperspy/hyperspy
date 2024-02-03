@@ -47,7 +47,7 @@ if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
         for toolkey, specs in widgets.items():
             # Skip toolkey if extension is not installed
             if toolkey.split(".")[0] in _EXTENSION_NAMES + ["hyperspy"]:
-                if not toolkey in UI_REGISTRY:
+                if toolkey not in UI_REGISTRY:
                     raise NameError(f"{toolkey} is not a registered toolkey")
                 UI_REGISTRY[toolkey][toolkit] = specs
 
@@ -74,6 +74,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             "hyperspy_gui_traitsui GUI elements."
         )
     from hyperspy.defaults_parser import preferences
+
     if isinstance(toolkit, str):
         toolkit = (toolkit,)
     if isinstance(toolkit, (tuple, list)):
@@ -97,10 +98,8 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             else:
                 available_disabled_toolkits.add("traitsui")
         if not toolkits and available_disabled_toolkits:
-            is_or_are = "is" if len(
-                available_disabled_toolkits) == 1 else "are"
-            them_or_it = ("it" if len(available_disabled_toolkits) == 1
-                          else "them")
+            is_or_are = "is" if len(available_disabled_toolkits) == 1 else "are"
+            them_or_it = "it" if len(available_disabled_toolkits) == 1 else "them"
             raise ValueError(
                 "No toolkit available. The "
                 f"{_toolkits_to_string(available_disabled_toolkits)} "
@@ -110,8 +109,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             )
 
     else:
-        raise ValueError(
-            "`toolkit` must be a string, an iterable of strings or None.")
+        raise ValueError("`toolkit` must be a string, an iterable of strings or None.")
     if toolkey not in UI_REGISTRY or not UI_REGISTRY[toolkey]:
         propose = KNOWN_TOOLKITS - TOOLKIT_REGISTRY
         if propose:
@@ -130,10 +128,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     available_toolkits = set()
     used_toolkits = set()
     for toolkit, specs in UI_REGISTRY[toolkey].items():
-        f = getattr(
-            importlib.import_module(
-                specs["module"]),
-            specs["function"])
+        f = getattr(importlib.import_module(specs["module"]), specs["function"])
         if toolkit in toolkits:
             used_toolkits.add(toolkit)
             try:
@@ -162,8 +157,10 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
 
 def get_partial_gui(toolkey):
     def pg(self, display=True, toolkit=None, **kwargs):
-        return get_gui(self, toolkey=toolkey, display=display,
-                       toolkit=toolkit, **kwargs)
+        return get_gui(
+            self, toolkey=toolkey, display=display, toolkit=toolkit, **kwargs
+        )
+
     return pg
 
 
@@ -194,4 +191,5 @@ def add_gui_method(toolkey):
         setattr(cls, "gui", get_partial_gui(toolkey))
         setattr(cls.gui, "__doc__", GUI_DT)
         return cls
+
     return decorator

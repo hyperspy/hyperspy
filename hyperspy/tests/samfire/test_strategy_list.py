@@ -21,19 +21,18 @@ from hyperspy.samfire import StrategyList
 
 
 class TestStrategyList:
-
     def setup_method(self, method):
         self.w1 = DictionaryTreeBrowser()
         self.w2 = DictionaryTreeBrowser()
 
         for w in [self.w1, self.w2]:
-            w.add_node('samf')
+            w.add_node("samf")
         self.samf = object()
         self.sl = StrategyList(self.samf)
 
     def test_append(self):
-        assert not self.w1.samf is self.samf
-        assert not self.w1 in self.sl
+        assert self.w1.samf is not self.samf
+        assert self.w1 not in self.sl
         self.sl.append(self.w1)
         assert self.w1.samf is self.samf
         assert self.w1 in self.sl
@@ -48,11 +47,11 @@ class TestStrategyList:
     def test_remove_int(self):
         self.sl.append(self.w1)
         self.sl.remove(0)
-        assert not self.w1.samf is self.samf
-        assert not self.w1 in self.sl
+        assert self.w1.samf is not self.samf
+        assert self.w1 not in self.sl
 
     def test_remove_object(self):
         self.sl.append(self.w1)
         self.sl.remove(self.w1)
-        assert not self.w1.samf is self.samf
-        assert not self.w1 in self.sl
+        assert self.w1.samf is not self.samf
+        assert self.w1 not in self.sl

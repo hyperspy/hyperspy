@@ -29,12 +29,12 @@ _logger = logging.getLogger(__name__)
 
 
 def unit_vector(vector):
-    """ Returns the unit vector of the vector.  """
+    """Returns the unit vector of the vector."""
     return vector / np.linalg.norm(vector)
 
 
 def angle_between(v1, v2):
-    """ Returns the angle in radians between the vectors 'v1' and 'v2'.
+    """Returns the angle in radians between the vectors 'v1' and 'v2'.
 
     Examples
     --------
@@ -96,20 +96,20 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     """
 
     # Bitfield values for different mouse interaction functions
-    FUNC_NONE = 0       # Do nothing
-    FUNC_MOVE = 1       # Move the widget
-    FUNC_RESIZE = 2     # Move a vertex
-    FUNC_ROTATE = 4     # Rotate
-    FUNC_SIZERS = 8     # Change linewidth by indicators
-    FUNC_A = 32         # Resize/rotate by first vertex
-    FUNC_B = 64         # Resize/rotate by second vertex
+    FUNC_NONE = 0  # Do nothing
+    FUNC_MOVE = 1  # Move the widget
+    FUNC_RESIZE = 2  # Move a vertex
+    FUNC_ROTATE = 4  # Rotate
+    FUNC_SIZERS = 8  # Change linewidth by indicators
+    FUNC_A = 32  # Resize/rotate by first vertex
+    FUNC_B = 64  # Resize/rotate by second vertex
 
     def __init__(self, axes_manager, **kwargs):
         super(Line2DWidget, self).__init__(axes_manager, **kwargs)
         self.linewidth = 1
         self.radius_move = self.radius_resize = 5
         self.radius_rotate = 15
-        self._mfunc = self.FUNC_NONE    # Mouse interaction function
+        self._mfunc = self.FUNC_NONE  # Mouse interaction function
         self._prev_pos = None
         self._orig_pos = None
         self.snap_all = False
@@ -171,8 +171,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         raise NotImplementedError("2D lines cannot be used to navigate (yet?)")
 
     def _validate_pos(self, pos):
-        """Make sure all vertices are within axis bounds.
-        """
+        """Make sure all vertices are within axis bounds."""
         if np.shape(pos)[1] != len(self.axes):
             raise ValueError()
 
@@ -194,15 +193,17 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
     def _set_snap_size(self, value):
         if value and self.axes[0].scale != self.axes[1].scale:
-            _logger.warning('Snapping the width of the line is not supported '
-                            'for axes with different scale.')
+            _logger.warning(
+                "Snapping the width of the line is not supported "
+                "for axes with different scale."
+            )
             return
         super()._set_snap_size(value)
 
     def _do_snap_size(self, value=None):
         if value is None:
             value = self._size[0]
-        if hasattr(value, '__len__'):
+        if hasattr(value, "__len__"):
             value = value[0]
         ax = self.axes[0]  # take one axis, different axis scale not supported
         value = round(value / ax.scale) * ax.scale
@@ -211,11 +212,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         return np.array([value])
 
     def _get_line_normal(self):
-        v = np.diff(self._pos, axis=0)   # Line vector
+        v = np.diff(self._pos, axis=0)  # Line vector
         x = -v[:, 1]
         y = v[:, 0]
-        n = np.array([x, y]).T                    # Normal vector
-        return n / np.linalg.norm(n)            # Normalized
+        n = np.array([x, y]).T  # Normal vector
+        return n / np.linalg.norm(n)  # Normalized
 
     def get_line_length(self):
         """Returns line length in axes coordinates. Requires units on all axes
@@ -237,7 +238,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             [[[x0A, y0A], [x1A, y1A]], [[x0B, y0B], [x1B, y1B]]]
             Where A and B refer to the two lines
         """
-        n = self.size[0] * self._get_line_normal() / 2.
+        n = self.size[0] * self._get_line_normal() / 2.0
         c = np.array(self._pos)
         return c + n, c - n
 
@@ -248,8 +249,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self._update_patch_geometry()
 
     def _update_patch_geometry(self):
-        """Set line position, and set width indicator's if appropriate
-        """
+        """Set line position, and set width indicator's if appropriate"""
         if self.is_on and self.patch:
             self.patch[0].set_data(np.array(self._pos).T)
             # Update width indicator if present
@@ -263,22 +263,25 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """Creates the line, and also creates the width indicators if
         appropriate.
         """
-        self.ax.autoscale(False)   # Prevent plotting from rescaling
+        self.ax.autoscale(False)  # Prevent plotting from rescaling
         xy = np.array(self._pos)
-        max_r = max(self.radius_move, self.radius_resize,
-                    self.radius_rotate)
+        max_r = max(self.radius_move, self.radius_resize, self.radius_rotate)
         kwargs = picker_kwargs(max_r)
-        self._patch = [plt.Line2D(
-            xy[:, 0], xy[:, 1],
-            linestyle='-',
-            lw=self.linewidth,
-            c=self.color,
-            alpha=self.alpha,
-            marker='s',
-            markersize=self.radius_resize,
-            mew=0.1,
-            mfc='lime',
-            **kwargs,)]
+        self._patch = [
+            plt.Line2D(
+                xy[:, 0],
+                xy[:, 1],
+                linestyle="-",
+                lw=self.linewidth,
+                c=self.color,
+                alpha=self.alpha,
+                marker="s",
+                markersize=self.radius_resize,
+                mew=0.1,
+                mfc="lime",
+                **kwargs,
+            )
+        ]
         if self._size[0] > 0:
             self._set_size_patch()
 
@@ -287,17 +290,15 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             # The widget hasn't been fully added to an axis yet.
             return
         if self.axes[0].scale != self.axes[1].scale:
-            raise ValueError("linewidth is not supported for axis with "
-                             "different scale.")
+            raise ValueError(
+                "linewidth is not supported for axis with " "different scale."
+            )
         wc = self._get_width_indicator_coords()
         kwargs = picker_kwargs(self.radius_move)
         for i in range(2):
             wi = plt.Line2D(
-                *wc[i].T,
-                linestyle=':',
-                lw=self.linewidth,
-                c=self.color,
-                **kwargs)
+                *wc[i].T, linestyle=":", lw=self.linewidth, c=self.color, **kwargs
+            )
             self._patch.append(wi)
             self._width_indicator_patches.append(wi)
 
@@ -310,8 +311,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self._width_indicator_patches = []
 
     def _get_vertex(self, event):
-        """Check bitfield on self.func, and return vertex index.
-        """
+        """Check bitfield on self.func, and return vertex index."""
         if self.func & self.FUNC_A:
             return 0
         elif self.func & self.FUNC_B:
@@ -320,8 +320,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             return None
 
     def _get_func_from_pos(self, cx, cy):
-        """Get interaction function from pixel position (cx,cy)
-        """
+        """Get interaction function from pixel position (cx,cy)"""
         if not self.patch:
             return self.FUNC_NONE
 
@@ -330,12 +329,12 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
         # Calculate the distances to the vertecies, and find nearest one
         r2 = np.sum(np.power(p - np.array((cx, cy)), 2), axis=1)
-        mini = np.argmin(r2)    # Index of nearest vertex
-        minr2 = r2[mini]        # Distance squared to nearest vertex
+        mini = np.argmin(r2)  # Index of nearest vertex
+        minr2 = r2[mini]  # Distance squared to nearest vertex
         del r2
         # Check for resize: Click within radius_resize from edge points
         radius = self.radius_resize
-        if minr2 <= radius ** 2:
+        if minr2 <= radius**2:
             ret = self.FUNC_RESIZE
             ret |= self.FUNC_A if mini == 0 else self.FUNC_B
             return ret
@@ -344,11 +343,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         radius = self.radius_rotate
         A = p[0, :]  # Vertex A
         B = p[1, :]  # Vertex B. Assumes one line segment only.
-        c = np.array((cx, cy))   # mouse click position
-        t = np.dot(c - A, B - A)    # t[0]: A->click, t[1]: A->B
-        bas = np.linalg.norm(B - A)**2
-        if minr2 <= radius**2:   # If within rotate radius
-            if t < 0.0 and mini == 0:   # "Before" A on the line
+        c = np.array((cx, cy))  # mouse click position
+        t = np.dot(c - A, B - A)  # t[0]: A->click, t[1]: A->B
+        bas = np.linalg.norm(B - A) ** 2
+        if minr2 <= radius**2:  # If within rotate radius
+            if t < 0.0 and mini == 0:  # "Before" A on the line
                 return self.FUNC_ROTATE | self.FUNC_A
             elif t > bas and mini == 1:  # "After" B on the line
                 return self.FUNC_ROTATE | self.FUNC_B
@@ -368,7 +367,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             A = np.array(trans.transform(wc[i][0]))
             B = np.array(trans.transform(wc[i][1]))
             t = np.dot(c - A, B - A)
-            bas = np.linalg.norm(B - A)**2
+            bas = np.linalg.norm(B - A) ** 2
             if 0 < t < bas:
                 # A + (t/bas)*(B-A) is closest point on line
                 if np.linalg.norm(A + (t / bas) * (B - A) - c) < radius:
@@ -388,8 +387,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             self._drag_start = [me.xdata, me.ydata]
 
     def _onmousemove(self, event):
-        """Delegate to _move(), _resize() or _rotate().
-        """
+        """Delegate to _move(), _resize() or _rotate()."""
         if self.picked is True:
             if self.func & self.FUNC_MOVE and event.inaxes:
                 self._move(event)
@@ -427,7 +425,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """
         ip = self._get_vertex(event)
         dx = self._get_diff(event)
-        p = np.array(self._pos)     # Copy
+        p = np.array(self._pos)  # Copy
         p[ip, 0:2] = self._drag_store[0][ip] + dx
         self.position = p
 
@@ -450,19 +448,23 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         c = trans.transform(np.mean(self._drag_store[0], axis=0))
 
         # Figure out theta
-        v1 = (event.x, event.y) - c     # Center to mouse
-        v2 = v1 - dx                    # Center to start pos
-        theta = angle_between(v2, v1)   # Rotation between start and mouse
+        v1 = (event.x, event.y) - c  # Center to mouse
+        v2 = v1 - dx  # Center to start pos
+        theta = angle_between(v2, v1)  # Rotation between start and mouse
 
-        if event.key is not None and 'shift' in event.key:
+        if event.key is not None and "shift" in event.key:
             base = 30 * np.pi / 180
             theta = base * round(float(theta) / base)
 
         # vector from points to center
         w1 = c - trans.transform(self._drag_store[0])
         # rotate into w2 for next point
-        w2 = np.array((w1[:, 0] * np.cos(theta) - w1[:, 1] * np.sin(theta),
-                       w1[:, 1] * np.cos(theta) + w1[:, 0] * np.sin(theta)))
+        w2 = np.array(
+            (
+                w1[:, 0] * np.cos(theta) - w1[:, 1] * np.sin(theta),
+                w1[:, 1] * np.cos(theta) + w1[:, 0] * np.sin(theta),
+            )
+        )
         self.position = trans.inverted().transform(c + np.rot90(w2))
 
     def _width_resize(self, event):

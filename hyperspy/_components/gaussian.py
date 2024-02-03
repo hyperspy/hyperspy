@@ -41,17 +41,25 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
         centre_shape = (1,)
     else:
         i = axis.index_in_array
-        data_gi = [slice(None), ] * len(signal.data.shape)
+        data_gi = [
+            slice(None),
+        ] * len(signal.data.shape)
         data_gi[axis.index_in_array] = slice(i1, i2)
         data = signal.data[tuple(data_gi)]
-        X_shape = [1, ] * len(signal.data.shape)
+        X_shape = [
+            1,
+        ] * len(signal.data.shape)
         X_shape[axis.index_in_array] = data.shape[i]
         centre_shape = list(data.shape)
         centre_shape[i] = 1
 
     centre = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
-    sigma = np.sqrt(abs(np.sum((X.reshape(X_shape) - centre.reshape(
-        centre_shape)) ** 2 * data, i) / np.sum(data, i)))
+    sigma = np.sqrt(
+        abs(
+            np.sum((X.reshape(X_shape) - centre.reshape(centre_shape)) ** 2 * data, i)
+            / np.sum(data, i)
+        )
+    )
     height = data.max(i)
 
     if isinstance(data, da.Array):
@@ -105,7 +113,7 @@ class Gaussian(Expression):
     GaussianHF
     """
 
-    def __init__(self, A=1., sigma=1., centre=0., module=None, **kwargs):
+    def __init__(self, A=1.0, sigma=1.0, centre=0.0, module=None, **kwargs):
         super().__init__(
             expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
                         / (2 * sigma**2))",
@@ -116,13 +124,14 @@ class Gaussian(Expression):
             position="centre",
             module=module,
             autodoc=False,
-            **kwargs)
+            **kwargs,
+        )
 
         # Boundaries
-        self.A.bmin = 0.
+        self.A.bmin = 0.0
         self.A.bmax = None
 
-        self.sigma.bmin = 0.
+        self.sigma.bmin = 0.0
         self.sigma.bmax = None
 
         self.isbackground = False
@@ -168,8 +177,9 @@ class Gaussian(Expression):
 
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
-                                                              only_current)
+        centre, height, sigma = _estimate_gaussian_parameters(
+            signal, x1, x2, only_current
+        )
         scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
@@ -182,14 +192,14 @@ class Gaussian(Expression):
         else:
             if self.A.map is None:
                 self._create_arrays()
-            self.A.map['values'][:] = height * sigma * sqrt2pi
+            self.A.map["values"][:] = height * sigma * sqrt2pi
             if axis.is_binned:
-                self.A.map['values'] /= scaling_factor
-            self.A.map['is_set'][:] = True
-            self.sigma.map['values'][:] = sigma
-            self.sigma.map['is_set'][:] = True
-            self.centre.map['values'][:] = centre
-            self.centre.map['is_set'][:] = True
+                self.A.map["values"] /= scaling_factor
+            self.A.map["is_set"][:] = True
+            self.sigma.map["values"][:] = sigma
+            self.sigma.map["is_set"][:] = True
+            self.centre.map["values"][:] = centre
+            self.centre.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 

@@ -19,12 +19,14 @@
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.collections import RectangleCollection
 
-from hyperspy.docstrings.markers import (OFFSET_DOCSTRING,
-                                         HEIGHTS_DOCSTRING,
-                                         WIDTHS_DOCSTRING,
-                                         ANGLES_DOCSTRING,
-                                         UNITS_DOCSTRING,
-                                         )
+from hyperspy.docstrings.markers import (
+    OFFSET_DOCSTRING,
+    HEIGHTS_DOCSTRING,
+    WIDTHS_DOCSTRING,
+    ANGLES_DOCSTRING,
+    UNITS_DOCSTRING,
+)
+
 
 class Rectangles(Markers):
     """A Collection of Rectangles Markers"""
@@ -39,7 +41,7 @@ class Rectangles(Markers):
         angles=0,
         offset_transform="data",
         units="xy",
-        **kwargs
+        **kwargs,
     ):
         """Initialize the set of Segments Markers.
 
@@ -56,11 +58,11 @@ class Rectangles(Markers):
         """
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(
-                f"The `transform` argument is not supported for Rectangle Markers. Instead, "
+                "The `transform` argument is not supported for Rectangle Markers. Instead, "
                 "use the `offset_transform` argument to specify the transform of the "
                 "`offsets` and use the `units` argument to specify transform of the "
                 "`sizes` argument."
-                )
+            )
 
         super().__init__(
             collection=RectangleCollection,
@@ -70,11 +72,13 @@ class Rectangles(Markers):
             angles=angles,
             offset_transform=offset_transform,
             units=units,
-            **kwargs
+            **kwargs,
         )
-    __init__.__doc__ %= (OFFSET_DOCSTRING,
-                        HEIGHTS_DOCSTRING,
-                        WIDTHS_DOCSTRING,
-                        ANGLES_DOCSTRING,
-                        UNITS_DOCSTRING,
-                        )
+
+    __init__.__doc__ %= (
+        OFFSET_DOCSTRING,
+        HEIGHTS_DOCSTRING,
+        WIDTHS_DOCSTRING,
+        ANGLES_DOCSTRING,
+        UNITS_DOCSTRING,
+    )

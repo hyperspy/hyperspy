@@ -25,10 +25,9 @@ import pytest
 import hyperspy.api as hs
 from hyperspy import _lazy_signals
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.io import assign_signal_subclass
 
-testcase = namedtuple('testcase', ['dtype', 'sig_dim', 'sig_type', 'cls'])
+testcase = namedtuple("testcase", ["dtype", "sig_dim", "sig_type", "cls"])
 
 subclass_cases = (
     testcase("float", 1000, "", "BaseSignal"),
@@ -43,14 +42,15 @@ subclass_cases = (
     testcase("float", 1, "DefinitelyNotAHyperSpySignal", "Signal1D"),
 )
 
+
 def test_assignment_class(caplog):
     for case in subclass_cases:
         with caplog.at_level(logging.WARNING):
             new_subclass = assign_signal_subclass(
-                 dtype=np.dtype(case.dtype),
-                 signal_dimension=case.sig_dim,
-                 signal_type=case.sig_type,
-                 lazy=False,
+                dtype=np.dtype(case.dtype),
+                signal_dimension=case.sig_dim,
+                signal_type=case.sig_type,
+                lazy=False,
             )
 
         assert new_subclass is getattr(hs.signals, case.cls)
@@ -61,7 +61,7 @@ def test_assignment_class(caplog):
         else:
             assert warn_msg not in caplog.text
 
-        lazyclass = 'Lazy' + case.cls if case.cls != 'BaseSignal' else 'LazySignal'
+        lazyclass = "Lazy" + case.cls if case.cls != "BaseSignal" else "LazySignal"
         new_subclass = assign_signal_subclass(
             dtype=np.dtype(case.dtype),
             signal_dimension=case.sig_dim,
@@ -85,7 +85,6 @@ def test_id_set_signal_type():
 
 @lazifyTestClass
 class TestToBaseSignalScalar:
-
     def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.array([0]))
 
@@ -93,13 +92,12 @@ class TestToBaseSignalScalar:
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.BaseSignal)
         assert self.s.axes_manager.signal_dimension == 0
-        assert self.s.axes_manager.signal_shape == (1, )
+        assert self.s.axes_manager.signal_shape == (1,)
         if self.s._lazy:
             assert isinstance(self.s, _lazy_signals.LazySignal)
 
 
 class TestConvertBaseSignal:
-
     def setup_method(self, method):
         self.s = hs.signals.BaseSignal(np.zeros((3, 3)))
 
@@ -114,7 +112,7 @@ class TestConvertBaseSignal:
         self.s.axes_manager._set_signal_dimension(1)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.Signal1D)
-        self.s.metadata.Signal.record_by = ''
+        self.s.metadata.Signal.record_by = ""
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.BaseSignal)
 
@@ -131,7 +129,6 @@ class TestConvertBaseSignal:
 
 
 class TestConvertComplexSignal:
-
     def setup_method(self, method):
         self.s = hs.signals.ComplexSignal(np.zeros((3, 3)))
 
@@ -148,10 +145,10 @@ class TestConvertComplexSignal:
 
 def test_create_lazy_signal():
     # Check that this syntax is working
-    _ = hs.signals.BaseSignal([0, 1, 2], attributes={'_lazy': True})
+    _ = hs.signals.BaseSignal([0, 1, 2], attributes={"_lazy": True})
 
 
-@pytest.mark.parametrize('signal_dim', (0, 1, 2, 4))
+@pytest.mark.parametrize("signal_dim", (0, 1, 2, 4))
 def test_setting_signal_dimension(signal_dim):
     s = hs.signals.BaseSignal(np.random.random(size=(10, 20, 30, 40)))
     nav_dim = s.data.ndim - signal_dim
@@ -178,8 +175,10 @@ def test_setting_signal_dimension(signal_dim):
     assert s.axes_manager.navigation_size == expected_size(expected_nav_shape)
 
     s._assign_subclass()
-    class_mapping = {0:hs.signals.BaseSignal,
-                     1:hs.signals.Signal1D,
-                     2:hs.signals.Signal2D,
-                     4:hs.signals.BaseSignal}
+    class_mapping = {
+        0: hs.signals.BaseSignal,
+        1: hs.signals.Signal1D,
+        2: hs.signals.Signal2D,
+        4: hs.signals.BaseSignal,
+    }
     assert isinstance(s, class_mapping[signal_dim])

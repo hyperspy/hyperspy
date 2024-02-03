@@ -44,7 +44,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
     s = Signal1D(np.empty((200,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
-    axis.scale = .05
+    axis.scale = 0.05
     axis.offset = -5
     g1 = Doniach(centre=1, A=5, sigma=1, alpha=0.5)
     s.data = g1.function(axis.axis)
@@ -59,8 +59,9 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
         factor = np.gradient(axis.axis)
     else:
         factor = 1
-    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
-                                  only_current=only_current)
+    assert g2.estimate_parameters(
+        s, axis.low_value, axis.high_value, only_current=only_current
+    )
     assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g2.sigma.value, 2.331764, 0.01)
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor, 0.3)

@@ -22,7 +22,7 @@ import hyperspy.api as hs
 
 
 def test_check_navigation_mask():
-    s = hs.signals.Signal1D(np.arange(2*3*4).reshape(3, 2, 4))
+    s = hs.signals.Signal1D(np.arange(2 * 3 * 4).reshape(3, 2, 4))
     navigation_mask = s.sum(-1)
     s._check_navigation_mask(navigation_mask)
     with pytest.raises(ValueError):
@@ -30,7 +30,7 @@ def test_check_navigation_mask():
 
 
 def test_check_signal_mask():
-    s = hs.signals.Signal1D(np.arange(2*3*4).reshape(3, 2, 4))
+    s = hs.signals.Signal1D(np.arange(2 * 3 * 4).reshape(3, 2, 4))
     signal_mask = s.sum([0, 1])
     s._check_signal_mask(signal_mask)
     with pytest.raises(ValueError):

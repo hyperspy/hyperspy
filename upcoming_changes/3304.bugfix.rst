@@ -1,0 +1,1 @@
+Fix bug with side by side plotting of signal containing navigation dimension only.

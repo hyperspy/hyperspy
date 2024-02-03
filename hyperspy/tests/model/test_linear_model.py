@@ -42,22 +42,20 @@ def test_fit_binned():
     g.A.value = 1e3
     # model contains free nonlinear parameters
     with pytest.raises(RuntimeError):
-        m.fit(optimizer='lstsq')
-
+        m.fit(optimizer="lstsq")
 
     g.centre.free = False
     g.sigma.free = False
 
-    m.fit(optimizer='lstsq')
+    m.fit(optimizer="lstsq")
     np.testing.assert_allclose(m[0].A.value, 6132.640632924692, 1)
     np.testing.assert_allclose(m[0].centre.value, 0.5)
     np.testing.assert_allclose(m[0].sigma.value, 1)
 
 
-@pytest.mark.parametrize('weighted', [False, True])
+@pytest.mark.parametrize("weighted", [False, True])
 @lazifyTestClass
 class TestMultiFitLinear:
-
     def setup_method(self):
         rng = np.random.default_rng(1)
         x = rng.random(30)
@@ -76,112 +74,134 @@ class TestMultiFitLinear:
     def test_gaussian(self, weighted):
         self._post_setup_method(weighted)
         m = self.m
-        L = Gaussian(centre=15.)
+        L = Gaussian(centre=15.0)
         L.centre.free = L.sigma.free = False
         m.append(L)
 
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
         single = m.as_signal()
         m.assign_current_values_to_all()
-        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
-            dummy_context_manager()
+        cm = (
+            pytest.warns(UserWarning)
+            if weighted and not self.s._lazy
+            else dummy_context_manager()
+        )
         with cm:
-            m.multifit(optimizer='lstsq')
+            m.multifit(optimizer="lstsq")
         multi = m.as_signal()
 
-        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
+        np.testing.assert_allclose(
+            single._get_current_data(), multi._get_current_data()
+        )
 
     def test_map_values_std_isset(self, weighted):
         self._post_setup_method(weighted)
         m = self.m
-        L = Gaussian(centre=15.)
+        L = Gaussian(centre=15.0)
         L.centre.free = L.sigma.free = False
         m.append(L)
 
         m.multifit()
         nonlinear = L.A.map.copy()
 
-        L.A.map['is_set'] = False
-        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
-            dummy_context_manager()
+        L.A.map["is_set"] = False
+        cm = (
+            pytest.warns(UserWarning)
+            if weighted and not self.s._lazy
+            else dummy_context_manager()
+        )
         with cm:
-            m.multifit(optimizer='lstsq', calculate_errors=True)
+            m.multifit(optimizer="lstsq", calculate_errors=True)
         linear = L.A.map.copy()
 
-        np.testing.assert_allclose(nonlinear['values'], linear['values'])
-        np.testing.assert_allclose(nonlinear['std'], linear['std'])
-        np.testing.assert_allclose(nonlinear['is_set'], linear['is_set'])
+        np.testing.assert_allclose(nonlinear["values"], linear["values"])
+        np.testing.assert_allclose(nonlinear["std"], linear["std"])
+        np.testing.assert_allclose(nonlinear["is_set"], linear["is_set"])
 
-        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
-            dummy_context_manager()
+        cm = (
+            pytest.warns(UserWarning)
+            if weighted and not self.s._lazy
+            else dummy_context_manager()
+        )
         with cm:
-            m.multifit(optimizer='lstsq', calculate_errors=False)
-        np.testing.assert_equal(L.A.map['std'], np.nan)
+            m.multifit(optimizer="lstsq", calculate_errors=False)
+        np.testing.assert_equal(L.A.map["std"], np.nan)
 
     def test_offset(self, weighted):
         self._post_setup_method(weighted)
         m = self.m
-        L = Offset(offset=1.)
+        L = Offset(offset=1.0)
         m.append(L)
 
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
         single = m.as_signal()
         m.assign_current_values_to_all()
-        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
-            dummy_context_manager()
+        cm = (
+            pytest.warns(UserWarning)
+            if weighted and not self.s._lazy
+            else dummy_context_manager()
+        )
         with cm:
-            m.multifit(optimizer='lstsq')
+            m.multifit(optimizer="lstsq")
         multi = m.as_signal()
         # compare fits from first pixel
-        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
+        np.testing.assert_allclose(
+            single._get_current_data(), multi._get_current_data()
+        )
 
     def test_channel_switches(self, weighted):
         self._post_setup_method(weighted)
         m = self.m
         m._channel_switches[5:-5] = False
-        L = Gaussian(centre=15.)
+        L = Gaussian(centre=15.0)
         L.centre.free = L.sigma.free = False
         m.append(L)
 
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
         single = m.as_signal()
         m.assign_current_values_to_all()
-        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
-            dummy_context_manager()
+        cm = (
+            pytest.warns(UserWarning)
+            if weighted and not self.s._lazy
+            else dummy_context_manager()
+        )
         with cm:
-           m.multifit(optimizer='lstsq')
+            m.multifit(optimizer="lstsq")
         multi = m.as_signal()
 
-        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
+        np.testing.assert_allclose(
+            single._get_current_data(), multi._get_current_data()
+        )
 
         m.fit()
         single_nonlinear = m.as_signal()
-        np.testing.assert_allclose(single._get_current_data(), single_nonlinear._get_current_data())
+        np.testing.assert_allclose(
+            single._get_current_data(), single_nonlinear._get_current_data()
+        )
 
     def test_multifit_ridge(self, weighted):
         pytest.importorskip("sklearn")
         m = self.m
-        L = Gaussian(centre=15.)
-        L.set_parameters_not_free(['centre', 'sigma'])
+        L = Gaussian(centre=15.0)
+        L.set_parameters_not_free(["centre", "sigma"])
         m.append(L)
 
         if m.signal._lazy:
             with pytest.raises(ValueError):
-                m.multifit(optimizer='ridge_regression')
+                m.multifit(optimizer="ridge_regression")
             return
         else:
-            m.multifit(optimizer='ridge_regression')
+            m.multifit(optimizer="ridge_regression")
 
 
 class TestLinearFitting:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.arange(0, 100) + 20)
         m = s.create_model()
         g1 = hs.model.components1D.Gaussian(A=1000, centre=20, sigma=10)
         g1.sigma.free = False
         g1.centre.free = False
-        c = Expression('a*x+b', 'line with offset')
+        c = Expression("a*x+b", "line with offset")
         m.extend([g1, c])
 
         axis = s.axes_manager[-1].axis
@@ -194,17 +214,17 @@ class TestLinearFitting:
     def test_linear_fitting_with_offset(self):
         m = self.m
         c = self.c
-        m.fit(optimizer='lstsq')
-        expected_values = np.array([1000., 1.0, 20.0])
-        np.testing.assert_allclose(m.p0, expected_values, rtol=5E-6)
+        m.fit(optimizer="lstsq")
+        expected_values = np.array([1000.0, 1.0, 20.0])
+        np.testing.assert_allclose(m.p0, expected_values, rtol=5e-6)
 
         # Repeat test with offset fixed
         c.b.free = False
-        m.fit(optimizer='lstsq')
-        np.testing.assert_allclose(m.p0, expected_values[:2], rtol=5E-6)
+        m.fit(optimizer="lstsq")
+        np.testing.assert_allclose(m.p0, expected_values[:2], rtol=5e-6)
 
     def test_fixed_offset_value(self):
-        self.m.fit(optimizer='lstsq')
+        self.m.fit(optimizer="lstsq")
         c = self.c
         c.b.free = False
         constant = self.m._compute_constant_term(component=c)
@@ -216,17 +236,16 @@ class TestLinearFitting:
         assert self.c._constant_term == self.c.b.value
 
 
-@pytest.mark.parametrize('weighted', [False, True])
+@pytest.mark.parametrize("weighted", [False, True])
 @lazifyTestClass
 class TestFitAlgorithms:
-
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.arange(1, 100))
         m = s.create_model()
         g1 = hs.model.components1D.Gaussian()
         g1.sigma.free = False
         g1.centre.free = False
-        c = Expression('a*x+b', 'line with offset')
+        c = Expression("a*x+b", "line with offset")
         m.extend([g1, c])
         self.m = m
 
@@ -234,7 +253,7 @@ class TestFitAlgorithms:
         """Convenience method to use class parametrize marker"""
         m = self.m
         if weighted:
-            variance = np.arange(10, m.signal.data.size-10, 0.01)
+            variance = np.arange(10, m.signal.data.size - 10, 0.01)
             m.signal.set_noise_variance(Signal1D(variance))
         m.fit()
         self.nonlinear_fit_res = m.as_signal()
@@ -243,21 +262,25 @@ class TestFitAlgorithms:
     def test_compare_lstsq(self, weighted):
         self._post_setup_method(weighted)
         m = self.m
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
         lstsq_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit._get_current_data(), atol=1E-8)
+        np.testing.assert_allclose(
+            self.nonlinear_fit_res, lstsq_fit._get_current_data(), atol=1e-8
+        )
         linear_std = [para.std for para in m._free_parameters if para.std]
-        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1E-8)
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1e-8)
 
     def test_nonactive_component(self, weighted):
         self._post_setup_method(weighted)
         m = self.m
         m[1].active = False
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
         linear_fit = m.as_signal()
         m.fit()
         nonlinear_fit = m.as_signal()
-        np.testing.assert_allclose(nonlinear_fit._get_current_data(), linear_fit._get_current_data(), rtol=1E-5)
+        np.testing.assert_allclose(
+            nonlinear_fit._get_current_data(), linear_fit._get_current_data(), rtol=1e-5
+        )
 
     def test_compare_ridge(self, weighted):
         self._post_setup_method(weighted)
@@ -265,18 +288,17 @@ class TestFitAlgorithms:
         m = self.m
         if m.signal._lazy:
             with pytest.raises(ValueError):
-                m.fit(optimizer='ridge_regression')
+                m.fit(optimizer="ridge_regression")
             return
         else:
-            m.fit(optimizer='ridge_regression')
+            m.fit(optimizer="ridge_regression")
         ridge_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, rtol=5E-6)
+        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, rtol=5e-6)
         linear_std = [para.std for para in m._free_parameters if para.std]
-        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1E-8)
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1e-8)
 
 
 class TestWarningSlowMultifit:
-
     def setup_method(self, method):
         s = hs.data.two_gaussians().inav[0]
         m = s.create_model()
@@ -286,9 +308,9 @@ class TestWarningSlowMultifit:
 
         # make dummy twinning
         g2.centre.twin = g1.centre
-        g2.centre.twin_function_expr = '15 + x'
+        g2.centre.twin_function_expr = "15 + x"
         g2.A.twin = g1.A
-        g2.centre.twin_function_expr = '2 * x'
+        g2.centre.twin_function_expr = "2 * x"
 
         m.set_parameters_not_free(only_nonlinear=True)
 
@@ -297,7 +319,7 @@ class TestWarningSlowMultifit:
     def test_active_is_multidimensional_all_active(self):
         m = self.m
         m[0].active_is_multidimensional = True
-        m.multifit(optimizer='lstsq')
+        m.multifit(optimizer="lstsq")
 
     def test_active_is_multidimensional(self):
         m = self.m
@@ -306,40 +328,37 @@ class TestWarningSlowMultifit:
         component._active_array[10] = False
         m[1].active = False
         assert component.active
-        with pytest.warns(UserWarning,
-                          match="active components that are not active"):
+        with pytest.warns(UserWarning, match="active components that are not active"):
             with pytest.raises(RuntimeError):
                 # when we hit the navigation position, where the component
                 # is not active
                 m.multifit(optimizer="lstsq")
-        assert m.signal.axes_manager.indices == (10, )
+        assert m.signal.axes_manager.indices == (10,)
 
     def test_set_value_in_non_free_parameter(self):
         m = self.m
         parameter = m[0].centre
         assert parameter.twin is None
-        parameter.map['values'][:3] = 50.
-        parameter.map['is_set'][:3] = True
-        with pytest.warns(UserWarning,
-                          match="model contains non-free parameters"):
+        parameter.map["values"][:3] = 50.0
+        parameter.map["is_set"][:3] = True
+        with pytest.warns(UserWarning, match="model contains non-free parameters"):
             m.multifit(optimizer="lstsq")
 
     def test_set_value_in_non_free_parameter_twin(self):
         m = self.m
         parameter = m[1].centre
         assert parameter.twin is not None
-        parameter.map['values'][:3] = 40.
-        parameter.map['is_set'][:3] = True
-        with pytest.warns(UserWarning,
-                          match="model contains non-free parameters"):
+        parameter.map["values"][:3] = 40.0
+        parameter.map["is_set"][:3] = True
+        with pytest.warns(UserWarning, match="model contains non-free parameters"):
             m.multifit(optimizer="lstsq")
 
     def test_set_value_in_free_parameter_twin(self):
         m = self.m
         parameter = m[1].A
         assert parameter.twin is not None
-        parameter.map['values'][:3] = 100.
-        parameter.map['is_set'][:3] = True
+        parameter.map["values"][:3] = 100.0
+        parameter.map["is_set"][:3] = True
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             m.multifit(optimizer="lstsq")
@@ -349,11 +368,11 @@ class TestWarningSlowMultifit:
         # of `multifit(optimizer="lstsq")` so that rerunning it doesn't fall
         # back to slow multifit
         m = self.m
-        m.multifit(optimizer='lstsq')
+        m.multifit(optimizer="lstsq")
         p = m[0].centre
         np.testing.assert_equal(p.map["is_set"], True)
-        np.testing.assert_allclose(p.map['values'], p.map['values'][0])
-        np.testing.assert_equal(p.map['std'], np.nan)
+        np.testing.assert_allclose(p.map["values"], p.map["values"][0])
+        np.testing.assert_equal(p.map["std"], np.nan)
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
@@ -364,12 +383,12 @@ class TestWarningSlowMultifit:
         m = self.m
         m.signal.estimate_poissonian_noise_variance()
         with pytest.warns(UserWarning):
-            m.multifit(optimizer="lstsq",
-                       match="noise of the signal is not homoscedastic")
+            m.multifit(
+                optimizer="lstsq", match="noise of the signal is not homoscedastic"
+            )
 
 
 class TestLinearModel2D:
-
     def setup_method(self, method):
         low, high = -10, 10
         N = 100
@@ -377,7 +396,7 @@ class TestLinearModel2D:
         mesh = np.meshgrid(x, y)
         self.mesh, self.x, self.y = mesh, x, y
 
-    @pytest.mark.parametrize('nav2d', [False, True])
+    @pytest.mark.parametrize("nav2d", [False, True])
     def test_model2D_one_component(self, nav2d):
         mesh, x, y = self.mesh, self.x, self.y
         G1 = Gaussian2D(30, 5.0, 4.0, 0, 0)
@@ -391,8 +410,8 @@ class TestLinearModel2D:
         s.axes_manager[-1].scale = y[1] - y[0]
 
         if nav2d:
-            s = hs.stack([s]*2)
-            s = hs.stack([s]*3)
+            s = hs.stack([s] * 2)
+            s = hs.stack([s] * 3)
 
         m = s.create_model()
         m.append(G1)
@@ -400,12 +419,12 @@ class TestLinearModel2D:
         G1.set_parameters_not_free()
         G1.A.free = True
 
-        m.multifit(optimizer='lstsq', calculate_errors=True)
-        diff = (s - m.as_signal(show_progressbar=False))
-        np.testing.assert_allclose(diff.data, 0.0, atol=1E-7)
-        np.testing.assert_allclose(m.p_std[0], 0.0, atol=1E-7)
+        m.multifit(optimizer="lstsq", calculate_errors=True)
+        diff = s - m.as_signal(show_progressbar=False)
+        np.testing.assert_allclose(diff.data, 0.0, atol=1e-7)
+        np.testing.assert_allclose(m.p_std[0], 0.0, atol=1e-7)
 
-    @pytest.mark.parametrize('nav2d', [False, True])
+    @pytest.mark.parametrize("nav2d", [False, True])
     def test_model2D_linear_many_gaussians(self, nav2d):
         mesh, x, y = self.mesh, self.x, self.y
         gausslow, gausshigh = -8, 8
@@ -413,8 +432,8 @@ class TestLinearModel2D:
         X, Y = mesh
         z = np.zeros(X.shape)
         g = Gaussian2D()
-        for i in np.arange(gausslow, gausshigh+1, gauss_step):
-            for j in np.arange(gausslow, gausshigh+1, gauss_step):
+        for i in np.arange(gausslow, gausshigh + 1, gauss_step):
+            for j in np.arange(gausslow, gausshigh + 1, gauss_step):
                 g.centre_x.value = i
                 g.centre_y.value = j
                 g.A.value = 10
@@ -428,24 +447,24 @@ class TestLinearModel2D:
         s.axes_manager[-1].scale = y[1] - y[0]
 
         if nav2d:
-            s = hs.stack([s]*2)
-            s = hs.stack([s]*3)
+            s = hs.stack([s] * 2)
+            s = hs.stack([s] * 3)
 
         m = s.create_model()
-        for i in np.arange(gausslow, gausshigh+1, gauss_step):
-            for j in np.arange(gausslow, gausshigh+1, gauss_step):
+        for i in np.arange(gausslow, gausshigh + 1, gauss_step):
+            for j in np.arange(gausslow, gausshigh + 1, gauss_step):
                 g = Gaussian2D(centre_x=i, centre_y=j)
                 g.set_parameters_not_free()
                 g.A.free = True
                 m.append(g)
 
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
         np.testing.assert_allclose(s.data, m.as_signal().data)
 
-    @pytest.mark.parametrize('nav2d', [False, True])
+    @pytest.mark.parametrize("nav2d", [False, True])
     def test_model2D_polyexpression(self, nav2d):
         poly = "a*x**2 + b*x - c*y**2 + d*y + e"
-        P = Expression(poly, 'poly')
+        P = Expression(poly, "poly")
         P.a.value = 6
         P.b.value = 5
         P.c.value = 4
@@ -456,19 +475,18 @@ class TestLinearModel2D:
         s = Signal2D(data)
 
         if nav2d:
-            s = hs.stack([s]*2)
-            s = hs.stack([s]*3)
+            s = hs.stack([s] * 2)
+            s = hs.stack([s] * 3)
 
         m = s.create_model()
         m.append(P)
-        m.fit(optimizer='lstsq')
-        diff = (s - m.as_signal(show_progressbar=False))
-        np.testing.assert_allclose(diff.data, 0.0, atol=1E-7)
-        np.testing.assert_allclose(m.p_std, 0.0, atol=1E-7)
+        m.fit(optimizer="lstsq")
+        diff = s - m.as_signal(show_progressbar=False)
+        np.testing.assert_allclose(diff.data, 0.0, atol=1e-7)
+        np.testing.assert_allclose(m.p_std, 0.0, atol=1e-7)
 
 
 class TestLinearFitTwins:
-
     def setup_method(self, method):
         g1 = Gaussian(centre=10)
         g2 = Gaussian(centre=20)
@@ -501,12 +519,12 @@ class TestLinearFitTwins:
             g.A.twin = None
 
         gs[0].A.value = 1
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
 
         np.testing.assert_allclose(gs[0].A.value, 20)
         np.testing.assert_allclose(gs[1].A.value, -10)
         np.testing.assert_allclose(gs[2].A.value, 5)
-        np.testing.assert_allclose(s.data,  m._get_current_data())
+        np.testing.assert_allclose(s.data, m._get_current_data())
 
     def test_with_twins(self):
         gs = self.gs
@@ -517,7 +535,7 @@ class TestLinearFitTwins:
             g.centre.free = False
 
         gs[0].A.value = 1
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
 
         np.testing.assert_allclose(gs[0].A.value, 20)
         np.testing.assert_allclose(gs[1].A.value, -10)
@@ -529,7 +547,7 @@ def test_compute_constant_term():
     rng = np.random.default_rng(1)
     s = Signal1D(rng.random(10))
     m = s.create_model()
-    lin = Expression("a*x + b", name='linear')
+    lin = Expression("a*x + b", name="linear")
     m.append(lin)
 
     lin.a.value = 2
@@ -552,8 +570,9 @@ class TestLinearEdgeCases:
 
     def test_no_free_parameters(self):
         self.m.set_parameters_not_free()
-        with pytest.raises(RuntimeError,
-                           match="Model does not contain any free components!"):
+        with pytest.raises(
+            RuntimeError, match="Model does not contain any free components!"
+        ):
             self.m.fit(optimizer="lstsq")
 
     def test_free_nonlinear_parameters(self):
@@ -567,7 +586,6 @@ class TestLinearEdgeCases:
 
 
 class TestTwinnedComponents:
-
     def setup_method(self):
         s = hs.signals.Signal1D(np.arange(100) + 20)
         m = s.create_model()
@@ -576,12 +594,14 @@ class TestTwinnedComponents:
         g2 = Gaussian(centre=40, A=500, sigma=5)
         g3 = Gaussian(centre=70, A=500, sigma=5)
         g2.A.twin = g1.A
-        g2.A.twin_function_expr = 'x / 2'
+        g2.A.twin_function_expr = "x / 2"
 
         m.extend([p0, g1, g2, g3])
 
         axis = s.axes_manager[-1].axis
-        s.data = (s.data + g1.function(axis) + g2.function(axis) + g3.function(axis)) * 100
+        s.data = (
+            s.data + g1.function(axis) + g2.function(axis) + g3.function(axis)
+        ) * 100
         s.change_dtype(np.int64)
         s.add_poissonian_noise()
 
@@ -605,26 +625,22 @@ class TestTwinnedComponents:
     def test_fit_fixed_twinned_components_and_std(self):
         m = self.m
         m[1].A.free = False
-        m.fit(optimizer='lstsq')
+        m.fit(optimizer="lstsq")
         lstsq_fit = m.as_signal()
-        nonlinear_parameters = [p for c in m for p in c.parameters
-                                if not p._linear]
+        nonlinear_parameters = [p for c in m for p in c.parameters if not p._linear]
         linear_std = [para.std for para in nonlinear_parameters if para.std]
 
         m.fit()
         nonlinear_fit = m.as_signal()
         nonlinear_std = [para.std for para in nonlinear_parameters if para.std]
 
-        np.testing.assert_allclose(nonlinear_fit.data, lstsq_fit.data, rtol=1E-5)
+        np.testing.assert_allclose(nonlinear_fit.data, lstsq_fit.data, rtol=1e-5)
         np.testing.assert_allclose(nonlinear_std, linear_std)
 
 
 class MultiLinearCustomComponent(Component):
-
     def __init__(self, a0=1, a1=1):
-        Component.__init__(
-            self, ('a0', 'a1'), linear_parameter_list=['a0', 'a1']
-            )
+        Component.__init__(self, ("a0", "a1"), linear_parameter_list=["a0", "a1"])
 
         self.a0.value = a0
         self.a1.value = a1
@@ -636,7 +652,6 @@ class MultiLinearCustomComponent(Component):
 
 
 class TestCustomComponent:
-
     def setup_method(self):
         s = hs.signals.Signal1D(np.arange(100))
         m = s.create_model()
@@ -651,13 +666,13 @@ class TestCustomComponent:
         c = MultiLinearCustomComponent()
         self.m.append(c)
         with pytest.raises(AttributeError, match="has more than one free"):
-            self.m.fit(optimizer='lstsq')
+            self.m.fit(optimizer="lstsq")
 
     def test_custom_comp(self):
         c = MultiLinearCustomComponent()
         c.a0.free = False
         self.m.append(c)
-        self.m.fit(optimizer='lstsq')
+        self.m.fit(optimizer="lstsq")
 
     def test_compare_custom_comp(self):
         c = MultiLinearCustomComponent()
@@ -665,7 +680,7 @@ class TestCustomComponent:
         c.a0.value = 0
 
         self.m.append(c)
-        self.m.fit(optimizer='lstsq')
+        self.m.fit(optimizer="lstsq")
         linear = c.a1.value
 
         self.m.fit()
@@ -675,17 +690,17 @@ class TestCustomComponent:
 
 
 def test_fixed_free_offset():
-    s = Signal1D(np.ones(100)*3)
+    s = Signal1D(np.ones(100) * 3)
     m = s.create_model()
-    a = Offset(1.)
+    a = Offset(1.0)
     a.offset.free = False
-    b = Offset(0.)
+    b = Offset(0.0)
     m.extend((a, b))
 
     m.fit(optimizer="lstsq")
 
-    np.testing.assert_almost_equal(a.offset.value, 1.)
-    np.testing.assert_almost_equal(b.offset.value, 2.)
+    np.testing.assert_almost_equal(a.offset.value, 1.0)
+    np.testing.assert_almost_equal(b.offset.value, 2.0)
 
 
 def test_non_uniform_binned():
@@ -694,6 +709,7 @@ def test_non_uniform_binned():
     m = s.create_model()
     with pytest.raises(ValueError):
         m.fit(optimizer="lstsq")
+
 
 def test_navigation_shape_signal1D():
     rng = np.random.default_rng(1)
@@ -704,14 +720,14 @@ def test_navigation_shape_signal1D():
     g.A.value = 1000
     m = s.create_model()
     m.append(g)
-    g.A.map['values'] = rng.integers(low=500, high=1500, size=(2, 3))
-    g.A.map['is_set'] = True
+    g.A.map["values"] = rng.integers(low=500, high=1500, size=(2, 3))
+    g.A.map["is_set"] = True
     s.data = m.as_signal().data
     s.add_gaussian_noise(0.5)
     m.set_parameters_not_free(only_nonlinear=True)
 
-    g.A.map['values'] = 0
-    m.multifit(optimizer='lstsq')
+    g.A.map["values"] = 0
+    m.multifit(optimizer="lstsq")
 
     np.testing.assert_allclose(s, m.as_signal(), atol=2.5)
 
@@ -725,14 +741,14 @@ def test_navigation_shape_signal2D():
     g.A.value = 1000
     m = s.create_model()
     m.append(g)
-    g.A.map['values'] = rng.integers(low=500, high=1500, size=(2, 3))
-    g.A.map['is_set'] = True
+    g.A.map["values"] = rng.integers(low=500, high=1500, size=(2, 3))
+    g.A.map["is_set"] = True
     s.data = m.as_signal().data
     s.add_gaussian_noise(0.5)
     m.set_parameters_not_free(only_nonlinear=True)
 
-    g.A.map['values'] = 0
-    m.multifit(optimizer='lstsq')
+    g.A.map["values"] = 0
+    m.multifit(optimizer="lstsq")
 
     np.testing.assert_allclose(s, m.as_signal(), atol=2)
 
@@ -755,7 +771,7 @@ def test_power_law():
     m.append(pl)
     m.set_parameters_not_free(only_nonlinear=True)
     m.plot()
-    m.fit(optimizer='lstsq')
+    m.fit(optimizer="lstsq")
 
     np.testing.assert_allclose(pl_ref.A.value, pl.A.value)
     np.testing.assert_allclose(pl_ref.r.value, pl.r.value)
@@ -779,16 +795,16 @@ def test_lorentzian():
     s = m_ref.as_signal()
 
     m = s.create_model()
-    l = hs.model.components1D.Lorentzian()
-    l.centre.value = l_ref.centre.value
-    m.append(l)
+    lorentzian = hs.model.components1D.Lorentzian()
+    lorentzian.centre.value = l_ref.centre.value
+    m.append(lorentzian)
     m.set_parameters_not_free(only_nonlinear=True)
     m.plot()
-    m.fit(optimizer='lstsq')
+    m.fit(optimizer="lstsq")
 
-    np.testing.assert_allclose(l_ref.A.value, l.A.value)
-    np.testing.assert_allclose(l_ref.centre.value, l.centre.value)
-    np.testing.assert_allclose(l_ref.gamma.value, l.gamma.value)
+    np.testing.assert_allclose(l_ref.A.value, lorentzian.A.value)
+    np.testing.assert_allclose(l_ref.centre.value, lorentzian.centre.value)
+    np.testing.assert_allclose(l_ref.gamma.value, lorentzian.gamma.value)
     np.testing.assert_allclose(m.as_signal().data, s.data)
 
 
@@ -807,21 +823,20 @@ def test_expression_multiple_linear_parameter(nav_dim):
     s = m_ref.as_signal()
 
     if nav_dim >= 1:
-        s = hs.stack([s]*2)
+        s = hs.stack([s] * 2)
     if nav_dim == 2:
-        s = hs.stack([s]*3)
+        s = hs.stack([s] * 3)
 
     m = s.create_model()
     p = hs.model.components1D.Polynomial(order=2)
     m.append(p)
-    m.multifit(optimizer='lstsq')
+    m.multifit(optimizer="lstsq")
 
     np.testing.assert_allclose(p_ref.a0.value, p.a0.value)
     np.testing.assert_allclose(p_ref.a1.value, p.a1.value)
     np.testing.assert_allclose(p_ref.a2.value, p.a2.value)
     np.testing.assert_allclose(m.as_signal().data, s.data)
     if nav_dim >= 1:
-        np.testing.assert_allclose(p.a0.map['values'].mean(), p_ref.a0.value)
-        np.testing.assert_allclose(p.a1.map['values'].mean(), p_ref.a1.value)
-        np.testing.assert_allclose(p.a2.map['values'].mean(), p_ref.a2.value)
-
+        np.testing.assert_allclose(p.a0.map["values"].mean(), p_ref.a0.value)
+        np.testing.assert_allclose(p.a1.map["values"].mean(), p_ref.a1.value)
+        np.testing.assert_allclose(p.a2.map["values"].mean(), p_ref.a2.value)

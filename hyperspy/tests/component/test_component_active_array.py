@@ -24,18 +24,15 @@ from hyperspy.signals import Signal1D
 
 
 class TestParametersAsSignals:
-
     def setup_method(self, method):
         self.gaussian = Gaussian()
-        self.gaussian._axes_manager = Signal1D(
-            np.zeros((3, 3, 1))).axes_manager
+        self.gaussian._axes_manager = Signal1D(np.zeros((3, 3, 1))).axes_manager
 
     def test_always_active(self):
         g = self.gaussian
         g.active_is_multidimensional = False
         g._create_arrays()
-        np.testing.assert_array_equal(g.A.as_signal('values').data,
-                                      np.zeros((3, 3)))
+        np.testing.assert_array_equal(g.A.as_signal("values").data, np.zeros((3, 3)))
 
     def test_some_inactive(self):
         g = self.gaussian
@@ -43,7 +40,7 @@ class TestParametersAsSignals:
         g._create_arrays()
         g._active_array[2, 0] = False
         g._active_array[0, 0] = False
-        assert np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all()
+        assert np.isnan(g.A.as_signal("values").data[[0, 2], [0]]).all()
 
     def test_stash_array(self):
         g = self.gaussian
@@ -54,11 +51,12 @@ class TestParametersAsSignals:
         with stash_active_state([g]):
             g.active_is_multidimensional = False
             assert not g._active_is_multidimensional
-            np.testing.assert_array_equal(g.A.as_signal('values').data,
-                                          np.zeros((3, 3)))
+            np.testing.assert_array_equal(
+                g.A.as_signal("values").data, np.zeros((3, 3))
+            )
             assert g._active_array is None
         assert g._active_is_multidimensional
         np.testing.assert_allclose(
-            g._active_array, np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]],
-                                      dtype=bool))
-        assert np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all()
+            g._active_array, np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]], dtype=bool)
+        )
+        assert np.isnan(g.A.as_signal("values").data[[0, 2], [0]]).all()

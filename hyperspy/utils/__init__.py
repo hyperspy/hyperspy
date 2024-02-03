@@ -60,19 +60,18 @@ def print_known_signal_types():
     from hyperspy.ui_registry import ALL_EXTENSIONS
     from prettytable import PrettyTable
     from hyperspy.misc.utils import display
+
     table = PrettyTable()
-    table.field_names = [
-        "signal_type",
-        "aliases",
-        "class name",
-        "package"]
+    table.field_names = ["signal_type", "aliases", "class name", "package"]
     for sclass, sdict in ALL_EXTENSIONS["signals"].items():
         # skip lazy signals and non-data-type specific signals
         if sdict["lazy"] or not sdict["signal_type"]:
             continue
-        aliases = (", ".join(sdict["signal_type_aliases"])
-                   if "signal_type_aliases" in sdict
-                   else "")
+        aliases = (
+            ", ".join(sdict["signal_type_aliases"])
+            if "signal_type_aliases" in sdict
+            else ""
+        )
         package = sdict["module"].split(".")[0]
         table.add_row([sdict["signal_type"], aliases, sclass, package])
         table.sortby = "class name"
@@ -80,16 +79,16 @@ def print_known_signal_types():
 
 
 __all__ = [
-    'interactive',
-    'markers',
-    'model',
-    'plot',
-    'print_known_signal_types',
-    'roi',
-    'samfire',
-    'stack',
-    'transpose',
-    ]
+    "interactive",
+    "markers",
+    "model",
+    "plot",
+    "print_known_signal_types",
+    "roi",
+    "samfire",
+    "stack",
+    "transpose",
+]
 
 
 def __dir__():
@@ -97,19 +96,17 @@ def __dir__():
 
 
 _import_mapping = {
-    'interactive':'.interactive',
-    'stack': '.misc.utils',
-    'transpose': '.misc.utils',
-    }
+    "interactive": ".interactive",
+    "stack": ".misc.utils",
+    "transpose": ".misc.utils",
+}
 
 
 def __getattr__(name):
     if name in __all__:
         if name in _import_mapping.keys():
-            import_path = 'hyperspy' + _import_mapping.get(name)
+            import_path = "hyperspy" + _import_mapping.get(name)
             return getattr(importlib.import_module(import_path), name)
         else:
-            return importlib.import_module(
-                "." + name, 'hyperspy.utils'
-                )
+            return importlib.import_module("." + name, "hyperspy.utils")
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

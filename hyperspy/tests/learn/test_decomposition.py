@@ -139,19 +139,23 @@ class TestNdAxes:
         s1s.decomposition(poisson)
         np.testing.assert_array_almost_equal(
             s1s.learning_results.explained_variance,
-            s1.learning_results.explained_variance)
+            s1.learning_results.explained_variance,
+        )
 
         s1.decomposition(poisson, navigation_mask=nav_mask)
         s1n.decomposition(poisson)
         np.testing.assert_array_almost_equal(
             s1n.learning_results.explained_variance,
-            s1.learning_results.explained_variance)
+            s1.learning_results.explained_variance,
+        )
 
         s1.decomposition(poisson, navigation_mask=nav_mask, signal_mask=sig_mask)
         s1sn.decomposition(poisson)
         np.testing.assert_array_almost_equal(
             s1sn.learning_results.explained_variance,
-            s1.learning_results.explained_variance)
+            s1.learning_results.explained_variance,
+        )
+
 
 @lazifyTestClass
 class TestGetModel:
@@ -245,7 +249,9 @@ class TestEstimateElbowPosition:
 
     # Should be removed in scikit-learn 0.26
     # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
-    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
+    @pytest.mark.filterwarnings(
+        "ignore:The 'init' value, when 'init=None':FutureWarning"
+    )
     @skip_sklearn
     def test_store_number_significant_components(self):
         s = signals.Signal1D(generate_low_rank_matrix())
@@ -443,8 +449,8 @@ class TestReturnInfo:
     )
     def test_decomposition_supported(self, algorithm, return_info):
         out = self.s.decomposition(
-                algorithm=algorithm, return_info=return_info, output_dimension=2
-            )
+            algorithm=algorithm, return_info=return_info, output_dimension=2
+        )
         assert (out is not None) is return_info
 
 
@@ -585,7 +591,9 @@ def test_decomposition_mlpca_warnings_errors():
 
     with pytest.raises(ValueError, match="`var_array` must have the same shape"):
         s.decomposition(
-            output_dimension=2, algorithm="MLPCA", var_array=s.data.copy()[:-3, :-3],
+            output_dimension=2,
+            algorithm="MLPCA",
+            var_array=s.data.copy()[:-3, :-3],
         )
 
     with pytest.raises(
@@ -594,7 +602,8 @@ def test_decomposition_mlpca_warnings_errors():
         s.decomposition(output_dimension=2, algorithm="MLPCA", var_func="func")
 
     with pytest.warns(
-        UserWarning, match="does not make sense to normalize Poisson noise",
+        UserWarning,
+        match="does not make sense to normalize Poisson noise",
     ):
         s.decomposition(
             normalize_poissonian_noise=True, algorithm="MLPCA", output_dimension=2
@@ -641,44 +650,43 @@ def test_centering_error():
         s.decomposition(centre="random")
 
 
-@pytest.mark.parametrize('mask_as_array', [True, False])
+@pytest.mark.parametrize("mask_as_array", [True, False])
 def test_decomposition_navigation_mask(mask_as_array):
     s = signals.Signal1D(generate_low_rank_matrix())
-    navigation_mask = (s.sum(-1) < 1.5)
+    navigation_mask = s.sum(-1) < 1.5
     if mask_as_array:
         navigation_mask = navigation_mask
     s.decomposition(navigation_mask=navigation_mask)
     data = s.get_decomposition_loadings().inav[0].data
     # Use np.argwhere(np.isnan(data)) to get the indices
-    np.testing.assert_allclose(data[[2, 5, 7, 8, 12, 13, 15, 19]],
-                               np.full(8, np.nan))
+    np.testing.assert_allclose(data[[2, 5, 7, 8, 12, 13, 15, 19]], np.full(8, np.nan))
     assert not np.isnan(s.get_decomposition_factors().data).any()
 
 
-@pytest.mark.parametrize('mask_as_array', [True, False])
+@pytest.mark.parametrize("mask_as_array", [True, False])
 def test_decomposition_signal_mask(mask_as_array):
     s = signals.Signal1D(generate_low_rank_matrix())
-    signal_mask = (s.sum(0) < 0.25)
+    signal_mask = s.sum(0) < 0.25
     if mask_as_array:
         signal_mask = signal_mask.data
     s.decomposition(signal_mask=signal_mask)
     data = s.get_decomposition_factors().inav[0].data
     # Use np.argwhere(np.isnan(data)) to get the indices
-    np.testing.assert_allclose(data[[ 5, 12, 14, 15, 18, 21, 27, 28, 32, 43,
-                                     52, 55, 57, 59, 62, 79, 83]],
-                                np.full(17, np.nan))
+    np.testing.assert_allclose(
+        data[[5, 12, 14, 15, 18, 21, 27, 28, 32, 43, 52, 55, 57, 59, 62, 79, 83]],
+        np.full(17, np.nan),
+    )
     assert not np.isnan(s.get_decomposition_loadings().data).any()
 
 
-@pytest.mark.parametrize('normalise_poissonian_noise', [True, False])
+@pytest.mark.parametrize("normalise_poissonian_noise", [True, False])
 def test_decomposition_mask_all_data(normalise_poissonian_noise):
-    with pytest.raises(ValueError, match='All the data are masked'):
+    with pytest.raises(ValueError, match="All the data are masked"):
         s = signals.Signal1D(generate_low_rank_matrix())
-        signal_mask = (s.sum(0) >= s.sum(0).min())
+        signal_mask = s.sum(0) >= s.sum(0).min()
         s.decomposition(normalise_poissonian_noise, signal_mask=signal_mask)
 
-    with pytest.raises(ValueError, match='All the data are masked'):
+    with pytest.raises(ValueError, match="All the data are masked"):
         s = signals.Signal1D(generate_low_rank_matrix())
-        navigation_mask = (s.sum(-1) >= 0)
-        s.decomposition(normalise_poissonian_noise,
-                        navigation_mask=navigation_mask)
+        navigation_mask = s.sum(-1) >= 0
+        s.decomposition(normalise_poissonian_noise, navigation_mask=navigation_mask)

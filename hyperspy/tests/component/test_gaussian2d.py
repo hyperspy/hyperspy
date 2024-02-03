@@ -29,10 +29,10 @@ sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
 def test_function():
     g = Gaussian2D()
     g.A.value = 14
-    g.sigma_x.value = 1.
-    g.sigma_y.value = 2.
-    g.centre_x.value = -5.
-    g.centre_y.value = -5.
+    g.sigma_x.value = 1.0
+    g.sigma_y.value = 2.0
+    g.centre_x.value = -5.0
+    g.centre_y.value = -5.0
     np.testing.assert_allclose(g.function(-5, -5), 1.1140846)
     np.testing.assert_allclose(g.function(-2, -3), 0.007506643)
     assert g._is2D

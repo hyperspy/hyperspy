@@ -24,18 +24,19 @@ from rsciio.utils import rgb_tools
 
 
 class TestRGBA8:
-
     def setup_method(self, method):
-        self.s = hs.signals.Signal1D(np.array(
-            [[[1, 1, 1, 0],
-              [2, 2, 2, 0]],
-             [[3, 3, 3, 0],
-              [4, 4, 4, 0]]],
-            dtype="uint8"))
-        self.im = hs.signals.Signal1D(np.array(
-            [[(1, 1, 1, 0), (2, 2, 2, 0)],
-             [(3, 3, 3, 0), (4, 4, 4, 0)]],
-            dtype=rgb_tools.rgba8))
+        self.s = hs.signals.Signal1D(
+            np.array(
+                [[[1, 1, 1, 0], [2, 2, 2, 0]], [[3, 3, 3, 0], [4, 4, 4, 0]]],
+                dtype="uint8",
+            )
+        )
+        self.im = hs.signals.Signal1D(
+            np.array(
+                [[(1, 1, 1, 0), (2, 2, 2, 0)], [(3, 3, 3, 0), (4, 4, 4, 0)]],
+                dtype=rgb_tools.rgba8,
+            )
+        )
 
     def test_torgb(self):
         self.s.change_dtype("rgba8")
@@ -57,18 +58,19 @@ class TestRGBA8:
 
 
 class TestRGBA16:
-
     def setup_method(self, method):
-        self.s = hs.signals.Signal1D(np.array(
-            [[[1, 1, 1, 0],
-              [2, 2, 2, 0]],
-             [[3, 3, 3, 0],
-              [4, 4, 4, 0]]],
-            dtype="uint16"))
-        self.im = hs.signals.Signal1D(np.array(
-            [[(1, 1, 1, 0), (2, 2, 2, 0)],
-             [(3, 3, 3, 0), (4, 4, 4, 0)]],
-            dtype=rgb_tools.rgba16))
+        self.s = hs.signals.Signal1D(
+            np.array(
+                [[[1, 1, 1, 0], [2, 2, 2, 0]], [[3, 3, 3, 0], [4, 4, 4, 0]]],
+                dtype="uint16",
+            )
+        )
+        self.im = hs.signals.Signal1D(
+            np.array(
+                [[(1, 1, 1, 0), (2, 2, 2, 0)], [(3, 3, 3, 0), (4, 4, 4, 0)]],
+                dtype=rgb_tools.rgba16,
+            )
+        )
 
     def test_torgb(self):
         self.s.change_dtype("rgba16")

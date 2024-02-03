@@ -46,13 +46,18 @@ class SquareWidget(Widget2DBase):
         """
         xy = self._get_patch_xy()
         xs, ys = self.size
-        self._patch = [plt.Rectangle(
-            xy, xs, ys,
-            fill=False,
-            lw=self.border_thickness,
-            ec=self.color,
-            alpha=self.alpha,
-            picker=True,)]
+        self._patch = [
+            plt.Rectangle(
+                xy,
+                xs,
+                ys,
+                fill=False,
+                lw=self.border_thickness,
+                ec=self.color,
+                alpha=self.alpha,
+                picker=True,
+            )
+        ]
         super(SquareWidget, self)._set_patch()
 
     def _onjumpclick(self, event):
@@ -96,19 +101,19 @@ class RectangleWidget(SquareWidget, ResizersMixin):
             return args[0]
         elif len(args) == 4:
             return args
-        elif len(kwargs) == 1 and 'bounds' in kwargs:
+        elif len(kwargs) == 1 and "bounds" in kwargs:
             return kwargs.values()[0]
         else:
-            x = kwargs.pop('x', kwargs.pop('left', self._pos[0]))
-            y = kwargs.pop('y', kwargs.pop('top', self._pos[1]))
-            if 'right' in kwargs:
-                w = kwargs.pop('right') - x
+            x = kwargs.pop("x", kwargs.pop("left", self._pos[0]))
+            y = kwargs.pop("y", kwargs.pop("top", self._pos[1]))
+            if "right" in kwargs:
+                w = kwargs.pop("right") - x
             else:
-                w = kwargs.pop('w', kwargs.pop('width', self._size[0]))
-            if 'bottom' in kwargs:
-                h = kwargs.pop('bottom') - y
+                w = kwargs.pop("w", kwargs.pop("width", self._size[0]))
+            if "bottom" in kwargs:
+                h = kwargs.pop("bottom") - y
             else:
-                h = kwargs.pop('h', kwargs.pop('height', self._size[1]))
+                h = kwargs.pop("h", kwargs.pop("height", self._size[1]))
             return x, y, w, h
 
     def set_ibounds(self, *args, **kwargs):
@@ -164,8 +169,10 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         def warn(obj, parameter, value):
             global already_warn_out_of_range
             if not already_warn_out_of_range:
-                _logger.info('{}: {} is out of range. It is therefore set '
-                             'to the value of {}'.format(obj, parameter, value))
+                _logger.info(
+                    "{}: {} is out of range. It is therefore set "
+                    "to the value of {}".format(obj, parameter, value)
+                )
                 already_warn_out_of_range = True
 
         scale = [axis.scale for axis in self.axes]
@@ -175,48 +182,48 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         in_range = 0
         if x < l0:
             x = l0
-            warn(self, '`x`', x)
+            warn(self, "`x`", x)
         elif h0 <= x:
             x = h0 - scale[0]
-            warn(self, '`x`', x)
+            warn(self, "`x`", x)
         else:
             in_range += 1
         if y < l1:
             y = l1
-            warn(self, '`y`', y)
+            warn(self, "`y`", y)
         elif h1 <= y:
-            warn(self, '`y`', y)
+            warn(self, "`y`", y)
             y = h1 - scale[1]
         else:
             in_range += 1
         if w < scale[0]:
             w = scale[0]
-            warn(self, '`width` or `right`', w)
+            warn(self, "`width` or `right`", w)
         elif not (l0 + scale[0] <= x + w <= h0 + scale[0]):
             if self.size[0] != w:  # resize
                 w = h0 + scale[0] - self.position[0]
-                warn(self, '`width` or `right`', w)
+                warn(self, "`width` or `right`", w)
             if self.position[0] != x:  # moved
                 x = h0 + scale[0] - self.size[0]
-                warn(self, '`x`', x)
+                warn(self, "`x`", x)
         else:
             in_range += 1
         if h < scale[1]:
             h = scale[1]
-            warn(self, '`height` or `bottom`', h)
+            warn(self, "`height` or `bottom`", h)
         elif not (l1 + scale[1] <= y + h <= h1 + scale[1]):
             if self.size[1] != h:  # resize
                 h = h1 + scale[1] - self.position[1]
-                warn(self, '`height` or `bottom`', h)
+                warn(self, "`height` or `bottom`", h)
             if self.position[1] != y:  # moved
                 y = h1 + scale[1] - self.size[1]
-                warn(self, '`y`', y)
+                warn(self, "`y`", y)
         else:
             in_range += 1
 
         # if we are in range again, reset `already_warn_out_of_range` to False
         if in_range == 4 and already_warn_out_of_range:
-            _logger.info('{} back in range.'.format(self.__class__.__name__))
+            _logger.info("{} back in range.".format(self.__class__.__name__))
             already_warn_out_of_range = False
 
         old_position, old_size = self.position, self.size
@@ -225,12 +232,11 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         self._apply_changes(old_size=old_size, old_position=old_position)
 
     def _validate_pos(self, value):
-        """Constrict the position within bounds.
-        """
-        value = (min(value[0], self.axes[0].high_value - self._size[0] +
-                     self.axes[0].scale),
-                 min(value[1], self.axes[1].high_value - self._size[1] +
-                     self.axes[1].scale))
+        """Constrict the position within bounds."""
+        value = (
+            min(value[0], self.axes[0].high_value - self._size[0] + self.axes[0].scale),
+            min(value[1], self.axes[1].high_value - self._size[1] + self.axes[1].scale),
+        )
         return super(RectangleWidget, self)._validate_pos(value)
 
     @property
@@ -244,9 +250,11 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         ix = self.indices[0] + value
         il0, ih0 = self.axes[0].low_index, self.axes[0].high_index
         if value <= 0 or not (il0 < ix <= ih0):
-            raise ValueError('`width` value is not in range. The '
-                             '`width` is {} and should be in range '
-                             '{}-{}.'.format(ix, il0 + 1, ih0))
+            raise ValueError(
+                "`width` value is not in range. The "
+                "`width` is {} and should be in range "
+                "{}-{}.".format(ix, il0 + 1, ih0)
+            )
         self._set_a_size(0, value)
 
     @property
@@ -260,9 +268,11 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         iy = self.indices[1] + value
         il1, ih1 = self.axes[1].low_index, self.axes[1].high_index
         if value <= 0 or not (il1 < iy <= ih1):
-            raise ValueError('`height` value is not in range. The '
-                             '`height` is {} and should be in range '
-                             '{}-{}.'.format(iy, il1 + 1, ih1))
+            raise ValueError(
+                "`height` value is not in range. The "
+                "`height` is {} and should be in range "
+                "{}-{}.".format(iy, il1 + 1, ih1)
+            )
         self._set_a_size(1, value)
 
     # --------- Internal functions ---------
@@ -292,8 +302,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         self._size_changed()
 
     def _increase_xsize(self):
-        self._set_a_size(0, self._size[0] +
-                         self.axes[0].scale * self.size_step)
+        self._set_a_size(0, self._size[0] + self.axes[0].scale * self.size_step)
 
     def _decrease_xsize(self):
         new_s = self._size[0] - self.axes[0].scale * self.size_step
@@ -301,8 +310,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         self._set_a_size(0, new_s)
 
     def _increase_ysize(self):
-        self._set_a_size(1, self._size[1] +
-                         self.axes[1].scale * self.size_step)
+        self._set_a_size(1, self._size[1] + self.axes[1].scale * self.size_step)
 
     def _decrease_ysize(self):
         new_s = self._size[1] - self.axes[1].scale * self.size_step
@@ -408,9 +416,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
             y = event.ydata
             p = self._get_patch_xy()
             # Old bounds
-            bounds = [p[0], p[1],
-                      p[0] + self._size[0],
-                      p[1] + self._size[1]]
+            bounds = [p[0], p[1], p[0] + self._size[0], p[1] + self._size[1]]
 
             # Store geometry for _apply_changes at end
             old_position, old_size = self.position, self.size
@@ -422,62 +428,62 @@ class RectangleWidget(SquareWidget, ResizersMixin):
                 y -= self.pick_offset[1]
                 self._validate_geometry(x, y)
             else:
-                posx = None     # New x pos. If None, the old pos will be used
-                posy = None     # Same for y
+                posx = None  # New x pos. If None, the old pos will be used
+                posy = None  # Same for y
                 corner = self.resizer_picked
                 # Adjust for resizer position:
                 offset = self._get_resizer_offset()
                 x += offset[0] * (0.5 - 1 * (corner % 2))
                 y += offset[1] * (0.5 - 1 * (corner // 2))
 
-                if corner % 2 == 0:         # Left side start
-                    if x > bounds[2]:       # flipped to right
-                        posx = bounds[2]    # New left is old right
+                if corner % 2 == 0:  # Left side start
+                    if x > bounds[2]:  # flipped to right
+                        posx = bounds[2]  # New left is old right
                         # New size is mouse position - new left
                         self._size[0] = x - posx
-                        self.resizer_picked += 1         # Switch pick to right
-                    elif bounds[2] - x < xaxis.scale:   # Width too small
-                        posx = bounds[2] - xaxis.scale      # So move pos left
-                        self._size[0] = bounds[2] - posx    # Should be scale
-                    else:                   # Moving left edge
-                        posx = x            # Set left to mouse position
+                        self.resizer_picked += 1  # Switch pick to right
+                    elif bounds[2] - x < xaxis.scale:  # Width too small
+                        posx = bounds[2] - xaxis.scale  # So move pos left
+                        self._size[0] = bounds[2] - posx  # Should be scale
+                    else:  # Moving left edge
+                        posx = x  # Set left to mouse position
                         # Keep right still by changing size:
                         self._size[0] = bounds[2] - x
-                else:                       # Right side start
-                    if x < bounds[0]:       # Flipped to left
+                else:  # Right side start
+                    if x < bounds[0]:  # Flipped to left
                         if bounds[0] - x < xaxis.scale:
                             posx = bounds[0] - xaxis.scale
                         else:
-                            posx = x            # Set left to mouse
+                            posx = x  # Set left to mouse
                         # Set size to old left - new left
                         self._size[0] = bounds[0] - posx
-                        self.resizer_picked -= 1     # Switch pick to left
-                    else:                   # Moving right edge
+                        self.resizer_picked -= 1  # Switch pick to left
+                    else:  # Moving right edge
                         # Left should be left as it is, only size updates:
                         self._size[0] = x - bounds[0]  # mouse - old left
-                if corner // 2 == 0:        # Top side start
-                    if y > bounds[3]:       # flipped to botton
-                        posy = bounds[3]    # New top is old bottom
+                if corner // 2 == 0:  # Top side start
+                    if y > bounds[3]:  # flipped to botton
+                        posy = bounds[3]  # New top is old bottom
                         # New size is mouse position - new top
                         self._size[1] = y - posy
-                        self.resizer_picked += 2     # Switch pick to bottom
+                        self.resizer_picked += 2  # Switch pick to bottom
                     elif bounds[3] - y < yaxis.scale:  # Height too small
-                        posy = bounds[3] - yaxis.scale      # So move pos up
-                        self._size[1] = bounds[3] - posy    # Should be scale
-                    else:                   # Moving top edge
-                        posy = y           # Set top to mouse index
+                        posy = bounds[3] - yaxis.scale  # So move pos up
+                        self._size[1] = bounds[3] - posy  # Should be scale
+                    else:  # Moving top edge
+                        posy = y  # Set top to mouse index
                         # Keep bottom still by changing size:
                         self._size[1] = bounds[3] - y  # old bottom - new top
-                else:                       # Bottom side start
-                    if y < bounds[1]:     # Flipped to top
+                else:  # Bottom side start
+                    if y < bounds[1]:  # Flipped to top
                         if bounds[1] - y < yaxis.scale:
                             posy = bounds[1] - yaxis.scale
                         else:
-                            posy = y           # Set top to mouse
+                            posy = y  # Set top to mouse
                         # Set size to old top - new top
                         self._size[1] = bounds[1] - posy
-                        self.resizer_picked -= 2     # Switch pick to top
-                    else:                   # Moving bottom edge
+                        self.resizer_picked -= 2  # Switch pick to top
+                    else:  # Moving bottom edge
                         self._size[1] = y - bounds[1]  # mouse - old top
                 # Bound size to scale:
                 if self._size[0] < xaxis.scale:

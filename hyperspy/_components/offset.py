@@ -44,8 +44,8 @@ class Offset(Component):
 
     """
 
-    def __init__(self, offset=0.):
-        Component.__init__(self, ('offset',), ['offset'])
+    def __init__(self, offset=0.0):
+        Component.__init__(self, ("offset",), ["offset"])
         self.offset.free = True
         self.offset.value = offset
 
@@ -92,8 +92,11 @@ class Offset(Component):
         if axis.is_binned:
             # using the mean of the gradient for non-uniform axes is a best
             # guess to the scaling of binned signals for the estimation
-            scaling_factor = axis.scale if axis.is_uniform \
-                             else np.mean(np.gradient(axis.axis), axis=-1)
+            scaling_factor = (
+                axis.scale
+                if axis.is_uniform
+                else np.mean(np.gradient(axis.axis), axis=-1)
+            )
 
         if only_current is True:
             self.offset.value = signal._get_current_data()[i1:i2].mean()
@@ -104,23 +107,22 @@ class Offset(Component):
             if self.offset.map is None:
                 self._create_arrays()
             dc = signal.data
-            gi = [slice(None), ] * len(dc.shape)
+            gi = [
+                slice(None),
+            ] * len(dc.shape)
             gi[axis.index_in_array] = slice(i1, i2)
-            self.offset.map['values'][:] = dc[tuple(
-                gi)].mean(axis.index_in_array)
+            self.offset.map["values"][:] = dc[tuple(gi)].mean(axis.index_in_array)
             if axis.is_binned:
-                self.offset.map['values'] /= scaling_factor
-            self.offset.map['is_set'][:] = True
+                self.offset.map["values"] /= scaling_factor
+            self.offset.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 
     def function_nd(self, axis):
-        """%s
-
-        """
+        """%s"""
         if self._is_navigation_multidimensional:
             x = axis[np.newaxis, :]
-            o = self.offset.map['values'][..., np.newaxis]
+            o = self.offset.map["values"][..., np.newaxis]
         else:
             x = axis
             o = self.offset.value

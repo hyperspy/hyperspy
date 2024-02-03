@@ -49,7 +49,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 1
     axis.offset = -20
-    g1 = Gaussian(50015.156, 10/sigma2fwhm, 10)
+    g1 = Gaussian(50015.156, 10 / sigma2fwhm, 10)
     s.data = g1.function(axis.axis)
     if not uniform:
         axis.convert_to_non_uniform_axis()
@@ -62,8 +62,9 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
         factor = np.gradient(axis.axis)
     else:
         factor = 1
-    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
-                                  only_current=only_current)
+    assert g2.estimate_parameters(
+        s, axis.low_value, axis.high_value, only_current=only_current
+    )
     assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor)
     assert abs(g2.centre.value - g1.centre.value) <= 1e-3
@@ -75,7 +76,7 @@ def test_estimate_parameters_negative_scale():
     axis = s.axes_manager.signal_axes[0]
     axis.scale = -1
     axis.offset = 100
-    g1 = Gaussian(50015.156, 15/sigma2fwhm, 50)
+    g1 = Gaussian(50015.156, 15 / sigma2fwhm, 50)
     s.data = g1.function(axis.axis)
 
     g2 = Gaussian()
@@ -94,7 +95,7 @@ def test_function_nd(binned, lazy):
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 1
     axis.offset = -20
-    g1 = Gaussian(50015.156, 10/sigma2fwhm, 10)
+    g1 = Gaussian(50015.156, 10 / sigma2fwhm, 10)
     s.data = g1.function(axis.axis)
     s.axes_manager.signal_axes[0].is_binned = binned
     s2 = stack([s] * 2)
@@ -124,17 +125,20 @@ def test_util_fwhm_getset():
     g1.fwhm = 1.0
     np.testing.assert_allclose(g1.fwhm, 1.0)
 
+
 def test_util_height_set():
     g1 = Gaussian()
     g1.sigma.value = 3.0
-    g1.height = 2.0/sqrt2pi
+    g1.height = 2.0 / sqrt2pi
     np.testing.assert_allclose(g1.A.value, 6)
+
 
 def test_util_height_get():
     g1 = Gaussian()
     g1.sigma.value = 4.0
-    g1.A.value = sqrt2pi*8
+    g1.A.value = sqrt2pi * 8
     np.testing.assert_allclose(g1.height, 2)
+
 
 def test_util_height_getset():
     g1 = Gaussian()

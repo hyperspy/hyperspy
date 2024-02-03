@@ -77,8 +77,9 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
         factor = np.gradient(axis.axis)
     else:
         factor = 1
-    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
-                                  only_current=only_current)
+    assert g2.estimate_parameters(
+        s, axis.low_value, axis.high_value, only_current=only_current
+    )
     assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.2)
     assert abs(g2.centre.value - g1.centre.value) <= 0.1
@@ -92,21 +93,20 @@ def test_function_nd(binned, lazy):
     s = Signal1D(np.empty((200,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
-    axis.scale = .05
+    axis.scale = 0.05
     axis.offset = -5
     A, sigma1, sigma2, fraction, centre = 5, 0.3, 0.75, 0.5, 1
-    g1 = SplitVoigt(A=A, sigma1=sigma1, sigma2=sigma2, fraction=fraction,
-                    centre=centre)
+    g1 = SplitVoigt(A=A, sigma1=sigma1, sigma2=sigma2, fraction=fraction, centre=centre)
     s.data = g1.function(axis.axis)
     s2 = stack([s] * 2)
     if lazy:
         s2 = s2.as_lazy()
     g2 = SplitVoigt()
     assert g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
-    g2.A.map['values'] = [A] * 2
-    g2.sigma1.map['values'] = [sigma1] * 2
-    g2.sigma2.map['values'] = [sigma2] * 2
-    g2.fraction.map['values'] = [fraction] * 2
-    g2.centre.map['values'] = [centre] * 2
+    g2.A.map["values"] = [A] * 2
+    g2.sigma1.map["values"] = [sigma1] * 2
+    g2.sigma2.map["values"] = [sigma2] * 2
+    g2.fraction.map["values"] = [fraction] * 2
+    g2.centre.map["values"] = [centre] * 2
     assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g2.function_nd(axis.axis), s2.data)

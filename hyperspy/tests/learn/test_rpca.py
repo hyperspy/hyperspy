@@ -200,7 +200,11 @@ class TestORPCA:
 
     def test_regularization(self):
         X, E, U, S, V = orpca(
-            self.X, rank=self.rank, store_error=True, lambda1=0.01, lambda2=0.02,
+            self.X,
+            rank=self.rank,
+            store_error=True,
+            lambda1=0.01,
+            lambda2=0.02,
         )
         compare_norms(X, self.A)
 

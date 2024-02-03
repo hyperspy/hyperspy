@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 import pytest
 
 from hyperspy.utils.parallel_pool import ParallelPool
@@ -28,10 +30,8 @@ def test_parallel_pool_multiprocessing():
 
 def test_parallel_pool_ipyparallel_not_installed():
     pool = ParallelPool()
-    try:
-        import ipyparallel
-        # ipyparallel is installed, use it as default
-    except ImportError:
+    ipyparallel_spec = importlib.util.find_spec("ipyparallel")
+    if ipyparallel_spec is None:
         # ipyparallel is installed, use multiprocessing instead
         assert pool.is_multiprocessing
         assert not pool.is_ipyparallel

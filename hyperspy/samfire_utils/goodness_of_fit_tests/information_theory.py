@@ -22,13 +22,14 @@ import numpy as np
 
 def notexp_o(x):
     if x > 1:
-        return np.exp(1.) * (x * x + 1.) * 0.5
+        return np.exp(1.0) * (x * x + 1.0) * 0.5
 
     elif x <= 1 and x > -1:
         return np.exp(x)
 
     else:
-        return 2. / ((x * x + 1.) * np.exp(1.))
+        return 2.0 / ((x * x + 1.0) * np.exp(1.0))
+
 
 notexp = np.vectorize(notexp_o)
 
@@ -37,9 +38,9 @@ class AIC_test:
     """Akaike information criterion test"""
 
     def __init__(self, tolerance):
-        self.name = 'Akaike information criterion test'
+        self.name = "Akaike information criterion test"
         self.tolerance = tolerance
-        self.expected = 0.
+        self.expected = 0.0
 
     def test(self, model, ind):
         m = model.inav[ind[::-1]]
@@ -60,9 +61,9 @@ class AICc_test:
     """Akaike information criterion (with a correction) test"""
 
     def __init__(self, tolerance):
-        self.name = 'Akaike information criterion (with a correction) test'
+        self.name = "Akaike information criterion (with a correction) test"
         self.tolerance = tolerance
-        self.expected = 0.
+        self.expected = 0.0
 
     def test(self, model, ind):
         m = model.inav[ind[::-1]]
@@ -83,9 +84,9 @@ class BIC_test:
     """Bayesian information criterion test"""
 
     def __init__(self, tolerance):
-        self.name = 'Bayesian information criterion test'
+        self.name = "Bayesian information criterion test"
         self.tolerance = tolerance
-        self.expected = 0.
+        self.expected = 0.0
 
     def test(self, model, ind):
         m = model.inav[ind[::-1]]

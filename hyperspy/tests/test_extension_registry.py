@@ -16,52 +16,46 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 from hyperspy.extensions import ALL_EXTENSIONS
 
 
-signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
-           if not value["lazy"]}
+def test_signal_registry():
+    signals = {
+        key: value
+        for key, value in ALL_EXTENSIONS["signals"].items()
+        if not value["lazy"]
+    }
 
-
-hyperspy_signals = [
-    'BaseSignal',
-    'Signal1D',
-    'Signal2D',
-    'ComplexSignal',
-    'ComplexSignal1D',
-    'ComplexSignal2D',
+    hyperspy_signals = [
+        "BaseSignal",
+        "Signal1D",
+        "Signal2D",
+        "ComplexSignal",
+        "ComplexSignal1D",
+        "ComplexSignal2D",
     ]
 
+    for signal in hyperspy_signals:
+        assert signal in signals.keys()
 
-for signal in hyperspy_signals:
-    assert signal in signals.keys()
+    exspy_spec = importlib.util.find_spec("exspy")
+    if exspy_spec is not None:
+        assert "EELSSpectrum" in signals.keys()
+        assert "EDSTEMSpectrum" in signals.keys()
+        assert "DielectricFunction" in signals.keys()
 
-try:
-    import exspy
-    assert 'EELSSpectrum' in signals.keys()
-    assert 'EDSTEMSpectrum' in signals.keys()
-    assert 'EDSSTEMSpectrum' in signals.keys()
-    assert 'DielectricFunction' in signals.keys()
-except:
-    pass
+    holospy_spec = importlib.util.find_spec("holospy")
+    if holospy_spec is not None:
+        assert "HologramImage" in signals.keys()
 
-try:
-    import holospy
-    assert 'HologramImage' in signals.keys()
-except:
-    pass
+    lumispy_spec = importlib.util.find_spec("lumispy")
+    if lumispy_spec is not None:
+        assert "LumiSpectrum" in signals.keys()
+        assert "CLSEMSpectrum" in signals.keys()
 
-try:
-    import lumipsy
-    assert 'LumiSpectrum' in signals.keys()
-    assert 'CLSEMSpectrum' in signals.keys()
-except:
-    pass
-
-
-try:
-    import pyxem
-    assert 'Diffraction2D' in signals.keys()
-    assert 'ElectronDiffraction' in signals.keys()
-except:
-    pass
+    pyxem_spec = importlib.util.find_spec("pyxem")
+    if pyxem_spec is not None:
+        assert "Diffraction2D" in signals.keys()
+        assert "ElectronDiffraction2D" in signals.keys()

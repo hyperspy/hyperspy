@@ -16,14 +16,16 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+import importlib
 import os
-from shutil import copyfile
 from pathlib import Path
+from shutil import copyfile
 
 import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
 import pytest
+
 try:
     # scipy >=1.10
     from scipy.datasets import ascent, face
@@ -37,27 +39,26 @@ from hyperspy.signals import Signal1D
 from hyperspy.drawing.signal1d import Signal1DLine
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 
-scalebar_color = 'blue'
+scalebar_color = "blue"
 default_tol = 2.0
-baseline_dir = 'plot_signal1d'
-style_pytest_mpl = 'default'
+baseline_dir = "plot_signal1d"
+style_pytest_mpl = "default"
 
-style = ['default', 'overlap', 'cascade', 'mosaic', 'heatmap']
+style = ["default", "overlap", "cascade", "mosaic", "heatmap"]
 
 
 def _generate_filename_list(style):
     path = Path(__file__).resolve().parent
     baseline_path = path.joinpath(baseline_dir)
 
-    filename_list = [f'test_plot_spectra_{s}' for s in style] + \
-                    [f'test_plot_spectra_rev_{s}' for s in style]
+    filename_list = [f"test_plot_spectra_{s}" for s in style] + [
+        f"test_plot_spectra_rev_{s}" for s in style
+    ]
     filename_list2 = []
 
     for filename in filename_list:
         for i in range(0, 4):
-            filename_list2.append(
-                baseline_path.joinpath(f'{filename}{i}.png')
-            )
+            filename_list2.append(baseline_path.joinpath(f"{filename}{i}.png"))
 
     return filename_list2
 
@@ -65,21 +66,22 @@ def _generate_filename_list(style):
 def _matplotlib_pick_event(figure, click, artist):
     try:
         # Introduced in matplotlib 3.6 and `pick_event` deprecated
-        event = PickEvent('pick_event', figure, click, artist)
-        figure.canvas.callbacks.process('pick_event', event)
-    except: # Deprecated in matplotlib 3.6
+        event = PickEvent("pick_event", figure, click, artist)
+        figure.canvas.callbacks.process("pick_event", event)
+    except Exception:  # Deprecated in matplotlib 3.6
         figure.canvas.pick_event(figure.canvas, click, artist)
 
 
 @pytest.fixture
 def setup_teardown(request, scope="class"):
     plot_testing = request.config.getoption("--mpl")
-    try:
-        import pytest_mpl
+    pytest_mpl_spec = importlib.util.find_spec("pytest_mpl")
+
+    if pytest_mpl_spec is None:
+        mpl_generate_path_cmdopt = None
+    else:
         # This option is available only when pytest-mpl is installed
         mpl_generate_path_cmdopt = request.config.getoption("--mpl-generate-path")
-    except ImportError:
-        mpl_generate_path_cmdopt = None
 
     # SETUP
     # duplicate baseline images to match the test_name when the
@@ -102,8 +104,7 @@ def setup_teardown(request, scope="class"):
 
 
 @pytest.mark.usefixtures("setup_teardown")
-class TestPlotSpectra():
-
+class TestPlotSpectra:
     def setup_method(self, method):
         s = hs.signals.Signal1D(ascent()[100:160:10])
 
@@ -128,11 +129,12 @@ class TestPlotSpectra():
             ids.extend([s] * duplicate)
         return ids
 
-    @pytest.mark.parametrize(("style", "fig", "ax"),
-                             _generate_parameters(style),
-                             ids=_generate_ids(style))
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.parametrize(
+        ("style", "fig", "ax"), _generate_parameters(style), ids=_generate_ids(style)
+    )
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_spectra(self, style, fig, ax):
         if fig:
             fig = plt.figure()
@@ -142,17 +144,17 @@ class TestPlotSpectra():
             else:
                 ax = plt.figure().add_subplot(111)
 
-        ax = hs.plot.plot_spectra(self.s, style=style, legend='auto',
-                                  fig=fig, ax=ax)
-        if style == 'mosaic':
+        ax = hs.plot.plot_spectra(self.s, style=style, legend="auto", fig=fig, ax=ax)
+        if style == "mosaic":
             ax = ax[0]
         return ax.figure
 
-    @pytest.mark.parametrize(("style", "fig", "ax"),
-                             _generate_parameters(style),
-                             ids=_generate_ids(style))
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.parametrize(
+        ("style", "fig", "ax"), _generate_parameters(style), ids=_generate_ids(style)
+    )
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_spectra_rev(self, style, fig, ax):
         if fig:
             fig = plt.figure()
@@ -160,47 +162,50 @@ class TestPlotSpectra():
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
-        ax = hs.plot.plot_spectra(self.s_reverse, style=style, legend='auto',
-                                  fig=fig, ax=ax)
-        if style == 'mosaic':
+        ax = hs.plot.plot_spectra(
+            self.s_reverse, style=style, legend="auto", fig=fig, ax=ax
+        )
+        if style == "mosaic":
             ax = ax[0]
         return ax.figure
 
-    @pytest.mark.parametrize("figure", ['1nav', '1sig', '2nav', '2sig'])
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.parametrize("figure", ["1nav", "1sig", "2nav", "2sig"])
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_spectra_sync(self, figure):
         s1 = hs.signals.Signal1D(face()).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
         hs.plot.plot_signals([s1, s2])
-        if figure == '1nav':
+        if figure == "1nav":
             return s1._plot.signal_plot.figure
-        if figure == '1sig':
+        if figure == "1sig":
             return s1._plot.navigator_plot.figure
-        if figure == '2nav':
+        if figure == "2nav":
             return s2._plot.navigator_plot.figure
-        if figure == '2sig':
+        if figure == "2sig":
             return s2._plot.navigator_plot.figure
 
     def test_plot_spectra_legend_pick(self):
-        x = np.linspace(0., 2., 512)
+        x = np.linspace(0.0, 2.0, 512)
         n = np.arange(1, 5)
-        x_pow_n = x[None, :]**n[:, None]
+        x_pow_n = x[None, :] ** n[:, None]
         s = hs.signals.Signal1D(x_pow_n)
-        my_legend = [r'x^' + str(io) for io in n]
+        my_legend = [r"x^" + str(io) for io in n]
         f = plt.figure()
         ax = hs.plot.plot_spectra(s, legend=my_legend, fig=f)
         leg = ax.get_legend()
         leg_artists = leg.get_lines()
-        click = MouseEvent('button_press_event', f.canvas, 0, 0, 'left')
+        click = MouseEvent("button_press_event", f.canvas, 0, 0, "left")
         for artist, li in zip(leg_artists, ax.lines[::-1]):
             _matplotlib_pick_event(f, click, artist)
             assert not li.get_visible()
             _matplotlib_pick_event(f, click, artist)
             assert li.get_visible()
 
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_spectra_auto_update(self):
         s = hs.signals.Signal1D(np.arange(100))
         s2 = s / 2
@@ -214,53 +219,67 @@ class TestPlotSpectra():
 
 
 class TestPlotNonUniformAxis:
-
     def setup_method(self, method):
-        dict0 = {'size': 10, 'name': 'Axis0', 'units': 'A', 'scale': 0.2,
-                 'offset': 1, 'navigate': True}
-        dict1 = {'axis': np.arange(100)**3, 'name': 'Axis1', 'units': 'O',
-                 'navigate': False}
+        dict0 = {
+            "size": 10,
+            "name": "Axis0",
+            "units": "A",
+            "scale": 0.2,
+            "offset": 1,
+            "navigate": True,
+        }
+        dict1 = {
+            "axis": np.arange(100) ** 3,
+            "name": "Axis1",
+            "units": "O",
+            "navigate": False,
+        }
         np.random.seed(1)
-        s = hs.signals.Signal1D(np.random.random((10, 100)),
-                                axes=[dict0, dict1])
+        s = hs.signals.Signal1D(np.random.random((10, 100)), axes=[dict0, dict1])
         self.s = s
 
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_non_uniform_sig(self):
         self.s.plot()
         return self.s._plot.signal_plot.figure
 
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_non_uniform_sig_update(self):
         s2 = self.s
         s2.plot()
         s2.axes_manager[0].index += 1
         return s2._plot.signal_plot.figure
 
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_uniform_nav(self):
         self.s.plot()
         return self.s._plot.navigator_plot.figure
 
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_uniform_nav_update(self):
         s2 = self.s
         s2.plot()
         s2.axes_manager[0].index += 1
         return self.s._plot.navigator_plot.figure
 
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_uniform_sig(self):
         self.s.plot()
         return self.s._plot.signal_plot.figure
 
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+    )
     def test_plot_non_uniform_nav(self):
         s2 = self.s.T
         s2.plot()
@@ -291,7 +310,7 @@ def test_plot_nav2_close():
 def _test_plot_two_cursors(ndim):
     test_plot = _TestPlot(ndim=ndim, sdim=1)  # sdim=2 not supported
     s = test_plot.signal
-    s.metadata.General.title = 'Nav %i, Sig 1, two cursor' % ndim
+    s.metadata.General.title = "Nav %i, Sig 1, two cursor" % ndim
     s.axes_manager[0].index = 4
     s.plot()
     s._plot.add_right_pointer()
@@ -304,10 +323,10 @@ def _test_plot_two_cursors(ndim):
     return s
 
 
-@pytest.mark.parametrize('autoscale', ['', 'x', 'xv', 'v'])
-@pytest.mark.parametrize('norm', ['log', 'auto'])
+@pytest.mark.parametrize("autoscale", ["", "x", "xv", "v"])
+@pytest.mark.parametrize("norm", ["log", "auto"])
 def test_plot_two_cursos_parameters(autoscale, norm):
-    kwargs = {'autoscale':autoscale, 'norm':norm}
+    kwargs = {"autoscale": autoscale, "norm": norm}
     test_plot = _TestPlot(ndim=2, sdim=1)  # sdim=2 not supported
     s = test_plot.signal
     s.plot(**kwargs)
@@ -319,29 +338,31 @@ def test_plot_two_cursos_parameters(autoscale, norm):
 def _generate_parameter():
     parameters = []
     for ndim in [1, 2]:
-        for plot_type in ['nav', 'sig']:
+        for plot_type in ["nav", "sig"]:
             parameters.append([ndim, plot_type])
     return parameters
 
 
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                               tolerance=default_tol, style=style_pytest_mpl)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
 def test_plot_log_scale():
     s = Signal1D(np.exp(-np.arange(100) / 5.0))
-    s.plot(norm='log')
+    s.plot(norm="log")
     return s._plot.signal_plot.figure
 
 
 @pytest.mark.parametrize(("ndim", "plot_type"), _generate_parameter())
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                               tolerance=default_tol, style=style_pytest_mpl)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
 def test_plot_two_cursors(ndim, plot_type):
     s = _test_plot_two_cursors(ndim=ndim)
 
     if plot_type == "sig":
         f = s._plot.signal_plot.figure
     else:
-        f= s._plot.navigator_plot.figure
+        f = s._plot.navigator_plot.figure
     return f
 
 
@@ -368,7 +389,7 @@ def test_plot_with_non_finite_value():
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
 
 
-@pytest.mark.parametrize('ax', ['left', 'right'])
+@pytest.mark.parametrize("ax", ["left", "right"])
 def test_plot_add_line_events(ax):
     s = hs.signals.Signal1D(np.arange(100))
     s.plot()
@@ -381,9 +402,9 @@ def test_plot_add_line_events(ax):
 
     line = Signal1DLine()
     line.data_function = line_function
-    line.set_line_properties(color='blue', type='line', scaley=False)
+    line.set_line_properties(color="blue", type="line", scaley=False)
 
-    if ax == 'right':
+    if ax == "right":
         plot.create_right_axis()
         plot.right_axes_manager = copy.deepcopy(s.axes_manager)
         expected_axis_number = 2
@@ -398,8 +419,10 @@ def test_plot_add_line_events(ax):
     assert len(line.events.closed.connected) == 1
     # expected_indices_changed_connected is 2 only when adding line on the left
     # because for the right ax, we have a deepcopy of the axes_manager
-    assert len(s.axes_manager.events.indices_changed.connected) == \
-        expected_indices_changed_connected
+    assert (
+        len(s.axes_manager.events.indices_changed.connected)
+        == expected_indices_changed_connected
+    )
 
     line.close()
     plot.close_right_axis()
@@ -413,9 +436,10 @@ def test_plot_add_line_events(ax):
     assert s._plot.signal_plot is None
 
 
-@pytest.mark.parametrize("autoscale", ['', 'x', 'xv', 'v'])
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                               tolerance=default_tol, style=style_pytest_mpl)
+@pytest.mark.parametrize("autoscale", ["", "x", "xv", "v"])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
 def test_plot_autoscale(autoscale):
     s = hs.data.two_gaussians().inav[0, 0]
     s.plot(autoscale=autoscale)
@@ -427,9 +451,10 @@ def test_plot_autoscale(autoscale):
     return s._plot.signal_plot.figure
 
 
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                               tolerance=default_tol, style=style_pytest_mpl)
-@pytest.mark.parametrize('linestyle', [None, '-', ['-', '--']])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
+@pytest.mark.parametrize("linestyle", [None, "-", ["-", "--"]])
 def test_plot_spectra_linestyle(linestyle):
     s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
     ax = hs.plot.plot_spectra(s, linestyle=linestyle)
@@ -441,7 +466,7 @@ def test_plot_spectra_linestyle_error():
     s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
 
     with pytest.raises(ValueError):
-        hs.plot.plot_spectra(s, linestyle='invalid')
+        hs.plot.plot_spectra(s, linestyle="invalid")
 
 
 def test_plot_empty_slice_autoscale():
@@ -449,12 +474,12 @@ def test_plot_empty_slice_autoscale():
     s.plot()
     r = hs.roi.SpanROI()
     s_span = r.interactive(s)
-    s_span.plot(autoscale='x')
+    s_span.plot(autoscale="x")
     # change span selector to an "empty" slice and trigger update
     r.left = 24
     r.right = 24.1
 
-    s_span.plot(autoscale='v')
+    s_span.plot(autoscale="v")
     # change span selector to an "empty" slice and trigger update
     r.left = 23
     r.right = 23.1

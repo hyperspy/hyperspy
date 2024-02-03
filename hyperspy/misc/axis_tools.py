@@ -44,12 +44,12 @@ def check_axes_calibration(ax1, ax2, rtol=1e-7):
     if ax1.size == ax2.size:
         try:
             unit1 = _ureg.Unit(ax1.units)
-        except:
+        except Exception:
             unit1 = ax1.units
         try:
             unit2 = ax2.units
             unit2 = _ureg.Unit(ax2.units)
-        except:
+        except Exception:
             pass
         if np.allclose(ax1.axis, ax2.axis, atol=0, rtol=rtol) and unit1 == unit2:
             return True

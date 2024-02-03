@@ -27,9 +27,15 @@ from hyperspy.drawing.utils import set_axes_decor
 from hyperspy.misc.utils import to_numpy
 
 
-def _plot_1D_component(factors, idx, axes_manager, ax=None,
-                       calibrate=True, comp_label=None,
-                       same_window=False):
+def _plot_1D_component(
+    factors,
+    idx,
+    axes_manager,
+    ax=None,
+    calibrate=True,
+    comp_label=None,
+    same_window=False,
+):
     if ax is None:
         ax = plt.gca()
     axis = axes_manager.signal_axes[0]
@@ -38,18 +44,23 @@ def _plot_1D_component(factors, idx, axes_manager, ax=None,
         plt.xlabel(axis.units)
     else:
         x = np.arange(axis.size)
-        plt.xlabel('Channel index')
-    ax.plot(x, to_numpy(factors[:, idx]), label=f'{idx}')
+        plt.xlabel("Channel index")
+    ax.plot(x, to_numpy(factors[:, idx]), label=f"{idx}")
     if comp_label and not same_window:
-        plt.title(f'{comp_label}')
+        plt.title(f"{comp_label}")
     return ax
 
 
-def _plot_2D_component(factors, idx, axes_manager,
-                       calibrate=True, ax=None,
-                       comp_label=None, cmap=plt.cm.gray,
-                       axes_decor='all'
-                       ):
+def _plot_2D_component(
+    factors,
+    idx,
+    axes_manager,
+    calibrate=True,
+    ax=None,
+    comp_label=None,
+    cmap=plt.cm.gray,
+    axes_decor="all",
+):
     shape = axes_manager._signal_shape_in_array
     factors = to_numpy(factors[:, idx].reshape(shape))
     if ax is None:
@@ -57,13 +68,15 @@ def _plot_2D_component(factors, idx, axes_manager,
     axes = axes_manager.signal_axes[::-1]
     extent = None
     if calibrate:
-        extent = (axes[1].low_value,
-                  axes[1].high_value,
-                  axes[0].high_value,
-                  axes[0].low_value)
+        extent = (
+            axes[1].low_value,
+            axes[1].high_value,
+            axes[0].high_value,
+            axes[0].low_value,
+        )
     if comp_label:
-        plt.title(f'{idx}')
-    im = ax.imshow(factors, cmap=cmap, interpolation='nearest', extent=extent)
+        plt.title(f"{idx}")
+    im = ax.imshow(factors, cmap=cmap, interpolation="nearest", extent=extent)
 
     # Set axes decorations based on user input
     set_axes_decor(ax, axes_decor)
@@ -74,10 +87,18 @@ def _plot_2D_component(factors, idx, axes_manager,
     return ax
 
 
-def _plot_loading(loadings, idx, axes_manager, ax=None,
-                  comp_label=None, no_nans=True,
-                  calibrate=True, cmap=plt.cm.gray,
-                  same_window=False, axes_decor='all'):
+def _plot_loading(
+    loadings,
+    idx,
+    axes_manager,
+    ax=None,
+    comp_label=None,
+    no_nans=True,
+    calibrate=True,
+    cmap=plt.cm.gray,
+    same_window=False,
+    axes_decor="all",
+):
     loadings = to_numpy(loadings[idx])
     if ax is None:
         ax = plt.gca()
@@ -89,24 +110,26 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         # get calibration from a passed axes_manager
         shape = axes_manager._navigation_shape_in_array
         if calibrate:
-            extent = (axes[0].low_value,
-                      axes[0].high_value,
-                      axes[1].high_value,
-                      axes[1].low_value)
-        im = ax.imshow(loadings.reshape(shape),
-                       cmap=cmap, extent=extent,
-                       interpolation='nearest')
+            extent = (
+                axes[0].low_value,
+                axes[0].high_value,
+                axes[1].high_value,
+                axes[1].low_value,
+            )
+        im = ax.imshow(
+            loadings.reshape(shape), cmap=cmap, extent=extent, interpolation="nearest"
+        )
         if calibrate:
             plt.xlabel(axes[0].units)
             plt.ylabel(axes[1].units)
         else:
-            plt.xlabel('pixels')
-            plt.ylabel('pixels')
+            plt.xlabel("pixels")
+            plt.ylabel("pixels")
         if comp_label:
             if same_window:
-                plt.title(f'{idx}')
+                plt.title(f"{idx}")
             else:
-                plt.title(f'{idx} #{idx}')
+                plt.title(f"{idx} #{idx}")
 
         # Set axes decorations based on user input
         set_axes_decor(ax, axes_decor)
@@ -119,16 +142,16 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
             x = axes[0].axis
         else:
             x = np.arange(axes[0].size)
-        ax.step(x, loadings, label=f'{idx}')
+        ax.step(x, loadings, label=f"{idx}")
         if comp_label and not same_window:
-            plt.title(f'{comp_label} #{idx}')
-        plt.ylabel('Score (a. u.)')
+            plt.title(f"{comp_label} #{idx}")
+        plt.ylabel("Score (a. u.)")
         if calibrate:
             if axes[0].units is not Undefined:
                 plt.xlabel(axes[0].units)
             else:
-                plt.xlabel('depth')
+                plt.xlabel("depth")
         else:
-            plt.xlabel('depth')
+            plt.xlabel("depth")
     else:
-        raise ValueError('View not supported')
+        raise ValueError("View not supported")

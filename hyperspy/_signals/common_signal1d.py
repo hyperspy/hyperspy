@@ -49,9 +49,12 @@ class CommonSignal1D:
         """
         if self.data.ndim < 2:
             raise DataDimensionError(
-                "A Signal dimension must be >= 2 to be converted to Signal2D")
+                "A Signal dimension must be >= 2 to be converted to Signal2D"
+            )
         nat = self.axes_manager._get_axes_in_natural_order()
-        im = self.transpose(signal_axes=nat[:2], navigation_axes=nat[2:],
-                            optimize=optimize)
+        im = self.transpose(
+            signal_axes=nat[:2], navigation_axes=nat[2:], optimize=optimize
+        )
         return im
-    to_signal2D.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))
+
+    to_signal2D.__doc__ %= OPTIMIZE_ARG.replace("False", "True")

@@ -20,15 +20,23 @@ from unittest import mock
 
 import numpy as np
 
-from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen, BaseDataAxis
+from hyperspy.axes import (
+    AxesManager,
+    _serpentine_iter,
+    _flyback_iter,
+    GeneratorLen,
+    BaseDataAxis,
+)
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
 import pytest
 
+
 def generator():
     for i in range(3):
-        yield((0,0,i))
+        yield ((0, 0, i))
+
 
 class TestAxesManager:
     def setup_method(self, method):
@@ -105,14 +113,14 @@ class TestAxesManager:
     def test_set_axis(self):
         am = self.am
         axis = am[-1].copy()
-        am.set_axis(axis,2)
+        am.set_axis(axis, 2)
         assert am[-2].offset == am[-1].offset
         assert am[-2].scale == am[-1].scale
 
     def test_all_uniform(self):
-        assert self.am.all_uniform == True
+        assert self.am.all_uniform is True
         self.am[-1].convert_to_non_uniform_axis()
-        assert self.am.all_uniform == False
+        assert self.am.all_uniform is False
 
     def test_get_axis(self):
         am = self.am
@@ -385,11 +393,11 @@ class TestIterPathScanPattern:
         self.am = s.axes_manager
 
     def test_iterpath_property(self):
-        self.am._iterpath = "abc" # with underscore
+        self.am._iterpath = "abc"  # with underscore
         assert self.am.iterpath == "abc"
 
         with pytest.raises(ValueError):
-            self.am.iterpath = "blahblah" # w/o underscore
+            self.am.iterpath = "blahblah"  # w/o underscore
 
         path = "flyback"
         self.am.iterpath = path
@@ -408,16 +416,23 @@ class TestIterPathScanPattern:
     def test_wrong_custom_iterpath(self):
         class A:
             pass
+
         with pytest.raises(TypeError):
             self.am.iterpath = A()
 
     def test_wrong_custom_iterpath2(self):
         with pytest.raises(TypeError):
-            self.am.iterpath = [0,1,2,3,4,] # indices are not iterable
+            self.am.iterpath = [
+                0,
+                1,
+                2,
+                3,
+                4,
+            ]  # indices are not iterable
 
     def test_wrong_custom_iterpath3(self):
         with pytest.raises(ValueError):
-            self.am.iterpath = [(0,)] # not enough dimensions
+            self.am.iterpath = [(0,)]  # not enough dimensions
 
     def test_flyback(self):
         self.am.iterpath = "flyback"
@@ -440,7 +455,7 @@ class TestIterPathScanPattern:
             break
 
     def test_custom_iterpath(self):
-        iterpath = [(0,1,1), (1,1,1)]
+        iterpath = [(0, 1, 1), (1, 1, 1)]
         self.am.iterpath = iterpath
         assert self.am._iterpath == iterpath
         assert self.am.iterpath == iterpath
@@ -454,7 +469,6 @@ class TestIterPathScanPattern:
             break
 
     def test_custom_iterpath_generator(self):
-
         iterpath = generator()
         self.am.iterpath = iterpath
         assert self.am._iterpath == iterpath
@@ -463,28 +477,30 @@ class TestIterPathScanPattern:
 
         for i, _ in enumerate(self.am):
             if i == 0:
-                assert self.am.indices == (0,0,0)
+                assert self.am.indices == (0, 0, 0)
             if i == 1:
-                assert self.am.indices == (0,0,1)
+                assert self.am.indices == (0, 0, 1)
             break
 
     def test_get_iterpath_size1(self):
         assert self.am._get_iterpath_size() == self.am.navigation_size
-        assert self.am._get_iterpath_size(masked_elements = 1) == self.am.navigation_size - 1
+        assert (
+            self.am._get_iterpath_size(masked_elements=1) == self.am.navigation_size - 1
+        )
 
     def test_get_iterpath_size2(self):
         self.am.iterpath = generator()
-        assert self.am._get_iterpath_size() == None
-        assert self.am._get_iterpath_size(masked_elements = 1) == None
+        assert self.am._get_iterpath_size() is None
+        assert self.am._get_iterpath_size(masked_elements=1) is None
 
     def test_get_iterpath_size3(self):
-        self.am.iterpath =[(0,0,0), (0,0,1)]
+        self.am.iterpath = [(0, 0, 0), (0, 0, 1)]
         assert self.am._get_iterpath_size() == 2
-        assert self.am._get_iterpath_size(masked_elements = 1) == 2
+        assert self.am._get_iterpath_size(masked_elements=1) == 2
 
     def test_GeneratorLen(self):
         gen = GeneratorLen(gen=generator(), length=3)
-        assert list(gen) == [(0,0,0),(0,0,1),(0,0,2)]
+        assert list(gen) == [(0, 0, 0), (0, 0, 1), (0, 0, 2)]
 
     def test_GeneratorLen_iterpath(self):
         gen = GeneratorLen(gen=generator(), length=3)
@@ -504,7 +520,7 @@ class TestIterPathScanPatternSignal2D:
             self.am.iterpath = "blahblah"
 
     def test_custom_iterpath_signal2D(self):
-        indices = [(0,1,1), (1,1,1)]
+        indices = [(0, 1, 1), (1, 1, 1)]
         self.am.iterpath = indices
         for i, _ in enumerate(self.am):
             if i == 0:
@@ -526,8 +542,8 @@ class TestIterPathScanPatternSignal2D:
     def test_switch_iterpath(self):
         s = self.s
         s.axes_manager.iterpath = "serpentine"
-        with s.axes_manager.switch_iterpath('flyback'):
-            assert s.axes_manager.iterpath == 'flyback'
+        with s.axes_manager.switch_iterpath("flyback"):
+            assert s.axes_manager.iterpath == "flyback"
             for i, _ in enumerate(s.axes_manager):
                 if i == 3:
                     assert self.am.indices == (0, 1, 0)
@@ -535,23 +551,22 @@ class TestIterPathScanPatternSignal2D:
                 if i == 9:
                     assert self.am.indices == (0, 0, 1)
                 break
-        assert s.axes_manager.iterpath == 'serpentine'
+        assert s.axes_manager.iterpath == "serpentine"
 
 
 def test_iterpath_function_flyback():
-    for i, indices in enumerate(_flyback_iter((3,3,3))):
+    for i, indices in enumerate(_flyback_iter((3, 3, 3))):
         if i == 3:
             assert indices == (0, 1, 0)
 
 
 def test_iterpath_function_serpentine():
-    for i, indices in enumerate(_serpentine_iter((3,3,3))):
+    for i, indices in enumerate(_serpentine_iter((3, 3, 3))):
         if i == 3:
             assert indices == (2, 1, 0)
 
 
 def TestAxesManagerRagged():
-
     def setup_method(self, method):
         axes_list = [
             {
@@ -562,7 +577,6 @@ def TestAxesManagerRagged():
                 "size": 2,
                 "units": "aa",
             },
-
         ]
 
         self.am = AxesManager(axes_list)
@@ -576,8 +590,7 @@ def TestAxesManagerRagged():
         assert not self.am.ragged
 
     def test_reprs(self):
-        expected_string = \
-        "<Axes manager, axes: (2|ragged)>\n"
+        expected_string = "<Axes manager, axes: (2|ragged)>\n"
         "            Name |   size |  index |  offset |   scale |  units \n"
         "================ | ====== | ====== | ======= | ======= | ====== \n"
         "               a |      2 |      0 |       0 |     1.3 |     aa \n"

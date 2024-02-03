@@ -17,11 +17,9 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-from packaging.version import Version
 
 import numpy as np
 from numpy.linalg import svd
-import scipy
 
 from hyperspy.misc.machine_learning.import_sklearn import (
     randomized_svd,
@@ -267,7 +265,7 @@ def svd_pca(
         **kwargs,
     )
 
-    explained_variance = S ** 2 / N
+    explained_variance = S**2 / N
 
     if auto_transpose is False:
         factors = V.T

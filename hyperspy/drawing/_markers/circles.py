@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.markers import Markers
-from hyperspy.docstrings.markers import (OFFSET_DOCSTRING, UNITS_DOCSTRING)
+from hyperspy.docstrings.markers import OFFSET_DOCSTRING, UNITS_DOCSTRING
 from hyperspy.external.matplotlib.collections import CircleCollection
 
 
@@ -33,7 +33,7 @@ class Circles(Markers):
         offset_transform="data",
         units="x",
         facecolors="none",
-        **kwargs
+        **kwargs,
     ):
         """
         Create a set of Circle Markers.
@@ -55,11 +55,11 @@ class Circles(Markers):
 
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(
-                f"The `transform` argument is not supported for Circles Markers. Instead, "
+                "The `transform` argument is not supported for Circles Markers. Instead, "
                 "use the `offset_transform` argument to specify the transform of the "
                 "`offsets` and use the `units` argument to specify transform of the "
                 "`sizes` argument."
-                )
+            )
 
         super().__init__(
             collection=CircleCollection,
@@ -68,7 +68,7 @@ class Circles(Markers):
             facecolors=facecolors,
             offset_transform=offset_transform,
             units=units,
-            **kwargs
+            **kwargs,
         )
 
     __init__.__doc__ %= (OFFSET_DOCSTRING, UNITS_DOCSTRING)

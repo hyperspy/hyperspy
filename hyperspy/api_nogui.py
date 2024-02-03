@@ -23,16 +23,20 @@ import logging
 import importlib
 import sys
 
-_logger = logging.getLogger(__name__)
+
 from hyperspy.logger import set_log_level
 from hyperspy.defaults_parser import preferences
+
+# Need to run before other import to use the logger during import
+_logger = logging.getLogger(__name__)
 set_log_level(preferences.General.logging_level)
 
-from hyperspy import docstrings
-from . import __version__
+from hyperspy import docstrings  # noqa: E402
+from . import __version__  # noqa: E402
 
 
-__doc__ = """
+__doc__ = (
+    """
 
 All public packages, functions and classes are available in this module.
 
@@ -88,7 +92,9 @@ The :mod:`~.api` package contains the following submodules/packages:
 
 For more details see their doctrings.
 
-""" % docstrings.START_HSPY
+"""
+    % docstrings.START_HSPY
+)
 
 
 del docstrings
@@ -97,41 +103,42 @@ del docstrings
 def get_configuration_directory_path():
     """Return configuration path"""
     import hyperspy.misc.config_dir
+
     return hyperspy.misc.config_dir.config_path
 
 
-__all__ = [
-    'data',
-    'get_configuration_directory_path',
-    'interactive',
-    'load',
-    'model',
-    'plot',
-    'preferences',
-    'print_known_signal_types',
-    'roi',
-    'samfire',
-    'set_log_level',
-    'signals',
-    'stack',
-    'transpose',
-    '__version__',
-    ]
+__all__ = [  # noqa: F822
+    "data",
+    "get_configuration_directory_path",
+    "interactive",
+    "load",
+    "model",
+    "plot",
+    "preferences",
+    "print_known_signal_types",
+    "roi",
+    "samfire",
+    "set_log_level",
+    "signals",
+    "stack",
+    "transpose",
+    "__version__",
+]
 
 
 # mapping following the pattern: from value import key
 _import_mapping = {
-    'interactive': '.utils',
-    'load': '.io',
-    'markers': '.utils',
-    'model': '.utils',
-    'plot': '.utils',
-    'print_known_signal_types': '.utils',
-    'roi': '.utils',
-    'samfire': '.utils',
-    'stack': '.utils',
-    'transpose': '.utils',
-    }
+    "interactive": ".utils",
+    "load": ".io",
+    "markers": ".utils",
+    "model": ".utils",
+    "plot": ".utils",
+    "print_known_signal_types": ".utils",
+    "roi": ".utils",
+    "samfire": ".utils",
+    "stack": ".utils",
+    "transpose": ".utils",
+}
 
 
 def __dir__():
@@ -141,15 +148,16 @@ def __dir__():
 def __getattr__(name):
     if name in __all__:
         if name in _import_mapping.keys():
-            import_path = 'hyperspy' + _import_mapping.get(name)
+            import_path = "hyperspy" + _import_mapping.get(name)
             return getattr(importlib.import_module(import_path), name)
         else:
-            return importlib.import_module("." + name, 'hyperspy')
+            return importlib.import_module("." + name, "hyperspy")
     # Special case _ureg to use it as a singleton
-    elif name == '_ureg':
-        if '_ureg' not in globals():
+    elif name == "_ureg":
+        if "_ureg" not in globals():
             from pint import UnitRegistry
-            setattr(sys.modules[__name__], '_ureg', UnitRegistry())
-        return getattr(sys.modules[__name__], '_ureg')
+
+            setattr(sys.modules[__name__], "_ureg", UnitRegistry())
+        return getattr(sys.modules[__name__], "_ureg")
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

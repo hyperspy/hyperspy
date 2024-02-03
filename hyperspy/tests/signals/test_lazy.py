@@ -26,41 +26,53 @@ from hyperspy import _lazy_signals
 from hyperspy._signals.lazy import (
     _reshuffle_mixed_blocks,
     to_array,
-    _get_navigation_dimension_chunk_slice
-    )
-from hyperspy.exceptions import VisibleDeprecationWarning
+    _get_navigation_dimension_chunk_slice,
+)
 
 
 def _signal():
-    ar = da.from_array(np.arange(6. * 9 * 7 * 11).reshape((6, 9, 7, 11)),
-                       chunks=((2, 1, 3), (4, 5), (7,), (11,))
-                       )
+    ar = da.from_array(
+        np.arange(6.0 * 9 * 7 * 11).reshape((6, 9, 7, 11)),
+        chunks=((2, 1, 3), (4, 5), (7,), (11,)),
+    )
     return hs.signals.Signal2D(ar).as_lazy()
+
 
 @pytest.fixture
 def signal():
     return _signal()
 
 
-@pytest.mark.parametrize("sl", [(0, 0),
-                                (slice(None,), 0),
-                                (slice(None), slice(None))
-                                ]
-                         )
+@pytest.mark.parametrize(
+    "sl",
+    [
+        (0, 0),
+        (
+            slice(
+                None,
+            ),
+            0,
+        ),
+        (slice(None), slice(None)),
+    ],
+)
 def test_reshuffle(signal, sl):
     sig = signal.isig[sl]
     array = np.concatenate(
-        [a for a in sig._block_iterator(flat_signal=True,
-                                        navigation_mask=None,
-                                        signal_mask=None)],
-        axis=0
+        [
+            a
+            for a in sig._block_iterator(
+                flat_signal=True, navigation_mask=None, signal_mask=None
+            )
+        ],
+        axis=0,
     )
     ndim = sig.axes_manager.navigation_dimension
-    ans = _reshuffle_mixed_blocks(array,
-                                  ndim,
-                                  sig.data.shape[ndim:],
-                                  sig.data.chunks[:ndim])
+    ans = _reshuffle_mixed_blocks(
+        array, ndim, sig.data.shape[ndim:], sig.data.chunks[:ndim]
+    )
     np.testing.assert_allclose(ans, sig.data.compute())
+
 
 nav_mask = np.zeros((6, 9), dtype=bool)
 nav_mask[0, 0] = True
@@ -69,19 +81,18 @@ sig_mask = np.zeros((7, 11), dtype=bool)
 sig_mask[0, :] = True
 
 
-@pytest.mark.parametrize('nm', [None, nav_mask])
-@pytest.mark.parametrize('sm', [None, sig_mask])
-@pytest.mark.parametrize('flat', [True, False])
-@pytest.mark.parametrize('dtype', ['float', 'int'])
+@pytest.mark.parametrize("nm", [None, nav_mask])
+@pytest.mark.parametrize("sm", [None, sig_mask])
+@pytest.mark.parametrize("flat", [True, False])
+@pytest.mark.parametrize("dtype", ["float", "int"])
 def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
     real_first = get(signal.data.dask, (signal.data.name, 0, 0, 0, 0)).copy()
     real_second = get(signal.data.dask, (signal.data.name, 0, 1, 0, 0)).copy()
     # Don't want to rechunk, so change dtype manually
     signal.data = signal.data.astype(dtype)
-    it = signal._block_iterator(flat_signal=flat,
-                                navigation_mask=nm,
-                                signal_mask=sm,
-                                get=get)
+    it = signal._block_iterator(
+        flat_signal=flat, navigation_mask=nm, signal_mask=sm, get=get
+    )
     first_block = next(it)
     second_block = next(it)
     if nm is not None:
@@ -99,7 +110,7 @@ def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
         real_first = real_first.reshape((2 * 4, -1))[slices1]
         real_second = real_second.reshape((2 * 5, -1))[:, sigslice]
     else:
-        value = np.nan if dtype == 'float' else 0
+        value = np.nan if dtype == "float" else 0
         if nm is not None:
             real_first[nm, ...] = value
         if sm is not None:
@@ -109,17 +120,13 @@ def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
     np.testing.assert_allclose(second_block, real_second)
 
 
-@pytest.mark.parametrize('sig', [_signal(),
-                                 _signal().data,
-                                 _signal().data.compute()])
+@pytest.mark.parametrize("sig", [_signal(), _signal().data, _signal().data.compute()])
 def test_as_array_numpy(sig):
     thing = to_array(sig, chunks=None)
     assert isinstance(thing, np.ndarray)
 
 
-@pytest.mark.parametrize('sig', [_signal(),
-                                 _signal().data,
-                                 _signal().data.compute()])
+@pytest.mark.parametrize("sig", [_signal(), _signal().data, _signal().data.compute()])
 def test_as_array_dask(sig):
     chunks = ((6,), (9,), (7,), (11,))
     thing = to_array(sig, chunks=chunks)
@@ -129,29 +136,26 @@ def test_as_array_dask(sig):
 
 def test_as_array_fail():
     with pytest.raises(ValueError):
-        to_array('asd', chunks=None)
+        to_array("asd", chunks=None)
+
 
 def test_as_array_fail_not_array():
     with pytest.raises(ValueError):
         to_array([], chunks=1)
 
+
 def test_ma_lazify():
-    s = hs.signals.BaseSignal(
-        np.ma.masked_array(
-            data=[
-                1, 2, 3], mask=[
-                0, 1, 0]))
-    l = s.as_lazy()
-    assert np.isnan(l.data[1].compute())
+    s = hs.signals.BaseSignal(np.ma.masked_array(data=[1, 2, 3], mask=[0, 1, 0]))
+    s2 = s.as_lazy()
+    assert np.isnan(s2.data[1].compute())
     ss = hs.stack([s, s])
     assert np.isnan(ss.data[:, 1]).all()
 
 
-@pytest.mark.parametrize('nav_chunks', ["auto", -1, (3, -1)])
-@pytest.mark.parametrize('sig_chunks', [-1, ("auto", "auto"), 4])
+@pytest.mark.parametrize("nav_chunks", ["auto", -1, (3, -1)])
+@pytest.mark.parametrize("sig_chunks", [-1, ("auto", "auto"), 4])
 def test_rechunk(signal, nav_chunks, sig_chunks):
-    signal.rechunk(nav_chunks=nav_chunks,
-                   sig_chunks=sig_chunks)
+    signal.rechunk(nav_chunks=nav_chunks, sig_chunks=sig_chunks)
 
 
 class TestGetNavigationDimensionHostChunkSlice:
@@ -387,7 +391,6 @@ class TestLazyPlot:
 
 
 class TestHTMLRep:
-
     def test_html_rep(self, signal):
         signal._repr_html_()
 
@@ -404,10 +407,10 @@ class TestHTMLRep:
         s = s.transpose(2)
         s.data = s.data.rechunk((3, 2, 6, 6))
         s_string = s._get_chunk_string()
-        assert (s_string == "(2,3|<b>6</b>,<b>6</b>)")
+        assert s_string == "(2,3|<b>6</b>,<b>6</b>)"
         s.data = s.data.rechunk((6, 6, 2, 3))
         s_string = s._get_chunk_string()
-        assert (s_string == "(<b>6</b>,<b>6</b>|3,2)")
+        assert s_string == "(<b>6</b>,<b>6</b>|3,2)"
 
 
 def test_get_chunk_size(signal):
@@ -419,7 +422,7 @@ def test_get_chunk_size(signal):
 
     sig = _signal()
     chunk_size = sig.get_chunk_size(axes=0)
-    chunk_size == ((2, 1, 3), )
+    chunk_size == ((2, 1, 3),)
 
 
 def test_compute_kwargs():

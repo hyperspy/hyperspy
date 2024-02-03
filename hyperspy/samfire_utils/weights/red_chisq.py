@@ -20,7 +20,6 @@ import numpy as np
 
 
 class ReducedChiSquaredWeight(object):
-
     def __init__(self):
         self.expected = 1.0
         self.model = None
@@ -30,6 +29,6 @@ class ReducedChiSquaredWeight(object):
 
     def map(self, mask, slices=slice(None, None)):
         thing = self.model.red_chisq.data[slices].copy()
-        thing = thing.astype('float64')
+        thing = thing.astype("float64")
         thing[np.logical_not(mask)] = np.nan
         return abs(thing - self.expected)

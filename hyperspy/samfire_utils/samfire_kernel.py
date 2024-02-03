@@ -59,7 +59,8 @@ def single_kernel(model, ind, values, optional_components, _args, test):
 
         on_comps = [i for i, _c in enumerate(model) if _c.active]
         name_list, iterator = generate_values_iterator(
-            component_names, values, on_comps)
+            component_names, values, on_comps
+        )
 
         ifgood = False
         for it in iterator:
@@ -67,7 +68,7 @@ def single_kernel(model, ind, values, optional_components, _args, test):
             for (comp_n, par_n), val in zip(name_list, it):
                 try:
                     getattr(model[comp_n], par_n).value = val
-                except:
+                except Exception:
                     pass
             model.fit(**_args)
             # only perform iterations until we find a solution that we think is
@@ -83,14 +84,13 @@ def single_kernel(model, ind, values, optional_components, _args, test):
             # get model with best chisq here, and test model validation
             new_AICc = AICc(model.inav[ind[::-1]])
 
-            if new_AICc < AICc_fraction * best_AICc or \
-                    (abs(new_AICc - best_AICc) <= abs(AICc_fraction * best_AICc)
-                     and len(model.p0) < best_dof):
+            if new_AICc < AICc_fraction * best_AICc or (
+                abs(new_AICc - best_AICc) <= abs(AICc_fraction * best_AICc)
+                and len(model.p0) < best_dof
+            ):
                 best_values = [
-                    getattr(
-                        model[comp_n],
-                        par_n).value for comp_n,
-                    par_n in name_list]
+                    getattr(model[comp_n], par_n).value for comp_n, par_n in name_list
+                ]
                 best_names = name_list
                 best_comb = combination
                 best_AICc = new_AICc
@@ -108,18 +108,17 @@ def single_kernel(model, ind, values, optional_components, _args, test):
         for (comp_n, par_n), val in zip(best_names, best_values):
             try:
                 getattr(model[comp_n], par_n).value = val
-            except:
+            except Exception:
                 pass
         model.fit(**_args)
         return True
 
 
-def multi_kernel(
-        ind, m_dic, values, optional_components, _args, result_q, test_dict):
-    import hyperspy.api as hs
+def multi_kernel(ind, m_dic, values, optional_components, _args, result_q, test_dict):
     from hyperspy.signal import Signal
     from multiprocessing import current_process
     from itertools import combinations, product
+
     # from collections import Iterable
     import numpy as np
     import copy
@@ -136,7 +135,9 @@ def multi_kernel(
             if _comp_n in turned_on_names:
                 for par_n, par in _comp.items():
                     if not isinstance(par, list):
-                        par = [par, ]
+                        par = [
+                            par,
+                        ]
                     tmp.append(par)
                     name_list.append((_comp_n, par_n))
         return name_list, product(*tmp)
@@ -144,8 +145,8 @@ def multi_kernel(
     def send_good_results(model, previous_switching, cur_p, result_q, ind):
         result = copy.deepcopy(model.as_dictionary())
         for num, a_i_m in enumerate(previous_switching):
-            result['components'][num]['active_is_multidimensional'] = a_i_m
-        result['current'] = cur_p._identity
+            result["components"][num]["active_is_multidimensional"] = a_i_m
+        result["current"] = cur_p._identity
         result_q.put((ind, result, True))
 
     test = cloudpickle.loads(test_dict)
@@ -154,12 +155,12 @@ def multi_kernel(
     comb = []
     AICc_fraction = 0.99
 
-    comp_dict = m_dic['models']['z']['_dict']['components']
+    comp_dict = m_dic["models"]["z"]["_dict"]["components"]
     for num, comp in enumerate(comp_dict):
-        previous_switching.append(comp['active_is_multidimensional'])
-        comp['active_is_multidimensional'] = False
+        previous_switching.append(comp["active_is_multidimensional"])
+        comp["active_is_multidimensional"] = False
     for comp in optional_components:
-        comp_dict[comp]['active'] = False
+        comp_dict[comp]["active"] = False
 
     for num in range(len(optional_components) + 1):
         for comp in combinations(optional_components, num):
@@ -168,7 +169,7 @@ def multi_kernel(
     best_AICc, best_dof = np.inf, np.inf
     best_comb, best_values, best_names = None, None, None
 
-    component_names = [c['name'] for c in comp_dict]
+    component_names = [c["name"] for c in comp_dict]
 
     sig = Signal(**m_dic)
     sig._assign_subclass()
@@ -180,7 +181,8 @@ def multi_kernel(
 
         on_comps = [i for i, _c in enumerate(model) if _c.active]
         name_list, iterator = generate_values_iterator(
-            component_names, values, on_comps)
+            component_names, values, on_comps
+        )
 
         ifgood = False
         for it in iterator:
@@ -188,7 +190,7 @@ def multi_kernel(
             for (comp_n, par_n), val in zip(name_list, it):
                 try:
                     getattr(model[comp_n], par_n).value = val
-                except:
+                except Exception:
                     pass
             model.fit(**_args)
             # only perform iterations until we find a solution that we think is
@@ -199,22 +201,16 @@ def multi_kernel(
         if ifgood:
             # get model with best chisq here, and test model validation
             if len(comb) == 1:
-                send_good_results(
-                    model,
-                    previous_switching,
-                    cur_p,
-                    result_q,
-                    ind)
+                send_good_results(model, previous_switching, cur_p, result_q, ind)
             new_AICc = AICc(model)
 
-            if new_AICc < AICc_fraction * best_AICc or \
-                    (abs(new_AICc - best_AICc) <= abs(AICc_fraction * best_AICc)
-                     and len(model.p0) < best_dof):
+            if new_AICc < AICc_fraction * best_AICc or (
+                abs(new_AICc - best_AICc) <= abs(AICc_fraction * best_AICc)
+                and len(model.p0) < best_dof
+            ):
                 best_values = [
-                    getattr(
-                        model[comp_n],
-                        par_n).value for comp_n,
-                    par_n in name_list]
+                    getattr(model[comp_n], par_n).value for comp_n, par_n in name_list
+                ]
                 best_names = name_list
                 best_comb = combination
                 best_AICc = new_AICc
@@ -231,7 +227,7 @@ def multi_kernel(
         for (comp_n, par_n), val in zip(best_names, best_values):
             try:
                 getattr(model[comp_n], par_n).value = val
-            except:
+            except Exception:
                 pass
         model.fit(**_args)
         send_good_results(model, previous_switching, cur_p, result_q, ind)

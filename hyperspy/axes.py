@@ -51,18 +51,15 @@ from collections.abc import Iterable
 _logger = logging.getLogger(__name__)
 
 
-FACTOR_DOCSTRING = \
-    """factor : float (default: 0.25)
+FACTOR_DOCSTRING = """factor : float (default: 0.25)
             'factor' is an adjustable value used to determine the prefix of
             the units. The product `factor * scale * size` is passed to the
             pint `to_compact` method to determine the prefix."""
 
 
 class ndindex_nat(np.ndindex):
-
     def __next__(self):
         return super().__next__()[::-1]
-
 
 
 def create_axis(**kwargs):
@@ -86,9 +83,9 @@ def create_axis(**kwargs):
     A DataAxis, FunctionalDataAxis or a UniformDataAxis
 
     """
-    if 'axis' in kwargs.keys():  # non-uniform axis
+    if "axis" in kwargs.keys():  # non-uniform axis
         axis_class = DataAxis
-    elif 'expression' in kwargs.keys():  # Functional axis
+    elif "expression" in kwargs.keys():  # Functional axis
         axis_class = FunctionalDataAxis
     else:  # if not argument is provided fall back to uniform axis
         axis_class = UniformDataAxis
@@ -123,9 +120,7 @@ class UnitConversion:
         try:
             _ureg(units)
         except pint.errors.UndefinedUnitError:
-            warnings.warn(
-                f"Unit {units} not supported for conversion. Nothing done."
-                )
+            warnings.warn(f"Unit {units} not supported for conversion. Nothing done.")
             return True
         return False
 
@@ -142,31 +137,34 @@ class UnitConversion:
             return
         scale = self.scale * _ureg(self.units)
         scale_size = factor * scale * self.size
-        converted_units = '{:~}'.format(scale_size.to_compact().units)
+        converted_units = "{:~}".format(scale_size.to_compact().units)
         return self._convert_units(converted_units, inplace=inplace)
 
     _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
 
     def _get_value_from_value_with_units(self, value):
         if self.units is t.Undefined:
-            raise ValueError("Units conversion can't be perfomed "
-                             f"because the axis '{self}' doesn't have "
-                             "units.")
+            raise ValueError(
+                "Units conversion can't be perfomed "
+                f"because the axis '{self}' doesn't have "
+                "units."
+            )
         value = _ureg.parse_expression(value)
-        if not hasattr(value, 'units'):
+        if not hasattr(value, "units"):
             raise ValueError(f"`{value}` should contain an units.")
 
         return float(value.to(self.units).magnitude)
 
     def _convert_units(self, converted_units, inplace=True):
-        if self._ignore_conversion(converted_units) or \
-                self._ignore_conversion(self.units):
+        if self._ignore_conversion(converted_units) or self._ignore_conversion(
+            self.units
+        ):
             return
         scale_pint = self.scale * _ureg(self.units)
         offset_pint = self.offset * _ureg(self.units)
         scale = float(scale_pint.to(_ureg(converted_units)).magnitude)
         offset = float(offset_pint.to(_ureg(converted_units)).magnitude)
-        units = '{:~}'.format(scale_pint.to(_ureg(converted_units)).units)
+        units = "{:~}".format(scale_pint.to(_ureg(converted_units)).units)
         if inplace:
             self.scale = scale
             self.offset = offset
@@ -201,19 +199,21 @@ class UnitConversion:
 
     convert_to_units.__doc__ %= FACTOR_DOCSTRING
 
-    def _get_quantity(self, attribute='scale'):
-        if attribute == 'scale' or attribute == 'offset':
+    def _get_quantity(self, attribute="scale"):
+        if attribute == "scale" or attribute == "offset":
             units = self.units
             if units == t.Undefined:
-                units = ''
+                units = ""
             return getattr(self, attribute) * _ureg(units)
         else:
-            raise ValueError('`attribute` argument can only take the `scale` '
-                             'or the `offset` value.')
+            raise ValueError(
+                "`attribute` argument can only take the `scale` "
+                "or the `offset` value."
+            )
 
-    def _set_quantity(self, value, attribute='scale'):
-        if attribute == 'scale' or attribute == 'offset':
-            units = '' if self.units == t.Undefined else self.units
+    def _set_quantity(self, value, attribute="scale"):
+        if attribute == "scale" or attribute == "offset":
+            units = "" if self.units == t.Undefined else self.units
             if isinstance(value, str):
                 value = _ureg.parse_expression(value)
             if isinstance(value, float):
@@ -221,16 +221,18 @@ class UnitConversion:
 
             # to be consistent, we also need to convert the other one
             # (scale or offset) when both units differ.
-            if value.units != units and value.units != '' and units != '':
-                other = 'offset' if attribute == 'scale' else 'scale'
+            if value.units != units and value.units != "" and units != "":
+                other = "offset" if attribute == "scale" else "scale"
                 other_quantity = self._get_quantity(other).to(value.units)
                 setattr(self, other, float(other_quantity.magnitude))
 
-            self.units = '{:~}'.format(value.units)
+            self.units = "{:~}".format(value.units)
             setattr(self, attribute, float(value.magnitude))
         else:
-            raise ValueError('`attribute` argument can only take the `scale` '
-                             'or the `offset` value.')
+            raise ValueError(
+                "`attribute` argument can only take the `scale` "
+                "or the `offset` value."
+            )
 
     @property
     def units(self):
@@ -238,7 +240,7 @@ class UnitConversion:
 
     @units.setter
     def units(self, s):
-        if s == '':
+        if s == "":
             self._units = t.Undefined
         self._units = s
 
@@ -258,27 +260,30 @@ class BaseDataAxis(t.HasTraits):
     is_binned : bool, optional
         True if data along the axis is binned. Default False.
     """
+
     name = t.Str()
     units = t.Str()
     size = t.CInt()
     low_value = t.Float()
     high_value = t.Float()
-    value = t.Range('low_value', 'high_value')
+    value = t.Range("low_value", "high_value")
     low_index = t.Int(0)
     high_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(False)
     is_binned = t.Bool(False)
-    index = t.Range('low_index', 'high_index')
+    index = t.Range("low_index", "high_index")
     axis = t.Array()
 
-    def __init__(self,
-                 index_in_array=None,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 is_binned=False,
-                 **kwargs):
+    def __init__(
+        self,
+        index_in_array=None,
+        name=None,
+        units=None,
+        navigate=False,
+        is_binned=False,
+        **kwargs,
+    ):
         super().__init__()
         if name is None:
             name = t.Undefined
@@ -286,13 +291,16 @@ class BaseDataAxis(t.HasTraits):
             units = t.Undefined
 
         self.events = Events()
-        if '_type' in kwargs:
-            _type = kwargs.get('_type')
+        if "_type" in kwargs:
+            _type = kwargs.get("_type")
             if _type != self.__class__.__name__:
-                raise ValueError(f'The passed `_type` ({_type}) of axis is '
-                                 'inconsistent with the given attributes.')
+                raise ValueError(
+                    f"The passed `_type` ({_type}) of axis is "
+                    "inconsistent with the given attributes."
+                )
         _name = self.__class__.__name__
-        self.events.index_changed = Event("""
+        self.events.index_changed = Event(
+            """
             Event that triggers when the index of the `{}` changes
 
             Triggers after the internal state of the `{}` has been
@@ -302,8 +310,11 @@ class BaseDataAxis(t.HasTraits):
             ----------
             obj : The {} that the event belongs to.
             index : The new index
-            """.format(_name, _name, _name), arguments=["obj", 'index'])
-        self.events.value_changed = Event("""
+            """.format(_name, _name, _name),
+            arguments=["obj", "index"],
+        )
+        self.events.value_changed = Event(
+            """
             Event that triggers when the value of the `{}` changes
 
             Triggers after the internal state of the `{}` has been
@@ -313,16 +324,18 @@ class BaseDataAxis(t.HasTraits):
             ----------
             obj : The {} that the event belongs to.
             value : The new value
-            """.format(_name, _name, _name), arguments=["obj", 'value'])
+            """.format(_name, _name, _name),
+            arguments=["obj", "value"],
+        )
 
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
         self.name = name
         self.units = units
         self.low_index = 0
-        self.on_trait_change(self._update_slice, 'navigate')
-        self.on_trait_change(self.update_index_bounds, 'size')
-        self.on_trait_change(self._update_bounds, 'axis')
+        self.on_trait_change(self._update_slice, "navigate")
+        self.on_trait_change(self.update_index_bounds, "size")
+        self.on_trait_change(self._update_bounds, "axis")
 
         self.index = 0
         self.navigate = navigate
@@ -361,8 +374,7 @@ class BaseDataAxis(t.HasTraits):
                 finally:
                     self._suppress_value_changed_trigger = False
 
-            elif new_value == new and not\
-                    self._suppress_value_changed_trigger:
+            elif new_value == new and not self._suppress_value_changed_trigger:
                 self.events.value_changed.trigger(obj=self, value=new)
 
     @property
@@ -373,18 +385,19 @@ class BaseDataAxis(t.HasTraits):
             raise AttributeError(
                 "This {} does not belong to an AxesManager"
                 " and therefore its index_in_array attribute "
-                " is not defined".format(self.__class__.__name__))
+                " is not defined".format(self.__class__.__name__)
+            )
 
     @property
     def index_in_axes_manager(self):
         if self.axes_manager is not None:
-            return self.axes_manager._get_axes_in_natural_order().\
-                index(self)
+            return self.axes_manager._get_axes_in_natural_order().index(self)
         else:
             raise AttributeError(
                 "This {} does not belong to an AxesManager"
                 " and therefore its index_in_array attribute "
-                " is not defined".format(self.__class__.__name__))
+                " is not defined".format(self.__class__.__name__)
+            )
 
     def _get_positive_index(self, index):
         # To be used with re
@@ -414,8 +427,7 @@ class BaseDataAxis(t.HasTraits):
         """
         if isinstance(slice_, slice):
             if not self.is_uniform and isfloat(slice_.step):
-                raise ValueError(
-                    "Float steps are only supported for uniform axes.")
+                raise ValueError("Float steps are only supported for uniform axes.")
 
         v2i = self.value2index
 
@@ -446,8 +458,9 @@ class BaseDataAxis(t.HasTraits):
                     # The start value is above the axis limit
                     raise IndexError(
                         "Start value above axis high bound for  axis %s."
-                        "value: %f high_bound: %f" % (repr(self), start,
-                                                      self.high_value))
+                        "value: %f high_bound: %f"
+                        % (repr(self), start, self.high_value)
+                    )
                 else:
                     # The start value is below the axis limit,
                     # we slice from the start.
@@ -460,8 +473,8 @@ class BaseDataAxis(t.HasTraits):
                     # The stop value is below the axis limits
                     raise IndexError(
                         "Stop value below axis low bound for  axis %s."
-                        "value: %f low_bound: %f" % (repr(self), stop,
-                                                     self.low_value))
+                        "value: %f low_bound: %f" % (repr(self), stop, self.low_value)
+                    )
                 else:
                     # The stop value is below the axis limit,
                     # we slice until the end.
@@ -476,17 +489,20 @@ class BaseDataAxis(t.HasTraits):
         raise NotImplementedError("This method must be implemented by subclasses")
 
     def _get_name(self):
-        name = (self.name
-                if self.name is not t.Undefined
-                else ("Unnamed " +
-                      ordinal(self.index_in_axes_manager))
-                if self.axes_manager is not None
-                else "Unnamed")
+        name = (
+            self.name
+            if self.name is not t.Undefined
+            else ("Unnamed " + ordinal(self.index_in_axes_manager))
+            if self.axes_manager is not None
+            else "Unnamed"
+        )
         return name
 
     def __repr__(self):
-        text = '<%s axis, size: %i' % (self._get_name(),
-                                       self.size,)
+        text = "<%s axis, size: %i" % (
+            self._get_name(),
+            self.size,
+        )
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
@@ -500,8 +516,7 @@ class BaseDataAxis(t.HasTraits):
 
     def _update_bounds(self):
         if len(self.axis) != 0:
-            self.low_value, self.high_value = (
-                self.axis.min(), self.axis.max())
+            self.low_value, self.high_value = (self.axis.min(), self.axis.max())
 
     def _update_slice(self, value):
         if value is False:
@@ -510,12 +525,13 @@ class BaseDataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
-        return {'_type': self.__class__.__name__,
-                'name': _parse_axis_attribute(self.name),
-                'units': _parse_axis_attribute(self.units),
-                'navigate': self.navigate,
-                'is_binned': self.is_binned,
-                }
+        return {
+            "_type": self.__class__.__name__,
+            "name": _parse_axis_attribute(self.name),
+            "units": _parse_axis_attribute(self.units),
+            "navigate": self.navigate,
+            "is_binned": self.is_binned,
+        }
 
     def copy(self):
         return self.__class__(**self.get_axis_dictionary())
@@ -528,11 +544,11 @@ class BaseDataAxis(t.HasTraits):
         return cp
 
     def _parse_value_from_string(self, value):
-        """Return calibrated value from a suitable string """
+        """Return calibrated value from a suitable string"""
         if len(value) == 0:
             raise ValueError("Cannot index with an empty string")
         # Starting with 'rel', it must be relative slicing
-        elif value.startswith('rel'):
+        elif value.startswith("rel"):
             try:
                 relative_value = float(value[3:])
             except ValueError:
@@ -546,8 +562,9 @@ class BaseDataAxis(t.HasTraits):
             if self.is_uniform:
                 value = self._get_value_from_value_with_units(value)
             else:
-                raise ValueError("Unit conversion is only supported for "
-                                 "uniform axis.")
+                raise ValueError(
+                    "Unit conversion is only supported for " "uniform axis."
+                )
         else:
             raise ValueError(f"`{value}` is not a suitable string for slicing.")
 
@@ -572,7 +589,7 @@ class BaseDataAxis(t.HasTraits):
         value : float or numpy.ndarray
         rounding : callable
             Handling of values between two axis points:
-            
+
             - If ``rounding=round``, use round-half-away-from-zero strategy to find closest value.
             - If ``rounding=math.floor``, round to the next lower value.
             - If ``rounding=math.ceil``, round to the next higher value.
@@ -592,44 +609,44 @@ class BaseDataAxis(t.HasTraits):
         else:
             value = np.asarray(value)
 
-        #Should evaluate on both arrays and scalars. Raises error if there are
-        #nan values in array
-        if np.all((value >= self.low_value)*(value <= self.high_value)):
-            #Only if all values will evaluate correctly do we implement rounding
-            #function. Rounding functions will strictly operate on numpy arrays
-            #and only evaluate self.axis - v input, v a scalar within value.
+        # Should evaluate on both arrays and scalars. Raises error if there are
+        # nan values in array
+        if np.all((value >= self.low_value) * (value <= self.high_value)):
+            # Only if all values will evaluate correctly do we implement rounding
+            # function. Rounding functions will strictly operate on numpy arrays
+            # and only evaluate self.axis - v input, v a scalar within value.
             if rounding is round:
-                #Use argmin(abs) which will return the closest value
+                # Use argmin(abs) which will return the closest value
                 # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis,value).astype(int)
+                index = numba_closest_index_round(self.axis, value).astype(int)
             elif rounding is math.ceil:
-                #Ceiling means finding index of the closest xi with xi - v >= 0
-                #we look for argmin of strictly non-negative part of self.axis-v.
-                #The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis,value).astype(int)
+                # Ceiling means finding index of the closest xi with xi - v >= 0
+                # we look for argmin of strictly non-negative part of self.axis-v.
+                # The trick is to replace strictly negative values with +np.inf
+                index = numba_closest_index_ceil(self.axis, value).astype(int)
             elif rounding is math.floor:
-                #flooring means finding index of the closest xi with xi - v <= 0
-                #we look for armgax of strictly non-positive part of self.axis-v.
-                #The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_floor(self.axis,value).astype(int)
+                # flooring means finding index of the closest xi with xi - v <= 0
+                # we look for armgax of strictly non-positive part of self.axis-v.
+                # The trick is to replace strictly positive values with -np.inf
+                index = numba_closest_index_floor(self.axis, value).astype(int)
             else:
                 raise ValueError(
-                    'Non-supported rounding function. Use '
-                    '`round`, `math.ceil` or `math.floor`.'
-                    )
-            #initialise the index same dimension as input, force type to int
+                    "Non-supported rounding function. Use "
+                    "`round`, `math.ceil` or `math.floor`."
+                )
+            # initialise the index same dimension as input, force type to int
             # index = np.empty_like(value,dtype=int)
-            #assign on flat, iterate on flat.
+            # assign on flat, iterate on flat.
             # for i,v in enumerate(value):
-                # index.flat[i] = rounding_index(self.axis - v)
-            #Squeezing to get a scalar out if scalar in. See squeeze doc
+            # index.flat[i] = rounding_index(self.axis - v)
+            # Squeezing to get a scalar out if scalar in. See squeeze doc
             return np.squeeze(index)[()]
         else:
             raise ValueError(
-                f'The value {value} is out of the limits '
-                f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
+                f"The value {value} is out of the limits "
+                f"[{self.low_value:.3g}-{self.high_value:.3g}] of the "
                 f'"{self._get_name()}" axis.'
-                )
+            )
 
     def index2value(self, index):
         if isinstance(index, da.Array):
@@ -662,8 +679,10 @@ class BaseDataAxis(t.HasTraits):
         error_message = "Wrong order of the values: for axis with"
         if self._is_increasing_order:
             if v1 is not None and v2 is not None and v1 > v2:
-                raise ValueError(f"{error_message} increasing order, v2 ({v2}) "
-                                 f"must be greater than v1 ({v1}).")
+                raise ValueError(
+                    f"{error_message} increasing order, v2 ({v2}) "
+                    f"must be greater than v1 ({v1})."
+                )
 
             if v1 is not None and self.low_value < v1 <= self.high_value:
                 i1 = self.value2index(v1)
@@ -671,8 +690,10 @@ class BaseDataAxis(t.HasTraits):
                 i2 = self.value2index(v2)
         else:
             if v1 is not None and v2 is not None and v1 < v2:
-                raise ValueError(f"{error_message} decreasing order: v1 ({v1}) "
-                                 f"must be greater than v2 ({v2}).")
+                raise ValueError(
+                    f"{error_message} decreasing order: v1 ({v1}) "
+                    f"must be greater than v2 ({v2})."
+                )
 
             if v1 is not None and self.high_value > v1 >= self.low_value:
                 i1 = self.value2index(v1)
@@ -716,8 +737,8 @@ class BaseDataAxis(t.HasTraits):
         del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
-            _logger.warning('The maximum scale error is {}.'.format(scale_err))
-        d["_type"] = 'UniformDataAxis'
+            _logger.warning("The maximum scale error is {}.".format(scale_err))
+        d["_type"] = "UniformDataAxis"
         self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
         self.axes_manager = axes_manager
@@ -771,21 +792,24 @@ class DataAxis(BaseDataAxis):
     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
     """
 
-    def __init__(self,
-                 index_in_array=None,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 is_binned=False,
-                 axis=[1],
-                 **kwargs):
+    def __init__(
+        self,
+        index_in_array=None,
+        name=None,
+        units=None,
+        navigate=False,
+        is_binned=False,
+        axis=[1],
+        **kwargs,
+    ):
         super().__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
             is_binned=is_binned,
-            **kwargs)
+            **kwargs,
+        )
         self.axis = axis
         self.update_axis()
 
@@ -820,12 +844,12 @@ class DataAxis(BaseDataAxis):
             if isinstance(self.axis, list):
                 self.axis = np.asarray(self.axis)
             if self._is_increasing_order is None:
-                raise ValueError('The non-uniform axis needs to be ordered.')
+                raise ValueError("The non-uniform axis needs to be ordered.")
         self.size = len(self.axis)
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
-        d.update({'axis': self.axis})
+        d.update({"axis": self.axis})
         return d
 
     def calibrate(self, *args, **kwargs):
@@ -842,7 +866,7 @@ class DataAxis(BaseDataAxis):
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised. If ``None``, ``units`` will be updated.
-        
+
         Returns
         -------
         bool
@@ -923,23 +947,27 @@ class FunctionalDataAxis(BaseDataAxis):
     'a': 100,
     'b': 10}
     """
-    def __init__(self,
-                 expression,
-                 x=None,
-                 index_in_array=None,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 size=1,
-                 is_binned=False,
-                 **parameters):
+
+    def __init__(
+        self,
+        expression,
+        x=None,
+        index_in_array=None,
+        name=None,
+        units=None,
+        navigate=False,
+        size=1,
+        is_binned=False,
+        **parameters,
+    ):
         super().__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
             is_binned=is_binned,
-            **parameters)
+            **parameters,
+        )
         # These trait needs to added dynamically to be removed when necessary
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
@@ -953,19 +981,22 @@ class FunctionalDataAxis(BaseDataAxis):
                 self.x = x
                 self.size = self.x.size
         self._expression = expression
-        if '_type' in parameters:
-            del parameters['_type']
+        if "_type" in parameters:
+            del parameters["_type"]
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
-        expr_parameters = [symbol for symbol in expr.free_symbols
-                           if symbol.name not in variables]
+        expr_parameters = [
+            symbol for symbol in expr.free_symbols if symbol.name not in variables
+        ]
         if set(parameters) != set([parameter.name for parameter in expr_parameters]):
             raise ValueError(
                 "The values of the following expression parameters "
-                f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
+                f"must be given as keywords: {set(expr_parameters) - set(parameters)}"
+            )
         self._function = lambdify(
-            variables + expr_parameters, expr.evalf(), dummify=False)
+            variables + expr_parameters, expr.evalf(), dummify=False
+        )
         for parameter in parameters.keys():
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
@@ -1006,9 +1037,17 @@ class FunctionalDataAxis(BaseDataAxis):
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
-        d['expression'] = self._expression
-        d.update({'size': _parse_axis_attribute(self.size), })
-        d.update({'x': self.x.get_axis_dictionary(), })
+        d["expression"] = self._expression
+        d.update(
+            {
+                "size": _parse_axis_attribute(self.size),
+            }
+        )
+        d.update(
+            {
+                "x": self.x.get_axis_dictionary(),
+            }
+        )
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
@@ -1017,12 +1056,12 @@ class FunctionalDataAxis(BaseDataAxis):
         """Convert to a non-uniform axis."""
         d = super().get_axis_dictionary()
         axes_manager = self.axes_manager
-        d["_type"] = 'DataAxis'
+        d["_type"] = "DataAxis"
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
         del self._expression
         del self._function
-        self.remove_trait('x')
+        self.remove_trait("x")
         self.axes_manager = axes_manager
 
     def crop(self, start=None, end=None):
@@ -1052,6 +1091,7 @@ class FunctionalDataAxis(BaseDataAxis):
         self.x.crop(start=slice_.start, end=slice_.stop)
         self.size = self.x.size
         self.update_axis()
+
     crop.__doc__ = DataAxis.crop.__doc__
 
     def _slice_me(self, slice_):
@@ -1108,24 +1148,27 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
      'scale': 1.0,
      'offset': 300.0}
     """
-    def __init__(self,
-                 index_in_array=None,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 size=1,
-                 scale=1.,
-                 offset=0.,
-                 is_binned=False,
-                 **kwargs):
+
+    def __init__(
+        self,
+        index_in_array=None,
+        name=None,
+        units=None,
+        navigate=False,
+        size=1,
+        scale=1.0,
+        offset=0.0,
+        is_binned=False,
+        **kwargs,
+    ):
         super().__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
             is_binned=is_binned,
-            **kwargs
-            )
+            **kwargs,
+        )
         # These traits need to added dynamically to be removed when necessary
         self.add_trait("scale", t.CFloat)
         self.add_trait("offset", t.CFloat)
@@ -1164,9 +1207,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
-        d.update({'size': self.size,
-                  'scale': self.scale,
-                  'offset': self.offset})
+        d.update({"size": self.size, "scale": self.scale, "offset": self.offset})
         return d
 
     def value2index(self, value, rounding=round):
@@ -1201,10 +1242,10 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         value = self._parse_value(value)
 
-        multiplier = 1E12
-        index = 1 / multiplier * np.trunc(
-            (value - self.offset) / self.scale * multiplier
-            )
+        multiplier = 1e12
+        index = (
+            1 / multiplier * np.trunc((value - self.offset) / self.scale * multiplier)
+        )
 
         if rounding is round:
             # When value are negative, we need to use half away from zero
@@ -1213,7 +1254,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                 value >= 0 if np.sign(self.scale) > 0 else value < 0,
                 round_half_towards_zero(index, decimals=0),
                 round_half_away_from_zero(index, decimals=0),
-                )
+            )
         else:
             if rounding is math.ceil:
                 rounding = np.ceil
@@ -1239,8 +1280,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.axis = self.offset + self.scale * np.arange(self.size)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
-        scale = (value_tuple[1] - value_tuple[0]) /\
-            (index_tuple[1] - index_tuple[0])
+        scale = (value_tuple[1] - value_tuple[0]) / (index_tuple[1] - index_tuple[0])
         offset = value_tuple[0] - scale * index_tuple[0]
         if modify_calibration is True:
             self.offset = offset
@@ -1299,21 +1339,23 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     @property
     def scale_as_quantity(self):
-        return self._get_quantity('scale')
+        return self._get_quantity("scale")
 
     @scale_as_quantity.setter
     def scale_as_quantity(self, value):
-        self._set_quantity(value, 'scale')
+        self._set_quantity(value, "scale")
 
     @property
     def offset_as_quantity(self):
-        return self._get_quantity('offset')
+        return self._get_quantity("offset")
 
     @offset_as_quantity.setter
     def offset_as_quantity(self, value):
-        self._set_quantity(value, 'offset')
+        self._set_quantity(value, "offset")
 
-    def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
+    def convert_to_functional_data_axis(
+        self, expression, units=None, name=None, **kwargs
+    ):
         d = super().get_axis_dictionary()
         axes_manager = self.axes_manager
         if units:
@@ -1322,10 +1364,10 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             d["name"] = name
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
-        self.remove_trait('scale')
-        self.remove_trait('offset')
+        self.remove_trait("scale")
+        self.remove_trait("offset")
         self.__class__ = FunctionalDataAxis
-        d["_type"] = 'FunctionalDataAxis'
+        d["_type"] = "FunctionalDataAxis"
         self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
         self.axes_manager = axes_manager
 
@@ -1333,15 +1375,15 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         d = super().get_axis_dictionary()
         axes_manager = self.axes_manager
         self.__class__ = DataAxis
-        d["_type"] = 'DataAxis'
-        self.remove_trait('scale')
-        self.remove_trait('offset')
+        d["_type"] = "DataAxis"
+        self.remove_trait("scale")
+        self.remove_trait("offset")
         self.__init__(**d, axis=self.axis)
         self.axes_manager = axes_manager
 
 
 def _serpentine_iter(shape):
-    '''Similar to np.ndindex, but yields indices
+    """Similar to np.ndindex, but yields indices
     in serpentine pattern, like snake game.
     Takes shape in hyperspy order, not numpy order.
 
@@ -1350,11 +1392,11 @@ def _serpentine_iter(shape):
 
     Note that the [::-1] reversing is necessary to iterate first along
     the x-direction on multidimensional navigators.
-    '''
+    """
     shape = shape[::-1]
     N = len(shape)
-    idx = N*[0]
-    drc = N*[1]
+    idx = N * [0]
+    drc = N * [1]
     while True:
         yield (*idx,)[::-1]
         for j in reversed(range(N)):
@@ -1365,9 +1407,11 @@ def _serpentine_iter(shape):
         else:  # pragma: no cover
             break
 
+
 def _flyback_iter(shape):
     "Classic flyback scan pattern generator which yields indices in similar fashion to np.ndindex. Takes shape in hyperspy order, not numpy order."
     shape = shape[::-1]
+
     class ndindex_reversed(np.ndindex):
         def __next__(self):
             next(self._it)
@@ -1463,7 +1507,8 @@ class AxesManager(t.HasTraits):
     def __init__(self, axes_list):
         super().__init__()
         self.events = Events()
-        self.events.indices_changed = Event("""
+        self.events.indices_changed = Event(
+            """
             Event that triggers when the indices of the `AxesManager` changes
 
             Triggers after the internal state of the `AxesManager` has been
@@ -1472,8 +1517,11 @@ class AxesManager(t.HasTraits):
             Parameters
             ----------
             obj : The AxesManager that the event belongs to.
-            """, arguments=['obj'])
-        self.events.any_axis_changed = Event("""
+            """,
+            arguments=["obj"],
+        )
+        self.events.any_axis_changed = Event(
+            """
             Event that trigger when the space defined by the axes transforms.
 
             Specifically, it triggers when one or more of the following
@@ -1483,7 +1531,9 @@ class AxesManager(t.HasTraits):
             Parameters
             ----------
             obj : The AxesManager that the event belongs to.
-            """, arguments=['obj'])
+            """,
+            arguments=["obj"],
+        )
 
         # Remove all axis for cases, we reinitiliase the AxesManager
         if self._axes:
@@ -1492,7 +1542,7 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self.iterpath = 'serpentine'
+        self.iterpath = "serpentine"
         self._ragged = False
 
     @property
@@ -1500,11 +1550,13 @@ class AxesManager(t.HasTraits):
         return self._ragged
 
     def _update_trait_handlers(self, remove=False):
-        things = {self._on_index_changed: '_axes.index',
-                  self._on_slice_changed: '_axes.slice',
-                  self._on_size_changed: '_axes.size',
-                  self._on_scale_changed: '_axes.scale',
-                  self._on_offset_changed: '_axes.offset'}
+        things = {
+            self._on_index_changed: "_axes.index",
+            self._on_slice_changed: "_axes.slice",
+            self._on_size_changed: "_axes.size",
+            self._on_scale_changed: "_axes.scale",
+            self._on_offset_changed: "_axes.offset",
+        }
 
         for k, v in things.items():
             self.on_trait_change(k, name=v, remove=remove)
@@ -1517,24 +1569,31 @@ class AxesManager(t.HasTraits):
         return axis
 
     def _array_indices_generator(self):
-        shape = (self.navigation_shape[::-1] if self.navigation_size > 0 else
-                 [1, ])
+        shape = (
+            self.navigation_shape[::-1]
+            if self.navigation_size > 0
+            else [
+                1,
+            ]
+        )
         return np.ndindex(*shape)
 
     def _am_indices_generator(self):
-        shape = (self.navigation_shape if self.navigation_size > 0 else
-                 [1, ])[::-1]
+        shape = (
+            self.navigation_shape
+            if self.navigation_size > 0
+            else [
+                1,
+            ]
+        )[::-1]
         return ndindex_nat(*shape)
 
     def __getitem__(self, y):
-        """x.__getitem__(y) <==> x[y]
-
-        """
+        """x.__getitem__(y) <==> x[y]"""
         if isinstance(y, str) or not np.iterable(y):
             return self[(y,)][0]
         axes = [self._axes_getter(ax) for ax in y]
-        _, indices = np.unique(
-            [_id for _id in map(id, axes)], return_index=True)
+        _, indices = np.unique([_id for _id in map(id, axes)], return_index=True)
         ans = tuple(axes[i] for i in sorted(indices))
         return ans
 
@@ -1551,10 +1610,15 @@ class AxesManager(t.HasTraits):
                 if y == axis.name:
                     return axis
             raise ValueError("There is no DataAxis named %s" % y)
-        elif (isfloat(y.real) and not y.real.is_integer() or
-                isfloat(y.imag) and not y.imag.is_integer()):
-            raise TypeError("axesmanager indices must be integers, "
-                            "complex integers or strings")
+        elif (
+            isfloat(y.real)
+            and not y.real.is_integer()
+            or isfloat(y.imag)
+            and not y.imag.is_integer()
+        ):
+            raise TypeError(
+                "axesmanager indices must be integers, " "complex integers or strings"
+            )
         if y.imag == 0:  # Natural order
             return self._get_axes_in_natural_order()[y]
         elif y.imag == 3:  # Array order
@@ -1566,13 +1630,12 @@ class AxesManager(t.HasTraits):
         elif y.imag == 2:  # Signal natural order
             return self.signal_axes[int(y.real)]
         else:
-            raise IndexError("axesmanager imaginary part of complex indices "
-                             "must be 0, 1, 2 or 3")
+            raise IndexError(
+                "axesmanager imaginary part of complex indices " "must be 0, 1, 2 or 3"
+            )
 
     def __getslice__(self, i=None, j=None):
-        """x.__getslice__(i, j) <==> x[i:j]
-
-        """
+        """x.__getslice__(i, j) <==> x[i:j]"""
         return self._get_axes_in_natural_order()[i:j]
 
     def _get_axes_in_natural_order(self):
@@ -1588,12 +1651,8 @@ class AxesManager(t.HasTraits):
 
     @property
     def shape(self):
-        nav_shape = (self.navigation_shape
-                     if self.navigation_shape != (0,)
-                     else tuple())
-        sig_shape = (self.signal_shape
-                     if self.signal_shape != (0,)
-                     else tuple())
+        nav_shape = self.navigation_shape if self.navigation_shape != (0,) else tuple()
+        sig_shape = self.signal_shape if self.signal_shape != (0,) else tuple()
         return nav_shape + sig_shape
 
     @property
@@ -1616,14 +1675,13 @@ class AxesManager(t.HasTraits):
 
     @property
     def all_uniform(self):
-        if any([axis.is_uniform == False for axis in self._axes]):
+        if any([axis.is_uniform is False for axis in self._axes]):
             return False
         else:
             return True
 
     def remove(self, axes):
-        """Remove one or more axes
-        """
+        """Remove one or more axes"""
         axes = self[axes]
         if not np.iterable(axes):
             axes = (axes,)
@@ -1656,7 +1714,9 @@ class AxesManager(t.HasTraits):
             slice.
 
         """
-        cslice = [slice(None), ] * len(self._axes)
+        cslice = [
+            slice(None),
+        ] * len(self._axes)
         if fill is not None:
             for index, slice_ in fill:
                 cslice[index] = slice_
@@ -1665,7 +1725,7 @@ class AxesManager(t.HasTraits):
     def create_axes(self, axes_list):
         """Given a list of either axes dictionaries, these are
         added to the AxesManager. In case dictionaries defining the axes
-        properties are passed, the 
+        properties are passed, the
         :class:`~hyperspy.axes.DataAxis`,
         :class:`~hyperspy.axes.UniformDataAxis`,
         :class:`~hyperspy.axes.FunctionalDataAxis` instances are first
@@ -1684,10 +1744,15 @@ class AxesManager(t.HasTraits):
         """
         # Reorder axes_list using index_in_array if it is defined
         # for all axes and the indices are not repeated.
-        indices = set([axis['index_in_array'] for axis in axes_list if
-                       hasattr(axis, 'index_in_array')])
+        indices = set(
+            [
+                axis["index_in_array"]
+                for axis in axes_list
+                if hasattr(axis, "index_in_array")
+            ]
+        )
         if len(indices) == len(axes_list):
-            axes_list.sort(key=lambda x: x['index_in_array'])
+            axes_list.sort(key=lambda x: x["index_in_array"])
         for axis_dict in axes_list:
             if isinstance(axis_dict, dict):
                 self._append_axis(**axis_dict)
@@ -1726,31 +1791,31 @@ class AxesManager(t.HasTraits):
     @iterpath.setter
     def iterpath(self, path):
         if isinstance(path, str):
-            if path == 'serpentine':
-                self._iterpath = 'serpentine'
+            if path == "serpentine":
+                self._iterpath = "serpentine"
                 self._iterpath_generator = _serpentine_iter(self.navigation_shape)
-            elif path == 'flyback':
-                self._iterpath = 'flyback'
+            elif path == "flyback":
+                self._iterpath = "flyback"
                 self._iterpath_generator = _flyback_iter(self.navigation_shape)
             else:
                 raise ValueError(
                     f'The iterpath scan pattern is set to `"{path}"`. '
                     'It must be either "serpentine" or "flyback", or an iterable '
-                    'of navigation indices, and is set either as multifit '
-                    '`iterpath` argument or `axes_manager.iterpath`'
-                    )
+                    "of navigation indices, and is set either as multifit "
+                    "`iterpath` argument or `axes_manager.iterpath`"
+                )
         else:
             # Passing a custom indices iterator
             try:
-                iter(path) # If this fails, its not an iterable and we raise TypeError
+                iter(path)  # If this fails, its not an iterable and we raise TypeError
             except TypeError as e:
                 raise TypeError(
-                    f'The iterpath `{path}` is not an iterable. '
-                    'Ensure it is an iterable like a list, array or generator.'
-                    ) from e
+                    f"The iterpath `{path}` is not an iterable. "
+                    "Ensure it is an iterable like a list, array or generator."
+                ) from e
             try:
                 if not (inspect.isgenerator(path) or type(path) is GeneratorLen):
-                # If iterpath is a generator, then we can't check its first value, have to trust it
+                    # If iterpath is a generator, then we can't check its first value, have to trust it
                     first_indices = path[0]
                     if not isinstance(first_indices, Iterable):
                         raise TypeError
@@ -1759,13 +1824,13 @@ class AxesManager(t.HasTraits):
                 raise TypeError(
                     f"Each set of indices in the iterpath should be an iterable, e.g. `(0,)` or `(0,0,0)`. "
                     f"The first entry currently looks like: `{first_indices}`, and does not satisfy this requirement."
-                    ) from e
+                ) from e
             except AssertionError as e:
                 raise ValueError(
                     f"The current iterpath yields indices of length "
                     f"{len(path)}. It should deliver incides with length "
                     f"equal to the navigation dimension, which is {self.navigation_dimension}."
-                    ) from e
+                ) from e
             else:
                 self._iterpath = path
                 self._iterpath_generator = iter(self._iterpath)
@@ -1782,17 +1847,21 @@ class AxesManager(t.HasTraits):
                     # Checking if mask indices exist in the iterpath could take a long time,
                     # or may not be possible in the case of a generator.
                     _logger.info(
-                    ("The progressbar length cannot be estimated when using both custom iterpath and a mask."
-                    "The progressbar may terminate before it appears complete. This can safely be ignored."),
+                        (
+                            "The progressbar length cannot be estimated when using both custom iterpath and a mask."
+                            "The progressbar may terminate before it appears complete. This can safely be ignored."
+                        ),
                     )
             except TypeError:
                 # progressbar is shown, so user can monitor "iterations per second"
                 # but the length of the bar is unknown
                 maxval = None
                 _logger.info(
-                    ("The AxesManager `iterpath` is missing the `__len__` method, so does not have a known length. "
-                    "The progressbar will only show run time and iterations per second, but no actual progress indicator."),
-                    )
+                    (
+                        "The AxesManager `iterpath` is missing the `__len__` method, so does not have a known length. "
+                        "The progressbar will only show run time and iterations per second, but no actual progress indicator."
+                    ),
+                )
         return maxval
 
     def __next__(self):
@@ -1876,9 +1945,8 @@ class AxesManager(t.HasTraits):
     def _on_offset_changed(self):
         self.events.any_axis_changed.trigger(obj=self)
 
-    def convert_units(self, axes=None, units=None, same_units=True,
-                      factor=0.25):
-        """ Convert the scale and the units of the selected axes. If the unit
+    def convert_units(self, axes=None, units=None, same_units=True, factor=0.25):
+        """Convert the scale and the units of the selected axes. If the unit
         of measure is not supported by the pint library, the scale and units
         are not changed.
 
@@ -1914,52 +1982,56 @@ class AxesManager(t.HasTraits):
 
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
-            convert_navigation = (len(self.navigation_axes) > 0)
-        elif axes == 'navigation':
+            convert_navigation = len(self.navigation_axes) > 0
+        elif axes == "navigation":
             axes = self.navigation_axes
             convert_signal = False
-            convert_navigation = (len(self.navigation_axes) > 0)
-        elif axes == 'signal':
+            convert_navigation = len(self.navigation_axes) > 0
+        elif axes == "signal":
             axes = self.signal_axes
             convert_navigation = False
         elif isinstance(axes, (UniformDataAxis, int, str)):
             if not isinstance(axes, UniformDataAxis):
                 axes = self[axes]
-            axes = (axes, )
+            axes = (axes,)
             convert_navigation = axes[0].navigate
             convert_signal = not convert_navigation
         else:
-            raise TypeError(
-                'Axes type `{}` is not correct.'.format(type(axes)))
+            raise TypeError("Axes type `{}` is not correct.".format(type(axes)))
 
         for axis in axes:
             if not axis.is_uniform:
                 raise NotImplementedError(
                     "This operation is not implemented for non-uniform axes "
-                    f"such as {axis}")
+                    f"such as {axis}"
+                )
 
         if isinstance(units, str) or units is None:
             units = [units] * len(axes)
         elif isinstance(units, list):
             if len(units) != len(axes):
-                raise ValueError('Length of the provided units list {} should '
-                                 'be the same than the length of the provided '
-                                 'axes {}.'.format(units, axes))
+                raise ValueError(
+                    "Length of the provided units list {} should "
+                    "be the same than the length of the provided "
+                    "axes {}.".format(units, axes)
+                )
         else:
-            raise TypeError('Units type `{}` is not correct. It can be a '
-                            '`string`, a `list` of string or `None`.'
-                            ''.format(type(units)))
+            raise TypeError(
+                "Units type `{}` is not correct. It can be a "
+                "`string`, a `list` of string or `None`."
+                "".format(type(units))
+            )
 
         if same_units:
             if convert_navigation:
-                units_nav = units[:self.navigation_dimension]
-                self._convert_axes_to_same_units(self.navigation_axes,
-                                                 units_nav, factor)
+                units_nav = units[: self.navigation_dimension]
+                self._convert_axes_to_same_units(
+                    self.navigation_axes, units_nav, factor
+                )
             if convert_signal:
                 offset = self.navigation_dimension if convert_navigation else 0
                 units_sig = units[offset:]
-                self._convert_axes_to_same_units(self.signal_axes,
-                                                 units_sig, factor)
+                self._convert_axes_to_same_units(self.signal_axes, units_sig, factor)
         else:
             for axis, unit in zip(axes, units):
                 axis.convert_to_units(unit, factor=factor)
@@ -1981,8 +2053,7 @@ class AxesManager(t.HasTraits):
             if _ureg(axis.units).dimensionality == _ureg(unit).dimensionality:
                 axis.convert_to_units(unit, factor=factor)
 
-    def update_axes_attributes_from(self, axes,
-                                    attributes=None):
+    def update_axes_attributes_from(self, axes, attributes=None):
         """Update the axes attributes to match those given.
 
         The axes are matched by their index in the array. The purpose of this
@@ -2004,7 +2075,8 @@ class AxesManager(t.HasTraits):
         with self.events.any_axis_changed.suppress():
             for axis in axes:
                 changed = self._axes[axis.index_in_array].update_from(
-                    axis=axis, attributes=attributes)
+                    axis=axis, attributes=attributes
+                )
                 changes = changes or changed
         if changes:
             self.events.any_axis_changed.trigger(obj=self)
@@ -2019,12 +2091,12 @@ class AxesManager(t.HasTraits):
             # here to avoid difficult to debug bugs.
             axis.axes_manager = self
             if axis.slice is None:
-                getitem_tuple += axis.index,
+                getitem_tuple += (axis.index,)
                 values.append(axis.value)
-                navigation_axes += axis,
+                navigation_axes += (axis,)
             else:
-                getitem_tuple += axis.slice,
-                signal_axes += axis,
+                getitem_tuple += (axis.slice,)
+                signal_axes += (axis,)
         if not signal_axes and navigation_axes:
             getitem_tuple[-1] = slice(axis.index, axis.index + 1)
 
@@ -2038,10 +2110,10 @@ class AxesManager(t.HasTraits):
             self._signal_dimension = len(self.signal_axes)
         self._navigation_dimension = len(self.navigation_axes)
 
-        self._signal_size = (np.prod(self.signal_shape)
-                             if self.signal_shape else 0)
-        self._navigation_size = (np.prod(self.navigation_shape)
-                                 if self.navigation_shape else 0)
+        self._signal_size = np.prod(self.signal_shape) if self.signal_shape else 0
+        self._navigation_size = (
+            np.prod(self.navigation_shape) if self.navigation_shape else 0
+        )
 
         self._update_max_index()
 
@@ -2093,15 +2165,16 @@ class AxesManager(t.HasTraits):
             # Nothing to be done
             return
         elif self.ragged and value > 0:
-            raise ValueError("Signal containing ragged array "
-                             "must have zero signal dimension.")
+            raise ValueError(
+                "Signal containing ragged array " "must have zero signal dimension."
+            )
         elif value > len(self._axes):
             raise ValueError(
                 "The signal dimension cannot be greater "
-                f"than the number of axes which is {len(self._axes)}")
+                f"than the number of axes which is {len(self._axes)}"
+            )
         elif value < 0:
-            raise ValueError(
-                "The signal dimension must be a positive integer")
+            raise ValueError("The signal dimension must be a positive integer")
 
         # Figure out which axis needs navigate=True
         tl = [True] * len(self._axes)
@@ -2125,25 +2198,25 @@ class AxesManager(t.HasTraits):
         mod23 = preferences.Plot.modifier_dims_23
         mod45 = preferences.Plot.modifier_dims_45
 
-        dim0_decrease = mod01 + '+' + preferences.Plot.dims_024_decrease
-        dim0_increase = mod01 + '+' + preferences.Plot.dims_024_increase
-        dim1_decrease = mod01 + '+' + preferences.Plot.dims_135_decrease
-        dim1_increase = mod01 + '+' + preferences.Plot.dims_135_increase
-        dim2_decrease = mod23 + '+' + preferences.Plot.dims_024_decrease
-        dim2_increase = mod23 + '+' + preferences.Plot.dims_024_increase
-        dim3_decrease = mod23 + '+' + preferences.Plot.dims_135_decrease
-        dim3_increase = mod23 + '+' + preferences.Plot.dims_135_increase
-        dim4_decrease = mod45 + '+' + preferences.Plot.dims_024_decrease
-        dim4_increase = mod45 + '+' + preferences.Plot.dims_024_increase
-        dim5_decrease = mod45 + '+' + preferences.Plot.dims_135_decrease
-        dim5_increase = mod45 + '+' + preferences.Plot.dims_135_increase
+        dim0_decrease = mod01 + "+" + preferences.Plot.dims_024_decrease
+        dim0_increase = mod01 + "+" + preferences.Plot.dims_024_increase
+        dim1_decrease = mod01 + "+" + preferences.Plot.dims_135_decrease
+        dim1_increase = mod01 + "+" + preferences.Plot.dims_135_increase
+        dim2_decrease = mod23 + "+" + preferences.Plot.dims_024_decrease
+        dim2_increase = mod23 + "+" + preferences.Plot.dims_024_increase
+        dim3_decrease = mod23 + "+" + preferences.Plot.dims_135_decrease
+        dim3_increase = mod23 + "+" + preferences.Plot.dims_135_increase
+        dim4_decrease = mod45 + "+" + preferences.Plot.dims_024_decrease
+        dim4_increase = mod45 + "+" + preferences.Plot.dims_024_increase
+        dim5_decrease = mod45 + "+" + preferences.Plot.dims_135_decrease
+        dim5_increase = mod45 + "+" + preferences.Plot.dims_135_increase
 
         keyDict = {
             # axes 0, 1
-            **dict.fromkeys([dim0_decrease, '4'], (0, -1)),
-            **dict.fromkeys([dim0_increase, '6'], (0, +1)),
-            **dict.fromkeys([dim1_decrease, '8'], (1, -1)),
-            **dict.fromkeys([dim1_increase, '2'], (1, +1)),
+            **dict.fromkeys([dim0_decrease, "4"], (0, -1)),
+            **dict.fromkeys([dim0_increase, "6"], (0, +1)),
+            **dict.fromkeys([dim1_decrease, "8"], (1, -1)),
+            **dict.fromkeys([dim1_increase, "2"], (1, +1)),
             # axes 2, 3
             **dict.fromkeys([dim2_decrease], (2, -1)),
             **dict.fromkeys([dim2_increase], (2, +1)),
@@ -2156,9 +2229,9 @@ class AxesManager(t.HasTraits):
             **dict.fromkeys([dim5_increase], (5, +1)),
         }
 
-        if event.key == 'pageup':
+        if event.key == "pageup":
             self._step += 1
-        elif event.key == 'pagedown':
+        elif event.key == "pagedown":
             if self._step > 1:
                 self._step -= 1
         else:
@@ -2190,16 +2263,14 @@ class AxesManager(t.HasTraits):
     def as_dictionary(self):
         am_dict = {}
         for i, axis in enumerate(self._axes):
-            am_dict['axis-%i' % i] = axis.get_axis_dictionary()
+            am_dict["axis-%i" % i] = axis.get_axis_dictionary()
         return am_dict
 
     def _get_signal_axes_dicts(self):
-        return [axis.get_axis_dictionary() for axis in
-                self.signal_axes[::-1]]
+        return [axis.get_axis_dictionary() for axis in self.signal_axes[::-1]]
 
     def _get_navigation_axes_dicts(self):
-        return [axis.get_axis_dictionary() for axis in
-                self.navigation_axes[::-1]]
+        return [axis.get_axis_dictionary() for axis in self.navigation_axes[::-1]]
 
     def _get_dimension_str(self):
         string = "("
@@ -2211,88 +2282,110 @@ class AxesManager(t.HasTraits):
             string += str(axis.size) + ", "
         string = string.rstrip(", ")
         if self.ragged:
-            string += 'ragged'
+            string += "ragged"
         string += ")"
         return string
 
     def __repr__(self):
-        text = ('<Axes manager, axes: %s>\n' %
-                self._get_dimension_str())
+        text = "<Axes manager, axes: %s>\n" % self._get_dimension_str()
         ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
         ax_signature_non_uniform = "% 16s | %6g | %6s | non-uniform axis | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
-        text += signature % ('Name', 'size', 'index', 'offset', 'scale',
-                             'units')
-        text += '\n'
-        text += signature % ('=' * 16, '=' * 6, '=' * 6,
-                             '=' * 7, '=' * 7, '=' * 6)
+        text += signature % ("Name", "size", "index", "offset", "scale", "units")
+        text += "\n"
+        text += signature % ("=" * 16, "=" * 6, "=" * 6, "=" * 7, "=" * 7, "=" * 6)
 
         def axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform):
             if ax.is_uniform:
-                return ax_signature_uniform % (str(ax.name)[:16], ax.size,
-                                              str(ax.index), ax.offset,
-                                              ax.scale, ax.units)
+                return ax_signature_uniform % (
+                    str(ax.name)[:16],
+                    ax.size,
+                    str(ax.index),
+                    ax.offset,
+                    ax.scale,
+                    ax.units,
+                )
             else:
-                return ax_signature_non_uniform % (str(ax.name)[:16], ax.size,
-                                                  str(ax.index), ax.units)
+                return ax_signature_non_uniform % (
+                    str(ax.name)[:16],
+                    ax.size,
+                    str(ax.index),
+                    ax.units,
+                )
 
         for ax in self.navigation_axes:
-            text += '\n'
+            text += "\n"
             text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
-        text += '\n'
-        text += signature % ('-' * 16, '-' * 6, '-' * 6,
-                             '-' * 7, '-' * 7, '-' * 6)
+        text += "\n"
+        text += signature % ("-" * 16, "-" * 6, "-" * 6, "-" * 7, "-" * 7, "-" * 6)
         for ax in self.signal_axes:
-            text += '\n'
+            text += "\n"
             text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
         if self.ragged:
-            text += '\n'
+            text += "\n"
             text += "     Ragged axis |               Variable length"
 
         return text
 
     def _repr_html_(self):
-        text = ("<style>\n"
-                "table, th, td {\n\t"
-                "border: 1px solid black;\n\t"
-                "border-collapse: collapse;\n}"
-                "\nth, td {\n\t"
-                "padding: 5px;\n}"
-                "\n</style>")
-        text += ('\n<p><b>< Axes manager, axes: %s ></b></p>\n' %
-                 self._get_dimension_str())
+        text = (
+            "<style>\n"
+            "table, th, td {\n\t"
+            "border: 1px solid black;\n\t"
+            "border-collapse: collapse;\n}"
+            "\nth, td {\n\t"
+            "padding: 5px;\n}"
+            "\n</style>"
+        )
+        text += (
+            "\n<p><b>< Axes manager, axes: %s ></b></p>\n" % self._get_dimension_str()
+        )
 
-        def format_row(*args, tag='td', bold=False):
+        def format_row(*args, tag="td", bold=False):
             if bold:
                 signature = "\n<tr class='bolder_row'> "
             else:
                 signature = "\n<tr> "
             signature += " ".join(("{}" for _ in args)) + " </tr>"
-            return signature.format(*map(lambda x:
-                                         '\n<' + tag +
-                                         '>{}</'.format(x) + tag + '>',
-                                         args))
+            return signature.format(
+                *map(lambda x: "\n<" + tag + ">{}</".format(x) + tag + ">", args)
+            )
 
         def axis_repr(ax):
             index = ax.index if ax.navigate else ""
             if ax.is_uniform:
-                return format_row(ax.name, ax.size, index, ax.offset,
-                                  ax.scale, ax.units)
+                return format_row(
+                    ax.name, ax.size, index, ax.offset, ax.scale, ax.units
+                )
             else:
-                return format_row(ax.name, ax.size, index, "non-uniform axis",
-                                  "non-uniform axis", ax.units)
+                return format_row(
+                    ax.name,
+                    ax.size,
+                    index,
+                    "non-uniform axis",
+                    "non-uniform axis",
+                    ax.units,
+                )
 
         if self.navigation_axes:
             text += "<table style='width:100%'>\n"
-            text += format_row('Navigation axis name', 'size', 'index', 'offset',
-                               'scale', 'units', tag='th')
+            text += format_row(
+                "Navigation axis name",
+                "size",
+                "index",
+                "offset",
+                "scale",
+                "units",
+                tag="th",
+            )
             for ax in self.navigation_axes:
                 text += axis_repr(ax)
             text += "</table>\n"
         if self.signal_axes:
             text += "<table style='width:100%'>\n"
-            text += format_row('Signal axis name', 'size',
-                               "", 'offset', 'scale', 'units', tag='th')
+            text += format_row(
+                "Signal axis name", "size", "", "offset", "scale", "units", tag="th"
+            )
             for ax in self.signal_axes:
                 text += axis_repr(ax)
             text += "</table>\n"
@@ -2313,8 +2406,8 @@ class AxesManager(t.HasTraits):
         if len(coordinates) != self.navigation_dimension:
             raise AttributeError(
                 "The number of coordinates must be equal to the "
-                "navigation dimension that is %i" %
-                self.navigation_dimension)
+                "navigation dimension that is %i" % self.navigation_dimension
+            )
         changes = False
         with self.events.indices_changed.suppress():
             for value, axis in zip(coordinates, self.navigation_axes):
@@ -2339,8 +2432,8 @@ class AxesManager(t.HasTraits):
         if len(indices) != self.navigation_dimension:
             raise AttributeError(
                 "The number of indices must be equal to the "
-                "navigation dimension that is %i" %
-                self.navigation_dimension)
+                "navigation dimension that is %i" % self.navigation_dimension
+            )
         changes = False
         with self.events.indices_changed.suppress():
             for index, axis in zip(indices, self.navigation_axes):
@@ -2368,10 +2461,14 @@ class AxesManager(t.HasTraits):
 
         """
         if not isiterable(values):
-            values = [values, ] * len(self._axes)
+            values = [
+                values,
+            ] * len(self._axes)
         elif len(values) != len(self._axes):
-            raise ValueError("Values must have the same number"
-                             "of items are axes are in this AxesManager")
+            raise ValueError(
+                "Values must have the same number"
+                "of items are axes are in this AxesManager"
+            )
         for axis, value in zip(self._axes, values):
             setattr(axis, attr, value)
 
@@ -2418,19 +2515,27 @@ class AxesManager(t.HasTraits):
         # which is fine to filter
         # https://github.com/enthought/traitsui/issues/883
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=DeprecationWarning,
-                                    message="'TraitPrefixList'",
-                                    module='traitsui')
-            warnings.filterwarnings("ignore", category=DeprecationWarning,
-                                    message="'TraitMap'",
-                                    module='traits')
-            return get_gui(self=self.navigation_axes,
-                           toolkey="hyperspy.navigation_sliders",
-                           display=display,
-                           toolkit=toolkit,
-                           title=title)
-    gui_navigation_sliders.__doc__ = \
-        """
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                message="'TraitPrefixList'",
+                module="traitsui",
+            )
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                message="'TraitMap'",
+                module="traits",
+            )
+            return get_gui(
+                self=self.navigation_axes,
+                toolkey="hyperspy.navigation_sliders",
+                display=display,
+                toolkit=toolkit,
+                title=title,
+            )
+
+    gui_navigation_sliders.__doc__ = """
         Navigation sliders to control the index of the navigation axes.
 
         Parameters
@@ -2439,6 +2544,7 @@ class AxesManager(t.HasTraits):
         %s
         %s
         """
+
 
 class GeneratorLen:
     """
@@ -2455,6 +2561,7 @@ class GeneratorLen:
     length : int
         The manually-specified length of the generator.
     """
+
     def __init__(self, gen, length):
         self.gen = gen
         self.length = length

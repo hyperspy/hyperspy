@@ -4,22 +4,24 @@ on: [push, pull_request]
 
 jobs:
   run_test_site:
-    name: ${{ matrix.os }}-py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
-    runs-on: ${{ matrix.os }}-latest
+    name: ${{ matrix.os }}-${{ matrix.os_version }}-py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
+    runs-on: ${{ matrix.os }}-${{ matrix.os_version }}
     timeout-minutes: 30
     env:
       MPLBACKEND: agg
       PIP_ARGS: --upgrade -e
-      PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
+      PYTEST_ARGS: --pyargs hyperspy --reruns 3 --instafail
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
+        os_version: [latest]
         PYTHON_VERSION: ['3.9', '3.10', ]
         PIP_SELECTOR: ['[all, tests, coverage]']
         include:
           # test oldest supported version of main dependencies on python 3.8
           - os: ubuntu
+            os_version: latest
             PYTHON_VERSION: '3.8'
             PIP_SELECTOR: '[all, tests, coverage]'
             OLDEST_SUPPORTED_VERSION: true
@@ -27,14 +29,21 @@ jobs:
             LABEL: -oldest
           # test minimum requirement
           - os: ubuntu
+            os_version: latest
             PYTHON_VERSION: '3.12'
             PIP_SELECTOR: '[tests, coverage]'
             LABEL: -minimum
             # Run coverage
           - os: ubuntu
+            os_version: latest
             PYTHON_VERSION: '3.8'
             PIP_SELECTOR: '[all, tests, coverage]'
           - os: ubuntu
+            os_version: latest
+            PYTHON_VERSION: '3.11'
+            PIP_SELECTOR: '[all, tests, coverage]'
+          - os: macos
+            os_version: '14'
             PYTHON_VERSION: '3.11'
             PIP_SELECTOR: '[all, tests, coverage]'
 
@@ -57,6 +66,18 @@ jobs:
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
 
+      - name: Get the number of CPUs
+        id: cpus
+        run: |
+          import os, platform
+          num_cpus = os.cpu_count()
+          print(f"Number of CPU: {num_cpus}")
+          print(f"Architecture: {platform.machine()}")
+          output_file = os.environ["GITHUB_OUTPUT"]
+          with open(output_file, "a", encoding="utf-8") as output_stream:
+              output_stream.write(f"count={num_cpus}\n")
+        shell: python
+
       - name: Display version
         run: |
           python --version
@@ -78,7 +99,7 @@ jobs:
 
       - name: Run test suite
         run: |
-          pytest ${{ env.PYTEST_ARGS }} --cov=. --cov-report=xml
+          pytest ${{ env.PYTEST_ARGS }} -n ${{ steps.cpus.outputs.count }} --cov=. --cov-report=xml
 
       - name: Run doctest (Docstring)
         run: |

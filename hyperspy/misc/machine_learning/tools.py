@@ -47,7 +47,7 @@ def amari(W, A):
     P = W @ A
     m, _ = P.shape
 
-    P_sq = P ** 2
+    P_sq = P**2
 
     P_sq_sum_0 = np.sum(P_sq, axis=0)
     P_sq_max_0 = np.max(P_sq, axis=0)

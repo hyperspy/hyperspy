@@ -27,12 +27,9 @@ from hyperspy.utils.plot import plot_roi_map
 
 
 # params different shapes of data, sig, nav dims
-@pytest.fixture(params=[
-    (1, 1),
-    (1, 2),
-    (2, 1),
-    (2, 2)
-], ids=lambda sn: f's{sn[0]}n{sn[1]}')
+@pytest.fixture(
+    params=[(1, 1), (1, 2), (2, 1), (2, 2)], ids=lambda sn: f"s{sn[0]}n{sn[1]}"
+)
 def test_signal(request):
     sig_dims, nav_dims = request.param
 
@@ -46,18 +43,12 @@ def test_signal(request):
 
     axes = []
 
-    for _, name in zip(range(nav_dims), 'xyz'):
+    for _, name in zip(range(nav_dims), "xyz"):
         axes.append(
-            {
-                "name": name,
-                "size": nav_size,
-                "offset": 0,
-                "scale": 1,
-                "units": "um"
-            }
+            {"name": name, "size": nav_size, "offset": 0, "scale": 1, "units": "um"}
         )
 
-    for _, name in zip(range(sig_dims), ['Ix', 'Iy', 'Iz']):
+    for _, name in zip(range(sig_dims), ["Ix", "Iy", "Iz"]):
         axes.append(
             {
                 "name": name,
@@ -65,7 +56,8 @@ def test_signal(request):
                 "offset": 0,
                 "scale": 1,
                 "units": "nm",
-            })
+            }
+        )
     sig = hs.signals.BaseSignal(
         test_data,
         axes=axes,
@@ -128,10 +120,15 @@ def test_too_many_rois(test_signal):
         plot_roi_map(test_signal, 4)
 
     with pytest.raises(ValueError):
-        plot_roi_map(test_signal, [hs.roi.SpanROI(0, 1),
-                                   hs.roi.SpanROI(1, 2),
-                                   hs.roi.SpanROI(2, 3),
-                                   hs.roi.SpanROI(3, 4)])
+        plot_roi_map(
+            test_signal,
+            [
+                hs.roi.SpanROI(0, 1),
+                hs.roi.SpanROI(1, 2),
+                hs.roi.SpanROI(2, 3),
+                hs.roi.SpanROI(3, 4),
+            ],
+        )
 
 
 def test_passing_rois(test_signal):
@@ -195,27 +192,25 @@ def test_navigator(test_signal, nrois):
 
 
 @sig_mpl_compare("sig")
-@pytest.mark.parametrize("nrois", [1, 2, 3], ids=lambda p: f'rois{p}')
-@pytest.mark.parametrize("roi_out", [1, 2, 3], ids=lambda p: f'out{p}')
+@pytest.mark.parametrize("nrois", [1, 2, 3], ids=lambda p: f"rois{p}")
+@pytest.mark.parametrize("roi_out", [1, 2, 3], ids=lambda p: f"out{p}")
 def test_roi_sums(test_signal, nrois, roi_out):
     all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, nrois)
 
     if roi_out > nrois:
-        pytest.skip((f"skipping test with roi_out={roi_out} as only "
-                     f"nrois={nrois}"))
+        pytest.skip((f"skipping test with roi_out={roi_out} as only " f"nrois={nrois}"))
 
     roi_sig = roi_sigs[roi_out - 1]
     roi_sum = roi_sums[roi_out - 1]
     roi = rois[roi_out - 1]
 
     assert np.all(
-        np.isclose(roi_sig.nansum(roi_sig.axes_manager.signal_axes).data,
-                   roi_sum.data)
+        np.isclose(roi_sig.nansum(roi_sig.axes_manager.signal_axes).data, roi_sum.data)
     )
 
     for i in range(3):
         lo, hi = roi.left, roi.right
-        within_roi = (lo <= (i * 2) < hi)
+        within_roi = lo <= (i * 2) < hi
 
         if within_roi:
             assert np.isin(i + 1, roi_sig.inav[i])
@@ -245,8 +240,7 @@ def test_interaction(test_signal, which_plot):
     roi.left = 6.0
     roi.right = 12.0
 
-    assert before_move.data.shape != roi_sig.data.shape or \
-        before_move != roi_sig
+    assert before_move.data.shape != roi_sig.data.shape or before_move != roi_sig
 
     for i in range(3):
         assert not np.isin(i + 1, roi_sig.data)
