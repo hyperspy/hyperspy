@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from functools import wraps
+from packaging.version import Version
 
 import numpy as np
 
@@ -188,9 +189,10 @@ class ComplexSignal(BaseSignal):
             connected and use this connectivity to guide the phase unwrapping
             process. If only a single boolean is given, it will apply to all axes.
             Wrap around is not supported for 1D arrays.
-        seed : None or int, default None
-            Unwrapping 2D or 3D images uses random initialization. This sets the
-            seed of the PRNG to achieve deterministic behavior.
+        seed : numpy.random.Generator, int or None, default None
+            Pass to the `rng` argument of the :func:`~skimage.restoration.unwrap_phase`
+            function. Unwrapping 2D or 3D images uses random initialization.
+            This sets the seed of the PRNG to achieve deterministic behavior.
         %s
         %s
 
@@ -208,16 +210,23 @@ class ComplexSignal(BaseSignal):
         Vol. 41, No. 35, pp. 7437, 2002
 
         """
+        import skimage
         from skimage.restoration import unwrap_phase
+
+        kwargs = {}
+        if Version(skimage.__version__) >= Version("0.21"):
+            kwargs["rng"] = seed
+        else:
+            kwargs["seed"] = seed
 
         phase = self.phase
         phase.map(
             unwrap_phase,
             wrap_around=wrap_around,
-            seed=seed,
             show_progressbar=show_progressbar,
             ragged=False,
             num_workers=num_workers,
+            **kwargs,
         )
         phase.metadata.General.title = f"unwrapped {phase.metadata.General.title}"
         return phase  # Now unwrapped!

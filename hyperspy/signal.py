@@ -6841,7 +6841,7 @@ class BaseSignal(
         elif window == "tukey":
 
             def window_function(m):
-                return sp_signal.tukey(m, tukey_alpha)
+                return sp_signal.windows.tukey(m, tukey_alpha)
         else:
             raise ValueError("Wrong type parameter value.")
 
