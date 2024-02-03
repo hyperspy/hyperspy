@@ -18,7 +18,7 @@
 
 import numpy as np
 import pytest
-from scipy.signal import tukey
+from scipy.signal.windows import tukey
 
 from hyperspy.misc.math_tools import hann_window_nth_order, outer_nd
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
