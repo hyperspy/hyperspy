@@ -47,6 +47,13 @@ class TestIPYMPL:
         captured = capsys.readouterr()
         assert "Canvas(toolbar=Toolbar(" in captured.out
 
+    def test_only_navigation(self, capsys):
+        matplotlib.use("module://ipympl.backend_nbagg")
+        s = hs.signals.Signal2D(np.random.random((2, 2))).T
+        s.plot()
+        captured = capsys.readouterr()
+        assert "Canvas(toolbar=Toolbar(" in captured.out
+
     def test_warnings(
         self,
     ):
