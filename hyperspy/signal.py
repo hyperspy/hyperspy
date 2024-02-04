@@ -3062,10 +3062,14 @@ class BaseSignal(
             slices = [slice(None)] * len(am.navigation_axes)
             slices[2:] = nav_ind
             if len(navigator.axes_manager.signal_axes) > 0:
-                new_nav = navigator.transpose(signal_axes=len(am.navigation_axes)) # roll axes to signal axes
+                new_nav = navigator.transpose(
+                    signal_axes=len(am.navigation_axes)
+                )  # roll axes to signal axes
             else:
-                new_nav=navigator
-            ind = new_nav.isig.__getitem__(slices=slices)  # Get the value from the nav reverse because hyperspy
+                new_nav = navigator
+            ind = new_nav.isig.__getitem__(
+                slices=slices
+            )  # Get the value from the nav reverse because hyperspy
             return np.nan_to_num(to_numpy(ind.data)).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -3133,8 +3137,9 @@ class BaseSignal(
                     )
 
                 # Static navigator
-                if is_shape_compatible(axes_manager.navigation_shape,
-                                       navigator.axes_manager.signal_shape):
+                if is_shape_compatible(
+                    axes_manager.navigation_shape, navigator.axes_manager.signal_shape
+                ):
                     if len(axes_manager.navigation_shape) > 2:
                         self._plot.navigator_data_function = get_dynamic_image_explorer
                     else:
@@ -3175,8 +3180,6 @@ class BaseSignal(
                         )
                 elif navigator == "spectrum":
                     self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
-                elif navigator == "image":
-                    self._plot.navigator_data_function = get_image
             elif navigator is None:
                 self._plot.navigator_data_function = None
             else:

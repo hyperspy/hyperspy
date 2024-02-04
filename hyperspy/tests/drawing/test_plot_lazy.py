@@ -30,9 +30,9 @@ def test_plot_lazy(ndim):
     s.plot()
 
     if ndim == 0:
-        assert s._plot.navigator_data_function == None
+        assert s._plot.navigator_data_function is None
     else:
-        assert s.navigator.data.shape == tuple([N]*ndim)
+        assert s.navigator.data.shape == tuple([N] * ndim)
         assert isinstance(s.navigator, hs.signals.BaseSignal)
 
 
