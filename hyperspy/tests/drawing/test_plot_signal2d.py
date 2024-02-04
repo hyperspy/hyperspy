@@ -835,6 +835,12 @@ def test_plot_images_bool():
     hs.plot.plot_images(s)
 
 
+def test_plot_static_signal_nav():
+    s = hs.signals.Signal2D(np.ones((20, 20, 10, 10)))
+    nav = hs.signals.Signal2D(np.ones((20, 20)))
+    s.plot(navigator=nav)
+
+
 @lazifyTestClass
 class TestDynamicNavigatorPlot:
     def setup_method(self, method):

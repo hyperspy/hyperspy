@@ -3069,16 +3069,6 @@ class BaseSignal(
             )  # Get the value from the nav reverse because hyperspy
             return np.nan_to_num(to_numpy(ind.data)).squeeze()
 
-        def get_dynamic_explorer_wrapper(*args, **kwargs):
-            navigator.axes_manager.indices = self.axes_manager.indices[
-                navigator.axes_manager.signal_dimension :
-            ]
-            navigator.axes_manager._update_attributes()
-            if np.issubdtype(navigator._get_current_data().dtype, np.complexfloating):
-                return abs(navigator._get_current_data(as_numpy=True))
-            else:
-                return navigator(as_numpy=True)
-
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
                 navigator = self.navigator
