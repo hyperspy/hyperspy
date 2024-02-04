@@ -838,14 +838,39 @@ def test_plot_images_bool():
 @lazifyTestClass
 class TestDynamicNavigatorPlot:
     def setup_method(self, method):
-        self.signal5d2d = hs.signals.Signal2D(np.arange((10**5)).reshape((10, 10, 10, 10, 10,)))
-        self.signal6d2d = hs.signals.Signal2D(np.arange((10**6)).reshape((10, 10, 10, 10, 10, 10)))
-        self.signal4d1d = hs.signals.Signal1D(np.arange((10**4)).reshape((10, 10, 10, 10)))
-        self.signal5d1d = hs.signals.Signal1D(np.arange((10**5)).reshape((10, 10, 10, 10, 10,)))
+        self.signal5d2d = hs.signals.Signal2D(
+            np.arange((10**5)).reshape(
+                (
+                    10,
+                    10,
+                    10,
+                    10,
+                    10,
+                )
+            )
+        )
+        self.signal6d2d = hs.signals.Signal2D(
+            np.arange((10**6)).reshape((10, 10, 10, 10, 10, 10))
+        )
+        self.signal4d1d = hs.signals.Signal1D(
+            np.arange((10**4)).reshape((10, 10, 10, 10))
+        )
+        self.signal5d1d = hs.signals.Signal1D(
+            np.arange((10**5)).reshape(
+                (
+                    10,
+                    10,
+                    10,
+                    10,
+                    10,
+                )
+            )
+        )
 
     def test_plot_5d(self):
         import hyperspy.api as hs
         import numpy as np
+
         s = self.signal5d2d
         nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
         s.plot(navigator=nav)
@@ -860,8 +885,11 @@ class TestDynamicNavigatorPlot:
     def test_plot_6d(self):
         import hyperspy.api as hs
         import numpy as np
+
         s = self.signal6d2d
-        nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10 * 10)).reshape(10, 10, 10,10))
+        nav = hs.signals.BaseSignal(
+            np.arange((10 * 10 * 10 * 10)).reshape(10, 10, 10, 10)
+        )
         s.plot(navigator=nav)
         data1 = s._plot.navigator_plot._current_data
         s.axes_manager.indices = (0, 0, 0, 1)
@@ -874,6 +902,7 @@ class TestDynamicNavigatorPlot:
     def test_plot_4d_1dSignal(self):
         import hyperspy.api as hs
         import numpy as np
+
         s = self.signal4d1d
         nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
         s.plot(navigator=nav)
@@ -888,8 +917,11 @@ class TestDynamicNavigatorPlot:
     def test_plot_5d_1dsignal(self):
         import hyperspy.api as hs
         import numpy as np
+
         s = self.signal5d1d
-        nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10 *10 )).reshape(10, 10, 10, 10))
+        nav = hs.signals.BaseSignal(
+            np.arange((10 * 10 * 10 * 10)).reshape(10, 10, 10, 10)
+        )
         s.plot(navigator=nav)
         data1 = s._plot.navigator_plot._current_data
         s.axes_manager.indices = (0, 0, 0, 1)

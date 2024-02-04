@@ -1214,11 +1214,13 @@ class LazySignal(BaseSignal):
         if isinstance(navigator, str):
             if navigator == "spectrum":
                 # We don't support the 'spectrum' option to keep it simple
-                _logger.warning("The `navigator='spectrum'` option is not "
-                                "supported for lazy signals, 'auto' is used "
-                                "instead.")
-                navigator = 'auto'
-            if navigator == 'auto':
+                _logger.warning(
+                    "The `navigator='spectrum'` option is not "
+                    "supported for lazy signals, 'auto' is used "
+                    "instead."
+                )
+                navigator = "auto"
+            if navigator == "auto":
                 if self.navigator is None:
                     self.compute_navigator()
                 navigator = self.navigator
