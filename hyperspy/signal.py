@@ -3151,13 +3151,6 @@ class BaseSignal(
                         self._plot.navigator_data_function = get_dynamic_image_explorer
                     else:
                         self._plot.navigator_data_function = get_static_explorer_wrapper
-                # Dynamic navigator
-                elif (
-                    axes_manager.navigation_shape
-                    == navigator.axes_manager.signal_shape
-                    + navigator.axes_manager.navigation_shape
-                ):
-                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
                 else:
                     raise ValueError(
                         "The dimensions of the provided (or stored) navigator "

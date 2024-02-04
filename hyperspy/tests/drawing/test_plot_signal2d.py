@@ -888,7 +888,6 @@ class TestDynamicNavigatorPlot:
 
         s = self.signal5d2d
         nav = hs.signals.Signal2D(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
-        nav = nav.transpose(navigation_axes=(0, 1, 2))
         s.plot(navigator=nav)
         data1 = s._plot.navigator_plot._current_data
         s.axes_manager.indices = (0, 0, 1)
