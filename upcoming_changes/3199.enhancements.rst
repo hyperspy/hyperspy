@@ -1,0 +1,1 @@
+Add an dynamic navigator which updates when the number of navigation dimensions is greater than 3
