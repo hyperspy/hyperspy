@@ -882,6 +882,21 @@ class TestDynamicNavigatorPlot:
         data3 = s._plot.navigator_plot._current_data
         assert np.array_equal(data2, data3)
 
+    def test_plot_5d_2(self):
+        import hyperspy.api as hs
+        import numpy as np
+
+        s = self.signal5d2d
+        nav = hs.signals.Signal2D(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
+        s.plot(navigator=nav)
+        data1 = s._plot.navigator_plot._current_data
+        s.axes_manager.indices = (0, 0, 1)
+        data2 = s._plot.navigator_plot._current_data
+        assert not np.array_equal(data1, data2)
+        s.axes_manager.indices = (0, 2, 1)
+        data3 = s._plot.navigator_plot._current_data
+        assert np.array_equal(data2, data3)
+
     def test_plot_6d(self):
         import hyperspy.api as hs
         import numpy as np
