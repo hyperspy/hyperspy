@@ -23,6 +23,7 @@ import traits.api as t
 import hyperspy.api as hs
 from hyperspy.drawing.signal1d import Signal1DFigure, Signal1DLine
 from hyperspy.drawing.image import ImagePlot
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import update_close_figure, check_closing_plot
 
 
@@ -291,14 +292,11 @@ def test_plot_slider(ndim, sdim):
         check_closing_plot(s, check_data_changed_close=False)
 
 
-@pytest.mark.parametrize("tranpose", [True, False])
 @pytest.mark.parametrize("ndim", [1, 2])
-def test_plot_navigator_plot_signal(ndim, tranpose):
+def test_plot_navigator_plot_signal(ndim):
     test_plot_nav1d = _TestPlot(ndim=ndim, sdim=1, data_type="real")
     s = test_plot_nav1d.signal
     navigator = -s.sum(-1)
-    if tranpose:
-        navigator = navigator.T
     s.plot(navigator=navigator)
     if ndim == 1:
         navigator_data = s._plot.navigator_plot.ax_lines[0]._get_data()
@@ -356,3 +354,12 @@ def test_plot_ragged_array(lazy):
         s = s.as_lazy()
     with pytest.raises(RuntimeError):
         s.plot()
+
+
+def test_plot_navigator_deprecation():
+    s = hs.signals.Signal1D(np.arange(1000).reshape((10, 10, 10)))
+    nav = s.sum(axis=-1).T
+
+    with pytest.warns(VisibleDeprecationWarning):
+        s.plot(navigator=nav)
+        s = s.plot(navigator=nav)

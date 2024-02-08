@@ -45,6 +45,7 @@ from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
 from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
@@ -2277,7 +2278,7 @@ class MVATools(object):
     ):
         """Plot the cluster labels and centers.
 
-        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and 
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and
         :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_signals`, this
         method displays one component at a time.
         Therefore it provides a more compact visualization than then other
@@ -3045,10 +3046,11 @@ class BaseSignal(
                 return s.sum(axis)
 
         def get_static_explorer_wrapper(*args, **kwargs):
+            data = np.nan_to_num(to_numpy(navigator.data))
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
-                return abs(navigator._get_current_data(as_numpy=True))
+                return abs(data)
             else:
-                return navigator._get_current_data(as_numpy=True)
+                return data
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             # Sum over all but the first navigation axis.
@@ -3057,16 +3059,7 @@ class BaseSignal(
             return np.nan_to_num(to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_image_explorer(*args, **kwargs):
-            am = self.axes_manager
-            nav_ind = am.indices[2:]  # image at first 2 nav indices
-            slices = [slice(None)] * len(am.navigation_axes)
-            slices[2:] = nav_ind
-            new_nav = navigator.transpose(
-                signal_axes=len(am.navigation_axes)
-            )  # roll axes to signal axes
-            ind = new_nav.isig.__getitem__(
-                slices=slices
-            )  # Get the value from the nav reverse because hyperspy
+            ind = navigator.inav.__getitem__(slices=self.axes_manager.indices[2:])
             return np.nan_to_num(to_numpy(ind.data)).squeeze()
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
@@ -3094,20 +3087,7 @@ class BaseSignal(
                         s=self,
                         axis=self.axes_manager.signal_axes,
                     )
-                if navigator.axes_manager.navigation_dimension == 1:
-                    navigator = interactive(
-                        f=navigator.as_signal1D,
-                        event=navigator.events.data_changed,
-                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
-                        spectral_axis=0,
-                    )
-                else:
-                    navigator = interactive(
-                        f=navigator.as_signal2D,
-                        event=navigator.events.data_changed,
-                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
-                        image_axes=(0, 1),
-                    )
+
             else:
                 navigator = None
         # Navigator properties
@@ -3115,28 +3095,20 @@ class BaseSignal(
             # check first if we have a signal to avoid comparison of signal with
             # string
             if isinstance(navigator, BaseSignal):
-
-                def is_shape_compatible(navigation_shape, shape):
-                    return (
-                        navigation_shape == shape
-                        or navigation_shape[:2] == shape
-                        or (navigation_shape[0],) == shape
+                if navigator.axes_manager.signal_dimension > 0:
+                    warnings.warn(
+                        "Support for navigator with signal dimension is deprecated, "
+                        "it will be removed in hyperspy 3.0. "
+                        "The navigator must have navigation dimension only.",
+                        VisibleDeprecationWarning,
                     )
+                    navigator = navigator.transpose(signal_axes=[])
 
-                # Static navigator
-                if is_shape_compatible(
-                    axes_manager.navigation_shape, navigator.axes_manager.signal_shape
+                if (
+                    navigator.axes_manager.signal_dimension == 0
+                    and axes_manager.navigation_shape
+                    == navigator.axes_manager.navigation_shape
                 ):
-                    if len(axes_manager.navigation_shape) > 2:
-                        self._plot.navigator_data_function = get_dynamic_image_explorer
-                    else:
-                        self._plot.navigator_data_function = get_static_explorer_wrapper
-                # Static transposed navigator
-                elif is_shape_compatible(
-                    axes_manager.navigation_shape,
-                    navigator.axes_manager.navigation_shape,
-                ):
-                    navigator = navigator.T
                     if len(axes_manager.navigation_shape) > 2:
                         self._plot.navigator_data_function = get_dynamic_image_explorer
                     else:
