@@ -362,4 +362,62 @@ def test_plot_navigator_deprecation():
 
     with pytest.warns(VisibleDeprecationWarning):
         s.plot(navigator=nav)
-        s = s.plot(navigator=nav)
+
+
+@pytest.mark.parametrize("nav_dim", (1, 2, 3))
+def test_plot_navigator_streak(nav_dim):
+    dim = nav_dim + 1
+    shape = (10,) * dim
+    s = hs.signals.Signal1D(np.arange(np.prod(shape)).reshape((10,) * dim))
+
+    s.plot(navigator="streak")
+
+    ref_data = s.inav.__getitem__(slices=tuple((0, 0, 0))[: nav_dim - 1]).data
+    np.testing.assert_allclose(s._plot.navigator_data_function(), ref_data)
+
+    indices = tuple((1, 2, 3))[:nav_dim]
+    s.axes_manager.indices = indices
+    assert s.axes_manager.indices == indices
+    ref_data = s.inav.__getitem__(slices=tuple((1, 2, 3))[: nav_dim - 1]).data
+    np.testing.assert_allclose(s._plot.navigator_data_function(), ref_data)
+
+
+def test_plot_navigator_streak_error():
+    # streak navigator works only for signal 1D.
+    s = hs.signals.Signal2D(np.arange(1000).reshape((10, 10, 10)))
+
+    with pytest.raises(ValueError):
+        s.plot(navigator="streak")
+
+
+def test_plot_navigator_axes():
+    shape = (3, 4, 5, 10)
+    data = np.arange(np.prod(shape)).reshape(shape)
+    s = hs.signals.Signal1D(data)
+    s.plot(navigator_axes=[0, 2])
+    # the first on third navigation axis
+    s._plot.navigator_data_function().shape == (3, 5)
+
+    with pytest.raises(ValueError):
+        s.plot(navigator_axes=[0, 1, 2])
+
+    shape2 = shape[-2:]
+    data2 = np.arange(np.prod(shape2)).reshape(shape2)
+    s2 = hs.signals.Signal1D(data2)
+    s2.plot(
+        navigator_axes=[
+            0,
+        ]
+    )
+
+    # Too many navigation axes
+    with pytest.raises(ValueError):
+        s2.plot(navigator_axes=[0, 1])
+
+    shape3 = (4, 5, 10)
+    data3 = np.arange(np.prod(shape3)).reshape(shape3)
+    s3 = hs.signals.Signal2D(data3)
+
+    # Not a navigation axis
+    with pytest.raises(ValueError):
+        s3.plot(navigator_axes=[1, 2])

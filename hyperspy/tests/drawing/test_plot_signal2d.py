@@ -859,8 +859,7 @@ class TestDynamicNavigatorPlot:
 
     def test_plot_5d(self):
         s = self.signal5d2d
-        nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10)).reshape(10, 10, 10)).T
-        s.plot(navigator=nav)
+        s.plot()
         data1 = s._plot.navigator_plot._current_data
         s.axes_manager.indices = (0, 0, 1)
         data2 = s._plot.navigator_plot._current_data
@@ -871,10 +870,7 @@ class TestDynamicNavigatorPlot:
 
     def test_plot_6d(self):
         s = self.signal6d2d
-        nav = hs.signals.BaseSignal(
-            np.arange((10 * 10 * 10 * 10)).reshape(10, 10, 10, 10)
-        ).T
-        s.plot(navigator=nav)
+        s.plot()
         data1 = s._plot.navigator_plot._current_data
         s.axes_manager.indices = (0, 0, 0, 1)
         data2 = s._plot.navigator_plot._current_data
@@ -885,8 +881,7 @@ class TestDynamicNavigatorPlot:
 
     def test_plot_4d_1dSignal(self):
         s = self.signal4d1d
-        nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10)).reshape(10, 10, 10)).T
-        s.plot(navigator=nav)
+        s.plot()
         data1 = s._plot.navigator_plot._current_data
         s.axes_manager.indices = (0, 0, 1)
         data2 = s._plot.navigator_plot._current_data
@@ -897,10 +892,7 @@ class TestDynamicNavigatorPlot:
 
     def test_plot_5d_1dsignal(self):
         s = self.signal5d1d
-        nav = hs.signals.BaseSignal(
-            np.arange((10 * 10 * 10 * 10)).reshape(10, 10, 10, 10)
-        ).T
-        s.plot(navigator=nav)
+        s.plot()
         data1 = s._plot.navigator_plot._current_data
         s.axes_manager.indices = (0, 0, 0, 1)
         data2 = s._plot.navigator_plot._current_data
