@@ -1303,6 +1303,28 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
 
+    def remove_baseline(self, interactive=False, algorithm="iasls", **kwargs):
+        """
+        Remove baselines using algorithm implemented in pybaselines.
+        """
+        from pybaselines import Baseline
+
+        if interactive:
+            pass
+        else:
+            baseline_fitter = getattr(
+                Baseline(
+                    self.axes_manager.signal_axes[0].axis,
+                    check_finite=False,
+                ),
+                algorithm,
+            )
+
+            def baseline_fitting(data):
+                return data - baseline_fitter(data, **kwargs)[0]
+
+            self.map(baseline_fitting)
+
     @interactive_range_selector
     def crop_signal(
         self,
