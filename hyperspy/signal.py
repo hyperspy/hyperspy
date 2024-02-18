@@ -46,7 +46,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
 from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
@@ -3135,13 +3134,8 @@ class BaseSignal(
             # string
             if isinstance(navigator, BaseSignal):
                 if navigator.axes_manager.signal_dimension > 0:
-                    # Deprecated in 2.1, to be removed in 3.0
-                    warnings.warn(
-                        "Support for navigator with signal dimension is deprecated, "
-                        "it will be removed in hyperspy 3.0. "
-                        "The navigator must have navigation dimension only.",
-                        VisibleDeprecationWarning,
-                    )
+                    # In view of adding support for signal dimension to
+                    # navigator in the future, we don't deprecate
                     navigator = navigator.transpose(signal_axes=[])
 
                 if (
@@ -3174,13 +3168,13 @@ class BaseSignal(
                     self._plot.navigator_data_function = get_dynamic_image_explorer
                 elif navigator == "spectrum":
                     self._plot.navigator_data_function = get_1D_sum_explorer
+                else:
+                    raise ValueError(
+                        'navigator must be one of "spectrum", "streak", "auto", '
+                        '"slider", None or a signal instance.'
+                    )
             elif navigator is None:
                 self._plot.navigator_data_function = None
-            else:
-                raise ValueError(
-                    'navigator must be one of "spectrum", "streak", "auto", '
-                    '"slider", None, a Signal instance'
-                )
 
         self._plot.plot(navigator_axes=navigator_axes, **kwargs)
         self.events.data_changed.connect(self.update_plot, [])

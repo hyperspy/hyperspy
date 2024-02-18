@@ -23,7 +23,6 @@ import traits.api as t
 import hyperspy.api as hs
 from hyperspy.drawing.signal1d import Signal1DFigure, Signal1DLine
 from hyperspy.drawing.image import ImagePlot
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import update_close_figure, check_closing_plot
 
 
@@ -356,12 +355,12 @@ def test_plot_ragged_array(lazy):
         s.plot()
 
 
-def test_plot_navigator_deprecation():
+def test_plot_navigator_with_signal_dimension():
     s = hs.signals.Signal1D(np.arange(1000).reshape((10, 10, 10)))
-    nav = s.sum(axis=-1).T
-
-    with pytest.warns(VisibleDeprecationWarning):
-        s.plot(navigator=nav)
+    nav = s.sum(axis=-1)
+    # Both give the same results
+    s.plot(navigator=nav)
+    s.plot(navigator=nav.T)
 
 
 @pytest.mark.parametrize("nav_dim", (1, 2, 3))
@@ -408,11 +407,7 @@ def test_plot_navigator_axes():
     shape2 = shape[-2:]
     data2 = np.arange(np.prod(shape2)).reshape(shape2)
     s2 = hs.signals.Signal1D(data2)
-    s2.plot(
-        navigator_axes=[
-            0,
-        ]
-    )
+    s2.plot(navigator_axes=[0])
 
     # Too many navigation axes
     with pytest.raises(ValueError):
@@ -422,6 +417,24 @@ def test_plot_navigator_axes():
     data3 = np.arange(np.prod(shape3)).reshape(shape3)
     s3 = hs.signals.Signal2D(data3)
 
-    # Not a navigation axis
+    # Not a navigation axes
     with pytest.raises(ValueError):
-        s3.plot(navigator_axes=[1, 2])
+        s3.plot(navigator_axes=[1])
+
+    # Length of navigation axis too long
+    with pytest.raises(ValueError):
+        s3.plot(navigator_axes=[0, 1])
+
+    # Wrong value
+    with pytest.raises(ValueError):
+        s3.plot(navigator="wrong value")
+
+
+def test_plot_navigator_signal_wrong_shape():
+    shape = (3, 4, 10)
+    data = np.arange(np.prod(shape)).reshape(shape)
+    s = hs.signals.Signal1D(data)
+    navigator = hs.signals.Signal2D(np.ones((20, 30)))
+
+    with pytest.raises(ValueError):
+        s.plot(navigator=navigator)
