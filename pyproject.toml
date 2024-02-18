@@ -88,11 +88,15 @@ file = "COPYING.txt"
 [project.optional-dependencies]
 all = [
     "hyperspy[dask-image]",
+    "hyperspy[baseline]",
     "hyperspy[gui-jupyter]",
     "hyperspy[gui-traitsui]",
     "hyperspy[ipython]",
     "hyperspy[learning]",
     "hyperspy[speed]",
+]
+baseline = [
+    "pybaselines"
 ]
 coverage = [
     "pytest-cov",
