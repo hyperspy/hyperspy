@@ -395,8 +395,12 @@ def test_plot_navigator_axes():
     data = np.arange(np.prod(shape)).reshape(shape)
     s = hs.signals.Signal1D(data)
     s.plot(navigator_axes=[0, 2])
-    # the first on third navigation axis
+    # the first and third navigation axis
     s._plot.navigator_data_function().shape == (3, 5)
+
+    s.plot(navigator_axes=[2, 0])
+    # the third and first navigation axis
+    s._plot.navigator_data_function().shape == (5, 3)
 
     with pytest.raises(ValueError):
         s.plot(navigator_axes=[0, 1, 2])

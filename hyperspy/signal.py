@@ -3084,11 +3084,18 @@ class BaseSignal(
             return np.nan_to_num(to_numpy(navigator.data))
 
         def get_dynamic_image_explorer(*args, **kwargs):
+            # Find the indices to slice the correct slice of the navigator
+            # for when navigation axes > 2
             slices = [
                 Ellipsis if axis in navigator_axes else axis.index
                 for axis in self.axes_manager.navigation_axes
             ]
+
             data = getitem(navigator.inav, slices).data
+            # transpose slice when axes are not in order
+            axes = [axis.index_in_array for axis in navigator_axes]
+            if axes[1] > axes[0]:
+                data = data.T
             if np.issubdtype(self.data.dtype, np.complexfloating):
                 data = abs(data)
             return np.nan_to_num(to_numpy(data))
