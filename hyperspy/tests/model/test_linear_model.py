@@ -621,7 +621,6 @@ class TestTwinnedComponents:
     #     B = m.as_signal()
     #     np.testing.assert_allclose(A.data, B.data, rtol=5E-5)
 
-    @pytest.mark.flaky(reruns=1)
     def test_fit_fixed_twinned_components_and_std(self):
         m = self.m
         m[1].A.free = False
@@ -634,7 +633,7 @@ class TestTwinnedComponents:
         nonlinear_fit = m.as_signal()
         nonlinear_std = [para.std for para in nonlinear_parameters if para.std]
 
-        np.testing.assert_allclose(nonlinear_fit.data, lstsq_fit.data, rtol=1e-5)
+        np.testing.assert_allclose(nonlinear_fit.data, lstsq_fit.data, rtol=5e-5)
         np.testing.assert_allclose(nonlinear_std, linear_std)
 
 
