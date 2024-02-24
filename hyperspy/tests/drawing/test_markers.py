@@ -1213,3 +1213,30 @@ def test_variable_length_markers_navigation_shape():
     # go to last indices to check that the shape of `offsets` and
     # navigation are aligned and plotting/getting currnet kwargs works fine
     s.axes_manager.indices = np.array(s.axes_manager.navigation_shape) - 1
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
+)
+def test_position_texts_with_mathtext():
+    s = hs.signals.Signal2D(np.arange(25).reshape((5, 5)))
+
+    s.plot()
+
+    offset = [
+        [3, 3],
+    ]
+    raw_text = "$\\bar{1}$"
+
+    point_marker = hs.plot.markers.Points(offset)
+    text_marker = hs.plot.markers.Texts(
+        offset,
+        texts=[
+            raw_text,
+        ],
+        color="red",
+    )
+
+    s.add_marker([point_marker, text_marker])
+
+    return s._plot.signal_plot.figure
