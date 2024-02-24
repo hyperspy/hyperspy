@@ -1,6 +1,7 @@
 from matplotlib import artist, path as mpath, transforms
 from hyperspy.external.matplotlib.path import Path
 from matplotlib.collections import Collection
+from matplotlib.cbook import is_math_text
 from matplotlib.textpath import TextPath, TextToPath
 from matplotlib.font_manager import FontProperties
 import numpy as np
@@ -414,9 +415,11 @@ class TextCollection(Collection):
 
         text_to_path = TextToPath()
         for i, t in enumerate(self._texts):
-            width, height, decent = text_to_path.get_text_width_height_descent(t,
-                                                                               prop=self.prop,
-                                                                               ismath=self.usetex)
+            width, height, decent = text_to_path.get_text_width_height_descent(
+                t,
+                prop=self.prop,
+                ismath=self.usetex or is_math_text(t),
+                )
 
             translation_ = [0, 0]
             if self._horizontalalignment == 'center':
