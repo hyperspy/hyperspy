@@ -530,7 +530,7 @@ def test_plot_images_multi_signal_w_axes_replot():
         fn = plt.gcf()
         tests.append(np.allclose(imi, plt.gca().images[0].get_array().data))
         plt.close(fn)
-    assert np.alltrue(tests)
+    assert np.all(tests)
 
 
 @pytest.mark.parametrize(

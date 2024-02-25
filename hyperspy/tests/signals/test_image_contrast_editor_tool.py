@@ -54,7 +54,7 @@ class TestContrastEditorTool:
         np.testing.assert_allclose(ax_image.norm.vmax, 90)
 
         ceditor._clear_span_selector()
-        assert not ceditor.span_selector.visible
+        assert not ceditor.span_selector.get_visible()
         np.testing.assert_allclose(ax_image.norm.vmin, 20)
         np.testing.assert_allclose(ax_image.norm.vmax, 90)
 
