@@ -498,9 +498,9 @@ class TestSamfireWorker:
         )
         self.vals.update(
             {
-                "signal.data": self.model.signal(),
+                "signal.data": self.model.signal._get_current_data(),
                 "fitting_kwargs": {},
-                "variance.data": self.model.signal.metadata.Signal.Noise_properties.variance(),
+                "variance.data": self.model.signal.metadata.Signal.Noise_properties.variance._get_current_data(),
             }
         )
         keyword, (_id, _ind, result, found_solution) = worker.run_pixel(
