@@ -18,6 +18,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.signal_tools import ImageContrastEditor
@@ -88,6 +89,7 @@ class TestContrastEditorTool:
         np.testing.assert_allclose(ceditor._vmax, 98.01)
 
 
+@pytest.mark.filterwarnings("ignore:FigureCanvasAgg is non-interactive")
 def test_close_vmin_vmax():
     data = np.random.random(10 * 10 * 10).reshape([10] * 3)
     s = hs.signals.Signal2D(data)

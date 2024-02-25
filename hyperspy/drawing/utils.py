@@ -1875,6 +1875,9 @@ def plot_roi_map(signal, rois=1):
     sig_dims = len(signal.axes_manager.signal_axes)
     nav_dims = len(signal.axes_manager.navigation_axes)
 
+    if signal.axes_manager.signal_dimension == 0:
+        raise ValueError("The signal must have signal dimension > 0.")
+
     if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
         warnings.warn(
             (

@@ -100,11 +100,10 @@ def test_args_wrong_shape():
     three_sigs = sig5.transpose(3)
     three_navs = sig5.transpose(2)
 
-    unsupported_sigs = [no_sig, no_nav, three_sigs, three_navs]
+    unsupported_sigs = [no_nav, three_sigs, three_navs]
 
-    for sig in unsupported_sigs:
-        with pytest.raises(ValueError):
-            plot_roi_map(no_sig, 1)
+    with pytest.raises(ValueError):
+        plot_roi_map(no_sig, 1)
 
     for sig in unsupported_sigs:
         # value error also raised because 1D ROI not right shape
