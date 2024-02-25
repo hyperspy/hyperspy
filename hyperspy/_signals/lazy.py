@@ -806,6 +806,10 @@ class LazySignal(BaseSignal):
             ),
             da.nanmax(data),
         )
+        # unlike np.percentile, da.percentile returns array
+        _q1 = _q1 if np.isscalar(_q1) else _q1[0]
+        _q2 = _q2 if np.isscalar(_q2) else _q2[0]
+        _q3 = _q3 if np.isscalar(_q3) else _q3[0]
         return _mean, _std, _min, _q1, _q2, _q3, _max
 
     def _block_iterator(
