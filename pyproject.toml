@@ -189,6 +189,7 @@ doctest_optionflags = [
 exclude = [
     "hyperspy/external/*",
     "examples",
+    "conftest.py",
     ]
 
 [tool.setuptools.package-data]
