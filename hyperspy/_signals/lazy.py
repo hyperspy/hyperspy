@@ -678,7 +678,7 @@ class LazySignal(BaseSignal):
         axis = self.axes_manager[axis]
         data = self._lazy_data(axis=axis, rechunk=rechunk)
         new_data = data.map_blocks(
-            integrate.simps,
+            integrate.simpson,
             x=axis.axis,
             axis=axis.index_in_array,
             drop_axis=axis.index_in_array,

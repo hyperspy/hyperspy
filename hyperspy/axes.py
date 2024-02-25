@@ -1264,11 +1264,13 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             index = rounding(index)
 
         if isinstance(value, np.ndarray):
+            if np.isnan(value).any():
+                raise ValueError("The value can't be 'Not a Number'.")
             index = index.astype(int)
             if np.all(self.size > index) and np.all(index >= 0):
                 return index
             else:
-                raise ValueError("A value is out of the axis limits")
+                raise ValueError("One of the value is out of the axis limits")
         else:
             index = int(index)
             if self.size > index >= 0:
