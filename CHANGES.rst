@@ -10,6 +10,30 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 
 .. towncrier release notes start
 
+2.0.1 (2024-02-26)
+==================
+
+Bug Fixes
+---------
+
+- Fix bug with side by side plotting of signal containing navigation dimension only. (`#3304 <https://github.com/hyperspy/hyperspy/issues/3304>`_)
+- Fix getting release on some linux system wide install, e.g. Debian or Google colab (`#3318 <https://github.com/hyperspy/hyperspy/issues/3318>`_)
+- Fix incorrect position of ``Texts`` marker when using mathtext. (`#3319 <https://github.com/hyperspy/hyperspy/issues/3319>`_)
+
+
+Maintenance
+-----------
+
+- Update version switcher. (`#3291 <https://github.com/hyperspy/hyperspy/issues/3291>`_)
+- Fix readme badges and fix broken web links. (`#3298 <https://github.com/hyperspy/hyperspy/issues/3298>`_)
+- Use ruff to lint code. (`#3299 <https://github.com/hyperspy/hyperspy/issues/3299>`_)
+- Use ruff to format code. (`#3300 <https://github.com/hyperspy/hyperspy/issues/3300>`_)
+- Run test suite on osx arm64 on GitHub CI and speed running test suite using all available CPUs (3 or 4) instead of only 2. (`#3305 <https://github.com/hyperspy/hyperspy/issues/3305>`_)
+- Fix API changes in scipy (:func:`scipy.signal.windows.tukey`) and scikit-image (:func:`skimage.restoration.unwrap_phase`). (`#3306 <https://github.com/hyperspy/hyperspy/issues/3306>`_)
+- Fix deprecation warnings and warnings in the test suite (`#3320 <https://github.com/hyperspy/hyperspy/issues/3320>`_)
+- Add documentation on how the documentation is updated and the required manual changes for minor and major releases. (`#3321 <https://github.com/hyperspy/hyperspy/issues/3321>`_)
+- Add Google Analytics ID to learn more about documentation usage. (`#3322 <https://github.com/hyperspy/hyperspy/issues/3322>`_)
+
 
 .. _changes_2.0:
 

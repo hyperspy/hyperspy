@@ -13,9 +13,9 @@ jobs:
       # optipng is required to optimize thumbnail
       install_package_ubuntu: graphviz optipng
 
-  Push:
+  Push_dev:
     needs: Build
-    # Push only on the "RELEASE_next_minor" branch
+    # Push only on the "RELEASE_next_minor" and update the "dev" documentation
     if: ${{ github.repository_owner == 'hyperspy' && github.ref_name == 'RELEASE_next_minor' }}
     permissions:
       # needs write permission to push the docs to gh-pages
@@ -27,4 +27,18 @@ jobs:
       output_path: 'dev'
     secrets:
       access_token: ${{ secrets.PAT_DOCUMENTATION }}
-    
+
+  Push_tag:
+    needs: Build
+    # Push only on tag and update the "current" documentation
+    if: ${{ github.repository_owner == 'hyperspy' && startsWith(github.ref, 'refs/tags/') }}
+    permissions:
+      # needs write permission to push the docs to gh-pages
+      contents: write
+    # Use the "reusable workflow" from the hyperspy organisation
+    uses: hyperspy/.github/.github/workflows/push_doc.yml@main
+    with:
+      repository: 'hyperspy/hyperspy-doc'
+      output_path: 'current'
+    secrets:
+      access_token: ${{ secrets.PAT_DOCUMENTATION }}

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -1829,8 +1829,8 @@ def plot_roi_map(signal, rois=1):
     The ROIs can be moved interactively and the corresponding plots will
     update automatically.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     signal: :class:`~.api.signals.BaseSignal`
         The signal to inspect.
     rois: int, list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
@@ -1874,6 +1874,9 @@ def plot_roi_map(signal, rois=1):
     """
     sig_dims = len(signal.axes_manager.signal_axes)
     nav_dims = len(signal.axes_manager.navigation_axes)
+
+    if signal.axes_manager.signal_dimension == 0:
+        raise ValueError("The signal must have signal dimension > 0.")
 
     if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
         warnings.warn(

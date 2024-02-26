@@ -1,5 +1,4 @@
 
-
 .. _writing_documentation-label:
 
 Writing documentation
@@ -101,3 +100,22 @@ cross-references. For example, to find how to write a cross-reference to
   Name                                                      Score
   ---------------------------------------------------------  -------
   :meth:`hyperspy.signal.BaseSignal.set_signal_type`      90
+
+.. _versioned_documentation:
+
+Hosting versioned documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Builds of the documentation for each minor and major release are hosted in the https://github.com/hyperspy/hyperspy-doc
+repository and are used by the `version switcher <https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/version-dropdown.html>`_
+of the documentation.
+
+The ``"dev"`` version is updated automatically when pushing on the ``RELEASE_next_minor`` branch and the `"current"` (stable)
+version is updated automatically when a tag is pushed.
+When releasing a minor and major release, two manual steps are required:
+
+1. in https://github.com/hyperspy/hyperspy-doc, copy the "current" stable documentation to a separate folder named with the corresponding version 
+2. update the documentation version switch, in ``doc/_static/switcher.json``:
+
+   - copy and paste the `"current"`` documentation entry
+   - update the version in the "current" entry to match the version to be released, e.g. increment the minor or major digit
+   - in the newly created entry, update the link to the folder created in step 1.

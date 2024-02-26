@@ -1,4 +1,4 @@
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -180,7 +180,7 @@ def test_plot_constrast_editor_setting_changed():
     assert not ceditor.auto
     ceditor.auto = True  # reset and clear span selector
     assert ceditor.auto
-    assert not ceditor.span_selector.visible
+    assert not ceditor.span_selector.get_visible()
     assert not ceditor._is_selector_visible
     assert not ceditor.line.line.get_visible()
     ceditor.span_selector.extents = (3e3, 5e3)
@@ -214,7 +214,7 @@ def test_plot_constrast_editor_auto_indices_changed():
     ceditor.update_span_selector_traits()
     s.axes_manager.indices = (0, 1)
     # auto is None by default, the span selector need to be removed:
-    assert not ceditor.span_selector.visible
+    assert not ceditor.span_selector.get_visible()
     assert not ceditor._is_selector_visible
     ref_value = (100020.046452, 110953.450532)
     np.testing.assert_allclose(ceditor._get_current_range(), ref_value)
@@ -241,7 +241,7 @@ def test_plot_constrast_editor_reset():
     np.testing.assert_allclose(ceditor._get_current_range(), (3e3, 5e3))
 
     ceditor.reset()
-    assert not ceditor.span_selector.visible
+    assert not ceditor.span_selector.get_visible()
     assert not ceditor._is_selector_visible
     np.testing.assert_allclose(ceditor._get_current_range(), (vmin, vmax))
     np.testing.assert_allclose(ceditor.image._vmin, vmin)
@@ -259,7 +259,7 @@ def test_plot_constrast_editor_apply():
     ceditor._update_image_contrast()
     image_vmin_vmax = ceditor.image._vmin, ceditor.image._vmax
     ceditor.apply()
-    assert not ceditor.span_selector.visible
+    assert not ceditor.span_selector.get_visible()
     assert not ceditor._is_selector_visible
     np.testing.assert_allclose(
         (ceditor.image._vmin, ceditor.image._vmax),

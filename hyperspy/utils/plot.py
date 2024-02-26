@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -29,7 +29,7 @@ plot_signals
 plot_histograms
     Compute and plot the histograms of multiple signals in the same figure.
 plot_roi_map
-    Plot a the spatial variation of a ROI within a `Signal`\ s signal axes.
+    Plot a the spatial variation of a signal sliced by a ROI in the signal space.
 
 The :mod:`hyperspy.api.plot` module contains the following submodules:
 

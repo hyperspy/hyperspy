@@ -9,6 +9,7 @@ Create a PR to the `RELEASE_next_patch` branch and go through the following step
   - update the release notes in `CHANGES.rst` by running `towncrier`,
   - update the `setuptools_scm` fallback version in `pyproject.toml`.
 - Check release notes
+- For a minor or major release, update the versioned documentation repository and documentation version switcher according to the instruction in the [developer guide](https://hyperspy.org/hyperspy-doc/current/dev_guide/writing_docs.html#hosting-versioned-documentation)
 - (optional) check conda-forge and wheels build. Pushing a tag to a fork will run the release workflow without uploading to pypi
 - Let that PR collect comments for a day to ensure that other maintainers are comfortable with releasing
 

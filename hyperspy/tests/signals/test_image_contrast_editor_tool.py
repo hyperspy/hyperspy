@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,6 +18,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.signal_tools import ImageContrastEditor
@@ -54,7 +55,7 @@ class TestContrastEditorTool:
         np.testing.assert_allclose(ax_image.norm.vmax, 90)
 
         ceditor._clear_span_selector()
-        assert not ceditor.span_selector.visible
+        assert not ceditor.span_selector.get_visible()
         np.testing.assert_allclose(ax_image.norm.vmin, 20)
         np.testing.assert_allclose(ax_image.norm.vmax, 90)
 
@@ -88,6 +89,7 @@ class TestContrastEditorTool:
         np.testing.assert_allclose(ceditor._vmax, 98.01)
 
 
+@pytest.mark.filterwarnings("ignore:FigureCanvasAgg is non-interactive")
 def test_close_vmin_vmax():
     data = np.random.random(10 * 10 * 10).reshape([10] * 3)
     s = hs.signals.Signal2D(data)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -269,7 +269,8 @@ def _shift1D(data, **kwargs):
     shift = kwargs.get("shift", 0.0)
     original_axis = kwargs.get("original_axis", None)
 
-    if np.isnan(shift) or shift == 0:
+    # shift.size for cases where shift is empty
+    if shift.size == 0 or np.isnan(shift) or shift == 0:
         return data
 
     data = ma.masked_invalid(data)
@@ -1507,6 +1508,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             peakgroup=peakgroup,
             subchannel=subchannel,
             ragged=True,
+            output_dtype=object,
+            output_signal_size=(),
             num_workers=num_workers,
             inplace=False,
             lazy_output=False,

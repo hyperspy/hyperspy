@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -1401,7 +1401,7 @@ class Line2DROI(BaseInteractiveROI):
                 img = np.rollaxis(img, idx[1], 0)
                 img = np.rollaxis(img, idx[0], 0)
             orig_shape = img.shape
-            img = np.reshape(img, orig_shape[0:2] + (np.product(orig_shape[2:]),))
+            img = np.reshape(img, orig_shape[0:2] + (np.prod(orig_shape[2:]),))
             pixels = [
                 nd.map_coordinates(
                     img[..., i].T, perp_lines, order=order, mode=mode, cval=cval

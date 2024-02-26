@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -344,6 +344,8 @@ class TestChangingAxes:
         for ax, name in zip(self.base.axes_manager._axes, _alphabet):
             ax.name = name
 
+    # warning is platform dependent and reason unknown
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in reduce")
     def test_one_nav_reducing(self):
         s = self.base.transpose(signal_axes=4).inav[0, 0]
         s.map(np.mean, axis=1, ragged=self.ragged)

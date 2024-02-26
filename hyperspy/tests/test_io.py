@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -27,6 +27,7 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signals import Signal1D
 from hyperspy.axes import DataAxis
 from rsciio import IO_PLUGINS
@@ -314,7 +315,8 @@ def test_load_save_filereader_metadata(tmp_path):
     # appended through a save and load cycle
 
     fname = PATH.parent / "drawing" / "data" / "Cr_L_cl.hspy"
-    s = hs.load(fname)
+    with pytest.warns(VisibleDeprecationWarning):
+        s = hs.load(fname)
     assert s.metadata.General.FileIO.Number_0.io_plugin == "rsciio.hspy"
     assert s.metadata.General.FileIO.Number_0.operation == "load"
     assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version

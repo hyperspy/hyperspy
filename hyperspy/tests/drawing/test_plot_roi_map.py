@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from functools import wraps
 
 import pytest
 import numpy as np
@@ -72,24 +71,6 @@ def test_signal(request):
     return sig
 
 
-def sig_mpl_compare(type: set(["sig", "nav"])):
-    def wrapper(f):
-        @pytest.mark.mpl_image_compare(baseline_dir="plot_roi_map")
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            sig = f(*args, **kwargs)
-            if type == "sig":
-                fig = sig._plot.signal_plot.figure
-            elif type == "nav":
-                fig = sig._plot.navigation_plot.figure
-
-            return fig
-
-        return wrapped
-
-    return wrapper
-
-
 def test_args_wrong_shape():
     sig2 = hs.signals.BaseSignal(np.empty((1, 1)))
 
@@ -100,11 +81,10 @@ def test_args_wrong_shape():
     three_sigs = sig5.transpose(3)
     three_navs = sig5.transpose(2)
 
-    unsupported_sigs = [no_sig, no_nav, three_sigs, three_navs]
+    unsupported_sigs = [no_nav, three_sigs, three_navs]
 
-    for sig in unsupported_sigs:
-        with pytest.raises(ValueError):
-            plot_roi_map(no_sig, 1)
+    with pytest.raises(ValueError):
+        plot_roi_map(no_sig, 1)
 
     for sig in unsupported_sigs:
         # value error also raised because 1D ROI not right shape
@@ -113,28 +93,22 @@ def test_args_wrong_shape():
                 plot_roi_map(sig, [hs.roi.Point1DROI(0)])
 
 
-def test_too_many_rois(test_signal):
-    plot_roi_map(test_signal, 1)
+def test_too_many_rois():
+    s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
+    plot_roi_map(s, 1)
 
     with pytest.raises(ValueError):
-        plot_roi_map(test_signal, 4)
+        plot_roi_map(s, 4)
 
     with pytest.raises(ValueError):
-        plot_roi_map(
-            test_signal,
-            [
-                hs.roi.SpanROI(0, 1),
-                hs.roi.SpanROI(1, 2),
-                hs.roi.SpanROI(2, 3),
-                hs.roi.SpanROI(3, 4),
-            ],
-        )
+        plot_roi_map(s, [hs.roi.SpanROI() for _ in range(4)])
 
 
-def test_passing_rois(test_signal):
-    _, int_rois, int_roi_sigs, int_roi_sums = plot_roi_map(test_signal, 3)
+def test_passing_rois():
+    s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
+    _, int_rois, int_roi_sigs, int_roi_sums = plot_roi_map(s, 3)
 
-    _, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, int_rois)
+    _, rois, roi_sigs, roi_sums = plot_roi_map(s, int_rois)
 
     assert rois is int_rois
 
@@ -146,83 +120,61 @@ def test_passing_rois(test_signal):
     assert int_roi_sums == roi_sums
 
 
-def test_roi_positioning(test_signal):
-    _, rois, *_ = plot_roi_map(test_signal, 1)
-
-    sig_size = test_signal.axes_manager.signal_axes[0].size
+def test_roi_positioning():
+    s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
+    _, rois, *_ = plot_roi_map(s, 1)
 
     assert len(rois) == 1
 
-    assert rois[0].left == pytest.approx(0)
-    assert rois[0].right == pytest.approx(sig_size // 2)
+    assert rois[0].left == 0
+    assert rois[0].right == 4.5
 
-    _, rois, *_ = plot_roi_map(test_signal, 2)
+    _, rois, *_ = plot_roi_map(s, 2)
 
     assert len(rois) == 2
-    assert rois[0].left == pytest.approx(0)
-    assert rois[0].right == pytest.approx(sig_size // 4)
-    assert rois[1].left == pytest.approx(sig_size // 4)
-    assert rois[1].right == pytest.approx(sig_size // 2)
+    assert rois[0].left == 0
+    assert rois[0].right == 2.25
+    assert rois[1].left == 2.25
+    assert rois[1].right == 4.5
 
     # no overlap
     assert rois[0].right <= rois[1].left
 
-    _, rois, *_ = plot_roi_map(test_signal, 3)
+    _, rois, *_ = plot_roi_map(s, 3)
 
     assert len(rois) == 3
-    assert rois[0].left == pytest.approx(0)
-    assert rois[0].right == pytest.approx(sig_size // 6)
-    assert rois[1].left == pytest.approx(sig_size // 6)
-    assert rois[1].right == pytest.approx(sig_size // 3)
-    assert rois[2].left == pytest.approx(sig_size // 3)
-    assert rois[2].right == pytest.approx(sig_size // 2)
+    assert rois[0].left == 0
+    assert rois[0].right == 1.5
+    assert rois[1].left == 1.5
+    assert rois[1].right == 3
+    assert rois[2].left == 3
+    assert rois[2].right == 4.5
 
     # no overlap
     assert rois[0].right <= rois[1].left and rois[1].right <= rois[2].left
 
 
-@sig_mpl_compare("sig")
+@pytest.mark.mpl_image_compare(baseline_dir="plot_roi_map")
 @pytest.mark.parametrize("nrois", [1, 2, 3])
 def test_navigator(test_signal, nrois):
     all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, nrois)
 
     assert np.all(all_sums.data == test_signal.sum().data)
 
-    return all_sums
+    return all_sums._plot.signal_plot.figure
 
 
-@sig_mpl_compare("sig")
-@pytest.mark.parametrize("nrois", [1, 2, 3], ids=lambda p: f"rois{p}")
-@pytest.mark.parametrize("roi_out", [1, 2, 3], ids=lambda p: f"out{p}")
-def test_roi_sums(test_signal, nrois, roi_out):
-    all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, nrois)
+def test_roi_sums():
+    # check that the sum is correct
+    s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
 
-    if roi_out > nrois:
-        pytest.skip((f"skipping test with roi_out={roi_out} as only " f"nrois={nrois}"))
+    all_sum, rois, roi_signals, roi_sums = hs.plot.plot_roi_map(s, 2)
 
-    roi_sig = roi_sigs[roi_out - 1]
-    roi_sum = roi_sums[roi_out - 1]
-    roi = rois[roi_out - 1]
-
-    assert np.all(
-        np.isclose(roi_sig.nansum(roi_sig.axes_manager.signal_axes).data, roi_sum.data)
-    )
-
-    for i in range(3):
-        lo, hi = roi.left, roi.right
-        within_roi = lo <= (i * 2) < hi
-
-        if within_roi:
-            assert np.isin(i + 1, roi_sig.inav[i])
-            assert roi_sum.isig[i].data.mean() > 0.0
-        else:
-            assert not np.isin(i + 1, roi_sig.inav[i])
-            assert not (roi_sum.isig[i].data.mean() > 0.0)
-
-    return roi_sum
+    for roi_signal, roi_sum in zip(roi_signals, roi_sums):
+        np.testing.assert_allclose(roi_signal.sum(-1), roi_sum.data)
 
 
-@sig_mpl_compare("sig")
+@pytest.mark.mpl_image_compare(baseline_dir="plot_roi_map")
 @pytest.mark.parametrize("which_plot", ["all_sums", "roi_sums"])
 def test_interaction(test_signal, which_plot):
     all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, 1)
@@ -246,6 +198,6 @@ def test_interaction(test_signal, which_plot):
         assert not np.isin(i + 1, roi_sig.data)
 
     if which_plot == "all_sums":
-        return all_sums
+        return all_sums._plot.signal_plot.figure
     elif which_plot == "roi_sums":
-        return roi_sums[0]
+        return roi_sums[0]._plot.signal_plot.figure

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -171,8 +171,8 @@ class PowerLaw(Expression):
                 return False
 
         if only_current is True:
-            self.r.value = r
-            self.A.value = A
+            self.r.value = r[0]
+            self.A.value = A[0]
             return True
 
         if out:

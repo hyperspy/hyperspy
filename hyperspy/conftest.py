@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,7 +17,12 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import importlib
+import os
 from pathlib import Path
+
+# memory leak in kmeans with mkl
+os.environ["OMP_NUM_THREADS"] = "1"
+
 
 try:
     # Set traits toolkit to work in a headless system

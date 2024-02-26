@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -259,7 +259,7 @@ class TestEstimateElbowPosition:
         assert s.learning_results.number_significant_components == 2
 
         # Check that number_significant_components is reset properly
-        s.decomposition(algorithm="NMF")
+        s.decomposition(algorithm="NMF", max_iter=500)
         assert s.learning_results.number_significant_components is None
 
 
@@ -536,7 +536,7 @@ def test_decomposition_reproject_warning(reproject):
     with pytest.warns(
         UserWarning, match="Reprojecting the signal is not yet supported"
     ):
-        s.decomposition(algorithm="NMF", reproject=reproject)
+        s.decomposition(algorithm="NMF", reproject=reproject, max_iter=500)
 
 
 @skip_sklearn

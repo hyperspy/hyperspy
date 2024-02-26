@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -272,7 +272,7 @@ class TestPlotRangeWidget:
         range_widget._is_on = False
 
         range_widget.set_on(True, render_figure=render_figure)
-        assert range_widget.span.visible
+        assert range_widget.span.get_visible()
 
         range_widget.set_on(False, render_figure=render_figure)
         assert range_widget.span is None
