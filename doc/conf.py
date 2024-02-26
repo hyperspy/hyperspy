@@ -175,6 +175,9 @@ version_match = "dev" if "dev" in _version else ".".join(_version.split(".")[:2]
 print("version_match:", version_match)
 
 html_theme_options = {
+    "analytics": {
+        "google_analytics_id": "G-B0XD0GTW1M",
+    },
     "show_toc_level": 2,
     "github_url": "https://github.com/hyperspy/hyperspy",
     "icon_links": [
