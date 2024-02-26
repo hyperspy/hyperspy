@@ -4632,7 +4632,7 @@ class BaseSignal(
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        data = integrate.simps(y=self.data, x=axis.axis, axis=axis.index_in_array)
+        data = integrate.simpson(y=self.data, x=axis.axis, axis=axis.index_in_array)
         if out is not None:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)

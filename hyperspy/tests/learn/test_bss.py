@@ -113,6 +113,8 @@ def test_bss_pipeline():
     assert hasattr(out.named_steps["ica"], "components_")
 
 
+# This warning is platform dependent
+@pytest.mark.filterwarnings("ignore:Cannot invert unmixing matrix")
 @pytest.mark.parametrize("whiten_method", ["PCA", "ZCA"])
 def test_orthomax(whiten_method):
     rng = np.random.RandomState(123)
@@ -129,6 +131,7 @@ def test_orthomax(whiten_method):
     s = hs.data.two_gaussians()
     s.change_dtype("float64")
     s.decomposition()
+
     s.blind_source_separation(2, algorithm="orthomax", gamma=2)
 
 

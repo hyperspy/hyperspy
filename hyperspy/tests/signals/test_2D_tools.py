@@ -93,6 +93,7 @@ class TestSubPixelAlign:
         )
         np.testing.assert_allclose(shifts, self.shifts, rtol=2, atol=0.2, verbose=True)
 
+    @pytest.mark.filterwarnings("ignore:FigureCanvasAgg is non-interactive")
     @pytest.mark.parametrize(("plot"), [True, "reuse"])
     def test_estimate_subpix_plot(self, plot):
         # To avoid this function plotting many figures and holding the test, we

@@ -250,6 +250,10 @@ class _SelectorWidget(AxesWidget):
     def _on_key_release(self, event):
         """Key release event handler."""
 
+    def get_visible(self):
+        """Get the visibility of the selector artists."""
+        return self.visible
+
     def set_visible(self, visible):
         """Set the visibility of our artists."""
         self.visible = visible

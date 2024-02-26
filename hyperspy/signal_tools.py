@@ -1393,7 +1393,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.model._calculate_chisq()
         else:
             self.model.fit()
-        self.red_chisq = self.model.red_chisq.data[self.model.axes_manager.indices]
+        self.red_chisq = self.model.red_chisq.data[self.model.axes_manager.indices][0]
 
     def _update_line(self):
         if self.bg_line is None:

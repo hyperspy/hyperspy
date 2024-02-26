@@ -35,7 +35,10 @@ class TestFindPeaks1DOhaver:
 
     def test_find_peaks1D_ohaver_high_amp_thres(self):
         signal1D = self.signal
-        peak_list = signal1D.find_peaks1D_ohaver(amp_thresh=10.0)[0]
+        # Disable medium filter to avoid warning; reason unknown
+        # UserWarning: kernel_size exceeds volume extent: the volume will be zero-padded.
+        # d = np.gradient(medfilt(y, medfilt_radius))
+        peak_list = signal1D.find_peaks1D_ohaver(amp_thresh=10.0, medfilt_radius=0)[0]
         assert len(peak_list) == 0
 
     def test_find_peaks1D_ohaver_zero_value_bug(self):

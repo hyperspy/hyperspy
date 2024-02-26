@@ -21,7 +21,7 @@ dependencies:
 - rosettasciio-base
 - scikit-image >=0.18
 - scikit-learn >=1.0.1
-- scipy >=1.5.0
+- scipy >=1.6.0
 - sympy >=1.6.0
 - tqdm >=4.9.0
 - traits >=4.5.0

@@ -24,6 +24,11 @@ ipympl = pytest.importorskip("ipympl")
 ipywidgets = pytest.importorskip("ipywidgets")
 
 
+# ipympl issue: https://github.com/matplotlib/ipympl/issues/236
+# DeprecationWarning: Passing unrecognized arguments to
+# super(Toolbar).__init__(). NavigationToolbar2WebAgg.__init__(
+# missing 1 required positional argument: 'canvas'
+@pytest.mark.filterwarnings("ignore:Passing unrecognized arguments to")
 class TestIPYMPL:
     def test_horizontal(self, capsys):
         matplotlib.use("module://ipympl.backend_nbagg")

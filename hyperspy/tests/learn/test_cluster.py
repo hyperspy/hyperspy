@@ -30,12 +30,7 @@ if import_sklearn.sklearn_installed:
     rng1 = np.random.RandomState(123)
     signal1 = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
     signal1.decomposition()
-    signal1.blind_source_separation(number_of_components=3)
-
-    rng2 = np.random.RandomState(123)
-    signal2 = signals.Signal2D(rng2.uniform(size=(7, 5, 7)))
-    signal2.decomposition()
-    signal2.blind_source_separation(number_of_components=3)
+    signal1.blind_source_separation(number_of_components=3, max_iter=500)
 else:
     # No need to create the data, since BSS will fail
     # if sklearn is missing, and the pytest.importorskip
@@ -122,7 +117,10 @@ class TestCluster1D:
 
 class TestClusterSignalSources:
     def setup_method(self):
-        self.signal = signal2.deepcopy()
+        rng2 = np.random.RandomState(123)
+        s = signals.Signal2D(rng2.uniform(size=(7, 5, 7)))
+        s.decomposition()
+        self.signal = s
         self.navigation_mask = np.zeros((7,), dtype=bool)
         self.navigation_mask[4:6] = True
         self.signal_mask = np.zeros((5, 7), dtype=bool)
@@ -189,7 +187,6 @@ class TestClusterSignalSources:
         )
 
 
-@pytest.mark.filterwarnings("ignore:FastICA did not converge")
 class TestClusterEstimate:
     def setup_method(self):
         rng = np.random.RandomState(123)
@@ -207,7 +204,6 @@ class TestClusterEstimate:
         rng.shuffle(X)
         self.signal = signals.Signal1D(X)
         self.signal.decomposition()
-        self.signal.blind_source_separation(number_of_components=3)
 
     @pytest.mark.parametrize("metric", ("elbow", "silhouette", "gap"))
     def test_metric(self, metric):

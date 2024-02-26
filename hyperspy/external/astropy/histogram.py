@@ -154,6 +154,8 @@ class _KnuthF:
             smaller values indicate a better fit.
 
         """
+        if not np.isscalar(M):
+            M = M[0]
         M = int(M)
 
         if M <= 0:

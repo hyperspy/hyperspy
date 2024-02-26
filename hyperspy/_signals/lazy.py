@@ -678,7 +678,7 @@ class LazySignal(BaseSignal):
         axis = self.axes_manager[axis]
         data = self._lazy_data(axis=axis, rechunk=rechunk)
         new_data = data.map_blocks(
-            integrate.simps,
+            integrate.simpson,
             x=axis.axis,
             axis=axis.index_in_array,
             drop_axis=axis.index_in_array,
@@ -806,6 +806,10 @@ class LazySignal(BaseSignal):
             ),
             da.nanmax(data),
         )
+        # unlike np.percentile, da.percentile returns array
+        _q1 = _q1 if np.isscalar(_q1) else _q1[0]
+        _q2 = _q2 if np.isscalar(_q2) else _q2[0]
+        _q3 = _q3 if np.isscalar(_q3) else _q3[0]
         return _mean, _std, _min, _q1, _q2, _q3, _max
 
     def _block_iterator(
