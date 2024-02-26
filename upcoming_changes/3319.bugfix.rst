@@ -1,1 +1,0 @@
-Fix incorrect position of ``Texts`` marker when using mathtext.

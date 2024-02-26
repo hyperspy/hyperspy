@@ -1,1 +1,0 @@
-Fix readme badges and fix broken web links.

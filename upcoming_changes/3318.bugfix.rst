@@ -1,1 +1,0 @@
-Fix getting release on some linux system wide install, e.g. Debian or Google colab
