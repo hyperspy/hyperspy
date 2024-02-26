@@ -1,1 +1,1 @@
-Add documentation on how the documentation is updated and the required manual changes for minor and major release.
+Add documentation on how the documentation is updated and the required manual changes for minor and major releases.

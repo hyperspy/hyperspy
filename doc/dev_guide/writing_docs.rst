@@ -105,12 +105,12 @@ cross-references. For example, to find how to write a cross-reference to
 
 Hosting versioned documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Build of the documentation for each minor and major release are hosted in the https://github.com/hyperspy/hyperspy-doc
-repository and is used by the `version switcher <https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/version-dropdown.html>`_
+Builds of the documentation for each minor and major release are hosted in the https://github.com/hyperspy/hyperspy-doc
+repository and are used by the `version switcher <https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/version-dropdown.html>`_
 of the documentation.
 
-The `"dev"`` version is updated automatically when pushing on the ``RELEASE_next_minor`` branch and the `"current"` (stable)
-version is updated automatically on tag.
+The ``"dev"`` version is updated automatically when pushing on the ``RELEASE_next_minor`` branch and the `"current"` (stable)
+version is updated automatically when a tag is pushed.
 When releasing a minor and major release, two manual steps are required:
 
 1. in https://github.com/hyperspy/hyperspy-doc, copy the "current" stable documentation to a separate folder named with the corresponding version 
