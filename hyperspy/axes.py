@@ -1270,7 +1270,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             if np.all(self.size > index) and np.all(index >= 0):
                 return index
             else:
-                raise ValueError("One of the value is out of the axis limits")
+                raise ValueError("One of the values is out of the axis limits")
         else:
             index = int(index)
             if self.size > index >= 0:
