@@ -1829,8 +1829,8 @@ def plot_roi_map(signal, rois=1):
     The ROIs can be moved interactively and the corresponding plots will
     update automatically.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     signal: :class:`~.api.signals.BaseSignal`
         The signal to inspect.
     rois: int, list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
