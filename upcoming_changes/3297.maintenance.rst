@@ -1,1 +1,0 @@
-Setup workflow to push development documentation automatically

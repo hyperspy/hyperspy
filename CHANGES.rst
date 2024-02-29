@@ -33,7 +33,7 @@ Maintenance
 - Fix deprecation warnings and warnings in the test suite (`#3320 <https://github.com/hyperspy/hyperspy/issues/3320>`_)
 - Add documentation on how the documentation is updated and the required manual changes for minor and major releases. (`#3321 <https://github.com/hyperspy/hyperspy/issues/3321>`_)
 - Add Google Analytics ID to learn more about documentation usage. (`#3322 <https://github.com/hyperspy/hyperspy/issues/3322>`_)
-
+- Setup workflow to push development documentation automatically. (`#3297 <https://github.com/hyperspy/hyperspy/pull/3297>`_)
 
 .. _changes_2.0:
 

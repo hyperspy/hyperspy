@@ -207,7 +207,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-fallback_version = "2.0.2.dev0"
+fallback_version = "2.1.0.dev0"
 
 [tool.towncrier]
 directory = "upcoming_changes/"
