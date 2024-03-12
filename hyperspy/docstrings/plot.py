@@ -63,10 +63,8 @@ BASE_PLOT_DOCSTRING_PARAMETERS = """navigator : str, None, or :class:`~hyperspy.
             - If ``None``, no navigator will be provided.
 
             Alternatively a :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
-            instance can be provided. The navigation or signal shape must
-            match the navigation shape of the signal to plot or the
-            ``navigation_shape`` + ``signal_shape`` must be equal to the
-            ``navigator_shape`` of the current object (for a dynamic navigator).
+            instance can be provided. The navigation must have navigation dimension
+            only and its shape must match the navigation shape of the signal.
             If the signal ``dtype`` is RGB or RGBA this parameter has no effect and
             the value is always set to ``'slider'``.
         axes_manager : None or :class:`~hyperspy.axes.AxesManager`

@@ -57,7 +57,7 @@ def test_compute_navigator():
     assert s.navigator.original_metadata.sum_from == "[slice(5, 10, None)]"
 
     # change the navigator and check it is used when plotting
-    s.navigator = s.navigator / s.navigator.mean()
+    s.navigator = s.navigator / s.navigator.data.mean()
     s.plot()
     np.testing.assert_allclose(s._plot.navigator_data_function(), s.navigator.data)
 
@@ -144,7 +144,7 @@ def test_plot_navigator_signal():
     N = 15
     dim = 4
     s = hs.signals.Signal2D(da.arange(N**dim).reshape([N] * dim)).as_lazy()
-    nav = s.inav[10, 10]
+    nav = s.isig[10, 10]
     nav.compute()
     nav *= -1
     s.plot(navigator=nav)

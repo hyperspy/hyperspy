@@ -1307,7 +1307,7 @@ class LazySignal(BaseSignal):
         navigator.compute(show_progressbar=show_progressbar)
         navigator.original_metadata.set_item("sum_from", str(isig_slice))
 
-        self.navigator = navigator.T
+        self.navigator = navigator
 
     compute_navigator.__doc__ %= SHOW_PROGRESSBAR_ARG
 

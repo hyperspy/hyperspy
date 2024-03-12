@@ -1,0 +1,1 @@
+Add support for specifying the axes of the navigator and "streak" navigator
