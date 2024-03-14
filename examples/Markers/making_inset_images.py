@@ -11,12 +11,13 @@ import numpy as np
 import hyperspy.api as hs
 import matplotlib
 
-
+# %%
 # Making some artificial data
 
 s = hs.signals.Signal2D(np.random.rand(100, 100, 10, 10))
 signal2 = hs.signals.Signal2D(np.random.rand(10, 10))
 
+# %%
 # Plotting signal2 as an inset image on s
 
 signal2_shape = signal2.axes_manager._signal_shape_in_array
@@ -43,15 +44,17 @@ quad = hs.plot.markers.Markers(
 
 s.plot()
 s.add_marker(quad)
+
 # %%
-
-
-# Plotting an updating inset image on s
+#
+# Dynamic Inset Markers
+# #####################
+#
+# This example shows how to draw dynamic inset markers, whose position
+# depends on the navigation coordinates
 
 s = hs.signals.Signal2D(np.random.rand(100, 100, 10, 10))
 signal2 = hs.signals.Signal2D(np.random.rand(100, 100, 10, 10))
-
-# Plotting signal2 as an inset image on s
 
 signal2_shape = signal2.axes_manager._signal_shape_in_array
 
@@ -86,13 +89,15 @@ s.plot()
 s.add_marker(quad)
 
 # %%
-
-# Plotting a transparent inset image directly on s
+#
+# Transparent Overlay
+# ###################
+#
+# This example shows how to draw overlay a dynamic image over the signal, whose position
+# depends on the navigation coordinates
 
 s = hs.signals.Signal2D(np.random.rand(100, 100, 10, 10))
 signal2 = hs.signals.Signal2D(np.random.rand(100, 100, 10, 10))
-
-# Plotting signal2 as an inset image on s
 
 y = np.linspace(
     0, 1, signal2_shape[0] + 1
@@ -118,8 +123,11 @@ s.plot()
 s.add_marker(quad)
 
 # %%
-
-#  Adding a circular color bar to the main image
+#
+# Circular ColorBar
+# #################
+#
+# This example shows how to a circular Color Bar for shows orientation
 
 n = 360  # the number of secants for the mesh
 t = np.linspace(0, 2 * np.pi, n)  # theta values
@@ -149,3 +157,4 @@ s.plot(navigator=nav, navigator_kwds=dict(cmap="hsv", colorbar=False))
 s.add_marker(quad, plot_on_signal=False)
 
 # %%
+# sphinx_gallery_thumbnail_number = 2
