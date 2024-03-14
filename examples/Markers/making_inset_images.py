@@ -12,10 +12,6 @@ import hyperspy.api as hs
 
 
 # Making some artificial data
-import hyperspy.api as hs
-import numpy as np
-import matplotlib
-
 
 s = hs.signals.Signal2D(np.random.rand(100, 100, 10, 10))
 signal2 = hs.signals.Signal2D(np.random.rand(10, 10))
@@ -39,13 +35,14 @@ quad = hs.plot.markers.Markers(
     array=signal2.data,
     cmap="hsv",
     transform="axes",
-    offset_transform="display",
+    offset_transform="axes",
     offsets=[[0.7, 0.7]],
     alpha=1,
 )  # Put in top right corner
 
 s.plot()
 s.add_marker(quad)
+# %%
 
 
 # Plotting an updating inset image on s
@@ -87,6 +84,8 @@ quad = hs.plot.markers.Markers(
 s.plot()
 s.add_marker(quad)
 
+# %%
+
 # Plotting a transparent inset image directly on s
 
 s = hs.signals.Signal2D(np.random.rand(100, 100, 10, 10))
@@ -117,6 +116,8 @@ quad = hs.plot.markers.Markers(
 s.plot()
 s.add_marker(quad)
 
+# %%
+
 #  Adding a circular color bar to the main image
 
 n = 360  # the number of secants for the mesh
@@ -145,3 +146,5 @@ nav = hs.signals.Signal2D(im).T
 s.plot(navigator=nav, navigator_kwds=dict(cmap="hsv", colorbar=False))
 
 s.add_marker(quad, plot_on_signal=False)
+
+# %%
