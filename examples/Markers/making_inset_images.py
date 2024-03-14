@@ -9,6 +9,7 @@ like a circular color bar to show orientation.
 
 import numpy as np
 import hyperspy.api as hs
+import matplotlib
 
 
 # Making some artificial data
