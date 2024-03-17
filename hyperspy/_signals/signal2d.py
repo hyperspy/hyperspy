@@ -344,7 +344,6 @@ def estimate_image_shift(
 
 
 class Signal2D(BaseSignal, CommonSignal2D):
-
     """General 2D signal class."""
 
     _signal_dimension = 2
@@ -1128,7 +1127,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
 
 class LazySignal2D(LazySignal, Signal2D):
-
     """Lazy general 2D signal class."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")

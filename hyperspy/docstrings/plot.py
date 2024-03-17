@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Common docstring snippets for plot.
-
-"""
-
+"""Common docstring snippets for plot."""
 
 BASE_PLOT_DOCSTRING_PARAMETERS = """navigator : str, None, or :class:`~hyperspy.signal.BaseSignal` (or subclass).
         Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.

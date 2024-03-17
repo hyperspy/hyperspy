@@ -146,7 +146,6 @@ class ComponentFit(SpanSelectorInSignal1D):
 
 
 class Model1D(BaseModel):
-
     """Model and data fitting for one dimensional signals.
 
     A model is constructed as a linear combination of

@@ -167,7 +167,6 @@ def _obj_in_dict2hspy(dic, lazy):
 
 
 class ModelManager(object):
-
     """Container for models"""
 
     class ModelStub(object):
@@ -2374,7 +2373,6 @@ class BaseSignal(
     MVA,
     MVATools,
 ):
-
     """
 
     Attributes

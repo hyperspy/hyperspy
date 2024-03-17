@@ -35,7 +35,6 @@ _logger = logging.getLogger(__name__)
 
 
 class RangeWidget(ResizableDraggableWidgetBase):
-
     """RangeWidget is a span-patch based widget, which can be
     dragged and resized by mouse/keys. Basically a wrapper for
     ModifiablepanSelector so that it conforms to the common widget interface.

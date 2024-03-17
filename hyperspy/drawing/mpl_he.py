@@ -30,7 +30,6 @@ _logger = logging.getLogger(__name__)
 
 
 class MPL_HyperExplorer(object):
-
     """ """
 
     def __init__(self):

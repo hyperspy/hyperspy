@@ -27,7 +27,6 @@ _logger = logging.getLogger(__name__)
 
 
 class Polynomial(Expression):
-
     """n-order polynomial component.
 
     Polynomial component consisting of order + 1 parameters.

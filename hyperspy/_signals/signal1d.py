@@ -282,7 +282,6 @@ def _shift1D(data, **kwargs):
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
-
     """General 1D signal class."""
 
     _signal_dimension = 1
@@ -1670,7 +1669,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
 
 class LazySignal1D(LazySignal, Signal1D):
-
     """Lazy general 1D signal class."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal1D")

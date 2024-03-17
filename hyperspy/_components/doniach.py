@@ -30,7 +30,6 @@ tiny = np.finfo(float).eps
 
 
 class Doniach(Expression):
-
     r"""Doniach Sunjic lineshape component.
 
     .. math::

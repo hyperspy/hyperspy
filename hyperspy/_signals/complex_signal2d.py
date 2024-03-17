@@ -30,7 +30,6 @@ from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 
 
 class ComplexSignal2D(ComplexSignal, CommonSignal2D):
-
     """Signal class for complex 2-dimensional data."""
 
     _signal_dimension = 2
@@ -126,7 +125,6 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
 
 
 class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
-
     """Lazy Signal class for complex 2-dimensional data."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal2D")

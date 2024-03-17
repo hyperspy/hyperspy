@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Common docstring snippets for model.
-
-"""
+"""Common docstring snippets for model."""
 
 # Used by exSpy
 

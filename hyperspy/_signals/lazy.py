@@ -113,7 +113,6 @@ def to_array(thing, chunks=None):
 
 
 class LazySignal(BaseSignal):
-
     """Lazy general signal class."""
 
     _lazy = True

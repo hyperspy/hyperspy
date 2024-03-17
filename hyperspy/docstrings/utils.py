@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Common docstring snippets for utils.
-
-"""
+"""Common docstring snippets for utils."""
 
 STACK_METADATA_ARG = """stack_metadata : {bool, int}
         If integer, this value defines the index of the signal in the signal

@@ -20,7 +20,6 @@ from hyperspy._components.expression import Expression
 
 
 class Erf(Expression):
-
     r"""Error function component.
 
     .. math::
