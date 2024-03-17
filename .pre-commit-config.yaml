@@ -12,3 +12,4 @@ ci:
     # Don't run automatically on PRs, instead add the comment
     # "pre-commit.ci autofix" on a pull request to manually trigger auto-fixing 
     autofix_prs: false
+    autoupdate_branch: 'RELEASE_next_patch'
