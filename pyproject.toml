@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 authors = [{name = "The HyperSpy Community"}]
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Framework :: Matplotlib",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
