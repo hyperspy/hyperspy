@@ -845,7 +845,7 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
-    if not isinstance(stuff, (bytes, np.string_)):
+    if not isinstance(stuff, (bytes, np.bytes_)):
         return stuff
     else:
         string = stuff
@@ -858,7 +858,7 @@ def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
 
 def check_long_string(value, max_len):
     "Checks whether string is too long for printing in html metadata"
-    if not isinstance(value, (str, np.string_)):
+    if not isinstance(value, (str, np.bytes_)):
         value = repr(value)
     value = ensure_unicode(value)
     strvalue = str(value)
