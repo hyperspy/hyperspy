@@ -42,7 +42,6 @@ _SIGNAL_RANGE_PIXELS = """i1, i2 : None or float
 
 
 class Model2D(BaseModel):
-
     """Model and data fitting for two dimensional signals.
 
     A model is constructed as a linear combination of

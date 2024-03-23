@@ -60,7 +60,6 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
 
 
 class Lorentzian(Expression):
-
     r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component.
 
     .. math::

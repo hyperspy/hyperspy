@@ -24,7 +24,6 @@ from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 
 class Offset(Component):
-
     r"""Component to add a constant value in the y-axis.
 
     .. math::

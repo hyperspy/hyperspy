@@ -1,4 +1,4 @@
-"""Common docstrings to Markers """
+"""Common docstrings to Markers"""
 
 OFFSET_DOCSTRING = """offsets : array-like
             The positions [x, y] of the center of the marker. If the offsets are

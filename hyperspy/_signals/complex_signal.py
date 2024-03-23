@@ -65,7 +65,6 @@ def format_title(thing):
 
 
 class ComplexSignal(BaseSignal):
-
     """General signal class for complex data."""
 
     _dtype = "complex"
@@ -427,7 +426,6 @@ class ComplexSignal(BaseSignal):
 
 
 class LazyComplexSignal(ComplexSignal, LazySignal):
-
     """Lazy general signal class for complex data."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal")

@@ -1424,7 +1424,6 @@ def _flyback_iter(shape):
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
-
     """Contains and manages the data axes.
 
     It supports indexing, slicing, subscripting and iteration. As an iterator,

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Common docstring snippets.
-
-"""
+"""Common docstring snippets."""
 
 START_HSPY = """When starting HyperSpy using the ``hyperspy`` script (e.g. by executing
 ``hyperspy`` in a console, using the context menu entries or using the links in

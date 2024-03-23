@@ -54,7 +54,6 @@ class NoneFloat(t.CFloat):  # Lazy solution, but usable
 
 @add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
-
     """The parameter of a component.
 
     Attributes

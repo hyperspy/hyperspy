@@ -69,7 +69,6 @@ class StrategyList(list):
 
 
 class Samfire:
-
     """Smart Adaptive Multidimensional Fitting (SAMFire) object
 
     SAMFire is a more robust way of fitting multidimensional datasets. By
@@ -421,9 +420,9 @@ class Samfire:
             if isinstance(current, LocalStrategy) and isinstance(new, GlobalStrategy):
                 # if diffusion->segmenter, set previous -1 to -2 (ignored for
                 # the next diffusion)
-                self.metadata.marker[
-                    self.metadata.marker == -self._scale
-                ] -= self._scale
+                self.metadata.marker[self.metadata.marker == -self._scale] -= (
+                    self._scale
+                )
 
             new.refresh(False)
         current.clean()

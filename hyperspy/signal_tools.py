@@ -314,7 +314,6 @@ class SpanSelectorInSignal1D(t.HasTraits):
 
 
 class LineInSignal1D(t.HasTraits):
-
     """Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
 

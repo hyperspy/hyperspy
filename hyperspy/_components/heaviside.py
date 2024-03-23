@@ -21,7 +21,6 @@ from hyperspy._components.expression import Expression
 
 
 class HeavisideStep(Expression):
-
     r"""The Heaviside step function.
 
     Based on the corresponding `numpy function

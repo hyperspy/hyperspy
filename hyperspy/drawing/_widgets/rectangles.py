@@ -29,7 +29,6 @@ already_warn_out_of_range = False
 
 
 class SquareWidget(Widget2DBase):
-
     """SquareWidget is a symmetric, Rectangle-patch based widget, which can be
     dragged, and resized by keystrokes/code. As the widget is normally only
     meant to indicate position, the sizing is deemed purely visual, but there
@@ -71,7 +70,6 @@ class SquareWidget(Widget2DBase):
 
 
 class RectangleWidget(SquareWidget, ResizersMixin):
-
     """RectangleWidget is a asymmetric, Rectangle-patch based widget, which can
     be dragged and resized by mouse/keys. For resizing by mouse, it adds a
     small Rectangle patch on the outer border of the main patch, to serve as

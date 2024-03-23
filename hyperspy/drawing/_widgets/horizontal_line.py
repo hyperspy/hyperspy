@@ -22,7 +22,6 @@ from hyperspy.defaults_parser import preferences
 
 
 class HorizontalLineWidget(Widget1DBase):
-
     """A draggable, horizontal line widget."""
 
     def _update_patch_position(self):

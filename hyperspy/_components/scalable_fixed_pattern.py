@@ -26,7 +26,6 @@ from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 @add_gui_method(toolkey="hyperspy.ScalableFixedPattern_Component")
 class ScalableFixedPattern(Component):
-
     r"""Fixed pattern component with interpolation support.
 
     .. math::

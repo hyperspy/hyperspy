@@ -69,7 +69,6 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
 
 
 class Gaussian(Expression):
-
     r"""Normalized Gaussian function component.
 
     .. math::

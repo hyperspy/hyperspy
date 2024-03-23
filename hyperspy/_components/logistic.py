@@ -20,7 +20,6 @@ from hyperspy._components.expression import Expression
 
 
 class Logistic(Expression):
-
     r"""Logistic function (sigmoid or s-shaped curve) component.
 
     .. math::

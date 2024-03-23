@@ -33,6 +33,7 @@ Examples
 >>> im.add_marker(m)
 
 """
+
 from hyperspy.drawing.markers import Markers
 from hyperspy.drawing._markers.texts import Texts
 from hyperspy.drawing._markers.horizontal_lines import HorizontalLines

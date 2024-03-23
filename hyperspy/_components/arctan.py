@@ -21,7 +21,6 @@ from hyperspy._components.expression import Expression
 
 
 class Arctan(Expression):
-
     r"""Arctan function component.
 
     .. math::

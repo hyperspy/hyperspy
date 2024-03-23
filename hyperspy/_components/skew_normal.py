@@ -93,7 +93,6 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
 
 
 class SkewNormal(Expression):
-
     r"""Skew normal distribution component.
 
     |  Asymmetric peak shape based on a normal distribution.

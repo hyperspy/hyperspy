@@ -24,7 +24,6 @@ import re
 
 
 class Events:
-
     """
     Events container.
 
@@ -143,7 +142,6 @@ class Events:
 
 
 class Event:
-
     """
     Events class
 
@@ -447,7 +445,6 @@ class Event:
 
 
 class EventSuppressor(object):
-
     """
     Object to enforce a variety of suppression types simultaneously
 

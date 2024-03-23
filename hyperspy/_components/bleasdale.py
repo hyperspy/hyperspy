@@ -22,7 +22,6 @@ from hyperspy._components.expression import Expression
 
 
 class Bleasdale(Expression):
-
     r"""Bleasdale function component.
 
     Also called the Bleasdale-Nelder function. Originates from

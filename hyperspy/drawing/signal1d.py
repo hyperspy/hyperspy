@@ -34,7 +34,6 @@ _logger = logging.getLogger(__name__)
 
 
 class Signal1DFigure(BlittedFigure):
-
     """ """
 
     def __init__(self, title="", **kwargs):
@@ -241,7 +240,6 @@ class Signal1DFigure(BlittedFigure):
 
 
 class Signal1DLine(object):
-
     """Line that can be added to Signal1DFigure.
 
     Attributes
