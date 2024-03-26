@@ -572,7 +572,7 @@ class ImagePlot(BlittedFigure):
                 if Version(matplotlib.__version__) <= Version("3.6.0"):
                     self._colorbar.draw_all()
                 elif isinstance(self.figure, SubFigure):
-                    self.figure.canvas.draw()  # draw without rendering not supported for sub-figures
+                    self.figure.canvas.draw_idle()  # draw without rendering not supported for sub-figures
                 else:
                     self.figure.draw_without_rendering()
                 self._colorbar.solids.set_animated(self.figure.canvas.supports_blit)
