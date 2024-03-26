@@ -75,7 +75,8 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         super().plot_signal()
         # Create the figure
         self.axis = self.axes_manager.signal_axes[0]
-        sf = signal1d.Signal1DFigure(title=self.signal_title + " Signal")
+        fig = kwargs.pop("fig", None)
+        sf = signal1d.Signal1DFigure(title=self.signal_title + " Signal", fig=fig)
         sf.axis = self.axis
         if sf.ax is None:
             sf.create_axis()

@@ -86,7 +86,8 @@ class MPL_HyperExplorer(object):
 
         if len(self.navigator_data_function().shape) == 1:
             # Create the figure
-            sf = signal1d.Signal1DFigure(title=title)
+            fig = kwargs.pop("fig", None)
+            sf = signal1d.Signal1DFigure(title=title, fig=fig)
             axis = self.axes_manager.navigation_axes[0]
             sf.xlabel = "%s" % str(axis)
             if axis.units is not Undefined:
