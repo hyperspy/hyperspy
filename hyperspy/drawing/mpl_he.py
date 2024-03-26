@@ -210,7 +210,7 @@ class MPL_HyperExplorer(object):
                         self.pointer.disconnect, []
                     )
             self.plot_signal(**kwargs)
-            if _is_widget_backend():
+            if _is_widget_backend() and "fig" not in kwargs:
                 if plot_style not in ["vertical", "horizontal", None]:
                     raise ValueError(
                         "plot_style must be one of ['vertical', 'horizontal', None]"
@@ -246,7 +246,7 @@ class MPL_HyperExplorer(object):
                         )
                     )
 
-        if _is_widget_backend():
+        if _is_widget_backend() and "fig" not in kwargs:
             with matplotlib.pyplot.ioff():
                 plot_sig_and_nav(plot_style)
         else:

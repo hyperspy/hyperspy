@@ -842,6 +842,14 @@ def test_plot_scalebar_list():
     assert not hasattr(ax1, "scalebar")
 
 
+def test_plot_subfigures():
+    rng = np.random.default_rng()
+    s = hs.signals.Signal2D(rng.random((10, 10, 10, 10, 10)))
+    fig = plt.figure(figsize=(10, 10))
+    subfigs = fig.subfigures(1, 2, wspace=0.07)
+    s.plot(fig=subfigs[0])
+
+
 def test_plot_images_bool():
     data = np.arange(100).reshape((10, 10)) > 50
     s = hs.signals.Signal2D(data)
