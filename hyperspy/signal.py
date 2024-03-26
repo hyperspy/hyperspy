@@ -41,7 +41,7 @@ from rsciio.utils import rgb_tools
 from rsciio.utils.tools import ensure_directory
 from scipy.interpolate import make_interp_spline
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, create_axis
 from hyperspy.api_nogui import _ureg
 from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
@@ -106,12 +106,14 @@ except ImportError:
     CUPY_INSTALLED = False
 
 
-def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
+def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers, axes):
     for key in dic:
         if key.startswith("_sig_"):
             signals.append((key, dic))
         elif key.startswith("_hspy_AxesManager_"):
             axes_managers.append((key, dic))
+        elif key.startswith("_hspy_Axis_"):
+            axes.append((key, dic))
         elif isinstance(dic[key], (list, tuple)):
             signals = []
             # Support storing signals in containers
@@ -126,6 +128,7 @@ def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
                 axes_managers=axes_managers,
                 signals=signals,
                 containers=containers,
+                axes=axes,
             )
 
 
@@ -143,13 +146,19 @@ def _obj_in_dict2hspy(dic, lazy):
     """
     from hyperspy.io import dict2signal
 
-    axes_managers, signals, containers = [], [], []
+    axes_managers, signals, containers, axes = [], [], [], []
     _dic_get_hs_obj_paths(
-        dic, axes_managers=axes_managers, signals=signals, containers=containers
+        dic,
+        axes_managers=axes_managers,
+        signals=signals,
+        containers=containers,
+        axes=axes,
     )
     for key, dic in axes_managers:
         dic[key[len("_hspy_AxesManager_") :]] = AxesManager(dic[key])
         del dic[key]
+    for key, dic in axes:
+        dic[key[len("_hspy_Axis_") :]] = create_axis(**dic[key])
     for key, dic in signals:
         dic[key[len("_sig_") :]] = dict2signal(dic[key], lazy=lazy)
         del dic[key]
