@@ -28,6 +28,7 @@ from hyperspy.misc.utils import (
     nested_dictionary_merge,
 )
 from hyperspy.signal import BaseSignal
+from hyperspy.axes import UniformDataAxis
 
 
 @pytest.fixture(params=[True, False], ids=["lazy", "not_lazy"])
@@ -123,6 +124,19 @@ class TestDictionaryBrowser:
             tree.signal_name.axes_manager._get_axes_dicts()
             == s.axes_manager._get_axes_dicts()
         )
+
+    def test_add_axes(self, tree):
+        axis = UniformDataAxis(name="x", units="ly", size=10)
+        tree.set_item("axis", axis)
+        tree.set_item("axis2", axis)
+        tree_dict = tree.as_dictionary()
+        assert tree_dict["_hspy_Axis_axis"]["name"] == "x"
+        assert tree_dict["_hspy_Axis_axis"]["units"] == "ly"
+        assert tree_dict["_hspy_Axis_axis2"]["units"] == "ly"
+        assert tree_dict["_hspy_Axis_axis2"]["name"] == "x"
+        new_signal = BaseSignal([1, 2, 3, 4], metadata=tree_dict)
+        assert isinstance(new_signal.metadata.axis, UniformDataAxis)
+        assert isinstance(new_signal.metadata.axis2, UniformDataAxis)
 
     def test_export(self, tree):
         with tempfile.TemporaryDirectory() as tmpdir:

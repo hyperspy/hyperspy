@@ -509,7 +509,7 @@ class DictionaryTreeBrowser:
         par_dict = {}
 
         from hyperspy.signal import BaseSignal
-        from hyperspy.axes import AxesManager
+        from hyperspy.axes import AxesManager, BaseDataAxis
 
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -526,6 +526,9 @@ class DictionaryTreeBrowser:
                 elif isinstance(item_["_dtb_value_"], AxesManager):
                     item = item_["_dtb_value_"]._get_axes_dicts()
                     key = "_hspy_AxesManager_" + key
+                elif isinstance(item_["_dtb_value_"], BaseDataAxis):
+                    item = item_["_dtb_value_"].get_axis_dictionary()
+                    key = "_hspy_Axis_" + key
                 elif type(item_["_dtb_value_"]) in (list, tuple):
                     signals = []
                     container = item_["_dtb_value_"]
