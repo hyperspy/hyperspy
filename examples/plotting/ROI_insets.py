@@ -9,6 +9,9 @@ we can create a custom layout to visualize and interact with the data.
 """
 import matplotlib.pyplot as plt
 import hyperspy.api as hs
+import numpy as np
+
+rng = np.random.default_rng()
 
 fig = plt.figure(figsize=(5, 3))
 gs = fig.add_gridspec(6, 10)
