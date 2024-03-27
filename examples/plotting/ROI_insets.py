@@ -38,15 +38,14 @@ s2.plot(fig=sub2, colorbar=False, axes_off=True, title="", plot_indices=False)
 s3.plot(fig=sub3, colorbar=False, axes_off=True, title="", plot_indices=False)
 s4.plot(fig=sub4, colorbar=False, axes_off=True, title="", plot_indices=False)
 
-# %%
 # Add ROI's to the navigator
 
 r1.add_widget(navigator, color="r")
 r2.add_widget(navigator, color="g")
 r3.add_widget(navigator, color="y")
 
-# %%
 # Add Borders to the match the color of the ROI
+
 red_edge = hs.plot.markers.Squares(
     offset_transform="axes",
     offsets=(0.5, 0.5),
@@ -81,7 +80,6 @@ yellow_edge = hs.plot.markers.Squares(
 
 s4.add_marker(yellow_edge)
 
-# %%
 # Label the insets
 
 label = hs.plot.markers.Texts(
