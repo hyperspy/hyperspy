@@ -81,7 +81,8 @@ class MPL_HyperExplorer(object):
 
         if len(self.navigator_data_function().shape) == 1:
             # Create the figure
-            sf = signal1d.Signal1DFigure(title=title)
+            fig = kwargs.pop("fig", None)
+            sf = signal1d.Signal1DFigure(title=title, fig=fig)
             axis = self.axes_manager.navigation_axes[0]
             sf.xlabel = "%s" % str(axis)
             if axis.units is not Undefined:
@@ -206,7 +207,7 @@ class MPL_HyperExplorer(object):
                         self.pointer.disconnect, []
                     )
             self.plot_signal(**kwargs)
-            if "ipympl" in backend:
+            if "ipympl" in backend and "fig" not in kwargs:
                 if plot_style not in ["vertical", "horizontal", None]:
                     raise ValueError(
                         "plot_style must be one of ['vertical', 'horizontal', None]"
@@ -242,7 +243,7 @@ class MPL_HyperExplorer(object):
                         )
                     )
 
-        if "ipympl" in backend:
+        if "ipympl" in backend and "fig" not in kwargs:
             import matplotlib.pyplot as plt
 
             with plt.ioff():

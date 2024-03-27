@@ -21,6 +21,7 @@ from packaging.version import Version
 
 import numpy as np
 import matplotlib
+from matplotlib.figure import SubFigure
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm, SymLogNorm, PowerNorm
 from traits.api import Undefined
@@ -332,7 +333,8 @@ class ImagePlot(BlittedFigure):
         self.data_function_kwargs = data_function_kwargs
         self.configure()
         if self.figure is None:
-            self.create_figure()
+            fig = kwargs.pop("fig", None)
+            self.create_figure(fig=fig)
             self.create_axis()
 
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
@@ -571,6 +573,8 @@ class ImagePlot(BlittedFigure):
                 # `draw_all` is deprecated in matplotlib 3.6.0
                 if Version(matplotlib.__version__) <= Version("3.6.0"):
                     self._colorbar.draw_all()
+                elif isinstance(self.figure, SubFigure):
+                    self.figure.canvas.draw_idle()  # draw without rendering not supported for sub-figures
                 else:
                     self.figure.draw_without_rendering()
                 self._colorbar.solids.set_animated(self.figure.canvas.supports_blit)
