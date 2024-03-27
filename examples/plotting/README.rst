@@ -1,4 +1,4 @@
-Making Publication-Quality Plots
-================================
+Making Custom Layouts for Plots
+===============================
 
-Below is a gallery of examples on making publication-quality plots using matplotlib.
+Below is a gallery of examples on making simple custom layouts for plotting data.
