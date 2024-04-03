@@ -2286,7 +2286,7 @@ class MVATools(object):
     ):
         """Plot the cluster labels and centers.
 
-        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and 
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and
         :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_signals`, this
         method displays one component at a time.
         Therefore it provides a more compact visualization than then other
@@ -3075,6 +3075,10 @@ class BaseSignal(
             else:
                 return navigator(as_numpy=True)
 
+        # function to disconnect when closing the navigator
+        function_to_disconnect = None
+        connected_event_copy = self.events.data_changed.connected.copy()
+
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
                 navigator = self.navigator
@@ -3100,6 +3104,11 @@ class BaseSignal(
                         s=self,
                         axis=self.axes_manager.signal_axes,
                     )
+                    # Set are not ordered, to retrieve the function to disconnect
+                    # take the difference with the previous copy
+                    function_to_disconnect = list(
+                        self.events.data_changed.connected - connected_event_copy
+                    )[0]
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
                         f=navigator.as_signal1D,
@@ -3178,6 +3187,7 @@ class BaseSignal(
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
 
+        # Disconnect event when closing signal
         p = (
             self._plot.signal_plot
             if self._plot.signal_plot
@@ -3186,6 +3196,17 @@ class BaseSignal(
         p.events.closed.connect(
             lambda: self.events.data_changed.disconnect(self.update_plot), []
         )
+        # Disconnect events to the navigator when closing navigator
+        if function_to_disconnect is not None:
+            self._plot.navigator_plot.events.closed.connect(
+                lambda: self.events.data_changed.disconnect(function_to_disconnect), []
+            )
+            self._plot.navigator_plot.events.closed.connect(
+                lambda: self.axes_manager.events.any_axis_changed.disconnect(
+                    function_to_disconnect
+                ),
+                [],
+            )
 
         if plot_markers:
             if self.metadata.has_item("Markers"):
