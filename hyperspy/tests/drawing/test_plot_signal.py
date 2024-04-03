@@ -291,14 +291,11 @@ def test_plot_slider(ndim, sdim):
         check_closing_plot(s, check_data_changed_close=False)
 
 
-@pytest.mark.parametrize("tranpose", [True, False])
 @pytest.mark.parametrize("ndim", [1, 2])
-def test_plot_navigator_plot_signal(ndim, tranpose):
+def test_plot_navigator_plot_signal(ndim):
     test_plot_nav1d = _TestPlot(ndim=ndim, sdim=1, data_type="real")
     s = test_plot_nav1d.signal
     navigator = -s.sum(-1)
-    if tranpose:
-        navigator = navigator.T
     s.plot(navigator=navigator)
     if ndim == 1:
         navigator_data = s._plot.navigator_plot.ax_lines[0]._get_data()
@@ -356,3 +353,88 @@ def test_plot_ragged_array(lazy):
         s = s.as_lazy()
     with pytest.raises(RuntimeError):
         s.plot()
+
+
+def test_plot_navigator_with_signal_dimension():
+    s = hs.signals.Signal1D(np.arange(1000).reshape((10, 10, 10)))
+    nav = s.sum(axis=-1)
+    # Both give the same results
+    s.plot(navigator=nav)
+    s.plot(navigator=nav.T)
+
+
+@pytest.mark.parametrize("nav_dim", (1, 2, 3))
+def test_plot_navigator_streak(nav_dim):
+    dim = nav_dim + 1
+    shape = (10,) * dim
+    s = hs.signals.Signal1D(np.arange(np.prod(shape)).reshape((10,) * dim))
+
+    s.plot(navigator="streak")
+
+    ref_data = s.inav.__getitem__(slices=tuple((0, 0, 0))[: nav_dim - 1]).data
+    np.testing.assert_allclose(s._plot.navigator_data_function(), ref_data)
+
+    indices = tuple((1, 2, 3))[:nav_dim]
+    s.axes_manager.indices = indices
+    assert s.axes_manager.indices == indices
+    ref_data = s.inav.__getitem__(slices=tuple((1, 2, 3))[: nav_dim - 1]).data
+    np.testing.assert_allclose(s._plot.navigator_data_function(), ref_data)
+
+
+def test_plot_navigator_streak_error():
+    # streak navigator works only for signal 1D.
+    s = hs.signals.Signal2D(np.arange(1000).reshape((10, 10, 10)))
+
+    with pytest.raises(ValueError):
+        s.plot(navigator="streak")
+
+
+def test_plot_navigator_axes():
+    shape = (3, 4, 5, 10)
+    data = np.arange(np.prod(shape)).reshape(shape)
+    s = hs.signals.Signal1D(data)
+    s.plot(navigator_axes=[0, 2])
+    # the first and third navigation axis
+    s._plot.navigator_data_function().shape == (3, 5)
+
+    s.plot(navigator_axes=[2, 0])
+    # the third and first navigation axis
+    s._plot.navigator_data_function().shape == (5, 3)
+
+    with pytest.raises(ValueError):
+        s.plot(navigator_axes=[0, 1, 2])
+
+    shape2 = shape[-2:]
+    data2 = np.arange(np.prod(shape2)).reshape(shape2)
+    s2 = hs.signals.Signal1D(data2)
+    s2.plot(navigator_axes=[0])
+
+    # Too many navigation axes
+    with pytest.raises(ValueError):
+        s2.plot(navigator_axes=[0, 1])
+
+    shape3 = (4, 5, 10)
+    data3 = np.arange(np.prod(shape3)).reshape(shape3)
+    s3 = hs.signals.Signal2D(data3)
+
+    # Not a navigation axes
+    with pytest.raises(ValueError):
+        s3.plot(navigator_axes=[1])
+
+    # Length of navigation axis too long
+    with pytest.raises(ValueError):
+        s3.plot(navigator_axes=[0, 1])
+
+    # Wrong value
+    with pytest.raises(ValueError):
+        s3.plot(navigator="wrong value")
+
+
+def test_plot_navigator_signal_wrong_shape():
+    shape = (3, 4, 10)
+    data = np.arange(np.prod(shape)).reshape(shape)
+    s = hs.signals.Signal1D(data)
+    navigator = hs.signals.Signal2D(np.ones((20, 30)))
+
+    with pytest.raises(ValueError):
+        s.plot(navigator=navigator)

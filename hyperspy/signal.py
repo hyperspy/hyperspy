@@ -25,6 +25,7 @@ import inspect
 from itertools import product
 import logging
 import numbers
+from operator import getitem
 from pathlib import Path
 import warnings
 
@@ -2277,7 +2278,7 @@ class MVATools(object):
     ):
         """Plot the cluster labels and centers.
 
-        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and 
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and
         :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_signals`, this
         method displays one component at a time.
         Therefore it provides a more compact visualization than then other
@@ -2982,11 +2983,21 @@ class BaseSignal(
     def navigator(self, navigator):
         self.metadata.set_item("_HyperSpy.navigator", navigator)
 
-    def plot(self, navigator="auto", axes_manager=None, plot_markers=True, **kwargs):
+    def plot(
+        self,
+        navigator="auto",
+        axes_manager=None,
+        plot_markers=True,
+        navigator_axes=None,
+        **kwargs,
+    ):
         """%s
         %s
         %s
         %s
+        navigator_axes : list or tuple of int, str or :class:`~hyperspy.axes.DataAxis`
+            Specify the axes of the navigator. Must be navigation axes.
+
         """
         if self.axes_manager.ragged:
             raise RuntimeError("Plotting ragged signal is not supported.")
@@ -3001,6 +3012,20 @@ class BaseSignal(
 
         if axes_manager is None:
             axes_manager = self.axes_manager
+        if navigator_axes is None:
+            # default, takes the first navigation axes
+            navigator_axes = list(range(min(self.axes_manager.navigation_dimension, 2)))
+        elif len(navigator_axes) > self.axes_manager.navigation_dimension:
+            raise ValueError(
+                "The length of the `navigation_axes` argument can't be "
+                "larger than the navigation dimension."
+            )
+        navigator_axes = getitem(self.axes_manager, navigator_axes)
+        # Check that there are all navigation axis
+        for axis in navigator_axes:
+            if not axis.navigate:
+                raise ValueError(f"Axis {axis} is not a navigation axis.")
+
         if self.is_rgbx is True:
             if axes_manager.navigation_size < 2:
                 navigator = None
@@ -3044,30 +3069,35 @@ class BaseSignal(
                 )
                 return s.sum(axis)
 
-        def get_static_explorer_wrapper(*args, **kwargs):
+        def get_static_explorer(*args, **kwargs):
+            data = np.nan_to_num(to_numpy(navigator.data))
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
-                return abs(navigator._get_current_data(as_numpy=True))
+                return abs(data)
             else:
-                return navigator._get_current_data(as_numpy=True)
+                return data
 
-        def get_1D_sum_explorer_wrapper(*args, **kwargs):
+        def get_1D_sum_explorer(*args, **kwargs):
             # Sum over all but the first navigation axis.
             am = self.axes_manager
             navigator = sum_wrapper(self, am.signal_axes + am.navigation_axes[1:])
-            return np.nan_to_num(to_numpy(navigator.data)).squeeze()
+            return np.nan_to_num(to_numpy(navigator.data))
 
         def get_dynamic_image_explorer(*args, **kwargs):
-            am = self.axes_manager
-            nav_ind = am.indices[2:]  # image at first 2 nav indices
-            slices = [slice(None)] * len(am.navigation_axes)
-            slices[2:] = nav_ind
-            new_nav = navigator.transpose(
-                signal_axes=len(am.navigation_axes)
-            )  # roll axes to signal axes
-            ind = new_nav.isig.__getitem__(
-                slices=slices
-            )  # Get the value from the nav reverse because hyperspy
-            return np.nan_to_num(to_numpy(ind.data)).squeeze()
+            # Find the indices to slice the correct slice of the navigator
+            # for when navigation axes > 2
+            slices = [
+                Ellipsis if axis in navigator_axes else axis.index
+                for axis in self.axes_manager.navigation_axes
+            ]
+
+            data = getitem(navigator.inav, slices).data
+            # transpose slice when axes are not in order
+            axes = [axis.index_in_array for axis in navigator_axes]
+            if axes[1] > axes[0]:
+                data = data.T
+            if np.issubdtype(self.data.dtype, np.complexfloating):
+                data = abs(data)
+            return np.nan_to_num(to_numpy(data))
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
@@ -3082,7 +3112,9 @@ class BaseSignal(
                 self.axes_manager.navigation_dimension == 1
                 and self.axes_manager.signal_dimension == 1
             ):
-                navigator = "data"
+                # in case of streak navigator, we don't take the sum, but
+                # we show the last navigation axis and the first signal axis
+                navigator = "streak"
             elif self.axes_manager.navigation_dimension > 0:
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()
@@ -3094,20 +3126,6 @@ class BaseSignal(
                         s=self,
                         axis=self.axes_manager.signal_axes,
                     )
-                if navigator.axes_manager.navigation_dimension == 1:
-                    navigator = interactive(
-                        f=navigator.as_signal1D,
-                        event=navigator.events.data_changed,
-                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
-                        spectral_axis=0,
-                    )
-                else:
-                    navigator = interactive(
-                        f=navigator.as_signal2D,
-                        event=navigator.events.data_changed,
-                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
-                        image_axes=(0, 1),
-                    )
             else:
                 navigator = None
         # Navigator properties
@@ -3115,32 +3133,20 @@ class BaseSignal(
             # check first if we have a signal to avoid comparison of signal with
             # string
             if isinstance(navigator, BaseSignal):
+                if navigator.axes_manager.signal_dimension > 0:
+                    # In view of adding support for signal dimension to
+                    # navigator in the future, we don't deprecate
+                    navigator = navigator.transpose(signal_axes=[])
 
-                def is_shape_compatible(navigation_shape, shape):
-                    return (
-                        navigation_shape == shape
-                        or navigation_shape[:2] == shape
-                        or (navigation_shape[0],) == shape
-                    )
-
-                # Static navigator
-                if is_shape_compatible(
-                    axes_manager.navigation_shape, navigator.axes_manager.signal_shape
+                if (
+                    navigator.axes_manager.signal_dimension == 0
+                    and axes_manager.navigation_shape
+                    == navigator.axes_manager.navigation_shape
                 ):
                     if len(axes_manager.navigation_shape) > 2:
                         self._plot.navigator_data_function = get_dynamic_image_explorer
                     else:
-                        self._plot.navigator_data_function = get_static_explorer_wrapper
-                # Static transposed navigator
-                elif is_shape_compatible(
-                    axes_manager.navigation_shape,
-                    navigator.axes_manager.navigation_shape,
-                ):
-                    navigator = navigator.T
-                    if len(axes_manager.navigation_shape) > 2:
-                        self._plot.navigator_data_function = get_dynamic_image_explorer
-                    else:
-                        self._plot.navigator_data_function = get_static_explorer_wrapper
+                        self._plot.navigator_data_function = get_static_explorer
                 else:
                     raise ValueError(
                         "The dimensions of the provided (or stored) navigator "
@@ -3149,26 +3155,28 @@ class BaseSignal(
             elif isinstance(navigator, str):
                 if navigator == "slider":
                     self._plot.navigator_data_function = "slider"
-                elif navigator == "data":
-                    if np.issubdtype(self.data.dtype, np.complexfloating):
-                        self._plot.navigator_data_function = (
-                            lambda axes_manager=None: to_numpy(abs(self.data))
+                elif navigator == "streak":
+                    if axes_manager.signal_dimension != 1:
+                        raise ValueError(
+                            '"Streak" navigator needs a signal dimension 1.'
                         )
-                    else:
-                        self._plot.navigator_data_function = (
-                            lambda axes_manager=None: to_numpy(self.data)
-                        )
+                    navigator = self
+                    navigator_axes = (
+                        self.axes_manager.signal_axes
+                        + self.axes_manager.navigation_axes[-1:]
+                    )
+                    self._plot.navigator_data_function = get_dynamic_image_explorer
                 elif navigator == "spectrum":
-                    self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
+                    self._plot.navigator_data_function = get_1D_sum_explorer
+                else:
+                    raise ValueError(
+                        'navigator must be one of "spectrum", "streak", "auto", '
+                        '"slider", None or a signal instance.'
+                    )
             elif navigator is None:
                 self._plot.navigator_data_function = None
-            else:
-                raise ValueError(
-                    'navigator must be one of "spectrum","auto", '
-                    '"slider", None, a Signal instance'
-                )
 
-        self._plot.plot(**kwargs)
+        self._plot.plot(navigator_axes=navigator_axes, **kwargs)
         self.events.data_changed.connect(self.update_plot, [])
 
         p = (

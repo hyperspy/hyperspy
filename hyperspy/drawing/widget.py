@@ -343,9 +343,9 @@ class DraggableWidgetBase(WidgetBase):
         # Set default axes
         if self.axes_manager is not None:
             if self.axes_manager.navigation_dimension > 0:
-                self.axes = self.axes_manager.navigation_axes[0:1]
+                self.axes = self.axes_manager.navigation_axes[:1]
             else:
-                self.axes = self.axes_manager.signal_axes[0:1]
+                self.axes = self.axes_manager.signal_axes[:1]
         else:
             self._pos = np.array([0.0])
 
@@ -779,9 +779,9 @@ class Widget2DBase(ResizableDraggableWidgetBase):
         # Set default axes
         if self.axes_manager is not None:
             if self.axes_manager.navigation_dimension > 1:
-                self.axes = self.axes_manager.navigation_axes[0:2]
+                self.axes = self.axes_manager.navigation_axes[:2]
             elif self.axes_manager.signal_dimension > 1:
-                self.axes = self.axes_manager.signal_axes[0:2]
+                self.axes = self.axes_manager.signal_axes[:2]
             elif len(self.axes_manager.shape) > 1:
                 self.axes = (
                     self.axes_manager.signal_axes + self.axes_manager.navigation_axes
