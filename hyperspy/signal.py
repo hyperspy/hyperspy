@@ -5698,10 +5698,16 @@ class BaseSignal(
                         "Only signals with dtype uint16 can be converted to "
                         "rgb16 images"
                     )
+                replot = self._plot is not None and self._plot.is_active
+                if replot:
+                    # Close the figure to avoid error with events
+                    self._plot.close()
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager._set_signal_dimension(2)
                 self._assign_subclass()
+                if replot:
+                    self.plot()
                 return
             else:
                 dtype = np.dtype(dtype)
@@ -5710,6 +5716,10 @@ class BaseSignal(
 
             if ddtype != dtype:
                 raise ValueError("It is only possibile to change to %s." % ddtype)
+            replot = self._plot is not None and self._plot.is_active
+            if replot:
+                # Close the figure to avoid error with events
+                self._plot.close()
             self.data = rgb_tools.rgbx2regular_array(self.data)
             self.axes_manager._append_axis(
                 size=self.data.shape[-1],
@@ -5720,6 +5730,8 @@ class BaseSignal(
             )
             self.axes_manager._set_signal_dimension(1)
             self._assign_subclass()
+            if replot:
+                self.plot()
             return
         else:
             self.data = self.data.astype(dtype)

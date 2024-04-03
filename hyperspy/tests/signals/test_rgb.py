@@ -56,6 +56,17 @@ class TestRGBA8:
         with pytest.raises(AttributeError):
             self.im.change_dtype("rgb8")
 
+    def test_change_dtype_with_plot(self):
+        # Check that changing dtype with a plot open
+        # doesn't raise any error
+        s = self.s
+        s.plot()
+        assert s._plot.navigator_plot is not None
+        s.change_dtype("rgba8")
+        assert s._plot.navigator_plot is None
+        s.change_dtype("uint8")
+        assert s._plot.navigator_plot is not None
+
 
 class TestRGBA16:
     def setup_method(self, method):
