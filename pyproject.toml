@@ -192,6 +192,17 @@ exclude = [
     "conftest.py",
     ]
 
+[tool.ruff.lint]
+select = [
+    # isort
+    "I"
+]
+# Rely on the formatter to define line-length
+# and avoid conflicting lint rules
+# https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+extend-ignore = ["E501"]
+
+
 [tool.setuptools.package-data]
 "*" = [
     "hyperspy_extension.yaml",
