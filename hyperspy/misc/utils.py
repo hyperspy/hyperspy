@@ -180,7 +180,6 @@ def slugify(value, valid_variable_name=False):
 
 
 class DictionaryTreeBrowser:
-
     """
     A class to comfortably browse a dictionary using a CLI.
 

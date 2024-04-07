@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Common docstring snippets for parameters.
-
-"""
+"""Common docstring snippets for parameters."""
 
 FUNCTION_ND_DOCSTRING = """Returns a numpy array containing the value of the component for all
         indices. If enough memory is available, this is useful to quickly to

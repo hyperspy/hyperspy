@@ -68,7 +68,6 @@ def _parse_substitutions(string):
 
 
 class Expression(Component):
-
     """Create a component from a string expression.
 
     It automatically generates the partial derivatives and the

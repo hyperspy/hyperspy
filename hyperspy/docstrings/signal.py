@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Common docstring snippets for signal.
-
-"""
+"""Common docstring snippets for signal."""
 
 ONE_AXIS_PARAMETER = """: :class:`int`, :class:`str`, or :class:`~hyperspy.axes.DataAxis`
             The axis can be passed directly, or specified using the index of

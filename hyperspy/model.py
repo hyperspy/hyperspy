@@ -165,7 +165,6 @@ def reconstruct_component(comp_dictionary, **init_args):
 
 
 class ModelComponents(object):
-
     """Container for model components.
 
     Useful to provide tab completion when running in IPython.
@@ -197,7 +196,6 @@ class ModelComponents(object):
 
 @add_gui_method(toolkey="hyperspy.Model")
 class BaseModel(list):
-
     """Model and data fitting tools applicable to signals of both one and two
     dimensions.
 

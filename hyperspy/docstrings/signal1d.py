@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Common docstring snippets for signal1d.
-
-"""
+"""Common docstring snippets for signal1d."""
 
 CROP_PARAMETER_DOC = """crop : bool
             If True automatically crop the signal axis at both ends if needed."""

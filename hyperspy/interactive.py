@@ -30,7 +30,6 @@ def _connect_events(event, to_connect):
 
 
 class Interactive:
-
     r"""
     Chainable operations on Signals that update on events. The operation
     result will be updated when a given event is triggered.

@@ -26,7 +26,6 @@ _logger = logging.getLogger(__name__)
 
 
 class Exponential(Expression):
-
     r"""Exponential function component.
 
     .. math::
