@@ -17,12 +17,11 @@
 
 import numpy as np
 import pytest
-
 from matplotlib.backend_bases import CloseEvent
 
 from hyperspy._components.polynomial import Polynomial
-from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing._markers.points import Points
+from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.test_utils import check_closing_plot
 from hyperspy.signals import Signal1D, Signal2D
 

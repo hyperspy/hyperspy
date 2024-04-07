@@ -17,10 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import inspect
+import re
 from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import wraps  # noqa: F401 Used in exec statement
-import re
 
 
 class Events:

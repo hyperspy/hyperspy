@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import __main__
+from pathlib import Path
+from time import strftime
+
 from packaging.version import Version
 
-from time import strftime
-from pathlib import Path
+import __main__
 
 
 def get_ipython():

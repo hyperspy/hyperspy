@@ -19,8 +19,8 @@
 import numpy as np
 import pytest
 
-from hyperspy.components1d import Doniach
 from hyperspy._signals.signal1d import Signal1D
+from hyperspy.components1d import Doniach
 
 sqrt2pi = np.sqrt(2 * np.pi)
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))

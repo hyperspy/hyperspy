@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from itertools import zip_longest
 import logging
+from itertools import zip_longest
 
 import numpy as np
 
-from hyperspy.misc.axis_tools import check_axes_calibration
 from hyperspy.misc.array_tools import are_aligned
+from hyperspy.misc.axis_tools import check_axes_calibration
 
 _logger = logging.getLogger(__name__)
 

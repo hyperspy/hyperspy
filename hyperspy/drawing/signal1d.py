@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import logging
 import inspect
+import logging
 from functools import partial
 
-from hyperspy.drawing.figure import BlittedFigure
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 from hyperspy.drawing import utils
+from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.events import Event, Events
 from hyperspy.misc.test_utils import ignore_warning
-
 
 _logger = logging.getLogger(__name__)
 

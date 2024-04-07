@@ -20,8 +20,8 @@ import numpy as np
 from scipy.interpolate import make_interp_spline
 
 from hyperspy.component import Component
-from hyperspy.ui_registry import add_gui_method
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy.ui_registry import add_gui_method
 
 
 @add_gui_method(toolkey="hyperspy.ScalableFixedPattern_Component")

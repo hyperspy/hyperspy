@@ -39,9 +39,10 @@ class Mock_queue(object):
 
 
 def generate_test_model():
-    from hyperspy.signals import Signal1D
-    from hyperspy.components1d import Gaussian, Lorentzian
     from scipy.ndimage import gaussian_filter
+
+    from hyperspy.components1d import Gaussian, Lorentzian
+    from hyperspy.signals import Signal1D
 
     total = None
     blurs = [1.5]
@@ -194,8 +195,8 @@ class TestSamfireEmpty:
     def test_samfire_init_strategies(self):
         m = self.model
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
+        from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 
         assert isinstance(samf.strategies[0], ReducedChiSquaredStrategy)
         assert isinstance(samf.strategies[1], HistogramStrategy)
@@ -303,8 +304,8 @@ class TestSamfireEmpty:
     def test_change_strategy(self):
         m = self.model
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
+        from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 
         ind = (0, 0)
         samf.metadata.marker[ind] = -2

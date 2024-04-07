@@ -17,14 +17,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import time
 import logging
+import time
 from multiprocessing import Manager
+
 import numpy as np
 from dask.array import Array as dar
 
-from hyperspy.utils.parallel_pool import ParallelPool
 from hyperspy.samfire_utils.samfire_worker import create_worker
+from hyperspy.utils.parallel_pool import ParallelPool
 
 _logger = logging.getLogger(__name__)
 

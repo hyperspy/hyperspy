@@ -17,12 +17,13 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from operator import attrgetter
-import numpy as np
-import dask.array as da
 
-from hyperspy.misc.utils import attrsetter
-from hyperspy.misc.export_dictionary import parse_flag_string
+import dask.array as da
+import numpy as np
+
 from hyperspy import roi
+from hyperspy.misc.export_dictionary import parse_flag_string
+from hyperspy.misc.utils import attrsetter
 
 
 def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):

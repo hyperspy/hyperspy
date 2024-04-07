@@ -16,21 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from functools import wraps
 import inspect
 import logging
-from typing import Callable, Optional, Union
 import warnings
+from functools import wraps
+from typing import Callable, Optional, Union
 
 import numpy as np
-
 
 _logger = logging.getLogger(__name__)
 
 
 def lazify(func, **kwargs):
-    from hyperspy.signal import BaseSignal
     from hyperspy.model import BaseModel
+    from hyperspy.signal import BaseSignal
 
     @wraps(func)
     def lazified_func(self, *args, **kwds):
@@ -105,8 +104,8 @@ def simple_decorator(decorator):
 
 @simple_decorator
 def interactive_range_selector(cm):
-    from hyperspy.ui_registry import get_gui
     from hyperspy.signal_tools import Signal1DRangeSelector
+    from hyperspy.ui_registry import get_gui
 
     def wrapper(self, *args, **kwargs):
         if not args and not kwargs:

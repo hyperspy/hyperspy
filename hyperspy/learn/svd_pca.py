@@ -27,7 +27,6 @@ from hyperspy.misc.machine_learning.import_sklearn import (
 )
 from hyperspy.misc.utils import is_cupy_array
 
-
 _logger = logging.getLogger(__name__)
 
 

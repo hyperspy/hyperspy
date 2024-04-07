@@ -17,16 +17,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import importlib
-from functools import wraps
 import logging
+import warnings
+from functools import wraps
+
 import numpy as np
 import sympy
 
-import warnings
-
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-
 
 _logger = logging.getLogger(__name__)
 

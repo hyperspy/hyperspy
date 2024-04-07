@@ -24,9 +24,12 @@ import warnings
 import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import FuncFormatter, MaxNLocator
 import rsciio.utils.tools as io_tools
+from matplotlib.ticker import FuncFormatter, MaxNLocator
 
+from hyperspy.defaults_parser import preferences
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.external.progressbar import progressbar
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.ornmf import ornmf
 from hyperspy.learn.orthomax import orthomax
@@ -35,15 +38,11 @@ from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.whitening import whiten_data
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import (
+    is_cupy_array,
+    is_hyperspy_signal,
     ordinal,
     stack,
-    is_hyperspy_signal,
-    is_cupy_array,
 )
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
-from hyperspy.external.progressbar import progressbar
-from hyperspy.defaults_parser import preferences
-
 
 try:
     import mdp

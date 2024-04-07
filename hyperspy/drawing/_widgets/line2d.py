@@ -18,12 +18,12 @@
 
 
 import logging
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 
-from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 from hyperspy.drawing.utils import picker_kwargs
-
+from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
 _logger = logging.getLogger(__name__)
 

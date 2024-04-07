@@ -24,10 +24,10 @@ import pytest
 from hyperspy.misc.array_tools import (
     get_array_memory_size_in_GiB,
     get_signal_chunk_slice,
-    numba_histogram,
-    round_half_towards_zero,
-    round_half_away_from_zero,
     get_value_at_index,
+    numba_histogram,
+    round_half_away_from_zero,
+    round_half_towards_zero,
 )
 
 dt = [("x", np.uint8), ("y", np.uint16), ("text", (bytes, 6))]

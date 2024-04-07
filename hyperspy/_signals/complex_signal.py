@@ -17,13 +17,12 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from functools import wraps
-from packaging.version import Version
 
 import numpy as np
+from packaging.version import Version
 
-from hyperspy.signal import BaseSignal
-from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
     BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -31,12 +30,12 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
-    SHOW_PROGRESSBAR_ARG,
-    NUM_WORKERS_ARG,
     LAZYSIGNAL_DOC,
+    NUM_WORKERS_ARG,
+    SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.misc.utils import parse_quantity
-
+from hyperspy.signal import BaseSignal
 
 ERROR_MESSAGE_SETTER = (
     "Setting the {} with a complex signal is ambiguous, "

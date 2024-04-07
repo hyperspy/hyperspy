@@ -32,7 +32,6 @@ The model module contains the following submodules:
 import hyperspy.components1d as components1D
 import hyperspy.components2d as components2D
 
-
 __all__ = [
     "components1D",
     "components2D",

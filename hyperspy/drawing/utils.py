@@ -17,29 +17,26 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
-from functools import partial
 import itertools
 import logging
-from packaging.version import Version
 import textwrap
 import warnings
+from functools import partial
 
 import dask.array as da
-import traits.api as t
-import numpy as np
-
 import matplotlib as mpl
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.backend_bases import key_press_handler
-from matplotlib.colors import LinearSegmentedColormap, BASE_COLORS, to_rgba
 import matplotlib.pyplot as plt
+import numpy as np
+import traits.api as t
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.colors import BASE_COLORS, LinearSegmentedColormap, to_rgba
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from packaging.version import Version
 from rsciio.utils import rgb_tools
-
 
 import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import to_numpy
-
 
 _logger = logging.getLogger(__name__)
 

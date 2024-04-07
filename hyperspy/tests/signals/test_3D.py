@@ -20,8 +20,8 @@ import numpy as np
 import pytest
 
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.signals import Signal1D
 from hyperspy.misc.array_tools import rebin
+from hyperspy.signals import Signal1D
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):

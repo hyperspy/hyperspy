@@ -18,7 +18,8 @@
 
 import numpy as np
 import pytest
-from hyperspy.signal_tools import SpikesRemovalInteractive, SpikesRemoval
+
+from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.signals import Signal1D
 
 

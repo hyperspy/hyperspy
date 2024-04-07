@@ -22,9 +22,9 @@ from pathlib import Path
 from shutil import copyfile
 
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
 import pytest
+from matplotlib.backend_bases import MouseEvent, PickEvent
 
 try:
     # scipy >=1.10
@@ -34,9 +34,9 @@ except ImportError:
     from scipy.misc import ascent, face
 
 import hyperspy.api as hs
+from hyperspy.drawing.signal1d import Signal1DLine
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.signals import Signal1D
-from hyperspy.drawing.signal1d import Signal1DLine
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 
 scalebar_color = "blue"

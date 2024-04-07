@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pytest
@@ -25,7 +25,6 @@ import pytest
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
-
 
 skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 

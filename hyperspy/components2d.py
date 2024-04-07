@@ -17,9 +17,9 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
 import importlib
 
+from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
 
 __all__ = [component for component, specs_ in _EXTENSIONS["components2D"].items()]
 

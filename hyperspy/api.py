@@ -24,8 +24,8 @@ import hyperspy.api_nogui
 from hyperspy.api_nogui import __doc__, get_configuration_directory_path  # noqa: F401
 from hyperspy.defaults_parser import preferences  # noqa: F401
 from hyperspy.logger import set_log_level  # noqa: F401
-from . import __version__  # noqa: F401
 
+from . import __version__  # noqa: F401
 
 _logger = logging.getLogger(__name__)
 

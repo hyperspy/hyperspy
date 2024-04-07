@@ -18,10 +18,9 @@
 
 import numpy as np
 
-from hyperspy.component import Component, _get_scaling_factor
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
+from hyperspy.component import Component, _get_scaling_factor
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-
 
 sqrt2pi = np.sqrt(2 * np.pi)
 

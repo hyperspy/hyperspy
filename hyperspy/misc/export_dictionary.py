@@ -16,11 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from operator import attrgetter
-from hyperspy.misc.utils import attrsetter
 from copy import deepcopy
+from operator import attrgetter
+
 import cloudpickle
 from dask.array import Array
+
+from hyperspy.misc.utils import attrsetter
 
 
 def check_that_flags_make_sense(flags):

@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.quiver import Quiver
-from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 
 class Arrows(Markers):

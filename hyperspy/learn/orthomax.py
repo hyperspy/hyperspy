@@ -17,7 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-
 from numpy.linalg import svd
 
 

@@ -16,14 +16,14 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-from packaging.version import Version
 
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import MouseEvent, MouseButton
 import numpy as np
 import pytest
 import scipy.ndimage
+from matplotlib.backend_bases import MouseButton, MouseEvent
+from packaging.version import Version
 
 try:
     # scipy >=1.10

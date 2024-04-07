@@ -18,8 +18,8 @@
 
 import logging
 import os
-import time
 import sys
+import time
 from itertools import combinations, product
 from queue import Empty
 

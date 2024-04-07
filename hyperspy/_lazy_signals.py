@@ -16,13 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy._signals.lazy import LazySignal
-from hyperspy._signals.signal1d import LazySignal1D
-from hyperspy._signals.signal2d import LazySignal2D
 from hyperspy._signals.complex_signal import LazyComplexSignal
 from hyperspy._signals.complex_signal1d import LazyComplexSignal1D
 from hyperspy._signals.complex_signal2d import LazyComplexSignal2D
-
+from hyperspy._signals.lazy import LazySignal
+from hyperspy._signals.signal1d import LazySignal1D
+from hyperspy._signals.signal2d import LazySignal2D
 
 __all__ = [
     "LazyComplexSignal",

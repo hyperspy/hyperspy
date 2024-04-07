@@ -26,18 +26,19 @@ from contextlib import contextmanager
 from functools import partial
 
 import cloudpickle
-import numpy as np
 import dask.array as da
-from dask.diagnostics import ProgressBar
+import numpy as np
 import scipy.odr as odr
+from dask.diagnostics import ProgressBar
 from scipy.linalg import svd
 from scipy.optimize import (
-    differential_evolution,
-    leastsq,
-    least_squares,
-    minimize,
     OptimizeResult,
+    differential_evolution,
+    least_squares,
+    leastsq,
+    minimize,
 )
+
 from hyperspy.component import Component
 from hyperspy.components1d import Expression
 from hyperspy.defaults_parser import preferences
@@ -53,6 +54,7 @@ from hyperspy.misc.export_dictionary import (
     parse_flag_string,
     reconstruct_object,
 )
+from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
@@ -64,8 +66,6 @@ from hyperspy.misc.utils import (
 )
 from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
-from hyperspy.misc.machine_learning import import_sklearn
-
 
 _logger = logging.getLogger(__name__)
 

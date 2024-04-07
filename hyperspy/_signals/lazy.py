@@ -16,34 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from functools import partial
 import logging
 import os
+from functools import partial
+from itertools import product
 
-import numpy as np
 import dask
 import dask.array as da
-from itertools import product
-from rsciio.utils.tools import get_file_handle
+import numpy as np
 from rsciio.utils import rgb_tools
+from rsciio.utils.tools import get_file_handle
 
-from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import (
-    SHOW_PROGRESSBAR_ARG,
-    MANY_AXIS_PARAMETER,
     LAZYSIGNAL_DOC,
+    MANY_AXIS_PARAMETER,
+    SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import (
+    _get_navigation_dimension_chunk_slice,
     _requires_linear_rebin,
     get_signal_chunk_slice,
-    _get_navigation_dimension_chunk_slice,
 )
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
-
+from hyperspy.misc.utils import dummy_context_manager, isiterable, multiply
+from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
 
@@ -139,8 +138,8 @@ class LazySignal(BaseSignal):
         try:
             from dask import config
             from dask.array.svg import svg
-            from dask.widgets import get_template
             from dask.utils import format_bytes
+            from dask.widgets import get_template
 
             nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
             sig_chunks = self.get_chunk_size(self.axes_manager.signal_axes)

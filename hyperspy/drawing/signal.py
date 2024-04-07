@@ -18,8 +18,8 @@
 
 # This file contains plotting code generic to the BaseSignal class.
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from traits.api import Undefined
 

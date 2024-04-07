@@ -16,17 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import pytest
-from unittest import mock
 import pathlib
+from unittest import mock
 
 import numpy as np
+import pytest
 
 import hyperspy.api as hs
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.axes import AxesManager
 from hyperspy.component import Component, Parameter, _get_scaling_factor
-from hyperspy._signals.signal1d import Signal1D
-
 
 DIRPATH = pathlib.Path(__file__).parent / "data"
 

@@ -17,10 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from hyperspy.drawing.widget import Widget2DBase, ResizersMixin
+from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
 
 
 class CircleWidget(Widget2DBase, ResizersMixin):

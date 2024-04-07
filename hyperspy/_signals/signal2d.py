@@ -16,16 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import matplotlib.pyplot as plt
-import numpy as np
-import numpy.ma as ma
-import dask.array as da
 import logging
 import warnings
 from copy import deepcopy
-
 from functools import partial
 
+import dask.array as da
+import matplotlib.pyplot as plt
+import numpy as np
+import numpy.ma as ma
 from scipy import ndimage
 
 try:
@@ -34,14 +33,10 @@ try:
 except ModuleNotFoundError:
     from skimage.feature.register_translation import _upsampled_dft
 
-from hyperspy.defaults_parser import preferences
-from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.math_tools import symmetrize, antisymmetrize, optimal_fft_size
-from hyperspy.signal import BaseSignal
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
+from hyperspy._signals.lazy import LazySignal
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
     BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -49,23 +44,26 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
-    SHOW_PROGRESSBAR_ARG,
-    NUM_WORKERS_ARG,
     LAZYSIGNAL_DOC,
+    NUM_WORKERS_ARG,
+    SHOW_PROGRESSBAR_ARG,
 )
+from hyperspy.external.progressbar import progressbar
+from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetrize
+from hyperspy.signal import BaseSignal
+from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
+    _get_peak_position_and_intensity,
     find_local_max,
+    find_peaks_dog,
+    find_peaks_log,
     find_peaks_max,
     find_peaks_minmax,
-    find_peaks_zaefferer,
     find_peaks_stat,
-    find_peaks_log,
-    find_peaks_dog,
     find_peaks_xc,
-    _get_peak_position_and_intensity,
+    find_peaks_zaefferer,
 )
-
 
 _logger = logging.getLogger(__name__)
 

@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import textwrap
-import matplotlib.pyplot as plt
 import logging
+import textwrap
 
-from hyperspy.events import Event, Events
+import matplotlib.pyplot as plt
+
 from hyperspy.drawing import utils
-
+from hyperspy.events import Event, Events
 
 _logger = logging.getLogger(__name__)
 

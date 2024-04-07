@@ -25,7 +25,6 @@ from skimage.feature import blob_dog, blob_log, match_template, peak_local_max
 from hyperspy.decorators import jit_ifnumba
 from hyperspy.misc.machine_learning import import_sklearn
 
-
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
 

@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
 import matplotlib.transforms as transforms
+import numpy as np
 
 from hyperspy.drawing.widget import Widget1DBase
 

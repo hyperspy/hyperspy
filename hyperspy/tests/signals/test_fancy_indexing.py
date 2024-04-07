@@ -20,8 +20,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from hyperspy.decorators import lazifyTestClass
 from hyperspy import roi, signals
+from hyperspy.decorators import lazifyTestClass
 
 
 @lazifyTestClass

@@ -16,12 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from packaging.version import Version
-
-import pytest
-import numpy as np
 import dask
 import dask.array as da
+import numpy as np
+import pytest
+from packaging.version import Version
 
 from hyperspy.misc import math_tools
 

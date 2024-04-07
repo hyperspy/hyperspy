@@ -19,12 +19,12 @@
 from __future__ import division
 
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
+from matplotlib.backend_bases import MouseEvent, PickEvent
 
-from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.events import Events, Event
 from hyperspy.defaults_parser import preferences
+from hyperspy.drawing.utils import on_figure_window_close
+from hyperspy.events import Event, Events
 
 
 class WidgetBase(object):

@@ -47,16 +47,15 @@ The following 2D ROIs are available:
 
 from functools import partial
 
-import traits.api as t
 import numpy as np
+import traits.api as t
 
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
-from hyperspy.events import Events, Event
+from hyperspy.events import Event, Events
 from hyperspy.interactive import interactive
 from hyperspy.misc.utils import is_cupy_array
 from hyperspy.ui_registry import add_gui_method
-
 
 not_set_error_msg = (
     "Some ROI parameters have not yet been set. " "Set them before slicing a signal."

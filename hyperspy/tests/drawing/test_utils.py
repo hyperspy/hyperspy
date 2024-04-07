@@ -17,11 +17,11 @@
 
 from unittest.mock import Mock
 
-import numpy as np
 import matplotlib
+import numpy as np
 import pytest
 
-from hyperspy.drawing.utils import create_figure, contrast_stretching
+from hyperspy.drawing.utils import contrast_stretching, create_figure
 
 
 def test_create_figure():

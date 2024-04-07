@@ -17,9 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+from numpy import arange
+
 from hyperspy.axes import DataAxis, FunctionalDataAxis, UniformDataAxis
 from hyperspy.misc.axis_tools import check_axes_calibration
-from numpy import arange
 
 
 def test_check_axes_calibration():

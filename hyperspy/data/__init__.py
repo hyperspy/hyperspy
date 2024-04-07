@@ -27,7 +27,6 @@ from .artificial_data import (
 )
 from .two_gaussians import two_gaussians
 
-
 __all__ = [
     "atomic_resolution_image",
     "luminescence_signal",

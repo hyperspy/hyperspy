@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.drawing.markers import Markers
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING, UNITS_DOCSTRING
+from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.collections import CircleCollection
 
 

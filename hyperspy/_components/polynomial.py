@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
 import logging
+
+import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import ordinal
-
 
 _logger = logging.getLogger(__name__)
 

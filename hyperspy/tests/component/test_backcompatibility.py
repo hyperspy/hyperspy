@@ -21,8 +21,8 @@ import pathlib
 
 import pytest
 
-from hyperspy.exceptions import VisibleDeprecationWarning
 import hyperspy.api as hs
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 DIRPATH = pathlib.Path(__file__).parent / "data"
 EXSPY_SPEC = importlib.util.find_spec("exspy")

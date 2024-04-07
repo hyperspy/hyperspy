@@ -16,9 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import pytest
-
 import numpy as np
+import pytest
 
 from hyperspy.components1d import Bleasdale
 

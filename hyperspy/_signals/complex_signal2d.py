@@ -22,8 +22,8 @@ from hyperspy._signals.complex_signal import ComplexSignal, LazyComplexSignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
     BASE_PLOT_DOCSTRING_PARAMETERS,
-    PLOT2D_DOCSTRING,
     COMPLEX_DOCSTRING,
+    PLOT2D_DOCSTRING,
     PLOT2D_KWARGS_DOCSTRING,
 )
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC

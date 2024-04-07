@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.utils.model_selection import AIC, AICc, BIC
 import numpy as np
+
+from hyperspy.utils.model_selection import AIC, BIC, AICc
 
 
 def notexp_o(x):
