@@ -896,7 +896,7 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        component : :class:`~hyperspy.component.Component` 
+        component : :class:`~hyperspy.component.Component`
             The component must be in the model, otherwise an exception
             is raised. The component can be specified by name, index or itself.
         signal_range : str, tuple of None

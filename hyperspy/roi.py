@@ -71,7 +71,7 @@ PARSE_AXES_DOCSTRING = """axes : None, str, int or :class:`hyperspy.axes.DataAxi
 
               - :class:`hyperspy.axes.DataAxis`
               - anything that can index the provided ``axes_manager``
-    
+
             * ``None``, it will check whether the widget can be added to the
               navigator, i.e. if dimensionality matches, and use it if
               possible, otherwise it will try the signal space. If none of the

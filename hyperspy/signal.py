@@ -2287,7 +2287,7 @@ class MVATools(object):
     ):
         """Plot the cluster labels and centers.
 
-        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and 
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and
         :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_signals`, this
         method displays one component at a time.
         Therefore it provides a more compact visualization than then other

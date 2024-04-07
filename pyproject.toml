@@ -187,6 +187,7 @@ doctest_optionflags = [
 
 [tool.ruff]
 exclude = [
+    "api_nogui.py",
     "hyperspy/external/*",
     "examples",
     "conftest.py",
@@ -194,6 +195,11 @@ exclude = [
 
 [tool.ruff.lint]
 select = [
+    # Pyflakes
+    "F",
+    # Pycodestyle
+    "E",
+    "W",
     # isort
     "I"
 ]
