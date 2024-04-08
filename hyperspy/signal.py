@@ -41,7 +41,7 @@ from scipy import signal as sp_signal
 from scipy.interpolate import make_interp_spline
 from tlz import concat
 
-from hyperspy.api_nogui import _ureg
+from hyperspy.api import _ureg
 from hyperspy.axes import AxesManager, create_axis
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,

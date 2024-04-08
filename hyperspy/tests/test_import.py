@@ -35,13 +35,6 @@ def test_import_api():
         getattr(hyperspy.api, obj_name)
 
 
-def test_import_api_nogui():
-    import hyperspy.api_nogui
-
-    for obj_name in hyperspy.api_nogui.__all__:
-        getattr(hyperspy.api_nogui, obj_name)
-
-
 def test_import_data():
     import hyperspy.data
 
@@ -106,29 +99,6 @@ def test_dir_api():
     import hyperspy.api
 
     d = dir(hyperspy.api)
-    assert d == [
-        "__version__",
-        "data",
-        "get_configuration_directory_path",
-        "interactive",
-        "load",
-        "model",
-        "plot",
-        "preferences",
-        "print_known_signal_types",
-        "roi",
-        "samfire",
-        "set_log_level",
-        "signals",
-        "stack",
-        "transpose",
-    ]
-
-
-def test_dir_api_nogui():
-    import hyperspy.api_nogui
-
-    d = dir(hyperspy.api_nogui)
     assert d == [
         "__version__",
         "data",

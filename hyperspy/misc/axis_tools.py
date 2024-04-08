@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.api_nogui import _ureg
+from hyperspy.api import _ureg
 
 
 def check_axes_calibration(ax1, ax2, rtol=1e-7):
