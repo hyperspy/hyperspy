@@ -1,9 +1,9 @@
+
 [![Azure pipelines status](https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor)](https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build?definitionId=1&_a=summary&view=branches)
 [![Tests status](https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml/badge.svg)](https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml)
 [![Documentation status](https://readthedocs.org/projects/hyperspy/badge/?version=latest)](https://hyperspy.org/hyperspy-doc/current)
 [![Codecov coverage](https://codecov.io/gh/hyperspy/hyperspy/graph/badge.svg?token=X7T3LE121Q)](https://codecov.io/gh/hyperspy/hyperspy)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/hyperspy/hyperspy/RELEASE_next_minor.svg)](https://results.pre-commit.ci/latest/github/hyperspy/hyperspy/RELEASE_next_minor)
-
 
 [![Python Version](https://img.shields.io/pypi/pyversions/hyperspy.svg?style=flat)](https://pypi.python.org/pypi/hyperspy)
 [![PyPI Version](http://img.shields.io/pypi/v/hyperspy.svg?style=flat)](https://pypi.python.org/pypi/hyperspy)
@@ -40,5 +40,3 @@ Contributing
 Everyone is welcome to contribute. Please read our [contributing 
 guidelines](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md) 
 and get started!
-
-
