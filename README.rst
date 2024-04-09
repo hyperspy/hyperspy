@@ -1,40 +1,54 @@
 .. -*- mode: rst -*-
 
-|Azure|_ |Github|_ |pre-commit|_ |rtd|_ |Codecov|_
+|Azure| |Github| |rtd| |Codecov| |pre-commit|
 
-|python_version|_ |pypi_version|_ |anaconda_cloud|_
+|python_version| |pypi_version| |anaconda_cloud| |license|
 
-|gitter|_ |DOI|_
+|gitter| |DOI|
 
 .. |Azure| image:: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_apis/build/status/hyperspy.hyperspy?branchName=RELEASE_next_minor
-.. _Azure: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build?definitionId=1&_a=summary&view=branches
+   :target: https://dev.azure.com/franciscode-la-pena-manchon/hyperspy/_build?definitionId=1&_a=summary&view=branches
+   :alt: Azure status
 
 .. |Github| image:: https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml/badge.svg
-.. _Github: https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml
-
-.. |pre-commit| image:: https://results.pre-commit.ci/badge/github/hyperspy/hyperspy/RELEASE_next_minor.svg
-.. _pre-commit: https://results.pre-commit.ci/latest/github/hyperspy/hyperspy/RELEASE_next_minor
+   :target: https://github.com/hyperspy/hyperspy/actions/workflows/tests.yml
+   :alt: Github tests status
 
 .. |Codecov| image:: https://codecov.io/gh/hyperspy/hyperspy/branch/RELEASE_next_minor/graph/badge.svg
-.. _Codecov: https://codecov.io/gh/hyperspy/hyperspy
+   :target: https://codecov.io/gh/hyperspy/hyperspy
+   :alt: Codecov coverage
+
+.. |pre-commit| image:: https://results.pre-commit.ci/badge/github/hyperspy/hyperspy/RELEASE_next_minor.svg
+   :target: https://results.pre-commit.ci/latest/github/hyperspy/hyperspy/RELEASE_next_minor
+   :alt: pre-commit.ci
 
 .. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
-.. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
+   :target: https://readthedocs.org/projects/hyperspy/?badge=latest
+   :alt: read the docs status
 
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
-.. _pypi_version: https://pypi.python.org/pypi/hyperspy
+   :target: https://pypi.python.org/pypi/hyperspy
+   :alt: PyPI version
 
 .. |anaconda_cloud| image:: https://anaconda.org/conda-forge/hyperspy/badges/version.svg
-.. _anaconda_cloud: https://anaconda.org/conda-forge/hyperspy
+   :target: https://anaconda.org/conda-forge/hyperspy
+   :alt: Conda forge version
 
 .. |python_version| image:: https://img.shields.io/pypi/pyversions/hyperspy.svg?style=flat
-.. _python_version: https://pypi.python.org/pypi/hyperspy
+   :target: https://pypi.python.org/pypi/hyperspy
+   :alt: Supported python versions
+
+.. |license| image:: https://img.shields.io/badge/License-GPLv3-blue.svg
+   :target: https://www.gnu.org/licenses/gpl-3.0
+   :alt: License: GPL v3
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
-.. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+   :target: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+   :alt: https://gitter.im/hyperspy/
 
 .. |DOI| image:: https://zenodo.org/badge/2233998.svg
-.. _DOI: https://zenodo.org/badge/latestdoi/2233998
+   :target: https://zenodo.org/badge/latestdoi/2233998
+   :alt: Zenodo DOI
 
 
 HyperSpy is an open source Python library for the interactive analysis of
