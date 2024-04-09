@@ -332,7 +332,8 @@ class ImagePlot(BlittedFigure):
         self.configure()
         if self.figure is None:
             fig = kwargs.pop("fig", None)
-            self.create_figure(fig=fig)
+            _on_figure_window_close = kwargs.pop("_on_figure_window_close", None)
+            self.create_figure(fig=fig, _on_figure_window_close=_on_figure_window_close)
             self.create_axis()
 
         if not self.axes_manager or self.axes_manager.navigation_size == 0:

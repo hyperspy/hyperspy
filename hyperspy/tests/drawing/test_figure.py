@@ -18,6 +18,7 @@
 import numpy as np
 import pytest
 from matplotlib.backend_bases import CloseEvent
+import matplotlib.pyplot as plt
 
 from hyperspy._components.polynomial import Polynomial
 from hyperspy.drawing._markers.points import Points
@@ -118,3 +119,31 @@ def test_remove_markers():
     s._plot.signal_plot.remove_markers()
     assert len(s._plot.signal_plot.ax_markers) == 0
     assert m._collection is None  # Check that the collection is set to None
+
+
+def test_close_figure_with_subfigure():
+    rng = np.random.default_rng()
+    s = Signal1D(rng.random((10, 10, 10)))
+
+    fig = plt.figure()
+    subfig_nav, subfig_sig = fig.subfigures(1, 2)
+
+    s.plot(navigator_kwds=dict(fig=subfig_nav), fig=subfig_sig)
+    s._plot.close()
+
+    # Currently fails
+    # s.plot(
+    #     navigator_kwds=dict(fig=subfig_nav),
+    #     fig=subfig_sig
+    #     )
+
+
+def test_close_figure_with_subfigure_matplotlib_event():
+    rng = np.random.default_rng()
+    s = Signal1D(rng.random((10, 10, 10)))
+
+    fig = plt.figure()
+    subfig_nav, subfig_sig = fig.subfigures(1, 2)
+
+    s.plot(navigator_kwds=dict(fig=subfig_nav), fig=subfig_sig)
+    plt.close(fig)

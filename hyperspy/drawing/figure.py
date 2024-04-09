@@ -19,6 +19,7 @@
 import logging
 import textwrap
 
+import matplotlib
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing import utils
@@ -27,7 +28,7 @@ from hyperspy.events import Event, Events
 _logger = logging.getLogger(__name__)
 
 
-class BlittedFigure(object):
+class BlittedFigure:
     def __init__(self):
         self._draw_event_cid = None
         self._background = None
@@ -43,22 +44,30 @@ class BlittedFigure(object):
             """,
             arguments=["obj"],
         )
+        # The matplotlib Figure or SubFigure
+        # To access the matplotlib figure, use `get_mpl_figure`
+        self.figure = None
+        # The matplotlib Axis
+        self.ax = None
         self.title = ""
         self.ax_markers = list()
 
     def create_figure(self, **kwargs):
-        """Create matplotlib figure
+        """
+        Create matplotlib figure.
 
         Parameters
         ----------
-        **kwargs
-            All keyword arguments are passed to ``plt.figure``.
+        **kwargs : dict
+            Keyword arguments are passed to
+            :func:`hyperspy.drawing.utils.create_figure`.
 
         """
+        kwargs.setdefault("_on_figure_window_close", self.close)
         self.figure = utils.create_figure(
-            window_title="Figure " + self.title if self.title else None, **kwargs
+            window_title="Figure " + self.title if self.title else None,
+            **kwargs,
         )
-        utils.on_figure_window_close(self.figure, self._on_close)
         if self.figure.canvas.supports_blit:
             self._draw_event_cid = self.figure.canvas.mpl_connect(
                 "draw_event", self._on_blit_draw
@@ -92,6 +101,18 @@ class BlittedFigure(object):
         self._draw_animated()
         canvas.blit(self.figure.bbox)
 
+    def get_mpl_figure(self):
+        """Retuns the matplotlib figure"""
+        if self.figure is None:
+            return None
+        else:
+            figure = self.figure
+            # matplotlib SubFigure can be nested and we don't support it
+            if isinstance(figure, matplotlib.figure.SubFigure):
+                return figure.figure
+            else:
+                return figure
+
     def add_marker(self, marker):
         marker.ax = self.ax
         self.ax_markers.append(marker)
@@ -106,9 +127,8 @@ class BlittedFigure(object):
 
     def _on_close(self):
         _logger.debug("Closing `BlittedFigure`.")
-        if self.figure is None:
-            _logger.debug("`BlittedFigure` already closed.")
-            return  # Already closed
+        self.ax = None
+        self._background = None
         for marker in self.ax_markers:
             marker.close(render_figure=False)
         self.events.closed.trigger(obj=self)
@@ -117,15 +137,13 @@ class BlittedFigure(object):
         if self._draw_event_cid:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
             self._draw_event_cid = None
-        plt.close(self.figure)
         self.figure = None
-        self.ax = None
-        self._background = None
         _logger.debug("`BlittedFigure` closed.")
 
     def close(self):
         _logger.debug("`close` `BlittedFigure` called.")
         self._on_close()  # Needs to trigger serially for a well defined state
+        plt.close(self.get_mpl_figure())
 
     @property
     def title(self):

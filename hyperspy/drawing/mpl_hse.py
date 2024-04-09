@@ -76,7 +76,12 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         # Create the figure
         self.axis = self.axes_manager.signal_axes[0]
         fig = kwargs.pop("fig", None)
-        sf = signal1d.Signal1DFigure(title=self.signal_title + " Signal", fig=fig)
+        sf = signal1d.Signal1DFigure(
+            title=self.signal_title + " Signal",
+            # Passed to figure creation
+            _on_figure_window_close=self.close,
+            fig=fig,
+        )
         sf.axis = self.axis
         if sf.ax is None:
             sf.create_axis()
@@ -121,7 +126,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                     "key_press_event", self.axes_manager.key_navigator
                 )
             if self.navigator_plot is not None:
-                sf.events.closed.connect(self.close_navigator_plot, [])
                 self.signal_plot.figure.canvas.mpl_connect(
                     "key_press_event", self.key2switch_right_pointer
                 )
@@ -131,7 +135,6 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 self.navigator_plot.figure.canvas.mpl_connect(
                     "key_press_event", self.axes_manager.key_navigator
                 )
-            sf.events.closed.connect(self._on_signal_plot_closing, [])
 
     def key2switch_right_pointer(self, event):
         if event.key == "e":
