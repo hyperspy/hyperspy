@@ -320,8 +320,6 @@ class EELSSpectrum(Signal1D):
             also_align=[],
             print_stats=True,
             subpixel=True,
-            left=-3.0,
-            right=3.0,
             mask=None,
             signal_range=None,
             show_progressbar=None,
@@ -330,8 +328,7 @@ class EELSSpectrum(Signal1D):
         """Align the zero-loss peak.
 
         This function first aligns the spectra using the result of
-        `estimate_zero_loss_peak_centre` which finds the maximum in the 
-        given energy range, then if subpixel is True,
+        `estimate_zero_loss_peak_centre` and afterward, if subpixel is True,
         proceeds to align with subpixel accuracy using `align1D`. The offset
         is automatically correct if `calibrate` is True.
 
@@ -351,12 +348,6 @@ class EELSSpectrum(Signal1D):
         subpixel : bool
             If True, perform the alignment with subpixel accuracy
             using cross-correlation.
-        left : float
-            When subpixel is True, left is the start of energy range used 
-            in cross-correlation in whichever unit the energy axis is in.
-        right : float
-            When subpixel is True, right is the end of energy range used 
-            in cross-correlation in whichever unit the energy axis is in.
         mask : Signal1D of bool data type or bool array.
             It must have signal_dimension = 0 and navigation_shape equal to
             the shape of the current signal. Where mask is True the shift is
@@ -449,7 +440,7 @@ class EELSSpectrum(Signal1D):
 
         if subpixel is False:
             return
-        left, right = left, right
+        left, right = -3., 3.
         if calibrate is False:
             left += mean_
             right += mean_
