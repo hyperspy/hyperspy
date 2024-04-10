@@ -753,9 +753,8 @@ class Model1D(BaseModel):
         _plot.signal_plot.events.closed.connect(self._close_plot, [])
 
         self._model_line = l2
-        self._plot = self.signal._plot
-        self._connect_parameters2update_plot(self)
-        
+        self._plot = self.signal._plot 
+
         #Optional to plot the residual of (Signal - Model)
         if plot_residual:
             l3 = hyperspy.drawing.signal1d.Signal1DLine()
@@ -767,7 +766,11 @@ class Model1D(BaseModel):
             l3.plot()
             # Quick access to _residual_line if needed 
             self._residual_line = l3
-
+            #Update residual line when model line is updated
+            self._connect_parameters2update_plot(self, update_residual=True) 
+        else:
+            #Update only the model line
+            self._connect_parameters2update_plot(self, update_residual=False)
 
         if plot_components is True:
             self.enable_plot_components()
