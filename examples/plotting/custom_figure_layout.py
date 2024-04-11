@@ -3,9 +3,9 @@
 Creating Custom Layouts
 =======================
 
-Custom layouts for hyperspy figures can be created using the `matplotlib.figure.SubFigure` class. Passing
-the `fig` argument to the `plot` method of a hyperspy signal object will target that figure instead of
-creating a new one. This is useful for creating custom layouts with multiple subplots.
+Custom layouts for hyperspy figures can be created using the :class:`matplotlib.figure.SubFigure` class. Passing
+the `fig` argument to the :func:`hyperspy.api.BaseSignal.plot` method of a hyperspy signal object will target
+that figure instead of creating a new one. This is useful for creating custom layouts with multiple subplots.
 """
 
 # Creating a simple layout with two subplots
