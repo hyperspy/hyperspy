@@ -705,17 +705,29 @@ class BaseModel(list):
         else:
             return False
 
-    def _connect_parameters2update_plot(self, components):
+    def _connect_parameters2update_plot(self, components, update_residual=False):
         if self._plot_active is False:
             return
-        for i, component in enumerate(components):
-            component.events.active_changed.connect(
-                self._model_line._auto_update_line, []
-            )
-            for parameter in component.parameters:
-                parameter.events.value_changed.connect(
-                    self._model_line._auto_update_line, []
-                )
+
+        if update_residual: #update both model and its residual lines
+            for i, component in enumerate(components):
+                component.events.active_changed.connect(
+                    self._model_line._auto_update_line, [])
+                component.events.active_changed.connect(
+                    self._residual_line.update, [])
+                for parameter in component.parameters:
+                    parameter.events.value_changed.connect(
+                        self._model_line._auto_update_line, [])
+                    parameter.events.value_changed.connect(
+                        self._residual_line.update, [])
+
+        else: #update only model line
+            for i, component in enumerate(components):
+                component.events.active_changed.connect(
+                    self._model_line._auto_update_line, [])
+                for parameter in component.parameters:
+                    parameter.events.value_changed.connect(
+                        self._model_line._auto_update_line, [])
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
