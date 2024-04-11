@@ -1168,7 +1168,7 @@ NEW
   artificial data, for use in things like docstrings or for people to test
   HyperSpy functionalities. See :ref:`example-data-label`.
 * New :meth:`~.api.signals.BaseSignal.fft` and :meth:`~.api.signals.BaseSignal.ifft` signal methods. See :ref:`signal.fft`.
-* New :meth:`holospy.signals.hologram_image.HologramImage.statistics` method to compute useful hologram parameters. See :external+holospy:ref:`holography.stats-label`.
+* New :meth:`holospy.signals.HologramImage.statistics` method to compute useful hologram parameters. See :external+holospy:ref:`holography.stats-label`.
 * Automatic axes units conversion and better units handling using `pint <https://pint.readthedocs.io/en/latest/>`__.
   See :ref:`quantity_and_converting_units`.
 * New :class:`~.roi.Line2DROI` :meth:`~.roi.Line2DROI.angle` method. See :ref:`roi-label` for details.
