@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
 import dask.array as da
+import numpy as np
 
-from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
+from hyperspy.component import _get_scaling_factor
 
 
 def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
@@ -60,7 +60,6 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
 
 
 class Lorentzian(Expression):
-
     r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component.
 
     .. math::

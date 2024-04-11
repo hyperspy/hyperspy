@@ -42,7 +42,6 @@ from hyperspy.samfire_utils import (
 )
 from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
-
 __all__ = ["fit_tests", "global_strategies", "local_strategies", "SamfirePool"]
 
 

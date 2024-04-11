@@ -28,7 +28,6 @@ from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.misc.machine_learning.tools import amari
 from hyperspy.signals import BaseSignal
 
-
 skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 
 

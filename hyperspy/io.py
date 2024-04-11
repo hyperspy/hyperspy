@@ -16,32 +16,31 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import os
 import glob
-import warnings
-import logging
 import importlib
+import logging
+import os
+import warnings
+from collections.abc import MutableMapping
+from datetime import datetime
+from inspect import isgenerator
+from pathlib import Path
 
 import numpy as np
 from natsort import natsorted
-from inspect import isgenerator
-from pathlib import Path
-from collections.abc import MutableMapping
-from datetime import datetime
+from rsciio import IO_PLUGINS
 from rsciio.utils.tools import ensure_directory
 from rsciio.utils.tools import overwrite as overwrite_method
-from rsciio import IO_PLUGINS
 
 from hyperspy.api import __version__ as hs_version
-from hyperspy.drawing.markers import markers_dict_to_markers
-from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.misc.utils import strlist2enumeration, get_object_package_info
-from hyperspy.misc.utils import stack as stack_method
-from hyperspy.ui_registry import get_gui
-from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
-
+from hyperspy.drawing.markers import markers_dict_to_markers
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.extensions import ALL_EXTENSIONS
+from hyperspy.misc.utils import get_object_package_info, strlist2enumeration
+from hyperspy.misc.utils import stack as stack_method
+from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
 

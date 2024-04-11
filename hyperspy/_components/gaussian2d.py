@@ -17,9 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
-import numpy as np
-from hyperspy._components.expression import Expression
 
+import numpy as np
+
+from hyperspy._components.expression import Expression
 
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
 

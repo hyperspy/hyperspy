@@ -19,9 +19,9 @@
 import copy
 
 import numpy as np
+from matplotlib.collections import LineCollection
 
 from hyperspy.drawing.markers import Markers
-from matplotlib.collections import LineCollection
 
 
 class HorizontalLines(Markers):

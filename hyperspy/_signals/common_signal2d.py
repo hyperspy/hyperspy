@@ -21,7 +21,6 @@ from hyperspy.docstrings.signal import OPTIMIZE_ARG
 
 
 class CommonSignal2D:
-
     """Common functions for 2-dimensional signals."""
 
     def to_signal1D(self, optimize=True):

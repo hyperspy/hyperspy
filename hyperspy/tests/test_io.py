@@ -17,22 +17,21 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import hashlib
-import os
 import logging
+import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 import pytest
+from rsciio import IO_PLUGINS
 
 import hyperspy.api as hs
+from hyperspy import __version__ as hs_version
+from hyperspy.axes import DataAxis
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signals import Signal1D
-from hyperspy.axes import DataAxis
-from rsciio import IO_PLUGINS
-from hyperspy import __version__ as hs_version
-
 
 PATH = Path(__file__).resolve()
 FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")

@@ -17,10 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.docstrings.markers import (
-    OFFSET_DOCSTRING,
-    WIDTHS_DOCSTRING,
     ANGLES_DOCSTRING,
+    OFFSET_DOCSTRING,
     UNITS_DOCSTRING,
+    WIDTHS_DOCSTRING,
 )
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.collections import SquareCollection

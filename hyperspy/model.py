@@ -26,18 +26,19 @@ from contextlib import contextmanager
 from functools import partial
 
 import cloudpickle
-import numpy as np
 import dask.array as da
-from dask.diagnostics import ProgressBar
+import numpy as np
 import scipy.odr as odr
+from dask.diagnostics import ProgressBar
 from scipy.linalg import svd
 from scipy.optimize import (
-    differential_evolution,
-    leastsq,
-    least_squares,
-    minimize,
     OptimizeResult,
+    differential_evolution,
+    least_squares,
+    leastsq,
+    minimize,
 )
+
 from hyperspy.component import Component
 from hyperspy.components1d import Expression
 from hyperspy.defaults_parser import preferences
@@ -53,6 +54,7 @@ from hyperspy.misc.export_dictionary import (
     parse_flag_string,
     reconstruct_object,
 )
+from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
@@ -64,8 +66,6 @@ from hyperspy.misc.utils import (
 )
 from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
-from hyperspy.misc.machine_learning import import_sklearn
-
 
 _logger = logging.getLogger(__name__)
 
@@ -165,7 +165,6 @@ def reconstruct_component(comp_dictionary, **init_args):
 
 
 class ModelComponents(object):
-
     """Container for model components.
 
     Useful to provide tab completion when running in IPython.
@@ -197,7 +196,6 @@ class ModelComponents(object):
 
 @add_gui_method(toolkey="hyperspy.Model")
 class BaseModel(list):
-
     """Model and data fitting tools applicable to signals of both one and two
     dimensions.
 
@@ -2546,9 +2544,9 @@ class BaseModel(list):
                     for vv in v:
                         if isinstance(vv, dict):
                             remove_empty_numpy_strings(vv)
-                        elif isinstance(vv, np.string_) and len(vv) == 0:
+                        elif isinstance(vv, np.bytes_) and len(vv) == 0:
                             vv = ""
-                elif isinstance(v, np.string_) and len(v) == 0:
+                elif isinstance(v, np.bytes_) and len(v) == 0:
                     del dic[k]
                     dic[k] = ""
 

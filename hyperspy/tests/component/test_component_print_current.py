@@ -20,9 +20,9 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.misc.model_tools import (
-    _format_string,
     CurrentComponentValues,
     CurrentModelValues,
+    _format_string,
 )
 
 

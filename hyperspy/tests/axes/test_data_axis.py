@@ -22,9 +22,9 @@ import platform
 from unittest import mock
 
 import numpy as np
-from numpy.testing import assert_allclose
-import traits.api as t
 import pytest
+import traits.api as t
+from numpy.testing import assert_allclose
 
 from hyperspy.axes import (
     BaseDataAxis,
@@ -33,8 +33,8 @@ from hyperspy.axes import (
     UniformDataAxis,
     create_axis,
 )
-from hyperspy.signals import Signal1D
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.signals import Signal1D
 
 
 class TestBaseDataAxis:

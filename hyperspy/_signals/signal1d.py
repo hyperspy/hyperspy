@@ -20,49 +20,50 @@ import logging
 import math
 import warnings
 
+import dask.array as da
 import numpy as np
 import numpy.ma as ma
-import dask.array as da
 from scipy import interpolate
-from scipy.signal import savgol_filter, medfilt
 from scipy.ndimage import gaussian_filter1d
+from scipy.signal import medfilt, savgol_filter
 
-from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive, SimpleMessage
-from hyperspy.models.model1d import Model1D
-from hyperspy.misc.lowess_smooth import lowess
-
-from hyperspy.defaults_parser import preferences
-from hyperspy.signal_tools import (
-    Signal1DCalibration,
-    SmoothingSavitzkyGolay,
-    SmoothingLowess,
-    SmoothingTV,
-    ButterworthFilter,
-)
-from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
-from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.signal_tools import BackgroundRemoval
-from hyperspy.decorators import interactive_range_selector
-from hyperspy.signal_tools import _get_background_estimator
 from hyperspy._signals.lazy import LazySignal
-from hyperspy.docstrings.signal1d import (
-    CROP_PARAMETER_DOC,
-    SPIKES_REMOVAL_TOOL_DOCSTRING,
-)
-from hyperspy.docstrings.signal import (
-    SHOW_PROGRESSBAR_ARG,
-    NUM_WORKERS_ARG,
-    SIGNAL_MASK_ARG,
-    NAVIGATION_MASK_ARG,
-    LAZYSIGNAL_DOC,
-)
+from hyperspy.decorators import interactive_range_selector
+from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
     BASE_PLOT_DOCSTRING_PARAMETERS,
     PLOT1D_DOCSTRING,
 )
+from hyperspy.docstrings.signal import (
+    LAZYSIGNAL_DOC,
+    NAVIGATION_MASK_ARG,
+    NUM_WORKERS_ARG,
+    SHOW_PROGRESSBAR_ARG,
+    SIGNAL_MASK_ARG,
+)
+from hyperspy.docstrings.signal1d import (
+    CROP_PARAMETER_DOC,
+    SPIKES_REMOVAL_TOOL_DOCSTRING,
+)
+from hyperspy.misc.lowess_smooth import lowess
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.models.model1d import Model1D
+from hyperspy.signal import BaseSignal
+from hyperspy.signal_tools import (
+    BackgroundRemoval,
+    ButterworthFilter,
+    Signal1DCalibration,
+    SimpleMessage,
+    SmoothingLowess,
+    SmoothingSavitzkyGolay,
+    SmoothingTV,
+    SpikesRemoval,
+    SpikesRemovalInteractive,
+    _get_background_estimator,
+)
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
 
@@ -282,7 +283,6 @@ def _shift1D(data, **kwargs):
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
-
     """General 1D signal class."""
 
     _signal_dimension = 1
@@ -1670,7 +1670,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
 
 class LazySignal1D(LazySignal, Signal1D):
-
     """Lazy general 1D signal class."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal1D")

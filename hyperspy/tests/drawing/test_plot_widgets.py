@@ -21,8 +21,8 @@ import numpy as np
 import pytest
 
 from hyperspy.drawing import widgets
-from hyperspy.signals import Signal1D, Signal2D
 from hyperspy.misc.test_utils import mock_event
+from hyperspy.signals import Signal1D, Signal2D
 
 baseline_dir = "plot_widgets"
 default_tol = 2.0

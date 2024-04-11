@@ -33,6 +33,7 @@ Subpackages:
         Tools for energy-dispersive X-ray data analysis.
 
 """
+
 import importlib
 
 
@@ -57,9 +58,10 @@ def print_known_signal_types():
     +--------------------+---------------------+--------------------+----------+
 
     """
-    from hyperspy.ui_registry import ALL_EXTENSIONS
     from prettytable import PrettyTable
+
     from hyperspy.misc.utils import display
+    from hyperspy.ui_registry import ALL_EXTENSIONS
 
     table = PrettyTable()
     table.field_names = ["signal_type", "aliases", "class name", "package"]

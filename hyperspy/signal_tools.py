@@ -24,25 +24,23 @@ import matplotlib
 import matplotlib.colors
 import matplotlib.text as mpl_text
 import numpy as np
+import traits.api as t
 from scipy import interpolate
 from scipy import signal as sp_signal
-import traits.api as t
 
-from hyperspy import drawing
-from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
-from hyperspy.exceptions import SignalDimensionError
+from hyperspy import components1d, drawing
 from hyperspy.axes import AxesManager, UniformDataAxis
-from hyperspy.drawing.widgets import Line2DWidget, VerticalLineWidget
-from hyperspy.drawing.markers import convert_positions
+from hyperspy.component import Component
+from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.drawing._markers.circles import Circles
 from hyperspy.drawing._widgets.range import SpanSelector
-from hyperspy import components1d
-from hyperspy.component import Component
-from hyperspy.ui_registry import add_gui_method
+from hyperspy.drawing.markers import convert_positions
 from hyperspy.drawing.signal1d import Signal1DFigure
+from hyperspy.drawing.widgets import Line2DWidget, VerticalLineWidget
+from hyperspy.exceptions import SignalDimensionError
 from hyperspy.misc.array_tools import numba_histogram
 from hyperspy.misc.math_tools import check_random_state
-
+from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
@@ -314,7 +312,6 @@ class SpanSelectorInSignal1D(t.HasTraits):
 
 
 class LineInSignal1D(t.HasTraits):
-
     """Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
 

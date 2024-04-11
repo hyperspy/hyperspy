@@ -16,20 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
-import dask.array as da
 import logging
 from copy import deepcopy
 
+import dask.array as da
 import matplotlib.collections as mpl_collections
-from matplotlib.transforms import IdentityTransform
+import numpy as np
 from matplotlib.patches import Patch
+from matplotlib.transforms import IdentityTransform
 
 import hyperspy
 from hyperspy.events import Event, Events
 from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
-
 
 _logger = logging.getLogger(__name__)
 

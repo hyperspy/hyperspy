@@ -20,7 +20,6 @@ from hyperspy._components.expression import Expression
 
 
 class RC(Expression):
-
     r"""
     RC function component (based on the time-domain capacitor voltage response
     of an RC-circuit)

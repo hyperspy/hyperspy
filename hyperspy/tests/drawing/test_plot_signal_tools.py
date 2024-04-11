@@ -20,14 +20,13 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy import signals, components1d
+from hyperspy import components1d, signals
 from hyperspy.signal_tools import (
-    ImageContrastEditor,
     BackgroundRemoval,
-    SpanSelectorInSignal1D,
+    ImageContrastEditor,
     Signal1DCalibration,
+    SpanSelectorInSignal1D,
 )
-
 
 BASELINE_DIR = "plot_signal_tools"
 DEFAULT_TOL = 2.0

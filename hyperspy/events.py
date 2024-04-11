@@ -17,14 +17,13 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import inspect
+import re
 from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import wraps  # noqa: F401 Used in exec statement
-import re
 
 
 class Events:
-
     """
     Events container.
 
@@ -143,7 +142,6 @@ class Events:
 
 
 class Event:
-
     """
     Events class
 
@@ -447,7 +445,6 @@ class Event:
 
 
 class EventSuppressor(object):
-
     """
     Object to enforce a variety of suppression types simultaneously
 

@@ -20,11 +20,11 @@
 import gc
 from copy import deepcopy
 
-import pytest
 import numpy as np
+import pytest
 
 from hyperspy import signals
-from hyperspy.axes import UniformDataAxis, DataAxis, FunctionalDataAxis
+from hyperspy.axes import DataAxis, FunctionalDataAxis, UniformDataAxis
 
 
 def _assert_equal_dimensions(s1, s2):

@@ -19,16 +19,15 @@
 from __future__ import division
 
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
+from matplotlib.backend_bases import MouseEvent, PickEvent
 
-from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.events import Events, Event
 from hyperspy.defaults_parser import preferences
+from hyperspy.drawing.utils import on_figure_window_close
+from hyperspy.events import Event, Events
 
 
 class WidgetBase(object):
-
     """Base class for interactive widgets/patches. A widget creates and
     maintains one or more matplotlib patches, and manages the interaction code
     so that the user can maniuplate it on the fly.
@@ -305,7 +304,6 @@ class WidgetBase(object):
 
 
 class DraggableWidgetBase(WidgetBase):
-
     """Adds the `position` and `indices` properties, and adds a framework for
     letting the user drag the patch around. Also adds the `moved` event.
 
@@ -502,7 +500,6 @@ class DraggableWidgetBase(WidgetBase):
 
 
 class Widget1DBase(DraggableWidgetBase):
-
     """A base class for 1D widgets.
 
     It sets the right dimensions for size and
@@ -531,7 +528,6 @@ class Widget1DBase(DraggableWidgetBase):
 
 
 class ResizableDraggableWidgetBase(DraggableWidgetBase):
-
     """Adds the `size` property and get_size_in_axes method, and adds a
     framework for letting the user resize the patch, including resizing by
     key strokes ('+', '-'). Also adds the 'resized' event.
@@ -759,7 +755,6 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
 
 class Widget2DBase(ResizableDraggableWidgetBase):
-
     """A base class for 2D widgets. It sets the right dimensions for size and
     position, adds the 'border_thickness' attribute and initalizes the 'axes'
     attribute to the first two navigation axes if possible, if not, the two

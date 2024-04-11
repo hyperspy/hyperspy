@@ -17,11 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import pytest
 import numpy as np
+import pytest
 
 import hyperspy.api as hs
-
 from hyperspy.utils.plot import plot_roi_map
 
 

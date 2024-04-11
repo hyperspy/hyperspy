@@ -16,24 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from operator import attrgetter
-import inspect
-import copy
-import types
-from io import StringIO
 import codecs
-from collections.abc import Iterable, Mapping
-import unicodedata
-from contextlib import contextmanager
+import copy
 import importlib
+import inspect
 import logging
+import types
+import unicodedata
+from collections.abc import Iterable, Mapping
+from contextlib import contextmanager
+from io import StringIO
+from operator import attrgetter
 
 import dask.array as da
 import numpy as np
 
-from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
+from hyperspy.misc.signal_tools import broadcast_signals
 
 _logger = logging.getLogger(__name__)
 
@@ -180,7 +180,6 @@ def slugify(value, valid_variable_name=False):
 
 
 class DictionaryTreeBrowser:
-
     """
     A class to comfortably browse a dictionary using a CLI.
 
@@ -508,8 +507,8 @@ class DictionaryTreeBrowser:
 
         par_dict = {}
 
+        from hyperspy.axes import AxesManager, BaseDataAxis
         from hyperspy.signal import BaseSignal
-        from hyperspy.axes import AxesManager
 
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -526,6 +525,9 @@ class DictionaryTreeBrowser:
                 elif isinstance(item_["_dtb_value_"], AxesManager):
                     item = item_["_dtb_value_"]._get_axes_dicts()
                     key = "_hspy_AxesManager_" + key
+                elif isinstance(item_["_dtb_value_"], BaseDataAxis):
+                    item = item_["_dtb_value_"].get_axis_dictionary()
+                    key = "_hspy_Axis_" + key
                 elif type(item_["_dtb_value_"]) in (list, tuple):
                     signals = []
                     container = item_["_dtb_value_"]
@@ -845,7 +847,7 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
-    if not isinstance(stuff, (bytes, np.string_)):
+    if not isinstance(stuff, (bytes, np.bytes_)):
         return stuff
     else:
         string = stuff
@@ -858,7 +860,7 @@ def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
 
 def check_long_string(value, max_len):
     "Checks whether string is too long for printing in html metadata"
-    if not isinstance(value, (str, np.string_)):
+    if not isinstance(value, (str, np.bytes_)):
         value = repr(value)
     value = ensure_unicode(value)
     strvalue = str(value)
@@ -1102,9 +1104,10 @@ def stack(
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    from hyperspy.signals import BaseSignal
-    from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
     from numbers import Number
+
+    from hyperspy.axes import DataAxis, FunctionalDataAxis, UniformDataAxis
+    from hyperspy.signals import BaseSignal
 
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
@@ -1467,8 +1470,8 @@ def iterable_not_string(thing):
 
 def add_scalar_axis(signal, lazy=None):
     am = signal.axes_manager
-    from hyperspy.signal import BaseSignal
     from hyperspy._signals.lazy import LazySignal
+    from hyperspy.signal import BaseSignal
 
     if lazy is None:
         lazy = signal._lazy

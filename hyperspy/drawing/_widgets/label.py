@@ -16,14 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
 import matplotlib.transforms as transforms
+import numpy as np
 
 from hyperspy.drawing.widget import Widget1DBase
 
 
 class LabelWidget(Widget1DBase):
-
     """A draggable text widget. Adds the attributes 'string' and 'bbox'.
     These are all arguments for matplotlib's Text artist. The default
     y-coordinate of the label is set to 0.9.

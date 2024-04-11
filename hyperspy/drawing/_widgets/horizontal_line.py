@@ -16,13 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.drawing.widget import Widget1DBase
-from hyperspy.drawing.utils import picker_kwargs
 from hyperspy.defaults_parser import preferences
+from hyperspy.drawing.utils import picker_kwargs
+from hyperspy.drawing.widget import Widget1DBase
 
 
 class HorizontalLineWidget(Widget1DBase):
-
     """A draggable, horizontal line widget."""
 
     def _update_patch_position(self):

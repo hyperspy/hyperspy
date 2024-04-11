@@ -47,16 +47,15 @@ The following 2D ROIs are available:
 
 from functools import partial
 
-import traits.api as t
 import numpy as np
+import traits.api as t
 
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
-from hyperspy.events import Events, Event
+from hyperspy.events import Event, Events
 from hyperspy.interactive import interactive
 from hyperspy.misc.utils import is_cupy_array
 from hyperspy.ui_registry import add_gui_method
-
 
 not_set_error_msg = (
     "Some ROI parameters have not yet been set. " "Set them before slicing a signal."
@@ -72,7 +71,7 @@ PARSE_AXES_DOCSTRING = """axes : None, str, int or :class:`hyperspy.axes.DataAxi
 
               - :class:`hyperspy.axes.DataAxis`
               - anything that can index the provided ``axes_manager``
-    
+
             * ``None``, it will check whether the widget can be added to the
               navigator, i.e. if dimensionality matches, and use it if
               possible, otherwise it will try the signal space. If none of the
@@ -81,7 +80,6 @@ PARSE_AXES_DOCSTRING = """axes : None, str, int or :class:`hyperspy.axes.DataAxi
 
 
 class BaseROI(t.HasTraits):
-
     """Base class for all ROIs.
 
     Provides some basic functionalities that are likely to be shared between all
@@ -312,7 +310,6 @@ def _get_mpl_ax(plot, axes):
 
 
 class BaseInteractiveROI(BaseROI):
-
     """Base class for interactive ROIs, i.e. ROIs with widget interaction.
     The base class defines a lot of the common code for interacting with
     widgets, but inheritors need to implement the following functions:
@@ -593,7 +590,6 @@ class BaseInteractiveROI(BaseROI):
 
 
 class BasePointROI(BaseInteractiveROI):
-
     """Base ROI class for point ROIs, i.e. ROIs with a unit size in each of its
     dimensions.
     """
@@ -632,7 +628,6 @@ def guess_vertical_or_horizontal(axes, signal):
 
 @add_gui_method(toolkey="hyperspy.Point1DROI")
 class Point1DROI(BasePointROI):
-
     """Selects a single point in a 1D space. The coordinate of the point in the
     1D space is stored in the 'value' trait.
 
@@ -692,7 +687,6 @@ class Point1DROI(BasePointROI):
 
 @add_gui_method(toolkey="hyperspy.Point2DROI")
 class Point2DROI(BasePointROI):
-
     """Selects a single point in a 2D space. The coordinates of the point in
     the 2D space are stored in the traits ``'x'`` and ``'y'``.
 
@@ -755,7 +749,6 @@ class Point2DROI(BasePointROI):
 
 @add_gui_method(toolkey="hyperspy.SpanROI")
 class SpanROI(BaseInteractiveROI):
-
     """Selects a range in a 1D space. The coordinates of the range in
     the 1D space are stored in the traits ``'left'`` and ``'right'``.
 
@@ -833,7 +826,6 @@ class SpanROI(BaseInteractiveROI):
 
 @add_gui_method(toolkey="hyperspy.RectangularROI")
 class RectangularROI(BaseInteractiveROI):
-
     """Selects a range in a 2D space. The coordinates of the range in
     the 2D space are stored in the traits ``'left'``, ``'right'``, ``'top'`` and ``'bottom'``.
     Convenience properties ``'x'``, ``'y'``, ``'width'`` and ``'height'`` are also available,

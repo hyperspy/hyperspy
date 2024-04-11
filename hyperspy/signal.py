@@ -16,43 +16,77 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from collections.abc import MutableMapping
-from contextlib import contextmanager
 import copy
-from datetime import datetime
-from functools import partial
 import inspect
-from itertools import product
 import logging
 import numbers
-from pathlib import Path
 import warnings
+from collections.abc import MutableMapping
+from contextlib import contextmanager
+from datetime import datetime
+from functools import partial
+from itertools import product
+from pathlib import Path
 
 import dask.array as da
+import numpy as np
+import traits.api as t
 from dask.diagnostics import ProgressBar
 from matplotlib import pyplot as plt
-import numpy as np
 from pint import UndefinedUnitError
-from scipy import integrate
-from scipy import signal as sp_signal
-import traits.api as t
-from tlz import concat
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import ensure_directory
+from scipy import integrate
+from scipy import signal as sp_signal
 from scipy.interpolate import make_interp_spline
+from tlz import concat
 
-from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
-from hyperspy.misc.array_tools import rebin as array_rebin
-from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
-from hyperspy.learn.mva import MVA, LearningResults
+from hyperspy.axes import AxesManager, create_axis
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING,
+    BASE_PLOT_DOCSTRING_PARAMETERS,
+    PLOT1D_DOCSTRING,
+    PLOT2D_KWARGS_DOCSTRING,
+)
+from hyperspy.docstrings.signal import (
+    CLUSTER_SIGNALS_ARG,
+    HISTOGRAM_BIN_ARGS,
+    HISTOGRAM_MAX_BIN_ARGS,
+    LAZY_OUTPUT_ARG,
+    MANY_AXIS_PARAMETER,
+    NAN_FUNC,
+    NUM_WORKERS_ARG,
+    ONE_AXIS_PARAMETER,
+    OPTIMIZE_ARG,
+    OUT_ARG,
+    RECHUNK_ARG,
+    SHOW_PROGRESSBAR_ARG,
+)
+from hyperspy.docstrings.utils import REBIN_ARGS
+from hyperspy.drawing import mpl_he, mpl_hie, mpl_hse
+from hyperspy.drawing import signal as sigdraw
+from hyperspy.drawing.markers import markers_dict_to_markers
+from hyperspy.drawing.utils import animate_legend
+from hyperspy.events import Event, Events
+from hyperspy.exceptions import (
+    DataDimensionError,
+    LazyCupyConversion,
+    SignalDimensionError,
+)
+from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
-from hyperspy.drawing import signal as sigdraw
-from hyperspy.exceptions import SignalDimensionError, DataDimensionError
+from hyperspy.learn.mva import MVA, LearningResults
+from hyperspy.misc.array_tools import rebin as array_rebin
+from hyperspy.misc.hist_tools import histogram
+from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
+from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
+from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
 from hyperspy.misc.utils import (
-    add_scalar_axis,
     DictionaryTreeBrowser,
+    _get_block_pattern,
+    add_scalar_axis,
     guess_output_signal_size,
     is_cupy_array,
     isiterable,
@@ -63,38 +97,6 @@ from hyperspy.misc.utils import (
     to_numpy,
     underline,
 )
-from hyperspy.misc.hist_tools import histogram
-from hyperspy.drawing.utils import animate_legend
-from hyperspy.drawing.markers import markers_dict_to_markers
-from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
-from hyperspy.misc.utils import _get_block_pattern
-from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER,
-    MANY_AXIS_PARAMETER,
-    OUT_ARG,
-    NAN_FUNC,
-    OPTIMIZE_ARG,
-    RECHUNK_ARG,
-    SHOW_PROGRESSBAR_ARG,
-    NUM_WORKERS_ARG,
-    CLUSTER_SIGNALS_ARG,
-    HISTOGRAM_BIN_ARGS,
-    HISTOGRAM_MAX_BIN_ARGS,
-    LAZY_OUTPUT_ARG,
-)
-from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING,
-    PLOT1D_DOCSTRING,
-    BASE_PLOT_DOCSTRING_PARAMETERS,
-    PLOT2D_KWARGS_DOCSTRING,
-)
-from hyperspy.docstrings.utils import REBIN_ARGS
-from hyperspy.events import Events, Event
-from hyperspy.interactive import interactive
-from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
-from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
-from hyperspy.exceptions import LazyCupyConversion
-
 
 _logger = logging.getLogger(__name__)
 
@@ -106,12 +108,14 @@ except ImportError:
     CUPY_INSTALLED = False
 
 
-def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
+def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers, axes):
     for key in dic:
         if key.startswith("_sig_"):
             signals.append((key, dic))
         elif key.startswith("_hspy_AxesManager_"):
             axes_managers.append((key, dic))
+        elif key.startswith("_hspy_Axis_"):
+            axes.append((key, dic))
         elif isinstance(dic[key], (list, tuple)):
             signals = []
             # Support storing signals in containers
@@ -126,6 +130,7 @@ def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
                 axes_managers=axes_managers,
                 signals=signals,
                 containers=containers,
+                axes=axes,
             )
 
 
@@ -143,13 +148,19 @@ def _obj_in_dict2hspy(dic, lazy):
     """
     from hyperspy.io import dict2signal
 
-    axes_managers, signals, containers = [], [], []
+    axes_managers, signals, containers, axes = [], [], [], []
     _dic_get_hs_obj_paths(
-        dic, axes_managers=axes_managers, signals=signals, containers=containers
+        dic,
+        axes_managers=axes_managers,
+        signals=signals,
+        containers=containers,
+        axes=axes,
     )
     for key, dic in axes_managers:
         dic[key[len("_hspy_AxesManager_") :]] = AxesManager(dic[key])
         del dic[key]
+    for key, dic in axes:
+        dic[key[len("_hspy_Axis_") :]] = create_axis(**dic[key])
     for key, dic in signals:
         dic[key[len("_sig_") :]] = dict2signal(dic[key], lazy=lazy)
         del dic[key]
@@ -167,7 +178,6 @@ def _obj_in_dict2hspy(dic, lazy):
 
 
 class ModelManager(object):
-
     """Container for models"""
 
     class ModelStub(object):
@@ -624,8 +634,8 @@ class MVATools(object):
         no_nans=True,
         per_row=3,
     ):
-        from hyperspy._signals.signal2d import Signal2D
         from hyperspy._signals.signal1d import Signal1D
+        from hyperspy._signals.signal2d import Signal2D
 
         if multiple_files is None:
             multiple_files = True
@@ -798,8 +808,8 @@ class MVATools(object):
         no_nans=True,
         per_row=3,
     ):
-        from hyperspy._signals.signal2d import Signal2D
         from hyperspy._signals.signal1d import Signal1D
+        from hyperspy._signals.signal2d import Signal2D
 
         if multiple_files is None:
             multiple_files = True
@@ -2277,7 +2287,7 @@ class MVATools(object):
     ):
         """Plot the cluster labels and centers.
 
-        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and 
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_labels` and
         :meth:`~hyperspy.api.signals.BaseSignal.plot_cluster_signals`, this
         method displays one component at a time.
         Therefore it provides a more compact visualization than then other
@@ -2374,7 +2384,6 @@ class BaseSignal(
     MVA,
     MVATools,
 ):
-
     """
 
     Attributes

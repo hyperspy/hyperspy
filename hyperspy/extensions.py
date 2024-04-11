@@ -16,16 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
 import copy
-import yaml
 import json
+import logging
+from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
-from pathlib import Path
 import importlib_metadata as metadata
-
+import yaml
 
 _logger = logging.getLogger(__name__)
 

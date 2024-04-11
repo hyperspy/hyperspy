@@ -33,19 +33,19 @@ Examples
 >>> im.add_marker(m)
 
 """
-from hyperspy.drawing.markers import Markers
-from hyperspy.drawing._markers.texts import Texts
-from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
-from hyperspy.drawing._markers.vertical_lines import VerticalLines
+
+from hyperspy.drawing._markers.arrows import Arrows
 from hyperspy.drawing._markers.circles import Circles
 from hyperspy.drawing._markers.ellipses import Ellipses
-from hyperspy.drawing._markers.squares import Squares
-from hyperspy.drawing._markers.arrows import Arrows
-from hyperspy.drawing._markers.points import Points
+from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
 from hyperspy.drawing._markers.lines import Lines
-from hyperspy.drawing._markers.rectangles import Rectangles
+from hyperspy.drawing._markers.points import Points
 from hyperspy.drawing._markers.polygons import Polygons
-
+from hyperspy.drawing._markers.rectangles import Rectangles
+from hyperspy.drawing._markers.squares import Squares
+from hyperspy.drawing._markers.texts import Texts
+from hyperspy.drawing._markers.vertical_lines import VerticalLines
+from hyperspy.drawing.markers import Markers
 
 __all__ = [
     "Arrows",

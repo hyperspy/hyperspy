@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from pathlib import Path
+
 import numpy as np
 import pytest
-from pathlib import Path
 
 import hyperspy.api as hs
 from hyperspy.components1d import Gaussian

@@ -11,12 +11,11 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import sys
 from datetime import datetime
 from importlib.metadata import version as get_version
-import sys
 
 import hyperspy
-
 
 sys.path.append("../")
 

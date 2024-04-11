@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Common docstring snippets for utils.
-
-"""
+"""Common docstring snippets for utils."""
 
 STACK_METADATA_ARG = """stack_metadata : {bool, int}
         If integer, this value defines the index of the signal in the signal
@@ -45,7 +43,7 @@ REBIN_ARGS = """new_shape : list (of float or int) or None
             Whether or not to crop the resulting rebinned data (default is
             ``True``). When binning by a non-integer number of
             pixels it is likely that the final row in each dimension will
-            contain fewer than the full quota to fill one pixel. For example, 
+            contain fewer than the full quota to fill one pixel. For example,
             a 5*5 array binned by 2.1 will produce two rows containing
             2.1 pixels and one row containing only 0.8 pixels. Selection of
             ``crop=True`` or ``crop=False`` determines whether or not this

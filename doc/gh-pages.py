@@ -9,7 +9,7 @@ If no tag is given, the current output of 'git describe' is used.  If given,
 that is how the resulting directory will be named.
 
 In practice, you should use either actual clean tags from a current build or
-something like 'current' as a stable URL for the most current version of the """
+something like 'current' as a stable URL for the most current version of the"""
 
 # -----------------------------------------------------------------------------
 # Imports
@@ -19,8 +19,7 @@ import shutil
 import sys
 from os import chdir as cd
 from os.path import join as pjoin
-
-from subprocess import Popen, PIPE, CalledProcessError, check_call
+from subprocess import PIPE, CalledProcessError, Popen, check_call
 
 # -----------------------------------------------------------------------------
 # Globals

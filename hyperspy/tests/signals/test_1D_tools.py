@@ -18,10 +18,10 @@
 
 from unittest import mock
 
+import dask.array as da
 import numpy as np
 import pytest
 from scipy.signal import savgol_filter
-import dask.array as da
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass

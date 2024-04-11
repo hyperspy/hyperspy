@@ -20,6 +20,7 @@ import logging
 
 import numpy as np
 import pytest
+
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.utils import stack

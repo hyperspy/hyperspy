@@ -26,7 +26,6 @@ _logger = logging.getLogger(__name__)
 
 
 class PowerLaw(Expression):
-
     r"""Power law component.
 
     .. math::

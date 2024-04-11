@@ -18,12 +18,12 @@
 
 
 import logging
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 
-from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 from hyperspy.drawing.utils import picker_kwargs
-
+from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
 _logger = logging.getLogger(__name__)
 
@@ -58,7 +58,6 @@ def angle_between(v1, v2):
 
 
 class Line2DWidget(ResizableDraggableWidgetBase):
-
     """A free-form line on a 2D plot. Enables dragging and moving the end
     points, but also allows rotation of the widget by moving the mouse beyond
     the end points of the line.

@@ -16,17 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
 import logging
 
-from hyperspy._components.expression import Expression
+import numpy as np
 
+from hyperspy._components.expression import Expression
 
 _logger = logging.getLogger(__name__)
 
 
 class Exponential(Expression):
-
     r"""Exponential function component.
 
     .. math::

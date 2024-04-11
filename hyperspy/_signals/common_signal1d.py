@@ -17,12 +17,11 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-from hyperspy.exceptions import DataDimensionError
 from hyperspy.docstrings.signal import OPTIMIZE_ARG
+from hyperspy.exceptions import DataDimensionError
 
 
 class CommonSignal1D:
-
     """Common functions for 1-dimensional signals."""
 
     def to_signal2D(self, optimize=True):

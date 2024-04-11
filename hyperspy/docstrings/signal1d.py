@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Common docstring snippets for signal1d.
-
-"""
+"""Common docstring snippets for signal1d."""
 
 CROP_PARAMETER_DOC = """crop : bool
             If True automatically crop the signal axis at both ends if needed."""
@@ -45,8 +43,8 @@ SPIKES_DIAGNOSIS_DOCSTRING = """Plots a histogram to help in choosing the thresh
 
         """
 
-SPIKES_REMOVAL_TOOL_DOCSTRING = """Graphical interface to remove spikes from EELS spectra or 
-        luminescence data. 
+SPIKES_REMOVAL_TOOL_DOCSTRING = """Graphical interface to remove spikes from EELS spectra or
+        luminescence data.
         If non-interactive, it removes all spikes.
 
         Parameters
@@ -61,10 +59,10 @@ SPIKES_REMOVAL_TOOL_DOCSTRING = """Graphical interface to remove spikes from EEL
             method.
         %s
         interactive : bool
-            If True, remove the spikes using the graphical user interface. 
+            If True, remove the spikes using the graphical user interface.
             If False, remove all the spikes automatically, which can
-            introduce artefacts if used with signal containing peak-like 
-            features. However, this can be mitigated by using the 
+            introduce artefacts if used with signal containing peak-like
+            features. However, this can be mitigated by using the
             ``signal_mask`` argument to mask the signal of interest.
         %s
         %s

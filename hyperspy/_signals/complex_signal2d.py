@@ -22,15 +22,14 @@ from hyperspy._signals.complex_signal import ComplexSignal, LazyComplexSignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
     BASE_PLOT_DOCSTRING_PARAMETERS,
-    PLOT2D_DOCSTRING,
     COMPLEX_DOCSTRING,
+    PLOT2D_DOCSTRING,
     PLOT2D_KWARGS_DOCSTRING,
 )
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 
 
 class ComplexSignal2D(ComplexSignal, CommonSignal2D):
-
     """Signal class for complex 2-dimensional data."""
 
     _signal_dimension = 2
@@ -126,7 +125,6 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
 
 
 class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
-
     """Lazy Signal class for complex 2-dimensional data."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal2D")

@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
-import matplotlib.pyplot as plt
 import logging
 
-from hyperspy.drawing.widget import Widget2DBase, ResizersMixin
+import matplotlib.pyplot as plt
+import numpy as np
 
+from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
 
 _logger = logging.getLogger(__name__)
 # Track if we have already warned when the widget is out of range
@@ -29,7 +29,6 @@ already_warn_out_of_range = False
 
 
 class SquareWidget(Widget2DBase):
-
     """SquareWidget is a symmetric, Rectangle-patch based widget, which can be
     dragged, and resized by keystrokes/code. As the widget is normally only
     meant to indicate position, the sizing is deemed purely visual, but there
@@ -71,7 +70,6 @@ class SquareWidget(Widget2DBase):
 
 
 class RectangleWidget(SquareWidget, ResizersMixin):
-
     """RectangleWidget is a asymmetric, Rectangle-patch based widget, which can
     be dragged and resized by mouse/keys. For resizing by mouse, it adds a
     small Rectangle patch on the outer border of the main patch, to serve as

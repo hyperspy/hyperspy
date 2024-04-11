@@ -16,14 +16,14 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-from packaging.version import Version
 
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import MouseEvent, MouseButton
 import numpy as np
 import pytest
 import scipy.ndimage
+from matplotlib.backend_bases import MouseButton, MouseEvent
+from packaging.version import Version
 
 try:
     # scipy >=1.10
@@ -34,10 +34,9 @@ except ImportError:
 import traits.api as t
 
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.drawing.utils import make_cmap, plot_RGB_map
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
-from hyperspy.decorators import lazifyTestClass
-
 
 scalebar_color = "blue"
 default_tol = 2.0
@@ -874,8 +873,9 @@ class TestDynamicNavigatorPlot:
         )
 
     def test_plot_5d(self):
-        import hyperspy.api as hs
         import numpy as np
+
+        import hyperspy.api as hs
 
         s = self.signal5d2d
         nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
@@ -889,8 +889,9 @@ class TestDynamicNavigatorPlot:
         assert np.array_equal(data2, data3)
 
     def test_plot_5d_2(self):
-        import hyperspy.api as hs
         import numpy as np
+
+        import hyperspy.api as hs
 
         s = self.signal5d2d
         nav = hs.signals.Signal2D(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
@@ -904,8 +905,9 @@ class TestDynamicNavigatorPlot:
         assert np.array_equal(data2, data3)
 
     def test_plot_6d(self):
-        import hyperspy.api as hs
         import numpy as np
+
+        import hyperspy.api as hs
 
         s = self.signal6d2d
         nav = hs.signals.BaseSignal(
@@ -921,8 +923,9 @@ class TestDynamicNavigatorPlot:
         assert np.array_equal(data2, data3)
 
     def test_plot_4d_1dSignal(self):
-        import hyperspy.api as hs
         import numpy as np
+
+        import hyperspy.api as hs
 
         s = self.signal4d1d
         nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
@@ -936,8 +939,9 @@ class TestDynamicNavigatorPlot:
         assert np.array_equal(data2, data3)
 
     def test_plot_5d_1dsignal(self):
-        import hyperspy.api as hs
         import numpy as np
+
+        import hyperspy.api as hs
 
         s = self.signal5d1d
         nav = hs.signals.BaseSignal(

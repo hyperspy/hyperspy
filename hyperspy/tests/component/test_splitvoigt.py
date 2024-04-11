@@ -26,7 +26,6 @@ from hyperspy.components1d import SplitVoigt
 from hyperspy.signals import Signal1D
 from hyperspy.utils import stack
 
-
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 

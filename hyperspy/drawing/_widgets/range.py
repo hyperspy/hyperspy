@@ -18,13 +18,13 @@
 
 import inspect
 import logging
-from packaging.version import Version
 
 import matplotlib
 import numpy as np
+from packaging.version import Version
 
-from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 from hyperspy.defaults_parser import preferences
+from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
 if Version(matplotlib.__version__) >= Version("3.6.0"):
     from matplotlib.widgets import SpanSelector
@@ -35,7 +35,6 @@ _logger = logging.getLogger(__name__)
 
 
 class RangeWidget(ResizableDraggableWidgetBase):
-
     """RangeWidget is a span-patch based widget, which can be
     dragged and resized by mouse/keys. Basically a wrapper for
     ModifiablepanSelector so that it conforms to the common widget interface.

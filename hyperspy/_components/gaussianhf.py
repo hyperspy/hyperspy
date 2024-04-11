@@ -22,13 +22,11 @@ from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.component import _get_scaling_factor
 
-
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
 class GaussianHF(Expression):
-
     r"""Normalized gaussian function component, with a ``fwhm`` parameter
     instead of the ``sigma`` parameter, and a ``height`` parameter instead of
     the area parameter ``A`` (scaling difference of

@@ -23,9 +23,9 @@ import pytest
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.components1d import Gaussian, Offset
-from hyperspy.models.model1d import ComponentFit
-from hyperspy.exceptions import SignalDimensionError
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import SignalDimensionError
+from hyperspy.models.model1d import ComponentFit
 
 
 class TestFitOneComponent:
