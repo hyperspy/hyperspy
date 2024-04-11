@@ -16,21 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
 import importlib
+import logging
 import sys
 
-
-from hyperspy.logger import set_log_level
 from hyperspy.defaults_parser import preferences
+from hyperspy.logger import set_log_level
 
 # Need to run before other import to use the logger during import
 _logger = logging.getLogger(__name__)
 set_log_level(preferences.General.logging_level)
 
-from hyperspy import docstrings  # noqa: E402
-from . import __version__  # noqa: E402
-
+from hyperspy import __version__  # noqa: E402
+from hyperspy.docstrings import START_HSPY as _START_HSPY_DOCSTRING  # noqa: E402
 
 __doc__ = (
     """
@@ -90,21 +88,20 @@ The :mod:`~.api` package contains the following submodules/packages:
 For more details see their doctrings.
 
 """
-    % docstrings.START_HSPY
+    % _START_HSPY_DOCSTRING
 )
-
-
-del docstrings
 
 
 def get_configuration_directory_path():
     """Return configuration path"""
-    import hyperspy.misc.config_dir
+    from hyperspy.defaults_parser import config_path
 
-    return hyperspy.misc.config_dir.config_path
+    return config_path
 
 
-__all__ = [  # noqa: F822
+# ruff: noqa: F822
+
+__all__ = [
     "data",
     "get_configuration_directory_path",
     "interactive",
