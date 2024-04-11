@@ -18,12 +18,11 @@
 
 import math
 
-import numpy as np
 import dask.array as da
+import numpy as np
 
-from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
-
+from hyperspy.component import _get_scaling_factor
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))

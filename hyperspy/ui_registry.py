@@ -33,7 +33,6 @@ import importlib
 
 from hyperspy.extensions import ALL_EXTENSIONS, _external_extensions
 
-
 UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["GUI"]["toolkeys"]}
 _EXTENSION_NAMES = [e.name for e in _external_extensions]
 

@@ -41,12 +41,11 @@ The :mod:`hyperspy.api.plot` module contains the following submodules:
 from hyperspy.drawing.utils import (
     plot_histograms,
     plot_images,
+    plot_roi_map,
     plot_signals,
     plot_spectra,
-    plot_roi_map,
 )
 from hyperspy.utils import markers
-
 
 __all__ = [
     "markers",

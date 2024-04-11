@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.drawing.markers import Markers
 from matplotlib.collections import PolyCollection
+
+from hyperspy.drawing.markers import Markers
 
 
 class Polygons(Markers):

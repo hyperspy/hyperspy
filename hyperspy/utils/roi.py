@@ -26,7 +26,6 @@ from hyperspy.roi import (
     SpanROI,
 )
 
-
 __doc__ = hyperspy.roi.__doc__
 
 

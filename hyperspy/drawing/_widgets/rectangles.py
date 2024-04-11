@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
-import matplotlib.pyplot as plt
 import logging
 
-from hyperspy.drawing.widget import Widget2DBase, ResizersMixin
+import matplotlib.pyplot as plt
+import numpy as np
 
+from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
 
 _logger = logging.getLogger(__name__)
 # Track if we have already warned when the widget is out of range

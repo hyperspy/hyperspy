@@ -20,23 +20,21 @@ import dask.array as da
 import numpy as np
 import pytest
 
-
 from hyperspy import signals
 from hyperspy.misc.utils import (
+    closest_power_of_two,
+    fsdict,
+    get_array_module,
+    is_cupy_array,
     is_hyperspy_signal,
     parse_quantity,
-    slugify,
-    strlist2enumeration,
-    str2num,
-    swapelem,
-    fsdict,
-    closest_power_of_two,
     shorten_name,
-    is_cupy_array,
+    slugify,
+    str2num,
+    strlist2enumeration,
+    swapelem,
     to_numpy,
-    get_array_module,
 )
-
 
 try:
     import cupy as cp

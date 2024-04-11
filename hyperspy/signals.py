@@ -39,9 +39,9 @@ ComplexSignal2D
     data of n-dimensions. The signal is unbinned by default.
 """
 
-from hyperspy.extensions import EXTENSIONS as EXTENSIONS_
 import importlib
 
+from hyperspy.extensions import EXTENSIONS as EXTENSIONS_
 
 __all__ = [
     signal_ for signal_, specs_ in EXTENSIONS_["signals"].items() if not specs_["lazy"]

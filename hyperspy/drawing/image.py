@@ -16,28 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import copy
+import inspect
+import logging
 import math
-from packaging.version import Version
 
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize, LogNorm, SymLogNorm, PowerNorm
-from traits.api import Undefined
-import logging
-import inspect
-import copy
+import numpy as np
+from matplotlib.colors import LogNorm, Normalize, PowerNorm, SymLogNorm
+from packaging.version import Version
 from rsciio.utils import rgb_tools
+from traits.api import Undefined
 
-from hyperspy.drawing import widgets
-from hyperspy.drawing import utils
-from hyperspy.signal_tools import ImageContrastEditor
-from hyperspy.misc import math_tools
-from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
+from hyperspy.drawing import utils, widgets
+from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.misc import math_tools
 from hyperspy.misc.test_utils import ignore_warning
-
+from hyperspy.signal_tools import ImageContrastEditor
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
 

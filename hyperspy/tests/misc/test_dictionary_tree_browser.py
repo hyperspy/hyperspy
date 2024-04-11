@@ -16,19 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
 import os.path
 import tempfile
+
+import numpy as np
 import pytest
 
+from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
     check_long_string,
-    replace_html_symbols,
     nested_dictionary_merge,
+    replace_html_symbols,
 )
 from hyperspy.signal import BaseSignal
-from hyperspy.axes import UniformDataAxis
 
 
 @pytest.fixture(params=[True, False], ids=["lazy", "not_lazy"])

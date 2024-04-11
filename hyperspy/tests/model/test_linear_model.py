@@ -23,7 +23,7 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.component import Component
-from hyperspy.components1d import Gaussian, Expression, Offset
+from hyperspy.components1d import Expression, Gaussian, Offset
 from hyperspy.components2d import Gaussian2D
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.utils import dummy_context_manager

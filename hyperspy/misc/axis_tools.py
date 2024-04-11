@@ -17,6 +17,7 @@
 
 
 import numpy as np
+
 from hyperspy.api_nogui import _ureg
 
 

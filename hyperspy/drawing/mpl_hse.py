@@ -22,8 +22,8 @@ import copy
 import numpy as np
 from traits.api import Undefined
 
-from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 from hyperspy.drawing import signal1d
+from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 
 
 class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):

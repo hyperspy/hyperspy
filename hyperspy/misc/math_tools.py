@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from functools import reduce
 import math
 import numbers
-from packaging.version import Version
 import warnings
+from functools import reduce
 
-import numpy as np
 import dask
 import dask.array as da
+import numpy as np
+from packaging.version import Version
 
 
 def symmetrize(a):

@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from pathlib import Path
+
 import pytest
 
 from hyperspy.api import load

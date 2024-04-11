@@ -18,7 +18,7 @@
 import numpy as np
 
 from hyperspy.axes import AxesManager
-from hyperspy.signal import _obj_in_dict2hspy, BaseSignal
+from hyperspy.signal import BaseSignal, _obj_in_dict2hspy
 
 
 def test_obj_in_dict2hspy_signal():

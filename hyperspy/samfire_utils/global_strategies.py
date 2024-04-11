@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.samfire_utils.strategy import GlobalStrategy
 from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
+from hyperspy.samfire_utils.strategy import GlobalStrategy
 
 
 class HistogramStrategy(GlobalStrategy):

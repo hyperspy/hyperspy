@@ -16,14 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import pytest
 import numpy as np
+import pytest
 from scipy.stats import norm
 
-from hyperspy.signals import Signal2D, BaseSignal, Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import PeaksFinder2D
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 from hyperspy.ui_registry import TOOLKIT_REGISTRY
 
 

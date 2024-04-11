@@ -17,12 +17,12 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-from packaging.version import Version
 from unittest import mock
 
 import dask
 import numpy as np
 import pytest
+from packaging.version import Version
 
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal import BaseSignal

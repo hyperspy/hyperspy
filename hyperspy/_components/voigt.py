@@ -18,10 +18,9 @@
 
 import math
 
-from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
-
+from hyperspy.component import _get_scaling_factor
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))

@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from functools import partial
 import logging
-
-from traits.api import Undefined
-import matplotlib as mpl
-
-from hyperspy.drawing import widgets, signal1d, image
-from hyperspy.defaults_parser import preferences
 import warnings
+from functools import partial
+
+import matplotlib as mpl
+from traits.api import Undefined
+
+from hyperspy.defaults_parser import preferences
+from hyperspy.drawing import image, signal1d, widgets
 
 _logger = logging.getLogger(__name__)
 
@@ -213,8 +213,8 @@ class MPL_HyperExplorer(object):
                 if plot_style is None:
                     plot_style = preferences.Plot.widget_plot_style
                 # If widgets do not already exist, we will `display` them at the end
-                from ipywidgets.widgets import HBox, VBox
                 from IPython.display import display
+                from ipywidgets.widgets import HBox, VBox
 
                 if self.signal_plot is None and self.navigator_plot is not None:
                     # in case the signal is navigation only

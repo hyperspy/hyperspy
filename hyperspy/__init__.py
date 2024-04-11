@@ -17,9 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import importlib
-from importlib.metadata import version
 import logging
+from importlib.metadata import version
 from pathlib import Path
+
 from hyperspy import docstrings
 
 _logger = logging.getLogger(__name__)

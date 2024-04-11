@@ -16,37 +16,35 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from contextlib import contextmanager
 import copy
-import math
+import inspect
 import logging
+import math
+import warnings
+from collections.abc import Iterable
+from contextlib import contextmanager
 
 import dask.array as da
 import numpy as np
 import pint
-from sympy.utilities.lambdify import lambdify
 import traits.api as t
+from sympy.utilities.lambdify import lambdify
 from traits.trait_errors import TraitError
 
-from hyperspy.api_nogui import _ureg
-from hyperspy.events import Events, Event
-from hyperspy.misc.array_tools import (
-    numba_closest_index_round,
-    numba_closest_index_floor,
-    numba_closest_index_ceil,
-    round_half_towards_zero,
-    round_half_away_from_zero,
-)
-from hyperspy.misc.utils import isiterable, ordinal
-from hyperspy.misc.math_tools import isfloat
-from hyperspy.ui_registry import add_gui_method, get_gui
-from hyperspy.defaults_parser import preferences
 from hyperspy._components.expression import _parse_substitutions
-
-
-import warnings
-import inspect
-from collections.abc import Iterable
+from hyperspy.api_nogui import _ureg
+from hyperspy.defaults_parser import preferences
+from hyperspy.events import Event, Events
+from hyperspy.misc.array_tools import (
+    numba_closest_index_ceil,
+    numba_closest_index_floor,
+    numba_closest_index_round,
+    round_half_away_from_zero,
+    round_half_towards_zero,
+)
+from hyperspy.misc.math_tools import isfloat
+from hyperspy.misc.utils import isiterable, ordinal
+from hyperspy.ui_registry import add_gui_method, get_gui
 
 _logger = logging.getLogger(__name__)
 

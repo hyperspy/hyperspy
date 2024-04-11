@@ -24,11 +24,9 @@ For use in things like docstrings or to test HyperSpy functionalities.
 
 import numpy as np
 
-from hyperspy import components1d, components2d
-from hyperspy import signals
-from hyperspy.misc.math_tools import check_random_state
+from hyperspy import components1d, components2d, signals
 from hyperspy.axes import UniformDataAxis
-
+from hyperspy.misc.math_tools import check_random_state
 
 ADD_NOISE_DOCSTRING = """add_noise : bool
         If True, add noise to the signal. See note to seed the noise to

@@ -22,15 +22,13 @@ from multiprocessing import cpu_count
 import cloudpickle
 import numpy as np
 
-from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.misc.utils import slugify
-from hyperspy.misc.math_tools import check_random_state
 from hyperspy.external.progressbar import progressbar
-from hyperspy.signal import BaseSignal
-from hyperspy.samfire_utils.strategy import LocalStrategy, GlobalStrategy
-from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
+from hyperspy.misc.math_tools import check_random_state
+from hyperspy.misc.utils import DictionaryTreeBrowser, slugify
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
-
+from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
+from hyperspy.samfire_utils.strategy import GlobalStrategy, LocalStrategy
+from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
 
@@ -528,8 +526,8 @@ class Samfire:
             self.optional_components = new_list
 
     def _request_user_input(self):
-        from hyperspy.signals import Image
         from hyperspy.drawing.widgets import SquareWidget
+        from hyperspy.signals import Image
 
         mark = Image(
             self.metadata.marker,

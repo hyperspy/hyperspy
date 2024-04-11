@@ -19,9 +19,8 @@
 import dask.array as da
 import numpy as np
 
-from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
-
+from hyperspy.component import _get_scaling_factor
 
 sqrt2pi = np.sqrt(2 * np.pi)
 

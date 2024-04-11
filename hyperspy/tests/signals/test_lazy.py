@@ -24,9 +24,9 @@ from dask.threaded import get
 import hyperspy.api as hs
 from hyperspy import _lazy_signals
 from hyperspy._signals.lazy import (
+    _get_navigation_dimension_chunk_slice,
     _reshuffle_mixed_blocks,
     to_array,
-    _get_navigation_dimension_chunk_slice,
 )
 
 

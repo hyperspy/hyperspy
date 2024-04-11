@@ -19,21 +19,20 @@
 # Set the PyQt API to 2 to avoid incompatibilities between matplotlib
 # traitsui
 
-import logging
 import importlib
+import logging
 import sys
 
-
-from hyperspy.logger import set_log_level
 from hyperspy.defaults_parser import preferences
+from hyperspy.logger import set_log_level
 
 # Need to run before other import to use the logger during import
 _logger = logging.getLogger(__name__)
 set_log_level(preferences.General.logging_level)
 
 from hyperspy import docstrings  # noqa: E402
-from . import __version__  # noqa: E402
 
+from . import __version__  # noqa: E402
 
 __doc__ = (
     """

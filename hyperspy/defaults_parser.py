@@ -24,9 +24,8 @@ from pathlib import Path
 
 import traits.api as t
 
-from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
+from hyperspy.misc.ipython_tools import turn_logging_off, turn_logging_on
 from hyperspy.ui_registry import add_gui_method
-
 
 config_path = Path("~/.hyperspy").expanduser()
 config_path.mkdir(parents=True, exist_ok=True)

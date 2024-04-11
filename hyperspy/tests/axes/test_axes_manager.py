@@ -19,18 +19,17 @@
 from unittest import mock
 
 import numpy as np
+import pytest
 
 from hyperspy.axes import (
     AxesManager,
-    _serpentine_iter,
-    _flyback_iter,
-    GeneratorLen,
     BaseDataAxis,
+    GeneratorLen,
+    _flyback_iter,
+    _serpentine_iter,
 )
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
-
-import pytest
 
 
 def generator():

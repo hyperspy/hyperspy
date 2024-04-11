@@ -17,11 +17,11 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os
-from contextlib import contextmanager
 import warnings
+from contextlib import contextmanager
+from unittest import mock
 
 import numpy as np
-from unittest import mock
 
 
 @contextmanager

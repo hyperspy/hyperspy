@@ -17,8 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-from hyperspy.exceptions import DataDimensionError
 from hyperspy.docstrings.signal import OPTIMIZE_ARG
+from hyperspy.exceptions import DataDimensionError
 
 
 class CommonSignal1D:

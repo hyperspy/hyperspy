@@ -17,8 +17,9 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-from hyperspy.misc.math_tools import closest_nice_number
 import numpy as np
+
+from hyperspy.misc.math_tools import closest_nice_number
 
 
 class ScaleBar(object):

@@ -18,14 +18,14 @@
 
 from unittest import mock
 
+import dask.array as da
 import numpy as np
 import pytest
-import dask.array as da
 from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 
 import hyperspy.api as hs
-from hyperspy.decorators import lazifyTestClass
 from hyperspy._signals.lazy import LazySignal
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.utils import _get_block_pattern
 
 

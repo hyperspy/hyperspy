@@ -14,11 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+import matplotlib
+import numpy as np
 import pytest
 
 import hyperspy.api as hs
-import numpy as np
-import matplotlib
 
 ipympl = pytest.importorskip("ipympl")
 ipywidgets = pytest.importorskip("ipywidgets")

@@ -16,26 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
-from dask.array import Array as dArray
-import traits.api as t
-from traits.trait_numeric import Array
-import sympy
-from sympy.utilities.lambdify import lambdify
+import logging
 from pathlib import Path
 
-from hyperspy.misc.utils import slugify
-from rsciio.utils.tools import incremental_filename, append2pathname
+import numpy as np
+import sympy
+import traits.api as t
+from dask.array import Array as dArray
+from rsciio.utils.tools import append2pathname, incremental_filename
+from sympy.utilities.lambdify import lambdify
+from traits.trait_numeric import Array
+
+from hyperspy.events import Event, Events
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
 )
-from hyperspy.events import Events, Event
-from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.model_tools import CurrentComponentValues
-from hyperspy.misc.utils import display, get_object_package_info
-
-import logging
+from hyperspy.misc.utils import display, get_object_package_info, slugify
+from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
@@ -725,7 +724,7 @@ class Parameter(t.HasTraits):
         # gives a ValueError. We therefore implement default_traits_view so
         # that configure/edit_traits will still work straight out of the box.
         # A whitelist controls which traits to include in this view.
-        from traitsui.api import RangeEditor, View, Item
+        from traitsui.api import Item, RangeEditor, View
 
         whitelist = ["bmax", "bmin", "free", "name", "std", "units", "value"]
         editable_traits = [

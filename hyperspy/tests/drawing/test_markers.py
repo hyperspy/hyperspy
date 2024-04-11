@@ -14,28 +14,27 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
-import pytest
 from copy import deepcopy
 from pathlib import Path
 
-import numpy as np
-from matplotlib.transforms import (
-    IdentityTransform,
-    CompositeGenericTransform,
-)
-import matplotlib.pyplot as plt
 import dask.array as da
-
-import hyperspy.api as hs
-from hyperspy.drawing.markers import markers_dict_to_markers
-from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
-from hyperspy.axes import UniformDataAxis
-from hyperspy.misc.test_utils import update_close_figure
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
 from matplotlib.collections import (
     LineCollection,
     PolyCollection,
     StarPolygonCollection,
 )
+from matplotlib.transforms import (
+    CompositeGenericTransform,
+    IdentityTransform,
+)
+
+import hyperspy.api as hs
+from hyperspy._signals.signal2d import BaseSignal, Signal1D, Signal2D
+from hyperspy.axes import UniformDataAxis
+from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.external.matplotlib.collections import (
     CircleCollection,
     EllipseCollection,
@@ -44,21 +43,21 @@ from hyperspy.external.matplotlib.collections import (
     TextCollection,
 )
 from hyperspy.external.matplotlib.quiver import Quiver
+from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
     Arrows,
     Circles,
     Ellipses,
     HorizontalLines,
+    Lines,
     Markers,
     Points,
     Polygons,
-    VerticalLines,
     Rectangles,
     Squares,
     Texts,
-    Lines,
+    VerticalLines,
 )
-
 
 BASELINE_DIR = "markers"
 DEFAULT_TOL = 2.0
@@ -239,6 +238,7 @@ class TestMarkers:
     def test_find_peaks(self):
         from skimage.draw import disk
         from skimage.morphology import disk as disk2
+
         import hyperspy.api as hs
 
         rr, cc = disk(

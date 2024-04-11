@@ -16,16 +16,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>
 
 
-import math
 import logging
+import math
 
 import dask.array as da
 import numpy as np
 
 from hyperspy.decorators import jit_ifnumba
-from hyperspy.misc.math_tools import anyfloatin
 from hyperspy.docstrings.utils import REBIN_ARGS
-
+from hyperspy.misc.math_tools import anyfloatin
 
 _logger = logging.getLogger(__name__)
 

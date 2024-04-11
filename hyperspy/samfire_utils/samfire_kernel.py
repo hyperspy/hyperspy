@@ -19,7 +19,9 @@
 
 def single_kernel(model, ind, values, optional_components, _args, test):
     from itertools import combinations, product
+
     import numpy as np
+
     from hyperspy.utils.model_selection import AICc
 
     def generate_values_iterator(compnames, vals, turned_on_component_inds):
@@ -115,15 +117,17 @@ def single_kernel(model, ind, values, optional_components, _args, test):
 
 
 def multi_kernel(ind, m_dic, values, optional_components, _args, result_q, test_dict):
-    from hyperspy.signal import Signal
-    from multiprocessing import current_process
+    import copy
     from itertools import combinations, product
+    from multiprocessing import current_process
+
+    import cloudpickle
 
     # from collections import Iterable
     import numpy as np
-    import copy
+
+    from hyperspy.signal import Signal
     from hyperspy.utils.model_selection import AICc
-    import cloudpickle
 
     def generate_values_iterator(compnames, vals, turned_on_component_inds):
         turned_on_names = [compnames[i] for i in turned_on_component_inds]

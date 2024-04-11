@@ -19,15 +19,14 @@
 import logging
 
 import numpy as np
-from packaging.version import Version
 import pytest
 import scipy
+from packaging.version import Version
 from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
 from hyperspy.axes import GeneratorLen
 from hyperspy.decorators import lazifyTestClass
-
 
 TOL = 1e-5
 

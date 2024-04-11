@@ -17,8 +17,8 @@
 
 import numpy as np
 
+from hyperspy import roi, signals
 from hyperspy.drawing import widget, widgets
-from hyperspy import signals, roi
 from hyperspy.misc.test_utils import mock_event
 
 

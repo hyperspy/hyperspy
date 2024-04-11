@@ -19,9 +19,9 @@
 import numpy as np
 import pytest
 
-from hyperspy.components1d import Expression, Gaussian
-from hyperspy._signals.signal1d import Signal1D
 from hyperspy._components.expression import _check_parameter_linearity
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy.components1d import Expression, Gaussian
 
 
 class TestModelLinearity:
