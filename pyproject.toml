@@ -82,7 +82,7 @@ keywords = [
     "spectrum image",
 ]
 name = "hyperspy"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.8"
 
 [project.license]
