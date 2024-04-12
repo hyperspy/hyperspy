@@ -21,10 +21,8 @@ import math
 import platform
 from unittest import mock
 
-import numpy as np
 import dask.array as da
-from numpy.testing import assert_allclose
-import traits.api as t
+import numpy as np
 import pytest
 import traits.api as t
 from numpy.testing import assert_allclose
@@ -74,19 +72,20 @@ class TestBaseDataAxis:
         with pytest.raises(NotImplementedError):
             self.axis._slice_me(1)
         with pytest.raises(AttributeError):
-            self.axis._parse_value_from_string('')
+            self.axis._parse_value_from_string("")
         with pytest.raises(AttributeError):
-            self.axis._parse_value_from_string('spam')
+            self.axis._parse_value_from_string("spam")
 
     def test_repr_BaseDataAxis(self):
-         assert self.axis.__repr__() == "<Unnamed axis, size: None>"
+        assert self.axis.__repr__() == "<Unnamed axis, size: None>"
 
-    #Note: The following methods from BaseDataAxis rely on the self.axis.axis
-    #numpy array to be initialized, and are tested in the subclasses:
-    #BaseDataAxis.value2index --> tested in FunctionalDataAxis
-    #BaseDataAxis.index2value --> NOT EXPLICITLY TESTED
-    #BaseDataAxis.value_range_to_indices --> tested in UniformDataAxis
-    #BaseDataAxis.update_from --> tested in DataAxis and FunctionalDataAxis
+    # Note: The following methods from BaseDataAxis rely on the self.axis.axis
+    # numpy array to be initialized, and are tested in the subclasses:
+    # BaseDataAxis.value2index --> tested in FunctionalDataAxis
+    # BaseDataAxis.index2value --> NOT EXPLICITLY TESTED
+    # BaseDataAxis.value_range_to_indices --> tested in UniformDataAxis
+    # BaseDataAxis.update_from --> tested in DataAxis and FunctionalDataAxis
+
 
 class TestDataAxis:
     def setup_method(self, method):
@@ -130,7 +129,6 @@ class TestDataAxis:
         axis = DataAxis(axis=values)
         assert_allclose(axis.axis, values)
         assert axis._is_increasing_order is None
-
 
     def test_index_changed_event(self):
         ax = self.axis
@@ -287,8 +285,7 @@ class TestDataAxis:
         if attributes is None:
             assert ax2.units == self.axis.units
         else:
-            assert ((ax2.units, ax2.name) ==
-                    (self.axis.units, self.axis.name))
+            assert (ax2.units, ax2.name) == (self.axis.units, self.axis.name)
 
     def test_update_from_all(self):
         ax2 = DataAxis(units="plumage", name="parrot", axis=np.arange(16))
@@ -316,6 +313,7 @@ class TestUnorderedDataAxis:
     def test_increasing_order(self):
         assert self.axis._is_increasing_order is None
 
+
 class TestFunctionalDataAxis:
     def setup_method(self, method):
         expression = "x ** power"
@@ -328,18 +326,12 @@ class TestFunctionalDataAxis:
     def test_initialisation_parameters(self):
         axis = self.axis
         assert axis.parameters["power"] == 2
-        np.testing.assert_allclose(
-            axis.axis,
-            np.arange(10)**2)
-
-    def test_low_value(self):
-        assert self.axis.low_value == 0
+        np.testing.assert_allclose(axis.axis, np.arange(10) ** 2)
 
     def test_initialisation_error(self):
         expression = "x ** power"
         with pytest.raises(t.TraitError):
-            axis = FunctionalDataAxis(expression=expression,
-                                      power=2, size=t.undefined)
+            FunctionalDataAxis(expression=expression, power=2, size=t.undefined)
 
     def test_low_value(self):
         assert self.axis.low_value == 0
@@ -357,16 +349,16 @@ class TestFunctionalDataAxis:
             )
 
     def test_change_parameters(self):
-         axis = self.axis
-         axis.parameters["power"] = 1
-         np.testing.assert_allclose(axis.axis, np.arange(10))
-         axis.parameters["power"] = 3
-         np.testing.assert_allclose(axis.axis, np.arange(10)**3)
+        axis = self.axis
+        axis.parameters["power"] = 1
+        np.testing.assert_allclose(axis.axis, np.arange(10))
+        axis.parameters["power"] = 3
+        np.testing.assert_allclose(axis.axis, np.arange(10) ** 3)
 
     def test_change_x(self):
         axis = self.axis
         axis.x.scale = 2
-        np.testing.assert_allclose(axis.axis, (np.arange(10)*2)**2)
+        np.testing.assert_allclose(axis.axis, (np.arange(10) * 2) ** 2)
         axis.x.scale = 4
         np.testing.assert_allclose(axis.axis, (np.arange(10) * 4) ** 2)
 
@@ -414,7 +406,7 @@ class TestFunctionalDataAxis:
         assert uniform_axis.axes_manager is None
 
     def test_convert_to_uniform_axis(self):
-        axis = np.copy(self.axis.axis)
+        np.copy(self.axis.axis)
         is_binned = self.axis.is_binned
         navigate = self.axis.navigate
         self.axis.name = "parrot"
@@ -444,12 +436,13 @@ class TestFunctionalDataAxis:
         assert isinstance(uniform_axis, UniformDataAxis)
         assert uniform_axis.axes_manager is None
 
-
     def test_update_from(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
         self.axis.update_from(ax2, attributes=("units", "parameters"))
-        assert ((ax2.units, ax2.parameters["power"]) ==
-                (self.axis.units, self.axis.parameters["power"]))
+        assert (ax2.units, ax2.parameters["power"]) == (
+            self.axis.units,
+            self.axis.parameters["power"],
+        )
 
     def test_update_from_none(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
@@ -519,7 +512,10 @@ class TestReciprocalDataAxis:
     def _test_initialisation_parameters(self, axis):
         assert axis.parameters["a"] == 0.1
         assert axis.parameters["b"] == 10
-        def func(x): return 0.1 / (x + 1) + 10
+
+        def func(x):
+            return 0.1 / (x + 1) + 10
+
         np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
     def test_initialisation_parameters(self):
@@ -749,7 +745,7 @@ class TestUniformDataAxis:
         assert navigate == s.axes_manager[0].navigate
 
     def test_convert_to_functional_data_axis_no_axes_manager(self):
-        uniform_axis = self.axis.convert_to_functional_data_axis(expression='x**2')
+        uniform_axis = self.axis.convert_to_functional_data_axis(expression="x**2")
         assert isinstance(uniform_axis, FunctionalDataAxis)
         assert uniform_axis.axes_manager is None
 

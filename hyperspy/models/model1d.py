@@ -26,7 +26,7 @@ import hyperspy.drawing.signal1d
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
 from hyperspy.events import EventSuppressor
-from hyperspy.exceptions import SignalDimensionError
+from hyperspy.exceptions import SignalDimensionError, WrongObjectError
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.model import BaseModel, ModelComponents
 from hyperspy.signal_tools import SpanSelectorInSignal1D
@@ -277,10 +277,11 @@ class Model1D(BaseModel):
     @signal.setter
     def signal(self, value):
         from hyperspy._signals.signal1d import Signal1D
+
         if isinstance(value, Signal1D):
             self._signal = value
         else:
-            raise WrongObjectError(str(type(value)), 'Signal1D')
+            raise WrongObjectError(str(type(value)), "Signal1D")
 
     @property
     def axis(self):
@@ -290,7 +291,8 @@ class Model1D(BaseModel):
     def axis(self, value):
         if value._is_increasing_order is None:
             raise ValueError(
-                "The axes must be DataAxis with an increasing or decreasing order")
+                "The axes must be DataAxis with an increasing or decreasing order"
+            )
         self._axis = value
 
     def append(self, thing):

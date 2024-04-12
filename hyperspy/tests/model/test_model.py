@@ -46,7 +46,7 @@ class TestModelJacobians:
         np.testing.assert_array_almost_equal(
             jac.squeeze()[:, 1],
             self.weights,
-            * np.array([m[0].A.grad(0), m[0].sigma.grad(0) + m[0].centre.grad(0)]),
+            *np.array([m[0].A.grad(0), m[0].sigma.grad(0) + m[0].centre.grad(0)]),
         )
         assert m[0].A.value == 1
         assert m[0].centre.value == 2

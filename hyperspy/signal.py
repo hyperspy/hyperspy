@@ -3511,9 +3511,8 @@ class BaseSignal(
 
         s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
         s.axes_manager._axes = rollelem(
-            s.axes_manager._axes,
-            index=axis,
-            to_index=to_index)
+            s.axes_manager._axes, index=axis, to_index=to_index
+        )
         if optimize:
             s._make_sure_data_is_contiguous()
         return s
@@ -5093,7 +5092,7 @@ class BaseSignal(
             else:
                 hist_spec.data = hist
 
-        if isinstance(bins, str) and bins == 'blocks':
+        if isinstance(bins, str) and bins == "blocks":
             warnings.warn(
                 "The option `bins='blocks'` is not fully supported in this "
                 "version of HyperSpy. It should be used for plotting purposes "

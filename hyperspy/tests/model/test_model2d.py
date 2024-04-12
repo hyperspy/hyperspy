@@ -50,7 +50,7 @@ class TestModel2D:
         self.m.append(gt)
 
     def test_fail_to_set_axis(self):
-        s = hs.signals.Signal2D(np.empty((4,4)))
+        s = hs.signals.Signal2D(np.empty((4, 4)))
         s.axes_manager[0].convert_to_non_uniform_axis()
         s.axes_manager[0].axis = [1, 2, 0, 3]
         with pytest.raises(ValueError):

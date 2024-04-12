@@ -29,9 +29,9 @@ import numpy as np
 import pint
 import traits.api as t
 from sympy.utilities.lambdify import lambdify
-from traits.trait_errors import TraitError
 from traits.api import observe
 from traits.observation.api import trait
+from traits.trait_errors import TraitError
 
 from hyperspy._components.expression import _parse_substitutions
 from hyperspy.api_nogui import _ureg
@@ -273,12 +273,9 @@ class BaseDataAxis(t.HasTraits):
     navigate = t.Bool(False)
     is_binned = t.Bool(False)
 
-    def __init__(self,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 is_binned=False,
-                 **kwargs):
+    def __init__(
+        self, name=None, units=None, navigate=False, is_binned=False, **kwargs
+    ):
         super().__init__()
         if name is None:
             name = t.Undefined
@@ -392,10 +389,12 @@ class BaseDataAxis(t.HasTraits):
 
     def __repr__(self):
         if hasattr(self, "size"):
-            text = '<%s axis, size: %i' % (self._get_name(),
-                                           self.size,)
+            text = "<%s axis, size: %i" % (
+                self._get_name(),
+                self.size,
+            )
         else:
-            text = '<%s axis, size: None' % (self._get_name(),)
+            text = "<%s axis, size: None" % (self._get_name(),)
         if self.navigate is True and hasattr(self, "index"):
             text += ", index: %i" % self.index
         text += ">"
@@ -500,6 +499,7 @@ class DataAxis(BaseDataAxis):
     'is_binned': False,
     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
     """
+
     axis = t.Array()  # Axis added as trait to track changes to axis
     _index = t.Int(0)
 
@@ -540,7 +540,6 @@ class DataAxis(BaseDataAxis):
         self.axis = self.axis[my_slice]
         return my_slice
 
-
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d.update({"axis": self.axis})
@@ -553,7 +552,10 @@ class DataAxis(BaseDataAxis):
         elif self._is_increasing_order is False:
             return self.axis[-1]
         else:
-            raise NotImplementedError("The axis is not ordered so there is no high/low value")
+            raise NotImplementedError(
+                "The axis is not ordered so there is no high/low value"
+            )
+
     @property
     def value(self):
         return self.axis[self.index]
@@ -569,7 +571,9 @@ class DataAxis(BaseDataAxis):
         elif self._is_increasing_order is False:
             return self.axis[0]
         else:
-            raise NotImplementedError("The axis is not ordered so there is no high/low value")
+            raise NotImplementedError(
+                "The axis is not ordered so there is no high/low value"
+            )
 
     @property
     def index(self):
@@ -615,7 +619,9 @@ class DataAxis(BaseDataAxis):
             else:
                 # the axis is not ordered
                 return None
-        except np.core._exceptions._UFuncNoLoopError:  # subtracting array of objects/strings will fail
+        except (
+            np.core._exceptions._UFuncNoLoopError
+        ):  # subtracting array of objects/strings will fail
             return None
 
     def _get_array_slices(self, slice_):
@@ -632,8 +638,7 @@ class DataAxis(BaseDataAxis):
         """
         if isinstance(slice_, slice):
             if not self.is_uniform and isfloat(slice_.step):
-                raise ValueError(
-                    "Float steps are only supported for uniform axes.")
+                raise ValueError("Float steps are only supported for uniform axes.")
 
         v2i = self.value2index
 
@@ -664,8 +669,9 @@ class DataAxis(BaseDataAxis):
                     # The start value is above the axis limit
                     raise IndexError(
                         "Start value above axis high bound for  axis %s."
-                        "value: %f high_bound: %f" % (repr(self), start,
-                                                      self.high_value))
+                        "value: %f high_bound: %f"
+                        % (repr(self), start, self.high_value)
+                    )
                 else:
                     # The start value is below the axis limit,
                     # we slice from the start.
@@ -678,8 +684,8 @@ class DataAxis(BaseDataAxis):
                     # The stop value is below the axis limits
                     raise IndexError(
                         "Stop value below axis low bound for  axis %s."
-                        "value: %f low_bound: %f" % (repr(self), stop,
-                                                     self.low_value))
+                        "value: %f low_bound: %f" % (repr(self), stop, self.low_value)
+                    )
                 else:
                     # The stop value is below the axis limit,
                     # we slice until the end.
@@ -691,11 +697,11 @@ class DataAxis(BaseDataAxis):
         return slice(start, stop, step)
 
     def _parse_value_from_string(self, value):
-        """Return calibrated value from a suitable string """
+        """Return calibrated value from a suitable string"""
         if len(value) == 0:
             raise ValueError("Cannot index with an empty string")
         # Starting with 'rel', it must be relative slicing
-        elif value.startswith('rel'):
+        elif value.startswith("rel"):
             try:
                 relative_value = float(value[3:])
             except ValueError:
@@ -709,8 +715,9 @@ class DataAxis(BaseDataAxis):
             if self.is_uniform:
                 value = self._get_value_from_value_with_units(value)
             else:
-                raise ValueError("Unit conversion is only supported for "
-                                 "uniform axis.")
+                raise ValueError(
+                    "Unit conversion is only supported for " "uniform axis."
+                )
         else:
             raise ValueError(f"`{value}` is not a suitable string for slicing.")
 
@@ -756,44 +763,44 @@ class DataAxis(BaseDataAxis):
         else:
             value = np.asarray(value)
 
-        #Should evaluate on both arrays and scalars. Raises error if there are
-        #nan values in array
-        if np.all((value >= self.low_value)*(value <= self.high_value)):
-            #Only if all values will evaluate correctly do we implement rounding
-            #function. Rounding functions will strictly operate on numpy arrays
-            #and only evaluate self.axis - v input, v a scalar within value.
+        # Should evaluate on both arrays and scalars. Raises error if there are
+        # nan values in array
+        if np.all((value >= self.low_value) * (value <= self.high_value)):
+            # Only if all values will evaluate correctly do we implement rounding
+            # function. Rounding functions will strictly operate on numpy arrays
+            # and only evaluate self.axis - v input, v a scalar within value.
             if rounding is round:
-                #Use argmin(abs) which will return the closest value
+                # Use argmin(abs) which will return the closest value
                 # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis,value).astype(int)
+                index = numba_closest_index_round(self.axis, value).astype(int)
             elif rounding is math.ceil:
-                #Ceiling means finding index of the closest xi with xi - v >= 0
-                #we look for argmin of strictly non-negative part of self.axis-v.
-                #The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis,value).astype(int)
+                # Ceiling means finding index of the closest xi with xi - v >= 0
+                # we look for argmin of strictly non-negative part of self.axis-v.
+                # The trick is to replace strictly negative values with +np.inf
+                index = numba_closest_index_ceil(self.axis, value).astype(int)
             elif rounding is math.floor:
-                #flooring means finding index of the closest xi with xi - v <= 0
-                #we look for armgax of strictly non-positive part of self.axis-v.
-                #The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_floor(self.axis,value).astype(int)
+                # flooring means finding index of the closest xi with xi - v <= 0
+                # we look for armgax of strictly non-positive part of self.axis-v.
+                # The trick is to replace strictly positive values with -np.inf
+                index = numba_closest_index_floor(self.axis, value).astype(int)
             else:
                 raise ValueError(
-                    'Non-supported rounding function. Use '
-                    '`round`, `math.ceil` or `math.floor`.'
-                    )
-            #initialise the index same dimension as input, force type to int
+                    "Non-supported rounding function. Use "
+                    "`round`, `math.ceil` or `math.floor`."
+                )
+            # initialise the index same dimension as input, force type to int
             # index = np.empty_like(value,dtype=int)
-            #assign on flat, iterate on flat.
+            # assign on flat, iterate on flat.
             # for i,v in enumerate(value):
-                # index.flat[i] = rounding_index(self.axis - v)
-            #Squeezing to get a scalar out if scalar in. See squeeze doc
+            # index.flat[i] = rounding_index(self.axis - v)
+            # Squeezing to get a scalar out if scalar in. See squeeze doc
             return np.squeeze(index)[()]
         else:
             raise ValueError(
-                f'The value {value} is out of the limits '
-                f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
+                f"The value {value} is out of the limits "
+                f"[{self.low_value:.3g}-{self.high_value:.3g}] of the "
                 f'"{self._get_name()}" axis.'
-                )
+            )
 
     def index2value(self, index):
         if isinstance(index, da.Array):
@@ -826,8 +833,10 @@ class DataAxis(BaseDataAxis):
         error_message = "Wrong order of the values: for axis with"
         if self._is_increasing_order:
             if v1 is not None and v2 is not None and v1 > v2:
-                raise ValueError(f"{error_message} increasing order, v2 ({v2}) "
-                                 f"must be greater than v1 ({v1}).")
+                raise ValueError(
+                    f"{error_message} increasing order, v2 ({v2}) "
+                    f"must be greater than v1 ({v1})."
+                )
 
             if v1 is not None and self.low_value < v1 <= self.high_value:
                 i1 = self.value2index(v1)
@@ -835,8 +844,10 @@ class DataAxis(BaseDataAxis):
                 i2 = self.value2index(v2)
         else:
             if v1 is not None and v2 is not None and v1 < v2:
-                raise ValueError(f"{error_message} decreasing order: v1 ({v1}) "
-                                 f"must be greater than v2 ({v2}).")
+                raise ValueError(
+                    f"{error_message} decreasing order: v1 ({v1}) "
+                    f"must be greater than v2 ({v2})."
+                )
 
             if v1 is not None and self.high_value > v1 >= self.low_value:
                 i1 = self.value2index(v1)
@@ -897,18 +908,14 @@ class DataAxis(BaseDataAxis):
         d = self.get_axis_dictionary()
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
-            _logger.warning('The maximum scale error is {}.'.format(scale_err))
-        d["_type"] = 'UniformDataAxis'
+            _logger.warning("The maximum scale error is {}.".format(scale_err))
+        d["_type"] = "UniformDataAxis"
         if self.axes_manager is not None:
-            self.axes_manager[self] = UniformDataAxis(**d,
-                                                      size=size,
-                                                      scale=scale,
-                                                      offset=offset)
+            self.axes_manager[self] = UniformDataAxis(
+                **d, size=size, scale=scale, offset=offset
+            )
         else:
-            return UniformDataAxis(**d,
-                                   size=size,
-                                   scale=scale,
-                                   offset=offset)
+            return UniformDataAxis(**d, size=size, scale=scale, offset=offset)
 
 
 class FunctionalDataAxis(DataAxis):
@@ -972,27 +979,34 @@ class FunctionalDataAxis(DataAxis):
     'a': 100,
     'b': 10}
     """
+
     x = t.Instance(DataAxis)
     parameters = t.Dict()
-    axis = t.Property(t.Array,
-                      depends_on="x.axis, parameters",)
-    def __init__(self,
-                 expression,
-                 x=None,
-                 index_in_array=None,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 size=1,
-                 is_binned=False,
-                 **parameters):
+    axis = t.Property(
+        t.Array,
+        depends_on="x.axis, parameters",
+    )
+
+    def __init__(
+        self,
+        expression,
+        x=None,
+        index_in_array=None,
+        name=None,
+        units=None,
+        navigate=False,
+        size=1,
+        is_binned=False,
+        **parameters,
+    ):
         super(DataAxis, self).__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
             is_binned=is_binned,
-            **parameters)
+            **parameters,
+        )
         if x is None:
             self.x = UniformDataAxis(scale=1, offset=0, size=size)
         else:
@@ -1006,8 +1020,9 @@ class FunctionalDataAxis(DataAxis):
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
-        expr_parameters = [symbol for symbol in expr.free_symbols
-                           if symbol.name not in variables]
+        expr_parameters = [
+            symbol for symbol in expr.free_symbols if symbol.name not in variables
+        ]
 
         if set(parameters) != set([parameter.name for parameter in expr_parameters]):
             raise ValueError(
@@ -1015,7 +1030,8 @@ class FunctionalDataAxis(DataAxis):
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}"
             )
         self._function = lambdify(
-            variables + expr_parameters, expr.evalf(), dummify=False)
+            variables + expr_parameters, expr.evalf(), dummify=False
+        )
         self.parameters = parameters
 
     @t.cached_property
@@ -1046,7 +1062,9 @@ class FunctionalDataAxis(DataAxis):
 
         """
         if attributes is None:
-            attributes = ["parameters", ]
+            attributes = [
+                "parameters",
+            ]
         return super().update_from(axis, attributes)
 
     def calibrate(self, *args, **kwargs):
@@ -1054,9 +1072,17 @@ class FunctionalDataAxis(DataAxis):
 
     def get_axis_dictionary(self):
         d = super(DataAxis, self).get_axis_dictionary()
-        d['expression'] = self._expression
-        d.update({'size': _parse_axis_attribute(self.size), })
-        d.update({'x': self.x.get_axis_dictionary(), })
+        d["expression"] = self._expression
+        d.update(
+            {
+                "size": _parse_axis_attribute(self.size),
+            }
+        )
+        d.update(
+            {
+                "x": self.x.get_axis_dictionary(),
+            }
+        )
         d.update(self.parameters)
         return d
 
@@ -1084,6 +1110,7 @@ class FunctionalDataAxis(DataAxis):
         """
         slice_ = self._get_array_slices(slice(start, end))
         self.x.crop(start=slice_.start, end=slice_.stop)
+
     crop.__doc__ = DataAxis.crop.__doc__
 
     def _slice_me(self, slice_):
@@ -1105,12 +1132,12 @@ class FunctionalDataAxis(DataAxis):
 
     def convert_to_uniform_axis(self):
         """Convert to an uniform axis."""
-        scale = (self.high_value - self.low_value) / (self.size-1)
+        scale = (self.high_value - self.low_value) / (self.size - 1)
         offset = self.low_value
         d = self.get_axis_dictionary()
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
-            _logger.warning('The maximum scale error is {}.'.format(scale_err))
+            _logger.warning("The maximum scale error is {}.".format(scale_err))
         d["_type"] = "UniformDataAxis"
 
         if self.axes_manager is not None:
@@ -1121,7 +1148,7 @@ class FunctionalDataAxis(DataAxis):
     def convert_to_non_uniform_axis(self):
         """Convert to a non-uniform axis."""
         d = super().get_axis_dictionary()
-        d["_type"] = 'DataAxis'
+        d["_type"] = "DataAxis"
         if self.axes_manager is not None:
             self.axes_manager[self] = DataAxis(**d)
         else:
@@ -1163,29 +1190,34 @@ class UniformDataAxis(DataAxis, UnitConversion):
      'scale': 1.0,
      'offset': 300.0}
     """
+
     scale = t.Float(1)
     offset = t.Float(0)
     _size = t.Int(1)
-    axis = t.Property(observe=["scale", "offset", "_size"])  # overwrites axis in DataAxis
+    axis = t.Property(
+        observe=["scale", "offset", "_size"]
+    )  # overwrites axis in DataAxis
 
-    def __init__(self,
-                 index_in_array=None,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 size=1,
-                 scale=1.,
-                 offset=0.,
-                 is_binned=False,
-                 **kwargs):
+    def __init__(
+        self,
+        index_in_array=None,
+        name=None,
+        units=None,
+        navigate=False,
+        size=1,
+        scale=1.0,
+        offset=0.0,
+        is_binned=False,
+        **kwargs,
+    ):
         super(DataAxis, self).__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
             is_binned=is_binned,
-            **kwargs
-            )
+            **kwargs,
+        )
         self.scale = scale
         self.offset = offset
         self.size = size
@@ -1231,9 +1263,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
 
     def get_axis_dictionary(self):
         d = super(DataAxis, self).get_axis_dictionary()
-        d.update({'size': self.size,
-                  'scale': self.scale,
-                  'offset': self.offset})
+        d.update({"size": self.size, "scale": self.scale, "offset": self.offset})
         return d
 
     def value2index(self, value, rounding=round):
@@ -1377,7 +1407,9 @@ class UniformDataAxis(DataAxis, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, "offset")
 
-    def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
+    def convert_to_functional_data_axis(
+        self, expression, units=None, name=None, **kwargs
+    ):
         d = super(DataAxis, self).get_axis_dictionary()
         if units:
             d["units"] = units
@@ -1387,22 +1419,21 @@ class UniformDataAxis(DataAxis, UnitConversion):
         this_kwargs = self.get_axis_dictionary()
         d["_type"] = "FunctionalDataAxis"
         if self.axes_manager is not None:
-            self.axes_manager[self] = FunctionalDataAxis(expression=expression,
-                                                         x=UniformDataAxis(**this_kwargs),
-                                                         **d)
+            self.axes_manager[self] = FunctionalDataAxis(
+                expression=expression, x=UniformDataAxis(**this_kwargs), **d
+            )
         else:
-            return FunctionalDataAxis(expression=expression,
-                                      x=UniformDataAxis(**this_kwargs),
-                                      **d)
+            return FunctionalDataAxis(
+                expression=expression, x=UniformDataAxis(**this_kwargs), **d
+            )
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
-        d["_type"] = 'DataAxis'
+        d["_type"] = "DataAxis"
         if self.axes_manager is not None:
             self.axes_manager[self] = DataAxis(**d)
         else:
             return DataAxis(**d)
-
 
 
 def _serpentine_iter(shape):
@@ -1527,7 +1558,7 @@ class AxesManager(t.HasTraits):
     _step = t.Int(1)
 
     def __init__(self, axes_list):
-        self._ragged =False
+        self._ragged = False
         super().__init__()
         self.events = Events()
         self.events.indices_changed = Event(
@@ -1572,18 +1603,13 @@ class AxesManager(t.HasTraits):
         return self._ragged
 
     def _update_trait_handlers(self, remove=False):
-        self.on_trait_change(self._on_index_changed,
-                             name='_axes._index', remove=remove)
-        self.on_trait_change(self._on_axes_changed,
-                             name='_axes._size', remove=remove)
-        self.on_trait_change(self._on_axes_changed,
-                             name='_axes._scale', remove=remove)
-        self.on_trait_change(self._on_axes_changed,
-                             name='_axes._offset', remove=remove)
+        self.on_trait_change(self._on_index_changed, name="_axes._index", remove=remove)
+        self.on_trait_change(self._on_axes_changed, name="_axes._size", remove=remove)
+        self.on_trait_change(self._on_axes_changed, name="_axes._scale", remove=remove)
+        self.on_trait_change(self._on_axes_changed, name="_axes._offset", remove=remove)
 
     def __setitem__(self, y, value):
-        """x.__getitem__(y) <==> x[y]
-        """
+        """x.__getitem__(y) <==> x[y]"""
         if isinstance(y, str) or not np.iterable(y):
             ax = self._axes_getter(y)
             self.axes[self.axes.index(ax)] = value
@@ -1970,9 +1996,8 @@ class AxesManager(t.HasTraits):
         axis = create_axis(**kwargs)
         self._axes.append(axis)
 
-    def convert_units(self, axes=None, units=None, same_units=True,
-                      factor=0.25):
-        """ Convert the scale and the units of the selected axes. If the unit
+    def convert_units(self, axes=None, units=None, same_units=True, factor=0.25):
+        """Convert the scale and the units of the selected axes. If the unit
         of measure is not supported by the pint library, the scale and units
         are not changed.
 
@@ -2122,7 +2147,9 @@ class AxesManager(t.HasTraits):
 
     @property
     def _getitem_tuple(self):
-        getitem_tuple = tuple([a.slice if a.slice is not None else a.index for a in self._axes])
+        getitem_tuple = tuple(
+            [a.slice if a.slice is not None else a.index for a in self._axes]
+        )
         return getitem_tuple
 
     def _on_index_changed(self):
@@ -2144,8 +2171,9 @@ class AxesManager(t.HasTraits):
     @property
     def signal_shape(self):
         """The shape of the signal space."""
-        return tuple([axis.size if hasattr(axis, "size")
-                       else None for axis in self.signal_axes])
+        return tuple(
+            [axis.size if hasattr(axis, "size") else None for axis in self.signal_axes]
+        )
 
     @property
     def navigation_shape(self):
