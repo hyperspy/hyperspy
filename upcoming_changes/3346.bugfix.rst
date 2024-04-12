@@ -1,0 +1,1 @@
+Fix navigator event disconnection and fix plot when changing dtype from/to rbgx.
