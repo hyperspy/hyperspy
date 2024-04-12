@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.backend_bases import CloseEvent
-import matplotlib.pyplot as plt
 
 from hyperspy._components.polynomial import Polynomial
 from hyperspy.drawing._markers.points import Points

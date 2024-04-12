@@ -22,10 +22,10 @@ import logging
 import math
 
 import matplotlib
-from matplotlib.figure import SubFigure
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm, Normalize, PowerNorm, SymLogNorm
+from matplotlib.figure import SubFigure
 from packaging.version import Version
 from rsciio.utils import rgb_tools
 from traits.api import Undefined
