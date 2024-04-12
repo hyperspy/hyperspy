@@ -3104,7 +3104,7 @@ class BaseSignal(
                         s=self,
                         axis=self.axes_manager.signal_axes,
                     )
-                    # Set are not ordered, to retrieve the function to disconnect
+                    # Sets are not ordered, to retrieve the function to disconnect
                     # take the difference with the previous copy
                     function_to_disconnect = list(
                         self.events.data_changed.connected - connected_event_copy
