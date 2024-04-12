@@ -32,7 +32,7 @@ from sympy.utilities.lambdify import lambdify
 from traits.trait_errors import TraitError
 
 from hyperspy._components.expression import _parse_substitutions
-from hyperspy.api_nogui import _ureg
+from hyperspy.api import _ureg
 from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
 from hyperspy.misc.array_tools import (
