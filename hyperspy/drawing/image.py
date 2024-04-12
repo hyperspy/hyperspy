@@ -385,7 +385,7 @@ class ImagePlot(BlittedFigure):
         # Bug extend='min' or extend='both' and power law norm
         # Use it when it is fixed in matplotlib
         ims = self.ax.images if len(self.ax.images) else self.ax.collections
-        self._colorbar = plt.colorbar(ims[0], ax=self.ax)
+        self._colorbar = self.figure.colorbar(ims[0], ax=self.ax)
         self.set_quantity_label()
         self._colorbar.set_label(self.quantity_label, rotation=-90, va="bottom")
         self._colorbar.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
