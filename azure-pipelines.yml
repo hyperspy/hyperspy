@@ -83,11 +83,3 @@ steps:
   artifact: $(Agent.JobName)-result_images
   displayName: Publish Image Comparison
   condition: failed()
-
-- template: azure_pipelines/generate_distribution.yml@templates
-- template: azure_pipelines/publish_distribution.yml@templates
-# - template: azure_pipelines/update_github_release.yml@templates
-#   parameters:
-#     # Set the token generated with github from the developer settings/personal
-#     # access tokens menu in azure pipeline
-#     github_token_name: ''
