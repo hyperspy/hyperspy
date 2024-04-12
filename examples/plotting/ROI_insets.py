@@ -4,7 +4,7 @@ ROI Insets
 ==========
 
 ROI's can be powerful tools to help visualize data.  In this case we will define ROI's in hyperspy, sum
-the data within the ROI, and then plot the sum as a signal. Using the `matplotlib.figure.SubFigure` class
+the data within the ROI, and then plot the sum as a signal. Using the :class:`matplotlib.figure.SubFigure` class
 we can create a custom layout to visualize and interact with the data.
 
 We can connect these ROI's using the :func:`hyperspy.api.interactive` function which allows us to move the ROI's and see the sum of the underlying data.

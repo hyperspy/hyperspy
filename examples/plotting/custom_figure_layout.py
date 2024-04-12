@@ -4,7 +4,7 @@ Creating Custom Layouts
 =======================
 
 Custom layouts for hyperspy figures can be created using the :class:`matplotlib.figure.SubFigure` class. Passing
-the `fig` argument to the :func:`hyperspy.api.BaseSignal.plot` method of a hyperspy signal object will target
+the ``fig`` argument to the :meth:`~.api.signals.BaseSignal.plot` method of a hyperspy signal object will target
 that figure instead of creating a new one. This is useful for creating custom layouts with multiple subplots.
 """
 
@@ -16,7 +16,7 @@ import numpy as np
 
 rng = np.random.default_rng()
 s = hs.signals.Signal2D(rng.random((10, 10, 10, 10)))
-fig = plt.figure(figsize=(10, 5))
+fig = plt.figure(figsize=(10, 5), layout="constrained")
 subfigs = fig.subfigures(1, 2, wspace=0.07)
 s.plot(navigator_kwds=dict(fig=subfigs[0]), fig=subfigs[1])
 
@@ -27,7 +27,7 @@ s.plot(navigator_kwds=dict(fig=subfigs[0]), fig=subfigs[1])
 s = hs.signals.Signal2D(rng.random((10, 10, 10, 10)))
 s2 = hs.signals.Signal2D(rng.random((10, 10, 50, 50)))
 
-fig = plt.figure(figsize=(8, 7))
+fig = plt.figure(figsize=(8, 7), layout="constrained")
 head_figures = fig.subfigures(1, 2, wspace=0.07)
 signal_figures = head_figures[1].subfigures(2, 1, hspace=0.07)
 s.plot(navigator_kwds=dict(fig=head_figures[0], colorbar=None), fig=signal_figures[0])
