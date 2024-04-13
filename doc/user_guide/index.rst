@@ -32,6 +32,7 @@ User guide
     region_of_interest.rst
     events.rst
     interactive_operations.rst
+    pint_unit_registry.rst
 
 .. toctree::
     :caption: Bibliography
