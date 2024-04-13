@@ -149,9 +149,9 @@ def __getattr__(name):
     # Special case _ureg to use it as a singleton
     elif name == "_ureg":
         if "_ureg" not in globals():
-            from pint import UnitRegistry
+            import pint
 
-            setattr(sys.modules[__name__], "_ureg", UnitRegistry())
+            setattr(sys.modules[__name__], "_ureg", pint.get_application_registry())
         return getattr(sys.modules[__name__], "_ureg")
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
