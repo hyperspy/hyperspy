@@ -23,7 +23,7 @@ the default pint :class:`pint.UnitRegistry` is used:
     <Quantity(2.5, 'micrometer')>
 
 Then, using :func:`pint.get_application_registry` get the handle of the same instance of :class:`pint.UnitRegistry`
-used by HyperSpy and used it to operate on this pint quantity:
+used by HyperSpy and use it to operate on this pint quantity:
 
     >>> import pint
     >>> ureg = pint.get_application_registry()
