@@ -247,3 +247,15 @@ def test_dir_utils_samfire4():
         "LocalStrategy",
         "ReducedChiSquaredStrategy",
     ]
+
+
+def test_pint_default_unit_registry():
+    import pint
+
+    import hyperspy.api as hs
+
+    # the pint unit registry used by hyperspy must be the
+    # same as pint default for interoperability reason
+    # See https://github.com/hgrecco/pint/issues/108
+    # and https://github.com/hgrecco/pint/issues/623
+    assert id(hs._ureg) == id(pint.get_application_registry())
