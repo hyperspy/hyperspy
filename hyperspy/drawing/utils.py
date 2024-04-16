@@ -1939,7 +1939,6 @@ def plot_roi_map(signal, rois=1):
         hs.interactive(
             roi_signal.nansum,
             event=roi_signal.events.data_changed,
-            #event=roi_signal.axes_manager.events.any_axis_changed,
             axis=roi_signal.axes_manager.signal_axes,
             out=roi_sum,
             recompute_out_event=None,
