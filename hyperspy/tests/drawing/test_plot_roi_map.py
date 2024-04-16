@@ -200,3 +200,38 @@ def test_interaction(test_signal, which_plot):
         return all_sums._plot.signal_plot.figure
     elif which_plot == "roi_sums":
         return roi_sums[0]._plot.signal_plot.figure
+
+
+def test_circle_roi():
+    data = np.zeros((2, 2, 7, 7))
+    data[-1, -1, 0, 0] = 10000
+    s = hs.signals.Signal2D(data)
+    roi = hs.roi.CircleROI(cx=3, cy=3, r=4, r_inner=0)
+    
+    all_sum, rois, roi_signals, roi_sums = hs.plot.plot_roi_map(s, rois=[roi])
+    roi_signal, = roi_signals
+    roi_sum, = roi_sums
+
+    assert not np.any(np.isin(10000, roi_signal.data[0, 0]))
+    
+    assert not np.any(np.isin(10000, roi_sum))
+    assert np.allclose(roi_sum, np.zeros((2, 2)))
+
+    before = roi_signal.data.copy()
+
+    roi.cx = 4  # force update
+    roi.cx = 3
+
+    after = roi_signal.data.copy()
+
+    # no change expected
+    assert np.allclose(before, after, equal_nan=True)  # sorry maths
+    assert not np.any(np.isin(10000, roi_sum))
+    assert np.allclose(roi_sum, np.zeros((2, 2)))
+
+    roi.cx = 0
+    roi.cy = 0
+
+    # check can actually find 10000
+    assert np.any(np.isin(10000, roi_sum))
+
