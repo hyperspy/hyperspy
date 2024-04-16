@@ -1,0 +1,1 @@
+fixed issue with `plot_roi_map` interaction to allow using `CircleROI`.
