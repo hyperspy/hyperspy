@@ -207,13 +207,13 @@ def test_circle_roi():
     data[-1, -1, 0, 0] = 10000
     s = hs.signals.Signal2D(data)
     roi = hs.roi.CircleROI(cx=3, cy=3, r=4, r_inner=0)
-    
+
     all_sum, rois, roi_signals, roi_sums = hs.plot.plot_roi_map(s, rois=[roi])
-    roi_signal, = roi_signals
-    roi_sum, = roi_sums
+    (roi_signal,) = roi_signals
+    (roi_sum,) = roi_sums
 
     assert not np.any(np.isin(10000, roi_signal.data[0, 0]))
-    
+
     assert not np.any(np.isin(10000, roi_sum))
     assert np.allclose(roi_sum, np.zeros((2, 2)))
 
@@ -234,4 +234,3 @@ def test_circle_roi():
 
     # check can actually find 10000
     assert np.any(np.isin(10000, roi_sum))
-
