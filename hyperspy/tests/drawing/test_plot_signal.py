@@ -136,6 +136,24 @@ def test_plot_data_changed_event(sdim):
     return plt.gcf()
 
 
+@pytest.mark.parametrize("ndim", [0, 1, 2])
+@pytest.mark.parametrize("sdim", [1, 2])
+def test_plot_event_close(sdim, ndim):
+    # check that the events are correctly disconnected after closing
+    dim = sdim + ndim
+    nav_event = 1 if sdim + ndim >= 3 else 0
+    data = np.arange(5**dim).reshape((5,) * dim)
+    s = hs.signals.Signal1D(data) if sdim == 1 else hs.signals.Signal2D(data)
+    assert len(s.events.data_changed.connected) == 0
+    assert len(s.axes_manager.events.any_axis_changed.connected) == 0
+    s.plot()
+    assert len(s.events.data_changed.connected) == 1 + nav_event
+    assert len(s.axes_manager.events.any_axis_changed.connected) == nav_event
+    s._plot.close()
+    assert len(s.events.data_changed.connected) == 0
+    assert len(s.axes_manager.events.any_axis_changed.connected) == 0
+
+
 def _get_figure(test_plot, data_type, plot_type):
     if plot_type == "sig":
         plot = "signal_plot"

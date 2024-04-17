@@ -1,0 +1,1 @@
+Merge ``hyperspy.api.no`` and ``hyperspy.api.no_gui`` modules since the latter is not necessary anymore.

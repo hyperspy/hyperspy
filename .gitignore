@@ -43,6 +43,7 @@ doc/log.txt
 doc/user_guide/_build/*
 doc/user_guide/.build/*
 examples/io/*.msa
+examples/io/rgb*.jpg
 examples/region_of_interest/*.msa
 hyperspy/io_plugins/unbcf_fast.c
 hyperspy/misc/etc/test_compilers.obj

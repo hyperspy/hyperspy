@@ -41,7 +41,7 @@ from scipy import signal as sp_signal
 from scipy.interpolate import make_interp_spline
 from tlz import concat
 
-from hyperspy.api_nogui import _ureg
+from hyperspy.api import _ureg
 from hyperspy.axes import AxesManager, create_axis
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -3078,6 +3078,10 @@ class BaseSignal(
             )  # Get the value from the nav reverse because hyperspy
             return np.nan_to_num(to_numpy(ind.data)).squeeze()
 
+        # function to disconnect when closing the navigator
+        function_to_disconnect = None
+        connected_event_copy = self.events.data_changed.connected.copy()
+
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
                 navigator = self.navigator
@@ -3103,6 +3107,11 @@ class BaseSignal(
                         s=self,
                         axis=self.axes_manager.signal_axes,
                     )
+                    # Sets are not ordered, to retrieve the function to disconnect
+                    # take the difference with the previous copy
+                    function_to_disconnect = list(
+                        self.events.data_changed.connected - connected_event_copy
+                    )[0]
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
                         f=navigator.as_signal1D,
@@ -3180,6 +3189,7 @@ class BaseSignal(
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
 
+        # Disconnect event when closing signal
         p = (
             self._plot.signal_plot
             if self._plot.signal_plot
@@ -3188,6 +3198,17 @@ class BaseSignal(
         p.events.closed.connect(
             lambda: self.events.data_changed.disconnect(self.update_plot), []
         )
+        # Disconnect events to the navigator when closing navigator
+        if function_to_disconnect is not None:
+            self._plot.navigator_plot.events.closed.connect(
+                lambda: self.events.data_changed.disconnect(function_to_disconnect), []
+            )
+            self._plot.navigator_plot.events.closed.connect(
+                lambda: self.axes_manager.events.any_axis_changed.disconnect(
+                    function_to_disconnect
+                ),
+                [],
+            )
 
         if plot_markers:
             if self.metadata.has_item("Markers"):
@@ -5679,10 +5700,16 @@ class BaseSignal(
                         "Only signals with dtype uint16 can be converted to "
                         "rgb16 images"
                     )
+                replot = self._plot is not None and self._plot.is_active
+                if replot:
+                    # Close the figure to avoid error with events
+                    self._plot.close()
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager._set_signal_dimension(2)
                 self._assign_subclass()
+                if replot:
+                    self.plot()
                 return
             else:
                 dtype = np.dtype(dtype)
@@ -5691,6 +5718,10 @@ class BaseSignal(
 
             if ddtype != dtype:
                 raise ValueError("It is only possibile to change to %s." % ddtype)
+            replot = self._plot is not None and self._plot.is_active
+            if replot:
+                # Close the figure to avoid error with events
+                self._plot.close()
             self.data = rgb_tools.rgbx2regular_array(self.data)
             self.axes_manager._append_axis(
                 size=self.data.shape[-1],
@@ -5701,6 +5732,8 @@ class BaseSignal(
             )
             self.axes_manager._set_signal_dimension(1)
             self._assign_subclass()
+            if replot:
+                self.plot()
             return
         else:
             self.data = self.data.astype(dtype)

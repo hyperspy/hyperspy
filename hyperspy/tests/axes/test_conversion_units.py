@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 import traits.api as t
 
-from hyperspy.api_nogui import _ureg
+from hyperspy.api import _ureg
 from hyperspy.axes import AxesManager, DataAxis, UniformDataAxis, UnitConversion
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
