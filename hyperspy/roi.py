@@ -1522,80 +1522,64 @@ class PolygonROI(BaseInteractiveROI):
     outside of the polygon and masked away.
     """
 
-    polygons = []
+    vertices = []
     _ndim = 2
 
-    def __init__(self, polygons=None):
+    def __init__(self, vertices=None):
 
         """
         Parameters
         ----------
-        polygons : list of lists of tuples
-            List of lists, where each inner list contains (x, y) values
-            of the vertices of a polygon. If a single polygon is desired,
-            a list of the (x, y) values can be given directly."""
+        vertices : list of tuples
+            List containng (x, y) values of the vertices of a polygon."""
         super().__init__()
 
-        if polygons:
-            self.set_vertices(polygons)
+        if vertices:
+            self.set_vertices(vertices)
 
     @property
     def parameters(self):
-        return {"polygons": self.polygons}
+        return {"vertices": self.vertices}
 
     def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self.polygons)
+        _tuple = tuple(self.vertices)
         return _tuple.__getitem__(*args, **kwargs)
 
     def __repr__(self):
         para = []
         for name, value in self.parameters.items():
             parastr = f"{name}=["
-            for polygon in value:
-                parastr += "("
-                parastr += ", ".join(f"({x:G}, {y:G})" for x, y in polygon)
-                parastr += "), "
-            parastr = parastr[:-2] + "]"
+            parastr += ", ".join(f"({x:G}, {y:G})" for x, y in value)
+            parastr += "]"
             para.append(parastr)
         return f"{self.__class__.__name__}({', '.join(para)})"
 
     def is_valid(self):
         """
-        The polygons are defined as valid if either there is none, or all
-        of them have at least three fully defined vertices.
+        The polygon is defined as valid if more than two vertices are fully defined.
         """
-        return len(self.polygons) == 0 or all(
-            len(vertices) > 2
-            and all((None not in vertex and len(vertex) == 2) for vertex in vertices)
-            for vertices in self.polygons
-        )
+        return len(self.vertices) == 0 or len(self.vertices) == 0 > 2 and all(
+            (None not in vertex and len(vertex) == 2) for vertex in self.vertices
+            )
 
-    def set_vertices(self, polygons):
-        """Sets the vertices of the polygons to the `polygons` argument,
+    def set_vertices(self, vertices):
+        """Sets the vertices of the polygon to the `vertices` argument,
         where each vertex is to be given as (x, y). The list is set to
         loop around, such that an edge runs from the first to the final
         vertex in the list.
 
         Parameters
         ----------
-        polygons : list of lists of tuples
-            List of lists, where each inner list contains (x, y) values
-            of the vertices of a polygon. If a single polygon is desired,
-            a list of the (x, y) values can be given directly.
+        vertices : list of tuples
+            List of (x, y) values of the vertices of the polygon.
         """
-        if (
-            len(polygons)
-            and len(polygons[0])
-            and not isinstance(polygons[0][0], collections.abc.Container)
-        ):
-            polygons = [polygons]
-        old_vertices = self.polygons
-        self.polygons = polygons
+        old_vertices = self.vertices
+        self.vertices = vertices
         if not self.is_valid():
-            self.polygons = old_vertices
+            self.vertices = old_vertices
             raise ValueError(
-                f"`polygons` is not a list of lists of fully defined two-dimensional points with\
-                    at least three entries:\n{polygons}"
+                f"`vertices` is not an empty list or a list of fully defined two-dimensional \
+                    points with at least three entries:\n{vertices}"
             )
 
     def __call__(self, signal, inverted=False, out=None, axes=None):
@@ -1613,16 +1597,12 @@ class PolygonROI(BaseInteractiveROI):
                     "This ROI cannot operate on a non-uniform axis."
                 )
         natax = signal.axes_manager._get_axes_in_natural_order()
-        if not inverted and len(self.polygons) > 0:
+        if not inverted0:
             # Slice original data with a circumscribed rectangle
-            left = min(x for polygon in self.polygons for x, y in polygon)
-            right = (
-                max(x for polygon in self.polygons for x, y in polygon) + axes[0].scale
-            )
-            top = min(y for polygon in self.polygons for x, y in polygon)
-            bottom = (
-                max(y for polygon in self.polygons for x, y in polygon) + axes[1].scale
-            )
+            left = min(x for x, y in self.vertices)
+            right = max(x for x, y in self.vertices) + axes[1].scale
+            top = min(y for x, y in self.vertices) 
+            bottom = max(y for x, y in self.vertices) + axes[0].scale 
         else:
             # Do not slice if selection is to be inverted
             left, right = axes[0].low_value, axes[0].high_value + axes[0].scale
@@ -1816,7 +1796,7 @@ class PolygonROI(BaseInteractiveROI):
             y_scale = y_scale if y_scale else axes[1].scale
 
         # Empty ROI
-        if not self.polygons or all(len(polygon) == 0 for polygon in self.polygons):
+        if not self.vertices:
             if xy_max:
                 min_index_x = round(xy_min[0] / x_scale)
                 min_index_y = round(xy_min[1] / y_scale)
@@ -1831,26 +1811,17 @@ class PolygonROI(BaseInteractiveROI):
             return None
 
         if not xy_max:
-            x_max = max(x for polygon in self.polygons for x, y in polygon) + x_scale
-            y_max = max(y for polygon in self.polygons for x, y in polygon) + y_scale
+            x_max = max(x for x, y in self.vertices) + x_scale
+            y_max = max(y for x, y in self.vertices) + y_scale
             xy_max = (x_max, y_max)
 
         complete_mask = self._rasterized_mask(
-            polygon_vertices=self.polygons[0],
+            polygon_vertices=self.vertices,
             xy_max=xy_max,
             xy_min=xy_min,
             x_scale=x_scale,
             y_scale=y_scale,
         )
-        for i in range(1, len(self.polygons)):
-            polygon_mask = self._rasterized_mask(
-                polygon_vertices=self.polygons[i],
-                xy_max=xy_max,
-                xy_min=xy_min,
-                x_scale=x_scale,
-                y_scale=y_scale,
-            )
-            complete_mask = np.logical_or(complete_mask, polygon_mask)
 
         return complete_mask
 
@@ -1863,7 +1834,7 @@ class PolygonROI(BaseInteractiveROI):
         suppressed, so this should not be necessary for _apply_roi2widget to
         handle.
         """
-        widget.set_polygons(self.polygons)
+        widget.set_polygons(self.vertices)
 
     def _set_default_values(self, signal, axes=None):
         """When the ROI is called interactively with Undefined parameters,
