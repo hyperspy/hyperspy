@@ -106,8 +106,6 @@ class PolygonWidget(MPLWidgetBase):
         
         self.events.changed.trigger(self)
 
-        print(self._widget.verts)
-
         xmax = max(x for x, y in self._widget.verts)
         ymax = max(y for x, y in self._widget.verts)
         xmin = min(x for x, y in self._widget.verts)
