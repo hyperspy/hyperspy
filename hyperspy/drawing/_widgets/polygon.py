@@ -52,9 +52,8 @@ class PolygonWidget(MPLWidgetBase):
 
         super().__init__(axes_manager, **kwargs)
 
+        self.set_on(False)
         self._widget = None
-
-        self._vertices = []
 
     def set_mpl_ax(self, ax):
         """
@@ -70,38 +69,53 @@ class PolygonWidget(MPLWidgetBase):
             self.disconnect()
         self.ax = ax
 
-        if self.is_on is True:
+        self.set_on(True)
 
-            handle_props = dict(color="blue")
-            props = dict(color="blue")
 
-            self._widget = PolygonSelector(
-                ax,
-                onselect=self._onselect,
-                useblit=self.blit,
-                handle_props=handle_props,
-                props=props,
-            )
+        handle_props = dict(color="blue")
+        props = dict(color="blue")
+
+        self._widget = PolygonSelector(
+            ax,
+            onselect=self._onselect,
+            useblit=self.blit,
+            handle_props=handle_props,
+            props=props,
+        )
 
         self.ax.figure.canvas.draw_idle()
 
+    def set_vertices(self, vertices):
+        """Function for deleting currently saved polygon and setting a new one."""
+
+        if self.ax is not None and self.is_on:
+            if len(vertices) > 2:
+                self._widget.verts = vertices.copy()
+            self.ax.figure.canvas.draw_idle()
 
     def connect(self, ax):
         super().connect(ax)
 
-    def get_polygons(self):
-        """Returns a list of lists, where each inner list contains `(x, y)` tuples
-        of the vertices of a single polygon. Only completed polygons are included.
-        The polygons are not closed."""
-        if self._finished:
-            return self._vertices
-        else:
-            return self._vertices
+    def get_vertices(self):
+        """Returns a list where each entry contains a `(x, y)` tuple
+        of the vertices of the polygon. The polygon is not closed."""
+        
+        return self._widget.verts.copy()
 
     def _onselect(self, vertices):
-        if len(self._widget.verts) > 0:
+        
+        self.events.changed.trigger(self)
 
-            self.position = (0, 0)
+        print(self._widget.verts)
+
+        xmax = max(x for x, y in self._widget.verts)
+        ymax = max(y for x, y in self._widget.verts)
+        xmin = min(x for x, y in self._widget.verts)
+        ymin = min(y for x, y in self._widget.verts)
+
+        self.position = ( (xmax + xmin) / 2, (ymax + ymin) / 2)
+
+
 
     def get_centre(self):
         """Returns the xy coordinates of the patch centre. In this implementation, the

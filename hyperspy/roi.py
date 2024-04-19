@@ -1513,11 +1513,10 @@ class Line2DROI(BaseInteractiveROI):
 
 
 class PolygonROI(BaseInteractiveROI):
-    """Selects polygonal regions in a 2D space. The coordinates of the
-    polygon vertices are given in the `polygons` attribute, which is a list
-    of lists, where each list defines an individual polygon with each entry
-    being a tuple (x, y) of a vertex's coordinates.
-    An edge runs from the final to the first point in each polygon list.
+    """Selects a polygonal region in a 2D space. The coordinates of the
+    polygon vertices are given in the `vertices` attribute, which is a
+    list where each entry is a tuple (x, y) of a vertex's coordinates.
+    An edge runs from the final to the first point in the list.
     If a polygon self overlaps, the overlapping areas may be considered
     outside of the polygon and masked away.
     """
@@ -1558,7 +1557,7 @@ class PolygonROI(BaseInteractiveROI):
         """
         The polygon is defined as valid if more than two vertices are fully defined.
         """
-        return len(self.vertices) == 0 or len(self.vertices) == 0 > 2 and all(
+        return len(self.vertices) == 0 or len(self.vertices) > 2 and all(
             (None not in vertex and len(vertex) == 2) for vertex in self.vertices
             )
 
@@ -1597,12 +1596,12 @@ class PolygonROI(BaseInteractiveROI):
                     "This ROI cannot operate on a non-uniform axis."
                 )
         natax = signal.axes_manager._get_axes_in_natural_order()
-        if not inverted0:
+        if not inverted:
             # Slice original data with a circumscribed rectangle
             left = min(x for x, y in self.vertices)
             right = max(x for x, y in self.vertices) + axes[1].scale
-            top = min(y for x, y in self.vertices) 
-            bottom = max(y for x, y in self.vertices) + axes[0].scale 
+            top = min(y for x, y in self.vertices)
+            bottom = max(y for x, y in self.vertices) + axes[0].scale
         else:
             # Do not slice if selection is to be inverted
             left, right = axes[0].low_value, axes[0].high_value + axes[0].scale
@@ -1834,7 +1833,7 @@ class PolygonROI(BaseInteractiveROI):
         suppressed, so this should not be necessary for _apply_roi2widget to
         handle.
         """
-        widget.set_polygons(self.vertices)
+        widget.set_vertices(self.vertices)
 
     def _set_default_values(self, signal, axes=None):
         """When the ROI is called interactively with Undefined parameters,
@@ -1846,7 +1845,7 @@ class PolygonROI(BaseInteractiveROI):
         """Sets the internal representation of the ROI from the passed widget,
         without doing anything to events.
         """
-        self.set_vertices(widget.get_polygons())
+        self.set_vertices(widget.get_vertices())
 
 
 def _get_central_half_limits_of_axis(ax):
