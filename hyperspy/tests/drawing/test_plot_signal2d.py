@@ -831,3 +831,22 @@ def test_plot_images_bool():
     s = hs.signals.Signal2D(data)
 
     hs.plot.plot_images(s)
+
+def test_plot_images_axes_ticks():
+    # Axes ticks should be the same with `plot_images` and `Signal2D.plot`
+
+    data = np.arange(100).reshape(10, 10)
+
+    positive_axis = {"scale": 1, "size":10, "name":"positive", "units":"px"}
+    negative_axis = {"scale":-1, "size":10, "name":"negative", "units":"px"}
+
+    s = hs.signals.Signal2D(data, axes=[positive_axis, negative_axis])
+
+    # No colorbar to ensure we can get the correct axis with plt.gca
+    s.plot(axes_ticks=True, colorbar=False, title="")
+    plot_ax = plt.gca()
+
+    show_images_ax, = hs.plot.plot_images(s, colorbar=False, label="")
+
+    assert np.allclose(plot_ax.get_xticks(), show_images_ax.get_xticks())
+    assert np.allclose(plot_ax.get_yticks(), show_images_ax.get_yticks())
