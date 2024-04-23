@@ -1814,6 +1814,15 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
     return rects
 
 
+def _roi_nan_sum(signal, roi, axis, out=None):
+    s = roi.__call__(signal=signal, axes=axis).nansum(axis=axis)
+    if out is not None:
+        out.data[:] = s.data
+        out.events.data_changed.trigger(obj=out)
+    else:
+        return s
+
+
 def plot_roi_map(signal, rois=1):
     """
     Plot one or multiple ROI maps of a ``signal``.
@@ -1837,15 +1846,10 @@ def plot_roi_map(signal, rois=1):
 
     Returns
     -------
-    all_sum : :class:`~.api.signals.BaseSignal`
-        Sum over all positions (navigation dimensions) of the signal, corresponds to
-        the 'navigator' (in signal space) on which the ROIs are added.
     rois : list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
         The ROI objects that slice ``signal``.
-    roi_signals : :class:`~.api.signals.BaseSignal`
-        Slices of ``signal`` corresponding to each ROI.
     roi_sums : :class:`~.api.signals.BaseSignal`
-        The summed ``roi_signals``.
+        The summed of the signals defined by the ROIs.
 
     Examples
     --------
@@ -1902,47 +1906,35 @@ def plot_roi_map(signal, rois=1):
         raise ValueError("Maximum number of spans is 3")
 
     colors = ["red", "green", "blue"]
-    roi_signals = []
     roi_sums = []
-
-    all_sum = signal.nansum()
-    all_sum.plot()
+    axes = [axis.index_in_axes_manager for axis in signal.axes_manager.signal_axes]
 
     for i, roi in enumerate(rois):
         color = colors[i]
 
         # add it to the sum over all positions
-        roi.add_widget(all_sum, color=colors[i])
+        roi.add_widget(signal, axes=axes, color=colors[i])
 
         # create a signal that is the spectral slice of sig
-        roi_signal = hs.interactive(
-            roi,
-            signal=signal,
-            event=roi.events.changed,
-            axes=signal.axes_manager.signal_axes,
-        )
-        roi_signals.append(roi_signal)
-
-        # add up the roi sliced signals to one point per nav position
-        roi_sum = roi_signal.nansum(roi_signal.axes_manager.signal_axes)
-
+        roi_sum = roi(signal).nansum(axes)
         # transpose shape to swap these points per nav into signal points
         roi_sum = roi_sum.transpose(
             signal_axes=roi_sum.axes_manager.navigation_dimension
         )
 
-        roi_sums.append(roi_sum)
-
-        roi_sum.plot(cmap=f"{color.capitalize()}s")
-
         # connect the span signal changing range to the value of span_sum
         hs.interactive(
-            roi_signal.nansum,
-            event=roi_signal.axes_manager.events.any_axis_changed,
-            axis=roi_signal.axes_manager.signal_axes,
+            _roi_nan_sum,
+            event=roi.events.changed,
+            signal=signal,
+            roi=roi,
+            axis=axes,
             out=roi_sum,
             recompute_out_event=None,
         )
 
+        roi_sums.append(roi_sum)
+        roi_sum.plot(cmap=f"{color.capitalize()}s")
+
     # return all ya bits for future messing around.
-    return all_sum, rois, roi_signals, roi_sums
+    return rois, roi_sums
