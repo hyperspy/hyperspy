@@ -1778,7 +1778,8 @@ def _create_span_roi_group(sig_ax, N):
 
 def _create_rect_roi_group(sig_wax, sig_hax, N):
     """
-    Creates a set of `N` :py:class:`~roi.RectangularROI`\\ s that sit along `waxis` and `haxis` at sensible positions.
+    Creates a set of `N` :py:class:`~roi.RectangularROI`\\ s that sit along
+    `waxis` and `haxis` at sensible positions.
 
     Arguments
     ---------
@@ -1873,34 +1874,23 @@ def plot_roi_map(signal, rois=1):
     region at each point in the scan. Therefore, regions of the
     scan where a particular spot is intense will appear bright.
     """
+    if signal._plot is None or not signal._plot.is_active:
+        signal.plot()
+
     sig_dims = len(signal.axes_manager.signal_axes)
     nav_dims = len(signal.axes_manager.navigation_axes)
 
-    if signal.axes_manager.signal_dimension == 0:
-        raise ValueError("The signal must have signal dimension > 0.")
+    if sig_dims not in [1, 2]:
+        raise ValueError("The signal must have signal dimension of 1 or 2.")
 
-    if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
-        warnings.warn(
-            (
-                "This function is only tested for signals with 1 or 2 "
-                "signal and navigation dimensions, not"
-                f" {sig_dims} signal and {nav_dims} navigation."
-            )
-        )
+    if nav_dims == 0:
+        raise ValueError("Navigation dimension must larger than 0.")
 
     if isinstance(rois, int):
         if sig_dims == 1:
             rois = _create_span_roi_group(signal.axes_manager.signal_axes[0], rois)
         elif sig_dims == 2:
             rois = _create_rect_roi_group(*signal.axes_manager.signal_axes, rois)
-        else:
-            raise ValueError(
-                (
-                    "Can only generate default ROIs for signals "
-                    f"with 1 or 2 signal dimensions, not {sig_dims}"
-                    ", try providing an explicit `rois` argument"
-                )
-            )
 
     if len(rois) > 3:
         raise ValueError("Maximum number of spans is 3")
@@ -1918,8 +1908,10 @@ def plot_roi_map(signal, rois=1):
         # create a signal that is the spectral slice of sig
         roi_sum = roi(signal).nansum(axes)
         # transpose shape to swap these points per nav into signal points
+        # cap to 2, since hyperspy can't signal dimension higher than 2
+        # take the two first navigation dimension by default
         roi_sum = roi_sum.transpose(
-            signal_axes=roi_sum.axes_manager.navigation_dimension
+            signal_axes=min(roi_sum.axes_manager.navigation_dimension, 2)
         )
 
         # connect the span signal changing range to the value of span_sum
