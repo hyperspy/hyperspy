@@ -832,8 +832,8 @@ def test_plot_images_bool():
 
     hs.plot.plot_images(s)
 
-
-def test_plot_images_axes_ticks():
+@pytest.mark.parametrize("axes_decor", ["all", "ticks", "off", None])
+def test_plot_images_axes_ticks(axes_decor):
     # Axes ticks should be the same with `plot_images` and `Signal2D.plot`
 
     data = np.arange(100).reshape(10, 10)
@@ -847,7 +847,9 @@ def test_plot_images_axes_ticks():
     s.plot(axes_ticks=True, colorbar=False, title="")
     plot_ax = plt.gca()
 
-    (show_images_ax,) = hs.plot.plot_images(s, colorbar=False, label="")
+    (plot_images_ax,) = hs.plot.plot_images(s, colorbar=False, label="", axes_decor=axes_decor)
 
-    assert np.allclose(plot_ax.get_xticks(), show_images_ax.get_xticks())
-    assert np.allclose(plot_ax.get_yticks(), show_images_ax.get_yticks())
+    assert np.allclose(plot_ax.get_xticks(), plot_images_ax.get_xticks())
+    assert np.allclose(plot_ax.get_yticks(), plot_images_ax.get_yticks())
+    assert np.allclose(plot_ax.get_xlim(), plot_images_ax.get_xlim())
+    assert np.allclose(plot_ax.get_ylim(), plot_images_ax.get_ylim())
