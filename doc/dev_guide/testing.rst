@@ -256,10 +256,16 @@ corresponding build on Azure Pipeliness:
 
 .. figure:: ../user_guide/images/azure_pipeline_artifacts.png
 
+.. note::
+  
+  To generate the baseline images, the version of matplotlib defined in
+  `conda_environment_dev.yml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/conda_environment_dev.yml>`__
+  is required.
+
 The plotting tests are tested on Azure Pipelines against a specific version of
-matplotlib defined in ``conda_environment_dev.yml``. This is because small
-changes in the way matplotlib generates the figure between versions can sometimes
-make the tests fail.
+matplotlib defined in `conda_environment_dev.yml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/conda_environment_dev.yml>`__.
+This is because small changes in the way matplotlib generates the figure between
+versions can sometimes make the tests fail.
 
 For plotting tests, the matplotlib backend is set to ``agg`` by setting
 the ``MPLBACKEND`` environment variable to ``agg``. At the first import of
