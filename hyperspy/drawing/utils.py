@@ -1136,7 +1136,9 @@ def plot_images(
                     )
                     aspect = "auto"
 
-                if aspect == "auto":
+                if not xaxis.is_uniform or not yaxis.is_uniform:
+                    asp = None
+                elif aspect == "auto":
                     if float(yaxis.size) / xaxis.size < min_asp:
                         factor = min_asp * float(xaxis.size) / yaxis.size
                     elif float(yaxis.size) / xaxis.size > min_asp**-1:

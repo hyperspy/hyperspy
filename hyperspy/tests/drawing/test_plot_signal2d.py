@@ -333,6 +333,9 @@ class TestPlotNonUniformAxis:
         s2.plot(navigator=None)
         return s2._plot.signal_plot.figure
 
+    def test_plot_images(self):
+        hs.plot.plot_images(self.s.inav[0])
+
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
