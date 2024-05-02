@@ -1375,9 +1375,9 @@ where i is the ith element of the collection.
 Relative Markers
 ----------------
 
-Many times when annotating 1-D Plots you want to add markers which are relative to the data.  For example
-you may want to add a line which goes from [0, y] where y is the value at x.  To do this you can set the
-``offset_transform`` and/or ``transfrom`` to ``"relative"``.
+Many times when annotating 1-D Plots, you want to add markers which are relative to the data.  For example,
+you may want to add a line which goes from [0, y], where y is the value at x.  To do this, you can set the
+``offset_transform`` and/or ``transform`` to ``"relative"``.
 
 .. code::
 
@@ -1387,18 +1387,18 @@ you may want to add a line which goes from [0, y] where y is the value at x.  To
     >>> s.plot()
     >>> s.add_marker(m)
 
-This marker will create a line at a value=2 which extends from 0 --> 1 and updates as the index changes.
+This marker will create a line at a value=2, which extends from 0 --> 1 and updates as the index changes.
 
 Path Markers
 ------------
 
-Adding new types of markers to hyperspy is relatively simple. Currently hyperspy supports any
-:class:`matplotlib.collections.Collection` object. For most common cases this should be sufficient
-as matplotlib has a large number of built in collections beyond what is available in hyperspy.
+Adding new types of markers to hyperspy is relatively simple. Currently, hyperspy supports any
+:class:`matplotlib.collections.Collection` object. For most common cases this should be sufficient,
+as matplotlib has a large number of built-in collections beyond what is available directly in hyperspy.
 
-In the event that you want a specific shape that isn't supported you can define a custom
+In the event that you want a specific shape that is not supported, you can define a custom
 :class:`matplotlib.path.Path` object and then use the :class:`matplotlib.collections.PathCollection`
-to add the markers to the plot. Currently there is no support for saving Path based markers but that can
+to add the markers to the plot. Currently, there is no support for saving Path based markers but that can
 be added if there are specific use cases.
 
 
@@ -1429,7 +1429,7 @@ passing ``heights=(.1,.2,.3)`` will result in the ellipse at ``offsets[0]`` with
 ``offsets[1]`` with a height of 0.1, ellipse at ``offsets[2]`` has a height of 0.3 and the ellipse at ``offsets[3]`` has
 a height of 0.1 and so on.
 
-For attributes which we want to by dynamic and change with the navigation coordinates we can pass those values as
+For attributes which we want to by dynamic and change with the navigation coordinates, we can pass those values as
 an array with ``dtype=object``.  Each of those values will be set as the index changes, similarly to signal data,
 the current ``index`` of the axis manager is used to retrieve the current array of
 markers at that ``index``.  Additionally, lazy markers are treated similarly where the current

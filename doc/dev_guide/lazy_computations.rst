@@ -18,8 +18,8 @@ the two arrays are indeed almost identical, the most important differences are
   shape of the result depends on the values and cannot be inferred without
   execution. Hence, few operations can be run on ``res`` lazily, and it should
   be avoided if possible.
-- **Computations in Dask are Lazy**:  Dask only preforms a computation when it has to. For example
-  the sum function isn't run until compute is called.  This also means that some function can be
+- **Computations in Dask are Lazy**: Dask only preforms a computation when it has to. For example
+  the sum function isn't run until compute is called. This also means that some function can be
   applied to only some portion of the data.
 
   .. code-block::python
