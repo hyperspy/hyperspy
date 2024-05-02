@@ -1224,7 +1224,7 @@ calling `s.plot`:
 
 
 If the signal has a navigation dimension, the markers can be made to change
-as a function of the navigation index by passing in kwargs with dtype=object.
+as a function of the navigation index by passing in kwargs with ``dtype=object``.
 For a signal with 1 navigation axis:
 
 .. code-block:: python
@@ -1372,6 +1372,35 @@ Additionally, if some ``**kwargs`` are shorter in length to some other parameter
 
 where i is the ith element of the collection.
 
+Relative Markers
+----------------
+
+Many times when annotating 1-D Plots, you want to add markers which are relative to the data.  For example,
+you may want to add a line which goes from [0, y], where y is the value at x.  To do this, you can set the
+``offset_transform`` and/or ``transform`` to ``"relative"``.
+
+.. code::
+
+    >>> s = hs.signals.Signal1D(np.random.rand(3, 15))
+    >>> from matplotlib.collections import LineCollection
+    >>> m = hs.plot.markers.Lines(segments=[[[2, 0], [2, 1.0]]], transform="relative")
+    >>> s.plot()
+    >>> s.add_marker(m)
+
+This marker will create a line at a value=2, which extends from 0 --> 1 and updates as the index changes.
+
+Path Markers
+------------
+
+Adding new types of markers to hyperspy is relatively simple. Currently, hyperspy supports any
+:class:`matplotlib.collections.Collection` object. For most common cases this should be sufficient,
+as matplotlib has a large number of built-in collections beyond what is available directly in hyperspy.
+
+In the event that you want a specific shape that is not supported, you can define a custom
+:class:`matplotlib.path.Path` object and then use the :class:`matplotlib.collections.PathCollection`
+to add the markers to the plot. Currently, there is no support for saving Path based markers but that can
+be added if there are specific use cases.
+
 
 Extra information about Markers
 -------------------------------
@@ -1400,11 +1429,21 @@ passing ``heights=(.1,.2,.3)`` will result in the ellipse at ``offsets[0]`` with
 ``offsets[1]`` with a height of 0.1, ellipse at ``offsets[2]`` has a height of 0.3 and the ellipse at ``offsets[3]`` has
 a height of 0.1 and so on.
 
-For attributes which we want to by dynamic and change with the navigation coordinates we can pass those values as
-an array with ``dtype=object``.  Each of those values will be set as the index changes.
+For attributes which we want to by dynamic and change with the navigation coordinates, we can pass those values as
+an array with ``dtype=object``.  Each of those values will be set as the index changes, similarly to signal data,
+the current ``index`` of the axis manager is used to retrieve the current array of
+markers at that ``index``.  Additionally, lazy markers are treated similarly where the current
+chunk for a marker is cached.
 
 .. NOTE::
     Only kwargs which can be passed to :meth:`matplotlib.collections.Collection.set` can be dynamic.
+
+
+:class:`~.api.plot.markers.Markers` operates in a similar way to signals when the data is
+retrieved. The current ``index`` for the signal is used to retrieve the current array of
+markers at that ``index``.  Additionally, lazy markers are treated similarly where the current
+chunk for a marker is cached.
+
 
 If we want to plot a series of points, we can use the following code, in this case
 both the ``sizes`` and ``offsets`` kwargs are dynamic and change with each index.

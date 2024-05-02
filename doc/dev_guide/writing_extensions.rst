@@ -54,10 +54,9 @@ In order to register HyperSpy extensions, you need to:
 
 1. Add the following line to your package's ``setup.py``:
 
-    .. code-block:: python
+   .. code-block:: python
 
-        entry_points={'hyperspy.extensions': 'your_package_name =
-                      your_package_name'},
+      entry_points={'hyperspy.extensions': 'your_package_name = your_package_name'},
 2. Create a ``hyperspy_extension.yaml`` configuration file in your
    module's root directory.
 3. Declare all new HyperSpy objects provided by your package in the

@@ -1686,7 +1686,7 @@ Plotting
 EDS
 ^^^
 
-* New method for quantifying EDS TEM spectra using Cliff-Lorimer method, ``hyperspy._signals.eds_tem.EDSTEMSpectrum.quantification``. See :external+exspy:external+exspy:ref:`eds_quantification-label`.
+* New method for quantifying EDS TEM spectra using Cliff-Lorimer method, ``hyperspy._signals.eds_tem.EDSTEMSpectrum.quantification``. See :external+exspy:ref:`eds_quantification-label`.
 * New method to estimate for background subtraction, ``hyperspy._signals.eds.EDSSpectrum.estimate_background_windows``. See :external+exspy:ref:`eds_background_subtraction-label`.
 * New method to estimate the windows of integration, ``hyperspy._signals.eds.EDSSpectrum.estimate_integration_windows``.
 * New specific ``hyperspy._signals.eds.EDSSpectrum.plot`` method, with markers to indicate the X-ray lines, the window of integration or/and the windows for background subtraction. See :external+exspy:ref:`eds_plot_markers-label`.
@@ -1866,7 +1866,7 @@ EDS
   ``hyperspy._signals.eds.EDSSpectrum.add_lines``. See :external+exspy:ref:`eds_sample-label`
 * New method to get the intensity of specific X-ray lines:
   ``hyperspy._signals.eds.EDSSpectrum.get_lines_intensity``. See
-  :external+exspy:ref:`eds_plot-label`
+  :external+exspy:ref:`eds_sample-label`
 
 API changes
 -----------

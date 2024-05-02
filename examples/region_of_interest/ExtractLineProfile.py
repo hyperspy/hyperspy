@@ -61,4 +61,4 @@ hs.plot.plot_spectra([profile1, profile2])
 #%%
 # Since the profile is a signal object, you can use any other functionality provided
 # by hyperspy, e.g. to save a profile as `.msa` text file:
-profile1.save('extracted-line-profile.msa', format='XY')
+profile1.save('extracted-line-profile.msa', format='XY', overwrite=True)

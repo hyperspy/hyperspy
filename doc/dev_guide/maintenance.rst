@@ -8,10 +8,10 @@ GitHub Workflows
 
 `GitHub workflows <https://github.com/hyperspy/hyperspy/actions>`_ are used to:
 
-* run the test suite
-* build packages and upload to pypi and GitHub release
-* build the documentation and check the links (external and cross-references)
-* push the development documentation to the ``dev`` folder of https://github.com/hyperspy/hyperspy-doc
+- run the test suite
+- build packages and upload to pypi and GitHub release
+- build the documentation and check the links (external and cross-references)
+- push the development documentation to the ``dev`` folder of https://github.com/hyperspy/hyperspy-doc
 
 Some of these workflow need to access `GitHub "secrets" <https://docs.github.com/en/actions/security-guides/encrypted-secrets>`_,
 which are private to the HyperSpy repository. The personal access token ``PAT_DOCUMENTATION`` is set to be able to push

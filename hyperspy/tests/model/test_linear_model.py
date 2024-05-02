@@ -710,16 +710,18 @@ def test_non_uniform_binned():
         m.fit(optimizer="lstsq")
 
 
-def test_navigation_shape_signal1D():
+@pytest.mark.parametrize("navigation_dim", (1, 2, 3))
+def test_navigation_shape(navigation_dim):
     rng = np.random.default_rng(1)
-    s = hs.signals.Signal1D(np.zeros((2, 3, 200)))
+    nav_shape = tuple(range(1, navigation_dim + 1))
+    s = hs.signals.Signal1D(np.zeros(nav_shape + (200,)))
     g = hs.model.components1D.Gaussian()
     g.sigma.value = 10
     g.centre.value = 100
     g.A.value = 1000
     m = s.create_model()
     m.append(g)
-    g.A.map["values"] = rng.integers(low=500, high=1500, size=(2, 3))
+    g.A.map["values"] = rng.integers(low=500, high=1500, size=nav_shape)
     g.A.map["is_set"] = True
     s.data = m.as_signal().data
     s.add_gaussian_noise(0.5)
@@ -729,27 +731,6 @@ def test_navigation_shape_signal1D():
     m.multifit(optimizer="lstsq")
 
     np.testing.assert_allclose(s, m.as_signal(), atol=2.5)
-
-
-def test_navigation_shape_signal2D():
-    rng = np.random.default_rng(10)
-    s = hs.signals.Signal1D(np.zeros((2, 3, 200)))
-    g = hs.model.components1D.Gaussian()
-    g.sigma.value = 10
-    g.centre.value = 100
-    g.A.value = 1000
-    m = s.create_model()
-    m.append(g)
-    g.A.map["values"] = rng.integers(low=500, high=1500, size=(2, 3))
-    g.A.map["is_set"] = True
-    s.data = m.as_signal().data
-    s.add_gaussian_noise(0.5)
-    m.set_parameters_not_free(only_nonlinear=True)
-
-    g.A.map["values"] = 0
-    m.multifit(optimizer="lstsq")
-
-    np.testing.assert_allclose(s, m.as_signal(), atol=2)
 
 
 def test_power_law():
