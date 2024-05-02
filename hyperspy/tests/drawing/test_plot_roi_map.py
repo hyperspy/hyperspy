@@ -105,17 +105,6 @@ def test_args_wrong_shape():
     plot_roi_map(three_navs)
 
 
-def test_too_many_rois():
-    s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
-    plot_roi_map(s, 1)
-
-    with pytest.raises(ValueError):
-        plot_roi_map(s, 4)
-
-    with pytest.raises(ValueError):
-        plot_roi_map(s, [hs.roi.SpanROI() for _ in range(4)])
-
-
 def test_passing_rois():
     s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
     int_rois, int_roi_sums = plot_roi_map(s, 3)

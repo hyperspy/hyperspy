@@ -1815,16 +1815,27 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
     return rects
 
 
-def _roi_nan_sum(signal, roi, axis, out=None):
-    s = roi.__call__(signal=signal, axes=axis).nansum(axis=axis)
+def _make_default_cmaps(colors):
+    for n_color, c in enumerate(colors):
+        name = f"mpl{n_color}"
+        if name not in plt.colormaps():
+            make_cmap(colors=["#000000", c["color"]], name=name)
+    return [f"mpl{i}" for i in range(len(colors))]
+
+
+def _roi_nan_sum(signal, roi, axes, out=None):
+    s = roi(signal=signal, axes=axes).nansum(axis=axes)
     if out is not None:
         out.data[:] = s.data
         out.events.data_changed.trigger(obj=out)
     else:
+        # Reset signal to default Signal1D or Signal2D
+        s.set_signal_type("")
+        s.metadata.General.title = "Integrated intensity"
         return s
 
 
-def plot_roi_map(signal, rois=1):
+def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
     """
     Plot one or multiple ROI maps of a ``signal``.
 
@@ -1892,21 +1903,26 @@ def plot_roi_map(signal, rois=1):
         elif sig_dims == 2:
             rois = _create_rect_roi_group(*signal.axes_manager.signal_axes, rois)
 
-    if len(rois) > 3:
-        raise ValueError("Maximum number of spans is 3")
+    if color is None:
+        color = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
+    if cmap is None:
+        cmap = _make_default_cmaps(mpl.rcParams["axes.prop_cycle"])
 
-    colors = ["red", "green", "blue"]
+    if len(rois) > len(color):
+        raise ValueError(
+            f"The number of rois ({len(rois)}) exceeds "
+            f"the number of colors ({len(color)})."
+        )
+
     roi_sums = []
     axes = [axis.index_in_axes_manager for axis in signal.axes_manager.signal_axes]
 
-    for i, roi in enumerate(rois):
-        color = colors[i]
-
+    for i, (roi, color_, cmap_) in enumerate(zip(rois, color, cmap)):
         # add it to the sum over all positions
-        roi.add_widget(signal, axes=axes, color=colors[i])
+        roi.add_widget(signal, axes=axes, color=color_)
 
         # create a signal that is the spectral slice of sig
-        roi_sum = roi(signal).nansum(axes)
+        roi_sum = _roi_nan_sum(signal, roi=roi, axes=axes)
         # transpose shape to swap these points per nav into signal points
         # cap to 2, since hyperspy can't signal dimension higher than 2
         # take the two first navigation dimension by default
@@ -1920,13 +1936,13 @@ def plot_roi_map(signal, rois=1):
             event=roi.events.changed,
             signal=signal,
             roi=roi,
-            axis=axes,
+            axes=axes,
             out=roi_sum,
             recompute_out_event=None,
         )
 
         roi_sums.append(roi_sum)
-        roi_sum.plot(cmap=f"{color.capitalize()}s")
+        roi_sum.plot(cmap=cmap_, **kwargs)
 
     # return all ya bits for future messing around.
     return rois, roi_sums
