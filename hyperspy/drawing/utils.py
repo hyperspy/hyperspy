@@ -25,15 +25,18 @@ from functools import partial
 
 import dask.array as da
 import matplotlib as mpl
+import matplotlib.colors as mcolors
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import traits.api as t
 from matplotlib.backend_bases import key_press_handler
-from matplotlib.colors import BASE_COLORS, LinearSegmentedColormap, to_rgba
+import matplotlib.colors as mcolors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from packaging.version import Version
 from rsciio.utils import rgb_tools
 
+import hyperspy
 import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import to_numpy
@@ -274,8 +277,7 @@ def subplot_parameters(fig):
 
 class ColorCycle:
     _color_cycle = [
-        mpl.colors.colorConverter.to_rgba(color)
-        for color in ("b", "g", "r", "c", "m", "y", "k")
+        mcolors.to_rgba(color) for color in ("b", "g", "r", "c", "m", "y", "k")
     ]
 
     def __init__(self):
@@ -740,12 +742,8 @@ def plot_images(
     if cmap is None:
         cmap = [preferences.Plot.cmap_signal]
     elif cmap == "mpl_colors":
-        cycle = mpl.rcParams["axes.prop_cycle"]
-        for n_color, c in enumerate(cycle):
-            name = f"mpl{n_color}"
-            if name not in plt.colormaps():
-                make_cmap(colors=["#000000", c["color"]], name=name)
-        cmap = [f"mpl{i}" for i in range(len(cycle))]
+        color = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
+        cmap = _make_cmaps(color)
         __check_single_colorbar(colorbar)
     # cmap is list, tuple, or something else iterable (but not string):
     elif hasattr(cmap, "__iter__") and not isinstance(cmap, str):
@@ -986,8 +984,8 @@ def plot_images(
     def transparent_single_color_cmap(color):
         """Return a single color matplotlib cmap with the transparency increasing
         linearly from 0 to 1."""
-        return LinearSegmentedColormap.from_list(
-            "", [to_rgba(color, 0), to_rgba(color, 1)]
+        return mcolors.LinearSegmentedColormap.from_list(
+            "", [mcolors.to_rgba(color, 0), mcolors.to_rgba(color, 1)]
         )
 
     # Below is for overlayed images
@@ -1015,7 +1013,7 @@ def plot_images(
         if colors == "auto":
             colors = []
             for i in range(len(images)):
-                colors.append(list(BASE_COLORS)[i])
+                colors.append(list(mcolors.BASE_COLORS)[i])
 
         # If no alphas are selected use 1.0
         if isinstance(alphas, float):
@@ -1338,7 +1336,7 @@ def make_cmap(colors, name="my_colormap", position=None, bit=False, register=Tru
 
     for pos, color in zip(position, colors):
         if isinstance(color, str):
-            color = mpl.colors.to_rgb(color)
+            color = mcolors.to_rgb(color)
         elif bit:
             color = (bit_rgb[color[0]], bit_rgb[color[1]], bit_rgb[color[2]])
 
@@ -1346,7 +1344,7 @@ def make_cmap(colors, name="my_colormap", position=None, bit=False, register=Tru
         cdict["green"].append((pos, color[1], color[1]))
         cdict["blue"].append((pos, color[2], color[2]))
 
-    cmap = mpl.colors.LinearSegmentedColormap(name, cdict, 256)
+    cmap = mcolors.LinearSegmentedColormap(name, cdict, 256)
 
     if register:
         try:
@@ -1815,12 +1813,29 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
     return rects
 
 
-def _make_default_cmaps(colors):
-    for n_color, c in enumerate(colors):
-        name = f"mpl{n_color}"
+def _make_cmaps(colors):
+    cmap_name = []
+    for n_color, color in enumerate(colors):
+        color = mcolors.to_hex(color)
+        name = f"single_color_{color}"
         if name not in plt.colormaps():
-            make_cmap(colors=["#000000", c["color"]], name=name)
-    return [f"mpl{i}" for i in range(len(colors))]
+            make_cmap(colors=["#000000", color], name=name)
+        cmap_name.append(name)
+    return cmap_name
+
+
+def _add_colored_frame(ax, color, animated=True):
+    colored_frame = patches.Rectangle(
+        (0, 0),
+        1,
+        1,
+        linewidth=10,
+        edgecolor=color,
+        facecolor="none",
+        transform=ax.transAxes,
+        animated=animated and ax.get_figure().canvas.supports_blit,
+    )
+    ax.add_patch(colored_frame)
 
 
 def _roi_nan_sum(signal, roi, axes, out=None):
@@ -1842,23 +1857,35 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
     Uses regions of interest (ROIs) to select ranges along the signal axis.
 
     For each ROI, a plot is generated of the summed data values within
-    this signal ROI at each point in the ``signal``'s navigator.
+    this signal ROI at each point in the ``signal``'s navigation space.
 
-    The ROIs can be moved interactively and the corresponding plots will
+    The ROIs can be moved interactively and the corresponding map plots will
     update automatically.
 
     Parameters
     ----------
-    signal: :class:`~.api.signals.BaseSignal`
+    signal : :class:`~.api.signals.BaseSignal`
         The signal to inspect.
-    rois: int, list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
-        ROIs that represent colour channels in map. Can either pass a list of
-        ROI objects, or an ``int``, ``N``, in which case ``N`` ROIs will
-        be created. Currently limited to a maximum of 3 ROIs.
+    rois : int, subclass of :class:`hyperspy.roi.BaseROI` or list of :class:`hyperspy.roi.BaseROI`
+        ROIs to slice ths signal in signal space. If int, define the number of
+        to use.
+    color : list of str or None
+        Color of the roi(s). Any string supported by matplotlib to define a color
+        can be used. The lenght of the list must be equal to the number rois.
+        If None (default), the default matplotlib color are used.
+    cmap : str of list of str or None
+        Only for signals with navigation dimension of 2. Define the colormap of the map(s).
+        If string, any string supported by matplotlib to define a colormap can be used
+        and the a colored frame matching the ROI color will be added to the map.
+        If list of str, it must be the same length as the rois.
+        If None (default), the color from ``color`` argument are used and no colored
+        frame is added.
+    **kwargs : dict
+        The keyword argument are passed to :meth:`~.api.signals.Signal2D.plot`.
 
     Returns
     -------
-    rois : list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
+    rois : list of :class:`hyperspy.roi.BaseROI`
         The ROI objects that slice ``signal``.
     roi_sums : :class:`~.api.signals.BaseSignal`
         The summed of the signals defined by the ROIs.
@@ -1875,11 +1902,13 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
     region at each point in the hyperspectral map. Therefore, regions of the
     sample where this peak is bright will be bright in this map.
 
-    **4D STEM:**
+    **4D STEM**
 
-    For 4D STEM data, the ROIs used will be instances of
-    :class:`~.api.roi.RectangularROI`. These ROIs can be used to select particular
-    regions in reciprocal space, e.g. a particular diffraction spot.
+    For 4D STEM data, by default, the ROIs used will be instances of
+    :class:`~.api.roi.RectangularROI`. Other hyperspy ROI, such as
+    :class:`~.api.roi.circleROI` can be used.. These ROIs can be used
+    to select particular regions in reciprocal space, e.g. a particular
+    diffraction spot.
 
     The map generated for a given ROI is the intensity of this
     region at each point in the scan. Therefore, regions of the
@@ -1902,17 +1931,34 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
             rois = _create_span_roi_group(signal.axes_manager.signal_axes[0], rois)
         elif sig_dims == 2:
             rois = _create_rect_roi_group(*signal.axes_manager.signal_axes, rois)
+    if isinstance(rois, hyperspy.roi.BaseROI):
+        rois = [rois]
 
     if color is None:
         color = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
-    if cmap is None:
-        cmap = _make_default_cmaps(mpl.rcParams["axes.prop_cycle"])
+    elif isinstance(color, (list, tuple)):
+        if len(rois) != len(color):
+            raise ValueError(
+                f"The number of rois ({len(rois)}) must match "
+                f"the number of colors ({len(color)})."
+            )
+    else:
+        raise ValueError("Provided value of color is not supported.")
 
-    if len(rois) > len(color):
-        raise ValueError(
-            f"The number of rois ({len(rois)}) exceeds "
-            f"the number of colors ({len(color)})."
-        )
+    add_colored_frame = False
+    if cmap is None:
+        cmap = _make_cmaps(color)
+    elif isinstance(cmap, str):
+        add_colored_frame = True
+        cmap = [cmap] * len(rois)
+    elif isinstance(color, (list, tuple)):
+        if len(rois) != len(cmap):
+            raise ValueError(
+                f"The number of rois ({len(rois)}) must match "
+                f"the number of cmap ({len(cmap)})."
+            )
+    else:
+        raise ValueError("Provided value of cmap is not supported.")
 
     roi_sums = []
     axes = [axis.index_in_axes_manager for axis in signal.axes_manager.signal_axes]
@@ -1943,6 +1989,19 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
 
         roi_sums.append(roi_sum)
         roi_sum.plot(cmap=cmap_, **kwargs)
+        if add_colored_frame:
+            ax = roi_sum._plot.signal_plot.ax
+            colored_frame = patches.Rectangle(
+                (0, 0),
+                1,
+                1,
+                linewidth=10,
+                edgecolor=color_,
+                facecolor="none",
+                transform=ax.transAxes,
+                animated=ax.get_figure().canvas.supports_blit,
+            )
+            ax.add_patch(colored_frame)
 
     # return all ya bits for future messing around.
     return rois, roi_sums

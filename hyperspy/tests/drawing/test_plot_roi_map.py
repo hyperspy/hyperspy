@@ -16,12 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
 from hyperspy.utils.plot import plot_roi_map
+
+BASELINE_DIR = "plot_roi_map"
+DEFAULT_TOL = 2.0
+STYLE_PYTEST_MPL = "default"
 
 
 # params different shapes of data, sig, nav dims
@@ -192,3 +196,76 @@ def test_circle_roi():
 
     # check can actually find 10000
     assert np.any(np.isin(10000, roi_sum))
+
+
+def test_pass_ROI():
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal2D(data)
+
+    roi = hs.roi.CircleROI()
+    hs.plot.plot_roi_map(s, rois=roi)
+
+
+def test_color():
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal2D(data)
+
+    # same number
+    hs.plot.plot_roi_map(s, rois=3, color=["C0", "C1", "C2"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=3, color=["C0", "C1"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=3, color=["C0", "C1", "C2", "C3"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=1, color=["unvalid_cmap"])
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+)
+@pytest.mark.parametrize("cmap", (None, "gray"))
+def test_cmap_image(cmap):
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    rois, roi_sums = hs.plot.plot_roi_map(s, rois=2, cmap=cmap)
+
+    return roi_sums[0]._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+)
+@pytest.mark.parametrize("color", (None, ["r", "b"]))
+def test_color_image(color):
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    rois, roi_sums = hs.plot.plot_roi_map(s, rois=2, color=color)
+
+    return roi_sums[0]._plot.signal_plot.figure
+
+
+def test_cmap_error():
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal2D(data)
+
+    # same number
+    hs.plot.plot_roi_map(s, rois=3, cmap=["C0", "C1", "C2"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=3, cmap=["C0", "C1"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=3, cmap=["C0", "C1", "C2", "C3"])
+
+    # with pytest.raises(ValueError):
+    #     hs.plot.plot_roi_map(s, rois=3, cmap="unvalid_cmap")
