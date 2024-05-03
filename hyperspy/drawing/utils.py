@@ -1938,8 +1938,8 @@ def plot_roi_map(
     Performance consideration:
 
     - :class:`~.api.roi.RectangularROI` is ~2x faster than :class:`~.api.roi.CircleROI`.
-    - If the data sliced by the ROI contains :class:`numpy.nan`, :func:`numpy.nansum`
-      will be used instead of :func:`numpy.nan` at a cost of speed penalty (more than
+    - If the data sliced by the ROI contains :obj:`numpy.nan`, :func:`numpy.nansum`
+      will be used instead of :func:`numpy.sum` at a cost of speed penalty (more than
       2 times slower).
     - Plotting ROI maps on a single figure is slower than on separate figure.
 
@@ -1959,7 +1959,7 @@ def plot_roi_map(
 
     For 4D STEM data, by default, the ROIs used will be instances of
     :class:`~.api.roi.RectangularROI`. Other hyperspy ROI, such as
-    :class:`~.api.roi.circleROI` can be used.. These ROIs can be used
+    :class:`~.api.roi.CircleROI` can be used.. These ROIs can be used
     to select particular regions in reciprocal space, e.g. a particular
     diffraction spot.
 
