@@ -50,6 +50,7 @@ from functools import partial
 import numpy as np
 import traits.api as t
 
+import hyperspy.api as hs
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.events import Event, Events
@@ -566,7 +567,7 @@ class BaseInteractiveROI(BaseROI):
             if self.update in signal.axes_manager.events.any_axis_changed.connected:
                 signal.axes_manager.events.any_axis_changed.disconnect(self.update)
 
-    def remove_widget(self, signal, render_figure=True):
+    def remove_widget(self, signal=None, render_figure=True):
         """
         Removing a widget from a signal consists of two tasks:
 
@@ -578,15 +579,21 @@ class BaseInteractiveROI(BaseROI):
         ----------
         signal : hyperspy.api.signals.BaseSignal (or subclass)
             The signal from which the interactive operations will be
-            disconnected.
+            disconnected. If None, remove from all signals.
         render_figure : bool, default True
             If False, the figure will not be rendered after removing the widget
             in order to save redraw events.
 
         """
-        if signal in self.signal_map:
-            w = self.signal_map.pop(signal)[0]
-            self._remove_widget(w, render_figure)
+        if signal is None:
+            signal = list(self.signal_map.keys())
+        elif isinstance(signal, hs.signals.BaseSignal):
+            signal = [signal]
+
+        for s in signal:
+            if s in self.signal_map:
+                w = self.signal_map.pop(s)[0]
+                self._remove_widget(w, render_figure)
 
 
 class BasePointROI(BaseInteractiveROI):

@@ -77,6 +77,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
                 self.connect(self.ax)
             elif value is False:
                 self.disconnect()
+                self.span.clear()
                 self.span = None
                 self.ax = None
             if render_figure:

@@ -2004,6 +2004,10 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
 
         roi_sums.append(roi_sum)
         roi_sum.plot(cmap=cmap_, **kwargs)
+
+        # Remove widget from signal plot when closing maps figure
+        roi_sum._plot.signal_plot.events.closed.connect(roi.remove_widget, [])
+
         if add_colored_frame:
             ax = roi_sum._plot.signal_plot.ax
             colored_frame = patches.Rectangle(
