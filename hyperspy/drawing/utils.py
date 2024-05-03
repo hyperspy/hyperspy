@@ -1838,12 +1838,18 @@ def _add_colored_frame(ax, color, animated=True):
     ax.add_patch(colored_frame)
 
 
-def _roi_nan_sum(signal, roi, axes, out=None):
-    s = roi(signal=signal, axes=axes).nansum(axis=axes)
+def _roi_sum(signal, roi, axes, out=None):
+    sliced_signal = roi(signal=signal, axes=axes)
     if out is not None:
-        out.data[:] = s.data
+        # use np.sum if the data doesn't contain nan
+        # ~2x (or more for larger array) faster than nansum
+        f = np.nansum if np.isnan(sliced_signal.data).any() else np.sum
+        out.data[:] = f(sliced_signal, axis=axes)
         out.events.data_changed.trigger(obj=out)
     else:
+        # we don't case if this is not optimised for speed since this is
+        # expected to be called only when setting up the out signal
+        s = sliced_signal.nansum(axis=axes)
         # Reset signal to default Signal1D or Signal2D
         s.set_signal_type("")
         s.metadata.General.title = "Integrated intensity"
@@ -1890,9 +1896,18 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
     roi_sums : :class:`~.api.signals.BaseSignal`
         The summed of the signals defined by the ROIs.
 
+    Notes
+    -----
+    Performance consideration:
+
+    - :class:`~.api.roi.RectangularROI` is ~2x faster than :class:`~.api.roi.CircleROI`.
+    - If the data sliced by the ROI contains :class:`numpy.nan`, :func:`numpy.nansum`
+      will be used instead of :func:`numpy.nan` at a cost of speed penalty (more than
+      2 times slower).
+
     Examples
     --------
-    **3D hyperspectral data:**
+    **3D hyperspectral data**
 
     For 3D hyperspectral data, the ROIs used will be instances of
     :class:`~.api.roi.SpanROI`. Therefore, these ROIs can be used to select
@@ -1961,14 +1976,14 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
         raise ValueError("Provided value of cmap is not supported.")
 
     roi_sums = []
-    axes = [axis.index_in_axes_manager for axis in signal.axes_manager.signal_axes]
+    axes = tuple(axis.index_in_axes_manager for axis in signal.axes_manager.signal_axes)
 
     for i, (roi, color_, cmap_) in enumerate(zip(rois, color, cmap)):
         # add it to the sum over all positions
         roi.add_widget(signal, axes=axes, color=color_)
 
-        # create a signal that is the spectral slice of sig
-        roi_sum = _roi_nan_sum(signal, roi=roi, axes=axes)
+        # create the signal that is the sum slice
+        roi_sum = _roi_sum(signal, roi=roi, axes=axes)
         # transpose shape to swap these points per nav into signal points
         # cap to 2, since hyperspy can't signal dimension higher than 2
         # take the two first navigation dimension by default
@@ -1978,7 +1993,7 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
 
         # connect the span signal changing range to the value of span_sum
         hs.interactive(
-            _roi_nan_sum,
+            _roi_sum,
             event=roi.events.changed,
             signal=signal,
             roi=roi,
