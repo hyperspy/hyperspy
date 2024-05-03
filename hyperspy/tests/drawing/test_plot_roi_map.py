@@ -253,6 +253,22 @@ def test_color_image(color):
     return roi_sums[0]._plot.signal_plot.figure
 
 
+def test_close():
+    # We can't test with `single_figure=True`, because `plt.close()`
+    # doesn't call on close callback.
+    # https://github.com/matplotlib/matplotlib/issues/18609
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    rois, roi_sums = hs.plot.plot_roi_map(s, rois=3)
+    # check that it closes and remove the roi from the figure
+    for roi, roi_sum in zip(rois, roi_sums):
+        assert len(roi.signal_map) == 1
+        roi_sum._plot.close()
+        assert len(roi.signal_map) == 0
+
+
 def test_cmap_error():
     rng = np.random.default_rng(0)
     data = rng.random(size=(10, 10, 50))
@@ -267,5 +283,31 @@ def test_cmap_error():
     with pytest.raises(ValueError):
         hs.plot.plot_roi_map(s, rois=3, cmap=["C0", "C1", "C2", "C3"])
 
-    # with pytest.raises(ValueError):
-    #     hs.plot.plot_roi_map(s, rois=3, cmap="unvalid_cmap")
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+)
+@pytest.mark.parametrize("cmap", (None, "gray"))
+def test_single_figure_image(cmap):
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    hs.plot.plot_roi_map(s, rois=3, cmap=cmap, single_figure=True, scalebar=False)
+
+    return plt.gcf()
+
+
+@pytest.mark.parametrize("color", (None, ["C0", "C1"], ["r", "b"]))
+def test_single_figure_spectra(color):
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(50, 10, 10))
+    s = hs.signals.Signal2D(data)
+
+    hs.plot.plot_roi_map(s, rois=2, color=color, single_figure=True)
+    if color is None:
+        color = ["b", "g"]
+
+    ax = plt.gca()
+    for line, color_ in zip(ax.lines, color):
+        assert line.get_color() == color_

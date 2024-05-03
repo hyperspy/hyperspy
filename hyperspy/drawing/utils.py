@@ -31,7 +31,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import traits.api as t
 from matplotlib.backend_bases import key_press_handler
-import matplotlib.colors as mcolors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from packaging.version import Version
 from rsciio.utils import rgb_tools
@@ -1091,11 +1090,7 @@ def plot_images(
                     data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
                     _vmin, _vmax = None, None
                 elif colorbar != "single":
-                    _vmin = vmin[idx] if isinstance(vmin, (tuple, list)) else vmin
-                    _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
-                    _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
-                    if centre:
-                        _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
+                    _vmin, _vmax = _parse_vmin_vmax(data, vmin, vmax, idx, centre)
 
                 # Remove NaNs (if requested)
                 if no_nans:
@@ -1274,7 +1269,32 @@ def plot_images(
 
     f.canvas.mpl_connect("button_press_event", on_dblclick)
 
+    def update_image(image, ax, image_index):
+        data = image.data
+        im = ax.images[0]
+        im.set_data(data)
+        _vmin, _vmax = _parse_vmin_vmax(data, vmin, vmax, image_index, centre)
+        im.set_clim(vmin=_vmin, vmax=_vmax)
+        ax.get_figure().canvas.draw()
+
+    for i, (image, ax) in enumerate(zip(images, axes_list)):
+        f = partial(update_image, image, ax, i)
+        image.events.data_changed.connect(f, [])
+        # disconnect event when closing figure
+        disconnect = partial(image.events.data_changed.disconnect, f)
+        on_figure_window_close(ax.get_figure(), disconnect)
+
     return axes_list
+
+
+def _parse_vmin_vmax(data, vmin, vmax, index, centre):
+    _vmin = vmin[index] if isinstance(vmin, (tuple, list)) else vmin
+    _vmax = vmax[index] if isinstance(vmax, (tuple, list)) else vmax
+    _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
+    if centre:
+        _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
+
+    return _vmin, _vmax
 
 
 def set_axes_decor(ax, axes_decor):
@@ -1856,7 +1876,15 @@ def _roi_sum(signal, roi, axes, out=None):
         return s
 
 
-def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
+def plot_roi_map(
+    signal,
+    rois=1,
+    color=None,
+    cmap=None,
+    single_figure=False,
+    single_figure_kwargs=None,
+    **kwargs,
+):
     """
     Plot one or multiple ROI maps of a ``signal``.
 
@@ -1886,6 +1914,15 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
         If list of str, it must be the same length as the rois.
         If None (default), the color from ``color`` argument are used and no colored
         frame is added.
+    single_figure : bool
+        Whether to plot on a single figure or several figures.
+        If True, :func:`~.api.plot.plot_images` or :func:`~.plot.plot_spectra`
+        will be used, depending on the navigation dimension of the signal.
+    single_figure_kwargs : dict
+        Only when ``single_figure=True``. Keywords arguments are passed to
+        :func:`~.api.plot.plot_images` or :func:`~.plot.plot_spectra`
+        depending on the navigation dimension of the signal.
+        If None, default kwargs are used.
     **kwargs : dict
         The keyword argument are passed to :meth:`~.api.signals.Signal2D.plot`.
 
@@ -1904,6 +1941,7 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
     - If the data sliced by the ROI contains :class:`numpy.nan`, :func:`numpy.nansum`
       will be used instead of :func:`numpy.nan` at a cost of speed penalty (more than
       2 times slower).
+    - Plotting ROI maps on a single figure is slower than on separate figure.
 
     Examples
     --------
@@ -1957,7 +1995,7 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
                 f"The number of rois ({len(rois)}) must match "
                 f"the number of colors ({len(color)})."
             )
-    else:
+    else:  # pragma: no cover
         raise ValueError("Provided value of color is not supported.")
 
     add_colored_frame = False
@@ -1972,7 +2010,7 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
                 f"The number of rois ({len(rois)}) must match "
                 f"the number of cmap ({len(cmap)})."
             )
-    else:
+    else:  # pragma: no cover
         raise ValueError("Provided value of cmap is not supported.")
 
     roi_sums = []
@@ -2003,24 +2041,36 @@ def plot_roi_map(signal, rois=1, color=None, cmap=None, **kwargs):
         )
 
         roi_sums.append(roi_sum)
-        roi_sum.plot(cmap=cmap_, **kwargs)
 
-        # Remove widget from signal plot when closing maps figure
-        roi_sum._plot.signal_plot.events.closed.connect(roi.remove_widget, [])
+        if not single_figure:
+            roi_sum.plot(cmap=cmap_, **kwargs)
+            # Remove widget from signal plot when closing maps figure
+            roi_sum._plot.signal_plot.events.closed.connect(roi.remove_widget, [])
 
-        if add_colored_frame:
-            ax = roi_sum._plot.signal_plot.ax
-            colored_frame = patches.Rectangle(
-                (0, 0),
-                1,
-                1,
-                linewidth=10,
-                edgecolor=color_,
-                facecolor="none",
-                transform=ax.transAxes,
-                animated=ax.get_figure().canvas.supports_blit,
-            )
-            ax.add_patch(colored_frame)
+            if add_colored_frame:
+                _add_colored_frame(roi_sum._plot.signal_plot.ax, color_)
+
+    if single_figure:
+        if nav_dims == 1:
+            axs = plot_spectra(roi_sums, color=color, **kwargs)
+        else:
+            # default plot kwargs
+            single_figure_kwargs_ = dict(scalebar=[0], axes_decor="off", suptitle="")
+            # overwrite defaults with user defined kwargs
+            single_figure_kwargs_.update(kwargs)
+            axs = plot_images(roi_sums, cmap=cmap, **single_figure_kwargs_)
+            if add_colored_frame:
+                # hs.plot.plot_images doesn't use blitting
+                for ax, color_ in zip(axs, color):
+                    _add_colored_frame(ax, color_, animated=False)
+
+        def remove_widgets():  # pragma: no cover
+            for roi in rois:
+                roi.remove_widget()
+
+        if not isinstance(axs, list):
+            axs = [axs]
+        on_figure_window_close(axs[0].get_figure(), remove_widgets)
 
     # return all ya bits for future messing around.
     return rois, roi_sums
