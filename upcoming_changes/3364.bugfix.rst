@@ -1,0 +1,4 @@
+Fixes in :func:`~.api.plot.plot_roi_map`:
+
+- Fix slicing signal when using CircleROI (`#3358 <https://github.com/hyperspy/hyperspy/issues/3358>`_).
+- Fix redundant events when using :class:`~.api.roi.SpanROI`, which was causing flickering of the colorbar in the ROI map figures
