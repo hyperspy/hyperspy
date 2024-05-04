@@ -3,7 +3,7 @@ Create Map from CircleROI in signal space
 =========================================
 
 Use the :func:`~.api.plot.plot_roi_map` function to create interactive maps defined
-from a CircleROI in signal space.
+from a :class:`~.api.roi.CircleROI` in signal space.
 
 """
 import hyperspy.api as hs
@@ -17,7 +17,7 @@ s = hs.signals.Signal2D(data)
 
 #%%
 # Add 2 ROIs in signal space and map the corresponding signal using :func:`~.api.plot.plot_roi_map`.
-# The ROI are added to the plot of the signal and by default, a
+# The ROIs are added to the plot of the signal and by default a
 # :class:`~.api.roi.RectangularROI` is used
 s.plot()
 roi = hs.plot.plot_roi_map(s, rois=2)

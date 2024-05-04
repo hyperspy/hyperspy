@@ -1901,18 +1901,18 @@ def plot_roi_map(
     signal : :class:`~.api.signals.BaseSignal`
         The signal to inspect.
     rois : int, subclass of :class:`hyperspy.roi.BaseROI` or list of :class:`hyperspy.roi.BaseROI`
-        ROIs to slice ths signal in signal space. If int, define the number of
-        to use.
+        ROIs to slice the signal in signal space. If ``int``, define the number of
+        ROIs to use.
     color : list of str or None
-        Color of the roi(s). Any string supported by matplotlib to define a color
-        can be used. The lenght of the list must be equal to the number rois.
-        If None (default), the default matplotlib color are used.
+        Color of the ROIs. Any string supported by matplotlib to define a color
+        can be used. The length of the list must be equal to the number ROIs.
+        If None (default), the default matplotlib colors are used.
     cmap : str of list of str or None
         Only for signals with navigation dimension of 2. Define the colormap of the map(s).
         If string, any string supported by matplotlib to define a colormap can be used
-        and the a colored frame matching the ROI color will be added to the map.
-        If list of str, it must be the same length as the rois.
-        If None (default), the color from ``color`` argument are used and no colored
+        and a colored frame matching the ROI color will be added to the map.
+        If list of str, it must be the same length as the ROIs.
+        If None (default), the colors from the ``color`` argument are used and no colored
         frame is added.
     single_figure : bool
         Whether to plot on a single figure or several figures.
@@ -1922,7 +1922,8 @@ def plot_roi_map(
         Only when ``single_figure=True``. Keywords arguments are passed to
         :func:`~.api.plot.plot_images` or :func:`~.plot.plot_spectra`
         depending on the navigation dimension of the signal.
-        If None, default kwargs are used.
+        If None, default ``kwargs`` are used with the following changes
+        ``scalebar=[0]``, ``axes_decor="off"`` and ``suptitle=""``.
     **kwargs : dict
         The keyword argument are passed to :meth:`~.api.signals.Signal2D.plot`.
 
@@ -1931,7 +1932,7 @@ def plot_roi_map(
     rois : list of :class:`hyperspy.roi.BaseROI`
         The ROI objects that slice ``signal``.
     roi_sums : :class:`~.api.signals.BaseSignal`
-        The summed of the signals defined by the ROIs.
+        The sums of the signals defined by the ROIs.
 
     Notes
     -----
@@ -1958,8 +1959,8 @@ def plot_roi_map(
     **4D STEM**
 
     For 4D STEM data, by default, the ROIs used will be instances of
-    :class:`~.api.roi.RectangularROI`. Other hyperspy ROI, such as
-    :class:`~.api.roi.CircleROI` can be used.. These ROIs can be used
+    :class:`~.api.roi.RectangularROI`. Other hyperspy ROIs, such as
+    :class:`~.api.roi.CircleROI` can be used. These ROIs can be used
     to select particular regions in reciprocal space, e.g. a particular
     diffraction spot.
 
@@ -1977,7 +1978,7 @@ def plot_roi_map(
         raise ValueError("The signal must have signal dimension of 1 or 2.")
 
     if nav_dims == 0:
-        raise ValueError("Navigation dimension must larger than 0.")
+        raise ValueError("Navigation dimension must be larger than 0.")
 
     if isinstance(rois, int):
         if sig_dims == 1:
@@ -2022,9 +2023,9 @@ def plot_roi_map(
 
         # create the signal that is the sum slice
         roi_sum = _roi_sum(signal, roi=roi, axes=axes)
-        # transpose shape to swap these points per nav into signal points
-        # cap to 2, since hyperspy can't signal dimension higher than 2
-        # take the two first navigation dimension by default
+        # Transpose shape to swap these points per nav into signal points.
+        # Cap to 2, since hyperspy can't handle signal dimension higher than 2.
+        # Take the two first navigation dimensions by default.
         roi_sum = roi_sum.transpose(
             signal_axes=min(roi_sum.axes_manager.navigation_dimension, 2)
         )
