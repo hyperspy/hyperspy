@@ -228,6 +228,7 @@ where = ["."]
 
 [tool.setuptools_scm]
 fallback_version = "2.1.0.dev0"
+version_scheme = "release-branch-semver"
 
 [tool.towncrier]
 directory = "upcoming_changes/"

@@ -44,7 +44,7 @@ if (_root / ".git").exists() and not (_root / ".git/shallow").exists():
         # setuptools_scm may not be installed
         from setuptools_scm import get_version
 
-        __version__ = get_version(_root)
+        __version__ = get_version(_root, version_scheme="release-branch-semver")
     except ImportError:  # pragma: no cover
         # setuptools_scm not install, we keep the existing __version__
         pass
