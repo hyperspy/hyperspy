@@ -1940,9 +1940,9 @@ def plot_roi_map(
 
     - :class:`~.api.roi.RectangularROI` is ~2x faster than :class:`~.api.roi.CircleROI`.
     - If the data sliced by the ROI contains :obj:`numpy.nan`, :func:`numpy.nansum`
-      will be used instead of :func:`numpy.sum` at a cost of speed penalty (more than
+      will be used instead of :func:`numpy.sum` at the cost of a speed penalty (more than
       2 times slower).
-    - Plotting ROI maps on a single figure is slower than on separate figure.
+    - Plotting ROI maps on a single figure is slower than on separate figures.
 
     Examples
     --------
