@@ -1111,12 +1111,19 @@ def plot_images(
                 xaxis = axes[0]
                 yaxis = axes[1]
 
-                extent = (
-                    xaxis.low_value,
-                    xaxis.high_value,
-                    yaxis.high_value,
-                    yaxis.low_value,
-                )
+                # Keep extent consistent with `Signal.plot`
+                if xaxis.is_uniform and yaxis.is_uniform:
+                    xaxis_half_px = xaxis.scale / 2.0
+                    yaxis_half_px = yaxis.scale / 2.0
+                else:
+                    xaxis_half_px = 0
+                    yaxis_half_px = 0
+                extent = [
+                    xaxis.axis[0] - xaxis_half_px,
+                    xaxis.axis[-1] + xaxis_half_px,
+                    yaxis.axis[-1] + yaxis_half_px,
+                    yaxis.axis[0] - yaxis_half_px,
+                ]
 
                 if not isinstance(aspect, (int, float)) and aspect not in [
                     "auto",
@@ -1129,7 +1136,9 @@ def plot_images(
                     )
                     aspect = "auto"
 
-                if aspect == "auto":
+                if not xaxis.is_uniform or not yaxis.is_uniform:
+                    asp = None
+                elif aspect == "auto":
                     if float(yaxis.size) / xaxis.size < min_asp:
                         factor = min_asp * float(xaxis.size) / yaxis.size
                     elif float(yaxis.size) / xaxis.size > min_asp**-1:

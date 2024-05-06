@@ -334,6 +334,9 @@ class TestPlotNonUniformAxis:
         s2.plot(navigator=None)
         return s2._plot.signal_plot.figure
 
+    def test_plot_images(self):
+        hs.plot.plot_images(self.s.inav[0])
+
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
@@ -955,3 +958,28 @@ class TestDynamicNavigatorPlot:
         s.axes_manager.indices = (0, 2, 0, 1)
         data3 = s._plot.navigator_plot._current_data
         assert np.array_equal(data2, data3)
+
+
+@pytest.mark.parametrize("axes_decor", ["all", "ticks", "off", None])
+def test_plot_images_axes_ticks(axes_decor):
+    # Axes ticks should be the same with `plot_images` and `Signal2D.plot`
+
+    data = np.arange(100).reshape(10, 10)
+
+    positive_axis = {"scale": 1, "size": 10, "name": "positive", "units": "px"}
+    negative_axis = {"scale": -1, "size": 10, "name": "negative", "units": "px"}
+
+    s = hs.signals.Signal2D(data, axes=[positive_axis, negative_axis])
+
+    # No colorbar to ensure we can get the correct axis with plt.gca
+    s.plot(axes_ticks=True, colorbar=False, title="")
+    plot_ax = plt.gca()
+
+    (plot_images_ax,) = hs.plot.plot_images(
+        s, colorbar=False, label="", axes_decor=axes_decor
+    )
+
+    assert np.allclose(plot_ax.get_xticks(), plot_images_ax.get_xticks())
+    assert np.allclose(plot_ax.get_yticks(), plot_images_ax.get_yticks())
+    assert np.allclose(plot_ax.get_xlim(), plot_images_ax.get_xlim())
+    assert np.allclose(plot_ax.get_ylim(), plot_images_ax.get_ylim())

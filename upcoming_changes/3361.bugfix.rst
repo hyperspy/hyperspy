@@ -1,0 +1,1 @@
+Fix :func:`~.api.plot.plot_images` axis ticks discrepancy.
