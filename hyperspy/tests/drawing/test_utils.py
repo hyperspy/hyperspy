@@ -25,12 +25,10 @@ from hyperspy.drawing.utils import contrast_stretching, create_figure
 
 
 def test_create_figure():
-    if matplotlib.get_backend() == "agg":
-        pytest.xfail(
-            "{} backend does not support on_close event.".format(
-                matplotlib.get_backend()
-            )
-        )
+    # needs to run inside the function to make sure the correct backend is used
+    # not possible to pytest.mark.skipif decorator
+    if matplotlib.get_backend().lower() == "agg":
+        pytest.skip("'agg' backend does not support on_close event.")
 
     dummy_function = Mock()
     fig = create_figure(
