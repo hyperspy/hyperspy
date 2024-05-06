@@ -768,8 +768,9 @@ class ImageContrastEditor(t.HasTraits):
         enter_set=True,
     )
     gamma = t.Range(0.1, 3.0, 1.0)
-    vmin_percentile = t.Range(0.0, 100.0, 0)
-    vmax_percentile = t.Range(0.0, 100.0, 100)
+    percentile_range = t.Range(0.0, 100.0)
+    vmin_percentile = t.Float(0.0)
+    vmax_percentile = t.Float(100.0)
 
     norm = t.Enum("Linear", "Power", "Log", "Symlog", default="Linear")
     linthresh = t.Range(
