@@ -1,1 +1,0 @@
-Simplify Azure Pipeline CI by removing build and uploading wheels, since this is now done on GitHub CI.

@@ -1,1 +1,0 @@
-Fix development version on ``RELEASE_next_minor`` branch.

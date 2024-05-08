@@ -1,1 +1,0 @@
-Add ``percentile_range`` traitsui attribute to ``ImageContrastEditor`` necessary for `hyperspy/hyperspy_gui_traitsui#76 <https://github.com/hyperspy/hyperspy_gui_traitsui/pull/76>`_.

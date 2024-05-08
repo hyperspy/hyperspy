@@ -1,1 +1,0 @@
-Enable ruff isort and all pyflakes/Pycodestyle rules, except E501 to avoid confict with black formatting.
