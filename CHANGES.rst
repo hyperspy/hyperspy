@@ -16,9 +16,9 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 Enhancements
 ------------
 
-- Add an dynamic navigator which updates when the number of navigation dimensions is greater than 3 (`#3199 <https://github.com/hyperspy/hyperspy/issues/3199>`_)
+- Add a dynamic navigator which updates when the number of navigation dimensions is greater than 3 (`#3199 <https://github.com/hyperspy/hyperspy/issues/3199>`_)
 - Add an example to the gallery to show how to extract a line profile from an image using a :class:`~.api.roi.Line2DROI` (`#3227 <https://github.com/hyperspy/hyperspy/issues/3227>`_)
-- Add example showing how to handle RGB images. (`#3346 <https://github.com/hyperspy/hyperspy/issues/3346>`_)
+- Add an example showing how to handle RGB images. (`#3346 <https://github.com/hyperspy/hyperspy/issues/3346>`_)
 - Use :func:`pint.get_application_registry` to get :class:`pint.UnitRegistry` and facilitate interoperability of pint quantity operation with other modules. (`#3357 <https://github.com/hyperspy/hyperspy/issues/3357>`_)
 - :func:`~.api.plot.plot_roi_map` improvement:
 
@@ -36,7 +36,7 @@ Bug Fixes
 ---------
 
 - Fix ROI slicing of non-uniform axis (`#3328 <https://github.com/hyperspy/hyperspy/issues/3328>`_)
-- Adds the ability to save and load :class:`~.axes.BaseDataAxis` objects to a hyperspy file. (`#3342 <https://github.com/hyperspy/hyperspy/issues/3342>`_)
+- Add the ability to save and load :class:`~.axes.BaseDataAxis` objects to a hyperspy file. (`#3342 <https://github.com/hyperspy/hyperspy/issues/3342>`_)
 - Fix navigator event disconnection and fix plot when changing dtype from/to rbgx. (`#3346 <https://github.com/hyperspy/hyperspy/issues/3346>`_)
 - Fix :func:`~.api.get_configuration_directory_path` function. (`#3349 <https://github.com/hyperspy/hyperspy/issues/3349>`_)
 - Fix :func:`~.api.plot.plot_images` axis ticks discrepancy. (`#3361 <https://github.com/hyperspy/hyperspy/issues/3361>`_)
@@ -58,8 +58,8 @@ Maintenance
 
 - Ruff update:
 
-  - set the ``RELEASE_next_patch`` branch as target for the ``pre-commit.ci`` update to keep all branches in synchronisation.
-  - update ruff to version 0.3.3 and run ruff check/format on source code. (`#3335 <https://github.com/hyperspy/hyperspy/issues/3335>`_)
+  - Set the ``RELEASE_next_patch`` branch as target for the ``pre-commit.ci`` update to keep all branches in synchronisation.
+  - Update ruff to version 0.3.3 and run ruff check/format on source code. (`#3335 <https://github.com/hyperspy/hyperspy/issues/3335>`_)
 - Replace deprecated ``np.string_`` by ``np.bytes_``. (`#3338 <https://github.com/hyperspy/hyperspy/issues/3338>`_)
 - Enable ruff isort and all pyflakes/Pycodestyle rules, except E501 to avoid confict with black formatting. (`#3348 <https://github.com/hyperspy/hyperspy/issues/3348>`_)
 - Merge ``hyperspy.api.no`` and ``hyperspy.api.no_gui`` modules since the latter is not necessary anymore. (`#3349 <https://github.com/hyperspy/hyperspy/issues/3349>`_)
