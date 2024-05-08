@@ -1,9 +1,0 @@
-:func:`~.api.plot.plot_roi_map` improvement:
-
-- Add ROIs on signal plot instead of adding them on a sum signal.
-- Add support for more than 3 ROIs.
-- Add ``color`` and ``cmap`` parameters to specify color and colormap.
-- Add ``single_figure`` parameter to enable plotting on a single figure using :func:`~.api.plot.plot_images` or :func:`~.api.plot.plot_spectra`.
-- Improve performance of updating ROI maps by a factor 2-4 when moving ROI.
-- Update images in :func:`~.api.plot.plot_images` on data change event.
-- Remove ROI widgets and disconnect interactive function when closing ROI map figures.

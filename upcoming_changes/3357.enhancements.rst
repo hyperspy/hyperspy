@@ -1,1 +1,0 @@
-Use :func:`pint.get_application_registry` to get :class:`pint.UnitRegistry` and facilitate interoperability of pint quantity operation with other modules .

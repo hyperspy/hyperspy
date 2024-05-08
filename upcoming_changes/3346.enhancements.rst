@@ -1,1 +1,0 @@
-Add example showing how to handle RGB images.

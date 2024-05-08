@@ -10,6 +10,66 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 
 .. towncrier release notes start
 
+2.1.0 (2024-05-08)
+==================
+
+Enhancements
+------------
+
+- Add a dynamic navigator which updates when the number of navigation dimensions is greater than 3 (`#3199 <https://github.com/hyperspy/hyperspy/issues/3199>`_)
+- Add an example to the gallery to show how to extract a line profile from an image using a :class:`~.api.roi.Line2DROI` (`#3227 <https://github.com/hyperspy/hyperspy/issues/3227>`_)
+- Add an example showing how to handle RGB images. (`#3346 <https://github.com/hyperspy/hyperspy/issues/3346>`_)
+- Use :func:`pint.get_application_registry` to get :class:`pint.UnitRegistry` and facilitate interoperability of pint quantity operation with other modules. (`#3357 <https://github.com/hyperspy/hyperspy/issues/3357>`_)
+- :func:`~.api.plot.plot_roi_map` improvement:
+
+  - Add ROIs on signal plot instead of adding them on a sum signal.
+  - Add support for more than 3 ROIs.
+  - Add ``color`` and ``cmap`` parameters to specify color and colormap.
+  - Add ``single_figure`` parameter to enable plotting on a single figure using :func:`~.api.plot.plot_images` or :func:`~.api.plot.plot_spectra`.
+  - Improve performance of updating ROI maps by a factor 2-4 when moving ROI.
+  - Update images in :func:`~.api.plot.plot_images` on data change event.
+  - Remove ROI widgets and disconnect interactive function when closing ROI map figures. (`#3364 <https://github.com/hyperspy/hyperspy/issues/3364>`_)
+- Documentation improvement. (`#3365 <https://github.com/hyperspy/hyperspy/issues/3365>`_)
+
+
+Bug Fixes
+---------
+
+- Fix ROI slicing of non-uniform axis (`#3328 <https://github.com/hyperspy/hyperspy/issues/3328>`_)
+- Add the ability to save and load :class:`~.axes.BaseDataAxis` objects to a hyperspy file. (`#3342 <https://github.com/hyperspy/hyperspy/issues/3342>`_)
+- Fix navigator event disconnection and fix plot when changing dtype from/to rbgx. (`#3346 <https://github.com/hyperspy/hyperspy/issues/3346>`_)
+- Fix :func:`~.api.get_configuration_directory_path` function. (`#3349 <https://github.com/hyperspy/hyperspy/issues/3349>`_)
+- Fix :func:`~.api.plot.plot_images` axis ticks discrepancy. (`#3361 <https://github.com/hyperspy/hyperspy/issues/3361>`_)
+- Fixes in :func:`~.api.plot.plot_roi_map`:
+
+  - Fix slicing signal when using CircleROI (`#3358 <https://github.com/hyperspy/hyperspy/issues/3358>`_).
+  - Fix redundant events when using :class:`~.api.roi.SpanROI`, which was causing flickering of the colorbar in the ROI map figures (`#3364 <https://github.com/hyperspy/hyperspy/issues/3364>`_)
+- Fix development version on ``RELEASE_next_minor`` branch. (`#3368 <https://github.com/hyperspy/hyperspy/issues/3368>`_)
+
+
+API changes
+-----------
+
+- :func:`~.api.plot.plot_roi_map` doesn't return the sum of all ROI maps (``all_sum``) and the signals sliced by the ROIs (``roi_signals``), these can be obtained separately using the ``rois`` returned by :func:`~.api.plot.plot_roi_map` and :func:`~.api.interactive`. (`#3364 <https://github.com/hyperspy/hyperspy/issues/3364>`_)
+
+
+Maintenance
+-----------
+
+- Ruff update:
+
+  - Set the ``RELEASE_next_patch`` branch as target for the ``pre-commit.ci`` update to keep all branches in synchronisation.
+  - Update ruff to version 0.3.3 and run ruff check/format on source code. (`#3335 <https://github.com/hyperspy/hyperspy/issues/3335>`_)
+- Replace deprecated ``np.string_`` by ``np.bytes_``. (`#3338 <https://github.com/hyperspy/hyperspy/issues/3338>`_)
+- Enable ruff isort and all pyflakes/Pycodestyle rules, except E501 to avoid confict with black formatting. (`#3348 <https://github.com/hyperspy/hyperspy/issues/3348>`_)
+- Merge ``hyperspy.api.no`` and ``hyperspy.api.no_gui`` modules since the latter is not necessary anymore. (`#3349 <https://github.com/hyperspy/hyperspy/issues/3349>`_)
+- Convert projet readme to markdown, fixes badges on github (`#3351 <https://github.com/hyperspy/hyperspy/issues/3351>`_)
+- Simplify Azure Pipeline CI by removing build and uploading wheels, since this is now done on GitHub CI. (`#3356 <https://github.com/hyperspy/hyperspy/issues/3356>`_)
+- Fix duplicated test and occasional test failure. (`#3365 <https://github.com/hyperspy/hyperspy/issues/3365>`_)
+- Use lower case when checking matplotlib backend in the test suite. (`#3367 <https://github.com/hyperspy/hyperspy/issues/3367>`_)
+- Add ``percentile_range`` traitsui attribute to ``ImageContrastEditor`` necessary for `hyperspy/hyperspy_gui_traitsui#76 <https://github.com/hyperspy/hyperspy_gui_traitsui/pull/76>`_. (`#3368 <https://github.com/hyperspy/hyperspy/issues/3368>`_)
+
+
 2.0.1 (2024-02-26)
 ==================
 
