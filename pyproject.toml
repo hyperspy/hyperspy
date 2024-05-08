@@ -227,7 +227,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-fallback_version = "2.1.1.dev0"
+fallback_version = "2.2.0.dev0"
 version_scheme = "release-branch-semver"
 
 [tool.towncrier]
