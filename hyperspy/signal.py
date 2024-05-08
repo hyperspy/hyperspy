@@ -3065,15 +3065,18 @@ class BaseSignal(
             navigator = sum_wrapper(self, am.signal_axes + am.navigation_axes[1:])
             return np.nan_to_num(to_numpy(navigator.data)).squeeze()
 
-        def get_dynamic_explorer_wrapper(*args, **kwargs):
-            navigator.axes_manager.indices = self.axes_manager.indices[
-                navigator.axes_manager.signal_dimension :
-            ]
-            navigator.axes_manager._update_attributes()
-            if np.issubdtype(navigator._get_current_data().dtype, np.complexfloating):
-                return abs(navigator._get_current_data(as_numpy=True))
-            else:
-                return navigator(as_numpy=True)
+        def get_dynamic_image_explorer(*args, **kwargs):
+            am = self.axes_manager
+            nav_ind = am.indices[2:]  # image at first 2 nav indices
+            slices = [slice(None)] * len(am.navigation_axes)
+            slices[2:] = nav_ind
+            new_nav = navigator.transpose(
+                signal_axes=len(am.navigation_axes)
+            )  # roll axes to signal axes
+            ind = new_nav.isig.__getitem__(
+                slices=slices
+            )  # Get the value from the nav reverse because hyperspy
+            return np.nan_to_num(to_numpy(ind.data)).squeeze()
 
         # function to disconnect when closing the navigator
         function_to_disconnect = None
@@ -3142,21 +3145,20 @@ class BaseSignal(
                 if is_shape_compatible(
                     axes_manager.navigation_shape, navigator.axes_manager.signal_shape
                 ):
-                    self._plot.navigator_data_function = get_static_explorer_wrapper
+                    if len(axes_manager.navigation_shape) > 2:
+                        self._plot.navigator_data_function = get_dynamic_image_explorer
+                    else:
+                        self._plot.navigator_data_function = get_static_explorer_wrapper
                 # Static transposed navigator
                 elif is_shape_compatible(
                     axes_manager.navigation_shape,
                     navigator.axes_manager.navigation_shape,
                 ):
                     navigator = navigator.T
-                    self._plot.navigator_data_function = get_static_explorer_wrapper
-                # Dynamic navigator
-                elif (
-                    axes_manager.navigation_shape
-                    == navigator.axes_manager.signal_shape
-                    + navigator.axes_manager.navigation_shape
-                ):
-                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
+                    if len(axes_manager.navigation_shape) > 2:
+                        self._plot.navigator_data_function = get_dynamic_image_explorer
+                    else:
+                        self._plot.navigator_data_function = get_static_explorer_wrapper
                 else:
                     raise ValueError(
                         "The dimensions of the provided (or stored) navigator "

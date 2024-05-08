@@ -720,7 +720,9 @@ class BaseDataAxis(t.HasTraits):
         any_changes = False
         changed = {}
         for f in attributes:
-            if getattr(self, f) != getattr(axis, f):
+            a, b = getattr(self, f), getattr(axis, f)
+            cond = np.allclose(a, b) if isinstance(a, np.ndarray) else a == b
+            if not cond:
                 changed[f] = getattr(axis, f)
         if len(changed) > 0:
             self.trait_set(**changed)
@@ -872,7 +874,7 @@ class DataAxis(BaseDataAxis):
 
         """
         if attributes is None:
-            attributes = ["units"]
+            attributes = ["axis"]
         return super().update_from(axis, attributes)
 
     def crop(self, start=None, end=None):
@@ -1027,7 +1029,7 @@ class FunctionalDataAxis(BaseDataAxis):
 
         """
         if attributes is None:
-            attributes = self.parameters_list
+            attributes = self.parameters_list + ["_expression", "x"]
         return super().update_from(axis, attributes)
 
     def calibrate(self, *args, **kwargs):
@@ -1305,7 +1307,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         """
         if attributes is None:
-            attributes = ["scale", "offset", "units"]
+            attributes = ["scale", "offset", "size"]
         return super().update_from(axis, attributes)
 
     def crop(self, start=None, end=None):

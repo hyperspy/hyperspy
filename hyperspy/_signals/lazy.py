@@ -1223,13 +1223,9 @@ class LazySignal(BaseSignal):
                 )
                 navigator = "auto"
             if navigator == "auto":
-                nav_dim = self.axes_manager.navigation_dimension
-                if nav_dim in [1, 2]:
-                    if self.navigator is None:
-                        self.compute_navigator()
-                    navigator = self.navigator
-                elif nav_dim > 2:
-                    navigator = "slider"
+                if self.navigator is None:
+                    self.compute_navigator()
+                navigator = self.navigator
         super().plot(navigator=navigator, **kwargs)
 
     def compute_navigator(self, index=None, chunks_number=None, show_progressbar=None):

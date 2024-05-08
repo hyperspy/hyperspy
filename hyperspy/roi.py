@@ -16,32 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy.  If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Region of interests (ROIs).
-
-ROIs operate on `BaseSignal` instances and include widgets for interactive
-operation.
+"""
+Region of interests (ROIs) operate on :py:class:`~.api.signals.BaseSignal`
+instances and include widgets for interactive operation.
 
 The following 1D ROIs are available:
 
-    Point1DROI
-        Single element ROI of a 1D signal.
+.. list-table:: 1D ROIs
+   :widths: 25 75
 
-    SpanROI
-        Interval ROI of a 1D signal.
+   * - :class:`~.api.roi.Point1DROI`
+     - Single element ROI of a 1D signal
+   * - :class:`~.api.roi.SpanROI`
+     - Interval ROI of a 1D signal
 
 The following 2D ROIs are available:
 
-    Point2DROI
-        Single element ROI of a 2D signal.
+.. list-table:: 2D ROIs
+   :widths: 25 75
 
-    RectangularROI
-        Rectagular ROI of a 2D signal.
-
-    CircleROI
-        (Hollow) circular ROI of a 2D signal
-
-    Line2DROI
-        Line profile of a 2D signal with customisable width.
+   * - :class:`~.api.roi.Point2DROI`
+     - Single element ROI of a 2D signal
+   * - :class:`~.api.roi.RectangularROI`
+     - Rectagular ROI of a 2D signal
+   * - :class:`~.api.roi.CircleROI`
+     - (Hollow) circular ROI of a 2D signal
+   * - :class:`~.api.roi.Line2DROI`
+     - Line profile of a 2D signal with customisable width
 
 """
 
@@ -50,6 +51,7 @@ from functools import partial
 import numpy as np
 import traits.api as t
 
+import hyperspy.api as hs
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.events import Event, Events
@@ -84,6 +86,15 @@ class BaseROI(t.HasTraits):
 
     Provides some basic functionalities that are likely to be shared between all
     ROIs, and serve as a common type that can be checked for.
+
+    Attributes
+    ----------
+    signal_map : dict
+        Mapping of ``signal``:(``widget``, ``axes``) to keep track to the signals
+        (and corresponding widget/signal axes) on which the ROI has been added.
+        This dictionary is populated in :meth:`BaseInteractiveROI.add_widget`
+    parameters : dict
+        Mapping of parameters name and values for all parameters of the ROI.
     """
 
     def __init__(self):
@@ -566,7 +577,7 @@ class BaseInteractiveROI(BaseROI):
             if self.update in signal.axes_manager.events.any_axis_changed.connected:
                 signal.axes_manager.events.any_axis_changed.disconnect(self.update)
 
-    def remove_widget(self, signal, render_figure=True):
+    def remove_widget(self, signal=None, render_figure=True):
         """
         Removing a widget from a signal consists of two tasks:
 
@@ -578,15 +589,21 @@ class BaseInteractiveROI(BaseROI):
         ----------
         signal : hyperspy.api.signals.BaseSignal (or subclass)
             The signal from which the interactive operations will be
-            disconnected.
+            disconnected. If None, remove from all signals.
         render_figure : bool, default True
             If False, the figure will not be rendered after removing the widget
             in order to save redraw events.
 
         """
-        if signal in self.signal_map:
-            w = self.signal_map.pop(signal)[0]
-            self._remove_widget(w, render_figure)
+        if signal is None:
+            signal = list(self.signal_map.keys())
+        elif isinstance(signal, hs.signals.BaseSignal):
+            signal = [signal]
+
+        for s in signal:
+            if s in self.signal_map:
+                w = self.signal_map.pop(s)[0]
+                self._remove_widget(w, render_figure)
 
 
 class BasePointROI(BaseInteractiveROI):

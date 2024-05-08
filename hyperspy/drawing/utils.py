@@ -25,15 +25,17 @@ from functools import partial
 
 import dask.array as da
 import matplotlib as mpl
+import matplotlib.colors as mcolors
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import traits.api as t
 from matplotlib.backend_bases import key_press_handler
-from matplotlib.colors import BASE_COLORS, LinearSegmentedColormap, to_rgba
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from packaging.version import Version
 from rsciio.utils import rgb_tools
 
+import hyperspy
 import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import to_numpy
@@ -274,8 +276,7 @@ def subplot_parameters(fig):
 
 class ColorCycle:
     _color_cycle = [
-        mpl.colors.colorConverter.to_rgba(color)
-        for color in ("b", "g", "r", "c", "m", "y", "k")
+        mcolors.to_rgba(color) for color in ("b", "g", "r", "c", "m", "y", "k")
     ]
 
     def __init__(self):
@@ -740,12 +741,8 @@ def plot_images(
     if cmap is None:
         cmap = [preferences.Plot.cmap_signal]
     elif cmap == "mpl_colors":
-        cycle = mpl.rcParams["axes.prop_cycle"]
-        for n_color, c in enumerate(cycle):
-            name = f"mpl{n_color}"
-            if name not in plt.colormaps():
-                make_cmap(colors=["#000000", c["color"]], name=name)
-        cmap = [f"mpl{i}" for i in range(len(cycle))]
+        color = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
+        cmap = _make_cmaps(color)
         __check_single_colorbar(colorbar)
     # cmap is list, tuple, or something else iterable (but not string):
     elif hasattr(cmap, "__iter__") and not isinstance(cmap, str):
@@ -986,8 +983,8 @@ def plot_images(
     def transparent_single_color_cmap(color):
         """Return a single color matplotlib cmap with the transparency increasing
         linearly from 0 to 1."""
-        return LinearSegmentedColormap.from_list(
-            "", [to_rgba(color, 0), to_rgba(color, 1)]
+        return mcolors.LinearSegmentedColormap.from_list(
+            "", [mcolors.to_rgba(color, 0), mcolors.to_rgba(color, 1)]
         )
 
     # Below is for overlayed images
@@ -1015,7 +1012,7 @@ def plot_images(
         if colors == "auto":
             colors = []
             for i in range(len(images)):
-                colors.append(list(BASE_COLORS)[i])
+                colors.append(list(mcolors.BASE_COLORS)[i])
 
         # If no alphas are selected use 1.0
         if isinstance(alphas, float):
@@ -1093,11 +1090,7 @@ def plot_images(
                     data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
                     _vmin, _vmax = None, None
                 elif colorbar != "single":
-                    _vmin = vmin[idx] if isinstance(vmin, (tuple, list)) else vmin
-                    _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
-                    _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
-                    if centre:
-                        _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
+                    _vmin, _vmax = _parse_vmin_vmax(data, vmin, vmax, idx, centre)
 
                 # Remove NaNs (if requested)
                 if no_nans:
@@ -1285,7 +1278,32 @@ def plot_images(
 
     f.canvas.mpl_connect("button_press_event", on_dblclick)
 
+    def update_image(image, ax, image_index):
+        data = image.data
+        im = ax.images[0]
+        im.set_data(data)
+        _vmin, _vmax = _parse_vmin_vmax(data, vmin, vmax, image_index, centre)
+        im.set_clim(vmin=_vmin, vmax=_vmax)
+        ax.get_figure().canvas.draw()
+
+    for i, (image, ax) in enumerate(zip(images, axes_list)):
+        f = partial(update_image, image, ax, i)
+        image.events.data_changed.connect(f, [])
+        # disconnect event when closing figure
+        disconnect = partial(image.events.data_changed.disconnect, f)
+        on_figure_window_close(ax.get_figure(), disconnect)
+
     return axes_list
+
+
+def _parse_vmin_vmax(data, vmin, vmax, index, centre):
+    _vmin = vmin[index] if isinstance(vmin, (tuple, list)) else vmin
+    _vmax = vmax[index] if isinstance(vmax, (tuple, list)) else vmax
+    _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
+    if centre:
+        _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
+
+    return _vmin, _vmax
 
 
 def set_axes_decor(ax, axes_decor):
@@ -1347,7 +1365,7 @@ def make_cmap(colors, name="my_colormap", position=None, bit=False, register=Tru
 
     for pos, color in zip(position, colors):
         if isinstance(color, str):
-            color = mpl.colors.to_rgb(color)
+            color = mcolors.to_rgb(color)
         elif bit:
             color = (bit_rgb[color[0]], bit_rgb[color[1]], bit_rgb[color[2]])
 
@@ -1355,7 +1373,7 @@ def make_cmap(colors, name="my_colormap", position=None, bit=False, register=Tru
         cdict["green"].append((pos, color[1], color[1]))
         cdict["blue"].append((pos, color[2], color[2]))
 
-    cmap = mpl.colors.LinearSegmentedColormap(name, cdict, 256)
+    cmap = mcolors.LinearSegmentedColormap(name, cdict, 256)
 
     if register:
         try:
@@ -1787,7 +1805,8 @@ def _create_span_roi_group(sig_ax, N):
 
 def _create_rect_roi_group(sig_wax, sig_hax, N):
     """
-    Creates a set of `N` :py:class:`~roi.RectangularROI`\\ s that sit along `waxis` and `haxis` at sensible positions.
+    Creates a set of `N` :py:class:`~roi.RectangularROI`\\ s that sit along
+    `waxis` and `haxis` at sensible positions.
 
     Arguments
     ---------
@@ -1823,42 +1842,120 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
     return rects
 
 
-def plot_roi_map(signal, rois=1):
+def _make_cmaps(colors):
+    cmap_name = []
+    for n_color, color in enumerate(colors):
+        color = mcolors.to_hex(color)
+        name = f"single_color_{color}"
+        if name not in plt.colormaps():
+            make_cmap(colors=["#000000", color], name=name)
+        cmap_name.append(name)
+    return cmap_name
+
+
+def _add_colored_frame(ax, color, animated=True):
+    colored_frame = patches.Rectangle(
+        (0, 0),
+        1,
+        1,
+        linewidth=10,
+        edgecolor=color,
+        facecolor="none",
+        transform=ax.transAxes,
+        animated=animated and ax.get_figure().canvas.supports_blit,
+    )
+    ax.add_patch(colored_frame)
+
+
+def _roi_sum(signal, roi, axes, out=None):
+    sliced_signal = roi(signal=signal, axes=axes)
+    if out is not None:
+        # use np.sum if the data doesn't contain nan
+        # ~2x (or more for larger array) faster than nansum
+        f = np.nansum if np.isnan(sliced_signal.data).any() else np.sum
+        out.data[:] = f(sliced_signal, axis=axes)
+        out.events.data_changed.trigger(obj=out)
+    else:
+        # we don't case if this is not optimised for speed since this is
+        # expected to be called only when setting up the out signal
+        s = sliced_signal.nansum(axis=axes)
+        # Reset signal to default Signal1D or Signal2D
+        s.set_signal_type("")
+        s.metadata.General.title = "Integrated intensity"
+        return s
+
+
+def plot_roi_map(
+    signal,
+    rois=1,
+    color=None,
+    cmap=None,
+    single_figure=False,
+    single_figure_kwargs=None,
+    **kwargs,
+):
     """
     Plot one or multiple ROI maps of a ``signal``.
 
     Uses regions of interest (ROIs) to select ranges along the signal axis.
 
     For each ROI, a plot is generated of the summed data values within
-    this signal ROI at each point in the ``signal``'s navigator.
+    this signal ROI at each point in the ``signal``'s navigation space.
 
-    The ROIs can be moved interactively and the corresponding plots will
+    The ROIs can be moved interactively and the corresponding map plots will
     update automatically.
 
     Parameters
     ----------
-    signal: :class:`~.api.signals.BaseSignal`
+    signal : :class:`~.api.signals.BaseSignal`
         The signal to inspect.
-    rois: int, list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
-        ROIs that represent colour channels in map. Can either pass a list of
-        ROI objects, or an ``int``, ``N``, in which case ``N`` ROIs will
-        be created. Currently limited to a maximum of 3 ROIs.
+    rois : int, subclass of :class:`hyperspy.roi.BaseROI` or list of :class:`hyperspy.roi.BaseROI`
+        ROIs to slice the signal in signal space. If ``int``, define the number of
+        ROIs to use.
+    color : list of str or None
+        Color of the ROIs. Any string supported by matplotlib to define a color
+        can be used. The length of the list must be equal to the number ROIs.
+        If None (default), the default matplotlib colors are used.
+    cmap : str of list of str or None
+        Only for signals with navigation dimension of 2. Define the colormap of the map(s).
+        If string, any string supported by matplotlib to define a colormap can be used
+        and a colored frame matching the ROI color will be added to the map.
+        If list of str, it must be the same length as the ROIs.
+        If None (default), the colors from the ``color`` argument are used and no colored
+        frame is added.
+    single_figure : bool
+        Whether to plot on a single figure or several figures.
+        If True, :func:`~.api.plot.plot_images` or :func:`~.plot.plot_spectra`
+        will be used, depending on the navigation dimension of the signal.
+    single_figure_kwargs : dict
+        Only when ``single_figure=True``. Keywords arguments are passed to
+        :func:`~.api.plot.plot_images` or :func:`~.plot.plot_spectra`
+        depending on the navigation dimension of the signal.
+        If None, default ``kwargs`` are used with the following changes
+        ``scalebar=[0]``, ``axes_decor="off"`` and ``suptitle=""``.
+    **kwargs : dict
+        The keyword argument are passed to :meth:`~.api.signals.Signal2D.plot`.
 
     Returns
     -------
-    all_sum : :class:`~.api.signals.BaseSignal`
-        Sum over all positions (navigation dimensions) of the signal, corresponds to
-        the 'navigator' (in signal space) on which the ROIs are added.
-    rois : list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
+    rois : list of :class:`hyperspy.roi.BaseROI`
         The ROI objects that slice ``signal``.
-    roi_signals : :class:`~.api.signals.BaseSignal`
-        Slices of ``signal`` corresponding to each ROI.
     roi_sums : :class:`~.api.signals.BaseSignal`
-        The summed ``roi_signals``.
+        The sums of the signals defined by the ROIs.
+
+    Notes
+    -----
+    Performance consideration:
+
+    - :class:`~.api.roi.RectangularROI` is ~2x faster than :class:`~.api.roi.CircleROI`.
+    - If the data sliced by the ROI contains :obj:`numpy.nan`, :func:`numpy.nansum`
+      will be used instead of :func:`numpy.sum` at the cost of a speed penalty (more than
+      2 times slower).
+    - Plotting ROI maps on a single figure is slower than on separate figures.
 
     Examples
     --------
-    **3D hyperspectral data:**
+    **3D hyperspectral data**
 
     For 3D hyperspectral data, the ROIs used will be instances of
     :class:`~.api.roi.SpanROI`. Therefore, these ROIs can be used to select
@@ -1868,90 +1965,122 @@ def plot_roi_map(signal, rois=1):
     region at each point in the hyperspectral map. Therefore, regions of the
     sample where this peak is bright will be bright in this map.
 
-    **4D STEM:**
+    **4D STEM**
 
-    For 4D STEM data, the ROIs used will be instances of
-    :class:`~.api.roi.RectangularROI`. These ROIs can be used to select particular
-    regions in reciprocal space, e.g. a particular diffraction spot.
+    For 4D STEM data, by default, the ROIs used will be instances of
+    :class:`~.api.roi.RectangularROI`. Other hyperspy ROIs, such as
+    :class:`~.api.roi.CircleROI` can be used. These ROIs can be used
+    to select particular regions in reciprocal space, e.g. a particular
+    diffraction spot.
 
     The map generated for a given ROI is the intensity of this
     region at each point in the scan. Therefore, regions of the
     scan where a particular spot is intense will appear bright.
     """
+    if signal._plot is None or not signal._plot.is_active:
+        signal.plot()
+
     sig_dims = len(signal.axes_manager.signal_axes)
     nav_dims = len(signal.axes_manager.navigation_axes)
 
-    if signal.axes_manager.signal_dimension == 0:
-        raise ValueError("The signal must have signal dimension > 0.")
+    if sig_dims not in [1, 2]:
+        raise ValueError("The signal must have signal dimension of 1 or 2.")
 
-    if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
-        warnings.warn(
-            (
-                "This function is only tested for signals with 1 or 2 "
-                "signal and navigation dimensions, not"
-                f" {sig_dims} signal and {nav_dims} navigation."
-            )
-        )
+    if nav_dims == 0:
+        raise ValueError("Navigation dimension must be larger than 0.")
 
     if isinstance(rois, int):
         if sig_dims == 1:
             rois = _create_span_roi_group(signal.axes_manager.signal_axes[0], rois)
         elif sig_dims == 2:
             rois = _create_rect_roi_group(*signal.axes_manager.signal_axes, rois)
-        else:
+    if isinstance(rois, hyperspy.roi.BaseROI):
+        rois = [rois]
+
+    if color is None:
+        color = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
+    elif isinstance(color, (list, tuple)):
+        if len(rois) != len(color):
             raise ValueError(
-                (
-                    "Can only generate default ROIs for signals "
-                    f"with 1 or 2 signal dimensions, not {sig_dims}"
-                    ", try providing an explicit `rois` argument"
-                )
+                f"The number of rois ({len(rois)}) must match "
+                f"the number of colors ({len(color)})."
             )
+    else:  # pragma: no cover
+        raise ValueError("Provided value of color is not supported.")
 
-    if len(rois) > 3:
-        raise ValueError("Maximum number of spans is 3")
+    add_colored_frame = False
+    if cmap is None:
+        cmap = _make_cmaps(color)
+    elif isinstance(cmap, str):
+        add_colored_frame = True
+        cmap = [cmap] * len(rois)
+    elif isinstance(color, (list, tuple)):
+        if len(rois) != len(cmap):
+            raise ValueError(
+                f"The number of rois ({len(rois)}) must match "
+                f"the number of cmap ({len(cmap)})."
+            )
+    else:  # pragma: no cover
+        raise ValueError("Provided value of cmap is not supported.")
 
-    colors = ["red", "green", "blue"]
-    roi_signals = []
     roi_sums = []
+    axes = tuple(axis.index_in_axes_manager for axis in signal.axes_manager.signal_axes)
 
-    all_sum = signal.nansum()
-    all_sum.plot()
-
-    for i, roi in enumerate(rois):
-        color = colors[i]
-
+    for i, (roi, color_, cmap_) in enumerate(zip(rois, color, cmap)):
         # add it to the sum over all positions
-        roi.add_widget(all_sum, color=colors[i])
+        roi.add_widget(signal, axes=axes, color=color_)
 
-        # create a signal that is the spectral slice of sig
-        roi_signal = hs.interactive(
-            roi,
-            signal=signal,
-            event=roi.events.changed,
-            axes=signal.axes_manager.signal_axes,
-        )
-        roi_signals.append(roi_signal)
-
-        # add up the roi sliced signals to one point per nav position
-        roi_sum = roi_signal.nansum(roi_signal.axes_manager.signal_axes)
-
-        # transpose shape to swap these points per nav into signal points
+        # create the signal that is the sum slice
+        roi_sum = _roi_sum(signal, roi=roi, axes=axes)
+        # Transpose shape to swap these points per nav into signal points.
+        # Cap to 2, since hyperspy can't handle signal dimension higher than 2.
+        # Take the two first navigation dimensions by default.
         roi_sum = roi_sum.transpose(
-            signal_axes=roi_sum.axes_manager.navigation_dimension
+            signal_axes=min(roi_sum.axes_manager.navigation_dimension, 2)
         )
-
-        roi_sums.append(roi_sum)
-
-        roi_sum.plot(cmap=f"{color.capitalize()}s")
 
         # connect the span signal changing range to the value of span_sum
         hs.interactive(
-            roi_signal.nansum,
-            event=roi_signal.axes_manager.events.any_axis_changed,
-            axis=roi_signal.axes_manager.signal_axes,
+            _roi_sum,
+            event=roi.events.changed,
+            signal=signal,
+            roi=roi,
+            axes=axes,
             out=roi_sum,
             recompute_out_event=None,
         )
 
+        roi_sums.append(roi_sum)
+
+        if not single_figure:
+            roi_sum.plot(cmap=cmap_, **kwargs)
+            # Remove widget from signal plot when closing maps figure
+            roi_sum._plot.signal_plot.events.closed.connect(roi.remove_widget, [])
+
+            if add_colored_frame:
+                _add_colored_frame(roi_sum._plot.signal_plot.ax, color_)
+
+    if single_figure:
+        if nav_dims == 1:
+            axs = plot_spectra(roi_sums, color=color, **kwargs)
+        else:
+            # default plot kwargs
+            single_figure_kwargs_ = dict(scalebar=[0], axes_decor="off", suptitle="")
+            # overwrite defaults with user defined kwargs
+            single_figure_kwargs_.update(kwargs)
+            axs = plot_images(roi_sums, cmap=cmap, **single_figure_kwargs_)
+            if add_colored_frame:
+                # hs.plot.plot_images doesn't use blitting
+                for ax, color_ in zip(axs, color):
+                    _add_colored_frame(ax, color_, animated=False)
+
+        def remove_widgets():  # pragma: no cover
+            for roi in rois:
+                roi.remove_widget()
+
+        if not isinstance(axs, list):
+            axs = [axs]
+        on_figure_window_close(axs[0].get_figure(), remove_widgets)
+
     # return all ya bits for future messing around.
-    return all_sum, rois, roi_signals, roi_sums
+    return rois, roi_sums

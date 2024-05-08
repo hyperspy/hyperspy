@@ -310,9 +310,7 @@ class FancySlicing(object):
                     axis_src._slice_me(slice_)
                     axis_dst = out.axes_manager._axes[i]
                     i += 1
-                    axis_dst.update_from(
-                        axis_src, attributes=("scale", "offset", "size")
-                    )
+                    axis_dst.update_from(axis_src)
 
         if hasattr(self, "_additional_slicing_targets"):
             for ta in self._additional_slicing_targets:

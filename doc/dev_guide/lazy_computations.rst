@@ -11,21 +11,21 @@ have attempted to streamline it as much as possible. ``LazySignals`` use
 the two arrays are indeed almost identical, the most important differences are
 (``da`` being ``dask.array.Array`` in the examples):
 
- - **Dask arrays are immutable**: ``da[3] = 2`` does not work. ``da += 2``
-   does, but it's actually a new object -- you might as well use ``da = da + 2``
-   for a better distinction.
- - **Unknown shapes are problematic**: ``res = da[da>0.3]`` works, but the
-   shape of the result depends on the values and cannot be inferred without
-   execution. Hence, few operations can be run on ``res`` lazily, and it should
-   be avoided if possible.
- - **Computations in Dask are Lazy**:  Dask only preforms a computation when it has to. For example
-   the sum function isn't run until compute is called.  This also means that some function can be
-   applied to only some portion of the data.
+- **Dask arrays are immutable**: ``da[3] = 2`` does not work. ``da += 2``
+  does, but it's actually a new object -- you might as well use ``da = da + 2``
+  for a better distinction.
+- **Unknown shapes are problematic**: ``res = da[da>0.3]`` works, but the
+  shape of the result depends on the values and cannot be inferred without
+  execution. Hence, few operations can be run on ``res`` lazily, and it should
+  be avoided if possible.
+- **Computations in Dask are Lazy**: Dask only preforms a computation when it has to. For example
+  the sum function isn't run until compute is called. This also means that some function can be
+  applied to only some portion of the data.
 
-    .. code-block::python
-        summed_lazy_signal = lazy_signal.sum(axis=lazy_signal.axes_manager.signal_axes) # Dask sets up tasks but does not compute
-        summed_lazy_signal.inav[0:10].compute() # computes sum for only 0:10
-        summed_lazy_signal.compute() # runs sum function
+  .. code-block::python
+      summed_lazy_signal = lazy_signal.sum(axis=lazy_signal.axes_manager.signal_axes) # Dask sets up tasks but does not compute
+      summed_lazy_signal.inav[0:10].compute() # computes sum for only 0:10
+      summed_lazy_signal.compute() # runs sum function
 
 
 
@@ -45,7 +45,6 @@ If the new method cannot be coerced into a shape suitable for ``map``, separate
 cases for lazy signals will have to be written. If a function operates on
 arbitrary-sized arrays and the shape of the output can be known before calling,
 ``da.map_blocks`` and ``da.map_overlap`` are efficient and flexible.
-
 
 Finally, in addition to ``_iterate_signal`` that is available to all HyperSpy
 signals, lazy counterparts also have the ``_block_iterator`` method that 

@@ -31,11 +31,9 @@ def test_plot_lazy(ndim):
 
     if ndim == 0:
         assert s._plot.navigator_data_function is None
-    elif ndim in [1, 2]:
+    else:
         assert s.navigator.data.shape == tuple([N] * ndim)
         assert isinstance(s.navigator, hs.signals.BaseSignal)
-    else:
-        assert s._plot.navigator_data_function == "slider"
 
 
 @pytest.mark.parametrize(

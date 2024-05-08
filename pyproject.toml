@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 authors = [{name = "The HyperSpy Community"}]
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Framework :: Matplotlib",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -81,7 +82,7 @@ keywords = [
     "spectrum image",
 ]
 name = "hyperspy"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.8"
 
 [project.license]
@@ -106,7 +107,11 @@ dev = [
     "hyperspy[tests]",
 ]
 doc = [
+    "holospy", # example gallery
     "IPython", # Needed in testing code in basic_usage.rst
+    # https://github.com/ipython/ipython/issues/14237
+    # https://github.com/conda-forge/ipython-feedstock/pull/210
+    "pickleshare", # ipython optional dependencies
     "numpydoc",
     "pydata_sphinx_theme",
     "setuptools_scm",
@@ -222,7 +227,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-fallback_version = "2.0.2.dev0"
+fallback_version = "2.1.1.dev0"
 
 [tool.towncrier]
 directory = "upcoming_changes/"

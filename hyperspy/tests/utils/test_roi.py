@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 import traits.api as t
 
+import hyperspy
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.array_tools import round_half_towards_zero
 from hyperspy.roi import (
@@ -913,3 +914,41 @@ class TestInteractive:
             assert w.snap_all == snap
             assert w.snap_position == snap
             assert w.snap_size == snap
+
+
+@pytest.mark.parametrize(
+    "axis_class", ["DataAxis", "FunctionalDataAxis", "UniformDataAxis"]
+)
+def test_roi_non_uniform_axes(axis_class):
+    nav_length = 10
+    sig_length = 20
+
+    nav_axes = [hyperspy.axes.UniformDataAxis(size=nav_length)]
+    if axis_class == "UniformDataAxis":
+        sig_axes = [hyperspy.axes.UniformDataAxis(size=sig_length)]
+    elif axis_class == "FunctionalDataAxis":
+        sig_axes = [
+            hyperspy.axes.FunctionalDataAxis(
+                size=sig_length,
+                expression="x",
+            )
+        ]
+    else:
+        sig_axes = [hyperspy.axes.DataAxis(axis=np.arange(sig_length))]
+    s = Signal1D(
+        np.arange(nav_length * nav_length * sig_length).reshape(
+            nav_length, nav_length, sig_length
+        ),
+        axes=2 * nav_axes + sig_axes,
+    )
+
+    roi = RectangularROI()
+    s.plot()
+    s_roi = roi.interactive(s, recompute_out_event=None)
+    assert roi.x == 2.25
+    assert s_roi.data.sum() == 899500
+
+    # change position to trigger events
+    roi.x = 4
+    assert roi.x == 4
+    assert s_roi.data.sum() == 959600

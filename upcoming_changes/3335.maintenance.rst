@@ -1,4 +1,0 @@
-Ruff update:
-
-- set the ``RELEASE_next_patch`` branch as target for the ``pre-commit.ci`` update to keep all branches in synchronisation.
-- update ruff to version 0.3.3 and run ruff check/format on source code.

@@ -1,1 +1,0 @@
-Replace deprecated ``np.string_`` by ``np.bytes_``.

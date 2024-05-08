@@ -31,6 +31,6 @@ m.multifit()
 #%%
 # Plot the fitted model with residual:
 m.plot(plot_residual=True)
-
-#%%
+# Choose the second figure as gallery thumbnail:
 # sphinx_gallery_thumbnail_number = 2
+
