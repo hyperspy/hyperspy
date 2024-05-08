@@ -16,12 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
 from hyperspy.utils.plot import plot_roi_map
+
+BASELINE_DIR = "plot_roi_map"
+DEFAULT_TOL = 2.0
+STYLE_PYTEST_MPL = "default"
 
 
 # params different shapes of data, sig, nav dims
@@ -71,64 +75,63 @@ def test_signal(request):
 
 
 def test_args_wrong_shape():
-    sig2 = hs.signals.BaseSignal(np.empty((1, 1)))
+    rng = np.random.default_rng()
+
+    sig2 = hs.signals.BaseSignal(rng.random(size=(2, 2)))
 
     no_sig = sig2.transpose(0)
     no_nav = sig2.transpose(2)
 
-    sig5 = hs.signals.BaseSignal(np.empty((1, 1, 1, 1, 1)))
+    sig5 = hs.signals.BaseSignal(rng.random(size=(2, 2, 2, 2, 2)))
     three_sigs = sig5.transpose(3)
     three_navs = sig5.transpose(2)
-
-    unsupported_sigs = [no_nav, three_sigs, three_navs]
 
     with pytest.raises(ValueError):
         plot_roi_map(no_sig, 1)
 
-    for sig in unsupported_sigs:
-        # value error also raised because 1D ROI not right shape
+    # navigation needed
+    with pytest.raises(ValueError):
+        plot_roi_map(no_nav, [hs.roi.Point1DROI(0)])
+
+    # unsupported signal
+    for sig in [no_nav, three_sigs]:
         with pytest.raises(ValueError):
-            with pytest.warns():
-                plot_roi_map(sig, [hs.roi.Point1DROI(0)])
+            plot_roi_map(sig, [hs.roi.Point1DROI(0)])
 
-
-def test_too_many_rois():
-    s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
-    plot_roi_map(s, 1)
-
+    # value error also raised because 1D ROI not right shape
     with pytest.raises(ValueError):
-        plot_roi_map(s, 4)
+        plot_roi_map(sig, [hs.roi.Point1DROI(0)])
 
-    with pytest.raises(ValueError):
-        plot_roi_map(s, [hs.roi.SpanROI() for _ in range(4)])
+    # 3 navigation works fine
+    plot_roi_map(three_navs, [hs.roi.CircleROI()])
+
+    # 3 navigation works fine
+    plot_roi_map(three_navs)
 
 
 def test_passing_rois():
     s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
-    _, int_rois, int_roi_sigs, int_roi_sums = plot_roi_map(s, 3)
+    int_rois, int_roi_sums = plot_roi_map(s, 3)
 
-    _, rois, roi_sigs, roi_sums = plot_roi_map(s, int_rois)
+    rois, roi_sums = plot_roi_map(s, int_rois)
 
     assert rois is int_rois
 
     # passing the rois rather than generating own should yield same results
-    assert int_roi_sigs is not roi_sigs
-    assert int_roi_sigs == roi_sigs
-
     assert int_roi_sums is not roi_sums
     assert int_roi_sums == roi_sums
 
 
 def test_roi_positioning():
     s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
-    _, rois, *_ = plot_roi_map(s, 1)
+    rois, _ = plot_roi_map(s, 1)
 
     assert len(rois) == 1
 
     assert rois[0].left == 0
     assert rois[0].right == 4.5
 
-    _, rois, *_ = plot_roi_map(s, 2)
+    rois, _ = plot_roi_map(s, 2)
 
     assert len(rois) == 2
     assert rois[0].left == 0
@@ -139,7 +142,7 @@ def test_roi_positioning():
     # no overlap
     assert rois[0].right <= rois[1].left
 
-    _, rois, *_ = plot_roi_map(s, 3)
+    rois, _ = plot_roi_map(s, 3)
 
     assert len(rois) == 3
     assert rois[0].left == 0
@@ -153,50 +156,158 @@ def test_roi_positioning():
     assert rois[0].right <= rois[1].left and rois[1].right <= rois[2].left
 
 
-@pytest.mark.mpl_image_compare(baseline_dir="plot_roi_map")
 @pytest.mark.parametrize("nrois", [1, 2, 3])
 def test_navigator(test_signal, nrois):
-    all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, nrois)
-
-    assert np.all(all_sums.data == test_signal.sum().data)
-
-    return all_sums._plot.signal_plot.figure
+    rois, roi_sums = plot_roi_map(test_signal, nrois)
+    assert len(rois) == nrois
 
 
 def test_roi_sums():
     # check that the sum is correct
     s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
 
-    all_sum, rois, roi_signals, roi_sums = hs.plot.plot_roi_map(s, 2)
+    rois, roi_sums = hs.plot.plot_roi_map(s, 2)
 
-    for roi_signal, roi_sum in zip(roi_signals, roi_sums):
-        np.testing.assert_allclose(roi_signal.sum(-1), roi_sum.data)
+    for roi, roi_sum in zip(rois, roi_sums):
+        np.testing.assert_allclose(roi(s).sum(-1), roi_sum.data)
 
 
-@pytest.mark.mpl_image_compare(baseline_dir="plot_roi_map")
-@pytest.mark.parametrize("which_plot", ["all_sums", "roi_sums"])
-def test_interaction(test_signal, which_plot):
-    all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, 1)
+def test_circle_roi():
+    data = np.zeros((2, 2, 7, 7))
+    data[-1, -1, 0, 0] = 10000
+    s = hs.signals.Signal2D(data)
+    roi = hs.roi.CircleROI(cx=3, cy=3, r=4, r_inner=0)
 
-    roi_sig = roi_sigs[0]
-    roi = rois[0]
+    rois, roi_sums = hs.plot.plot_roi_map(s, rois=[roi])
+    roi_sum = roi_sums[0]
 
-    before_move = roi_sig.deepcopy()
+    assert not np.any(np.isin(10000, roi_sum))
+    assert np.allclose(roi_sum, np.zeros((2, 2)))
 
-    for i in range(3):
-        assert np.isin(i + 1, roi_sig.data)
+    roi.cx = 4  # force update
+    roi.cx = 3
 
-    roi.left = 6.0
-    roi.right = 12.0
-    roi.left = 6.0
-    roi.right = 12.0
+    # no change expected
+    assert not np.any(np.isin(10000, roi_sum))
+    assert np.allclose(roi_sum, np.zeros((2, 2)))
 
-    assert before_move.data.shape != roi_sig.data.shape or before_move != roi_sig
+    roi.cx = 0
+    roi.cy = 0
 
-    for i in range(3):
-        assert not np.isin(i + 1, roi_sig.data)
+    # check can actually find 10000
+    assert np.any(np.isin(10000, roi_sum))
 
-    if which_plot == "all_sums":
-        return all_sums._plot.signal_plot.figure
-    elif which_plot == "roi_sums":
-        return roi_sums[0]._plot.signal_plot.figure
+
+def test_pass_ROI():
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal2D(data)
+
+    roi = hs.roi.CircleROI()
+    hs.plot.plot_roi_map(s, rois=roi)
+
+
+def test_color():
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal2D(data)
+
+    # same number
+    hs.plot.plot_roi_map(s, rois=3, color=["C0", "C1", "C2"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=3, color=["C0", "C1"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=3, color=["C0", "C1", "C2", "C3"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=1, color=["unvalid_cmap"])
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+)
+@pytest.mark.parametrize("cmap", (None, "gray"))
+def test_cmap_image(cmap):
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    rois, roi_sums = hs.plot.plot_roi_map(s, rois=2, cmap=cmap)
+
+    return roi_sums[0]._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+)
+@pytest.mark.parametrize("color", (None, ["r", "b"]))
+def test_color_image(color):
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    rois, roi_sums = hs.plot.plot_roi_map(s, rois=2, color=color)
+
+    return roi_sums[0]._plot.signal_plot.figure
+
+
+def test_close():
+    # We can't test with `single_figure=True`, because `plt.close()`
+    # doesn't call on close callback.
+    # https://github.com/matplotlib/matplotlib/issues/18609
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    rois, roi_sums = hs.plot.plot_roi_map(s, rois=3)
+    # check that it closes and remove the roi from the figure
+    for roi, roi_sum in zip(rois, roi_sums):
+        assert len(roi.signal_map) == 1
+        roi_sum._plot.close()
+        assert len(roi.signal_map) == 0
+
+
+def test_cmap_error():
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal2D(data)
+
+    # same number
+    hs.plot.plot_roi_map(s, rois=3, cmap=["C0", "C1", "C2"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=3, cmap=["C0", "C1"])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_roi_map(s, rois=3, cmap=["C0", "C1", "C2", "C3"])
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+)
+@pytest.mark.parametrize("cmap", (None, "gray"))
+def test_single_figure_image(cmap):
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    hs.plot.plot_roi_map(s, rois=3, cmap=cmap, single_figure=True, scalebar=False)
+
+    return plt.gcf()
+
+
+@pytest.mark.parametrize("color", (None, ["C0", "C1"], ["r", "b"]))
+def test_single_figure_spectra(color):
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(50, 10, 10))
+    s = hs.signals.Signal2D(data)
+
+    hs.plot.plot_roi_map(s, rois=2, color=color, single_figure=True)
+    if color is None:
+        color = ["b", "g"]
+
+    ax = plt.gca()
+    for line, color_ in zip(ax.lines, color):
+        assert line.get_color() == color_

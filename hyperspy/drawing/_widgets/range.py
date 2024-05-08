@@ -77,6 +77,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
                 self.connect(self.ax)
             elif value is False:
                 self.disconnect()
+                self.span.clear()
                 self.span = None
                 self.ax = None
             if render_figure:
@@ -154,10 +155,17 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self._span_changed()
 
     def _span_changed(self, *args, **kwargs):
+        # This is connected to matplotlib event and will be called
+        # on any mouse movement with the span selected
         extents = self.span.extents
+        old_range = self._get_range()
+        # Set extents to self._pos and self._size
         self._pos = np.array([extents[0]])
         self._size = np.array([extents[1] - extents[0]])
-        self.events.changed.trigger(self)
+        # to avoid trigger events when snap is on and the extent
+        # actually didn't change.
+        if self._get_range() != old_range:
+            self.events.changed.trigger(self)
 
     def _get_range(self):
         p = self._pos[0]

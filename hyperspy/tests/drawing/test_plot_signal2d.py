@@ -608,6 +608,18 @@ def test_plot_images_tranpose():
     hs.plot.plot_images([a, b])
 
 
+def test_plot_images_update():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    s2 = s / 2
+    axs = hs.plot.plot_images([s, s2])
+
+    s.data = -s.data - 10
+    s.events.data_changed.trigger(s)
+
+    np.testing.assert_allclose(axs[0].images[0].get_array()[0, :2], [-10, -11])
+    np.testing.assert_allclose(axs[1].images[0].get_array()[0, :2], [0, 0.5])
+
+
 # Ignore numpy warning about clipping np.nan values
 @pytest.mark.filterwarnings("ignore:Passing `np.nan` to mean no clipping in np.clip")
 def test_plot_with_non_finite_value():

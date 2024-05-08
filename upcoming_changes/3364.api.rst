@@ -1,0 +1,1 @@
+:func:`~.api.plot.plot_roi_map` doesn't return the sum of all ROI maps (``all_sum``) and the signals sliced by the ROIs (``roi_signals``), these can be obtained separately using the ``rois`` returned by :func:`~.api.plot.plot_roi_map` and :func:`~.api.interactive`.
