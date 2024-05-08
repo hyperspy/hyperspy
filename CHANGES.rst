@@ -17,9 +17,9 @@ Enhancements
 ------------
 
 - Add an dynamic navigator which updates when the number of navigation dimensions is greater than 3 (`#3199 <https://github.com/hyperspy/hyperspy/issues/3199>`_)
-- Add an example to the gallery to show how to extract a line profile from an image using a Line2DROI (`#3227 <https://github.com/hyperspy/hyperspy/issues/3227>`_)
+- Add an example to the gallery to show how to extract a line profile from an image using a :class:`~.api.roi.Line2DROI` (`#3227 <https://github.com/hyperspy/hyperspy/issues/3227>`_)
 - Add example showing how to handle RGB images. (`#3346 <https://github.com/hyperspy/hyperspy/issues/3346>`_)
-- Use :func:`pint.get_application_registry` to get :class:`pint.UnitRegistry` and facilitate interoperability of pint quantity operation with other modules . (`#3357 <https://github.com/hyperspy/hyperspy/issues/3357>`_)
+- Use :func:`pint.get_application_registry` to get :class:`pint.UnitRegistry` and facilitate interoperability of pint quantity operation with other modules. (`#3357 <https://github.com/hyperspy/hyperspy/issues/3357>`_)
 - :func:`~.api.plot.plot_roi_map` improvement:
 
   - Add ROIs on signal plot instead of adding them on a sum signal.
@@ -36,7 +36,7 @@ Bug Fixes
 ---------
 
 - Fix ROI slicing of non-uniform axis (`#3328 <https://github.com/hyperspy/hyperspy/issues/3328>`_)
-- Adds the ability to save and load `BaseDataAxis` objects to a hyperspy file. (`#3342 <https://github.com/hyperspy/hyperspy/issues/3342>`_)
+- Adds the ability to save and load :class:`~.axes.BaseDataAxis` objects to a hyperspy file. (`#3342 <https://github.com/hyperspy/hyperspy/issues/3342>`_)
 - Fix navigator event disconnection and fix plot when changing dtype from/to rbgx. (`#3346 <https://github.com/hyperspy/hyperspy/issues/3346>`_)
 - Fix :func:`~.api.get_configuration_directory_path` function. (`#3349 <https://github.com/hyperspy/hyperspy/issues/3349>`_)
 - Fix :func:`~.api.plot.plot_images` axis ticks discrepancy. (`#3361 <https://github.com/hyperspy/hyperspy/issues/3361>`_)
