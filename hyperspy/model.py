@@ -705,7 +705,7 @@ class BaseModel(list):
         else:
             return False
 
-    def _connect_parameters2update_plot(self, components, update_residual=False):
+    def _connect_parameters2update_plot(self, components):
         if self._plot_active is False:
             return
 
