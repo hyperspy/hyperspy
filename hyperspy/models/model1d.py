@@ -672,7 +672,7 @@ class Model1D(BaseModel):
 
         self._model_line = l2
         self._plot = self.signal._plot
-        self._connect_parameters2update_plot(self)
+        
 
         # Optional to plot the residual of (Signal - Model)
         if plot_residual:
@@ -686,6 +686,8 @@ class Model1D(BaseModel):
             # Quick access to _residual_line if needed
             self._residual_line = l3
 
+        self._connect_parameters2update_plot(self)
+        
         if plot_components is True:
             self.enable_plot_components()
         else:
