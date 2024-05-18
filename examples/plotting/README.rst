@@ -1,3 +1,5 @@
+.. _subfigure_examples_label:
+
 Making Custom Layouts for Plots
 ===============================
 
