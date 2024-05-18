@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.backend_bases import CloseEvent
+from packaging.version import Version
 
 from hyperspy._components.polynomial import Polynomial
 from hyperspy.drawing._markers.points import Points
@@ -121,6 +123,10 @@ def test_remove_markers():
     assert m._collection is None  # Check that the collection is set to None
 
 
+@pytest.mark.skipif(
+    Version(matplotlib.__version__) < Version("3.9.0"),
+    reason="Subfigures plotting requires matplotlib >= 3.9.0",
+)
 def test_close_figure_with_subfigure():
     rng = np.random.default_rng()
     s = Signal1D(rng.random((10, 10, 10)))
@@ -138,6 +144,10 @@ def test_close_figure_with_subfigure():
     #     )
 
 
+@pytest.mark.skipif(
+    Version(matplotlib.__version__) < Version("3.9.0"),
+    reason="Subfigures plotting requires matplotlib >= 3.9.0",
+)
 def test_close_figure_with_subfigure_matplotlib_event():
     rng = np.random.default_rng()
     s = Signal1D(rng.random((10, 10, 10)))

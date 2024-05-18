@@ -842,6 +842,10 @@ def test_plot_scalebar_list():
     assert not hasattr(ax1, "scalebar")
 
 
+@pytest.mark.skipif(
+    Version(matplotlib.__version__) < Version("3.9.0"),
+    reason="Subfigures plotting requires matplotlib >= 3.9.0",
+)
 def test_plot_subfigures():
     rng = np.random.default_rng()
     s = hs.signals.Signal2D(rng.random((10, 10, 10, 10, 10)))

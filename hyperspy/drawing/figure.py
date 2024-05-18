@@ -106,6 +106,7 @@ class BlittedFigure:
         if self.figure is None:
             return None
         else:
+            # See https://github.com/matplotlib/matplotlib/pull/28177
             figure = self.figure
             # matplotlib SubFigure can be nested and we don't support it
             if isinstance(figure, matplotlib.figure.SubFigure):
