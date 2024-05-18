@@ -854,6 +854,20 @@ def test_plot_subfigures():
     s.plot(fig=subfigs[0])
 
 
+@pytest.mark.skipif(
+    Version(matplotlib.__version__) < Version("3.9.0"),
+    reason="Subfigures plotting requires matplotlib >= 3.9.0",
+)
+def test_plot_subfigures_change_navigation_indices():
+    rng = np.random.default_rng()
+    s = hs.signals.Signal2D(rng.random((10, 10, 10, 10, 10)))
+    hs.preferences.Plot.use_subfigure = True
+    s.plot()
+    s.axes_manager.indices = (1, 2, 3)
+    # Set default setting back
+    hs.preferences.Plot.use_subfigure = False
+
+
 def test_plot_images_bool():
     data = np.arange(100).reshape((10, 10)) > 50
     s = hs.signals.Signal2D(data)
