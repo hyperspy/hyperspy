@@ -89,6 +89,19 @@ class TestRaggedArray:
         with pytest.raises(RuntimeError):
             s.isig[0]
 
+    def test_ragged_0D_map(self):
+        def return_value(val):
+            return val
+
+        zeroDragged = self.s.inav[0, 0]
+
+        new_signal = zeroDragged.map(return_value, inplace=False)
+        if self.s._lazy:
+            new_signal.compute()
+            assert self.s.data[0, 0].compute().shape == new_signal.data[0].shape
+        else:
+            self.s.data[0, 0].shape == new_signal.data[0].shape
+
 
 def test_create_ragged_array():
     data = np.array([[0, 1], [2, 3, 4]], dtype=object)
