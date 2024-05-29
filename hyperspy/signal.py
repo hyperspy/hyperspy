@@ -6578,8 +6578,10 @@ class BaseSignal(
             kwargs["chunks"] = self.data.chunks
 
         original_dtype = self.data.dtype
-
-        self.data = random_state.poisson(lam=self.data, **kwargs)
+        if self._lazy:
+            self.data = random_state.poisson(lam=self.data, **kwargs)
+        else:
+            self.data[:] = random_state.poisson(lam=self.data, **kwargs)
 
         if self.data.dtype != original_dtype:
             if keep_dtype:
