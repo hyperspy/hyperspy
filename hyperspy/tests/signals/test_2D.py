@@ -439,6 +439,7 @@ class Test2D:
             rng2 = default_rng(123)
         else:
             data = s.data.copy()
+            original_data = s.data
             rng1 = np.random.default_rng(123)
             rng2 = np.random.default_rng(123)
 
@@ -446,19 +447,24 @@ class Test2D:
 
         if s._lazy:
             s.compute()
+        else:
+            assert s.data is original_data
 
         np.testing.assert_array_almost_equal(s.data, rng2.poisson(lam=data, **kwargs))
         s.change_dtype("float64")
-
+        original_data = s.data
         s.add_poissonian_noise(keep_dtype=True, random_state=rng1)
         if s._lazy:
             s.compute()
+        else:
+            assert s.data is original_data
 
         assert s.data.dtype == np.dtype("float64")
 
     def test_add_poisson_noise_warning(self, caplog):
         s = self.signal
         s.change_dtype("float64")
+        s = s.as_lazy()
 
         with caplog.at_level(logging.WARNING):
             s.add_poissonian_noise(keep_dtype=True)
