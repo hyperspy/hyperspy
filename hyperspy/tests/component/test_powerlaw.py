@@ -25,7 +25,7 @@ from hyperspy.components1d import PowerLaw
 from hyperspy.signals import Signal1D
 from hyperspy.utils import stack
 
-TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
+TRUE_FALSE_3_TUPLE = [p for p in itertools.product((True, False), repeat=3)]
 
 
 def test_function():
@@ -47,8 +47,8 @@ def test_linear_override():
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
-@pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-def test_estimate_parameters_binned(only_current, binned, lazy):
+@pytest.mark.parametrize(("only_current", "binned", "split"), TRUE_FALSE_3_TUPLE)
+def test_estimate_parameters_binned(only_current, binned, split, lazy):
     s = Signal1D(np.empty((100,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
@@ -60,9 +60,19 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
         s = s.as_lazy()
     g2 = PowerLaw()
     factor = axis.scale if binned else 1
-    assert g2.estimate_parameters(
-        s, axis.low_value, axis.high_value, only_current=only_current
-    )
+    if split: # test estimating parameters in 2 separate regions
+        assert g2.estimate_parameters(
+            s,
+            x1=axis.low_value,
+            x2=axis.high_value/2,
+            x3=axis.high_value/2,
+            x4=axis.high_value,
+            only_current=only_current
+        )
+    else:
+        assert g2.estimate_parameters(
+            s, axis.low_value, axis.high_value, only_current=only_current
+        )
     assert g2._axes_manager[-1].is_binned == binned
     # error of the estimate function is rather large, esp. when binned=FALSE
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.05)
