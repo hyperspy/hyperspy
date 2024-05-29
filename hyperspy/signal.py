@@ -6550,17 +6550,19 @@ class BaseSignal(
     def add_poissonian_noise(self, keep_dtype=True, random_state=None):
         """Add Poissonian noise to the data.
 
-        This method works in-place. The resulting data type is ``int64``.
-        If this is different from the original data type then a warning
-        is added to the log.
+        This method works in-place. 
 
         Parameters
         ----------
         keep_dtype : bool, default True
+            This parameter is used only for lazy signals. Non-lazy signals
+            always keep their original data type.
             If ``True``, keep the original data type of the signal data. For
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
             ``'float64'``.
+            If ``False``, the resulting data type is ``int64``. If this is different
+            from the original data type then a warning is added to the log.
         random_state : None, int or numpy.random.Generator, default None
             Seed for the random generator.
 
