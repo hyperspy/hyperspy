@@ -443,7 +443,7 @@ class Test2D:
             rng1 = np.random.default_rng(123)
             rng2 = np.random.default_rng(123)
 
-        s.add_poissonian_noise(keep_dtype=False, random_state=rng1)
+        s.add_poissonian_noise(random_state=rng1)
 
         if s._lazy:
             s.compute()
@@ -453,7 +453,7 @@ class Test2D:
         np.testing.assert_array_almost_equal(s.data, rng2.poisson(lam=data, **kwargs))
         s.change_dtype("float64")
         original_data = s.data
-        s.add_poissonian_noise(keep_dtype=True, random_state=rng1)
+        s.add_poissonian_noise(random_state=rng1)
         if s._lazy:
             s.compute()
         else:
