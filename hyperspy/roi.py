@@ -44,6 +44,9 @@ The following 2D ROIs are available:
    * - :class:`~.api.roi.Line2DROI`
      - Line profile of a 2D signal with customisable width
 
+    PolygonROI
+        Polygonal ROI with a customisable shape.
+
 """
 
 from functools import partial
@@ -1530,7 +1533,7 @@ class PolygonROI(BaseInteractiveROI):
         Parameters
         ----------
         vertices : list of tuples
-            List containng (x, y) values of the vertices of a polygon."""
+            List containing (x, y) values of the vertices of a polygon."""
         super().__init__()
 
         if vertices:
