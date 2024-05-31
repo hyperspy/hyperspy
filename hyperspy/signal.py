@@ -6623,12 +6623,7 @@ class BaseSignal(
 
         noise = random_state.normal(loc=0, scale=std, size=self.data.shape, **kwargs)
 
-        if self._lazy:
-            # With lazy data we can't keep the same array object
-            self.data = self.data + noise
-        else:
-            # Don't change the object
-            self.data += noise
+        self.data += noise
 
         self.events.data_changed.trigger(obj=self)
 
