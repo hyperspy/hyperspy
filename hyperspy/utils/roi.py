@@ -24,21 +24,20 @@ from hyperspy.roi import (
     Point2DROI,
     RectangularROI,
     SpanROI,
-    PolygonROI
+    PolygonROI,
 )
-
 
 __doc__ = hyperspy.roi.__doc__
 
 
 __all__ = [
-    'CircleROI',
-    'Line2DROI',
-    'Point1DROI',
-    'Point2DROI',
-    'RectangularROI',
-    'SpanROI',
-    'PolygonROI'
+    "CircleROI",
+    "Line2DROI",
+    "Point1DROI",
+    "Point2DROI",
+    "RectangularROI",
+    "SpanROI",
+    "PolygonROI",
 ]
 
 
