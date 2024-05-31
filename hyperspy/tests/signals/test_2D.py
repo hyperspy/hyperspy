@@ -463,7 +463,6 @@ class Test2D:
 
     def test_add_poisson_noise_warning(self, caplog):
         s = self.signal
-        s.change_dtype("float64")
 
         with pytest.warns(DeprecationWarning):
             s.add_poissonian_noise(keep_dtype=False)
