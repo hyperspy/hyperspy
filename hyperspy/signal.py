@@ -6581,7 +6581,7 @@ class BaseSignal(
 
         original_dtype = self.data.dtype
         if self._lazy:
-            self.data = random_state.poisson(lam=self.data, **kwargs)
+            self.data[:] = random_state.poisson(lam=self.data, **kwargs)
         else:
             self.data[:] = random_state.poisson(lam=self.data, **kwargs)
 
