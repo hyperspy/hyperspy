@@ -464,14 +464,6 @@ class Test2D:
     def test_add_poisson_noise_warning(self, caplog):
         s = self.signal
         s.change_dtype("float64")
-        s = s.as_lazy()
 
-        with caplog.at_level(logging.WARNING):
-            s.add_poissonian_noise(keep_dtype=True)
-
-        assert "Changing data type from" in caplog.text
-
-        with caplog.at_level(logging.WARNING):
+        with pytest.warns(DeprecationWarning):
             s.add_poissonian_noise(keep_dtype=False)
-
-        assert "The data type changed from" in caplog.text
