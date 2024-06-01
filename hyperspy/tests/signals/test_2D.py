@@ -447,8 +447,7 @@ class Test2D:
 
         if s._lazy:
             s.compute()
-        else:
-            assert s.data is original_data
+        assert s.data is original_data
 
         np.testing.assert_array_almost_equal(s.data, rng2.poisson(lam=data, **kwargs))
         s.change_dtype("float64")
