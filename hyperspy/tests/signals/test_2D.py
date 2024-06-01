@@ -455,8 +455,7 @@ class Test2D:
         s.add_poissonian_noise(random_state=rng1)
         if s._lazy:
             s.compute()
-        else:
-            assert s.data is original_data
+        assert s.data is original_data
 
         assert s.data.dtype == np.dtype("float64")
 
