@@ -6622,6 +6622,7 @@ class BaseSignal(
         noise = random_state.normal(loc=0, scale=std, size=self.data.shape, **kwargs)
 
         self.data += noise
+        self.events.data_changed.trigger(obj=self)
 
         self.events.data_changed.trigger(obj=self)
 
