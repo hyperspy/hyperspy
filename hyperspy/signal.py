@@ -6579,10 +6579,8 @@ class BaseSignal(
         if self._lazy:
             kwargs["chunks"] = self.data.chunks
 
-        if self._lazy:
-            self.data[:] = random_state.poisson(lam=self.data, **kwargs)
-        else:
-            self.data[:] = random_state.poisson(lam=self.data, **kwargs)
+        self.data[:] = random_state.poisson(lam=self.data, **kwargs)
+        self.events.data_changed.trigger(obj=self)
         self.events.data_changed.trigger(obj=self)
 
     def add_gaussian_noise(self, std, random_state=None):
