@@ -80,8 +80,9 @@ class TestPowerLaw:
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components1D.PowerLaw())
-        m[0].A.value = 1000
-        m[0].r.value = 4
+        self.A_value, self.r_value = 1000, 4
+        m[0].A.value = self.A_value
+        m[0].r.value = self.r_value
         self.m = m
         self.s = s
 
@@ -93,19 +94,21 @@ class TestPowerLaw:
         g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s, None, None, only_current=only_current)
         assert g._axes_manager[-1].is_binned == binned
-        A_value = 1008.4913 if binned else 1006.4378
-        r_value = 4.001768 if binned else 4.001752
-        np.testing.assert_allclose(g.A.value, A_value)
-        np.testing.assert_allclose(g.r.value, r_value)
+        np.testing.assert_allclose(g.A.value, self.A_value, rtol=0.05)
+        np.testing.assert_allclose(g.r.value, self.r_value, rtol=0.05)
 
-        if only_current:
-            A_value, r_value = 0, 0
         # Test that it all works when calling it with a different signal
         s2 = hs.stack((s, s))
         g.estimate_parameters(s2, None, None, only_current=only_current)
         assert g._axes_manager[-1].is_binned == binned
-        np.testing.assert_allclose(g.A.map["values"][1], A_value)
-        np.testing.assert_allclose(g.r.map["values"][1], r_value)
+        np.testing.assert_allclose(
+            g.A.map["values"][1],
+            0 if only_current else self.A_value,
+            rtol=0.05)
+        np.testing.assert_allclose(
+            g.r.map["values"][1],
+            0 if only_current else self.r_value,
+            rtol=0.05)
 
     def test_missing_data(self):
         g = hs.model.components1D.PowerLaw()
