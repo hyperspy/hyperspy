@@ -64,8 +64,8 @@ def test_estimate_parameters_binned(only_current, binned, split, lazy):
         assert g2.estimate_parameters(
             s,
             x1=axis.low_value,
-            x2=axis.high_value/2,
-            x3=axis.high_value/2,
+            x2=(axis.low_value + axis.high_value)/2,
+            x3=(axis.low_value + axis.high_value)/2,
             x4=axis.high_value,
             only_current=only_current
         )
@@ -76,7 +76,7 @@ def test_estimate_parameters_binned(only_current, binned, split, lazy):
     assert g2._axes_manager[-1].is_binned == binned
     # error of the estimate function is rather large, esp. when binned=FALSE
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.05)
-    assert abs(g2.r.value - g1.r.value) <= 2e-2
+    np.testing.assert_allclose(g1.r.value, g2.r.value, rtol=0.05)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
@@ -94,6 +94,6 @@ def test_function_nd(binned, lazy):
         s = s.as_lazy()
     g2 = PowerLaw()
     factor = axis.scale if binned else 1
-    g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
+    g2.estimate_parameters(s2, axis.low_value, axis.high_value, only_current=False)
     assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)

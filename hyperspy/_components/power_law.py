@@ -122,6 +122,7 @@ class PowerLaw(Expression):
             Exit status required for the :meth:`~.api.signals.Signal1D.remove_background` function.
 
         """
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if x3 is None: # Continous area estimation
