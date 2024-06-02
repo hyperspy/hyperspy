@@ -124,12 +124,19 @@ class PowerLaw(Expression):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
+        # Sanity check
+        if x2 <= x1:
+            raise ValueError("x2 must be greater than x1")
         if x3 is None: # Continuos area estimation
             x4 = x2
             x2 = (x4 + x1) / 2
             x3 = x2
+        elif x4 <= x3:
+            raise ValueError("x4 must be greater than x3")
         i1, i2 = axis.value_range_to_indices(x1, x2)
         i3, i4 = axis.value_range_to_indices(x3, x4)
+        if i1 == i2 or i3 == i4:
+            raise ValueError("The estimation interval must contain at least 2 points")
         if only_current is True:
             s = signal.get_current_signal()
         else:
