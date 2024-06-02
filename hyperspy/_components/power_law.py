@@ -124,29 +124,19 @@ class PowerLaw(Expression):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
+        if x3 is None: # Continuos area estimation
+            x4 = x2
+            x2 = (x4 + x1) / 2
+            x3 = x2
         i1, i2 = axis.value_range_to_indices(x1, x2)
-        if x3 is None: # Continous area estimation
-            if not (i2 + i1) % 2 == 0:
-                i2 -= 1
-            if i2 == i1:
-                i2 += 2
-            i3 = (i2 + i1) // 2
-            x1 = axis.index2value(i1)
-            x2 = axis.index2value(i2)
-            x3 = axis.index2value(i3)
-        else:
-            i3, i4 = axis.value_range_to_indices(x3, x4)
+        i3, i4 = axis.value_range_to_indices(x3, x4)
         if only_current is True:
             s = signal.get_current_signal()
         else:
             s = signal
         if s._lazy:
-            if x4 is None:
-                I1 = s.isig[i1:i3].integrate1D(2j).data
-                I2 = s.isig[i3:i2].integrate1D(2j).data
-            else:
-                I1 = s.isig[i1:i2].integrate1D(2j).data
-                I2 = s.isig[i3:i4].integrate1D(2j).data
+            I1 = s.isig[i1:i2].integrate1D(2j).data
+            I2 = s.isig[i3:i4].integrate1D(2j).data
         else:
             from hyperspy.signal import BaseSignal
 
@@ -154,28 +144,18 @@ class PowerLaw(Expression):
             I1_s = BaseSignal(np.empty(shape, dtype="float", like=s.data))
             I2_s = BaseSignal(np.empty(shape, dtype="float", like=s.data))
             # Use the `out` parameters to avoid doing the deepcopy
-            if x4 is None:
-                s.isig[i1:i3].integrate1D(2j, out=I1_s)
-                s.isig[i3:i2].integrate1D(2j, out=I2_s)
-            else:
-                s.isig[i1:i2].integrate1D(2j, out=I1_s)
-                s.isig[i3:i4].integrate1D(2j, out=I2_s)
+            s.isig[i1:i2].integrate1D(2j, out=I1_s)
+            s.isig[i3:i4].integrate1D(2j, out=I2_s)
 
             I1 = I1_s.data
             I2 = I2_s.data
         with np.errstate(divide="raise"):
             try:
-                if x4 is not None:
-                    r = 2 * (np.log(I1/I2*(x4-x3)/(x2-x1))) / (np.log(x4*x3/x2/x1))
-                else:
-                    r = 2 * (np.log(I1) - np.log(I2)) / (np.log(x2) - np.log(x1))
+                r = 2 * (np.log(I1/I2*(x4-x3)/(x2-x1))) / (np.log(x4*x3/x2/x1))
                 k = 1 - r
-                if x4 is None:
-                    A = k * I2 / (x2**k - x3**k)
-                else:
-                    A2 = k * I2 / (x4**k - x3**k)
-                    A1 = k * I1 / (x2**k - x1**k)
-                    A = (A1 + A2)/2
+                A2 = k * I2 / (x4**k - x3**k)
+                A1 = k * I1 / (x2**k - x1**k)
+                A = (A1 + A2)/2
 
                 if s._lazy:
                     r = r.map_blocks(np.nan_to_num)
