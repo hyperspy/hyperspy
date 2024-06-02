@@ -125,7 +125,7 @@ class PowerLaw(Expression):
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         # Sanity check
-        if x2 <= x1:
+        if x1 is not None and <= x1:
             raise ValueError("x2 must be greater than x1")
         if x3 is None: # Continuos area estimation
             i1, i4 = axis.value_range_to_indices(x1, x2)
