@@ -171,7 +171,7 @@ class PowerLaw(Expression):
                 k = 1 - r
                 A2 = k * I2 / (x4**k - x3**k)
                 A1 = k * I1 / (x2**k - x1**k)
-                A = (A1 + A2)/2
+                A = (A1 * I1 + A2 * I2) / (I1 + I2)
                 if s._lazy:
                     r = r.map_blocks(np.nan_to_num)
                     A = A.map_blocks(np.nan_to_num)
