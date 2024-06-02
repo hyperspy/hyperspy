@@ -128,15 +128,24 @@ class PowerLaw(Expression):
         if x2 <= x1:
             raise ValueError("x2 must be greater than x1")
         if x3 is None: # Continuos area estimation
-            x4 = x2
-            x2 = (x4 + x1) / 2
-            x3 = x2
-        elif x4 <= x3:
-            raise ValueError("x4 must be greater than x3")
-        i1, i2 = axis.value_range_to_indices(x1, x2)
-        i3, i4 = axis.value_range_to_indices(x3, x4)
-        if i1 == i2 or i3 == i4:
-            raise ValueError("The estimation interval must contain at least 2 points")
+            i1, i4 = axis.value_range_to_indices(x1, x2)
+            # Ensure that i1 and i4 are odd to split the interval in two
+            if not (i4 + i1) % 2 == 0:
+                i4 -= 1
+            if i4 == i1:
+                i4 += 2
+            i3 = (i4 + i1) // 2
+            i2 = i3
+        else:
+            if x3 < x2:
+                raise ValueError("x4 must be greater than x3")
+            if x4 <= x3:
+                raise ValueError("x4 must be greater than x3")
+            i1, i2 = axis.value_range_to_indices(x1, x2)
+            i3, i4 = axis.value_range_to_indices(x3, x4)
+            if i1 == i2 or i3 == i4:
+                raise ValueError("The estimation intervals must contain at least 2 points")
+        x1, x2, x3, x4 = axis.index2value([i1, i2, i3, i4])
         if only_current is True:
             s = signal.get_current_signal()
         else:
@@ -163,7 +172,6 @@ class PowerLaw(Expression):
                 A2 = k * I2 / (x4**k - x3**k)
                 A1 = k * I1 / (x2**k - x1**k)
                 A = (A1 + A2)/2
-
                 if s._lazy:
                     r = r.map_blocks(np.nan_to_num)
                     A = A.map_blocks(np.nan_to_num)
