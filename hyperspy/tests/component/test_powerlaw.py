@@ -77,6 +77,8 @@ def test_estimate_parameters_binned(only_current, binned, split, lazy):
     # error of the estimate function is rather large, esp. when binned=FALSE
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.05)
     np.testing.assert_allclose(g1.r.value, g2.r.value, rtol=0.05)
+    pytest.raises(ValueError, g2.estimate_parameters, s, 1, 3, 2, 4)
+    pytest.raises(ValueError, g2.estimate_parameters, s, 1, 3, 3, 2)
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
