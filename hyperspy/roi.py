@@ -1583,8 +1583,8 @@ class PolygonROI(BaseInteractiveROI):
                 f"`vertices` is not an empty list or a list of fully defined two-dimensional \
                     points with at least three entries:\n{vertices}"
             )
-
-    def __call__(self, signal, inverted=False, out=None, axes=None):
+    
+    def _apply_roi(self, signal, inverted=False, out=None, axes=None, other_rois=None):
         if not self.is_valid():
             raise ValueError(not_set_error_msg)
 
@@ -1601,10 +1601,16 @@ class PolygonROI(BaseInteractiveROI):
         natax = signal.axes_manager._get_axes_in_natural_order()
         if not inverted:
             # Slice original data with a circumscribed rectangle
-            left = min(x for x, y in self.vertices)
-            right = max(x for x, y in self.vertices) + axes[1].scale
-            top = min(y for x, y in self.vertices)
-            bottom = max(y for x, y in self.vertices) + axes[0].scale
+            
+            polygons = [self.vertices]
+            # In case of combining multiple PolygonROI, all vertices must be considered
+            if other_rois is not None:
+                polygons += [roi.vertices for roi in other_rois]
+                
+            left = min(x for polygon in polygons for x, y in polygon)
+            right = max(x for polygon in polygons for x, y in polygon) + axes[1].scale
+            top = min(y for polygon in polygons for x, y in polygon)
+            bottom = max(y for polygon in polygons for x, y in polygon) + axes[0].scale
         else:
             # Do not slice if selection is to be inverted
             left, right = axes[0].low_value, axes[0].high_value + axes[0].scale
@@ -1614,7 +1620,7 @@ class PolygonROI(BaseInteractiveROI):
         slices = self._make_slices(natax, axes, ranges)
         ir = [slices[natax.index(axes[0])], slices[natax.index(axes[1])]]
 
-        mask = self.boolean_mask(axes=axes, xy_max=(right, bottom))
+        mask = self.boolean_mask(axes=axes, xy_max=(right, bottom), rois_to_combine=other_rois)
 
         mask = mask[ir[1], ir[0]]
         if not inverted:
@@ -1667,6 +1673,12 @@ class PolygonROI(BaseInteractiveROI):
             return roi
         else:
             out.events.data_changed.trigger(out)
+
+    def __call__(self, signal, inverted=False, out=None, axes=None):
+        return self._apply_roi(signal, inverted=inverted, out=out, axes=axes)
+    
+    def combine_rois(self, signal, inverted=False, out=None, axes=None, other_rois=None):
+        return self._apply_roi(signal, inverted=inverted, out=out, axes=axes, other_rois=other_rois)
 
     def _rasterized_mask(
         self, polygon_vertices, xy_max=None, xy_min=(0, 0), x_scale=1, y_scale=1
@@ -1844,9 +1856,7 @@ class PolygonROI(BaseInteractiveROI):
                         mask = expanded_mask
                     
                     mask[:other_mask.shape[0], :other_mask.shape[1]] |= other_mask
-                    
-
-
+                   
         return mask
 
     def _get_widget_type(self, axes, signal):
