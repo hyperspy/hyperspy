@@ -98,18 +98,22 @@ class PowerLaw(Expression):
         self.convolved = False
 
     def estimate_parameters(self, signal, x1, x2, x3=None, x4=None, only_current=False, out=False):
-        """Estimate the parameters for the power law component by the two area
-        method.
+        """Estimate the parameters for the power law component
+
+        The two area method is used to estimate the parameters. If `x3` and `x4` are
+        given, two discontinuous areas are used for the estimation.
 
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
-        x1, x2, x3, 4 : float
-            `x1` and `x2` are the left and right endpoints of the signal interval where to perform the estimation.
-            It is possible to specify `x3` and `x4` to perform the estimation in two discontiuous areas.
+        x1 : float
+            The left endpoint of the first signal interval.
         x2 : float
-            Defines the right limit of the spectral range to use for the
-            estimation.
+            The right endpoint of the first signal interval.
+        x3 : float, optional
+            The left endpoint of the second signal interval. Default is None.
+        x4 : float, optional
+            The right endpoint of the second signal interval. Default is None.
         only_current : bool
             If False, estimates the parameters for the full dataset.
         out : bool
