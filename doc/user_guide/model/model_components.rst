@@ -174,3 +174,56 @@ scaling it in the x and y directions using the
 and
 :attr:`~.api.model.components1D.ScalableFixedPattern.yscale`
 parameters respectively.
+
+.. _components_parameter_estimation-label:
+
+Parameter estimation
+^^^^^^^^^^^^^^^^^^^^
+
+The following components implement a `estimate_parameters` method to estimate the parameters
+of the component quickly:
+
+
+* :meth:`~.api.model.components1D.Doniach.estimate_parameters`
+* :meth:`~.api.model.components1D.Exponential.estimate_parameters`
+* :meth:`~.api.model.components1D.Gaussian.estimate_parameters`
+* :meth:`~.api.model.components1D.GaussianHF.estimate_parameters`
+* :meth:`~.api.model.components1D.Lorentzian.estimate_parameters`
+* :meth:`~.api.model.components1D.Offset.estimate_parameters`
+* :meth:`~.api.model.components1D.Polynomial.estimate_parameters`
+* :meth:`~.api.model.components1D.PowerLaw.estimate_parameters`
+* :meth:`~.api.model.components1D.SkewNormal.estimate_parameters`
+* :meth:`~.api.model.components1D.Voigt.estimate_parameters`
+* :meth:`~.api.model.components1D.SplitVoigt.estimate_parameters`
+
+
+.. versionadded:: 2.2
+    :meth:`~.api.model.components1D.PowerLaw.estimate_parameters` can take two disconnected intervals to estimate the parameters.
+
+
+For example, the following estimates the parameters of a power law function using data from two disconnected intervals:
+
+.. code-block:: python
+
+    import hyperspy as  hs
+    import numpy as np
+
+    pl = hs.model.components1D.PowerLaw()
+    pl.r.value = 2
+    pl.A.value = 1e4
+    axis = np.arange(10, 20, 0.1)
+    s = hs.signals.Signal1D(pl.function(axis))
+    s.axes_manager[-1].scale = 0.1
+    s.axes_manager[-1].offset = 10
+    s.isig[15.:16.].data[:] = 0
+    s.add_poissonian_noise()
+    roi1 = hs.roi.SpanROI(11,14)
+    roi2 = hs.roi.SpanROI(17, 19)
+
+    pl.estimate_parameters(s,
+                        roi1.left, roi1.right,
+                        roi2.left, roi2.right,
+
+                        only_current=True)
+
+

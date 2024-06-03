@@ -1,0 +1,2 @@
+The :meth:`~.api.model.components1D.PowerLaw.estimate_parameters` method can now use two disconnected intervals to estimate the parameters.
+See :ref:`_components_parameter_estimation-label` for more information.
