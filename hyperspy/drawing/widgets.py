@@ -18,7 +18,6 @@
 
 """Interactive widgets that can be added to :class:`~.api.signals.BaseSignal` plots."""
 
-from hyperspy.drawing._widgets.polygon import PolygonWidget
 from hyperspy.drawing._widgets.circle import CircleWidget
 from hyperspy.drawing._widgets.horizontal_line import HorizontalLineWidget
 from hyperspy.drawing._widgets.label import LabelWidget
@@ -36,6 +35,7 @@ from hyperspy.drawing.widget import (
     WidgetBase,
     MPLWidgetBase,
 )
+from hyperspy.drawing._widgets.polygon import PolygonWidget
 
 __all__ = [
     "WidgetBase",
@@ -43,6 +43,7 @@ __all__ = [
     "ResizableDraggableWidgetBase",
     "Widget2DBase",
     "Widget1DBase",
+    "MPLWidgetBase",
     "ResizersMixin",
     "HorizontalLineWidget",
     "VerticalLineWidget",
@@ -53,4 +54,5 @@ __all__ = [
     "SquareWidget",
     "RangeWidget",
     "Line2DWidget",
+    "PolygonWidget",
 ]
