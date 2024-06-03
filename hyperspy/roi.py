@@ -1752,6 +1752,7 @@ class PolygonROI(BaseInteractiveROI):
         xy_min=None,
         x_scale=None,
         y_scale=None,
+        rois_to_combine=None,
     ):
         """Function to rasterize the polygon into a boolean numpy array. The
             interior of the polygon is by default `True`.
@@ -1809,23 +1810,44 @@ class PolygonROI(BaseInteractiveROI):
                     (max_index_y - min_index_y + 1, max_index_x - min_index_x + 1),
                     dtype=bool,
                 )
-                return mask
-            return None
+            mask = None
+        else:
 
-        if not xy_max:
-            x_max = max(x for x, y in self.vertices) + x_scale
-            y_max = max(y for x, y in self.vertices) + y_scale
-            xy_max = (x_max, y_max)
+            mask = self._rasterized_mask(
+                polygon_vertices=self.vertices,
+                xy_max=xy_max,
+                xy_min=xy_min,
+                x_scale=x_scale,
+                y_scale=y_scale,
+            )
 
-        complete_mask = self._rasterized_mask(
-            polygon_vertices=self.vertices,
-            xy_max=xy_max,
-            xy_min=xy_min,
-            x_scale=x_scale,
-            y_scale=y_scale,
-        )
+        if rois_to_combine is not None:
+            for roi in rois_to_combine:
+                if self is roi or not roi.is_valid():
+                    continue
+                
+                other_mask = self._rasterized_mask(
+                    polygon_vertices=roi.vertices,
+                    xy_max=xy_max,
+                    xy_min=xy_min,
+                    x_scale=x_scale,
+                    y_scale=y_scale,
+                )
+                if mask is None:
+                    mask = other_mask
+                else:
+                    # Expand mask to encompass both
+                    if other_mask.shape[0] > mask.shape[0] or \
+                        other_mask.shape[1] > mask.shape[1]:
+                        expanded_mask = np.zeros(np.max((mask.shape,other_mask.shape), axis=0), dtype=bool)
+                        expanded_mask[:mask.shape[0], :mask.shape[1]] = mask
+                        mask = expanded_mask
+                    
+                    mask[:other_mask.shape[0], :other_mask.shape[1]] |= other_mask
+                    
 
-        return complete_mask
+
+        return mask
 
     def _get_widget_type(self, axes, signal):
         return widgets.PolygonWidget
