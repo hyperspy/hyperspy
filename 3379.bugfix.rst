@@ -1,1 +1,0 @@
-Avoid changing `data` object when using :meth:`~.api.signals.Signal1D.add_gaussian_noise` and :meth:`~.api.signals.Signal1D.add_poissonian_noise`.
