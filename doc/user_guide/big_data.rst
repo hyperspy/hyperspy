@@ -473,9 +473,9 @@ parameters. This is the reason why e.g. the result of
 Dask Scheduler
 --------------
 
-Dask is a flexible library for parallel computing in Python. All of the lazy operations in
+Dask is a flexible library for parallel computing in Python. All of the lazy operations (and many of the non lazy operations) in
 hyperspy run through dask. Dask can be used to run computations on a single machine or
-scaled to a cluster. This section introduce the different scheduler and how to use them
+scaled to a cluster. This section introduces the different schedulers and how to use them
 in HyperSpy - for more details, see the dask documention on
 `scheduling <https://docs.dask.org/en/stable/scheduling.html>`_.
 
