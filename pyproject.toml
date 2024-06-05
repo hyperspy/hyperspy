@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "cloudpickle",
-    "dask[array]>=2021.3.1",
+    "dask[array]>=2021.5.1",
     "importlib-metadata>=3.6",
     "jinja2",
     "matplotlib>=3.1.3",

@@ -6550,17 +6550,14 @@ class BaseSignal(
     def add_poissonian_noise(self, keep_dtype=True, random_state=None):
         """Add Poissonian noise to the data.
 
-        This method works in-place. The resulting data type is ``int64``.
-        If this is different from the original data type then a warning
-        is added to the log.
+        This method works in-place.
 
         Parameters
         ----------
         keep_dtype : bool, default True
-            If ``True``, keep the original data type of the signal data. For
-            example, if the data type was initially ``'float64'``, the result of
-            the operation (usually ``'int64'``) will be converted to
-            ``'float64'``.
+            This parameter is deprecated and will be removed in HyperSpy 3.0.
+            Currently, it does not have any effect. This method always
+            keeps the original dtype of the signal.
         random_state : None, int or numpy.random.Generator, default None
             Seed for the random generator.
 
@@ -6573,28 +6570,17 @@ class BaseSignal(
         """
         kwargs = {}
         random_state = check_random_state(random_state, lazy=self._lazy)
+        if not keep_dtype:
+            warnings.warn(
+                "The `keep_dtype` parameter is deprecated and will be removed in HyperSpy 3.0.",
+                DeprecationWarning,
+            )
 
         if self._lazy:
             kwargs["chunks"] = self.data.chunks
 
-        original_dtype = self.data.dtype
-
-        self.data = random_state.poisson(lam=self.data, **kwargs)
-
-        if self.data.dtype != original_dtype:
-            if keep_dtype:
-                _logger.warning(
-                    f"Changing data type from {self.data.dtype} "
-                    f"to the original {original_dtype}"
-                )
-                # Don't change the object if possible
-                self.data = self.data.astype(original_dtype, copy=False)
-            else:
-                _logger.warning(
-                    f"The data type changed from {original_dtype} "
-                    f"to {self.data.dtype}"
-                )
-
+        self.data[:] = random_state.poisson(lam=self.data, **kwargs)
+        self.events.data_changed.trigger(obj=self)
         self.events.data_changed.trigger(obj=self)
 
     def add_gaussian_noise(self, std, random_state=None):
@@ -6635,12 +6621,8 @@ class BaseSignal(
 
         noise = random_state.normal(loc=0, scale=std, size=self.data.shape, **kwargs)
 
-        if self._lazy:
-            # With lazy data we can't keep the same array object
-            self.data = self.data + noise
-        else:
-            # Don't change the object
-            self.data += noise
+        self.data += noise
+        self.events.data_changed.trigger(obj=self)
 
         self.events.data_changed.trigger(obj=self)
 
