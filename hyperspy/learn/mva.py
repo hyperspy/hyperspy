@@ -897,6 +897,7 @@ class MVA:
                     if diff_axes is not None
                     else None
                 )
+                mask = mask.deepcopy() # Avoid changing the original mask
                 mask.change_dtype("float")
                 mask.data[mask.data == 1] = np.nan
                 mask = _get_derivative(
