@@ -130,6 +130,8 @@ class TestAxesManager:
         with pytest.raises(ValueError):
             axis = BaseDataAxis()
             am[axis]
+        assert am["nav"] == am.navigation_axes
+        assert am["sig"] == am.signal_axes
 
 
 class TestAxesManagerScaleOffset:

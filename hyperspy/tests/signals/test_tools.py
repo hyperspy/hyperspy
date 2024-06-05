@@ -82,12 +82,13 @@ class TestDerivative:
         )
 
 
-def test_derivative():
+@pytest.mark.parametrize("axis", (0, "sig"))
+def test_derivative(axis):
     data = np.arange(10)
     scale = 0.1
     s = signals.Signal1D(data)
     s.axes_manager[0].scale = scale
-    der = s.derivative(axis=0)
+    der = s.derivative(axis=axis)
     np.testing.assert_allclose(der.data, (data[2] - data[1]) / scale)
 
 
@@ -375,3 +376,13 @@ def test_lazy_to_device():
     s = signals.BaseSignal(np.arange(10)).as_lazy()
     with pytest.raises(BaseException):
         s.to_device()
+
+
+@pytest.mark.parametrize("axis", ("nav", "sig"))
+def test_reduction_axes(axis):
+    s = signals.Signal2D(np.ones((2, 3, 4, 5)))
+    s2 = s.sum(axis)
+    if axis == "nav":
+        assert s2.data.shape == (4, 5)
+    if axis == "sig":
+        assert s2.data.shape == (2, 3)

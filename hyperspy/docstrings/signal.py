@@ -20,14 +20,16 @@
 
 ONE_AXIS_PARAMETER = """: :class:`int`, :class:`str`, or :class:`~hyperspy.axes.DataAxis`
             The axis can be passed directly, or specified using the index of
-            the axis in the Signal's `axes_manager` or the axis name."""
+            the axis in the Signal's `axes_manager` or the axis name. If ``"sig"`` or
+            ``"nav"``, the signal or navigation axis will be used, respectively."""
 
 MANY_AXIS_PARAMETER = """: :class:`int`, :class:`str`, :class:`~hyperspy.axes.DataAxis` or tuple
             Either one on its own, or many axes in a tuple can be passed. In
             both cases the axes can be passed directly, or specified using the
             index in `axes_manager` or the name of the axis. Any duplicates are
-            removed. If ``None``, the operation is performed over all navigation
-            axes (default)."""
+            removed. If ``"sig"`` or ``"nav"``, the signal or navigation axes
+            will be used, respectively. If ``None``, the operation is performed
+            over all navigation axes (default)."""
 
 OUT_ARG = """out : :class:`~hyperspy.api.signals.BaseSignal` (or subclass) or None
             If ``None``, a new Signal is created with the result of the
