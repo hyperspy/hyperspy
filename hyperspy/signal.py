@@ -6550,7 +6550,7 @@ class BaseSignal(
     def add_poissonian_noise(self, keep_dtype=True, random_state=None):
         """Add Poissonian noise to the data.
 
-        This method works in-place. 
+        This method works in-place.
 
         Parameters
         ----------
