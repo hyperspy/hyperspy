@@ -134,7 +134,10 @@ class TestNdAxes:
         s1s = s1.isig[:, 1:]
         s1n = s1.inav[:, :, 1:]
         s1sn = s1n.isig[:, 1:]
+        sig_mask_data = sig_mask.data
+        nav_mask_data = nav_mask.data
         s1.decomposition(poisson, signal_mask=sig_mask)
+        assert sig_mask_data is sig_mask.data
         s1s.decomposition(poisson)
         np.testing.assert_array_almost_equal(
             s1s.learning_results.explained_variance,
@@ -142,6 +145,7 @@ class TestNdAxes:
         )
 
         s1.decomposition(poisson, navigation_mask=nav_mask)
+        assert nav_mask_data is nav_mask.data
         s1n.decomposition(poisson)
         np.testing.assert_array_almost_equal(
             s1n.learning_results.explained_variance,
