@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
 from unittest import mock
 
 import dask
@@ -439,15 +438,15 @@ class Test2D:
             rng2 = default_rng(123)
         else:
             data = s.data.copy()
-            original_data = s.data
             rng1 = np.random.default_rng(123)
             rng2 = np.random.default_rng(123)
 
+        original_data = s.data
         s.add_poissonian_noise(random_state=rng1)
+        assert s.data is original_data
 
         if s._lazy:
             s.compute()
-        assert s.data is original_data
 
         np.testing.assert_array_almost_equal(s.data, rng2.poisson(lam=data, **kwargs))
         s.change_dtype("float64")
