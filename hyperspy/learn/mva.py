@@ -793,7 +793,7 @@ class MVA:
                     )
             else:
                 raise ValueError("`mask` must be a HyperSpy signal.")
-
+            mask = mask.deepcopy()  # Avoid changing the original mask
             if hasattr(mask, "compute"):
                 # if the mask is lazy, we compute them, which should be fine
                 # since we already reduce the dimensionality of the data.

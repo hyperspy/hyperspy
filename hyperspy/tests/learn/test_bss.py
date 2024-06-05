@@ -330,10 +330,14 @@ class TestBSS1D:
         # we get "ConvergenceWarning: FastICA did not converge."
         # We test for convergence warnings separately
         n_components = 2 if diff_order == 1 and on_loadings else 3
-
+        mask_data = mask.data
         self.s.blind_source_separation(
             n_components, diff_order=diff_order, mask=mask, on_loadings=on_loadings
         )
+
+        # Verify that the mask is not changed
+        # See https://github.com/hyperspy/hyperspy/issues/3384
+        assert mask_data is mask.data
 
 
 @skip_sklearn

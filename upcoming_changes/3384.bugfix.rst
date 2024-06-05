@@ -1,0 +1,3 @@
+Avoid replacing the original mask in :meth:`~.api.signals.BaseSignal.blind_source_separation`
+
+
