@@ -598,7 +598,8 @@ def load_single_file(filename, **kwds):
     except BaseException:
         _logger.error(
             "If this file format is supported, please "
-            "report this error to the HyperSpy developers."
+            "report this error to the RosettaSciIO developers at "
+            "https://github.com/hyperspy/rosettasciio/issues"
         )
         raise
 

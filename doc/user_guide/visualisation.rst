@@ -342,7 +342,7 @@ Data files used in the following examples can be downloaded using
 
 .. NOTE::
     See also the
-    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
+    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/exspy-demos/tree/main/EDS>`__.
 
 .. NOTE::
 
@@ -450,8 +450,7 @@ Data files used in the following examples can be downloaded using
     >>> urlretrieve(url + 'Ni_La_intensity.hdf5', 'Ni_La_intensity.hdf5') # doctest: +SKIP
 
 .. NOTE::
-    See also the
-    `EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
+    See also the `EDS tutorials <https://nbviewer.org/github/hyperspy/exspy-demos/tree/main/EDS>`__.
 
 Although HyperSpy does not currently support plotting when signal_dimension is
 greater than 2, `Mayavi <https://docs.enthought.com/mayavi/mayavi/>`_ can be
@@ -479,7 +478,7 @@ found in :external+exspy:ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. NOTE::
     See also the
-    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
+    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/exspy-demos/tree/main/EDS>`__.
 
 .. NOTE::
 
