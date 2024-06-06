@@ -583,7 +583,7 @@ class TestROIs:
 
         s = hyperspy.signals.Signal2D(np.ones((33, 80)))
 
-        sr = r1.combine_polygonrois(s, other_rois=[r2, r3, r4, r5, r6, r7])
+        sr = r1.combine(s, rois=[r2, r3, r4, r5, r6, r7])
 
         n_x = int(79 // s.axes_manager[0].scale) + 1
         n_y = int(31 // s.axes_manager[1].scale) + 1

@@ -203,6 +203,8 @@ def test_dir_utils_roi():
         "PolygonROI",
         "RectangularROI",
         "SpanROI",
+        "combine_rois",
+        "create_mask_from_rois",
     ]
 
 
