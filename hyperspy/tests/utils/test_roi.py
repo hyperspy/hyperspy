@@ -32,6 +32,8 @@ from hyperspy.roi import (
     RectangularROI,
     SpanROI,
     _get_central_half_limits_of_axis,
+    combine_rois,
+    create_mask_from_rois,
 )
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -942,6 +944,119 @@ class TestROIs:
     def test_line2droi_length(self):
         line = Line2DROI(x1=0.0, x2=2, y1=0.0, y2=2)
         np.testing.assert_allclose(line.length, np.sqrt(8))
+
+    def test_combined_rois_polygon(self):
+
+        # Test only for `PolygonROI`
+
+        s = self.s_s
+
+        s.data = np.ones_like(s.data)
+
+        r1 = PolygonROI(
+            vertices=[(0.61, 0.52), (0.5, 30.51), (2.99, 30.51), (2.87, 0.64)]
+        )
+        r2 = PolygonROI(
+            vertices=[
+                (5.95, 0.52),
+                (5.71, 30.75),
+                (17.92, 30.87),
+                (17.92, 28.26),
+                (9.27, 28.14),
+                (9.15, 0.52),
+            ]
+        )
+        r3 = PolygonROI(
+            vertices=[
+                (22.21, 29.45),
+                (25.05, 29.45),
+                (26.24, 21.15),
+                (32.05, 21.38),
+                (33.71, 29.33),
+                (37.03, 29.45),
+                (30.62, 0.16),
+                (28.61, 0.04),
+                (24.58, 13.09),
+                (27.54, 13.2),
+                (29.2, 7.75),
+                (30.86, 15.22),
+                (27.3, 15.22),
+                (27.66, 13.2),
+                (24.46, 13.2),
+                (20.55, 29.68),
+            ]
+        )
+        r4 = PolygonROI(
+            vertices=[
+                (39.99, 30.25),
+                (39.99, 0.57),
+                (47.07, 0.22),
+                (54.49, 3.85),
+                (55.01, 10.41),
+                (51.04, 13.68),
+                (45.0, 13.51),
+                (45.0, 9.72),
+                (48.79, 9.03),
+                (50.35, 7.13),
+                (50.17, 5.75),
+                (48.62, 4.02),
+                (44.82, 4.02),
+                (45.0, 9.54),
+                (45.34, 9.54),
+                (45.0, 13.68),
+                (55.18, 29.73),
+                (49.31, 29.73),
+                (44.82, 18.86),
+                (45.17, 30.25),
+            ]
+        )
+        r5 = PolygonROI(
+            vertices=[(57.61, 0.52), (57.5, 30.51), (59.99, 30.51), (59.87, 0.64)]
+        )
+        r6 = PolygonROI(
+            vertices=[
+                (64.21, 29.45),
+                (67.05, 29.45),
+                (68.24, 21.15),
+                (74.05, 21.38),
+                (75.71, 29.33),
+                (79.03, 29.45),
+                (72.62, 0.16),
+                (70.61, 0.04),
+                (66.58, 13.09),
+                (69.54, 13.2),
+                (71.2, 7.75),
+                (72.86, 15.22),
+                (69.3, 15.22),
+                (69.66, 13.2),
+                (66.46, 13.2),
+                (62.55, 29.68),
+            ]
+        )
+        r7 = PolygonROI(
+            vertices=[
+                (17.73, 4.54),
+                (13.59, 0.74),
+                (10.83, 3.68),
+                (11.69, 8.33),
+                (17.39, 13.86),
+                (23.25, 8.68),
+                (24.63, 3.85),
+                (22.56, 1.26),
+            ]
+        )
+
+        rois = [r1, r2, r3, r4, r5, r6, r7]
+
+        combined_slice = combine_rois(s, rois=rois)
+
+        # Check same result as method in `PolygonROI`
+        np.testing.assert_array_equal(combined_slice, rois[0].combine(s, rois=rois[1:]))
+
+        combined_mask = create_mask_from_rois(rois=rois, axes_manager=s.axes_manager)
+        desired_mask = rois[0].boolean_mask(axes_manager=s.axes_manager, rois=rois[1:])
+
+        np.testing.assert_array_equal(combined_mask, desired_mask)
 
 
 @lazifyTestClass

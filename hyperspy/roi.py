@@ -1680,9 +1680,9 @@ class PolygonROI(BaseInteractiveROI):
     def __call__(self, signal, inverted=False, out=None, axes=None):
         return self._apply_roi(signal, inverted=inverted, out=out, axes=axes)
 
-    def combine(self, signal, inverted=False, out=None, axes=None, other_rois=None):
+    def combine(self, signal, inverted=False, out=None, axes=None, rois=None):
         return self._apply_roi(
-            signal, inverted=inverted, out=out, axes=axes, other_rois=other_rois
+            signal, inverted=inverted, out=out, axes=axes, other_rois=rois
         )
 
     def _rasterized_mask(
@@ -1939,7 +1939,7 @@ def combine_rois(signal, rois, inverted=False, out=None, axes=None):
     polygonrois = rois
 
     sliced_signal = polygonrois[0].combine(
-        signal, inverted=inverted, out=out, axes=axes, other_rois=rois[1:]
+        signal, inverted=inverted, out=out, axes=axes, rois=rois[1:]
     )
 
     return sliced_signal
