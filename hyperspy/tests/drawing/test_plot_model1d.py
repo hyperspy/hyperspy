@@ -69,5 +69,31 @@ class TestModelPlot:
         self.m.plot(navigator=None)
         assert self.m.signal._plot.navigator_plot is None
 
-    def test_plot_residual(self):
-        self.m.plot(plot_residual=True)
+    @pytest.mark.parametrize("plot_residual", (False, True))
+    def test_plot_events_connection(self, plot_residual):
+        # Check that the events connection and
+        # the plotting line are reset when closing
+        expected_connection = 1
+        if plot_residual:
+            expected_connection += 1
+        c = self.m[0]
+
+        assert self.m._model_line is None
+        assert self.m._residual_line is None
+        assert len(c.events.active_changed.connected) == 0
+        for p in c.parameters:
+            assert len(p.events.value_changed.connected) == 0
+
+        self.m.plot(plot_residual=plot_residual)
+        assert self.m._model_line is not None
+        assert (self.m._residual_line is not None) is plot_residual
+        assert len(c.events.active_changed.connected) == expected_connection
+        for p in c.parameters:
+            assert len(p.events.value_changed.connected) == expected_connection
+
+        self.m._plot.close()
+        assert len(c.events.active_changed.connected) == 0
+        for p in c.parameters:
+            assert len(p.events.value_changed.connected) == 0
+        assert self.m._model_line is None
+        assert self.m._residual_line is None

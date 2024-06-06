@@ -1,0 +1,1 @@
+Fix updating residual line in model plot when changing components.

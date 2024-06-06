@@ -708,26 +708,26 @@ class BaseModel(list):
     def _connect_parameters2update_plot(self, components):
         if self._plot_active is False:
             return
+        lines = [
+            line for line in (self._model_line, self._residual_line) if line is not None
+        ]
         for i, component in enumerate(components):
-            component.events.active_changed.connect(
-                self._model_line._auto_update_line, []
-            )
-            for parameter in component.parameters:
-                parameter.events.value_changed.connect(
-                    self._model_line._auto_update_line, []
-                )
+            for line in lines:
+                component.events.active_changed.connect(line._auto_update_line, [])
+                for parameter in component.parameters:
+                    parameter.events.value_changed.connect(line._auto_update_line, [])
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
             return
+        lines = [
+            line for line in (self._model_line, self._residual_line) if line is not None
+        ]
         for component in components:
-            component.events.active_changed.disconnect(
-                self._model_line._auto_update_line
-            )
-            for parameter in component.parameters:
-                parameter.events.value_changed.disconnect(
-                    self._model_line._auto_update_line
-                )
+            for line in lines:
+                component.events.active_changed.disconnect(line._auto_update_line)
+                for parameter in component.parameters:
+                    parameter.events.value_changed.disconnect(line._auto_update_line)
 
     def update_plot(self, render_figure=False, update_ylimits=False, **kwargs):
         """Update model plot.
@@ -797,6 +797,8 @@ class BaseModel(list):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
+        if self._residual_line is not None:
+            self._residual_line = None
         self._model_line = None
 
     def enable_plot_components(self):
