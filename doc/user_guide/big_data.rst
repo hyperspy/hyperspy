@@ -468,15 +468,21 @@ compute the result of all functions that are affected by the axes
 parameters. This is the reason why e.g. the result of
 :meth:`~.api.signals.Signal1D.shift1D` is not lazy.
 
-.. _dask_backends:
+.. _dask_scheduler:
 
-Dask Backends
--------------
+Dask Scheduler
+--------------
 
-Dask is a flexible library for parallel computing in Python. All of the lazy operations in
+Dask is a flexible library for parallel computing in Python. All of the lazy operations (and many of the non lazy operations) in
 hyperspy run through dask. Dask can be used to run computations on a single machine or
-scaled to a cluster. The following example shows how to use dask to run computations on a
-variety of different hardware:
+scaled to a cluster. This section introduces the different schedulers and how to use them
+in HyperSpy - for more details, see the dask documention on
+`scheduling <https://docs.dask.org/en/stable/scheduling.html>`_.
+
+.. Note::
+
+    To scale on multiple machines, e.g. a computer cluster, the distributed scheduler is required.
+
 
 Single Threaded Scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -541,7 +547,9 @@ Distributed Scheduler
 
    Distributed computing is limited to a few file formats, see the list of
    :external+rsciio:ref:`supported file format <supported-formats>` in
-   RosettaSciIO documentation.
+   RosettaSciIO documentation. If the format you are using is not supported,
+   it is recommended to convert the file to :external+rsciio:ref:`zspy <zspy-format>`
+   by reading with a single machine scheduler and saving it as a ``zspy`` file.
 
 The recommended way to use dask is with the distributed scheduler. This allows you to scale your computations
 to a cluster of machines. The distributed scheduler can be used on a single machine as well. ``dask-distributed``

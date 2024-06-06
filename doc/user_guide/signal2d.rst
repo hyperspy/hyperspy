@@ -54,7 +54,7 @@ If you have a large stack of images, the image alignment is automatically done i
 parallel.
 
 You can control the number of threads used with the ``num_workers`` argument. Or by adjusting
-the scheduler of the :ref:`dask backend <dask_backends>`.
+the :ref:`scheduler <dask_scheduler>`.
 
 .. code-block:: python
 

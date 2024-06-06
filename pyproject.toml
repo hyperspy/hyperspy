@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "cloudpickle",
-    "dask[array]>=2021.3.1",
+    "dask[array]>=2021.5.1",
     "importlib-metadata>=3.6",
     "jinja2",
     "matplotlib>=3.1.3",
@@ -227,8 +227,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-fallback_version = "2.2.0.dev0"
-version_scheme = "release-branch-semver"
+fallback_version = "2.1.1.dev0"
 
 [tool.towncrier]
 directory = "upcoming_changes/"
