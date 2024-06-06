@@ -85,7 +85,7 @@ class PolygonWidget(MPLWidgetBase):
 
         if self.ax is not None and self.is_on:
             if len(vertices) > 2:
-                self._widget.verts = vertices.copy()
+                self._widget.verts = list(vertices)
             self.ax.figure.canvas.draw_idle()
 
     def connect(self, ax):
