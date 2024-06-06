@@ -1690,7 +1690,7 @@ class PolygonROI(BaseInteractiveROI):
         )
 
     def _rasterized_mask(
-        self, polygon_vertices, xy_max=None, xy_min=(0, 0), x_scale=1, y_scale=1
+        self, polygon_vertices, xy_max=None, xy_min=None, x_scale=None, y_scale=None
     ):
         """Utility function to rasterize a polygon into a boolean numpy
             array. The interior of the polygon is `True`.
@@ -1724,6 +1724,10 @@ class PolygonROI(BaseInteractiveROI):
             x_max = max(x for x, y in polygon_vertices)
             y_max = max(y for x, y in polygon_vertices)
             xy_max = (x_max, y_max)
+
+        xy_min = xy_min if xy_min is not None else (0, 0)
+        x_scale = x_scale if x_scale is not None else 1.0
+        y_scale = y_scale if y_scale is not None else 1.0
 
         min_index_x = round(xy_min[0] / x_scale)
         min_index_y = round(xy_min[1] / y_scale)
@@ -1816,14 +1820,15 @@ class PolygonROI(BaseInteractiveROI):
         if axes_manager or axes:
             axes = axes if not axes_manager else self._parse_axes(axes, axes_manager)
 
-            xy_max = xy_max if xy_max else (axes[0].high_value, axes[1].high_value)
-            xy_min = xy_min if xy_min else (axes[0].low_value, axes[1].low_value)
+            xy_max = xy_max if xy_max is not None else (axes[0].high_value, axes[1].high_value)
+            xy_min = xy_min if xy_min is not None else (axes[0].low_value, axes[1].low_value)
 
-            x_scale = x_scale if x_scale else axes[0].scale
-            y_scale = y_scale if y_scale else axes[1].scale
+            x_scale = x_scale if x_scale is not None else axes[0].scale
+            y_scale = y_scale if y_scale is not None else axes[1].scale
 
         # Empty ROI
         if not self.vertices:
+            mask = None
             if xy_max:
                 min_index_x = round(xy_min[0] / x_scale)
                 min_index_y = round(xy_min[1] / y_scale)
@@ -1834,7 +1839,7 @@ class PolygonROI(BaseInteractiveROI):
                     (max_index_y - min_index_y + 1, max_index_x - min_index_x + 1),
                     dtype=bool,
                 )
-            mask = None
+
         else:
             mask = self._rasterized_mask(
                 polygon_vertices=self.vertices,
