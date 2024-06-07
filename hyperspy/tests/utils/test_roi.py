@@ -756,6 +756,20 @@ class TestROIs:
             r._set_default_values(s, axes=s.axes_manager.signal_axes)
             r(s)
 
+    @pytest.mark.parametrize("axes", ("sig", (2, 3)))
+    def test_call_signal_axes(self, axes):
+        s = self.s_i
+        r = RectangularROI(1, 1, 3, 3)
+        s_roi = r(s, axes=axes)
+        assert s_roi.data.shape == (100, 100, 2, 2)
+
+    @pytest.mark.parametrize("axes", ("nav", (0, 1)))
+    def test_call_navigation_axes(self, axes):
+        s = self.s_i
+        r = RectangularROI(25, 25, 75, 75)
+        s_roi = r(s, axes=axes)
+        assert s_roi.data.shape == (50, 50, 4, 4)
+
     def test_get_central_half_limits(self):
         ax = self.s_s.axes_manager[0]
         assert _get_central_half_limits_of_axis(ax) == (73.75, 221.25)

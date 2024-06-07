@@ -276,15 +276,16 @@ class BaseROI(t.HasTraits):
                 )
             else:
                 raise ValueError("Could not find valid axes configuration.")
-        elif isinstance(axes, (tuple, list)):
-            if len(axes) > nd:
+        else:
+            if isinstance(axes, (tuple, list)) and len(axes) > nd:
                 raise ValueError(
                     "The length of the provided `axes` is larger "
                     "than the dimensionality of the ROI."
                 )
             axes_out = axes_manager[axes]
-        else:
-            axes_out = (axes_manager[axes],)
+
+        if not isinstance(axes_out, tuple):
+            axes_out = (axes_out,)
 
         return axes_out
 
