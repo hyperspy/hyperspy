@@ -24,10 +24,10 @@ from hyperspy.drawing.widgets import MPLWidgetBase
 class PolygonWidget(MPLWidgetBase):
     """PolygonWidget is a widget for drawing an arbitrary
     polygon, which can then be used as a region-of-interest.
-    The polygon can be moved by shift-clicking.
+    The polygon can be moved by pressing 'shift' and clicking.
     A polygon vertex can be moved by clicking its handle. If incomplete,
-    it is also necessary to press control.
-    The polygon can be deleted by pressing escape.
+    it is also necessary to press 'ctrl'.
+    The polygon can be deleted by pressing 'esc'.
     """
 
     def __init__(self, axes_manager, **kwargs):
