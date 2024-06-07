@@ -26,6 +26,8 @@ from hyperspy.drawing._widgets.range import RangeWidget
 from hyperspy.drawing._widgets.rectangles import RectangleWidget, SquareWidget
 from hyperspy.drawing._widgets.scalebar import ScaleBar
 from hyperspy.drawing._widgets.vertical_line import VerticalLineWidget
+from hyperspy.drawing.widget import MPLWidgetBase # Placed here to avoid circular import
+from hyperspy.drawing._widgets.polygon import PolygonWidget
 from hyperspy.drawing.widget import (
     DraggableWidgetBase,
     ResizableDraggableWidgetBase,
@@ -33,9 +35,7 @@ from hyperspy.drawing.widget import (
     Widget1DBase,
     Widget2DBase,
     WidgetBase,
-    MPLWidgetBase,
 )
-from hyperspy.drawing._widgets.polygon import PolygonWidget
 
 __all__ = [
     "WidgetBase",

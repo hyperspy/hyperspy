@@ -1026,7 +1026,7 @@ class MPLWidgetBase(WidgetBase):
     of patches. Also, it prepares the default axes as for a 2D widget.
     """
 
-    def __init__(self, axes_manager=None, mpl_ax=None, **kwargs):
+    def __init__(self, axes_manager=None, **kwargs):
         super(MPLWidgetBase, self).__init__(**kwargs)
 
         if self.axes_manager is not None:
@@ -1042,9 +1042,6 @@ class MPLWidgetBase(WidgetBase):
                 raise ValueError("MPL widget needs at least two axes!")
 
         self._widget = None
-
-        if mpl_ax is not None:
-            self.set_mpl_ax(mpl_ax)
 
     def set_on(self, value, render_figure=True):
         """Change the on state of the widget. If turning off, the widget will
