@@ -4613,6 +4613,12 @@ class BaseSignal(
         """
         # rechunk was a valid keyword up to HyperSpy 1.6
         if "rechunk" in kwargs:
+            # We miss the deprecation cycle for 2.0
+            warnings.warn(
+                "The `rechunk` parameter is not used since HyperSpy 1.7 and"
+                "will be removed in HyperSpy 3.0.",
+                DeprecationWarning,
+            )
             del kwargs["rechunk"]
         n = order
         der_data = self.data
