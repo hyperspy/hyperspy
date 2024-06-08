@@ -116,7 +116,7 @@ jobs:
           pytest ${{ env.PYTEST_ARGS }} --doctest-modules --ignore=hyperspy/tests
 
       - name: Upload coverage to Codecov
-        if: ${{ always() }}
+        if: ${{ github.repository_owner == 'hyperspy' }}
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
