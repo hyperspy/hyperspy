@@ -33,7 +33,12 @@ jobs:
             PYTHON_VERSION: '3.12'
             PIP_SELECTOR: '[tests, coverage]'
             LABEL: -minimum
-            # Run coverage
+          - os: ubuntu
+            os_version: latest
+            PYTHON_VERSION: '3.12'
+            PIP_SELECTOR: '[tests, coverage]'
+            NUMPY20: true
+            LABEL: -npy20
           - os: ubuntu
             os_version: latest
             PYTHON_VERSION: '3.8'
@@ -87,6 +92,11 @@ jobs:
         if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
         run: |
           pip install ${{ matrix.DEPENDENCIES }} -v
+
+      - name: Install numpy 2.0
+        if: ${{ matrix.NUMPY20 }}
+        run: |
+          pip install --pre numpy
 
       - name: Install
         shell: bash
