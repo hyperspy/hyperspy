@@ -97,19 +97,23 @@ class PowerLaw(Expression):
         self.isbackground = True
         self.convolved = False
 
-    def estimate_parameters(self, signal, x1, x2, only_current=False, out=False):
-        """Estimate the parameters for the power law component by the two area
-        method.
+    def estimate_parameters(self, signal, x1, x2, x3=None, x4=None, only_current=False, out=False):
+        """Estimate the parameters for the power law component
+
+        The two area method is used to estimate the parameters. If `x3` and `x4` are
+        given, two discontinuous areas are used for the estimation.
 
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
         x1 : float
-            Defines the left limit of the spectral range to use for the
-            estimation.
+            The left endpoint of the first signal interval.
         x2 : float
-            Defines the right limit of the spectral range to use for the
-            estimation.
+            The right endpoint of the first signal interval.
+        x3 : float, optional
+            The left endpoint of the second signal interval. Default is None.
+        x4 : float, optional
+            The right endpoint of the second signal interval. Default is None.
         only_current : bool
             If False, estimates the parameters for the full dataset.
         out : bool
@@ -124,22 +128,35 @@ class PowerLaw(Expression):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        i1, i2 = axis.value_range_to_indices(x1, x2)
-        if not (i2 + i1) % 2 == 0:
-            i2 -= 1
-        if i2 == i1:
-            i2 += 2
-        i3 = (i2 + i1) // 2
-        x1 = axis.index2value(i1)
-        x2 = axis.index2value(i2)
-        x3 = axis.index2value(i3)
+        # Sanity check
+        if x1 is not None and  x2 <= x1:
+            raise ValueError("x2 must be greater than x1")
+        if x3 is None: # Continuos area estimation
+            i1, i4 = axis.value_range_to_indices(x1, x2)
+            # Ensure that i1 and i4 are odd to split the interval in two
+            if not (i4 + i1) % 2 == 0:
+                i4 -= 1
+            if i4 == i1:
+                i4 += 2
+            i3 = (i4 + i1) // 2
+            i2 = i3
+        else:
+            if x3 < x2:
+                raise ValueError("x4 must be greater than x3")
+            if x4 <= x3:
+                raise ValueError("x4 must be greater than x3")
+            i1, i2 = axis.value_range_to_indices(x1, x2)
+            i3, i4 = axis.value_range_to_indices(x3, x4)
+            if i1 == i2 or i3 == i4:
+                raise ValueError("The estimation intervals must contain at least 2 points")
+        x1, x2, x3, x4 = axis.index2value([i1, i2, i3, i4])
         if only_current is True:
             s = signal.get_current_signal()
         else:
             s = signal
         if s._lazy:
-            I1 = s.isig[i1:i3].integrate1D(2j).data
-            I2 = s.isig[i3:i2].integrate1D(2j).data
+            I1 = s.isig[i1:i2].integrate1D(2j).data
+            I2 = s.isig[i3:i4].integrate1D(2j).data
         else:
             from hyperspy.signal import BaseSignal
 
@@ -147,15 +164,18 @@ class PowerLaw(Expression):
             I1_s = BaseSignal(np.empty(shape, dtype="float", like=s.data))
             I2_s = BaseSignal(np.empty(shape, dtype="float", like=s.data))
             # Use the `out` parameters to avoid doing the deepcopy
-            s.isig[i1:i3].integrate1D(2j, out=I1_s)
-            s.isig[i3:i2].integrate1D(2j, out=I2_s)
+            s.isig[i1:i2].integrate1D(2j, out=I1_s)
+            s.isig[i3:i4].integrate1D(2j, out=I2_s)
+
             I1 = I1_s.data
             I2 = I2_s.data
         with np.errstate(divide="raise"):
             try:
-                r = 2 * (np.log(I1) - np.log(I2)) / (np.log(x2) - np.log(x1))
+                r = 2 * (np.log(I1/I2*(x4-x3)/(x2-x1))) / (np.log(x4*x3/x2/x1))
                 k = 1 - r
-                A = k * I2 / (x2**k - x3**k)
+                A2 = k * I2 / (x4**k - x3**k)
+                A1 = k * I1 / (x2**k - x1**k)
+                A = (A1 * I1 + A2 * I2) / (I1 + I2)
                 if s._lazy:
                     r = r.map_blocks(np.nan_to_num)
                     A = A.map_blocks(np.nan_to_num)
@@ -183,7 +203,6 @@ class PowerLaw(Expression):
             self.r.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
-
     def grad_A(self, x):
         return self.function(x) / self.A.value
 
