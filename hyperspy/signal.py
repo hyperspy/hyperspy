@@ -2845,11 +2845,22 @@ class BaseSignal(
 
     # TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
     # np.log(s) -> da.log(s.data) wrapped.
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None, copy=None):
+        # The copy parameter was added in numpy 2.0
+        if dtype is not None and dtype != self.data.dtype:
+            if copy is not None and not copy:
+                raise ValueError(
+                    f"Converting array from {self.data.dtype} to "
+                    f"{dtype} requires a copy."
+                )
         if dtype:
-            return self.data.astype(dtype)
+            array = self.data.astype(dtype)
         else:
-            return self.data
+            array = self.data
+        if copy:
+            array = np.copy(array)
+
+        return array
 
     def __array_wrap__(self, array, context=None):
         signal = self._deepcopy_with_new_data(array)
