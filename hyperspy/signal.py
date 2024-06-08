@@ -2862,7 +2862,7 @@ class BaseSignal(
 
         return array
 
-    def __array_wrap__(self, array, context=None):
+    def __array_wrap__(self, array, context=None, return_scalar=False):
         signal = self._deepcopy_with_new_data(array)
         if context is not None:
             # ufunc, argument of the ufunc, domain of the ufunc
