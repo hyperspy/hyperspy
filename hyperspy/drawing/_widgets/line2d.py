@@ -38,11 +38,11 @@ def angle_between(v1, v2):
 
     Examples
     --------
-    >>> angle_between((1, 0), (0, 1))
+    >>> print(angle_between((1, 0), (0, 1)))
     1.5707963267948966
-    >>> angle_between((1, 0), (1, 0))
+    >>> print(angle_between((1, 0), (1, 0)))
     0.0
-    >>> angle_between((1, 0), (-1, 0))
+    >>> print(angle_between((1, 0), (-1, 0)))
     3.141592653589793
     """
     v1_u = unit_vector(v1)
