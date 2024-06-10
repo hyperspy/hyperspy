@@ -94,7 +94,7 @@ class Voigt(Expression):
         # We use `gamma_` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
-            expression="area * real(V); \
+            expression="area * re(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
                 z = (x - centre + 1j * gamma_) / (sigma * sqrt(2.0))",
             name="Voigt",
@@ -104,6 +104,7 @@ class Voigt(Expression):
             sigma=sigma,
             position="centre",
             module=module,
+            compute_gradients=False,
             autodoc=False,
             rename_pars={"gamma_": "gamma"},
             **kwargs,
