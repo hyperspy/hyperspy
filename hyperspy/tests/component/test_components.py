@@ -70,3 +70,10 @@ def test_creation_components1d(component_name):
 
     m2 = s.create_model()
     m2._load_dictionary(model_dict)
+
+    # For Expression based component which uses sympy to compute gradient
+    # automatically, check that the gradient are working
+    for parameter in component.parameters:
+        grad = getattr(component, f"grad_{parameter.name}", None)
+        if grad is not None:
+            grad(np.arange(1, 100))

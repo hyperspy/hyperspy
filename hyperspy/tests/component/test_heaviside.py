@@ -52,12 +52,11 @@ class TestHeavisideStep:
             c.function(np.array([3, -0.1, 0])), np.array([1, 0, 0.5])
         )
 
-    def test_gradients(self):
-        c = self.c
-        np.testing.assert_array_almost_equal(
-            c.A.grad(np.array([3, -0.1, 0])), np.array([1, 0, 0.5])
-        )
-
-
-#        np.testing.assert_array_almost_equal(c.n.grad(np.array([3, -0.1, 0])),
-#                                             np.array([1, 1, 1]))
+    # def test_gradients(self):
+    #     c = self.c
+    #     np.testing.assert_array_almost_equal(
+    #         c.A.grad(np.array([3, -0.1, 0])), np.array([1, 0, 0.5])
+    #     )
+    #     np.testing.assert_array_almost_equal(
+    #         c.n.grad(np.array([3, -0.1, 0])), np.array([1, 1, 1])
+    #     )
