@@ -21,15 +21,13 @@ import itertools
 import numpy as np
 import pytest
 
-from hyperspy.components1d import PowerLaw
-from hyperspy.signals import Signal1D
-from hyperspy.utils import stack
+import hyperspy.api as hs
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 
 def test_function():
-    g = PowerLaw()
+    g = hs.model.components1D.PowerLaw()
     g.A.value = 1
     g.r.value = 2
     g.origin.value = 3
@@ -38,7 +36,7 @@ def test_function():
 
 
 def test_linear_override():
-    g = PowerLaw()
+    g = hs.model.components1D.PowerLaw()
     for para in g.parameters:
         if para is g.A:
             assert para._linear
@@ -49,16 +47,16 @@ def test_linear_override():
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy):
-    s = Signal1D(np.empty((100,)))
+    s = hs.signals.Signal1D(np.empty((100,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 0.02
     axis.offset = 1
-    g1 = PowerLaw(50015.156, 1.2)
+    g1 = hs.model.components1D.PowerLaw(50015.156, 1.2)
     s.data = g1.function(axis.axis)
     if lazy:
         s = s.as_lazy()
-    g2 = PowerLaw()
+    g2 = hs.model.components1D.PowerLaw()
     factor = axis.scale if binned else 1
     assert g2.estimate_parameters(
         s, axis.low_value, axis.high_value, only_current=only_current
@@ -72,18 +70,75 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("binned"), (True, False))
 def test_function_nd(binned, lazy):
-    s = Signal1D(np.empty((100,)))
+    s = hs.signals.Signal1D(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 0.02
     axis.offset = 1
-    g1 = PowerLaw(50015.156, 1.2)
+    g1 = hs.model.components1D.PowerLaw(50015.156, 1.2)
     s.data = g1.function(axis.axis)
     s.axes_manager.signal_axes[0].is_binned = binned
-    s2 = stack([s] * 2)
+    s2 = hs.stack([s] * 2)
     if lazy:
         s = s.as_lazy()
-    g2 = PowerLaw()
+    g2 = hs.model.components1D.PowerLaw()
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)
+
+
+class TestPowerLaw:
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.zeros(1024))
+        s.axes_manager[0].offset = 100
+        s.axes_manager[0].scale = 0.01
+        m = s.create_model()
+        m.append(hs.model.components1D.PowerLaw())
+        m[0].A.value = 1000
+        m[0].r.value = 4
+        self.m = m
+        self.s = s
+
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+    def test_estimate_parameters(self, only_current, binned):
+        self.m.signal.axes_manager[-1].is_binned = binned
+        s = self.m.as_signal()
+        assert s.axes_manager[-1].is_binned == binned
+        g = hs.model.components1D.PowerLaw()
+        g.estimate_parameters(s, None, None, only_current=only_current)
+        assert g._axes_manager[-1].is_binned == binned
+        A_value = 1008.4913 if binned else 1006.4378
+        r_value = 4.001768 if binned else 4.001752
+        np.testing.assert_allclose(g.A.value, A_value)
+        np.testing.assert_allclose(g.r.value, r_value)
+
+        if only_current:
+            A_value, r_value = 0, 0
+        # Test that it all works when calling it with a different signal
+        s2 = hs.stack((s, s))
+        g.estimate_parameters(s2, None, None, only_current=only_current)
+        assert g._axes_manager[-1].is_binned == binned
+        np.testing.assert_allclose(g.A.map["values"][1], A_value)
+        np.testing.assert_allclose(g.r.map["values"][1], r_value)
+
+    def test_missing_data(self):
+        g = hs.model.components1D.PowerLaw()
+        s = self.m.as_signal()
+        s2 = hs.signals.Signal1D(s.data)
+        g.estimate_parameters(s2, None, None)
+
+    def test_function_grad_cutoff(self):
+        pl = self.m[0]
+        pl.left_cutoff.value = 105.0
+        axis = self.s.axes_manager[0].axis
+        for attr in ["function", "grad_A", "grad_r", "grad_origin"]:
+            values = getattr(pl, attr)((axis))
+            np.testing.assert_allclose(values[:501], np.zeros((501)))
+            assert getattr(pl, attr)((axis))[500] == 0
+            getattr(pl, attr)((axis))[502] > 0
+
+    def test_exception_gradient_calculation(self):
+        # if this doesn't warn, it means that sympy can compute the gradients
+        # and the power law component can be updated.
+        with pytest.warns(UserWarning):
+            hs.model.components1D.PowerLaw(compute_gradients=True)
