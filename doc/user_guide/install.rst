@@ -329,8 +329,8 @@ and ``gui-traitsui`` will be missing. More generally, all dependencies from ``de
 will be absent (see :ref:`install-with-pip`). These can be installed manually 
 using conda (inspect ``project.optional-dependencies`` section of 
 `pyproject.toml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/pyproject.toml>`__ 
-and install them using ``conda install -c conda-forge``). Alternatively, all 
-optional dependencies installation can be left to ``pip``:
+and install them using ``conda install -c conda-forge``). Alternatively, the
+installation of all optional dependencies can be left to ``pip``:
 
 .. code-block:: bash
 
