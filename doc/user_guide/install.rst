@@ -318,7 +318,7 @@ From the root folder of your hyperspy repository (folder containing the
 
     $ pip install -e . --no-deps # install the currently checked-out branch of hyperspy
 
-Note that some tests only pass on specific packages versions (see :ref:`Plot testing<plot-test-label>`).
+Note that some tests only pass on specific package versions (see :ref:`Plot testing<plot-test-label>`).
 Consequently, a previous version of python (such as 3.10) can end up being 
 installed in the ``hspy_dev`` environment. If this is a problem, ``hyperspy-dev`` should be 
 removed from environment creation. This will ensure that the latest python release is used. 
