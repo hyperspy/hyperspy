@@ -248,8 +248,9 @@ images will not be compared to the reference images.
 Both locally and on Azure Pipelines, plot tests should be run against specific 
 versions of matplotlib and freetype, defined in `conda_environment_dev.yml 
 <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/conda_environment_dev.yml>`__.
-Small changes different versions of matplotlib/freetype generate figures can 
-make tests fail. During hyperspy source installation, this also restricts the 
+Small changes between different versions of matplotlib/freetype, which generate
+the figures, can result in failing tests. During installation of the hyperspy source
+including all development dependencies (``hyperspy-dev``), this also restricts the 
 python version that is supported. For this reason, the ``--mpl`` tests are 
 not run for all python versions in the pipelines, and might be skipped when 
 running tests locally depending on the python/matplotlib/freetype version.
