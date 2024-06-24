@@ -56,16 +56,19 @@ class HeavisideStep(Expression):
         :class:`~.api.model.components1D.Expression` component.
     """
 
-    def __init__(self, A=1.0, n=0.0, module="numpy", compute_gradients=True, **kwargs):
+    def __init__(self, A=1.0, n=0.0, module="numpy", compute_gradients=False, **kwargs):
         super().__init__(
-            expression="A*heaviside(x-n,0.5)",
+            expression="A*Heaviside(x-n,0.5)",
             name="HeavisideStep",
             A=A,
             n=n,
             position="n",
             module=module,
-            autodoc=False,
+            # compute gradient with sympy is not supported
+            # NameError: name 'DiracDelta' is not defined
+            # See https://github.com/sympy/sympy/issues/26663#issuecomment-2160451385
             compute_gradients=compute_gradients,
+            autodoc=False,
             **kwargs,
         )
 
