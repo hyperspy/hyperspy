@@ -1544,7 +1544,6 @@ def is_cupy_array(array):
     """
     Convenience function to determine if an array is a cupy array
 
-<<<<<<< HEAD
     Parameters
     ----------
     array : array
