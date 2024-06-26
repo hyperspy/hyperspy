@@ -45,6 +45,8 @@ class TestUnitConversion:
         assert self.uc.units == "µm"
         self.uc.units = "km"
         assert self.uc.units == "km"
+        self.uc.units = ""
+        assert self.uc.units is t.Undefined
 
     def test_ignore_conversion(self):
         assert self.uc._ignore_conversion(t.Undefined)

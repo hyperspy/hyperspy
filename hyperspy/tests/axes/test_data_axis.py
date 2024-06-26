@@ -21,6 +21,7 @@ import math
 import platform
 from unittest import mock
 
+import dask.array as da
 import numpy as np
 import pytest
 import traits.api as t
@@ -70,10 +71,13 @@ class TestBaseDataAxis:
     def test_error_BaseDataAxis(self):
         with pytest.raises(NotImplementedError):
             self.axis._slice_me(1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             self.axis._parse_value_from_string("")
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             self.axis._parse_value_from_string("spam")
+
+    def test_repr_BaseDataAxis(self):
+        assert self.axis.__repr__() == "<Unnamed axis, size: None>"
 
     # Note: The following methods from BaseDataAxis rely on the self.axis.axis
     # numpy array to be initialized, and are tested in the subclasses:
@@ -107,25 +111,24 @@ class TestDataAxis:
     def test_update_axes(self):
         values = np.arange(20) ** 2
         self.axis.axis = values.tolist()
-        self.axis.update_axis()
         assert self.axis.size == 20
         assert_allclose(self.axis.axis, values)
 
     def test_update_axes2(self):
         values = np.array([3, 4, 10, 40])
         self.axis.axis = values
-        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_update_axis_from_list(self):
         values = np.arange(16) ** 2
         self.axis.axis = values.tolist()
-        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_unsorted_axis(self):
-        with pytest.raises(ValueError):
-            DataAxis(axis=np.array([10, 40, 1, 30, 20]))
+        values = np.array([10, 40, 1, 30, 20])
+        axis = DataAxis(axis=values)
+        assert_allclose(axis.axis, values)
+        assert axis._is_increasing_order is None
 
     def test_index_changed_event(self):
         ax = self.axis
@@ -139,7 +142,7 @@ class TestDataAxis:
     def test_value_changed_event(self):
         ax = self.axis
         m = mock.Mock()
-        ax.events.value_changed.connect(m.trigger_me)
+        ax.events.index_changed.connect(m.trigger_me)
         ax.value = ax.value
         assert not m.trigger_me.called
         ax.value = ax.value + (ax.axis[1] - ax.axis[0]) * 0.4
@@ -187,6 +190,11 @@ class TestDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
+    def test_convert_to_uniform_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_uniform_axis()
+        assert isinstance(uniform_axis, UniformDataAxis)
+        assert uniform_axis.axes_manager is None
+
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
         assert self.axis.value2index(60) == 8
@@ -199,9 +207,17 @@ class TestDataAxis:
         # test rounding on negative value
         assert self.axis.value2index(-1.5, rounding=round) == 1
 
+    def test_index2value_lazy(self):
+        values = self.axis.index2value(da.array([1, 2, 3]))
+        np.testing.assert_array_equal(values, [1, 4, 9])
+
     def test_value2index_error(self):
         with pytest.raises(ValueError):
             self.axis.value2index(226)
+
+    def test_value2index_rounding_error(self):
+        with pytest.raises(ValueError):
+            self.axis.value2index(1.5, rounding="test")
 
     def test_parse_value_from_relative_string(self):
         ax = self.axis
@@ -262,14 +278,40 @@ class TestDataAxis:
         with pytest.raises(IndexError):
             self.axis._get_array_slices(slice_=slice(225.1, 0, 1))
 
-    def test_update_from(self):
+    @pytest.mark.parametrize("attributes", (("units", "name"), None))
+    def test_update_from(self, attributes):
         ax2 = DataAxis(units="plumage", name="parrot", axis=np.arange(16))
-        self.axis.update_from(ax2, attributes=("units", "name"))
-        assert (ax2.units, ax2.name) == (self.axis.units, self.axis.name)
+        self.axis.update_from(ax2, attributes=attributes)
+        if attributes is None:
+            assert ax2.units == self.axis.units
+        else:
+            assert (ax2.units, ax2.name) == (self.axis.units, self.axis.name)
+
+    def test_update_from_all(self):
+        ax2 = DataAxis(units="plumage", name="parrot", axis=np.arange(16))
+        self.axis.update_from(ax2)
+        assert ax2.units == self.axis.units
 
     def test_calibrate(self):
         with pytest.raises(TypeError, match="only for uniform axes"):
             self.axis.calibrate(value_tuple=(11, 12), index_tuple=(0, 5))
+
+
+class TestUnorderedDataAxis:
+    def setup_method(self, method):
+        self._axis = ["a", "b", "c", "d", "e"]
+        self.axis = DataAxis(axis=self._axis)
+
+    def test_set_up(self):
+        np.testing.assert_array_equal(self.axis.axis, self._axis)
+
+    @pytest.mark.parametrize("value", ("high_value", "low_value"))
+    def test_failures(self, value):
+        with pytest.raises(NotImplementedError):
+            getattr(self.axis, value)
+
+    def test_increasing_order(self):
+        assert self.axis._is_increasing_order is None
 
 
 class TestFunctionalDataAxis:
@@ -283,8 +325,16 @@ class TestFunctionalDataAxis:
 
     def test_initialisation_parameters(self):
         axis = self.axis
-        assert axis.power == 2
+        assert axis.parameters["power"] == 2
         np.testing.assert_allclose(axis.axis, np.arange(10) ** 2)
+
+    def test_initialisation_error(self):
+        expression = "x ** power"
+        with pytest.raises(t.TraitError):
+            FunctionalDataAxis(expression=expression, power=2, size=t.undefined)
+
+    def test_low_value(self):
+        assert self.axis.low_value == 0
 
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
@@ -297,6 +347,20 @@ class TestFunctionalDataAxis:
                 size=10,
                 expression=expression,
             )
+
+    def test_change_parameters(self):
+        axis = self.axis
+        axis.parameters["power"] = 1
+        np.testing.assert_allclose(axis.axis, np.arange(10))
+        axis.parameters["power"] = 3
+        np.testing.assert_allclose(axis.axis, np.arange(10) ** 3)
+
+    def test_change_x(self):
+        axis = self.axis
+        axis.x.scale = 2
+        np.testing.assert_allclose(axis.axis, (np.arange(10) * 2) ** 2)
+        axis.x.scale = 4
+        np.testing.assert_allclose(axis.axis, (np.arange(10) * 4) ** 2)
 
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
@@ -336,10 +400,54 @@ class TestFunctionalDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
+    def test_convert_to_nonuniform_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_non_uniform_axis()
+        assert isinstance(uniform_axis, DataAxis)
+        assert uniform_axis.axes_manager is None
+
+    def test_convert_to_uniform_axis(self):
+        np.copy(self.axis.axis)
+        is_binned = self.axis.is_binned
+        navigate = self.axis.navigate
+        self.axis.name = "parrot"
+        self.axis.units = "plumage"
+
+        s = Signal1D(np.arange(10), axes=[self.axis])
+        index_in_array = s.axes_manager[0].index_in_array
+        s.axes_manager[0].convert_to_uniform_axis()
+        assert isinstance(s.axes_manager[0], DataAxis)
+        assert s.axes_manager[0].name == "parrot"
+        assert s.axes_manager[0].units == "plumage"
+        assert s.axes_manager[0].size == 10
+        assert s.axes_manager[0].low_value == 0
+        assert s.axes_manager[0].high_value == 81
+        with pytest.raises(AttributeError):
+            s.axes_manager[0]._expression
+        with pytest.raises(AttributeError):
+            s.axes_manager[0]._function
+        with pytest.raises(AttributeError):
+            s.axes_manager[0].x
+        assert index_in_array == s.axes_manager[0].index_in_array
+        assert is_binned == s.axes_manager[0].is_binned
+        assert navigate == s.axes_manager[0].navigate
+
+    def test_convert_to_uniform_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_uniform_axis()
+        assert isinstance(uniform_axis, UniformDataAxis)
+        assert uniform_axis.axes_manager is None
+
     def test_update_from(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
-        self.axis.update_from(ax2, attributes=("units", "power"))
-        assert (ax2.units, ax2.power) == (self.axis.units, self.axis.power)
+        self.axis.update_from(ax2, attributes=("units", "parameters"))
+        assert (ax2.units, ax2.parameters["power"]) == (
+            self.axis.units,
+            self.axis.parameters["power"],
+        )
+
+    def test_update_from_none(self):
+        ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
+        self.axis.update_from(ax2)
+        assert ax2.parameters == self.axis.parameters
 
     def test_slice_me(self):
         assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)
@@ -402,8 +510,8 @@ class TestReciprocalDataAxis:
         self.axis = FunctionalDataAxis(size=10, expression=expression, a=0.1, b=10)
 
     def _test_initialisation_parameters(self, axis):
-        assert axis.a == 0.1
-        assert axis.b == 10
+        assert axis.parameters["a"] == 0.1
+        assert axis.parameters["b"] == 10
 
         def func(x):
             return 0.1 / (x + 1) + 10
@@ -572,17 +680,6 @@ class TestUniformDataAxis:
         self.axis.update_from(ax2, attributes=("units", "scale"))
         assert (ax2.units, ax2.scale) == (self.axis.units, self.axis.scale)
 
-    def test_value_changed_event(self):
-        ax = self.axis
-        m = mock.Mock()
-        ax.events.value_changed.connect(m.trigger_me)
-        ax.value = ax.value
-        assert not m.trigger_me.called
-        ax.value = ax.value + ax.scale * 0.3
-        assert not m.trigger_me.called
-        ax.value = ax.value + ax.scale
-        assert m.trigger_me.called
-
     def test_index_changed_event(self):
         ax = self.axis
         m = mock.Mock()
@@ -616,6 +713,11 @@ class TestUniformDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
+    def test_convert_to_nonuniform_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_non_uniform_axis()
+        assert isinstance(uniform_axis, DataAxis)
+        assert uniform_axis.axes_manager is None
+
     def test_convert_to_functional_data_axis(self):
         axis = np.copy(self.axis.axis)
         is_binned = self.axis.is_binned
@@ -641,6 +743,11 @@ class TestUniformDataAxis:
         assert index_in_array == s.axes_manager[0].index_in_array
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
+
+    def test_convert_to_functional_data_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_functional_data_axis(expression="x**2")
+        assert isinstance(uniform_axis, FunctionalDataAxis)
+        assert uniform_axis.axes_manager is None
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):

@@ -91,6 +91,14 @@ class Model2D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        if (
+            self.signal.axes_manager.signal_axes[0]._is_increasing_order is None
+            or self.signal.axes_manager.signal_axes[1]._is_increasing_order is None
+        ):
+            raise ValueError(
+                "The axes must be DataAxis with an increasing or decreasing order"
+            )
+
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis, self.axes_manager.signal_axes[1].axis
         )

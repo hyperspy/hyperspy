@@ -25,6 +25,7 @@ from hyperspy.axes import (
     AxesManager,
     BaseDataAxis,
     GeneratorLen,
+    UniformDataAxis,
     _flyback_iter,
     _serpentine_iter,
 )
@@ -84,6 +85,26 @@ class TestAxesManager:
         repr(self.am)
         self.am._repr_html_
 
+    def test_inclusion(self):
+        am = self.am
+        assert all([a.axes_manager == am for a in am._axes])
+
+    def test_changing_axes(self):
+        am = self.am
+
+        new_axis = BaseDataAxis("test1")
+        am._axes.append(new_axis)
+        assert len(am._axes) == 5
+        assert all([a.axes_manager == am for a in am._axes])
+
+    def test_changing_axes_insertion(self):
+        am = self.am
+
+        new_axis = BaseDataAxis("test1")
+        am._axes[2] = new_axis
+        assert len(am._axes) == 4
+        assert all([a.axes_manager == am for a in am._axes])
+
     def test_update_from(self):
         am = self.am
         am2 = self.am.deepcopy()
@@ -109,12 +130,31 @@ class TestAxesManager:
         assert am[-3].offset == am[-1].offset
         assert am[-3].scale == am[-1].scale
 
+    def test_axes_setter(self):
+        self.am.axes = [BaseDataAxis(name="test1"), BaseDataAxis(name="test2")]
+        assert len(self.am.axes) == 2
+        assert self.am.axes[0].name == "test1"
+        assert self.am.axes[1].name == "test2"
+
     def test_set_axis(self):
         am = self.am
         axis = am[-1].copy()
         am.set_axis(axis, 2)
         assert am[-2].offset == am[-1].offset
         assert am[-2].scale == am[-1].scale
+
+    def test_setitem_axis(self):
+        am = self.am
+        am[("a", "b")] = (
+            UniformDataAxis(scale=1, offset=0, size=10, name="test1"),
+            UniformDataAxis(scale=1, offset=0, size=10, name="test2"),
+        )
+        assert am[3].name == "test1"
+        assert am[2].name == "test2"
+
+    def test_getitem_axis_fail(self):
+        with pytest.raises(TypeError):
+            self.am[3.3]
 
     def test_all_uniform(self):
         assert self.am.all_uniform is True

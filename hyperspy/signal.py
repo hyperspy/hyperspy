@@ -2772,7 +2772,6 @@ class BaseSignal(
             for index in axes:
                 axis = {"index_in_array": index, "size": self.data.shape[index]}
                 self.axes_manager._append_axis(**axis)
-            self.axes_manager._update_attributes()
 
         self.axes_manager._ragged = value
 
@@ -3342,7 +3341,12 @@ class BaseSignal(
         """
         dc = self.data
         for axis in self.axes_manager._axes:
-            axis.size = int(dc.shape[axis.index_in_array])
+            new_size = int(dc.shape[axis.index_in_array])
+            if axis.size != new_size:  # Do nothing if already set
+                if not axis.is_uniform:  # Axis must be uniform to set the size
+                    axis.convert_to_uniform_axis()
+                    _logger.warning(f"converting axis: {axis} to a UniformDataAxis")
+                axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
         """Crops the data in a given axis. The range is given in pixels.
@@ -3474,12 +3478,10 @@ class BaseSignal(
         am._update_trait_handlers(remove=True)
         c1 = am._axes[axis1]
         c2 = am._axes[axis2]
-        c1.slice, c2.slice = c2.slice, c1.slice
         c1.navigate, c2.navigate = c2.navigate, c1.navigate
         c1.is_binned, c2.is_binned = c2.is_binned, c1.is_binned
         am._axes[axis1] = c2
         am._axes[axis2] = c1
-        am._update_attributes()
         am._update_trait_handlers(remove=False)
         if optimize:
             s._make_sure_data_is_contiguous()
@@ -3532,7 +3534,6 @@ class BaseSignal(
         s.axes_manager._axes = rollelem(
             s.axes_manager._axes, index=axis, to_index=to_index
         )
-        s.axes_manager._update_attributes()
         if optimize:
             s._make_sure_data_is_contiguous()
         return s
@@ -5113,7 +5114,6 @@ class BaseSignal(
                 hist_spec.data = hist
 
         if isinstance(bins, str) and bins == "blocks":
-            hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
                 "The option `bins='blocks'` is not fully supported in this "
                 "version of HyperSpy. It should be used for plotting purposes "
@@ -6768,7 +6768,6 @@ class BaseSignal(
 
         # reconfigure the axes of the axesmanager:
         ram = res.axes_manager
-        ram._update_trait_handlers(remove=True)
         # _axes are ordered in array order
         ram._axes = [ram._axes[i] for i in array_order]
         for i, ax in enumerate(ram._axes):
@@ -6776,8 +6775,6 @@ class BaseSignal(
                 ax.navigate = True
             else:
                 ax.navigate = False
-        ram._update_attributes()
-        ram._update_trait_handlers(remove=False)
         res._assign_subclass()
 
         var = res.get_noise_variance()
