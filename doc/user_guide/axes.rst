@@ -107,7 +107,7 @@ attributes, e.g.:
     >>> s.axes_manager[0]
     <X axis, size: 20, index: 0>
 
-.. version_added:: 2.2
+.. versionadded:: 2.2
     `set` method for `navigation_axes` and `signal_axes`.
 
 It is also possible to set multiple attributes of multiple axes at once, using the :meth:`~.misc.utils.TupleSA.set`
