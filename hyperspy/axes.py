@@ -43,7 +43,7 @@ from hyperspy.misc.array_tools import (
     round_half_towards_zero,
 )
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.misc.utils import isiterable, ordinal, TupleSA
+from hyperspy.misc.utils import TupleSA, isiterable, ordinal
 from hyperspy.ui_registry import add_gui_method, get_gui
 
 _logger = logging.getLogger(__name__)
@@ -2120,12 +2120,20 @@ class AxesManager(t.HasTraits):
 
     @property
     def signal_axes(self):
-        """The signal axes as a tuple."""
+        """The signal axes as a TupleSA.
+
+        A TupleSA object is a tuple with a `set` method
+        to easily set the attributes of its items.
+        """
         return TupleSA(self._signal_axes)
 
     @property
     def navigation_axes(self):
-        """The navigation axes as a tuple."""
+        """The navigation axes as a TupleSA.
+
+        A TupleSA object is a tuple with a `set` method
+        to easily set the attributes of its items.
+        """
         return TupleSA(self._navigation_axes)
 
     @property
@@ -2580,4 +2588,3 @@ def _parse_axis_attribute(value):
         return None
     else:
         return value
-
