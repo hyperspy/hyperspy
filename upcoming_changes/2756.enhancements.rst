@@ -1,2 +1,2 @@
 New :attr:`~.axes.AxesManager.signal_axes` and :attr:`~.axes.AxesManager.navigation_axes` :meth:`~.misc.utils.TupleSA.set` method 
-to set multiple attributes of multiple axes at once. See :ref:`_Setting_axis_properties`.
+to set multiple attributes of multiple axes at once. See :ref:`Setting_axis_properties`.
