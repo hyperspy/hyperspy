@@ -16,12 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from unittest.mock import Mock
+
 import dask.array as da
 import numpy as np
 import pytest
 
 from hyperspy import signals
 from hyperspy.misc.utils import (
+    TupleSA,
     closest_power_of_two,
     fsdict,
     get_array_module,
@@ -174,3 +177,40 @@ def test_get_array_module():
 def test_get_array_module_cupy():
     cp_array = cp.array([0, 1, 2])
     assert get_array_module(cp_array) == cp
+
+
+class TestTupleSA:
+    def setup_method(self, method):
+        item1 = Mock()
+        item1.attribute1 = "value1"
+        item1.attribute2 = "value2"
+        item2 = Mock()
+        item2.attribute1 = "value1"
+        item2.attribute2 = "value2"
+        self.tuple = TupleSA((item1, item2))
+
+    def test_tuple_sa_set_attribute(self):
+        t = self.tuple
+        t.set(attribute1="value3", attribute2=(0, 1))
+        assert t[0].attribute1 == "value3"
+        assert t[1].attribute1 == "value3"
+        assert t[0].attribute2 == 0
+        assert t[1].attribute2 == 1
+
+    def test_tuple_sa_set_attribute_error(self):
+        t = TupleSA((1, 2, 3))
+        with pytest.raises(AttributeError):
+            t.set(a=4, b=5, c=6, d=7)
+
+    @staticmethod
+    def test_tuple_sa_add():
+        t1 = TupleSA((1, 2, 3))
+        t2 = TupleSA((4, 5, 6))
+        t3 = t1 + t2
+        assert isinstance(t3, TupleSA)
+
+    @staticmethod
+    def test_tuple_sa_mul():
+        t1 = TupleSA((1, 2, 3))
+        t2 = t1 * 2
+        assert isinstance(t2, TupleSA)
