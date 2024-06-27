@@ -1651,6 +1651,14 @@ class TupleSA(tuple):
             return item
 
     def set(self, **kwargs):
+        """Set the attributes of its items
+
+        Parameters
+        ----------
+        kwargs : dict
+            The name of the attributes and their values. If a value is iterable,
+            then attribute of each item of the tuple will be set to each of the values.
+        """
         for key, value in kwargs.items():
             no_name = [item
                     for item in self
