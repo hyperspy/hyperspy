@@ -1650,20 +1650,21 @@ class TupleSA(tuple):
         except TypeError:
             return item
 
-    def __setattr__(self, name, value):
-        no_name = [item
-                   for item in self
-                   if not hasattr(item, name)]
-        if no_name:
-            raise AttributeError(
-                f"'The items {no_name} have not attribute '{name}'")
-        else:
-            if isiterable(value) and not isinstance(value, str):
-                for item, value_ in zip(self, value):
-                    setattr(item, name, value_)
+    def set(self, **kwargs):
+        for key, value in kwargs.items():
+            no_name = [item
+                    for item in self
+                    if not hasattr(item, key)]
+            if no_name:
+                raise AttributeError(
+                    f"'The items {no_name} have not attribute '{key}'")
             else:
-                for item in self:
-                    setattr(item, name, value)
+                if isiterable(value) and not isinstance(value, str):
+                    for item, value_ in zip(self, value):
+                        setattr(item, key, value_)
+                else:
+                    for item in self:
+                        setattr(item, key, value)
 
     def __add__(self, *args, **kwargs):
         return type(self)(super().__add__(*args, **kwargs))
