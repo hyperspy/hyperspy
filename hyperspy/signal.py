@@ -73,6 +73,7 @@ from hyperspy.exceptions import (
     DataDimensionError,
     LazyCupyConversion,
     SignalDimensionError,
+    VisibleDeprecationWarning,
 )
 from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
@@ -4617,7 +4618,7 @@ class BaseSignal(
             warnings.warn(
                 "The `rechunk` parameter is not used since HyperSpy 1.7 and"
                 "will be removed in HyperSpy 3.0.",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
             del kwargs["rechunk"]
         n = order
@@ -6585,7 +6586,7 @@ class BaseSignal(
         if not keep_dtype:
             warnings.warn(
                 "The `keep_dtype` parameter is deprecated and will be removed in HyperSpy 3.0.",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
 
         if self._lazy:

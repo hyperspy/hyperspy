@@ -25,6 +25,7 @@ import pytest
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.drawing._markers.points import Points
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 def _verify_test_sum_x_E(self, s):
@@ -98,6 +99,17 @@ def test_derivative_non_uniform_axis():
     s = signals.Signal1D(data, axes=[axis_dict])
     der = s.derivative(axis=0)
     np.testing.assert_allclose(der.data[:4], np.array([-2, -5, -10, -17]))
+
+
+def test_derivative_deprecation_warning():
+    # Remove in hyperspy 3
+    data = np.arange(10)
+    scale = 0.1
+    s = signals.Signal1D(data)
+    s.axes_manager[0].scale = scale
+    with pytest.warns(VisibleDeprecationWarning):
+        der = s.derivative(axis=0, rechunk=True)
+    np.testing.assert_allclose(der.data, (data[2] - data[1]) / scale)
 
 
 @lazifyTestClass
