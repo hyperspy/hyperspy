@@ -1592,8 +1592,14 @@ class AxesManager(t.HasTraits):
     def __getitem__(self, y):
         """x.__getitem__(y) <==> x[y]"""
         if isinstance(y, str) or not np.iterable(y):
-            return self[(y,)][0]
-        axes = [self._axes_getter(ax) for ax in y]
+            if y == "nav":
+                axes = self.navigation_axes
+            elif y == "sig":
+                axes = self.signal_axes
+            else:
+                return self[(y,)][0]
+        else:
+            axes = [self._axes_getter(ax) for ax in y]
         _, indices = np.unique([_id for _id in map(id, axes)], return_index=True)
         ans = tuple(axes[i] for i in sorted(indices))
         return ans

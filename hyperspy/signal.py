@@ -73,6 +73,7 @@ from hyperspy.exceptions import (
     DataDimensionError,
     LazyCupyConversion,
     SignalDimensionError,
+    VisibleDeprecationWarning,
 )
 from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
@@ -4613,14 +4614,23 @@ class BaseSignal(
         """
         # rechunk was a valid keyword up to HyperSpy 1.6
         if "rechunk" in kwargs:
+            # We miss the deprecation cycle for 2.0
+            warnings.warn(
+                "The `rechunk` parameter is not used since HyperSpy 1.7 and"
+                "will be removed in HyperSpy 3.0.",
+                VisibleDeprecationWarning,
+            )
             del kwargs["rechunk"]
         n = order
         der_data = self.data
+        axis = self.axes_manager[axis]
+        if isinstance(axis, tuple):
+            axis = axis[0]
         while n:
             der_data = np.gradient(
                 der_data,
-                self.axes_manager[axis].axis,
-                axis=self.axes_manager[axis].index_in_array,
+                axis.axis,
+                axis=axis.index_in_array,
                 **kwargs,
             )
             n -= 1
@@ -4894,7 +4904,10 @@ class BaseSignal(
         <Signal2D, title: , dimensions: (|64, 64)>
 
         """
-        if self.axes_manager[axis].is_binned:
+        axis = self.axes_manager[axis]
+        if isinstance(axis, tuple):
+            axis = axis[0]
+        if axis.is_binned:
             return self.sum(axis=axis, out=out, rechunk=rechunk)
         else:
             return self.integrate_simpson(axis=axis, out=out, rechunk=rechunk)
@@ -6573,7 +6586,7 @@ class BaseSignal(
         if not keep_dtype:
             warnings.warn(
                 "The `keep_dtype` parameter is deprecated and will be removed in HyperSpy 3.0.",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
 
         if self._lazy:

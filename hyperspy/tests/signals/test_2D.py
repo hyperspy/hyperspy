@@ -24,6 +24,7 @@ import pytest
 from packaging.version import Version
 
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signal import BaseSignal
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -461,5 +462,5 @@ class Test2D:
     def test_add_poisson_noise_warning(self, caplog):
         s = self.signal
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(VisibleDeprecationWarning):
             s.add_poissonian_noise(keep_dtype=False)
