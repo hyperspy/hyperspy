@@ -6,7 +6,8 @@
     },
     {
         "version": "2.1",
-        "url": "https://hyperspy.org/hyperspy-doc/current/"
+        "url": "https://hyperspy.org/hyperspy-doc/current/",
+        "preferred": true
     },
     {
         "version": "2.0",

@@ -202,6 +202,7 @@ html_theme_options = {
         },
     ],
     "header_links_before_dropdown": 7,
+    "show_version_warning_banner": True,
     "switcher": {
         # Update when merged and released
         "json_url": "https://hyperspy.org/hyperspy-doc/dev/_static/switcher.json",
