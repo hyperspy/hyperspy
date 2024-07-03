@@ -35,7 +35,12 @@ jobs:
             PYTHON_VERSION: '3.12'
             PIP_SELECTOR: '[tests, coverage]'
             LABEL: -minimum
-            # Run coverage
+          - os: ubuntu
+            os_version: latest
+            PYTHON_VERSION: '3.12'
+            PIP_SELECTOR: '[tests, coverage]'
+            NUMPY20: true
+            LABEL: -npy20
           - os: ubuntu
             os_version: latest
             PYTHON_VERSION: '3.8'
@@ -45,7 +50,7 @@ jobs:
             PYTHON_VERSION: '3.11'
             PIP_SELECTOR: '[all, tests, coverage]'
           - os: macos
-            os_version: '14'
+            os_version: '13'
             PYTHON_VERSION: '3.11'
             PIP_SELECTOR: '[all, tests, coverage]'
 
@@ -90,6 +95,11 @@ jobs:
         run: |
           pip install ${{ matrix.DEPENDENCIES }} -v
 
+      - name: Install numpy 2.0
+        if: ${{ matrix.NUMPY20 }}
+        run: |
+          pip install --pre numpy
+
       - name: Install
         shell: bash
         run: |
@@ -108,7 +118,7 @@ jobs:
           pytest ${{ env.PYTEST_ARGS }} --doctest-modules --ignore=hyperspy/tests
 
       - name: Upload coverage to Codecov
-        if: ${{ always() }}
+        if: ${{ github.repository_owner == 'hyperspy' }}
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

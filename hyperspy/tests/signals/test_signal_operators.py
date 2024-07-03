@@ -153,3 +153,31 @@ class TestUnaryOperators:
 
     def test_abs(self):
         assert_array_equal(abs(self.s1).data, abs(self.s1.data))
+
+
+def test_numpy_function_on_signals():
+    s = signals.BaseSignal(np.array((1, -1, 4, -3))).T
+    np.testing.assert_allclose(np.sum(s), np.sum(s.data))
+
+
+def test_signal__array__():
+    s = signals.BaseSignal(np.array((1, -1, 4, -3)))
+    arr = s.__array__()
+    assert arr.dtype == int
+
+    arr2 = s.__array__(dtype=float)
+    assert arr2.dtype == float
+    assert arr2 is not s.data
+
+    arr3 = s.__array__(copy=False)
+    assert arr3 is s.data
+
+    arr4 = s.__array__(copy=True)
+    assert arr4 is not s.data
+
+    with pytest.raises(ValueError):
+        _ = s.__array__(dtype=float, copy=False)
+
+    arr5 = s.__array__(dtype=float, copy=True)
+    assert arr5 is not s.data
+    assert arr5.dtype == float

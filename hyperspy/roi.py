@@ -1313,7 +1313,7 @@ class Line2DROI(BaseInteractiveROI):
         Examples
         --------
         >>> r = hs.roi.Line2DROI(0., 0., 1., 2.)
-        >>> r.angle()
+        >>> print(r.angle())
         63.43494882292201
         """
 

@@ -611,8 +611,8 @@ class LazySignal(BaseSignal):
 
     rebin.__doc__ = BaseSignal.rebin.__doc__
 
-    def __array__(self, dtype=None):
-        return self.data.__array__(dtype=dtype)
+    def __array__(self, dtype=None, copy=None):
+        return self.data.__array__(dtype=dtype, copy=copy)
 
     def _make_sure_data_is_contiguous(self):
         self._make_lazy(rechunk=True)
