@@ -1501,8 +1501,6 @@ class AxesManager(t.HasTraits):
     """
 
     _axes = t.List(BaseDataAxis)
-    signal_axes = t.Tuple()
-    navigation_axes = t.Tuple()
     _step = t.Int(1)
 
     def __init__(self, axes_list):
