@@ -42,7 +42,7 @@ class PolygonWidget(MPLWidgetBase):
 
         self.set_on(False)
         self._widget = None
-        self.position = None
+        self.position = []
 
     def set_mpl_ax(self, ax):
         """
@@ -86,6 +86,7 @@ class PolygonWidget(MPLWidgetBase):
         if self.ax is not None and self.is_on:
             if len(vertices) > 2:
                 self._widget.verts = list(vertices)
+                self._onselect(vertices)
             self.ax.figure.canvas.draw_idle()
 
     def connect(self, ax):
@@ -93,7 +94,11 @@ class PolygonWidget(MPLWidgetBase):
 
     def get_vertices(self):
         """Returns a list where each entry contains a `(x, y)` tuple
-        of the vertices of the polygon. The polygon is not closed."""
+        of the vertices of the polygon. The polygon is not closed.
+        Returns an empty list if no polygon is set."""
+
+        if self._widget is None:
+            return []
 
         return self._widget.verts.copy()
 

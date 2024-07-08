@@ -212,6 +212,40 @@ class TestPlotCircleWidget:
         assert circle.size == size
 
 
+class TestPlotPolygonWidget:
+    def setup_method(self, method):
+        # Create test image 100x100 pixels:
+        N = 100
+        im = Signal2D(np.arange(N**2).reshape([N] * 2))
+        im.axes_manager[0].scale = 1.2
+        im.axes_manager[1].scale = 1.2
+        polygon = widgets.PolygonWidget(im.axes_manager)
+        self.im = im
+        self.polygon = polygon
+
+    def test_set_vertices(self):
+        polygon = self.polygon
+        im = self.im
+
+        im.plot()
+        polygon.set_mpl_ax(im._plot.signal_plot.ax)
+
+        # Defaults
+        assert polygon.get_vertices() == []
+        assert polygon.get_centre() == []
+
+        verts = [(31, 41), (15, 92), (65, 35)]
+        polygon.set_vertices(verts)
+        np.testing.assert_allclose(polygon.get_vertices(), verts)
+        assert polygon.get_centre() == (40.0, 63.5)
+
+        verts = np.arange(100).reshape((50, 2))
+        verts[::2, 1] = 0
+        polygon.set_vertices(verts)
+        np.testing.assert_allclose(polygon.get_vertices(), verts)
+        assert polygon.get_centre() == (49.0, 49.5)
+
+
 class TestPlotRangeWidget:
     def setup_method(self, method):
         s = Signal1D(np.arange(50))
