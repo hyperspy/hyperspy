@@ -1,4 +1,4 @@
 Added :class:`~.api.roi.PolygonROI` and related functionality:
+
 - Added the ROI :class:`~.api.roi.PolygonROI` to create ROIs of arbitrary shape.
-- Added the widget :class:`~.api.widgets.PolygonWidget` to do this through the GUI.
-- Added functions :func:`~.api.widgets.combine_rois` and :func:`~.api.widgets.create_mask_from_rois` to use multiple ROIs to slice signals and create masks, respectively. Currently only for several :class:`~.api.roi.PolygonROI`.
+- Added functions :func:`~.api.roi.combine_rois` and :func:`~.api.roi.create_mask_from_rois` to use multiple ROIs to slice signals and create masks, respectively. Currently only :class:`~.api.roi.PolygonROI` is supported.
