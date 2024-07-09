@@ -130,7 +130,6 @@ name e.g.:
     >>> s.axes_manager["X"].units = "nm"
     >>> s.axes_manager["X"].offset = 100
 
-The 
 
 
 It is also possible to set the axes properties using a GUI by calling the
