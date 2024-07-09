@@ -111,7 +111,7 @@ attributes, e.g.:
     :meth:`~.misc.utils.TupleSA.set` method for :attr:`~.axes.AxesManager.navigation_axes` and :attr:`~.axes.AxesManager.signal_axes`.
 
 It is also possible to set multiple attributes of multiple axes at once, using the :meth:`~.misc.utils.TupleSA.set`
-of the `navigation_axes` and `signal_axes` attributes.
+of the :attr:`~.axes.AxesManager.navigation_axes` and :attr:`~.axes.AxesManager.signal_axes` attributes.
 For example:
 
 .. code-block:: python
