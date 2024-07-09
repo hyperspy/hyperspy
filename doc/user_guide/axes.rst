@@ -108,7 +108,7 @@ attributes, e.g.:
     <X axis, size: 20, index: 0>
 
 .. versionadded:: 2.2
-    `set` method for `navigation_axes` and `signal_axes`.
+    :meth:`~.misc.utils.TupleSA.set` method for :attr:`~.axes.AxesManager.navigation_axes` and :attr:`~.axes.AxesManager.signal_axes`.
 
 It is also possible to set multiple attributes of multiple axes at once, using the :meth:`~.misc.utils.TupleSA.set`
 of the `navigation_axes` and `signal_axes` attributes.
