@@ -196,11 +196,20 @@ class TestTupleSA:
         assert t[1].attribute1 == "value3"
         assert t[0].attribute2 == 0
         assert t[1].attribute2 == 1
-
-    def test_tuple_sa_set_attribute_error(self):
+    @staticmethod
+    def test_tuple_sa_set_attribute_error():
         t = TupleSA((1, 2, 3))
         with pytest.raises(AttributeError):
             t.set(a=4, b=5, c=6, d=7)
+
+    def test_tuple_sa_get_attribute(self):
+        t = self.tuple
+        assert t.get("attribute1", "attribute2") == {"attribute1": ("value1", "value1"), "attribute2": ("value2", "value2")}
+    @staticmethod
+    def test_tuple_sa_get_attribute_error():
+        t = TupleSA((1, 2, 3))
+        with pytest.raises(AttributeError):
+            t.get("a", "b")
 
     @staticmethod
     def test_tuple_sa_add():
