@@ -1674,6 +1674,31 @@ class TupleSA(tuple):
                     for item in self:
                         setattr(item, key, value)
 
+    def get(self, *args):
+        """Get the attributes of its items
+
+        Parameters
+        ----------
+        args : list
+            The names of the attributes to get.
+
+        Returns
+        -------
+        output : dict
+            The name of the attributes and their values.
+        """
+        output = dict()
+        for key in args:
+            values = list()
+            for axis in self:
+                if not hasattr(axis, key):
+                    raise AttributeError(
+                        f"'The item {axis} has not attribute '{key}'")
+                else:
+                    values.append(getattr(axis, key))
+            output[key] = tuple(values)
+        return output
+
     def __add__(self, *args, **kwargs):
         return type(self)(super().__add__(*args, **kwargs))
 
