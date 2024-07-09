@@ -1098,6 +1098,7 @@ class BaseModel(list):
             'lstsq' - Default, supports lazy signal
             'ridge_regression' - Supports regularisation, doesn't support lazy
             signal.
+            'nnls' - Linear regression with positive
         calculate_errors : bool, default is False
             If True, calculate the errors.
         only_current : bool, default is True
@@ -1271,10 +1272,21 @@ class BaseModel(list):
                 X=comp_values.T, y=target_signal.T, **kwargs
             )
             residual = None
+        elif optimizer == "nnls":
+            if self.signal._lazy:
+                raise ValueError(
+                    "The `nnls` solver can't operate lazily, the "
+                    "`lstsq` solver can be used instead."
+                )
+            kwargs["positive"] = True
+            reg = import_sklearn.sklearn.linear_model.LinearRegression(**kwargs)
+            results = reg.fit(X=comp_values.T, y=target_signal.T)
+            coefficient_array = results.coef_
+            residual = None
         else:
             raise ValueError(
                 f"Optimizer {optimizer} not supported. Use "
-                "'lstsq' or 'ridge_regression'."
+                "'lstsq', 'ridge_regression' or 'nnls'."
             )
 
         fit_output = {"x": coefficient_array}
@@ -1775,7 +1787,7 @@ class BaseModel(list):
                 self.p0 = self.fit_output.x
                 self.p_std = self.fit_output.perror
 
-            elif optimizer in ["lstsq", "ridge_regression"]:
+            elif optimizer in ["lstsq", "ridge_regression", "nnls"]:
                 # multifit pass this kwargs when necessary
                 only_current = kwargs.get("only_current", True)
                 # Errors are calculated when specifying calculate_errors=True
@@ -1961,7 +1973,11 @@ class BaseModel(list):
                 "The mask must be a numpy array of boolean type with "
                 f"shape: {self.axes_manager._navigation_shape_in_array}"
             )
-        linear_fitting = kwargs.get("optimizer", "") in ["lstsq", "ridge_regression"]
+        linear_fitting = kwargs.get("optimizer", "") in [
+            "lstsq",
+            "ridge_regression",
+            "nnls",
+        ]
 
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager._get_iterpath_size(masked_elements)
