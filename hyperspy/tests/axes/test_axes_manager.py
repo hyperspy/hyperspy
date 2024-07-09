@@ -137,7 +137,9 @@ class TestAxesManager:
         assert am.navigation_axes[0].units == "nm"
         assert am.navigation_axes[1].units == "nm"
         with pytest.raises(AttributeError):
-            am.signal_axes.set(names=("kx", "kx"), offset=(1, 2), scale=3, units="nm^{-1}")
+            am.signal_axes.set(
+                names=("kx", "kx"), offset=(1, 2), scale=3, units="nm^{-1}"
+            )
 
     def test_all_uniform(self):
         assert self.am.all_uniform is True

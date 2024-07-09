@@ -1640,9 +1640,10 @@ def display(obj):
     except ImportError:
         print(obj)
 
+
 class TupleSA(tuple):
-    """A tuple that can set the attributes of its items
-    """
+    """A tuple that can set the attributes of its items"""
+
     def __getitem__(self, *args, **kwargs):
         item = super().__getitem__(*args, **kwargs)
         try:
@@ -1661,12 +1662,9 @@ class TupleSA(tuple):
             then attribute of each item of the tuple will be set to each of the values.
         """
         for key, value in kwargs.items():
-            no_name = [item
-                    for item in self
-                    if not hasattr(item, key)]
+            no_name = [item for item in self if not hasattr(item, key)]
             if no_name:
-                raise AttributeError(
-                    f"'The items {no_name} have not attribute '{key}'")
+                raise AttributeError(f"'The items {no_name} have not attribute '{key}'")
             else:
                 if isiterable(value) and not isinstance(value, str):
                     for item, value_ in zip(self, value):
@@ -1693,8 +1691,7 @@ class TupleSA(tuple):
             values = list()
             for item in self:
                 if not hasattr(item, key):
-                    raise AttributeError(
-                        f"'The item {item} has not attribute '{key}'")
+                    raise AttributeError(f"'The item {item} has not attribute '{key}'")
                 else:
                     values.append(getattr(item, key))
             output[key] = tuple(values)
