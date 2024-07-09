@@ -1648,6 +1648,7 @@ class TupleSA(tuple):
         try:
             return type(self)(item)
         except TypeError:
+            # When indexing, the returned object is not a tuple
             return item
 
     def set(self, **kwargs):
@@ -1690,12 +1691,12 @@ class TupleSA(tuple):
         output = dict()
         for key in args:
             values = list()
-            for axis in self:
-                if not hasattr(axis, key):
+            for item in self:
+                if not hasattr(item, key):
                     raise AttributeError(
-                        f"'The item {axis} has not attribute '{key}'")
+                        f"'The item {item} has not attribute '{key}'")
                 else:
-                    values.append(getattr(axis, key))
+                    values.append(getattr(item, key))
             output[key] = tuple(values)
         return output
 
