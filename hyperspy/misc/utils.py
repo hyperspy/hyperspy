@@ -1639,3 +1639,66 @@ def display(obj):
         display.display(obj)
     except ImportError:
         print(obj)
+
+
+class TupleSA(tuple):
+    """A tuple that can set the attributes of its items"""
+
+    def __getitem__(self, *args, **kwargs):
+        item = super().__getitem__(*args, **kwargs)
+        try:
+            return type(self)(item)
+        except TypeError:
+            # When indexing, the returned object is not a tuple
+            return item
+
+    def set(self, **kwargs):
+        """Set the attributes of its items
+
+        Parameters
+        ----------
+        kwargs : dict
+            The name of the attributes and their values. If a value is iterable,
+            then attribute of each item of the tuple will be set to each of the values.
+        """
+        for key, value in kwargs.items():
+            no_name = [item for item in self if not hasattr(item, key)]
+            if no_name:
+                raise AttributeError(f"'The items {no_name} have not attribute '{key}'")
+            else:
+                if isiterable(value) and not isinstance(value, str):
+                    for item, value_ in zip(self, value):
+                        setattr(item, key, value_)
+                else:
+                    for item in self:
+                        setattr(item, key, value)
+
+    def get(self, *args):
+        """Get the attributes of its items
+
+        Parameters
+        ----------
+        args : list
+            The names of the attributes to get.
+
+        Returns
+        -------
+        output : dict
+            The name of the attributes and their values.
+        """
+        output = dict()
+        for key in args:
+            values = list()
+            for item in self:
+                if not hasattr(item, key):
+                    raise AttributeError(f"'The item {item} has not attribute '{key}'")
+                else:
+                    values.append(getattr(item, key))
+            output[key] = tuple(values)
+        return output
+
+    def __add__(self, *args, **kwargs):
+        return type(self)(super().__add__(*args, **kwargs))
+
+    def __mul__(self, *args, **kwargs):
+        return type(self)(super().__mul__(*args, **kwargs))
