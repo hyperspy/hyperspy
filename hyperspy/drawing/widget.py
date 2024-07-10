@@ -971,7 +971,7 @@ class ResizersMixin:
             self._resizer_handles.append(r)
 
     def set_on(self, value):
-        """Turns on/off resizers whet widget is turned on/off."""
+        """Turns on/off resizers when widget is turned on/off."""
         if self.resizers and value != self._resizers_on:
             self._set_resizers(value, self.ax)
         if hasattr(super(ResizersMixin, self), "set_on"):
@@ -1015,49 +1015,3 @@ class ResizersMixin:
             self._set_resizers(True, ax)
         if hasattr(super(ResizersMixin, self), "_add_patch_to"):
             super(ResizersMixin, self)._add_patch_to(ax)
-
-
-class MPLWidgetBase(WidgetBase):
-
-    """Base class for interactive widgets based on `matplotlib.widgets`.
-
-    This base class tailors certain parts of `WidgetBase` to work with widgets
-    as implemented by `matplotlib`. In particular, it removes the manipulation
-    of patches. Also, it prepares the default axes as for a 2D widget.
-    """
-
-    def __init__(self, axes_manager=None, **kwargs):
-        super(MPLWidgetBase, self).__init__(**kwargs)
-
-        if self.axes_manager is not None:
-            if self.axes_manager.navigation_dimension > 1:
-                self.axes = self.axes_manager.navigation_axes[0:2]
-            elif self.axes_manager.signal_dimension > 1:
-                self.axes = self.axes_manager.signal_axes[0:2]
-            elif len(self.axes_manager.shape) > 1:
-                self.axes = (
-                    self.axes_manager.signal_axes + self.axes_manager.navigation_axes
-                )
-            else:
-                raise ValueError("MPL widget needs at least two axes!")
-
-        self._widget = None
-
-    def set_on(self, value, render_figure=True):
-        """Change the on state of the widget. If turning off, the widget will
-        disconnect from the events. If turning on, the widget will connect to
-        the default events.
-        """
-        if value is not self.is_on and self.ax is not None:
-            if value is True:
-                self.blit = (
-                    hasattr(self.ax, "hspy_fig") and self.ax.figure.canvas.supports_blit
-                )
-                self.connect(self.ax)
-            elif value is False:
-                self.disconnect()
-                self.ax = None
-        self._is_on = value
-
-    def __str__(self):
-        return "{} with id {}".format(self.__class__.__name__, id(self))
