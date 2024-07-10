@@ -18,10 +18,10 @@
 
 from matplotlib.widgets import PolygonSelector
 
-from hyperspy.drawing.widgets import MPLWidgetBase
+from hyperspy.drawing.widget import WidgetBase
 
 
-class PolygonWidget(MPLWidgetBase):
+class PolygonWidget(WidgetBase):
     """PolygonWidget is a widget for drawing an arbitrary
     polygon, which can then be used as a region-of-interest.
     The polygon can be moved by pressing 'shift' and clicking.
@@ -40,9 +40,37 @@ class PolygonWidget(MPLWidgetBase):
 
         super().__init__(axes_manager, **kwargs)
 
+        if self.axes_manager is not None:
+            if self.axes_manager.navigation_dimension > 1:
+                self.axes = self.axes_manager.navigation_axes[0:2]
+            elif self.axes_manager.signal_dimension > 1:
+                self.axes = self.axes_manager.signal_axes[0:2]
+            elif len(self.axes_manager.shape) > 1:
+                self.axes = (
+                    self.axes_manager.signal_axes + self.axes_manager.navigation_axes
+                )
+            else:
+                raise ValueError("PolygonWidget needs at least two axes!")
+
         self.set_on(False)
         self._widget = None
         self.position = []
+    
+    def set_on(self, value, render_figure=True):
+        """Change the on state of the widget. If turning off, the widget will
+        disconnect from the events. If turning on, the widget will connect to
+        the default events.
+        """
+        if value is not self.is_on and self.ax is not None:
+            if value is True:
+                self.blit = (
+                    hasattr(self.ax, "hspy_fig") and self.ax.figure.canvas.supports_blit
+                )
+                self.connect(self.ax)
+            elif value is False:
+                self.disconnect()
+                self.ax = None
+        self._is_on = value
 
     def set_mpl_ax(self, ax):
         """
@@ -88,9 +116,6 @@ class PolygonWidget(MPLWidgetBase):
                 self._widget.verts = list(vertices)
                 self._onselect(vertices)
             self.ax.figure.canvas.draw_idle()
-
-    def connect(self, ax):
-        super().connect(ax)
 
     def get_vertices(self):
         """Returns a list where each entry contains a `(x, y)` tuple
