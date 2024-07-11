@@ -10,6 +10,37 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 
 .. towncrier release notes start
 
+2.1.1 (2024-07-11)
+==================
+
+Enhancements
+------------
+
+- Only import gui widget when the toolkit is enabled. (`#3366 <https://github.com/hyperspy/hyperspy/issues/3366>`_)
+- Tweak documention on dask scheduler. (`#3380 <https://github.com/hyperspy/hyperspy/issues/3380>`_)
+
+
+Bug Fixes
+---------
+
+- Fix updating residual line in model plot when changing components. (`#3355 <https://github.com/hyperspy/hyperspy/issues/3355>`_)
+- Avoid changing ``data`` object when using :meth:`~.api.signals.BaseSignal.add_gaussian_noise` and :meth:`~.api.signals.BaseSignal.add_poissonian_noise`. (`#3379 <https://github.com/hyperspy/hyperspy/issues/3379>`_)
+- Avoid replacing the original mask in :meth:`~.api.signals.BaseSignal.blind_source_separation` (`#3384 <https://github.com/hyperspy/hyperspy/issues/3384>`_)
+- Fix gradients in some expression based components (`#3388 <https://github.com/hyperspy/hyperspy/issues/3388>`_)
+
+
+Improved Documentation
+----------------------
+
+- Add old version warning banner in documentation. (`#3397 <https://github.com/hyperspy/hyperspy/issues/3397>`_)
+
+
+Maintenance
+-----------
+
+- Add support for numpy 2.0. (`#3386 <https://github.com/hyperspy/hyperspy/issues/3386>`_)
+
+
 2.1.0 (2024-05-08)
 ==================
 
