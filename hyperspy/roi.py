@@ -43,9 +43,8 @@ The following 2D ROIs are available:
      - (Hollow) circular ROI of a 2D signal
    * - :class:`~.api.roi.Line2DROI`
      - Line profile of a 2D signal with customisable width
-
-    PolygonROI
-        Polygonal ROI with a customisable shape.
+   * - :class:`~api.roi.,PolygonROI`
+     - Polygonal ROI with a customisable shape.
 
 """
 
