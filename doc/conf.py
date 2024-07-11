@@ -13,7 +13,6 @@
 
 import sys
 from datetime import datetime
-from importlib.metadata import version as get_version
 
 import hyperspy
 
@@ -92,7 +91,7 @@ copyright = f"2011-{datetime.today().year}, The HyperSpy development team"
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = get_version("hyperspy")
+release = hyperspy.__version__
 # The short X.Y version.
 version = ".".join(release.split(".")[:2])
 
@@ -168,8 +167,17 @@ favicons = [
 # For version switcher:
 # For development, we match to the dev version in `switcher.json`
 # for release version, we match to the minor increment
-_version = hyperspy.__version__
-version_match = "dev" if "dev" in _version else ".".join(_version.split(".")[:2])
+
+# The old version banner used `release` to compare to the "prefered" version
+# using https://www.npmjs.com/package/compare-versions
+# To play well with our documentation structure (the preferred version point
+# to the latest minor or patch release without having to update on patch release),
+# we add a ".x".
+# See https://github.com/pydata/pydata-sphinx-theme/issues/1552 for more context
+# On a minor release, the version switcher json is updated.
+# In the version switcher json, version needs to be defined with a `x`, e.g. 2.1.x
+# in as it is done here to make sure that they match!
+version_match = "dev" if "dev" in release else ".".join(release.split(".")[:2] + ["x"])
 
 print("version_match:", version_match)
 
