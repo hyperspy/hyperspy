@@ -8,7 +8,10 @@ signals.
 .. currentmodule:: hyperspy.misc.utils
 
 .. autoclass:: DictionaryTreeBrowser
-   :members: 
+   :members:
+
+.. autoclass:: TupleSA
+   :members:
 
 .. currentmodule:: hyperspy.misc.export_dictionary
 

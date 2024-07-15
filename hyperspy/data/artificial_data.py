@@ -106,7 +106,7 @@ def luminescence_signal(
 
     >>> s1 = hs.data.luminescence_signal(random_state=10)
     >>> s2 = hs.data.luminescence_signal(random_state=10)
-    >>> (s1.data == s2.data).all()
+    >>> print((s1.data == s2.data).all())
     True
 
     2D map

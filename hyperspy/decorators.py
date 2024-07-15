@@ -22,7 +22,7 @@ import warnings
 from functools import wraps
 from typing import Callable, Optional, Union
 
-import numpy as np
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -174,12 +174,14 @@ class deprecated:
         @wraps(func)
         def wrapped(*args, **kwargs):
             warnings.simplefilter(
-                action="always", category=np.VisibleDeprecationWarning, append=True
+                action="always",
+                category=VisibleDeprecationWarning,
+                append=True,
             )
             func_code = func.__code__
             warnings.warn_explicit(
                 message=msg,
-                category=np.VisibleDeprecationWarning,
+                category=VisibleDeprecationWarning,
                 filename=func_code.co_filename,
                 lineno=func_code.co_firstlineno + 1,
             )
@@ -229,12 +231,12 @@ class deprecated_argument:
                     )  # replace with alternative kwarg
                 msg += f"See the documentation of `{func.__name__}()` for more details."
                 warnings.simplefilter(
-                    action="always", category=np.VisibleDeprecationWarning
+                    action="always", category=VisibleDeprecationWarning
                 )
                 func_code = func.__code__
                 warnings.warn_explicit(
                     message=msg,
-                    category=np.VisibleDeprecationWarning,
+                    category=VisibleDeprecationWarning,
                     filename=func_code.co_filename,
                     lineno=func_code.co_firstlineno + 1,
                 )

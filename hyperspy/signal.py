@@ -73,6 +73,7 @@ from hyperspy.exceptions import (
     DataDimensionError,
     LazyCupyConversion,
     SignalDimensionError,
+    VisibleDeprecationWarning,
 )
 from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
@@ -2845,13 +2846,24 @@ class BaseSignal(
 
     # TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
     # np.log(s) -> da.log(s.data) wrapped.
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None, copy=None):
+        # The copy parameter was added in numpy 2.0
+        if dtype is not None and dtype != self.data.dtype:
+            if copy is not None and not copy:
+                raise ValueError(
+                    f"Converting array from {self.data.dtype} to "
+                    f"{dtype} requires a copy."
+                )
         if dtype:
-            return self.data.astype(dtype)
+            array = self.data.astype(dtype)
         else:
-            return self.data
+            array = self.data
+        if copy:
+            array = np.copy(array)
 
-    def __array_wrap__(self, array, context=None):
+        return array
+
+    def __array_wrap__(self, array, context=None, return_scalar=False):
         signal = self._deepcopy_with_new_data(array)
         if context is not None:
             # ufunc, argument of the ufunc, domain of the ufunc
@@ -4613,14 +4625,23 @@ class BaseSignal(
         """
         # rechunk was a valid keyword up to HyperSpy 1.6
         if "rechunk" in kwargs:
+            # We miss the deprecation cycle for 2.0
+            warnings.warn(
+                "The `rechunk` parameter is not used since HyperSpy 1.7 and"
+                "will be removed in HyperSpy 3.0.",
+                VisibleDeprecationWarning,
+            )
             del kwargs["rechunk"]
         n = order
         der_data = self.data
+        axis = self.axes_manager[axis]
+        if isinstance(axis, tuple):
+            axis = axis[0]
         while n:
             der_data = np.gradient(
                 der_data,
-                self.axes_manager[axis].axis,
-                axis=self.axes_manager[axis].index_in_array,
+                axis.axis,
+                axis=axis.index_in_array,
                 **kwargs,
             )
             n -= 1
@@ -4894,7 +4915,10 @@ class BaseSignal(
         <Signal2D, title: , dimensions: (|64, 64)>
 
         """
-        if self.axes_manager[axis].is_binned:
+        axis = self.axes_manager[axis]
+        if isinstance(axis, tuple):
+            axis = axis[0]
+        if axis.is_binned:
             return self.sum(axis=axis, out=out, rechunk=rechunk)
         else:
             return self.integrate_simpson(axis=axis, out=out, rechunk=rechunk)
@@ -6573,7 +6597,7 @@ class BaseSignal(
         if not keep_dtype:
             warnings.warn(
                 "The `keep_dtype` parameter is deprecated and will be removed in HyperSpy 3.0.",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
 
         if self._lazy:

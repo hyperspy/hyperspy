@@ -291,20 +291,21 @@ class Expression(Component):
                 "cos(rotation_angle)".format(*position)
             )
             expr = expr.subs({"x": rotx, "y": roty}, simultaneous=False)
-        rvars = sympy.symbols([s.name for s in expr.free_symbols], real=True)
-        real_expr = expr.subs(
-            {orig: real_ for (orig, real_) in zip(expr.free_symbols, rvars)}
-        )
+        original_vars = [symbol for symbol in expr.free_symbols]
+        real_vars = sympy.symbols([symbol.name for symbol in original_vars], real=True)
         # just replace with the assumption that all our variables are real
-        expr = real_expr
-
+        # as this helps with differentiation
+        expr = expr.subs(
+            {orig: real_ for (orig, real_) in zip(original_vars, real_vars)}
+        )
         eval_expr = expr.evalf()
         # Extract parameters
         variables = ("x", "y") if self._is2D else ("x",)
         parameters = [
             symbol for symbol in expr.free_symbols if symbol.name not in variables
         ]
-        parameters.sort(key=lambda x: x.name)  # to have a reliable order
+        # to have a reliable order
+        parameters.sort(key=lambda parameter: parameter.name)
         # Create compiled function
         variables = [x, y] if self._is2D else [x]
         self._f = sympy.utilities.lambdify(

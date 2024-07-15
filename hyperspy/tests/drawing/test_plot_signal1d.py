@@ -174,7 +174,7 @@ class TestPlotSpectra:
         baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
     )
     def test_plot_spectra_sync(self, figure):
-        s1 = hs.signals.Signal1D(face()).as_signal1D(0).inav[:, :3]
+        s1 = hs.signals.Signal1D(face().astype(float)).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
         hs.plot.plot_signals([s1, s2])
         if figure == "1nav":

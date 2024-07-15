@@ -43,7 +43,7 @@ from hyperspy.misc.array_tools import (
     round_half_towards_zero,
 )
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.misc.utils import isiterable, ordinal
+from hyperspy.misc.utils import TupleSA, isiterable, ordinal
 from hyperspy.ui_registry import add_gui_method, get_gui
 
 _logger = logging.getLogger(__name__)
@@ -1501,8 +1501,6 @@ class AxesManager(t.HasTraits):
     """
 
     _axes = t.List(BaseDataAxis)
-    signal_axes = t.Tuple()
-    navigation_axes = t.Tuple()
     _step = t.Int(1)
 
     def __init__(self, axes_list):
@@ -1592,8 +1590,14 @@ class AxesManager(t.HasTraits):
     def __getitem__(self, y):
         """x.__getitem__(y) <==> x[y]"""
         if isinstance(y, str) or not np.iterable(y):
-            return self[(y,)][0]
-        axes = [self._axes_getter(ax) for ax in y]
+            if y == "nav":
+                axes = self.navigation_axes
+            elif y == "sig":
+                axes = self.signal_axes
+            else:
+                return self[(y,)][0]
+        else:
+            axes = [self._axes_getter(ax) for ax in y]
         _, indices = np.unique([_id for _id in map(id, axes)], return_index=True)
         ans = tuple(axes[i] for i in sorted(indices))
         return ans
@@ -2120,13 +2124,21 @@ class AxesManager(t.HasTraits):
 
     @property
     def signal_axes(self):
-        """The signal axes as a tuple."""
-        return self._signal_axes
+        """The signal axes as a TupleSA.
+
+        A TupleSA object is a tuple with a `set` method
+        to easily set the attributes of its items.
+        """
+        return TupleSA(self._signal_axes)
 
     @property
     def navigation_axes(self):
-        """The navigation axes as a tuple."""
-        return self._navigation_axes
+        """The navigation axes as a TupleSA.
+
+        A TupleSA object is a tuple with a `set` method
+        to easily set the attributes of its items.
+        """
+        return TupleSA(self._navigation_axes)
 
     @property
     def signal_shape(self):

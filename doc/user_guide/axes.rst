@@ -107,6 +107,20 @@ attributes, e.g.:
     >>> s.axes_manager[0]
     <X axis, size: 20, index: 0>
 
+.. versionadded:: 2.2
+    :meth:`~.misc.utils.TupleSA.set` and :meth:`~.misc.utils.TupleSA.get` methods for :attr:`~.axes.AxesManager.navigation_axes`
+    and :attr:`~.axes.AxesManager.signal_axes`.
+
+It is also possible to set multiple attributes of multiple axes at once, using the :meth:`~.misc.utils.TupleSA.set`
+of the :attr:`~.axes.AxesManager.navigation_axes` and :attr:`~.axes.AxesManager.signal_axes` attributes.
+The :meth:`~.misc.utils.TupleSA.get` returns a dictionary of the attributes.  For example:
+
+.. code-block:: python
+
+    >>> s.axes_manager.navigation_axes.set(name=("X", "Y"), offset=10, units="nm")
+    >>> s.axes_manager.navigation_axes.get("name", "offset", "units")
+    {"name" : ("X", "Y"), "offset" : (10, 10), "units" : ("nm", "nm")}
+
 
 Once the name of an axis has been defined it is possible to request it by its
 name e.g.:
@@ -118,6 +132,7 @@ name e.g.:
     >>> s.axes_manager["X"].scale = 0.2
     >>> s.axes_manager["X"].units = "nm"
     >>> s.axes_manager["X"].offset = 100
+
 
 
 It is also possible to set the axes properties using a GUI by calling the

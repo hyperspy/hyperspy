@@ -26,12 +26,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 from scipy import ndimage
-
-try:
-    # For scikit-image >= 0.17.0
-    from skimage.registration._phase_cross_correlation import _upsampled_dft
-except ModuleNotFoundError:
-    from skimage.feature.register_translation import _upsampled_dft
+from skimage.registration._phase_cross_correlation import _upsampled_dft
 
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy._signals.lazy import LazySignal
@@ -140,8 +135,8 @@ def fft_correlation(in1, in2, normalize=False, real_only=False):
     else:
         fft_f, ifft_f = np.fft.fftn, np.fft.ifftn
 
-    fprod = fft_f(in1, fsize)
-    fprod *= fft_f(in2, fsize).conjugate()
+    fprod = fft_f(in1, fsize, axes=[-2, -1])
+    fprod *= fft_f(in2, fsize, axes=[-2, -1]).conjugate()
 
     if normalize is True:
         fprod = np.nan_to_num(fprod / abs(fprod))
