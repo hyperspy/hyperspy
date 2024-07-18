@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import numpy as np
 import pytest
 
 from hyperspy.signals import (
@@ -33,8 +34,6 @@ def test_signal():
         s.ifft()
     with pytest.raises(NotImplementedError):
         s.diff(0)
-    with pytest.raises(NotImplementedError):
-        s.rebin(scale=[1])
     with pytest.raises(NotImplementedError):
         s.split(number_of_parts=2, axis=0)
 
@@ -71,3 +70,14 @@ def test_lazy():
     print(s)
     with pytest.raises(NotImplementedError):
         s.diff(0)
+
+
+def test_rebin():
+    s = Signal1D(np.arange(100).reshape(10, 10))
+    s.axes_manager[-1].convert_to_non_uniform_axis()
+    s.rebin(scale=(2, 1))
+    s.rebin(new_shape=(5, 10))
+    with pytest.raises(NotImplementedError):
+        s.rebin(scale=(1, 2))
+    with pytest.raises(NotImplementedError):
+        s.rebin(new_shape=(1, 5))

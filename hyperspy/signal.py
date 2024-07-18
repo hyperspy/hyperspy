@@ -3574,8 +3574,8 @@ class BaseSignal(
         elif new_shape:
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
-            for axis in self.axes_manager._axes:
-                if axis.is_uniform is False:
+            for i, axis in enumerate(self.axes_manager._axes):
+                if axis.is_uniform is False and new_shape[i] != self.data.shape[i]:
                     raise NotImplementedError(
                         "Rebinning of non-uniform axes is not yet implemented."
                     )
@@ -3589,8 +3589,8 @@ class BaseSignal(
         else:
             if len(scale) != len(self.data.shape):
                 raise ValueError("Wrong scale size")
-            for axis in self.axes_manager._axes:
-                if axis.is_uniform is False:
+            for i, axis in enumerate(self.axes_manager._axes):
+                if axis.is_uniform is False and scale[i] != 1:
                     raise NotImplementedError(
                         "Rebinning of non-uniform axes is not yet implemented."
                     )
@@ -3683,8 +3683,10 @@ class BaseSignal(
         s.get_dimensions_from_data()
         for axis, axis_src in zip(s.axes_manager._axes, self.axes_manager._axes):
             factor = factors[axis.index_in_array]
-            axis.scale = axis_src.scale * factor
-            axis.offset = axis_src.offset + (factor - 1) * axis_src.scale / 2
+            if factor != 1:
+                # Change scale, offset only when necessary
+                axis.scale = axis_src.scale * factor
+                axis.offset = axis_src.offset + (factor - 1) * axis_src.scale / 2
         if s.metadata.has_item("Signal.Noise_properties.variance"):
             if isinstance(s.metadata.Signal.Noise_properties.variance, BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
