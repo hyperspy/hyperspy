@@ -1,0 +1,1 @@
+Allow rebinning uniform axis of signal containing non-uniform axis.

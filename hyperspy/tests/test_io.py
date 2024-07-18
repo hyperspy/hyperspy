@@ -220,11 +220,12 @@ def test_file_reader_warning(caplog, tmp_path):
     try:
         with caplog.at_level(logging.WARNING):
             _ = hs.load(f, reader="some_unknown_file_extension")
-
-        assert "Unable to infer file type from extension" in caplog.text
-    except (ValueError, OSError):
+    except (ValueError, OSError, IndexError):
         # Test fallback to Pillow imaging library
+        # IndexError is for oldest supported version build on Github CI
         pass
+
+    assert "Unable to infer file type from extension" in caplog.text
 
 
 def test_file_reader_options(tmp_path):
