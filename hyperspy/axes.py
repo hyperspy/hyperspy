@@ -739,16 +739,19 @@ class BaseDataAxis(t.HasTraits):
             If ``True``, The maximum scale error will be logged as INFO.
             Default is ``True``.
         """
-        scale = (self.high_value - self.low_value) / self.size
+        steps = self.axis[1:] - self.axis[:-1]
+        scale = np.mean(steps)
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
-        del d["axis"]
+        if "axis" in d:
+            del d["axis"]
         if len(self.axis) > 1 and log_scale_error:
-            scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
+            scale_err = max(steps) - scale
             _logger.info("The maximum scale error is {}.".format(scale_err))
         d["_type"] = "UniformDataAxis"
+        d["size"] = self.size
         self.__class__ = UniformDataAxis
-        self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
+        self.__init__(**d, scale=scale, offset=self.low_value)
         self.axes_manager = axes_manager
 
     @property

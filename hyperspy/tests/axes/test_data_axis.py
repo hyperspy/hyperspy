@@ -167,7 +167,7 @@ class TestDataAxis:
         np.testing.assert_allclose(self.axis.axis, np.arange(0, 10, 2) ** 2)
 
     def test_convert_to_uniform_axis(self):
-        scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
+        scale = np.mean(self.axis.axis[1:] - self.axis.axis[:-1])
         is_binned = self.axis.is_binned
         navigate = self.axis.navigate
         self.axis.name = "parrot"
@@ -335,6 +335,12 @@ class TestFunctionalDataAxis:
         assert index_in_array == s.axes_manager[0].index_in_array
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
+
+    def test_convert_to_uniform_axis(self):
+        ax = FunctionalDataAxis(size=10, expression="a * x + b", a=2, b=100)
+        axis_before = copy.deepcopy(ax.axis)
+        ax.convert_to_uniform_axis()
+        np.testing.assert_allclose(axis_before, ax.axis)
 
     def test_update_from(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
