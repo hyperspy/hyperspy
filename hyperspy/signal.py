@@ -3413,17 +3413,21 @@ class BaseSignal(
             self.axes_manager.convert_units(axis)
 
     def interpolate_on_axis(self, new_axis, axis=0, inplace=False, degree=1):
-        """Replaces the given ``axis`` with the provided ``new_axis``
+        """
+        Replaces the given ``axis`` with the provided ``new_axis``
         and interpolates data accordingly using
         :func:`scipy.interpolate.make_interp_spline`.
 
         Parameters
         ----------
         new_axis : :class:`hyperspy.axes.UniformDataAxis`,
-        :class:`hyperspy.axes.DataAxis` or :class:`hyperspy.axes.FunctionalDataAxis`
+        :class:`hyperspy.axes.DataAxis`, :class:`hyperspy.axes.FunctionalDataAxis`
+        or str
             Axis which replaces the one specified by the ``axis`` argument.
             If this new axis exceeds the range of the old axis,
             a warning is raised that the data will be extrapolated.
+            If ``"uniform"``, convert the axis specified by the ``axis``
+            parameter to a uniform axis.
         axis : int or str, default 0
             Specifies the axis which will be replaced using the index of the
             axis in the `axes_manager`. The axis can be specified using the index of the
@@ -3442,26 +3446,37 @@ class BaseSignal(
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
         """
         old_axis = self.axes_manager[axis]
-        if old_axis.navigate != new_axis.navigate:
-            raise ValueError(
-                "The navigate attribute of new_axis differs from the to be replaced axis."
-            )
         axis_idx = old_axis.index_in_array
-        if (
-            old_axis.low_value > new_axis.low_value
-            or old_axis.high_value < new_axis.high_value
-        ):
-            _logger.warning(
-                "The specified new axis exceeds the range of the to be replaced old axis. "
-                "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
-            )
-
         interpolator = make_interp_spline(
             old_axis.axis,
             self.data,
             axis=axis_idx,
             k=degree,
         )
+
+        if new_axis == "uniform":
+            if old_axis.is_uniform:
+                raise ValueError(f"The axis {old_axis.name} is already uniform.")
+            if inplace:
+                old_axis.convert_to_uniform_axis(log_scale_error=False)
+                new_axis = old_axis
+            else:
+                new_axis = old_axis.copy()
+                new_axis.convert_to_uniform_axis(log_scale_error=False)
+        else:
+            if old_axis.navigate != new_axis.navigate:
+                raise ValueError(
+                    "The navigate attribute of new_axis differs from the to be replaced axis."
+                )
+            if (
+                old_axis.low_value > new_axis.low_value
+                or old_axis.high_value < new_axis.high_value
+            ):
+                _logger.warning(
+                    "The specified new axis exceeds the range of the to be replaced old axis. "
+                    "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
+                )
+
         new_data = interpolator(new_axis.axis)
 
         if inplace:
@@ -3470,7 +3485,10 @@ class BaseSignal(
         else:
             s = self._deepcopy_with_new_data(new_data)
 
-        s.axes_manager.set_axis(new_axis, axis_idx)
+        if new_axis is not old_axis:
+            # user specifies a new_axis != "uniform"
+            s.axes_manager.set_axis(new_axis, axis_idx)
+
         if not inplace:
             return s
 

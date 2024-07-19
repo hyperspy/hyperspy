@@ -729,15 +729,23 @@ class BaseDataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
-    def convert_to_uniform_axis(self):
-        """Convert to an uniform axis."""
+    def convert_to_uniform_axis(self, log_scale_error=True):
+        """
+        Convert to an uniform axis.
+
+        Parameters
+        ----------
+        log_scale_error : bool
+            If ``True``, The maximum scale error will be logged as INFO.
+            Default is ``True``.
+        """
         scale = (self.high_value - self.low_value) / self.size
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
         del d["axis"]
-        if len(self.axis) > 1:
+        if len(self.axis) > 1 and log_scale_error:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
-            _logger.warning("The maximum scale error is {}.".format(scale_err))
+            _logger.info("The maximum scale error is {}.".format(scale_err))
         d["_type"] = "UniformDataAxis"
         self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
