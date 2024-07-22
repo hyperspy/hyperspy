@@ -177,6 +177,9 @@ class Expression(Component):
         **kwargs,
     ):
         if module is None:
+            module = "numexpr"
+
+        if module == "numexpr":
             numexpr_spec = importlib.util.find_spec("numexpr")
             if numexpr_spec is None:
                 module = "numpy"
@@ -184,8 +187,6 @@ class Expression(Component):
                     "Numexpr is not installed, falling back to numpy, "
                     "which is slower to calculate model."
                 )
-            else:
-                module = "numexpr"
 
         if linear_parameter_list is None:
             linear_parameter_list = []
