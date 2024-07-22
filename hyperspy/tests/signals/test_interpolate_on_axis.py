@@ -129,6 +129,7 @@ def test_interpolate_convert_to_uniform():
     s2 = s.interpolate_on_axis("uniform", -1, inplace=False)
     assert s2.axes_manager[-1].is_uniform
     np.testing.assert_allclose(s.data, s2.data)
+    np.testing.assert_allclose(axis.axis, s2.axes_manager[-1].axis)
 
     s.interpolate_on_axis("uniform", -1, inplace=True)
     # Check that the object is still the same

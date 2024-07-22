@@ -3427,7 +3427,7 @@ class BaseSignal(
             If this new axis exceeds the range of the old axis,
             a warning is raised that the data will be extrapolated.
             If ``"uniform"``, convert the axis specified by the ``axis``
-            parameter to a uniform axis.
+            parameter to a uniform axis with the same number of data points.
         axis : int or str, default 0
             Specifies the axis which will be replaced using the index of the
             axis in the `axes_manager`. The axis can be specified using the index of the
@@ -3444,6 +3444,30 @@ class BaseSignal(
         :class:`~.api.signals.BaseSignal` (or subclass)
             A copy of the object with the axis exchanged and the data interpolated.
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
+
+        Examples
+        --------
+        >>> s = hs.data.luminescence_signal(uniform=False)
+        >>> s2 = s.interpolate_on_axis("uniform", -1, inplace=False)
+        >>> hs.plot.plot_spectra(
+        ...     [s, s2],
+        ...     legend=["FunctionalAxis", "Interpolated (identical bounds)"],
+        ...     drawstyle='steps-mid',
+        ... )
+        <Axes: xlabel='Energy (eV)', ylabel='Intensity'>
+
+        Specifying a uniform axis:
+
+        >>> s = hs.data.luminescence_signal(uniform=False)
+        >>> new_axis = s.axes_manager[-1].copy()
+        >>> new_axis.convert_to_uniform_axis()
+        >>> s3 = s.interpolate_on_axis(new_axis, -1, inplace=False)
+        >>> hs.plot.plot_spectra(
+        ...     [s, s3],
+        ...     legend=["FunctionalAxis", "Interpolated (polyfit)"],
+        ...     drawstyle='steps-mid',
+        ... )
+        <Axes: xlabel='Energy (eV)', ylabel='Intensity'>
         """
         old_axis = self.axes_manager[axis]
         axis_idx = old_axis.index_in_array
