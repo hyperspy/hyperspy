@@ -5107,6 +5107,11 @@ class BaseSignal(
         hist_spec : :class:`~.api.signals.Signal1D`
             A 1D spectrum instance containing the histogram.
 
+        Note
+        ----
+        See :func:`numpy.histogram` for more details of the
+        meaning of the returned values.
+
         See Also
         --------
         hyperspy.api.signals.BaseSignal.print_summary_statistics,
@@ -5151,9 +5156,18 @@ class BaseSignal(
             hist_spec.axes_manager[0].offset = bin_edges[0]
             hist_spec.axes_manager[0].size = hist.shape[-1]
 
-        hist_spec.axes_manager[0].name = "value"
+        name = self.metadata.get_item("Signal.quantity", "value")
+        units = t.Undefined
+        if "(" in name:
+            name, units = name.split("(")
+            name = name.strip()
+            units = units.strip(")")
+        hist_spec.axes_manager[0].name = name
+        hist_spec.axes_manager[0].units = units
         hist_spec.axes_manager[0].is_binned = True
         hist_spec.metadata.General.title = self.metadata.General.title + " histogram"
+        quantity = "Probability density" if kwargs.get("density") else "Count"
+        hist_spec.metadata.Signal.quantity = quantity
         if out is None:
             return hist_spec
         else:

@@ -24,6 +24,7 @@ from itertools import product
 import dask
 import dask.array as da
 import numpy as np
+import traits.api as t
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import get_file_handle
 
@@ -741,10 +742,19 @@ class LazySignal(BaseSignal):
             # we always overwrite the data because the computation is lazy ->
             # the result signal is lazy. Assume that the `out` is already lazy
             hist_spec.data = hist
+
+        name = self.metadata.get_item("Signal.quantity", "value")
+        units = t.Undefined
+        if "(" in name:
+            name, units = name.split("(")
+            name = name.strip()
+            units = units.strip(")")
+        hist_spec.axes_manager[0].name = name
+        hist_spec.axes_manager[0].units = units
+
         hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
         hist_spec.axes_manager[0].offset = bin_edges[0]
         hist_spec.axes_manager[0].size = hist.shape[-1]
-        hist_spec.axes_manager[0].name = "value"
         hist_spec.axes_manager[0].is_binned = True
         hist_spec.metadata.General.title = self.metadata.General.title + " histogram"
         if out is None:
