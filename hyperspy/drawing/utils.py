@@ -39,7 +39,7 @@ import hyperspy
 import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS
-from hyperspy.misc.utils import to_numpy
+from hyperspy.misc.utils import isiterable, to_numpy
 
 _logger = logging.getLogger(__name__)
 
@@ -532,6 +532,7 @@ def plot_images(
     min_asp=0.1,
     namefrac_thresh=0.4,
     fig=None,
+    ax=None,
     vmin=None,
     vmax=None,
     overlay=False,
@@ -645,6 +646,12 @@ def plot_images(
         auto-label code.
     fig : matplotlib.figure.Figure, default None
         If set, the images will be plotted to an existing matplotlib figure.
+        If the parameter ``ax`` is provided, this parameter will be ignored
+        and the figure will be obtained from the ``ax`` parameter.
+    ax : matplotlib.axes.Axes or list of matplotlib.axes.Axes, default None
+        The matplotlib axes to use to display the images.
+        When using `overlay=True`, `ax` must be a matplotlib axis.
+        If None, new matplotlib axes will be created as required.
     vmin, vmax: scalar, str, None
         If str, formatted as 'xth', use this value to calculate the percentage
         of pixels that are left out of the lower and upper bounds.
@@ -920,6 +927,13 @@ def plot_images(
         if n < per_row:
             per_row = n
 
+    # Get the figure from ax is provided
+    if ax is not None:
+        if isiterable(ax):
+            fig = ax[0].get_figure()
+        else:
+            fig = ax.get_figure()
+    # Create figure if none has been provided through fig or ax
     # Set overall figure size and define figure (if not pre-existing)
     if fig is None:
         w, h = plt.rcParams["figure.figsize"]
@@ -945,9 +959,7 @@ def plot_images(
         else:
             k = max(w, h) / max(per_row, rows)
             figsize = [k * i for i in (per_row, rows)]
-        f = plt.figure(figsize=figsize, dpi=dpi)
-    else:
-        f = fig
+        fig = plt.figure(figsize=figsize, dpi=dpi)
 
     # Initialize list to hold subplot axes
     axes_list = []
@@ -1029,10 +1041,16 @@ def plot_images(
         import matplotlib.patches as mpatches
 
         factor = plt.rcParams["font.size"] / 100
-        if not suptitle and axes_decor == "off":
-            ax = f.add_axes([0, 0, 1, 1])
-        else:
-            ax = f.add_subplot()
+        if ax is None:
+            if not suptitle and axes_decor == "off":
+                ax = fig.add_axes([0, 0, 1, 1])
+            else:
+                ax = fig.add_subplot()
+        elif isiterable(ax):
+            raise ValueError(
+                "When using `overlay=True`, `ax` must be a matplotlib axis."
+                )
+
         patches = []
 
         # If no colors are selected use BASE_COLORS
@@ -1080,9 +1098,9 @@ def plot_images(
                 patches.append(mpatches.Patch(color=colors[i], label=legend_label))
 
         if label is not None:
-            plt.legend(handles=patches, loc=legend_loc)
+            ax.legend(handles=patches, loc=legend_loc)
             if legend_picking:
-                animate_legend(fig=f, ax=ax, plot_type="images")
+                animate_legend(fig=fig, ax=ax, plot_type="images")
 
         set_axes_decor(ax, axes_decor)
 
@@ -1097,6 +1115,10 @@ def plot_images(
 
     # Below is for non-overlayed images
     else:
+        if ax is not None:
+            if not isiterable(ax):
+                ax = (ax,)
+
         # Loop through each image, adding subplot for each one
         for i, ims in enumerate(images):
             # Get handles for the signal axes and axes_manager
@@ -1107,8 +1129,21 @@ def plot_images(
                 # i.e. order the user would except
                 ims.axes_manager.iterpath = "flyback"
             for j, im in enumerate(ims):
-                ax = f.add_subplot(rows, per_row, idx + 1)
-                axes_list.append(ax)
+                # Get `ax_`: the current matplotlib axis used for plotting
+                if ax is None:
+                    # Create the ax
+                    ax_ = fig.add_subplot(rows, per_row, idx + 1)
+                else:
+                    # Get the ax when ax is provided
+                    try:
+                        ax_ = ax[idx]
+                    except IndexError:
+                        # in case ax is not long enough
+                        raise ValueError(
+                            "The length of `ax` must match the number of images to plot."
+                        )
+                # `axes_list` will be returned
+                axes_list.append(ax_)
                 centre = next(centre_colormaps)  # get next value for centring
                 data = _parse_array(im)
 
@@ -1179,7 +1214,7 @@ def plot_images(
                 # or allowing them to be set automatically if using individual
                 # colorbars
                 kwargs.update({"cmap": next(cmap), "extent": extent, "aspect": asp})
-                axes_im = ax.imshow(data, vmin=_vmin, vmax=_vmax, **kwargs)
+                axes_im = ax_.imshow(data, vmin=_vmin, vmax=_vmax, **kwargs)
                 ax_im_list[i] = axes_im
 
                 # If an axis trait is undefined, shut off :
@@ -1200,8 +1235,8 @@ def plot_images(
                         axes_decor = "ticks"
                 # If all traits are defined, set labels as appropriate:
                 else:
-                    ax.set_xlabel(axes[0].name + " axis (" + axes[0].units + ")")
-                    ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
+                    ax_.set_xlabel(axes[0].name + " axis (" + axes[0].units + ")")
+                    ax_.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
 
                 if label:
                     if all_match:
@@ -1221,21 +1256,21 @@ def plot_images(
                     if ims.axes_manager.navigation_size > 1 and not user_labels:
                         title += " %s" % str(ims.axes_manager.indices)
 
-                    ax.set_title(textwrap.fill(title, labelwrap))
+                    ax_.set_title(textwrap.fill(title, labelwrap))
 
                 # Set axes decorations based on user input
-                set_axes_decor(ax, axes_decor)
+                set_axes_decor(ax_, axes_decor)
 
                 # If using independent colorbars, add them
                 if colorbar == "multi" and not isrgb[i]:
-                    div = make_axes_locatable(ax)
+                    div = make_axes_locatable(ax_)
                     cax = div.append_axes("right", size="5%", pad=0.05)
                     plt.colorbar(axes_im, cax=cax)
 
                 # Add scalebars as necessary
                 if (scalelist and idx in scalebar) or scalebar == "all":
-                    ax.scalebar = ScaleBar(
-                        ax=ax,
+                    ax_.scalebar = ScaleBar(
+                        ax=ax_,
                         units=axes[0].units,
                         color=scalebar_color,
                     )
@@ -1253,9 +1288,9 @@ def plot_images(
                 foundim = i
 
         if foundim is not None:
-            f.subplots_adjust(right=0.8)
-            cbar_ax = f.add_axes([0.9, 0.1, 0.03, 0.8])
-            f.colorbar(ax_im_list[foundim], cax=cbar_ax)
+            fig.subplots_adjust(right=0.8)
+            cbar_ax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
+            fig.colorbar(ax_im_list[foundim], cax=cbar_ax)
             if tight_layout:
                 # tight_layout, leaving room for the colorbar
                 plt.tight_layout(rect=[0, 0, 0.9, 1])
@@ -1267,8 +1302,8 @@ def plot_images(
 
     # Set top bounds for shared titles and add suptitle
     if suptitle:
-        f.subplots_adjust(top=0.85)
-        f.suptitle(suptitle, fontsize=suptitle_fontsize)
+        fig.subplots_adjust(top=0.85)
+        fig.suptitle(suptitle, fontsize=suptitle_fontsize)
 
     # Adjust subplot spacing according to user's specification
     if padding is not None:
@@ -1303,7 +1338,7 @@ def plot_images(
             cmap=cm,
         )
 
-    f.canvas.mpl_connect("button_press_event", on_dblclick)
+    fig.canvas.mpl_connect("button_press_event", on_dblclick)
 
     def update_image(image, ax, image_index):
         data = image.data
@@ -1313,12 +1348,12 @@ def plot_images(
         im.set_clim(vmin=_vmin, vmax=_vmax)
         ax.get_figure().canvas.draw()
 
-    for i, (image, ax) in enumerate(zip(images, axes_list)):
-        f = partial(update_image, image, ax, i)
+    for i, (image, ax_) in enumerate(zip(images, axes_list)):
+        f = partial(update_image, image, ax_, i)
         image.events.data_changed.connect(f, [])
         # disconnect event when closing figure
         disconnect = partial(image.events.data_changed.disconnect, f)
-        on_figure_window_close(ax.get_figure(), disconnect)
+        on_figure_window_close(ax_.get_figure(), disconnect)
 
     return axes_list
 

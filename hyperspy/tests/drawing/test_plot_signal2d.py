@@ -995,3 +995,38 @@ def test_plot_images_axes_ticks(axes_decor):
     assert np.allclose(plot_ax.get_yticks(), plot_images_ax.get_yticks())
     assert np.allclose(plot_ax.get_xlim(), plot_images_ax.get_xlim())
     assert np.allclose(plot_ax.get_ylim(), plot_images_ax.get_ylim())
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
+def test_plot_image_ax():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    s2 = -s
+
+    # check that passing a non-iterable is working
+    fig, ax = plt.subplots()
+    hs.plot.plot_images(s, ax=ax, axes_decor="off")
+
+    s_ = hs.stack([s, s2])
+    fig, ax = plt.subplots()
+    with pytest.raises(ValueError):
+        # length of ax is not compatible
+        hs.plot.plot_images(s_, ax=ax, axes_decor="off")
+
+    fig, ax = plt.subplots(ncols=2, nrows=1)
+    # axes_decor="off" to avoid ticks warning
+    hs.plot.plot_images(s_, ax=ax, axes_decor="off")
+
+    with pytest.raises(ValueError):
+        # ax can't be iterable with overlay=True
+        hs.plot.plot_images([s, s2], ax=ax, overlay=True)
+
+    fig, ax = plt.subplots(ncols=1, nrows=1)
+    hs.plot.plot_images([s, s2], ax=ax, overlay=True)
+
+    fig, ax = plt.subplots(ncols=3, nrows=1)
+    # axes_decor="off" to avoid ticks warning
+    hs.plot.plot_images([s, s2], ax=ax[1:], axes_decor="off")
+
+    return fig
