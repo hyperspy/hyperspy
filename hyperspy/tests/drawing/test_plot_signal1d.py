@@ -469,6 +469,21 @@ def test_plot_spectra_linestyle_error():
         hs.plot.plot_spectra(s, linestyle="invalid")
 
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
+@pytest.mark.parametrize("style", ("overlap", "cascade", "mosaic", "heatmap"))
+def test_plot_spectra_normalise(style):
+    s = hs.signals.Signal1D(np.arange(100)) + 100
+    s2 = s * 1000
+
+    ax = hs.plot.plot_spectra([s, s2], style=style, normalise=True)
+    if style == "mosaic":
+        ax = ax[0]
+
+    return ax.get_figure()
+
+
 def test_plot_empty_slice_autoscale():
     s = hs.signals.Signal1D(np.arange(100))
     s.plot()

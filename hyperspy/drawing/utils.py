@@ -396,10 +396,15 @@ def plot_signals(
             signal.plot(navigator=navigator, **kwargs)
 
 
-def _make_heatmap_subplot(spectra, **plot_kwargs):
+def _make_heatmap_subplot(spectra, normalise, **plot_kwargs):
     from hyperspy._signals.signal2d import Signal2D
 
     im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
+    if normalise:
+        im.data = (
+            (im.data.T - im.data.min(-1)) / (im.data.max(-1) - im.data.min(-1))
+        ).T
+
     im.metadata.General.title = spectra.metadata.General.title
     im.plot(**plot_kwargs)
     return im._plot.signal_plot.ax
@@ -421,31 +426,44 @@ def set_xaxis_lims(mpl_ax, hs_axis):
     mpl_ax.set_xlim(x_axis_lower_lim, x_axis_upper_lim)
 
 
-def _make_overlap_plot(spectra, ax, color, linestyle, **kwargs):
+def _make_overlap_plot(spectra, ax, color, linestyle, normalise, **kwargs):
     for spectrum_index, (spectrum, color, linestyle) in enumerate(
         zip(spectra, color, linestyle)
     ):
         x_axis = spectrum.axes_manager.signal_axes[0]
         spectrum = _transpose_if_required(spectrum, 1)
         ax.plot(
-            x_axis.axis, _parse_array(spectrum), color=color, ls=linestyle, **kwargs
+            x_axis.axis,
+            _parse_array(spectrum, normalise),
+            color=color,
+            ls=linestyle,
+            **kwargs,
         )
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra, ax)
-    ax.set_ylabel("Intensity")
     ax.autoscale(tight=True)
 
 
-def _make_cascade_subplot(spectra, ax, color, linestyle, padding=1, **kwargs):
+def _make_cascade_subplot(
+    spectra, ax, color, linestyle, normalise, padding=1, **kwargs
+):
     max_value = 0
-    for spectrum in spectra:
+    factors = [1] * len(spectra)
+    for i, spectrum in enumerate(spectra):
         spectrum_yrange = np.nanmax(spectrum.data) - np.nanmin(spectrum.data)
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    for i, (spectrum, color, linestyle) in enumerate(zip(spectra, color, linestyle)):
+        if normalise:
+            factors[i] = spectrum.data.max() - spectrum.data.min()
+    if normalise:
+        # when using normalise, we don't use need `max_value`
+        max_value = 1
+    for i, (spectrum, color, linestyle, factor) in enumerate(
+        zip(spectra, color, linestyle, factors)
+    ):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data = _parse_array(_transpose_if_required(spectrum, 1))
-        data_to_plot = (data - data.min()) / float(max_value) + i * padding
+        data_to_plot = (data - data.min()) / float(max_value) / factor + i * padding
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=linestyle, **kwargs)
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra, ax)
@@ -453,9 +471,15 @@ def _make_cascade_subplot(spectra, ax, color, linestyle, padding=1, **kwargs):
     ax.autoscale(tight=True)
 
 
-def _plot_spectrum(spectrum, ax, color="blue", linestyle="-", **kwargs):
+def _plot_spectrum(spectrum, ax, normalise, color="blue", linestyle="-", **kwargs):
     x_axis = spectrum.axes_manager.signal_axes[0]
-    ax.plot(x_axis.axis, _parse_array(spectrum), color=color, ls=linestyle, **kwargs)
+    ax.plot(
+        x_axis.axis,
+        _parse_array(spectrum, normalise),
+        color=color,
+        ls=linestyle,
+        **kwargs,
+    )
     set_xaxis_lims(ax, x_axis)
 
 
@@ -477,11 +501,13 @@ def _transpose_if_required(signal, expected_dimension):
         return signal
 
 
-def _parse_array(signal):
+def _parse_array(signal, normalise=False):
     """Convenience function to parse array from a signal."""
     data = signal.data
     if isinstance(data, da.Array):
         data = data.compute()
+    if normalise:
+        data = (data - data.min()) / (data.max() - data.min())
     return to_numpy(data)
 
 
@@ -1398,6 +1424,7 @@ def plot_spectra(
     fig=None,
     ax=None,
     auto_update=None,
+    normalise=False,
     **kwargs,
 ):
     """Plot several spectra in the same figure.
@@ -1456,6 +1483,8 @@ def plot_spectra(
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
         If None (default), update the plot only for style='overlap'.
+    normalise : bool, default False
+        If True, the data are normalised to the [0, 1] interval in the plot.
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 
@@ -1538,12 +1567,20 @@ def plot_spectra(
             else:
                 raise ValueError("legend must be None, 'auto' or a list of " "strings.")
 
+    if normalise:
+        ylabel = "Normalised Intensity"
+    else:
+        ylabel = "Intensity"
+
     if style == "overlap":
         if fig is None:
             fig = plt.figure(**kwargs)
         if ax is None:
             ax = fig.add_subplot(111)
-        _make_overlap_plot(spectra, ax, color, linestyle, drawstyle=drawstyle)
+        _make_overlap_plot(
+            spectra, ax, color, linestyle, normalise, drawstyle=drawstyle
+        )
+        ax.set_ylabel(ylabel)
         if legend is not None:
             ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
@@ -1555,7 +1592,13 @@ def plot_spectra(
         if ax is None:
             ax = fig.add_subplot(111)
         _make_cascade_subplot(
-            spectra, ax, color, linestyle, padding=padding, drawstyle=drawstyle
+            spectra,
+            ax,
+            color,
+            linestyle,
+            normalise,
+            padding=padding,
+            drawstyle=drawstyle,
         )
         if legend is not None:
             ax.legend(legend, loc=legend_loc)
@@ -1574,9 +1617,14 @@ def plot_spectra(
         ):
             spectrum = _transpose_if_required(spectrum, 1)
             _plot_spectrum(
-                spectrum, ax, color=color, linestyle=linestyle, drawstyle=drawstyle
+                spectrum,
+                ax,
+                normalise,
+                color=color,
+                linestyle=linestyle,
+                drawstyle=drawstyle,
             )
-            ax.set_ylabel("Intensity")
+            ax.set_ylabel(ylabel)
             if legend is not None:
                 ax.set_title(legend)
             if not isinstance(spectra, BaseSignal):
@@ -1592,13 +1640,13 @@ def plot_spectra(
             spectra = [_transpose_if_required(spectrum, 1) for spectrum in spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
-            ax = _make_heatmap_subplot(spectra, **kwargs)
+            ax = _make_heatmap_subplot(spectra, normalise, **kwargs)
             ax.set_ylabel("Spectra")
     ax = ax if style != "mosaic" else subplots
 
-    def update_line(spectrum, line):
+    def update_line(spectrum, line, factor):
         x_axis = spectrum.axes_manager[-1].axis
-        line.set_data(x_axis, spectrum.data)
+        line.set_data(x_axis, spectrum.data / factor)
         fig = line.get_figure()
         ax = fig.get_axes()[0]
         # `relim` needs to be called before `autoscale_view`
@@ -1616,7 +1664,11 @@ def plot_spectra(
             )
 
         for spectrum, line in zip(spectra, ax.get_lines()):
-            f = partial(update_line, spectrum, line)
+            if normalise:
+                factor = spectrum.data.max()
+            else:
+                factor = 1
+            f = partial(update_line, spectrum, line, factor)
             spectrum.events.data_changed.connect(f, [])
             # disconnect event when closing figure
             disconnect = partial(spectrum.events.data_changed.disconnect, f)
