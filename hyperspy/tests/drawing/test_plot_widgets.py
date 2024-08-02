@@ -20,6 +20,7 @@ import matplotlib
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.drawing import widgets
 from hyperspy.misc.test_utils import mock_event
 from hyperspy.signals import Signal1D, Signal2D
@@ -530,3 +531,20 @@ class TestSquareWidget:
         assert count_calls.counter == 0
         assert im.axes_manager.navigation_axes[0].index == 0
         # drag down and check that it doesn't change
+
+
+def test_widgets_non_uniform_axis():
+    s = hs.data.luminescence_signal(uniform=False).isig[10:20]
+    roi = hs.roi.SpanROI()
+    s.plot()
+    roi.add_widget(s)
+    np.testing.assert_allclose(roi.left, 1.61375935)
+    np.testing.assert_allclose(roi.right, 1.61887959)
+
+    roi2 = hs.roi.SpanROI()
+    with pytest.raises(ValueError):
+        roi2.add_widget(s, snap=True)
+
+    w = list(roi.widgets)[0]
+    with pytest.raises(ValueError):
+        w.snap_size = True
