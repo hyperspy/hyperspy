@@ -1,0 +1,4 @@
+:meth:`~.api.signals.BaseSignal.get_histogram` fixes:
+- fix setting range when falling back to capped bin number,
+- set name and units of the returned signal
+- don't remove ``range_bins`` parameter for lazy signal since dask now supports it.
