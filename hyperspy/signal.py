@@ -5561,6 +5561,7 @@ class BaseSignal(
                     dtype=mapped.dtype,
                     compute=True,
                     num_workers=num_workers,
+                    lock=False,
                 )
                 data_stored = True
             else:

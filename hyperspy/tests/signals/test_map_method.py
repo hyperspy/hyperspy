@@ -18,6 +18,7 @@
 
 from unittest import mock
 
+import dask
 import dask.array as da
 import numpy as np
 import pytest
@@ -1282,3 +1283,13 @@ class TestMapAll:
         assert sig.axes_manager.signal_shape == (64, 64)
         assert sig.axes_manager.navigation_shape == (10,)
         assert sig.data.shape == (10, 64, 64)
+
+
+def test_map_processes_scheduler():
+    data = np.arange(4 * 128 * 128).reshape((4, 128, 128))
+    s = hs.signals.Signal2D(data)
+
+    angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
+
+    with dask.config.set(scheduler="processes"):
+        s.map(rotate, angle=angles.T, reshape=False)
