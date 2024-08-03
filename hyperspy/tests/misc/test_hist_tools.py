@@ -107,3 +107,13 @@ class TestHistogramBinMethodsBadDataset:
     def test_working_bins(self, bins, size):
         out = self.s1.get_histogram(bins=bins)
         assert out.data.shape == size
+
+    def test_range_bins(self, caplog):
+        # when falling back to capping the number of bins to 250, make sure
+        # that the kwargs are passed correctly
+        with caplog.at_level(logging.WARNING):
+            out = self.s1.get_histogram(range_bins=[1e-10, 0.5])
+
+        axis = out.axes_manager[-1].axis
+        np.testing.assert_allclose(axis[0], 1e-10)
+        np.testing.assert_allclose(axis[-1], 0.498)

@@ -21,7 +21,12 @@ import logging
 import dask.array as da
 import numpy as np
 
-from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS
+from hyperspy.docstrings.signal import (
+    HISTOGRAM_BIN_ARGS,
+    HISTOGRAM_MAX_BIN_ARGS,
+    HISTOGRAM_RANGE_ARGS,
+    HISTOGRAM_WEIGHTS_ARGS,
+)
 from hyperspy.external.astropy.bayesian_blocks import bayesian_blocks
 from hyperspy.external.astropy.histogram import knuth_bin_width
 
@@ -39,20 +44,9 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
     a : array_like
         Input data. The histogram is computed over the flattened array.
     %s
-    range : (float, float), optional
-        The lower and upper range of the bins.  If not provided, range
-        is simply ``(a.min(), a.max())``.  Values outside the range are
-        ignored. The first element of the range must be less than or
-        equal to the second. `range` affects the automatic bin
-        computation as well. While bin width is computed to be optimal
-        based on the actual data within `range`, the bin count will fill
-        the entire range including portions containing no data.
     %s
-    weights : array_like, optional
-        An array of weights, of the same shape as `a`.  Each value in
-        `a` only contributes its associated weight towards the bin count
-        (instead of 1). This is currently not used by any of the bin estimators,
-        but may be in the future.
+    %s
+    %s
     **kwargs :
         Passed to :func:`numpy.histogram`
 
@@ -70,7 +64,14 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
 
     """
     if isinstance(a, da.Array):
-        return histogram_dask(a, bins=bins, max_num_bins=max_num_bins, **kwargs)
+        return histogram_dask(
+            a,
+            bins=bins,
+            range=range,
+            max_num_bins=max_num_bins,
+            weights=weights,
+            **kwargs,
+        )
 
     _old_bins = bins
 
@@ -103,14 +104,21 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
             "`max_num_bins` keyword argument."
         )
         bins = max_num_bins
+        kwargs["range"] = range
+        kwargs["weights"] = weights
 
     return np.histogram(a, bins=bins, **kwargs)
 
 
-histogram.__doc__ %= (HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
+histogram.__doc__ %= (
+    HISTOGRAM_BIN_ARGS,
+    HISTOGRAM_RANGE_ARGS,
+    HISTOGRAM_MAX_BIN_ARGS,
+    HISTOGRAM_WEIGHTS_ARGS,
+)
 
 
-def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
+def histogram_dask(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs):
     """Enhanced histogram for dask arrays.
 
     The range keyword is ignored. Reads the data at most two times - once to
@@ -131,7 +139,8 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
         'scott'
             Less robust estimator that that takes into account data
             variability and data size.
-
+    %s
+    %s
     %s
     **kwargs :
         Passed to :func:`dask.array.histogram`
@@ -165,7 +174,7 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
             _, bins = _freedman_bw_dask(a, True)
         else:
             raise ValueError(f"Unrecognized 'bins' argument: got {bins}")
-    elif not np.iterable(bins):
+    elif range is None:
         kwargs["range"] = da.compute(a.min(), a.max())
 
     _bins_len = bins if not np.iterable(bins) else len(bins)
@@ -184,14 +193,22 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
             "`max_num_bins` keyword argument."
         )
         bins = max_num_bins
-        kwargs["range"] = da.compute(a.min(), a.max())
+        kwargs["weights"] = weights
+        if range is None:
+            kwargs["range"] = da.compute(a.min(), a.max())
+        else:
+            kwargs["range"] = range
 
     h, bins = da.histogram(a, bins=bins, **kwargs)
 
     return h.compute(), bins
 
 
-histogram_dask.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
+histogram_dask.__doc__ %= (
+    HISTOGRAM_RANGE_ARGS,
+    HISTOGRAM_MAX_BIN_ARGS,
+    HISTOGRAM_WEIGHTS_ARGS,
+)
 
 
 def _scott_bw_dask(data, return_bins=True):

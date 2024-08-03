@@ -140,6 +140,22 @@ HISTOGRAM_MAX_BIN_ARGS = """max_num_bins : int, default 250
            number of bins is capped by this number to avoid a MemoryError
            being raised by :func:`numpy.histogram`."""
 
+
+HISTOGRAM_RANGE_ARGS = """range : (float, float), optional
+        The lower and upper range of the bins.  If not provided, range
+        is simply ``(a.min(), a.max())``.  Values outside the range are
+        ignored. The first element of the range must be less than or
+        equal to the second. `range` affects the automatic bin
+        computation as well. While bin width is computed to be optimal
+        based on the actual data within `range`, the bin count will fill
+        the entire range including portions containing no data."""
+
+HISTOGRAM_WEIGHTS_ARGS = """weights : array_like, optional
+        An array of weights, of the same shape as `a`.  Each value in
+        `a` only contributes its associated weight towards the bin count
+        (instead of 1). This is currently not used by any of the bin estimators,
+        but may be in the future."""
+
 SIGNAL_MASK_ARG = """signal_mask : numpy.ndarray of bool
             Restricts the operation to the signal locations not marked
             as True (masked)."""
