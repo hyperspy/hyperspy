@@ -87,6 +87,7 @@ from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
     _get_block_pattern,
     add_scalar_axis,
+    dummy_context_manager,
     guess_output_signal_size,
     is_cupy_array,
     isiterable,
@@ -5522,10 +5523,6 @@ class BaseSignal(
 
         axes_changed = len(new_axis) != 0 or len(adjust_chunks) != 0
 
-        if show_progressbar:
-            pbar = ProgressBar()
-            pbar.register()
-
         mapped = da.blockwise(
             process_function_blockwise,
             output_pattern,
@@ -5545,6 +5542,8 @@ class BaseSignal(
 
         data_stored = False
 
+        cm = ProgressBar if show_progressbar else dummy_context_manager
+
         if inplace:
             if (
                 not self._lazy
@@ -5555,14 +5554,15 @@ class BaseSignal(
                 # da.store is used to avoid unnecessary amount of memory usage.
                 # By using it here, the contents in mapped is written directly to
                 # the existing NumPy array, avoiding a potential doubling of memory use.
-                da.store(
-                    mapped,
-                    self.data,
-                    dtype=mapped.dtype,
-                    compute=True,
-                    num_workers=num_workers,
-                    lock=False,
-                )
+                with cm():
+                    da.store(
+                        mapped,
+                        self.data,
+                        dtype=mapped.dtype,
+                        compute=True,
+                        num_workers=num_workers,
+                        lock=False,
+                    )
                 data_stored = True
             else:
                 self.data = mapped
@@ -5590,10 +5590,8 @@ class BaseSignal(
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = sig.data.compute(num_workers=num_workers)
-
-        if show_progressbar:
-            pbar.unregister()
+            with cm():
+                sig.data = sig.data.compute(num_workers=num_workers)
 
         return sig
 
