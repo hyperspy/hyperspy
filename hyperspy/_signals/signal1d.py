@@ -1333,6 +1333,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             def baseline_fitting(data, **kwargs):
                 return data - baseline_fitter(data, **kwargs)[0]
 
+            kwargs["silence_warnings"] = "non-uniform"
             return self.map(baseline_fitting, inplace=inplace, **kwargs)
 
     @interactive_range_selector
