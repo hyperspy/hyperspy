@@ -35,6 +35,13 @@ algorithms_mapping_whittaker = {
     "Peaked Signal's Asymmetric Least Squares Algorithm": "psalsa",
     "Derivative Peak-Screening Asymmetric Least Squares Algorithm": "derpsalsa",
 }
+# Polynomial
+algorithms_mapping_polynomial = {
+    "Regular Polynomial": "poly",
+    "Modified Polynomial": "modpoly",
+    "Improved Modified Polynomial": "imodpoly",
+    "Locally Estimated Scatterplot Smoothing": "loess",
+}
 # Splines
 algorithms_mapping_splines = {
     "Mixture Model": "mixture_model",
@@ -42,6 +49,7 @@ algorithms_mapping_splines = {
 }  # + Penalized splines version
 algorithms_mapping = dict(algorithms_mapping_whittaker)
 algorithms_mapping.update(algorithms_mapping_splines)
+algorithms_mapping.update(algorithms_mapping_polynomial)
 
 algorithms_parameters = {
     # Whittaker
@@ -54,6 +62,11 @@ algorithms_parameters = {
     "aspls": ("lam", "diff_order"),
     "psalsa": ("lam", "p", "diff_order"),
     "derpsalsa": ("lam", "p", "diff_order"),
+    # Polynomial
+    "poly": ("poly_order",),
+    "modpoly": ("poly_order",),
+    "imodpoly": ("poly_order",),
+    "loess": ("poly_order",),
     # Splines
     "mixture_model": (
         "lam",
@@ -133,7 +146,6 @@ class BaselineRemoval(t.HasTraits):
         from pybaselines import Baseline
 
         algorithm = self._get_algorithm_name()
-
         self.estimator = getattr(
             Baseline(
                 self.signal.axes_manager[-1].axis,
@@ -207,7 +219,13 @@ class BaselineRemoval(t.HasTraits):
     def _update_lines(self):
         if self.estimator_line is None:
             self._create_lines()
-        self.estimator_line.update(render_figure=True, update_ylimits=True)
+        try:
+            self.estimator_line.update(render_figure=True, update_ylimits=True)
+        except AttributeError:
+            # in case the figure is closed
+            # to fix this, the callback should be disconnected correctly
+            # when closing the figure
+            pass
 
     def apply(self):
         self.signal.remove_baseline(
