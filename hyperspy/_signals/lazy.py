@@ -728,9 +728,6 @@ class LazySignal(BaseSignal):
     def get_histogram(
         self, bins="fd", range_bins=None, out=None, rechunk=False, **kwargs
     ):
-        if "range_bins" in kwargs:
-            _logger.warning("'range_bins' argument not supported for lazy signals")
-            del kwargs["range_bins"]
         from hyperspy.signals import Signal1D
 
         data = self._lazy_data(rechunk=rechunk).flatten()
