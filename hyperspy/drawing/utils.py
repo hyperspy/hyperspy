@@ -49,8 +49,8 @@ def contrast_stretching(data, vmin=None, vmax=None):
 
     Parameters
     ----------
-    data: numpy array
-    vmin, vmax: scalar, str, None
+    data : numpy array
+    vmin, vmax : scalar, str, None
         If str, formatted as 'xth', use this value to calculate the percentage
         of pixels that are left out of the lower and upper bounds.
         For example, for a vmin of '1th', 1% of the lowest will be ignored to
@@ -62,7 +62,7 @@ def contrast_stretching(data, vmin=None, vmax=None):
 
     Returns
     -------
-    vmin, vmax: scalar
+    vmin, vmax : scalar
         The low and high bounds.
 
     Raises
@@ -84,8 +84,8 @@ def contrast_stretching(data, vmin=None, vmax=None):
                 value = "100th"
         if isinstance(value, str):
             value = float(value.split("th")[0])
-        if not 0 <= value <= 100:
-            raise ValueError(f"{value_name} must be in the range[0, 100].")
+            if not 0 <= value <= 100:
+                raise ValueError(f"{value_name} must be in the range[0, 100].")
         return value
 
     if np.ma.is_masked(data):
@@ -1049,7 +1049,7 @@ def plot_images(
         elif isiterable(ax):
             raise ValueError(
                 "When using `overlay=True`, `ax` must be a matplotlib axis."
-                )
+            )
 
         patches = []
 
@@ -1074,9 +1074,10 @@ def plot_images(
             centre = next(centre_colormaps)  # get next value for centreing
             data = _parse_array(im)
 
-            _vmin = data.min()
+            _vmin = vmax[idx] if isinstance(vmin, (tuple, list)) else vmin
             _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
             _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
+
             if centre:
                 _logger.warning("Centering is ignored when overlaying images.")
 
