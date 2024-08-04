@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
 from unittest import mock
 
 import dask
@@ -1293,3 +1294,73 @@ def test_map_processes_scheduler():
 
     with dask.config.set(scheduler="processes"):
         s.map(rotate, angle=angles.T, reshape=False)
+
+
+def test_silence_warning_non_uniform(caplog):
+    s = hs.signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
+    s.axes_manager[-1].convert_to_non_uniform_axis()
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=True, inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["non-uniform"], inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, inplace=False)
+    assert "At least one axis of the signal is non-uniform." in caplog.text
+
+
+def test_silence_warning_scales(caplog):
+    s = hs.signals.Signal2D(np.arange(5 * 10 * 15).reshape(5, 10, 15))
+    s.axes_manager.signal_axes[0].scale = 0.5
+    s.axes_manager.signal_axes[1].scale = 1.0
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=True, inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["scale"], inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=False, inplace=False)
+    assert "The function you applied does not take into account" in caplog.text
+    assert "scales" in caplog.text
+
+
+def test_silence_warning_units(caplog):
+    s = hs.signals.Signal2D(np.arange(5 * 10 * 15).reshape(5, 10, 15))
+    s.axes_manager.signal_axes[0].units = "m"
+    s.axes_manager.signal_axes[1].units = "nm"
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=True, inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["units"], inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=False, inplace=False)
+    assert "The function you applied does not take into account" in caplog.text
+    assert "units" in caplog.text
+
+
+def test_silence_warning_scales_units(caplog):
+    s = hs.signals.Signal2D(np.arange(5 * 10 * 15).reshape(5, 10, 15))
+    s.axes_manager.signal_axes[0].units = "m"
+    s.axes_manager.signal_axes[0].scale = 10
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["scales", "units"], inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=False, inplace=False)
+    assert "scales" in caplog.text
+    assert "units" in caplog.text
