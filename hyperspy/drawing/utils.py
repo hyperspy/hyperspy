@@ -1511,11 +1511,11 @@ def plot_spectra(
         This parameter controls where the legend is placed on the figure;
         see the pyplot.legend docstring for valid values. Default ``'upper right'``.
     fig : None, matplotlib.figure.Figure, default None
-        If None (default), a default figure will be created. Specifying `fig` will
-        not work for the 'heatmap' style.
+        If None (default), a default figure will be created.
+        Not suppored for the ``'heatmap'`` style.
     ax : None, matplotlib.axes.Axes, default None
-        If None (default), a default ax will be created. Will not work for ``'mosaic'``
-        or ``'heatmap'`` style.
+        If None (default), matplotlib axes will be created when necessary.
+        Not suppored for the ``'heatmap'`` style.
     auto_update : bool or None, default None
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
@@ -1525,8 +1525,7 @@ def plot_spectra(
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 
-        - ``"overlap"`` or ``"cascade"``: arguments passed to :func:`matplotlib.pyplot.figure`
-        - ``"mosiac"``: arguments passed to :func:`matplotlib.pyplot.subplots`
+        - ``"overlap"``, ``"cascade"`` or ``"mosiac"``: arguments passed to :func:`matplotlib.pyplot.figure`
         - ``"heatmap"``: arguments  passed to :meth:`~.api.signals.Signal2D.plot`.
 
     Examples
@@ -1609,11 +1608,40 @@ def plot_spectra(
     else:
         ylabel = "Intensity"
 
-    if style == "overlap":
+    # Get fig and ax
+    # Try to get fig from ax
+    if ax is not None:
+        if style == "heatmap":
+            raise ValueError("The `ax` parameter is not supported for 'heatmap' style.")
+        # To avoid ambiguouity, don't support iterable with overalp and cascase style
+        elif style in ["overlap", "cascade"]:
+            if isiterable(ax):
+                raise ValueError(
+                    "When using 'overlap' or 'cascade' style, `ax` must be a matplotlib axis."
+                )
+            fig = ax.get_figure()
+        else:
+            # use flatten for cases where ax is two dimensional
+            fig = np.asarray(ax).flatten()[0].get_figure()
+    # fallback to fig, create when necessary
+    else:
         if fig is None:
+            if style == "mosaic":
+                default_fsize = plt.rcParams["figure.figsize"]
+                kwargs.setdefault(
+                    "figsize", (default_fsize[0], default_fsize[1] * len(spectra))
+                )
             fig = plt.figure(**kwargs)
-        if ax is None:
+        elif style == "heatmap":
+            raise ValueError(
+                "The `fig` parameter is not supported for 'heatmap' style."
+            )
+        if style in ["overlap", "cascade"]:
             ax = fig.add_subplot(111)
+        else:
+            ax = fig.subplots(len(spectra), 1)
+
+    if style == "overlap":
         _make_overlap_plot(
             spectra, ax, color, linestyle, normalise, drawstyle=drawstyle
         )
@@ -1624,10 +1652,6 @@ def plot_spectra(
             if legend_picking is True:
                 animate_legend(fig=fig, ax=ax, plot_type="spectra")
     elif style == "cascade":
-        if fig is None:
-            fig = plt.figure(**kwargs)
-        if ax is None:
-            ax = fig.add_subplot(111)
         _make_cascade_subplot(
             spectra,
             ax,
@@ -1644,30 +1668,27 @@ def plot_spectra(
                 animate_legend(fig=fig, ax=ax)
 
     elif style == "mosaic":
-        default_fsize = plt.rcParams["figure.figsize"]
-        figsize = (default_fsize[0], default_fsize[1] * len(spectra))
-        fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize, **kwargs)
         if legend is None:
             legend = [legend] * len(spectra)
-        for spectrum, ax, color, linestyle, legend in zip(
-            spectra, subplots, color, linestyle, legend
+        for spectrum, ax_, color, linestyle, legend in zip(
+            spectra, ax, color, linestyle, legend
         ):
             spectrum = _transpose_if_required(spectrum, 1)
             _plot_spectrum(
                 spectrum,
-                ax,
+                ax_,
                 normalise,
                 color=color,
                 linestyle=linestyle,
                 drawstyle=drawstyle,
             )
-            ax.set_ylabel(ylabel)
+            ax_.set_ylabel(ylabel)
             if legend is not None:
-                ax.set_title(legend)
+                ax_.set_title(legend)
             if not isinstance(spectra, BaseSignal):
-                _set_spectrum_xlabel(spectrum, ax)
+                _set_spectrum_xlabel(spectrum, ax_)
         if isinstance(spectra, BaseSignal):
-            _set_spectrum_xlabel(spectrum, ax)
+            _set_spectrum_xlabel(spectrum, ax_)
         fig.tight_layout()
 
     elif style == "heatmap":
@@ -1679,7 +1700,6 @@ def plot_spectra(
         with spectra.unfolded():
             ax = _make_heatmap_subplot(spectra, normalise, **kwargs)
             ax.set_ylabel("Spectra")
-    ax = ax if style != "mosaic" else subplots
 
     def update_line(spectrum, line, normalise):
         x_axis = spectrum.axes_manager[-1].axis
@@ -1778,6 +1798,7 @@ def plot_histograms(
     linestyle=None,
     legend="auto",
     fig=None,
+    ax=None,
     **kwargs,
 ):
     """Plot the histogram of every signal in the list in one figure.
@@ -1839,6 +1860,7 @@ def plot_histograms(
         drawstyle="steps-mid",
         legend=legend,
         fig=fig,
+        ax=ax,
     )
 
 

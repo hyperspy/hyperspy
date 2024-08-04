@@ -520,3 +520,34 @@ def test_plot_empty_slice_autoscale():
     # change span selector to an "empty" slice and trigger update
     r.left = 23
     r.right = 23.1
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
+def test_plot_spectra_ax():
+    s = hs.signals.Signal1D(np.arange(10))
+    s.axes_manager[-1].name = ""
+    s.axes_manager[-1].units = ""
+    s2 = -s
+    s_stack = hs.stack([s, s2])
+
+    fig, ax = plt.subplots(ncols=5, nrows=1)
+    with pytest.raises(ValueError):
+        hs.plot.plot_spectra(s_stack, style="heatmap", ax=ax)
+    with pytest.raises(ValueError):
+        hs.plot.plot_spectra(s_stack, style="heatmap", fig=fig)
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_spectra(s_stack, ax=ax)
+
+    hs.plot.plot_spectra(s_stack, ax=ax[1], style="overlap")
+    hs.plot.plot_spectra(s_stack, ax=ax[2], style="cascade", padding=1.5)
+    hs.plot.plot_spectra(s_stack, ax=ax[3:], style="mosaic")
+
+    ax[1].set_title("overlap")
+    ax[2].set_title("cascade")
+    ax[3].set_title("mosaic 0")
+    ax[4].set_title("mosaic 1")
+
+    return fig
