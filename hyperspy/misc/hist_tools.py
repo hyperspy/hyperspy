@@ -20,6 +20,7 @@ import logging
 
 import dask.array as da
 import numpy as np
+import traits.api as t
 
 from hyperspy.docstrings.signal import (
     HISTOGRAM_BIN_ARGS,
@@ -31,6 +32,21 @@ from hyperspy.external.astropy.bayesian_blocks import bayesian_blocks
 from hyperspy.external.astropy.histogram import knuth_bin_width
 
 _logger = logging.getLogger(__name__)
+
+
+def _set_histogram_metadata(signal, histogram, **kwargs):
+    name = signal.metadata.get_item("Signal.quantity", "value")
+    units = t.Undefined
+    if "(" in name:
+        name, units = name.split("(")
+        name = name.strip()
+        units = units.strip(")")
+    histogram.axes_manager[0].name = name
+    histogram.axes_manager[0].units = units
+    histogram.axes_manager[0].is_binned = True
+    histogram.metadata.General.title = signal.metadata.General.title + " histogram"
+    quantity = "Probability density" if kwargs.get("density") else "Count"
+    histogram.metadata.Signal.quantity = quantity
 
 
 def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs):

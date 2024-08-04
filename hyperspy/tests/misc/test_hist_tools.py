@@ -73,15 +73,18 @@ def test_unsupported_lazy():
         s1.get_histogram(bins="sturges")
 
 
+@pytest.mark.parametrize("density", (True, False))
 @pytest.mark.parametrize("lazy", (True, False))
-def test_histogram_quantity(lazy):
+def test_histogram_metadata(lazy, density):
     s1 = generate_bad_toy_data()
     if lazy:
         s1 = s1.as_lazy()
     s1.metadata.Signal.quantity = "Intensity (Count)"
-    out = s1.get_histogram(bins=200)
+    out = s1.get_histogram(bins=200, density=density)
     assert out.axes_manager[-1].name == "Intensity"
     assert out.axes_manager[-1].units == "Count"
+    quantity = "Probability density" if density else "Count"
+    assert out.metadata.Signal.quantity == quantity
 
 
 @lazifyTestClass

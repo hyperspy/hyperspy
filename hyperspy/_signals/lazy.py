@@ -24,7 +24,6 @@ from itertools import product
 import dask
 import dask.array as da
 import numpy as np
-import traits.api as t
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import get_file_handle
 
@@ -40,7 +39,7 @@ from hyperspy.misc.array_tools import (
     _requires_linear_rebin,
     get_signal_chunk_slice,
 )
-from hyperspy.misc.hist_tools import histogram_dask
+from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import dummy_context_manager, isiterable, multiply
 from hyperspy.signal import BaseSignal
@@ -742,20 +741,12 @@ class LazySignal(BaseSignal):
             # the result signal is lazy. Assume that the `out` is already lazy
             hist_spec.data = hist
 
-        name = self.metadata.get_item("Signal.quantity", "value")
-        units = t.Undefined
-        if "(" in name:
-            name, units = name.split("(")
-            name = name.strip()
-            units = units.strip(")")
-        hist_spec.axes_manager[0].name = name
-        hist_spec.axes_manager[0].units = units
-
         hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
         hist_spec.axes_manager[0].offset = bin_edges[0]
         hist_spec.axes_manager[0].size = hist.shape[-1]
-        hist_spec.axes_manager[0].is_binned = True
-        hist_spec.metadata.General.title = self.metadata.General.title + " histogram"
+
+        _set_histogram_metadata(self, hist_spec, **kwargs)
+
         if out is None:
             return hist_spec
         else:
