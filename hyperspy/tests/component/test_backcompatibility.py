@@ -19,6 +19,7 @@
 import importlib
 import pathlib
 
+import numpy as np
 import pytest
 
 import hyperspy.api as hs
@@ -128,3 +129,39 @@ def test_loading_components_exspy_not_installed():
         pytest.importorskip("numexpr")
         # This should work fine
         _ = s.models.restore("a")
+
+
+def test_load_polynomial(tmp_path):
+    # For hyperspy >= 1.5 (with new polynomial API) and <= 2.1.1
+    # the polynomial component was saved incorrectly:
+    # saving initialisation polynomial order was missing
+
+    s2 = hs.load(DIRPATH / "hs211_model_polynomial_reload.hspy")
+    assert s2.metadata.get_item("General.FileIO.0.hyperspy_version") == "2.1.1"
+
+    m2 = s2.models.restore("a")
+    polynomial = m2[0]
+    for i, p in enumerate(polynomial.parameters):
+        np.testing.assert_allclose(p.value, i, atol=0.002)
+
+    # Test for current version
+    c = hs.model.components1D.Polynomial(order=3)
+    c.function(np.arange(10))
+
+    for i, p in enumerate(c.parameters):
+        p.value = i
+
+    s = hs.signals.Signal1D(c.function(np.arange(100)))
+
+    m = s.create_model()
+    m.append(hs.model.components1D.Polynomial(order=3))
+    m.fit()
+
+    fname = tmp_path / "polynomial_save_load_cycle.hspy"
+    m.save(fname)
+
+    s2 = hs.load(fname)
+    m2 = s2.models.restore("a")
+    polynomial = m2[0]
+    for i, p in enumerate(polynomial.parameters):
+        np.testing.assert_allclose(p.value, i, atol=0.002)

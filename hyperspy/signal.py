@@ -343,6 +343,18 @@ class ModelManager(object):
         """
         name = self._check_name(name, True)
         d = self._models.get_item(name + "._dict").as_dictionary()
+        for c in d["components"]:
+            # Restoring of polynomials saved with Hyperspy <v2.1.1 and >= 1.5
+            # the order initialisation argument was missing from the whitelist
+            # We patch the dictionary to be able to load these files
+            if (
+                c["_id_name"] == "Polynomial"
+                # make sure that this is not an old polynomial
+                and c["parameters"][0]["_id_name"] != "coefficients"
+                and "order" not in c.keys()
+            ):
+                c["_whitelist"]["order"] = "init"
+                c["order"] = len(c["parameters"]) - 1
         return self._signal.create_model(dictionary=copy.deepcopy(d))
 
     def __repr__(self):
