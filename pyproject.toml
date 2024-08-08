@@ -122,7 +122,8 @@ doc = [
     "sphinx>=1.7",
     "sphinxcontrib-mermaid",
     "sphinxcontrib-towncrier>=0.3.0a0",
-    "towncrier",
+    # unpin when sphinxcontrib-towncrier support more recent version to towncrier
+    "towncrier<24",
 ]
 gui-jupyter = [
     "hyperspy_gui_ipywidgets>=2.0",

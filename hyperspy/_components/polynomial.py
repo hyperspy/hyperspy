@@ -63,6 +63,8 @@ class Polynomial(Expression):
         super().__init__(
             expression=expr, name=name, module=module, autodoc=False, **kwargs
         )
+        # Need to save order to be able to reload component after being saved
+        self._whitelist["order"] = ("init", order)
 
     def get_polynomial_order(self):
         return len(self.parameters) - 1

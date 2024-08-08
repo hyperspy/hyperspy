@@ -5,7 +5,8 @@
         "url": "https://hyperspy.org/hyperspy-doc/dev/"
     },
     {
-        "version": "2.1",
+        "version": "2.1.x",
+        "name": "2.1",
         "url": "https://hyperspy.org/hyperspy-doc/current/",
         "preferred": true
     },

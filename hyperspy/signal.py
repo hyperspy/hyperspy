@@ -88,6 +88,7 @@ from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
     _get_block_pattern,
     add_scalar_axis,
+    dummy_context_manager,
     guess_output_signal_size,
     is_cupy_array,
     isiterable,
@@ -344,6 +345,18 @@ class ModelManager(object):
         """
         name = self._check_name(name, True)
         d = self._models.get_item(name + "._dict").as_dictionary()
+        for c in d["components"]:
+            # Restoring of polynomials saved with Hyperspy <v2.1.1 and >= 1.5
+            # the order initialisation argument was missing from the whitelist
+            # We patch the dictionary to be able to load these files
+            if (
+                c["_id_name"] == "Polynomial"
+                # make sure that this is not an old polynomial
+                and c["parameters"][0]["_id_name"] != "coefficients"
+                and "order" not in c.keys()
+            ):
+                c["_whitelist"]["order"] = "init"
+                c["order"] = len(c["parameters"]) - 1
         return self._signal.create_model(dictionary=copy.deepcopy(d))
 
     def __repr__(self):
@@ -5177,6 +5190,7 @@ class BaseSignal(
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
+        silence_warnings=False,
         **kwargs,
     ):
         """Apply a function to the signal data at all the navigation
@@ -5233,6 +5247,14 @@ class BaseSignal(
             See docstring for output_signal_size for more information.
             Default None.
         %s
+        silence_warnings : bool or list of str
+            If ``True``, don't warn when one of the signal axes are non-uniform,
+            or the scales of the signal axes differ. If ``"non-uniform"``,
+            ``"scales"`` or ``"units"`` are in the list the warning will be
+            silenced when using non-uniform axis, different scales or different
+            units of the signal axes, respectively.
+            If ``False``, all warnings will be added to the logger.
+            Default is ``False``.
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
 
@@ -5328,12 +5350,12 @@ class BaseSignal(
                     f"with the size of the mapped signal "
                     f"<{self_nav_shape}>"
                 )
-        # TODO: Consider support for non-uniform signal axis
         if any([not ax.is_uniform for ax in self.axes_manager.signal_axes]):
-            _logger.warning(
-                "At least one axis of the signal is non-uniform. Can your "
-                "`function` operate on non-uniform axes?"
-            )
+            if not (silence_warnings or silence_warnings == "non-uniform"):
+                _logger.warning(
+                    "At least one axis of the signal is non-uniform. Can your "
+                    "`function` operate on non-uniform axes?",
+                )
         else:
             # Check if the signal axes have inhomogeneous scales and/or units and
             # display in warning if yes.
@@ -5342,10 +5364,19 @@ class BaseSignal(
             for i in range(len(self.axes_manager.signal_axes)):
                 scale.add(self.axes_manager.signal_axes[i].scale)
                 units.add(self.axes_manager.signal_axes[i].units)
-            if len(units) != 1 or len(scale) != 1:
+            if len(scale) != 1 and not (
+                silence_warnings or silence_warnings == "scales"
+            ):
                 _logger.warning(
                     "The function you applied does not take into account "
-                    "the difference of units and of scales in-between axes."
+                    "the difference of scales in-between axes."
+                )
+            if len(units) != 1 and not (
+                silence_warnings or silence_warnings == "units"
+            ):
+                _logger.warning(
+                    "The function you applied does not take into account "
+                    "the difference of units in-between axes."
                 )
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
@@ -5523,10 +5554,6 @@ class BaseSignal(
 
         axes_changed = len(new_axis) != 0 or len(adjust_chunks) != 0
 
-        if show_progressbar:
-            pbar = ProgressBar()
-            pbar.register()
-
         mapped = da.blockwise(
             process_function_blockwise,
             output_pattern,
@@ -5546,6 +5573,8 @@ class BaseSignal(
 
         data_stored = False
 
+        cm = ProgressBar if show_progressbar else dummy_context_manager
+
         if inplace:
             if (
                 not self._lazy
@@ -5556,13 +5585,15 @@ class BaseSignal(
                 # da.store is used to avoid unnecessary amount of memory usage.
                 # By using it here, the contents in mapped is written directly to
                 # the existing NumPy array, avoiding a potential doubling of memory use.
-                da.store(
-                    mapped,
-                    self.data,
-                    dtype=mapped.dtype,
-                    compute=True,
-                    num_workers=num_workers,
-                )
+                with cm():
+                    da.store(
+                        mapped,
+                        self.data,
+                        dtype=mapped.dtype,
+                        compute=True,
+                        num_workers=num_workers,
+                        lock=False,
+                    )
                 data_stored = True
             else:
                 self.data = mapped
@@ -5590,10 +5621,8 @@ class BaseSignal(
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = sig.data.compute(num_workers=num_workers)
-
-        if show_progressbar:
-            pbar.unregister()
+            with cm():
+                sig.data = sig.data.compute(num_workers=num_workers)
 
         return sig
 

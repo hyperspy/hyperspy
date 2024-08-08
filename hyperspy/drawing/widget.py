@@ -614,6 +614,11 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         return value
 
     def _set_snap_size(self, value):
+        if value and any(not axis.is_uniform for axis in self.axes):
+            raise ValueError(
+                "The snap to axes values feature is not supported "
+                "for non-uniform axes."
+            )
         self._snap_size = value
         if value:
             snap_value = self._do_snap_size(self._size)
