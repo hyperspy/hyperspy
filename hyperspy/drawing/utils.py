@@ -1876,9 +1876,12 @@ def _roi_sum(signal, roi, axes, out=None):
         out.data[:] = f(sliced_signal.data, axis=axes)
         out.events.data_changed.trigger(obj=out)
     else:
-        # we don't case if this is not optimised for speed since this is
+        # we don't care if this is not optimised for speed since this is
         # expected to be called only when setting up the out signal
-        s = sliced_signal.nansum(axis=axes)
+        with warnings.catch_warnings():
+            # Catch warning for non-uniform axis
+            warnings.filterwarnings("ignore", category=UserWarning, module="hyperspy")
+            s = sliced_signal.nansum(axis=axes)
         # Reset signal to default Signal1D or Signal2D
         s.set_signal_type("")
         s.metadata.General.title = "Integrated intensity"

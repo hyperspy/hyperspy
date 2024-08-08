@@ -487,7 +487,7 @@ class BaseInteractiveROI(BaseROI):
         self.events.changed.trigger(self)
 
     def add_widget(
-        self, signal, axes=None, widget=None, color="green", snap=True, **kwargs
+        self, signal, axes=None, widget=None, color="green", snap=None, **kwargs
     ):
         """Add a widget to visually represent the ROI, and connect it so any
         changes in either are reflected in the other. Note that only one
@@ -507,8 +507,10 @@ class BaseInteractiveROI(BaseROI):
             The color for the widget. Any format that matplotlib uses should be
             ok. This will not change the color for any widget passed with the
             ``'widget'`` argument.
-        snap : bool, default True
-            If True, the ROI will be snapped to the axes values.
+        snap : bool or None, default None
+            If True, the ROI will be snapped to the axes values, non-uniform
+            axes are not supported. If None, it will be disabled (set to
+            ``False``) for signals containing non-uniform axes.
         **kwargs : dict
             All keyword arguments are passed to the widget constructor.
 
@@ -549,6 +551,14 @@ class BaseInteractiveROI(BaseROI):
         widget.axes = axes
         with widget.events.changed.suppress_callback(self._on_widget_change):
             self._apply_roi2widget(widget)
+
+            if snap is None:
+                if any(not axis.is_uniform for axis in axes):
+                    # Disable snapping for non-uniform axes
+                    snap = False
+                else:
+                    snap = True
+
             # We need to snap after the widget value have been set
             if hasattr(widget, "snap_all"):
                 widget.snap_all = snap
