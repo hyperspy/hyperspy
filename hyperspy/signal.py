@@ -3631,9 +3631,13 @@ class BaseSignal(
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
             for i, axis in enumerate(self.axes_manager._axes):
+                # If the shape doesn't change, there is nothing to do
+                # and we don't need to raise an error
                 if axis.is_uniform is False and new_shape[i] != self.data.shape[i]:
                     raise NotImplementedError(
-                        "Rebinning of non-uniform axes is not yet implemented."
+                        "Rebinning of non-uniform axes is not yet implemented. "
+                        "An alternative is to interpolate the data on an uniform axis "
+                        "using `interpolate_on_axis` before rebinning."
                     )
             new_shape_in_array = np.array(
                 [
