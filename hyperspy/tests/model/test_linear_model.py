@@ -246,6 +246,7 @@ class TestFitAlgorithms:
         g1.sigma.free = False
         g1.centre.free = False
         c = Expression("a*x+b", "line with offset")
+        c.b.value = 3
         m.extend([g1, c])
         self.m = m
 
