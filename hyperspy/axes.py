@@ -739,10 +739,11 @@ class BaseDataAxis(t.HasTraits):
             If ``True``, the first and last value of the axis will not be changed.
             The new scale is calculated by substracting the last value by the first
             value and dividing by the number of intervals.
-            the axis. If ``False``, the scale and offset are calculated using
+            If ``False``, the scale and offset are calculated using
             :meth:`numpy.polynomial.polynomial.Polynomial.fit`, which minimises
             the scale difference over the whole axis range but the bounds of
-            the axis can change. Default is ``True``.
+            the axis can change (in some cases quite significantly, in particular when the
+            interval width is changing continuously). Default is ``True``.
         log_scale_error : bool
             If ``True``, the maximum scale error will be logged as INFO.
             Default is ``True``.
@@ -790,7 +791,7 @@ class BaseDataAxis(t.HasTraits):
 
         Notes
         -----
-        The function only convert the axis type and doesn't interpolate
+        The function only converts the axis type and doesn't interpolate
         the data itself - see :meth:`~.api.signals.BaseSignal.interpolate_on_axis`
         to interpolate data on a uniform axis.
 

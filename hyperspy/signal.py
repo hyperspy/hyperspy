@@ -3451,7 +3451,7 @@ class BaseSignal(
         >>> s2 = s.interpolate_on_axis("uniform", -1, inplace=False)
         >>> hs.plot.plot_spectra(
         ...     [s, s2],
-        ...     legend=["FunctionalAxis", "Interpolated (identical bounds)"],
+        ...     legend=["FunctionalAxis", "Interpolated"],
         ...     drawstyle='steps-mid',
         ... )
         <Axes: xlabel='Energy (eV)', ylabel='Intensity'>
@@ -3464,7 +3464,7 @@ class BaseSignal(
         >>> s3 = s.interpolate_on_axis(new_axis, -1, inplace=False)
         >>> hs.plot.plot_spectra(
         ...     [s, s3],
-        ...     legend=["FunctionalAxis", "Interpolated (polyfit)"],
+        ...     legend=["FunctionalAxis", "Interpolated"],
         ...     drawstyle='steps-mid',
         ... )
         <Axes: xlabel='Energy (eV)', ylabel='Intensity'>
