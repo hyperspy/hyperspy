@@ -729,18 +729,93 @@ class BaseDataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
-    def convert_to_uniform_axis(self):
-        """Convert to an uniform axis."""
-        scale = (self.high_value - self.low_value) / self.size
+    def convert_to_uniform_axis(self, keep_bounds=True, log_scale_error=True):
+        """
+        Convert to an uniform axis.
+
+        Parameters
+        ----------
+        keep_bounds : bool
+            If ``True``, the first and last value of the axis will not be changed.
+            The new scale is calculated by substracting the last value by the first
+            value and dividing by the number of intervals.
+            If ``False``, the scale and offset are calculated using
+            :meth:`numpy.polynomial.polynomial.Polynomial.fit`, which minimises
+            the scale difference over the whole axis range but the bounds of
+            the axis can change (in some cases quite significantly, in particular when the
+            interval width is changing continuously). Default is ``True``.
+        log_scale_error : bool
+            If ``True``, the maximum scale error will be logged as INFO.
+            Default is ``True``.
+
+        Examples
+        --------
+        Using ``keep_bounds=True`` (default):
+
+        >>> s = hs.data.luminescence_signal(uniform=False)
+        >>> print(s.axes_manager)
+        <Axes manager, axes: (|1024)>
+                    Name |   size |  index |  offset |   scale |  units
+        ================ | ====== | ====== | ======= | ======= | ======
+        ---------------- | ------ | ------ | ------- | ------- | ------
+                  Energy |   1024 |      0 | non-uniform axis |     eV
+        >>> s.axes_manager[-1].convert_to_uniform_axis(keep_bounds=True)
+        >>> print(s.axes_manager)
+        <Axes manager, axes: (|1024)>
+                    Name |   size |  index |  offset |   scale |  units
+        ================ | ====== | ====== | ======= | ======= | ======
+        ---------------- | ------ | ------ | ------- | ------- | ------
+                  Energy |   1024 |      0 |     1.6 |  0.0039 |     eV
+
+        Using ``keep_bounds=False``:
+
+        >>> s = hs.data.luminescence_signal(uniform=False)
+        >>> print(s.axes_manager)
+        <Axes manager, axes: (|1024)>
+                    Name |   size |  index |  offset |   scale |  units
+        ================ | ====== | ====== | ======= | ======= | ======
+        ---------------- | ------ | ------ | ------- | ------- | ------
+                  Energy |   1024 |      0 | non-uniform axis |     eV
+        >>> s.axes_manager[-1].convert_to_uniform_axis(keep_bounds=False)
+        >>> print(s.axes_manager)
+        <Axes manager, axes: (|1024)>
+                    Name |   size |  index |  offset |   scale |  units
+        ================ | ====== | ====== | ======= | ======= | ======
+        ---------------- | ------ | ------ | ------- | ------- | ------
+                  Energy |   1024 |      0 |     1.1 |  0.0033 |     eV
+
+
+        See Also
+        --------
+        hyperspy.api.signals.BaseSignal.interpolate_on_axis
+
+        Notes
+        -----
+        The function only converts the axis type and doesn't interpolate
+        the data itself - see :meth:`~.api.signals.BaseSignal.interpolate_on_axis`
+        to interpolate data on a uniform axis.
+
+        """
+        indices = np.arange(self.size)
+        if keep_bounds:
+            scale = (self.axis[-1] - self.axis[0]) / (self.size - 1)
+            offset = self.axis[0]
+        else:
+            # polyfit minimize the error over the whole axis
+            offset, scale = np.polynomial.Polynomial.fit(
+                indices, self.axis, deg=1
+            ).convert()
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
-        del d["axis"]
-        if len(self.axis) > 1:
-            scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
-            _logger.warning("The maximum scale error is {}.".format(scale_err))
+        if "axis" in d:
+            del d["axis"]
+        if len(self.axis) > 1 and log_scale_error:
+            scale_err = np.max(self.axis - (scale * indices + offset))
+            _logger.info("The maximum scale error is {}.".format(scale_err))
         d["_type"] = "UniformDataAxis"
+        d["size"] = self.size
         self.__class__ = UniformDataAxis
-        self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
+        self.__init__(**d, scale=scale, offset=offset)
         self.axes_manager = axes_manager
 
     @property

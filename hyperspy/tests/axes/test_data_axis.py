@@ -167,7 +167,6 @@ class TestDataAxis:
         np.testing.assert_allclose(self.axis.axis, np.arange(0, 10, 2) ** 2)
 
     def test_convert_to_uniform_axis(self):
-        scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
         is_binned = self.axis.is_binned
         navigate = self.axis.navigate
         self.axis.name = "parrot"
@@ -179,13 +178,21 @@ class TestDataAxis:
         assert s.axes_manager[0].name == "parrot"
         assert s.axes_manager[0].units == "plumage"
         assert s.axes_manager[0].size == 16
-        assert s.axes_manager[0].scale == scale
+        np.testing.assert_allclose(s.axes_manager[0].scale, 15)
         assert s.axes_manager[0].offset == 0
         assert s.axes_manager[0].low_value == 0
-        assert s.axes_manager[0].high_value == 15 * scale
+        assert s.axes_manager[0].high_value == 15 * 15
         assert index_in_array == s.axes_manager[0].index_in_array
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
+
+    def test_convert_to_uniform_axis_keep_bounds_False(self):
+        # estimated offset, scale using numpy polyfit
+        s = Signal1D(np.arange(10), axes=[self.axis])
+        s.axes_manager[0].convert_to_uniform_axis(keep_bounds=False)
+        assert s.axes_manager[0].size == 16
+        np.testing.assert_allclose(s.axes_manager[0].scale, 15)
+        np.testing.assert_allclose(s.axes_manager[0].offset, -35.0)
 
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
@@ -335,6 +342,12 @@ class TestFunctionalDataAxis:
         assert index_in_array == s.axes_manager[0].index_in_array
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
+
+    def test_convert_to_uniform_axis(self):
+        ax = FunctionalDataAxis(size=10, expression="a * x + b", a=2, b=100)
+        axis_before = copy.deepcopy(ax.axis)
+        ax.convert_to_uniform_axis()
+        np.testing.assert_allclose(axis_before, ax.axis)
 
     def test_update_from(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)

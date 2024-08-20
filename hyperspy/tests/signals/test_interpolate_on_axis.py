@@ -121,6 +121,25 @@ class TestInterpolateAxis1D:
             self.s0.interpolate_on_axis(x_uniform, 0)
 
 
+def test_interpolate_convert_to_uniform():
+    s = signals.Signal1D(np.arange(100))
+    axis = s.axes_manager[-1]
+    axis.convert_to_non_uniform_axis()
+    assert not s.axes_manager[-1].is_uniform
+    s2 = s.interpolate_on_axis("uniform", -1, inplace=False)
+    assert s2.axes_manager[-1].is_uniform
+    np.testing.assert_allclose(s.data, s2.data)
+    np.testing.assert_allclose(axis.axis, s2.axes_manager[-1].axis)
+
+    s.interpolate_on_axis("uniform", -1, inplace=True)
+    # Check that the object is still the same
+    assert axis is s.axes_manager[-1]
+
+    with pytest.raises(ValueError):
+        # already changed to uniform axis
+        s.interpolate_on_axis("uniform", -1, inplace=True)
+
+
 def test_interpolate_on_axis_2D():
     d = np.arange(0, 140).reshape(7, 20)
     x_initial = {"offset": 0, "scale": 1, "size": 20, "name": "X"}

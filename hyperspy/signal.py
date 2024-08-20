@@ -3413,17 +3413,21 @@ class BaseSignal(
             self.axes_manager.convert_units(axis)
 
     def interpolate_on_axis(self, new_axis, axis=0, inplace=False, degree=1):
-        """Replaces the given ``axis`` with the provided ``new_axis``
+        """
+        Replaces the given ``axis`` with the provided ``new_axis``
         and interpolates data accordingly using
         :func:`scipy.interpolate.make_interp_spline`.
 
         Parameters
         ----------
         new_axis : :class:`hyperspy.axes.UniformDataAxis`,
-        :class:`hyperspy.axes.DataAxis` or :class:`hyperspy.axes.FunctionalDataAxis`
+        :class:`hyperspy.axes.DataAxis`, :class:`hyperspy.axes.FunctionalDataAxis`
+        or str
             Axis which replaces the one specified by the ``axis`` argument.
             If this new axis exceeds the range of the old axis,
             a warning is raised that the data will be extrapolated.
+            If ``"uniform"``, convert the axis specified by the ``axis``
+            parameter to a uniform axis with the same number of data points.
         axis : int or str, default 0
             Specifies the axis which will be replaced using the index of the
             axis in the `axes_manager`. The axis can be specified using the index of the
@@ -3440,28 +3444,63 @@ class BaseSignal(
         :class:`~.api.signals.BaseSignal` (or subclass)
             A copy of the object with the axis exchanged and the data interpolated.
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
+
+        Examples
+        --------
+        >>> s = hs.data.luminescence_signal(uniform=False)
+        >>> s2 = s.interpolate_on_axis("uniform", -1, inplace=False)
+        >>> hs.plot.plot_spectra(
+        ...     [s, s2],
+        ...     legend=["FunctionalAxis", "Interpolated"],
+        ...     drawstyle='steps-mid',
+        ... )
+        <Axes: xlabel='Energy (eV)', ylabel='Intensity'>
+
+        Specifying a uniform axis:
+
+        >>> s = hs.data.luminescence_signal(uniform=False)
+        >>> new_axis = s.axes_manager[-1].copy()
+        >>> new_axis.convert_to_uniform_axis()
+        >>> s3 = s.interpolate_on_axis(new_axis, -1, inplace=False)
+        >>> hs.plot.plot_spectra(
+        ...     [s, s3],
+        ...     legend=["FunctionalAxis", "Interpolated"],
+        ...     drawstyle='steps-mid',
+        ... )
+        <Axes: xlabel='Energy (eV)', ylabel='Intensity'>
         """
         old_axis = self.axes_manager[axis]
-        if old_axis.navigate != new_axis.navigate:
-            raise ValueError(
-                "The navigate attribute of new_axis differs from the to be replaced axis."
-            )
         axis_idx = old_axis.index_in_array
-        if (
-            old_axis.low_value > new_axis.low_value
-            or old_axis.high_value < new_axis.high_value
-        ):
-            _logger.warning(
-                "The specified new axis exceeds the range of the to be replaced old axis. "
-                "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
-            )
-
         interpolator = make_interp_spline(
             old_axis.axis,
             self.data,
             axis=axis_idx,
             k=degree,
         )
+
+        if new_axis == "uniform":
+            if old_axis.is_uniform:
+                raise ValueError(f"The axis {old_axis.name} is already uniform.")
+            if inplace:
+                old_axis.convert_to_uniform_axis(log_scale_error=False)
+                new_axis = old_axis
+            else:
+                new_axis = old_axis.copy()
+                new_axis.convert_to_uniform_axis(log_scale_error=False)
+        else:
+            if old_axis.navigate != new_axis.navigate:
+                raise ValueError(
+                    "The navigate attribute of new_axis differs from the to be replaced axis."
+                )
+            if (
+                old_axis.low_value > new_axis.low_value
+                or old_axis.high_value < new_axis.high_value
+            ):
+                _logger.warning(
+                    "The specified new axis exceeds the range of the to be replaced old axis. "
+                    "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
+                )
+
         new_data = interpolator(new_axis.axis)
 
         if inplace:
@@ -3470,7 +3509,10 @@ class BaseSignal(
         else:
             s = self._deepcopy_with_new_data(new_data)
 
-        s.axes_manager.set_axis(new_axis, axis_idx)
+        if new_axis is not old_axis:
+            # user specifies a new_axis != "uniform"
+            s.axes_manager.set_axis(new_axis, axis_idx)
+
         if not inplace:
             return s
 
@@ -3589,9 +3631,13 @@ class BaseSignal(
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
             for i, axis in enumerate(self.axes_manager._axes):
+                # If the shape doesn't change, there is nothing to do
+                # and we don't need to raise an error
                 if axis.is_uniform is False and new_shape[i] != self.data.shape[i]:
                     raise NotImplementedError(
-                        "Rebinning of non-uniform axes is not yet implemented."
+                        "Rebinning of non-uniform axes is not yet implemented. "
+                        "An alternative is to interpolate the data on an uniform axis "
+                        "using `interpolate_on_axis` before rebinning."
                     )
             new_shape_in_array = np.array(
                 [
