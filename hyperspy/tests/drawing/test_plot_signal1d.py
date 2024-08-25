@@ -484,6 +484,28 @@ def test_plot_spectra_normalise(style):
     return ax.get_figure()
 
 
+def test_plot_spectra_normalise_interactive():
+    s = hs.signals.Signal1D(np.arange(100)) + 100
+    s2 = np.sqrt(s)
+
+    ax = hs.plot.plot_spectra([s, s2], normalise=True)
+    lines = ax.get_lines()
+    assert lines[0].get_data()[1][0] == 0
+    assert lines[0].get_data()[1][-1] == 1
+    assert lines[1].get_data()[1][0] == 0
+    assert lines[1].get_data()[1][-1] == 1
+
+    # Simulate data changed
+    s.data = s.data * -1
+    s.events.data_changed.trigger(s)
+
+    # check the values
+    assert lines[0].get_data()[1][0] == 1
+    assert lines[0].get_data()[1][-1] == 0
+    assert lines[1].get_data()[1][0] == 0
+    assert lines[1].get_data()[1][-1] == 1
+
+
 def test_plot_empty_slice_autoscale():
     s = hs.signals.Signal1D(np.arange(100))
     s.plot()
