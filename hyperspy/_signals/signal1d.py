@@ -1000,6 +1000,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 show_progressbar=show_progressbar,
                 ragged=False,
                 num_workers=num_workers,
+                silence_warnings="non-uniform",
             )
 
     smooth_lowess.__doc__ %= (

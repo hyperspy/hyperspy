@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
 from unittest import mock
 
 import dask.array as da
@@ -337,6 +338,14 @@ class TestSmoothing:
             number_of_iterations=n_iter,
         )
         np.testing.assert_allclose(self.s.data, data, rtol=self.rtol, atol=self.atol)
+
+    def test_lowess_non_uniform(self, caplog):
+        s = self.s
+        s.axes_manager[-1].convert_to_non_uniform_axis()
+        assert not s.axes_manager[-1].is_uniform
+        with caplog.at_level(logging.WARNING):
+            s.smooth_lowess(0.5, 1)
+        assert caplog.text == ""
 
     def test_tv(self):
         weight = 1
