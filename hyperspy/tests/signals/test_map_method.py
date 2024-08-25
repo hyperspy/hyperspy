@@ -1323,13 +1323,29 @@ def test_silence_warning_scales(caplog):
     assert caplog.text == ""
 
     with caplog.at_level(logging.WARNING):
-        s.map(np.sum, silence_warnings=["scale"], inplace=False)
+        s.map(np.sum, silence_warnings="scales", inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["scales"], inplace=False)
     assert caplog.text == ""
 
     with caplog.at_level(logging.WARNING):
         s.map(np.sum, silence_warnings=False, inplace=False)
     assert "The function you applied does not take into account" in caplog.text
     assert "scales" in caplog.text
+
+
+@pytest.mark.parametrize("silence_warnings", (False, "scales"))
+def test_silence_warning_units_warn(caplog, silence_warnings):
+    s = hs.signals.Signal2D(np.arange(5 * 10 * 15).reshape(5, 10, 15))
+    s.axes_manager.signal_axes[0].units = "m"
+    s.axes_manager.signal_axes[1].units = "nm"
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=silence_warnings, inplace=False)
+    assert "The function you applied does not take into account" in caplog.text
+    assert "units" in caplog.text
 
 
 def test_silence_warning_units(caplog):
@@ -1342,13 +1358,18 @@ def test_silence_warning_units(caplog):
     assert caplog.text == ""
 
     with caplog.at_level(logging.WARNING):
-        s.map(np.sum, silence_warnings=["units"], inplace=False)
+        s.map(np.sum, silence_warnings="units", inplace=False)
     assert caplog.text == ""
 
     with caplog.at_level(logging.WARNING):
-        s.map(np.sum, silence_warnings=False, inplace=False)
-    assert "The function you applied does not take into account" in caplog.text
-    assert "units" in caplog.text
+        s.map(np.sum, silence_warnings=["units"], inplace=False)
+    assert caplog.text == ""
+
+    with pytest.raises(ValueError):
+        s.map(np.sum, silence_warnings=["units", "wrong_string"], inplace=False)
+
+    with pytest.raises(TypeError):
+        s.map(np.sum, silence_warnings=[True], inplace=False)
 
 
 def test_silence_warning_scales_units(caplog):

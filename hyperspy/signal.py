@@ -5234,7 +5234,7 @@ class BaseSignal(
             See docstring for output_signal_size for more information.
             Default None.
         %s
-        silence_warnings : bool or list of str
+        silence_warnings : bool, str or tuple, list of str
             If ``True``, don't warn when one of the signal axes are non-uniform,
             or the scales of the signal axes differ. If ``"non-uniform"``,
             ``"scales"`` or ``"units"`` are in the list the warning will be
@@ -5316,6 +5316,30 @@ class BaseSignal(
             lazy_output = self._lazy
         if ragged is None:
             ragged = self.ragged
+        if isinstance(silence_warnings, str):
+            silence_warnings = (silence_warnings,)
+
+        if isinstance(silence_warnings, (list, tuple)):
+            for key in silence_warnings:
+                if isinstance(key, str):
+                    if key not in ["non-uniform", "units", "scales"]:
+                        raise ValueError(
+                            f"'{key}' is not a valid string for the "
+                            "`silence_warnings` parameter."
+                        )
+                else:
+                    raise TypeError(
+                        "`silence_warnings` must be a boolean or a list, tuple of string."
+                    )
+
+        def _silence_warnings(silence_warnings, key):
+            # Return True when it should silence warning,
+            # otherwise False
+            # Warn only when `silence_warnings` is False
+            # or when the key is not in `silence_warnings`
+            return silence_warnings is True or (
+                isinstance(silence_warnings, (tuple, list)) and key in silence_warnings
+            )
 
         # Separate arguments to pass to the mapping function:
         # ndkwargs dictionary contains iterating arguments which must be signals.
@@ -5338,7 +5362,7 @@ class BaseSignal(
                     f"<{self_nav_shape}>"
                 )
         if any([not ax.is_uniform for ax in self.axes_manager.signal_axes]):
-            if not (silence_warnings or silence_warnings == "non-uniform"):
+            if not _silence_warnings(silence_warnings, "non-uniform"):
                 _logger.warning(
                     "At least one axis of the signal is non-uniform. Can your "
                     "`function` operate on non-uniform axes?",
@@ -5351,16 +5375,12 @@ class BaseSignal(
             for i in range(len(self.axes_manager.signal_axes)):
                 scale.add(self.axes_manager.signal_axes[i].scale)
                 units.add(self.axes_manager.signal_axes[i].units)
-            if len(scale) != 1 and not (
-                silence_warnings or silence_warnings == "scales"
-            ):
+            if len(scale) != 1 and not _silence_warnings(silence_warnings, "scales"):
                 _logger.warning(
                     "The function you applied does not take into account "
                     "the difference of scales in-between axes."
                 )
-            if len(units) != 1 and not (
-                silence_warnings or silence_warnings == "units"
-            ):
+            if len(units) != 1 and not _silence_warnings(silence_warnings, "units"):
                 _logger.warning(
                     "The function you applied does not take into account "
                     "the difference of units in-between axes."
