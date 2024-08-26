@@ -825,6 +825,15 @@ def test_plot_images_overlay_vmin_warning(caplog):
     assert "`vmin` is ignored when overlaying images." in caplog.text
 
 
+def test_plot_images_overlay_signals():
+    s = hs.signals.Signal2D(np.arange(10 * 10).reshape(10, 10))
+
+    hs.plot.plot_images(s, overlay=True)
+
+    s = hs.stack([s, -s])
+    hs.plot.plot_images(s, overlay=True)
+
+
 def test_plot_scalebar_error():
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     with pytest.raises(ValueError):

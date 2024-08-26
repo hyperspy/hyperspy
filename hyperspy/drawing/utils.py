@@ -741,8 +741,8 @@ def plot_images(
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
-    if isinstance(images, BaseSignal) and images.axes_manager.navigation_dimension > 0:
-        images = [images._deepcopy_with_new_data(images.data)]
+    if isinstance(images, BaseSignal):
+        images = [im_ for im_ in images]
 
     n = 0
     for i, sig in enumerate(images):
