@@ -168,6 +168,13 @@ class TestFindPeaks1D:
             peaks["position"], self.peak_positions1, rtol=1e-5, atol=1e-4
         )
 
+    def test_non_uniform(self, caplog):
+        s = self.signal
+        s.axes_manager[-1].convert_to_non_uniform_axis()
+        with caplog.at_level(logging.WARNING):
+            _ = s.find_peaks1D_ohaver()[1]
+        assert caplog.text == ""
+
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
         if isinstance(peaks, da.Array):

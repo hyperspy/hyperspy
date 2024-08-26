@@ -1514,6 +1514,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             num_workers=num_workers,
             inplace=False,
             lazy_output=False,
+            silence_warnings="non-uniform",
         )
         return peaks.data
 
