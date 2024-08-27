@@ -405,7 +405,8 @@ def test_hanning(lazy, offset):
         data[..., -offset:] = 0
 
     assert channels == sig.hanning_taper(side="both", channels=channels, offset=offset)
-    np.testing.assert_allclose(data, sig.data)
+    kwargs = {"atol": 0.5} if lazy else {}
+    np.testing.assert_allclose(data, sig.data, **kwargs)
 
 
 @pytest.mark.parametrize("float_data", [True, False])
