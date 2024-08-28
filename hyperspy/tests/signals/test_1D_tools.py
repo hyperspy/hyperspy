@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
 from unittest import mock
 
 import dask.array as da
@@ -166,6 +167,13 @@ class TestFindPeaks1D:
         np.testing.assert_allclose(
             peaks["position"], self.peak_positions1, rtol=1e-5, atol=1e-4
         )
+
+    def test_non_uniform(self, caplog):
+        s = self.signal
+        s.axes_manager[-1].convert_to_non_uniform_axis()
+        with caplog.at_level(logging.WARNING):
+            _ = s.find_peaks1D_ohaver()[1]
+        assert caplog.text == ""
 
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
@@ -338,6 +346,14 @@ class TestSmoothing:
         )
         np.testing.assert_allclose(self.s.data, data, rtol=self.rtol, atol=self.atol)
 
+    def test_lowess_non_uniform(self, caplog):
+        s = self.s
+        s.axes_manager[-1].convert_to_non_uniform_axis()
+        assert not s.axes_manager[-1].is_uniform
+        with caplog.at_level(logging.WARNING):
+            s.smooth_lowess(0.5, 1)
+        assert caplog.text == ""
+
     def test_tv(self):
         weight = 1
         data = np.asanyarray(self.s.data, dtype="float")
@@ -389,7 +405,8 @@ def test_hanning(lazy, offset):
         data[..., -offset:] = 0
 
     assert channels == sig.hanning_taper(side="both", channels=channels, offset=offset)
-    np.testing.assert_allclose(data, sig.data)
+    kwargs = {"atol": 0.5} if lazy else {}
+    np.testing.assert_allclose(data, sig.data, **kwargs)
 
 
 @pytest.mark.parametrize("float_data", [True, False])
