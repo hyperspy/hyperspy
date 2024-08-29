@@ -26,19 +26,65 @@ import numpy as np
 
 from hyperspy import components1d, components2d, signals
 from hyperspy.axes import UniformDataAxis
+from hyperspy.decorators import jit_ifnumba
 from hyperspy.misc.math_tools import check_random_state
 
+try:
+    from numba import prange
+except ImportError:
+    # Numba not installed
+    prange = range
+
+
 ADD_NOISE_DOCSTRING = """add_noise : bool
-        If True, add noise to the signal. See note to seed the noise to
-        generate reproducible noise.
+        If True, add noise to the signal. Use ``random_state`` to seed
+        the noise to generate reproducible noise.
     random_state : None, int or numpy.random.Generator, default None
         Random seed used to generate the data.
     """
 
 
-def atomic_resolution_image():
+@jit_ifnumba(cache=True, parallel=True)
+def _create_array_with_gaussian(spacing_x, spacing_y, size_x, size_y, gaussian):
+    array = np.zeros((size_x, size_y), dtype=np.float32)
+    for i in prange(int(size_x / spacing_x)):
+        for j in prange(int(size_y / spacing_y)):
+            array[
+                i * spacing_x : (i + 1) * spacing_x, j * spacing_y : (j + 1) * spacing_y
+            ] += gaussian
+
+    return array * 1e3
+
+
+def atomic_resolution_image(
+    size=512,
+    spacing=0.2,
+    column_radius=0.05,
+    rotation_angle=0,
+    pixel_size=0.015,
+    add_noise=False,
+    random_state=None,
+):
     """
-    Get an artificial atomic resolution image.
+    Make an artificial atomic resolution image. The atomic columns
+    are modelled with Gaussian functions.
+
+    Parameters
+    ----------
+    size : int or tuple of int, default=512
+        The number of pixels of the image in horizontal and vertical
+        directions. If int, the size is the same in both directions.
+    spacing : float or tuple of float, default=14
+        The spacing between the atomic columns in horizontal
+        and vertical directions in nanometer.
+    column_radius : float, default=0.05
+        The radius of the atomic column, i. e. the width of the Gaussian
+        in nanometer.
+    rotation_angle : int or float, default=0
+        The rotation of the lattice in degree.
+    pixel_size : float, default=0.015
+        The pixel size in nanometer.
+    %s
 
     Returns
     -------
@@ -46,22 +92,66 @@ def atomic_resolution_image():
 
     Examples
     --------
+    >>> import hyperspy.api as hs
     >>> s = hs.data.atomic_resolution_image()
     >>> s.plot()
 
     """
-    sX, sY = 2, 2
-    x_array, y_array = np.mgrid[0:200, 0:200]
-    image = np.zeros_like(x_array, dtype=np.float32)
-    gaussian2d = components2d.Gaussian2D(sigma_x=sX, sigma_y=sY)
-    for x in range(10, 195, 20):
-        for y in range(10, 195, 20):
-            gaussian2d.centre_x.value = x
-            gaussian2d.centre_y.value = y
-            image += gaussian2d.function(x_array, y_array)
+    if isinstance(size, int):
+        size = (size,) * 2
+    elif not isinstance(size, tuple):
+        raise ValueError("`size` must be an integer or tuple of int.")
 
-    s = signals.Signal2D(image)
+    if isinstance(spacing, float):
+        spacing = (spacing,) * 2
+    elif not isinstance(spacing, tuple):
+        raise ValueError("`spacing` must be an integer or tuple of int.")
+
+    size_x, size_y = size
+    spacing_x, spacing_y = tuple([int(round(v / pixel_size)) for v in spacing])
+
+    gaussian = components2d.Gaussian2D(
+        sigma_x=column_radius / pixel_size,
+        sigma_y=column_radius / pixel_size,
+        centre_x=spacing_x / 2,
+        centre_y=spacing_y / 2,
+    )
+
+    gaussian_values = gaussian.function(*np.mgrid[:spacing_x, :spacing_y])
+
+    array = _create_array_with_gaussian(
+        spacing_x, spacing_y, size_x, size_y, gaussian_values
+    )
+
+    if add_noise:
+        random_state = check_random_state(random_state)
+        array += random_state.poisson(array)
+
+    s = signals.Signal2D(array)
+
+    if rotation_angle != 0:
+        from scipy.ndimage import rotate
+
+        s.map(rotate, angle=rotation_angle, reshape=False)
+
+        w, h = s.axes_manager.signal_axes[0].size, s.axes_manager.signal_axes[1].size
+        wr, hr = _get_largest_rectangle_from_rotation(w, h, rotation_angle)
+        w_remove, h_remove = (w - wr), (h - hr)
+        s.crop_signal(
+            int(w_remove / 2),
+            int(w - w_remove / 2),
+            int(h_remove / 2),
+            int(h - h_remove / 2),
+        )
+
+    for axis in s.axes_manager.signal_axes:
+        axis.scale = pixel_size
+        axis.units = "nm"
+
     return s
+
+
+atomic_resolution_image.__doc__ %= ADD_NOISE_DOCSTRING
 
 
 def luminescence_signal(
@@ -237,3 +327,39 @@ def wave_image(
 
 
 wave_image.__doc__ %= ADD_NOISE_DOCSTRING
+
+
+def _get_largest_rectangle_from_rotation(width, height, angle):
+    """
+    Given a rectangle of size wxh that has been rotated by 'angle' (in
+    degrees), computes the width and height of the largest possible
+    axis-aligned rectangle (maximal area) within the rotated rectangle.
+    from: http://stackoverflow.com/a/16778797/1018861
+    In hyperspy, it is centered around centre coordinate of the signal.
+    """
+    import math
+
+    angle = math.radians(angle)
+    if width <= 0 or height <= 0:
+        return 0, 0
+
+    width_is_longer = width >= height
+    side_long, side_short = (width, height) if width_is_longer else (height, width)
+
+    # since the solutions for angle, -angle and 180-angle are all the same,
+    # if suffices to look at the first quadrant and the absolute values of sin,cos:
+    sin_a, cos_a = abs(math.sin(angle)), abs(math.cos(angle))
+    if side_short <= 2.0 * sin_a * cos_a * side_long:
+        # half constrained case: two crop corners touch the longer side,
+        #   the other two corners are on the mid-line parallel to the longer line
+        x = 0.5 * side_short
+        wr, hr = (x / sin_a, x / cos_a) if width_is_longer else (x / cos_a, x / sin_a)
+    else:
+        # fully constrained case: crop touches all 4 sides
+        cos_2a = cos_a * cos_a - sin_a * sin_a
+        wr, hr = (
+            (width * cos_a - height * sin_a) / cos_2a,
+            (height * cos_a - width * sin_a) / cos_2a,
+        )
+
+    return wr, hr
