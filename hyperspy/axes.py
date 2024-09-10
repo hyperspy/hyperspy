@@ -1674,7 +1674,7 @@ class AxesManager(t.HasTraits):
         else:
             axes = [self._axes_getter(ax) for ax in y]
         _, indices = np.unique([_id for _id in map(id, axes)], return_index=True)
-        ans = tuple(axes[i] for i in sorted(indices))
+        ans = TupleSA(axes[i] for i in sorted(indices))
         return ans
 
     def _axes_getter(self, y):
