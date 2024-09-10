@@ -29,6 +29,7 @@ from hyperspy.axes import (
     _serpentine_iter,
 )
 from hyperspy.defaults_parser import preferences
+from hyperspy.misc.utils import TupleSA
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
 
@@ -155,8 +156,13 @@ class TestAxesManager:
         with pytest.raises(ValueError):
             axis = BaseDataAxis()
             am[axis]
+        assert isinstance(am.navigation_axes, TupleSA)
+        assert isinstance(am.signal_axes, TupleSA)
+
         assert am["nav"] == am.navigation_axes
+        assert isinstance(am["nav"], TupleSA)
         assert am["sig"] == am.signal_axes
+        assert isinstance(am["nav"], TupleSA)
 
 
 class TestAxesManagerScaleOffset:
