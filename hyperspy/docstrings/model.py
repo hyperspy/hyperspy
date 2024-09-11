@@ -23,7 +23,7 @@
 FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             The optimization algorithm used to perform the fitting.
 
-            * Non-linear optimizer
+            * Non-linear optimizers:
 
               * ``"lm"`` performs least-squares optimization using the
                 Levenberg-Marquardt algorithm, and supports bounds
@@ -53,7 +53,7 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
                 :func:`scipy.optimize.shgo` for more details on available
                 options. Requires ``scipy >= 1.2.0``.
 
-            * Linear optimizer
+            * Linear optimizers:
 
               * ``"lstsq"`` - least square using :func:`numpy.linalg.lstsq`.
               * ``"ols"`` - Ordinary least square using

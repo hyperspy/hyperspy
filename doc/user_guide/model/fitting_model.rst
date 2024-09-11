@@ -460,7 +460,7 @@ solve the problem as a linear regression problem! This can be done using two app
     Gaussian peaks with well-defined energy (``Gaussian.centre``) and peak widths
     (``Gaussian.sigma``). This dataset can be fit extremely fast with a linear optimizer.
 
-There are two implementations of linear least squares fitting in hyperspy:
+There are several implementations of linear least squares fitting in HyperSpy:
 
 - ``'lstsq'``: least squares using :func:`numpy.linalg.lstsq`, or
   :func:`dask.array.linalg.lstsq` for lazy signals,
@@ -469,7 +469,7 @@ There are two implementations of linear least squares fitting in hyperspy:
   :class:`sklearn.linear_model.LinearRegression`,
 - ``'ridge'``: least square supporting regularisation using
   :class:`sklearn.linear_model.Ridge`. The parameter ``alpha`` controls the
-  regularization strength and can significantly affects the results.
+  regularization strength and can significantly affect the results.
 
 See the corresponding documentation in `scikit-learn <https://scikit-learn.org/stable/modules/linear_model.html>`_
 or :func:`numpy.linalg.lstsq` for passing parameters to :meth:`~hyperspy.model.BaseModel.fit` or
@@ -477,7 +477,7 @@ or :func:`numpy.linalg.lstsq` for passing parameters to :meth:`~hyperspy.model.B
 Only the ``'lstsq'`` optimizer supports lazy signals.
 
 As for non-linear least squares fitting, :ref:`weighted least squares <weighted_least_squares-label>`
-is supported.
+are supported.
 
 In the following example, we first generate a 300x300 navigation signal of varying total intensity,
 and then populate it with an EDS spectrum at each point. The signal can be fitted with a polynomial

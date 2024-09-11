@@ -1109,13 +1109,13 @@ class BaseModel(list):
               as keyword argument, see :class:`sklearn.linear_model.Ridge`
               for more information.
 
-            Only 'lstsq' suppors lazy signal.
+            Only 'lstsq' suppors lazy signals.
         calculate_errors : bool, default is False
             If True, calculate the errors.
         only_current : bool, default is True
             Fit the current index only, instead of the whole navigation space.
         kwargs : dict, optional
-            Keywords arguments are passed to the corresponding optimizer.
+            Keyword arguments are passed to the corresponding optimizer.
 
         Notes
         -----
