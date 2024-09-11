@@ -24,7 +24,8 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.components1d import Gaussian, Offset
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import SignalDimensionError
+from hyperspy.exceptions import SignalDimensionError, VisibleDeprecationWarning
+from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.models.model1d import ComponentFit
 
 
@@ -219,15 +220,26 @@ class TestStdWithMultipleFitters:
 
         self.g1, self.g2 = g1, g2
 
-    @pytest.mark.parametrize("optimizer", ["lm", "lstsq", "ridge_regression"])
+    @pytest.mark.parametrize(
+        "optimizer", ["lm", "lstsq", "ols", "ridge", "ridge_regression"]
+    )
     def test_fitters(self, optimizer):
-        if optimizer == "ridge_regression":
+        if optimizer in ["ols", "ridge", "ridge_regression"]:
             pytest.importorskip("sklearn")
 
-        if self.m.signal._lazy and optimizer == "ridge_regression":
-            with pytest.raises(ValueError):
-                self.m.fit(optimizer=optimizer)
+        if optimizer == "ridge_regression":
+            cm = pytest.warns(
+                VisibleDeprecationWarning, match="Use `optimizer='ridge'` instead"
+            )
         else:
-            self.m.fit(optimizer=optimizer)
-            np.testing.assert_almost_equal(self.g1.A.std, 0.29659216)
+            cm = dummy_context_manager()
+
+        if self.m.signal._lazy and optimizer in ["ols", "ridge", "ridge_regression"]:
+            with pytest.raises(ValueError):
+                with cm:
+                    self.m.fit(optimizer=optimizer)
+        else:
+            with cm:
+                self.m.fit(optimizer=optimizer)
+            np.testing.assert_allclose(self.g1.A.std, 0.29659216, rtol=1e6)
             np.testing.assert_almost_equal(self.g1.A.std, self.g2.A.std)

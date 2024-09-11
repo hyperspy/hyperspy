@@ -45,6 +45,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.events import Event, Events, EventSuppressor
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
@@ -1095,16 +1096,26 @@ class BaseModel(list):
         Parameters
         ----------
         optimizer : str, default is "lstsq"
-            'lstsq' - Default, supports lazy signal
-            'ridge_regression' - Supports regularisation, doesn't support lazy
-            signal.
+
+            * ``'lstsq'`` - Default, least square using :func:`numpy.linalg.lstsq`.
+            * ``'ols'`` - Ordinary least square using
+              :class:`sklearn.linear_model.LinearRegression`
+            * ``'nnls'`` - Linear regression with positive constraints on the
+              regression coefficients using
+              :class:`sklearn.linear_model.LinearRegression`
+            * ``'ridge'`` - least square supporting regularisation using
+              :class:`sklearn.linear_model.Ridge`. The parameter
+              ``alpha`` controlling regularization strength can be passed
+              as keyword argument, see :class:`sklearn.linear_model.Ridge`
+              for more information.
+
+            Only 'lstsq' suppors lazy signals.
         calculate_errors : bool, default is False
             If True, calculate the errors.
         only_current : bool, default is True
             Fit the current index only, instead of the whole navigation space.
         kwargs : dict, optional
-            Keywords arguments are passed to
-            :func:`sklearn.linear_model.ridge_regression`.
+            Keyword arguments are passed to the corresponding optimizer.
 
         Notes
         -----
@@ -1120,6 +1131,13 @@ class BaseModel(list):
         fitting is hence currently only useful for fitting a dataset in the
         vectorized manner.
         """
+        if optimizer == "ridge_regression":
+            warnings.warn(
+                "`'ridge_regression'` has been renamed to `'ridge'`. "
+                "Use `optimizer='ridge'` instead.",
+                VisibleDeprecationWarning,
+            )
+            optimizer = "ridge"
 
         signal_axes = self.signal.axes_manager.signal_axes
         if any([not ax.is_uniform and ax.is_binned for ax in signal_axes]):
@@ -1250,31 +1268,49 @@ class BaseModel(list):
             comp_values = comp_values * weights
             target_signal = target_signal * weights
 
+        if self.signal._lazy and optimizer in ["ols", "nnls", "ridge"]:
+            raise ValueError(
+                f"The optimizer {optimizer} can't operate lazily, "
+                "use the `lstsq` optimizer instead."
+            )
+
         if optimizer == "lstsq":
-            xp = da if self.signal._lazy else np
-            kw = dict(rcond=None) if not self.signal._lazy else {}
+            if self.signal._lazy:
+                xp = da
+                kw = {}
+            else:
+                xp = np
+                kw = kwargs
+                kw.setdefault("rcond", None)
 
             result, residual, *_ = np.linalg.lstsq(
                 xp.asanyarray(comp_values.T), target_signal.T, **kw
             )
             coefficient_array = result.T
 
-        elif optimizer == "ridge_regression":
-            if self.signal._lazy:
-                raise ValueError(
-                    "The `ridge_regression` solver can't operate lazily, the "
-                    "`lstsq` solver can be used instead."
-                )
+        elif optimizer in ["ols", "nnls"]:
+            if optimizer == "nnls":
+                kwargs["positive"] = True
+            kwargs.setdefault("fit_intercept", False)
+            reg = import_sklearn.sklearn.linear_model.LinearRegression(**kwargs)
+            results = reg.fit(X=comp_values.T, y=target_signal.T)
+            coefficient_array = results.coef_
+            residual = None
 
-            kwargs.setdefault("alpha", 0.0)
-            coefficient_array = import_sklearn.sklearn.linear_model.ridge_regression(
-                X=comp_values.T, y=target_signal.T, **kwargs
-            )
+        elif optimizer == "ridge":
+            # scikit-learn documentation advices against setting alpha=0.0
+            # for numerical consideration
+            # https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
+            kwargs.setdefault("alpha", 0.01)
+            kwargs.setdefault("fit_intercept", False)
+            reg = import_sklearn.sklearn.linear_model.Ridge(**kwargs)
+            results = reg.fit(X=comp_values.T, y=target_signal.T)
+            coefficient_array = results.coef_
             residual = None
         else:
             raise ValueError(
-                f"Optimizer {optimizer} not supported. Use "
-                "'lstsq' or 'ridge_regression'."
+                f"Optimizer `'{optimizer}'` not supported. "
+                "Use 'lstsq', 'ols', 'nnls' or 'ridge'."
             )
 
         fit_output = {"x": coefficient_array}
@@ -1775,7 +1811,7 @@ class BaseModel(list):
                 self.p0 = self.fit_output.x
                 self.p_std = self.fit_output.perror
 
-            elif optimizer in ["lstsq", "ridge_regression"]:
+            elif optimizer in ["lstsq", "ols", "nnls", "ridge", "ridge_regression"]:
                 # multifit pass this kwargs when necessary
                 only_current = kwargs.get("only_current", True)
                 # Errors are calculated when specifying calculate_errors=True
@@ -1961,7 +1997,13 @@ class BaseModel(list):
                 "The mask must be a numpy array of boolean type with "
                 f"shape: {self.axes_manager._navigation_shape_in_array}"
             )
-        linear_fitting = kwargs.get("optimizer", "") in ["lstsq", "ridge_regression"]
+        linear_fitting = kwargs.get("optimizer", "") in [
+            "lstsq",
+            "ols",
+            "nnls",
+            "ridge",
+            "ridge_regression",
+        ]
 
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager._get_iterpath_size(masked_elements)

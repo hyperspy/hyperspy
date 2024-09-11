@@ -188,10 +188,10 @@ class TestMultiFitLinear:
 
         if m.signal._lazy:
             with pytest.raises(ValueError):
-                m.multifit(optimizer="ridge_regression")
+                m.multifit(optimizer="ridge")
             return
         else:
-            m.multifit(optimizer="ridge_regression")
+            m.multifit(optimizer="ridge")
 
 
 class TestLinearFitting:
@@ -246,6 +246,7 @@ class TestFitAlgorithms:
         g1.sigma.free = False
         g1.centre.free = False
         c = Expression("a*x+b", "line with offset")
+        c.b.value = 3
         m.extend([g1, c])
         self.m = m
 
@@ -288,14 +289,14 @@ class TestFitAlgorithms:
         m = self.m
         if m.signal._lazy:
             with pytest.raises(ValueError):
-                m.fit(optimizer="ridge_regression")
+                m.fit(optimizer="ridge")
             return
         else:
-            m.fit(optimizer="ridge_regression")
+            m.fit(optimizer="ridge")
         ridge_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, rtol=5e-6)
+        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, rtol=5e-3)
         linear_std = [para.std for para in m._free_parameters if para.std]
-        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1e-8)
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1e-2)
 
 
 class TestWarningSlowMultifit:
@@ -382,10 +383,10 @@ class TestWarningSlowMultifit:
     def test_heteroscedastic_variance(self):
         m = self.m
         m.signal.estimate_poissonian_noise_variance()
-        with pytest.warns(UserWarning):
-            m.multifit(
-                optimizer="lstsq", match="noise of the signal is not homoscedastic"
-            )
+        with pytest.warns(
+            UserWarning, match="noise of the signal is not homoscedastic"
+        ):
+            m.multifit(optimizer="lstsq")
 
 
 class TestLinearModel2D:
@@ -820,3 +821,27 @@ def test_expression_multiple_linear_parameter(nav_dim):
         np.testing.assert_allclose(p.a0.map["values"].mean(), p_ref.a0.value)
         np.testing.assert_allclose(p.a1.map["values"].mean(), p_ref.a1.value)
         np.testing.assert_allclose(p.a2.map["values"].mean(), p_ref.a2.value)
+
+
+@pytest.mark.parametrize("optimizer", ("lstsq", "ols", "nnls", "ridge"))
+def test_fitter(optimizer):
+    if optimizer in ["ols", "nnls", "ridge"]:
+        pytest.importorskip("sklearn")
+    s_ref = hs.signals.Signal1D(np.ones(20))
+    p_ref = hs.model.components1D.Polynomial(order=2, a0=25, a1=50, a2=2.5)
+
+    m_ref = s_ref.create_model()
+    m_ref.extend([p_ref])
+    s = m_ref.as_signal()
+
+    m = s.create_model()
+    p = hs.model.components1D.Polynomial(order=2)
+    m.append(p)
+    m.fit(optimizer=optimizer)
+
+    rtol = 5e-3 if optimizer == "ridge" else 1e-7
+
+    np.testing.assert_allclose(p_ref.a0.value, p.a0.value, rtol=rtol)
+    np.testing.assert_allclose(p_ref.a1.value, p.a1.value, rtol=rtol)
+    np.testing.assert_allclose(p_ref.a2.value, p.a2.value, rtol=rtol)
+    np.testing.assert_allclose(m.as_signal().data, s.data, rtol=rtol)

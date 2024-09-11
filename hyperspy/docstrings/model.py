@@ -23,33 +23,49 @@
 FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             The optimization algorithm used to perform the fitting.
 
-            * ``"lm"`` performs least-squares optimization using the
-              Levenberg-Marquardt algorithm, and supports bounds
-              on parameters.
-            * ``"trf"`` performs least-squares optimization using the
-              Trust Region Reflective algorithm, and supports
-              bounds on parameters.
-            * ``"dogbox"`` performs least-squares optimization using the
-              dogleg algorithm with rectangular trust regions, and
-              supports bounds on parameters.
-            * ``"odr"`` performs the optimization using the orthogonal
-              distance regression (ODR) algorithm. It does not support
-              bounds on parameters. See :mod:`scipy.odr` for more details.
-            * All of the available methods for :func:`scipy.optimize.minimize`
-              can be used here. See the :ref:`User Guide <model.fitting>`
-              documentation for more details.
-            * ``"Differential Evolution"`` is a global optimization method.
-              It does support bounds on parameters. See
-              :func:`scipy.optimize.differential_evolution` for more
-              details on available options.
-            * ``"Dual Annealing"`` is a global optimization method.
-              It does support bounds on parameters. See
-              :func:`scipy.optimize.dual_annealing` for more
-              details on available options. Requires ``scipy >= 1.2.0``.
-            * ``"SHGO"`` (simplicial homology global optimization) is a global
-              optimization method. It does support bounds on parameters. See
-              :func:`scipy.optimize.shgo` for more details on available
-              options. Requires ``scipy >= 1.2.0``.
+            * Non-linear optimizers:
+
+              * ``"lm"`` performs least-squares optimization using the
+                Levenberg-Marquardt algorithm, and supports bounds
+                on parameters.
+              * ``"trf"`` performs least-squares optimization using the
+                Trust Region Reflective algorithm, and supports
+                bounds on parameters.
+              * ``"dogbox"`` performs least-squares optimization using the
+                dogleg algorithm with rectangular trust regions, and
+                supports bounds on parameters.
+              * ``"odr"`` performs the optimization using the orthogonal
+                distance regression (ODR) algorithm. It does not support
+                bounds on parameters. See :mod:`scipy.odr` for more details.
+              * All of the available methods for :func:`scipy.optimize.minimize`
+                can be used here. See the :ref:`User Guide <model.fitting>`
+                documentation for more details.
+              * ``"Differential Evolution"`` is a global optimization method.
+                It does support bounds on parameters. See
+                :func:`scipy.optimize.differential_evolution` for more
+                details on available options.
+              * ``"Dual Annealing"`` is a global optimization method.
+                It does support bounds on parameters. See
+                :func:`scipy.optimize.dual_annealing` for more
+                details on available options. Requires ``scipy >= 1.2.0``.
+              * ``"SHGO"`` (simplicial homology global optimization) is a global
+                optimization method. It does support bounds on parameters. See
+                :func:`scipy.optimize.shgo` for more details on available
+                options. Requires ``scipy >= 1.2.0``.
+
+            * Linear optimizers:
+
+              * ``"lstsq"`` - least square using :func:`numpy.linalg.lstsq`.
+              * ``"ols"`` - Ordinary least square using
+                :class:`sklearn.linear_model.LinearRegression`
+              * ``"nnls"`` - Linear regression with positive constraints on the
+                regression coefficients using
+                :class:`sklearn.linear_model.LinearRegression`
+              * ``"ridge"`` - least square supporting regularisation using
+                :class:`sklearn.linear_model.Ridge`. The parameter
+                ``alpha`` (default set to 0.01) controlling regularization
+                strength can be passed as keyword argument, see
+                :class:`sklearn.linear_model.Ridge` for more information.
 
         loss_function : {``"ls"``, ``"ML-poisson"``, ``"huber"``, callable}, default ``"ls"``
             The loss function to use for minimization. Only ``"ls"`` is available
