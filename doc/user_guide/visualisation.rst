@@ -624,7 +624,8 @@ are described in :ref:`[Rossouw2015] <Rossouw2015>`.
     ...     z.extractall() # doctest: +SKIP
 
 Another example for this function is plotting EDS line intensities see
-:external+exspy:ref:`EDS chapter <get_lines_intensity>`. One can use the following commands
+:external+exspy:ref:`EDS chapter in the eXSpy documentation <get_lines_intensity>`.
+One can use the following commands
 to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
 `cmap`), adding scalebars to the plots (with `scalebar`), and changing the
