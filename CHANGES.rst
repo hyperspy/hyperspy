@@ -139,8 +139,8 @@ Release Highlights
     See `RosettaSciIO release notes <https://hyperspy.org/rosettasciio/changes.html>`_ for new features and supported formats.
   - `exSpy <https://exspy.readthedocs.io>`_: A library for EELS and EDS analysis.
     See `exSpy release notes <https://hyperspy.org/exspy/changes.html>`_ for new features.
-  - `HoloSpy <https://holospy.readthedocs.io>`_: A library for analysis of (off-axis) electron holography data.
-    See `HoloSpy release notes <https://holospy.readthedocs.io/en/latest/changes.html>`_ for new features.
+  - `holoSpy <https://holospy.readthedocs.io>`_: A library for analysis of (off-axis) electron holography data.
+    See `holoSpy release notes <https://holospy.readthedocs.io/en/latest/changes.html>`_ for new features.
 
 - The :py:mod:`~.api.plot.markers` API has been refactored
 

@@ -6302,13 +6302,16 @@ class BaseSignal(
         :class:`~.api.signals.BaseSignal` subclass associated, usually
         providing specific features for the analysis of that type of signal.
 
-        HyperSpy ships with a minimal set of known signal types. External
-        packages can register extra signal types. To print a list of
+        HyperSpy ships only with generic signal types. External packages
+        can register domain-specific signal types, usually associated with
+        specific measurement techniques. To print a list of
         registered signal types in the current installation, call
         :func:`~.api.print_known_signal_types`, and see
         the developer guide for details on how to add new signal_types.
-        A non-exhaustive list of HyperSpy extensions is also maintained
-        here: https://github.com/hyperspy/hyperspy-extensions-list.
+        A non-exhaustive list of HyperSpy extensions is maintained
+        here: https://github.com/hyperspy/hyperspy-extensions-list. See also the
+        `HyperSpy Website <https://hyperspy.org>`_ for an overview of the
+        ecosystem.
 
         Parameters
         ----------
@@ -6329,7 +6332,9 @@ class BaseSignal(
         Examples
         --------
 
-        Let's first print all known signal types:
+        Let's first print all known signal types (assuming the extensions
+        `eXSpy <https://hyperspy.org/exspy>`_ and `holoSpy
+        <https://hyperspy.org/holospy>`_ are installed):
 
         >>> s = hs.signals.Signal1D([0, 1, 2, 3])
         >>> s
