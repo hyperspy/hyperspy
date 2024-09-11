@@ -20,13 +20,19 @@ import logging
 import warnings
 from functools import partial
 
-import matplotlib as mpl
+import matplotlib
 from traits.api import Undefined
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.drawing import image, signal1d, widgets
 
 _logger = logging.getLogger(__name__)
+
+
+def _is_widget_backend():
+    backend = matplotlib.get_backend()
+    # in ipympl 0.9.4/ipython 8.24, the backend name changed from ipympl to widget
+    return backend.lower() in ["ipympl", "widget", "module://ipympl.backend_nbagg"]
 
 
 class MPL_HyperExplorer(object):
@@ -182,8 +188,7 @@ class MPL_HyperExplorer(object):
         for key in ["power_spectrum", "fft_shift"]:
             if key in kwargs:
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
-        backend = mpl.get_backend()
-        if "ipympl" not in backend and "plot_style" in kwargs:
+        if not _is_widget_backend() and "plot_style" in kwargs:
             warnings.warn(
                 "The `plot_style` keyword is only used when the `ipympl` or `widget`"
                 "plotting backends are used."
@@ -205,7 +210,7 @@ class MPL_HyperExplorer(object):
                         self.pointer.disconnect, []
                     )
             self.plot_signal(**kwargs)
-            if "ipympl" in backend:
+            if _is_widget_backend():
                 if plot_style not in ["vertical", "horizontal", None]:
                     raise ValueError(
                         "plot_style must be one of ['vertical', 'horizontal', None]"
@@ -241,10 +246,8 @@ class MPL_HyperExplorer(object):
                         )
                     )
 
-        if "ipympl" in backend:
-            import matplotlib.pyplot as plt
-
-            with plt.ioff():
+        if _is_widget_backend():
+            with matplotlib.pyplot.ioff():
                 plot_sig_and_nav(plot_style)
         else:
             plot_sig_and_nav(plot_style)
