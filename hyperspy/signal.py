@@ -5109,7 +5109,7 @@ class BaseSignal(
 
         Note
         ----
-        See :func:`numpy.histogram` for more details of the
+        See :func:`numpy.histogram` for more details on the
         meaning of the returned values.
 
         See Also
