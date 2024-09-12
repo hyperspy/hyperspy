@@ -1978,7 +1978,7 @@ def plot_roi_map(
         Whether to plot on a single figure or several figures.
         If True, :func:`~.api.plot.plot_images` or :func:`~.plot.plot_spectra`
         will be used, depending on the navigation dimension of the signal.
-    single_figure_kwargs : dict
+    single_figure_kwargs : dict, None
         Only when ``single_figure=True``. Keywords arguments are passed to
         :func:`~.api.plot.plot_images` or :func:`~.plot.plot_spectra`
         depending on the navigation dimension of the signal.
@@ -2112,14 +2112,15 @@ def plot_roi_map(
                 _add_colored_frame(roi_sum._plot.signal_plot.ax, color_)
 
     if single_figure:
+        if single_figure_kwargs is None:
+            single_figure_kwargs = {}
         if nav_dims == 1:
-            axs = plot_spectra(roi_sums, color=color, **kwargs)
+            axs = plot_spectra(roi_sums, color=color, **single_figure_kwargs)
         else:
             # default plot kwargs
-            single_figure_kwargs_ = dict(scalebar=[0], axes_decor="off", suptitle="")
-            # overwrite defaults with user defined kwargs
-            single_figure_kwargs_.update(kwargs)
-            axs = plot_images(roi_sums, cmap=cmap, **single_figure_kwargs_)
+            for k, v in zip(["scalebar", "axes_decor", "suptitle"], [0, "off", ""]):
+                single_figure_kwargs.setdefault(k, v)
+            axs = plot_images(roi_sums, cmap=cmap, **single_figure_kwargs)
             if add_colored_frame:
                 # hs.plot.plot_images doesn't use blitting
                 for ax, color_ in zip(axs, color):

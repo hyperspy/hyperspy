@@ -298,6 +298,32 @@ def test_single_figure_image(cmap):
     return plt.gcf()
 
 
+def test_single_figure_kwargs():
+    pytest.importorskip("matplotlib", minversion="3.8")
+
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 10, 50))
+    s = hs.signals.Signal1D(data)
+
+    title = "A title"
+    hs.plot.plot_roi_map(
+        s, rois=3, single_figure=True, single_figure_kwargs={"suptitle": title}
+    )
+    fig = plt.gcf()
+    assert fig.get_suptitle() == title
+
+    s2 = s.T
+    legend = ["Custom text 0", "Custom text 1"]
+    hs.plot.plot_roi_map(
+        s2, rois=2, single_figure=True, single_figure_kwargs={"legend": legend}
+    )
+
+    ax = plt.gca()
+    texts = ax.get_legend().get_texts()
+    for text, expected_text in zip(texts, legend[::-1]):
+        assert text.get_text() == expected_text
+
+
 @pytest.mark.parametrize("color", (None, ["C0", "C1"], ["r", "b"]))
 def test_single_figure_spectra(color):
     rng = np.random.default_rng(0)
