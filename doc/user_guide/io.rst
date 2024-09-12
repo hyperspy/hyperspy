@@ -100,7 +100,8 @@ available on your local installation use:
     >>> hs.print_known_signal_types() # doctest: +SKIP
 
 When loading data, the signal type can be specified by providing the ``signal_type``
-keyword, which has to correspond to one of the available subclasses of signal:
+keyword, which has to correspond to one of the available subclasses of signal
+(The ``EELS`` signal type is provided by the extension :external+exspy:ref:`eXSpy <user_guide>`):
 
 .. code-block:: python
 
