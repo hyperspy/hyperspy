@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
 
 import numpy as np
 import pytest
@@ -49,14 +48,12 @@ def test_types_of_bins(bins):
     assert out.data.shape == (10,)
 
 
-def test_knuth_bad_data_set(caplog):
+def test_knuth_bad_data_set():
     s1 = generate_bad_toy_data()
-    with caplog.at_level(logging.WARNING):
+    with pytest.warns(UserWarning, match="Capping the number of bins"):
         out = s1.get_histogram("knuth")
 
     assert out.data.shape == (250,)
-    assert "Initial estimation of number of bins using Freedman-Diaconis" in caplog.text
-    assert "Capping the number of bins" in caplog.text
 
 
 def test_bayesian_blocks_warning():
@@ -93,29 +90,27 @@ class TestHistogramBinMethodsBadDataset:
     def setup_method(self, method):
         self.s1 = generate_bad_toy_data()
 
-    def test_fd_logger_warning(self, caplog):
-        with caplog.at_level(logging.WARNING):
+    def test_fd_logger_warning(self):
+        with pytest.warns(UserWarning, match="Capping the number of bins"):
             out = self.s1.get_histogram()
 
         assert out.data.shape == (250,)
-        assert "Capping the number of bins" in caplog.text
 
-    def test_int_bins_logger_warning(self, caplog):
-        with caplog.at_level(logging.WARNING):
+    def test_int_bins_logger_warning(self):
+        with pytest.warns(UserWarning, match="Capping the number of bins"):
             out = self.s1.get_histogram(bins=251)
 
         assert out.data.shape == (250,)
-        assert "Capping the number of bins" in caplog.text
 
     @pytest.mark.parametrize("bins, size", [("scott", (58,)), (10, (10,))])
     def test_working_bins(self, bins, size):
         out = self.s1.get_histogram(bins=bins)
         assert out.data.shape == size
 
-    def test_range_bins(self, caplog):
+    def test_range_bins(self):
         # when falling back to capping the number of bins to 250, make sure
         # that the kwargs are passed correctly
-        with caplog.at_level(logging.WARNING):
+        with pytest.warns(UserWarning, match="Capping the number of bins"):
             out = self.s1.get_histogram(range_bins=[1e-10, 0.5])
 
         axis = out.axes_manager[-1].axis

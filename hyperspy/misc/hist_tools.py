@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
+import warnings
 
 import dask.array as da
 import numpy as np
@@ -30,8 +30,6 @@ from hyperspy.docstrings.signal import (
 )
 from hyperspy.external.astropy.bayesian_blocks import bayesian_blocks
 from hyperspy.external.astropy.histogram import knuth_bin_width
-
-_logger = logging.getLogger(__name__)
 
 
 def _set_histogram_metadata(signal, histogram, **kwargs):
@@ -111,7 +109,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
         # https://github.com/hyperspy/hyperspy/issues/784,
         # we log a warning and cap the number of bins at
         # a sensible value.
-        _logger.warning(
+        warnings.warn(
             f"Estimated number of bins using `bins='{_old_bins}'` "
             f"is too large ({_bins_len}). Capping the number of bins "
             f"at `max_num_bins={max_num_bins}`. Consider using an "
@@ -200,7 +198,7 @@ def histogram_dask(a, bins="fd", range=None, max_num_bins=250, weights=None, **k
         # https://github.com/hyperspy/hyperspy/issues/784,
         # we log a warning and cap the number of bins at
         # a sensible value.
-        _logger.warning(
+        warnings.warn(
             f"Estimated number of bins using `bins='{_old_bins}'` "
             f"is too large ({_bins_len}). Capping the number of bins "
             f"at `max_num_bins={max_num_bins}`. Consider using an "

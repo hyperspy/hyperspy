@@ -320,8 +320,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
         # arbitrary cutoff for number of spectra necessary before histogram
         # data is compressed by finding maxima of each spectrum
         tmp = BaseSignal(der) if n < 2000 else BaseSignal(np.ravel(der.max(-1)))
-
-        s_ = tmp.get_histogram(**kwargs)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=Warning,
+                message="Estimated number of bins using",
+                module="hyperspy",
+            )
+            s_ = tmp.get_histogram(**kwargs)
         s_.axes_manager[0].name = "Derivative magnitude"
         s_.metadata.Signal.quantity = "Counts"
         s_.metadata.General.title = "Spikes Analysis"
