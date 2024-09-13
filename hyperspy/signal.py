@@ -53,6 +53,7 @@ from hyperspy.docstrings.signal import (
     CLUSTER_SIGNALS_ARG,
     HISTOGRAM_BIN_ARGS,
     HISTOGRAM_MAX_BIN_ARGS,
+    HISTOGRAM_RANGE_ARGS,
     LAZY_OUTPUT_ARG,
     MANY_AXIS_PARAMETER,
     NAN_FUNC,
@@ -79,7 +80,7 @@ from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.misc.array_tools import rebin as array_rebin
-from hyperspy.misc.hist_tools import histogram
+from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
 from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
@@ -5092,9 +5093,7 @@ class BaseSignal(
         Parameters
         ----------
         %s
-        range_bins : tuple or None, optional
-            the minimum and maximum range for the histogram. If
-            `range_bins` is ``None``, (``x.min()``, ``x.max()``) will be used.
+        %s
         %s
         %s
         %s
@@ -5106,6 +5105,11 @@ class BaseSignal(
         -------
         hist_spec : :class:`~.api.signals.Signal1D`
             A 1D spectrum instance containing the histogram.
+
+        Notes
+        -----
+        See :func:`numpy.histogram` for more details on the
+        meaning of the returned values.
 
         See Also
         --------
@@ -5151,9 +5155,8 @@ class BaseSignal(
             hist_spec.axes_manager[0].offset = bin_edges[0]
             hist_spec.axes_manager[0].size = hist.shape[-1]
 
-        hist_spec.axes_manager[0].name = "value"
-        hist_spec.axes_manager[0].is_binned = True
-        hist_spec.metadata.General.title = self.metadata.General.title + " histogram"
+        _set_histogram_metadata(self, hist_spec, **kwargs)
+
         if out is None:
             return hist_spec
         else:
@@ -5161,6 +5164,7 @@ class BaseSignal(
 
     get_histogram.__doc__ %= (
         HISTOGRAM_BIN_ARGS,
+        HISTOGRAM_RANGE_ARGS,
         HISTOGRAM_MAX_BIN_ARGS,
         OUT_ARG,
         RECHUNK_ARG,

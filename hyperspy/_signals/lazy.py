@@ -39,7 +39,7 @@ from hyperspy.misc.array_tools import (
     _requires_linear_rebin,
     get_signal_chunk_slice,
 )
-from hyperspy.misc.hist_tools import histogram_dask
+from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import dummy_context_manager, isiterable, multiply
 from hyperspy.signal import BaseSignal
@@ -724,14 +724,13 @@ class LazySignal(BaseSignal):
 
     valuemin.__doc__ = BaseSignal.valuemin.__doc__
 
-    def get_histogram(self, bins="fd", out=None, rechunk=False, **kwargs):
-        if "range_bins" in kwargs:
-            _logger.warning("'range_bins' argument not supported for lazy " "signals")
-            del kwargs["range_bins"]
+    def get_histogram(
+        self, bins="fd", range_bins=None, out=None, rechunk=False, **kwargs
+    ):
         from hyperspy.signals import Signal1D
 
         data = self._lazy_data(rechunk=rechunk).flatten()
-        hist, bin_edges = histogram_dask(data, bins=bins, **kwargs)
+        hist, bin_edges = histogram_dask(data, bins=bins, range=range_bins, **kwargs)
         if out is None:
             hist_spec = Signal1D(hist)
             hist_spec._lazy = True
@@ -741,12 +740,13 @@ class LazySignal(BaseSignal):
             # we always overwrite the data because the computation is lazy ->
             # the result signal is lazy. Assume that the `out` is already lazy
             hist_spec.data = hist
+
         hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
         hist_spec.axes_manager[0].offset = bin_edges[0]
         hist_spec.axes_manager[0].size = hist.shape[-1]
-        hist_spec.axes_manager[0].name = "value"
-        hist_spec.axes_manager[0].is_binned = True
-        hist_spec.metadata.General.title = self.metadata.General.title + " histogram"
+
+        _set_histogram_metadata(self, hist_spec, **kwargs)
+
         if out is None:
             return hist_spec
         else:
