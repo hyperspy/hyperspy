@@ -37,11 +37,16 @@ Subpackages:
 import importlib
 
 
-def print_known_signal_types():
+def print_known_signal_types(style=None):
     r"""Print all known `signal_type`\s
 
     This includes `signal_type`\s from all installed packages that
     extend HyperSpy.
+
+    Parameters
+    ----------
+    style : prettytable style or None
+        If None, the default prettytable style will be used.
 
     Examples
     --------
@@ -65,6 +70,8 @@ def print_known_signal_types():
 
     table = PrettyTable()
     table.field_names = ["signal_type", "aliases", "class name", "package"]
+    if style is not None:
+        table.set_style(style)
     for sclass, sdict in ALL_EXTENSIONS["signals"].items():
         # skip lazy signals and non-data-type specific signals
         if sdict["lazy"] or not sdict["signal_type"]:
@@ -77,6 +84,7 @@ def print_known_signal_types():
         package = sdict["module"].split(".")[0]
         table.add_row([sdict["signal_type"], aliases, sclass, package])
         table.sortby = "class name"
+
     display(table)
 
 

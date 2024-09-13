@@ -404,6 +404,7 @@ numpydoc_xref_ignore = {
     "widget",
     "strategy",
     "module",
+    "prettytable",
 }
 
 # if Version(numpydoc.__version__) >= Version("1.6.0rc0"):

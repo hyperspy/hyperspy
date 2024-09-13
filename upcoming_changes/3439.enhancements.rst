@@ -1,0 +1,1 @@
+Add ``style`` parameter to the :func:`~.api.print_known_signal_types` function.
