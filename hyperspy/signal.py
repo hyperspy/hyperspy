@@ -53,6 +53,7 @@ from hyperspy.docstrings.signal import (
     CLUSTER_SIGNALS_ARG,
     HISTOGRAM_BIN_ARGS,
     HISTOGRAM_MAX_BIN_ARGS,
+    HISTOGRAM_RANGE_ARGS,
     LAZY_OUTPUT_ARG,
     MANY_AXIS_PARAMETER,
     NAN_FUNC,
@@ -5092,9 +5093,7 @@ class BaseSignal(
         Parameters
         ----------
         %s
-        range_bins : tuple or None, optional
-            the minimum and maximum range for the histogram. If
-            `range_bins` is ``None``, (``x.min()``, ``x.max()``) will be used.
+        %s
         %s
         %s
         %s
@@ -5107,8 +5106,8 @@ class BaseSignal(
         hist_spec : :class:`~.api.signals.Signal1D`
             A 1D spectrum instance containing the histogram.
 
-        Note
-        ----
+        Notes
+        -----
         See :func:`numpy.histogram` for more details on the
         meaning of the returned values.
 
@@ -5165,6 +5164,7 @@ class BaseSignal(
 
     get_histogram.__doc__ %= (
         HISTOGRAM_BIN_ARGS,
+        HISTOGRAM_RANGE_ARGS,
         HISTOGRAM_MAX_BIN_ARGS,
         OUT_ARG,
         RECHUNK_ARG,

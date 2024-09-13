@@ -107,7 +107,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
     if _bins_len > max_num_bins:
         # To avoid memory errors such as that detailed in
         # https://github.com/hyperspy/hyperspy/issues/784,
-        # we log a warning and cap the number of bins at
+        # we raise a warning and cap the number of bins at
         # a sensible value.
         warnings.warn(
             f"Estimated number of bins using `bins='{_old_bins}'` "
@@ -126,7 +126,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
 
 histogram.__doc__ %= (
     HISTOGRAM_BIN_ARGS,
-    HISTOGRAM_RANGE_ARGS,
+    HISTOGRAM_RANGE_ARGS.replace("range_bins : ", "range : "),
     HISTOGRAM_MAX_BIN_ARGS,
     HISTOGRAM_WEIGHTS_ARGS,
 )
