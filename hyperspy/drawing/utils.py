@@ -38,6 +38,7 @@ from rsciio.utils import rgb_tools
 import hyperspy
 import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
+from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS
 from hyperspy.misc.utils import to_numpy
 
 _logger = logging.getLogger(__name__)
@@ -1753,16 +1754,8 @@ def plot_histograms(
     signal_list : iterable
         Ordered list of spectra to plot. If ``style`` is ``"cascade"`` or
         ``"mosaic"``, the spectra can have different size and axes.
-    bins : int, list or str, optional
-        If bins is a string, then it must be one of:
-
-         - ``'knuth'`` : use Knuth's rule to determine bins,
-         - ``'scott'`` : use Scott's rule to determine bins,
-         - ``'fd'`` : use the Freedman-diaconis rule to determine bins,
-         - ``'blocks'`` : use bayesian blocks for dynamic bin widths.
-    range_bins : None or tuple, optional
-        The minimum and maximum range for the histogram. If not specified,
-        it will be (``x.min()``, ``x.max()``).
+    %s
+    %s
     color : None, (list of) matplotlib color, optional
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
@@ -1811,6 +1804,9 @@ def plot_histograms(
         legend=legend,
         fig=fig,
     )
+
+
+plot_histograms.__doc__ %= (HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS)
 
 
 def picker_kwargs(value, kwargs=None):

@@ -51,96 +51,94 @@ OPTIMIZE_ARG = """optimize : bool
             the chunks are optimised for the new axes configuration."""
 
 RECHUNK_ARG = """rechunk : bool
-           Only has effect when operating on lazy signal. Default ``False``,
-           which means the chunking structure will be retained. If ``True``,
-           the data may be automatically rechunked before performing this
-           operation."""
+            Only has effect when operating on lazy signal. Default ``False``,
+            which means the chunking structure will be retained. If ``True``,
+            the data may be automatically rechunked before performing this
+            operation."""
 
 SHOW_PROGRESSBAR_ARG = """show_progressbar : None or bool
-           If ``True``, display a progress bar. If ``None``, the default from
-           the preferences settings is used."""
+            If ``True``, display a progress bar. If ``None``, the default from
+            the preferences settings is used."""
 
 LAZY_OUTPUT_ARG = """lazy_output : None or bool
-           If ``True``, the output will be returned as a lazy signal. This means
-           the calculation itself will be delayed until either compute() is used,
-           or the signal is stored as a file.
-           If ``False``, the output will be returned as a non-lazy signal, this
-           means the outputs will be calculated directly, and loaded into memory.
-           If ``None`` the output will be lazy if the input signal is lazy, and
-           non-lazy if the input signal is non-lazy."""
+            If ``True``, the output will be returned as a lazy signal. This means
+            the calculation itself will be delayed until either compute() is used,
+            or the signal is stored as a file.
+            If ``False``, the output will be returned as a non-lazy signal, this
+            means the outputs will be calculated directly, and loaded into memory.
+            If ``None`` the output will be lazy if the input signal is lazy, and
+            non-lazy if the input signal is non-lazy."""
 
 NUM_WORKERS_ARG = """num_workers : None or int
-           Number of worker used by dask. If None, default
-           to dask default value."""
+            Number of worker used by dask. If None, default
+            to dask default value."""
 
 CLUSTER_SIGNALS_ARG = """signal : {"mean", "sum", "centroid"}, optional
-           If "mean" or "sum" return the mean signal or sum respectively
-           over each cluster. If "centroid", returns the signals closest
-           to the centroid."""
+            If "mean" or "sum" return the mean signal or sum respectively
+            over each cluster. If "centroid", returns the signals closest
+            to the centroid."""
 
 HISTOGRAM_BIN_ARGS = """bins : int or sequence of float or str, default "fd"
-           If ``bins`` is an int, it defines the number of equal-width
-           bins in the given range. If ``bins`` is a
-           sequence, it defines the bin edges, including the rightmost
-           edge, allowing for non-uniform bin widths.
+            If ``bins`` is an int, it defines the number of equal-width
+            bins in the given range. If ``bins`` is a
+            sequence, it defines the bin edges, including the rightmost
+            edge, allowing for non-uniform bin widths.
 
-           If ``bins`` is a string from the list below, will use
-           the method chosen to calculate the optimal bin width and
-           consequently the number of bins (see Notes for more detail on
-           the estimators) from the data that falls within the requested
-           range. While the bin width will be optimal for the actual data
-           in the range, the number of bins will be computed to fill the
-           entire range, including the empty portions. For visualisation,
-           using the ``'auto'`` option is suggested. Weighted data is not
-           supported for automated bin size selection.
+            If ``bins`` is a string from the list below, will use
+            the method chosen to calculate the optimal bin width and
+            consequently the number of bins (see Notes for more detail on
+            the estimators) from the data that falls within the requested
+            range. While the bin width will be optimal for the actual data
+            in the range, the number of bins will be computed to fill the
+            entire range, including the empty portions. For visualisation,
+            using the ``'auto'`` option is suggested. Weighted data is not
+            supported for automated bin size selection.
 
-           'auto'
-               Maximum of the 'sturges' and 'fd' estimators. Provides good
-               all around performance.
+            Possible strings are:
 
-           'fd' (Freedman Diaconis Estimator)
-               Robust (resilient to outliers) estimator that takes into
-               account data variability and data size.
-
-           'doane'
-               An improved version of Sturges' estimator that works better
-               with non-normal datasets.
-
-           'scott'
-               Less robust estimator that that takes into account data
-               variability and data size.
-
-           'stone'
-               Estimator based on leave-one-out cross-validation estimate of
-               the integrated squared error. Can be regarded as a generalization
-               of Scott's rule.
-
-           'rice'
-               Estimator does not take variability into account, only data
-               size. Commonly overestimates number of bins required.
-
-           'sturges'
-               R's default method, only accounts for data size. Only
-               optimal for gaussian data and underestimates number of bins
-               for large non-gaussian datasets.
-
-           'sqrt'
-               Square root (of data size) estimator, used by Excel and
-               other programs for its speed and simplicity.
-
-           'knuth'
-               Knuth's rule is a fixed-width, Bayesian approach to determining
-               the optimal bin width of a histogram.
-
-           'blocks'
-               Determination of optimal adaptive-width histogram bins using
-               the Bayesian Blocks algorithm.
-    """
+            - ``'auto'`` : Maximum of the 'sturges' and 'fd' estimators.
+              Provides good all around performance.
+            - ``'fd'`` : Freedman Diaconis Estimator, robust
+              (resilient to outliers) estimator that takes into
+              account data variability and data size.
+            - ``'doane'`` : An improved version of Sturges' estimator
+              that works better with non-normal datasets.
+            - ``'scott'`` : Less robust estimator that that takes into
+              account data variability and data size.
+            - ``'stone'`` : Estimator based on leave-one-out cross-validation
+              estimate of the integrated squared error. Can be regarded
+              as a generalization of Scott's rule.
+            - ``'rice'`` : Estimator does not take variability into account,
+              only data size. Commonly overestimates number of bins required.
+            - ``'sturges'`` : R's default method, only accounts for data size.
+              Only optimal for gaussian data and underestimates number
+              of bins for large non-gaussian datasets.
+            - ``'sqrt'`` : Square root (of data size) estimator, used by Excel
+              and other programs for its speed and simplicity.
+            - ``'knuth'`` : Knuth's rule is a fixed-width, Bayesian approach to
+              determining the optimal bin width of a histogram.
+            - ``'blocks'`` : Determination of optimal adaptive-width histogram
+              bins using the Bayesian Blocks algorithm."""
 
 HISTOGRAM_MAX_BIN_ARGS = """max_num_bins : int, default 250
-           When estimating the bins using one of the str methods, the
-           number of bins is capped by this number to avoid a MemoryError
-           being raised by :func:`numpy.histogram`."""
+            When estimating the bins using one of the str methods, the
+            number of bins is capped by this number to avoid a MemoryError
+            being raised by :func:`numpy.histogram`."""
+
+HISTOGRAM_RANGE_ARGS = """range_bins : (float, float), optional
+            The lower and upper limit of the range of bins. If not provided,
+            range is simply ``(a.min(), a.max())``. Values outside the range are
+            ignored. The first element of the range must be less than or
+            equal to the second. `range` affects the automatic bin
+            computation as well. While bin width is computed to be optimal
+            based on the actual data within `range`, the bin count will fill
+            the entire range including portions containing no data."""
+
+HISTOGRAM_WEIGHTS_ARGS = """weights : array_like, optional
+            An array of weights, of the same shape as `a`.  Each value in
+            `a` only contributes its associated weight towards the bin count
+            (instead of 1). This is currently not used by any of the bin estimators,
+            but may be in the future."""
 
 SIGNAL_MASK_ARG = """signal_mask : numpy.ndarray of bool
             Restricts the operation to the signal locations not marked
