@@ -142,8 +142,8 @@ HISTOGRAM_MAX_BIN_ARGS = """max_num_bins : int, default 250
 
 
 HISTOGRAM_RANGE_ARGS = """range : (float, float), optional
-        The lower and upper range of the bins.  If not provided, range
-        is simply ``(a.min(), a.max())``.  Values outside the range are
+        The lower and upper limit of the range of bins. If not provided,
+        range is simply ``(a.min(), a.max())``. Values outside the range are
         ignored. The first element of the range must be less than or
         equal to the second. `range` affects the automatic bin
         computation as well. While bin width is computed to be optimal
