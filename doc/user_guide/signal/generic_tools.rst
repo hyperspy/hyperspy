@@ -930,3 +930,65 @@ is preserved. If alpha is one, the Tukey window is equivalent to a Hann window.
 
 Apodization can be applied in place by setting keyword argument ``inplace`` to ``True``.
 In this case method will not return anything.
+
+
+Spike removal
+^^^^^^^^^^^^^
+
+Comic ray or X-ray can cause intense pixels in the data. To correct for these experimental
+artifact, two approaches are implemented in HyperSpy to remove spikes:
+
+- using a median filter - see :meth:`~.api.signals.BaseSignal.remove_spikes`
+- using interpolation (Signal1D only) - see :meth:`~.api.signals.Signal1D.spikes_removal_tool`
+
+Using a median filter
+"""""""""""""""""""""
+
+The :meth:`~.api.signals.BaseSignal.remove_spikes` find spikes using the following condition:
+
+.. math::
+
+    \mathrm{value} > \mathrm{median} + \sigma * \mathrm{threshold\_factor}
+
+where :math:`\sigma` is the standard deviation.
+
+Where the condition above is fullfill, the value are replace by their local median.
+The parameter ``threshold_factor`` can be specified by the user (default value is 5)
+and the axes along which the median and the standard deviation are calculated can be specified
+using the ``axes`` parameter.
+
+Using interpolation (Signal1D only)
+"""""""""""""""""""""""""""""""""""
+
+:meth:`~.api.signals.Signal1D.spikes_removal_tool` provides an user
+interface to remove spikes from spectra. The ``derivative histogram`` allows to
+identify the appropriate threshold. It is possible to use this tool
+on a specific interval of the data by :ref:`slicing the data
+<signal.indexing>`. For example, to use this tool in the signal between
+indices 8 and 17:
+
+.. code-block:: python
+
+   >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
+   >>> s.isig[8:17].spikes_removal_tool() # doctest: +SKIP
+
+
+The options ``navigation_mask`` or ``signal_mask`` provide more flexibility in the
+selection of the data, but these require a mask (booleen array) as parameter, which needs
+to be created manually:
+
+.. code-block:: python
+
+   >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
+   
+   To get a signal mask, get the mean over the navigation space
+
+   >>> s_mean = s.mean()
+   >>> mask = s_mean > 495
+   >>> s.spikes_removal_tool(signal_mask=mask) # doctest: +SKIP
+
+.. figure::  ../images/spikes_removal_tool.png
+   :align:   center
+   :width:   500
+
+   Spikes removal tool.

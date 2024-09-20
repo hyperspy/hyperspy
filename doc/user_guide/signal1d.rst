@@ -130,43 +130,6 @@ passed) can perform data smoothing with different algorithms:
 * :meth:`~.api.signals.Signal1D.smooth_savitzky_golay`
 
 
-Spike removal
---------------
-
-:meth:`~.api.signals.Signal1D.spikes_removal_tool` provides an user
-interface to remove spikes from spectra. The ``derivative histogram`` allows to
-identify the appropriate threshold. It is possible to use this tool
-on a specific interval of the data by :ref:`slicing the data
-<signal.indexing>`. For example, to use this tool in the signal between
-indices 8 and 17:
-
-.. code-block:: python
-
-   >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
-   >>> s.isig[8:17].spikes_removal_tool() # doctest: +SKIP
-
-
-The options ``navigation_mask`` or ``signal_mask`` provide more flexibility in the
-selection of the data, but these require a mask (booleen array) as parameter, which needs
-to be created manually:
-
-.. code-block:: python
-
-   >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
-   
-   To get a signal mask, get the mean over the navigation space
-
-   >>> s_mean = s.mean()
-   >>> mask = s_mean > 495
-   >>> s.spikes_removal_tool(signal_mask=mask) # doctest: +SKIP
-
-.. figure::  images/spikes_removal_tool.png
-   :align:   center
-   :width:   500
-
-   Spikes removal tool.
-
-
 Peak finding
 ------------
 
