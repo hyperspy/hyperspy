@@ -39,7 +39,7 @@ SPIKES_DIAGNOSIS_DOCSTRING = """Plots a histogram to help in choosing the thresh
 
         See Also
         --------
-        spikes_removal_tool
+        spikes_removal_tool, hyperspy.api.signals.BaseSignal.remove_spikes
 
         """
 
@@ -71,7 +71,8 @@ SPIKES_REMOVAL_TOOL_DOCSTRING = """Graphical interface to remove spikes from EEL
 
         See Also
         --------
-        :meth:`~hyperspy.api.signals.Signal1D.spikes_diagnosis`
+        hyperspy.api.signals.Signal1D.spikes_diagnosis,
+        hyperspy.api.signals.BaseSignal.remove_spikes
 
         """
 
