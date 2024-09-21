@@ -56,6 +56,7 @@ class Signal1DFigure(BlittedFigure):
         # Color cycles
         self._color_cycles = {
             "line": utils.ColorCycle(),
+            "dash": utils.ColorCycle(),
             "step": utils.ColorCycle(),
             "scatter": utils.ColorCycle(),
         }
@@ -345,9 +346,12 @@ class Signal1DLine(object):
             lp["marker"] = "o"
             lp["linestyle"] = "None"
             lp["markersize"] = 1
-
         elif value == "line":
             lp["linestyle"] = "-"
+            lp["marker"] = "None"
+            lp["drawstyle"] = "default"
+        elif value == "dash":
+            lp["linestyle"] = "--"
             lp["marker"] = "None"
             lp["drawstyle"] = "default"
         elif value == "step":
