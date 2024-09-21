@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import itertools
+import time
 
 import traits.api as t
 
@@ -129,6 +130,9 @@ class BaselineRemoval(t.HasTraits):
     # Splines parameters
     _enable_spline_parameters = t.Bool()
 
+    # To display the time per pixel
+    _time_per_pixel = t.Float(value=0)
+
     def __init__(self, signal):
         super().__init__()
         self.signal = signal
@@ -199,7 +203,11 @@ class BaselineRemoval(t.HasTraits):
         return kwargs
 
     def _baseline_to_plot(self, *args, **kwargs):
-        return self.estimator(self.signal._get_current_data(), **self._get_kwargs())[0]
+        start = time.perf_counter_ns()
+        out = self.estimator(self.signal._get_current_data(), **self._get_kwargs())[0]
+        end = time.perf_counter_ns()
+        self._time_per_pixel = (end - start) / 1e6
+        return out
 
     def _create_lines(self):
         self.estimator_line = hyperspy.drawing.signal1d.Signal1DLine()
