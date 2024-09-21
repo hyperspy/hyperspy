@@ -212,7 +212,7 @@ class BaselineRemoval(t.HasTraits):
     def _create_lines(self):
         self.estimator_line = hyperspy.drawing.signal1d.Signal1DLine()
         self.estimator_line.data_function = self._baseline_to_plot
-        self.estimator_line.set_line_properties(color="blue", type="line", scaley=False)
+        self.estimator_line.set_line_properties(color="blue", type="dash", scaley=False)
         self.signal._plot.signal_plot.add_line(self.estimator_line)
         self.estimator_line.autoscale = ""
         self.estimator_line.plot()
