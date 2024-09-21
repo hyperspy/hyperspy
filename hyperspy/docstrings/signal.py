@@ -73,6 +73,10 @@ NUM_WORKERS_ARG = """num_workers : None or int
             Number of worker used by dask. If None, default
             to dask default value."""
 
+IN_PLACE = """inplace : bool, default True
+            If ``True``, the data is replaced by the result. Otherwise
+            a new Signal with the results is returned."""
+
 CLUSTER_SIGNALS_ARG = """signal : {"mean", "sum", "centroid"}, optional
             If "mean" or "sum" return the mean signal or sum respectively
             over each cluster. If "centroid", returns the signals closest

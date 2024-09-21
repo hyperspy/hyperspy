@@ -118,6 +118,7 @@ doc = [
     # https://github.com/conda-forge/ipython-feedstock/pull/210
     "pickleshare", # ipython optional dependencies
     "numpydoc",
+    "pybaselines", # for docstring test
     "pydata_sphinx_theme",
     "setuptools_scm",
     "sphinx-copybutton",

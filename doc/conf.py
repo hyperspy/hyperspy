@@ -341,6 +341,7 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "pint": ("https://pint.readthedocs.io/en/stable", None),
+    "pybaselines": ("https://pybaselines.readthedocs.io/en/stable", None),
     "python": ("https://docs.python.org/3", None),
     "rsciio": ("https://hyperspy.org/rosettasciio/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy", None),
