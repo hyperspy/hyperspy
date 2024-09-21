@@ -54,6 +54,7 @@ from hyperspy.docstrings.signal import (
     HISTOGRAM_BIN_ARGS,
     HISTOGRAM_MAX_BIN_ARGS,
     HISTOGRAM_RANGE_ARGS,
+    IN_PLACE,
     LAZY_OUTPUT_ARG,
     MANY_AXIS_PARAMETER,
     NAN_FUNC,
@@ -5286,9 +5287,7 @@ class BaseSignal(
             first. For example via `image = copy.deepcopy(image)`.
         %s
         %s
-        inplace : bool, default True
-            If ``True``, the data is replaced by the result. Otherwise
-            a new Signal with the results is returned.
+        %s
         ragged : None or bool, default None
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
@@ -5529,7 +5528,7 @@ class BaseSignal(
         else:
             self.events.data_changed.trigger(obj=self)
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, NUM_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG, IN_PLACE, LAZY_OUTPUT_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """

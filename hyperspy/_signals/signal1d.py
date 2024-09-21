@@ -37,6 +37,7 @@ from hyperspy.docstrings.plot import (
     PLOT1D_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
+    IN_PLACE,
     LAZYSIGNAL_DOC,
     NAVIGATION_MASK_ARG,
     NUM_WORKERS_ARG,
@@ -1312,7 +1313,28 @@ class Signal1D(BaseSignal, CommonSignal1D):
         **kwargs,
     ):
         """
-        Remove baselines using algorithm implemented in pybaselines.
+        Remove baselines using algorithms implemented in pybaselines.
+
+        Parameters
+        ----------
+        algorithm : str or None
+            If ``str``, any of algorithm name in :class:`pybaselines.api.Baseline`.
+            If ``None``, a widget is open to select an algorithm and adjust
+            the parameters.
+        %s
+        %s
+        %s
+        **kwargs : dict
+            Keyword arguments of baseline algorithm. These are passed
+            to baseline function.
+
+        Examples
+        --------
+        import hyperspy.api as hs
+        s = hs.data.two_gaussians()
+
+        s.remove_baselines(algorithm="aspls", lam=1E7)
+
         """
         if algorithm is None:
             from hyperspy.utils.baseline_removal_tool import BaselineRemoval
@@ -1335,6 +1357,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
             kwargs["silence_warnings"] = "non-uniform"
             return self.map(baseline_fitting, inplace=inplace, **kwargs)
+
+    remove_baseline.__doc__ %= (IN_PLACE, DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
     def crop_signal(
