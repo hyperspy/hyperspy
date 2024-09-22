@@ -14,7 +14,7 @@ s = hs.data.two_gaussians()
 
 #%%
 # Remove baseline using :meth:`~.api.signals.Signal1D.remove_baseline`:
-s2 = s.remove_baseline(algorithm="aspls", lam=1E7, inplace=False)
+s2 = s.remove_baseline(method="aspls", lam=1E7, inplace=False)
 
 #%%
 # Plot the signal and its baseline: 

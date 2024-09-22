@@ -25,7 +25,7 @@ import hyperspy
 from hyperspy.ui_registry import add_gui_method
 
 # Whittaker
-algorithms_mapping_whittaker = {
+ALGORITHMS_MAPPING_WHITTAKER = {
     "Asymmetric Least Squares": "asls",
     "Improved Asymmetric Least Squares": "iasls",
     "Adaptive Iteratively Reweighted Penalized Least Squares": "airpls",
@@ -37,22 +37,22 @@ algorithms_mapping_whittaker = {
     "Derivative Peak-Screening Asymmetric Least Squares Algorithm": "derpsalsa",
 }
 # Polynomial
-algorithms_mapping_polynomial = {
+ALGORITHMS_MAPPING_POLYNOMIAL = {
     "Regular Polynomial": "poly",
     "Modified Polynomial": "modpoly",
     "Improved Modified Polynomial": "imodpoly",
     "Locally Estimated Scatterplot Smoothing": "loess",
 }
 # Splines
-algorithms_mapping_splines = {
+ALGORITHMS_MAPPING_SPLINES = {
     "Mixture Model": "mixture_model",
     "Iterative Reweighted Spline Quantile Regression": "irsqr",
 }  # + Penalized splines version
-algorithms_mapping = dict(algorithms_mapping_whittaker)
-algorithms_mapping.update(algorithms_mapping_splines)
-algorithms_mapping.update(algorithms_mapping_polynomial)
+ALGORITHMS_MAPPING = dict(ALGORITHMS_MAPPING_WHITTAKER)
+ALGORITHMS_MAPPING.update(ALGORITHMS_MAPPING_SPLINES)
+ALGORITHMS_MAPPING.update(ALGORITHMS_MAPPING_POLYNOMIAL)
 
-algorithms_parameters = {
+ALGORITHMS_PARAMETERS = {
     # Whittaker
     "asls": ("lam", "p", "diff_order"),
     "iasls": ("lam", "lam_1", "p", "diff_order"),
@@ -80,16 +80,16 @@ algorithms_parameters = {
     "irsqr": ("lam", "quantile", "num_knots", "spline_degree", "diff_order"),
 }
 
-algorithms_mapping_inverse = {v: k for k, v in algorithms_mapping.items()}
+ALGORITHMS_MAPPING_INVERSE = {v: k for k, v in ALGORITHMS_MAPPING.items()}
 # Get the mapping of parameters to algorithms
-parameters_algorithms = {}
-for parameter in set(itertools.chain(*algorithms_parameters.values())):
+PARAMETERS_ALGORITHMS = {}
+for parameter in set(itertools.chain(*ALGORITHMS_PARAMETERS.values())):
     algorithm_list = [
-        algorithms_mapping_inverse[algorithm]
-        for algorithm, parameters in algorithms_parameters.items()
+        ALGORITHMS_MAPPING_INVERSE[algorithm]
+        for algorithm, parameters in ALGORITHMS_PARAMETERS.items()
         if parameter in parameters
     ]
-    parameters_algorithms[parameter] = algorithm_list
+    PARAMETERS_ALGORITHMS[parameter] = algorithm_list
 
 
 def _baseline_fitting(data, baseline_fitter, **kwargs):
@@ -99,7 +99,7 @@ def _baseline_fitting(data, baseline_fitter, **kwargs):
 @add_gui_method(toolkey="hyperspy.Signal1D.remove_baseline")
 class BaselineRemoval(t.HasTraits):
     algorithm = t.Enum(
-        *algorithms_mapping.keys(),
+        *ALGORITHMS_MAPPING.keys(),
         default="Adaptive Smoothness Penalized Least Squares",
     )
     # Whittaker parameters
@@ -159,17 +159,17 @@ class BaselineRemoval(t.HasTraits):
         )
 
         # get algorithm full name
-        algorithm = algorithms_mapping_inverse[self._get_algorithm_abbreviation(False)]
+        algorithm = ALGORITHMS_MAPPING_INVERSE[self._get_algorithm_abbreviation(False)]
 
-        self._enable_p = algorithm in parameters_algorithms["p"]
-        self._enable_lam = algorithm in parameters_algorithms["lam"]
-        self._enable_lam_1 = algorithm in parameters_algorithms["lam_1"]
-        self._enable_eta = algorithm in parameters_algorithms["eta"]
-        self._enable_diff_order = algorithm in parameters_algorithms["diff_order"]
-        self._enable_poly_order = algorithm in algorithms_mapping_polynomial.keys()
-        self._enable_penalized_spline = algorithm in algorithms_mapping_whittaker.keys()
+        self._enable_p = algorithm in PARAMETERS_ALGORITHMS["p"]
+        self._enable_lam = algorithm in PARAMETERS_ALGORITHMS["lam"]
+        self._enable_lam_1 = algorithm in PARAMETERS_ALGORITHMS["lam_1"]
+        self._enable_eta = algorithm in PARAMETERS_ALGORITHMS["eta"]
+        self._enable_diff_order = algorithm in PARAMETERS_ALGORITHMS["diff_order"]
+        self._enable_poly_order = algorithm in ALGORITHMS_MAPPING_POLYNOMIAL.keys()
+        self._enable_penalized_spline = algorithm in ALGORITHMS_MAPPING_WHITTAKER.keys()
         self._enable_spline_parameters = (
-            algorithm in parameters_algorithms["spline_degree"] or self.penalized_spline
+            algorithm in PARAMETERS_ALGORITHMS["spline_degree"] or self.penalized_spline
         )
         self._update_lines()
 
@@ -185,18 +185,18 @@ class BaselineRemoval(t.HasTraits):
         self._update_lines()
 
     def _get_algorithm_abbreviation(self, with_prefix=True):
-        algorithm = algorithms_mapping[self.algorithm]
+        algorithm = ALGORITHMS_MAPPING[self.algorithm]
         if (
             self.penalized_spline
             and with_prefix
-            and self.algorithm not in algorithms_mapping_splines
+            and self.algorithm not in ALGORITHMS_MAPPING_SPLINES
         ):
             algorithm = "pspline_" + algorithm
 
         return algorithm
 
     def _get_kwargs(self):
-        args_name = algorithms_parameters[self._get_algorithm_abbreviation(False)]
+        args_name = ALGORITHMS_PARAMETERS[self._get_algorithm_abbreviation(False)]
         if self.penalized_spline:
             args_name += ("num_knots", "spline_degree")
         kwargs = {key: getattr(self, key) for key in args_name}
@@ -245,7 +245,7 @@ class BaselineRemoval(t.HasTraits):
 
     def apply(self):
         self.signal.remove_baseline(
-            algorithm=algorithms_mapping[self.algorithm],
+            method=ALGORITHMS_MAPPING[self.algorithm],
             inplace=True,
             **self._get_kwargs(),
         )

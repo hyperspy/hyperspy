@@ -20,8 +20,8 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.utils.baseline_removal_tool import (
+    ALGORITHMS_MAPPING_POLYNOMIAL,
     BaselineRemoval,
-    algorithms_mapping_polynomial,
 )
 
 pytest.importorskip("pybaselines")
@@ -31,11 +31,11 @@ def test_remove_baseline():
     s = hs.data.two_gaussians().inav[:5, :5]
 
     assert s.isig[:10].data.mean() > 20
-    s2 = s.remove_baseline(algorithm="aspls", lam=1e7, inplace=False)
+    s2 = s.remove_baseline(method="aspls", lam=1e7, inplace=False)
     assert s.isig[:10].data.mean() > 20
     assert s2.isig[:10].data.mean() < 5
 
-    s.remove_baseline(algorithm="aspls", lam=1e7)
+    s.remove_baseline(method="aspls", lam=1e7)
     assert s.isig[:10].data.mean() < 5
 
 
@@ -95,7 +95,7 @@ def test_baseline_removal_tool_enable():
     assert br._enable_eta is True
 
     # Polynomial
-    for algorithm in algorithms_mapping_polynomial.keys():
+    for algorithm in ALGORITHMS_MAPPING_POLYNOMIAL.keys():
         br.algorithm = algorithm
         assert br._enable_p is False
         assert br._enable_lam is False
