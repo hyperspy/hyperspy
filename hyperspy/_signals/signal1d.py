@@ -1294,7 +1294,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     def remove_baseline(
         self,
-        algorithm=None,
+        method=None,
         inplace=True,
         display=True,
         toolkit=None,
@@ -1305,8 +1305,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        algorithm : str or None
-            If ``str``, any of algorithm name in :class:`pybaselines.api.Baseline`.
+        method : str or None
+            If ``str``, any of the algorithm name in :class:`pybaselines.api.Baseline`.
             If ``None``, a widget is open to select an algorithm and adjust
             the parameters.
         %s
@@ -1321,10 +1321,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
         import hyperspy.api as hs
         s = hs.data.two_gaussians()
 
-        s.remove_baselines(algorithm="aspls", lam=1E7)
+        s.remove_baselines(method="aspls", lam=1E7)
 
         """
-        if algorithm is None:
+        if method is None:
             from hyperspy.utils.baseline_removal_tool import BaselineRemoval
 
             br = BaselineRemoval(self, **kwargs)
@@ -1337,7 +1337,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                     self.axes_manager[-1].axis,
                     check_finite=False,
                 ),
-                algorithm,
+                method,
             )
 
             def baseline_fitting(data, **kwargs):
