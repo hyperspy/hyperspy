@@ -1317,7 +1317,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if algorithm is None:
             from hyperspy.utils.baseline_removal_tool import BaselineRemoval
 
-            br = BaselineRemoval(self, algorithm=algorithm, **kwargs)
+            br = BaselineRemoval(self, **kwargs)
             return br.gui(display=display, toolkit=toolkit)
         else:
             from pybaselines import Baseline
