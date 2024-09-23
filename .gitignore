@@ -62,3 +62,4 @@ jsconfig.json
 *__pycache__*
 
 *sg_execution_times.rst
+doc/gen_modules/backreferences/*
