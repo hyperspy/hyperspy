@@ -51,9 +51,19 @@ ALGORITHMS_MAPPING_SPLINES = {
     "Mixture Model": "mixture_model",
     "Iterative Reweighted Spline Quantile Regression": "irsqr",
 }  # + Penalized splines version
+ALGORITHMS_MAPPING_CLASSIFICATION = {
+    "Dietrich's Classification": "dietrich",
+    "Golotvin's Classification": "golotvin",
+    "Standard Deviation Distribution": "std_distribution",
+    "Continuous Wavelet Transform Baseline Recognition": "cwt_br",
+    "Fully Automatic Baseline Correction": "fabc",
+    "Rubberband ": "rubberband",
+}
+
 ALGORITHMS_MAPPING = dict(ALGORITHMS_MAPPING_WHITTAKER)
 ALGORITHMS_MAPPING.update(ALGORITHMS_MAPPING_SPLINES)
 ALGORITHMS_MAPPING.update(ALGORITHMS_MAPPING_POLYNOMIAL)
+ALGORITHMS_MAPPING.update(ALGORITHMS_MAPPING_CLASSIFICATION)
 
 ALGORITHMS_PARAMETERS = {
     # Whittaker
@@ -84,6 +94,25 @@ ALGORITHMS_PARAMETERS = {
         "symmetric",
     ),
     "irsqr": ("lam", "quantile", "num_knots", "spline_degree", "diff_order"),
+    # Classification
+    "dietrich": ("smooth_half_window", "num_std", "interp_half_window"),
+    "golotvin": (
+        "half_window",
+        "smooth_half_window",
+        "num_std",
+        "interp_half_window",
+        "section",
+    ),
+    "std_distribution": (
+        "half_window",
+        "smooth_half_window",
+        "num_std",
+        "interp_half_window",
+        "section",
+    ),
+    "cwt_br": ("poly_order", "num_std"),
+    "fabc": ("lam", "num_std", "diff_order"),
+    "rubberband": ("lam", "segments", "diff_order"),
 }
 
 ALGORITHMS_MAPPING_INVERSE = {v: k for k, v in ALGORITHMS_MAPPING.items()}
@@ -123,6 +152,13 @@ class BaselineRemoval(t.HasTraits):
     spline_degree = t.Range(1, 5, value=3)
     symmetric = t.Bool()
     quantile = t.Range(0.001, 0.5, value=0.05)
+    # Classification
+    smooth_half_window = t.Range(1, 100, value=10)
+    num_std = t.Range(1, 100, value=3)
+    interp_half_window = t.Range(1, 100, value=10)
+    half_window = t.Range(1, 100, value=10)
+    section = t.Range(1, 100, value=20)
+    segments = t.Range(1, 100, value=1)
 
     # these are used to know if parameters needs to be enable or not
     # Whittaker parameters
@@ -235,7 +271,14 @@ class BaselineRemoval(t.HasTraits):
             "spline_degree",
             "symmetric",
             "poly_order",
+            "peak_ratio",
             "quantile",
+            "smooth_half_window",
+            "num_std",
+            "interp_half_window",
+            "half_window",
+            "section",
+            "segments",
         ],
         post_init=True,
     )
