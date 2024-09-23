@@ -41,7 +41,10 @@ ALGORITHMS_MAPPING_POLYNOMIAL = {
     "Regular Polynomial": "poly",
     "Modified Polynomial": "modpoly",
     "Improved Modified Polynomial": "imodpoly",
+    "Penalized Polynomial": "penalized_poly",
     "Locally Estimated Scatterplot Smoothing": "loess",
+    "Quantile Regression": "quant_reg",
+    "Goldindec": "goldindec",
 }
 # Splines
 ALGORITHMS_MAPPING_SPLINES = {
@@ -67,7 +70,10 @@ ALGORITHMS_PARAMETERS = {
     "poly": ("poly_order",),
     "modpoly": ("poly_order",),
     "imodpoly": ("poly_order",),
+    "penalized_poly": ("poly_order",),
     "loess": ("poly_order",),
+    "quant_reg": ("poly_order", "quantile"),
+    "goldindec": ("poly_order", "peak_ratio"),
     # Splines
     "mixture_model": (
         "lam",
@@ -111,6 +117,7 @@ class BaselineRemoval(t.HasTraits):
     penalized_spline = t.Bool()
     # Polynomial parameters
     poly_order = t.Range(1, 10, value=2)
+    peak_ratio = t.Range(0.0, 1.0, value=0.5)
     # Spline parameters
     num_knots = t.Range(10, 10000, value=100)
     spline_degree = t.Range(1, 5, value=3)
