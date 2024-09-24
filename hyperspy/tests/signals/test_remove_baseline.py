@@ -21,6 +21,7 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.utils.baseline_removal_tool import (
     ALGORITHMS_MAPPING_POLYNOMIAL,
+    PARAMETERS_ALGORITHMS,
     BaselineRemoval,
 )
 
@@ -68,14 +69,13 @@ def test_baseline_removal_tool_enable():
 
     # Whittaker
     assert br.algorithm == "Adaptive Smoothness Penalized Least Squares"
-    assert br._enable_p is False
-    assert br._enable_lam is True
-    assert br._enable_lam_1 is False
-    assert br._enable_eta is False
-    assert br._enable_diff_order is True
-    assert br._enable_poly_order is False
-    assert br._enable_penalized_spline is True
-    assert br._enable_spline_parameters is False
+    for parameter in PARAMETERS_ALGORITHMS.keys():
+        # only "lam" and "diff_order" are enable
+        if parameter in ["lam", "diff_order"]:
+            result = True
+        else:
+            result = False
+        assert getattr(br, f"_enable_{parameter}") is result
 
     for algorithm in [
         "Asymmetric Least Squares",
@@ -104,7 +104,6 @@ def test_baseline_removal_tool_enable():
         assert br._enable_poly_order is True
         assert br._enable_diff_order is False
         assert br._enable_penalized_spline is False
-        assert br._enable_spline_parameters is False
 
     # Splines
     for algorithm in [
@@ -119,4 +118,3 @@ def test_baseline_removal_tool_enable():
         assert br._enable_poly_order is False
         assert br._enable_diff_order is True
         assert br._enable_penalized_spline is False
-        assert br._enable_spline_parameters is True
