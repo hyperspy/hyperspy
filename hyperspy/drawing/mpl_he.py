@@ -25,6 +25,7 @@ from traits.api import Undefined
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.drawing import image, signal1d, widgets
+from hyperspy.events import Event, Events
 
 _logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ def _is_widget_backend():
     return backend.lower() in ["ipympl", "widget", "module://ipympl.backend_nbagg"]
 
 
-class MPL_HyperExplorer(object):
+class MPL_HyperExplorer:
     """ """
 
     def __init__(self):
@@ -52,6 +53,19 @@ class MPL_HyperExplorer(object):
         self.axis = None
         self.pointer = None
         self._pointer_nav_dim = None
+
+        self.events = Events()
+        self.events.closed = Event(
+            """
+            Event that triggers when the figure window is closed.
+
+            Parameters
+            ----------
+            obj:  SpectrumFigure instances
+                The instance that triggered the event.
+            """,
+            arguments=["obj"],
+        )
 
     def plot_signal(self, **kwargs):
         # This method should be implemented by the subclasses.
@@ -86,7 +100,13 @@ class MPL_HyperExplorer(object):
 
         if len(self.navigator_data_function().shape) == 1:
             # Create the figure
-            sf = signal1d.Signal1DFigure(title=title)
+            fig = kwargs.pop("fig", None)
+            sf = signal1d.Signal1DFigure(
+                title=title,
+                # Passed to figure creation
+                _on_figure_window_close=self.close,
+                fig=fig,
+            )
             axis = self.axes_manager.navigation_axes[0]
             sf.xlabel = "%s" % str(axis)
             if axis.units is not Undefined:
@@ -116,13 +136,15 @@ class MPL_HyperExplorer(object):
                 self._get_navigation_sliders()
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.events.index_changed.connect(sf.update, [])
-                    sf.events.closed.connect(
+                    self.events.closed.connect(
                         partial(axis.events.index_changed.disconnect, sf.update), []
                     )
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
             # Create the figure
-            imf = image.ImagePlot(title=title)
+            imf = image.ImagePlot(
+                title=title,
+            )
             imf.data_function = self.navigator_data_function
 
             # Set all kwargs value to the image figure before passing the rest
@@ -142,21 +164,21 @@ class MPL_HyperExplorer(object):
                     self._get_navigation_sliders()
                     for axis in self.axes_manager.navigation_axes[2:]:
                         axis.events.index_changed.connect(imf.update, [])
-                        imf.events.closed.connect(
+                        self.events.closed.connect(
                             partial(axis.events.index_changed.disconnect, imf.update),
                             [],
                         )
 
             if "cmap" not in kwargs.keys() or kwargs["cmap"] is None:
                 kwargs["cmap"] = preferences.Plot.cmap_navigator
-            imf.plot(**kwargs)
+            imf.plot(
+                # Passed to figure creation
+                _on_figure_window_close=self.close,
+                # Other kwargs
+                **kwargs,
+            )
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
-
-        if self.navigator_plot is not None:
-            self.navigator_plot.events.closed.connect(
-                self._on_navigator_plot_closing, []
-            )
 
     def _get_navigation_sliders(self):
         try:
@@ -206,11 +228,9 @@ class MPL_HyperExplorer(object):
                     self.pointer.connect_navigate()
                 self.plot_navigator(**kwargs.pop("navigator_kwds", {}))
                 if pointer is not None:
-                    self.navigator_plot.events.closed.connect(
-                        self.pointer.disconnect, []
-                    )
+                    self.events.closed.connect(self.pointer.disconnect, [])
             self.plot_signal(**kwargs)
-            if _is_widget_backend():
+            if _is_widget_backend() and "fig" not in kwargs:
                 if plot_style not in ["vertical", "horizontal", None]:
                     raise ValueError(
                         "plot_style must be one of ['vertical', 'horizontal', None]"
@@ -246,7 +266,7 @@ class MPL_HyperExplorer(object):
                         )
                     )
 
-        if _is_widget_backend():
+        if _is_widget_backend() and "fig" not in kwargs:
             with matplotlib.pyplot.ioff():
                 plot_sig_and_nav(plot_style)
         else:
@@ -272,19 +292,25 @@ class MPL_HyperExplorer(object):
         self._pointer_nav_dim = nav_dim
         return Pointer
 
-    def _on_navigator_plot_closing(self):
-        self.navigator_plot = None
-
-    def _on_signal_plot_closing(self):
-        self.signal_plot = None
-
     def close(self):
-        """When closing, we make sure:
-        - close the matplotlib figure
-        - drawing events are disconnected
-        - the attribute 'signal_plot' and 'navigation_plot' are set to None
         """
-        if self.is_active:
-            if self.signal_plot:
-                self.signal_plot.close()
-            self.close_navigator_plot()
+        Close the plot of the signals.
+
+        This function is called programmatically or on matplotlib close
+        callback.
+        When closing, it does the following:
+        1. trigger a closed event
+        2. disconnect the closed event
+        3. run the close method of the signal_plot and navigator_plot
+        4. reset the attribute
+        """
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
+
+        for p in [self.signal_plot, self.navigator_plot]:
+            if p is not None:
+                p.close()
+
+        self.navigator_plot = None
+        self.signal_plot = None

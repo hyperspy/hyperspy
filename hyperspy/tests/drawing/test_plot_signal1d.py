@@ -431,8 +431,9 @@ def test_plot_add_line_events(ax):
     assert len(line.events.closed.connected) == 0
     assert len(s.axes_manager.events.indices_changed.connected) == 1
 
-    plot.close()
+    s._plot.close()
     assert len(s.axes_manager.events.indices_changed.connected) == 0
+    assert len(s._plot.events.closed.connected) == 0
     assert s._plot.signal_plot is None
 
 

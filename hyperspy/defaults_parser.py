@@ -120,6 +120,12 @@ class PlotConfig(t.HasTraits):
     widget_plot_style = t.Enum(
         ["horizontal", "vertical"], label="Widget plot style: (only with ipympl)"
     )
+    use_subfigure = t.CBool(
+        False,
+        desc="EXPERIMENTAL. Plot navigator and signal on the same figure. "
+        "Note that this is slower than using separate figures "
+        "and it requires matplotlib >=3.9.",
+    )
     cmap_navigator = t.Str(
         "gray",
         label="Color map navigator",

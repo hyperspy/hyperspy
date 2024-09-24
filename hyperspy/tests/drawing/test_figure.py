@@ -15,10 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.backend_bases import CloseEvent
+from packaging.version import Version
 
+import hyperspy.api as hs
 from hyperspy._components.polynomial import Polynomial
 from hyperspy.drawing._markers.points import Points
 from hyperspy.drawing.figure import BlittedFigure
@@ -118,3 +122,85 @@ def test_remove_markers():
     s._plot.signal_plot.remove_markers()
     assert len(s._plot.signal_plot.ax_markers) == 0
     assert m._collection is None  # Check that the collection is set to None
+
+
+@pytest.mark.skipif(
+    Version(matplotlib.__version__) < Version("3.9.0"),
+    reason="Subfigures plotting requires matplotlib >= 3.9.0",
+)
+def test_close_figure_with_subfigure():
+    rng = np.random.default_rng()
+    s = Signal1D(rng.random((10, 10, 10)))
+
+    fig = plt.figure()
+    subfig_nav, subfig_sig = fig.subfigures(1, 2)
+
+    s.plot(navigator_kwds=dict(fig=subfig_nav), fig=subfig_sig)
+    s._plot.close()
+
+    # This shows an empty axis...
+    # s.plot(
+    #     navigator_kwds=dict(fig=subfig_nav),
+    #     fig=subfig_sig
+    #     )
+
+
+@pytest.mark.skipif(
+    Version(matplotlib.__version__) >= Version("3.9.0"),
+    reason="Error raised for matplotlib < 3.9.0",
+)
+def test_subfigure_preferences_setting():
+    rng = np.random.default_rng()
+    s = Signal1D(rng.random((10, 10, 10)))
+
+    hs.preferences.Plot.use_subfigure = True
+    if Version(matplotlib.__version__) < Version("3.9.0"):
+        with pytest.raises(ValueError):
+            s.plot()
+    else:
+        s.plot()
+    s._plot.close()
+    # Set default setting back
+    hs.preferences.Plot.use_subfigure = False
+
+
+@pytest.mark.skipif(
+    Version(matplotlib.__version__) < Version("3.9.0"),
+    reason="Subfigures plotting requires matplotlib >= 3.9.0",
+)
+def test_close_figure_with_subfigure_matplotlib_event():
+    rng = np.random.default_rng()
+    s = Signal1D(rng.random((10, 10, 10)))
+
+    fig = plt.figure()
+    subfig_nav, subfig_sig = fig.subfigures(1, 2)
+
+    s.plot(navigator_kwds=dict(fig=subfig_nav), fig=subfig_sig)
+    plt.close(fig)
+
+
+@pytest.mark.skipif(
+    Version(matplotlib.__version__) < Version("3.9.0"),
+    reason="Subfigures plotting requires matplotlib >= 3.9.0",
+)
+def test_subfigure_get_mpl_figure():
+    rng = np.random.default_rng()
+    s = Signal1D(rng.random((10, 10, 10)))
+
+    hs.preferences.Plot.use_subfigure = True
+    s.plot()
+    assert isinstance(s._plot.signal_plot.get_mpl_figure(), matplotlib.figure.Figure)
+    assert isinstance(s._plot.signal_plot.figure, matplotlib.figure.SubFigure)
+    s._plot.signal_plot.close()
+    # Set default setting back
+    hs.preferences.Plot.use_subfigure = False
+
+
+def test_separate_figure_get_mpl_figure():
+    rng = np.random.default_rng()
+    s = Signal1D(rng.random((10, 10, 10)))
+
+    s.plot()
+    assert isinstance(s._plot.signal_plot.get_mpl_figure(), matplotlib.figure.Figure)
+    assert isinstance(s._plot.signal_plot.figure, matplotlib.figure.Figure)
+    s._plot.signal_plot.close()

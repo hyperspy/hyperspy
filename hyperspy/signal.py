@@ -3041,6 +3041,21 @@ class BaseSignal(
                 navigator = None
             else:
                 navigator = "slider"
+
+        from hyperspy.defaults_parser import preferences
+
+        if (
+            "fig" not in kwargs.keys()
+            and preferences.Plot.use_subfigure
+            and axes_manager.navigation_dimension > 0
+            and axes_manager.signal_dimension in [1, 2]
+        ):
+            # Create default subfigure
+            fig = plt.figure(figsize=(15, 7), layout="constrained")
+            subfigs = fig.subfigures(1, 2)
+            kwargs["fig"] = subfigs[1]
+            kwargs["navigator_kwds"] = dict(fig=subfigs[0])
+
         if axes_manager.signal_dimension == 0:
             if axes_manager.navigation_dimension == 0:
                 # 0d signal without navigation axis: don't make a figure

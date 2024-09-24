@@ -140,6 +140,7 @@ def centre_colormap_values(vmin, vmax):
 
 
 def create_figure(
+    fig=None,
     window_title=None,
     _on_figure_window_close=None,
     disable_xyscale_keys=False,
@@ -166,7 +167,14 @@ def create_figure(
     fig : plt.figure
 
     """
-    fig = plt.figure(**kwargs)
+    if fig is None:
+        fig = plt.figure(**kwargs)
+    else:
+        if isinstance(fig, mpl.figure.SubFigure) and Version(mpl.__version__) < Version(
+            "3.9.0"
+        ):
+            raise ValueError("Subfigure are only supported for matplotlib>=3.9")
+
     if window_title is not None:
         # remove non-alphanumeric characters to prevent file saving problems
         # This is a workaround for:

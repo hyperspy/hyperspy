@@ -48,7 +48,12 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         kwargs["data_function_kwargs"] = self.signal_data_function_kwargs
         if "cmap" not in kwargs.keys() or kwargs["cmap"] is None:
             kwargs["cmap"] = preferences.Plot.cmap_signal
-        imf.plot(**kwargs)
+        imf.plot(
+            # Passed to figure creation
+            _on_figure_window_close=self.close,
+            # Other kwargs
+            **kwargs,
+        )
         self.signal_plot = imf
 
         if imf.figure is not None:
@@ -60,5 +65,3 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                 self.navigator_plot.figure.canvas.mpl_connect(
                     "key_press_event", self.axes_manager.key_navigator
                 )
-                imf.events.closed.connect(self.close_navigator_plot, [])
-            imf.events.closed.connect(self._on_signal_plot_closing, [])

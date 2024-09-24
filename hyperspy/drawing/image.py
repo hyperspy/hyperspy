@@ -25,6 +25,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm, Normalize, PowerNorm, SymLogNorm
+from matplotlib.figure import SubFigure
 from packaging.version import Version
 from rsciio.utils import rgb_tools
 from traits.api import Undefined
@@ -330,7 +331,9 @@ class ImagePlot(BlittedFigure):
         self.data_function_kwargs = data_function_kwargs
         self.configure()
         if self.figure is None:
-            self.create_figure()
+            fig = kwargs.pop("fig", None)
+            _on_figure_window_close = kwargs.pop("_on_figure_window_close", None)
+            self.create_figure(fig=fig, _on_figure_window_close=_on_figure_window_close)
             self.create_axis()
 
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
@@ -382,7 +385,7 @@ class ImagePlot(BlittedFigure):
         # Bug extend='min' or extend='both' and power law norm
         # Use it when it is fixed in matplotlib
         ims = self.ax.images if len(self.ax.images) else self.ax.collections
-        self._colorbar = plt.colorbar(ims[0], ax=self.ax)
+        self._colorbar = self.figure.colorbar(ims[0], ax=self.ax)
         self.set_quantity_label()
         self._colorbar.set_label(self.quantity_label, rotation=-90, va="bottom")
         self._colorbar.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
@@ -569,6 +572,8 @@ class ImagePlot(BlittedFigure):
                 # `draw_all` is deprecated in matplotlib 3.6.0
                 if Version(matplotlib.__version__) <= Version("3.6.0"):
                     self._colorbar.draw_all()
+                elif isinstance(self.figure, SubFigure):
+                    self.figure.canvas.draw_idle()  # draw without rendering not supported for sub-figures
                 else:
                     self.figure.draw_without_rendering()
                 self._colorbar.solids.set_animated(self.figure.canvas.supports_blit)
