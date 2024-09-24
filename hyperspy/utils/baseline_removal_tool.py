@@ -162,16 +162,27 @@ class BaselineRemoval(t.HasTraits):
 
     # these are used to know if parameters needs to be enable or not
     # Whittaker parameters
-    _enable_p = t.Bool()
-    _enable_lam = t.Bool()
-    _enable_lam_1 = t.Bool()
-    _enable_eta = t.Bool()
-    _enable_diff_order = t.Bool()
-    _enable_penalized_spline = t.Bool()
+    _enable_p = False
+    _enable_lam = False
+    _enable_lam_1 = False
+    _enable_eta = False
+    _enable_diff_order = False
+    _enable_penalized_spline = False
     # Polynomial parameters
-    _enable_poly_order = t.Bool()
+    _enable_poly_order = False
+    _enable_peak_ratio = False
     # Splines parameters
-    _enable_spline_parameters = t.Bool()
+    _enable_num_knots = False
+    _enable_spline_degree = False
+    _enable_symmetric = False
+    _enable_quantile = False
+    # Classification
+    _enable_smooth_half_window = False
+    _enable_num_std = False
+    _enable_interp_half_window = False
+    _enable_half_window = False
+    _enable_section = False
+    _enable_segments = False
 
     # To display the time per pixel
     _time_per_pixel = t.Float(value=0)
@@ -203,17 +214,15 @@ class BaselineRemoval(t.HasTraits):
 
         # get algorithm full name
         algorithm = ALGORITHMS_MAPPING_INVERSE[self._get_algorithm_abbreviation(False)]
+        for param, algorithm_list in PARAMETERS_ALGORITHMS.items():
+            result = algorithm in algorithm_list
+            if param in ["spline_degree", "num_knots"]:
+                # enable also when "penalized_spline" is True
+                result = result or self.penalized_spline
+            setattr(self, f"_enable_{param}", result)
 
-        self._enable_p = algorithm in PARAMETERS_ALGORITHMS["p"]
-        self._enable_lam = algorithm in PARAMETERS_ALGORITHMS["lam"]
-        self._enable_lam_1 = algorithm in PARAMETERS_ALGORITHMS["lam_1"]
-        self._enable_eta = algorithm in PARAMETERS_ALGORITHMS["eta"]
-        self._enable_diff_order = algorithm in PARAMETERS_ALGORITHMS["diff_order"]
-        self._enable_poly_order = algorithm in ALGORITHMS_MAPPING_POLYNOMIAL.keys()
         self._enable_penalized_spline = algorithm in ALGORITHMS_MAPPING_WHITTAKER.keys()
-        self._enable_spline_parameters = (
-            algorithm in PARAMETERS_ALGORITHMS["spline_degree"] or self.penalized_spline
-        )
+
         self._update_lines()
 
     @t.observe(
