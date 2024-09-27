@@ -1,0 +1,1 @@
+Add :meth:`~.api.signals.Signal1D.remove_baseline` to remove baseline using `pybaselines <https://pybaselines.readthedocs.io>`_; see the :ref:`baseline removal <signal1D.remove_baseline>` section in the user guide.

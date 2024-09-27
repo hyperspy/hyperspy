@@ -86,6 +86,7 @@ Example of usage:
    figure) click inside the axes of the figure and drag to the right
    without releasing the button.
 
+.. _signal1D.remove_baseline:
 
 Baseline removal
 ----------------
