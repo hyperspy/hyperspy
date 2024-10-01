@@ -786,15 +786,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             interpolation_order=interpolation_order,
         )
         if crop and not expand:
+            # Calculate the maximum shifts
             max_shift = signal_shifts.max() - signal_shifts.min()
-            if np.any(max_shift.data >= np.array(self.axes_manager.signal_shape)):
+            
+            # Adjust this check to correctly compare with the shape dimensions
+            if np.any(max_shift.data[0] >= self.axes_manager.signal_shape[0]) or \
+            np.any(max_shift.data[1] >= self.axes_manager.signal_shape[1]):
                 raise ValueError(
                     "Shift outside range of signal axes. Cannot crop signal."
-                    + "Max shift:"
-                    + str(max_shift.data)
-                    + " shape"
-                    + str(self.axes_manager.signal_shape)
-                )
+                    + " Max shift: " + str(max_shift.data)
+                    + " shape: " + str(self.axes_manager.signal_shape)
+        )
+
 
             # Crop the image to the valid size
             _min0 = signal_shifts.isig[0].min().data[0]
