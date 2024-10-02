@@ -1556,7 +1556,8 @@ class PolygonROI(BaseInteractiveROI):
 
     def is_valid(self):
         """
-        The polygon is defined as valid if more than two vertices are fully defined.
+        The polygon is defined as valid if either zero or more than two 
+        vertices are fully defined.
         """
         return (
             len(self.vertices) == 0
@@ -1568,9 +1569,10 @@ class PolygonROI(BaseInteractiveROI):
 
     def set_vertices(self, vertices):
         """Sets the vertices of the polygon to the `vertices` argument,
-        where each vertex is to be given as (x, y). The list is set to
-        loop around, such that an edge runs from the first to the final
-        vertex in the list.
+        where each vertex is to be given as a tuple `(x, y)` where `x`
+        and `y` are its coordinates. The list is set to loop around, 
+        such that an edge runs from the final to the first vertex in 
+        the list.
 
         Parameters
         ----------
@@ -1912,13 +1914,16 @@ def _get_central_half_limits_of_axis(ax):
 
 
 def combine_rois(signal, rois, inverted=False, out=None, axes=None):
-    """Slice the signal according to a list of rois, and return it.
+    """Slice the signal according by combining a list of ROIs.
+        Currently only implemented for a list of `PolygonROI`s.
 
     Parameters
     ----------
     signal : Signal
         The signal to slice with the ROI.
-    rois : list
+    rois : list of ROIs
+        List containing the ROIs to be sliced , making it possible
+        to combine several ROI shapes.
     inverted : boolean, default = False
         If `True`, everything outside of the ROIs supplied will be
         sliced, with the insides of the ROIs becoming NaN
@@ -1926,6 +1931,8 @@ def combine_rois(signal, rois, inverted=False, out=None, axes=None):
         If the `out` argument is supplied, the sliced output will be put
         into this instead of returning a Signal. See Signal.__getitem__()
         for more details on `out`.
+    axes : list, optional
+        List of the axes in the signal that the ROIs are applied to.
     %s
     """
 
@@ -1953,12 +1960,12 @@ def create_mask_from_rois(
     x_scale=None,
     y_scale=None,
 ):
-    """Function to rasterize the rois into a boolean numpy array. The
-        interior of the rois are by default `True`.
+    """Function to rasterize a list of ROIs into a boolean numpy array. The
+        interior of the ROIs are by default `True`.
 
     Parameters
     ----------
-    rois : list of ROIs, optional
+    rois : list of ROIs
         List containing the ROIs to be added to the mask, making it possible
         to combine several ROI shapes.
     axes_manager : :py:class:`~hyperspy.axes.AxesManager`, optional
@@ -1986,8 +1993,8 @@ def create_mask_from_rois(
     Returns
     -------
     return_value : array
-        boolean numpy array of the rasterized polygon. The entire or parts of
-        the polygon ROI can be within this shape.
+        boolean numpy array of the rasterized ROIs. Depending on the limits set for
+        the rasterization, parts of the ROIs may be outside of this.
     """
 
     for roi in rois:
