@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2024 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
