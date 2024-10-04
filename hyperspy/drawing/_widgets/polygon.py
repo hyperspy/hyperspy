@@ -23,6 +23,7 @@ from hyperspy.drawing.widget import WidgetBase
 
 from packaging.version import Version
 
+
 class PolygonWidget(WidgetBase):
     """PolygonWidget is a widget for drawing an arbitrary
     polygon, which can then be used as a region-of-interest.
@@ -57,7 +58,7 @@ class PolygonWidget(WidgetBase):
         self.set_on(False)
         self._widget = None
         self.position = []
-    
+
     def set_on(self, value, render_figure=True):
         """Change the on state of the widget. If turning off, the widget will
         disconnect from the events. If turning on, the widget will connect to
@@ -115,16 +116,17 @@ class PolygonWidget(WidgetBase):
 
         if self.ax is not None and self.is_on:
             if len(vertices) > 2:
-                
+
                 if Version(matplotlib.__version__) >= Version("3.6"):
                     self._widget.verts = list(vertices)
-                else: 
+                else:
                     # Accessing some private members to be able to change the `matplotlib`
                     # widgets with older `matplotlib` versions.
                     # Can hopefully be removed soon in the future
-                    self._widget._xs, self._widget._ys = \
-                        [list(dimension) for dimension in zip(*vertices)]
-                    
+                    self._widget._xs, self._widget._ys = [
+                        list(dimension) for dimension in zip(*vertices)
+                    ]
+
                     # Close the polygon
                     self._widget._xs.append(self._widget._xs[0])
                     self._widget._ys.append(self._widget._ys[0])
