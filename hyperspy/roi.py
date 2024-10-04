@@ -1587,6 +1587,8 @@ class PolygonROI(BaseInteractiveROI):
                 f"`vertices` is not an empty list or a list of fully defined two-dimensional \
                     points with at least three entries:\n{vertices}"
             )
+        if self.widgets:
+            self._update_widgets()
 
     def _apply_roi(self, signal, inverted=False, out=None, axes=None, other_rois=None):
         if not self.is_valid():

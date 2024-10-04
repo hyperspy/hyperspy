@@ -16,10 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import matplotlib
 from matplotlib.widgets import PolygonSelector
 
 from hyperspy.drawing.widget import WidgetBase
 
+from packaging.version import Version
 
 class PolygonWidget(WidgetBase):
     """PolygonWidget is a widget for drawing an arbitrary
@@ -113,7 +115,23 @@ class PolygonWidget(WidgetBase):
 
         if self.ax is not None and self.is_on:
             if len(vertices) > 2:
-                self._widget.verts = list(vertices)
+                
+                if Version(matplotlib.__version__) >= Version("3.6"):
+                    self._widget.verts = list(vertices)
+                else: 
+                    # Accessing some private members to be able to change the `matplotlib`
+                    # widgets with older `matplotlib` versions.
+                    # Can hopefully be removed soon in the future
+                    self._widget._xs, self._widget._ys = \
+                        [list(dimension) for dimension in zip(*vertices)]
+                    
+                    # Close the polygon
+                    self._widget._xs.append(self._widget._xs[0])
+                    self._widget._ys.append(self._widget._ys[0])
+
+                    self._widget._selection_completed = True
+                    self._widget.set_visible(True)
+                    self._widget._draw_polygon()
                 self._onselect(vertices)
             self.ax.figure.canvas.draw_idle()
 
@@ -131,10 +149,10 @@ class PolygonWidget(WidgetBase):
 
         self.events.changed.trigger(self)
 
-        xmax = max(x for x, y in self._widget.verts)
-        ymax = max(y for x, y in self._widget.verts)
-        xmin = min(x for x, y in self._widget.verts)
-        ymin = min(y for x, y in self._widget.verts)
+        xmax = max(x for x, y in vertices)
+        ymax = max(y for x, y in vertices)
+        xmin = min(x for x, y in vertices)
+        ymin = min(y for x, y in vertices)
 
         self.position = ((xmax + xmin) / 2, (ymax + ymin) / 2)
 
