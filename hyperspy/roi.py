@@ -1556,7 +1556,7 @@ class PolygonROI(BaseInteractiveROI):
 
     def is_valid(self):
         """
-        The polygon is defined as valid if either zero or more than two 
+        The polygon is defined as valid if either zero or more than two
         vertices are fully defined.
         """
         return (
@@ -1570,8 +1570,8 @@ class PolygonROI(BaseInteractiveROI):
     def set_vertices(self, vertices):
         """Sets the vertices of the polygon to the `vertices` argument,
         where each vertex is to be given as a tuple `(x, y)` where `x`
-        and `y` are its coordinates. The list is set to loop around, 
-        such that an edge runs from the final to the first vertex in 
+        and `y` are its coordinates. The list is set to loop around,
+        such that an edge runs from the final to the first vertex in
         the list.
 
         Parameters
