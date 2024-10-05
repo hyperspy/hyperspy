@@ -1294,7 +1294,7 @@ def plot_images(
             fig.colorbar(ax_im_list[foundim], cax=cbar_ax)
             if tight_layout:
                 # tight_layout, leaving room for the colorbar
-                plt.tight_layout(rect=[0, 0, 0.9, 1])
+                fig.tight_layout(rect=[0, 0, 0.9, 1])
         elif tight_layout:
             plt.tight_layout()
 
@@ -1512,10 +1512,10 @@ def plot_spectra(
         see the pyplot.legend docstring for valid values. Default ``'upper right'``.
     fig : None, matplotlib.figure.Figure, default None
         If None (default), a default figure will be created.
-        Not suppored for the ``'heatmap'`` style.
+        Not supported for the ``'heatmap'`` style.
     ax : None, matplotlib.axes.Axes, default None
         If None (default), matplotlib axes will be created when necessary.
-        Not suppored for the ``'heatmap'`` style.
+        Not supported for the ``'heatmap'`` style.
     auto_update : bool or None, default None
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
@@ -1613,7 +1613,7 @@ def plot_spectra(
     if ax is not None:
         if style == "heatmap":
             raise ValueError("The `ax` parameter is not supported for 'heatmap' style.")
-        # To avoid ambiguouity, don't support iterable with overalp and cascase style
+        # To avoid ambiguity, don't support iterable with overalp and cascase style
         elif style in ["overlap", "cascade"]:
             if isiterable(ax):
                 raise ValueError(
