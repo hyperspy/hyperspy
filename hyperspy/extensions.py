@@ -62,7 +62,7 @@ for _external_extension in _external_extensions:
         ]
         with _files[0].locate().open() as json_data:
             _path = url2pathname(urlparse(json.load(json_data)["url"]).path)
-            _path = Path(_path) / _external_extension.name / "hyperspy_extension.yaml"
+            _path = Path(_path) / _external_extension.value / "hyperspy_extension.yaml"
     else:
         _path = _files.pop().locate()
 
