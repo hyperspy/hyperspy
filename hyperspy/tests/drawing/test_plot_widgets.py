@@ -232,7 +232,7 @@ class TestPlotPolygonWidget:
 
         # Defaults
         assert polygon.get_vertices() == []
-        assert polygon.get_centre() == []
+        assert polygon.get_centre() == tuple()
 
         verts = [(31, 41), (15, 92), (65, 35)]
         polygon.set_vertices(verts)
@@ -244,6 +244,31 @@ class TestPlotPolygonWidget:
         polygon.set_vertices(verts)
         np.testing.assert_allclose(polygon.get_vertices(), verts)
         assert polygon.get_centre() == (49.0, 49.5)
+
+    def test_polygon_errors(self):
+        polygon = self.polygon
+        im_1d = self.im.isig[0]
+
+        im_1d.plot()
+        with pytest.raises(ValueError):
+            polygone = widgets.PolygonWidget(im_1d.axes_manager)
+    
+    def test_set_on(self):
+        polygon = self.polygon
+        im = self.im
+
+        assert polygon.ax is None
+        assert polygon._is_on
+
+        im.plot()
+        polygon.set_mpl_ax(im._plot.signal_plot.ax)
+        
+        assert polygon.ax == im._plot.signal_plot.ax
+        assert polygon._is_on
+
+        polygon.set_on(False)
+        assert polygon.ax is None
+        assert not polygon._is_on
 
 
 class TestPlotRangeWidget:
