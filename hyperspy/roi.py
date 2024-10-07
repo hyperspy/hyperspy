@@ -1916,15 +1916,16 @@ def _get_central_half_limits_of_axis(ax):
 
 
 def combine_rois(signal, rois, inverted=False, out=None, axes=None):
-    """Slice the signal according by combining a list of ROIs.
+    """Slice the signal according by combining a list of ROIs, by default
+        returning a sliced copy.
         Currently only implemented for a list of `PolygonROI`s.
-
+    
     Parameters
     ----------
     signal : Signal
         The signal to slice with the ROI.
     rois : list of ROIs
-        List containing the ROIs to be sliced , making it possible
+        List containing the ROIs to be sliced, making it possible
         to combine several ROI shapes.
     inverted : boolean, default = False
         If `True`, everything outside of the ROIs supplied will be
@@ -1964,6 +1965,7 @@ def create_mask_from_rois(
 ):
     """Function to rasterize a list of ROIs into a boolean numpy array. The
         interior of the ROIs are by default `True`.
+        Currently only implemented for a list of `PolygonROI`s.
 
     Parameters
     ----------
