@@ -1919,7 +1919,7 @@ def combine_rois(signal, rois, inverted=False, out=None, axes=None):
     """Slice the signal according by combining a list of ROIs, by default
         returning a sliced copy.
         Currently only implemented for a list of `PolygonROI`s.
-    
+
     Parameters
     ----------
     signal : Signal

@@ -246,13 +246,12 @@ class TestPlotPolygonWidget:
         assert polygon.get_centre() == (49.0, 49.5)
 
     def test_polygon_errors(self):
-        polygon = self.polygon
         im_1d = self.im.isig[0]
 
         im_1d.plot()
         with pytest.raises(ValueError):
-            polygone = widgets.PolygonWidget(im_1d.axes_manager)
-    
+            widgets.PolygonWidget(im_1d.axes_manager)
+
     def test_set_on(self):
         polygon = self.polygon
         im = self.im
@@ -262,7 +261,7 @@ class TestPlotPolygonWidget:
 
         im.plot()
         polygon.set_mpl_ax(im._plot.signal_plot.ax)
-        
+
         assert polygon.ax == im._plot.signal_plot.ax
         assert polygon._is_on
 
