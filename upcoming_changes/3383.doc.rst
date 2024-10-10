@@ -1,0 +1,1 @@
+Update doc on how to perform a clean installation from source (Part of previous instructions were obsolete).

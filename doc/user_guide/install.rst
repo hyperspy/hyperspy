@@ -285,32 +285,31 @@ To get the development version from our git repository you need to install `git
 
 .. Warning::
 
-    When running hyperspy from a development version, it can happen that the
-    dependency requirement changes in which you will need to keep this
-    this requirement up to date (check dependency requirement in ``setup.py``)
-    or run again the installation in development mode using ``pip`` as explained
-    below.
+    When running hyperspy from a development version, it can happen that
+    dependencies change when pulling new commits / syncing the project. You 
+    will then need to manually update dependencies in the environment 
+    (check `pyproject.toml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/pyproject.toml>`__) 
+    or run again the development installation procedure, as explained below.
 
 Installation in a Anaconda/Miniconda distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Optionally, create an environment to separate your hyperspy installation from
 other anaconda environments (`read more about environments here
-<https://conda.io/projects/conda/en/latest/user-guide/concepts/environments.html>`_):
+<https://conda.io/projects/conda/en/latest/user-guide/concepts/environments.html>`_).
+At this point, it is helpful to let conda pick compatible ``python`` and 
+``hyperspy-dev`` versions. ``hyperspy-dev`` contains development 
+dependencies required for testing and building documentation. 
 
 .. code-block:: bash
 
-    $ conda create -n hspy_dev python # create an empty environment with latest python
+    $ conda create -n hspy_dev python hyperspy-dev -c conda-forge # create an env with compatible hyperspy-dev and python versions
     $ conda activate hspy_dev # activate environment
 
-Install the runtime and development dependencies requirements using conda:
+Install the runtime requirements using conda:
 
 .. code-block:: bash
 
     $ conda install hyperspy-base -c conda-forge --only-deps # install hyperspy dependencies
-    $ conda install hyperspy-dev -c conda-forge # install developer dependencies
-
-The package ``hyperspy-dev`` will install the development dependencies required
-for testing and building the documentation.
 
 From the root folder of your hyperspy repository (folder containing the
 ``setup.py`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
@@ -318,6 +317,30 @@ From the root folder of your hyperspy repository (folder containing the
 .. code-block:: bash
 
     $ pip install -e . --no-deps # install the currently checked-out branch of hyperspy
+
+Note that some tests only pass on specific package versions (see :ref:`Plot testing<plot-test-label>`).
+Consequently, a previous version of python (such as 3.10) can end up being 
+installed in the ``hspy_dev`` environment. If this is a problem, ``hyperspy-dev`` should be 
+removed from environment creation. This will ensure that the latest python release is used. 
+
+Skipping ``hyperspy-dev`` will not prevent a successful installation from source, 
+but will require manually installing some packages. Notably, ``gui-ipywidgets`` 
+and ``gui-traitsui`` will be missing. More generally, all dependencies from ``dev`` 
+will be absent (see :ref:`install-with-pip`). These can be installed manually 
+using conda (inspect ``project.optional-dependencies`` section of 
+`pyproject.toml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/pyproject.toml>`__ 
+and install them using ``conda install -c conda-forge``). Alternatively, the
+installation of all optional dependencies can be left to ``pip``:
+
+.. code-block:: bash
+
+    $ conda create -n hspy_dev python # create an env with latest stable python
+    $ conda activate hspy_dev # activate environment
+    $ conda install hyperspy-base -c conda-forge --only-deps # install hyperspy dependencies
+    $ pip install -e .[dev] # Install hyperspy from source + dev dependencies (run from source folder)
+
+Because this will result in many conflict risks being cleared by pip, this is not 
+necessarily the cleanest way to proceed.
 
 Installation in other (non-system) Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
