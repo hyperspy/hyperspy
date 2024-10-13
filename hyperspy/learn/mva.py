@@ -142,7 +142,7 @@ class MVA:
         ----------
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
-            the approach described in [*].
+            the approach described in [*]_.
         algorithm : str {``"SVD"``, ``"MLPCA"``, ``"sklearn_pca"``, ``"NMF"``, ``"sparse_pca"``,
         ``"mini_batch_sparse_pca"``, ``"RPCA"``, ``"ORPCA"``, ``"ORNMF"``} or object, default ``"SVD"``
             The decomposition algorithm to use. If algorithm is an object,
@@ -1599,7 +1599,7 @@ class MVA:
         """Normalize the signal under the assumption of Poisson noise.
 
         Scales the signal using to "normalize" the Poisson data for
-        subsequent decomposition analysis [*].
+        subsequent decomposition analysis [*]_.
 
         Parameters
         ----------

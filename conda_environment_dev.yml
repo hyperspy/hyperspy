@@ -3,8 +3,9 @@ channels:
 - conda-forge
 dependencies:
 # We pin freetype and matplotlib for the image comparison
-- freetype=2.10
-- matplotlib-base=3.5.1
+- freetype=2.12
+- git
+- matplotlib-base=3.9.2
 - pytest
 - pytest-mpl
 # Regression introduced in https://github.com/pytest-dev/pytest-xdist/pull/778

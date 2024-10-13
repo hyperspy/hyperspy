@@ -512,10 +512,6 @@ def test_plot_images_single_image_stack():
     return plt.gcf()
 
 
-@pytest.mark.skipif(
-    Version(matplotlib.__version__) < Version("3.6.0"),
-    reason="This test requires matplotlib >= 3.6.0",
-)
 def test_plot_images_multi_signal_w_axes_replot():
     imdata = np.random.rand(6, 5, 5)
     imgs = hs.signals.Signal2D(imdata)
@@ -687,11 +683,7 @@ def test_plot_autoscale(autoscale):
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
     # Because we are hacking the vmin, vmax with matplotlib, we need to update
     # colorbar too
-    if Version(matplotlib.__version__) <= Version("3.6.0"):
-        # `draw_all` is deprecated in matplotlib 3.6.0
-        imf._colorbar.draw_all()
-    else:
-        imf.figure.draw_without_rendering()
+    imf.figure.draw_without_rendering()
 
     return s._plot.signal_plot.figure
 
