@@ -103,6 +103,7 @@ jobs:
           pytest ${{ env.PYTEST_ARGS }} -n ${{ steps.cpus.outputs.count }} --cov=. --cov-report=xml
 
       - name: Run doctest (Docstring)
+        if: ${{ matrix.OLDEST_SUPPORTED_VERSION == 'false'}}
         run: |
           pytest ${{ env.PYTEST_ARGS }} --doctest-modules --ignore=hyperspy/tests
 
