@@ -61,12 +61,39 @@ for _external_extension in _external_extensions:
             if "direct_url.json" in str(file)
         ]
         with _files[0].locate().open() as json_data:
-            _path = url2pathname(urlparse(json.load(json_data)["url"]).path)
-            _path = Path(_path) / _external_extension.name / "hyperspy_extension.yaml"
+            _basepath = url2pathname(urlparse(json.load(json_data)["url"]).path)
+            # for packages with flat layout
+            _path = (
+                Path(_basepath) / _external_extension.name / "hyperspy_extension.yaml"
+            )
+            if not _path.exists():
+                # for packages with src layout
+                _path = (
+                    Path(_basepath)
+                    / "src"
+                    / _external_extension.name
+                    / "hyperspy_extension.yaml"
+                )
     else:
         _path = _files.pop().locate()
 
-    if _path:
+    if not _path:  # pragma: no cover
+        # empty list: "hyperspy_extension.yaml" is missing from the package
+        _logger.error(
+            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(
+                _external_extension.name
+            )
+        )
+
+    elif not _path.exists():  # pragma: no cover
+        # Possible extension editable installation issue
+        _logger.error(
+            "Failed to load hyperspy extension from {0}. The path {1} doesn't exist.".format(
+                _external_extension.name, _path
+            )
+        )
+
+    else:
         with open(str(_path)) as stream:
             _external_extension = yaml.safe_load(stream)
             if "signals" in _external_extension:
@@ -89,11 +116,3 @@ for _external_extension in _external_extensions:
                         if toolkit not in ALL_EXTENSIONS["GUI"]["widgets"]:
                             ALL_EXTENSIONS["GUI"]["widgets"][toolkit] = {}
                         ALL_EXTENSIONS["GUI"]["widgets"][toolkit].update(specs)
-
-    else:  # pragma: no cover
-        # When the "hyperspy_extension.yaml" is missing from the package
-        _logger.error(
-            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(
-                _external_extension.name
-            )
-        )
