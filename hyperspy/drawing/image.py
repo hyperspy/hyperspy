@@ -21,12 +21,10 @@ import inspect
 import logging
 import math
 
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm, Normalize, PowerNorm, SymLogNorm
 from matplotlib.figure import SubFigure
-from packaging.version import Version
 from rsciio.utils import rgb_tools
 from traits.api import Undefined
 
@@ -522,9 +520,8 @@ class ImagePlot(BlittedFigure):
                     "linscale": self.linscale,
                     "vmin": vmin,
                     "vmax": vmax,
+                    "base": 10,
                 }
-                if Version(matplotlib.__version__) >= Version("3.2"):
-                    sym_log_kwargs["base"] = 10
                 norm = SymLogNorm(**sym_log_kwargs)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
@@ -569,10 +566,7 @@ class ImagePlot(BlittedFigure):
                 ims[0].set_norm(norm)
                 ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar:
-                # `draw_all` is deprecated in matplotlib 3.6.0
-                if Version(matplotlib.__version__) <= Version("3.6.0"):
-                    self._colorbar.draw_all()
-                elif isinstance(self.figure, SubFigure):
+                if isinstance(self.figure, SubFigure):
                     self.figure.canvas.draw_idle()  # draw without rendering not supported for sub-figures
                 else:
                     self.figure.draw_without_rendering()
