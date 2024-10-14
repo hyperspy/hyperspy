@@ -1523,7 +1523,7 @@ class PolygonROI(BaseInteractiveROI):
     outside of the polygon and masked away.
     """
 
-    vertices = []
+    _vertices = []
     _ndim = 2
 
     def __init__(self, vertices=None):
@@ -1535,14 +1535,14 @@ class PolygonROI(BaseInteractiveROI):
         super().__init__()
 
         if vertices:
-            self.set_vertices(vertices)
+            self.vertices = vertices
 
     @property
     def parameters(self):
         return {"vertices": self.vertices}
 
     def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self.vertices)
+        _tuple = tuple(self._vertices)
         return _tuple.__getitem__(*args, **kwargs)
 
     def __repr__(self):
@@ -1559,15 +1559,29 @@ class PolygonROI(BaseInteractiveROI):
         The polygon is defined as valid if either zero or more than two
         vertices are fully defined.
         """
-        return (
-            len(self.vertices) == 0
-            or len(self.vertices) > 2
-            and all(
-                (None not in vertex and len(vertex) == 2) for vertex in self.vertices
+        valid = False
+        try:
+            valid = (
+                len(self._vertices) == 0
+                or len(self._vertices) > 2
+                and all(
+                    (None not in vertex and len(vertex) == 2)
+                    for vertex in self._vertices
+                )
             )
-        )
+        finally:
+            return valid
 
-    def set_vertices(self, vertices):
+    @property
+    def vertices(self):
+        """Returns a list where each entry contains a `(x, y)` tuple
+        of the vertices of the polygon. The polygon is not closed.
+        Returns an empty list if no polygon is set."""
+
+        return self._vertices.copy()
+
+    @vertices.setter
+    def vertices(self, vertices):
         """Sets the vertices of the polygon to the `vertices` argument,
         where each vertex is to be given as a tuple `(x, y)` where `x`
         and `y` are its coordinates. The list is set to loop around,
@@ -1579,10 +1593,10 @@ class PolygonROI(BaseInteractiveROI):
         vertices : list of tuples
             List of (x, y) values of the vertices of the polygon.
         """
-        old_vertices = self.vertices
-        self.vertices = vertices
+        old_vertices = self._vertices
+        self._vertices = vertices
         if not self.is_valid():
-            self.vertices = old_vertices
+            self._vertices = old_vertices
             raise ValueError(
                 f"`vertices` is not an empty list or a list of fully defined two-dimensional \
                     points with at least three entries:\n{vertices}"
@@ -1608,7 +1622,7 @@ class PolygonROI(BaseInteractiveROI):
         if not inverted:
             # Slice original data with a circumscribed rectangle
 
-            polygons = [self.vertices]
+            polygons = [self._vertices]
             # In case of combining multiple PolygonROI, all vertices must be considered
             if other_rois is not None:
                 polygons += [roi.vertices for roi in other_rois]
@@ -1832,7 +1846,7 @@ class PolygonROI(BaseInteractiveROI):
             y_scale = y_scale if y_scale is not None else axes[1].scale
 
         # Empty ROI
-        if not self.vertices:
+        if not self._vertices:
             mask = None
             if xy_max:
                 xy_min = xy_min if xy_min is not None else (0, 0)
@@ -1849,7 +1863,7 @@ class PolygonROI(BaseInteractiveROI):
 
         else:
             mask = self._rasterized_mask(
-                polygon_vertices=self.vertices,
+                polygon_vertices=self._vertices,
                 xy_max=xy_max,
                 xy_min=xy_min,
                 x_scale=x_scale,
@@ -1895,19 +1909,19 @@ class PolygonROI(BaseInteractiveROI):
         suppressed, so this should not be necessary for _apply_roi2widget to
         handle.
         """
-        widget.set_vertices(self.vertices)
+        widget.set_vertices(self._vertices)
 
     def _set_default_values(self, signal, axes=None):
         """When the ROI is called interactively with Undefined parameters,
         use these values instead.
         """
-        self.set_vertices([])
+        self.vertices = []
 
     def _set_from_widget(self, widget):
         """Sets the internal representation of the ROI from the passed widget,
         without doing anything to events.
         """
-        self.set_vertices(widget.get_vertices())
+        self.vertices = widget.get_vertices()
 
 
 def _get_central_half_limits_of_axis(ax):
