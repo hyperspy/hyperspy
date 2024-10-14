@@ -65,9 +65,6 @@ class PolygonWidget(WidgetBase):
         """
         if value is not self.is_on and self.ax is not None:
             if value is True:
-                self.blit = (
-                    hasattr(self.ax, "hspy_fig") and self.ax.figure.canvas.supports_blit
-                )
                 self.connect(self.ax)
                 if render_figure:
                     self.ax.figure.canvas.draw_idle()
@@ -88,20 +85,22 @@ class PolygonWidget(WidgetBase):
         if ax is self.ax or ax is None:
             return  # Do nothing
         # Disconnect from previous axes if set
-        if self.ax is not None and self.is_on:
-            self.disconnect()
-        self.ax = ax
+        self.set_on(False, render_figure=False)
 
+        # Connect to new axes
+        self.ax = ax
         self.set_on(True, render_figure=False)
 
         # Colors of widget. Usually set from constructor.
         handle_props = dict(color=self._color)
         line_props = dict(color=self._color)
 
+        useblit = hasattr(self.ax, "hspy_fig") and self.ax.figure.canvas.supports_blit
+
         self._widget = PolygonSelector(
             ax,
             onselect=self._onselect,
-            useblit=self.blit,
+            useblit=useblit,
             handle_props=handle_props,
             props=line_props,
         )
