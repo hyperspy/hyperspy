@@ -37,6 +37,7 @@ from hyperspy.docstrings.plot import (
     PLOT1D_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
+    IN_PLACE,
     LAZYSIGNAL_DOC,
     NAVIGATION_MASK_ARG,
     NUM_WORKERS_ARG,
@@ -1302,6 +1303,62 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return result
 
     remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
+
+    def remove_baseline(
+        self,
+        method=None,
+        inplace=True,
+        display=True,
+        toolkit=None,
+        **kwargs,
+    ):
+        """
+        Remove baselines using algorithms implemented in pybaselines.
+
+        Parameters
+        ----------
+        method : str or None
+            If ``str``, any of the algorithm name in :class:`pybaselines.api.Baseline`.
+            If ``None``, a widget is open to select an algorithm and adjust
+            the parameters.
+        %s
+        %s
+        %s
+        **kwargs : dict
+            Keyword arguments of baseline algorithm. These are passed
+            to baseline function.
+
+        Examples
+        --------
+        import hyperspy.api as hs
+        s = hs.data.two_gaussians()
+
+        s.remove_baselines(method="aspls", lam=1E7)
+
+        """
+        if method is None:
+            from hyperspy.utils.baseline_removal_tool import BaselineRemoval
+
+            br = BaselineRemoval(self, **kwargs)
+            return br.gui(display=display, toolkit=toolkit)
+        else:
+            from pybaselines import Baseline
+
+            baseline_fitter = getattr(
+                Baseline(
+                    self.axes_manager[-1].axis,
+                    check_finite=False,
+                ),
+                method,
+            )
+
+            def baseline_fitting(data, **kwargs):
+                return data - baseline_fitter(data, **kwargs)[0]
+
+            kwargs["silence_warnings"] = "non-uniform"
+            return self.map(baseline_fitting, inplace=inplace, **kwargs)
+
+    remove_baseline.__doc__ %= (IN_PLACE, DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
     def crop_signal(

@@ -90,11 +90,15 @@ file = "COPYING.txt"
 
 [project.optional-dependencies]
 all = [
+    "hyperspy[baseline]",
     "hyperspy[gui-jupyter]",
     "hyperspy[gui-traitsui]",
     "hyperspy[ipython]",
     "hyperspy[learning]",
     "hyperspy[speed]",
+]
+baseline = [
+    "pybaselines"
 ]
 coverage = [
     "pytest-cov",
@@ -113,6 +117,7 @@ doc = [
     # https://github.com/conda-forge/ipython-feedstock/pull/210
     "pickleshare", # ipython optional dependencies
     "numpydoc",
+    "pybaselines", # for docstring test
     "pydata_sphinx_theme",
     "setuptools_scm",
     "sphinx-copybutton",
