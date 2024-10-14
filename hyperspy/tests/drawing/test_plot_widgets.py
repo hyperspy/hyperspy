@@ -223,6 +223,43 @@ class TestPlotPolygonWidget:
         self.im = im
         self.polygon = polygon
 
+    def test_polygon_setup(self):
+        # Test default matplotlib axes
+        im_4d = Signal2D(np.arange(4**4).reshape([4] * 4))
+        im_4d.plot()
+        polygon = widgets.PolygonWidget(im_4d.axes_manager)
+        polygon.set_mpl_ax(im_4d._plot.navigator_plot.ax)
+        assert polygon.axes == im_4d.axes_manager.navigation_axes[0:2]
+        assert polygon.ax is im_4d._plot.navigator_plot.ax
+
+        im_3d = im_4d.inav[0]
+        im_3d.plot()
+        polygon = widgets.PolygonWidget(im_3d.axes_manager)
+        polygon.set_mpl_ax(im_3d._plot.signal_plot.ax)
+        assert polygon.axes == im_3d.axes_manager.signal_axes[0:2]
+        assert polygon.ax is im_3d._plot.signal_plot.ax
+
+        im_2d = im_3d.inav[0]
+        im_2d.plot()
+        polygon = widgets.PolygonWidget(im_2d.axes_manager)
+        polygon.set_mpl_ax(im_2d._plot.signal_plot.ax)
+        assert polygon.axes == im_2d.axes_manager.signal_axes[0:2]
+        assert polygon.ax is im_2d._plot.signal_plot.ax
+
+        # Needs at least two axes to work
+        im_1d = im_2d.isig[0]
+        im_2d.plot()
+        with pytest.raises(ValueError):
+            widgets.PolygonWidget(im_1d.axes_manager)
+
+        im_2d_navsig = im_3d.isig[0]
+        polygon = widgets.PolygonWidget(im_2d_navsig.axes_manager)
+        assert (
+            polygon.axes
+            == im_2d_navsig.axes_manager.signal_axes
+            + im_2d_navsig.axes_manager.navigation_axes
+        )
+
     def test_set_vertices(self):
         polygon = self.polygon
         im = self.im
@@ -245,13 +282,6 @@ class TestPlotPolygonWidget:
         np.testing.assert_allclose(polygon.get_vertices(), verts)
         assert polygon.get_centre() == (49.0, 49.5)
 
-    def test_polygon_errors(self):
-        im_1d = self.im.isig[0]
-
-        im_1d.plot()
-        with pytest.raises(ValueError):
-            widgets.PolygonWidget(im_1d.axes_manager)
-
     def test_set_on(self):
         polygon = self.polygon
         im = self.im
@@ -265,7 +295,7 @@ class TestPlotPolygonWidget:
         assert polygon.ax == im._plot.signal_plot.ax
         assert polygon._is_on
 
-        polygon.set_on(False)
+        polygon.set_on(False, render_figure=True)
         assert polygon.ax is None
         assert not polygon._is_on
 

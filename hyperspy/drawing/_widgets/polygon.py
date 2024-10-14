@@ -43,6 +43,7 @@ class PolygonWidget(WidgetBase):
 
         super().__init__(axes_manager, **kwargs)
 
+        # Set default axes
         if self.axes_manager is not None:
             if self.axes_manager.navigation_dimension > 1:
                 self.axes = self.axes_manager.navigation_axes[0:2]
@@ -64,15 +65,14 @@ class PolygonWidget(WidgetBase):
         the default events.
         """
         if value is not self.is_on and self.ax is not None:
+            existing_ax = self.ax
             if value is True:
                 self.connect(self.ax)
-                if render_figure:
-                    self.ax.figure.canvas.draw_idle()
             elif value is False:
                 self.disconnect()
-                if render_figure:
-                    self.ax.figure.canvas.draw_idle()
                 self.ax = None
+            if render_figure:
+                existing_ax.figure.canvas.draw_idle()
         self._is_on = value
 
     def set_mpl_ax(self, ax):

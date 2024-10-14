@@ -1598,8 +1598,8 @@ class PolygonROI(BaseInteractiveROI):
         if not self.is_valid():
             self._vertices = old_vertices
             raise ValueError(
-                f"`vertices` is not an empty list or a list of fully defined two-dimensional \
-                    points with at least three entries:\n{vertices}"
+                f"`vertices` is not an empty list or a list of fully defined two-dimensional "
+                + f"points with at least three entries:\n{vertices}"
             )
         if self.widgets:
             self._update_widgets()
