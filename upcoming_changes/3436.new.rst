@@ -1,0 +1,1 @@
+Add :meth:`~.api.signals.BaseSignal.remove_spikes` method to remove spikes on :class:`~.api.signals.Signal1D` and :class:`~.api.signals.Signal2D` using local median.

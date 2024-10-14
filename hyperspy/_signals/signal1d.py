@@ -364,7 +364,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         See Also
         --------
-        spikes_removal_tool
+        spikes_removal_tool, hyperspy.api.signals.BaseSignal.remove_spikes
 
         """
         self._spikes_diagnosis(

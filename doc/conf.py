@@ -330,6 +330,7 @@ towncrier_draft_working_directory = ".."
 intersphinx_mapping = {
     "cupy": ("https://docs.cupy.dev/en/stable", None),
     "dask": ("https://docs.dask.org/en/latest", None),
+    "dask_image": ("https://image.dask.org/en/latest", None),
     "exspy": ("https://exspy.readthedocs.io/en/latest", None),
     "h5py": ("https://docs.h5py.org/en/stable", None),
     "holospy": ("https://holospy.readthedocs.io/en/latest", None),
