@@ -1,0 +1,2 @@
+Add examples for overlaying a quad mesh marker to an image using the :class:`~.api.plot.markers.Markers` class
+and the :class:`matplotlib.collections.QuadMesh` class.
