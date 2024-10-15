@@ -483,7 +483,6 @@ class TestROIs:
         desired_mask = np.array(desired_mask)
 
         mask = sr.data[:, :, 0]
-        print(mask)  # To help debugging, this shows the shape of the mask
         np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
 
         # Test inverted mask
@@ -508,6 +507,14 @@ class TestROIs:
             constant_values=False,
         )
         np.testing.assert_array_equal(np.isnan(mask), desired_mask)
+
+        # Test square ROI. Useful for testing edge cases.
+        r_square = PolygonROI([(10, 10), (20, 10), (20, 40), (10, 40)])
+        sr_square = r_square(s, inverted=True)
+        mask = sr_square.data[:, :, 0]
+        desired_mask = np.ones_like(mask, dtype=bool)
+        desired_mask[2:5, 2:9] = False
+        np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
 
         # Test multiple polygons
 

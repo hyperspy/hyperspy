@@ -1766,8 +1766,10 @@ class PolygonROI(BaseInteractiveROI):
                 elif y1 == row_y:
                     if y1 == y2:
                         # Ensures edges parallel with row_y are included
-                        raster_start = round(x1 / x_scale) - min_index_x
-                        raster_end = round(x2 / x_scale) - min_index_x
+                        x_start = min(x1, x2)
+                        x_end = max(x1, x2)
+                        raster_start = round(x_start / x_scale) - min_index_x
+                        raster_end = round(x_end / x_scale) - min_index_x
                         mask[row, raster_start : raster_end + 1] = True
                     else:
                         # Ensures vertices landing exactly on row_y are included
