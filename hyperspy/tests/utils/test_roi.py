@@ -519,7 +519,7 @@ class TestROIs:
         sr_square = r_square(s, inverted=True)
         mask = sr_square.data[:, :, 0]
         desired_mask = np.ones_like(mask, dtype=bool)
-        desired_mask[2:5, 2:9] = False
+        desired_mask[2:9, 2:5] = False
         np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
 
         # Test multiple polygons
