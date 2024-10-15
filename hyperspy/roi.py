@@ -1645,7 +1645,7 @@ class PolygonROI(BaseInteractiveROI):
         slices = self._make_slices(natax, axes, ranges)
         ir = [slices[natax.index(axes[0])], slices[natax.index(axes[1])]]
 
-        mask = self.boolean_mask(axes=axes, xy_max=(right, bottom), rois=other_rois)
+        mask = self._boolean_mask(axes=axes, xy_max=(right, bottom), rois=other_rois)
 
         mask = mask[ir[1], ir[0]]
         if not inverted:
@@ -1789,7 +1789,7 @@ class PolygonROI(BaseInteractiveROI):
 
         return mask
 
-    def boolean_mask(
+    def _boolean_mask(
         self,
         axes_manager=None,
         axes=None,
@@ -1950,7 +1950,7 @@ def combine_rois(signal, rois, inverted=False, out=None, axes=None):
         to combine several ROI shapes.
     inverted : boolean, default = False
         If `True`, everything outside of the ROIs supplied will be
-        sliced, with the insides of the ROIs becoming NaN
+        retained, with the insides of the ROIs becoming NaN
     out : Signal, default = None
         If the `out` argument is supplied, the sliced output will be put
         into this instead of returning a Signal. See Signal.__getitem__()
@@ -1975,7 +1975,7 @@ def combine_rois(signal, rois, inverted=False, out=None, axes=None):
     return sliced_signal
 
 
-def create_mask_from_rois(
+def mask_from_rois(
     rois,
     axes_manager=None,
     axes=None,
@@ -2030,7 +2030,7 @@ def create_mask_from_rois(
 
     polygonrois = rois
 
-    mask = polygonrois[0].boolean_mask(
+    mask = polygonrois[0]._boolean_mask(
         axes_manager=axes_manager,
         axes=axes,
         xy_max=xy_max,

@@ -26,7 +26,7 @@ from hyperspy.roi import (
     SpanROI,
     PolygonROI,
     combine_rois,
-    create_mask_from_rois,
+    mask_from_rois,
 )
 
 __doc__ = hyperspy.roi.__doc__
@@ -41,7 +41,7 @@ __all__ = [
     "SpanROI",
     "PolygonROI",
     "combine_rois",
-    "create_mask_from_rois",
+    "mask_from_rois",
 ]
 
 

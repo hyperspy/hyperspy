@@ -33,7 +33,7 @@ from hyperspy.roi import (
     SpanROI,
     _get_central_half_limits_of_axis,
     combine_rois,
-    create_mask_from_rois,
+    mask_from_rois,
 )
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -646,7 +646,7 @@ class TestROIs:
 
         # Test combined boolean mask
         sigaxes = s.axes_manager.signal_axes
-        combined_mask = r1.boolean_mask(
+        combined_mask = r1._boolean_mask(
             x_scale=sigaxes[0].scale,
             y_scale=sigaxes[1].scale,
             rois=[r1, r2, r3, r4, r5, r6, r7]
@@ -1146,8 +1146,8 @@ class TestROIs:
         # Check same result as method in `PolygonROI`
         np.testing.assert_array_equal(combined_slice, rois[0].combine(s, rois=rois[1:]))
 
-        combined_mask = create_mask_from_rois(rois=rois, axes_manager=s.axes_manager)
-        desired_mask = rois[0].boolean_mask(axes_manager=s.axes_manager, rois=rois[1:])
+        combined_mask = mask_from_rois(rois=rois, axes_manager=s.axes_manager)
+        desired_mask = rois[0]._boolean_mask(axes_manager=s.axes_manager, rois=rois[1:])
 
         np.testing.assert_array_equal(combined_mask, desired_mask)
 
