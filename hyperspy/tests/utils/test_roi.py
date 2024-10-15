@@ -629,7 +629,12 @@ class TestROIs:
 
         s = hyperspy.signals.Signal2D(np.ones((33, 80)))
 
-        sr = r1.combine(s, rois=[r2, r3, r4, r5, r6, r7])
+        all_polygons = [
+            polygon._vertices
+            for polygon in [r1, r2, r3, r4, r5, r6, r7]
+            if polygon.is_valid()
+        ]
+        sr = r1._combine(s, additional_polygons=all_polygons)
 
         n_x = int(79 // s.axes_manager[0].scale) + 1
         n_y = int(31 // s.axes_manager[1].scale) + 1
@@ -649,7 +654,7 @@ class TestROIs:
         combined_mask = r1._boolean_mask(
             x_scale=sigaxes[0].scale,
             y_scale=sigaxes[1].scale,
-            rois=[r1, r2, r3, r4, r5, r6, r7]
+            additional_polygons=all_polygons[1:],
         )
         np.testing.assert_array_equal(combined_mask, desired_mask)
 
@@ -1140,14 +1145,21 @@ class TestROIs:
         )
 
         rois = [r1, r2, r3, r4, r5, r6, r7]
+        other_polygons = [
+            polygon._vertices for polygon in rois[1:] if polygon.is_valid()
+        ]
 
         combined_slice = combine_rois(s, rois=rois)
 
         # Check same result as method in `PolygonROI`
-        np.testing.assert_array_equal(combined_slice, rois[0].combine(s, rois=rois[1:]))
+        np.testing.assert_array_equal(
+            combined_slice, rois[0]._combine(s, additional_polygons=other_polygons)
+        )
 
         combined_mask = mask_from_rois(rois=rois, axes_manager=s.axes_manager)
-        desired_mask = rois[0]._boolean_mask(axes_manager=s.axes_manager, rois=rois[1:])
+        desired_mask = rois[0]._boolean_mask(
+            axes_manager=s.axes_manager, additional_polygons=other_polygons
+        )
 
         np.testing.assert_array_equal(combined_mask, desired_mask)
 
