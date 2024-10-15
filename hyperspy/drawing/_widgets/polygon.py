@@ -16,12 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import matplotlib
 from matplotlib.widgets import PolygonSelector
 
 from hyperspy.drawing.widget import WidgetBase
-
-from packaging.version import Version
 
 
 class PolygonWidget(WidgetBase):

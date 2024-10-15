@@ -1598,7 +1598,7 @@ class PolygonROI(BaseInteractiveROI):
         if not self.is_valid():
             self._vertices = old_vertices
             raise ValueError(
-                f"`vertices` is not an empty list or a list of fully defined two-dimensional "
+                "`vertices` is not an empty list or a list of fully defined two-dimensional "
                 + f"points with at least three entries:\n{vertices}"
             )
         if self.widgets:
@@ -1679,7 +1679,6 @@ class PolygonROI(BaseInteractiveROI):
         nav_dim = signal.axes_manager.navigation_dimension
         if True in nav_axes:
             if False in nav_axes:
-
                 slicer = signal.inav[slices[:nav_dim]].isig.__getitem__
                 slices = slices[nav_dim:]
             else:
