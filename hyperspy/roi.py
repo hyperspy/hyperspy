@@ -1604,7 +1604,9 @@ class PolygonROI(BaseInteractiveROI):
         if self.widgets:
             self._update_widgets()
 
-    def _apply_roi(self, signal, inverted=False, out=None, axes=None, other_rois=None):
+    def _apply_roi(
+        self, signal, inverted=False, out=None, axes=None, additional_polygons=None
+    ):
         if not self.is_valid():
             raise ValueError(not_set_error_msg)
 
@@ -1619,18 +1621,19 @@ class PolygonROI(BaseInteractiveROI):
                     "This ROI cannot operate on a non-uniform axis."
                 )
         natax = signal.axes_manager._get_axes_in_natural_order()
-        if not inverted and ( # Make sure at least one polygon is not empty
-            self._vertices
+        if not inverted and (
+            self._vertices  # Make sure at least one polygon is not empty
             or (
-                other_rois is not None and any(roi.vertices for roi in other_rois)
+                additional_polygons is not None
+                and any(polygon for polygon in additional_polygons)
             )
         ):
             # Slice original data with a circumscribed rectangle
 
             polygons = [self._vertices]
             # In case of combining multiple PolygonROI, all vertices must be considered
-            if other_rois is not None:
-                polygons += [roi.vertices for roi in other_rois]
+            if additional_polygons is not None:
+                polygons += [polygon for polygon in additional_polygons]
 
             left = min(x for polygon in polygons for x, y in polygon)
             right = max(x for polygon in polygons for x, y in polygon) + axes[1].scale
@@ -1645,7 +1648,9 @@ class PolygonROI(BaseInteractiveROI):
         slices = self._make_slices(natax, axes, ranges)
         ir = [slices[natax.index(axes[0])], slices[natax.index(axes[1])]]
 
-        mask = self._boolean_mask(axes=axes, xy_max=(right, bottom), rois=other_rois)
+        mask = self._boolean_mask(
+            axes=axes, xy_max=(right, bottom), additional_polygons=additional_polygons
+        )
 
         mask = mask[ir[1], ir[0]]
         if not inverted:
@@ -1702,9 +1707,15 @@ class PolygonROI(BaseInteractiveROI):
     def __call__(self, signal, inverted=False, out=None, axes=None):
         return self._apply_roi(signal, inverted=inverted, out=out, axes=axes)
 
-    def combine(self, signal, inverted=False, out=None, axes=None, rois=None):
+    def _combine(
+        self, signal, inverted=False, out=None, axes=None, additional_polygons=None
+    ):
         return self._apply_roi(
-            signal, inverted=inverted, out=out, axes=axes, other_rois=rois
+            signal,
+            inverted=inverted,
+            out=out,
+            axes=axes,
+            additional_polygons=additional_polygons,
         )
 
     def _rasterized_mask(
@@ -1797,7 +1808,7 @@ class PolygonROI(BaseInteractiveROI):
         xy_min=None,
         x_scale=None,
         y_scale=None,
-        rois=None,
+        additional_polygons=None,
     ):
         """Function to rasterize the polygon into a boolean numpy array. The
             interior of the polygon is by default `True`.
@@ -1825,9 +1836,10 @@ class PolygonROI(BaseInteractiveROI):
             This gives the scale of the second axis of the signal. In other words,
             how many units in coordinate space that corresponds to one step between
             rows.
-        rois : list of `PolygonROI`, optional
-            List containing further `PolygonROI` to be added to the mask, resulting
-            in a raster of several polygons.
+        additional_polygons : list, optional
+            List containing further polygons to be added to the mask, resulting
+            in a raster of several polygons. Each inner list gives the vertices
+            of one individual polygon. These do not need to be closed.
 
         Returns
         -------
@@ -1877,13 +1889,13 @@ class PolygonROI(BaseInteractiveROI):
                 y_scale=y_scale,
             )
 
-        if rois is not None:
-            for roi in rois:
-                if self is roi or not roi.is_valid():
+        if additional_polygons is not None:
+            for polygon in additional_polygons:
+                if self._vertices is polygon:
                     continue
 
                 other_mask = self._rasterized_mask(
-                    polygon_vertices=roi.vertices,
+                    polygon_vertices=polygon,
                     xy_max=xy_max,
                     xy_min=xy_min,
                     x_scale=x_scale,
@@ -1967,9 +1979,16 @@ def combine_rois(signal, rois, inverted=False, out=None, axes=None):
             )
 
     polygonrois = rois
+    other_polygons = [
+        polygon._vertices for polygon in polygonrois[1:] if polygon.is_valid()
+    ]
 
-    sliced_signal = polygonrois[0].combine(
-        signal, inverted=inverted, out=out, axes=axes, rois=rois[1:]
+    sliced_signal = polygonrois[0]._combine(
+        signal,
+        inverted=inverted,
+        out=out,
+        axes=axes,
+        additional_polygons=other_polygons,
     )
 
     return sliced_signal
@@ -2002,18 +2021,18 @@ def mask_from_rois(
     xy_max : tuple, optional
         The maximum x and y values that the rasterized mask covers, given in
         the same coordinate space as the polygon vertices. The defaults are
-        the max values in the `vertices` member attribute.
+        the max values in the `vertices` of the supplied ROIs.
     xy_min : tuple, optional
         The minimum x and y values that the mask covers, given in the same coordinate
-        space as the polygon vertices.
+        space as the polygon vertices. The default is from `(0, 0)`.
     x_scale : float, optional
         This gives the scale of the second axis of the signal. In other words,
         how many units in coordinate space that corresponds to one step between
-        columns.
+        columns. Default is 1.
     y_scale : float, optional
         This gives the scale of the second axis of the signal. In other words,
         how many units in coordinate space that corresponds to one step between
-        rows.
+        rows. Default is 1.
 
     Returns
     -------
@@ -2029,6 +2048,9 @@ def mask_from_rois(
             )
 
     polygonrois = rois
+    other_polygons = [
+        polygon._vertices for polygon in polygonrois[1:] if polygon.is_valid()
+    ]
 
     mask = polygonrois[0]._boolean_mask(
         axes_manager=axes_manager,
@@ -2037,7 +2059,7 @@ def mask_from_rois(
         xy_min=xy_min,
         x_scale=x_scale,
         y_scale=y_scale,
-        rois=polygonrois[1:],
+        additional_polygons=other_polygons,
     )
 
     return mask
