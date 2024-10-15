@@ -1619,7 +1619,12 @@ class PolygonROI(BaseInteractiveROI):
                     "This ROI cannot operate on a non-uniform axis."
                 )
         natax = signal.axes_manager._get_axes_in_natural_order()
-        if not inverted:
+        if not inverted and ( # Make sure at least one polygon is not empty
+            self._vertices
+            or (
+                other_rois is not None and any(roi.vertices for roi in other_rois)
+            )
+        ):
             # Slice original data with a circumscribed rectangle
 
             polygons = [self._vertices]
@@ -1632,7 +1637,7 @@ class PolygonROI(BaseInteractiveROI):
             top = min(y for polygon in polygons for x, y in polygon)
             bottom = max(y for polygon in polygons for x, y in polygon) + axes[0].scale
         else:
-            # Do not slice if selection is to be inverted
+            # Do not slice if selection is to be inverted or is empty
             left, right = axes[0].low_value, axes[0].high_value + axes[0].scale
             top, bottom = axes[1].low_value, axes[1].high_value + axes[1].scale
 
