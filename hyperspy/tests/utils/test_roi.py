@@ -644,6 +644,15 @@ class TestROIs:
 
         np.testing.assert_array_equal(~np.isnan(sr.data), desired_mask)
 
+        # Test combined boolean mask
+        sigaxes = s.axes_manager.signal_axes
+        combined_mask = r1.boolean_mask(
+            x_scale=sigaxes[0].scale,
+            y_scale=sigaxes[1].scale,
+            rois=[r1, r2, r3, r4, r5, r6, r7]
+        )
+        np.testing.assert_array_equal(combined_mask, desired_mask)
+
     def test_set_polygon_errors(self):
         r = PolygonROI()
         r.vertices = []
