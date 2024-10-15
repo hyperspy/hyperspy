@@ -522,6 +522,16 @@ class TestROIs:
         desired_mask[2:9, 2:5] = False
         np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
 
+        # Test empty ROI
+        r_empty = PolygonROI()
+        r_empty.vertices = []
+        s_empty = r_empty(s)
+        assert np.all(np.isnan(s_empty))
+        assert s_empty.axes_manager.navigation_shape == s.axes_manager.navigation_shape
+
+        s_empty_inv = r_empty(s, inverted=True)
+        np.testing.assert_array_equal(s_empty_inv.data, s.data)
+
         # Test multiple polygons
 
         r1 = PolygonROI(
