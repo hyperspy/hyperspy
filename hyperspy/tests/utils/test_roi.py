@@ -485,6 +485,12 @@ class TestROIs:
         mask = sr.data[:, :, 0]
         np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
 
+        # Test signal axes
+        s_t = s.T
+        sr = r(s_t)
+        mask = sr.data[0, :, :]
+        np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
+
         # Test inverted mask
 
         sr = r(s, inverted=True)
