@@ -486,6 +486,29 @@ class TestROIs:
         print(mask)  # To help debugging, this shows the shape of the mask
         np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
 
+        # Test inverted mask
+
+        sr = r(s, inverted=True)
+        assert sr.axes_manager.navigation_shape == s.axes_manager.navigation_shape
+        # Check that mask is same for all images:
+        for i in range(sr.axes_manager.navigation_shape[0]):
+            for j in range(sr.axes_manager.navigation_shape[1]):
+                assert np.all(np.isnan(sr.data[j, i, :])) or np.all(
+                    ~np.isnan(sr.data[j, i, :])
+                )
+
+        mask = sr.data[:, :, 0]
+        # Pad desired_mask to same shape
+        pad_left = int(15 // s.axes_manager[1].scale)
+        pad_right = mask.shape[1] - desired_mask.shape[1] - pad_left
+        pad_bottom = mask.shape[0] - desired_mask.shape[0]
+        desired_mask = np.pad(
+            desired_mask,
+            ((0, pad_bottom), (pad_left, pad_right)),
+            constant_values=False,
+        )
+        np.testing.assert_array_equal(np.isnan(mask), desired_mask)
+
         # Test multiple polygons
 
         r1 = PolygonROI(
