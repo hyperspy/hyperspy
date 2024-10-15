@@ -24,11 +24,11 @@ import hyperspy
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.array_tools import round_half_towards_zero
 from hyperspy.roi import (
-    PolygonROI,
     CircleROI,
     Line2DROI,
     Point1DROI,
     Point2DROI,
+    PolygonROI,
     RectangularROI,
     SpanROI,
     _get_central_half_limits_of_axis,
@@ -474,9 +474,7 @@ class TestROIs:
             O O O O O O O O X
             X X X X X X O O X
             X X X X X X X O X
-        """.strip().replace(
-            " ", ""
-        )
+        """.strip().replace(" ", "")
         desired_mask = [
             [c == "O" for c in line.strip()] for line in desired_mask.splitlines()
         ]
@@ -1044,7 +1042,6 @@ class TestROIs:
         np.testing.assert_allclose(line.length, np.sqrt(8))
 
     def test_combined_rois_polygon(self):
-
         # Test only for `PolygonROI`
 
         s = self.s_s
