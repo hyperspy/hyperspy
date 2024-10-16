@@ -3328,9 +3328,10 @@ class BaseSignal(
             If set to True the signal or first signal in the list of signals
             will be defined as the default (following Nexus v3 data rules).
         write_dataset : bool, optional
-            Only for hspy files. If True, write the dataset, otherwise, don't
+            Only for hspy and zspy files. If True, write the dataset, otherwise, don't
             write it. Useful to save attributes without having to write the
-            whole dataset. Default is True.
+            whole dataset. Default is True. Note: for zspy files, only the default
+            file writer (``DirectoryStore``) is supported.
         close_file : bool, optional
             Only for hdf5-based files and some zarr store. Close the file after
             writing. Default is True.
