@@ -212,6 +212,94 @@ class TestPlotCircleWidget:
         assert circle.size == size
 
 
+class TestPlotPolygonWidget:
+    def setup_method(self, method):
+        # Create test image 100x100 pixels:
+        N = 100
+        im = Signal2D(np.arange(N**2).reshape([N] * 2))
+        im.axes_manager[0].scale = 1.2
+        im.axes_manager[1].scale = 1.2
+        polygon = widgets.PolygonWidget(im.axes_manager)
+        self.im = im
+        self.polygon = polygon
+
+    def test_polygon_setup(self):
+        # Test default matplotlib axes
+        im_4d = Signal2D(np.arange(4**4).reshape([4] * 4))
+        im_4d.plot()
+        polygon = widgets.PolygonWidget(im_4d.axes_manager)
+        polygon.set_mpl_ax(im_4d._plot.navigator_plot.ax)
+        assert polygon.axes == im_4d.axes_manager.navigation_axes[0:2]
+        assert polygon.ax is im_4d._plot.navigator_plot.ax
+
+        im_3d = im_4d.inav[0]
+        im_3d.plot()
+        polygon = widgets.PolygonWidget(im_3d.axes_manager)
+        polygon.set_mpl_ax(im_3d._plot.signal_plot.ax)
+        assert polygon.axes == im_3d.axes_manager.signal_axes[0:2]
+        assert polygon.ax is im_3d._plot.signal_plot.ax
+
+        im_2d = im_3d.inav[0]
+        im_2d.plot()
+        polygon = widgets.PolygonWidget(im_2d.axes_manager)
+        polygon.set_mpl_ax(im_2d._plot.signal_plot.ax)
+        assert polygon.axes == im_2d.axes_manager.signal_axes[0:2]
+        assert polygon.ax is im_2d._plot.signal_plot.ax
+
+        # Needs at least two axes to work
+        im_1d = im_2d.isig[0]
+        im_2d.plot()
+        with pytest.raises(ValueError):
+            widgets.PolygonWidget(im_1d.axes_manager)
+
+        im_2d_navsig = im_3d.isig[0]
+        polygon = widgets.PolygonWidget(im_2d_navsig.axes_manager)
+        assert (
+            polygon.axes
+            == im_2d_navsig.axes_manager.signal_axes
+            + im_2d_navsig.axes_manager.navigation_axes
+        )
+
+    def test_set_vertices(self):
+        polygon = self.polygon
+        im = self.im
+
+        im.plot()
+        polygon.set_mpl_ax(im._plot.signal_plot.ax)
+
+        # Defaults
+        assert polygon.get_vertices() == []
+        assert polygon.get_centre() == tuple()
+
+        verts = [(31, 41), (15, 92), (65, 35)]
+        polygon.set_vertices(verts)
+        np.testing.assert_allclose(polygon.get_vertices(), verts)
+        assert polygon.get_centre() == (40.0, 63.5)
+
+        verts = np.arange(100).reshape((50, 2))
+        verts[::2, 1] = 0
+        polygon.set_vertices(verts)
+        np.testing.assert_allclose(polygon.get_vertices(), verts)
+        assert polygon.get_centre() == (49.0, 49.5)
+
+    def test_set_on(self):
+        polygon = self.polygon
+        im = self.im
+
+        assert polygon.ax is None
+        assert polygon._is_on
+
+        im.plot()
+        polygon.set_mpl_ax(im._plot.signal_plot.ax)
+
+        assert polygon.ax == im._plot.signal_plot.ax
+        assert polygon._is_on
+
+        polygon.set_on(False, render_figure=True)
+        assert polygon.ax is None
+        assert not polygon._is_on
+
+
 class TestPlotRangeWidget:
     def setup_method(self, method):
         s = Signal1D(np.arange(50))

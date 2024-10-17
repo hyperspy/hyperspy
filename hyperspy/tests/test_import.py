@@ -200,8 +200,11 @@ def test_dir_utils_roi():
         "Line2DROI",
         "Point1DROI",
         "Point2DROI",
+        "PolygonROI",
         "RectangularROI",
         "SpanROI",
+        "combine_rois",
+        "mask_from_rois",
     ]
 
 
