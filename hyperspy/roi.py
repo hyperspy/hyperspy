@@ -52,7 +52,6 @@ from functools import partial
 
 import numpy as np
 import traits.api as t
-import collections.abc
 
 import hyperspy.api as hs
 from hyperspy.axes import UniformDataAxis

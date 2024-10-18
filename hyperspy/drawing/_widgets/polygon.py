@@ -130,7 +130,6 @@ class PolygonWidget(WidgetBase):
         return self._widget.verts.copy()
 
     def _onselect(self, vertices):
-
         self.events.changed.trigger(self)
 
         xmax = max(x for x, y in vertices)
