@@ -187,6 +187,12 @@ the signal subclass with ``Electron Energy Loss Spectroscopy`` signal type.
 It is good practice to choose a very explicit ``signal_type`` while leaving
 acronyms for ``signal_type_aliases``.
 
+Additionally, the optional key ``hidden: True`` can be defined if a signal should
+be registered with HyperSpy, but not listed by :meth:`hyperspy.api.print_known_signal_types`.
+This option can be used if a signal subclass is needed for certain functionalities,
+such as casting to a different signal subclass, but should usually not be set
+directly by the user.
+
 Creating new HyperSpy model components
 --------------------------------------
 
