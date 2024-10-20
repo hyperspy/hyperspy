@@ -2042,7 +2042,7 @@ def mask_from_rois(
     for roi in rois:
         if not isinstance(roi, PolygonROI):
             raise NotImplementedError(
-                "`create_mask_from_roi` is currently only implemented for `PolygonROI`."
+                "`mask_from_rois` is currently only implemented for `PolygonROI`."
             )
 
     polygonrois = rois
