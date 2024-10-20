@@ -22,6 +22,7 @@ from hyperspy.drawing._widgets.circle import CircleWidget
 from hyperspy.drawing._widgets.horizontal_line import HorizontalLineWidget
 from hyperspy.drawing._widgets.label import LabelWidget
 from hyperspy.drawing._widgets.line2d import Line2DWidget
+from hyperspy.drawing._widgets.polygon import PolygonWidget
 from hyperspy.drawing._widgets.range import RangeWidget
 from hyperspy.drawing._widgets.rectangles import RectangleWidget, SquareWidget
 from hyperspy.drawing._widgets.scalebar import ScaleBar
@@ -51,4 +52,5 @@ __all__ = [
     "SquareWidget",
     "RangeWidget",
     "Line2DWidget",
+    "PolygonWidget",
 ]

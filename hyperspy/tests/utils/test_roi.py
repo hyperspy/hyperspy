@@ -28,9 +28,12 @@ from hyperspy.roi import (
     Line2DROI,
     Point1DROI,
     Point2DROI,
+    PolygonROI,
     RectangularROI,
     SpanROI,
     _get_central_half_limits_of_axis,
+    combine_rois,
+    mask_from_rois,
 )
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -439,6 +442,260 @@ class TestROIs:
         r_ann = CircleROI(20, 25, 20, 15)
         assert tuple(r_ann) == (20, 25, 20, 15)
 
+    def test_polygon_spec(self):
+        s = self.s_s
+
+        s.data = np.ones_like(s.data)
+        r = PolygonROI(
+            [(20, 5), (35, 15), (55, 0), (50, 50), (45, 45), (15, 40), (20, 35)]
+        )
+        sr = r(s)
+
+        n_x = int(40 // s.axes_manager[0].scale) + 1
+        n_y = int(50 // s.axes_manager[1].scale) + 1
+        assert sr.axes_manager.navigation_shape == (n_x, n_y)
+        # Check that mask is same for all images:
+        for i in range(n_x):
+            for j in range(n_y):
+                assert np.all(np.isnan(sr.data[j, i, :])) or np.all(
+                    ~np.isnan(sr.data[j, i, :])
+                )
+
+        # Check that the correct elements have been masked out:
+        desired_mask = """
+            X X X X X X X X O
+            X O X X X X X O O
+            X O O O X O O O O
+            X O O O O O O O O
+            X O O O O O O O O
+            X O O O O O O O X
+            X O O O O O O O X
+            X O O O O O O O X
+            O O O O O O O O X
+            X X X X X X O O X
+            X X X X X X X O X
+        """.strip().replace(" ", "")
+        desired_mask = [
+            [c == "O" for c in line.strip()] for line in desired_mask.splitlines()
+        ]
+        desired_mask = np.array(desired_mask)
+
+        mask = sr.data[:, :, 0]
+        np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
+
+        # Test signal axes
+        s_t = s.T
+        sr = r(s_t)
+        mask = sr.data[0, :, :]
+        np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
+
+        # Test inverted mask
+
+        sr = r(s, inverted=True)
+        assert sr.axes_manager.navigation_shape == s.axes_manager.navigation_shape
+        # Check that mask is same for all images:
+        for i in range(sr.axes_manager.navigation_shape[0]):
+            for j in range(sr.axes_manager.navigation_shape[1]):
+                assert np.all(np.isnan(sr.data[j, i, :])) or np.all(
+                    ~np.isnan(sr.data[j, i, :])
+                )
+
+        mask = sr.data[:, :, 0]
+        # Pad desired_mask to same shape
+        pad_left = int(15 // s.axes_manager[1].scale)
+        pad_right = mask.shape[1] - desired_mask.shape[1] - pad_left
+        pad_bottom = mask.shape[0] - desired_mask.shape[0]
+        desired_mask = np.pad(
+            desired_mask,
+            ((0, pad_bottom), (pad_left, pad_right)),
+            constant_values=False,
+        )
+        np.testing.assert_array_equal(np.isnan(mask), desired_mask)
+
+        # Test square ROI. Useful for testing edge cases.
+        r_square = PolygonROI([(10, 10), (20, 10), (20, 40), (10, 40)])
+        sr_square = r_square(s, inverted=True)
+        mask = sr_square.data[:, :, 0]
+        desired_mask = np.ones_like(mask, dtype=bool)
+        desired_mask[2:9, 2:5] = False
+        np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
+
+        # Test empty ROI
+        r_empty = PolygonROI()
+        r_empty.vertices = []
+        s_empty = r_empty(s)
+        assert np.all(np.isnan(s_empty))
+        assert s_empty.axes_manager.navigation_shape == s.axes_manager.navigation_shape
+
+        s_empty_inv = r_empty(s, inverted=True)
+        np.testing.assert_array_equal(s_empty_inv.data, s.data)
+
+        # Test multiple polygons
+
+        r1 = PolygonROI(
+            vertices=[(0.61, 0.52), (0.5, 30.51), (2.99, 30.51), (2.87, 0.64)]
+        )
+        r2 = PolygonROI(
+            vertices=[
+                (5.95, 0.52),
+                (5.71, 30.75),
+                (17.92, 30.87),
+                (17.92, 28.26),
+                (9.27, 28.14),
+                (9.15, 0.52),
+            ]
+        )
+        r3 = PolygonROI(
+            vertices=[
+                (22.21, 29.45),
+                (25.05, 29.45),
+                (26.24, 21.15),
+                (32.05, 21.38),
+                (33.71, 29.33),
+                (37.03, 29.45),
+                (30.62, 0.16),
+                (28.61, 0.04),
+                (24.58, 13.09),
+                (27.54, 13.2),
+                (29.2, 7.75),
+                (30.86, 15.22),
+                (27.3, 15.22),
+                (27.66, 13.2),
+                (24.46, 13.2),
+                (20.55, 29.68),
+            ]
+        )
+        r4 = PolygonROI(
+            vertices=[
+                (39.99, 30.25),
+                (39.99, 0.57),
+                (47.07, 0.22),
+                (54.49, 3.85),
+                (55.01, 10.41),
+                (51.04, 13.68),
+                (45.0, 13.51),
+                (45.0, 9.72),
+                (48.79, 9.03),
+                (50.35, 7.13),
+                (50.17, 5.75),
+                (48.62, 4.02),
+                (44.82, 4.02),
+                (45.0, 9.54),
+                (45.34, 9.54),
+                (45.0, 13.68),
+                (55.18, 29.73),
+                (49.31, 29.73),
+                (44.82, 18.86),
+                (45.17, 30.25),
+            ]
+        )
+        r5 = PolygonROI(
+            vertices=[(57.61, 0.52), (57.5, 30.51), (59.99, 30.51), (59.87, 0.64)]
+        )
+        r6 = PolygonROI(
+            vertices=[
+                (64.21, 29.45),
+                (67.05, 29.45),
+                (68.24, 21.15),
+                (74.05, 21.38),
+                (75.71, 29.33),
+                (79.03, 29.45),
+                (72.62, 0.16),
+                (70.61, 0.04),
+                (66.58, 13.09),
+                (69.54, 13.2),
+                (71.2, 7.75),
+                (72.86, 15.22),
+                (69.3, 15.22),
+                (69.66, 13.2),
+                (66.46, 13.2),
+                (62.55, 29.68),
+            ]
+        )
+        r7 = PolygonROI(
+            vertices=[
+                (17.73, 4.54),
+                (13.59, 0.74),
+                (10.83, 3.68),
+                (11.69, 8.33),
+                (17.39, 13.86),
+                (23.25, 8.68),
+                (24.63, 3.85),
+                (22.56, 1.26),
+            ]
+        )
+
+        s = hyperspy.signals.Signal2D(np.ones((33, 80)))
+
+        all_polygons = [
+            polygon._vertices
+            for polygon in [r1, r2, r3, r4, r5, r6, r7]
+            if polygon.is_valid()
+        ]
+        sr = r1._combine(s, additional_polygons=all_polygons)
+
+        n_x = int(79 // s.axes_manager[0].scale) + 1
+        n_y = int(31 // s.axes_manager[1].scale) + 1
+        assert sr.axes_manager.signal_shape == (n_x, n_y)
+
+        # Check more complex mask
+        desired_mask = " ".join(
+            "0000000000000000000000000000000000000000000000000000000000000000000000000000000001110011110001100000000000001111000000001111111111000000001110000000001111000000011100111100111100000111000011110000000011111111111100000011100000000011110000000111001111011111100011111000111100000000111111111111110000111000000000111100000001110011110111111101111111011111000000001111111111111111001110000000011111000000011100111101111111111111100111111000000011111100011111110011100000000111111000000111001111011111111111111001111110000000111111000011111100111000000001111110000001110011110111111111111110111111100000001111110000111111001110000000111111100000011100111100111111111111001111111000000011111100001111110011100000001111111000000111001111001111111111110011111111000000111111000111111100111000000011111111000001110011110001111111111000111111110000001111111111111111001110000000111111110000011100111100001111111100011110111100000011111111111111100011100000011110111100000111001111000001111100000111101111000000111111111111110000111000000111101111000001110011110000000110000001111011110000001111111111111000001110000001111011110000011100111100000000000000111110011110000011111100000000000011100000111110011110000111001111000000000000001111000111100000111111100000000000111000001111000111100001110011110000000000000011111111111000001111111000000000001110000011111111111000011100111100000000000000111111111110000011111111000000000011100000111111111110000111001111000000000000011111111111110000111111111000000000111000011111111111110001110011110000000000000111111111111100001111111110000000001110000111111111111100011100111100000000000001111111111111000011111111110000000011100001111111111111000111001111000000000000011111111111110000111111111110000000111000011111111111110001110011110000000000001111100000111100001111111111100000001110001111100000111100011100111100000000000011111000001111100011111101111100000011100011111000001111100111001111000000000000111110000001111000111111011111100000111000111110000001111001110011110000000000001111100000011110001111110111111000001110001111100000011110011100111100000000000111111000000111100011111100111111000011100111111000000111100111001111000000000001111100000001111000111111001111110000111001111100000001111001110011110000000000011111000000011111001111110001111110001110011111000000011111011100111111111111100111110000000011110011111100011111110011100111110000000011110111001111111111111000000000000000000000111111000000000000111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        )
+        desired_mask = np.fromstring(desired_mask, "int8", sep=" ")
+        desired_mask = desired_mask.astype(bool).reshape((n_y, n_x))
+
+        np.testing.assert_array_equal(~np.isnan(sr.data), desired_mask)
+
+        # Test combined boolean mask
+        sigaxes = s.axes_manager.signal_axes
+        combined_mask = r1._boolean_mask(
+            x_scale=sigaxes[0].scale,
+            y_scale=sigaxes[1].scale,
+            additional_polygons=all_polygons[1:],
+        )
+        np.testing.assert_array_equal(combined_mask, desired_mask)
+
+    def test_set_polygon_errors(self):
+        r = PolygonROI()
+        r.vertices = []
+        r.vertices = [
+            (20, 5),
+            (35, 15),
+            (55, 0),
+            (50, 50),
+            (45, 45),
+            (15, 40),
+            (20, 35),
+        ]
+
+        with pytest.raises(ValueError):
+            r.vertices = [(10, 2)]
+        with pytest.raises(ValueError):
+            r.vertices = [
+                (20, 5),
+                (35, 15),
+                (55, 0),
+                (50, 50),
+                (45, 45),
+                (15, 40),
+                (20, None),
+            ]
+        with pytest.raises(ValueError):
+            r.vertices = [
+                (20, 5),
+                (35, 15),
+                (55, 0),
+                (50, 50),
+                (45, 45),
+                (15, 40),
+                (20, 20, 4),
+            ]
+
+    def test_polygon_getitem(self):
+        r = PolygonROI([(2, 5), (5, 6), (5, 3)])
+        assert tuple(r) == ((2, 5), (5, 6), (5, 3))
+
     def test_2d_line_getitem(self):
         r = Line2DROI(10, 10, 150, 50, 5)
         assert tuple(r) == (10, 10, 150, 50, 5)
@@ -706,6 +963,10 @@ class TestROIs:
                 assert value == t.Undefined
             assert tuple(r)[-1] == 0
             repr(r)
+        for roi in [PolygonROI]:
+            r = roi()
+            assert tuple(r) == tuple()
+            repr(r)
 
     def test_repr_vals(self):
         repr(Point1DROI(1.1))
@@ -715,6 +976,8 @@ class TestROIs:
         repr(SpanROI(3.0, 5.0))
         repr(CircleROI(5, 5, 3))
         repr(CircleROI(5, 5, 3, 1))
+        repr(PolygonROI([(0, 0), (0, 6.0), (2.1, 3)]))
+        repr(PolygonROI([(0, 0), (0, 6.0), (2.1, 3), (1, -1)]))
 
     def test_undefined_call(self):
         for roi in [
@@ -777,6 +1040,125 @@ class TestROIs:
     def test_line2droi_length(self):
         line = Line2DROI(x1=0.0, x2=2, y1=0.0, y2=2)
         np.testing.assert_allclose(line.length, np.sqrt(8))
+
+    def test_combined_rois_polygon(self):
+        # Test only for `PolygonROI`
+
+        s = self.s_s
+
+        s.data = np.ones_like(s.data)
+
+        r1 = PolygonROI(
+            vertices=[(0.61, 0.52), (0.5, 30.51), (2.99, 30.51), (2.87, 0.64)]
+        )
+        r2 = PolygonROI(
+            vertices=[
+                (5.95, 0.52),
+                (5.71, 30.75),
+                (17.92, 30.87),
+                (17.92, 28.26),
+                (9.27, 28.14),
+                (9.15, 0.52),
+            ]
+        )
+        r3 = PolygonROI(
+            vertices=[
+                (22.21, 29.45),
+                (25.05, 29.45),
+                (26.24, 21.15),
+                (32.05, 21.38),
+                (33.71, 29.33),
+                (37.03, 29.45),
+                (30.62, 0.16),
+                (28.61, 0.04),
+                (24.58, 13.09),
+                (27.54, 13.2),
+                (29.2, 7.75),
+                (30.86, 15.22),
+                (27.3, 15.22),
+                (27.66, 13.2),
+                (24.46, 13.2),
+                (20.55, 29.68),
+            ]
+        )
+        r4 = PolygonROI(
+            vertices=[
+                (39.99, 30.25),
+                (39.99, 0.57),
+                (47.07, 0.22),
+                (54.49, 3.85),
+                (55.01, 10.41),
+                (51.04, 13.68),
+                (45.0, 13.51),
+                (45.0, 9.72),
+                (48.79, 9.03),
+                (50.35, 7.13),
+                (50.17, 5.75),
+                (48.62, 4.02),
+                (44.82, 4.02),
+                (45.0, 9.54),
+                (45.34, 9.54),
+                (45.0, 13.68),
+                (55.18, 29.73),
+                (49.31, 29.73),
+                (44.82, 18.86),
+                (45.17, 30.25),
+            ]
+        )
+        r5 = PolygonROI(
+            vertices=[(57.61, 0.52), (57.5, 30.51), (59.99, 30.51), (59.87, 0.64)]
+        )
+        r6 = PolygonROI(
+            vertices=[
+                (64.21, 29.45),
+                (67.05, 29.45),
+                (68.24, 21.15),
+                (74.05, 21.38),
+                (75.71, 29.33),
+                (79.03, 29.45),
+                (72.62, 0.16),
+                (70.61, 0.04),
+                (66.58, 13.09),
+                (69.54, 13.2),
+                (71.2, 7.75),
+                (72.86, 15.22),
+                (69.3, 15.22),
+                (69.66, 13.2),
+                (66.46, 13.2),
+                (62.55, 29.68),
+            ]
+        )
+        r7 = PolygonROI(
+            vertices=[
+                (17.73, 4.54),
+                (13.59, 0.74),
+                (10.83, 3.68),
+                (11.69, 8.33),
+                (17.39, 13.86),
+                (23.25, 8.68),
+                (24.63, 3.85),
+                (22.56, 1.26),
+            ]
+        )
+
+        rois = [r1, r2, r3, r4, r5, r6, r7]
+        other_polygons = [
+            polygon._vertices for polygon in rois[1:] if polygon.is_valid()
+        ]
+
+        combined_slice = combine_rois(s, rois=rois)
+
+        # Check same result as method in `PolygonROI`
+        np.testing.assert_array_equal(
+            combined_slice, rois[0]._combine(s, additional_polygons=other_polygons)
+        )
+
+        combined_mask = mask_from_rois(rois=rois, axes_manager=s.axes_manager)
+        desired_mask = rois[0]._boolean_mask(
+            axes_manager=s.axes_manager, additional_polygons=other_polygons
+        )
+
+        np.testing.assert_array_equal(combined_mask, desired_mask)
 
 
 @lazifyTestClass
