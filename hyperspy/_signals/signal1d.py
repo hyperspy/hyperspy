@@ -1340,11 +1340,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 method,
             )
 
-            def baseline_fitting(data, **kwargs):
+            def baseline_fitting(data):
                 return data - baseline_fitter(data, **kwargs)[0]
 
-            kwargs["silence_warnings"] = "non-uniform"
-            return self.map(baseline_fitting, inplace=inplace, **kwargs)
+            return self.map(
+                baseline_fitting,
+                inplace=inplace,
+                output_signal_size=self.axes_manager.signal_shape,
+                output_dtype=float,
+                silence_warnings="non-uniform",
+            )
 
     remove_baseline.__doc__ %= (IN_PLACE, DISPLAY_DT, TOOLKIT_DT)
 
