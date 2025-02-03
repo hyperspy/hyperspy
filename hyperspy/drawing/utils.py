@@ -1675,25 +1675,30 @@ def plot_spectra(
     elif style == "mosaic":
         if legend is None:
             legend = [legend] * len(spectra)
-        for spectrum, ax_, color, linestyle, legend in zip(
+        if not np.iterable(ax):
+            # make sure it is a list
+            ax = [ax]
+        for spectra_, ax_, color_, linestyle_, legend_ in zip(
             spectra, ax, color, linestyle, legend
         ):
-            spectrum = _transpose_if_required(spectrum, 1)
+            spectra_ = _transpose_if_required(spectra_, 1)
             _plot_spectrum(
-                spectrum,
+                spectra_,
                 ax_,
                 normalise,
-                color=color,
-                linestyle=linestyle,
+                color=color_,
+                linestyle=linestyle_,
                 drawstyle=drawstyle,
             )
             ax_.set_ylabel(ylabel)
-            if legend is not None:
-                ax_.set_title(legend)
+            if legend_ is not None:
+                ax_.set_title(legend_)
+            # Add xlabel for each axes (list of BaseSignal)
             if not isinstance(spectra, BaseSignal):
-                _set_spectrum_xlabel(spectrum, ax_)
+                _set_spectrum_xlabel(spectra_, ax_)
+        # Add xlabel at the very bottom (single BaseSignal)
         if isinstance(spectra, BaseSignal):
-            _set_spectrum_xlabel(spectrum, ax_)
+            _set_spectrum_xlabel(spectra, ax[-1])
         fig.tight_layout()
 
     elif style == "heatmap":

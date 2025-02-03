@@ -551,3 +551,9 @@ def test_plot_spectra_ax():
     ax[4].set_title("mosaic 1")
 
     return fig
+
+
+@pytest.mark.parametrize("style", ("overlap", "cascade", "mosaic"))
+def test_plot_spectra_single(style):
+    s = hs.signals.Signal1D([0, 1, 2])
+    hs.plot.plot_spectra([s], style=style)
