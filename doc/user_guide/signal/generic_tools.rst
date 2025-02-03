@@ -935,8 +935,8 @@ In this case method will not return anything.
 Spike removal
 ^^^^^^^^^^^^^
 
-Comic ray or X-ray can cause intense pixels in the data. To correct for these experimental
-artifact, two approaches are implemented in HyperSpy to remove spikes:
+Cosmic rays or X-rays can cause intense pixels in the data. To correct for these experimental
+artifacts, two approaches are implemented in HyperSpy to remove spikes:
 
 - using a median filter - see :meth:`~.api.signals.BaseSignal.remove_spikes`
 - using interpolation (Signal1D only) - see :meth:`~.api.signals.Signal1D.spikes_removal_tool`
@@ -944,7 +944,7 @@ artifact, two approaches are implemented in HyperSpy to remove spikes:
 Using a median filter
 """""""""""""""""""""
 
-The :meth:`~.api.signals.BaseSignal.remove_spikes` find spikes using the following condition:
+The :meth:`~.api.signals.BaseSignal.remove_spikes` finds spikes using the following condition:
 
 .. math::
 
@@ -952,7 +952,7 @@ The :meth:`~.api.signals.BaseSignal.remove_spikes` find spikes using the followi
 
 where :math:`\sigma` is the standard deviation.
 
-Where the condition above is fullfill, the value are replace by their local median.
+Where the condition above is fullfilled, the values are replaced by their local median.
 The parameter ``threshold_factor`` can be specified by the user (default value is 5)
 and the axes along which the median and the standard deviation are calculated can be specified
 using the ``axes`` parameter.
