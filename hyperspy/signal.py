@@ -7189,25 +7189,25 @@ class BaseSignal(
         Parameters
         ----------
         threshold_factor : int, float
-            Factor used in the thresholding calculation. Higher value will
-            give higher threshold value to find spikes and less spikes will
-            removed. It must a positive number. Default is 5.
+            Factor used in the thresholding calculation. A higher value will
+            give a higher threshold value to find spikes and less spikes will
+            removed. It must be a positive number. Default is 5.
         axes : int, str, :class:`~hyperspy.axes.DataAxis` or tuple
             Specify the axes used for calculating the local median. It is recommended
-            to use axes of similar nature where the local median is representative
-            of the current value (for example, spatial position of mapped values)
-            ``axes`` can be a single or many axes in a tuple. In both cases the
+            to use axes of similar nature, where the local median is representative
+            of the current value (for example, spatial position of mapped values).
+            ``axes`` can be a single or multiple axes in a tuple. In both cases, the
             axes can be passed directly, or specified using the index in
             :attr:`~.api.signals.BaseSignal.axes_manager` or the name of the axis.
             If ``None``, for :class:`~.api.signals.Signal1D`, the navigation axes are
             used. For signals with signal dimension >= 2, the signal axes are used.
             For signals with a signal dimension of 0, all axes are used.
         inplace : bool, default True
-            If ``True``, the data is replaced by the result. Otherwise
-            a new Signal with the results is returned.
+            If ``True``, the data is replaced by the result. Otherwise,
+            a new Signal with the result is returned.
         **kwargs : dict
-            keyword arguments are passed to :func:`scipy.ndimage.median_filter`
-            of :func:`dask_image.ndfilters.median_filter` for lazy signal.
+            Keyword arguments are passed to :func:`scipy.ndimage.median_filter`
+            of :func:`dask_image.ndfilters.median_filter` for lazy signals.
 
         Returns
         -------
