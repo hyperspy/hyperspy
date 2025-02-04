@@ -31,7 +31,6 @@ from pathlib import Path
 import dask.array as da
 import numpy as np
 import traits.api as t
-from dask.diagnostics import ProgressBar
 from matplotlib import pyplot as plt
 from pint import UndefinedUnitError
 from rsciio.utils import rgb_tools
@@ -89,9 +88,9 @@ from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
 from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
+    _compute,
     _get_block_pattern,
     add_scalar_axis,
-    dummy_context_manager,
     guess_output_signal_size,
     is_cupy_array,
     isiterable,
@@ -5657,8 +5656,6 @@ class BaseSignal(
 
         data_stored = False
 
-        cm = ProgressBar if show_progressbar else dummy_context_manager
-
         if inplace:
             if (
                 not self._lazy
@@ -5669,15 +5666,7 @@ class BaseSignal(
                 # da.store is used to avoid unnecessary amount of memory usage.
                 # By using it here, the contents in mapped is written directly to
                 # the existing NumPy array, avoiding a potential doubling of memory use.
-                with cm():
-                    da.store(
-                        mapped,
-                        self.data,
-                        dtype=mapped.dtype,
-                        compute=True,
-                        num_workers=num_workers,
-                        lock=False,
-                    )
+                _compute(mapped, self.data, show_progressbar, num_workers=num_workers)
                 data_stored = True
             else:
                 self.data = mapped
@@ -5705,8 +5694,9 @@ class BaseSignal(
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            with cm():
-                sig.data = sig.data.compute(num_workers=num_workers)
+            sig.data = _compute(
+                sig.data, show_progressbar=show_progressbar, num_workers=num_workers
+            )
 
         return sig
 

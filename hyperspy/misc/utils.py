@@ -28,9 +28,11 @@ from contextlib import contextmanager
 from io import StringIO
 from operator import attrgetter
 
+import dask
 import dask.array as da
 import numpy as np
 
+from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 from hyperspy.misc.signal_tools import broadcast_signals
@@ -1443,6 +1445,20 @@ def guess_output_signal_size(test_data, function, ragged, **kwargs):
             output_dtype = output.dtype
             output_signal_size = output.shape
     return output_signal_size, output_dtype
+
+
+def _compute(array, store_to=None, show_progressbar=None, **kwargs):
+    if show_progressbar is None:
+        show_progressbar = preferences.General.show_progressbar
+    cm = dask.diagnostics.ProgressBar if show_progressbar else dummy_context_manager
+
+    with cm():
+        if store_to is not None:
+            da.store(
+                array, store_to, dtype=array.dtype, compute=True, lock=False, **kwargs
+            )
+        else:
+            return array.compute(**kwargs)
 
 
 def multiply(iterable):

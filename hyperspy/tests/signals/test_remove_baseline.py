@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
+
+import dask
 import pytest
 
 import hyperspy.api as hs
@@ -118,3 +121,16 @@ def test_baseline_removal_tool_enable():
         assert br._enable_poly_order is False
         assert br._enable_diff_order is True
         assert br._enable_penalized_spline is False
+
+
+def test_remove_baseline_warning(caplog):
+    s = hs.data.two_gaussians().inav[:2, :2]
+
+    with dask.config.set(scheduler="threads"):
+        with caplog.at_level(logging.WARNING):
+            s.remove_baseline(
+                method="aspls",
+                lam=1e7,
+            )
+
+    assert "Use processes scheduler to enable parallelism" in caplog.text

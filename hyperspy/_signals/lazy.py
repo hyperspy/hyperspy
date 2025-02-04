@@ -28,7 +28,6 @@ from dask.widgets import TEMPLATE_PATHS
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import get_file_handle
 
-from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import (
     LAZYSIGNAL_DOC,
     MANY_AXIS_PARAMETER,
@@ -42,7 +41,7 @@ from hyperspy.misc.array_tools import (
 )
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import dummy_context_manager, isiterable, multiply
+from hyperspy.misc.utils import _compute, isiterable, multiply
 from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
@@ -242,17 +241,9 @@ class LazySignal(BaseSignal):
         >>> s3.compute(scheduler='single-threaded')
 
         """
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
-
-        cm = dask.diagnostics.ProgressBar if show_progressbar else dummy_context_manager
-
-        with cm():
-            da = self.data
-            data = da.compute(**kwargs)
-            if close_file:
-                self.close_file()
-            self.data = data
+        self.data = _compute(self.data, show_progressbar=show_progressbar, **kwargs)
+        if close_file:
+            self.close_file()
 
         self._lazy = False
         self._assign_subclass()
@@ -561,8 +552,7 @@ class LazySignal(BaseSignal):
             chunk_slice != self._cache_dask_chunk_slice
             or self._cache_dask_chunk is None
         ):
-            with dummy_context_manager():
-                self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
+            self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
             self._cache_dask_chunk_slice = chunk_slice
 
         indices = list(indices)

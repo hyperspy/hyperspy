@@ -20,6 +20,7 @@ import logging
 import math
 import warnings
 
+import dask
 import dask.array as da
 import numpy as np
 import numpy.ma as ma
@@ -50,6 +51,7 @@ from hyperspy.docstrings.signal1d import (
 )
 from hyperspy.misc.lowess_smooth import lowess
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.misc.utils import _compute
 from hyperspy.models.model1d import Model1D
 from hyperspy.signal import BaseSignal
 from hyperspy.signal_tools import (
@@ -1296,6 +1298,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self,
         method=None,
         inplace=True,
+        show_progressbar=None,
+        num_workers=None,
         display=True,
         toolkit=None,
         **kwargs,
@@ -1312,6 +1316,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         %s
         %s
+        %s
+        %s
         **kwargs : dict
             Keyword arguments of baseline algorithm. These are passed
             to baseline function.
@@ -1324,34 +1330,60 @@ class Signal1D(BaseSignal, CommonSignal1D):
         s.remove_baselines(method="aspls", lam=1E7)
 
         """
-        if method is None:
+        from hyperspy._signals._signal1d_tool import _remove_baseline
+
+        if method is None:  # pragma: no cover
             from hyperspy.utils.baseline_removal_tool import BaselineRemoval
 
             br = BaselineRemoval(self, **kwargs)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            from pybaselines import Baseline
+            # Use dask.delayed because `BaseSignal.map`
+            # doesn't work with dask process scheduler
+            x = self.axes_manager[-1].axis
+            delayed_out = [
+                dask.delayed(_remove_baseline)(data, method, x, kwargs)
+                for data in self._iterate_signal(iterpath="flyback")
+            ]
+            arrays = [
+                da.from_delayed(
+                    delayed_out_,
+                    dtype=self.data.dtype,
+                    shape=self.axes_manager.signal_shape,
+                )
+                for delayed_out_ in delayed_out
+            ]
+            out = da.stack(arrays, axis=0).reshape(self.data.shape)
 
-            baseline_fitter = getattr(
-                Baseline(
-                    self.axes_manager[-1].axis,
-                    check_finite=False,
-                ),
-                method,
-            )
+            if not self._lazy:
+                scheduler = dask.config.get("scheduler", None)
+                # if None, it means that it wasn't set and
+                # therefore we can sense to set the scheduler
+                # without overwritting a user setting
+                if scheduler is None:
+                    _logger.info("Using processes scheduler.")
+                    scheduler = "processes"
+                elif scheduler == "threads":
+                    _logger.warning("Use processes scheduler to enable parallelism.")
 
-            def baseline_fitting(data):
-                return data - baseline_fitter(data, **kwargs)[0]
+                out = _compute(
+                    out,
+                    show_progressbar=show_progressbar,
+                    scheduler=scheduler,
+                    num_workers=num_workers,
+                )
+            if inplace:
+                self.data = out
+            else:
+                return self._deepcopy_with_new_data(out)
 
-            return self.map(
-                baseline_fitting,
-                inplace=inplace,
-                output_signal_size=self.axes_manager.signal_shape,
-                output_dtype=float,
-                silence_warnings="non-uniform",
-            )
-
-    remove_baseline.__doc__ %= (IN_PLACE, DISPLAY_DT, TOOLKIT_DT)
+    remove_baseline.__doc__ %= (
+        IN_PLACE,
+        SHOW_PROGRESSBAR_ARG,
+        NUM_WORKERS_ARG,
+        DISPLAY_DT,
+        TOOLKIT_DT,
+    )
 
     @interactive_range_selector
     def crop_signal(
