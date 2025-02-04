@@ -90,7 +90,7 @@ Example of usage:
 Baseline removal
 ----------------
 
-.. versionadded:: 2.2
+.. versionadded:: 2.3
 
 The :meth:`~.api.signals.Signal1D.remove_baseline` method provides baseline
 removal capabilities through both a CLI and a GUI. The baseline is estimated using

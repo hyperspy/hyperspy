@@ -19,6 +19,5 @@ s2 = s.remove_baseline(method="aspls", lam=1E7, inplace=False)
 #%%
 # Plot the signal and its baseline: 
 (s + (s-s2) * 1j).plot()
-
-#%%
+# Choose the second figure as gallery thumbnail:
 # sphinx_gallery_thumbnail_number = 2

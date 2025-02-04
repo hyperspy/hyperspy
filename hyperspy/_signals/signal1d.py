@@ -1305,13 +1305,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
         **kwargs,
     ):
         """
-        Remove baselines using algorithms implemented in pybaselines.
+        Remove baselines using algorithms implemented in `pybaselines <https://pybaselines.readthedocs.io>`_.
 
         Parameters
         ----------
         method : str or None
             If ``str``, any of the algorithm name in :class:`pybaselines.api.Baseline`.
-            If ``None``, a widget is open to select an algorithm and adjust
+            If ``None``, a widget is opened to select an algorithm and adjust
             the parameters.
         %s
         %s
@@ -1322,12 +1322,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
             Keyword arguments of baseline algorithm. These are passed
             to baseline function.
 
+        Returns
+        -------
+        Signal1D
+            If ``inplace=False`` the signal with the baseline removed.
+
         Examples
         --------
-        import hyperspy.api as hs
-        s = hs.data.two_gaussians()
-
-        s.remove_baselines(method="aspls", lam=1E7)
+        >>> import hyperspy.api as hs
+        >>> s = hs.data.two_gaussians()
+        >>> s.remove_baselines(method="aspls", lam=1e7)
 
         """
         from hyperspy._signals._signal1d_tool import _remove_baseline
@@ -1357,8 +1361,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
             if not self._lazy:
                 scheduler = dask.config.get("scheduler", None)
-                # if None, it means that it wasn't set and
-                # therefore we can sense to set the scheduler
+                # if None, it means that the scheduler wasn't
+                # set and therefore we can set it
                 # without overwritting a user setting
                 if scheduler is None:
                     _logger.info("Using processes scheduler.")
