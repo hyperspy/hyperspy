@@ -31,8 +31,14 @@ from hyperspy.utils.baseline_removal_tool import (
 pytest.importorskip("pybaselines")
 
 
-def test_remove_baseline():
-    s = hs.data.two_gaussians().inav[:5, :5]
+@pytest.mark.parametrize("single", (True, False))
+def test_remove_baseline(single):
+    # 100 navigation size with 16 workers
+    # enable chunking optimisation to distribute
+    # over workers
+    s = hs.data.two_gaussians().inav[:10, :10]
+    if single:
+        s = s.inav[0, 0]
 
     assert s.isig[:10].data.mean() > 20
     s2 = s.remove_baseline(method="aspls", lam=1e7, inplace=False)
@@ -44,7 +50,7 @@ def test_remove_baseline():
 
 
 def test_remove_baseline_apply_close():
-    s = hs.data.two_gaussians().inav[:5, :5]
+    s = hs.data.two_gaussians().inav[:2, :4]
     assert s.isig[:10].data.mean() > 20
 
     # open/close cycle
@@ -59,14 +65,14 @@ def test_remove_baseline_apply_close():
     br.algorithm = "Adaptive Smoothness Penalized Least Squares"
     br.lam = 1e7
     # move to different index to call update line
-    s.axes_manager.indices = (2, 4)
+    s.axes_manager.indices = (1, 3)
     br.apply()
     assert br.estimator_line is None
     assert s.isig[:10].data.mean() < 5
 
 
 def test_baseline_removal_tool_enable():
-    s = hs.data.two_gaussians().inav[:5, :5]
+    s = hs.data.two_gaussians().inav[:4, :2]
 
     br = BaselineRemoval(s)
 

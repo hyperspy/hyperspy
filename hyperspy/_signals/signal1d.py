@@ -51,7 +51,6 @@ from hyperspy.docstrings.signal1d import (
 )
 from hyperspy.misc.lowess_smooth import lowess
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.misc.utils import _compute
 from hyperspy.models.model1d import Model1D
 from hyperspy.signal import BaseSignal
 from hyperspy.signal_tools import (
@@ -1327,12 +1326,28 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Signal1D
             If ``inplace=False`` the signal with the baseline removed.
 
+        Notes
+        -----
+        To use parallelism with lazy signal, use a multiprocessing dask
+        scheduler (``processes`` or a distributed scheduler). The dask
+        ``threads`` scheduler (default) will run serially, because
+        :class:`pybaselines.api.Baseline` does not release the GIL.
+
+        >>> import hyperspy.api as hs
+        >>> import dask
+        >>> s = hs.data.two_gaussians().as_lazy()
+        >>> s.remove_baselines(method="aspls", lam=1e7)
+        >>> with dask.config.set(scheduler="processes"):
+        >>>    s.compute()
+
+        To speed up computations, install `optional dependencies of pybaselines <https://pybaselines.readthedocs.io/en/latest/installation.html#optional-dependencies>`_,
+        such as for example: `pentapy <https://geostat-framework.readthedocs.io/projects/pentapy>`_.
+
         Examples
         --------
         >>> import hyperspy.api as hs
         >>> s = hs.data.two_gaussians()
         >>> s.remove_baselines(method="aspls", lam=1e7)
-
         """
         from hyperspy._signals._signal1d_tool import _remove_baseline
 
@@ -1342,44 +1357,28 @@ class Signal1D(BaseSignal, CommonSignal1D):
             br = BaselineRemoval(self, **kwargs)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            # Use dask.delayed because `BaseSignal.map`
-            # doesn't work with dask process scheduler
-            x = self.axes_manager[-1].axis
-            delayed_out = [
-                dask.delayed(_remove_baseline)(data, method, x, kwargs)
-                for data in self._iterate_signal(iterpath="flyback")
-            ]
-            arrays = [
-                da.from_delayed(
-                    delayed_out_,
-                    dtype=self.data.dtype,
-                    shape=self.axes_manager.signal_shape,
-                )
-                for delayed_out_ in delayed_out
-            ]
-            out = da.stack(arrays, axis=0).reshape(self.data.shape)
-
+            scheduler = None
             if not self._lazy:
-                scheduler = dask.config.get("scheduler", None)
-                # if None, it means that the scheduler wasn't
-                # set and therefore we can set it
+                scheduler = dask.config.get("scheduler", scheduler)
+                # if fallback to "scheduler", it means that it wasn't
+                # set and therefore we can sense to set the scheduler
                 # without overwritting a user setting
                 if scheduler is None:
                     _logger.info("Using processes scheduler.")
                     scheduler = "processes"
                 elif scheduler == "threads":
                     _logger.warning("Use processes scheduler to enable parallelism.")
-
-                out = _compute(
-                    out,
-                    show_progressbar=show_progressbar,
-                    scheduler=scheduler,
-                    num_workers=num_workers,
+            with dask.config.set(scheduler=scheduler):
+                return self.map(
+                    _remove_baseline,
+                    method=method,
+                    x=self.axes_manager[-1].axis,
+                    inplace=inplace,
+                    output_signal_size=self.axes_manager.signal_shape,
+                    output_dtype=float,
+                    silence_warnings="non-uniform",
+                    **kwargs,
                 )
-            if inplace:
-                self.data = out
-            else:
-                return self._deepcopy_with_new_data(out)
 
     remove_baseline.__doc__ %= (
         IN_PLACE,
