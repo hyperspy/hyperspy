@@ -28,9 +28,9 @@ from contextlib import contextmanager
 from io import StringIO
 from operator import attrgetter
 
-import dask
 import dask.array as da
 import numpy as np
+from tqdm.dask import TqdmCallback
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -1450,7 +1450,9 @@ def guess_output_signal_size(test_data, function, ragged, **kwargs):
 def _compute(array, store_to=None, show_progressbar=None, **kwargs):
     if show_progressbar is None:
         show_progressbar = preferences.General.show_progressbar
-    cm = dask.diagnostics.ProgressBar if show_progressbar else dummy_context_manager
+    # this isn't compatible with distributed scheduler
+    # https://docs.dask.org/en/stable/diagnostics-distributed.html#progress-bar
+    cm = TqdmCallback if show_progressbar else dummy_context_manager
 
     with cm():
         if store_to is not None:
