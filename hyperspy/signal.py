@@ -20,6 +20,7 @@ import copy
 import inspect
 import logging
 import numbers
+import os
 import warnings
 from collections.abc import MutableMapping
 from contextlib import contextmanager
@@ -28,6 +29,7 @@ from functools import partial
 from itertools import product
 from pathlib import Path
 
+import dask
 import dask.array as da
 import numpy as np
 import traits.api as t
@@ -2659,7 +2661,7 @@ class BaseSignal(
 
     def as_lazy(
         self,
-        chunks="auto",
+        chunks=None,
         copy_variance=True,
         copy_navigator=True,
         copy_learning_results=True,
@@ -2699,8 +2701,10 @@ class BaseSignal(
             copy_learning_results=copy_learning_results,
         )
         res._lazy = True
-        # don't rechunk when dask is already a dask array
-        if isinstance(chunks, str) and isinstance(res.data, da.Array):
+        if chunks is None:
+            # Set default values
+            chunks = False if isinstance(res.data, da.Array) else "auto"
+        elif isinstance(chunks, str) and isinstance(res.data, da.Array):
             chunks = False
             _logger.warning(
                 "Ignoring `chunks` argument because data is already a dask array."
@@ -5597,8 +5601,31 @@ class BaseSignal(
             lazy_output = self._lazy
 
         if not self._lazy:
-            s_input = self.as_lazy()
-            s_input.rechunk(nav_chunks=navigation_chunks)
+            chunks = "auto"
+            if navigation_chunks == "auto":
+                nav_size = self.axes_manager.navigation_size
+                nav_dim = max(self.axes_manager.navigation_dimension, 1)
+                if num_workers is None:
+                    # Get dask current setting, fall back to os.cpu_count
+                    num_workers = dask.config.get("num_workers", os.cpu_count())
+
+                # Optimise chunking for parallel computing if the navigation size is
+                # large enough (5 * num_workers), the data will be split into chunks
+                # else if the data set is large (chunk of 100MB * num_workers)
+                # we keep "auto" chunking
+                if (
+                    nav_size > 5 * num_workers
+                    and self.data.nbytes < 100e6 * num_workers
+                ):
+                    # optimise chunk size to distribute over num_workers
+                    # factor of 5 is to make smaller chunks
+                    chunk_size = nav_size // (num_workers * 5)
+                    navigation_chunks = (int(chunk_size ** (1 / nav_dim)),) * nav_dim
+
+            if isinstance(navigation_chunks, tuple):
+                chunks = navigation_chunks + (-1,) * self.axes_manager.signal_dimension
+
+            s_input = self.as_lazy(chunks=chunks)
         else:
             s_input = self
 
@@ -5690,10 +5717,13 @@ class BaseSignal(
                 and (mapped.shape == self.data.shape)
                 and (mapped.dtype == self.data.dtype)
             ):
-                # da.store is used to avoid unnecessary amount of memory usage.
-                # By using it here, the contents in mapped is written directly to
-                # the existing NumPy array, avoiding a potential doubling of memory use.
-                _compute(mapped, self.data, show_progressbar, num_workers=num_workers)
+                # use `store_to` to minmize memory usage
+                _compute(
+                    array=mapped,
+                    store_to=self.data,
+                    show_progressbar=show_progressbar,
+                    num_workers=num_workers,
+                )
                 data_stored = True
             else:
                 self.data = mapped

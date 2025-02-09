@@ -1385,3 +1385,33 @@ def test_silence_warning_scales_units(caplog):
         s.map(np.sum, silence_warnings=False, inplace=False)
     assert "scales" in caplog.text
     assert "units" in caplog.text
+
+
+def test_map_chunking_parallel():
+    data = np.ones((350, 400, 100))
+    s = hs.signals.Signal1D(data)
+
+    def func(x):
+        return x
+
+    with dask.config.set(num_workers=10):
+        s2 = s.inav[:25, :25].map(func, lazy_output=True, inplace=False)
+        s2.data.chunks == (
+            (3, 3, 3, 3, 3, 3, 3, 3, 1),
+            (3, 3, 3, 3, 3, 3, 3, 3, 1),
+            (100,),
+        )
+
+        # not large enough to use optimised chunking for parallelisation
+        s3 = s.inav[:10, :2].map(func, lazy_output=True, inplace=False)
+        assert s3.data.chunks == ((2,), (10,), (100,))
+
+    # data size large enough to use "auto" chunking
+    with dask.config.set(num_workers=1):
+        s4 = s.map(func, lazy_output=True, inplace=False)
+        s4.data.chunks == ((350,), (200, 200), (100,))
+
+    s5 = s.inav[:20, :20].map(
+        func, lazy_output=True, inplace=False, navigation_chunks=(5, 5)
+    )
+    assert s5.data.chunks == ((5,) * 4, (5,) * 4, (100,))
