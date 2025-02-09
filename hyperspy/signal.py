@@ -6352,7 +6352,7 @@ class BaseSignal(
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(self.data, full_initialisation=False)
         if self._lazy:
-            self._make_lazy()
+            self.data = self._lazy_data()
 
     def set_signal_type(self, signal_type=""):
         """Set the signal type and convert the current signal accordingly.
