@@ -23,20 +23,19 @@ from hyperspy.signals import Signal1D, Signal2D
 
 
 def test_lazy_changetype_rechunk_True():
-    ar = da.ones((50, 50, 512, 512), chunks=(5, 5, 128, 128), dtype="uint8")
+    ar = da.ones((50, 50, 512, 512), chunks=(25, 50, 128, 128), dtype=np.uint8)
     s = Signal2D(ar).as_lazy()
-    s.data = s._lazy_data(rechunk=True)
-    assert s.data.dtype is np.dtype("uint8")
+    assert s.data.dtype is np.dtype(np.uint8)
     chunks_old = s.data.chunks
-    s.change_dtype("float", rechunk=True)
-    assert s.data.dtype is np.dtype("float")
+    s.change_dtype(float, rechunk=True)
+    assert s.data.dtype is np.dtype(float)
     chunks_new = s.data.chunks
     # We expect more chunks
     assert len(chunks_old[0]) * len(chunks_old[1]) < len(chunks_new[0]) * len(
         chunks_new[1]
     )
-    s.change_dtype("uint8", rechunk=True)
-    assert s.data.dtype is np.dtype("uint8")
+    s.change_dtype(np.uint8, rechunk=True)
+    assert s.data.dtype is np.dtype(np.uint8)
     chunks_newest = s.data.chunks
     # We expect less chunks
     assert len(chunks_newest[0]) * len(chunks_newest[1]) < len(chunks_new[0]) * len(
@@ -45,24 +44,24 @@ def test_lazy_changetype_rechunk_True():
 
 
 def test_lazy_changetype_rechunk_default():
-    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype="uint8")
+    ar = da.ones((50, 50, 256, 256), chunks=(25, 50, 256, 256), dtype=np.uint8)
     s = Signal2D(ar).as_lazy()
     s.data = s._lazy_data(rechunk=True)
-    assert s.data.dtype is np.dtype("uint8")
+    assert s.data.dtype is np.dtype(np.uint8)
     chunks_old = s.data.chunks
-    s.change_dtype("float")
-    assert s.data.dtype is np.dtype("float")
+    s.change_dtype(float)
+    assert s.data.dtype is np.dtype(float)
     assert chunks_old == s.data.chunks
 
 
 def test_lazy_changetype_rechunk_False():
-    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype="uint8")
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype=np.uint8)
     s = Signal2D(ar).as_lazy()
     s.data = s._lazy_data(rechunk=True)
-    assert s.data.dtype is np.dtype("uint8")
+    assert s.data.dtype is np.dtype(np.uint8)
     chunks_old = s.data.chunks
-    s.change_dtype("float", rechunk=False)
-    assert s.data.dtype is np.dtype("float")
+    s.change_dtype(float, rechunk=False)
+    assert s.data.dtype is np.dtype(float)
     assert chunks_old == s.data.chunks
 
 

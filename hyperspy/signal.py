@@ -2658,7 +2658,11 @@ class BaseSignal(
                 self.learning_results = old_learning_results
 
     def as_lazy(
-        self, copy_variance=True, copy_navigator=True, copy_learning_results=True
+        self,
+        chunks="auto",
+        copy_variance=True,
+        copy_navigator=True,
+        copy_learning_results=True,
     ):
         """
         Create a copy of the given Signal as a
@@ -2666,6 +2670,13 @@ class BaseSignal(
 
         Parameters
         ----------
+        chunks : str or tuple
+            Define chunking of the dask array.
+            If ``"auto"``, automatic chunking will be used and the signal
+            dimension will not be split. If ``dask_auto"``, dask's
+            automatic chunking will be used. If tuple, it defines the chunks,
+            see dask documentation for more information on defining chunks.
+            If ``str`` and the array is already a dask array, don't change the chunking.
         copy_variance : bool
             Whether or not to copy the variance from the original Signal to
             the new lazy version. Default is True.
@@ -2688,7 +2699,13 @@ class BaseSignal(
             copy_learning_results=copy_learning_results,
         )
         res._lazy = True
-        res._assign_subclass()
+        # don't rechunk when dask is already a dask array
+        if isinstance(chunks, str) and isinstance(res.data, da.Array):
+            chunks = False
+            _logger.warning(
+                "Ignoring `chunks` argument because data is already a dask array."
+            )
+        res._assign_subclass(chunks=chunks)
         return res
 
     def _summary(self):
@@ -5170,7 +5187,6 @@ class BaseSignal(
         %s
         %s
         %s
-        %s
         **kwargs
             other keyword arguments (weight and density) are described in
             :func:`numpy.histogram`.
@@ -5241,7 +5257,6 @@ class BaseSignal(
         HISTOGRAM_RANGE_ARGS,
         HISTOGRAM_MAX_BIN_ARGS,
         OUT_ARG,
-        RECHUNK_ARG,
     )
 
     def map(
@@ -5251,7 +5266,7 @@ class BaseSignal(
         num_workers=None,
         inplace=True,
         ragged=None,
-        navigation_chunks=None,
+        navigation_chunks="auto",
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
@@ -5291,11 +5306,13 @@ class BaseSignal(
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
             the output signal will be ragged only if the original signal is ragged.
-        navigation_chunks : str, None, int or tuple of int, default ``None``
-            Set the navigation_chunks argument to a tuple of integers to split
-            the navigation axes into chunks. This can be useful to enable
-            using multiple cores with signals which are less that 100 MB.
-            This argument is passed to :meth:`~._signals.lazy.LazySignal.rechunk`.
+        navigation_chunks : str, or tuple of int, default ``"auto"``
+            Set the ``navigation_chunks`` argument to a tuple of integers to split
+            the navigation axes into chunks, without chunking the signal dimension.
+            If ``"auto"`` and when the data size is less than 100MB * number of cores,
+            the chunking will be optimised to be distributed over the number of cores.
+            This is useful to enable using multiple cores with signals which are
+            less that 100 MB.
         output_signal_size : None, tuple
             Since the size and dtype of the signal dimension of the output
             signal can be different from the input signal, this output signal
@@ -5392,6 +5409,16 @@ class BaseSignal(
             lazy_output = self._lazy
         if ragged is None:
             ragged = self.ragged
+        if navigation_chunks is None:
+            navigation_chunks = "auto"
+            _logger.warning(
+                "Setting `navigaion_chunk=None`, use `navigaion_chunk='auto'` instead."
+            )
+        if not isinstance(navigation_chunks, tuple) and navigation_chunks != "auto":
+            raise ValueError(
+                "`navigation_chunks` argument must be a tuple or `'auto'`."
+            )
+
         if isinstance(silence_warnings, str):
             silence_warnings = (silence_warnings,)
 
@@ -5782,7 +5809,8 @@ class BaseSignal(
         return copy.deepcopy(self)
 
     def change_dtype(self, dtype, rechunk=False):
-        """Change the data type of a Signal.
+        """
+        Change the data type of a Signal.
 
         Parameters
         ----------
@@ -5803,7 +5831,6 @@ class BaseSignal(
             `signal_dimension` becomes 1.
         %s
 
-
         Examples
         --------
         >>> s = hs.signals.Signal1D([1, 2, 3, 4, 5])
@@ -5813,6 +5840,8 @@ class BaseSignal(
         >>> s.data
         array([1., 2., 3., 4., 5.])
         """
+        if rechunk is True:
+            rechunk = "dask_auto"
         if not isinstance(dtype, np.dtype):
             if dtype in rgb_tools.rgb_dtypes:
                 if self.axes_manager.signal_dimension != 1:
@@ -5835,7 +5864,7 @@ class BaseSignal(
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager._set_signal_dimension(2)
-                self._assign_subclass()
+                self._assign_subclass(chunks=rechunk)
                 if replot:
                     self.plot()
                 return
@@ -5859,15 +5888,15 @@ class BaseSignal(
                 navigate=False,
             )
             self.axes_manager._set_signal_dimension(1)
-            self._assign_subclass()
+            self._assign_subclass(chunks=rechunk)
             if replot:
                 self.plot()
             return
         else:
             self.data = self.data.astype(dtype)
-        self._assign_subclass()
+        self._assign_subclass(chunks=rechunk)
 
-    change_dtype.__doc__ %= RECHUNK_ARG
+    change_dtype.__doc__ %= RECHUNK_ARG.replace('use ``"auto"``', 'use ``"dask_auto"``')
 
     def estimate_poissonian_noise_variance(
         self,
@@ -6338,7 +6367,7 @@ class BaseSignal(
 
     as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG)
 
-    def _assign_subclass(self):
+    def _assign_subclass(self, chunks=False):
         mp = self.metadata
         self.__class__ = assign_signal_subclass(
             dtype=self.data.dtype,
@@ -6352,10 +6381,11 @@ class BaseSignal(
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(self.data, full_initialisation=False)
         if self._lazy:
-            self.data = self._lazy_data()
+            self.data = self._lazy_data(rechunk=chunks)
 
     def set_signal_type(self, signal_type=""):
-        """Set the signal type and convert the current signal accordingly.
+        """
+        Set the signal type and convert the current signal accordingly.
 
         The ``signal_type`` attribute specifies the type of data that the signal
         contains e.g. electron energy-loss spectroscopy data,

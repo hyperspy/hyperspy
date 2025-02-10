@@ -50,11 +50,17 @@ OPTIMIZE_ARG = """optimize : bool
             for more information. When operating on lazy signals, if ``True``,
             the chunks are optimised for the new axes configuration."""
 
-RECHUNK_ARG = """rechunk : bool
-            Only has effect when operating on lazy signal. Default ``False``,
-            which means the chunking structure will be retained. If ``True``,
-            the data may be automatically rechunked before performing this
-            operation."""
+# Passed to `_lazy_data`
+RECHUNK_ARG = """rechunk : bool, str or tuple
+            Only for lazy signal, default is ``False``.
+            If ``False``, the chunking structure will be retained.
+            If ``True`` (use ``"auto"``), the data may be automatically rechunked before
+            performing this operation, when the chunking changes.\n
+            Chunking options:
+
+            - ``"auto"``: chunking doesn't split the signal dimension,
+            - ``"dask_auto"``: uses dask's automatic chunking,
+            - ``tuple``: defines the chunking."""
 
 SHOW_PROGRESSBAR_ARG = """show_progressbar : None or bool
             If ``True``, display a progress bar. If ``None``, the default from

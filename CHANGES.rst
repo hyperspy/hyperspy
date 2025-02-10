@@ -1002,7 +1002,7 @@ Enhancements
 * Improve error message when file not found (`#2597 <https://github.com/hyperspy/hyperspy/pull/2597>`_)
 * Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
 * Improve plotting navigator of lazy signals, add ``navigator`` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
-* Use ``'dask_auto'`` when rechunk=True in :py:meth:`~._signals.lazy.LazySignal.change_dtype` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
+* Use ``'dask_auto'`` when rechunk=True in :py:meth:`~.api.signals.BaseSignal.change_dtype` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
 * Use dask chunking when saving lazy signal instead of rechunking and leave the user to decide what is the suitable chunking (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
 * Added lazy reading support for FFT and DPC datasets in FEI emd datasets (`#2651 <https://github.com/hyperspy/hyperspy/pull/2651>`_).
 * Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)

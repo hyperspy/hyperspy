@@ -25,12 +25,12 @@ import dask
 import dask.array as da
 import numpy as np
 from dask.widgets import TEMPLATE_PATHS
-from rsciio.utils import rgb_tools
 from rsciio.utils.tools import get_file_handle
 
 from hyperspy.docstrings.signal import (
     LAZYSIGNAL_DOC,
     MANY_AXIS_PARAMETER,
+    RECHUNK_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
@@ -259,11 +259,11 @@ class LazySignal(BaseSignal):
 
         Parameters
         ----------
-        nav_chunks : {tuple, int, "auto", None}
+        nav_chunks : {tuple, int, "auto"}
             The navigation block dimensions to create.
             -1 indicates the full size of the corresponding dimension.
             Default is “auto” which automatically determines chunk sizes.
-        sig_chunks : {tuple, int, "auto", None}
+        sig_chunks : {tuple, int, "auto"}
             The signal block dimensions to create.
             -1 indicates the full size of the corresponding dimension.
             Default is -1 which automatically spans the full signal dimension
@@ -274,11 +274,12 @@ class LazySignal(BaseSignal):
             sig_chunks = (sig_chunks,) * len(self.axes_manager.signal_shape)
         if not isinstance(nav_chunks, tuple):
             nav_chunks = (nav_chunks,) * len(self.axes_manager.navigation_shape)
-        new_chunks = nav_chunks + sig_chunks
+
+        data_ = self.data.rechunk(nav_chunks + sig_chunks, **kwargs)
         if inplace:
-            self.data = self.data.rechunk(new_chunks, **kwargs)
+            self.data = data_
         else:
-            return self._deepcopy_with_new_data(self.data.rechunk(new_chunks, **kwargs))
+            return self._deepcopy_with_new_data(data_)
 
     def close_file(self):
         """Closes the associated data file if any.
@@ -408,34 +409,18 @@ class LazySignal(BaseSignal):
 
     get_chunk_size.__doc__ %= MANY_AXIS_PARAMETER
 
-    def change_dtype(self, dtype, rechunk=False):
-        # To be consistent with the rechunk argument of other method, we use
-        # 'dask_auto' in favour of a chunking which doesn't split signal space.
-        if rechunk:
-            rechunk = "dask_auto"
-
-        if not isinstance(dtype, np.dtype) and (dtype not in rgb_tools.rgb_dtypes):
-            dtype = np.dtype(dtype)
-        super().change_dtype(dtype)
-        self.data = self._lazy_data(rechunk=rechunk, dtype=dtype)
-
-    change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
-
     def _lazy_data(self, axis=None, rechunk=False, dtype=None):
         """
         Return the data as a dask array, rechunked if necessary.
 
         Parameters
         ----------
-        axis: None, :class:`~.axes.DataAxis` or tuple of data axes
+        axis : None, :class:`~.axes.DataAxis` or tuple of data axes
             The data axis that must not be broken into chunks when `rechunk`
-            is `True`. If None, it defaults to the current signal axes.
-        rechunk: bool, "dask_auto" or iterable
-            If `True`, it rechunks the data if necessary making sure that the
-            axes in ``axis`` are not split into chunks. If `False` it does
-            not rechunk at least the data is not a dask array, in which case
-            it chunks as if rechunk was `True`. If "dask_auto", rechunk if
-            necessary using dask's automatic chunk guessing.
+            is ``True``. If None, it defaults to the current signal axes.
+        %s
+        dtype : numpy.dtype
+            The array dtype used to calculate chunking.
 
         Returns
         -------
@@ -444,13 +429,21 @@ class LazySignal(BaseSignal):
         """
         if rechunk == "dask_auto":
             new_chunks = "auto"
-        elif isiterable(rechunk):
+        elif isinstance(rechunk, tuple):
             new_chunks = rechunk
-        else:
+        elif isinstance(rechunk, bool) or rechunk == "auto":
+            # when rechunk is False, still need new_chunks
+            # da.from_array call in case of numpy array
             new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
+        else:
+            raise ValueError(
+                "`rechunk` argument must be a tuple, a boolean or "
+                "a str ('auto' or 'dask_auto') "
+            )
         if isinstance(self.data, da.Array):
             res = self.data
-            if res.chunks != new_chunks and rechunk:
+            # rechunk when necessary when rechunk is True, "auto" or "dask_auto"
+            if rechunk and res.chunks != new_chunks:
                 _logger.info("Rechunking.\nOriginal chunks: %s." % str(res.chunks))
                 res = self.data.rechunk(new_chunks)
                 _logger.info("Final chunks: %s." % str(res.chunks))
@@ -462,6 +455,8 @@ class LazySignal(BaseSignal):
             res = da.from_array(data, chunks=new_chunks)
         assert isinstance(res, da.Array)
         return res
+
+    _lazy_data.__doc__ %= RECHUNK_ARG
 
     def _apply_function_on_data_and_remove_axis(
         self, function, axes, out=None, rechunk=False
