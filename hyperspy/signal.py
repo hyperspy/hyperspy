@@ -31,7 +31,6 @@ from pathlib import Path
 import dask.array as da
 import numpy as np
 import traits.api as t
-from dask.diagnostics import ProgressBar
 from matplotlib import pyplot as plt
 from pint import UndefinedUnitError
 from rsciio.utils import rgb_tools
@@ -54,6 +53,7 @@ from hyperspy.docstrings.signal import (
     HISTOGRAM_BIN_ARGS,
     HISTOGRAM_MAX_BIN_ARGS,
     HISTOGRAM_RANGE_ARGS,
+    IN_PLACE,
     LAZY_OUTPUT_ARG,
     MANY_AXIS_PARAMETER,
     NAN_FUNC,
@@ -88,9 +88,9 @@ from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
 from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
+    _compute,
     _get_block_pattern,
     add_scalar_axis,
-    dummy_context_manager,
     guess_output_signal_size,
     is_cupy_array,
     isiterable,
@@ -5286,9 +5286,7 @@ class BaseSignal(
             first. For example via `image = copy.deepcopy(image)`.
         %s
         %s
-        inplace : bool, default True
-            If ``True``, the data is replaced by the result. Otherwise
-            a new Signal with the results is returned.
+        %s
         ragged : None or bool, default None
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
@@ -5529,7 +5527,7 @@ class BaseSignal(
         else:
             self.events.data_changed.trigger(obj=self)
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, NUM_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG, IN_PLACE, LAZY_OUTPUT_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """
@@ -5658,8 +5656,6 @@ class BaseSignal(
 
         data_stored = False
 
-        cm = ProgressBar if show_progressbar else dummy_context_manager
-
         if inplace:
             if (
                 not self._lazy
@@ -5670,15 +5666,7 @@ class BaseSignal(
                 # da.store is used to avoid unnecessary amount of memory usage.
                 # By using it here, the contents in mapped is written directly to
                 # the existing NumPy array, avoiding a potential doubling of memory use.
-                with cm():
-                    da.store(
-                        mapped,
-                        self.data,
-                        dtype=mapped.dtype,
-                        compute=True,
-                        num_workers=num_workers,
-                        lock=False,
-                    )
+                _compute(mapped, self.data, show_progressbar, num_workers=num_workers)
                 data_stored = True
             else:
                 self.data = mapped
@@ -5706,8 +5694,9 @@ class BaseSignal(
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            with cm():
-                sig.data = sig.data.compute(num_workers=num_workers)
+            sig.data = _compute(
+                sig.data, show_progressbar=show_progressbar, num_workers=num_workers
+            )
 
         return sig
 

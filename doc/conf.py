@@ -341,6 +341,7 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "pint": ("https://pint.readthedocs.io/en/stable", None),
+    "pybaselines": ("https://pybaselines.readthedocs.io/en/stable", None),
     "python": ("https://docs.python.org/3", None),
     "rsciio": ("https://hyperspy.org/rosettasciio/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy", None),
@@ -426,6 +427,11 @@ numpydoc_class_members_toctree = False
 sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    # directory where function/class granular galleries are stored
+    "backreferences_dir": "gen_modules/backreferences",
+    # Modules for which function/class level galleries are created. In
+    # this case sphinx_gallery and numpy in a tuple of strings.
+    "doc_module": ("hyperspy",),
     "filename_pattern": ".py",  # pattern to define which will be executed
     "ignore_pattern": "_sgskip.py",  # pattern to define which will not be executed
     "compress_images": (
