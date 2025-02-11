@@ -223,14 +223,14 @@ def _get_model_data_function_nd(
             ],
         )
 
-        if signal_axis.is_binned:
-            if signal_axis.is_uniform:
-                scale_factor = signal_axis.scale
-            else:
-                scale_factor = np.gradient(signal_axis.axis)
+    if signal_axis.is_binned:
+        if signal_axis.is_uniform:
+            scale_factor = signal_axis.scale
         else:
-            scale_factor = 1
-        data_ *= scale_factor
+            scale_factor = np.gradient(signal_axis.axis)
+    else:
+        scale_factor = 1
+    data_ *= scale_factor
 
     if out_of_range_to_nan:
         if sig_slices is None:
