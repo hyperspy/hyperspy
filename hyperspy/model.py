@@ -170,7 +170,7 @@ def reconstruct_component(comp_dictionary, **init_args):
     return _class(**init_args)
 
 
-def _check_parameters_set(component, nav_slices):
+def _check_parameter_values_are_set(component, nav_slices):
     for p in component.parameters:
         if not p.map["is_set"][nav_slices].all():
             raise ValueError(
@@ -238,7 +238,7 @@ def _get_model_data_function_nd(
             parameters_values = [
                 p.map["values"][nav_slices] for p in component.parameters
             ]
-            _check_parameters_set(component, nav_slices)
+            _check_parameter_values_are_set(component, nav_slices)
             if component.convolved:
                 # component to be convolved needs to be calculated
                 # on wider axes for the convolution
@@ -259,7 +259,7 @@ def _get_model_data_function_nd(
             )
     else:
         for component in component_list:
-            _check_parameters_set(component, nav_slices)
+            _check_parameter_values_are_set(component, nav_slices)
             data_ += component.function_nd(
                 *axis_,
                 parameters_values=[
