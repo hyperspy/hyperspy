@@ -40,6 +40,7 @@ from scipy.optimize import (
     leastsq,
     minimize,
 )
+from scipy.signal import fftconvolve
 
 from hyperspy.component import Component
 from hyperspy.components1d import Expression
@@ -169,6 +170,16 @@ def reconstruct_component(comp_dictionary, **init_args):
     return _class(**init_args)
 
 
+def _check_parameters_set(component, nav_slices):
+    for p in component.parameters:
+        if not p.map["is_set"][nav_slices].all():
+            raise ValueError(
+                f"The parameter {p.name} of the component {component.name} "
+                "has unset values. Set the values by using the `multifit` or "
+                "the `set_parameters_value` methods."
+            )
+
+
 def _get_model_data_function_nd(
     model,
     component_list,
@@ -204,24 +215,57 @@ def _get_model_data_function_nd(
         shape = model.signal.data.shape
 
     data_ = np.zeros(shape, dtype=float)
-    for component in component_list:
-        for p in component.parameters:
-            if not p.map["is_set"][nav_slices].all():
-                raise ValueError(
-                    f"The parameter {p.name} of the component {component.name} "
-                    "has unset values. Set the values by using the `multifit` or "
-                    "the `set_parameters_value` methods."
-                )
+    axis_ = model.axes_manager["sig"].get("axis")["axis"]
+    if len(axis_) >= 2:
+        axis_ = np.meshgrid(*axis_)
 
-        axis_ = model.axes_manager["sig"].get("axis")["axis"]
-        if len(axis_) >= 2:
-            axis_ = np.meshgrid(*axis_)
-        data_ += component.function_nd(
-            *axis_,
-            parameters_values=[
-                p.map["values"][nav_slices] for p in component.parameters
-            ],
+    try:
+        model_convolved = model.convolved
+        convolution_supported = True
+    except NotImplementedError:
+        convolution_supported = False
+
+    if convolution_supported and model_convolved:
+        # calculate components and keep results in two separate
+        # arrays depending if they need to be convolved or not
+        sum_ = np.zeros(shape, dtype=float)
+        sum_convolved = np.zeros(
+            shape[: -model.axes_manager.signal_dimension]
+            + model._convolution_axis.shape,
+            dtype=float,
         )
+        for component in component_list:
+            parameters_values = [
+                p.map["values"][nav_slices] for p in component.parameters
+            ]
+            _check_parameters_set(component, nav_slices)
+            if component.convolved:
+                # component to be convolved needs to be calculated
+                # on wider axes for the convolution
+                sum_convolved += component.function_nd(
+                    model._convolution_axis, parameters_values=parameters_values
+                )
+            else:
+                sum_ += component.function_nd(
+                    signal_axis.axis, parameters_values=parameters_values
+                )
+            # add all components, take the convolution for components that needs
+            # to be convolved, do it here only once instead of each component individually
+            data_ = sum_ + fftconvolve(
+                sum_convolved,
+                model._signal_to_convolve.inav[nav_slices].data,
+                mode="valid",
+                axes=model.axes_manager.signal_indices_in_array,
+            )
+    else:
+        for component in component_list:
+            _check_parameters_set(component, nav_slices)
+            data_ += component.function_nd(
+                *axis_,
+                parameters_values=[
+                    p.map["values"][nav_slices] for p in component.parameters
+                ],
+            )
 
     if signal_axis.is_binned:
         if signal_axis.is_uniform:
@@ -845,7 +889,7 @@ class BaseModel(list):
             # lazy signal not supported with this code path
             name = ", ".join([c.name for c in components_missing_function_nd])
             _logger.warning(
-                "Using slow `as_signal` implementation because some components "
+                "Using slow `as_signal` implementation because the components "
                 f"({name}) don't implement the `function_nd` method."
             )
             self._as_signal_iter(

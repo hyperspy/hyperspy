@@ -350,10 +350,32 @@ class Model1D(BaseModel):
             ]
 
         slice_ = slice(None) if ignore_channel_switches else self._channel_switches
-        axis = self.axis.axis[slice_]
-        model_data = np.zeros(len(axis))
-        for component in component_list:
-            model_data += component.function(axis)
+
+        try:
+            model_convolved = self.convolved
+            convolution_supported = True
+        except NotImplementedError:
+            convolution_supported = False
+
+        if convolution_supported and model_convolved:
+            sum_convolved = np.zeros_like(self._convolution_axis, dtype=float)
+            sum_ = np.zeros_like(self.axis.axis, dtype=float)
+            for component in component_list:
+                if component.convolved:
+                    sum_convolved += component.function(self._convolution_axis)
+                else:
+                    sum_ += component.function(self.axis.axis)
+            model_data = sum_ + np.convolve(
+                self._signal_to_convolve._get_current_data(self.axes_manager),
+                sum_convolved,
+                mode="valid",
+            )
+            model_data = model_data[slice_]
+        else:
+            axis = self.axis.axis[slice_]
+            model_data = np.zeros(len(axis))
+            for component in component_list:
+                model_data += component.function(axis)
 
         if binned is None:
             # use self.axis instead of self.signal.axes_manager[-1]
