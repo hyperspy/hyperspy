@@ -193,6 +193,8 @@ This option can be used if a signal subclass is needed for certain functionaliti
 such as casting to a different signal subclass, but should usually not be set
 directly by the user.
 
+.. _extension_components_label:
+
 Creating new HyperSpy model components
 --------------------------------------
 
@@ -320,6 +322,13 @@ Equivalently, to add a new component 2D:
   the component online if e.g. the package is renamed or the component
   relocated.
 
+Convolution implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The implementation of convolution in subclasses of :class:`~hyperspy.models.model1d.Model1D`
+is explained in the :ref:`extension gallery <extension_gallery-label>`:
+
+.. minigallery:: ../examples/extensions/model_convolution*
 
 Creating and registering new widgets and toolkeys
 -------------------------------------------------

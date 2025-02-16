@@ -38,6 +38,7 @@ doc/_build/*
 doc/.build/*
 doc/api/*
 doc/auto_examples
+doc/backreferences_dir
 doc/gh-pages
 doc/log.txt
 doc/user_guide/_build/*

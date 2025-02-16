@@ -425,6 +425,7 @@ numpydoc_class_members_toctree = False
 sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    "backreferences_dir": "backreferences_dir",  # directory where object granular galleries are stored
     "filename_pattern": ".py",  # pattern to define which will be executed
     "ignore_pattern": "_sgskip.py",  # pattern to define which will not be executed
     "compress_images": (
