@@ -121,12 +121,48 @@ class LazySignal(BaseSignal):
         # the NumPy array originates from.
         self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
+        self._cache_dask_chunk_index = None
+
+        self._neighbor_cache_dask_indexes = []
+        self._neighbor_cache_arrays = []
+
+        self._client = None
+
         if self._clear_cache_dask_data not in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
     __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
         ":class:`numpy.ndarray`", ":class:`dask.array.Array`"
     )
+
+    @property
+    def client(self):
+        """Get the Dask client if one if running"""
+        if self._client is not None:  # first check if we have a client set
+            return self._client
+        # if not, try to get the Global client if available
+        try:
+            from dask.distributed import get_client
+
+            return get_client()
+        except ImportError or ValueError:
+            return None
+
+    @client.setter
+    def client(self, client):
+        """Set the Dask client"""
+        try:
+            from dask.distributed.client import Client
+
+            if isinstance(client, Client):
+                self._client = client
+            else:
+                raise ValueError("client must be an instance of distributed.Client")
+        except ImportError:
+            raise ImportError(
+                "Dask distributed is not available, please install it to set the client"
+            )
+        self._client = client
 
     def _repr_html_(self):
         try:
@@ -543,23 +579,94 @@ class LazySignal(BaseSignal):
 
         """
 
+        # this is more complicated as we do allow data which is not chunked
+        # only in the navigation dimension.  Potentially this could be
+        # slow, but we can't do much about it.
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         navigation_indices = indices[:-sig_dim]
-        chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
+        chunk_slice, center_block, neighbor_blocks = (
+            _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
+        )
 
+        # most computers have multiple cores, so we should try to cache the center
+        # of the chunk and then get the neighboring chunks as well.
+
+        # If we are using the distributed scheduler, we can use futures for this.
+
+        to_compute_neighbors = []  # list of dask arrays to compute
+        to_compute_neighbor_indices = []  # list of indices to compute
+        to_compute_center = []  # This is "blocking"
         if (
-            chunk_slice != self._cache_dask_chunk_slice
+            center_block != self._cache_dask_chunk_index
             or self._cache_dask_chunk is None
         ):
-            self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
+            # first test to see if this is cached as a neighboring block...
             self._cache_dask_chunk_slice = chunk_slice
+
+            if center_block in self._neighbor_cache_dask_indexes:
+                index = self._neighbor_cache_dask_indexes.index(center_block)
+                self._cache_dask_chunk = self._neighbor_cache_arrays.pop(index)
+                self._neighbor_cache_dask_indexes.remove(center_block)
+            else:
+                to_compute_center.append(self.data.blocks[center_block])
+
+            # now we need to compute the neighbors
+            for neighbor_block in neighbor_blocks:
+                if neighbor_block not in self._neighbor_cache_dask_indexes:
+                    to_compute_neighbors.append(self.data.blocks[neighbor_block])
+                    to_compute_neighbor_indices.append(neighbor_block)
+
+            for i in self._neighbor_cache_dask_indexes:
+                if i not in neighbor_blocks:
+                    index = self._neighbor_cache_dask_indexes.index(i)
+                    self._neighbor_cache_dask_indexes.remove(i)
+                    arr = self._neighbor_cache_arrays.pop(index)
+                    if self.client is not None:
+                        arr.cancel(
+                            reason="No longer in Relevant Area"
+                        )  # Don't calculate this anymore
+
+        if len(to_compute_center) > 0:
+            self._cache_dask_chunk_index = center_block
+
+        if self.client is None:
+            if len(to_compute_center) + len(to_compute_neighbors) > 0:
+                computed_chunks = da.compute(*to_compute_center, *to_compute_neighbors)
+                if len(to_compute_center) > 0:
+                    self._cache_dask_chunk = computed_chunks[0]
+                for i, neighbor_block in enumerate(to_compute_neighbor_indices):
+                    self._neighbor_cache_dask_indexes.append(neighbor_block)
+                    self._neighbor_cache_arrays.append(
+                        computed_chunks[i + len(to_compute_center)]
+                    )
+
+        else:
+            if len(to_compute_center) > 0:
+                self._cache_dask_chunk = self.client.compute(
+                    *to_compute_center
+                )  # This is non-blocking, returns a future
+            if len(to_compute_neighbors) > 0:
+                for i, neighbor_block in enumerate(
+                    to_compute_neighbors
+                ):  # This is non-blocking, returns a list of futures
+                    self._neighbor_cache_dask_indexes.append(
+                        to_compute_neighbor_indices[i]
+                    )
+                    self._neighbor_cache_arrays.append(
+                        self.client.compute(neighbor_block)
+                    )
 
         indices = list(indices)
         for i, temp_slice in enumerate(chunk_slice):
             indices[i] -= temp_slice.start
         indices = tuple(indices)
-        value = self._cache_dask_chunk[indices]
+        # block for now... we can make this non-blocking later by
+        # retunring a fut
+        if self.client is not None:
+            value = self._cache_dask_chunk.result()[indices]
+        else:
+            value = self._cache_dask_chunk[indices]
         return value
 
     def rebin(

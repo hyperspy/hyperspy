@@ -704,14 +704,71 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
 
     """
     chunk_slice_list = da.core.slices_from_chunks(chunks)
-    for chunk_slice in chunk_slice_list:
+    block_indexes = np.meshgrid(*[np.arange(0, len(n)) for n in chunks])
+    n_dim = len(chunks)
+    if len(block_indexes) == 0:
+        block_indexes_flat = [()]
+    else:
+        block_indexes_flat = np.array(block_indexes).T.reshape(-1, n_dim)
+        block_indexes_flat = block_indexes_flat
+
+    # iterate through and just find the slice that contains the navigation indices
+    center_slice = None
+    is_slice = True
+    for chunk_slice, block_index in zip(chunk_slice_list, block_indexes_flat):
         is_slice = True
         for index_nav in range(len(navigation_indices)):
             temp_slice = chunk_slice[index_nav]
             nav = navigation_indices[index_nav]
+
             if not (temp_slice.start <= nav < temp_slice.stop):
                 is_slice = False
                 break
-        if is_slice:
-            return chunk_slice
-    return False
+        if is_slice:  # if the slice contains the navigation indices
+            center_slice = chunk_slice
+            center_block_index = block_index
+            break
+    if not is_slice:
+        return False
+
+    if center_slice == ():
+        return (
+            center_slice,
+            center_block_index,
+            [
+                (),
+            ],
+        )
+    around = [-1, 0, 1]
+    surrounding_block_indexes = np.array(np.meshgrid(*(around,) * n_dim)).T.reshape(
+        -1, n_dim
+    )
+    surrounding_block_indexes = np.array(
+        [
+            center_block_index + i
+            for i in surrounding_block_indexes
+            if np.any(
+                i
+                != np.array(
+                    [
+                        0,
+                    ]
+                    * n_dim
+                )
+            )
+        ]
+    )
+
+    is_in = np.prod(
+        np.array(
+            [
+                np.isin(surrounding_block_indexes[:, i], block_indexes_flat[:, i])
+                for i in np.arange(block_indexes_flat.shape[1])
+            ]
+        ),
+        axis=0,
+    ).astype(bool)
+
+    surrounding_block_indexes = surrounding_block_indexes[is_in]
+    surrounding_block_indexes = [tuple(s) for s in surrounding_block_indexes]
+    return center_slice, tuple(center_block_index), surrounding_block_indexes
