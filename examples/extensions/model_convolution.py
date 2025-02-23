@@ -1,13 +1,13 @@
 
 """
-==============================================
-Implementation of model supporting convolution
-==============================================
+==============================================================
+Implementation of a model supporting convolution of components
+==============================================================
 
 This example illustrates how to implement a model supporting convolution.
 
 .. Note::
-    Model convolution has only been tested for 1D signal.
+    Model convolution has only been tested for 1D signals.
 """
 
 import hyperspy.api as hs
@@ -18,13 +18,13 @@ import numpy as np
 # --------------------------
 #
 # Create a model class subclassing :class:`hyperspy.models.model1d.Model1D`.
-# The subdclass needs to implement the following API:
+# The subclass needs to implement the following API:
 #
 # - ``_convolution_axis``
 # - ``_signal_to_convolved``
 # - ``convolved``
 #
-# The steps of the convolution implementation are explained in
+# The steps of how the convolution is implemented are explained in
 # :ref:`component convolution example <convolution_steps-label>`.
 #
 from hyperspy.models.model1d import Model1D
@@ -88,7 +88,7 @@ class ConvolvedModel1D(Model1D):
 #
 # We create a signal of a Lorentzian convolved with a Gaussian function, where
 # the Lorentzian function is the measurement of interest and the Gaussian function
-# model a detector response.
+# a model for a detector response.
 #
 # Generate a signal of the detector response:
     
@@ -98,8 +98,8 @@ g_signal.axes_manager.signal_axes.set(offset=-20)
 g_signal.plot()
 
 #%%
-# Generate an example signal using the same approach as in convolution implementation
-# of model fitting (see :ref:`component convolution <convolution_steps-label>`):
+# Generate an example signal using the same approach as in the implementation of a convolution
+# for model fitting (see :ref:`component convolution <convolution_steps-label>`):
 
 f = hs.model.components1D.Lorentzian(centre=220)
 f_signal = hs.signals.Signal1D(f.function(np.arange(200, 300)))
@@ -111,8 +111,8 @@ f_padded_data = f.function(convolution_axis)
 f_signal.data = np.convolve(f_padded_data, g_signal.data, mode="valid") + 10
 
 #%%
-# Plot signal which is made of the convolution of a Lorentzian and Gaussian
-# functions:
+# Plot signal composed of the convolution of a Lorentzian and a Gaussian
+# function:
 f_signal.plot()
 
 #%%
@@ -128,7 +128,7 @@ m.extend([lorentzian_component, offset_component])
 #%%
 # The component of the model can be set to be convolved or not
 # during model fitting.
-# Specify that the lorentzian is convolved:
+# Specify that the Lorentzian is convolved:
 lorentzian_component.convolved = True
 offset_component.convolved = False
 

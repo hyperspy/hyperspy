@@ -227,7 +227,7 @@ def _get_model_data_function_nd(
 
     if convolution_supported and model_convolved:
         # calculate components and keep results in two separate
-        # arrays depending if they need to be convolved or not
+        # arrays depending on whether they need to be convolved or not
         sum_ = np.zeros(shape, dtype=float)
         sum_convolved = np.zeros(
             shape[: -model.axes_manager.signal_dimension]
@@ -249,7 +249,7 @@ def _get_model_data_function_nd(
                 sum_ += component.function_nd(
                     signal_axis.axis, parameters_values=parameters_values
                 )
-            # add all components, take the convolution for components that needs
+            # add all components, take the convolution for components that need
             # to be convolved, do it here only once instead of each component individually
             data_ = sum_ + fftconvolve(
                 sum_convolved,

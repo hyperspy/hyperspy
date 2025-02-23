@@ -59,8 +59,8 @@ def check_axes_calibration(ax1, ax2, rtol=1e-7):
 
 def calculate_convolution1D_axis(f_axis, g_axis):
     """
-    Creates an axis that includes padding for convolution. Typically,
-    in model fitting implementing convolution.
+    Creates an axis that includes padding for convolution. Typically used
+    in model fitting implementing the convolution of components with a given functions.
 
     Parameters
     ----------
@@ -85,7 +85,7 @@ def calculate_convolution1D_axis(f_axis, g_axis):
     >>> g_signal.axes_manager.signal_axes.set(offset=-20)
     >>> g_signal.plot()
 
-    Calculate the convolution axis and padded the signal
+    Calculate the convolution axis and pad the signal
     >>> convolution_axis = calculate_convolution1D_axis(
     ...     f_signal.axes_manager.signal_axes[0], g_signal.axes_manager.signal_axes[0]
     ...     )
@@ -99,7 +99,7 @@ def calculate_convolution1D_axis(f_axis, g_axis):
 
     for axis_ in [f_axis, g_axis]:
         if not axis_.is_uniform:  # pragma: no cover
-            raise ValueError("Only uniform-axis are supported.")
+            raise ValueError("Only uniform axes are supported.")
 
     offset = f_axis.offset
     scale = f_axis.scale

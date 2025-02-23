@@ -322,10 +322,10 @@ Equivalently, to add a new component 2D:
   the component online if e.g. the package is renamed or the component
   relocated.
 
-Convolution implementation
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Convoluting model components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The implementation of convolution in subclasses of :class:`~hyperspy.models.model1d.Model1D`
+The implementation of the convolution of components in subclasses of :class:`~hyperspy.models.model1d.Model1D`
 is explained in the :ref:`extension gallery <extension_gallery-label>`:
 
 .. minigallery:: ../examples/extensions/model_convolution*

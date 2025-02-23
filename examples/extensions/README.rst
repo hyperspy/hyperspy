@@ -4,4 +4,4 @@ Extensions
 ==========
 
 This gallery of examples is relevant to users interested in developping HyperSpy
-extensions and illustrated some of HyperSpy implementions and patterns.
+extensions and illustrates some of the HyperSpy implementions and patterns.
