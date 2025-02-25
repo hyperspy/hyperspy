@@ -548,26 +548,44 @@ class Model1D(BaseModel):
         if weights is None:
             weights = 1.0
 
-        axis = self.axis.axis[self._channel_switches]
         counter = 0
-        grad = axis
+        grad = np.zeros(len(self.axis.axis))
         for component in self:  # Cut the parameters list
             if component.active:
                 component.fetch_values_from_array(
                     param[counter : counter + component._nfree_param], onlyfree=True
                 )
-
                 for parameter in component.free_parameters:
-                    par_grad = parameter.grad(axis)
+                    if self._convolved and component.convolved:
+                        par_grad = np.convolve(
+                            parameter.grad(self._convolution_axis),
+                            self._signal_to_convolve._get_current_data(
+                                self.axes_manager
+                            ),
+                            mode="valid",
+                        )
+                    else:
+                        par_grad = parameter.grad(self.axis.axis)
+
                     if parameter._twins:
                         for par in parameter._twins:
-                            np.add(par_grad, par.grad(axis), par_grad)
+                            if self._convolved and component.convolved:
+                                par_grad_twin = np.convolve(
+                                    par.grad(self._convolution_axis),
+                                    self._signal_to_convolve._get_current_data(
+                                        self.axes_manager
+                                    ),
+                                    mode="valid",
+                                )
+                            else:
+                                par_grad_twin = par.grad(self.axis.axis)
+                            np.add(par_grad, par_grad_twin, par_grad)
 
                     grad = np.vstack((grad, par_grad))
 
                 counter += component._nfree_param
 
-        to_return = grad[1:, :] * weights
+        to_return = grad[1:, self._channel_switches] * weights
 
         if self.axis.is_binned:
             if self.axis.is_uniform:

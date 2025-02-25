@@ -191,3 +191,78 @@ def test_convolved_model_polynomial(nav_dim, optimizer):
 
     s = m.as_signal()
     np.testing.assert_allclose(s.data, f_signal.data, rtol=1e-5)
+
+
+def test_convolve_jacobian():
+    g = hs.model.components1D.Gaussian(sigma=3)
+    g_signal = hs.signals.Signal1D(g.function(np.arange(-20, 20)))
+    g_signal.axes_manager.signal_axes.set(offset=-20)
+
+    # example signal
+    f = hs.model.components1D.Lorentzian(A=2.5, centre=220)
+    f_signal = hs.signals.Signal1D(f.function(np.arange(200, 300)))
+    f_signal.axes_manager.signal_axes.set(offset=200)
+    convolution_axis = calculate_convolution1D_axis(
+        f_signal.axes_manager.signal_axes[0], g_signal.axes_manager.signal_axes[0]
+    )
+    f_padded_data = f.function(convolution_axis)
+    f_signal.data = np.convolve(f_padded_data, g_signal.data, mode="valid")
+
+    m = ConvolvedModel1D(f_signal, detector_response=g_signal)
+    lorentzian_component = hs.model.components1D.Lorentzian()
+    lorentzian_component.convolved = True
+    lorentzian_component.estimate_parameters(f_signal, 210, 230)
+    m.extend([lorentzian_component])
+
+    m.fit(optimizer="lm", grad="analytical")
+    np.testing.assert_allclose(lorentzian_component.A.value, 2.5)
+    np.testing.assert_allclose(lorentzian_component.centre.value, 220)
+    np.testing.assert_allclose(lorentzian_component.gamma.value, 1)
+
+    s = m.as_signal()
+    np.testing.assert_allclose(s.data, f_signal.data)
+
+
+def test_convolve_jacobian_twin():
+    g = hs.model.components1D.Gaussian(sigma=3)
+    g_signal = hs.signals.Signal1D(g.function(np.arange(-20, 20)))
+    g_signal.axes_manager.signal_axes.set(offset=-20)
+
+    # example signal
+    f = hs.model.components1D.Lorentzian(A=2.5, centre=220)
+    f_signal = hs.signals.Signal1D(f.function(np.arange(200, 300)))
+    f_signal.axes_manager.signal_axes.set(offset=200)
+
+    convolution_axis = calculate_convolution1D_axis(
+        f_signal.axes_manager.signal_axes[0], g_signal.axes_manager.signal_axes[0]
+    )
+
+    f_padded_data = f.function(convolution_axis)
+    f_signal.data = np.convolve(f_padded_data, g_signal.data, mode="valid")
+
+    f_twinned = hs.model.components1D.Lorentzian(centre=260)
+    f_twinned.A.twin = f.A
+    f_twinned_padded_data = f_twinned.function(convolution_axis)
+    f_signal.data += np.convolve(f_twinned_padded_data, g_signal.data, mode="valid")
+
+    m = ConvolvedModel1D(f_signal, detector_response=g_signal)
+    lorentzian_component = hs.model.components1D.Lorentzian()
+    lorentzian_component.convolved = True
+    lorentzian_component.estimate_parameters(f_signal, 210, 230)
+    lorentzian2_component = hs.model.components1D.Lorentzian()
+    lorentzian2_component.convolved = True
+    lorentzian2_component.A.twin = lorentzian_component.A
+    lorentzian2_component.estimate_parameters(f_signal, 250, 270)
+    m.extend([lorentzian_component, lorentzian2_component])
+
+    m.fit(optimizer="lm", grad="analytical")
+    np.testing.assert_allclose(lorentzian_component.A.value, 2.5)
+    np.testing.assert_allclose(lorentzian_component.centre.value, 220)
+    np.testing.assert_allclose(lorentzian_component.gamma.value, 1)
+
+    np.testing.assert_allclose(lorentzian2_component.A.value, 2.5)
+    np.testing.assert_allclose(lorentzian2_component.centre.value, 260)
+    np.testing.assert_allclose(lorentzian2_component.gamma.value, 1)
+
+    s = m.as_signal()
+    np.testing.assert_allclose(s.data, f_signal.data)

@@ -513,6 +513,7 @@ class BaseModel(list):
         # multifit(). Setting it to None ensures that the existing behaviour
         # is preserved.
         self._binned = None
+        self._convolved = False
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
 
@@ -1365,8 +1366,12 @@ class BaseModel(list):
 
     def _compute_constant_term(self, component):
         """Gets the value of any (non-free) constant term"""
-        signal_shape = self.axes_manager.signal_shape[::-1]
-        data = component._constant_term * np.ones(signal_shape)
+        if self._convolved and component.convolved:
+            data = self._convolve_component_values(component._constant_term)
+        else:
+            signal_shape = self.axes_manager.signal_shape[::-1]
+            data = component._constant_term * np.ones(signal_shape)
+
         return data.T[np.where(self._channel_switches)[::-1]].T
 
     def _linear_fit(
