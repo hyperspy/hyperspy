@@ -1350,7 +1350,18 @@ class BaseModel(list):
         return tuple([c for c in self if c.active])
 
     def _convolve_component_values(self, component_values):
-        raise NotImplementedError("This  model does not support convolution")
+        """
+        Convolve component with model convolution axis.
+
+        Multiply by np.ones in order to handle case where component_values is a
+        single constant
+        """
+        sig = component_values * np.ones(self._convolution_axis.shape)
+
+        c = self._signal_to_convolve._get_current_data(self.axes_manager)
+        convolved = np.convolve(sig, c, mode="valid")
+
+        return convolved
 
     def _compute_constant_term(self, component):
         """Gets the value of any (non-free) constant term"""
@@ -1562,6 +1573,10 @@ class BaseModel(list):
             result, residual, *_ = np.linalg.lstsq(
                 xp.asanyarray(comp_values.T), target_signal.T, **kw
             )
+            if len(residual) == 0:
+                # can be empty array, see np.linalg.lstsq docstring
+                # for example when rank(a) is lower than number of free parameters (N)
+                residual = None
             coefficient_array = result.T
 
         elif optimizer in ["ols", "nnls"]:
@@ -1600,7 +1615,7 @@ class BaseModel(list):
                 fit_output["x"] = fit_output["x"].compute()
 
         # Calculate errors
-        # We only do this if going pixel-by-pixel or if `calculate_errors =True`
+        # We only do this if going pixel-by-pixel or if `calculate_errors=True`
         # is specified in multifit. This is because it is a very large
         # calculation and can eat all our ram, even when run lazily.
         if calculate_errors:

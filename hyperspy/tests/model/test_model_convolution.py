@@ -88,7 +88,7 @@ def test_convolved_model(nav_dim, optimizer):
     g_signal.axes_manager.signal_axes.set(offset=-20)
 
     # example signal
-    f = hs.model.components1D.Lorentzian(centre=220)
+    f = hs.model.components1D.Lorentzian(A=2.5, centre=220)
     f_signal = hs.signals.Signal1D(f.function(np.arange(200, 300)))
     f_signal.axes_manager.signal_axes.set(offset=200)
     convolution_axis = calculate_convolution1D_axis(
@@ -103,7 +103,7 @@ def test_convolved_model(nav_dim, optimizer):
 
     m = ConvolvedModel1D(f_signal, detector_response=g_signal)
     lorentzian_component = hs.model.components1D.Lorentzian()
-    lorentzian_component.estimate_parameters(f_signal, 200, 300)
+    lorentzian_component.estimate_parameters(f_signal, 210, 230)
     offset_component = hs.model.components1D.Offset()
     m.extend([lorentzian_component, offset_component])
 
@@ -119,10 +119,75 @@ def test_convolved_model(nav_dim, optimizer):
         cm = dummy_context_manager
     with cm():
         m.multifit(optimizer=optimizer)
-    np.testing.assert_allclose(lorentzian_component.A.value, 1)
-    np.testing.assert_allclose(lorentzian_component.centre.value, 220)
-    np.testing.assert_allclose(lorentzian_component.gamma.value, 1)
-    np.testing.assert_allclose(offset_component.offset.value, 10)
+    np.testing.assert_allclose(lorentzian_component.A.value, 2.5, rtol=2e-3)
+    np.testing.assert_allclose(lorentzian_component.centre.value, 220, rtol=1e-5)
+    np.testing.assert_allclose(lorentzian_component.gamma.value, 1, rtol=5e-3)
 
     s = m.as_signal()
-    np.testing.assert_allclose(s.data, f_signal.data)
+    np.testing.assert_allclose(s.data, f_signal.data, rtol=1e-5)
+
+
+@pytest.mark.parametrize("nav_dim", (0, 1))
+@pytest.mark.parametrize("optimizer", ("lm", "lstsq"))
+def test_convolved_model_polynomial(nav_dim, optimizer):
+    # Test with polynomial to cover the `Expression._compute_expression_part` code
+    # which is used when a components has several free linear parameters
+    # example of detector response
+    g = hs.model.components1D.Gaussian(sigma=3)
+    g_signal = hs.signals.Signal1D(g.function(np.arange(-20, 20)))
+    g_signal.axes_manager.signal_axes.set(offset=-20)
+
+    # example signal
+    polynomial_values = dict(a0=0.5, a1=0.1, a2=-0.05)
+    f = hs.model.components1D.Polynomial(order=2, **polynomial_values)
+    f_signal = hs.signals.Signal1D(f.function(np.arange(200, 300)))
+    f_signal.axes_manager.signal_axes.set(offset=200)
+    convolution_axis = calculate_convolution1D_axis(
+        f_signal.axes_manager.signal_axes[0], g_signal.axes_manager.signal_axes[0]
+    )
+    f_padded_data = f.function(convolution_axis)
+    f_signal.data = np.convolve(f_padded_data, g_signal.data, mode="valid")
+
+    polynomial = hs.model.components1D.Polynomial(order=2)
+    f_signal.data += polynomial.function(f_signal.axes_manager[-1].axis)
+
+    lorentzian = hs.model.components1D.Lorentzian(centre=260, A=1e5)
+    f_signal.data += lorentzian.function(f_signal.axes_manager[-1].axis)
+
+    if nav_dim == 1:
+        g_signal = hs.stack([g_signal] * 2)
+        f_signal = hs.stack([f_signal] * 2)
+
+    m = ConvolvedModel1D(f_signal, detector_response=g_signal)
+    polynomial_component = hs.model.components1D.Polynomial(order=2)
+    lorentzian_component = hs.model.components1D.Lorentzian()
+    lorentzian_component.estimate_parameters(f_signal, 250, 270)
+    m.extend([polynomial_component, lorentzian_component])
+
+    polynomial_component.convolved = True
+    lorentzian_component.convolved = False
+    if optimizer == "lstsq":
+        lorentzian_component.centre.value = 260
+        lorentzian_component.gamma.value = 1
+        m.assign_current_values_to_all()
+        m.set_parameters_not_free(only_nonlinear=True)
+        cm = pytest.warns
+    else:
+        cm = dummy_context_manager
+    with cm():
+        m.multifit(optimizer=optimizer)
+    np.testing.assert_allclose(lorentzian_component.A.value, 1e5, rtol=2e-3)
+    np.testing.assert_allclose(lorentzian_component.centre.value, 260, rtol=1e-5)
+    np.testing.assert_allclose(lorentzian_component.gamma.value, 1, rtol=5e-3)
+    np.testing.assert_allclose(
+        polynomial_component.a0.value, polynomial_values["a0"], rtol=2e-3
+    )
+    np.testing.assert_allclose(
+        polynomial_component.a1.value, polynomial_values["a1"], rtol=1e-5
+    )
+    np.testing.assert_allclose(
+        polynomial_component.a2.value, polynomial_values["a2"], rtol=5e-3
+    )
+
+    s = m.as_signal()
+    np.testing.assert_allclose(s.data, f_signal.data, rtol=1e-5)

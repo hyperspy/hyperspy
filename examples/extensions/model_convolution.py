@@ -21,7 +21,7 @@ import numpy as np
 # The subclass needs to implement the following API:
 #
 # - ``_convolution_axis``
-# - ``_signal_to_convolved``
+# - ``_signal_to_convolve``
 # - ``convolved``
 #
 # The steps of how the convolution is implemented are explained in
