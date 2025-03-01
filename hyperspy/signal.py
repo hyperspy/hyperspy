@@ -5277,8 +5277,8 @@ class BaseSignal(
         silence_warnings=False,
         **kwargs,
     ):
-        """Apply a function to the signal data at all the navigation
-        coordinates.
+        """
+        Apply a function to the signal data at all the navigation coordinates.
 
         The function must operate on numpy arrays. It is applied to the data at
         each navigation coordinate pixel-py-pixel. Any extra keyword arguments
@@ -5416,7 +5416,8 @@ class BaseSignal(
         if navigation_chunks is None:
             navigation_chunks = "auto"
             _logger.warning(
-                "Setting `navigaion_chunk=None`, use `navigaion_chunk='auto'` instead."
+                "Using `navigaion_chunk=None` is deprecated, "
+                "`navigaion_chunk='auto'` is used instead."
             )
         if not isinstance(navigation_chunks, tuple) and navigation_chunks != "auto":
             raise ValueError(

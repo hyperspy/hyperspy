@@ -28,7 +28,7 @@ from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 import hyperspy.api as hs
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.utils import _get_block_pattern
+from hyperspy.misc.utils import _get_block_pattern, dummy_context_manager
 
 
 def identify_function(x):
@@ -1415,3 +1415,40 @@ def test_map_chunking_parallel():
         func, lazy_output=True, inplace=False, navigation_chunks=(5, 5)
     )
     assert s5.data.chunks == ((5,) * 4, (5,) * 4, (100,))
+
+
+@pytest.mark.parametrize("navigation_chunks", (None, "auto"))
+def test_map_chunking_parallel_warning_input(caplog, navigation_chunks):
+    data = np.ones((350, 400, 100))
+    s = hs.signals.Signal1D(data)
+
+    def func(x):
+        return x
+
+    cm = caplog.at_level if navigation_chunks is None else dummy_context_manager
+
+    with dask.config.set(num_workers=1):
+        with cm(logging.WARNING):
+            s2 = s.map(
+                func,
+                lazy_output=True,
+                inplace=False,
+                navigation_chunks=navigation_chunks,
+            )
+        if navigation_chunks is None:
+            assert "`navigaion_chunk=None` is deprecated" in caplog.text
+        s2.data.chunks == ((350,), (200, 200), (100,))
+
+
+def test_map_navigation_chunks_error_input():
+    data = np.ones((350, 400, 100))
+    s = hs.signals.Signal1D(data)
+
+    def func(x):
+        return x
+
+    with pytest.raises(ValueError):
+        s.map(func, lazy_output=True, navigation_chunks=-1)
+
+    with pytest.raises(ValueError):
+        s.map(func, lazy_output=True, navigation_chunks="dask_auto")

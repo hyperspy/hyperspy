@@ -18,6 +18,7 @@
 
 import dask.array as da
 import numpy as np
+import pytest
 
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -63,6 +64,12 @@ def test_lazy_changetype_rechunk_False():
     s.change_dtype(float, rechunk=False)
     assert s.data.dtype is np.dtype(float)
     assert chunks_old == s.data.chunks
+
+
+def test_rechunk_error_parameter():
+    s = Signal1D(da.ones((10, 100))).as_lazy()
+    with pytest.raises(ValueError):
+        s._lazy_data(rechunk=0)
 
 
 def test_lazy_reduce_rechunk():
