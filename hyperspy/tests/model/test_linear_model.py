@@ -883,3 +883,24 @@ def test_fitter(optimizer):
     np.testing.assert_allclose(p_ref.a1.value, p.a1.value, rtol=rtol)
     np.testing.assert_allclose(p_ref.a2.value, p.a2.value, rtol=rtol)
     np.testing.assert_allclose(m.as_signal().data, s.data, rtol=rtol)
+
+
+def test_rank_lstsq_residual():
+    # test for case where rank is lower than number of free parameters
+    # the residual returned by np.linalg.lstsq is then an empty array
+    s_ref = hs.signals.Signal1D(np.ones(20))
+    p_ref = hs.model.components1D.Polynomial(order=2, a0=25, a1=50, a2=2.5)
+    g_ref = hs.model.components1D.Gaussian(A=1e4)
+
+    m_ref = s_ref.create_model()
+    m_ref.extend([p_ref, g_ref])
+    m_ref.assign_current_values_to_all()
+    s = m_ref.as_signal()
+
+    m = s.create_model()
+    p = hs.model.components1D.Polynomial(order=2)
+    g = hs.model.components1D.Gaussian()
+    o = hs.model.components1D.Offset()
+    m.extend([p, g, o])
+    m.set_parameters_not_free(only_nonlinear=True)
+    m.fit(optimizer="lstsq")
