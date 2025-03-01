@@ -840,7 +840,7 @@ def dict2signal(signal_dict, lazy=False):
         lazy=lazy,
     )(**signal_dict)
     if signal._lazy:
-        signal._make_lazy()
+        signal.data = signal._lazy_data()
 
     # This may happen when the signal dimension couldn't be matched with
     # any specialised subclass
