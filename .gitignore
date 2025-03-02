@@ -29,28 +29,16 @@ desktop.ini
 dist
 /MANIFEST
 build/*
-bin/*.bat
-PortableInstall/*
 hyperspy.egg-info/*
 data/octave-core
 deb_dist/*
-doc/_build/*
-doc/.build/*
-doc/api/*
 doc/auto_examples
-doc/gh-pages
+doc/backreferences
+doc/_build
 doc/log.txt
-doc/user_guide/_build/*
-doc/user_guide/.build/*
 examples/io/*.msa
 examples/io/rgb*.jpg
 examples/region_of_interest/*.msa
-hyperspy/io_plugins/unbcf_fast.c
-hyperspy/misc/etc/test_compilers.obj
-hyperspy/tests/io/edax_files.zip
-hyperspy/tests/misc/cython/test_cython_integration.c
-setup/windows/requires/*
-setup/windows/reccomends/*
 
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/
@@ -62,4 +50,3 @@ jsconfig.json
 *__pycache__*
 
 *sg_execution_times.rst
-doc/gen_modules/backreferences/*

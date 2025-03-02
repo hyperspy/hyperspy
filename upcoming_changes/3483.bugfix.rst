@@ -1,0 +1,1 @@
+Fix plotting single spectra in :func:`~.api.plot.plot_spectra` with ``style="mosaic"``.

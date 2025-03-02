@@ -428,9 +428,9 @@ sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
     # directory where function/class granular galleries are stored
-    "backreferences_dir": "gen_modules/backreferences",
+    "backreferences_dir": "backreferences",
     # Modules for which function/class level galleries are created. In
-    # this case sphinx_gallery and numpy in a tuple of strings.
+    # this case hyperspy in a tuple of strings.
     "doc_module": ("hyperspy",),
     "filename_pattern": ".py",  # pattern to define which will be executed
     "ignore_pattern": "_sgskip.py",  # pattern to define which will not be executed
