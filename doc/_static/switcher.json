@@ -5,10 +5,14 @@
         "url": "https://hyperspy.org/hyperspy-doc/dev/"
     },
     {
-        "version": "2.2.x",
-        "name": "2.2",
+        "version": "2.3.x",
+        "name": "2.3",
         "url": "https://hyperspy.org/hyperspy-doc/current/",
         "preferred": true
+    },
+    {
+        "version": "2.2",
+        "url": "https://hyperspy.org/hyperspy-doc/v2.2/"
     },
     {
         "version": "2.1",
