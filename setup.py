@@ -25,7 +25,7 @@ def custom_version_scheme(version):
     # On RELEASE_next_major, "retain" needs to be 1
     # On RELEASE_next_minor, "retain" needs to be 2
     # On RELEASE_next_patch, "retain" needs to be 3
-    return version.format_next_version(guess_version, retain=3)
+    return version.format_next_version(guess_version, retain=2)
 
 
 setup(use_scm_version={"version_scheme": custom_version_scheme})
