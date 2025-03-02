@@ -36,7 +36,7 @@ dependencies = [
     "scikit-image>=0.18",
     "scipy>=1.6.0",
     "sympy>=1.10",
-    "tqdm>=4.9.0",
+    "tqdm>=4.59.0",
     "traits>=4.5.0",
 ]
 description = "Multidimensional data analysis toolbox"
@@ -87,14 +87,22 @@ file = "COPYING.txt"
 
 [project.optional-dependencies]
 all = [
+    "hyperspy[dask-image]",
+    "hyperspy[baseline]",
     "hyperspy[gui-jupyter]",
     "hyperspy[gui-traitsui]",
     "hyperspy[ipython]",
     "hyperspy[learning]",
     "hyperspy[speed]",
 ]
+baseline = [
+    "pybaselines"
+]
 coverage = [
     "pytest-cov",
+]
+dask-image = [
+    "dask-image",
 ]
 dev = [
     "black",
@@ -110,6 +118,7 @@ doc = [
     # https://github.com/conda-forge/ipython-feedstock/pull/210
     "pickleshare", # ipython optional dependencies
     "numpydoc",
+    "pybaselines", # for docstring test
     "pydata_sphinx_theme",
     "setuptools_scm",
     "sphinx-copybutton",
@@ -118,9 +127,8 @@ doc = [
     "sphinx-gallery",
     "sphinx>=1.7",
     "sphinxcontrib-mermaid",
-    "sphinxcontrib-towncrier>=0.3.0a0",
-    # unpin when sphinxcontrib-towncrier support more recent version to towncrier
-    "towncrier<24",
+    "sphinxcontrib-towncrier>=0.5.0a0",
+    "towncrier",
 ]
 gui-jupyter = [
     "hyperspy_gui_ipywidgets>=2.0",
@@ -167,6 +175,7 @@ omit = [
     "examples/*",
     "hyperspy/conftest.py",
     "hyperspy/tests/*",
+    "hyperspy/external/scipy/*",
     "prepare_release.py",
     "setup.py",
 ]
@@ -227,7 +236,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-fallback_version = "2.2.1.dev0"
+fallback_version = "2.3.1.dev0"
 
 [tool.towncrier]
 directory = "upcoming_changes/"

@@ -185,3 +185,15 @@ def test_decomposition():
     s.plot_decomposition_factors(3)
 
     s.blind_source_separation(2, algorithm="orthomax")
+
+
+def test_remove_spikes():
+    s = hs.data.two_gaussians()
+    s.to_device()
+
+    index0 = (10, 5, 800)
+    expected_value = 271
+    s.data[index0] = 1e4  # initial value is 310
+
+    s.remove_spikes()
+    assert s.data[index0] == expected_value

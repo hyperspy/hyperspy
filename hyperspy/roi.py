@@ -1123,7 +1123,7 @@ class CircleROI(BaseInteractiveROI):
         vy = axes[1].axis[ir[1]] - cy
 
         # convert to cupy array when necessary
-        if is_cupy_array(signal.data):
+        if is_cupy_array(signal.data):  # pragma: no cover
             import cupy as cp
 
             vx, vy = cp.array(vx), cp.array(vy)

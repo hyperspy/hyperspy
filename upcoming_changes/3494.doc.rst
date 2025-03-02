@@ -1,1 +1,0 @@
-Document implementation of model convolution for subclassing :class:`~hyperspy.models.model1d.Model1D` in the :ref:`extension guide <extension_components_label>`.

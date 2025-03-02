@@ -20,6 +20,7 @@ import logging
 import math
 import warnings
 
+import dask
 import dask.array as da
 import numpy as np
 import numpy.ma as ma
@@ -37,6 +38,7 @@ from hyperspy.docstrings.plot import (
     PLOT1D_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
+    IN_PLACE,
     LAZYSIGNAL_DOC,
     NAVIGATION_MASK_ARG,
     NUM_WORKERS_ARG,
@@ -364,7 +366,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         See Also
         --------
-        spikes_removal_tool
+        hyperspy.api.signals.Signal1D.spikes_removal_tool,
+        hyperspy.api.signals.BaseSignal.remove_spikes
 
         """
         self._spikes_diagnosis(
@@ -1289,6 +1292,101 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return result
 
     remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
+
+    def remove_baseline(
+        self,
+        method=None,
+        inplace=True,
+        show_progressbar=None,
+        num_workers=None,
+        display=True,
+        toolkit=None,
+        **kwargs,
+    ):
+        """
+        Remove baselines using algorithms implemented in `pybaselines <https://pybaselines.readthedocs.io>`_.
+
+        Parameters
+        ----------
+        method : str or None
+            If ``str``, any of the algorithm name in :class:`pybaselines.api.Baseline`.
+            If ``None``, a widget is opened to select an algorithm and adjust
+            the parameters.
+        %s
+        %s
+        %s
+        %s
+        %s
+        **kwargs : dict
+            Keyword arguments of baseline algorithm. These are passed
+            to baseline function.
+
+        Returns
+        -------
+        Signal1D
+            If ``inplace=False`` the signal with the baseline removed.
+
+        Notes
+        -----
+        To use parallelism with lazy signal, use a multiprocessing dask
+        scheduler (``processes`` or a distributed scheduler). The dask
+        ``threads`` scheduler (default) will run serially, because
+        :class:`pybaselines.api.Baseline` does not release the GIL.
+
+        >>> import hyperspy.api as hs
+        >>> import dask
+        >>> s = hs.data.two_gaussians().as_lazy()
+        >>> s.remove_baselines(method="aspls", lam=1e7)
+        >>> with dask.config.set(scheduler="processes"):
+        >>>    s.compute()
+
+        To speed up computations, install `optional dependencies of pybaselines <https://pybaselines.readthedocs.io/en/latest/installation.html#optional-dependencies>`_,
+        such as for example: `pentapy <https://geostat-framework.readthedocs.io/projects/pentapy>`_.
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> s = hs.data.two_gaussians()
+        >>> s.remove_baselines(method="aspls", lam=1e7)
+        """
+        from hyperspy._signals._signal1d_tool import _remove_baseline
+
+        if method is None:  # pragma: no cover
+            from hyperspy.utils.baseline_removal_tool import BaselineRemoval
+
+            br = BaselineRemoval(self, **kwargs)
+            return br.gui(display=display, toolkit=toolkit)
+        else:
+            scheduler = None
+            if not self._lazy:
+                scheduler = dask.config.get("scheduler", scheduler)
+                # if fallback to "scheduler", it means that it wasn't
+                # set and therefore we can sense to set the scheduler
+                # without overwritting a user setting
+                if scheduler is None:
+                    _logger.info("Using processes scheduler.")
+                    scheduler = "processes"
+                elif scheduler == "threads":
+                    _logger.warning("Use processes scheduler to enable parallelism.")
+            with dask.config.set(scheduler=scheduler):
+                return self.map(
+                    _remove_baseline,
+                    method=method,
+                    x=self.axes_manager[-1].axis,
+                    inplace=inplace,
+                    output_signal_size=self.axes_manager.signal_shape,
+                    output_dtype=float,
+                    silence_warnings="non-uniform",
+                    **kwargs,
+                )
+
+    remove_baseline.__doc__ %= (
+        IN_PLACE,
+        SHOW_PROGRESSBAR_ARG,
+        NUM_WORKERS_ARG,
+        DISPLAY_DT,
+        TOOLKIT_DT,
+    )
 
     @interactive_range_selector
     def crop_signal(
