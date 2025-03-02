@@ -14,6 +14,49 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 
 .. towncrier release notes start
 
+2.3.0 (2025-03-02)
+==================
+
+New features
+------------
+
+- Add :meth:`~.api.signals.BaseSignal.remove_spikes` method to remove spikes on :class:`~.api.signals.Signal1D` and :class:`~.api.signals.Signal2D` using local median. (`#3436 <https://github.com/hyperspy/hyperspy/issues/3436>`_)
+- Add :meth:`~.api.signals.Signal1D.remove_baseline` to remove baseline using `pybaselines <https://pybaselines.readthedocs.io>`_; see the :ref:`baseline removal <signal1D.remove_baseline>` section in the user guide. (`#3441 <https://github.com/hyperspy/hyperspy/issues/3441>`_)
+
+
+Enhancements
+------------
+
+- Fix and improve :meth:`~.model.BaseModel.as_signal`:
+
+  -  Fix lazy support which stops working from dask version 2024.12.0.
+  -  Add vectorised implementation using ``function_nd`` method of Components. For components not implementing ``function_nd`` (for example, in HyperSpy extensions, old or custom components), the old slow implementation is used. All :class:`~.api.model.components1D.Expression` based-components have the ``function_nd`` created automatically. (`#3476 <https://github.com/hyperspy/hyperspy/issues/3476>`_)
+- Improve setting chunking:
+
+  - add automatic chunking in :meth:`~.api.signals.BaseSignal.map` for non-lazy signal to optimize chunking for multiple core processing,
+  - :meth:`~.api.signals.BaseSignal.as_lazy` can now take the ``chunks`` argument,
+  - improve documentation of the ``rechunk`` argument. (`#3489 <https://github.com/hyperspy/hyperspy/issues/3489>`_)
+
+
+Bug Fixes
+---------
+
+- Fix plotting single spectra in :func:`~.api.plot.plot_spectra` with ``style="mosaic"``. (`#3483 <https://github.com/hyperspy/hyperspy/issues/3483>`_)
+
+
+Improved Documentation
+----------------------
+
+- Document implementation of model convolution for subclassing :class:`~hyperspy.models.model1d.Model1D` in the :ref:`extension guide <extension_components_label>`. (`#3494 <https://github.com/hyperspy/hyperspy/issues/3494>`_)
+
+
+Maintenance
+-----------
+
+- Add support for python 3.13. (`#3468 <https://github.com/hyperspy/hyperspy/issues/3468>`_)
+- Clean up dependencies, which are now used in eXSpy_ and RosettaSciIO_. (`#3482 <https://github.com/hyperspy/hyperspy/issues/3482>`_)
+
+
 2.2.0 (2024-11-08)
 ==================
 

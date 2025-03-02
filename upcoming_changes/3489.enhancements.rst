@@ -1,5 +1,0 @@
-Improve setting chunking:
-
-- add automatic chunking in :meth:`~.api.signals.BaseSignal.map` for non-lazy signal to optimize chunking for multiple core processing,
-- :meth:`~.api.signals.BaseSignal.as_lazy` can now take a the ``chunks`` argument,
-- improve documentation of the ``rechunk`` argument.

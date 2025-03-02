@@ -1,4 +1,0 @@
-Fix and improve :meth:`~.model.BaseModel.as_signal`:
-
--  Fix lazy support which stops working from dask version 2024.12.0.
--  Add vectorised implementation using ``function_nd`` method of Components. For components not implementing ``function_nd`` (for example, in HyperSpy extensions, old or custom components), the old slow implementation is used. All :class:`~.api.model.components1D.Expression` based-components have the ``function_nd`` created automatically.
