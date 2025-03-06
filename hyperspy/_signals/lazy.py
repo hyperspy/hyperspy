@@ -18,6 +18,7 @@
 
 import logging
 import os
+import warnings
 from functools import partial
 from itertools import product
 
@@ -25,7 +26,6 @@ import dask
 import dask.array as da
 import numpy as np
 from dask.widgets import TEMPLATE_PATHS
-from rsciio.utils.tools import get_file_handle
 
 from hyperspy.docstrings.signal import (
     LAZYSIGNAL_DOC,
@@ -109,6 +109,7 @@ class LazySignal(BaseSignal):
     """Lazy general signal class."""
 
     _lazy = True
+    _file_handle = None
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "BaseSignal")
 
     def __init__(self, *args, **kwargs):
@@ -282,16 +283,31 @@ class LazySignal(BaseSignal):
             return self._deepcopy_with_new_data(data_)
 
     def close_file(self):
-        """Closes the associated data file if any.
-
-        Currently it only supports closing the file associated with a dask
-        array created from an h5py DataSet (default HyperSpy hdf5 reader).
-
         """
-        try:
-            get_file_handle(self.data).close()
-        except AttributeError:
-            _logger.warning("Failed to close lazy signal file")
+        Closes the associated data file for compatible file format - see
+        rosettasciio documentation for more detaileds.
+        """
+        file_handle = self._file_handle
+        if file_handle is None:
+            try:
+                from rsciio.utils.tools import get_file_handle
+
+                # fall back to deprecated get_file_handle for older rosettasciio
+                # version that doesn't haimplve the `file_handle` API
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    get_file_handle(self.data)
+            except BaseException:
+                pass
+        if file_handle is not None:
+            try:
+                self._file_handle.close()
+            except BaseException as error:  # pragma: no cover
+                _logger.warning(
+                    f"File couldn't be closed because of the following error:\n\n{error}"
+                )
+            finally:
+                self._file_handle = None
 
     def _clear_cache_dask_data(self, obj=None):
         self._cache_dask_chunk = None

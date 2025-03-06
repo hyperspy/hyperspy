@@ -839,8 +839,10 @@ def dict2signal(signal_dict, lazy=False):
         dtype=signal_dict["data"].dtype,
         lazy=lazy,
     )(**signal_dict)
+
     if signal._lazy:
         signal.data = signal._lazy_data()
+        signal._file_handle = signal_dict.get("file_handle", None)
 
     # This may happen when the signal dimension couldn't be matched with
     # any specialised subclass

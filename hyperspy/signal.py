@@ -2987,7 +2987,11 @@ class BaseSignal(
             "axes": self.axes_manager._get_axes_dicts(),
             "metadata": copy.deepcopy(self.metadata.as_dictionary()),
             "tmp_parameters": self.tmp_parameters.as_dictionary(),
-            "attributes": {"_lazy": self._lazy, "ragged": self.axes_manager._ragged},
+            "attributes": {
+                "_lazy": self._lazy,
+                "ragged": self.axes_manager._ragged,
+                "_file_handle": self._file_handle if self._lazy else None,
+            },
         }
         if add_original_metadata:
             dic["original_metadata"] = copy.deepcopy(
