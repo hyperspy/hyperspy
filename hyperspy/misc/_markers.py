@@ -207,7 +207,7 @@ def markers_dict_to_markers(marker_dict):
             kwargs["offsets"] = offsets
             kwargs["widths"] = widths
             kwargs["heights"] = heights
-            fill = kwargs.pop("fill")
+            fill = kwargs.pop("fill", False)
             if not fill:
                 kwargs["facecolor"] = "none"
             markers_class = "Rectangles"
