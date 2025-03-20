@@ -35,7 +35,7 @@ from hyperspy.docstrings.signal import (
 )
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import (
-    _get_navigation_dimension_chunk_slice,
+    CachedDaskArray,
     _requires_linear_rebin,
     get_signal_chunk_slice,
 )
@@ -119,14 +119,15 @@ class LazySignal(BaseSignal):
         # _cache_dask_chunk has the NumPy array itself, while
         # _cache_dask_chunk_slice has the navigation dimension chunk which
         # the NumPy array originates from.
-        self._cache_dask_chunk = None
-        self._cache_dask_chunk_slice = None
-        self._cache_dask_chunk_index = None
 
-        self._neighbor_cache_dask_indexes = []
-        self._neighbor_cache_arrays = []
+        # set self.cached_dask_array on `plot` call
+        self.cached_dask_array = None
 
         self._client = None
+        if self.client is not None:
+            self.cache_pad = 1
+        else:
+            self.cache_pad = 0
 
         if self._clear_cache_dask_data not in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
@@ -145,7 +146,9 @@ class LazySignal(BaseSignal):
             from dask.distributed import get_client
 
             return get_client()
-        except ImportError or ValueError:
+        except ImportError:
+            return None
+        except ValueError:
             return None
 
     @client.setter
@@ -163,46 +166,6 @@ class LazySignal(BaseSignal):
                 "Dask distributed is not available, please install it to set the client"
             )
         self._client = client
-
-    def _repr_html_(self):
-        try:
-            from dask import config
-            from dask.array.svg import svg
-            from dask.utils import format_bytes
-            from dask.widgets import get_template
-
-            nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
-            sig_chunks = self.get_chunk_size(self.axes_manager.signal_axes)
-            if nav_chunks == ():
-                nav_grid = ""
-            else:
-                nav_grid = svg(
-                    chunks=nav_chunks, size=config.get("array.svg.size", 160)
-                )
-            if sig_chunks == ():
-                sig_grid = ""
-            else:
-                sig_grid = svg(
-                    chunks=sig_chunks, size=config.get("array.svg.size", 160)
-                )
-            nbytes = format_bytes(self.data.nbytes)
-            cbytes = format_bytes(
-                np.prod(self.data.chunksize) * self.data.dtype.itemsize
-            )
-            return get_template("lazy_signal.html.j2").render(
-                nav_grid=nav_grid,
-                sig_grid=sig_grid,
-                dim=self.axes_manager._get_dimension_str(),
-                chunks=self._get_chunk_string(),
-                array=self.data,
-                signal_type=self._signal_type,
-                nbytes=nbytes,
-                cbytes=cbytes,
-                title=self.metadata.General.title,
-            )
-
-        except ModuleNotFoundError:
-            return self
 
     def _get_chunk_string(self):
         nav_chunks = self.data.chunksize[: len(self.axes_manager.navigation_shape)][
@@ -535,7 +498,7 @@ class LazySignal(BaseSignal):
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def _get_cache_dask_chunk(self, indices):
+    def _get_cache_dask_chunk(self, indices, get_result=True):
         """Method for handling caching of dask chunks, when using __call__.
 
         When accessing data in a chunked HDF5 file, the whole chunks needs
@@ -578,96 +541,15 @@ class LazySignal(BaseSignal):
         >>> s._clear_cache_dask_data() # Clearing both of these
 
         """
-
-        # this is more complicated as we do allow data which is not chunked
-        # only in the navigation dimension.  Potentially this could be
-        # slow, but we can't do much about it.
-        sig_dim = self.axes_manager.signal_dimension
-        chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
-        navigation_indices = indices[:-sig_dim]
-        chunk_slice, center_block, neighbor_blocks = (
-            _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
+        if self.cached_dask_array is None:
+            self.cached_dask_array = CachedDaskArray(self, cache_padding=self.cache_pad)
+        res = self.cached_dask_array.get_index(
+            indices,
+            force_compute=get_result,
+            nav_dim=len(self.axes_manager.navigation_axes),
+            sum_data=True,
         )
-
-        # most computers have multiple cores, so we should try to cache the center
-        # of the chunk and then get the neighboring chunks as well.
-
-        # If we are using the distributed scheduler, we can use futures for this.
-
-        to_compute_neighbors = []  # list of dask arrays to compute
-        to_compute_neighbor_indices = []  # list of indices to compute
-        to_compute_center = []  # This is "blocking"
-        if (
-            center_block != self._cache_dask_chunk_index
-            or self._cache_dask_chunk is None
-        ):
-            # first test to see if this is cached as a neighboring block...
-            self._cache_dask_chunk_slice = chunk_slice
-
-            if center_block in self._neighbor_cache_dask_indexes:
-                index = self._neighbor_cache_dask_indexes.index(center_block)
-                self._cache_dask_chunk = self._neighbor_cache_arrays.pop(index)
-                self._neighbor_cache_dask_indexes.remove(center_block)
-            else:
-                to_compute_center.append(self.data.blocks[center_block])
-
-            # now we need to compute the neighbors
-            for neighbor_block in neighbor_blocks:
-                if neighbor_block not in self._neighbor_cache_dask_indexes:
-                    to_compute_neighbors.append(self.data.blocks[neighbor_block])
-                    to_compute_neighbor_indices.append(neighbor_block)
-
-            for i in self._neighbor_cache_dask_indexes:
-                if i not in neighbor_blocks:
-                    index = self._neighbor_cache_dask_indexes.index(i)
-                    self._neighbor_cache_dask_indexes.remove(i)
-                    arr = self._neighbor_cache_arrays.pop(index)
-                    if self.client is not None:
-                        arr.cancel(
-                            reason="No longer in Relevant Area"
-                        )  # Don't calculate this anymore
-
-        if len(to_compute_center) > 0:
-            self._cache_dask_chunk_index = center_block
-
-        if self.client is None:
-            if len(to_compute_center) + len(to_compute_neighbors) > 0:
-                computed_chunks = da.compute(*to_compute_center, *to_compute_neighbors)
-                if len(to_compute_center) > 0:
-                    self._cache_dask_chunk = computed_chunks[0]
-                for i, neighbor_block in enumerate(to_compute_neighbor_indices):
-                    self._neighbor_cache_dask_indexes.append(neighbor_block)
-                    self._neighbor_cache_arrays.append(
-                        computed_chunks[i + len(to_compute_center)]
-                    )
-
-        else:
-            if len(to_compute_center) > 0:
-                self._cache_dask_chunk = self.client.compute(
-                    *to_compute_center
-                )  # This is non-blocking, returns a future
-            if len(to_compute_neighbors) > 0:
-                for i, neighbor_block in enumerate(
-                    to_compute_neighbors
-                ):  # This is non-blocking, returns a list of futures
-                    self._neighbor_cache_dask_indexes.append(
-                        to_compute_neighbor_indices[i]
-                    )
-                    self._neighbor_cache_arrays.append(
-                        self.client.compute(neighbor_block)
-                    )
-
-        indices = list(indices)
-        for i, temp_slice in enumerate(chunk_slice):
-            indices[i] -= temp_slice.start
-        indices = tuple(indices)
-        # block for now... we can make this non-blocking later by
-        # retunring a fut
-        if self.client is not None:
-            value = self._cache_dask_chunk.result()[indices]
-        else:
-            value = self._cache_dask_chunk[indices]
-        return value
+        return res
 
     def rebin(
         self,
@@ -1304,6 +1186,7 @@ class LazySignal(BaseSignal):
     def plot(self, navigator="auto", **kwargs):
         if self.axes_manager.ragged:
             raise RuntimeError("Plotting ragged signal is not supported.")
+        self.cached_dask_array = CachedDaskArray(self)
         if isinstance(navigator, str):
             if navigator == "spectrum":
                 # We don't support the 'spectrum' option to keep it simple

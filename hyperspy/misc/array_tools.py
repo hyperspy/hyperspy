@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>
 
-
 import logging
 import math
 
@@ -25,6 +24,14 @@ import numpy as np
 from hyperspy.decorators import jit_ifnumba
 from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.misc.math_tools import anyfloatin
+
+try:
+    from dask.distributed import Future
+
+    distributed_installed = True
+except ImportError:
+    distributed_installed = False
+    Future = None
 
 _logger = logging.getLogger(__name__)
 
@@ -656,7 +663,9 @@ def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
     )
 
 
-def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
+def _get_navigation_dimension_chunk_slice(
+    navigation_indices, chunks, surrounding_blocks=1
+):
     """Get the slice necessary to get the dask data chunk containing the
     navigation indices.
 
@@ -701,64 +710,69 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
     >>> print(chunk_slice)
     (slice(64, 96, None), slice(96, 128, None))
     >>> data_chunk = data[chunk_slice]
-
     """
-    chunk_slice_list = da.core.slices_from_chunks(chunks)
-    block_indexes = np.meshgrid(*[np.arange(0, len(n)) for n in chunks])
-    n_dim = len(chunks)
-    if len(block_indexes) == 0:
-        block_indexes_flat = [()]
+
+    n_dim = navigation_indices.shape[1]
+    block_indexes = np.meshgrid(
+        *[np.arange(0, len(n) - 1) for n in zip(chunks, range(n_dim))]
+    )  # only for n_dim
+    cum_sum_chunks = [np.cumsum(chunks) for chunks in chunks]
+    if n_dim == 0:
+        return (
+            [
+                tuple(),
+            ],
+            [
+                tuple(),
+            ],
+            navigation_indices,
+        )
     else:
-        block_indexes_flat = np.array(block_indexes).T.reshape(-1, n_dim)
+        block_indexes_flat = np.array(block_indexes).reshape(-1, n_dim)
         block_indexes_flat = block_indexes_flat
 
-    # iterate through and just find the slice that contains the navigation indices
-    center_slice = None
-    is_slice = True
-    for chunk_slice, block_index in zip(chunk_slice_list, block_indexes_flat):
-        is_slice = True
-        for index_nav in range(len(navigation_indices)):
-            temp_slice = chunk_slice[index_nav]
-            nav = navigation_indices[index_nav]
-
-            if not (temp_slice.start <= nav < temp_slice.stop):
-                is_slice = False
-                break
-        if is_slice:  # if the slice contains the navigation indices
-            center_slice = chunk_slice
-            center_block_index = block_index
-            break
-    if not is_slice:
-        return False
-
-    if center_slice == ():
-        return (
-            center_slice,
-            center_block_index,
-            [
-                (),
-            ],
+    blocks = np.array(
+        [
+            np.searchsorted(chunks, navigation_indices[:, i], side="right")
+            for i, chunks in zip(np.arange(navigation_indices.shape[1]), cum_sum_chunks)
+        ]
+    ).T
+    core_block_ind, index = np.unique(blocks, return_inverse=True, axis=0)
+    cum_sum_chunks_0 = [np.insert(c, 0, 0) for c in cum_sum_chunks]
+    if core_block_ind.ndim == 1:
+        offset_by_slic = np.array(
+            [cum_sum_chunks_0[i][core_block_ind[i]] for i in range(len(core_block_ind))]
         )
-    around = [-1, 0, 1]
+    else:
+        offset_by_slic = np.array(
+            [
+                cum_sum_chunks_0[i][core_block_ind[:, i]]
+                for i in range(core_block_ind.shape[1])
+            ]
+        ).T
+
+    ind_by_block = [
+        navigation_indices[index == i] - offset_by_slic[i]
+        for i, core_block_ind in enumerate(core_block_ind)
+    ]
+
+    if len(ind_by_block) == 0:
+        return
+
+        # get the blocks around the core chunks which are absolutely needed for plotting...
+    around = np.arange(-surrounding_blocks, surrounding_blocks + 1)
     surrounding_block_indexes = np.array(np.meshgrid(*(around,) * n_dim)).T.reshape(
         -1, n_dim
     )
-    surrounding_block_indexes = np.array(
-        [
-            center_block_index + i
-            for i in surrounding_block_indexes
-            if np.any(
-                i
-                != np.array(
-                    [
-                        0,
-                    ]
-                    * n_dim
-                )
-            )
-        ]
+    # remove duplicates and the "core" blocks which are needed for the ind.
+    shifted_blocks = np.reshape(
+        [u + surrounding_block_indexes for u in core_block_ind], (-1, n_dim)
     )
-
+    surrounding_block_indexes = np.unique(shifted_blocks, axis=0)
+    for u in core_block_ind:
+        surrounding_block_indexes = surrounding_block_indexes[
+            np.any(surrounding_block_indexes != u, axis=1)
+        ]
     is_in = np.prod(
         np.array(
             [
@@ -768,7 +782,274 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
         ),
         axis=0,
     ).astype(bool)
-
     surrounding_block_indexes = surrounding_block_indexes[is_in]
     surrounding_block_indexes = [tuple(s) for s in surrounding_block_indexes]
-    return center_slice, tuple(center_block_index), surrounding_block_indexes
+    core_block_ind = [tuple(b) for b in core_block_ind]
+    return core_block_ind, surrounding_block_indexes, ind_by_block
+
+
+class CachedDaskArray:
+    """
+    A custom dask array class that caches the current chunk in memory and loads nearby chunks as well.
+
+    There are two ways that this class can be used:
+
+    1. With the default dask scheduler in this case all the chunks are computed and stored in memory.
+
+    2. With the distributed scheduler, in this case the chunks are computed and stored in memory on the workers.
+       When the data is needed, however, the data will be transferred from the workers and stored in memory there.
+       This case has a two-step buffer, which allows plotting to be asynchronous but also some added latency from
+       the copying of data from the workers to the client (even if the worker/client are on the same machine).
+
+    In either case, data which ends up stored in memory and will be kept there until the object goes out of scope.
+    In which case it is deleted. Increasing the cache_padding will increase the amount of data that is stored
+    in memory. But can be an effective strategy especially with the distributed scheduler and very especially
+    when the data is stored on a networked file system which increases the latency of transfer from the disk
+    and from the workers.
+
+    Parameters
+    ----------
+    array : dask.array.Array
+        The dask array to be cached.
+    cache_padding : int
+        The number of blocks around the current index to cache as well.
+
+    """
+
+    def __init__(self, signal, cache_padding=1):
+        self.signal = signal
+        self.array = signal.data
+        self.current_indices = None
+        self.core_cached_blocks = []
+        self.core_cached_block_inds = []
+        self.surrounding_cached_blocks = []
+        self.surrounding_cached_block_inds = []
+        self.cache_padding = cache_padding
+        self._client = None
+
+    def _repr_html_(self):
+        try:
+            from dask import config
+            from dask.array.svg import svg
+            from dask.utils import format_bytes
+            from dask.widgets import get_template
+
+            nav_chunks = self.signal.get_chunk_size(
+                self.signal.axes_manager.navigation_axes
+            )
+            sig_chunks = self.signal.get_chunk_size(
+                self.signal.axes_manager.signal_axes
+            )
+            if nav_chunks == ():
+                nav_grid = ""
+            else:
+                nav_grid = svg(
+                    chunks=nav_chunks, size=config.get("array.svg.size", 160)
+                )
+            if sig_chunks == ():
+                sig_grid = ""
+            else:
+                sig_grid = svg(
+                    chunks=sig_chunks, size=config.get("array.svg.size", 160)
+                )
+            nbytes = format_bytes(self.signal.data.nbytes)
+            cbytes = format_bytes(
+                np.prod(self.signal.data.chunksize) * self.signal.data.dtype.itemsize
+            )
+            return get_template("lazy_signal.html.j2").render(
+                nav_grid=nav_grid,
+                sig_grid=sig_grid,
+                dim=self.signal.axes_manager._get_dimension_str(),
+                chunks=self.signal._get_chunk_string(),
+                array=self.signal.data,
+                signal_type=self.signal._signal_type,
+                nbytes=nbytes,
+                cbytes=cbytes,
+                title="Cached Dask Array",
+            )
+
+        except ModuleNotFoundError:
+            return self
+
+    @property
+    def client(self):
+        if self._client is not None:  # first check if we have a client set
+            return self._client
+        # if not, try to get the Global client if available
+        try:
+            from dask.distributed import get_client
+
+            client = get_client()
+            return client
+        except ImportError:
+            return None
+        except ValueError:
+            return None
+
+    def get_index(
+        self, indices, nav_dim, force_compute=True, sum_data=True, data_on_workers=True
+    ):
+        """
+        The first time that a dask result is called the chunk is loaded into memory
+        and kept there until it goes out of scope...
+
+         -------------               -------------------                   -----------
+        | Numpy Cache |<-(1-50 ms)- | Dask Result Cache | <-(100-1000ms)- | Hard Disk |
+         -------------               -------------------                   -----------
+
+         When no client is used, the data is loaded into memory on the host machine. It might be
+         worth having cache_padding = 0 in this case and maybe only computing what is absolutely
+         necessary as we can't really do things asynchronously....
+         -------------                    -----------
+        | Numpy Cache | <-(100-1000ms)- | Hard Disk |
+         -------------                   -----------
+
+        """
+        try:
+            indices = np.array([inds[:nav_dim] for inds in indices])
+        except TypeError:
+            indices = np.array(indices[:nav_dim])[np.newaxis, :]
+        except IndexError:
+            indices = np.array(indices[:nav_dim])[np.newaxis, :]
+        # First get the indices for the core and surrounding blocks as well as the slic for the blocks
+        core_block_ind, surrounding_block_indexes, ind_by_block = (
+            _get_navigation_dimension_chunk_slice(
+                indices, self.array.chunks, self.cache_padding
+            )
+        )
+        # most computers have multiple cores, so we should try to cache the center
+        # of the chunk and then get the neighboring chunks as well.
+        # If we are using the distributed scheduler, we can use futures for this.
+        all_cached_block_ind = (
+            self.core_cached_block_inds + self.surrounding_cached_block_inds
+        )
+        all_new_block_ind = core_block_ind + surrounding_block_indexes
+        to_compute_core_inds = [
+            c for c in core_block_ind if c not in all_cached_block_ind
+        ]
+        to_compute_surrounding_inds = [
+            c for c in surrounding_block_indexes if c not in all_cached_block_ind
+        ]
+
+        # remove unused blocks first...
+        for cached_block in all_cached_block_ind:
+            if (
+                cached_block not in all_new_block_ind
+            ):  # remove the block and block ind...
+                if cached_block in self.core_cached_block_inds:
+                    ind = self.core_cached_block_inds.index(cached_block)
+                    self.core_cached_block_inds.remove(cached_block)
+                    removed_block = self.core_cached_blocks.pop(ind)
+                    del removed_block  # stop future or remove object
+                else:  # cached_block in self.surrounding_cached_block_inds:
+                    ind = self.surrounding_cached_block_inds.index(cached_block)
+                    self.surrounding_cached_block_inds.remove(cached_block)
+                    removed_block = self.surrounding_cached_blocks.pop(ind)
+                    del removed_block  # stop future or remove object
+            else:  # Swap core <--> surroundings
+                if (
+                    cached_block in self.core_cached_block_inds
+                    and cached_block in core_block_ind
+                    or cached_block in self.surrounding_cached_block_inds
+                    and cached_block in surrounding_block_indexes
+                ):
+                    pass
+                # elif swap core --> surrounding
+                elif (
+                    cached_block in self.core_cached_block_inds
+                    and cached_block in surrounding_block_indexes
+                ):
+                    ind = self.core_cached_block_inds.index(cached_block)
+                    self.core_cached_block_inds.remove(cached_block)
+                    self.surrounding_cached_block_inds.append(cached_block)
+                    self.surrounding_cached_blocks.append(
+                        self.core_cached_blocks.pop(ind)
+                    )
+                elif (
+                    cached_block in self.surrounding_cached_block_inds
+                    and cached_block in core_block_ind
+                ):
+                    ind = self.surrounding_cached_block_inds.index(cached_block)
+                    self.surrounding_cached_block_inds.remove(cached_block)
+                    self.core_cached_block_inds.append(cached_block)
+                    self.core_cached_blocks.append(
+                        self.surrounding_cached_blocks.pop(ind)
+                    )
+        new_core_blocks = [
+            self.array.blocks[new_core_ind] for new_core_ind in to_compute_core_inds
+        ]
+        new_surrounding_blocks = [
+            self.array.blocks[new_surr_ind]
+            for new_surr_ind in to_compute_surrounding_inds
+        ]
+
+        if self.client is not None:
+            new_core_blocks_to_add = self.client.compute(new_core_blocks)
+            self.core_cached_blocks.extend(new_core_blocks_to_add)
+            self.core_cached_block_inds.extend(to_compute_core_inds)
+            new_surrounding_blocks_to_add = self.client.compute(new_surrounding_blocks)
+            self.surrounding_cached_blocks.extend(new_surrounding_blocks_to_add)
+            self.surrounding_cached_block_inds.extend(to_compute_surrounding_inds)
+        else:  # compute everything...
+            new_blocks_to_add = da.compute(*new_core_blocks, *new_surrounding_blocks)
+            self.core_cached_blocks.extend(new_blocks_to_add[: len(new_core_blocks)])
+            self.core_cached_block_inds.extend(to_compute_core_inds)
+            self.surrounding_cached_blocks.extend(
+                new_blocks_to_add[len(new_core_blocks) :]
+            )
+            self.surrounding_cached_block_inds.extend(to_compute_surrounding_inds)
+
+        if distributed_installed and self.client and data_on_workers:
+            # get the data from the workers...
+            results = []
+            for block_ind, slic_inds in zip(core_block_ind, ind_by_block):
+                b_ind = self.core_cached_block_inds.index(block_ind)
+                slices = tuple([slic_inds[:, i] for i in range(slic_inds.shape[1])])
+                results.append(
+                    self.client.submit(
+                        get_inds,
+                        self.core_cached_blocks[b_ind],
+                        slices,
+                        sum_data=sum_data,
+                    )
+                )
+            if force_compute or np.all([c.done() for c in results]):
+                return np.sum([r.result() for r in results], axis=0)
+            else:
+                return
+
+        elif distributed_installed and self.client is not None:
+            for i, c in enumerate(self.core_cached_blocks):
+                if isinstance(c, Future) and force_compute:
+                    self.core_cached_blocks[i] = (
+                        c.result()
+                    )  # force computation... results is now numpy array.
+                elif isinstance(c, Future) and c.done():
+                    self.core_cached_blocks[i] = (
+                        c.result()
+                    )  # computation done, move results to host (1 ms overhead?)
+                elif isinstance(
+                    c, Future
+                ):  # computations are still running try not to block...
+                    return
+                    # all other results are numpy arrays instead of futures...
+        arrays = []
+
+        for block_ind, slic_inds in zip(core_block_ind, ind_by_block):
+            b_ind = self.core_cached_block_inds.index(block_ind)
+            if len(slic_inds.shape) == 1:  # account for 0 dim arrays...
+                slic_inds = slic_inds[np.newaxis, :]
+            slices = tuple([slic_inds[:, i] for i in range(slic_inds.shape[1])])
+            arrays.append(self.core_cached_blocks[b_ind][slices])
+        arrays = np.vstack(arrays)
+        if sum_data:
+            return np.sum(arrays, axis=0)
+        else:
+            return arrays
+
+
+def get_inds(arrs, indices, sum_data=True):
+    if sum_data:
+        return np.sum(arrs[indices], axis=0)
+    else:
+        return arrs[indices]

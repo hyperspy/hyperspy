@@ -232,7 +232,12 @@ class ComplexSignal(BaseSignal):
     unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
     def _get_current_data(
-        self, axes_manager=None, power_spectrum=False, fft_shift=False, as_numpy=None
+        self,
+        axes_manager=None,
+        power_spectrum=False,
+        fft_shift=False,
+        as_numpy=None,
+        get_result=False,
     ):
         value = super()._get_current_data(
             axes_manager=axes_manager, fft_shift=fft_shift, as_numpy=as_numpy

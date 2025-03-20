@@ -3015,12 +3015,16 @@ class BaseSignal(
             axes = []
         return axes
 
-    def _get_current_data(self, axes_manager=None, fft_shift=False, as_numpy=False):
+    def _get_current_data(
+        self, axes_manager=None, fft_shift=False, as_numpy=False, get_result=False
+    ):
         if axes_manager is None:
             axes_manager = self.axes_manager
         indices = axes_manager._getitem_tuple
         if self._lazy:
-            value = self._get_cache_dask_chunk(indices)
+            value = self._get_cache_dask_chunk(indices, get_result=get_result)
+            if get_result:
+                return value
         else:
             value = self.data.__getitem__(indices)
         if as_numpy:
@@ -3028,6 +3032,7 @@ class BaseSignal(
         value = np.atleast_1d(value)
         if fft_shift:
             value = np.fft.fftshift(value)
+
         return value
 
     @property
@@ -3098,7 +3103,15 @@ class BaseSignal(
             )
 
         self._plot.axes_manager = axes_manager
-        self._plot.signal_data_function = partial(self._get_current_data, as_numpy=True)
+        if hasattr(self, "client") and self.client is not None:
+            get_result = True
+        else:
+            get_result = False
+        _logger.info(f"Get Result:{get_result}")
+
+        self._plot.signal_data_function = partial(
+            self._get_current_data, as_numpy=True, get_result=get_result
+        )
 
         if self.metadata.has_item("Signal.quantity"):
             self._plot.quantity_label = self.metadata.Signal.quantity

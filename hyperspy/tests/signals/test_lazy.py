@@ -227,9 +227,8 @@ class TestGetTemporaryDaskChunk:
             value_output = s._get_cache_dask_chunk(
                 (chunk_slice[0].start, chunk_slice[1].start, slice(None), slice(None))
             )
-            assert s._cache_dask_chunk.shape == (5, 5, 50, 50)
-            assert np.all(s._cache_dask_chunk == value)
-            assert chunk_slice == s._cache_dask_chunk_slice
+            assert s.cached_dask_array.core_cached_blocks[0].shape == (5, 5, 50, 50)
+            assert np.all(s.cached_dask_array.core_cached_blocks[0] == value)
             assert value == value_output.mean(dtype=np.uint16)
 
     def test_change_position(self):
@@ -237,18 +236,18 @@ class TestGetTemporaryDaskChunk:
             da.zeros((10, 10, 20, 20), chunks=(5, 5, 10, 10))
         )
         s._get_cache_dask_chunk((0, 0, slice(None), slice(None)))
-        chunk_slice0 = s._cache_dask_chunk_slice
+        chunk_slice0 = s.cached_dask_array.core_cached_block_inds[0]
 
-        s._cache_dask_chunk[:] = 2
+        s.cached_dask_array.core_cached_blocks[0][:] = 2
 
         s._get_cache_dask_chunk((4, 4, slice(None), slice(None)))
-        chunk_slice1 = s._cache_dask_chunk_slice
+        chunk_slice1 = s.cached_dask_array.core_cached_block_inds[0]
         assert chunk_slice0 == chunk_slice1
-        assert np.all(s._cache_dask_chunk == 2)
+        assert np.all(s.cached_dask_array.core_cached_blocks[0] == 2)
 
         s._get_cache_dask_chunk((6, 4, slice(None), slice(None)))
         s._get_cache_dask_chunk((0, 0, slice(None), slice(None)))
-        assert np.all(s._cache_dask_chunk == 0)
+        assert np.all(s.cached_dask_array.core_cached_blocks[0] == 0)
 
     @pytest.mark.parametrize(
         "shape",
@@ -295,9 +294,8 @@ class TestGetTemporaryDaskChunk:
         data = da.from_array(data, chunks=(2, 2, 10))
         s = _lazy_signals.LazySignal1D(data)
         value = s._get_cache_dask_chunk(s.axes_manager._getitem_tuple)
-        assert len(s._cache_dask_chunk_slice) == 2
-        assert s._cache_dask_chunk.shape == (2, 2, 20)
-        assert s._cache_dask_chunk_slice == np.s_[0:2, 0:2]
+        assert len(s.cached_dask_array.core_cached_block_inds) == 1
+        assert s.cached_dask_array.core_cached_blocks[0].shape == (2, 2, 20)
         assert len(value.shape) == 1
         assert len(value) == 20
         s.axes_manager.indices = (5, 5)
@@ -308,19 +306,18 @@ class TestGetTemporaryDaskChunk:
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         position = s.axes_manager._getitem_tuple
         s._get_cache_dask_chunk(position)
-        assert s._cache_dask_chunk is not None
-        assert s._cache_dask_chunk_slice is not None
+        assert s.cached_dask_array is not None
+        assert s.cached_dask_array.core_cached_block_inds is not None
         s.events.data_changed.trigger(None)
-        assert s._cache_dask_chunk is None
-        assert s._cache_dask_chunk_slice is None
+        assert s.cached_dask_array is None
 
     def test_map_inplace_data_changing(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         s._get_current_data()
-        assert len(s._cache_dask_chunk.shape) == 4
+        assert len(s.cached_dask_array.core_cached_blocks[0].shape) == 4
         s.map(np.sum, axis=1, ragged=False, inplace=True)
         s._get_current_data()
-        assert len(s._cache_dask_chunk.shape) == 3
+        assert len(s.cached_dask_array.core_cached_blocks[0].shape) == 3
 
     def test_clear_cache_dask_data_method(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
@@ -350,9 +347,8 @@ class TestLazyPlot:
         for value, chunk_slice in zip(value_list, chunk_slice_list):
             s.plot()
             s.axes_manager.indices = (chunk_slice[1].start, chunk_slice[0].start)
-            assert s._cache_dask_chunk.shape == (5, 5, 50, 50)
-            assert np.all(s._cache_dask_chunk == value)
-            assert chunk_slice == s._cache_dask_chunk_slice
+            assert s.cached_dask_array.core_cached_blocks[0].shape == (5, 5, 50, 50)
+            assert np.all(s.cached_dask_array.core_cached_blocks[0] == value)
             s._plot.close()
 
     @pytest.mark.parametrize(

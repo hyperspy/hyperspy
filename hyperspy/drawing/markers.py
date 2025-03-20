@@ -497,6 +497,7 @@ class Markers:
         otherwise compute the kwargs and cache them.
         """
         chunks = {key: value.chunks for key, value in self.dask_kwargs.items()}
+        indices = np.array(indices)[np.newaxis, :]
         chunk_slices = {
             key: _get_navigation_dimension_chunk_slice(indices, chunk)
             for key, chunk in chunks.items()
@@ -506,7 +507,7 @@ class Markers:
             index_slice = chunk_slices[key]
             current_slice = self._cache_dask_chunk_kwargs_slice.get(key, None)
             if current_slice is None or current_slice != index_slice:
-                to_compute[key] = value[index_slice]
+                to_compute[key] = value.blocks[index_slice[0]]
                 self._cache_dask_chunk_kwargs_slice[key] = index_slice
 
         if len(to_compute) > 0:
@@ -648,7 +649,7 @@ class Markers:
         """
         current_keys = {}
         if self._is_iterating:
-            indices = self._axes_manager.indices
+            indices = np.array(self._axes_manager.indices)
             for key, value in self.kwargs.items():
                 if is_iterating(value):
                     if key not in self.dask_kwargs:
