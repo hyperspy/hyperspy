@@ -101,7 +101,7 @@ def markers_dict_to_markers(marker_dict):
             kwargs["offsets"], kwargs["sizes"] = dict2vector(
                 marker_dict["data"], keys=["x1", "y1"], return_size=True
             )
-            kwargs["facecolors"] = kwargs["color"]
+            kwargs["facecolor"] = kwargs["color"]
             kwargs["units"] = "dots"
             if "size" not in kwargs:
                 kwargs["size"] = 20
@@ -207,8 +207,7 @@ def markers_dict_to_markers(marker_dict):
             kwargs["offsets"] = offsets
             kwargs["widths"] = widths
             kwargs["heights"] = heights
-            fill = kwargs.pop("fill", False)
-            if not fill:
+            if not kwargs.pop("fill", False):
                 kwargs["facecolor"] = "none"
             markers_class = "Rectangles"
 
@@ -226,8 +225,7 @@ def markers_dict_to_markers(marker_dict):
             kwargs["heights"] = dict2vector(
                 marker_dict["data"], keys=["y2"], return_size=False
             )
-            fill = kwargs.pop("fill")
-            if not fill:
+            if not kwargs.pop("fill", False):
                 kwargs["facecolor"] = "none"
             markers_class = "Ellipses"
 
