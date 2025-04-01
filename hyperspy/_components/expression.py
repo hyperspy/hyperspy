@@ -483,15 +483,16 @@ class Expression(Component):
     def _compute_expression_part(self, part):
         """Compute the expression for a given value or map["values"]."""
         model = self.model
-        function = part["function"]
-        parameters = [para.value for para in part["parameters"]]
         try:
             model_convolved = model.convolved
+            convolution_supported = True
         except NotImplementedError:
-            model_convolved = False
-        if model_convolved and self.convolved:
+            convolution_supported = False
+        function = part["function"]
+        parameters = [para.value for para in part["parameters"]]
+        if convolution_supported and model_convolved and self.convolved:
             data = model._convolve_component_values(
-                function(model.convolution_axis, *parameters)
+                function(model._convolution_axis, *parameters)
             )
         else:
             axes = [ax.axis for ax in model.axes_manager.signal_axes]

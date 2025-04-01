@@ -25,13 +25,12 @@ import dask
 import dask.array as da
 import numpy as np
 from dask.widgets import TEMPLATE_PATHS
-from rsciio.utils import rgb_tools
 from rsciio.utils.tools import get_file_handle
 
-from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import (
     LAZYSIGNAL_DOC,
     MANY_AXIS_PARAMETER,
+    RECHUNK_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
@@ -42,7 +41,7 @@ from hyperspy.misc.array_tools import (
 )
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import dummy_context_manager, isiterable, multiply
+from hyperspy.misc.utils import _compute, isiterable, multiply
 from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
@@ -242,17 +241,9 @@ class LazySignal(BaseSignal):
         >>> s3.compute(scheduler='single-threaded')
 
         """
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
-
-        cm = dask.diagnostics.ProgressBar if show_progressbar else dummy_context_manager
-
-        with cm():
-            da = self.data
-            data = da.compute(**kwargs)
-            if close_file:
-                self.close_file()
-            self.data = data
+        self.data = _compute(self.data, show_progressbar=show_progressbar, **kwargs)
+        if close_file:
+            self.close_file()
 
         self._lazy = False
         self._assign_subclass()
@@ -260,18 +251,19 @@ class LazySignal(BaseSignal):
     compute.__doc__ %= SHOW_PROGRESSBAR_ARG
 
     def rechunk(self, nav_chunks="auto", sig_chunks=-1, inplace=True, **kwargs):
-        """Rechunks the data using the same rechunking formula from Dask
+        """
+        Rechunks the data using the same rechunking formula from Dask
         expect that the navigation and signal chunks are defined seperately.
         Note, for most functions sig_chunks should remain ``None`` so that it
         spans the entire signal axes.
 
         Parameters
         ----------
-        nav_chunks : {tuple, int, "auto", None}
+        nav_chunks : {tuple, int, "auto"}
             The navigation block dimensions to create.
             -1 indicates the full size of the corresponding dimension.
             Default is “auto” which automatically determines chunk sizes.
-        sig_chunks : {tuple, int, "auto", None}
+        sig_chunks : {tuple, int, "auto"}
             The signal block dimensions to create.
             -1 indicates the full size of the corresponding dimension.
             Default is -1 which automatically spans the full signal dimension
@@ -282,11 +274,12 @@ class LazySignal(BaseSignal):
             sig_chunks = (sig_chunks,) * len(self.axes_manager.signal_shape)
         if not isinstance(nav_chunks, tuple):
             nav_chunks = (nav_chunks,) * len(self.axes_manager.navigation_shape)
-        new_chunks = nav_chunks + sig_chunks
+
+        data_ = self.data.rechunk(nav_chunks + sig_chunks, **kwargs)
         if inplace:
-            self.data = self.data.rechunk(new_chunks, **kwargs)
+            self.data = data_
         else:
-            return self._deepcopy_with_new_data(self.data.rechunk(new_chunks, **kwargs))
+            return self._deepcopy_with_new_data(data_)
 
     def close_file(self):
         """Closes the associated data file if any.
@@ -416,48 +409,44 @@ class LazySignal(BaseSignal):
 
     get_chunk_size.__doc__ %= MANY_AXIS_PARAMETER
 
-    def _make_lazy(self, axis=None, rechunk=False, dtype=None):
-        self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
-
-    def change_dtype(self, dtype, rechunk=False):
-        # To be consistent with the rechunk argument of other method, we use
-        # 'dask_auto' in favour of a chunking which doesn't split signal space.
-        if rechunk:
-            rechunk = "dask_auto"
-
-        if not isinstance(dtype, np.dtype) and (dtype not in rgb_tools.rgb_dtypes):
-            dtype = np.dtype(dtype)
-        super().change_dtype(dtype)
-        self._make_lazy(rechunk=rechunk, dtype=dtype)
-
-    change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
-
     def _lazy_data(self, axis=None, rechunk=False, dtype=None):
-        """Return the data as a dask array, rechunked if necessary.
+        """
+        Return the data as a dask array, rechunked if necessary.
 
         Parameters
         ----------
-        axis: None, :class:`~.axes.DataAxis` or tuple of data axes
+        axis : None, :class:`~.axes.DataAxis` or tuple of data axes
             The data axis that must not be broken into chunks when `rechunk`
-            is `True`. If None, it defaults to the current signal axes.
-        rechunk: bool, "dask_auto"
-            If `True`, it rechunks the data if necessary making sure that the
-            axes in ``axis`` are not split into chunks. If `False` it does
-            not rechunk at least the data is not a dask array, in which case
-            it chunks as if rechunk was `True`. If "dask_auto", rechunk if
-            necessary using dask's automatic chunk guessing.
+            is ``True``. If None, it defaults to the current signal axes.
+        %s
+        dtype : numpy.dtype
+            The array dtype used to calculate chunking.
 
+        Returns
+        -------
+        dask.array
+            The data as dask array and rechunked if necessary.
         """
         if rechunk == "dask_auto":
             new_chunks = "auto"
-        else:
+        elif isinstance(rechunk, tuple):
+            new_chunks = rechunk
+        elif isinstance(rechunk, bool) or rechunk == "auto":
+            # when rechunk is False, still need new_chunks
+            # da.from_array call in case of numpy array
             new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
+        else:
+            raise ValueError(
+                "`rechunk` argument must be a tuple, a boolean or "
+                "a str ('auto' or 'dask_auto') "
+            )
         if isinstance(self.data, da.Array):
             res = self.data
-            if self.data.chunks != new_chunks and rechunk:
-                _logger.info("Rechunking.\nOriginal chunks: %s" % str(self.data.chunks))
+            # rechunk when necessary when rechunk is True, "auto" or "dask_auto"
+            if rechunk and res.chunks != new_chunks:
+                _logger.info("Rechunking.\nOriginal chunks: %s." % str(res.chunks))
                 res = self.data.rechunk(new_chunks)
-                _logger.info("Final chunks: %s " % str(res.chunks))
+                _logger.info("Final chunks: %s." % str(res.chunks))
         else:
             if isinstance(self.data, np.ma.masked_array):
                 data = np.where(self.data.mask, np.nan, self.data)
@@ -466,6 +455,8 @@ class LazySignal(BaseSignal):
             res = da.from_array(data, chunks=new_chunks)
         assert isinstance(res, da.Array)
         return res
+
+    _lazy_data.__doc__ %= RECHUNK_ARG
 
     def _apply_function_on_data_and_remove_axis(
         self, function, axes, out=None, rechunk=False
@@ -561,8 +552,7 @@ class LazySignal(BaseSignal):
             chunk_slice != self._cache_dask_chunk_slice
             or self._cache_dask_chunk is None
         ):
-            with dummy_context_manager():
-                self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
+            self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
             self._cache_dask_chunk_slice = chunk_slice
 
         indices = list(indices)
@@ -599,7 +589,7 @@ class LazySignal(BaseSignal):
         axis = {ax.index_in_array: ax for ax in self.axes_manager._axes}[
             factors.argmax()
         ]
-        self._make_lazy(axis=axis, rechunk=rechunk)
+        self.data = self._lazy_data(axis=axis, rechunk=rechunk)
         return super().rebin(
             new_shape=new_shape, scale=scale, crop=crop, dtype=dtype, out=out
         )
@@ -610,7 +600,7 @@ class LazySignal(BaseSignal):
         return self.data.__array__(dtype=dtype, copy=copy)
 
     def _make_sure_data_is_contiguous(self):
-        self._make_lazy(rechunk=True)
+        self.data = self._lazy_data(rechunk=True)
 
     def diff(self, axis, order=1, out=None, rechunk=False):
         if not self.axes_manager[axis].is_uniform:
@@ -833,7 +823,6 @@ class LazySignal(BaseSignal):
         """
         if get is None:
             get = _get()
-        self._make_lazy()
         data = self._data_aligned_with_axes
         nav_chunks = data.chunks[: self.axes_manager.navigation_dimension]
         indices = product(*[range(len(c)) for c in nav_chunks])
