@@ -1390,7 +1390,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.model._calculate_chisq()
         else:
             self.model.fit()
-        self.red_chisq = self.model.red_chisq.data[self.model.axes_manager.indices][0]
+        # for navigation dimension 0, use (0, ) instead of ()
+        # to avoid numpy array to float conversion
+        indices = self.model.axes_manager.indices or (0,)
+        self.red_chisq = float(self.model.red_chisq.data[indices])
 
     def _update_line(self):
         if self.bg_line is None:
