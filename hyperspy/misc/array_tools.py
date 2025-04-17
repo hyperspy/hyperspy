@@ -1013,7 +1013,7 @@ class CachedDaskArray:
                         sum_data=sum_data,
                     )
                 )
-            if force_compute or np.all([c.done() for c in results]):
+            if force_compute or np.all([c.done() for c in self.core_cached_blocks]):
                 return np.sum([r.result() for r in results], axis=0)
             else:
                 return
