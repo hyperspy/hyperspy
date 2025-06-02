@@ -1,4 +1,4 @@
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -46,6 +46,7 @@ def _generate_parameters():
 @lazifyTestClass
 class TestSubPixelAlign:
     def setup_method(self, method):
+        pytest.importorskip("skimage")
         ref_image = ascent()
         center = np.array((256, 256))
         shifts = np.array(
@@ -77,6 +78,7 @@ class TestSubPixelAlign:
         self.shifts = shifts
 
     def test_align_subpix(self):
+        pytest.importorskip("skimage")
         # Align signal
         s = self.signal
         shifts = self.shifts

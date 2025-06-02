@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -309,29 +309,6 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def _get_model_data(self, component_list=None, ignore_channel_switches=False):
-        """
-        Return the model data at the current position
-
-        Parameters
-        ----------
-        component_list : list or None
-            If None, the model is constructed with all active components. Otherwise,
-            the model is constructed with the components in component_list.
-
-        Returns:
-        --------
-        model_data: `ndarray`
-        """
-        if component_list is None:
-            component_list = self
-        slice_ = slice(None) if ignore_channel_switches else self._channel_switches
-        axis = self.axis.axis[slice_]
-        model_data = np.zeros(len(axis))
-        for component in component_list:
-            model_data += component.function(axis)
-        return model_data
-
     def _get_current_data(
         self,
         onlyactive=False,
@@ -357,8 +334,6 @@ class Model1D(BaseModel):
             If true, the entire signal axis are returned
             without checking _channel_switches.
 
-        cursor: 1 or 2
-
         Returns
         -------
         numpy array
@@ -373,10 +348,35 @@ class Model1D(BaseModel):
             component_list = [
                 component for component in component_list if component.active
             ]
-        model_data = self._get_model_data(
-            component_list=component_list,
-            ignore_channel_switches=ignore_channel_switches,
-        )
+
+        slice_ = slice(None) if ignore_channel_switches else self._channel_switches
+
+        try:
+            model_convolved = self.convolved
+            convolution_supported = True
+        except NotImplementedError:
+            convolution_supported = False
+
+        if convolution_supported and model_convolved:
+            sum_convolved = np.zeros_like(self._convolution_axis, dtype=float)
+            sum_ = np.zeros_like(self.axis.axis, dtype=float)
+            for component in component_list:
+                if component.convolved:
+                    sum_convolved += component.function(self._convolution_axis)
+                else:
+                    sum_ += component.function(self.axis.axis)
+            model_data = sum_ + np.convolve(
+                self._signal_to_convolve._get_current_data(self.axes_manager),
+                sum_convolved,
+                mode="valid",
+            )
+            model_data = model_data[slice_]
+        else:
+            axis = self.axis.axis[slice_]
+            model_data = np.zeros(len(axis))
+            for component in component_list:
+                model_data += component.function(axis)
+
         if binned is None:
             # use self.axis instead of self.signal.axes_manager[-1]
             # to avoid small overhead (~10 us) which isn't negligeable when
@@ -548,26 +548,44 @@ class Model1D(BaseModel):
         if weights is None:
             weights = 1.0
 
-        axis = self.axis.axis[self._channel_switches]
         counter = 0
-        grad = axis
+        grad = np.zeros(len(self.axis.axis))
         for component in self:  # Cut the parameters list
             if component.active:
                 component.fetch_values_from_array(
                     param[counter : counter + component._nfree_param], onlyfree=True
                 )
-
                 for parameter in component.free_parameters:
-                    par_grad = parameter.grad(axis)
+                    if self._convolved and component.convolved:
+                        par_grad = np.convolve(
+                            parameter.grad(self._convolution_axis),
+                            self._signal_to_convolve._get_current_data(
+                                self.axes_manager
+                            ),
+                            mode="valid",
+                        )
+                    else:
+                        par_grad = parameter.grad(self.axis.axis)
+
                     if parameter._twins:
                         for par in parameter._twins:
-                            np.add(par_grad, par.grad(axis), par_grad)
+                            if self._convolved and component.convolved:
+                                par_grad_twin = np.convolve(
+                                    par.grad(self._convolution_axis),
+                                    self._signal_to_convolve._get_current_data(
+                                        self.axes_manager
+                                    ),
+                                    mode="valid",
+                                )
+                            else:
+                                par_grad_twin = par.grad(self.axis.axis)
+                            np.add(par_grad, par_grad_twin, par_grad)
 
                     grad = np.vstack((grad, par_grad))
 
                 counter += component._nfree_param
 
-        to_return = grad[1:, :] * weights
+        to_return = grad[1:, self._channel_switches] * weights
 
         if self.axis.is_binned:
             if self.axis.is_uniform:
@@ -595,6 +613,94 @@ class Model1D(BaseModel):
         mf = self._model_function(param)
         return -(self._jacobian(param, y) * (y / mf - 1)).sum(1)
 
+    def _hessian_ml(self, param, y, weights=None):
+        """Calculate the Hessian of the negative log-likelihood for Poisson ML fitting.
+
+        This computes the Fisher Information Matrix, which is used to estimate
+        parameter uncertainties via the Cramér-Rao bound.
+
+        Parameters
+        ----------
+        param : array-like
+            Model parameters
+        y : array-like
+            Observed data
+        weights : array-like, optional
+            Weights (not used for Poisson fitting)
+
+        Returns
+        -------
+        hessian : ndarray
+            Hessian matrix (Fisher Information Matrix)
+        """
+        mf = self._model_function(param)
+        jac = self._jacobian(param, y)
+
+        # For Poisson likelihood, the Hessian has two terms:
+        # H_ij = sum_k [ (y_k / mu_k^2) * J_ki * J_kj + (y_k / mu_k - 1) * H_kij ]
+        # where mu_k = model_function(x_k), J_ki = d(mu_k)/d(p_i), H_kij = d^2(mu_k)/d(p_i)d(p_j)
+
+        # First term: (y / mu^2) * J^T @ J
+        with np.errstate(divide="ignore", invalid="ignore"):
+            weights_hess = y / (mf * mf)
+            # Handle division by zero - set to 0 where mf is 0
+            weights_hess = np.nan_to_num(weights_hess, nan=0.0, posinf=0.0, neginf=0.0)
+
+        # Weighted Jacobian outer product: sum_k (y_k / mu_k^2) * J_ki * J_kj
+        hessian_first = np.einsum("k,ki,kj->ij", weights_hess, jac.T, jac.T)
+
+        # Second term: (y / mu - 1) * d^2(mu)/d(p_i)d(p_j)
+        # For most components, the second derivatives are small compared to first term
+        # and can be neglected (Gauss-Newton approximation)
+        # This is commonly done in practice for Poisson ML fitting
+
+        return hessian_first
+
+    def _hessian_ls(self, param, y, weights=None):
+        """Calculate the Hessian matrix for least squares loss function.
+
+        This computes the approximate Hessian using the Gauss-Newton method,
+        which is used to estimate parameter uncertainties.
+
+        Parameters
+        ----------
+        param : array-like
+            Model parameters
+        y : array-like
+            Observed data
+        weights : array-like, optional
+            Weights for weighted least squares
+
+        Returns
+        -------
+        hessian : ndarray
+            Hessian matrix (Gauss-Newton approximation)
+        """
+        jac = self._jacobian(param, y)
+
+        # For least squares, the Hessian has two terms:
+        # H_ij = sum_k [ J_ki * J_kj + (y_k - f_k) * H_kij ]
+        # where J_ki = d(f_k)/d(p_i), H_kij = d^2(f_k)/d(p_i)d(p_j)
+
+        # Gauss-Newton approximation: neglect second term, H_ij ≈ J^T @ W @ J
+        # where W is the weight matrix (identity for unweighted case)
+
+        if weights is None:
+            # Unweighted case: H = J^T @ J
+            hessian = np.dot(jac, jac.T)
+        else:
+            # Weighted case: H = J^T @ W @ J
+            # Convert weights to appropriate shape if needed
+            if np.isscalar(weights):
+                weights = np.full(len(y), weights)
+            elif weights.ndim == 0:
+                weights = np.full(len(y), float(weights))
+
+            # Apply weights: sum_k (w_k * J_ki * J_kj)
+            hessian = np.einsum("k,ki,kj->ij", weights, jac.T, jac.T)
+
+        return hessian
+
     def _gradient_ls(self, param, y, weights=None):
         gls = (2 * self._errfunc(param, y, weights) * self._jacobian(param, y)).sum(1)
         return gls
@@ -613,6 +719,54 @@ class Model1D(BaseModel):
             self._jacobian(param, y)
             * np.clip(self._errfunc(param, y, weights), -huber_delta, huber_delta)
         ).sum(axis=1)
+
+    def _hessian_huber(self, param, y, weights=None, huber_delta=None):
+        """Calculate the Hessian matrix for Huber loss function.
+
+        This computes the approximate Hessian using the Gauss-Newton method,
+        which is used to estimate parameter uncertainties.
+
+        Parameters
+        ----------
+        param : array-like
+            Model parameters
+        y : array-like
+            Observed data
+        weights : array-like, optional
+            Weights for weighted fitting
+        huber_delta : float, optional
+            Delta parameter for Huber loss function (default: 1.0)
+
+        Returns
+        -------
+        hessian : ndarray
+            Hessian matrix (Gauss-Newton approximation)
+        """
+        if huber_delta is None:
+            huber_delta = 1.0
+
+        jac = self._jacobian(param, y)
+        residuals = self._errfunc(param, y, weights)
+
+        # For Huber loss, the second derivative w.r.t. residuals is:
+        # d²L/dr² = 1 if |r| ≤ δ, 0 if |r| > δ
+        # This creates a weight matrix for the Gauss-Newton approximation
+        huber_weights = (np.abs(residuals) <= huber_delta).astype(float)
+
+        # Apply additional weights if provided
+        if weights is not None:
+            if np.isscalar(weights):
+                huber_weights = huber_weights * weights
+            elif weights.ndim == 0:
+                huber_weights = huber_weights * float(weights)
+            else:
+                huber_weights = huber_weights * weights
+
+        # Gauss-Newton approximation: H = J^T @ W @ J
+        # where W is the weight matrix (huber_weights in this case)
+        hessian = np.einsum("k,ki,kj->ij", huber_weights, jac.T, jac.T)
+
+        return hessian
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None

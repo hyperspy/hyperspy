@@ -27,7 +27,7 @@ gs1 = hs.model.components1D.Gaussian()
 m.append(gs1)
 
 # Set the parameters
-gs1.sigma.value = 10
+m.set_parameters_value('sigma', 10, component_list=[gs1])
 # Make the center vary in the -5,5 range around 128
 gs1.centre.map['values'][:] = 256 + (np.random.random((32, 32)) - 0.5) * 10
 gs1.centre.map['is_set'][:] = True
@@ -42,7 +42,7 @@ gs2 = hs.model.components1D.Gaussian()
 m.append(gs2)
 
 # Set the parameters
-gs2.sigma.value = 20
+m.set_parameters_value('sigma', 20, component_list=[gs2])
 
 # Make the center vary in the -10,10 range around 768
 gs2.centre.map['values'][:] = 768 + (np.random.random((32, 32)) - 0.5) * 20

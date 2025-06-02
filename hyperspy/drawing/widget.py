@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -616,8 +616,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _set_snap_size(self, value):
         if value and any(not axis.is_uniform for axis in self.axes):
             raise ValueError(
-                "The snap to axes values feature is not supported "
-                "for non-uniform axes."
+                "The snap to axes values feature is not supported for non-uniform axes."
             )
         self._snap_size = value
         if value:

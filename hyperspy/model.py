@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -26,10 +26,12 @@ from contextlib import contextmanager
 from functools import partial
 
 import cloudpickle
+import dask
 import dask.array as da
 import numpy as np
 import scipy.odr as odr
 from dask.diagnostics import ProgressBar
+from packaging.version import Version
 from scipy.linalg import svd
 from scipy.optimize import (
     OptimizeResult,
@@ -38,6 +40,7 @@ from scipy.optimize import (
     leastsq,
     minimize,
 )
+from scipy.signal import fftconvolve
 
 from hyperspy.component import Component
 from hyperspy.components1d import Expression
@@ -49,6 +52,8 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
+from hyperspy.io import assign_signal_subclass
+from hyperspy.misc.array_tools import get_chunk_slice
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
@@ -56,7 +61,11 @@ from hyperspy.misc.export_dictionary import (
     reconstruct_object,
 )
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
+from hyperspy.misc.model_tools import (
+    CurrentModelValues,
+    _calculate_covariance,
+    _calculate_parameter_uncertainty_from_fisher_information,
+)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     display,
@@ -157,12 +166,216 @@ def reconstruct_component(comp_dictionary, **init_args):
         if comp_dictionary["_id_name"] in EXSPY_HSPY_COMPONENTS:
             comp_dictionary["package"] = "exspy"
         raise ImportError(
-            f'Loading the {comp_dictionary["_id_name"]} component '
+            f"Loading the {comp_dictionary['_id_name']} component "
             + "failed because the component is provided by the "
-            + f'`{comp_dictionary["package"]}` Python package, but '
-            + f'{comp_dictionary["package"]} is not installed.'
+            + f"`{comp_dictionary['package']}` Python package, but "
+            + f"{comp_dictionary['package']} is not installed."
         )
     return _class(**init_args)
+
+
+def _check_parameter_values_are_set(component, nav_slices):
+    for p in component.parameters:
+        if not p.map["is_set"][nav_slices].all():
+            raise ValueError(
+                f"The parameter {p.name} of the component {component.name} "
+                "has unset values. Set the values by using the `multifit` or "
+                "the `set_parameters_value` methods."
+            )
+
+
+def _get_model_data_function_nd(
+    model,
+    component_list,
+    out_of_range_to_nan,
+    nav_slices=None,
+    sig_slices=None,
+    shape=None,
+):
+    """
+    Compute the model data in a vectorised manner.
+
+    Parameters
+    ----------
+    model : hyperspy.model.BaseModel
+        The model used to calculate the data.
+    component_list : list, tuple of hyperspy.component.Component or None, optional
+        The list of components used to calculate the model. If None, all
+        components of the model are used. The default is None.
+    out_of_range_to_nan : bool
+        If True the signal range outside of the fitted range is filled with
+        nans. Default True.
+    nav_slices : slice or None
+        The slices in navigation space. If None, the whole navigation space is used.
+    sig_slices : slice or None
+        The slices in signal space. If None, the whole signal space is used.
+    shape : tuple or None
+        The shape of the output array. If None, the shape of signal array is used.
+    """
+    signal_axis = model.axes_manager[-1]
+    if nav_slices is None:
+        nav_slices = tuple([slice(None)] * model.axes_manager.navigation_dimension)
+    if shape is None:
+        shape = model.signal.data.shape
+
+    data_ = np.zeros(shape, dtype=float)
+    axis_ = model.axes_manager["sig"].get("axis")["axis"]
+    if len(axis_) >= 2:
+        axis_ = np.meshgrid(*axis_)
+
+    try:
+        model_convolved = model.convolved
+        convolution_supported = True
+    except NotImplementedError:
+        convolution_supported = False
+
+    if convolution_supported and model_convolved:
+        # calculate components and keep results in two separate
+        # arrays depending on whether they need to be convolved or not
+        sum_ = np.zeros(shape, dtype=float)
+        sum_convolved = np.zeros(
+            shape[: -model.axes_manager.signal_dimension]
+            + model._convolution_axis.shape,
+            dtype=float,
+        )
+        for component in component_list:
+            parameters_values = [
+                p.map["values"][nav_slices] for p in component.parameters
+            ]
+            _check_parameter_values_are_set(component, nav_slices)
+            if component.convolved:
+                # component to be convolved needs to be calculated
+                # on wider axes for the convolution
+                sum_convolved += component.function_nd(
+                    model._convolution_axis, parameters_values=parameters_values
+                )
+            else:
+                sum_ += component.function_nd(
+                    signal_axis.axis, parameters_values=parameters_values
+                )
+            # add all components, take the convolution for components that need
+            # to be convolved, do it here only once instead of each component individually
+            data_ = sum_ + fftconvolve(
+                sum_convolved,
+                model._signal_to_convolve.inav[nav_slices].data,
+                mode="valid",
+                axes=model.axes_manager.signal_indices_in_array,
+            )
+    else:
+        for component in component_list:
+            _check_parameter_values_are_set(component, nav_slices)
+            data_ += component.function_nd(
+                *axis_,
+                parameters_values=[
+                    p.map["values"][nav_slices] for p in component.parameters
+                ],
+            )
+
+    if signal_axis.is_binned:
+        if signal_axis.is_uniform:
+            scale_factor = signal_axis.scale
+        else:
+            scale_factor = np.gradient(signal_axis.axis)
+    else:
+        scale_factor = 1
+    data_ *= scale_factor
+
+    if out_of_range_to_nan:
+        if sig_slices is None:
+            sig_slices = tuple([slice(None)] * model.axes_manager.signal_dimension)
+        data_[..., np.invert(model._channel_switches[sig_slices])] = np.nan
+
+    return data_
+
+
+def _get_model_data_chunk(
+    model,
+    component_list,
+    out_of_range_to_nan=True,
+    block_info=None,
+):
+    """
+    Compute the model data for a give chunk
+
+    Parameters
+    ----------
+    model : hyperspy.model.BaseModel
+        The model used to calculate the data.
+    component_list : list, tuple of hyperspy.component.Component or None, optional
+        The list of components used to calculate the model. If None, all
+        components of the model are used. The default is None.
+    out_of_range_to_nan : bool
+        If True the signal range outside of the fitted range is filled with
+        nans. Default True.
+    block_info : dict or None
+        Passed by dask to provide the chunk location and shape.
+
+    Returns
+    -------
+    model_data : numpy.ndarray
+        The calculated model data for the given chunk and components.
+
+    """
+    chunk_slice = block_info[None]["array-location"]
+    chunk_shape = block_info[None]["chunk-shape"]
+    nav_slices = tuple(
+        [
+            slice(*slice_)
+            for slice_ in chunk_slice[: model.axes_manager.navigation_dimension]
+        ]
+    )
+    sig_slices = tuple(
+        [
+            slice(*slice_)
+            for slice_ in chunk_slice[model.axes_manager.navigation_dimension :]
+        ]
+    )
+
+    return _get_model_data_function_nd(
+        model, component_list, out_of_range_to_nan, nav_slices, sig_slices, chunk_shape
+    )
+
+
+def _model_as_signal_lazy_data(
+    model,
+    component_list=None,
+    chunks="auto",
+    block_size_limit=None,
+):
+    """
+    Returns a chunk of model data.
+
+    Parameters
+    ----------
+    model : hyperspy.model.BaseModel
+        The model used to create the signal data.
+    component_list : list, tuple of hyperspy.component.Component or None, optional
+        The list of components used to calculate the model. If None, all
+        components of the model are used. The default is None.
+    chunks : "auto", "dask_auto" or tuple.
+
+    Returns
+    -------
+    data : dask array
+        The calculated model data
+    """
+    _, data_chunks = get_chunk_slice(
+        shape=model.signal.data.shape,
+        chunks=chunks,
+        signal_dimension=model.axes_manager.signal_dimension,
+        block_size_limit=block_size_limit,
+        dtype=float,
+    )
+
+    data = da.map_blocks(
+        _get_model_data_chunk,
+        model,
+        component_list,
+        dtype=float,
+        chunks=data_chunks,
+        meta=np.array((), dtype=float),
+    )
+    return data
 
 
 class ModelComponents(object):
@@ -304,6 +517,7 @@ class BaseModel(list):
         # multifit(). Setting it to None ensures that the existing behaviour
         # is preserved.
         self._binned = None
+        self._convolved = False
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
 
@@ -594,6 +808,9 @@ class BaseModel(list):
         out_of_range_to_nan=True,
         show_progressbar=None,
         out=None,
+        lazy_output=None,
+        chunks="auto",
+        block_size_limit=None,
         **kwargs,
     ):
         """Returns a recreation of the dataset using the model.
@@ -635,43 +852,100 @@ class BaseModel(list):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        if out is None:
-            data = np.empty(self.signal.data.shape, dtype="float")
-            data.fill(np.nan)
-            signal = self.signal.__class__(
-                data, axes=self.signal.axes_manager._get_axes_dicts()
+        if component_list is None:
+            component_list = self.active_components
+        else:
+            component_list = [self._get_component(c) for c in component_list]
+            component_list = [c for c in component_list if c.active]
+
+        if lazy_output is None:
+            lazy_output = self.signal._lazy
+
+        components_with_function_nd = set(
+            [c for c in component_list if hasattr(c, "function_nd")]
+        )
+        components_missing_function_nd = (
+            set(component_list) - components_with_function_nd
+        )
+
+        if components_with_function_nd:
+            # Get data array for all components with function_nd
+            if lazy_output:
+                # Issue with passing the model object to _get_model_data_chunk
+                if Version(dask.__version__) < Version("2024.12.0"):
+                    raise RuntimeError("Lazy support needs dask >= 2024.12.0")
+                data_ = _model_as_signal_lazy_data(
+                    self, components_with_function_nd, chunks, block_size_limit
+                )
+            else:
+                data_ = _get_model_data_function_nd(
+                    self, components_with_function_nd, out_of_range_to_nan
+                )
+        else:
+            xp = da if lazy_output else np
+            # Make the placeholder array
+            data_ = xp.full_like(self.signal.data, np.nan, dtype=float)
+
+        if components_missing_function_nd:
+            # Add component that doesn't have `function_nd` method
+            # Old slow code path iterating over indices
+            # we need to keep this code path to support components without
+            # function_nd implementation, for example when loading old models
+            # lazy signal not supported with this code path
+            name = ", ".join([c.name for c in components_missing_function_nd])
+            _logger.warning(
+                "Using slow `as_signal` implementation because the components "
+                f"({name}) don't implement the `function_nd` method."
             )
-            signal.set_signal_type(signal.metadata.Signal.signal_type)
-            signal.metadata.General.title = (
+            self._as_signal_iter(
+                data_,
+                component_list=components_missing_function_nd,
+                out_of_range_to_nan=out_of_range_to_nan,
+                show_progressbar=show_progressbar,
+            )
+
+        # Create signal when out is not provided, otherwise set out.data array
+        if out is None:
+            signal_class = assign_signal_subclass(
+                dtype=self.signal.data.dtype,
+                signal_dimension=self.signal.axes_manager.signal_dimension,
+                signal_type=self.signal.metadata.Signal.signal_type,
+                lazy=lazy_output,
+            )
+            signal_ = signal_class(
+                data_, axes=self.signal.axes_manager._get_axes_dicts()
+            )
+            signal_.metadata.General.title = (
                 self.signal.metadata.General.title + " from fitted model"
             )
         else:
-            signal = out
-            data = signal.data
+            out.data = data_
 
-        if not out_of_range_to_nan:
-            # we want the full signal range, including outside the fitted
-            # range, we need to set all the _channel_switches to True
-            channel_switches_backup = copy.copy(self._channel_switches)
-            self._channel_switches[:] = True
-
-        self._as_signal_iter(
-            component_list=component_list, show_progressbar=show_progressbar, data=data
-        )
-
-        if not out_of_range_to_nan:
-            # Restore the _channel_switches, previously set
-            self._channel_switches[:] = channel_switches_backup
-
-        return signal
+        if out is None:
+            return signal_
 
     as_signal.__doc__ %= SHOW_PROGRESSBAR_ARG
 
-    def _as_signal_iter(self, data, component_list=None, show_progressbar=None):
-        # BUG: with lazy signal returns lazy signal with numpy array
+    def _as_signal_iter(
+        self,
+        data_,
+        component_list=None,
+        out_of_range_to_nan=True,
+        show_progressbar=None,
+    ):
+        # Note: old slow code path which doesn't support lazy processing
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
+
+        if out_of_range_to_nan and isinstance(data_, da.Array):
+            # requires array assignment which is not compatible with
+            # dask array since dask 2024.12.0
+            raise ValueError(
+                "`out_of_range_to_nan` parameter is not supported with "
+                "components not implementing the `function_nd` method."
+            )
+
         if show_progressbar is None:  # pragma: no cover
             show_progressbar = preferences.General.show_progressbar
 
@@ -694,10 +968,17 @@ class BaseModel(list):
             )
             for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
-                data[self.axes_manager._getitem_tuple][
-                    np.where(self._channel_switches)
-                ] = self._get_current_data(onlyactive=True).ravel()
+                if out_of_range_to_nan:
+                    slice_ = np.where(self._channel_switches)
+                else:
+                    slice_ = slice(None, None)
+                data_[self.axes_manager._getitem_tuple][slice_] = (
+                    self._get_current_data(onlyactive=True).ravel()
+                )
+
                 pbar.update(1)
+
+        return data_
 
     @property
     def _plot_active(self):
@@ -1074,12 +1355,27 @@ class BaseModel(list):
         return tuple([c for c in self if c.active])
 
     def _convolve_component_values(self, component_values):
-        raise NotImplementedError("This  model does not support convolution")
+        """
+        Convolve component with model convolution axis.
+
+        Multiply by np.ones in order to handle case where component_values is a
+        single constant
+        """
+        sig = component_values * np.ones(self._convolution_axis.shape)
+
+        c = self._signal_to_convolve._get_current_data(self.axes_manager)
+        convolved = np.convolve(sig, c, mode="valid")
+
+        return convolved
 
     def _compute_constant_term(self, component):
         """Gets the value of any (non-free) constant term"""
-        signal_shape = self.axes_manager.signal_shape[::-1]
-        data = component._constant_term * np.ones(signal_shape)
+        if self._convolved and component.convolved:
+            data = self._convolve_component_values(component._constant_term)
+        else:
+            signal_shape = self.axes_manager.signal_shape[::-1]
+            data = component._constant_term * np.ones(signal_shape)
+
         return data.T[np.where(self._channel_switches)[::-1]].T
 
     def _linear_fit(
@@ -1286,6 +1582,10 @@ class BaseModel(list):
             result, residual, *_ = np.linalg.lstsq(
                 xp.asanyarray(comp_values.T), target_signal.T, **kw
             )
+            if len(residual) == 0:
+                # can be empty array, see np.linalg.lstsq docstring
+                # for example when rank(a) is lower than number of free parameters (N)
+                residual = None
             coefficient_array = result.T
 
         elif optimizer in ["ols", "nnls"]:
@@ -1324,7 +1624,7 @@ class BaseModel(list):
                 fit_output["x"] = fit_output["x"].compute()
 
         # Calculate errors
-        # We only do this if going pixel-by-pixel or if `calculate_errors =True`
+        # We only do this if going pixel-by-pixel or if `calculate_errors=True`
         # is specified in multifit. This is because it is a very large
         # calculation and can eat all our ram, even when run lazily.
         if calculate_errors:
@@ -1642,8 +1942,7 @@ class BaseModel(list):
                 )
         else:
             raise ValueError(
-                "`grad` must be one of ['analytical', callable, None], not "
-                f"'{grad}'."
+                f"`grad` must be one of ['analytical', callable, None], not '{grad}'."
             )
 
         with cm(update_on_resume=True):
@@ -1703,10 +2002,19 @@ class BaseModel(list):
                     self.p0 = self.fit_output.x
                     ysize = len(self.fit_output.x) + self.fit_output.dof
                     cost = self.fit_output.fnorm
-                    pcov = self.fit_output.perror**2
+                    if self.fit_output.perror is None:  # pragma: no cover
+                        # in case of RuntimeWarning in mpfit
+                        nav_msg = ""
+                        if self.signal.axes_manager.navigation_size > 0:
+                            nav_msg = f" for navigation position: {self.signal.axes_manager.indices}"
+                        _logger.warning(
+                            f"Covariance of the parameters could not be estimated{nav_msg}."
+                        )
+                    else:
+                        pcov = self.fit_output.perror**2
 
-                    # Calculate estimated parameter standard deviation
-                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+                        # Calculate estimated parameter standard deviation
+                        self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
                 else:
                     # Unbounded Levenberg-Marquardt algorithm is supported
@@ -1881,6 +2189,146 @@ class BaseModel(list):
                     )
 
                 self.p0 = self.fit_output.x
+
+                # Calculate parameter uncertainties for ML-poisson using Fisher Information Matrix
+                # Only available for 1D models currently
+                if loss_function == "ML-poisson" and self._signal_dimension == 1:
+                    try:
+                        # Get current data for Hessian calculation
+                        current_data = self.signal._get_current_data(as_numpy=True)[
+                            np.where(self._channel_switches)
+                        ]
+                        weights = self._convert_variance_to_weights()
+
+                        # Calculate Fisher Information Matrix (Hessian of negative log-likelihood)
+                        fisher_info_matrix = self._hessian_ml(
+                            self.p0, current_data, weights
+                        )
+
+                        # Calculate parameter uncertainties from Fisher Information Matrix
+                        p_std, _ = (
+                            _calculate_parameter_uncertainty_from_fisher_information(
+                                fisher_info_matrix
+                            )
+                        )
+                        self.p_std = p_std
+
+                    except Exception as e:
+                        # If Fisher Information Matrix calculation fails, set to None
+                        _logger.warning(
+                            f"Could not calculate parameter uncertainties for ML-poisson fitting: {e}"
+                        )
+                        self.p_std = None
+
+                # Calculate parameter uncertainties for ls using Hessian matrix
+                # Only available for 1D models currently
+                elif loss_function == "ls" and self._signal_dimension == 1:
+                    try:
+                        # Get current data for Hessian calculation
+                        current_data = self.signal._get_current_data(as_numpy=True)[
+                            np.where(self._channel_switches)
+                        ]
+                        weights = self._convert_variance_to_weights()
+
+                        # Calculate Hessian matrix for least squares
+                        hessian_matrix = self._hessian_ls(
+                            self.p0, current_data, weights
+                        )
+
+                        # Calculate parameter uncertainties from Hessian matrix
+                        # For least squares, the covariance matrix is proportional to inv(H)
+                        # where H is the Hessian. The proportionality constant depends on
+                        # the residual sum of squares and degrees of freedom.
+                        p_std, _ = (
+                            _calculate_parameter_uncertainty_from_fisher_information(
+                                hessian_matrix
+                            )
+                        )
+
+                        # Scale by residual variance for proper uncertainty estimation
+                        # Get residuals and calculate variance
+                        residuals = self._errfunc(self.p0, current_data, weights)
+                        residual_variance = np.sum(residuals**2) / (
+                            len(current_data) - len(self.p0)
+                        )
+
+                        # Scale standard deviations by residual variance
+                        if residual_variance > 0:
+                            p_std = p_std * np.sqrt(residual_variance)
+
+                        self.p_std = p_std
+
+                    except Exception as e:
+                        # If Hessian calculation fails, set to None
+                        _logger.warning(
+                            f"Could not calculate parameter uncertainties for ls fitting: {e}"
+                        )
+                        self.p_std = None
+
+                # Calculate parameter uncertainties for huber using Hessian matrix
+                # Only available for 1D models currently
+                elif loss_function == "huber" and self._signal_dimension == 1:
+                    try:
+                        # Get current data for Hessian calculation
+                        current_data = self.signal._get_current_data(as_numpy=True)[
+                            np.where(self._channel_switches)
+                        ]
+                        weights = self._convert_variance_to_weights()
+
+                        # Get huber delta parameter from kwargs if available
+                        huber_delta = kwargs.get("huber_delta", 1.0)
+
+                        # Calculate Hessian matrix for Huber loss
+                        hessian_matrix = self._hessian_huber(
+                            self.p0, current_data, weights, huber_delta
+                        )
+
+                        # Calculate parameter uncertainties from Hessian matrix
+                        p_std, _ = (
+                            _calculate_parameter_uncertainty_from_fisher_information(
+                                hessian_matrix
+                            )
+                        )
+
+                        # For Huber loss, we need to scale by appropriate variance estimate
+                        # Calculate Huber residuals and effective variance
+                        residuals = self._errfunc(self.p0, current_data, weights)
+
+                        # Effective variance for Huber loss considers the robust nature
+                        # Use median absolute deviation scaled appropriately
+                        huber_weights = (np.abs(residuals) <= huber_delta).astype(float)
+                        if np.sum(huber_weights) > 0:
+                            # Use weighted variance for residuals within delta
+                            valid_residuals = residuals[huber_weights == 1]
+                            if len(valid_residuals) > len(self.p0):
+                                residual_variance = np.sum(valid_residuals**2) / (
+                                    len(valid_residuals) - len(self.p0)
+                                )
+                            else:
+                                # Fallback to full residual variance if too few valid points
+                                residual_variance = np.sum(residuals**2) / (
+                                    len(current_data) - len(self.p0)
+                                )
+                        else:
+                            # Fallback if no residuals within delta
+                            residual_variance = np.sum(residuals**2) / (
+                                len(current_data) - len(self.p0)
+                            )
+
+                        # Scale standard deviations by residual variance
+                        if residual_variance > 0:
+                            p_std = p_std * np.sqrt(residual_variance)
+
+                        self.p_std = p_std
+
+                    except Exception as e:
+                        # If Hessian calculation fails, set to None
+                        _logger.warning(
+                            f"Could not calculate parameter uncertainties for huber fitting: {e}"
+                        )
+                        self.p_std = None
+                else:
+                    self.p_std = None
 
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
@@ -2298,7 +2746,7 @@ class BaseModel(list):
             current folder is used by default.
         format : str
             The extension of the file format. It must be one of the
-            fileformats supported by HyperSpy. The default is ``"hspy"``.
+            fileformats supported by RosettaSciIO. The default is ``"hspy"``.
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
@@ -2458,7 +2906,8 @@ class BaseModel(list):
         >>> s = hs.signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
         >>> v1 = hs.model.components1D.Voigt()
-        >>> m.append(v1)
+        >>> v2 = hs.model.components1D.Voigt()
+        >>> m.extend([v1,v2])
 
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(

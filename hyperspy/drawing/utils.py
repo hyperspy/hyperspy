@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,6 +19,7 @@
 import copy
 import itertools
 import logging
+import math
 import textwrap
 import warnings
 from functools import partial
@@ -347,9 +348,7 @@ def plot_signals(
 
     if navigator_list:
         if not (len(signal_list) == len(navigator_list)):
-            raise ValueError(
-                "signal_list and navigator_list must" " have the same size"
-            )
+            raise ValueError("signal_list and navigator_list must have the same size")
 
     if sync:
         axes_manager_list = []
@@ -515,8 +514,15 @@ def _parse_array(signal, normalise=False):
     data = signal.data
     if isinstance(data, da.Array):
         data = data.compute()
-    if normalise:
+
+    # Check if normalise is a function
+    if callable(normalise):
+        data = normalise(signal)
+
+    # Otherwise, if normalise is True, use default min-max normalization
+    elif normalise:
         data = (data - data.min()) / (data.max() - data.min())
+
     return to_numpy(data)
 
 
@@ -656,7 +662,7 @@ def plot_images(
         If set, the images will be plotted to an existing matplotlib figure.
         If the parameter ``ax`` is provided, this parameter will be ignored
         and the figure will be obtained from the ``ax`` parameter.
-    ax : matplotlib.axes.Axes or list of matplotlib.axes.Axes, default None
+    ax : matplotlib.axes.Axes or list or np.ndarray of matplotlib.axes.Axes, default None
         The matplotlib axes to use to display the images.
         When using `overlay=True`, `ax` must be a matplotlib axis.
         If None, new matplotlib axes will be created as required.
@@ -800,7 +806,7 @@ def plot_images(
     else:
         # Didn't understand cmap input, so raise error
         raise ValueError(
-            "The provided cmap value was not understood. Please " "check input values."
+            "The provided cmap value was not understood. Please check input values."
         )
 
     # If any of the cmaps given are diverging, and auto-centering, set the
@@ -922,8 +928,7 @@ def plot_images(
 
     if scalebar not in [None, False, "all"] and scalelist is False:
         raise ValueError(
-            "Did not understand scalebar input. Must be None, "
-            "'all', or list of ints."
+            "Did not understand scalebar input. Must be None, 'all', or list of ints."
         )
 
     # Determine appropriate number of images per row
@@ -938,6 +943,10 @@ def plot_images(
     # Get the figure from ax is provided
     if ax is not None:
         if isiterable(ax):
+            if isinstance(ax, np.ndarray):
+                # plt.subplots can return numpy array
+                # convert and flatten to support list and array
+                ax = ax.flatten().tolist()
             fig = ax[0].get_figure()
         else:
             fig = ax.get_figure()
@@ -1038,9 +1047,16 @@ def plot_images(
     if overlay:
         # Check if images all have same scale and therefore can be overlayed.
         for im in images:
-            if im.axes_manager[0].scale != images[0].axes_manager[0].scale:
+            axes = im.axes_manager.signal_axes
+            # relative difference normalized to the size of the second axis
+            # the more pixels are in the second axis, the tighter the tolerance need to be
+            if not math.isclose(
+                axes[0].scale_as_quantity.to_base_units().magnitude,
+                axes[1].scale_as_quantity.to_base_units().magnitude,
+                rel_tol=0.1 / axes[1].size,
+            ):
                 raise ValueError(
-                    "Images are not the same scale and so should" "not be overlayed."
+                    "Images do not have the same scale and should not be overlayed."
                 )
 
         if vmin is not None:
@@ -1074,7 +1090,12 @@ def plot_images(
                 alphas_list.append(alphas)
             alphas = alphas_list
 
-        ax.imshow(np.zeros_like(images[0].data), cmap="gray")
+        # Set dimensions of images
+        xaxis = images[0].axes_manager[0]
+        yaxis = images[0].axes_manager[1]
+        extent = _get_extent(xaxis, yaxis)
+
+        ax.imshow(np.zeros_like(images[0].data), cmap="gray", extent=extent)
 
         # Loop through each image
         for i, im in enumerate(images):
@@ -1095,6 +1116,7 @@ def plot_images(
                 vmax=_vmax,
                 cmap=transparent_single_color_cmap(colors[i]),
                 alpha=alphas[i],
+                extent=extent,
                 **kwargs,
             )
 
@@ -1114,7 +1136,6 @@ def plot_images(
         set_axes_decor(ax, axes_decor)
 
         if scalebar == "all":
-            axes = im.axes_manager.signal_axes
             ax.scalebar = ScaleBar(
                 ax=ax,
                 units=im.axes_manager[0].units,
@@ -1174,20 +1195,7 @@ def plot_images(
                 # Set dimensions of images
                 xaxis = axes[0]
                 yaxis = axes[1]
-
-                # Keep extent consistent with `Signal.plot`
-                if xaxis.is_uniform and yaxis.is_uniform:
-                    xaxis_half_px = xaxis.scale / 2.0
-                    yaxis_half_px = yaxis.scale / 2.0
-                else:
-                    xaxis_half_px = 0
-                    yaxis_half_px = 0
-                extent = [
-                    xaxis.axis[0] - xaxis_half_px,
-                    xaxis.axis[-1] + xaxis_half_px,
-                    yaxis.axis[-1] + yaxis_half_px,
-                    yaxis.axis[0] - yaxis_half_px,
-                ]
+                extent = _get_extent(xaxis, yaxis)
 
                 if not isinstance(aspect, (int, float)) and aspect not in [
                     "auto",
@@ -1377,6 +1385,22 @@ def _parse_vmin_vmax(data, vmin, vmax, index, centre):
     return _vmin, _vmax
 
 
+def _get_extent(xaxis, yaxis):
+    # Keep extent consistent with `Signal.plot`
+    if xaxis.is_uniform and yaxis.is_uniform:
+        xaxis_half_px = xaxis.scale / 2.0
+        yaxis_half_px = yaxis.scale / 2.0
+    else:
+        xaxis_half_px = 0
+        yaxis_half_px = 0
+    return [
+        xaxis.axis[0] - xaxis_half_px,
+        xaxis.axis[-1] + xaxis_half_px,
+        yaxis.axis[-1] + yaxis_half_px,
+        yaxis.axis[0] - yaxis_half_px,
+    ]
+
+
 def set_axes_decor(ax, axes_decor):
     if axes_decor == "off":
         ax.axis("off")
@@ -1528,8 +1552,12 @@ def plot_spectra(
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
         If None (default), update the plot only for style='overlap'.
-    normalise : bool, default False
-        If True, the data are normalised to the [0, 1] interval in the plot.
+    normalise : bool or callable, default False
+        If True, applies default min-max normalization:
+            (x - x.min()) / (x.max() - x.min()).
+        If a callable is provided, it should be a function that takes a
+        HyperSpy signal as input and returns the normalised array.
+
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 
@@ -1609,7 +1637,7 @@ def plot_spectra(
             if legend == "auto":
                 legend = [spec.metadata.General.title for spec in spectra]
             else:
-                raise ValueError("legend must be None, 'auto' or a list of " "strings.")
+                raise ValueError("legend must be None, 'auto' or a list of strings.")
 
     if normalise:
         ylabel = "Normalised Intensity"
@@ -1629,8 +1657,14 @@ def plot_spectra(
                 )
             fig = ax.get_figure()
         else:
-            # use flatten for cases where ax is two dimensional
-            fig = np.asarray(ax).flatten()[0].get_figure()
+            if isiterable(ax):
+                if isinstance(ax, np.ndarray):
+                    # plt.subplots can return numpy array
+                    # convert and flatten to support list and array
+                    ax = np.asarray(ax).flatten()
+                fig = ax[0].get_figure()
+            else:
+                fig = ax.get_figure()
     # fallback to fig, create when necessary
     else:
         if fig is None:
@@ -1678,25 +1712,30 @@ def plot_spectra(
     elif style == "mosaic":
         if legend is None:
             legend = [legend] * len(spectra)
-        for spectrum, ax_, color, linestyle, legend in zip(
+        if not np.iterable(ax):
+            # make sure it is a list
+            ax = [ax]
+        for spectra_, ax_, color_, linestyle_, legend_ in zip(
             spectra, ax, color, linestyle, legend
         ):
-            spectrum = _transpose_if_required(spectrum, 1)
+            spectra_ = _transpose_if_required(spectra_, 1)
             _plot_spectrum(
-                spectrum,
+                spectra_,
                 ax_,
                 normalise,
-                color=color,
-                linestyle=linestyle,
+                color=color_,
+                linestyle=linestyle_,
                 drawstyle=drawstyle,
             )
             ax_.set_ylabel(ylabel)
-            if legend is not None:
-                ax_.set_title(legend)
+            if legend_ is not None:
+                ax_.set_title(legend_)
+            # Add xlabel for each axes (list of BaseSignal)
             if not isinstance(spectra, BaseSignal):
-                _set_spectrum_xlabel(spectrum, ax_)
+                _set_spectrum_xlabel(spectra_, ax_)
+        # Add xlabel at the very bottom (single BaseSignal)
         if isinstance(spectra, BaseSignal):
-            _set_spectrum_xlabel(spectrum, ax_)
+            _set_spectrum_xlabel(spectra, ax[-1])
         fig.tight_layout()
 
     elif style == "heatmap":
@@ -1724,9 +1763,7 @@ def plot_spectra(
 
     if auto_update:
         if style != "overlap":
-            raise ValueError(
-                "auto_update=True is only supported with " "style='overlap'."
-            )
+            raise ValueError("auto_update=True is only supported with style='overlap'.")
 
         for s, line in zip(spectra, ax.get_lines()):
             f = partial(update_line, s, line=line, normalise=normalise)

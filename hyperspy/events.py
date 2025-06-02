@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,6 +18,7 @@
 
 import inspect
 import re
+import sys
 from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import wraps  # noqa: F401 Used in exec statement
@@ -224,7 +225,12 @@ class Event:
         gl = dict(globals())
         gl.update(locals())
         gl.update({"f": orig_f})  # Make sure it keeps the original!
-        exec(wrap_code, gl, locals())
+
+        if sys.version_info.minor >= 13:
+            locals_ = sys._getframe().f_locals
+        else:
+            locals_ = locals()
+        exec(wrap_code, gl, locals_)
         new_f = locals()["trigger"]
         # Replace the trigger function with the new one
         if defaults:

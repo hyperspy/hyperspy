@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -290,7 +290,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             return
         if self.axes[0].scale != self.axes[1].scale:
             raise ValueError(
-                "linewidth is not supported for axis with " "different scale."
+                "linewidth is not supported for axis with different scale."
             )
         wc = self._get_width_indicator_coords()
         kwargs = picker_kwargs(self.radius_move)

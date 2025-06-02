@@ -1,3 +1,7 @@
+.. _RosettaSciIO: https://hyperspy.org/rosettasciio
+.. _eXSpy: https://hyperspy.org/exspy
+.. _holoSpy: https://hyperspy.org/holospy
+
 .. _changelog:
 
 Changelog
@@ -9,6 +13,49 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 .. towncrier-draft-entries:: |release| [UNRELEASED]
 
 .. towncrier release notes start
+
+2.3.0 (2025-03-02)
+==================
+
+New features
+------------
+
+- Add :meth:`~.api.signals.BaseSignal.remove_spikes` method to remove spikes on :class:`~.api.signals.Signal1D` and :class:`~.api.signals.Signal2D` using local median. (`#3436 <https://github.com/hyperspy/hyperspy/issues/3436>`_)
+- Add :meth:`~.api.signals.Signal1D.remove_baseline` to remove baseline using `pybaselines <https://pybaselines.readthedocs.io>`_; see the :ref:`baseline removal <signal1D.remove_baseline>` section in the user guide. (`#3441 <https://github.com/hyperspy/hyperspy/issues/3441>`_)
+
+
+Enhancements
+------------
+
+- Fix and improve :meth:`~.model.BaseModel.as_signal`:
+
+  -  Fix lazy support which stops working from dask version 2024.12.0.
+  -  Add vectorised implementation using ``function_nd`` method of Components. For components not implementing ``function_nd`` (for example, in HyperSpy extensions, old or custom components), the old slow implementation is used. All :class:`~.api.model.components1D.Expression` based-components have the ``function_nd`` created automatically. (`#3476 <https://github.com/hyperspy/hyperspy/issues/3476>`_)
+- Improve setting chunking:
+
+  - add automatic chunking in :meth:`~.api.signals.BaseSignal.map` for non-lazy signal to optimize chunking for multiple core processing,
+  - :meth:`~.api.signals.BaseSignal.as_lazy` can now take the ``chunks`` argument,
+  - improve documentation of the ``rechunk`` argument. (`#3489 <https://github.com/hyperspy/hyperspy/issues/3489>`_)
+
+
+Bug Fixes
+---------
+
+- Fix plotting single spectra in :func:`~.api.plot.plot_spectra` with ``style="mosaic"``. (`#3483 <https://github.com/hyperspy/hyperspy/issues/3483>`_)
+
+
+Improved Documentation
+----------------------
+
+- Document implementation of model convolution for subclassing :class:`~hyperspy.models.model1d.Model1D` in the :ref:`extension guide <extension_components_label>`. (`#3494 <https://github.com/hyperspy/hyperspy/issues/3494>`_)
+
+
+Maintenance
+-----------
+
+- Add support for python 3.13. (`#3468 <https://github.com/hyperspy/hyperspy/issues/3468>`_)
+- Clean up dependencies, which are now used in eXSpy_ and RosettaSciIO_. (`#3482 <https://github.com/hyperspy/hyperspy/issues/3482>`_)
+
 
 2.2.0 (2024-11-08)
 ==================
@@ -211,11 +258,11 @@ Release Highlights
 ------------------
 - Hyperspy has split off some of the file reading/writing and domain specific functionalities into separate libraries!
   
-  - `RosettaSciIO <https://hyperspy.org/rosettasciio>`_: A library for reading and writing scientific data files.
+  - RosettaSciIO_: A library for reading and writing scientific data files.
     See `RosettaSciIO release notes <https://hyperspy.org/rosettasciio/changes.html>`_ for new features and supported formats.
-  - `exSpy <https://exspy.readthedocs.io>`_: A library for EELS and EDS analysis.
-    See `exSpy release notes <https://hyperspy.org/exspy/changes.html>`_ for new features.
-  - `holoSpy <https://holospy.readthedocs.io>`_: A library for analysis of (off-axis) electron holography data.
+  - eXSpy_: A library for EELS and EDS analysis.
+    See `eXSpy release notes <https://hyperspy.org/exspy/changes.html>`_ for new features.
+  - holoSpy_: A library for analysis of (off-axis) electron holography data.
     See `holoSpy release notes <https://holospy.readthedocs.io/en/latest/changes.html>`_ for new features.
 
 - The :py:mod:`~.api.plot.markers` API has been refactored
@@ -576,7 +623,7 @@ Maintenance
 - Drop support for python 3.7, update oldest supported dependencies and simplify code accordingly (`#3144 <https://github.com/hyperspy/hyperspy/issues/3144>`_)
 - IPython and IParallel are now optional dependencies (`#3145 <https://github.com/hyperspy/hyperspy/issues/3145>`_)
 - Fix Numpy 1.25 deprecation: implicit array to scalar conversion in :py:meth:`~.signals.Signal2D.align2D` (`#3189 <https://github.com/hyperspy/hyperspy/issues/3189>`_)
-- Replace deprecated :mod:`scipy.misc` by :mod:`scipy.datasets` in documentation (`#3225 <https://github.com/hyperspy/hyperspy/issues/3225>`_)
+- Replace deprecated ``scipy.misc`` by :mod:`scipy.datasets` in documentation (`#3225 <https://github.com/hyperspy/hyperspy/issues/3225>`_)
 - Fix documentation version switcher (`#3228 <https://github.com/hyperspy/hyperspy/issues/3228>`_)
 - Replace deprecated :py:class:`scipy.interpolate.interp1d` with :py:func:`scipy.interpolate.make_interp_spline` (`#3233 <https://github.com/hyperspy/hyperspy/issues/3233>`_)
 - Add support for python 3.12 (`#3256 <https://github.com/hyperspy/hyperspy/issues/3256>`_)
@@ -998,7 +1045,7 @@ Enhancements
 * Improve error message when file not found (`#2597 <https://github.com/hyperspy/hyperspy/pull/2597>`_)
 * Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
 * Improve plotting navigator of lazy signals, add ``navigator`` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
-* Use ``'dask_auto'`` when rechunk=True in :py:meth:`~._signals.lazy.LazySignal.change_dtype` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
+* Use ``'dask_auto'`` when rechunk=True in :py:meth:`~.api.signals.BaseSignal.change_dtype` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
 * Use dask chunking when saving lazy signal instead of rechunking and leave the user to decide what is the suitable chunking (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
 * Added lazy reading support for FFT and DPC datasets in FEI emd datasets (`#2651 <https://github.com/hyperspy/hyperspy/pull/2651>`_).
 * Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)

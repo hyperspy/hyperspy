@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -26,7 +26,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 from scipy import ndimage
-from skimage.registration._phase_cross_correlation import _upsampled_dft
 
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy._signals.lazy import LazySignal
@@ -48,17 +47,6 @@ from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetriz
 from hyperspy.signal import BaseSignal
 from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
-from hyperspy.utils.peakfinders2D import (
-    _get_peak_position_and_intensity,
-    find_local_max,
-    find_peaks_dog,
-    find_peaks_log,
-    find_peaks_max,
-    find_peaks_minmax,
-    find_peaks_stat,
-    find_peaks_xc,
-    find_peaks_zaefferer,
-)
 
 _logger = logging.getLogger(__name__)
 
@@ -273,6 +261,8 @@ def estimate_image_shift(
     # The following code is more or less copied from
     # skimage.feature.register_feature, to gain access to the maximum value:
     if sub_pixel_factor != 1:
+        from skimage.registration._phase_cross_correlation import _upsampled_dft
+
         # Initial shift estimate in upsampled grid
         shifts = np.round(shifts * sub_pixel_factor) / sub_pixel_factor
         upsampled_region_size = np.ceil(sub_pixel_factor * 1.5)
@@ -378,7 +368,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         for c in autoscale:
             if c not in ["x", "y", "v"]:
                 raise ValueError(
-                    "`autoscale` only accepts 'x', 'y', 'v' as " "valid characters."
+                    "`autoscale` only accepts 'x', 'y', 'v' as valid characters."
                 )
         super().plot(
             navigator=navigator,
@@ -872,8 +862,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         else:
             if None in (x0, y0, x1, y1, new_length):
                 raise ValueError(
-                    "With interactive=False x0, y0, x1, y1 and new_length "
-                    "must be set."
+                    "With interactive=False x0, y0, x1, y1 and new_length must be set."
                 )
             self._calibrate(x0, y0, x1, y1, new_length, units=units)
 
@@ -1054,6 +1043,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             pixel coordinates of peaks found in each image sorted
             first along `y` and then along `x`.
         """
+        from hyperspy.utils.peakfinders2D import (
+            _get_peak_position_and_intensity,
+            find_local_max,
+            find_peaks_dog,
+            find_peaks_log,
+            find_peaks_max,
+            find_peaks_minmax,
+            find_peaks_stat,
+            find_peaks_xc,
+            find_peaks_zaefferer,
+        )
+
         method_dict = {
             "local_max": find_local_max,
             "max": find_peaks_max,

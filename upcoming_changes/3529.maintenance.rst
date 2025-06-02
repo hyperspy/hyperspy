@@ -1,0 +1,1 @@
+Support handling of zarr v3 store.

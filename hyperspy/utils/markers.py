@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,8 +21,8 @@
 Examples
 --------
 
->>> import skimage
->>> im = hs.signals.Signal2D(skimage.data.camera())
+>>> import scipy
+>>> im = hs.signals.Signal2D(scipy.datasets.face())
 >>> m = hs.plot.markers.Rectangles(
 ...    offsets=[10, 15],
 ...    widths=(5,),

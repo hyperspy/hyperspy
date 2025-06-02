@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -689,14 +689,14 @@ class Markers:
             key = self._position_key
 
         x_positions = kwds[key][..., 0]
-        if len(x_positions) == 0:
+        if x_positions.size == 0:
             # can't scale as there is no marker at this coordinate
             return kwds
 
         new_kwds = deepcopy(kwds)
         current_data = self._signal._get_current_data(as_numpy=True)
         axis = self._axes_manager.signal_axes[0]
-        indexes = np.round((x_positions - axis.offset) / axis.scale).astype(int)
+        indexes = axis.value2index(x_positions)
         y_positions = new_kwds[key][..., 1]
         new_y_positions = current_data[indexes] * y_positions
 

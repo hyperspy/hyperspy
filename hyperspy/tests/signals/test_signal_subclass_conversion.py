@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
+
+import dask.array as da
 import numpy as np
 import pytest
 
-from hyperspy import signals
+import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import DataDimensionError
 from hyperspy.signals import BaseSignal
@@ -28,7 +31,7 @@ from hyperspy.signals import BaseSignal
 @lazifyTestClass
 class Test1d:
     def setup_method(self, method):
-        self.s = BaseSignal(np.arange(2))
+        self.s = hs.signals.BaseSignal(np.arange(2))
 
     def test_as_signal2D(self):
         with pytest.raises(DataDimensionError):
@@ -41,7 +44,7 @@ class Test1d:
 @lazifyTestClass
 class Test2d:
     def setup_method(self, method):
-        self.s = BaseSignal(np.random.random((2, 3)))  # (|3, 2)
+        self.s = hs.signals.BaseSignal(np.random.random((2, 3)))  # (|3, 2)
 
     def test_as_signal2D_T(self):
         assert self.s.data.T.shape == self.s.as_signal2D((1, 0)).data.shape
@@ -92,4 +95,29 @@ class Test3d:
     def test_remove_axis(self):
         im = self.s.as_signal2D((-2, -1))
         im._remove_axis(-1)
-        assert isinstance(im, signals.Signal1D)
+        assert isinstance(im, hs.signals.Signal1D)
+
+
+def test_as_lazy_chunks(caplog):
+    data = np.ones((100, 100, 2000))
+    s = hs.signals.Signal1D(data)
+
+    # chunks is "auto"
+    s2 = s.as_lazy()
+    assert isinstance(s2.data, da.Array)
+    assert s2.data.chunks == ((50, 50), (100,), (2000,))
+
+    s3 = s.as_lazy(chunks="auto")
+    assert s3.data.chunks == ((50, 50), (100,), (2000,))
+
+    s4 = s.as_lazy(chunks="dask_auto")
+    assert s4.data.chunks == ((100,), (100,), (1677, 323))
+
+    s5 = s.as_lazy(chunks=(25, 25, 500))
+    assert s5.data.chunks == ((25,) * 4, (25,) * 4, (500,) * 4)
+
+    # ignore `chunks` since data is already a dask array
+    s6 = s5.as_lazy(chunks="dask_auto")
+    with caplog.at_level(logging.WARNING):
+        assert s6.data.chunks == s5.data.chunks
+    assert "Ignoring `chunks` argument" in caplog.text
