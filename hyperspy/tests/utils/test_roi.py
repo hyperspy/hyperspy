@@ -453,7 +453,7 @@ class TestROIs:
         # Test correct inferred axes
         rs_navigation = roi(s, axes=s.axes_manager.navigation_axes)
         rs_inferred = roi(s)
-        assert np.array_equal(rs_inferred.data, rs_navigation.data, equal_nan=True)
+        np.testing.assert_allclose(rs_inferred.data, rs_navigation.data, equal_nan=True)
 
         # Test set vertices from widget
         desired_vertices = [(10, 20), (30, 40), (50, 60)]
@@ -482,7 +482,7 @@ class TestROIs:
         s = self.s_s.copy()
         # converting to non-uniform axis
         s.axes_manager.navigation_axes[0].convert_to_functional_data_axis(
-            expression="1/x",
+            expression="1/(1+ x)",
         )
         roi = PolygonROI([(1, 2), (3, 4), (5, 6)])
         with pytest.raises(NotImplementedError):
@@ -576,7 +576,7 @@ class TestROIs:
         # Test using ``out`` parameter
         out = Signal1D(np.ones_like(sr_square))
         r_square(s, inverted=True, out=out)
-        assert np.array_equal(out.data, sr_square.data, equal_nan=True)
+        np.testing.assert_allclose(out.data, sr_square.data, equal_nan=True)
 
         # Test empty ROI
         r_empty = PolygonROI()

@@ -262,7 +262,7 @@ class Parameter(t.HasTraits):
             raise ValueError("The expression must contain only one variable.")
         elif len(expr.free_symbols) == 0:
             raise ValueError(
-                "The expression must contain one variable, " "it contains none."
+                "The expression must contain one variable, it contains none."
             )
         x = tuple(expr.free_symbols)[0]
         self.__twin_inverse_function = lambdify(x, expr.evalf())
@@ -451,9 +451,7 @@ class Parameter(t.HasTraits):
         if self.__number_of_elements == arg:
             return
         if arg < 1:
-            raise ValueError(
-                "Please provide an integer number equal " "or greater to 1"
-            )
+            raise ValueError("Please provide an integer number equal or greater to 1")
         self._bounds = ((self.bmin, self.bmax),) * arg
         self.__number_of_elements = arg
 
@@ -882,7 +880,7 @@ class Component(t.HasTraits):
             for component in self.model:
                 if value == component.name:
                     raise ValueError(
-                        "Another component already has " "the name " + str(value)
+                        "Another component already has the name " + str(value)
                     )
             self._name = value
             setattr(

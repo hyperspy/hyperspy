@@ -322,7 +322,7 @@ class TestClusterExceptions:
         nav_mask = np.zeros((11,), dtype=bool)
         with pytest.raises(
             ValueError,
-            match="Navigation mask size does not match " "signal navigation size",
+            match="Navigation mask size does not match signal navigation size",
         ):
             self.s.cluster_analysis("signal", n_clusters=2, navigation_mask=nav_mask)
 
@@ -330,7 +330,7 @@ class TestClusterExceptions:
         sig_mask = np.zeros((11,), dtype=bool)
         with pytest.raises(
             ValueError,
-            match="signal mask size does not match your " "cluster source signal size",
+            match="signal mask size does not match your cluster source signal size",
         ):
             self.s.cluster_analysis("signal", n_clusters=2, signal_mask=sig_mask)
 
@@ -338,7 +338,7 @@ class TestClusterExceptions:
         sig_mask = np.zeros((11,), dtype=bool)
         with pytest.raises(
             ValueError,
-            match="signal mask size does not match your " "cluster source signal size",
+            match="signal mask size does not match your cluster source signal size",
         ):
             self.s.cluster_analysis(
                 self.s.deepcopy(), n_clusters=2, signal_mask=sig_mask

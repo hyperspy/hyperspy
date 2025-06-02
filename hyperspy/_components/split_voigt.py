@@ -85,7 +85,7 @@ class SplitVoigt(Component):
         self.isbackground = False
         self.convolved = True
 
-    def _function(self, x, A, sigma1, sigma2, fraction, centre):
+    def _function(self, x, A, sigma1, sigma2, centre, fraction):
         arg = x - centre
         lor1 = (A / (1.0 + ((1.0 * arg) / sigma1) ** 2)) / (
             0.5 * np.pi * (sigma1 + sigma2)
@@ -122,31 +122,31 @@ class SplitVoigt(Component):
             weight for lorentzian peak in the linear combination,
             and (1-fraction) is the weight for gaussian peak.
         """
-        A = self.A.value
-        sigma1 = self.sigma1.value
-        sigma2 = self.sigma2.value
-        fraction = self.fraction.value
-        centre = self.centre.value
+        parameters_value = [p.value for p in self.parameters]
+        return self._function(x, *parameters_value)
 
-        return self._function(x, A, sigma1, sigma2, fraction, centre)
+    def function_nd(self, axis, parameters_values=None):
+        """
+        Calculate the component over given axes and with given parameter values.
 
-    def function_nd(self, axis):
-        """%s"""
+        Parameters
+        ----------
+        axis : numpy.ndarray
+            The axis onto which the component is calculated.
+        %s
+
+        Returns
+        -------
+        numpy.ndarray
+            The component values.
+        """
         if self._is_navigation_multidimensional:
-            x = axis[np.newaxis, :]
-            A = self.A.map["values"][..., np.newaxis]
-            sigma1 = self.sigma1.map["values"][..., np.newaxis]
-            sigma2 = self.sigma2.map["values"][..., np.newaxis]
-            fraction = self.fraction.map["values"][..., np.newaxis]
-            centre = self.centre.map["values"][..., np.newaxis]
+            if parameters_values is None:
+                parameters_values = [p.map["values"] for p in self.parameters]
+            parameters_values = [p[..., np.newaxis] for p in parameters_values]
+            return self._function(axis[np.newaxis, :], *parameters_values)
         else:
-            x = axis
-            A = self.A.value
-            sigma1 = self.sigma1.value
-            sigma2 = self.sigma2.value
-            fraction = self.fraction.value
-            centre = self.centre.value
-        return self._function(x, A, sigma1, sigma2, fraction, centre)
+            return self.function(axis)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
@@ -217,6 +217,7 @@ class SplitVoigt(Component):
             self.sigma2.map["is_set"][:] = True
             self.centre.map["values"][:] = centre
             self.centre.map["is_set"][:] = True
+            self.fraction.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 

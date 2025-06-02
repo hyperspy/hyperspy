@@ -46,7 +46,7 @@ _logger = logging.getLogger(__name__)
 
 
 # Utility string:
-f_error_fmt = "\tFile %d:\n" "\t\t%d signals\n" "\t\tPath: %s"
+f_error_fmt = "\tFile %d:\n\t\t%d signals\n\t\tPath: %s"
 
 
 def _format_name_to_reader(format_name):
@@ -456,7 +456,8 @@ def load(
     elif isgenerator(filenames):
         filenames = list(filenames)
 
-    elif not isinstance(filenames, (list, tuple, MutableMapping)):
+    # pathlib.Path.glob returns a map object in python 3.13
+    elif not isinstance(filenames, (list, tuple, MutableMapping, map)):
         raise ValueError(
             "The filenames parameter must be a list, tuple, "
             f"string or None, not {type(filenames)}"
@@ -588,7 +589,7 @@ def load_single_file(filename, **kwds):
         pass
     else:
         raise ValueError(
-            "`reader` should be one of None, str, " "or a custom file reader object"
+            "`reader` should be one of None, str, or a custom file reader object"
         )
 
     try:
@@ -799,11 +800,11 @@ def dict2signal(signal_dict, lazy=False):
         except ImportError:
             _logger.warning(
                 "This file contains a signal provided by the "
-                f'{signal_dict["package"]} Python package that is not '
-                'currently installed. The signal will be loaded into a '
-                'generic HyperSpy signal. Consider installing '
-                f'{signal_dict["package"]} to load this dataset into its '
-                'original signal class.'
+                f"{signal_dict['package']} Python package that is not "
+                "currently installed. The signal will be loaded into a "
+                "generic HyperSpy signal. Consider installing "
+                f"{signal_dict['package']} to load this dataset into its "
+                "original signal class."
             )
     signal_dimension = -1  # undefined
     signal_type = ""
@@ -839,7 +840,7 @@ def dict2signal(signal_dict, lazy=False):
         lazy=lazy,
     )(**signal_dict)
     if signal._lazy:
-        signal._make_lazy()
+        signal.data = signal._lazy_data()
 
     # This may happen when the signal dimension couldn't be matched with
     # any specialised subclass
@@ -958,9 +959,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         elif overwrite is False and is_file:
             write = False  # Don't write the file
         else:
-            raise ValueError(
-                "`overwrite` parameter can only be None, True or " "False."
-            )
+            raise ValueError("`overwrite` parameter can only be None, True or False.")
     else:
         write = True  # file does not exist (creating it)
     if write:

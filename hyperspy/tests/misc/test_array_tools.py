@@ -23,6 +23,7 @@ import pytest
 
 from hyperspy.misc.array_tools import (
     get_array_memory_size_in_GiB,
+    get_chunk_slice,
     get_signal_chunk_slice,
     get_value_at_index,
     numba_histogram,
@@ -105,6 +106,34 @@ def test_get_signal_chunk_slice_not_square(sig_chunks, index, expected):
     else:
         chunk_slice = get_signal_chunk_slice(index, data.chunks)
         assert chunk_slice == expected
+
+
+@pytest.mark.parametrize(
+    "shape", ((10, 20, 30, 512, 512), (20, 30, 512, 512), (10, 512, 512), (512, 512))
+)
+def test_get_chunk_slice(shape):
+    # Adapted from https://github.com/hyperspy/rosettasciio/blob/main/rsciio/tests/utils/test_utils.py
+    chunk_arr, chunk = get_chunk_slice(shape, signal_dimension=1, chunks=-1)  # 1 chunk
+    assert chunk_arr.shape == (1,) * len(shape) + (len(shape), 2)
+    assert chunk == tuple([(i,) for i in shape])
+
+    chunks = (1,) * (len(shape) - 2) + (-1, -1)
+    # Eveything is 1 chunk
+    chunk_arr, chunk = get_chunk_slice(shape, signal_dimension=1, chunks=chunks)
+    assert chunk_arr.shape == shape[:-2] + (1, 1) + (len(shape), 2)
+    assert chunk == (
+        tuple([(1,) * i for i in shape[:-2]]) + tuple([(i,) for i in shape[-2:]])
+    )
+
+
+def test_get_chunk_slice_dask_auto():
+    chunk_arr, chunk = get_chunk_slice((200, 200, 500), signal_dimension=1, dtype=float)
+    assert chunk == ((183, 17), (183, 17), (500,))
+
+    chunk_arr, chunk = get_chunk_slice(
+        (200, 200, 500), signal_dimension=1, chunks="dask_auto", dtype=float
+    )
+    assert chunk == ((200,), (200,), (419, 81))
 
 
 @pytest.mark.parametrize("dtype", ["<u2", "u2", ">u2", "<f4", "f4", ">f4"])

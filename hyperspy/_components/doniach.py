@@ -127,7 +127,6 @@ class Doniach(Expression):
         x2 : float
             Defines the right limit of the spectral range to use for the
             estimation.
-
         only_current : bool
             If False estimates the parameters for the full dataset.
 
@@ -175,5 +174,6 @@ class Doniach(Expression):
             self.sigma.map["is_set"][:] = True
             self.centre.map["values"][:] = centre
             self.centre.map["is_set"][:] = True
+            self.alpha.map["is_set"][:] = True
             self.fetch_stored_values()
             return True

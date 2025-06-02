@@ -241,7 +241,7 @@ class MVA:
             if algorithm == "SVD":
                 if svd_solver == "randomized":
                     raise ValueError(
-                        "`svd_solver='randomized'` is not supported with " "cupy array."
+                        "`svd_solver='randomized'` is not supported with cupy array."
                     )
                 elif svd_solver == "auto":
                     svd_solver = "full"
@@ -837,7 +837,7 @@ class MVA:
         if algorithm in algorithms_sklearn:
             if is_cupy_array(self.data):  # pragma: no cover
                 raise TypeError(
-                    "cupy arrays are not supported with scikit-learn " "algorithms."
+                    "cupy arrays are not supported with scikit-learn algorithms."
                 )
             if not import_sklearn.sklearn_installed:
                 raise ImportError(f"algorithm='{algorithm}' requires scikit-learn.")
@@ -1424,7 +1424,7 @@ class MVA:
 
         """
         s = self.get_explained_variance_ratio()
-        if is_cupy_array(s.data):
+        if is_cupy_array(s.data):  # pragma: no cover
             s.to_host()
 
         n_max = len(self.learning_results.explained_variance_ratio)
@@ -1437,7 +1437,7 @@ class MVA:
         # Determine right number of components for signal and cutoff value
         if isinstance(threshold, float):
             if not 0 < threshold < 1:
-                raise ValueError("Variance threshold should be between 0 and" " 1")
+                raise ValueError("Variance threshold should be between 0 and 1")
             # Catch if the threshold is less than the minimum variance value:
             if threshold < s.data.min():
                 n_signal_pcs = n

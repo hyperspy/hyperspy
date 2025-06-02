@@ -153,14 +153,14 @@ class ParallelPool:
                 if self._setup_ipyparallel():
                     return
                 else:
-                    raise ValueError("Could not connect to the ipyparallel" " Client")
+                    raise ValueError("Could not connect to the ipyparallel Client")
             elif ipyparallel is False:
                 self._setup_multiprocessing()
             elif ipyparallel is None:
                 _ = self._setup_ipyparallel() or self._setup_multiprocessing()
                 return
             else:
-                raise ValueError("ipyparallel has to be True, False or None " "type")
+                raise ValueError("ipyparallel has to be True, False or None type")
 
     def sleep(self, howlong=None):
         """Sleeps for the required number of seconds.

@@ -37,4 +37,4 @@ class CommonSignal2D:
         """
         return self.as_signal1D(0 + 3j, optimize=optimize)
 
-    to_signal1D.__doc__ %= OPTIMIZE_ARG.replace("False", "True")
+    to_signal1D.__doc__ %= OPTIMIZE_ARG

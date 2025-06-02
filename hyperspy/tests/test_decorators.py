@@ -27,7 +27,8 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 
 class TestDeprecationWarning:
     def test_deprecation_since(self):
-        """Ensure functions decorated with the custom deprecated
+        """
+        Ensure functions decorated with the custom deprecated
         decorator returns desired output, raises a desired warning, and
         gets the desired additions to their docstring.
         """
@@ -46,14 +47,17 @@ class TestDeprecationWarning:
         assert str(record[0].message) == desired_msg
         assert foo.__doc__ == (
             "[*Deprecated*] Some docstring.\n\n"
-            "Notes\n-----\n"
+            "Notes\n"
+            "-----\n"
             ".. deprecated:: 0.7\n"
             f"   {desired_msg}"
-        )
+        )  # fmt: skip
 
         @deprecated(since=1.9)
         def foo2(n):
-            """Another docstring.
+            """
+            Another docstring.
+
             Notes
             -----
             Some existing notes.
@@ -65,12 +69,13 @@ class TestDeprecationWarning:
         desired_msg2 = "Function `foo2()` is deprecated."
         assert str(record[0].message) == desired_msg2
         assert foo2.__doc__ == (
-            "[*Deprecated*] Another docstring."
-            "\nNotes\n-----\n"
+            "[*Deprecated*] Another docstring.\n\n"
+            "Notes\n"
+            "-----\n"
             "Some existing notes.\n\n"
             ".. deprecated:: 1.9\n"
             f"   {desired_msg2}"
-        )
+        )  # fmt: skip
 
     def test_deprecation_no_old_doc(self):
         @deprecated(since=0.7, alternative="bar", removal=0.8)
@@ -85,16 +90,18 @@ class TestDeprecationWarning:
         )
         assert str(record[0].message) == desired_msg
         assert foo.__doc__ == (
-            "[*Deprecated*] \n"
-            "\nNotes\n-----\n"
+            "[*Deprecated*] \n\n"
+            "Notes\n"
+            "-----\n"
             ".. deprecated:: 0.7\n"
             f"   {desired_msg}"
-        )
+        )  # fmt: skip
 
 
 class TestDeprecateArgument:
     def test_deprecate_argument(self):
-        """Functions decorated with the custom `deprecated_argument`
+        """
+        Functions decorated with the custom `deprecated_argument`
         decorator returns desired output and raises a desired warning
         only if the argument is passed.
         """
@@ -119,16 +126,16 @@ class TestDeprecateArgument:
         with pytest.warns(VisibleDeprecationWarning) as record1:
             assert my_foo.bar_arg(a=2) == {"a": 2}
         assert str(record1[0].message) == (
-            r"Argument `a` is deprecated and will be removed in version 1.4. "
-            r"To avoid this warning, please do not use `a`. See the documentation of "
-            r"`bar_arg()` for more details."
+            "Argument `a` is deprecated and will be removed in version 1.4. "
+            "To avoid this warning, please do not use `a`. See the documentation of "
+            "`bar_arg()` for more details."
         )
 
         # Warns with alternative
         with pytest.warns(VisibleDeprecationWarning) as record2:
             assert my_foo.bar_arg_alt(a=3) == {"b": 3}
         assert str(record2[0].message) == (
-            r"Argument `a` is deprecated and will be removed in version 1.4. "
-            r"To avoid this warning, please do not use `a`. Use `b` instead. See the "
-            r"documentation of `bar_arg_alt()` for more details."
+            "Argument `a` is deprecated and will be removed in version 1.4. "
+            "To avoid this warning, please do not use `a`. Use `b` instead. See the "
+            "documentation of `bar_arg_alt()` for more details."
         )

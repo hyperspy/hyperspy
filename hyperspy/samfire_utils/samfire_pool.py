@@ -143,7 +143,7 @@ class SamfirePool(ParallelPool):
             direct_view = self.pool.client[: self.num_workers]
             direct_view.block = True
             direct_view.execute(
-                "from hyperspy.samfire_utils.samfire_worker" " import create_worker"
+                "from hyperspy.samfire_utils.samfire_worker import create_worker"
             )
             direct_view.scatter("identity", range(self.num_workers), flatten=True)
             direct_view.execute("worker = create_worker(identity)")
@@ -316,7 +316,7 @@ class SamfirePool(ParallelPool):
         elif keyword == "result":
             _id, ind, result, isgood = the_rest
             _logger.debug(
-                "Got result from pixel {} and it is good:" "{}".format(ind, isgood)
+                "Got result from pixel {} and it is good:{}".format(ind, isgood)
             )
             if ind in samf.running_pixels:
                 samf.running_pixels.remove(ind)
@@ -326,7 +326,7 @@ class SamfirePool(ParallelPool):
                 samf.log(ind, isgood, samf.count, _id)
         else:
             _logger.error(
-                "Unusual return from some worker. The value " "is:\n%s" % str(value)
+                "Unusual return from some worker. The value is:\n%s" % str(value)
             )
 
     def collect_results(self, timeout=None):
@@ -368,7 +368,7 @@ class SamfirePool(ParallelPool):
                     found_something = True
                 except TimeoutError:
                     _logger.info(
-                        "Some ind failed to come back in {} " "seconds.".format(
+                        "Some ind failed to come back in {} seconds.".format(
                             self.timeout
                         )
                     )

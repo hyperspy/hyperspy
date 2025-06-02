@@ -53,7 +53,10 @@ class TestExpression:
         np.testing.assert_allclose(self.g.grad_fwhm(2), 0.00033845077175778578)
 
     def test_function_nd(self):
-        assert self.g.function_nd(0) == 1
+        with pytest.raises(RuntimeError):
+            self.g.function_nd(0)
+        parameters_values = [p.value for p in self.g.parameters]
+        assert self.g.function_nd(0, parameters_values=parameters_values) == 1
 
 
 def test_expression_symbols():

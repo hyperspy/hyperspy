@@ -62,7 +62,7 @@ from hyperspy.misc.utils import is_cupy_array
 from hyperspy.ui_registry import add_gui_method
 
 not_set_error_msg = (
-    "Some ROI parameters have not yet been set. " "Set them before slicing a signal."
+    "Some ROI parameters have not yet been set. Set them before slicing a signal."
 )
 
 
@@ -309,9 +309,7 @@ def _get_mpl_ax(plot, axes):
         The axes to infer from.
     """
     if not plot.is_active:
-        raise RuntimeError(
-            "The signal needs to be plotted before using this " "function."
-        )
+        raise RuntimeError("The signal needs to be plotted before using this function.")
 
     if axes[0].navigate:
         ax = plot.navigator_plot.ax
@@ -445,7 +443,7 @@ class BaseInteractiveROI(BaseROI):
             # raise a NotImplementedError
             if signal._plot.signal_data_function_kwargs.get("fft_shift", False):
                 raise NotImplementedError(
-                    "ROIs are not supported when data " "are shifted during plotting."
+                    "ROIs are not supported when data are shifted during plotting."
                 )
 
         if isinstance(navigation_signal, str) and navigation_signal == "same":
@@ -1125,7 +1123,7 @@ class CircleROI(BaseInteractiveROI):
         vy = axes[1].axis[ir[1]] - cy
 
         # convert to cupy array when necessary
-        if is_cupy_array(signal.data):
+        if is_cupy_array(signal.data):  # pragma: no cover
             import cupy as cp
 
             vx, vy = cp.array(vx), cp.array(vy)
@@ -1348,7 +1346,7 @@ class Line2DROI(BaseInteractiveROI):
             return np.arctan2(x, y) * conversation
         else:
             raise ValueError(
-                "Axis is not recognized. " "Use  either 'horizontal' or 'vertical'."
+                "Axis is not recognized. Use  either 'horizontal' or 'vertical'."
             )
 
     @staticmethod

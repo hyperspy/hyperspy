@@ -16,12 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import sys
 from unittest import mock
 
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.drawing._markers.points import Points
@@ -398,3 +400,161 @@ def test_reduction_axes(axis):
         assert s2.data.shape == (4, 5)
     if axis == "sig":
         assert s2.data.shape == (2, 3)
+
+
+@pytest.mark.parametrize("signal_dimension", (1, 2))
+@pytest.mark.parametrize("lazy", (False, True))
+def test_remove_spikes(signal_dimension, lazy):
+    if lazy:
+        pytest.importorskip("dask_image")
+
+    s = hs.data.two_gaussians()
+
+    index0 = (10, 5, 800)
+    index1 = (10, 20, 200)
+    index2 = (15, 25, 500)
+
+    if signal_dimension == 1:
+        expected_value = (271, 234, 769)
+    else:
+        s = s.T
+        index0 = index0[::-1]
+        index1 = index1[::-1]
+        index2 = index2[::-1]
+        expected_value = (184, 236, 549)
+
+    # Add spikes
+    s.data[index0] = 750  # initial value is 310
+    s.data[index1] = 200000  # initial value is 220
+    s.data[index2] = 5000000  # initial value is 764
+
+    if lazy:
+        s = s.as_lazy()
+
+    # 5 is default
+    threshold_value = 7 if signal_dimension == 2 else 5
+    s.remove_spikes(threshold_value)
+    s2_data = s.data
+    if lazy:
+        s2_data = s2_data.compute()
+    assert s2_data[index0] == 750
+    assert s2_data[index1] == expected_value[1]
+    assert s2_data[index2] == expected_value[2]
+
+    s.remove_spikes(threshold_factor=3.5)
+    s3_data = s.data
+    if lazy:
+        s3_data = s3_data.compute()
+    assert s3_data[index0] == expected_value[0]
+    assert s3_data[index1] == expected_value[1]
+    assert s3_data[index2] == expected_value[2]
+
+    if lazy:
+        s.compute()
+
+    np.testing.assert_allclose(
+        s.data.sum(), hs.data.two_gaussians().data.sum(), rtol=1e-6
+    )
+
+
+@pytest.mark.parametrize("spike_value", (-1e10, -1e4, 1e4, 1e10))
+def test_remove_spikes_value(spike_value):
+    # check that the value of the corrected spike
+    # is independent of the spike value
+    s = hs.data.two_gaussians()
+
+    index0 = (10, 5, 800)
+    expected_value = 271
+    s.data[index0] = spike_value  # initial value is 310
+
+    s.remove_spikes()
+    assert s.data[index0] == expected_value
+
+
+@pytest.mark.parametrize("lazy", (False, True))
+def test_remove_spikes_inplace(lazy):
+    if lazy:
+        pytest.importorskip("dask_image")
+
+    s = hs.data.two_gaussians()
+    if lazy:
+        s.as_lazy()
+
+    s.data[10, 20, 200] = 200000  # initial value is 220
+    s2 = s.remove_spikes(inplace=False)
+    assert s.data[10, 20, 200] == 200000
+    assert s2.data[10, 20, 200] == 234
+
+
+@pytest.mark.parametrize("lazy", (False, True))
+def test_remove_spikes_axes(lazy):
+    if lazy:
+        pytest.importorskip("dask_image")
+
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 20, 100))
+    data[:, 10, 5] = 1e5
+
+    s = hs.signals.Signal1D(data)
+    if lazy:
+        s = s.as_lazy()
+
+    # doesn't remove spikes
+    s.remove_spikes()
+    np.testing.assert_allclose(s.data[:, 10, 5], 1e5)
+    # remove spikes
+    s.remove_spikes(axes=-1)
+    np.testing.assert_allclose(
+        s.data[:5, 10, 5], [0.6017947, 0.6712713, 0.8357588, 0.6232695, 0.5523769]
+    )
+
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 20, 100))
+    data[5, 10, :] = 1e5
+
+    s = hs.signals.Signal1D(data)
+    s.plot()
+
+    # s.remove_spikes(-1)
+    np.testing.assert_allclose(s.data[5, 10, :], 1e5)
+    # Doesn't remove spikes because in the signal dimension, the values all 1e5
+    s.remove_spikes(axes=-1)
+    np.testing.assert_allclose(s.data[5, 10, :], 1e5)
+    # remove spikes because calculation is performed in the navigation space
+    s.remove_spikes(axes=(0, 1))
+    np.testing.assert_allclose(
+        s.data[5, 10, :5], [0.6741055, 0.3417235, 0.4364143, 0.5053036, 0.6015408]
+    )
+
+    rng = np.random.default_rng(0)
+    data = rng.random(size=(10, 20, 100))
+    data[5, 10, :] = 1e5
+
+    s2 = hs.signals.BaseSignal(data).T
+    s2.remove_spikes()
+    np.testing.assert_allclose(
+        s2.data[5, 10, :5], [0.5962007, 0.549079, 0.4364143, 0.5053036, 0.5053036]
+    )
+
+
+def test_remove_spikes_error():
+    s = hs.data.two_gaussians()
+
+    with pytest.raises(ValueError):
+        s.remove_spikes(threshold_factor=-1)
+
+    with pytest.raises(RuntimeError):
+        s.remove_spikes(origin=1)
+
+    with pytest.raises(ValueError):
+        s.remove_spikes(size=2)
+
+    if not importlib.util.find_spec("dask_image"):
+        s2 = s.as_lazy()
+        with pytest.raises(RuntimeError):
+            s2.remove_spikes()
+
+    # create a signals with nan
+    s.data = np.where(s.data > 500, np.nan, s.data)
+    with pytest.raises(ValueError):
+        s.remove_spikes()

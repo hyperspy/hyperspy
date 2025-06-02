@@ -80,7 +80,7 @@ class ScalableFixedPattern(Component):
     """
 
     def __init__(self, signal1D, yscale=1.0, xscale=1.0, shift=0.0, interpolate=True):
-        Component.__init__(self, ["yscale", "xscale", "shift"], ["yscale"])
+        Component.__init__(self, ["xscale", "yscale", "shift"], ["yscale"])
 
         self._position = self.shift
         self._whitelist["signal1D"] = ("init,sig", signal1D)
@@ -142,14 +142,27 @@ class ScalableFixedPattern(Component):
     def function(self, x):
         return self._function(x, self.xscale.value, self.yscale.value, self.shift.value)
 
-    def function_nd(self, axis):
-        """%s"""
+    def function_nd(self, axis, parameters_values=None):
+        """
+        Calculate the component over given axes and with given parameter values.
+
+        Parameters
+        ----------
+        axis : numpy.ndarray
+            The axis onto which the component is calculated.
+        %s
+
+        Returns
+        -------
+        numpy.ndarray
+            The component values.
+        """
         if self._is_navigation_multidimensional:
             x = axis[np.newaxis, :]
-            xscale = self.xscale.map["values"][..., np.newaxis]
-            yscale = self.yscale.map["values"][..., np.newaxis]
-            shift = self.shift.map["values"][..., np.newaxis]
-            return self._function(x, xscale, yscale, shift)
+            if parameters_values is None:
+                parameters_values = [p.map["values"] for p in self.parameters]
+            parameters_values = [p[..., np.newaxis] for p in parameters_values]
+            return self._function(x, *parameters_values)
         else:
             return self.function(axis)
 

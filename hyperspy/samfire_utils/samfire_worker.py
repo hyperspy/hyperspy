@@ -80,7 +80,7 @@ class Worker:
     def set_optional_names(self, optional_names):
         self.optional_names = optional_names
         _logger.debug(
-            "Setting optional names in worker {} to " "{}".format(
+            "Setting optional names in worker {} to {}".format(
                 self.identity, self.optional_names
             )
         )
@@ -123,7 +123,7 @@ class Worker:
                             "Error",
                             (
                                 self.identity,
-                                "Setting {}.{} value to {}. " "Caught:\n{}".format(
+                                "Setting {}.{} value to {}. Caught:\n{}".format(
                                     comp_name, parameter_name, value, e
                                 ),
                             ),
@@ -231,13 +231,13 @@ class Worker:
             for k in self.parameters.keys():
                 self.parameters[k] = getattr(self.model, k).data[0]
         if len(self.best_values):  # i.e. we have a good result
-            _logger.debug("we have a good result in worker " "{}".format(self.identity))
+            _logger.debug("we have a good result in worker {}".format(self.identity))
             result = {k + ".data": np.array(v) for k, v in self.parameters.items()}
             result["components"] = self.best_values
             found_solution = True
         else:
             _logger.debug(
-                "we don't have a good result in worker " "{}".format(self.identity)
+                "we don't have a good result in worker {}".format(self.identity)
             )
             result = None
             found_solution = False

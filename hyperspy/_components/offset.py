@@ -117,11 +117,26 @@ class Offset(Component):
             self.fetch_stored_values()
             return True
 
-    def function_nd(self, axis):
-        """%s"""
+    def function_nd(self, axis, parameters_values=None):
+        """
+        Calculate the component over given axes and with given parameter values.
+
+        Parameters
+        ----------
+        axis : numpy.ndarray
+            The axis onto which the component is calculated.
+        %s
+
+        Returns
+        -------
+        numpy.ndarray
+            The component values.
+        """
+        if parameters_values is None:
+            parameters_values = [self.offset.map["values"]]
         if self._is_navigation_multidimensional:
             x = axis[np.newaxis, :]
-            o = self.offset.map["values"][..., np.newaxis]
+            o = parameters_values[0][..., np.newaxis]
         else:
             x = axis
             o = self.offset.value

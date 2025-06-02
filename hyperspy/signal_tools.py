@@ -447,7 +447,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             return
         elif self.left_value is t.Undefined or self.right_value is t.Undefined:
             _logger.warning(
-                "Select the new left and right values before " "pressing apply."
+                "Select the new left and right values before pressing apply."
             )
             return
         axis = self.axis
@@ -621,7 +621,7 @@ class SmoothingSavitzkyGolay(Smoothing):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
             _logger.warning(
-                "Polynomial order must be < window length. " "Window length set to %i.",
+                "Polynomial order must be < window length. Window length set to %i.",
                 self.window_length,
             )
         self.update_lines()
@@ -788,8 +788,7 @@ class ImageContrastEditor(t.HasTraits):
         0.1,
         exclude_low=False,
         exclude_high=False,
-        desc="Number of decades to use for each half of "
-        f"the linear range. {mpl_help}",
+        desc=f"Number of decades to use for each half of the linear range. {mpl_help}",
     )
     auto = t.Bool(
         True,
@@ -1714,7 +1713,7 @@ class SpikesRemoval:
 @add_gui_method(toolkey="hyperspy.Signal1D.spikes_removal_tool")
 class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
     threshold = t.Float(
-        400, desc="the derivative magnitude threshold above\n" "which to find spikes"
+        400, desc="the derivative magnitude threshold above\nwhich to find spikes"
     )
     click_to_show_instructions = t.Button()
     show_derivative_histogram = t.Button()
@@ -1722,7 +1721,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
         1,
         10,
         1,
-        desc="the order of the spline used to\n" "connect the reconstructed data",
+        desc="the order of the spline used to\nconnect the reconstructed data",
     )
     interpolator = None
     default_spike_width = t.Int(

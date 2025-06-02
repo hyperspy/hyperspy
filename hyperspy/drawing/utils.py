@@ -347,9 +347,7 @@ def plot_signals(
 
     if navigator_list:
         if not (len(signal_list) == len(navigator_list)):
-            raise ValueError(
-                "signal_list and navigator_list must" " have the same size"
-            )
+            raise ValueError("signal_list and navigator_list must have the same size")
 
     if sync:
         axes_manager_list = []
@@ -800,7 +798,7 @@ def plot_images(
     else:
         # Didn't understand cmap input, so raise error
         raise ValueError(
-            "The provided cmap value was not understood. Please " "check input values."
+            "The provided cmap value was not understood. Please check input values."
         )
 
     # If any of the cmaps given are diverging, and auto-centering, set the
@@ -922,8 +920,7 @@ def plot_images(
 
     if scalebar not in [None, False, "all"] and scalelist is False:
         raise ValueError(
-            "Did not understand scalebar input. Must be None, "
-            "'all', or list of ints."
+            "Did not understand scalebar input. Must be None, 'all', or list of ints."
         )
 
     # Determine appropriate number of images per row
@@ -1040,7 +1037,7 @@ def plot_images(
         for im in images:
             if im.axes_manager[0].scale != images[0].axes_manager[0].scale:
                 raise ValueError(
-                    "Images are not the same scale and so should" "not be overlayed."
+                    "Images are not the same scale and so shouldnot be overlayed."
                 )
 
         if vmin is not None:
@@ -1609,7 +1606,7 @@ def plot_spectra(
             if legend == "auto":
                 legend = [spec.metadata.General.title for spec in spectra]
             else:
-                raise ValueError("legend must be None, 'auto' or a list of " "strings.")
+                raise ValueError("legend must be None, 'auto' or a list of strings.")
 
     if normalise:
         ylabel = "Normalised Intensity"
@@ -1678,25 +1675,30 @@ def plot_spectra(
     elif style == "mosaic":
         if legend is None:
             legend = [legend] * len(spectra)
-        for spectrum, ax_, color, linestyle, legend in zip(
+        if not np.iterable(ax):
+            # make sure it is a list
+            ax = [ax]
+        for spectra_, ax_, color_, linestyle_, legend_ in zip(
             spectra, ax, color, linestyle, legend
         ):
-            spectrum = _transpose_if_required(spectrum, 1)
+            spectra_ = _transpose_if_required(spectra_, 1)
             _plot_spectrum(
-                spectrum,
+                spectra_,
                 ax_,
                 normalise,
-                color=color,
-                linestyle=linestyle,
+                color=color_,
+                linestyle=linestyle_,
                 drawstyle=drawstyle,
             )
             ax_.set_ylabel(ylabel)
-            if legend is not None:
-                ax_.set_title(legend)
+            if legend_ is not None:
+                ax_.set_title(legend_)
+            # Add xlabel for each axes (list of BaseSignal)
             if not isinstance(spectra, BaseSignal):
-                _set_spectrum_xlabel(spectrum, ax_)
+                _set_spectrum_xlabel(spectra_, ax_)
+        # Add xlabel at the very bottom (single BaseSignal)
         if isinstance(spectra, BaseSignal):
-            _set_spectrum_xlabel(spectrum, ax_)
+            _set_spectrum_xlabel(spectra, ax[-1])
         fig.tight_layout()
 
     elif style == "heatmap":
@@ -1724,9 +1726,7 @@ def plot_spectra(
 
     if auto_update:
         if style != "overlap":
-            raise ValueError(
-                "auto_update=True is only supported with " "style='overlap'."
-            )
+            raise ValueError("auto_update=True is only supported with style='overlap'.")
 
         for s, line in zip(spectra, ax.get_lines()):
             f = partial(update_line, s, line=line, normalise=normalise)

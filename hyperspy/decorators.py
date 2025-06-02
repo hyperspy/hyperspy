@@ -254,7 +254,7 @@ def jit_ifnumba(*args, **kwargs):
         return numba.jit(*args, **kwargs)
     except ImportError:
         _logger.warning(
-            "Numba is not installed, falling back to " "non-accelerated implementation."
+            "Numba is not installed, falling back to non-accelerated implementation."
         )
 
         def wrap1(func):

@@ -205,8 +205,7 @@ class UnitConversion:
             return getattr(self, attribute) * _ureg(units)
         else:
             raise ValueError(
-                "`attribute` argument can only take the `scale` "
-                "or the `offset` value."
+                "`attribute` argument can only take the `scale` or the `offset` value."
             )
 
     def _set_quantity(self, value, attribute="scale"):
@@ -228,8 +227,7 @@ class UnitConversion:
             setattr(self, attribute, float(value.magnitude))
         else:
             raise ValueError(
-                "`attribute` argument can only take the `scale` "
-                "or the `offset` value."
+                "`attribute` argument can only take the `scale` or the `offset` value."
             )
 
     @property
@@ -560,9 +558,7 @@ class BaseDataAxis(t.HasTraits):
             if self.is_uniform:
                 value = self._get_value_from_value_with_units(value)
             else:
-                raise ValueError(
-                    "Unit conversion is only supported for " "uniform axis."
-                )
+                raise ValueError("Unit conversion is only supported for uniform axis.")
         else:
             raise ValueError(f"`{value}` is not a suitable string for slicing.")
 
@@ -1697,7 +1693,7 @@ class AxesManager(t.HasTraits):
             and not y.imag.is_integer()
         ):
             raise TypeError(
-                "axesmanager indices must be integers, " "complex integers or strings"
+                "axesmanager indices must be integers, complex integers or strings"
             )
         if y.imag == 0:  # Natural order
             return self._get_axes_in_natural_order()[y]
@@ -1711,7 +1707,7 @@ class AxesManager(t.HasTraits):
             return self.signal_axes[int(y.real)]
         else:
             raise IndexError(
-                "axesmanager imaginary part of complex indices " "must be 0, 1, 2 or 3"
+                "axesmanager imaginary part of complex indices must be 0, 1, 2 or 3"
             )
 
     def __getslice__(self, i=None, j=None):
@@ -2254,7 +2250,7 @@ class AxesManager(t.HasTraits):
             return
         elif self.ragged and value > 0:
             raise ValueError(
-                "Signal containing ragged array " "must have zero signal dimension."
+                "Signal containing ragged array must have zero signal dimension."
             )
         elif value > len(self._axes):
             raise ValueError(

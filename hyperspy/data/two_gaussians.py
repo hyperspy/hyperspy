@@ -76,7 +76,8 @@ def two_gaussians(add_noise=True, return_model=False):
     gs01 = hs.model.components1D.GaussianHF()
     gs01.name = "wide"
     m.append(gs01)
-    gs01.fwhm.value = 60
+    gs01.fwhm.map["values"][:] = 60
+    gs01.fwhm.map["is_set"][:] = True
     gs01.centre.map["values"][:] = center_wide
     gs01.centre.map["is_set"][:] = True
     gs01.height.map["values"][:] = h_wide
@@ -85,7 +86,8 @@ def two_gaussians(add_noise=True, return_model=False):
     gs02 = hs.model.components1D.GaussianHF()
     gs02.name = "narrow"
     m.append(gs02)
-    gs02.fwhm.value = 6
+    gs02.fwhm.map["values"][:] = 6
+    gs02.fwhm.map["is_set"][:] = True
     gs02.centre.map["values"][:] = center_narrow
     gs02.centre.map["is_set"][:] = True
     gs02.height.map["values"][:] = h_narrow

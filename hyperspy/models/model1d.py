@@ -309,29 +309,6 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def _get_model_data(self, component_list=None, ignore_channel_switches=False):
-        """
-        Return the model data at the current position
-
-        Parameters
-        ----------
-        component_list : list or None
-            If None, the model is constructed with all active components. Otherwise,
-            the model is constructed with the components in component_list.
-
-        Returns:
-        --------
-        model_data: `ndarray`
-        """
-        if component_list is None:
-            component_list = self
-        slice_ = slice(None) if ignore_channel_switches else self._channel_switches
-        axis = self.axis.axis[slice_]
-        model_data = np.zeros(len(axis))
-        for component in component_list:
-            model_data += component.function(axis)
-        return model_data
-
     def _get_current_data(
         self,
         onlyactive=False,
@@ -357,8 +334,6 @@ class Model1D(BaseModel):
             If true, the entire signal axis are returned
             without checking _channel_switches.
 
-        cursor: 1 or 2
-
         Returns
         -------
         numpy array
@@ -373,10 +348,35 @@ class Model1D(BaseModel):
             component_list = [
                 component for component in component_list if component.active
             ]
-        model_data = self._get_model_data(
-            component_list=component_list,
-            ignore_channel_switches=ignore_channel_switches,
-        )
+
+        slice_ = slice(None) if ignore_channel_switches else self._channel_switches
+
+        try:
+            model_convolved = self.convolved
+            convolution_supported = True
+        except NotImplementedError:
+            convolution_supported = False
+
+        if convolution_supported and model_convolved:
+            sum_convolved = np.zeros_like(self._convolution_axis, dtype=float)
+            sum_ = np.zeros_like(self.axis.axis, dtype=float)
+            for component in component_list:
+                if component.convolved:
+                    sum_convolved += component.function(self._convolution_axis)
+                else:
+                    sum_ += component.function(self.axis.axis)
+            model_data = sum_ + np.convolve(
+                self._signal_to_convolve._get_current_data(self.axes_manager),
+                sum_convolved,
+                mode="valid",
+            )
+            model_data = model_data[slice_]
+        else:
+            axis = self.axis.axis[slice_]
+            model_data = np.zeros(len(axis))
+            for component in component_list:
+                model_data += component.function(axis)
+
         if binned is None:
             # use self.axis instead of self.signal.axes_manager[-1]
             # to avoid small overhead (~10 us) which isn't negligeable when
@@ -548,26 +548,44 @@ class Model1D(BaseModel):
         if weights is None:
             weights = 1.0
 
-        axis = self.axis.axis[self._channel_switches]
         counter = 0
-        grad = axis
+        grad = np.zeros(len(self.axis.axis))
         for component in self:  # Cut the parameters list
             if component.active:
                 component.fetch_values_from_array(
                     param[counter : counter + component._nfree_param], onlyfree=True
                 )
-
                 for parameter in component.free_parameters:
-                    par_grad = parameter.grad(axis)
+                    if self._convolved and component.convolved:
+                        par_grad = np.convolve(
+                            parameter.grad(self._convolution_axis),
+                            self._signal_to_convolve._get_current_data(
+                                self.axes_manager
+                            ),
+                            mode="valid",
+                        )
+                    else:
+                        par_grad = parameter.grad(self.axis.axis)
+
                     if parameter._twins:
                         for par in parameter._twins:
-                            np.add(par_grad, par.grad(axis), par_grad)
+                            if self._convolved and component.convolved:
+                                par_grad_twin = np.convolve(
+                                    par.grad(self._convolution_axis),
+                                    self._signal_to_convolve._get_current_data(
+                                        self.axes_manager
+                                    ),
+                                    mode="valid",
+                                )
+                            else:
+                                par_grad_twin = par.grad(self.axis.axis)
+                            np.add(par_grad, par_grad_twin, par_grad)
 
                     grad = np.vstack((grad, par_grad))
 
                 counter += component._nfree_param
 
-        to_return = grad[1:, :] * weights
+        to_return = grad[1:, self._channel_switches] * weights
 
         if self.axis.is_binned:
             if self.axis.is_uniform:

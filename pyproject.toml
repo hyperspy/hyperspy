@@ -11,35 +11,32 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
     "cloudpickle",
-    "dask[array]>=2021.5.1",
+    "dask[array]>=2022.9.2",
     "importlib-metadata>=3.6",
-    "jinja2",
+    "jinja2", # improves representation of lazy signals by dask
     "matplotlib>=3.6",
     "natsort",
     "numpy>=1.20.0",
     "packaging",
     "pint>=0.10",
-    "pooch",
     "prettytable>=2.3",
-    "python-dateutil>=2.5.0",
     "pyyaml",
-    "requests",
     "rosettasciio[hdf5]",
     "scikit-image>=0.18",
     "scipy>=1.6.0",
-    "sympy>=1.6",
-    "tqdm>=4.9.0",
+    "sympy>=1.10",
+    "tqdm>=4.59.0",
     "traits>=4.5.0",
 ]
 description = "Multidimensional data analysis toolbox"
@@ -83,21 +80,29 @@ keywords = [
 ]
 name = "hyperspy"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [project.license]
 file = "COPYING.txt"
 
 [project.optional-dependencies]
 all = [
+    "hyperspy[dask-image]",
+    "hyperspy[baseline]",
     "hyperspy[gui-jupyter]",
     "hyperspy[gui-traitsui]",
     "hyperspy[ipython]",
     "hyperspy[learning]",
     "hyperspy[speed]",
 ]
+baseline = [
+    "pybaselines"
+]
 coverage = [
     "pytest-cov",
+]
+dask-image = [
+    "dask-image",
 ]
 dev = [
     "black",
@@ -113,6 +118,7 @@ doc = [
     # https://github.com/conda-forge/ipython-feedstock/pull/210
     "pickleshare", # ipython optional dependencies
     "numpydoc",
+    "pybaselines", # for docstring test
     "pydata_sphinx_theme",
     "setuptools_scm",
     "sphinx-copybutton",
@@ -121,9 +127,8 @@ doc = [
     "sphinx-gallery",
     "sphinx>=1.7",
     "sphinxcontrib-mermaid",
-    "sphinxcontrib-towncrier>=0.3.0a0",
-    # unpin when sphinxcontrib-towncrier support more recent version to towncrier
-    "towncrier<24",
+    "sphinxcontrib-towncrier>=0.5.0a0",
+    "towncrier",
 ]
 gui-jupyter = [
     "hyperspy_gui_ipywidgets>=2.0",
@@ -140,10 +145,11 @@ learning = [
     "scikit-learn>=1.0.1",
 ]
 speed = [
-    "numba",
-    "numexpr",
+    "numba>=0.53",
+    "numexpr>=2.8",
 ]
 tests = [
+    "pooch",
     "pytest-instafail",
     "pytest-mpl",
     "pytest-rerunfailures",
@@ -169,6 +175,7 @@ omit = [
     "examples/*",
     "hyperspy/conftest.py",
     "hyperspy/tests/*",
+    "hyperspy/external/scipy/*",
     "prepare_release.py",
     "setup.py",
 ]
@@ -229,7 +236,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-fallback_version = "2.3.0.dev0"
+fallback_version = "2.3.1.dev0"
 
 [tool.towncrier]
 directory = "upcoming_changes/"

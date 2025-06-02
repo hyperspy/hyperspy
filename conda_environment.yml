@@ -2,26 +2,24 @@ name: test_env
 channels:
 - conda-forge
 dependencies:
-- dask-core >=2021.3.1
+- dask-core >=2022.9.2
 - dill
 - importlib-metadata
 - h5py
 - jinja2
 - matplotlib-base >=3.6
 - natsort
-- numba >=0.52
-- numexpr
+- numba >=0.53
+- numexpr >=2.8
 - numpy >=1.20
 - packaging
 - pint >=0.10
 - prettytable >=2.3
-- python-dateutil >=2.5.0
 - pyyaml
-- requests
 - rosettasciio-base
 - scikit-image >=0.18
 - scikit-learn >=1.0.1
 - scipy >=1.6.0
-- sympy >=1.6.0
-- tqdm >=4.9.0
+- sympy >=1.10
+- tqdm >=4.59.0
 - traits >=4.5.0

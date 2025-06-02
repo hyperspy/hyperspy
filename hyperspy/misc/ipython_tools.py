@@ -83,9 +83,7 @@ def turn_logging_on(verbose=1):
         )
     if verbose == 1:
         print("\nLogging is active")
-        print(
-            "The log is stored in the hyperspy_log.py file" " in the current directory"
-        )
+        print("The log is stored in the hyperspy_log.py file in the current directory")
 
 
 def turn_logging_off():

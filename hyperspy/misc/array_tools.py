@@ -140,7 +140,7 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
             scale.append(a.shape[i] / new_shape[i])
     if isinstance(dtype, str) and dtype != "same":
         raise ValueError(
-            "`dtype` argument needs to be None, a numpy dtype or " 'the string "same".'
+            '`dtype` argument needs to be None, a numpy dtype or the string "same".'
         )
 
     # check whether or not interpolation is needed.
@@ -283,7 +283,7 @@ def _linear_bin(dat, scale, crop=True, dtype=None):
 
     if dtype_str_same_integer or dtype_interger:
         raise ValueError(
-            "Linear interpolation requires float dtype, change the " "dtype argument."
+            "Linear interpolation requires float dtype, change the dtype argument."
         )
 
     if np.issubdtype(dat.dtype, np.integer):
@@ -407,6 +407,69 @@ def get_signal_chunk_slice(index, chunks):
             elif _slice[1].start <= index[1] < _slice[1].stop:
                 return chunk_slice
     raise ValueError("Index out of signal range.")
+
+
+def get_chunk_slice(
+    shape,
+    signal_dimension,
+    chunks="auto",
+    block_size_limit=None,
+    dtype=None,
+):
+    """
+    Takes a shape and chunks and returns an array of the slices to be used with
+    :func:`dask.array.map_blocks`.
+
+    Parameters
+    ----------
+    shape : tuple
+        Shape of the data.
+    signal_dimension : int
+        The signal dimension of the signal.
+    chunks : "auto", "dask_auto" or tuple
+        If ``"auto"``, no chunking is created in the signal dimension. If ``"dask_auto"``, the
+        dask "auto" chunking is used - see :func:`dask.array.core.normalize_chunks` for more
+        information. The default is "auto".
+    block_size_limit : int, optional
+        Maximum size of a block in bytes. The default is None. This is passed
+        to the :func:`dask.array.core.normalize_chunks` function when chunks == "auto".
+    dtype : numpy.dtype, optional
+        Data type. The default is None. This is passed to the
+        :func:`dask.array.core.normalize_chunks` function when chunks == "auto".
+
+    Returns
+    -------
+    numpy.ndarray of slices
+        Dask array of the slices.
+    tuple
+        Tuple of the chunks.
+
+    Note
+    ----
+    Adapted from https://github.com/hyperspy/rosettasciio/blob/main/rsciio/utils/distributed.py
+    """
+    if chunks == "auto":
+        # no chunking along signal_dimension
+        chunks = ("auto",) * len(shape[:-signal_dimension]) + (-1,)
+    elif chunks == "dask_auto":
+        # Use dask auto
+        chunks = "auto"
+
+    chunks = da.core.normalize_chunks(
+        chunks=chunks, shape=shape, limit=block_size_limit, dtype=dtype
+    )
+    chunks_shape = tuple([len(c) for c in chunks])
+    slices = np.empty(
+        shape=chunks_shape + (len(chunks_shape), 2),
+        dtype=int,
+    )
+    for ind in np.ndindex(chunks_shape):
+        current_chunk = [chunk[i] for i, chunk in zip(ind, chunks)]
+        starts = [int(np.sum(chunk[:i])) for i, chunk in zip(ind, chunks)]
+        stops = [s + c for s, c in zip(starts, current_chunk)]
+        slices[ind] = [[start, stop] for start, stop in zip(starts, stops)]
+
+    return slices, chunks
 
 
 @jit_ifnumba(cache=True)

@@ -39,6 +39,7 @@ class TestOffset:
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned, uniform):
         self.m.signal.axes_manager[-1].is_binned = binned
+        self.m.assign_current_values_to_all()
         s = self.m.as_signal()
         if not uniform:
             s.axes_manager[-1].convert_to_non_uniform_axis()
@@ -53,6 +54,7 @@ class TestOffset:
     @pytest.mark.parametrize(("binned"), (True, False))
     def test_function_nd(self, binned, uniform):
         self.m.signal.axes_manager[-1].is_binned = binned
+        self.m.assign_current_values_to_all()
         s = self.m.as_signal()
         s = hs.stack([s] * 2)
         o = hs.model.components1D.Offset()

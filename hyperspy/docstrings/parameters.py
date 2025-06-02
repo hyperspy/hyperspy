@@ -18,7 +18,10 @@
 
 """Common docstring snippets for parameters."""
 
-FUNCTION_ND_DOCSTRING = """Returns a numpy array containing the value of the component for all
-        indices. If enough memory is available, this is useful to quickly to
-        obtain the fitted component without iterating over the navigation axes.
+FUNCTION_ND_DOCSTRING = """parameters_values : list, None, optional
+            List of parameters values used to calculate the component.
+            The order of the parameter in the list is defined in the
+            ``parameters`` attributes of the components
+            If ``None``, the parameters values for all navigation positions
+            are considered. The default is None.
         """

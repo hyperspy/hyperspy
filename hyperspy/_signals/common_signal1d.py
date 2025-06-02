@@ -56,4 +56,4 @@ class CommonSignal1D:
         )
         return im
 
-    to_signal2D.__doc__ %= OPTIMIZE_ARG.replace("False", "True")
+    to_signal2D.__doc__ %= OPTIMIZE_ARG

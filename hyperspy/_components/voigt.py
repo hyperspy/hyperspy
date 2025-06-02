@@ -182,6 +182,7 @@ class Voigt(Expression):
             self.sigma.map["is_set"][:] = True
             self.centre.map["values"][:] = centre
             self.centre.map["is_set"][:] = True
+            self.gamma.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 

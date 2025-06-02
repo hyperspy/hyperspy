@@ -148,6 +148,39 @@ following template to suit your needs:
             p2 = self.parameter_2.value
             return p1 + x * p2
 
+        # Optional vectorised implementation of function to optimize
+        # performance for specific features such as linear fitting and
+        # `BaseModel.as_signal`
+        def function_nd(self, x, parameters_values=None):
+            """
+            Parameters
+            ----------
+            x : numpy.ndarray
+                The axis used to calculate the 
+            parameters_values : list of numpy.ndarray or None
+                The list of parameters values.
+                If None, the parameters values will obtained
+                from ``Parameter.map["values"]``.
+            
+            Returns
+            -------
+            numpy.ndarray
+                Results of the component calculated over the axis ``x``.
+            """
+            if parameters_values is None:
+                parameters_values = [
+                    self.parameter_1.map["values"],
+                    self.parameter_2.map["values"],
+                    ]
+            if self._is_navigation_multidimensional:
+                x = x[np.newaxis, :]
+                p1 = parameters_values[0][..., np.newaxis]
+                p2 = parameters_values[1][..., np.newaxis]
+            else:
+                p1 = self.parameter_1.value
+                p2 = self.parameter_2.value
+            return np.ones_like(x) * p1 + x * p2
+
         # Optionally define the gradients of each parameter
         def grad_parameter_1(self, x):
             """
@@ -160,6 +193,7 @@ following template to suit your needs:
             Returns d(function)/d(parameter_2)
             """
             return x
+
 
 Define components from a fixed-pattern
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

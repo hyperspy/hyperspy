@@ -157,6 +157,7 @@ GUI:
     - hyperspy.Signal1D.smooth_butterworth
     - hyperspy.Signal1D.contrast_editor
     - hyperspy.Signal1D.remove_background
+    - hyperspy.Signal1D.remove_baseline
     - hyperspy.SimpleMessage
     - hyperspy.Signal1D.spikes_removal_tool
     - hyperspy.Signal2D.find_peaks

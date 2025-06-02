@@ -159,6 +159,7 @@ class TestGaussian:
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters_binned(self, only_current, binned):
         self.m.signal.axes_manager[-1].is_binned = binned
+        self.m.assign_current_values_to_all()
         s = self.m.as_signal()
         assert s.axes_manager[-1].is_binned == binned
         g = hs.model.components1D.Gaussian()
@@ -171,6 +172,7 @@ class TestGaussian:
     @pytest.mark.parametrize("binned", (True, False))
     def test_function_nd(self, binned):
         self.m.signal.axes_manager[-1].is_binned = binned
+        self.m.assign_current_values_to_all()
         s = self.m.as_signal()
         s2 = hs.stack([s] * 2)
         g = hs.model.components1D.Gaussian()

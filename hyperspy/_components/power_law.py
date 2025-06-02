@@ -181,6 +181,8 @@ class PowerLaw(Expression):
             self.A.map["is_set"][:] = True
             self.r.map["values"][:] = r
             self.r.map["is_set"][:] = True
+            self.origin.map["is_set"] = True
+            self.left_cutoff.map["is_set"] = True
             self.fetch_stored_values()
             return True
 

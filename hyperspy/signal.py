@@ -20,6 +20,7 @@ import copy
 import inspect
 import logging
 import numbers
+import os
 import warnings
 from collections.abc import MutableMapping
 from contextlib import contextmanager
@@ -28,10 +29,10 @@ from functools import partial
 from itertools import product
 from pathlib import Path
 
+import dask
 import dask.array as da
 import numpy as np
 import traits.api as t
-from dask.diagnostics import ProgressBar
 from matplotlib import pyplot as plt
 from pint import UndefinedUnitError
 from rsciio.utils import rgb_tools
@@ -54,6 +55,7 @@ from hyperspy.docstrings.signal import (
     HISTOGRAM_BIN_ARGS,
     HISTOGRAM_MAX_BIN_ARGS,
     HISTOGRAM_RANGE_ARGS,
+    IN_PLACE,
     LAZY_OUTPUT_ARG,
     MANY_AXIS_PARAMETER,
     NAN_FUNC,
@@ -76,6 +78,7 @@ from hyperspy.exceptions import (
     SignalDimensionError,
     VisibleDeprecationWarning,
 )
+from hyperspy.external.scipy.ndfilters import _get_footprint
 from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
@@ -87,9 +90,9 @@ from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
 from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
+    _compute,
     _get_block_pattern,
     add_scalar_axis,
-    dummy_context_manager,
     guess_output_signal_size,
     is_cupy_array,
     isiterable,
@@ -2076,8 +2079,7 @@ class MVATools(object):
         """
         if self.axes_manager.signal_dimension > 2:
             raise NotImplementedError(
-                "This method cannot plot factors of "
-                "signals of dimension higher than 2."
+                "This method cannot plot factors of signals of dimension higher than 2."
             )
         cs = self._get_cluster_signals_factors(signal=signal)
         if same_window is None:
@@ -2658,7 +2660,11 @@ class BaseSignal(
                 self.learning_results = old_learning_results
 
     def as_lazy(
-        self, copy_variance=True, copy_navigator=True, copy_learning_results=True
+        self,
+        chunks=None,
+        copy_variance=True,
+        copy_navigator=True,
+        copy_learning_results=True,
     ):
         """
         Create a copy of the given Signal as a
@@ -2666,6 +2672,13 @@ class BaseSignal(
 
         Parameters
         ----------
+        chunks : str or tuple
+            Define chunking of the dask array.
+            If ``"auto"``, automatic chunking will be used and the signal
+            dimension will not be split. If ``dask_auto"``, dask's
+            automatic chunking will be used. If tuple, it defines the chunks,
+            see dask documentation for more information on defining chunks.
+            If ``str`` and the array is already a dask array, don't change the chunking.
         copy_variance : bool
             Whether or not to copy the variance from the original Signal to
             the new lazy version. Default is True.
@@ -2688,7 +2701,15 @@ class BaseSignal(
             copy_learning_results=copy_learning_results,
         )
         res._lazy = True
-        res._assign_subclass()
+        if chunks is None:
+            # Set default values
+            chunks = False if isinstance(res.data, da.Array) else "auto"
+        elif isinstance(chunks, str) and isinstance(res.data, da.Array):
+            chunks = False
+            _logger.warning(
+                "Ignoring `chunks` argument because data is already a dask array."
+            )
+        res._assign_subclass(chunks=chunks)
         return res
 
     def _summary(self):
@@ -3414,7 +3435,7 @@ class BaseSignal(
         i1, i2 = axis._get_index(start), axis._get_index(end)
         # To prevent an axis error, which may confuse users
         if i1 is not None and i2 is not None and not i1 != i2:
-            raise ValueError("The `start` and `end` values need to be " "different.")
+            raise ValueError("The `start` and `end` values need to be different.")
 
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
@@ -3641,7 +3662,7 @@ class BaseSignal(
             raise ValueError("One of new_shape, or scale must be specified")
         elif new_shape is not None and scale is not None:
             raise ValueError(
-                "Only one out of new_shape or scale should be specified. " "Not both."
+                "Only one out of new_shape or scale should be specified. Not both."
             )
         elif new_shape:
             if len(new_shape) != len(self.data.shape):
@@ -5170,7 +5191,6 @@ class BaseSignal(
         %s
         %s
         %s
-        %s
         **kwargs
             other keyword arguments (weight and density) are described in
             :func:`numpy.histogram`.
@@ -5241,7 +5261,6 @@ class BaseSignal(
         HISTOGRAM_RANGE_ARGS,
         HISTOGRAM_MAX_BIN_ARGS,
         OUT_ARG,
-        RECHUNK_ARG,
     )
 
     def map(
@@ -5251,15 +5270,15 @@ class BaseSignal(
         num_workers=None,
         inplace=True,
         ragged=None,
-        navigation_chunks=None,
+        navigation_chunks="auto",
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
         silence_warnings=False,
         **kwargs,
     ):
-        """Apply a function to the signal data at all the navigation
-        coordinates.
+        """
+        Apply a function to the signal data at all the navigation coordinates.
 
         The function must operate on numpy arrays. It is applied to the data at
         each navigation coordinate pixel-py-pixel. Any extra keyword arguments
@@ -5286,18 +5305,18 @@ class BaseSignal(
             first. For example via `image = copy.deepcopy(image)`.
         %s
         %s
-        inplace : bool, default True
-            If ``True``, the data is replaced by the result. Otherwise
-            a new Signal with the results is returned.
+        %s
         ragged : None or bool, default None
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
             the output signal will be ragged only if the original signal is ragged.
-        navigation_chunks : str, None, int or tuple of int, default ``None``
-            Set the navigation_chunks argument to a tuple of integers to split
-            the navigation axes into chunks. This can be useful to enable
-            using multiple cores with signals which are less that 100 MB.
-            This argument is passed to :meth:`~._signals.lazy.LazySignal.rechunk`.
+        navigation_chunks : str, or tuple of int, default ``"auto"``
+            Set the ``navigation_chunks`` argument to a tuple of integers to split
+            the navigation axes into chunks, without chunking the signal dimension.
+            If ``"auto"`` and when the data size is less than 100MB * number of cores,
+            the chunking will be optimised to be distributed over the number of cores.
+            This is useful to enable using multiple cores with signals which are
+            less that 100 MB.
         output_signal_size : None, tuple
             Since the size and dtype of the signal dimension of the output
             signal can be different from the input signal, this output signal
@@ -5394,6 +5413,17 @@ class BaseSignal(
             lazy_output = self._lazy
         if ragged is None:
             ragged = self.ragged
+        if navigation_chunks is None:
+            navigation_chunks = "auto"
+            _logger.warning(
+                "Using `navigaion_chunk=None` is deprecated, "
+                "`navigaion_chunk='auto'` is used instead."
+            )
+        if not isinstance(navigation_chunks, tuple) and navigation_chunks != "auto":
+            raise ValueError(
+                "`navigation_chunks` argument must be a tuple or `'auto'`."
+            )
+
         if isinstance(silence_warnings, str):
             silence_warnings = (silence_warnings,)
 
@@ -5529,7 +5559,7 @@ class BaseSignal(
         else:
             self.events.data_changed.trigger(obj=self)
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, NUM_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG, IN_PLACE, LAZY_OUTPUT_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """
@@ -5572,8 +5602,31 @@ class BaseSignal(
             lazy_output = self._lazy
 
         if not self._lazy:
-            s_input = self.as_lazy()
-            s_input.rechunk(nav_chunks=navigation_chunks)
+            chunks = "auto"
+            if navigation_chunks == "auto":
+                nav_size = self.axes_manager.navigation_size
+                nav_dim = max(self.axes_manager.navigation_dimension, 1)
+                if num_workers is None:
+                    # Get dask current setting, fall back to os.cpu_count
+                    num_workers = dask.config.get("num_workers", os.cpu_count())
+
+                # Optimise chunking for parallel computing if the navigation size is
+                # large enough (5 * num_workers), the data will be split into chunks
+                # else if the data set is large (chunk of 100MB * num_workers)
+                # we keep "auto" chunking
+                if (
+                    nav_size > 5 * num_workers
+                    and self.data.nbytes < 100e6 * num_workers
+                ):
+                    # optimise chunk size to distribute over num_workers
+                    # factor of 5 is to make smaller chunks
+                    chunk_size = nav_size // (num_workers * 5)
+                    navigation_chunks = (int(chunk_size ** (1 / nav_dim)),) * nav_dim
+
+            if isinstance(navigation_chunks, tuple):
+                chunks = navigation_chunks + (-1,) * self.axes_manager.signal_dimension
+
+            s_input = self.as_lazy(chunks=chunks)
         else:
             s_input = self
 
@@ -5603,7 +5656,7 @@ class BaseSignal(
         autodetermine = (
             output_signal_size is None or output_dtype is None
         )  # try to guess output dtype and sig size?
-        if autodetermine and is_cupy_array(self.data):
+        if autodetermine and is_cupy_array(self.data):  # pragma: no cover
             raise ValueError(
                 "Autodetermination of `output_signal_size` and "
                 "`output_dtype` is not supported for cupy array."
@@ -5658,8 +5711,6 @@ class BaseSignal(
 
         data_stored = False
 
-        cm = ProgressBar if show_progressbar else dummy_context_manager
-
         if inplace:
             if (
                 not self._lazy
@@ -5667,18 +5718,13 @@ class BaseSignal(
                 and (mapped.shape == self.data.shape)
                 and (mapped.dtype == self.data.dtype)
             ):
-                # da.store is used to avoid unnecessary amount of memory usage.
-                # By using it here, the contents in mapped is written directly to
-                # the existing NumPy array, avoiding a potential doubling of memory use.
-                with cm():
-                    da.store(
-                        mapped,
-                        self.data,
-                        dtype=mapped.dtype,
-                        compute=True,
-                        num_workers=num_workers,
-                        lock=False,
-                    )
+                # use `store_to` to minmize memory usage
+                _compute(
+                    array=mapped,
+                    store_to=self.data,
+                    show_progressbar=show_progressbar,
+                    num_workers=num_workers,
+                )
                 data_stored = True
             else:
                 self.data = mapped
@@ -5706,8 +5752,9 @@ class BaseSignal(
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            with cm():
-                sig.data = sig.data.compute(num_workers=num_workers)
+            sig.data = _compute(
+                sig.data, show_progressbar=show_progressbar, num_workers=num_workers
+            )
 
         return sig
 
@@ -5793,7 +5840,8 @@ class BaseSignal(
         return copy.deepcopy(self)
 
     def change_dtype(self, dtype, rechunk=False):
-        """Change the data type of a Signal.
+        """
+        Change the data type of a Signal.
 
         Parameters
         ----------
@@ -5814,7 +5862,6 @@ class BaseSignal(
             `signal_dimension` becomes 1.
         %s
 
-
         Examples
         --------
         >>> s = hs.signals.Signal1D([1, 2, 3, 4, 5])
@@ -5824,16 +5871,17 @@ class BaseSignal(
         >>> s.data
         array([1., 2., 3., 4., 5.])
         """
+        if rechunk is True:
+            rechunk = "dask_auto"
         if not isinstance(dtype, np.dtype):
             if dtype in rgb_tools.rgb_dtypes:
                 if self.axes_manager.signal_dimension != 1:
                     raise AttributeError(
-                        "Only 1D signals can be converted " "to RGB images."
+                        "Only 1D signals can be converted to RGB images."
                     )
                 if "8" in dtype and self.data.dtype.name != "uint8":
                     raise AttributeError(
-                        "Only signals with dtype uint8 can be converted to "
-                        "rgb8 images"
+                        "Only signals with dtype uint8 can be converted to rgb8 images"
                     )
                 elif "16" in dtype and self.data.dtype.name != "uint16":
                     raise AttributeError(
@@ -5847,7 +5895,7 @@ class BaseSignal(
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager._set_signal_dimension(2)
-                self._assign_subclass()
+                self._assign_subclass(chunks=rechunk)
                 if replot:
                     self.plot()
                 return
@@ -5871,15 +5919,15 @@ class BaseSignal(
                 navigate=False,
             )
             self.axes_manager._set_signal_dimension(1)
-            self._assign_subclass()
+            self._assign_subclass(chunks=rechunk)
             if replot:
                 self.plot()
             return
         else:
             self.data = self.data.astype(dtype)
-        self._assign_subclass()
+        self._assign_subclass(chunks=rechunk)
 
-    change_dtype.__doc__ %= RECHUNK_ARG
+    change_dtype.__doc__ %= RECHUNK_ARG.replace('use ``"auto"``', 'use ``"dask_auto"``')
 
     def estimate_poissonian_noise_variance(
         self,
@@ -6293,7 +6341,7 @@ class BaseSignal(
     as_signal1D.__doc__ %= (
         ONE_AXIS_PARAMETER,
         OUT_ARG,
-        OPTIMIZE_ARG.replace("False", "True"),
+        OPTIMIZE_ARG,
     )
 
     def as_signal2D(self, image_axes, out=None, optimize=True):
@@ -6348,9 +6396,9 @@ class BaseSignal(
                 out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
 
-    as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG.replace("False", "True"))
+    as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG)
 
-    def _assign_subclass(self):
+    def _assign_subclass(self, chunks=False):
         mp = self.metadata
         self.__class__ = assign_signal_subclass(
             dtype=self.data.dtype,
@@ -6364,10 +6412,11 @@ class BaseSignal(
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(self.data, full_initialisation=False)
         if self._lazy:
-            self._make_lazy()
+            self.data = self._lazy_data(rechunk=chunks)
 
     def set_signal_type(self, signal_type=""):
-        """Set the signal type and convert the current signal accordingly.
+        """
+        Set the signal type and convert the current signal accordingly.
 
         The ``signal_type`` attribute specifies the type of data that the signal
         contains e.g. electron energy-loss spectroscopy data,
@@ -6829,7 +6878,7 @@ class BaseSignal(
         """
 
         if self.axes_manager.ragged:
-            raise RuntimeError("Signal with ragged dimension can't be " "transposed.")
+            raise RuntimeError("Signal with ragged dimension can't be transposed.")
 
         am = self.axes_manager
         ax_list = am._axes
@@ -6862,12 +6911,12 @@ class BaseSignal(
                 intersection = set(signal_axes).intersection(navigation_axes)
                 if len(intersection):
                     raise ValueError(
-                        "At least one axis found in both spaces:" " {}".format(
+                        "At least one axis found in both spaces: {}".format(
                             intersection
                         )
                     )
                 if len(am._axes) != (len(signal_axes) + len(navigation_axes)):
-                    raise ValueError("Not all current axes were assigned to a " "space")
+                    raise ValueError("Not all current axes were assigned to a space")
             else:
                 raise ValueError(
                     "navigation_axes has to be None or an iterable"
@@ -7087,8 +7136,7 @@ class BaseSignal(
             mask.shape != self.axes_manager.navigation_shape
         ):
             raise ValueError(
-                "The shape of the navigation mask array must "
-                "match `navigation_shape`."
+                "The shape of the navigation mask array must match `navigation_shape`."
             )
 
     def _check_signal_mask(self, mask):
@@ -7125,7 +7173,7 @@ class BaseSignal(
             mask.shape != self.axes_manager.signal_shape
         ):
             raise ValueError(
-                "The shape of signal mask array must match " "`signal_shape`."
+                "The shape of signal mask array must match `signal_shape`."
             )
 
     def to_device(self):
@@ -7171,6 +7219,141 @@ class BaseSignal(
         if self._lazy:  # pragma: no cover
             raise LazyCupyConversion
         self.data = to_numpy(self.data)
+
+    def remove_spikes(self, threshold_factor=5, axes=None, inplace=True, **kwargs):
+        r"""
+        Remove spikes (intense pixels that may have been generated by X-ray or
+        cosmic ray events) from data.
+        Values fullfilling the following condition will be replaced by their local
+        median:
+
+        .. math::
+
+            \mathrm{value} > \mathrm{median} + \sigma * \mathrm{threshold\_factor}
+
+        where :math:`\sigma` is the standard deviation taken along the given axes.
+
+        The local median is calculated using the :func:`scipy.ndimage.median_filter`
+        function.
+
+        Parameters
+        ----------
+        threshold_factor : int, float
+            Factor used in the thresholding calculation. A higher value will
+            give a higher threshold value to find spikes and less spikes will
+            removed. It must be a positive number. Default is 5.
+        axes : int, str, :class:`~hyperspy.axes.DataAxis` or tuple
+            Specify the axes used for calculating the local median. It is recommended
+            to use axes of similar nature, where the local median is representative
+            of the current value (for example, spatial position of mapped values).
+            ``axes`` can be a single or multiple axes in a tuple. In both cases, the
+            axes can be passed directly, or specified using the index in
+            :attr:`~.api.signals.BaseSignal.axes_manager` or the name of the axis.
+            If ``None``, for :class:`~.api.signals.Signal1D`, the navigation axes are
+            used. For signals with signal dimension >= 2, the signal axes are used.
+            For signals with a signal dimension of 0, all axes are used.
+        inplace : bool, default True
+            If ``True``, the data is replaced by the result. Otherwise,
+            a new Signal with the result is returned.
+        **kwargs : dict
+            Keyword arguments are passed to :func:`scipy.ndimage.median_filter`
+            of :func:`dask_image.ndfilters.median_filter` for lazy signals.
+
+        Returns
+        -------
+        signal : subclass of BaseSignal
+            If ``inplace=False``, the signal with removed spikes.
+
+        See Also
+        --------
+        hyperspy.api.signals.Signal1D.spikes_removal_tool,
+        hyperspy.api.signals.Signal1D.spikes_diagnosis
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> s = hs.data.two_gaussians()
+
+        Add spikes
+
+        >>> s.data[10, 5, 800] = 750
+        >>> s.data[10, 20, 200] = 2000
+        >>> s.data[15, 25, 500] = 50000
+
+        >>> s.remove_spikes()
+
+        With the default ``threshold_factor`` value of 5, the two largest
+        spikes (values of 2000 and 50000) have been removed but not the
+        smallest one (value of 750).
+
+        >>> s.remove_spikes(threshold_factor=3.5)
+
+        Parameters can be passed for the calculation of the median filter
+
+        >>> s.remove_spikes(size=5)
+        """
+        if threshold_factor <= 0:
+            raise ValueError("`threshold_factor` must a positive number.")
+
+        if "origin" in kwargs.keys():
+            raise RuntimeError(
+                "`origin` argument is not supported, use `footprint` instead."
+            )
+        size = kwargs.pop("size", 3)
+        if size % 2 == 0:
+            # Don't support even number to simplify setting footprint
+            raise ValueError("Only odd number are supported for the `size` argument.")
+
+        if np.any(np.isnan(self.data)):
+            raise ValueError("Data containing `nan` are not supported.")
+
+        if axes is not None:
+            axes = self.axes_manager[axes]
+            if not np.iterable(axes):
+                axes = (axes,)
+        else:
+            if self.axes_manager.signal_dimension == 1:
+                # Signal1D, use navigation space
+                axes = self.axes_manager.navigation_axes
+            else:
+                # Signal2D, use signal_axes
+                axes = self.axes_manager.signal_axes
+            if len(axes) == 0:
+                # Use all axes
+                axes = None
+
+        if axes is not None:
+            axes = tuple(axis.index_in_array for axis in axes)
+
+        if self._lazy:
+            try:
+                from dask_image.ndfilters import median_filter
+
+            except ImportError:
+                raise RuntimeError("`dask_image` is required to remove spikes lazily.")
+        else:
+            if is_cupy_array(self.data):  # pragma: no cover
+                from cupyx.scipy.ndimage import median_filter
+            else:
+                from scipy.ndimage import median_filter
+
+        footprint = _get_footprint(self.data, axes=axes, size=size, **kwargs)
+        # Set middle value to False to exclude from the median calculation
+        idx = tuple(size_ // 2 for size_ in footprint.shape)
+        footprint[idx] = False
+
+        med = median_filter(self.data, footprint=footprint, **kwargs)
+        std = np.std(self.data, axis=axes, keepdims=True)
+
+        corrected_data = np.where(
+            np.abs(self.data - med) > std * threshold_factor, med, self.data
+        )
+
+        if inplace:
+            self.data[:] = corrected_data
+            self.events.data_changed.trigger(obj=self)
+        else:
+            return self._deepcopy_with_new_data(corrected_data)
 
 
 ARITHMETIC_OPERATORS = (
