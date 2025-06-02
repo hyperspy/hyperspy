@@ -37,8 +37,12 @@ def antisymmetrize(a):
 
 def closest_nice_number(number):
     oom = 10 ** math.floor(math.log10(number))
-    return oom * (number // oom)
+    mantissa = number / oom
+    REFS = np.array([1, 2, 2.5, 5, 10])
+    LOGREFS = np.array([0.0, 0.6931, 0.9162, 1.6094, 2.3026])
 
+    idx = np.argmin(np.abs(LOGREFS-np.log(mantissa)))
+    return REFS[idx]*oom
 
 def get_linear_interpolation(p1, p2, x):
     """Given two points in 2D returns y for a given x for y = ax + b
