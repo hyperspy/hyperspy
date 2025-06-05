@@ -61,7 +61,11 @@ from hyperspy.misc.export_dictionary import (
     reconstruct_object,
 )
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
+from hyperspy.misc.model_tools import (
+    CurrentModelValues,
+    _calculate_covariance,
+    _calculate_parameter_uncertainty_from_fisher_information,
+)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     display,
@@ -2176,6 +2180,40 @@ class BaseModel(list):
                     )
 
                 self.p0 = self.fit_output.x
+
+                # Calculate parameter uncertainties for ML-poisson using Fisher Information Matrix
+                # Only available for 1D models currently
+                if (
+                    loss_function == "ML-poisson"
+                    and grad == "analytical"
+                    and self._signal_dimension == 1
+                ):
+                    try:
+                        # Get current data for Hessian calculation
+                        current_data = self.signal._get_current_data(as_numpy=True)[
+                            np.where(self._channel_switches)
+                        ]
+                        weights = self._convert_variance_to_weights()
+
+                        # Calculate Fisher Information Matrix (Hessian of negative log-likelihood)
+                        fisher_info_matrix = self._hessian_ml(
+                            self.p0, current_data, weights
+                        )
+
+                        # Calculate parameter uncertainties from Fisher Information Matrix
+                        p_std, _ = (
+                            _calculate_parameter_uncertainty_from_fisher_information(
+                                fisher_info_matrix
+                            )
+                        )
+                        self.p_std = p_std
+
+                    except Exception as e:
+                        # If Fisher Information Matrix calculation fails, set to None
+                        _logger.warning(
+                            f"Could not calculate parameter uncertainties for ML-poisson fitting: {e}"
+                        )
+                        self.p_std = None
 
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
