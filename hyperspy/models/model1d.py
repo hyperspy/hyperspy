@@ -613,6 +613,49 @@ class Model1D(BaseModel):
         mf = self._model_function(param)
         return -(self._jacobian(param, y) * (y / mf - 1)).sum(1)
 
+    def _hessian_ml(self, param, y, weights=None):
+        """Calculate the Hessian of the negative log-likelihood for Poisson ML fitting.
+
+        This computes the Fisher Information Matrix, which is used to estimate
+        parameter uncertainties via the Cramér-Rao bound.
+
+        Parameters
+        ----------
+        param : array-like
+            Model parameters
+        y : array-like
+            Observed data
+        weights : array-like, optional
+            Weights (not used for Poisson fitting)
+
+        Returns
+        -------
+        hessian : ndarray
+            Hessian matrix (Fisher Information Matrix)
+        """
+        mf = self._model_function(param)
+        jac = self._jacobian(param, y)
+
+        # For Poisson likelihood, the Hessian has two terms:
+        # H_ij = sum_k [ (y_k / mu_k^2) * J_ki * J_kj + (y_k / mu_k - 1) * H_kij ]
+        # where mu_k = model_function(x_k), J_ki = d(mu_k)/d(p_i), H_kij = d^2(mu_k)/d(p_i)d(p_j)
+
+        # First term: (y / mu^2) * J^T @ J
+        with np.errstate(divide="ignore", invalid="ignore"):
+            weights_hess = y / (mf * mf)
+            # Handle division by zero - set to 0 where mf is 0
+            weights_hess = np.nan_to_num(weights_hess, nan=0.0, posinf=0.0, neginf=0.0)
+
+        # Weighted Jacobian outer product: sum_k (y_k / mu_k^2) * J_ki * J_kj
+        hessian_first = np.einsum("k,ki,kj->ij", weights_hess, jac.T, jac.T)
+
+        # Second term: (y / mu - 1) * d^2(mu)/d(p_i)d(p_j)
+        # For most components, the second derivatives are small compared to first term
+        # and can be neglected (Gauss-Newton approximation)
+        # This is commonly done in practice for Poisson ML fitting
+
+        return hessian_first
+
     def _gradient_ls(self, param, y, weights=None):
         gls = (2 * self._errfunc(param, y, weights) * self._jacobian(param, y)).sum(1)
         return gls
