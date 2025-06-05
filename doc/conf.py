@@ -220,7 +220,7 @@ html_theme_options = {
         "version_match": version_match,
     },
     "navbar_start": ["navbar-logo", "version-switcher"],
-    "announcement": "HyperSpy API has changed in version 2.0, see the <a href='https://hyperspy.org/hyperspy-doc/current/changes.html#changes-2-0'>release notes!</a>",
+    # "announcement": "",
 }
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
