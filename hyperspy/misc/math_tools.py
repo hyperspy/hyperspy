@@ -41,8 +41,8 @@ def closest_nice_number(number):
     REFS = np.array([1, 2, 5, 10])
     LOGREFS = np.array([0.0, 0.6931, 1.6094, 2.3026])
 
-    idx = np.argmin(np.abs(LOGREFS-np.log(mantissa)))
-    return REFS[idx]*oom
+    idx = np.argmin(np.abs(LOGREFS - np.log(mantissa)))
+    return REFS[idx] * oom
 
 
 def get_linear_interpolation(p1, p2, x):
