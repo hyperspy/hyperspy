@@ -1,0 +1,1 @@
+Fix rendering mermaid graph in the contributor guide.
