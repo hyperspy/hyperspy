@@ -34,12 +34,12 @@ extensions = [
     "IPython.sphinxext.ipython_directive",  # Needed in basic_usage.rst
     "numpydoc",
     "sphinxcontrib.towncrier",
+    "sphinxcontrib.mermaid",
     "sphinx_design",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.githubpages",
-    "sphinx.ext.graphviz",
     "sphinx.ext.mathjax",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
@@ -443,8 +443,6 @@ sphinx_gallery_conf = {
     "notebook_images": "https://hyperspy.org/hyperspy-doc/current/",  # folder for loading images in gallery
     "reference_url": {"hyperspy": None},
 }
-
-graphviz_output_format = "svg"
 
 # -- Sphinx-copybutton -----------
 
