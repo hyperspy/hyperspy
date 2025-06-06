@@ -2183,11 +2183,7 @@ class BaseModel(list):
 
                 # Calculate parameter uncertainties for ML-poisson using Fisher Information Matrix
                 # Only available for 1D models currently
-                if (
-                    loss_function == "ML-poisson"
-                    and grad == "analytical"
-                    and self._signal_dimension == 1
-                ):
+                if loss_function == "ML-poisson" and self._signal_dimension == 1:
                     try:
                         # Get current data for Hessian calculation
                         current_data = self.signal._get_current_data(as_numpy=True)[
