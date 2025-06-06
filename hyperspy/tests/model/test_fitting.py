@@ -298,6 +298,85 @@ class TestModelFitBinnedGlobal:
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
 
+    def _check_model_parameter_stds(self, model, should_have_stds=None):
+        """Check that parameter standard deviations are properly calculated and valid.
+
+        Parameters
+        ----------
+        model : hyperspy.model.component
+            The model component to check
+        should_have_stds : bool, optional
+            If True, standard deviations are expected to be computed.
+            If False, standard deviations are expected to be None.
+            If None (default), the check adapts based on whether stds are available.
+        """
+        if should_have_stds is True:
+            # Standard deviations are expected to be available
+            assert self.m.p_std is not None, (
+                "Expected parameter standard deviations to be computed"
+            )
+            assert len(self.m.p_std) == 3, (
+                "Expected 3 parameter standard deviations (A, centre, sigma)"
+            )
+            assert np.all(~np.isnan(self.m.p_std)), (
+                "Parameter standard deviations should not be NaN"
+            )
+
+            # Check that individual parameter std values exist and are positive
+            assert model.A.std is not None, "Expected A parameter standard deviation"
+            assert model.centre.std is not None, (
+                "Expected centre parameter standard deviation"
+            )
+            assert model.sigma.std is not None, (
+                "Expected sigma parameter standard deviation"
+            )
+            assert model.A.std > 0, "A parameter standard deviation should be positive"
+            assert model.centre.std > 0, (
+                "centre parameter standard deviation should be positive"
+            )
+            assert model.sigma.std > 0, (
+                "sigma parameter standard deviation should be positive"
+            )
+
+        elif should_have_stds is False:
+            # Standard deviations are expected to be None (for certain global optimizers)
+            assert self.m.p_std is None, (
+                "Expected parameter standard deviations to be None for this optimizer/loss combination"
+            )
+            assert model.A.std is None, (
+                "Expected A parameter standard deviation to be None"
+            )
+            assert model.centre.std is None, (
+                "Expected centre parameter standard deviation to be None"
+            )
+            assert model.sigma.std is None, (
+                "Expected sigma parameter standard deviation to be None"
+            )
+
+        else:
+            # Adaptive check: if stds are available, validate them; if not, that's also OK
+            if self.m.p_std is not None:
+                assert len(self.m.p_std) == 3, (
+                    "If available, should have 3 parameter standard deviations"
+                )
+                assert np.all(~np.isnan(self.m.p_std)), (
+                    "Available parameter standard deviations should not be NaN"
+                )
+
+                # Check individual parameter stds if they exist
+                if model.A.std is not None:
+                    assert model.A.std > 0, (
+                        "If available, A parameter standard deviation should be positive"
+                    )
+                if model.centre.std is not None:
+                    assert model.centre.std > 0, (
+                        "If available, centre parameter standard deviation should be positive"
+                    )
+                if model.sigma.std is not None:
+                    assert model.sigma.std > 0, (
+                        "If available, sigma parameter standard deviation should be positive"
+                    )
+
     @pytest.mark.parametrize(
         "loss_function, expected",
         [
@@ -316,12 +395,19 @@ class TestModelFitBinnedGlobal:
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
+        # Only ML-poisson provides standard deviations with differential evolution
+        should_have_stds = loss_function == "ML-poisson"
+        self._check_model_parameter_stds(self.m[0], should_have_stds=should_have_stds)
+
     def test_fit_dual_annealing(self):
         pytest.importorskip("scipy", minversion="1.2.0")
         self.m.fit(optimizer="Dual Annealing", loss_function="ls", bounded=True, seed=1)
         expected = (250.66282750, 50.0, 5.0)
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
+
+        # Dual annealing with ls loss function does not provide standard deviations
+        self._check_model_parameter_stds(self.m[0], should_have_stds=False)
 
     # See https://github.com/scipy/scipy/issues/14589
     @pytest.mark.xfail(
@@ -334,6 +420,9 @@ class TestModelFitBinnedGlobal:
         expected = (250.66282750, 50.0, 5.0)
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
+
+        # SHGO with ls loss function does not provide standard deviations
+        self._check_model_parameter_stds(self.m[0], should_have_stds=False)
 
 
 @lazifyTestClass
