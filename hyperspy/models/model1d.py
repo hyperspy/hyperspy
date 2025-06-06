@@ -656,6 +656,51 @@ class Model1D(BaseModel):
 
         return hessian_first
 
+    def _hessian_ls(self, param, y, weights=None):
+        """Calculate the Hessian matrix for least squares loss function.
+
+        This computes the approximate Hessian using the Gauss-Newton method,
+        which is used to estimate parameter uncertainties.
+
+        Parameters
+        ----------
+        param : array-like
+            Model parameters
+        y : array-like
+            Observed data
+        weights : array-like, optional
+            Weights for weighted least squares
+
+        Returns
+        -------
+        hessian : ndarray
+            Hessian matrix (Gauss-Newton approximation)
+        """
+        jac = self._jacobian(param, y)
+
+        # For least squares, the Hessian has two terms:
+        # H_ij = sum_k [ J_ki * J_kj + (y_k - f_k) * H_kij ]
+        # where J_ki = d(f_k)/d(p_i), H_kij = d^2(f_k)/d(p_i)d(p_j)
+
+        # Gauss-Newton approximation: neglect second term, H_ij ≈ J^T @ W @ J
+        # where W is the weight matrix (identity for unweighted case)
+
+        if weights is None:
+            # Unweighted case: H = J^T @ J
+            hessian = np.dot(jac, jac.T)
+        else:
+            # Weighted case: H = J^T @ W @ J
+            # Convert weights to appropriate shape if needed
+            if np.isscalar(weights):
+                weights = np.full(len(y), weights)
+            elif weights.ndim == 0:
+                weights = np.full(len(y), float(weights))
+
+            # Apply weights: sum_k (w_k * J_ki * J_kj)
+            hessian = np.einsum("k,ki,kj->ij", weights, jac.T, jac.T)
+
+        return hessian
+
     def _gradient_ls(self, param, y, weights=None):
         gls = (2 * self._errfunc(param, y, weights) * self._jacobian(param, y)).sum(1)
         return gls
@@ -674,6 +719,54 @@ class Model1D(BaseModel):
             self._jacobian(param, y)
             * np.clip(self._errfunc(param, y, weights), -huber_delta, huber_delta)
         ).sum(axis=1)
+
+    def _hessian_huber(self, param, y, weights=None, huber_delta=None):
+        """Calculate the Hessian matrix for Huber loss function.
+
+        This computes the approximate Hessian using the Gauss-Newton method,
+        which is used to estimate parameter uncertainties.
+
+        Parameters
+        ----------
+        param : array-like
+            Model parameters
+        y : array-like
+            Observed data
+        weights : array-like, optional
+            Weights for weighted fitting
+        huber_delta : float, optional
+            Delta parameter for Huber loss function (default: 1.0)
+
+        Returns
+        -------
+        hessian : ndarray
+            Hessian matrix (Gauss-Newton approximation)
+        """
+        if huber_delta is None:
+            huber_delta = 1.0
+
+        jac = self._jacobian(param, y)
+        residuals = self._errfunc(param, y, weights)
+
+        # For Huber loss, the second derivative w.r.t. residuals is:
+        # d²L/dr² = 1 if |r| ≤ δ, 0 if |r| > δ
+        # This creates a weight matrix for the Gauss-Newton approximation
+        huber_weights = (np.abs(residuals) <= huber_delta).astype(float)
+
+        # Apply additional weights if provided
+        if weights is not None:
+            if np.isscalar(weights):
+                huber_weights = huber_weights * weights
+            elif weights.ndim == 0:
+                huber_weights = huber_weights * float(weights)
+            else:
+                huber_weights = huber_weights * weights
+
+        # Gauss-Newton approximation: H = J^T @ W @ J
+        # where W is the weight matrix (huber_weights in this case)
+        hessian = np.einsum("k,ki,kj->ij", huber_weights, jac.T, jac.T)
+
+        return hessian
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
