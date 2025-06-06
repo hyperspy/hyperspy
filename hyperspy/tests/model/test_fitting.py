@@ -298,7 +298,9 @@ class TestModelFitBinnedGlobal:
         np.testing.assert_allclose(model.centre.value, expected[1], **kwargs)
         np.testing.assert_allclose(model.sigma.value, expected[2], **kwargs)
 
-    def _check_model_parameter_stds(self, model, should_have_stds=None):
+    def _check_model_parameter_stds(
+        self, model, should_have_stds=None, expected_stds=None
+    ):
         """Check that parameter standard deviations are properly calculated and valid.
 
         Parameters
@@ -309,6 +311,9 @@ class TestModelFitBinnedGlobal:
             If True, standard deviations are expected to be computed.
             If False, standard deviations are expected to be None.
             If None (default), the check adapts based on whether stds are available.
+        expected_stds : tuple of floats, optional
+            Expected standard deviation values (A_std, centre_std, sigma_std).
+            Only used when should_have_stds is True.
         """
         if should_have_stds is True:
             # Standard deviations are expected to be available
@@ -337,6 +342,28 @@ class TestModelFitBinnedGlobal:
             assert model.sigma.std > 0, (
                 "sigma parameter standard deviation should be positive"
             )
+
+            # Check expected standard deviation values if provided
+            if expected_stds is not None:
+                expected_A_std, expected_centre_std, expected_sigma_std = expected_stds
+                np.testing.assert_allclose(
+                    model.A.std,
+                    expected_A_std,
+                    rtol=TOL,
+                    err_msg=f"A standard deviation mismatch: expected {expected_A_std}, got {model.A.std}",
+                )
+                np.testing.assert_allclose(
+                    model.centre.std,
+                    expected_centre_std,
+                    rtol=TOL,
+                    err_msg=f"centre standard deviation mismatch: expected {expected_centre_std}, got {model.centre.std}",
+                )
+                np.testing.assert_allclose(
+                    model.sigma.std,
+                    expected_sigma_std,
+                    rtol=TOL,
+                    err_msg=f"sigma standard deviation mismatch: expected {expected_sigma_std}, got {model.sigma.std}",
+                )
 
         elif should_have_stds is False:
             # Standard deviations are expected to be None (for certain global optimizers)
@@ -377,15 +404,43 @@ class TestModelFitBinnedGlobal:
                         "If available, sigma parameter standard deviation should be positive"
                     )
 
+                # Check expected standard deviation values if provided
+                if expected_stds is not None:
+                    expected_A_std, expected_centre_std, expected_sigma_std = (
+                        expected_stds
+                    )
+                    np.testing.assert_allclose(
+                        model.A.std,
+                        expected_A_std,
+                        rtol=TOL,
+                        err_msg=f"A standard deviation mismatch: expected {expected_A_std}, got {model.A.std}",
+                    )
+                    np.testing.assert_allclose(
+                        model.centre.std,
+                        expected_centre_std,
+                        rtol=TOL,
+                        err_msg=f"centre standard deviation mismatch: expected {expected_centre_std}, got {model.centre.std}",
+                    )
+                    np.testing.assert_allclose(
+                        model.sigma.std,
+                        expected_sigma_std,
+                        rtol=TOL,
+                        err_msg=f"sigma standard deviation mismatch: expected {expected_sigma_std}, got {model.sigma.std}",
+                    )
+
     @pytest.mark.parametrize(
-        "loss_function, expected",
+        "loss_function, expected, expected_stds",
         [
-            ("ls", (250.66282746, 50.0, 5.0)),
-            ("ML-poisson", (250.66337106, 50.00001755, 4.99997114)),
-            ("huber", (250.66282746, 50.0, 5.0)),
+            ("ls", (250.66282746, 50.0, 5.0), None),
+            (
+                "ML-poisson",
+                (250.66445100, 50.00000379, 5.00001396),
+                (15.832437416790, 0.315811152423, 0.223312830964),
+            ),
+            ("huber", (250.66282746, 50.0, 5.0), None),
         ],
     )
-    def test_fit_differential_evolution(self, loss_function, expected):
+    def test_fit_differential_evolution(self, loss_function, expected, expected_stds):
         self.m.fit(
             optimizer="Differential Evolution",
             loss_function=loss_function,
@@ -397,7 +452,9 @@ class TestModelFitBinnedGlobal:
 
         # Only ML-poisson provides standard deviations with differential evolution
         should_have_stds = loss_function == "ML-poisson"
-        self._check_model_parameter_stds(self.m[0], should_have_stds=should_have_stds)
+        self._check_model_parameter_stds(
+            self.m[0], should_have_stds=should_have_stds, expected_stds=expected_stds
+        )
 
     def test_fit_dual_annealing(self):
         pytest.importorskip("scipy", minversion="1.2.0")
