@@ -431,13 +431,21 @@ class TestModelFitBinnedGlobal:
     @pytest.mark.parametrize(
         "loss_function, expected, expected_stds",
         [
-            ("ls", (250.66282746, 50.0, 5.0), None),
+            (
+                "ls",
+                (250.66282746, 50.0, 5.0),
+                (5.48388690e-15, 1.26310056e-16, 1.26310056e-16),
+            ),
             (
                 "ML-poisson",
                 (250.66445100, 50.00000379, 5.00001396),
                 (15.832437416790, 0.315811152423, 0.223312830964),
             ),
-            ("huber", (250.66282746, 50.0, 5.0), None),
+            (
+                "huber",
+                (250.66282746, 50.0, 5.0),
+                (5.48388690e-15, 1.26310056e-16, 1.26310056e-16),
+            ),
         ],
     )
     def test_fit_differential_evolution(self, loss_function, expected, expected_stds):
@@ -450,8 +458,8 @@ class TestModelFitBinnedGlobal:
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
-        # Only ML-poisson provides standard deviations with differential evolution
-        should_have_stds = loss_function == "ML-poisson"
+        # Only ML-poisson, ls, and huber provide standard deviations with differential evolution
+        should_have_stds = loss_function in ["ML-poisson", "ls", "huber"]
         self._check_model_parameter_stds(
             self.m[0], should_have_stds=should_have_stds, expected_stds=expected_stds
         )
@@ -463,8 +471,11 @@ class TestModelFitBinnedGlobal:
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
-        # Dual annealing with ls loss function does not provide standard deviations
-        self._check_model_parameter_stds(self.m[0], should_have_stds=False)
+        # Dual annealing with ls loss function now provides standard deviations
+        expected_stds = (7.05645958e-08, 1.62531034e-09, 1.62531034e-09)
+        self._check_model_parameter_stds(
+            self.m[0], should_have_stds=True, expected_stds=expected_stds
+        )
 
     # See https://github.com/scipy/scipy/issues/14589
     @pytest.mark.xfail(
@@ -478,8 +489,11 @@ class TestModelFitBinnedGlobal:
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
-        # SHGO with ls loss function does not provide standard deviations
-        self._check_model_parameter_stds(self.m[0], should_have_stds=False)
+        # SHGO with ls loss function now provides standard deviations
+        expected_stds = (2.56825396e-07, 5.91544486e-09, 5.91544486e-09)
+        self._check_model_parameter_stds(
+            self.m[0], should_have_stds=True, expected_stds=expected_stds
+        )
 
 
 @lazifyTestClass

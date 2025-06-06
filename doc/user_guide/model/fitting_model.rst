@@ -49,13 +49,13 @@ whether the optimizers find a local or global optima.
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"ridge"``                     |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | :func:`scipy.optimize.minimize` | Yes [2]_ | Yes [2]_  | No       | All           | local  | No     |
+    | :func:`scipy.optimize.minimize` | Yes [2]_ | Yes [2]_  | Yes      | All           | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"Differential Evolution"``    |  Yes     | No        | No       | All           | global | No     |
+    | ``"Differential Evolution"``    |  Yes     | No        | Yes      | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"Dual Annealing"`` [3]_       |  Yes     | No        | No       | All           | global | No     |
+    | ``"Dual Annealing"`` [3]_       |  Yes     | No        | Yes      | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"SHGO"`` [3]_                 |  Yes     | No        | No       | All           | global | No     |
+    | ``"SHGO"`` [3]_                 |  Yes     | No        | Yes      | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
 
 .. rubric:: Footnotes
@@ -235,9 +235,6 @@ non-linear optimization algorithms:
 .. code-block:: python
 
    >>> m.fit(optimizer="Nelder-Mead", loss_function="huber") # doctest: +SKIP
-
-Estimation of the parameter errors is not currently supported
-for the Huber loss function.
 
 Custom loss functions
 ~~~~~~~~~~~~~~~~~~~~~

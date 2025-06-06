@@ -337,6 +337,9 @@ class Model2D(BaseModel):
     def _hessian_ml(self, param, y, weights=None):
         raise NotImplementedError
 
+    def _hessian_ls(self, param, y, weights=None):
+        raise NotImplementedError
+
     def _gradient_ls(self, param, y, weights=None):
         raise NotImplementedError
 
