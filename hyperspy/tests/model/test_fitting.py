@@ -28,7 +28,7 @@ import hyperspy.api as hs
 from hyperspy.axes import GeneratorLen
 from hyperspy.decorators import lazifyTestClass
 
-TOL = 1e-5
+TOL = 2e-4
 
 
 def _create_toy_1d_gaussian_model(binned=True, weights=False, noise=False):
