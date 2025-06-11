@@ -1646,8 +1646,14 @@ def plot_spectra(
                 )
             fig = ax.get_figure()
         else:
-            # use flatten for cases where ax is two dimensional
-            fig = np.asarray(ax).flatten()[0].get_figure()
+            if isiterable(ax):
+                if isinstance(ax, np.ndarray):
+                    # plt.subplots can return numpy array
+                    # convert and flatten to support list and array
+                    ax = np.asarray(ax).flatten()
+                fig = ax[0].get_figure()
+            else:
+                fig = ax.get_figure()
     # fallback to fig, create when necessary
     else:
         if fig is None:
