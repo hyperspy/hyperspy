@@ -826,6 +826,18 @@ def test_plot_images_overlay_signals():
     hs.plot.plot_images(s, overlay=True)
 
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
+def test_plot_images_overlay_scalebar():
+    s = hs.signals.Signal2D(np.arange(10 * 10).reshape(10, 10))
+    s.axes_manager.signal_axes.set(scale=0.15, units="nm")
+
+    ax = hs.plot.plot_images(s, overlay=True, scalebar="all")
+
+    return ax[0].get_figure()
+
+
 def test_plot_scalebar_error():
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     with pytest.raises(ValueError):

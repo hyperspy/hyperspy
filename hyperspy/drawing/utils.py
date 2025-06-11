@@ -19,6 +19,7 @@
 import copy
 import itertools
 import logging
+import math
 import textwrap
 import warnings
 from functools import partial
@@ -1035,9 +1036,16 @@ def plot_images(
     if overlay:
         # Check if images all have same scale and therefore can be overlayed.
         for im in images:
-            if im.axes_manager[0].scale != images[0].axes_manager[0].scale:
+            axes = im.axes_manager.signal_axes
+            # relative difference normalized to the size of the second axis
+            # the more pixels are in the second axis, the tighter the tolerance need to be
+            if not math.isclose(
+                axes[0].scale_as_quantity.to_base_units().magnitude,
+                axes[1].scale_as_quantity.to_base_units().magnitude,
+                rel_tol=0.1 / axes[1].size,
+            ):
                 raise ValueError(
-                    "Images are not the same scale and so shouldnot be overlayed."
+                    "Images do not have the same scale and should not be overlayed."
                 )
 
         if vmin is not None:
@@ -1071,7 +1079,12 @@ def plot_images(
                 alphas_list.append(alphas)
             alphas = alphas_list
 
-        ax.imshow(np.zeros_like(images[0].data), cmap="gray")
+        # Set dimensions of images
+        xaxis = images[0].axes_manager[0]
+        yaxis = images[0].axes_manager[1]
+        extent = _get_extent(xaxis, yaxis)
+
+        ax.imshow(np.zeros_like(images[0].data), cmap="gray", extent=extent)
 
         # Loop through each image
         for i, im in enumerate(images):
@@ -1092,6 +1105,7 @@ def plot_images(
                 vmax=_vmax,
                 cmap=transparent_single_color_cmap(colors[i]),
                 alpha=alphas[i],
+                extent=extent,
                 **kwargs,
             )
 
@@ -1111,7 +1125,6 @@ def plot_images(
         set_axes_decor(ax, axes_decor)
 
         if scalebar == "all":
-            axes = im.axes_manager.signal_axes
             ax.scalebar = ScaleBar(
                 ax=ax,
                 units=im.axes_manager[0].units,
@@ -1171,20 +1184,7 @@ def plot_images(
                 # Set dimensions of images
                 xaxis = axes[0]
                 yaxis = axes[1]
-
-                # Keep extent consistent with `Signal.plot`
-                if xaxis.is_uniform and yaxis.is_uniform:
-                    xaxis_half_px = xaxis.scale / 2.0
-                    yaxis_half_px = yaxis.scale / 2.0
-                else:
-                    xaxis_half_px = 0
-                    yaxis_half_px = 0
-                extent = [
-                    xaxis.axis[0] - xaxis_half_px,
-                    xaxis.axis[-1] + xaxis_half_px,
-                    yaxis.axis[-1] + yaxis_half_px,
-                    yaxis.axis[0] - yaxis_half_px,
-                ]
+                extent = _get_extent(xaxis, yaxis)
 
                 if not isinstance(aspect, (int, float)) and aspect not in [
                     "auto",
@@ -1372,6 +1372,22 @@ def _parse_vmin_vmax(data, vmin, vmax, index, centre):
         _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
 
     return _vmin, _vmax
+
+
+def _get_extent(xaxis, yaxis):
+    # Keep extent consistent with `Signal.plot`
+    if xaxis.is_uniform and yaxis.is_uniform:
+        xaxis_half_px = xaxis.scale / 2.0
+        yaxis_half_px = yaxis.scale / 2.0
+    else:
+        xaxis_half_px = 0
+        yaxis_half_px = 0
+    return [
+        xaxis.axis[0] - xaxis_half_px,
+        xaxis.axis[-1] + xaxis_half_px,
+        yaxis.axis[-1] + yaxis_half_px,
+        yaxis.axis[0] - yaxis_half_px,
+    ]
 
 
 def set_axes_decor(ax, axes_decor):
