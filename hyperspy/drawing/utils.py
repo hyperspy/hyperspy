@@ -655,7 +655,7 @@ def plot_images(
         If set, the images will be plotted to an existing matplotlib figure.
         If the parameter ``ax`` is provided, this parameter will be ignored
         and the figure will be obtained from the ``ax`` parameter.
-    ax : matplotlib.axes.Axes or list of matplotlib.axes.Axes, default None
+    ax : matplotlib.axes.Axes or list or np.ndarray of matplotlib.axes.Axes, default None
         The matplotlib axes to use to display the images.
         When using `overlay=True`, `ax` must be a matplotlib axis.
         If None, new matplotlib axes will be created as required.
@@ -936,6 +936,10 @@ def plot_images(
     # Get the figure from ax is provided
     if ax is not None:
         if isiterable(ax):
+            if isinstance(ax, np.ndarray):
+                # plt.subplots can return numpy array
+                # convert and flatten to support list and array
+                ax = ax.flatten().tolist()
             fig = ax[0].get_figure()
         else:
             fig = ax.get_figure()

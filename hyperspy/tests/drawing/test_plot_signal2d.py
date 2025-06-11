@@ -1069,3 +1069,11 @@ def test_plot_image_ax():
     hs.plot.plot_images([s, s2], ax=ax[1:], axes_decor="off")
 
     return fig
+
+
+def test_plot_images_ax_array():
+    n = 20
+    s = hs.signals.Signal2D(np.arange(4 * n * n).reshape(4, n, n))
+
+    fig, axes = plt.subplots(nrows=2, ncols=3)
+    hs.plot.plot_images(s, ax=axes, axes_decor="off")
