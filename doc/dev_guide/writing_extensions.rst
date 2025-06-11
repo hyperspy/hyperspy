@@ -92,7 +92,7 @@ for your function, you should consider creating your own.
       G(Contribute it to SignalxD)
       H{Does a signal for that sort<br/>of data exists?}
       I(Contribute to package<br/>providing the relevant<br/>signal)
-      J(Create you own package<br/>and signal subclass to<br/>host the funtion)
+      J(Create your own package<br/>and signal subclass to<br/>host the function)
       A-->B
       B-- Yes -->C
       B-- No  -->D
