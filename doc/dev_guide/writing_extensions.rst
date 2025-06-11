@@ -80,6 +80,17 @@ for your function, you should consider creating your own.
 
 
 .. mermaid::
+    :config: {"theme": "base"}
+
+    %%{
+    init: {
+        'theme': 'base',
+        'themeVariables': {
+        'primaryColor': '#AFEEEE',
+        'lineColor': '#6495ED'
+        }
+    }
+    }%%
 
     graph TD
 
@@ -93,16 +104,16 @@ for your function, you should consider creating your own.
       H{Does a signal for that sort<br/>of data exists?}
       I(Contribute to package<br/>providing the relevant<br/>signal)
       J(Create your own package<br/>and signal subclass to<br/>host the function)
-      A-->B
-      B-- Yes -->C
-      B-- No  -->D
-      D-- Yes -->F
-      D-- No  -->E
-      E-->F
-      F-- Yes -->H
-      F-- No  -->G
-      H-- Yes -->I
-      H-- No -->J
+      A==>B
+      B== Yes ==>C
+      B== No  ==>D
+      D== Yes ==>F
+      D== No  ==>E
+      E==>F
+      F== Yes ==>H
+      F== No  ==>G
+      H== Yes ==>I
+      H== No ==>J
 
 
 Registering a new BaseSignal subclass
@@ -179,6 +190,17 @@ a new hyperspy model :class:`hyperspy.component.Component`
 for your function, should you consider creating your own.
 
 .. mermaid::
+    :config: {"theme": "base"}
+
+    %%{
+    init: {
+        'theme': 'base',
+        'themeVariables': {
+        'primaryColor': '#AFEEEE',
+        'lineColor': '#6495ED'
+        }
+    }
+    }%%
 
     graph TD
 
@@ -194,17 +216,17 @@ for your function, should you consider creating your own.
       J[Contribute it to<br/>the relevant package]
       K[Create your own<br/>package to host it]
 
-      A-->B
-      B-- Yes -->C
-      B-- No  -->F
-      C-- No  -->D
-      C-- Yes -->E
-      E-->G
-      F-->G
-      G-- Yes --> H
-      G-- No  --> I
-      I-- Yes --> J
-      I-- No  --> K
+      A==>B
+      B== Yes ==>C
+      B== No  ==>F
+      C== No  ==>D
+      C== Yes ==>E
+      E==>G
+      F==>G
+      G== Yes ==> H
+      G== No  ==> I
+      I== Yes ==> J
+      I== No  ==> K
 
 
 Registering new components
