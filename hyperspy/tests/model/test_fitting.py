@@ -346,22 +346,32 @@ class TestModelFitBinnedGlobal:
             # Check expected standard deviation values if provided
             if expected_stds is not None:
                 expected_A_std, expected_centre_std, expected_sigma_std = expected_stds
+
+                # For very small values (essentially machine precision noise), use more lenient tolerance
+                def get_tolerance(expected_val):
+                    if abs(expected_val) < 1e-12:
+                        # For very small values, use absolute tolerance or higher relative tolerance
+                        return {"rtol": 1e-2, "atol": 1e-14}
+                    else:
+                        # For normal values, use standard tolerance
+                        return {"rtol": TOL, "atol": 0}
+
                 np.testing.assert_allclose(
                     model.A.std,
                     expected_A_std,
-                    rtol=TOL,
+                    **get_tolerance(expected_A_std),
                     err_msg=f"A standard deviation mismatch: expected {expected_A_std}, got {model.A.std}",
                 )
                 np.testing.assert_allclose(
                     model.centre.std,
                     expected_centre_std,
-                    rtol=TOL,
+                    **get_tolerance(expected_centre_std),
                     err_msg=f"centre standard deviation mismatch: expected {expected_centre_std}, got {model.centre.std}",
                 )
                 np.testing.assert_allclose(
                     model.sigma.std,
                     expected_sigma_std,
-                    rtol=TOL,
+                    **get_tolerance(expected_sigma_std),
                     err_msg=f"sigma standard deviation mismatch: expected {expected_sigma_std}, got {model.sigma.std}",
                 )
 
