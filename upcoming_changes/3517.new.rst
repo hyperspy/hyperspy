@@ -1,0 +1,9 @@
+Parameter uncertainty estimation for model fitting
+===================================================
+
+HyperSpy now automatically calculates parameter uncertainties when fitting 1D models 
+with ``"ls"``, ``"ML-poisson"``, and ``"huber"`` loss functions. Uncertainties are 
+computed using Fisher Information Matrix (for ML-Poisson) and Hessian matrix 
+approaches.
+
+The uncertainty estimates are accessible through the individual parameter ``std`` attributes.
