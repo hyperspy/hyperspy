@@ -3365,7 +3365,8 @@ class BaseSignal(
                 "filename"
             ) and self.tmp_parameters.has_item("folder"):
                 filename = Path(
-                    self.tmp_parameters.folder, self.tmp_parameters.filename
+                    self.tmp_parameters.folder,
+                    self.tmp_parameters.filename + "." + self.tmp_parameters.extension,
                 )
                 extension = (
                     self.tmp_parameters.extension if not extension else extension
