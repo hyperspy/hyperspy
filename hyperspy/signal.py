@@ -3330,7 +3330,7 @@ class BaseSignal(
             True(False) it does(not) overwrite the file if it exists.
         extension : None or str, deprecated
             .. deprecated:: 2.4
-                The `extension` parameter is deprecated. Use `file_format` instead.
+                The `extension` parameter is deprecated in version 2.4 and will be removed in version 3.0. Use `file_format` instead.
 
             The extension of the file that defines the file format.
             Allowable string values are: {``'hspy'``, ``'hdf5'``, ``'rpl'``,
@@ -3417,9 +3417,10 @@ class BaseSignal(
         # Deprecation warning for extension parameter
         if extension is not None:
             warnings.warn(
-                "The 'extension' parameter is deprecated and will be removed in a future version. "
+                "The 'extension' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
                 "Please use 'file_format' instead.",
                 FutureWarning,
+                stacklevel=2,
             )
 
         if filename is None:

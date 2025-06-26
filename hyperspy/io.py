@@ -643,7 +643,7 @@ def load_single_file(filename, **kwds):
     # Issue deprecation warning if reader is used
     if reader is not None:
         warnings.warn(
-            "The 'reader' parameter is deprecated and will be removed in HyperSpy v2.4. "
+            "The 'reader' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
             "Use 'file_format' instead.",
             VisibleDeprecationWarning,
         )

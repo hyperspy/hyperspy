@@ -501,3 +501,143 @@ def test_save_extension_parameter_strips_leading_dot(tmp_path):
         s.save(tmp_path / "test2", extension="hspy", overwrite=True)
 
     assert (tmp_path / "test2.hspy").exists()
+
+
+def test_save_file_format_unknown_format_error(tmp_path):
+    """Test that unknown file_format raises a ValueError."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file to get tmp_parameters
+    source_file = tmp_path / "source.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    # Test with an unknown/invalid file format - should raise ValueError
+    with pytest.raises(ValueError, match="does not match any format available"):
+        s_loaded.save(output_dir, file_format="unknown_format", overwrite=True)
+
+
+def test_save_extension_parameter_current_directory_path(tmp_path):
+    """Test extension parameter when filename parent is current directory."""
+    s = Signal1D(np.arange(10))
+
+    # Change to the tmp directory to test current directory behavior
+    import os
+
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(tmp_path)
+
+        # Test with extension parameter on a filename with no parent path
+        with pytest.warns(FutureWarning):
+            s.save("test", extension="msa", overwrite=True)
+
+        assert Path("test.msa").exists()
+
+    finally:
+        os.chdir(original_cwd)
+
+
+def test_save_base_filename_already_has_extension(tmp_path):
+    """Test filename construction when base filename already has the target extension."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file with a specific name that already includes the target extension
+    source_file = tmp_path / "data.msa"  # Note: saving as .msa but with .msa name
+    s.save(
+        source_file.with_suffix(".hspy")
+    )  # First save as .hspy to get tmp_parameters
+    s_loaded = hs.load(source_file.with_suffix(".hspy"))
+
+    # Manually set the tmp_parameters filename to include the extension
+    s_loaded.tmp_parameters.filename = "data.msa"
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    # When we save with file_format="msa", it should not double the extension
+    s_loaded.save(output_dir, file_format="msa", overwrite=True)
+
+    # Should create "data.msa", not "data.msa.msa"
+    assert (output_dir / "data.msa").exists()
+    assert not (output_dir / "data.msa.msa").exists()
+
+
+def test_save_stacklevel_in_deprecation_warning():
+    """Test that the deprecation warning points to the correct stack level."""
+    s = Signal1D(np.arange(10))
+
+    # Capture the warning and check that stacklevel is set correctly
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        s.save("test_stacklevel", extension="hspy", overwrite=True)
+
+        assert len(w) == 1
+        assert issubclass(w[0].category, FutureWarning)
+        # The warning should point to this test file, not to signal.py
+        assert "test_io.py" in str(w[0].filename)
+        assert "signal.py" not in str(w[0].filename)
+
+    # Clean up
+    Path("test_stacklevel.hspy").unlink(missing_ok=True)
+
+
+def test_save_extension_parameter_none_handling(tmp_path):
+    """Test the extension=None handling logic in filename construction."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file to get tmp_parameters
+    source_file = tmp_path / "source.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
+
+    # Save to None filename with no extension parameter (extension=None)
+    # This should use tmp_parameters for everything
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    # This tests the path where extension=None and we fall back to tmp_parameters.extension
+    s_loaded.save(output_dir, overwrite=True)
+
+    # Should use the original extension from tmp_parameters
+    assert (output_dir / "source.hspy").exists()
+
+
+def test_save_file_format_with_directory_ending_slash(tmp_path):
+    """Test that directory path detection works with explicit trailing slash."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file to get tmp_parameters
+    source_file = tmp_path / "source.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    # Test with explicit trailing slash to ensure directory detection works
+    output_dir_with_slash = str(output_dir) + "/"
+    s_loaded.save(output_dir_with_slash, file_format="msa", overwrite=True)
+
+    assert (output_dir / "source.msa").exists()
+
+
+def test_save_extension_parameter_overrides_tmp_parameters_extension(tmp_path):
+    """Test that explicit extension parameter overrides tmp_parameters.extension."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file to get tmp_parameters with .hspy extension
+    source_file = tmp_path / "source.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
+
+    # Use extension parameter to override the tmp_parameters extension
+    with pytest.warns(FutureWarning):
+        s_loaded.save(tmp_path / "test", extension="msa", overwrite=True)
+
+    # Should create .msa file, overriding the .hspy from tmp_parameters
+    assert (tmp_path / "test.msa").exists()
+    assert not (tmp_path / "test.hspy").exists()
