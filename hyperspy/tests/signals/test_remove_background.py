@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -26,6 +26,7 @@ from packaging.version import Version
 import hyperspy.api as hs
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.signal_tools import BackgroundRemoval
 
 
 def _skip_test(s):
@@ -329,3 +330,22 @@ def test_remove_background_metadata_axes_manager_copy(
     )
     compare_axes_manager_metadata(s, s_r)
     assert s_r.data.shape == s.data.shape
+
+
+@pytest.mark.parametrize("fast", [True, False])
+@pytest.mark.parametrize("nav_dim", [0, 1])
+def test_BackgroundRemoval_tool(nav_dim, fast):
+    pl = components1d.PowerLaw()
+    pl.A.value = 1e10
+    pl.r.value = 3
+    s = hs.signals.Signal1D(pl.function(np.arange(100, 200)))
+    if nav_dim == 1:
+        s = hs.stack([s] * 2)
+    s.axes_manager[0].offset = 100
+    s.add_poissonian_noise(random_state=1)
+
+    br = BackgroundRemoval(s, background_type="Power Law", fast=fast)
+    br.span_selector.extents = (20, 40)
+    br.span_selector_changed()
+    br._fit()
+    assert isinstance(br.red_chisq, float)

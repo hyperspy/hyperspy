@@ -34,12 +34,12 @@ extensions = [
     "IPython.sphinxext.ipython_directive",  # Needed in basic_usage.rst
     "numpydoc",
     "sphinxcontrib.towncrier",
+    "sphinxcontrib.mermaid",
     "sphinx_design",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.githubpages",
-    "sphinx.ext.graphviz",
     "sphinx.ext.mathjax",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
@@ -52,8 +52,10 @@ extensions = [
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
+    "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
     "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
+    "https://scholar.google.co.uk",  # 403 Client Error: Forbidden for url
     "https://software.opensuse.org",  # 400 Client Error: Bad Request for url
 ]
 
@@ -218,7 +220,7 @@ html_theme_options = {
         "version_match": version_match,
     },
     "navbar_start": ["navbar-logo", "version-switcher"],
-    "announcement": "HyperSpy API has changed in version 2.0, see the <a href='https://hyperspy.org/hyperspy-doc/current/changes.html#changes-2-0'>release notes!</a>",
+    # "announcement": "",
 }
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -441,8 +443,6 @@ sphinx_gallery_conf = {
     "notebook_images": "https://hyperspy.org/hyperspy-doc/current/",  # folder for loading images in gallery
     "reference_url": {"hyperspy": None},
 }
-
-graphviz_output_format = "svg"
 
 # -- Sphinx-copybutton -----------
 
