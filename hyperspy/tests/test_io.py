@@ -20,6 +20,7 @@ import hashlib
 import logging
 import os
 import tempfile
+import warnings
 from pathlib import Path
 from unittest.mock import patch
 
@@ -350,3 +351,153 @@ def test_load_save_filereader_metadata(tmp_path):
     del t.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
     del t.metadata.General.FileIO.Number_2.timestamp  # runtime dependent
     assert t.metadata.General.FileIO.as_dictionary() == expected
+
+
+def test_save_extension_parameter_deprecation_warning(tmp_path):
+    """Test that using the 'extension' parameter raises a deprecation warning."""
+    s = Signal1D(np.arange(10))
+
+    with pytest.warns(FutureWarning, match="The 'extension' parameter is deprecated"):
+        s.save(tmp_path / "test", extension="hspy", overwrite=True)
+
+    # Verify the file was saved correctly despite the deprecation
+    assert (tmp_path / "test.hspy").exists()
+
+
+def test_save_extension_and_file_format_conflict_error(tmp_path):
+    """Test that providing both 'extension' and 'file_format' raises a ValueError."""
+    s = Signal1D(np.arange(10))
+
+    with pytest.raises(
+        ValueError, match="Cannot specify both 'extension' and 'file_format'"
+    ):
+        s.save(tmp_path / "test", extension="hspy", file_format="msa")
+
+
+def test_save_extension_parameter_backward_compatibility(tmp_path):
+    """Test that extension parameter still works for backward compatibility."""
+    s = Signal1D(np.arange(10))
+
+    # Test with different extensions
+    test_cases = [
+        ("hspy", "test.hspy"),
+        ("msa", "test.msa"),
+    ]
+
+    for ext, expected_file in test_cases:
+        with pytest.warns(FutureWarning):
+            s.save(tmp_path / "test", extension=ext, overwrite=True)
+        assert (tmp_path / expected_file).exists()
+        (tmp_path / expected_file).unlink()  # Clean up
+
+
+def test_save_extension_parameter_with_directory_path(tmp_path):
+    """Test extension parameter works with directory paths (backward compatibility)."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file to get tmp_parameters
+    source_file = tmp_path / "source.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    # Test with extension parameter and directory path
+    with pytest.warns(FutureWarning):
+        s_loaded.save(output_dir, extension="msa", overwrite=True)
+
+    assert (output_dir / "source.msa").exists()
+
+
+def test_save_file_format_parameter_no_warning(tmp_path):
+    """Test that using 'file_format' parameter does not raise any warning."""
+    s = Signal1D(np.arange(10))
+
+    # This should not raise any warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # Turn warnings into errors
+        s.save(tmp_path / "test", file_format="hspy", overwrite=True)
+
+    assert (tmp_path / "test.hspy").exists()
+
+
+def test_save_file_format_parameter_with_directory_path(tmp_path):
+    """Test file_format parameter works correctly with directory paths."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file to get tmp_parameters
+    source_file = tmp_path / "source.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    # Test with file_format parameter and directory path
+    s_loaded.save(output_dir, file_format="msa", overwrite=True)
+
+    assert (output_dir / "source.msa").exists()
+
+
+def test_save_extension_precedence_with_file_format_fallback(tmp_path):
+    """Test the precedence order when extension is deprecated."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file to get tmp_parameters
+    source_file = tmp_path / "source.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    # When only file_format is provided (no extension), it should use file_format
+    s_loaded.save(output_dir, file_format="msa", overwrite=True)
+    assert (output_dir / "source.msa").exists()
+
+    # Clean up
+    (output_dir / "source.msa").unlink()
+
+    # When neither extension nor file_format is provided, should fall back to current tmp_parameters
+    # Note: tmp_parameters are updated after each save, so this will use .msa format
+    s_loaded.save(output_dir, overwrite=True)
+    assert (output_dir / "source.msa").exists()
+
+
+def test_save_extension_parameter_maps_to_file_format(tmp_path):
+    """Test that the deprecated extension parameter correctly determines the output file extension."""
+    s = Signal1D(np.arange(10))
+
+    # Create a source file to get tmp_parameters
+    source_file = tmp_path / "source.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    # Test that extension="msa" creates a .msa file
+    with pytest.warns(FutureWarning):
+        s_loaded.save(output_dir, extension="msa", overwrite=True)
+
+    # Should create a .msa file, not .msa.msa or similar
+    assert (output_dir / "source.msa").exists()
+    assert not (output_dir / "source.msa.msa").exists()
+
+
+def test_save_extension_parameter_strips_leading_dot(tmp_path):
+    """Test that extension parameter correctly handles extensions with leading dots."""
+    s = Signal1D(np.arange(10))
+
+    # Test with leading dot
+    with pytest.warns(FutureWarning):
+        s.save(tmp_path / "test", extension=".hspy", overwrite=True)
+
+    assert (tmp_path / "test.hspy").exists()
+
+    # Test without leading dot (should work the same)
+    with pytest.warns(FutureWarning):
+        s.save(tmp_path / "test2", extension="hspy", overwrite=True)
+
+    assert (tmp_path / "test2.hspy").exists()

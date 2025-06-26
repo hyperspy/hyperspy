@@ -358,8 +358,8 @@ To convert files to different formats, specify the ``file_format`` or
 .. code-block:: python
 
     >>> s = hs.load("data.hspy")                       # Load HyperSpy format  # doctest: +SKIP
-    >>> s.save("/output/", file_format="msa")          # Convert to MSA format  # doctest: +SKIP
-    >>> s.save("/output/", extension="rpl")            # Convert to Ripple format  # doctest: +SKIP
+    >>> s.save("output/", file_format="msa")          # Convert to MSA format  # doctest: +SKIP
+    >>> s.save("output/", file_format="rpl")          # Convert to Ripple format  # doctest: +SKIP
 
 Batch Processing Example
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -383,7 +383,6 @@ Here's a complete example of batch processing multiple files:
         
         # Apply your processing steps
         s = s.remove_background()
-        s = s.smooth()
         
         # Save in new location - filename is preserved automatically
         s.save(output_folder)  # Uses original filename from tmp_parameters

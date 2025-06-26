@@ -3316,8 +3316,7 @@ class BaseSignal(
             * **Directory path only**: ``'/path/to/output_folder/'`` - When a
               directory is provided, the filename is constructed from
               `tmp_parameters.filename` and the extension is determined from
-              the `extension`, `file_format`, or `tmp_parameters.extension`
-              parameters.
+              the `file_format` or `tmp_parameters.extension` parameters.
             * **None**: Uses `tmp_parameters.folder` and `tmp_parameters.filename`
               if available.
 
@@ -3329,7 +3328,10 @@ class BaseSignal(
         overwrite : None or bool
             If None, if the file exists it will query the user. If
             True(False) it does(not) overwrite the file if it exists.
-        extension : None or str
+        extension : None or str, deprecated
+            .. deprecated:: 2.4
+                The `extension` parameter is deprecated. Use `file_format` instead.
+
             The extension of the file that defines the file format.
             Allowable string values are: {``'hspy'``, ``'hdf5'``, ``'rpl'``,
             ``'msa'``, ``'unf'``, ``'blo'``, ``'emd'``, and common image
@@ -3340,10 +3342,9 @@ class BaseSignal(
             this order:
 
             i) the filename (if a full filename with extension is provided)
-            ii) the `extension` parameter
-            iii) the `file_format` parameter (mapped to corresponding extension)
-            iv) `Signal.tmp_parameters.extension`
-            v) ``'.hspy'`` (the default extension)
+            ii) the `file_format` parameter (mapped to corresponding extension)
+            iii) `Signal.tmp_parameters.extension`
+            iv) ``'.hspy'`` (the default extension)
         chunks : tuple or True or None (default)
             HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
             saving. The chunk shape should follow the order of the array
@@ -3388,7 +3389,7 @@ class BaseSignal(
 
         >>> s = hs.load("data.hspy")           # Original format
         >>> s.save("/output/", file_format="msa")  # Convert to MSA format
-        >>> s.save("/output/", extension="rpl")    # Convert to Ripple format
+        >>> s.save("/output/", file_format="rpl")  # Convert to Ripple format
 
         Process multiple files and save in different format:
 
@@ -3406,6 +3407,21 @@ class BaseSignal(
         ...     s.save(output_folder, file_format="msa")
 
         """
+        # Check for conflicting parameters
+        if extension is not None and file_format is not None:
+            raise ValueError(
+                "Cannot specify both 'extension' and 'file_format' parameters. "
+                "Please use only 'file_format' as 'extension' is deprecated."
+            )
+
+        # Deprecation warning for extension parameter
+        if extension is not None:
+            warnings.warn(
+                "The 'extension' parameter is deprecated and will be removed in a future version. "
+                "Please use 'file_format' instead.",
+                FutureWarning,
+            )
+
         if filename is None:
             if self.tmp_parameters.has_item(
                 "filename"
@@ -3414,9 +3430,11 @@ class BaseSignal(
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename + self.tmp_parameters.extension,
                 )
-                extension = (
-                    self.tmp_parameters.extension if not extension else extension
-                )
+                # Don't override extension if it was explicitly provided
+                if extension is None:
+                    extension = (
+                        self.tmp_parameters.extension if not extension else extension
+                    )
             elif self.metadata.has_item("General.original_filename"):
                 filename = self.metadata.General.original_filename
             else:
@@ -3438,7 +3456,7 @@ class BaseSignal(
 
                 # Determine extension from file_format, extension parameter, or tmp_parameters.extension
                 if extension is not None:
-                    file_extension = extension
+                    file_extension = extension.lstrip(".")
                 elif file_format is not None:
                     # Get the default extension for the file format from rsciio
                     try:
@@ -3465,7 +3483,13 @@ class BaseSignal(
 
                 filename = filename / full_filename
             elif extension is not None:
-                filename = filename.with_suffix(f".{extension}")
+                # If extension parameter is provided, ensure filename has that extension
+                # Remove any existing extension and add the specified one
+                base_name = filename.stem
+                if filename.parent != Path("."):
+                    filename = filename.parent / f"{base_name}.{extension.lstrip('.')}"
+                else:
+                    filename = Path(f"{base_name}.{extension.lstrip('.')}")
 
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
