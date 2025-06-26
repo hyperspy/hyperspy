@@ -3309,12 +3309,23 @@ class BaseSignal(
 
         Parameters
         ----------
-        filename : str or None
-            If None (default) and `tmp_parameters.filename` and
-            `tmp_parameters.folder` are defined, the
-            filename and path will be taken from there. A valid
-            extension can be provided e.g. ``'my_file.rpl'``
-            (see `extension` parameter).
+        filename : str, Path, or None
+            The output filename or directory path. Can be:
+
+            * **Full path with extension**: ``'/path/to/my_file.hspy'``
+            * **Directory path only**: ``'/path/to/output_folder/'`` - When a
+              directory is provided, the filename is constructed from
+              `tmp_parameters.filename` and the extension is determined from
+              the `extension`, `file_format`, or `tmp_parameters.extension`
+              parameters.
+            * **None**: Uses `tmp_parameters.folder` and `tmp_parameters.filename`
+              if available.
+
+            **About tmp_parameters**: These are automatically created when
+            loading files and store the original filename, folder, and extension.
+            This enables convenient workflows like batch processing where you
+            can load files, process them, and save to new locations without
+            manually specifying filenames.
         overwrite : None or bool
             If None, if the file exists it will query the user. If
             True(False) it does(not) overwrite the file if it exists.
@@ -3328,9 +3339,11 @@ class BaseSignal(
             If ``None``, the extension is determined from the following list in
             this order:
 
-            i) the filename
-            ii)  `Signal.tmp_parameters.extension`
-            iii) ``'.hspy'`` (the default extension)
+            i) the filename (if a full filename with extension is provided)
+            ii) the `extension` parameter
+            iii) the `file_format` parameter (mapped to corresponding extension)
+            iv) `Signal.tmp_parameters.extension`
+            v) ``'.hspy'`` (the default extension)
         chunks : tuple or True or None (default)
             HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
             saving. The chunk shape should follow the order of the array
@@ -3359,6 +3372,39 @@ class BaseSignal(
             The file format of choice to save the file. If not given, it is inferred
             from the file extension.
 
+        Examples
+        --------
+        Save with a complete filename:
+
+        >>> s = hs.signals.Signal1D(np.arange(10))
+        >>> s.save("my_data.hspy")
+
+        Re-save a loaded signal in a different location (uses tmp_parameters):
+
+        >>> s = hs.load("original_data.hspy")  # tmp_parameters are auto-populated
+        >>> s.save("/new/output/folder/")      # Saves to /new/output/folder/original_data.hspy
+
+        Re-save a loaded signal in a different format:
+
+        >>> s = hs.load("data.hspy")           # Original format
+        >>> s.save("/output/", file_format="msa")  # Convert to MSA format
+        >>> s.save("/output/", extension="rpl")    # Convert to Ripple format
+
+        Process multiple files and save in different format:
+
+        >>> import hyperspy.api as hs
+        >>> from pathlib import Path
+        >>>
+        >>> input_folder = Path("input_data/")
+        >>> output_folder = Path("processed_data/")
+        >>>
+        >>> for file_path in input_folder.glob("*.hspy"):
+        ...     s = hs.load(file_path)
+        ...     # Process the signal...
+        ...     s = s.remove_background()
+        ...     # Save in new location with different format
+        ...     s.save(output_folder, file_format="msa")
+
         """
         if filename is None:
             if self.tmp_parameters.has_item(
@@ -3378,8 +3424,49 @@ class BaseSignal(
 
         if not isinstance(filename, MutableMapping):
             filename = Path(filename)
-            if extension is not None:
+
+            # Check if filename is clearly a directory path.
+            # We only consider it a directory path if:
+            # 1. It's an existing directory, OR
+            # 2. The path explicitly ends with a directory separator ('/' or '\')
+            # This conservative approach ensures we don't accidentally treat
+            # filenames without extensions as directories.
+            is_directory_path = filename.is_dir() or str(filename).endswith(("/", "\\"))
+
+            if is_directory_path and self.tmp_parameters.has_item("filename"):
+                # Filename is a directory path, construct full filename
+
+                # Determine extension from file_format, extension parameter, or tmp_parameters.extension
+                if extension is not None:
+                    file_extension = extension
+                elif file_format is not None:
+                    # Get the default extension for the file format from rsciio
+                    try:
+                        from hyperspy.io import _format_name_to_reader
+
+                        writer = _format_name_to_reader(file_format)
+                        file_extension = writer["file_extensions"][
+                            writer["default_extension"]
+                        ]
+                    except (ValueError, KeyError):
+                        # If format not found in rsciio, use the file_format as extension
+                        file_extension = file_format
+                elif self.tmp_parameters.has_item("extension"):
+                    file_extension = self.tmp_parameters.extension.lstrip(".")
+                else:
+                    file_extension = "hspy"  # Default extension
+
+                # Construct full filename
+                base_filename = self.tmp_parameters.filename
+                if not base_filename.endswith(f".{file_extension}"):
+                    full_filename = f"{base_filename}.{file_extension}"
+                else:
+                    full_filename = base_filename
+
+                filename = filename / full_filename
+            elif extension is not None:
                 filename = filename.with_suffix(f".{extension}")
+
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
     def _replot(self):

@@ -311,3 +311,119 @@ If you want to save to the :external+rsciio:ref:`ripple format <ripple-format>` 
 
 Some formats take extra arguments. See the corresponding pages at
 :external+rsciio:ref:`supported-formats` for more information.
+
+.. _batch_resaving:
+
+Batch Processing and Re-saving
+------------------------------
+
+HyperSpy provides convenient functionality for batch processing and re-saving 
+files using the ``tmp_parameters`` that are automatically populated when 
+loading files. This is particularly useful when you need to:
+
+* Process multiple files and save them in a different location
+* Convert files from one format to another
+* Apply the same processing to many files while preserving their original names
+
+The ``tmp_parameters`` contain the original filename, folder, and extension 
+information from loaded files, enabling you to save processed data without 
+manually specifying filenames.
+
+Basic Re-saving to Different Locations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When you load a file with HyperSpy, the ``tmp_parameters`` are automatically 
+populated:
+
+.. code-block:: python
+
+    >>> s = hs.load("original_data.hspy")  # doctest: +SKIP
+    >>> print(s.tmp_parameters.filename)   # 'original_data'  # doctest: +SKIP
+    >>> print(s.tmp_parameters.extension)  # '.hspy'  # doctest: +SKIP
+    >>> print(s.tmp_parameters.folder)     # '/path/to/original/'  # doctest: +SKIP
+
+You can then save the signal to a different directory by providing only the 
+directory path:
+
+.. code-block:: python
+
+    >>> s.save("/new/output/folder/")  # Saves to /new/output/folder/original_data.hspy  # doctest: +SKIP
+
+Format Conversion
+^^^^^^^^^^^^^^^^^
+
+To convert files to different formats, specify the ``file_format`` or 
+``extension`` parameter:
+
+.. code-block:: python
+
+    >>> s = hs.load("data.hspy")                       # Load HyperSpy format  # doctest: +SKIP
+    >>> s.save("/output/", file_format="msa")          # Convert to MSA format  # doctest: +SKIP
+    >>> s.save("/output/", extension="rpl")            # Convert to Ripple format  # doctest: +SKIP
+
+Batch Processing Example
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here's a complete example of batch processing multiple files:
+
+.. code-block:: python
+
+    import hyperspy.api as hs
+    from pathlib import Path
+
+    # Define input and output directories
+    input_folder = Path("raw_data/")
+    output_folder = Path("processed_data/")
+    output_folder.mkdir(exist_ok=True)  # Create output directory if it doesn't exist
+
+    # Process all .hspy files in the input directory
+    for file_path in input_folder.glob("*.hspy"):
+        # Load the signal
+        s = hs.load(file_path)
+        
+        # Apply your processing steps
+        s = s.remove_background()
+        s = s.smooth()
+        
+        # Save in new location - filename is preserved automatically
+        s.save(output_folder)  # Uses original filename from tmp_parameters
+
+    # Convert all files to a different format
+    for file_path in input_folder.glob("*.hspy"):
+        s = hs.load(file_path)
+        # Save as MSA format in output directory
+        s.save(output_folder, file_format="msa")
+
+Batch Processing with Different Output Names
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you need more control over output filenames while still leveraging the 
+batch functionality:
+
+.. code-block:: python
+
+    import hyperspy.api as hs
+    from pathlib import Path
+
+    input_folder = Path("input_data/")
+    output_folder = Path("processed_data/")
+
+    for file_path in input_folder.glob("*.hspy"):
+        s = hs.load(file_path)
+        
+        # Process the signal
+        s = s.remove_background()
+        
+        # Option 1: Use automatic filename with prefix/suffix
+        base_name = s.tmp_parameters.filename
+        custom_filename = f"processed_{base_name}.hspy"
+        s.save(output_folder / custom_filename)
+        
+        # Option 2: Completely custom filename
+        s.save(output_folder / f"{base_name}_cleaned.msa")
+
+.. note::
+
+    The ``tmp_parameters`` are only available for signals that were loaded from 
+    files. If you create a signal programmatically, you'll need to provide the 
+    full filename when saving.
