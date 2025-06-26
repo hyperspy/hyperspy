@@ -49,6 +49,34 @@ _logger = logging.getLogger(__name__)
 f_error_fmt = "\tFile %d:\n\t\t%d signals\n\t\tPath: %s"
 
 
+def _get_supported_write_formats():
+    """Generate a formatted string of supported file formats for writing.
+
+    Returns
+    -------
+    str
+        Formatted string listing all supported write formats with rsciio version
+
+    """
+    import rsciio
+
+    writers = [plugin for plugin in IO_PLUGINS if plugin["writes"]]
+    format_descriptions = []
+
+    for plugin in writers:
+        name = plugin["name"]
+        extensions = plugin["file_extensions"]
+        main_ext = extensions[plugin["default_extension"]]
+
+        # Create description
+        format_descriptions.append(f"'{name}' (*.{main_ext})")
+
+    formats_list = ", ".join(sorted(format_descriptions))
+    return (
+        f"Supported formats: {formats_list} (provided by rsciio v{rsciio.__version__})."
+    )
+
+
 def _format_name_to_reader(format_name):
     for reader in IO_PLUGINS:
         if format_name.lower() == reader["name"].lower():
@@ -877,7 +905,9 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
     Parameters
     ----------
     filename : None, str, pathlib.Path
-        The filename to save the signal to.
+        The filename to save the signal to. If None and file_format is provided,
+        the filename will be constructed from signal.tmp_parameters.folder and
+        signal.tmp_parameters.filename with the appropriate extension.
     signal : Hyperspy signal
         The signal to be saved to the file.
     overwrite : None, bool, optional
@@ -885,15 +915,39 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         to overwrite. If False and a file exists, the file will not be written.
         If True and a file exists, the file will be overwritten without
         prompting
-    file_format: string
+    file_format : None, str, optional
         The file format of choice to save the file. If not given, it is inferred
-        from the file extension.
+        from the file extension. %s
 
     Returns
     -------
     None
 
     """
+
+    # Handle case where filename is None but file_format is provided
+    if filename is None and file_format is not None:
+        if signal.tmp_parameters.has_item(
+            "filename"
+        ) and signal.tmp_parameters.has_item("folder"):
+            # Construct filename from tmp_parameters
+            writer = _format_name_to_reader(file_format)
+            extension = "." + writer["file_extensions"][writer["default_extension"]]
+            filename = Path(
+                signal.tmp_parameters.folder, signal.tmp_parameters.filename + extension
+            )
+        else:
+            raise ValueError(
+                "Cannot construct filename: signal.tmp_parameters.filename and/or "
+                "signal.tmp_parameters.folder are not defined. Please provide a filename."
+            )
+    elif filename is None:
+        raise ValueError(
+            "Either filename or file_format must be provided. "
+            "If file_format is provided, signal.tmp_parameters.filename and "
+            "signal.tmp_parameters.folder must be defined."
+        )
+
     writer = None
     if isinstance(filename, MutableMapping):
         extension = ".zspy"
@@ -985,6 +1039,9 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
                 signal.tmp_parameters.set_item("folder", file.parent)
                 signal.tmp_parameters.set_item("filename", file.stem)
                 signal.tmp_parameters.set_item("extension", extension)
+
+
+save.__doc__ %= _get_supported_write_formats()
 
 
 def _add_file_load_save_metadata(operation, signal, io_plugin):
