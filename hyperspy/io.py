@@ -49,21 +49,33 @@ _logger = logging.getLogger(__name__)
 f_error_fmt = "\tFile %d:\n\t\t%d signals\n\t\tPath: %s"
 
 
-def _get_supported_write_formats():
-    """Generate a formatted string of supported file formats for writing.
+def _get_supported_formats(write_mode=False):
+    """Generate a formatted string of supported file formats.
+
+    Parameters
+    ----------
+    write_mode : bool, default False
+        If False (default), returns all supported read formats (all plugins).
+        If True, returns only supported write formats (plugins with write capability).
 
     Returns
     -------
     str
-        Formatted string listing all supported write formats with rsciio version
+        Formatted string listing supported formats with rsciio version
 
     """
     import rsciio
 
-    writers = [plugin for plugin in IO_PLUGINS if plugin["writes"]]
+    if write_mode:
+        # Filter plugins that support writing
+        plugins = [plugin for plugin in IO_PLUGINS if plugin["writes"]]
+    else:
+        # All plugins support reading
+        plugins = IO_PLUGINS
+
     format_descriptions = []
 
-    for plugin in writers:
+    for plugin in plugins:
         name = plugin["name"]
         extensions = plugin["file_extensions"]
         main_ext = extensions[plugin["default_extension"]]
@@ -244,13 +256,12 @@ def load(
     stack_metadata=True,
     load_original_metadata=True,
     show_progressbar=None,
+    file_format=None,
     **kwds,
 ):
     """Load potentially multiple supported files into HyperSpy.
 
-    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
-    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc, CEOS prz
-    tif, and a number of image formats.
+    %s
 
     Depending on the number of datasets to load in the file, this function will
     return a HyperSpy signal instance or list of HyperSpy signal instances.
@@ -314,7 +325,15 @@ def load(
         If ``True``, all metadata contained in the input file will be added
         to ``original_metadata``.
         This does not affect parsing the metadata to ``metadata``.
+    file_format : None, str, optional
+        The file format to use when loading the file(s). If None (default),
+        will use the file extension to infer the file type and appropriate
+        reader. If str, will select the appropriate file reader from the list
+        of available readers. %s
     reader : None, str, module, optional
+        .. deprecated:: 2.1.0
+            The ``reader`` parameter is deprecated and will be removed in
+            HyperSpy v2.4. Use ``file_format`` instead.
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
         appropriate reader. If str, will select the appropriate file reader
@@ -572,7 +591,12 @@ def load(
     return objects
 
 
-load.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
+load.__doc__ %= (
+    _get_supported_formats(write_mode=False),
+    STACK_METADATA_ARG,
+    SHOW_PROGRESSBAR_ARG,
+    _get_supported_formats(write_mode=False),
+)
 
 
 def load_single_file(filename, **kwds):
@@ -604,20 +628,40 @@ def load_single_file(filename, **kwds):
 
     # File extension without "." separator
     file_ext = os.path.splitext(path)[1][1:]
+
+    # Handle both file_format and reader parameters
+    file_format = kwds.pop("file_format", None)
     reader = kwds.pop("reader", None)
 
-    if reader is None:
+    # Check if both parameters are provided
+    if file_format is not None and reader is not None:
+        raise ValueError(
+            "Cannot specify both 'file_format' and 'reader' parameters. "
+            "Use 'file_format' instead of 'reader' as 'reader' is deprecated."
+        )
+
+    # Issue deprecation warning if reader is used
+    if reader is not None:
+        warnings.warn(
+            "The 'reader' parameter is deprecated and will be removed in HyperSpy v2.4. "
+            "Use 'file_format' instead.",
+            VisibleDeprecationWarning,
+        )
+        # Use reader value as file_format for backward compatibility
+        file_format = reader
+
+    if file_format is None:
         # Infer file reader based on extension
         reader = _infer_file_reader(file_ext)
-    elif isinstance(reader, str):
+    elif isinstance(file_format, str):
         # Infer file reader based on provided kwarg string
-        reader = _infer_file_reader(reader)
-    elif hasattr(reader, "file_reader"):
+        reader = _infer_file_reader(file_format)
+    elif hasattr(file_format, "file_reader"):
         # Implies the user has passed their own file reader
-        pass
+        reader = file_format
     else:
         raise ValueError(
-            "`reader` should be one of None, str, or a custom file reader object"
+            "`file_format` should be one of None, str, or a custom file reader object"
         )
 
     try:
@@ -1041,7 +1085,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
                 signal.tmp_parameters.set_item("extension", extension)
 
 
-save.__doc__ %= _get_supported_write_formats()
+save.__doc__ %= _get_supported_formats(write_mode=True)
 
 
 def _add_file_load_save_metadata(operation, signal, io_plugin):
