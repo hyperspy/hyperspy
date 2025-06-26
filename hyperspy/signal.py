@@ -3330,7 +3330,7 @@ class BaseSignal(
 
             i) the filename
             ii)  `Signal.tmp_parameters.extension`
-            iii) ``'hspy'`` (the default extension)
+            iii) ``'.hspy'`` (the default extension)
         chunks : tuple or True or None (default)
             HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
             saving. The chunk shape should follow the order of the array
@@ -3366,7 +3366,7 @@ class BaseSignal(
             ) and self.tmp_parameters.has_item("folder"):
                 filename = Path(
                     self.tmp_parameters.folder,
-                    self.tmp_parameters.filename + "." + self.tmp_parameters.extension,
+                    self.tmp_parameters.filename + self.tmp_parameters.extension,
                 )
                 extension = (
                     self.tmp_parameters.extension if not extension else extension
