@@ -1,0 +1,1 @@
+Deprecate ``extension`` parameter in :func:`~.api.signals.BaseSignal.save` and ``reader`` parameter in :func:`~.api.load` in favor of the ``file_format`` parameter. Both deprecated parameters now show deprecation warnings and will be removed in HyperSpy 3.0.
