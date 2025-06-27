@@ -5,13 +5,21 @@ Loading and saving data
 
 .. versionchanged:: 2.0
 
-    The IO plugins formerly developed within HyperSpy have been moved to
-    the separate package :external+rsciio:doc:`RosettaSciIO <index>`
-    in order to facilitate a wider use also by other packages. Plugins supporting
-    additional formats or corrections/enhancements to existing plugins should now
-    be contributed to the `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_
-    and file format specific issues should be reported to the `RosettaSciIO issue
-    tracker <https://github.com/hyperspy/rosettasciio/issues>`_.
+    File format support in HyperSpy is provided by the separate package 
+    :external+rsciio:doc:`RosettaSciIO <index>`. The IO plugins formerly 
+    developed within HyperSpy have been moved to RosettaSciIO in order to 
+    facilitate a wider use also by other packages. 
+    
+    **For file format information and documentation**, please refer to:
+    
+    * :external+rsciio:ref:`Supported File Formats <supported-formats>` - Complete list of supported formats
+    * :external+rsciio:doc:`RosettaSciIO Documentation <index>` - Full documentation for file I/O functionality
+    * `RosettaSciIO GitHub Repository <https://github.com/hyperspy/rosettasciio>`_ - Source code and development
+    
+    **Reporting Issues**: File format specific issues should be reported to the 
+    `RosettaSciIO issue tracker <https://github.com/hyperspy/rosettasciio/issues>`_. 
+    Plugins supporting additional formats or corrections/enhancements to existing 
+    plugins should be contributed to the RosettaSciIO repository.
 
 .. _loading_files:
 
@@ -21,7 +29,10 @@ Loading
 Basic usage
 -----------
 
-HyperSpy can read and write to multiple formats (see :external+rsciio:ref:`supported-formats`).
+HyperSpy can read and write to multiple formats through the 
+:external+rsciio:doc:`RosettaSciIO <index>` library (see :external+rsciio:ref:`supported-formats`). 
+RosettaSciIO provides the file format support that powers HyperSpy's loading and saving capabilities.
+
 To load data use the :func:`~.load` command. For example, to load the
 image ``spam.jpg``, you can type:
 
@@ -73,17 +84,20 @@ allows to select a single file through your OS file manager, e.g.:
 It is also possible to load multiple files at once or even stack multiple
 files. For more details read :ref:`load-multiple-label`.
 
-Specifying reader
------------------
+Specifying file format
+----------------------
 
-HyperSpy will attempt to infer the appropriate file reader to use based on
-the file extension (for example. ``.hspy``, ``.emd`` and so on). You can
-override this using the ``reader`` keyword:
+HyperSpy (via RosettaSciIO) will attempt to infer the appropriate file reader to use based on
+the file extension (for example ``.hspy``, ``.emd`` and so on). You can
+override this using the ``file_format`` keyword:
 
 .. code-block:: python
 
     # Load a .hspy file with an unknown extension
     >>> s = hs.load("filename.some_extension", file_format="hspy") # doctest: +SKIP
+
+For a complete list of supported file formats and their capabilities, see the
+:external+rsciio:ref:`supported-formats` documentation in RosettaSciIO.
 
 .. _load_specify_signal_type-label:
 
