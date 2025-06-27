@@ -3420,15 +3420,31 @@ class BaseSignal(
             if self.tmp_parameters.has_item(
                 "filename"
             ) and self.tmp_parameters.has_item("folder"):
+                # Determine the extension to use
+                if self.tmp_parameters.has_item("extension"):
+                    file_ext = self.tmp_parameters.extension
+                elif file_format is not None:
+                    # Get the default extension for the file format from rsciio
+                    try:
+                        from hyperspy.io import _format_name_to_reader
+
+                        writer = _format_name_to_reader(file_format)
+                        file_ext = (
+                            "." + writer["file_extensions"][writer["default_extension"]]
+                        )
+                    except (ValueError, KeyError):
+                        # If format not found in rsciio, use the file_format as extension
+                        file_ext = "." + file_format
+                else:
+                    file_ext = ".hspy"  # Default extension
+
                 filename = Path(
                     self.tmp_parameters.folder,
-                    self.tmp_parameters.filename + self.tmp_parameters.extension,
+                    self.tmp_parameters.filename + file_ext,
                 )
                 # Don't override extension if it was explicitly provided
-                if extension is None:
-                    extension = (
-                        self.tmp_parameters.extension if not extension else extension
-                    )
+                if extension is None and self.tmp_parameters.has_item("extension"):
+                    extension = self.tmp_parameters.extension
             elif self.metadata.has_item("General.original_filename"):
                 filename = self.metadata.General.original_filename
             else:

@@ -462,6 +462,31 @@ def load(
 
     """
 
+    # Handle both file_format and reader parameters
+    reader = kwds.pop("reader", None)
+
+    # Check if both parameters are provided
+    if file_format is not None and reader is not None:
+        raise ValueError(
+            "Cannot specify both 'file_format' and 'reader' parameters. "
+            "Use 'file_format' instead of 'reader' as 'reader' is deprecated."
+        )
+
+    # Issue deprecation warning if reader is used
+    if reader is not None:
+        warnings.warn(
+            "The 'reader' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
+            "Use 'file_format' instead.",
+            VisibleDeprecationWarning,
+        )
+        # Use reader value as file_format for backward compatibility
+        effective_file_format = reader
+    else:
+        effective_file_format = file_format
+
+    # Pass effective_file_format through kwds
+    kwds["file_format"] = effective_file_format
+
     kwds["signal_type"] = signal_type
     kwds["convert_units"] = convert_units
     kwds["load_original_metadata"] = load_original_metadata
@@ -599,6 +624,36 @@ load.__doc__ %= (
 
 
 def load_single_file(filename, **kwds):
+    """Load a single file into a HyperSpy signal.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Path to the file to load.
+    **kwds : keyword arguments
+        Keyword arguments to pass to the file reader.
+
+    Returns
+    -------
+    signal : HyperSpy Signal
+        The loaded signal.
+    """
+    # Handle both file_format and reader parameters
+    file_format = kwds.pop("file_format", None)
+    reader = kwds.pop("reader", None)
+
+    # Check if both parameters are provided
+    if file_format is not None and reader is not None:
+        raise ValueError(
+            "Cannot specify both 'file_format' and 'reader' parameters. "
+            "Use 'file_format' instead of 'reader' as 'reader' is deprecated."
+        )
+
+    # Use file_format if reader was provided (backward compatibility)
+    if reader is not None:
+        file_format = reader
+
+    kwds["file_format"] = file_format
     """Load any supported file into an HyperSpy structure.
 
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
@@ -628,26 +683,8 @@ def load_single_file(filename, **kwds):
     # File extension without "." separator
     file_ext = os.path.splitext(path)[1][1:]
 
-    # Handle both file_format and reader parameters
+    # Get file_format from kwds (passed from main load function)
     file_format = kwds.pop("file_format", None)
-    reader = kwds.pop("reader", None)
-
-    # Check if both parameters are provided
-    if file_format is not None and reader is not None:
-        raise ValueError(
-            "Cannot specify both 'file_format' and 'reader' parameters. "
-            "Use 'file_format' instead of 'reader' as 'reader' is deprecated."
-        )
-
-    # Issue deprecation warning if reader is used
-    if reader is not None:
-        warnings.warn(
-            "The 'reader' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
-            "Use 'file_format' instead.",
-            VisibleDeprecationWarning,
-        )
-        # Use reader value as file_format for backward compatibility
-        file_format = reader
 
     if file_format is None:
         # Infer file reader based on extension
