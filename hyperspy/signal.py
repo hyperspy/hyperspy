@@ -3328,9 +3328,7 @@ class BaseSignal(
                         The `extension` parameter is deprecated in version 2.4 and will be removed in version 3.0. Use `file_format` instead.
 
                     The extension of the file that defines the file format.
-                    Allowable string values are: {``'hspy'``, ``'hdf5'``, ``'rpl'``,
-                    ``'msa'``, ``'unf'``, ``'blo'``, ``'emd'``, and common image
-                    extensions e.g. ``'tiff'``, ``'png'``, etc.}
+                    Allowable string values are: {%s}
                     ``'hspy'`` and ``'hdf5'`` are equivalent. Use ``'hdf5'`` if
                     compatibility with HyperSpy versions older than 1.2 is required.
                     If ``None``, the extension is determined from the following list in
@@ -3490,8 +3488,9 @@ class BaseSignal(
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
     # Format save method docstring with dynamic format list
-    save.__doc__ = save.__doc__ % _get_format_list_for_docstring(
-        write_mode=True, style="bullet"
+    save.__doc__ = save.__doc__ % (
+        _get_format_list_for_docstring(write_mode=True, style="bullet"),
+        _get_format_list_for_docstring(write_mode=True, style="inline"),
     )
 
     def _replot(self):
