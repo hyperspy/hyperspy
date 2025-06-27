@@ -672,7 +672,7 @@ class Parameter(t.HasTraits):
         save_std : bool
             If True, also the standard deviation will be saved
         format: str
-            The extension of any file format supported by HyperSpy, default
+            The extension of any file format supported by RosettaSciIO, default
             ``hspy``.
 
         """

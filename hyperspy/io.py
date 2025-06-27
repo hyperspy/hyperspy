@@ -27,6 +27,7 @@ from inspect import isgenerator
 from pathlib import Path
 
 import numpy as np
+import rsciio
 from natsort import natsorted
 from rsciio import IO_PLUGINS
 from rsciio.utils.tools import ensure_directory
@@ -64,8 +65,6 @@ def _get_supported_formats(write_mode=False):
         Formatted string listing supported formats with rsciio version
 
     """
-    import rsciio
-
     if write_mode:
         # Filter plugins that support writing
         plugins = [plugin for plugin in IO_PLUGINS if plugin["writes"]]
@@ -1110,3 +1109,68 @@ def _add_file_load_save_metadata(operation, signal, io_plugin):
     signal.metadata.set_item(f"General.FileIO.{largest_index}", mdata_dict)
 
     return signal
+
+
+def _get_format_list_for_docstring(write_mode=False, style="bullet"):
+    """Generate a formatted list of supported file formats for docstrings.
+
+    Parameters
+    ----------
+    write_mode : bool, default False
+        If False (default), returns all supported read formats.
+        If True, returns only supported write formats.
+    style : str, default "bullet"
+        Format style for the list:
+        - "bullet": Bullet list with descriptions
+        - "inline": Comma-separated inline list
+        - "extensions": Just the extensions
+
+    Returns
+    -------
+    str
+        Formatted string suitable for docstrings
+
+    """
+    if write_mode:
+        plugins = [plugin for plugin in IO_PLUGINS if plugin["writes"]]
+    else:
+        plugins = IO_PLUGINS
+
+    if style == "bullet":
+        format_items = []
+        for plugin in sorted(plugins, key=lambda x: x["name"]):
+            name = plugin["name"]
+            extensions = plugin["file_extensions"]
+            main_ext = extensions[plugin["default_extension"]]
+
+            # Add description if available
+            description = plugin.get("description", "")
+            if description:
+                format_items.append(
+                    f"        * ``'{main_ext}'`` for {name} ({description})"
+                )
+            else:
+                format_items.append(f"        * ``'{main_ext}'`` for {name}")
+
+        return "\n" + "\n".join(format_items) + "\n"
+
+    elif style == "inline":
+        format_items = []
+        for plugin in sorted(plugins, key=lambda x: x["name"]):
+            extensions = plugin["file_extensions"]
+            main_ext = extensions[plugin["default_extension"]]
+            format_items.append(f"``'{main_ext}'``")
+
+        return ", ".join(format_items)
+
+    elif style == "extensions":
+        extensions = []
+        for plugin in sorted(plugins, key=lambda x: x["name"]):
+            ext_dict = plugin["file_extensions"]
+            main_ext = ext_dict[plugin["default_extension"]]
+            extensions.append(main_ext)
+
+        return ", ".join(extensions)
+
+    else:
+        raise ValueError(f"Unknown style: {style}")

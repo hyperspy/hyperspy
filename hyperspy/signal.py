@@ -80,7 +80,7 @@ from hyperspy.exceptions import (
 )
 from hyperspy.external.scipy.ndfilters import _get_footprint
 from hyperspy.interactive import interactive
-from hyperspy.io import assign_signal_subclass
+from hyperspy.io import _get_format_list_for_docstring, assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.misc.array_tools import rebin as array_rebin
@@ -3288,123 +3288,118 @@ class BaseSignal(
     ):
         """Saves the signal in the specified format.
 
-        The function gets the format from the specified extension (see
-        :ref:`supported-formats` in the User Guide for more information):
+                The function gets the format from the specified extension (see
+                :ref:`supported-formats` in the User Guide for more information):
 
-        * ``'hspy'`` for HyperSpy's HDF5 specification
-        * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
-        * ``'msa'`` for EMSA/MSA single spectrum saving.
-        * ``'unf'`` for SEMPER unf binary format.
-        * ``'blo'`` for Blockfile diffraction stack saving.
-        * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
+        %s
 
-        If no extension is provided the default file format as defined
-        in the `preferences` is used.
-        Please note that not all the formats supports saving datasets of
-        arbitrary dimensions, e.g. ``'msa'`` only supports 1D data, and
-        blockfiles only supports image stacks with a `navigation_dimension` < 2.
+                If no extension is provided the default file format as defined
+                in the `preferences` is used.
+                Please note that not all the formats supports saving datasets of
+                arbitrary dimensions, e.g. ``'msa'`` only supports 1D data, and
+                blockfiles only supports image stacks with a `navigation_dimension` < 2.
 
-        Each format accepts a different set of parameters. For details
-        see the specific format documentation.
+                Each format accepts a different set of parameters. For details
+                see the specific format documentation.
 
-        Parameters
-        ----------
-        filename : str, Path, or None
-            The output filename or directory path. Can be:
+                Parameters
+                ----------
+                filename : str, Path, or None
+                    The output filename or directory path. Can be:
 
-            * **Full path with extension**: ``'/path/to/my_file.hspy'``
-            * **Directory path only**: ``'/path/to/output_folder/'`` - When a
-              directory is provided, the filename is constructed from
-              `tmp_parameters.filename` and the extension is determined from
-              the `file_format` or `tmp_parameters.extension` parameters.
-            * **None**: Uses `tmp_parameters.folder` and `tmp_parameters.filename`
-              if available.
+                    * **Full path with extension**: ``'/path/to/my_file.hspy'``
+                    * **Directory path only**: ``'/path/to/output_folder/'`` - When a
+                      directory is provided, the filename is constructed from
+                      `tmp_parameters.filename` and the extension is determined from
+                      the `file_format` or `tmp_parameters.extension` parameters.
+                    * **None**: Uses `tmp_parameters.folder` and `tmp_parameters.filename`
+                      if available.
 
-            **About tmp_parameters**: These are automatically created when
-            loading files and store the original filename, folder, and extension.
-            This enables convenient workflows like batch processing where you
-            can load files, process them, and save to new locations without
-            manually specifying filenames.
-        overwrite : None or bool
-            If None, if the file exists it will query the user. If
-            True(False) it does(not) overwrite the file if it exists.
-        extension : None or str, deprecated
-            .. deprecated:: 2.4
-                The `extension` parameter is deprecated in version 2.4 and will be removed in version 3.0. Use `file_format` instead.
+                    **About tmp_parameters**: These are automatically created when
+                    loading files and store the original filename, folder, and extension.
+                    This enables convenient workflows like batch processing where you
+                    can load files, process them, and save to new locations without
+                    manually specifying filenames.
+                overwrite : None or bool
+                    If None, if the file exists it will query the user. If
+                    True(False) it does(not) overwrite the file if it exists.
+                extension : None or str, deprecated
+                    .. deprecated:: 2.4
+                        The `extension` parameter is deprecated in version 2.4 and will be removed in version 3.0. Use `file_format` instead.
 
-            The extension of the file that defines the file format.
-            Allowable string values are: {``'hspy'``, ``'hdf5'``, ``'rpl'``,
-            ``'msa'``, ``'unf'``, ``'blo'``, ``'emd'``, and common image
-            extensions e.g. ``'tiff'``, ``'png'``, etc.}
-            ``'hspy'`` and ``'hdf5'`` are equivalent. Use ``'hdf5'`` if
-            compatibility with HyperSpy versions older than 1.2 is required.
-            If ``None``, the extension is determined from the following list in
-            this order:
+                    The extension of the file that defines the file format.
+                    Allowable string values are: {``'hspy'``, ``'hdf5'``, ``'rpl'``,
+                    ``'msa'``, ``'unf'``, ``'blo'``, ``'emd'``, and common image
+                    extensions e.g. ``'tiff'``, ``'png'``, etc.}
+                    ``'hspy'`` and ``'hdf5'`` are equivalent. Use ``'hdf5'`` if
+                    compatibility with HyperSpy versions older than 1.2 is required.
+                    If ``None``, the extension is determined from the following list in
+                    this order:
 
-            i) the filename (if a full filename with extension is provided)
-            ii) the `file_format` parameter (mapped to corresponding extension)
-            iii) `Signal.tmp_parameters.extension`
-            iv) ``'.hspy'`` (the default extension)
-        chunks : tuple or True or None (default)
-            HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
-            saving. The chunk shape should follow the order of the array
-            (``s.data.shape``), not the shape of the ``axes_manager``.
-            If None and lazy signal, the dask array chunking is used.
-            If None and non-lazy signal, the chunks are estimated automatically
-            to have at least one chunk per signal space.
-            If True, the chunking is determined by the the h5py ``guess_chunk``
-            function.
-        save_original_metadata : bool , default : False
-            Nexus file only. Option to save hyperspy.original_metadata with
-            the signal. A loaded Nexus file may have a large amount of data
-            when loaded which you may wish to omit on saving
-        use_default : bool , default : False
-            Nexus file only. Define the default dataset in the file.
-            If set to True the signal or first signal in the list of signals
-            will be defined as the default (following Nexus v3 data rules).
-        write_dataset : bool, optional
-            Only for hspy files. If True, write the dataset, otherwise, don't
-            write it. Useful to save attributes without having to write the
-            whole dataset. Default is True.
-        close_file : bool, optional
-            Only for hdf5-based files and some zarr store. Close the file after
-            writing. Default is True.
-        file_format: string
-            The file format of choice to save the file. If not given, it is inferred
-            from the file extension.
+                    i) the filename (if a full filename with extension is provided)
+                    ii) the `file_format` parameter (mapped to corresponding extension)
+                    iii) `Signal.tmp_parameters.extension`
+                    iv) ``'.hspy'`` (the default extension)
+                chunks : tuple or True or None (default)
+                    HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
+                    saving. The chunk shape should follow the order of the array
+                    (``s.data.shape``), not the shape of the ``axes_manager``.
+                    If None and lazy signal, the dask array chunking is used.
+                    If None and non-lazy signal, the chunks are estimated automatically
+                    to have at least one chunk per signal space.
+                    If True, the chunking is determined by the the h5py ``guess_chunk``
+                    function.
+                save_original_metadata : bool , default : False
+                    Nexus file only. Option to save hyperspy.original_metadata with
+                    the signal. A loaded Nexus file may have a large amount of data
+                    when loaded which you may wish to omit on saving
+                use_default : bool , default : False
+                    Nexus file only. Define the default dataset in the file.
+                    If set to True the signal or first signal in the list of signals
+                    will be defined as the default (following Nexus v3 data rules).
+                write_dataset : bool, optional
+                    Only for hspy files. If True, write the dataset, otherwise, don't
+                    write it. Useful to save attributes without having to write the
+                    whole dataset. Default is True.
+                close_file : bool, optional
+                    Only for hdf5-based files and some zarr store. Close the file after
+                    writing. Default is True.
+                file_format: string
+                    The file format of choice to save the file. If not given, it is inferred
+                    from the file extension.
 
-        Examples
-        --------
-        Save with a complete filename:
+                Examples
+                --------
+                Save with a complete filename:
 
-        >>> s = hs.signals.Signal1D(np.arange(10))
-        >>> s.save("my_data.hspy")
+                >>> s = hs.signals.Signal1D(np.arange(10))
+                >>> s.save("my_data.hspy")
 
-        Re-save a loaded signal in a different location (uses tmp_parameters):
+                Re-save a loaded signal in a different location (uses tmp_parameters):
 
-        >>> s = hs.load("original_data.hspy")  # tmp_parameters are auto-populated
-        >>> s.save("/new/output/folder/")      # Saves to /new/output/folder/original_data.hspy
+                >>> s = hs.load("original_data.hspy")  # tmp_parameters are auto-populated
+                >>> s.save("/new/output/folder/")      # Saves to /new/output/folder/original_data.hspy
 
-        Re-save a loaded signal in a different format:
+                Re-save a loaded signal in a different format:
 
-        >>> s = hs.load("data.hspy")           # Original format
-        >>> s.save("/output/", file_format="msa")  # Convert to MSA format
-        >>> s.save("/output/", file_format="rpl")  # Convert to Ripple format
+                >>> s = hs.load("data.hspy")           # Original format
+                >>> s.save("/output/", file_format="msa")  # Convert to MSA format
+                >>> s.save("/output/", file_format="rpl")  # Convert to Ripple format
 
-        Process multiple files and save in different format:
+                Process multiple files and save in different format:
 
-        >>> import hyperspy.api as hs
-        >>> from pathlib import Path
-        >>>
-        >>> input_folder = Path("input_data/")
-        >>> output_folder = Path("processed_data/")
-        >>>
-        >>> for file_path in input_folder.glob("*.hspy"):
-        ...     s = hs.load(file_path)
-        ...     # Process the signal...
-        ...     s = s.remove_background()
-        ...     # Save in new location with different format
-        ...     s.save(output_folder, file_format="msa")
+                >>> import hyperspy.api as hs
+                >>> from pathlib import Path
+                >>>
+                >>> input_folder = Path("input_data/")
+                >>> output_folder = Path("processed_data/")
+                >>>
+                >>> for file_path in input_folder.glob("*.hspy"):
+                ...     s = hs.load(file_path)
+                ...     # Process the signal...
+                ...     s = s.remove_background()
+                ...     # Save in new location with different format
+                ...     s.save(output_folder, file_format="msa")
 
         """
         # Check for conflicting parameters
@@ -3493,6 +3488,11 @@ class BaseSignal(
                     filename = Path(f"{base_name}.{extension.lstrip('.')}")
 
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
+
+    # Format save method docstring with dynamic format list
+    save.__doc__ = save.__doc__ % _get_format_list_for_docstring(
+        write_mode=True, style="bullet"
+    )
 
     def _replot(self):
         if self._plot is not None:

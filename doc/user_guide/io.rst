@@ -83,7 +83,7 @@ override this using the ``reader`` keyword:
 .. code-block:: python
 
     # Load a .hspy file with an unknown extension
-    >>> s = hs.load("filename.some_extension", reader="hspy") # doctest: +SKIP
+    >>> s = hs.load("filename.some_extension", file_format="hspy") # doctest: +SKIP
 
 .. _load_specify_signal_type-label:
 
