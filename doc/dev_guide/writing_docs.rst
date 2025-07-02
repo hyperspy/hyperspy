@@ -1,4 +1,3 @@
-
 .. _writing_documentation-label:
 
 Writing documentation
@@ -119,3 +118,27 @@ When releasing a minor and major release, two manual steps are required:
    - copy and paste the `"current"`` documentation entry
    - update the version in the "current" entry to match the version to be released, e.g. increment the minor or major digit
    - in the newly created entry, update the link to the folder created in step 1.
+
+Maintaining AI Integration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To keep the AI integration effective, the following files should be maintained:
+
+**llms.txt maintenance:**
+
+1. **Update** when major features are added or APIs change
+2. **Review links** to ensure documentation URLs remain valid  
+3. **Add new extension packages** to the ecosystem section
+4. **Update key concepts** if fundamental patterns change
+
+The goal is to maintain current, accurate information that helps AI systems provide better assistance to HyperSpy users.
+
+**Context generator maintenance:**
+
+- Test the `llms_txt <https://llmstxt.org/>`_ CLI tool (``llms_txt2ctx``) periodically to ensure it works correctly with HyperSpy's ``llms.txt`` file
+- Update the ``llms.txt`` file if the format specification changes significantly
+- Monitor the llms_txt project for new command-line options that could benefit HyperSpy users
+
+**Integration with documentation updates:**
+
+When making significant changes to the documentation structure or adding new major features, consider whether the AI integration files need updates to reflect these changes.

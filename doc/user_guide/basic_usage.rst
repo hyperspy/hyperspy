@@ -3,6 +3,79 @@
 Basic Usage
 ===========
 
+.. _ai-assistance-label:
+
+AI Assistance for HyperSpy
+---------------------------
+
+HyperSpy includes AI-friendly documentation to help Large Language Models (LLMs) and AI coding assistants provide better support when working with HyperSpy code.
+
+Using AI Tools with HyperSpy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**For repository-aware AI tools:**
+
+If you're using AI coding assistants that can read files in your project, the ``llms.txt`` file in the HyperSpy repository root automatically provides context about HyperSpy's architecture and workflows. No additional setup is needed.
+
+**For chat-based AI interfaces:**
+
+When working with AI systems through chat interfaces, you can provide them with comprehensive HyperSpy context:
+
+1. **Generate a context file** from the HyperSpy repository:
+
+1. **Generate context using HyperSpy's built-in function**:
+
+   .. code-block:: python
+   
+       import hyperspy.api as hs
+       
+       # Generate basic context
+       context = hs.generate_ai_context()
+       
+       # Save to file
+       hs.generate_ai_context(output_file="hyperspy_context.txt")
+
+   This requires the ``llms_txt`` package to be installed:
+
+   .. code-block:: bash
+   
+       pip install llms_txt
+
+2. **Copy the generated content** from the string or file and paste it into your AI chat session before asking HyperSpy-related questions.
+
+3. **For comprehensive context** (includes content from documentation links):
+
+   .. code-block:: python
+   
+       # Generate full context with web content (includes optional sections)
+       full_context = hs.generate_ai_context(include_optional=True)
+       
+       # Or save directly to file
+       hs.generate_ai_context(include_optional=True, output_file="hyperspy_full_context.txt")
+
+Tips for Better AI Assistance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When asking AI systems for help with HyperSpy:
+
+- **Use standard conventions**: Always mention ``import hyperspy.api as hs`` for import statements
+- **Be specific about data types**: Mention signal types when relevant (e.g., "EDS spectrum", "EELS spectrum map", "4D-STEM dataset")
+- **Reference key concepts**: Use terms like "navigation dimensions", "signal dimensions", and "lazy loading" when describing your data structure
+- **Mention extensions**: Ask about domain-specific packages like eXSpy for EDS analysis or holoSpy for electron holography when appropriate
+- **Describe your workflow**: Whether you're doing interactive analysis in Jupyter notebooks, batch processing, or model fitting
+
+Example AI Queries
+^^^^^^^^^^^^^^^^^^^
+
+Good examples of how to ask AI systems for HyperSpy help:
+
+- "How do I load an EDS spectrum map in HyperSpy and plot the sum spectrum?"
+- "I have a 4D-STEM dataset that's too large for memory. How can I use lazy loading to analyze it?"
+- "How do I fit a Gaussian model to multiple spectra in a spectrum image using HyperSpy?"
+- "What's the best way to perform SVD decomposition on an EELS spectrum image?"
+
+With proper context, AI systems can provide more accurate code suggestions, guide you to relevant documentation sections, and understand HyperSpy's unique concepts like the navigation/signal dimension distinction.
+
 
 .. _importing_hyperspy-label:
 

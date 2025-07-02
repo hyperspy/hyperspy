@@ -89,6 +89,7 @@ def print_known_signal_types(style=None):
 
 
 __all__ = [
+    "generate_ai_context",
     "interactive",
     "markers",
     "model",
@@ -106,6 +107,7 @@ def __dir__():
 
 
 _import_mapping = {
+    "generate_ai_context": ".utils.ai_tools",
     "interactive": ".interactive",
     "stack": ".misc.utils",
     "transpose": ".misc.utils",
