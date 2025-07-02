@@ -39,3 +39,26 @@ User guide
     
     bibliography.rst
 
+.. _install-label:
+
+##########
+Installation
+##########
+
+.. toctree::
+    :hidden:
+
+    basic_usage
+    io
+    signal
+    axes
+    interactive_operations
+    region_of_interest
+    model/index
+    mva/index
+    visualisation
+    big_data
+    events
+    pint_unit_registry
+    bibliography
+

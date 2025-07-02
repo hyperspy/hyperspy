@@ -37,6 +37,9 @@ HyperSpy in Python 2.7, please install version 0.8.3.
 Contributing
 ------------
 
-Everyone is welcome to contribute. Please read our [contributing 
-guidelines](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md) 
+Everyone is welcome to contribute. Please read our [contributing
+guidelines](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md)
 and get started!
+
+For AI-assisted development, this repository includes an [`llms.txt`](llms.txt) file
+that provides structured information about HyperSpy for Large Language Models.
