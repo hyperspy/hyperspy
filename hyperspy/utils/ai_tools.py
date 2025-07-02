@@ -79,9 +79,9 @@ def _get_doc_version_path():
     return "current"
 
 
-def _convert_rst_to_html_urls(llms_content):
+def _convert_rst_to_markdown_urls(llms_content):
     """
-    Convert local RST file paths in llms.txt content to appropriate web HTML URLs.
+    Convert local RST file paths in llms.txt content to appropriate web Markdown URLs.
 
     Parameters
     ----------
@@ -91,19 +91,19 @@ def _convert_rst_to_html_urls(llms_content):
     Returns
     -------
     str
-        The content with RST paths converted to HTML URLs.
+        The content with RST paths converted to Markdown URLs.
     """
     doc_version = _get_doc_version_path()
     base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
 
     # Transform local paths to web URLs
     transformations = [
-        # Documentation files (doc/path/file.rst -> base_url/path/file.html)
-        (r"doc/user_guide/([^)]+)\.rst", rf"{base_url}/user_guide/\1.html"),
-        (r"doc/dev_guide/([^)]+)\.rst", rf"{base_url}/dev_guide/\1.html"),
-        (r"doc/reference/([^)]+)\.rst", rf"{base_url}/reference/\1.html"),
-        # Handle directory paths without .rst extension (doc/reference/api.signals/ -> base_url/reference/api.signals.html)
-        (r"doc/reference/([^)]+)/", rf"{base_url}/reference/\1.html"),
+        # Documentation files (doc/path/file.rst -> base_url/path/file.html.md)
+        (r"doc/user_guide/([^)]+)\.rst", rf"{base_url}/user_guide/\1.html.md"),
+        (r"doc/dev_guide/([^)]+)\.rst", rf"{base_url}/dev_guide/\1.html.md"),
+        (r"doc/reference/([^)]+)\.rst", rf"{base_url}/reference/\1.html.md"),
+        # Handle directory paths without .rst extension (doc/reference/api.signals/ -> base_url/reference/api.signals.html.md)
+        (r"doc/reference/([^)]+)/", rf"{base_url}/reference/\1.html.md"),
     ]
 
     # Apply transformations
@@ -202,8 +202,8 @@ def generate_ai_context(include_optional=False, output_file=None):
     # Read the llms.txt content
     llms_content = llms_file.read_text(encoding="utf-8")
 
-    # Convert RST paths to HTML URLs for the current HyperSpy version
-    llms_content_with_urls = _convert_rst_to_html_urls(llms_content)
+    # Convert RST paths to Markdown URLs for the current HyperSpy version
+    llms_content_with_urls = _convert_rst_to_markdown_urls(llms_content)
 
     # Generate the context using llms_txt
     try:
