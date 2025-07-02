@@ -181,6 +181,177 @@ class TestGenerateAIContext:
         assert len(context) > 0
         assert "HyperSpy" in context
 
+    def test_save_to_file_prints_message(self, capsys):
+        """Test that saving to file prints a confirmation message."""
+        from hyperspy.utils import ai_tools
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_file = Path(tmp_dir) / "test_context.txt"
+
+            ai_tools.generate_ai_context(
+                include_optional=False, output_file=output_file
+            )
+
+            # Check that a message was printed
+            captured = capsys.readouterr()
+            assert "AI context saved to:" in captured.out
+            assert str(output_file) in captured.out
+
+    def test_utf8_encoding_handling(self):
+        """Test that UTF-8 encoding is properly handled for file operations."""
+        from hyperspy.utils import ai_tools
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_file = Path(tmp_dir) / "test_utf8.txt"
+
+            # Generate and save context
+            ai_tools.generate_ai_context(
+                include_optional=False, output_file=output_file
+            )
+
+            # Read the file back and ensure it's valid UTF-8
+            content = output_file.read_text(encoding="utf-8")
+            assert isinstance(content, str)
+            assert len(content) > 0
+            assert "HyperSpy" in content
+
+            # Ensure the file can be read with explicit UTF-8 encoding
+            with open(output_file, "r", encoding="utf-8") as f:
+                file_content = f.read()
+                assert file_content == content
+
+    @patch("pathlib.Path.read_text")
+    def test_file_reading_error_handling(self, mock_read_text):
+        """Test error handling when reading llms.txt file fails."""
+        from hyperspy.utils import ai_tools
+
+        # Mock read_text to raise an exception
+        mock_read_text.side_effect = UnicodeDecodeError(
+            "utf-8", b"", 0, 1, "invalid start byte"
+        )
+
+        with pytest.raises(UnicodeDecodeError):
+            ai_tools.generate_ai_context(include_optional=False)
+
+    @patch("pathlib.Path.write_text")
+    def test_file_writing_error_handling(self, mock_write_text):
+        """Test error handling when writing output file fails."""
+        from hyperspy.utils import ai_tools
+
+        # Mock write_text to raise an exception
+        mock_write_text.side_effect = PermissionError("Permission denied")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_file = Path(tmp_dir) / "test_context.txt"
+
+            with pytest.raises(PermissionError):
+                ai_tools.generate_ai_context(
+                    include_optional=False, output_file=output_file
+                )
+
+    @patch("llms_txt.core.create_ctx")
+    def test_optional_parameter_passing(self, mock_create_ctx):
+        """Test that the optional parameter is correctly passed to create_ctx."""
+        from hyperspy.utils import ai_tools
+
+        mock_create_ctx.return_value = "mocked context"
+
+        # Test with include_optional=False
+        ai_tools.generate_ai_context(include_optional=False)
+        args, kwargs = mock_create_ctx.call_args
+        assert kwargs["optional"] is False
+
+        # Test with include_optional=True
+        ai_tools.generate_ai_context(include_optional=True)
+        args, kwargs = mock_create_ctx.call_args
+        assert kwargs["optional"] is True
+
+    @patch("llms_txt.core.create_ctx")
+    def test_content_conversion_applied(self, mock_create_ctx):
+        """Test that RST to Markdown URL conversion is applied to llms.txt content."""
+        from hyperspy.utils import ai_tools
+
+        mock_create_ctx.return_value = "mocked context"
+
+        # Call the function
+        ai_tools.generate_ai_context(include_optional=False)
+
+        # Check that create_ctx was called with converted content
+        args, kwargs = mock_create_ctx.call_args
+        content = args[0]
+
+        # Should contain Markdown URLs, not RST paths
+        assert "hyperspy.org/hyperspy-doc/" in content
+        assert ".html.md" in content
+        # Should not contain unconverted RST paths (allowing for some occurrences in headers)
+        rst_path_count = content.count("doc/user_guide/")
+        assert rst_path_count <= 2, f"Found {rst_path_count} unconverted RST paths"
+
+    @patch("llms_txt.core.create_ctx")
+    @patch("pathlib.Path.exists")
+    def test_hyperspy_installation_path_resolution(self, mock_exists, mock_create_ctx):
+        """Test that the llms.txt file path is correctly resolved relative to HyperSpy installation."""
+        import hyperspy
+        from hyperspy.utils import ai_tools
+
+        mock_create_ctx.return_value = "mocked context"
+        mock_exists.return_value = True
+
+        # Use a list to store the accessed path (mutable object)
+        accessed_paths = []
+
+        def mock_read_text_with_tracking(self, encoding=None):
+            # Store the path that was accessed
+            accessed_paths.append(self)
+            return "# Mock llms.txt content\n[Test](doc/user_guide/test.rst): Test"
+
+        with patch.object(Path, "read_text", mock_read_text_with_tracking):
+            ai_tools.generate_ai_context(include_optional=False)
+
+            # Check that the correct path was accessed
+            expected_path = Path(hyperspy.__file__).parent.parent / "llms.txt"
+            assert len(accessed_paths) == 1
+            assert accessed_paths[0] == expected_path
+
+    def test_string_conversion_of_context_object(self):
+        """Test that the context object is properly converted to string."""
+        from unittest.mock import MagicMock
+
+        from hyperspy.utils import ai_tools
+
+        # Create a mock context object that has a __str__ method
+        mock_context = MagicMock()
+        mock_context.__str__ = MagicMock(return_value="stringified context")
+
+        with patch("llms_txt.core.create_ctx", return_value=mock_context):
+            result = ai_tools.generate_ai_context(include_optional=False)
+
+            # Verify that str() was called on the context object
+            mock_context.__str__.assert_called_once()
+            assert result == "stringified context"
+
+    @patch("llms_txt.core.create_ctx")
+    def test_both_include_optional_values(self, mock_create_ctx):
+        """Test that both True and False values for include_optional work correctly."""
+        from hyperspy.utils import ai_tools
+
+        mock_create_ctx.return_value = "mocked context"
+
+        # Test default behavior (should be False)
+        ai_tools.generate_ai_context()
+        args, kwargs = mock_create_ctx.call_args
+        assert kwargs["optional"] is False
+
+        # Test explicit False
+        ai_tools.generate_ai_context(include_optional=False)
+        args, kwargs = mock_create_ctx.call_args
+        assert kwargs["optional"] is False
+
+        # Test explicit True
+        ai_tools.generate_ai_context(include_optional=True)
+        args, kwargs = mock_create_ctx.call_args
+        assert kwargs["optional"] is True
+
 
 class TestVersionDetection:
     """Test suite for version detection functionality."""
@@ -245,6 +416,81 @@ class TestVersionDetection:
                 result = _get_doc_version_path()
                 assert result == "current", (
                     f"Failed to fallback to 'current' for version {version}"
+                )
+
+    def test_get_doc_version_path_single_part_version(self):
+        """Test version detection for single-part version strings."""
+        import hyperspy
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        # Test versions with only one part (should fallback to current)
+        single_part_versions = ["2", "3", "1"]
+
+        for version in single_part_versions:
+            with patch.object(hyperspy, "__version__", version):
+                result = _get_doc_version_path()
+                assert result == "current", (
+                    f"Failed to fallback to 'current' for single-part version {version}"
+                )
+
+    def test_get_doc_version_path_exception_handling(self):
+        """Test version detection when int conversion fails."""
+        import hyperspy
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        # Test versions that will cause ValueError in int() conversion
+        problematic_versions = [
+            "2.3.alpha",  # non-numeric minor
+            "two.three.one",  # non-numeric major
+            "2.3beta.1",  # non-numeric minor with beta
+            "v2.3.1",  # prefixed version
+        ]
+
+        for version in problematic_versions:
+            with patch.object(hyperspy, "__version__", version):
+                result = _get_doc_version_path()
+                assert result == "current", (
+                    f"Failed to fallback to 'current' for problematic version {version}"
+                )
+
+    def test_get_doc_version_path_extra_version_parts(self):
+        """Test version detection with extra version parts."""
+        import hyperspy
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        # Test versions with more than 3 parts
+        extra_part_versions = {
+            "2.3.1.4": "current",  # Should still use major.minor logic
+            "2.2.0.1": "v2.2",  # Older version with extra part
+            "1.7.5.2": "v1.7",  # Even older version
+            "3.0.0.0": "current",  # Future version
+        }
+
+        for version, expected in extra_part_versions.items():
+            with patch.object(hyperspy, "__version__", version):
+                result = _get_doc_version_path()
+                assert result == expected, (
+                    f"Failed for version {version}, got {result}, expected {expected}"
+                )
+
+    def test_get_doc_version_path_edge_case_versions(self):
+        """Test version detection for edge case version patterns."""
+        import hyperspy
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        # Test edge cases around the boundary conditions
+        edge_cases = {
+            "2.2.9": "v2.2",  # Just below current threshold
+            "2.3.0": "current",  # At the threshold
+            "2.99.0": "current",  # High minor version
+            "1.0.0": "v1.0",  # Low version
+        }
+
+        for version, expected in edge_cases.items():
+            with patch.object(hyperspy, "__version__", version):
+                result = _get_doc_version_path()
+                assert result == expected, (
+                    f"Failed for edge case version {version}, got {result}, expected {expected}"
                 )
 
 
@@ -369,6 +615,122 @@ class TestRSTToMarkdownConversion:
         assert f"{base_url}/reference/api.signals.html.md" in markdown_content
         assert f"{base_url}/user_guide/signal/index.html.md" in markdown_content
         assert f"{base_url}/user_guide/mva/index.html.md" in markdown_content
+
+    def test_convert_rst_to_markdown_urls_no_rst_paths(self):
+        """Test conversion when content has no RST paths."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
+
+        rst_content = """
+# HyperSpy
+
+This is some content without any documentation links.
+
+- [External Link](https://example.com): External link
+- [GitHub](https://github.com/hyperspy/hyperspy): GitHub repo
+        """
+
+        markdown_content = _convert_rst_to_markdown_urls(rst_content)
+
+        # Content should remain unchanged
+        assert markdown_content == rst_content
+        # External links should be preserved
+        assert "https://example.com" in markdown_content
+        assert "https://github.com/hyperspy/hyperspy" in markdown_content
+
+    def test_convert_rst_to_markdown_urls_nested_subdirectories(self):
+        """Test conversion of nested subdirectory paths."""
+        from hyperspy.utils.ai_tools import (
+            _convert_rst_to_markdown_urls,
+            _get_doc_version_path,
+        )
+
+        rst_content = """
+- [Deep Signal Guide](doc/user_guide/signal/advanced/fitting.rst): Advanced fitting
+- [Deep Dev Guide](doc/dev_guide/testing/unit_tests.rst): Unit testing
+- [Deep Reference](doc/reference/api/signals/eels.rst): EELS API
+        """
+
+        markdown_content = _convert_rst_to_markdown_urls(rst_content)
+        doc_version = _get_doc_version_path()
+        base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
+
+        # Check that nested paths are correctly converted
+        assert (
+            f"{base_url}/user_guide/signal/advanced/fitting.html.md" in markdown_content
+        )
+        assert f"{base_url}/dev_guide/testing/unit_tests.html.md" in markdown_content
+        assert f"{base_url}/reference/api/signals/eels.html.md" in markdown_content
+
+        # Check that original paths are gone
+        assert "doc/user_guide/signal/advanced/fitting.rst" not in markdown_content
+        assert "doc/dev_guide/testing/unit_tests.rst" not in markdown_content
+        assert "doc/reference/api/signals/eels.rst" not in markdown_content
+
+    def test_convert_rst_to_markdown_urls_malformed_paths(self):
+        """Test conversion handles malformed or partial RST paths gracefully."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
+
+        rst_content = """
+- [Good Path](doc/user_guide/install.rst): This should be converted
+- [Partial Path](doc/user_guide/): No .rst extension
+- [Wrong Path](docs/user_guide/install.rst): Wrong directory name
+- [No Extension](doc/user_guide/install): No .rst extension
+- [Empty](doc//install.rst): Double slash
+        """
+
+        markdown_content = _convert_rst_to_markdown_urls(rst_content)
+
+        # Only the good path should be converted
+        assert "hyperspy.org/hyperspy-doc/" in markdown_content
+        assert "install.html.md" in markdown_content
+
+        # Malformed paths should remain unchanged
+        assert "doc/user_guide/):" in markdown_content  # Partial path preserved
+        assert "docs/user_guide/install.rst" in markdown_content  # Wrong dir preserved
+        assert "doc/user_guide/install):" in markdown_content  # No extension preserved
+        assert "doc//install.rst" in markdown_content  # Double slash preserved
+
+    def test_convert_rst_to_markdown_urls_multiple_occurrences(self):
+        """Test conversion of multiple occurrences of the same path."""
+        from hyperspy.utils.ai_tools import (
+            _convert_rst_to_markdown_urls,
+            _get_doc_version_path,
+        )
+
+        rst_content = """
+- [Installation](doc/user_guide/install.rst): Install guide
+- [Install Again](doc/user_guide/install.rst): Same link again
+- [Basic Usage](doc/user_guide/basic_usage.rst): Basic guide
+- [Basic Again](doc/user_guide/basic_usage.rst): Same basic guide
+        """
+
+        markdown_content = _convert_rst_to_markdown_urls(rst_content)
+        doc_version = _get_doc_version_path()
+        base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
+
+        # All occurrences should be converted
+        assert markdown_content.count(f"{base_url}/user_guide/install.html.md") == 2
+        assert markdown_content.count(f"{base_url}/user_guide/basic_usage.html.md") == 2
+
+        # No original paths should remain
+        assert "doc/user_guide/install.rst" not in markdown_content
+        assert "doc/user_guide/basic_usage.rst" not in markdown_content
+
+    def test_convert_rst_to_markdown_urls_empty_content(self):
+        """Test conversion with empty content."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
+
+        empty_content = ""
+        result = _convert_rst_to_markdown_urls(empty_content)
+        assert result == ""
+
+    def test_convert_rst_to_markdown_urls_only_whitespace(self):
+        """Test conversion with only whitespace content."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
+
+        whitespace_content = "   \n\n  \t  \n  "
+        result = _convert_rst_to_markdown_urls(whitespace_content)
+        assert result == whitespace_content
 
 
 class TestGenerateAIContextIntegration:
