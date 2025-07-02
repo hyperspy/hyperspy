@@ -47,6 +47,7 @@ extensions = [
     "sphinx_gallery.gen_gallery",
     "sphinx_copybutton",
     "sphinx_favicon",
+    "sphinx_markdown_builder",
 ]
 
 linkcheck_ignore = [
@@ -455,3 +456,8 @@ tls_verify = True
 
 def setup(app):
     app.add_css_file("custom-styles.css")
+
+
+# -- Options for markdown builder --------------------------------------------
+
+markdown_file_suffix = ".html.md"
