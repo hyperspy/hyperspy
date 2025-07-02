@@ -1,0 +1,76 @@
+# HyperSpy
+
+> HyperSpy is an open source Python library for the interactive analysis of multidimensional datasets that can be described as multidimensional arrays of a given signal (e.g., a 2D array of spectra, also known as spectrum image). It provides tools for processing, analyzing, and visualizing data from electron microscopy, spectroscopy, and related experimental techniques.
+
+HyperSpy makes it straightforward to apply analytical procedures that operate on an individual signal to multidimensional arrays, while providing easy access to analytical tools that exploit the multidimensionality of the dataset. The library's modular structure makes it easy to add features to analyze many different types of signals.
+
+Key features include:
+- Support for multidimensional signal processing
+- Interactive data visualization and exploration
+- Machine learning tools (PCA, ICA, NMF)
+- Model fitting and curve fitting capabilities
+- Extensive I/O support for various file formats
+- Integration with the scientific Python ecosystem (NumPy, SciPy, Matplotlib, Dask)
+
+HyperSpy is particularly suited for analyzing data from:
+- Electron Energy Loss Spectroscopy (EELS)
+- Energy Dispersive X-ray Spectroscopy (EDX/EDS)
+- Cathodoluminescence (CL)
+- Photoluminescence (PL)
+- Electron Backscatter Diffraction (EBSD)
+- Scanning Transmission Electron Microscopy (STEM)
+
+## Getting Started
+
+- [Installation Guide](doc/user_guide/install.rst): Complete installation instructions for all platforms
+- [Basic Usage](doc/user_guide/basic_usage.rst): Fundamental concepts and basic operations
+- [Input/Output Guide](doc/user_guide/io.rst): Loading and saving data in various formats
+
+## Core Concepts
+
+- [Signal Processing](doc/user_guide/signal/index.rst): Understanding HyperSpy's signal objects and basic operations
+- [Axes Management](doc/user_guide/axes.rst): Working with signal axes and calibration
+- [Visualization](doc/user_guide/visualisation.rst): Plotting and interactive visualization tools
+- [1D Signal Analysis](doc/user_guide/signal1d.rst): Specific tools for 1D signals like spectra
+- [2D Signal Analysis](doc/user_guide/signal2d.rst): Tools for 2D signals like images
+
+## Advanced Features
+
+- [Multivariate Analysis](doc/user_guide/mva/index.rst): PCA, ICA, NMF, and other machine learning tools
+- [Model Fitting](doc/user_guide/model/index.rst): Comprehensive model fitting and curve fitting capabilities
+- [Region of Interest](doc/user_guide/region_of_interest.rst): ROI tools for selective analysis
+- [Big Data Processing](doc/user_guide/big_data.rst): Handling large datasets with lazy loading and Dask
+
+## Examples and Tutorials
+
+- [Create Signal Examples](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/create_signal): How to create signals from arrays and load data
+- [Data Visualization Examples](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/data_visualization): Various plotting and visualization techniques
+- [Model Fitting Examples](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/model_fitting): Practical model fitting scenarios
+- [Processing Examples](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/processing): Signal processing workflows
+- [Simple Simulations](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/simple_simulations): Creating synthetic data for testing
+
+## API Reference
+
+- [Main API Documentation](doc/reference/api.rst): Complete API reference
+- [Signal Classes](doc/reference/api.signals/): All signal types and their methods
+- [Model Classes](doc/reference/api.model/): Model fitting components and methods
+- [Plotting API](doc/reference/api.plot/): Visualization and plotting functions
+- [Utilities](doc/reference/utils/): Helper functions and utilities
+
+## Development
+
+- [Contributing Guide](doc/dev_guide/intro.rst): How to contribute to HyperSpy development
+- [Coding Style](doc/dev_guide/coding_style.rst): Code style guidelines and conventions
+- [Testing Guide](doc/dev_guide/testing.rst): Running and writing tests
+- [Writing Documentation](doc/dev_guide/writing_docs.rst): Documentation contribution guidelines
+- [Writing Extensions](doc/dev_guide/writing_extensions.rst): Creating HyperSpy extensions
+
+## Optional
+
+- [Git Workflow](doc/dev_guide/git.rst): Git workflow for contributors
+- [Maintenance Tasks](doc/dev_guide/maintenance.rst): Maintenance procedures for maintainers
+- [Lazy Computations](doc/dev_guide/lazy_computations.rst): Implementation details for lazy operations
+- [Performance Optimization](doc/dev_guide/speeding_up_code.rst): Tips for optimizing HyperSpy code
+- [Events System](doc/user_guide/events.rst): Understanding HyperSpy's event system
+- [Interactive Operations](doc/user_guide/interactive_operations.rst): Advanced interactive features
+- [Unit Registry](doc/user_guide/pint_unit_registry.rst): Working with physical units
