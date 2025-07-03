@@ -150,6 +150,7 @@ speed = [
     "numexpr>=2.8",
 ]
 tests = [
+    "llms_txt",
     "pooch",
     "pytest-instafail",
     "pytest-mpl",
