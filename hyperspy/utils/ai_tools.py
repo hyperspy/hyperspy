@@ -79,31 +79,39 @@ def _get_doc_version_path():
     return "current"
 
 
-def _convert_rst_to_markdown_urls(llms_content):
+def _convert_rst_to_web_urls(llms_content, prefer_markdown=True):
     """
-    Convert local RST file paths in llms.txt content to appropriate web Markdown URLs.
+    Convert local RST file paths in llms.txt content to appropriate web URLs.
+
+    Prefers Markdown format for better AI readability, with HTML fallback.
 
     Parameters
     ----------
     llms_content : str
         The content of the llms.txt file with local RST paths.
+    prefer_markdown : bool, optional
+        If True, generates Markdown URLs (.html.md). If False, generates HTML URLs (.html).
+        Default is True for better AI readability.
 
     Returns
     -------
     str
-        The content with RST paths converted to Markdown URLs.
+        The content with RST paths converted to web URLs.
     """
     doc_version = _get_doc_version_path()
     base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
 
+    # Choose extension based on preference
+    ext = ".html.md" if prefer_markdown else ".html"
+
     # Transform local paths to web URLs
     transformations = [
-        # Documentation files (doc/path/file.rst -> base_url/path/file.html.md)
-        (r"doc/user_guide/([^)]+)\.rst", rf"{base_url}/user_guide/\1.html.md"),
-        (r"doc/dev_guide/([^)]+)\.rst", rf"{base_url}/dev_guide/\1.html.md"),
-        (r"doc/reference/([^)]+)\.rst", rf"{base_url}/reference/\1.html.md"),
-        # Handle directory paths without .rst extension (doc/reference/api.signals/ -> base_url/reference/api.signals.html.md)
-        (r"doc/reference/([^)]+)/", rf"{base_url}/reference/\1.html.md"),
+        # Documentation files (doc/path/file.rst -> base_url/path/file.ext)
+        (r"doc/user_guide/([^)]+)\.rst", rf"{base_url}/user_guide/\1{ext}"),
+        (r"doc/dev_guide/([^)]+)\.rst", rf"{base_url}/dev_guide/\1{ext}"),
+        (r"doc/reference/([^)]+)\.rst", rf"{base_url}/reference/\1{ext}"),
+        # Handle directory paths without .rst extension (doc/reference/api.signals/ -> base_url/reference/api.signals.ext)
+        (r"doc/reference/([^)]+)/", rf"{base_url}/reference/\1{ext}"),
     ]
 
     # Apply transformations
@@ -114,7 +122,7 @@ def _convert_rst_to_markdown_urls(llms_content):
     return converted_content
 
 
-def generate_ai_context(include_optional=False, output_file=None):
+def generate_ai_context(include_optional=False, output_file=None, prefer_markdown=True):
     """
     Generate AI context from HyperSpy's llms.txt file.
 
@@ -130,6 +138,10 @@ def generate_ai_context(include_optional=False, output_file=None):
         This creates a more comprehensive but larger context file.
     output_file : str or Path, optional
         Path where to save the generated context. If None, returns the context as a string.
+    prefer_markdown : bool, default True
+        If True, prefer Markdown format URLs (.html.md) for better AI readability.
+        If False, use HTML URLs (.html). If Markdown URLs are not available,
+        automatically falls back to HTML.
 
     Returns
     -------
@@ -147,16 +159,14 @@ def generate_ai_context(include_optional=False, output_file=None):
     Examples
     --------
     >>> import hyperspy.api as hs
-    >>> # Generate basic context as string
+    >>> # Generate basic context as string with Markdown URLs
     >>> context = hs.generate_ai_context()
+    >>>
+    >>> # Generate context with HTML URLs
+    >>> context = hs.generate_ai_context(prefer_markdown=False)
     >>>
     >>> # Generate full context with web content and save to file
     >>> hs.generate_ai_context(include_optional=True, output_file="hyperspy_context.txt")
-    >>>
-    >>> # Generate context for offline use
-    >>> context = hs.generate_ai_context(include_optional=True)
-    >>> with open("my_context.txt", "w") as f:
-    ...     f.write(context)
 
     Notes
     -----
@@ -169,6 +179,11 @@ def generate_ai_context(include_optional=False, output_file=None):
 
     - Development versions (containing 'dev', '+', or pre-release markers) → `/dev/` docs
     - Stable releases → `/current/` docs (for latest) or `/vX.Y/` docs (for older versions)
+
+    URL Format Selection:
+    - prefer_markdown=True: URLs end with .html.md for better AI readability
+    - prefer_markdown=False: URLs end with .html for standard web access
+    - Automatic fallback: If Markdown URLs aren't accessible, falls back to HTML
 
     The generated context includes:
     - Project overview and key concepts
@@ -202,15 +217,37 @@ def generate_ai_context(include_optional=False, output_file=None):
     # Read the llms.txt content
     llms_content = llms_file.read_text(encoding="utf-8")
 
-    # Convert RST paths to Markdown URLs for the current HyperSpy version
-    llms_content_with_urls = _convert_rst_to_markdown_urls(llms_content)
+    # Try Markdown URLs first if preferred
+    context_str = None
+    if prefer_markdown:
+        llms_content_markdown = _convert_rst_to_web_urls(
+            llms_content, prefer_markdown=True
+        )
+        try:
+            context = create_ctx(llms_content_markdown, optional=include_optional)
+            context_str = str(context)
 
-    # Generate the context using llms_txt
-    try:
-        context = create_ctx(llms_content_with_urls, optional=include_optional)
-        context_str = str(context)
-    except Exception as e:
-        raise RuntimeError(f"Failed to generate context from llms.txt: {e}") from e
+            # Check if Markdown URLs are actually present in the output
+            if ".html.md" in context_str:
+                # Success with Markdown URLs
+                pass
+            else:
+                # Markdown URLs were filtered out, try HTML fallback
+                context_str = None
+        except Exception:
+            # Error with Markdown URLs, try HTML fallback
+            context_str = None
+
+    # If Markdown failed or wasn't preferred, use HTML URLs
+    if context_str is None:
+        llms_content_html = _convert_rst_to_web_urls(
+            llms_content, prefer_markdown=False
+        )
+        try:
+            context = create_ctx(llms_content_html, optional=include_optional)
+            context_str = str(context)
+        except Exception as e:
+            raise RuntimeError(f"Failed to generate context from llms.txt: {e}") from e
 
     # Handle output
     if output_file is not None:

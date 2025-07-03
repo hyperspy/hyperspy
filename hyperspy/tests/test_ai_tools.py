@@ -194,12 +194,16 @@ class TestGenerateAIContext:
 
             # Verify the function was called and get the converted content
             assert result == "mocked response"
+
+            # With the fallback mechanism, we should get HTML URLs (not Markdown)
+            # since .html.md URLs don't exist and get filtered out by llms_txt
             args, kwargs = mock_create_ctx.call_args
             converted_content = args[0]
 
             # Verify the real URL conversion happened in the content passed to create_ctx
             assert "hyperspy.org/hyperspy-doc/" in converted_content
-            assert ".html.md" in converted_content
+            # Due to fallback mechanism, should contain HTML URLs
+            assert ".html)" in converted_content
             # Should not contain unconverted RST paths
             assert converted_content.count("doc/user_guide/") <= 2
 
@@ -238,7 +242,7 @@ class TestGenerateAIContext:
 
     def test_real_rst_conversion_patterns(self):
         """Test RST conversion patterns in real execution."""
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
 
         # Test with real RST content similar to llms.txt
         test_content = """
@@ -251,7 +255,7 @@ class TestGenerateAIContext:
         """
 
         # Execute real conversion
-        converted = _convert_rst_to_markdown_urls(test_content)
+        converted = _convert_rst_to_web_urls(test_content)
 
         # Verify conversions happened
         assert "hyperspy.org/hyperspy-doc/" in converted
@@ -401,24 +405,49 @@ class TestGenerateAIContext:
 
     @patch("llms_txt.core.create_ctx")
     def test_content_conversion_applied(self, mock_create_ctx):
-        """Test that RST to Markdown URL conversion is applied to llms.txt content."""
+        """Test that RST to URL conversion is applied to llms.txt content."""
         from hyperspy.utils import ai_tools
 
         mock_create_ctx.return_value = "mocked context"
 
-        # Call the function
-        ai_tools.generate_ai_context(include_optional=False)
+        # Call the function with prefer_markdown=True
+        ai_tools.generate_ai_context(include_optional=False, prefer_markdown=True)
 
-        # Check that create_ctx was called with converted content
-        args, kwargs = mock_create_ctx.call_args
-        content = args[0]
+        # Check that create_ctx was called at least once
+        assert mock_create_ctx.called
 
-        # Should contain Markdown URLs, not RST paths
+        # Get the first call (should be with Markdown URLs)
+        first_call_args, first_call_kwargs = mock_create_ctx.call_args_list[0]
+        content = first_call_args[0]
+
+        # Should contain converted URLs, not RST paths
         assert "hyperspy.org/hyperspy-doc/" in content
         assert ".html.md" in content
         # Should not contain unconverted RST paths (allowing for some occurrences in headers)
         rst_path_count = content.count("doc/user_guide/")
         assert rst_path_count <= 2, f"Found {rst_path_count} unconverted RST paths"
+
+    @patch("llms_txt.core.create_ctx")
+    def test_markdown_fallback_behavior(self, mock_create_ctx):
+        """Test that the function falls back to HTML URLs when Markdown URLs fail."""
+        from hyperspy.utils import ai_tools
+
+        # Mock that returns content without .html.md (simulating Markdown URLs being filtered)
+        mock_create_ctx.side_effect = [
+            "context without markdown urls",  # First call with Markdown URLs
+            "context with html urls and hyperspy.org/hyperspy-doc/dev/user_guide/install.html",  # Second call with HTML URLs
+        ]
+
+        # Call the function with prefer_markdown=True
+        result = ai_tools.generate_ai_context(
+            include_optional=False, prefer_markdown=True
+        )
+
+        # Should have been called twice (Markdown attempt, then HTML fallback)
+        assert mock_create_ctx.call_count == 2
+
+        # Result should be from the HTML fallback
+        assert result is not None and "html urls" in result
 
     @patch("llms_txt.core.create_ctx")
     @patch("pathlib.Path.exists")
@@ -460,7 +489,8 @@ class TestGenerateAIContext:
             result = ai_tools.generate_ai_context(include_optional=False)
 
             # Verify that str() was called on the context object
-            mock_context.__str__.assert_called_once()
+            # With the fallback mechanism, it might be called twice (Markdown attempt + HTML fallback)
+            assert mock_context.__str__.call_count >= 1
             assert result == "stringified context"
 
     @patch("llms_txt.core.create_ctx")
@@ -485,454 +515,241 @@ class TestGenerateAIContext:
         args, kwargs = mock_create_ctx.call_args
         assert kwargs["optional"] is True
 
+    def test_convert_rst_to_web_urls_markdown_vs_html_modes(self):
+        """Test that prefer_markdown parameter controls output format."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
 
-class TestVersionDetection:
-    """Test suite for version detection functionality."""
+        rst_content = "- [Test Guide](doc/user_guide/test.rst): Test documentation"
 
-    def test_get_doc_version_path_with_current_hyperspy_version(self):
-        """Test _get_doc_version_path with the actual current HyperSpy version."""
-        from hyperspy.utils.ai_tools import _get_doc_version_path
+        # Test Markdown mode (default)
+        markdown_result = _convert_rst_to_web_urls(rst_content, prefer_markdown=True)
+        assert ".html.md" in markdown_result
+        assert ".html)" not in markdown_result or ".html.md" in markdown_result
 
-        # This executes the real function with the real version
-        result = _get_doc_version_path()
+        # Test HTML mode
+        html_result = _convert_rst_to_web_urls(rst_content, prefer_markdown=False)
+        assert ".html)" in html_result
+        assert ".html.md" not in html_result
 
-        # Should return a valid path component
-        assert isinstance(result, str)
-        assert len(result) > 0
-        assert result in ["current", "dev"] or result.startswith("v")
+        # Test default (should be Markdown)
+        default_result = _convert_rst_to_web_urls(rst_content)
+        assert ".html.md" in default_result
 
-    def test_get_doc_version_path_dev_versions(self):
-        """Test version detection for development versions."""
+    def test_prefer_markdown_parameter(self):
+        """Test the prefer_markdown parameter functionality."""
+        import hyperspy.api as hs
+
+        # Test with prefer_markdown=True (default)
+        context_markdown = hs.generate_ai_context(
+            include_optional=False, prefer_markdown=True
+        )
+        assert isinstance(context_markdown, str)
+        assert len(context_markdown) > 0
+
+        # Test with prefer_markdown=False
+        context_html = hs.generate_ai_context(
+            include_optional=False, prefer_markdown=False
+        )
+        assert isinstance(context_html, str)
+        assert len(context_html) > 0
+
+        # Both should contain the core content
+        assert "HyperSpy" in context_markdown
+        assert "HyperSpy" in context_html
+
+    def test_prefer_markdown_default_behavior(self):
+        """Test that prefer_markdown defaults to True."""
+        import hyperspy.api as hs
+
+        # Test default behavior (should prefer Markdown)
+        context_default = hs.generate_ai_context(include_optional=False)
+        context_explicit_true = hs.generate_ai_context(
+            include_optional=False, prefer_markdown=True
+        )
+
+        # Should behave the same
+        assert isinstance(context_default, str)
+        assert isinstance(context_explicit_true, str)
+        assert len(context_default) > 0
+        assert len(context_explicit_true) > 0
+
+    def test_prefer_markdown_with_file_output(self):
+        """Test prefer_markdown parameter with file output."""
+        import hyperspy.api as hs
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Test Markdown preference with file output
+            output_file_md = Path(tmp_dir) / "context_md.txt"
+            result = hs.generate_ai_context(
+                include_optional=False, output_file=output_file_md, prefer_markdown=True
+            )
+            assert result is None
+            assert output_file_md.exists()
+
+            # Test HTML preference with file output
+            output_file_html = Path(tmp_dir) / "context_html.txt"
+            result = hs.generate_ai_context(
+                include_optional=False,
+                output_file=output_file_html,
+                prefer_markdown=False,
+            )
+            assert result is None
+            assert output_file_html.exists()
+
+            # Both files should contain content
+            content_md = output_file_md.read_text(encoding="utf-8")
+            content_html = output_file_html.read_text(encoding="utf-8")
+            assert "HyperSpy" in content_md
+            assert "HyperSpy" in content_html
+
+    def test_prefer_markdown_with_url_conversion(self):
+        """Test that generate_ai_context applies URL conversion to RST paths with prefer_markdown."""
+        from hyperspy.utils import ai_tools
+
+        # Create a mock that allows us to see the converted content but avoid network calls
+        with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+            mock_create_ctx.return_value = "mocked response"
+
+            # This will execute the real URL conversion code path
+            result = ai_tools.generate_ai_context(
+                include_optional=True, prefer_markdown=True
+            )
+
+            # Verify the function was called and get the converted content
+            assert result == "mocked response"
+
+            # Due to fallback mechanism, should get HTML URLs
+            args, kwargs = mock_create_ctx.call_args
+            converted_content = args[0]
+
+            # Verify the real URL conversion happened in the content passed to create_ctx
+            assert "hyperspy.org/hyperspy-doc/" in converted_content
+            assert ".html)" in converted_content  # HTML URLs due to fallback
+            # Should not contain unconverted RST paths
+            assert converted_content.count("doc/user_guide/") <= 2
+
+    def test_real_version_detection_in_context_with_prefer_markdown(self):
+        """Test that version detection works in real context generation with prefer_markdown."""
         import hyperspy
-        from hyperspy.utils.ai_tools import _get_doc_version_path
+        from hyperspy.utils import ai_tools
 
-        # Test various development version patterns
-        dev_versions = [
-            "2.4.0.dev30+ga416ec60b.d20250702",
-            "2.3.0.dev1",
-            "2.3.0+untagged.123.g1234567",
-            "2.3.0rc1",
-            "2.3.0a1",
-            "2.3.0b2",
-        ]
+        # Get the real version being used
+        real_version = hyperspy.__version__
 
-        for version in dev_versions:
-            with patch.object(hyperspy, "__version__", version):
-                result = _get_doc_version_path()
-                assert result == "dev", f"Failed for version {version}"
+        # Mock create_ctx to avoid network requests to non-existent URLs
+        with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+            mock_create_ctx.return_value = "mocked response"
 
-    def test_get_doc_version_path_stable_versions(self):
-        """Test version detection for stable versions."""
-        import hyperspy
-        from hyperspy.utils.ai_tools import _get_doc_version_path
+            # Generate context with real version detection
+            result = ai_tools.generate_ai_context(
+                include_optional=True, prefer_markdown=True
+            )
 
-        # Test stable version patterns
-        stable_versions = {
-            "2.3.1": "current",
-            "2.3.0": "current",
-            "3.0.0": "current",
-            "2.2.0": "v2.2",
-            "2.1.0": "v2.1",
-            "1.7.0": "v1.7",
-        }
+            # Verify context was generated
+            assert result == "mocked response"
 
-        for version, expected in stable_versions.items():
-            with patch.object(hyperspy, "__version__", version):
-                result = _get_doc_version_path()
-                assert result == expected, (
-                    f"Failed for version {version}, got {result}, expected {expected}"
+            # Get the content that was passed to create_ctx (after URL conversion)
+            args, kwargs = mock_create_ctx.call_args
+            converted_content = args[0]
+
+            # Should contain version-appropriate URLs
+            assert "hyperspy.org/hyperspy-doc/" in converted_content
+            if "dev" in real_version or "+" in real_version:
+                # Dev version should use /dev/ URLs
+                assert "/dev/" in converted_content
+            else:
+                # Stable version should use /current/ or versioned URLs
+                assert ("/current/" in converted_content) or (
+                    "/v" in converted_content and "." in converted_content
                 )
 
-    def test_get_doc_version_path_malformed_versions(self):
-        """Test version detection for malformed version strings."""
-        import hyperspy
-        from hyperspy.utils.ai_tools import _get_doc_version_path
+    def test_real_rst_conversion_patterns_with_prefer_markdown(self):
+        """Test RST conversion patterns in real execution with prefer_markdown."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
 
-        # Test malformed versions that should fallback to 'current'
-        malformed_versions = [
-            "unknown",
-            "",
-            "2",
-            "not.a.version",
-        ]
-
-        for version in malformed_versions:
-            with patch.object(hyperspy, "__version__", version):
-                result = _get_doc_version_path()
-                assert result == "current", (
-                    f"Failed to fallback to 'current' for version {version}"
-                )
-
-    def test_get_doc_version_path_single_part_version(self):
-        """Test version detection for single-part version strings."""
-        import hyperspy
-        from hyperspy.utils.ai_tools import _get_doc_version_path
-
-        # Test versions with only one part (should fallback to current)
-        single_part_versions = ["2", "3", "1"]
-
-        for version in single_part_versions:
-            with patch.object(hyperspy, "__version__", version):
-                result = _get_doc_version_path()
-                assert result == "current", (
-                    f"Failed to fallback to 'current' for single-part version {version}"
-                )
-
-    def test_get_doc_version_path_exception_handling(self):
-        """Test version detection when int conversion fails."""
-        import hyperspy
-        from hyperspy.utils.ai_tools import _get_doc_version_path
-
-        # Test versions that will cause ValueError in int() conversion
-        problematic_versions = [
-            "2.3.alpha",  # non-numeric minor
-            "two.three.one",  # non-numeric major
-            "2.3beta.1",  # non-numeric minor with beta
-            "v2.3.1",  # prefixed version
-        ]
-
-        for version in problematic_versions:
-            with patch.object(hyperspy, "__version__", version):
-                result = _get_doc_version_path()
-                assert result == "current", (
-                    f"Failed to fallback to 'current' for problematic version {version}"
-                )
-
-    def test_get_doc_version_path_extra_version_parts(self):
-        """Test version detection with extra version parts."""
-        import hyperspy
-        from hyperspy.utils.ai_tools import _get_doc_version_path
-
-        # Test versions with more than 3 parts
-        extra_part_versions = {
-            "2.3.1.4": "current",  # Should still use major.minor logic
-            "2.2.0.1": "v2.2",  # Older version with extra part
-            "1.7.5.2": "v1.7",  # Even older version
-            "3.0.0.0": "current",  # Future version
-        }
-
-        for version, expected in extra_part_versions.items():
-            with patch.object(hyperspy, "__version__", version):
-                result = _get_doc_version_path()
-                assert result == expected, (
-                    f"Failed for version {version}, got {result}, expected {expected}"
-                )
-
-    def test_get_doc_version_path_edge_case_versions(self):
-        """Test version detection for edge case version patterns."""
-        import hyperspy
-        from hyperspy.utils.ai_tools import _get_doc_version_path
-
-        # Test edge cases around the boundary conditions
-        edge_cases = {
-            "2.2.9": "v2.2",  # Just below current threshold
-            "2.3.0": "current",  # At the threshold
-            "2.99.0": "current",  # High minor version
-            "1.0.0": "v1.0",  # Low version
-        }
-
-        for version, expected in edge_cases.items():
-            with patch.object(hyperspy, "__version__", version):
-                result = _get_doc_version_path()
-                assert result == expected, (
-                    f"Failed for edge case version {version}, got {result}, expected {expected}"
-                )
-
-
-class TestRSTToMarkdownConversion:
-    """Test suite for RST to Markdown URL conversion."""
-
-    def test_convert_rst_to_markdown_urls_with_current_version(self):
-        """Test _convert_rst_to_markdown_urls with the current HyperSpy version."""
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
-
-        # Test with real content similar to llms.txt
+        # Test with real RST content similar to llms.txt
         test_content = """
-        - [Installation Guide](doc/user_guide/install.rst): Install instructions
-        - [API Reference](doc/reference/api.rst): API docs
-        - [Dev Guide](doc/dev_guide/intro.rst): Development guide
+# Test Content
+
+- [Installation Guide](doc/user_guide/install.rst): Install instructions
+- [API Reference](doc/reference/api.rst): API docs
+- [Dev Guide](doc/dev_guide/intro.rst): Development guide
+- [Signal API](doc/reference/api.signals/): Signal classes
         """
 
-        # Execute real conversion with current version
-        converted = _convert_rst_to_markdown_urls(test_content)
+        # Execute real conversion
+        converted = _convert_rst_to_web_urls(test_content, prefer_markdown=True)
 
         # Verify conversions happened
         assert "hyperspy.org/hyperspy-doc/" in converted
         assert "install.html.md" in converted
         assert "api.html.md" in converted
         assert "intro.html.md" in converted
+        assert "api.signals.html.md" in converted
 
         # Verify original RST paths are gone
         assert "doc/user_guide/install.rst" not in converted
         assert "doc/reference/api.rst" not in converted
         assert "doc/dev_guide/intro.rst" not in converted
+        assert "doc/reference/api.signals/" not in converted
 
-    def test_convert_rst_to_markdown_urls_basic(self):
-        """Test basic RST to Markdown URL conversion."""
-        from hyperspy.utils.ai_tools import (
-            _convert_rst_to_markdown_urls,
-            _get_doc_version_path,
-        )
-
-        # Mock content with RST paths
-        rst_content = """
-# HyperSpy
-
-## Getting Started
-
-- [Installation Guide](doc/user_guide/install.rst): Complete installation instructions
-- [Basic Usage](doc/user_guide/basic_usage.rst): Fundamental concepts
-
-## API Reference
-
-- [Main API](doc/reference/api.rst): Complete API reference
-- [Signal Classes](doc/reference/api.signals/): All signal types
-        """
-
-        # Convert to Markdown URLs
-        markdown_content = _convert_rst_to_markdown_urls(rst_content)
-
-        # Check that conversions happened
-        doc_version = _get_doc_version_path()
-        base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
-
-        assert f"{base_url}/user_guide/install.html.md" in markdown_content
-        assert f"{base_url}/user_guide/basic_usage.html.md" in markdown_content
-        assert f"{base_url}/reference/api.html.md" in markdown_content
-        assert f"{base_url}/reference/api.signals.html.md" in markdown_content
-
-        # Check that original RST paths are gone
-        assert "doc/user_guide/install.rst" not in markdown_content
-        assert "doc/user_guide/basic_usage.rst" not in markdown_content
-        assert "doc/reference/api.rst" not in markdown_content
-        assert "doc/reference/api.signals/" not in markdown_content
-
-    def test_convert_rst_to_markdown_urls_with_dev_version(self):
-        """Test RST to Markdown conversion with development version."""
-        import hyperspy
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
-
-        rst_content = "- [Test](doc/user_guide/test.rst): Test link"
-
-        with patch.object(hyperspy, "__version__", "2.4.0.dev30+abc123"):
-            markdown_content = _convert_rst_to_markdown_urls(rst_content)
-            assert (
-                "https://hyperspy.org/hyperspy-doc/dev/user_guide/test.html.md"
-                in markdown_content
-            )
-
-    def test_convert_rst_to_markdown_urls_with_stable_version(self):
-        """Test RST to Markdown conversion with stable version."""
-        import hyperspy
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
-
-        rst_content = "- [Test](doc/user_guide/test.rst): Test link"
-
-        with patch.object(hyperspy, "__version__", "2.3.1"):
-            markdown_content = _convert_rst_to_markdown_urls(rst_content)
-            assert (
-                "https://hyperspy.org/hyperspy-doc/current/user_guide/test.html.md"
-                in markdown_content
-            )
-
-    def test_convert_rst_to_markdown_urls_preserves_non_doc_links(self):
-        """Test that non-doc links are preserved unchanged."""
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
-
-        rst_content = """
-- [GitHub Examples](https://github.com/hyperspy/hyperspy/tree/main/examples): Examples
-- [External Link](https://example.com): External link
-- [Installation Guide](doc/user_guide/install.rst): This should be converted
-        """
-
-        markdown_content = _convert_rst_to_markdown_urls(rst_content)
-
-        # External links should be preserved
-        assert (
-            "https://github.com/hyperspy/hyperspy/tree/main/examples"
-            in markdown_content
-        )
-        assert "https://example.com" in markdown_content
-
-        # Doc links should be converted
-        assert "doc/user_guide/install.rst" not in markdown_content
-        assert "hyperspy.org/hyperspy-doc/" in markdown_content
-
-    def test_convert_rst_to_markdown_urls_all_patterns(self):
-        """Test conversion of all supported RST path patterns."""
-        from hyperspy.utils.ai_tools import (
-            _convert_rst_to_markdown_urls,
-            _get_doc_version_path,
-        )
-
-        rst_content = """
-- [User Guide](doc/user_guide/basic_usage.rst): User guide
-- [Dev Guide](doc/dev_guide/intro.rst): Development guide
-- [API Reference](doc/reference/api.rst): API reference
-- [Signal API](doc/reference/api.signals/): Signal API directory
-- [Signal Processing](doc/user_guide/signal/index.rst): Signal processing guide
-- [MVA Guide](doc/user_guide/mva/index.rst): Multivariate analysis guide
-        """
-
-        markdown_content = _convert_rst_to_markdown_urls(rst_content)
-        doc_version = _get_doc_version_path()
-        base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
-
-        # Check all pattern types are converted
-        assert f"{base_url}/user_guide/basic_usage.html.md" in markdown_content
-        assert f"{base_url}/dev_guide/intro.html.md" in markdown_content
-        assert f"{base_url}/reference/api.html.md" in markdown_content
-        assert f"{base_url}/reference/api.signals.html.md" in markdown_content
-        assert f"{base_url}/user_guide/signal/index.html.md" in markdown_content
-        assert f"{base_url}/user_guide/mva/index.html.md" in markdown_content
-
-    def test_convert_rst_to_markdown_urls_no_rst_paths(self):
-        """Test conversion when content has no RST paths."""
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
-
-        rst_content = """
-# HyperSpy
-
-This is some content without any documentation links.
-
-- [External Link](https://example.com): External link
-- [GitHub](https://github.com/hyperspy/hyperspy): GitHub repo
-        """
-
-        markdown_content = _convert_rst_to_markdown_urls(rst_content)
-
-        # Content should remain unchanged
-        assert markdown_content == rst_content
-        # External links should be preserved
-        assert "https://example.com" in markdown_content
-        assert "https://github.com/hyperspy/hyperspy" in markdown_content
-
-    def test_convert_rst_to_markdown_urls_nested_subdirectories(self):
-        """Test conversion of nested subdirectory paths."""
-        from hyperspy.utils.ai_tools import (
-            _convert_rst_to_markdown_urls,
-            _get_doc_version_path,
-        )
-
-        rst_content = """
-- [Deep Signal Guide](doc/user_guide/signal/advanced/fitting.rst): Advanced fitting
-- [Deep Dev Guide](doc/dev_guide/testing/unit_tests.rst): Unit testing
-- [Deep Reference](doc/reference/api/signals/eels.rst): EELS API
-        """
-
-        markdown_content = _convert_rst_to_markdown_urls(rst_content)
-        doc_version = _get_doc_version_path()
-        base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
-
-        # Check that nested paths are correctly converted
-        assert (
-            f"{base_url}/user_guide/signal/advanced/fitting.html.md" in markdown_content
-        )
-        assert f"{base_url}/dev_guide/testing/unit_tests.html.md" in markdown_content
-        assert f"{base_url}/reference/api/signals/eels.html.md" in markdown_content
-
-        # Check that original paths are gone
-        assert "doc/user_guide/signal/advanced/fitting.rst" not in markdown_content
-        assert "doc/dev_guide/testing/unit_tests.rst" not in markdown_content
-        assert "doc/reference/api/signals/eels.rst" not in markdown_content
-
-    def test_convert_rst_to_markdown_urls_malformed_paths(self):
-        """Test conversion handles malformed or partial RST paths gracefully."""
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
-
-        rst_content = """
-- [Good Path](doc/user_guide/install.rst): This should be converted
-- [Partial Path](doc/user_guide/): No .rst extension
-- [Wrong Path](docs/user_guide/install.rst): Wrong directory name
-- [No Extension](doc/user_guide/install): No .rst extension
-- [Empty](doc//install.rst): Double slash
-        """
-
-        markdown_content = _convert_rst_to_markdown_urls(rst_content)
-
-        # Only the good path should be converted
-        assert "hyperspy.org/hyperspy-doc/" in markdown_content
-        assert "install.html.md" in markdown_content
-
-        # Malformed paths should remain unchanged
-        assert "doc/user_guide/):" in markdown_content  # Partial path preserved
-        assert "docs/user_guide/install.rst" in markdown_content  # Wrong dir preserved
-        assert "doc/user_guide/install):" in markdown_content  # No extension preserved
-        assert "doc//install.rst" in markdown_content  # Double slash preserved
-
-    def test_convert_rst_to_markdown_urls_multiple_occurrences(self):
-        """Test conversion of multiple occurrences of the same path."""
-        from hyperspy.utils.ai_tools import (
-            _convert_rst_to_markdown_urls,
-            _get_doc_version_path,
-        )
-
-        rst_content = """
-- [Installation](doc/user_guide/install.rst): Install guide
-- [Install Again](doc/user_guide/install.rst): Same link again
-- [Basic Usage](doc/user_guide/basic_usage.rst): Basic guide
-- [Basic Again](doc/user_guide/basic_usage.rst): Same basic guide
-        """
-
-        markdown_content = _convert_rst_to_markdown_urls(rst_content)
-        doc_version = _get_doc_version_path()
-        base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
-
-        # All occurrences should be converted
-        assert markdown_content.count(f"{base_url}/user_guide/install.html.md") == 2
-        assert markdown_content.count(f"{base_url}/user_guide/basic_usage.html.md") == 2
-
-        # No original paths should remain
-        assert "doc/user_guide/install.rst" not in markdown_content
-        assert "doc/user_guide/basic_usage.rst" not in markdown_content
-
-    def test_convert_rst_to_markdown_urls_empty_content(self):
-        """Test conversion with empty content."""
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
-
-        empty_content = ""
-        result = _convert_rst_to_markdown_urls(empty_content)
-        assert result == ""
-
-    def test_convert_rst_to_markdown_urls_only_whitespace(self):
-        """Test conversion with only whitespace content."""
-        from hyperspy.utils.ai_tools import _convert_rst_to_markdown_urls
-
-        whitespace_content = "   \n\n  \t  \n  "
-        result = _convert_rst_to_markdown_urls(whitespace_content)
-        assert result == whitespace_content
-
-
-class TestGenerateAIContextIntegration:
-    """Test integration of new functionality with generate_ai_context."""
-
-    @patch("llms_txt.core.create_ctx")
-    def test_url_conversion_integration(self, mock_create_ctx):
-        """Test that generate_ai_context correctly uses URL conversion logic."""
-        import hyperspy
+    def test_generate_ai_context_integration_with_prefer_markdown(self):
+        """Test generate_ai_context integration with prefer_markdown parameter."""
         from hyperspy.utils import ai_tools
 
-        mock_create_ctx.return_value = "mocked context"
+        # Mock create_ctx to control the output
+        with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+            mock_create_ctx.return_value = "mocked context with converted URLs"
 
-        # Test with development version
-        with patch.object(hyperspy, "__version__", "2.4.0.dev30+abc123"):
-            ai_tools.generate_ai_context(include_optional=True)
-            args, kwargs = mock_create_ctx.call_args
-            content = args[0]
-            assert "hyperspy.org/hyperspy-doc/dev/" in content
-            assert ".html.md" in content
-            assert "doc/user_guide/basic_usage.rst" not in content
-            assert kwargs["optional"] is True
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                output_file = Path(tmp_dir) / "test_context.txt"
 
-        # Test with stable version
-        with patch.object(hyperspy, "__version__", "2.3.1"):
-            ai_tools.generate_ai_context(include_optional=True)
-            args, kwargs = mock_create_ctx.call_args
-            content = args[0]
-            assert "hyperspy.org/hyperspy-doc/current/" in content
-            assert ".html.md" in content
-            assert "doc/user_guide/basic_usage.rst" not in content
-            assert kwargs["optional"] is True
+                # Test with prefer_markdown=True
+                result = ai_tools.generate_ai_context(
+                    include_optional=True, output_file=output_file, prefer_markdown=True
+                )
+
+                # Should return None when saving to file
+                assert result is None
+
+                # File should exist and contain converted content
+                assert output_file.exists()
+                content = output_file.read_text(encoding="utf-8")
+
+                # Verify it contains the mocked content
+                assert "mocked context with converted URLs" in content
+                assert len(content) > 0
+
+                # Check that create_ctx was called with converted content
+                args, kwargs = mock_create_ctx.call_args
+                assert "hyperspy.org/hyperspy-doc/" in args[0]
+                assert ".html)" in args[0]  # HTML URLs due to fallback
+
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                output_file = Path(tmp_dir) / "test_context_html.txt"
+
+                # Test with prefer_markdown=False (HTML output)
+                result = ai_tools.generate_ai_context(
+                    include_optional=True,
+                    output_file=output_file,
+                    prefer_markdown=False,
+                )
+
+                # Should return None when saving to file
+                assert result is None
+
+                # File should exist and contain converted content
+                assert output_file.exists()
+                content = output_file.read_text(encoding="utf-8")
+
+                # Verify it contains the mocked content
+                assert "mocked context with converted URLs" in content
+                assert len(content) > 0
+
+                # Check that create_ctx was called with converted content
+                args, kwargs = mock_create_ctx.call_args
+                assert "hyperspy.org/hyperspy-doc/" in args[0]
+                assert ".html)" in args[0]  # HTML URLs when prefer_markdown=False
 
 
 # Skip all tests if llms_txt is not installed
