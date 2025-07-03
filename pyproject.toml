@@ -126,6 +126,7 @@ doc = [
     "sphinx-favicon",
     "sphinx-gallery",
     "sphinx>=1.7",
+    "sphinx-markdown-builder",
     "sphinxcontrib-mermaid",
     "sphinxcontrib-towncrier>=0.5.0a0",
     "towncrier",
