@@ -106,12 +106,22 @@ def _convert_rst_to_web_urls(llms_content, prefer_markdown=True):
 
     # Transform local paths to web URLs
     transformations = [
+        # Examples paths - specific file extensions first (most specific patterns first)
+        (r"examples/([^)]+\.py)\)", rf"{base_url}/auto_examples/\1{ext})"),
+        # Examples paths - README.rst files in directories (examples/create_signal/README.rst -> auto_examples/create_signal/index.ext)
+        (
+            r"examples/([^)]+)/README\.rst\)",
+            rf"{base_url}/auto_examples/\1/index{ext})",
+        ),
+        (r"examples/([^)]+\.rst)\)", rf"{base_url}/auto_examples/\1{ext})"),
+        # Examples paths - directories ending with / (examples/create_signal/ -> base_url/auto_examples/create_signal/index.ext)
+        (r"examples/([^)]+)/\)", rf"{base_url}/auto_examples/\1/index{ext})"),
         # Documentation files (doc/path/file.rst -> base_url/path/file.ext)
-        (r"doc/user_guide/([^)]+)\.rst", rf"{base_url}/user_guide/\1{ext}"),
-        (r"doc/dev_guide/([^)]+)\.rst", rf"{base_url}/dev_guide/\1{ext}"),
-        (r"doc/reference/([^)]+)\.rst", rf"{base_url}/reference/\1{ext}"),
+        (r"doc/user_guide/([^)]+)\.rst\)", rf"{base_url}/user_guide/\1{ext})"),
+        (r"doc/dev_guide/([^)]+)\.rst\)", rf"{base_url}/dev_guide/\1{ext})"),
+        (r"doc/reference/([^)]+)\.rst\)", rf"{base_url}/reference/\1{ext})"),
         # Handle directory paths without .rst extension (doc/reference/api.signals/ -> base_url/reference/api.signals.ext)
-        (r"doc/reference/([^)]+)/", rf"{base_url}/reference/\1{ext}"),
+        (r"doc/reference/([^)]+)/\)", rf"{base_url}/reference/\1{ext})"),
     ]
 
     # Apply transformations

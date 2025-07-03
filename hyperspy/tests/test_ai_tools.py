@@ -798,19 +798,419 @@ class TestGenerateAIContext:
 
         # Verify examples/ file paths are converted appropriately
         assert (
-            "auto_examples/simple_simulations/create_artificial_data.html.md"
+            "auto_examples/simple_simulations/create_artificial_data.py.html.md"
             in converted
         )
-        assert "auto_examples/create_signal/README.html.md" in converted
+        # README.rst files in directories should become index.html.md
+        assert "auto_examples/create_signal/index.html.md" in converted
 
-        # Verify original examples/ paths are gone
-        assert "examples/create_signal/" not in converted
-        assert "examples/data_visualization/" not in converted
-        assert "examples/simple_simulations/create_artificial_data.py" not in converted
-        assert "examples/create_signal/README.rst" not in converted
+        # Verify original examples/ paths are gone (check that they're not standalone anymore)
+        assert "](examples/create_signal/)" not in converted
+        assert "](examples/data_visualization/)" not in converted
+        assert (
+            "](examples/simple_simulations/create_artificial_data.py)" not in converted
+        )
+        assert "](examples/create_signal/README.rst)" not in converted
 
 
 # Skip all tests if llms_txt is not installed
 pytestmark = pytest.mark.skipif(
     pytest.importorskip is None, reason="llms_txt is not installed"
 )
+
+
+class TestVersionDetection:
+    """Test suite for version detection and path resolution functions."""
+
+    def test_get_doc_version_path_dev_version(self):
+        """Test version path detection for development versions."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.0.0.dev123"):
+            result = _get_doc_version_path()
+            assert result == "dev"
+
+    def test_get_doc_version_path_dev_plus_version(self):
+        """Test version path detection for versions with + suffix."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.0.0+abc123"):
+            result = _get_doc_version_path()
+            assert result == "dev"
+
+    def test_get_doc_version_path_alpha_version(self):
+        """Test version path detection for alpha versions."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.0.0a1"):
+            result = _get_doc_version_path()
+            assert result == "dev"
+
+    def test_get_doc_version_path_beta_version(self):
+        """Test version path detection for beta versions."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.0.0b2"):
+            result = _get_doc_version_path()
+            assert result == "dev"
+
+    def test_get_doc_version_path_rc_version(self):
+        """Test version path detection for release candidate versions."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.0.0rc1"):
+            result = _get_doc_version_path()
+            assert result == "dev"
+
+    def test_get_doc_version_path_current_stable(self):
+        """Test version path detection for current stable versions."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.3.1"):
+            result = _get_doc_version_path()
+            assert result == "current"
+
+    def test_get_doc_version_path_older_stable(self):
+        """Test version path detection for older stable versions."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.1.0"):
+            result = _get_doc_version_path()
+            assert result == "v2.1"
+
+    def test_get_doc_version_path_very_old_stable(self):
+        """Test version path detection for very old stable versions."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "1.9.0"):
+            result = _get_doc_version_path()
+            assert result == "v1.9"
+
+    def test_get_doc_version_path_future_version(self):
+        """Test version path detection for future major versions."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "3.0.0"):
+            result = _get_doc_version_path()
+            assert result == "current"
+
+    def test_get_doc_version_path_malformed_version(self):
+        """Test version path detection with malformed version string."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "not.a.version"):
+            result = _get_doc_version_path()
+            assert result == "current"  # Falls back to current
+
+    def test_get_doc_version_path_empty_version(self):
+        """Test version path detection with empty version string."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", ""):
+            result = _get_doc_version_path()
+            assert result == "current"  # Falls back to current
+
+    def test_get_doc_version_path_single_number(self):
+        """Test version path detection with single number version."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2"):
+            result = _get_doc_version_path()
+            assert (
+                result == "current"
+            )  # Falls back to current due to insufficient parts
+
+    def test_get_doc_version_path_major_only(self):
+        """Test version path detection with major version only."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2."):
+            result = _get_doc_version_path()
+            assert result == "current"  # Falls back to current due to parsing error
+
+    def test_get_doc_version_path_non_numeric_major(self):
+        """Test version path detection with non-numeric major version."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "v2.3.0"):
+            result = _get_doc_version_path()
+            assert result == "current"  # Falls back to current due to parsing error
+
+    def test_get_doc_version_path_non_numeric_minor(self):
+        """Test version path detection with non-numeric minor version."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.x.0"):
+            result = _get_doc_version_path()
+            assert result == "current"  # Falls back to current due to parsing error
+
+    def test_get_doc_version_path_complex_dev_version(self):
+        """Test version path detection with complex development version strings."""
+        from hyperspy.utils.ai_tools import _get_doc_version_path
+
+        with patch("hyperspy.__version__", "2.0.0.dev123+abc456"):
+            result = _get_doc_version_path()
+            assert result == "dev"
+
+
+class TestUrlConversion:
+    """Test suite for URL conversion functionality."""
+
+    def test_convert_rst_to_web_urls_examples_directories(self):
+        """Test conversion of examples directory paths."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
+
+        test_content = """
+- [Create Signal Examples](examples/create_signal/): How to create signals
+- [Data Visualization](examples/data_visualization/): Plotting techniques
+        """
+
+        result = _convert_rst_to_web_urls(test_content, prefer_markdown=True)
+
+        assert "auto_examples/create_signal/index.html.md" in result
+        assert "auto_examples/data_visualization/index.html.md" in result
+        assert "](examples/create_signal/)" not in result
+        assert "](examples/data_visualization/)" not in result
+
+    def test_convert_rst_to_web_urls_examples_python_files(self):
+        """Test conversion of examples Python file paths."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
+
+        test_content = """
+- [Example Script](examples/simple_simulations/create_artificial_data.py): Example file
+- [Another Script](examples/plotting/plot_basic.py): Plotting example
+        """
+
+        result = _convert_rst_to_web_urls(test_content, prefer_markdown=True)
+
+        assert (
+            "auto_examples/simple_simulations/create_artificial_data.py.html.md"
+            in result
+        )
+        assert "auto_examples/plotting/plot_basic.py.html.md" in result
+        assert "](examples/simple_simulations/create_artificial_data.py)" not in result
+        assert "](examples/plotting/plot_basic.py)" not in result
+
+    def test_convert_rst_to_web_urls_examples_rst_files(self):
+        """Test conversion of examples RST file paths."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
+
+        test_content = """
+- [Example Documentation](examples/create_signal/README.rst): Example docs
+        """
+
+        result = _convert_rst_to_web_urls(test_content, prefer_markdown=True)
+
+        # README.rst files in directories should become index.html.md
+        assert "auto_examples/create_signal/index.html.md" in result
+        assert "](examples/create_signal/README.rst)" not in result
+
+    def test_convert_rst_to_web_urls_html_mode_examples(self):
+        """Test examples conversion in HTML mode."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
+
+        test_content = """
+- [Examples Directory](examples/create_signal/): Examples
+- [Example Script](examples/test.py): Script
+        """
+
+        result = _convert_rst_to_web_urls(test_content, prefer_markdown=False)
+
+        assert "auto_examples/create_signal/index.html" in result
+        assert "auto_examples/test.py.html" in result
+        assert ".html.md" not in result
+
+    def test_convert_rst_to_web_urls_mixed_paths(self):
+        """Test conversion of mixed doc and examples paths."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
+
+        test_content = """
+- [User Guide](doc/user_guide/install.rst): Installation
+- [Examples](examples/create_signal/): Signal creation
+- [API Reference](doc/reference/api.rst): API docs
+- [Example Script](examples/test.py): Test script
+        """
+
+        result = _convert_rst_to_web_urls(test_content, prefer_markdown=True)
+
+        # Check doc conversions
+        assert "user_guide/install.html.md" in result
+        assert "reference/api.html.md" in result
+        # Check examples conversions
+        assert "auto_examples/create_signal/index.html.md" in result
+        assert "auto_examples/test.py.html.md" in result
+        # Check originals are gone
+        assert "](doc/user_guide/install.rst)" not in result
+        assert "](examples/create_signal/)" not in result
+
+
+class TestGenerateAIContextEdgeCases:
+    """Test suite for edge cases and error handling in generate_ai_context."""
+
+    def test_generate_ai_context_markdown_fallback_on_exception(self):
+        """Test that Markdown attempt falls back to HTML on exception."""
+        from hyperspy.utils import ai_tools
+
+        # Mock create_ctx to fail on first call (Markdown), succeed on second (HTML)
+        with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+            mock_create_ctx.side_effect = [
+                Exception("Markdown URLs failed"),  # First call fails
+                "HTML context successful",  # Second call succeeds
+            ]
+
+            result = ai_tools.generate_ai_context(
+                include_optional=False, prefer_markdown=True
+            )
+
+            # Should have been called twice (Markdown attempt + HTML fallback)
+            assert mock_create_ctx.call_count == 2
+            assert result == "HTML context successful"
+
+    def test_generate_ai_context_markdown_fallback_on_no_md_in_output(self):
+        """Test that Markdown attempt falls back when no .md URLs in output."""
+        from hyperspy.utils import ai_tools
+
+        # Mock create_ctx to return content without .md URLs, then with HTML
+        with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+            mock_create_ctx.side_effect = [
+                "context without markdown urls",  # First call - no .md found
+                "context with html urls and hyperspy.org/hyperspy-doc/dev/user_guide/install.html",  # Second call
+            ]
+
+            result = ai_tools.generate_ai_context(
+                include_optional=False, prefer_markdown=True
+            )
+
+            # Should have been called twice (Markdown attempt + HTML fallback)
+            assert mock_create_ctx.call_count == 2
+            assert result is not None and "html urls" in result
+
+    def test_generate_ai_context_prefer_markdown_false_single_call(self):
+        """Test that prefer_markdown=False makes only one call to create_ctx."""
+        from hyperspy.utils import ai_tools
+
+        with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+            mock_create_ctx.return_value = "HTML context"
+
+            result = ai_tools.generate_ai_context(
+                include_optional=False, prefer_markdown=False
+            )
+
+            # Should have been called only once (HTML directly)
+            assert mock_create_ctx.call_count == 1
+            assert result == "HTML context"
+
+            # Check that the content passed had HTML URLs
+            args, kwargs = mock_create_ctx.call_args
+            converted_content = args[0]
+            assert ".html)" in converted_content
+            assert ".html.md" not in converted_content
+
+    def test_generate_ai_context_successful_markdown_no_fallback(self):
+        """Test successful Markdown generation without fallback."""
+        from hyperspy.utils import ai_tools
+
+        with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+            # Mock returns content with .md URLs
+            mock_create_ctx.return_value = (
+                "context with .md URLs like user_guide/install.html.md"
+            )
+
+            result = ai_tools.generate_ai_context(
+                include_optional=False, prefer_markdown=True
+            )
+
+            # Should have been called only once (successful Markdown)
+            assert mock_create_ctx.call_count == 1
+            assert result is not None and ".md" in result
+
+    def test_generate_ai_context_both_calls_fail(self):
+        """Test behavior when both Markdown and HTML calls fail."""
+        from hyperspy.utils import ai_tools
+
+        with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+            mock_create_ctx.side_effect = [
+                Exception("Markdown failed"),  # First call fails
+                Exception("HTML also failed"),  # Second call also fails
+            ]
+
+            with pytest.raises(RuntimeError) as excinfo:
+                ai_tools.generate_ai_context(
+                    include_optional=False, prefer_markdown=True
+                )
+
+            assert "Failed to generate context from llms.txt" in str(excinfo.value)
+            assert "HTML also failed" in str(excinfo.value)
+            assert mock_create_ctx.call_count == 2
+
+    def test_generate_ai_context_directory_creation_for_output(self):
+        """Test that parent directories are created when saving to nested path."""
+        from hyperspy.utils import ai_tools
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Use a deeply nested path that doesn't exist
+            output_file = (
+                Path(tmp_dir) / "very" / "deep" / "nested" / "path" / "context.txt"
+            )
+
+            # Mock create_ctx to avoid network requests
+            with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+                mock_create_ctx.return_value = "test context content"
+
+                result = ai_tools.generate_ai_context(
+                    include_optional=False, output_file=output_file
+                )
+
+                # Should return None when saving to file
+                assert result is None
+
+                # File should exist with correct content
+                assert output_file.exists()
+                content = output_file.read_text(encoding="utf-8")
+                assert content == "test context content"
+
+                # All parent directories should have been created
+                assert output_file.parent.exists()
+
+    def test_generate_ai_context_string_output_path_handling(self):
+        """Test that string output paths are correctly converted to Path objects."""
+        from hyperspy.utils import ai_tools
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_file_str = str(Path(tmp_dir) / "test_string_path.txt")
+
+            with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+                mock_create_ctx.return_value = "string path test content"
+
+                result = ai_tools.generate_ai_context(
+                    include_optional=False, output_file=output_file_str
+                )
+
+                assert result is None
+
+                # Verify file was created at string path
+                output_path = Path(output_file_str)
+                assert output_path.exists()
+                content = output_path.read_text(encoding="utf-8")
+                assert content == "string path test content"
+
+    @patch("builtins.print")
+    def test_generate_ai_context_print_message_verification(self, mock_print):
+        """Test that the correct message is printed when saving to file."""
+        from hyperspy.utils import ai_tools
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_file = Path(tmp_dir) / "print_test.txt"
+
+            with patch("llms_txt.core.create_ctx") as mock_create_ctx:
+                mock_create_ctx.return_value = "print test content"
+
+                ai_tools.generate_ai_context(
+                    include_optional=False, output_file=output_file
+                )
+
+                # Verify print was called with correct message
+                mock_print.assert_called_once()
+                print_args = mock_print.call_args[0]
+                assert "AI context saved to:" in print_args[0]
+                assert str(output_file) in print_args[0]
