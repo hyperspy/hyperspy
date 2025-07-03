@@ -90,7 +90,7 @@ def _convert_rst_to_web_urls(llms_content, prefer_markdown=True):
     llms_content : str
         The content of the llms.txt file with local RST paths.
     prefer_markdown : bool, optional
-        If True, generates Markdown URLs (.html.md). If False, generates HTML URLs (.html).
+        If True, generates Markdown URLs (.md). If False, generates HTML URLs (.html).
         Default is True for better AI readability.
 
     Returns
@@ -139,7 +139,7 @@ def generate_ai_context(include_optional=False, output_file=None, prefer_markdow
     output_file : str or Path, optional
         Path where to save the generated context. If None, returns the context as a string.
     prefer_markdown : bool, default True
-        If True, prefer Markdown format URLs (.html.md) for better AI readability.
+        If True, prefer Markdown format URLs (.md) for better AI readability.
         If False, use HTML URLs (.html). If Markdown URLs are not available,
         automatically falls back to HTML.
 
@@ -181,7 +181,7 @@ def generate_ai_context(include_optional=False, output_file=None, prefer_markdow
     - Stable releases → `/current/` docs (for latest) or `/vX.Y/` docs (for older versions)
 
     URL Format Selection:
-    - prefer_markdown=True: URLs end with .html.md for better AI readability
+    - prefer_markdown=True: URLs end with .md for better AI readability
     - prefer_markdown=False: URLs end with .html for standard web access
     - Automatic fallback: If Markdown URLs aren't accessible, falls back to HTML
 
@@ -228,7 +228,7 @@ def generate_ai_context(include_optional=False, output_file=None, prefer_markdow
             context_str = str(context)
 
             # Check if Markdown URLs are actually present in the output
-            if ".html.md" in context_str:
+            if ".md" in context_str:
                 # Success with Markdown URLs
                 pass
             else:

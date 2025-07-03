@@ -460,4 +460,4 @@ def setup(app):
 
 # -- Options for markdown builder --------------------------------------------
 
-markdown_file_suffix = ".html.md"
+markdown_file_suffix = ".md"
