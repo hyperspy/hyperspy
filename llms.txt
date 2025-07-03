@@ -12,13 +12,42 @@ Key features include:
 - Extensive I/O support for various file formats
 - Integration with the scientific Python ecosystem (NumPy, SciPy, Matplotlib, Dask)
 
-HyperSpy is particularly suited for analyzing data from:
-- Electron Energy Loss Spectroscopy (EELS)
-- Energy Dispersive X-ray Spectroscopy (EDX/EDS)
-- Cathodoluminescence (CL)
-- Photoluminescence (PL)
-- Electron Backscatter Diffraction (EBSD)
-- Scanning Transmission Electron Microscopy (STEM)
+HyperSpy serves as the core library for a rich ecosystem of domain-specific extensions that provide specialized functionality for analyzing data from:
+- **Electron Energy Loss Spectroscopy (EELS)**: [exspy](https://github.com/hyperspy/exspy) - Core electron microscopy functionality
+- **Energy Dispersive X-ray Spectroscopy (EDX/EDS)**: [exspy](https://github.com/hyperspy/exspy) - X-ray microanalysis tools
+- **Luminescence Spectroscopy**: [lumispy](https://github.com/LumiSpy/lumispy) - Cathodoluminescence (CL), photoluminescence (PL), electroluminescence (EL), and time-resolved measurements
+- **Electron Backscatter Diffraction (EBSD)**: [kikuchipy](https://github.com/pyxem/kikuchipy) - Processing, simulating and indexing of diffraction patterns
+- **Multi-dimensional Diffraction Microscopy**: [pyxem](https://github.com/pyxem/pyxem) - 4D-STEM, electron diffraction, and related techniques
+- **Electron Holography**: [holospy](https://github.com/hyperspy/holospy) - Holographic reconstruction and analysis
+- **Electron Tomography**: [etspy](https://github.com/etspy/etspy) - Tomographic processing and reconstruction tools
+
+While HyperSpy provides the foundational signal processing capabilities, these extensions add domain-specific methods, file format support, and specialized analysis routines.
+
+## HyperSpy Ecosystem
+
+HyperSpy follows a modular architecture where the core library provides fundamental multidimensional data analysis capabilities, while specialized extensions add domain-specific functionality:
+
+### Core Library
+- **HyperSpy**: Foundational signal processing, visualization, machine learning, and model fitting capabilities
+- Generic multidimensional array operations and interactive analysis tools
+- Common file format support and extensible I/O framework
+
+### Key Extensions
+- **[exspy](https://github.com/hyperspy/exspy)**: Electron energy loss spectroscopy (EELS) and X-ray energy dispersive spectroscopy (EDS)
+- **[lumispy](https://github.com/LumiSpy/lumispy)**: Analysis of luminescence spectroscopy data (CL, PL, EL, time-resolved measurements)
+- **[pyxem](https://github.com/pyxem/pyxem)**: Multi-dimensional diffraction microscopy (4D-STEM, electron diffraction)
+- **[kikuchipy](https://github.com/pyxem/kikuchipy)**: Processing, simulating and indexing of electron backscatter diffraction patterns
+- **[holospy](https://github.com/hyperspy/holospy)**: Electron holography reconstruction and analysis
+- **[etspy](https://github.com/etspy/etspy)**: Electron tomography processing and reconstruction tools
+- **[rosettasciio](https://github.com/hyperspy/rosettasciio)**: Reading and writing of scientific data formats
+
+For a complete and up-to-date list of HyperSpy extensions, see the [official extensions list](https://github.com/hyperspy/hyperspy-extensions-list).
+
+#### GUI Extensions
+- **[hyperspy-gui-ipywidgets](https://github.com/hyperspy/hyperspy-gui-ipywidgets)**: Interactive widgets for Jupyter notebooks
+- **[hyperspy-gui-traitsui](https://github.com/hyperspy/hyperspy-gui-traitsui)**: Desktop GUI widgets using TraitsUI
+
+This modular approach allows users to install only the functionality they need while maintaining a lightweight core library.
 
 ## Getting Started
 
@@ -43,11 +72,11 @@ HyperSpy is particularly suited for analyzing data from:
 
 ## Examples and Tutorials
 
-- [Create Signal Examples](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/create_signal): How to create signals from arrays and load data
-- [Data Visualization Examples](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/data_visualization): Various plotting and visualization techniques
-- [Model Fitting Examples](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/model_fitting): Practical model fitting scenarios
-- [Processing Examples](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/processing): Signal processing workflows
-- [Simple Simulations](https://github.com/hyperspy/hyperspy/tree/RELEASE_next_minor/examples/simple_simulations): Creating synthetic data for testing
+- [Create Signal Examples](examples/create_signal/README.rst): How to create signals from arrays and load data
+- [Data Visualization Examples](examples/data_visualization/README.rst): Various plotting and visualization techniques
+- [Model Fitting Examples](examples/model_fitting/README.rst): Practical model fitting scenarios
+- [Processing Examples](examples/processing/README.rst): Signal processing workflows
+- [Simple Simulations](examples/simple_simulations/README.rst): Creating synthetic data for testing
 
 ## API Reference
 
@@ -63,7 +92,7 @@ HyperSpy is particularly suited for analyzing data from:
 - [Coding Style](doc/dev_guide/coding_style.rst): Code style guidelines and conventions
 - [Testing Guide](doc/dev_guide/testing.rst): Running and writing tests
 - [Writing Documentation](doc/dev_guide/writing_docs.rst): Documentation contribution guidelines
-- [Writing Extensions](doc/dev_guide/writing_extensions.rst): Creating HyperSpy extensions
+- [Writing Extensions](doc/dev_guide/writing_extensions.rst): Creating HyperSpy extensions and contributing to the ecosystem
 
 ## Optional
 

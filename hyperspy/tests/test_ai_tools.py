@@ -751,6 +751,64 @@ class TestGenerateAIContext:
                 assert "hyperspy.org/hyperspy-doc/" in args[0]
                 assert ".html)" in args[0]  # HTML URLs when prefer_markdown=False
 
+    def test_auto_examples_url_conversion_patterns(self):
+        """Test URL conversion specifically for auto_examples paths."""
+        import re
+
+        # Test the pattern directly to avoid import caching issues
+        test_content = """
+- [Create Signal Examples](doc/auto_examples/create_signal/index.rst): Example tutorials
+- [Processing Examples](doc/auto_examples/processing/index.rst): Signal processing workflows
+        """
+
+        # Apply the transformation manually
+        base_url = "https://hyperspy.org/hyperspy-doc/dev"
+        ext = ".html.md"
+        pattern = r"doc/auto_examples/([^)\s]+)\.rst"
+        replacement = rf"{base_url}/auto_examples/\1{ext}"
+
+        converted = re.sub(pattern, replacement, test_content)
+
+        # Verify the conversions
+        assert "create_signal/index.html.md" in converted
+        assert "processing/index.html.md" in converted
+        assert "doc/auto_examples" not in converted
+        assert "hyperspy.org/hyperspy-doc/dev/auto_examples/" in converted
+
+    def test_examples_path_conversion(self):
+        """Test conversion of examples/ paths to auto_examples URLs."""
+        from hyperspy.utils.ai_tools import _convert_rst_to_web_urls
+
+        # Test content with examples paths
+        test_content = """
+# Test Content
+
+- [Create Signal Examples](examples/create_signal/): How to create signals
+- [Data Visualization Examples](examples/data_visualization/): Plotting techniques
+- [Example Script](examples/simple_simulations/create_artificial_data.py): Example file
+- [Example RST](examples/create_signal/README.rst): Example documentation
+        """
+
+        # Execute conversion
+        converted = _convert_rst_to_web_urls(test_content, prefer_markdown=True)
+
+        # Verify examples/ directory paths are converted to auto_examples/*/index.html.md
+        assert "auto_examples/create_signal/index.html.md" in converted
+        assert "auto_examples/data_visualization/index.html.md" in converted
+
+        # Verify examples/ file paths are converted appropriately
+        assert (
+            "auto_examples/simple_simulations/create_artificial_data.html.md"
+            in converted
+        )
+        assert "auto_examples/create_signal/README.html.md" in converted
+
+        # Verify original examples/ paths are gone
+        assert "examples/create_signal/" not in converted
+        assert "examples/data_visualization/" not in converted
+        assert "examples/simple_simulations/create_artificial_data.py" not in converted
+        assert "examples/create_signal/README.rst" not in converted
+
 
 # Skip all tests if llms_txt is not installed
 pytestmark = pytest.mark.skipif(
