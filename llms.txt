@@ -12,16 +12,6 @@ Key features include:
 - Extensive I/O support for various file formats
 - Integration with the scientific Python ecosystem (NumPy, SciPy, Matplotlib, Dask)
 
-## Domains
-
-- [exspy - EELS](https://github.com/hyperspy/exspy): Electron Energy Loss Spectroscopy analysis and core electron microscopy functionality
-- [exspy - EDS](https://github.com/hyperspy/exspy): Energy Dispersive X-ray Spectroscopy and X-ray microanalysis tools
-- [lumispy](https://github.com/LumiSpy/lumispy): Luminescence spectroscopy including cathodoluminescence (CL), photoluminescence (PL), electroluminescence (EL), and time-resolved measurements
-- [kikuchipy](https://github.com/pyxem/kikuchipy): Electron Backscatter Diffraction (EBSD) processing, simulating and indexing of diffraction patterns
-- [pyxem](https://github.com/pyxem/pyxem): Multi-dimensional diffraction microscopy including 4D-STEM, electron diffraction, and related techniques
-- [holospy](https://github.com/hyperspy/holospy): Electron holography reconstruction and analysis
-- [etspy](https://github.com/etspy/etspy): Electron tomography processing and reconstruction tools
-
 ## HyperSpy Ecosystem
 
 - [exspy](https://github.com/hyperspy/exspy): Electron energy loss spectroscopy (EELS) and X-ray energy dispersive spectroscopy (EDS)
