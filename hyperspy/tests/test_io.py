@@ -836,12 +836,26 @@ def test_infer_file_writer_read_only_format():
 
     from hyperspy.io import _infer_file_writer
 
-    # Find a read-only format for testing
+    # Find a read-only format that doesn't have any writable counterparts
     read_only_formats = [p for p in IO_PLUGINS if not p["writes"]]
 
-    if read_only_formats:
-        read_only_plugin = read_only_formats[0]
-        ext = read_only_plugin["file_extensions"][read_only_plugin["default_extension"]]
+    # Get all extensions from writable formats to avoid conflicts
+    writable_extensions = set()
+    for p in IO_PLUGINS:
+        if p["writes"]:
+            for ext in p["file_extensions"]:
+                writable_extensions.add(ext.lower())
+
+    # Find a read-only format whose extensions don't overlap with writable ones
+    suitable_plugin = None
+    for plugin in read_only_formats:
+        plugin_extensions = [ext.lower() for ext in plugin["file_extensions"]]
+        if not any(ext in writable_extensions for ext in plugin_extensions):
+            suitable_plugin = plugin
+            break
+
+    if suitable_plugin:
+        ext = suitable_plugin["file_extensions"][suitable_plugin["default_extension"]]
 
         with pytest.raises(ValueError, match="Writing to this format is not supported"):
             _infer_file_writer(ext)
@@ -853,7 +867,7 @@ def test_get_supported_formats_read_mode():
 
     result = _get_supported_formats(write_mode=False)
     assert "Supported formats:" in result
-    assert "provided by rsciio" in result
+    assert "provided by RosettaSciIO v" in result
     assert len(result) > 100  # Should be a substantial list
 
 
@@ -863,7 +877,7 @@ def test_get_supported_formats_write_mode():
 
     result = _get_supported_formats(write_mode=True)
     assert "Supported formats:" in result
-    assert "provided by rsciio" in result
+    assert "provided by RosettaSciIO v" in result
     # Write mode should have fewer formats than read mode
     read_result = _get_supported_formats(write_mode=False)
     assert len(result) <= len(read_result)
@@ -1191,10 +1205,10 @@ def test_get_supported_formats():
     read_formats = _get_supported_formats(write_mode=False)
     assert isinstance(read_formats, str)
     assert "Supported formats:" in read_formats
-    assert "rsciio" in read_formats
+    assert "RosettaSciIO" in read_formats
 
     # Test write formats
     write_formats = _get_supported_formats(write_mode=True)
     assert isinstance(write_formats, str)
     assert "Supported formats:" in write_formats
-    assert "rsciio" in write_formats
+    assert "RosettaSciIO" in write_formats
