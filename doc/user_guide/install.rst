@@ -1,5 +1,5 @@
 
-.. _install-label:
+.. _installation-guide:
 
 Installing HyperSpy
 ===================

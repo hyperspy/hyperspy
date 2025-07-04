@@ -1,4 +1,5 @@
 .. Getting help
+
 ============
 
 There are several places to obtain help with HyperSpy:

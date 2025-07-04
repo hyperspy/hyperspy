@@ -146,7 +146,7 @@ def generate_ai_context(include_optional=False, output_file=None, prefer_markdow
     include_optional : bool, default False
         If True, include optional sections and web content in the generated context.
         This creates a more comprehensive but larger context file.
-    output_file : str or Path, optional
+    output_file : str or pathlib.Path, optional
         Path where to save the generated context. If None, returns the context as a string.
     prefer_markdown : bool, default True
         If True, prefer Markdown format URLs (.md) for better AI readability.

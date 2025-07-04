@@ -41,16 +41,16 @@ User guide
 
 .. _install-label:
 
-##########
+############
 Installation
-##########
+############
 
 .. toctree::
     :hidden:
 
     basic_usage
     io
-    signal
+    signal/index
     axes
     interactive_operations
     region_of_interest
