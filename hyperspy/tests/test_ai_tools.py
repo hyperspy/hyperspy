@@ -450,14 +450,12 @@ class TestGenerateAIContext:
         assert result is not None and "html urls" in result
 
     @patch("llms_txt.core.create_ctx")
-    @patch("pathlib.Path.exists")
-    def test_hyperspy_installation_path_resolution(self, mock_exists, mock_create_ctx):
+    def test_hyperspy_installation_path_resolution(self, mock_create_ctx):
         """Test that the llms.txt file path is correctly resolved relative to HyperSpy installation."""
         import hyperspy
         from hyperspy.utils import ai_tools
 
         mock_create_ctx.return_value = "mocked context"
-        mock_exists.return_value = True
 
         # Use a list to store the accessed path (mutable object)
         accessed_paths = []
@@ -471,6 +469,7 @@ class TestGenerateAIContext:
             ai_tools.generate_ai_context(include_optional=False)
 
             # Check that the correct path was accessed
+            # Following llmstxt.org spec: should look at site-packages root
             expected_path = Path(hyperspy.__file__).parent.parent / "llms.txt"
             assert len(accessed_paths) == 1
             assert accessed_paths[0] == expected_path

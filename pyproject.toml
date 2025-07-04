@@ -230,6 +230,9 @@ extend-ignore = ["E501"]
     "misc/dask_widgets/*.html.j2",
 ]
 
+[tool.setuptools.data-files]
+"." = ["llms.txt"]
+
 [tool.setuptools.packages.find]
 include = ["hyperspy*"]
 where = ["."]

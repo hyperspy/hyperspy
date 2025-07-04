@@ -212,11 +212,19 @@ def generate_ai_context(include_optional=False, output_file=None, prefer_markdow
             "For more information, see: https://llmstxt.org/"
         ) from e
 
-    # Find the llms.txt file in the HyperSpy installation
+    # Find the llms.txt file following the llmstxt.org specification
     import hyperspy
 
-    hyperspy_dir = Path(hyperspy.__file__).parent.parent
-    llms_file = hyperspy_dir / "llms.txt"
+    # Following llmstxt.org spec: look for llms.txt at the root of the installation
+    # For installed packages, this would be in site-packages directory
+    site_packages_dir = Path(hyperspy.__file__).parent.parent
+    llms_file = site_packages_dir / "llms.txt"
+
+    # Fall back to the repository root for development installations
+    if not llms_file.exists():
+        # Try in the repository root directory (development)
+        hyperspy_root_dir = Path(hyperspy.__file__).parent.parent
+        llms_file = hyperspy_root_dir / "llms.txt"
 
     if not llms_file.exists():
         raise FileNotFoundError(
