@@ -13,6 +13,9 @@ build:
   apt_packages:
     - optipng
   jobs:
+    pre_build:
+      # Prepare llms.txt for documentation build
+      - cd doc && python prepare_llms_txt.py
     post_build:
       # Copy Markdown documentation to HTML output for serving at predictable URLs
       - python scripts/copy_markdown_docs.py

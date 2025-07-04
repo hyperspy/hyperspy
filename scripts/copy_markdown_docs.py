@@ -89,6 +89,9 @@ def main():
                 f"WARNING: Temporary Markdown directory {temp_markdown_dir} does not exist"
             )
 
+        # Copy llms.txt to HTML root directory
+        copy_llms_txt(html_dir)
+
     except subprocess.CalledProcessError as e:
         print("ERROR: Sphinx Markdown build failed")
         print(f"Return code: {e.returncode}")
@@ -103,6 +106,29 @@ def main():
         if temp_markdown_dir.exists():
             print(f"Cleaning up temporary directory: {temp_markdown_dir}")
             shutil.rmtree(temp_markdown_dir)
+
+
+def copy_llms_txt(html_dir):
+    """Copy llms.txt to the root of the HTML output directory."""
+    # The llms.txt should have been prepared by the pre_build step
+    llms_source = Path("doc/llms.txt")
+    llms_target = html_dir / "llms.txt"
+
+    if llms_source.exists():
+        print(f"Copying llms.txt from {llms_source} to {llms_target}")
+        shutil.copy2(llms_source, llms_target)
+        print("Successfully copied llms.txt to HTML root directory")
+
+        # Verify the content
+        if llms_target.exists():
+            content = llms_target.read_text(encoding="utf-8")
+            html_md_count = len(
+                [line for line in content.split("\n") if ".html.md" in line]
+            )
+            print(f"llms.txt contains {html_md_count} web-compatible URLs")
+    else:
+        print(f"WARNING: llms.txt not found at {llms_source}")
+        print("The llms.txt file should have been prepared by the pre_build step")
 
 
 if __name__ == "__main__":

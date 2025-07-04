@@ -163,6 +163,10 @@ html_logo = "_static/hyperspy_logo.png"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+# Add files to be copied to the root of the HTML documentation
+# This includes llms.txt for AI/LLM context (transformed for web)
+html_extra_path = ["llms.txt"]
+
 favicons = [
     "hyperspy.ico",
 ]
@@ -456,6 +460,34 @@ tls_verify = True
 
 def setup(app):
     app.add_css_file("custom-styles.css")
+
+    # Prepare llms.txt for documentation build
+    # This automatically transforms the root llms.txt to web-compatible URLs
+    def prepare_llms_txt(app, env, added, changed, removed):
+        """Prepare llms.txt file during documentation build."""
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        doc_dir = Path(__file__).parent
+        script_path = doc_dir / "prepare_llms_txt.py"
+
+        try:
+            subprocess.run(
+                [sys.executable, str(script_path)],
+                cwd=doc_dir,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            print("Successfully prepared llms.txt for documentation build")
+        except subprocess.CalledProcessError as e:
+            print(f"Warning: Failed to prepare llms.txt: {e}")
+            print(f"Stdout: {e.stdout}")
+            print(f"Stderr: {e.stderr}")
+
+    # Run this when the environment is updated (i.e., at the start of build)
+    app.connect("env-updated", prepare_llms_txt)
 
 
 # -- Options for markdown builder --------------------------------------------

@@ -79,7 +79,7 @@ def _get_doc_version_path():
     return "current"
 
 
-def _convert_rst_to_web_urls(llms_content, prefer_markdown=True):
+def _convert_rst_to_web_urls(llms_content, prefer_markdown=True, doc_version=None):
     """
     Convert local RST file paths in llms.txt content to appropriate web URLs.
 
@@ -92,13 +92,17 @@ def _convert_rst_to_web_urls(llms_content, prefer_markdown=True):
     prefer_markdown : bool, optional
         If True, generates Markdown URLs (.md). If False, generates HTML URLs (.html).
         Default is True for better AI readability.
+    doc_version : str, optional
+        The documentation version to use. If None, auto-detects from HyperSpy version.
 
     Returns
     -------
     str
         The content with RST paths converted to web URLs.
     """
-    doc_version = _get_doc_version_path()
+    if doc_version is None:
+        doc_version = _get_doc_version_path()
+
     base_url = f"https://hyperspy.org/hyperspy-doc/{doc_version}"
 
     # Choose extension based on preference
@@ -122,6 +126,9 @@ def _convert_rst_to_web_urls(llms_content, prefer_markdown=True):
         (r"doc/reference/([^)]+)\.rst\)", rf"{base_url}/reference/\1{ext})"),
         # Handle directory paths without .rst extension (doc/reference/api.signals/ -> base_url/reference/api.signals.ext)
         (r"doc/reference/([^)]+)/\)", rf"{base_url}/reference/\1{ext})"),
+        # Handle user_guide and dev_guide directory paths
+        (r"doc/user_guide/([^)]+)/\)", rf"{base_url}/user_guide/\1/index{ext})"),
+        (r"doc/dev_guide/([^)]+)/\)", rf"{base_url}/dev_guide/\1/index{ext})"),
     ]
 
     # Apply transformations
