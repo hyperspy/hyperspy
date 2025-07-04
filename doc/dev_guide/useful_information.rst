@@ -23,77 +23,24 @@ Following the `llms.txt specification <https://llmstxt.org/>`_, the ``llms.txt``
 
 This file provides context automatically for repository-aware AI tools when working in the HyperSpy repository.
 
-Using generate_ai_context Function
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**When to use llms.txt vs online context files:**
 
-HyperSpy provides a convenient function to generate AI context files directly from Python:
+- **Use llms.txt directly** for repository-aware AI tools and quick reference when working with the source code
+- **Use online context files** (llms-ctx.txt) for chat-based AI interfaces or when you need comprehensive context
 
-.. code-block:: python
-
-    import hyperspy.api as hs
-    
-    # Generate basic context as a string
-    context = hs.generate_ai_context()
-    
-    # Generate full context with web content
-    full_context = hs.generate_ai_context(include_optional=True)
-    
-    # Save context directly to a file
-    hs.generate_ai_context(output_file="hyperspy_context.txt")
-    
-    # Save full context to a file
-    hs.generate_ai_context(include_optional=True, output_file="hyperspy_full_context.txt")
-
-**Requirements:**
-
-The function requires the ``llms_txt`` package to be installed:
-
-.. code-block:: bash
-
-    pip install llms_txt
-
-If ``llms_txt`` is not installed, the function will raise an ``ImportError`` with installation instructions.
-
-**When to use llms.txt vs generated context:**
-
-- **Use llms.txt directly** for repository-aware AI tools, quick reference, or when AI systems can access external links
-- **Use generated context files** for chat-based AI interfaces, offline scenarios, deep analysis tasks, or custom AI workflows
-
-**Generated context files provide:**
+**The online context files provide:**
 
 1. **Expanded explanations**: More detailed descriptions of key concepts and workflows
 2. **Usage guidance**: Explicit instructions for AI systems on how to help HyperSpy users effectively  
 3. **Code patterns**: Concrete examples of common import conventions and usage patterns
 4. **Self-contained**: No dependency on external links being accessible to the AI system
-5. **Customizable**: Can be modified or extended for specific use cases
+5. **Version-specific**: Always matches the documentation version you're using
 
-Example Usage Scenarios
-^^^^^^^^^^^^^^^^^^^^^^^^
+**Access online context files at:**
 
-**Repository-aware AI Integration**: The ``llms.txt`` file provides context automatically when coding with AI tools that read repository files. No additional setup needed.
-
-**Chat-based AI Development Session**:
-
-.. code-block:: python
-
-    import hyperspy.api as hs
-    
-    # Generate context and copy to clipboard or AI chat
-    context = hs.generate_ai_context()
-    # Copy 'context' to your AI chat interface
-
-**Custom AI Assistant**:
-
-.. code-block:: python
-
-    import hyperspy.api as hs
-    
-    # Generate comprehensive context for AI applications
-    hs.generate_ai_context(include_optional=True, output_file="complete_hyperspy_context.txt")
-
-
-All necessary information is included without requiring external links.
-
+- Current stable: ``https://hyperspy.org/hyperspy-doc/current/llms-ctx.txt``
+- Development: ``https://hyperspy.org/hyperspy-doc/dev/llms-ctx.txt``
+- Specific version: ``https://hyperspy.org/hyperspy-doc/v2.4/llms-ctx.txt``
 
 NEP 29 — Recommend Python and Numpy version support
 ---------------------------------------------------

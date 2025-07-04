@@ -150,7 +150,6 @@ speed = [
     "numexpr>=2.8",
 ]
 tests = [
-    "llms_txt",
     "pooch",
     "pytest-instafail",
     "pytest-mpl",
@@ -188,7 +187,7 @@ addopts = "-ra -n auto --dist loadfile"
 filterwarnings = [
     "ignore:Matplotlib is currently using agg:UserWarning",
 ]
-testpaths = ["hyperspy"]
+testpaths = ["hyperspy", "doc", "scripts"]
 norecursedirs = [
     "hyperspy/external/*",
     "doc/auto_examples*",

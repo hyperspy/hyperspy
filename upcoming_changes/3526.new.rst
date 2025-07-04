@@ -1,8 +1,6 @@
 Added AI-friendly documentation features to improve interaction with Large Language Models and AI coding assistants:
 
 - Added an ``llms.txt`` file to make HyperSpy more AI-friendly by providing structured information for Large Language Models, following the best practices from the llms.txt specification (https://llmstxt.org). The file uses local RST paths for repository-aware AI assistants.
-- Added the ``generate_ai_context()`` function to ``hyperspy.api``, which automatically converts the local RST paths in ``llms.txt`` to version-appropriate web URLs for external AI systems. This improves AI-assisted development and support while maintaining compatibility with HyperSpy's existing AI tooling.
-- Integrated AI assistance guidance into the User Guide with a simplified Python-based workflow.
-- AI systems can now better understand HyperSpy's architecture, the navigation/signal dimensions concept, the extension ecosystem, and common workflows.
+- Added an online context file (``llms-ctx.txt``) accessible at ``https://hyperspy.org/hyperspy-doc/{version}/llms-ctx.txt`` that converts local RST paths to web URLs for external AI systems. This improves AI-assisted development and support.
+- Integrated AI assistance guidance into the User Guide with a simplified workflow using online context files.
 
-The new ``generate_ai_context()`` function provides a cross-platform solution that eliminates the need for complex command-line instructions and automatically locates the local ``llms.txt`` file.

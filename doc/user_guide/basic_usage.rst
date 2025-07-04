@@ -35,33 +35,7 @@ Copy the content from this link and paste it into your AI chat session before as
 - Development version: ``https://hyperspy.org/hyperspy-doc/dev/llms-ctx.txt``
 - Specific version: ``https://hyperspy.org/hyperspy-doc/v2.4/llms-ctx.txt`` (replace with your version)
 
-
-**Alternative: Generate context programmatically (Local method):**
-
-If you prefer to generate context locally or need a custom version:
-
-.. code-block:: python
-
-    import hyperspy.api as hs
-    
-    # Generate basic context
-    context = hs.generate_ai_context()
-    
-    # Save to file
-    hs.generate_ai_context(output_file="hyperspy_context.txt")
-    
-    # For comprehensive context (includes content from documentation links)
-    full_context = hs.generate_ai_context(include_optional=True)
-
-This requires the ``llms_txt`` package to be installed:
-
-.. code-block:: bash
-
-    pip install llms_txt
-
-Copy the generated content from the string or file and paste it into your AI chat session before asking HyperSpy-related questions.
-
-**Note**: The online ``llms-ctx.txt`` method is recommended as it provides more comprehensive and up-to-date context than the local generation method.
+Copy the content from the appropriate URL above and paste it into your AI chat session before asking HyperSpy-related questions.
 
 Tips for Better AI Assistance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

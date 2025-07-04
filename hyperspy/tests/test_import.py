@@ -102,7 +102,6 @@ def test_dir_api():
     assert d == [
         "__version__",
         "data",
-        "generate_ai_context",
         "get_configuration_directory_path",
         "interactive",
         "load",
@@ -136,7 +135,6 @@ def test_dir_utils():
 
     d = dir(hyperspy.utils)
     assert d == [
-        "generate_ai_context",
         "interactive",
         "markers",
         "model",

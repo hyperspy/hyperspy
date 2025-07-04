@@ -36,6 +36,8 @@ doc/auto_examples
 doc/backreferences
 doc/_build
 doc/log.txt
+doc/llms.txt
+doc/llms-ctx.txt
 examples/io/*.msa
 examples/io/rgb*.jpg
 examples/region_of_interest/*.msa

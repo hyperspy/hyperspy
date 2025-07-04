@@ -39,9 +39,6 @@ All public packages, functions and classes are available in this module.
 
 Functions:
 
-    :func:`~.api.generate_ai_context`
-        Generate AI context from HyperSpy's llms.txt file.
-
     :func:`~.api.get_configuration_directory_path`
         Return the configuration directory path.
 
@@ -106,7 +103,6 @@ def get_configuration_directory_path():
 
 __all__ = [
     "data",
-    "generate_ai_context",
     "get_configuration_directory_path",
     "interactive",
     "load",
@@ -126,7 +122,6 @@ __all__ = [
 
 # mapping following the pattern: from value import key
 _import_mapping = {
-    "generate_ai_context": ".utils",
     "interactive": ".utils",
     "load": ".io",
     "markers": ".utils",
