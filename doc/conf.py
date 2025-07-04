@@ -165,7 +165,8 @@ html_static_path = ["_static"]
 
 # Add files to be copied to the root of the HTML documentation
 # This includes llms.txt for AI/LLM context (transformed for web)
-html_extra_path = ["llms.txt"]
+# and llms-ctx.txt for expanded context
+html_extra_path = ["llms.txt", "llms-ctx.txt"]
 
 favicons = [
     "hyperspy.ico",

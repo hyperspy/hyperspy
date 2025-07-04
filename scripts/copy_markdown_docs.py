@@ -109,11 +109,15 @@ def main():
 
 
 def copy_llms_txt(html_dir):
-    """Copy llms.txt to the root of the HTML output directory."""
-    # The llms.txt should have been prepared by the pre_build step
+    """Copy llms.txt and llms-ctx.txt to the root of the HTML output directory."""
+    # The files should have been prepared by the pre_build step
     llms_source = Path("doc/llms.txt")
     llms_target = html_dir / "llms.txt"
 
+    ctx_source = Path("doc/llms-ctx.txt")
+    ctx_target = html_dir / "llms-ctx.txt"
+
+    # Copy basic llms.txt
     if llms_source.exists():
         print(f"Copying llms.txt from {llms_source} to {llms_target}")
         shutil.copy2(llms_source, llms_target)
@@ -128,6 +132,25 @@ def copy_llms_txt(html_dir):
             print(f"llms.txt contains {html_md_count} web-compatible URLs")
     else:
         print(f"WARNING: llms.txt not found at {llms_source}")
+
+    # Copy expanded context llms-ctx.txt
+    if ctx_source.exists():
+        print(f"Copying llms-ctx.txt from {ctx_source} to {ctx_target}")
+        shutil.copy2(ctx_source, ctx_target)
+        print("Successfully copied llms-ctx.txt to HTML root directory")
+
+        # Verify the content
+        if ctx_target.exists():
+            content = ctx_target.read_text(encoding="utf-8")
+            content_size = len(content)
+            print(
+                f"llms-ctx.txt contains {content_size} characters of expanded context"
+            )
+    else:
+        print(f"WARNING: llms-ctx.txt not found at {ctx_source}")
+        print(
+            "The expanded context file should have been prepared by the pre_build step"
+        )
         print("The llms.txt file should have been prepared by the pre_build step")
 
 
