@@ -344,7 +344,9 @@ def load(
         then square brackets are escaped before wildcard matching with
         ``glob.glob()``. If False, square brackets are used to represent
         character classes (e.g. ``[a-z]`` matches lowercase letters).
+
     %s
+
     %s Only used with ``stack=True``.
     load_original_metadata : bool, default True
         If ``True``, all metadata contained in the input file will be added
@@ -355,7 +357,9 @@ def load(
         will use the file extension to infer the file type and appropriate
         reader. If str, will select the appropriate file reader from the list
         of available readers. Supported formats:
+
         %s
+
     reader : None, str, module, optional
         .. deprecated:: 2.4.0
             The ``reader`` parameter is deprecated and will be removed in

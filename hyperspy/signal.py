@@ -3308,7 +3308,7 @@ class BaseSignal(
 
         Parameters
         ----------
-        filename : str, Path, or None
+        filename : str, :py:obj:`~pathlib.Path`, or None
             The output filename or directory path. Can be:
 
             * **Full path with extension**: ``'/path/to/my_file.hspy'``
@@ -3327,7 +3327,7 @@ class BaseSignal(
         overwrite : None or bool
             If None, if the file exists it will query the user. If
             True(False) it does(not) overwrite the file if it exists.
-        extension : None or str, deprecated
+        extension : None or str
             .. deprecated:: 2.4
                 The `extension` parameter is deprecated in version 2.4 and will be removed in version 3.0. Use `file_format` instead.
 
