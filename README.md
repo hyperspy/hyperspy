@@ -34,12 +34,26 @@ HyperSpy is released under the GPL v3 license.
 **Since version 0.8.4, HyperSpy only supports Python 3.** If you need to install
 HyperSpy in Python 2.7, please install version 0.8.3.
 
+Getting Help from AI
+------------------
+
+AI systems like coding assistants and chatbots can provide valuable help with HyperSpy, but they need proper context to give accurate answers. We've provided AI-friendly documentation to solve this:
+
+- **For repository-aware tools**: This repository includes an [`llms.txt`](llms.txt) file that automatically provides context about HyperSpy.
+
+- **For chat-based AI**: Use our comprehensive context file from the online documentation:
+
+  ```text
+  https://hyperspy.org/hyperspy-doc/current/llms-ctx.txt
+  ```
+  
+  Copy the content from this link and paste it into your AI chat session before asking HyperSpy questions. Make sure to use the URL that matches your HyperSpy version (replace `current` with `dev` for development version, or specific version like `v2.3`).
+
+This context allows AI systems to understand HyperSpy's unique concepts like navigation/signal dimensions, lazy loading, and the extensive ecosystem of extension packages.
+
 Contributing
 ------------
 
 Everyone is welcome to contribute. Please read our [contributing
 guidelines](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md)
 and get started!
-
-For AI-assisted development, this repository includes an [`llms.txt`](llms.txt) file
-that provides structured information about HyperSpy for Large Language Models.

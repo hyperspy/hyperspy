@@ -10,58 +10,69 @@ AI Assistance for HyperSpy
 
 HyperSpy includes AI-friendly documentation to help Large Language Models (LLMs) and AI coding assistants provide better support when working with HyperSpy code.
 
-Using AI Tools with HyperSpy
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Getting Help from AI
+^^^^^^^^^^^^^^^^^^^^^
+
+AI systems like coding assistants and chatbots can provide valuable help with HyperSpy, but they need proper context to give accurate answers. We've provided AI-friendly documentation to solve this:
 
 **For repository-aware AI tools:**
 
-If you're using AI coding assistants that can read files in your project, the ``llms.txt`` file in the HyperSpy repository root automatically provides context about HyperSpy's architecture and workflows. No additional setup is needed.
+If you're using AI coding assistants that can read files in your project repository, the ``llms.txt`` file in the HyperSpy repository root automatically provides context about HyperSpy's architecture and workflows. No additional setup is needed.
 
-**For chat-based AI interfaces:**
+**For chat-based AI interfaces (Recommended):**
 
-When working with AI systems through chat interfaces, you can provide them with comprehensive HyperSpy context:
+Use our comprehensive context file from the online documentation. This is now the **preferred method** as it includes expanded content from the full documentation:
 
-1. **Generate a context file** from the HyperSpy repository:
+.. code-block:: text
 
-1. **Generate context using HyperSpy's built-in function**:
+    https://hyperspy.org/hyperspy-doc/current/llms-ctx.txt
 
-   .. code-block:: python
-   
-       import hyperspy.api as hs
-       
-       # Generate basic context
-       context = hs.generate_ai_context()
-       
-       # Save to file
-       hs.generate_ai_context(output_file="hyperspy_context.txt")
+Copy the content from this link and paste it into your AI chat session before asking HyperSpy questions. 
 
-   This requires the ``llms_txt`` package to be installed:
+**Important**: Make sure to use the URL that matches your HyperSpy version:
 
-   .. code-block:: bash
-   
-       pip install llms_txt
+- Current stable release: ``https://hyperspy.org/hyperspy-doc/current/llms-ctx.txt``
+- Development version: ``https://hyperspy.org/hyperspy-doc/dev/llms-ctx.txt``
+- Specific version: ``https://hyperspy.org/hyperspy-doc/v2.4/llms-ctx.txt`` (replace with your version)
 
-2. **Copy the generated content** from the string or file and paste it into your AI chat session before asking HyperSpy-related questions.
 
-3. **For comprehensive context** (includes content from documentation links):
+**Alternative: Generate context programmatically (Local method):**
 
-   .. code-block:: python
-   
-       # Generate full context with web content (includes optional sections)
-       full_context = hs.generate_ai_context(include_optional=True)
-       
-       # Or save directly to file
-       hs.generate_ai_context(include_optional=True, output_file="hyperspy_full_context.txt")
+If you prefer to generate context locally or need a custom version:
+
+.. code-block:: python
+
+    import hyperspy.api as hs
+    
+    # Generate basic context
+    context = hs.generate_ai_context()
+    
+    # Save to file
+    hs.generate_ai_context(output_file="hyperspy_context.txt")
+    
+    # For comprehensive context (includes content from documentation links)
+    full_context = hs.generate_ai_context(include_optional=True)
+
+This requires the ``llms_txt`` package to be installed:
+
+.. code-block:: bash
+
+    pip install llms_txt
+
+Copy the generated content from the string or file and paste it into your AI chat session before asking HyperSpy-related questions.
+
+**Note**: The online ``llms-ctx.txt`` method is recommended as it provides more comprehensive and up-to-date context than the local generation method.
 
 Tips for Better AI Assistance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When asking AI systems for help with HyperSpy:
 
+- **Use the online context file**: The ``llms-ctx.txt`` file provides comprehensive documentation that often enables AI systems to give better guidance than even the official documentation alone
 - **Use standard conventions**: Always mention ``import hyperspy.api as hs`` for import statements
 - **Be specific about data types**: Mention signal types when relevant (e.g., "EDS spectrum", "EELS spectrum map", "4D-STEM dataset")
 - **Reference key concepts**: Use terms like "navigation dimensions", "signal dimensions", and "lazy loading" when describing your data structure
-- **Mention extensions**: Ask about domain-specific packages like eXSpy for EDS analysis or holoSpy for electron holography when appropriate
+- **Mention extensions**: Ask about domain-specific packages like eXSpy for EDS analysis or pyXem for 4D-STEM when appropriate
 - **Describe your workflow**: Whether you're doing interactive analysis in Jupyter notebooks, batch processing, or model fitting
 
 Example AI Queries
@@ -74,7 +85,7 @@ Good examples of how to ask AI systems for HyperSpy help:
 - "How do I fit a Gaussian model to multiple spectra in a spectrum image using HyperSpy?"
 - "What's the best way to perform SVD decomposition on an EELS spectrum image?"
 
-With proper context, AI systems can provide more accurate code suggestions, guide you to relevant documentation sections, and understand HyperSpy's unique concepts like the navigation/signal dimension distinction.
+With the proper context file, AI systems can provide more accurate code suggestions, guide you to relevant documentation sections, and understand HyperSpy's unique concepts like the navigation/signal dimension distinction. The context file is auto-generated from our documentation, ensuring AI systems have access to the most current information.
 
 
 .. _importing_hyperspy-label:

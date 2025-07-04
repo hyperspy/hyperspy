@@ -10,5 +10,7 @@ There are several places to obtain help with HyperSpy:
   create a new issue on the `HyperSpy GitHub issues <https://github.com/hyperspy/hyperspy/issues>`_ page.
   When reporting bugs, please try to replicate the bug with the HyperSpy sample data, and make every effort
   to simplify your example script to only the elements necessary to replicate the bug.
-- For AI-assisted development, HyperSpy provides an ``llms.txt`` file in the repository root. See the
-  :ref:`AI Assistance for HyperSpy <ai-assistance-label>` section of the User Guide for more details on how to use it.
+- For AI-assisted development and support, HyperSpy provides comprehensive context files. Use the online
+  ``llms-ctx.txt`` file from the documentation (e.g., https://hyperspy.org/hyperspy-doc/current/llms-ctx.txt)
+  for the most comprehensive AI assistance. See the :ref:`AI Assistance for HyperSpy <ai-assistance-label>` 
+  section of the User Guide for detailed instructions on getting help from AI systems.
