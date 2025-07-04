@@ -464,7 +464,7 @@ def setup(app):
 
     # Prepare llms.txt for documentation build
     # This automatically transforms the root llms.txt to web-compatible URLs
-    def prepare_llms_txt(app, env, added, changed, removed):
+    def prepare_llms_txt(app):
         """Prepare llms.txt file during documentation build."""
         import subprocess
         import sys
@@ -487,8 +487,8 @@ def setup(app):
             print(f"Stdout: {e.stdout}")
             print(f"Stderr: {e.stderr}")
 
-    # Run this when the environment is updated (i.e., at the start of build)
-    app.connect("env-updated", prepare_llms_txt)
+    # Run this when the builder is initialized (i.e., at the start of build)
+    app.connect("builder-inited", prepare_llms_txt)
 
 
 # -- Options for markdown builder --------------------------------------------
