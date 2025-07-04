@@ -50,7 +50,7 @@ _logger = logging.getLogger(__name__)
 f_error_fmt = "\tFile %d:\n\t\t%d signals\n\t\tPath: %s"
 
 
-def _get_supported_formats(write_mode=False):
+def _get_supported_formats(write_mode=False, style="inline"):
     """Generate a formatted string of supported file formats.
 
     Parameters
@@ -58,11 +58,15 @@ def _get_supported_formats(write_mode=False):
     write_mode : bool, default False
         If False (default), returns all supported read formats (all plugins).
         If True, returns only supported write formats (plugins with write capability).
+    style : str, default "inline"
+        Format style for the list:
+        - "inline": Comma-separated inline list with rsciio version
+        - "bullet": Bullet list for docstring parameter documentation
 
     Returns
     -------
     str
-        Formatted string listing supported formats with rsciio version
+        Formatted string listing supported formats
 
     """
     if write_mode:
@@ -72,6 +76,26 @@ def _get_supported_formats(write_mode=False):
         # All plugins support reading
         plugins = IO_PLUGINS
 
+    if style == "bullet":
+        # Create bullet-style format for docstring parameter documentation
+        format_items = []
+        for plugin in sorted(plugins, key=lambda x: x["name"]):
+            name = plugin["name"]
+            extensions = plugin["file_extensions"]
+            main_ext = extensions[plugin["default_extension"]]
+
+            # Add description if available
+            description = plugin.get("description", "")
+            if description:
+                format_items.append(
+                    f"        * ``'{main_ext}'`` for {name} ({description})"
+                )
+            else:
+                format_items.append(f"        * ``'{main_ext}'`` for {name}")
+
+        return "\n" + "\n".join(format_items) + "\n"
+
+    # Original inline format for backward compatibility
     format_descriptions = []
 
     for plugin in plugins:
@@ -260,8 +284,6 @@ def load(
 ):
     """Load potentially multiple supported files into HyperSpy.
 
-    %s
-
     Depending on the number of datasets to load in the file, this function will
     return a HyperSpy signal instance or list of HyperSpy signal instances.
 
@@ -328,9 +350,10 @@ def load(
         The file format to use when loading the file(s). If None (default),
         will use the file extension to infer the file type and appropriate
         reader. If str, will select the appropriate file reader from the list
-        of available readers. %s
+        of available readers. Supported formats:
+        %s
     reader : None, str, module, optional
-        .. deprecated:: 2.1.0
+        .. deprecated:: 2.4.0
             The ``reader`` parameter is deprecated and will be removed in
             HyperSpy v2.4. Use ``file_format`` instead.
         Specify the file reader to use when loading the file(s). If None
@@ -616,10 +639,9 @@ def load(
 
 
 load.__doc__ %= (
-    _get_supported_formats(write_mode=False),
     STACK_METADATA_ARG,
     SHOW_PROGRESSBAR_ARG,
-    _get_supported_formats(write_mode=False),
+    _get_supported_formats(write_mode=False, style="bullet"),
 )
 
 
@@ -654,24 +676,7 @@ def load_single_file(filename, **kwds):
         file_format = reader
 
     kwds["file_format"] = file_format
-    """Load any supported file into an HyperSpy structure.
 
-    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
-    Bruker bcf, FEI ser and emi, EDAX spc and spd, hspy (HDF5), and SEMPER unf.
-
-    Parameters
-    ----------
-    filename : string
-        File name including the extension.
-    **kwds
-        Keyword arguments passed to specific file reader.
-
-    Returns
-    -------
-    object
-        Data loaded from the file.
-
-    """
     # in case filename is a zarr store, we want to the path and not the store
     path = _parse_path(filename)
 
