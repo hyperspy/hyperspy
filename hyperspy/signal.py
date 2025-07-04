@@ -3293,6 +3293,10 @@ class BaseSignal(
 
         %s
 
+        File format support is provided by RosettaSciIO. For detailed information
+        about supported formats, format-specific parameters, and examples, see the
+        `RosettaSciIO documentation <https://hyperspy.org/rosettasciio/>`_.
+
         If no extension is provided the default file format as defined
         in the `preferences` is used.
         Please note that not all the formats supports saving datasets of
@@ -3328,7 +3332,7 @@ class BaseSignal(
                 The `extension` parameter is deprecated in version 2.4 and will be removed in version 3.0. Use `file_format` instead.
 
             The extension of the file that defines the file format.
-            Allowable string values are: {%s}
+            Allowable string values are: %s
             ``'hspy'`` and ``'hdf5'`` are equivalent. Use ``'hdf5'`` if
             compatibility with HyperSpy versions older than 1.2 is required.
             If ``None``, the extension is determined from the following list in
@@ -3362,9 +3366,10 @@ class BaseSignal(
         close_file : bool, optional
             Only for hdf5-based files and some zarr store. Close the file after
             writing. Default is True.
-        file_format: string
+        file_format : None or str, optional
             The file format of choice to save the file. If not given, it is inferred
-            from the file extension.
+            from the file extension. Supported formats:
+            %s
 
         Examples
         --------
@@ -3507,6 +3512,7 @@ class BaseSignal(
     save.__doc__ = save.__doc__ % (
         _get_format_list_for_docstring(write_mode=True, style="bullet"),
         _get_format_list_for_docstring(write_mode=True, style="inline"),
+        _get_format_list_for_docstring(write_mode=True, style="bullet"),
     )
 
     def _replot(self):

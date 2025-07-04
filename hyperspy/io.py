@@ -93,7 +93,9 @@ def _get_supported_formats(write_mode=False, style="inline"):
             else:
                 format_items.append(f"        * ``'{main_ext}'`` for {name}")
 
-        return "\n" + "\n".join(format_items) + "\n"
+        # Add version info at the end
+        version_info = f"        \n        All formats are provided by RosettaSciIO v{rsciio.__version__}."
+        return "\n" + "\n".join(format_items) + "\n" + version_info + "\n"
 
     # Original inline format for backward compatibility
     format_descriptions = []
@@ -107,9 +109,7 @@ def _get_supported_formats(write_mode=False, style="inline"):
         format_descriptions.append(f"'{name}' (*.{main_ext})")
 
     formats_list = ", ".join(sorted(format_descriptions))
-    return (
-        f"Supported formats: {formats_list} (provided by rsciio v{rsciio.__version__})."
-    )
+    return f"Supported formats: {formats_list} (provided by RosettaSciIO v{rsciio.__version__})."
 
 
 def _format_name_to_reader(format_name):
@@ -289,6 +289,10 @@ def load(
 
     Any extra keywords are passed to the corresponding reader. For
     available options, see their individual documentation.
+
+    File format support is provided by RosettaSciIO. For detailed information
+    about supported formats, format-specific parameters, and examples, see the
+    `RosettaSciIO documentation <https://hyperspy.org/rosettasciio/>`_.
 
     Parameters
     ----------
@@ -1194,7 +1198,9 @@ def _get_format_list_for_docstring(write_mode=False, style="bullet"):
             else:
                 format_items.append(f"        * ``'{main_ext}'`` for {name}")
 
-        return "\n" + "\n".join(format_items) + "\n"
+        # Add version info at the end
+        version_info = f"        \n        All formats are provided by RosettaSciIO v{rsciio.__version__}."
+        return "\n" + "\n".join(format_items) + "\n" + version_info + "\n"
 
     elif style == "inline":
         format_items = []
@@ -1203,7 +1209,8 @@ def _get_format_list_for_docstring(write_mode=False, style="bullet"):
             main_ext = extensions[plugin["default_extension"]]
             format_items.append(f"``'{main_ext}'``")
 
-        return ", ".join(format_items)
+        formats_list = ", ".join(format_items)
+        return f"{formats_list} (provided by RosettaSciIO v{rsciio.__version__})"
 
     elif style == "extensions":
         extensions = []
