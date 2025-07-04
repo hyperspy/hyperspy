@@ -11,6 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import os
 import sys
 from datetime import datetime
 
@@ -166,7 +167,41 @@ html_static_path = ["_static"]
 # Add files to be copied to the root of the HTML documentation
 # This includes llms.txt for AI/LLM context (transformed for web)
 # and llms-ctx.txt for expanded context
-html_extra_path = ["llms.txt", "llms-ctx.txt"]
+
+
+# Prepare llms.txt files before Sphinx processes html_extra_path
+# This ensures the files exist during configuration phase
+def _prepare_llms_files():
+    """Prepare llms.txt files if they don't exist."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    doc_dir = Path(__file__).parent
+    script_path = doc_dir / "prepare_llms_txt.py"
+
+    # Only run if files don't exist to avoid unnecessary work
+    if not (doc_dir / "llms.txt").exists() or not (doc_dir / "llms-ctx.txt").exists():
+        try:
+            subprocess.run(
+                [sys.executable, str(script_path)],
+                cwd=doc_dir,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"Warning: Failed to prepare llms.txt: {e}")
+
+
+# Run the preparation function during configuration
+_prepare_llms_files()
+
+# Only include files that exist to avoid warnings during CI builds
+html_extra_path = []
+for filename in ["llms.txt", "llms-ctx.txt"]:
+    if os.path.exists(filename):
+        html_extra_path.append(filename)
 
 favicons = [
     "hyperspy.ico",
@@ -461,34 +496,6 @@ tls_verify = True
 
 def setup(app):
     app.add_css_file("custom-styles.css")
-
-    # Prepare llms.txt for documentation build
-    # This automatically transforms the root llms.txt to web-compatible URLs
-    def prepare_llms_txt(app):
-        """Prepare llms.txt file during documentation build."""
-        import subprocess
-        import sys
-        from pathlib import Path
-
-        doc_dir = Path(__file__).parent
-        script_path = doc_dir / "prepare_llms_txt.py"
-
-        try:
-            subprocess.run(
-                [sys.executable, str(script_path)],
-                cwd=doc_dir,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            print("Successfully prepared llms.txt for documentation build")
-        except subprocess.CalledProcessError as e:
-            print(f"Warning: Failed to prepare llms.txt: {e}")
-            print(f"Stdout: {e.stdout}")
-            print(f"Stderr: {e.stderr}")
-
-    # Run this when the builder is initialized (i.e., at the start of build)
-    app.connect("builder-inited", prepare_llms_txt)
 
 
 # -- Options for markdown builder --------------------------------------------
