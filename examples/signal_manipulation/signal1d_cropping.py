@@ -52,30 +52,24 @@ s3 = s.isig[5.:15.:0.5]  # Every 0.5 units - both crops and subsamples
 # Combines cropping with downsampling in a single operation
 
 # %%
-# Plot comparison of original and cropped signals
-import matplotlib.pyplot as plt
+# Plot comparison of original and cropped signals using HyperSpy's plotting
 
-fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+# Extract spectra from a single pixel and plot using HyperSpy
+s_single = s.inav[16, 16]
+s_single.metadata.General.title = 'Original signal'
+s_single.plot()
 
-# Plot the signals using matplotlib directly
-axes[0,0].plot(s.axes_manager.signal_axes[0].axis, s.data[16, 16])
-axes[0,0].set_title('Original signal')
-axes[0,0].set_xlabel('Energy')
+s1_single = s1.inav[16, 16] 
+s1_single.metadata.General.title = 'crop_signal(5, 15)'
+s1_single.plot()
 
-axes[0,1].plot(s1.axes_manager.signal_axes[0].axis, s1.data[16, 16])
-axes[0,1].set_title('crop_signal(5, 15)')
-axes[0,1].set_xlabel('Energy')
+s2_single = s2.inav[16, 16]
+s2_single.metadata.General.title = 'isig[5.:15.]'
+s2_single.plot()
 
-axes[1,0].plot(s2.axes_manager.signal_axes[0].axis, s2.data[16, 16])
-axes[1,0].set_title('isig[5.:15.]')
-axes[1,0].set_xlabel('Energy')
-
-axes[1,1].plot(s3.axes_manager.signal_axes[0].axis, s3.data[16, 16])
-axes[1,1].set_title('isig[5.:15.:0.5]')
-axes[1,1].set_xlabel('Energy')
-
-plt.tight_layout()
-plt.show()
+s3_single = s3.inav[16, 16]
+s3_single.metadata.General.title = 'isig[5.:15.:0.5]'
+s3_single.plot()
 
 # %%
 # Method 4: Interactive cropping with ROI

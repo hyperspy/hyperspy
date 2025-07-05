@@ -15,7 +15,6 @@ Key navigation shortcuts:
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # %%
 # Create test signals for navigation demonstration
@@ -84,5 +83,3 @@ nav_y = s.axes_manager.navigation_axes[1]
 
 print(f"X axis range: {nav_x.low_value:.1f} to {nav_x.high_value:.1f} {nav_x.units}")
 print(f"Y axis range: {nav_y.low_value:.1f} to {nav_y.high_value:.1f} {nav_y.units}")
-
-plt.show()

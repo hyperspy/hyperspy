@@ -10,7 +10,6 @@ for 2D signals, including shift estimation and alignment with sub-pixel accuracy
 # Create test data with known shifts
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # Create a test image with distinct features
 def create_test_image(shift_x=0, shift_y=0, size=100):
@@ -95,21 +94,20 @@ if s.axes_manager.navigation_size > 1:
     print(f"Statistical method shifts: {shifts_stat}")
 
 # %%
-# Visualize the alignment results
-fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+# Visualize the alignment results using HyperSpy plotting
+# Select first 3 images for comparison
+original_images = [s.inav[i] for i in range(3)]
+aligned_images = [s_copy2.inav[i] for i in range(3)]
 
-# Original images (first 3)
-for i in range(3):
-    s.inav[i].plot(ax=axes[0, i])
-    axes[0, i].set_title(f'Original Image {i}')
+# Plot original images
+hs.plot.plot_images(original_images,
+                   label=[f'Original Image {i}' for i in range(3)],
+                   colorbar=True)
 
-# Aligned images (first 3)
-for i in range(3):
-    s_copy2.inav[i].plot(ax=axes[1, i])
-    axes[1, i].set_title(f'Aligned Image {i}')
-
-plt.tight_layout()
-plt.show()
+# Plot aligned images  
+hs.plot.plot_images(aligned_images,
+                   label=[f'Aligned Image {i}' for i in range(3)],
+                   colorbar=True)
 
 # %%
 # Method 5: Parallel alignment for large datasets
@@ -162,27 +160,23 @@ print("\n--- Shift correction analysis ---")
 cumulative_drift_x = np.cumsum([shift[0] for shift in estimated_shifts])
 cumulative_drift_y = np.cumsum([shift[1] for shift in estimated_shifts])
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+# Create signals for the shift data to plot with HyperSpy
+shift_x_signal = hs.signals.Signal1D([s[0] for s in estimated_shifts])
+shift_y_signal = hs.signals.Signal1D([s[1] for s in estimated_shifts])
 
-# Plot individual shifts
-ax1.plot(range(len(estimated_shifts)), [s[0] for s in estimated_shifts], 'o-', label='X shifts')
-ax1.plot(range(len(estimated_shifts)), [s[1] for s in estimated_shifts], 's-', label='Y shifts')
-ax1.set_xlabel('Image number')
-ax1.set_ylabel('Shift (pixels)')
-ax1.set_title('Individual Shifts')
-ax1.legend()
-ax1.grid(True)
+shift_x_signal.metadata.General.title = "X-direction shifts"
+shift_y_signal.metadata.General.title = "Y-direction shifts"
 
-# Plot cumulative drift
-ax2.plot(cumulative_drift_x, cumulative_drift_y, 'o-')
-ax2.set_xlabel('Cumulative X drift (pixels)')
-ax2.set_ylabel('Cumulative Y drift (pixels)')
-ax2.set_title('Drift Trajectory')
-ax2.grid(True)
-ax2.axis('equal')
+# Use plot_spectra for side-by-side comparison - much cleaner than matplotlib subplots!
+print("Plotting individual shifts using plot_spectra...")
+hs.plot.plot_spectra([shift_x_signal, shift_y_signal], style='mosaic', legend='auto')
 
-plt.tight_layout()
-plt.show()
+# Create trajectory signal for cumulative drift
+trajectory_signal = hs.signals.Signal1D(cumulative_drift_y)
+trajectory_signal.axes_manager[0].axis = cumulative_drift_x
+trajectory_signal.metadata.General.title = "Drift trajectory (Y vs X cumulative)"
+print("Plotting drift trajectory...")
+trajectory_signal.plot()
 
 # %%
 # Important notes about alignment

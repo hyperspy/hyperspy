@@ -11,7 +11,6 @@ analysis when dealing with time series or multiple acquisitions.
 # Create test spectra with known shifts for demonstration
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 def create_test_spectra_with_shifts(n_spectra=5, size=1024):
     """Create a set of spectra with known energy shifts"""
@@ -63,17 +62,12 @@ print(f"Created signal with {s.axes_manager.navigation_size} spectra")
 print(f"Energy range: {s.axes_manager.signal_axes[0].axis[0]:.1f} to {s.axes_manager.signal_axes[0].axis[-1]:.1f} eV")
 print(f"True shifts (channels): {true_shifts}")
 
-# Plot the unaligned spectra
-plt.figure(figsize=(12, 8))
+# Plot the unaligned spectra using HyperSpy's native plotting
+# Plot each spectrum individually to show the drift
 for i in range(s.axes_manager.navigation_size):
-    plt.plot(s.axes_manager.signal_axes[0].axis, s.inav[i].data, 
-             label=f'Spectrum {i} (shift: {true_shifts[i]} channels)', alpha=0.8)
-plt.xlabel('Energy (eV)')
-plt.ylabel('Intensity')
-plt.title('Unaligned spectra showing energy drift')
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.show()
+    spectrum = s.inav[i]
+    spectrum.metadata.General.title = f'Spectrum {i} (shift: {true_shifts[i]} channels)'
+    spectrum.plot()
 
 # %%
 # Method 1: Estimate shifts using cross-correlation
@@ -137,17 +131,12 @@ if result_shifts is not None and hasattr(result_shifts, 'data'):
     alignment_shifts = result_shifts.data
     print(f"Applied alignment shifts: {alignment_shifts}")
 
-# Plot aligned spectra
-plt.figure(figsize=(12, 8))
+# Plot aligned spectra using HyperSpy's native plotting
+print("Plotting aligned spectra...")
 for i in range(s_aligned.axes_manager.navigation_size):
-    plt.plot(s_aligned.axes_manager.signal_axes[0].axis, s_aligned.inav[i].data, 
-             label=f'Spectrum {i} (aligned)', alpha=0.8)
-plt.xlabel('Energy (eV)')
-plt.ylabel('Intensity')
-plt.title('Aligned spectra after automatic alignment')
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.show()
+    spectrum = s_aligned.inav[i]
+    spectrum.metadata.General.title = f'Spectrum {i} (aligned)'
+    spectrum.plot()
 
 # %%
 # Method 3: Manual alignment using estimated shifts
@@ -206,17 +195,12 @@ try:
     
     print("Expanded alignment completed")
     
-    # Plot expanded aligned spectra
-    plt.figure(figsize=(12, 8))
+    # Plot expanded aligned spectra using HyperSpy's native plotting
+    print("Plotting expanded aligned spectra...")
     for i in range(s_expanded.axes_manager.navigation_size):
-        plt.plot(s_expanded.axes_manager.signal_axes[0].axis, s_expanded.inav[i].data, 
-                 label=f'Spectrum {i} (expanded)', alpha=0.8)
-    plt.xlabel('Energy (eV)')
-    plt.ylabel('Intensity')
-    plt.title('Aligned spectra with expanded range (no cropping)')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.show()
+        spectrum = s_expanded.inav[i]
+        spectrum.metadata.General.title = f'Spectrum {i} (expanded alignment)'
+        spectrum.plot()
     
 except Exception as e:
     print(f"Expanded alignment failed: {e}")
@@ -225,60 +209,29 @@ except Exception as e:
 # Comparison and validation
 print("\n--- Alignment quality assessment ---")
 
-# Compare before and after alignment
-plt.figure(figsize=(15, 10))
-
-# Original spectra
-plt.subplot(2, 2, 1)
+# Plot original (unaligned) spectra
+print("Plotting original (unaligned) spectra...")
 for i in range(s.axes_manager.navigation_size):
-    plt.plot(s.axes_manager.signal_axes[0].axis, s.inav[i].data, alpha=0.7)
-plt.title('Original (unaligned) spectra')
-plt.xlabel('Energy (eV)')
-plt.ylabel('Intensity')
-plt.grid(True, alpha=0.3)
+    spectrum = s.inav[i]
+    spectrum.metadata.General.title = f'Original spectrum {i} (unaligned)'
+    spectrum.plot()
 
-# Aligned spectra
-plt.subplot(2, 2, 2)
+# Plot aligned spectra
+print("Plotting aligned spectra...")
 for i in range(s_aligned.axes_manager.navigation_size):
-    plt.plot(s_aligned.axes_manager.signal_axes[0].axis, s_aligned.inav[i].data, alpha=0.7)
-plt.title('Aligned spectra')
-plt.xlabel('Energy (eV)')
-plt.ylabel('Intensity')
-plt.grid(True, alpha=0.3)
+    spectrum = s_aligned.inav[i]
+    spectrum.metadata.General.title = f'Aligned spectrum {i}'
+    spectrum.plot()
 
-# Peak position analysis - focus on main peak around 300 channels (250 eV)
-plt.subplot(2, 2, 3)
-peak_region = slice(280, 320)  # Around the main peak
-energy_peak = s.axes_manager.signal_axes[0].axis[peak_region]
-
-for i in range(s.axes_manager.navigation_size):
-    plt.plot(energy_peak, s.inav[i].data[peak_region], 
-             label=f'Original {i}', linestyle='--', alpha=0.7)
-    plt.plot(energy_peak, s_aligned.inav[i].data[peak_region], 
-             label=f'Aligned {i}', alpha=0.9)
-plt.title('Peak alignment comparison (zoomed)')
-plt.xlabel('Energy (eV)')
-plt.ylabel('Intensity')
-plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.grid(True, alpha=0.3)
-
-# Mean spectrum comparison
-plt.subplot(2, 2, 4)
+# Mean spectrum comparison using HyperSpy
 mean_original = s.mean(axis=0)
 mean_aligned = s_aligned.mean(axis=0)
 
-plt.plot(s.axes_manager.signal_axes[0].axis, mean_original.data, 
-         label='Mean original', linewidth=2)
-plt.plot(s_aligned.axes_manager.signal_axes[0].axis, mean_aligned.data, 
-         label='Mean aligned', linewidth=2)
-plt.title('Mean spectra comparison')
-plt.xlabel('Energy (eV)')
-plt.ylabel('Intensity')
-plt.legend()
-plt.grid(True, alpha=0.3)
+mean_original.metadata.General.title = 'Mean original spectrum'
+mean_original.plot()
 
-plt.tight_layout()
-plt.show()
+mean_aligned.metadata.General.title = 'Mean aligned spectrum'
+mean_aligned.plot()
 
 # %%
 # Performance metrics

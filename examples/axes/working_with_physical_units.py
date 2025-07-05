@@ -9,7 +9,6 @@ convenient methods to set and manipulate axis scales and offsets with units.
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import hyperspy.api as hs
 import pint
 
@@ -209,53 +208,35 @@ s_eels.axes_manager[2].scale_as_quantity = new_scale
 print(f"Updated axis scale: {s_eels.axes_manager[2].scale} {s_eels.axes_manager[2].units}")
 
 # %%
-# Visualization with Units
-# =========================
+# Visualization with Units using HyperSpy's native plotting
+# =========================================================
 
-# Create a figure showing the effect of unit conversions
-fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-fig.suptitle('Effect of Unit Conversions on Axis Display', fontsize=14)
+print("\n--- Demonstrating unit conversions with plots ---")
 
-# Original signal with nm units
+# Plot original signal with eV units
 s_plot = s_eels.inav[10, 10]  # Single spectrum
-axes[0, 0].plot(s_plot.axes_manager[0].axis, s_plot.data)
-axes[0, 0].set_xlabel(f'{s_plot.axes_manager[0].name} ({s_plot.axes_manager[0].units})')
-axes[0, 0].set_ylabel('Intensity')
-axes[0, 0].set_title('Original Energy Scale (eV)')
-axes[0, 0].grid(True, alpha=0.3)
+s_plot.metadata.General.title = 'Original Energy Scale (eV)'
+s_plot.plot()
 
-# Energy converted to keV
+# Plot energy converted to keV
 s_plot_kev = s_eels_copy.inav[10, 10]
-axes[0, 1].plot(s_plot_kev.axes_manager[0].axis, s_plot_kev.data)
-axes[0, 1].set_xlabel(f'{s_plot_kev.axes_manager[0].name} ({s_plot_kev.axes_manager[0].units})')
-axes[0, 1].set_ylabel('Intensity')
-axes[0, 1].set_title('Energy Scale in keV')
-axes[0, 1].grid(True, alpha=0.3)
+s_plot_kev.metadata.General.title = 'Energy Scale in keV'
+s_plot_kev.plot()
 
-# Spatial navigation in nm
-nav_map = s_eels.sum(axis=-1)  # Sum over energy axis to get 2D navigation map
-im1 = axes[1, 0].imshow(nav_map.data, extent=[
-    s_eels.axes_manager[1].axis[0], s_eels.axes_manager[1].axis[-1],
-    s_eels.axes_manager[0].axis[-1], s_eels.axes_manager[0].axis[0]
-])
-axes[1, 0].set_xlabel(f'{s_eels.axes_manager[1].name} ({s_eels.axes_manager[1].units})')
-axes[1, 0].set_ylabel(f'{s_eels.axes_manager[0].name} ({s_eels.axes_manager[0].units})')
-axes[1, 0].set_title('Spatial Map (nm)')
-plt.colorbar(im1, ax=axes[1, 0])
+# Create spatial navigation maps by summing over energy axis
+nav_map_nm = s_eels.sum(axis=-1)  # Sum over energy axis to get 2D navigation map
+nav_map_nm.metadata.General.title = 'Spatial Map (nm)'
+nav_map_nm.plot()
 
-# Spatial navigation in µm
-nav_map_um = s_eels_copy2.sum(axis=-1)  # Sum over energy axis to get 2D navigation map
-im2 = axes[1, 1].imshow(nav_map_um.data, extent=[
-    s_eels_copy2.axes_manager[1].axis[0], s_eels_copy2.axes_manager[1].axis[-1],
-    s_eels_copy2.axes_manager[0].axis[-1], s_eels_copy2.axes_manager[0].axis[0]
-])
-axes[1, 1].set_xlabel(f'{s_eels_copy2.axes_manager[1].name} ({s_eels_copy2.axes_manager[1].units})')
-axes[1, 1].set_ylabel(f'{s_eels_copy2.axes_manager[0].name} ({s_eels_copy2.axes_manager[0].units})')
-axes[1, 1].set_title('Spatial Map (µm)')
-plt.colorbar(im2, ax=axes[1, 1])
+nav_map_um = s_eels_copy2.sum(axis=-1)  # Sum over energy axis to get 2D navigation map  
+nav_map_um.metadata.General.title = 'Spatial Map (µm)'
+nav_map_um.plot()
 
-plt.tight_layout()
-plt.show()
+# Use plot_images to compare the spatial maps with different units
+hs.plot.plot_images([nav_map_nm, nav_map_um],
+                   label=['Spatial Map (nm)', 'Spatial Map (µm)'],
+                   cmap='viridis',
+                   colorbar=True)
 
 # %%
 # Practical Examples with Different Unit Systems
@@ -396,28 +377,30 @@ HyperSpy Physical Units Features:
 
 print(summary_text)
 
-# Show final comparison
-fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-
-# Create example with different unit systems
+# Show final comparison using HyperSpy signals with proper units
 x_nm = np.linspace(0, 10, 100)  # nm
 y_data = np.sin(2 * np.pi * x_nm)
 
-x_um = x_nm / 1000  # µm
-x_pm = x_nm * 1000  # pm
+# Create HyperSpy signals with different units
+signal_nm = hs.signals.Signal1D(y_data)
+signal_nm.axes_manager[0].name = 'Distance'
+signal_nm.axes_manager[0].units = 'nm'
+signal_nm.axes_manager[0].scale = 0.1
+signal_nm.axes_manager[0].offset = 0
+signal_nm.metadata.General.title = 'Signal in nanometers'
 
-ax.plot(x_nm, y_data, 'b-', label='nanometers (nm)', linewidth=2)
-ax.plot(x_um * 1000, y_data, 'r--', label='micrometers (×1000 for display)', linewidth=2)
-ax.plot(x_pm / 1000, y_data, 'g:', label='picometers (÷1000 for display)', linewidth=2)
+signal_um = signal_nm.deepcopy()
+signal_um.axes_manager[0].convert_to_units('µm')
+signal_um.metadata.General.title = 'Signal in micrometers'
 
-ax.set_xlabel('Distance (nm equivalent)')
-ax.set_ylabel('Signal')
-ax.set_title('Same Data with Different Unit Representations')
-ax.legend()
-ax.grid(True, alpha=0.3)
+signal_pm = signal_nm.deepcopy()
+signal_pm.axes_manager[0].convert_to_units('pm')
+signal_pm.metadata.General.title = 'Signal in picometers'
 
-plt.tight_layout()
-plt.show()
+# Plot using HyperSpy's native plotting - units are handled automatically
+signal_nm.plot()
+signal_um.plot()
+signal_pm.plot()
 
 print("\nExample completed successfully!")
 print("Physical units in HyperSpy provide powerful tools for scientific data analysis.")

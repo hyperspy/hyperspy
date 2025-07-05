@@ -10,7 +10,6 @@ in HyperSpy, including crop_signal(), isig indexing, and interactive ROI.
 # Create test data
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # Create a test image with some structure
 x = np.linspace(-5, 5, 100)
@@ -62,35 +61,12 @@ im_circle = circle_roi(im)
 print(f"Circle ROI result: {im_circle}")
 
 # %%
-# Plot comparison of different cropping methods
-fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-
-# Original image
-im.plot(ax=axes[0,0])
-axes[0,0].set_title('Original image')
-
-# crop_signal result
-im1.plot(ax=axes[0,1])
-axes[0,1].set_title('crop_signal()')
-
-# isig indexing result
-im2.plot(ax=axes[0,2])
-axes[0,2].set_title('isig[0.5:, 0.7:2.0]')
-
-# More complex isig
-im3.plot(ax=axes[1,0])
-axes[1,0].set_title('isig[1.0:4.0, -2.0:3.0]')
-
-# Rectangular ROI
-im_roi.plot(ax=axes[1,1])
-axes[1,1].set_title('Rectangular ROI')
-
-# Circle ROI
-im_circle.plot(ax=axes[1,2])
-axes[1,2].set_title('Circle ROI')
-
-plt.tight_layout()
-plt.show()
+# Plot comparison of different cropping methods using HyperSpy's plot_images
+hs.plot.plot_images([im, im1, im2, im3, im_roi, im_circle],
+                   label=['Original image', 'crop_signal()', 'isig[0.5:, 0.7:2.0]',
+                          'isig[1.0:4.0, -2.0:3.0]', 'Rectangular ROI', 'Circle ROI'],
+                   cmap='viridis',
+                   colorbar=True)
 
 # %%
 # Working with image stacks

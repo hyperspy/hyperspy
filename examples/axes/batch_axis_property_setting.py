@@ -17,7 +17,6 @@ Key concepts covered:
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # %%
 # Create Test Signals with Multiple Axes
@@ -329,42 +328,27 @@ print(f"   Sig: {new_signal.axes_manager.signal_axes[0].name}, {new_signal.axes_
 
 print("\n3. Demonstration of properly configured axes in plots:")
 
-# Demonstrate how properly configured axes improve data interpretation
-fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+# Demonstrate how properly configured axes improve data interpretation using HyperSpy plotting
 
-# EELS spectrum image - show sum spectrum and spatial distribution of a peak
+# EELS spectrum image - show sum spectrum
 eels_sum_spectrum = s_eels.sum()
-axes[0, 0].plot(eels_sum_spectrum.axes_manager[0].axis, eels_sum_spectrum.data)
-axes[0, 0].set_title('EELS Sum Spectrum')
-axes[0, 0].set_xlabel(f'{eels_sum_spectrum.axes_manager[0].name} ({eels_sum_spectrum.axes_manager[0].units})')
-axes[0, 0].set_ylabel('Intensity')
-axes[0, 0].grid(True, alpha=0.3)
+eels_sum_spectrum.metadata.General.title = 'EELS Sum Spectrum'
+eels_sum_spectrum.plot()
 
 # Time-resolved imaging - show first frame
 time_frame = s_time.inav[0]
-im1 = axes[0, 1].imshow(time_frame.data, origin='lower')
-axes[0, 1].set_title('Time-resolved Image (t=0)')
-axes[0, 1].set_xlabel('X (pixels)')
-axes[0, 1].set_ylabel('Y (pixels)')
+time_frame.metadata.General.title = 'Time-resolved Image (t=0)'
+time_frame.plot()
 
-# Show time series at a point
+# Show time series at a point using HyperSpy's 1D plotting
 time_series = s_time.inav[:].isig[64, 64]  # Time series at center pixel
-axes[1, 0].plot(s_time.axes_manager.navigation_axes[0].axis, time_series.data)
-axes[1, 0].set_xlabel(f'{s_time.axes_manager.navigation_axes[0].name} ({s_time.axes_manager.navigation_axes[0].units})')
-axes[1, 0].set_ylabel('Intensity')
-axes[1, 0].set_title('Time Series at Center Pixel')
-axes[1, 0].grid(True, alpha=0.3)
+time_series.metadata.General.title = 'Time Series at Center Pixel'
+time_series.plot()
 
 # Show example spectrum from EELS
 single_spectrum = s_eels.inav[7, 6]
-axes[1, 1].plot(single_spectrum.axes_manager[0].axis, single_spectrum.data)
-axes[1, 1].set_xlabel(f'{single_spectrum.axes_manager[0].name} ({single_spectrum.axes_manager[0].units})')
-axes[1, 1].set_ylabel('Intensity')
-axes[1, 1].set_title('Individual EELS Spectrum')
-axes[1, 1].grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.show()
+single_spectrum.metadata.General.title = 'Individual EELS Spectrum'
+single_spectrum.plot()
 
 print("   ✓ Properly configured axes enable meaningful plots with correct labels and units")
 

@@ -10,7 +10,6 @@ simulated hyperspectrum.
 """
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # %%
 # **Creating empty spectrum and model**
@@ -91,5 +90,3 @@ s_model.add_poissonian_noise()
 # ---------------
 # Plot the result
 s_model.plot()
-
-plt.show()

@@ -8,7 +8,6 @@ in HyperSpy through simple, visual examples.
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # %%
 # Create different types of signals to show dimension concepts
@@ -35,41 +34,38 @@ image_stack.axes_manager[1].name = 'x'
 image_stack.axes_manager[2].name = 'y'
 
 # %%
-# Visualize the dimension concepts
+# Visualize the dimension concepts using HyperSpy's native plotting
 
-fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+print("\n--- Demonstrating different signal dimension types ---")
 
 # Single spectrum
-axes[0, 0].plot(energy, spectrum_data, 'b-', linewidth=2)
-axes[0, 0].set_xlabel('Energy (eV)')
-axes[0, 0].set_ylabel('Intensity')
-axes[0, 0].set_title('Single Spectrum\n(0D nav + 1D signal)')
-axes[0, 0].grid(True, alpha=0.3)
+spectrum.metadata.General.title = 'Single Spectrum (0D nav + 1D signal)'
+spectrum.plot()
 
-# Spectrum image navigator - simplified to avoid potential issues
-navigator_data = np.sum(spectrum_image_data, axis=2)  # Sum along energy axis
-axes[0, 1].imshow(navigator_data, origin='lower', cmap='viridis')
-axes[0, 1].set_xlabel('x')
-axes[0, 1].set_ylabel('y') 
-axes[0, 1].set_title('Spectrum Image Navigator\n(2D nav + 1D signal)')
+# Spectrum image 
+spectrum_image.metadata.General.title = 'Spectrum Image (2D nav + 1D signal)'
+spectrum_image.plot()
 
-# Single image from stack
-axes[1, 0].imshow(image_stack_data[7], origin='lower', cmap='gray')
-axes[1, 0].set_xlabel('x')
-axes[1, 0].set_ylabel('y')
-axes[1, 0].set_title('Image from Stack\n(1D nav + 2D signal)')
+# Image stack
+image_stack.metadata.General.title = 'Image Stack (1D nav + 2D signal)'
+image_stack.plot()
 
-# Show shapes as text
-axes[1, 1].text(0.1, 0.8, f'Spectrum: {spectrum.data.shape}', fontsize=12, transform=axes[1, 1].transAxes)
-axes[1, 1].text(0.1, 0.6, f'Spectrum Image: {spectrum_image.data.shape}', fontsize=12, transform=axes[1, 1].transAxes)
-axes[1, 1].text(0.1, 0.4, f'Image Stack: {image_stack.data.shape}', fontsize=12, transform=axes[1, 1].transAxes)
-axes[1, 1].set_title('Data Shapes')
-axes[1, 1].set_xlim(0, 1)
-axes[1, 1].set_ylim(0, 1)
-axes[1, 1].axis('off')
+# Show data shapes and navigation information
+print(f"\nData shapes and dimensions:")
+print(f"Single spectrum:")
+print(f"  Data shape: {spectrum.data.shape}")
+print(f"  Navigation shape: {spectrum.axes_manager.navigation_shape}")
+print(f"  Signal shape: {spectrum.axes_manager.signal_shape}")
 
-plt.tight_layout()
-plt.show()
+print(f"\nSpectrum image:")
+print(f"  Data shape: {spectrum_image.data.shape}")
+print(f"  Navigation shape: {spectrum_image.axes_manager.navigation_shape}")
+print(f"  Signal shape: {spectrum_image.axes_manager.signal_shape}")
+
+print(f"\nImage stack:")
+print(f"  Data shape: {image_stack.data.shape}")
+print(f"  Navigation shape: {image_stack.axes_manager.navigation_shape}")
+print(f"  Signal shape: {image_stack.axes_manager.signal_shape}")
 
 # %%
 # **Signal Dimension Examples Summary**

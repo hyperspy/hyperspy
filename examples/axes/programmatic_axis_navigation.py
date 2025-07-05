@@ -18,7 +18,6 @@ Key concepts covered:
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # %%
 # **Creating multidimensional test data**
@@ -195,7 +194,10 @@ for indices in s.axes_manager:
 s.axes_manager.indices = max_position
 print(f"   Maximum intensity: {max_intensity:.3f}")
 print(f"   Found at indices: {max_position}")
-print(f"   Coordinates: {max_coords[0]:.1f}s, {max_coords[1]:.1f}°C")
+if max_coords is not None:
+    print(f"   Coordinates: {max_coords[0]:.1f}s, {max_coords[1]:.1f}°C")
+else:
+    print("   Coordinates: Not available")
 
 # 2. Extract time series at specific temperature
 print("\n2. Extracting time series at specific temperature:")
@@ -243,58 +245,64 @@ for temp_idx in range(s.axes_manager[1].size):
 print(f"   Extracted {len(temp_series_max)} temperature points")
 
 # %%
-# Visualization of Navigation Results
+# Visualization of Navigation Results using HyperSpy plotting
 # -----------------------------------
 
 print("\n4. Visualizing navigation results:")
 
-fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+# Create signals for time and temperature series for better plotting
+time_signal = hs.signals.Signal1D(time_series_max)
+time_signal.axes_manager[0].name = 'Time'
+time_signal.axes_manager[0].units = 's'
+time_signal.axes_manager[0].scale = s.axes_manager[0].scale
+time_signal.axes_manager[0].offset = s.axes_manager[0].offset
+time_signal.metadata.General.title = f'Time Series at {actual_temp:.1f}°C'
+time_signal.plot()
 
-# Plot time series at constant temperature
-axes[0, 0].plot(time_values, time_series_max, 'o-')
-axes[0, 0].set_xlabel('Time (s)')
-axes[0, 0].set_ylabel('Maximum Intensity')
-axes[0, 0].set_title(f'Time Series at {actual_temp:.1f}°C')
-axes[0, 0].grid(True, alpha=0.3)
+temp_signal = hs.signals.Signal1D(temp_series_max)
+temp_signal.axes_manager[0].name = 'Temperature'
+temp_signal.axes_manager[0].units = '°C'
+temp_signal.axes_manager[0].scale = s.axes_manager[1].scale
+temp_signal.axes_manager[0].offset = s.axes_manager[1].offset
+temp_signal.metadata.General.title = f'Temperature Series at {actual_time:.1f}s'
+temp_signal.plot()
 
-# Plot temperature series at constant time
-axes[0, 1].plot(temp_values, temp_series_max, 's-', color='red')
-axes[0, 1].set_xlabel('Temperature (°C)')
-axes[0, 1].set_ylabel('Maximum Intensity')
-axes[0, 1].set_title(f'Temperature Series at {actual_time:.1f}s')
-axes[0, 1].grid(True, alpha=0.3)
-
-# Show image at maximum intensity position
+# Show image at maximum intensity position using HyperSpy
 s.axes_manager.indices = max_position
 max_image = s.inav[max_position]
-im1 = axes[1, 0].imshow(max_image.data, origin='lower')
-axes[1, 0].set_title(f'Image at Max Intensity\n(t={max_coords[0]:.1f}s, T={max_coords[1]:.1f}°C)')
-axes[1, 0].set_xlabel('X (pixels)')
-axes[1, 0].set_ylabel('Y (pixels)')
-plt.colorbar(im1, ax=axes[1, 0])
+if max_coords is not None:
+    max_image.metadata.General.title = f'Image at Max Intensity (t={max_coords[0]:.1f}s, T={max_coords[1]:.1f}°C)'
+else:
+    max_image.metadata.General.title = 'Image at Max Intensity'
+max_image.plot()
 
-# Create navigation heatmap
+# Create navigation heatmap as a HyperSpy signal
 nav_intensity_map = np.zeros((s.axes_manager[0].size, s.axes_manager[1].size))
 for t_idx in range(s.axes_manager[0].size):
     for temp_idx in range(s.axes_manager[1].size):
         s.axes_manager.indices = (t_idx, temp_idx)
         nav_intensity_map[t_idx, temp_idx] = np.max(s.inav[s.axes_manager.indices].data)
 
-im2 = axes[1, 1].imshow(nav_intensity_map, aspect='auto', origin='lower',
-                        extent=[temp_values[0], temp_values[-1], time_values[0], time_values[-1]])
-axes[1, 1].set_xlabel('Temperature (°C)')
-axes[1, 1].set_ylabel('Time (s)')
-axes[1, 1].set_title('Navigation Space Heatmap\n(Max Intensity)')
-plt.colorbar(im2, ax=axes[1, 1])
+heatmap_signal = hs.signals.Signal2D(nav_intensity_map)
+heatmap_signal.axes_manager[0].name = 'Time'
+heatmap_signal.axes_manager[0].units = 's'
+heatmap_signal.axes_manager[0].scale = s.axes_manager[0].scale
+heatmap_signal.axes_manager[0].offset = s.axes_manager[0].offset
+heatmap_signal.axes_manager[1].name = 'Temperature'
+heatmap_signal.axes_manager[1].units = '°C'
+heatmap_signal.axes_manager[1].scale = s.axes_manager[1].scale
+heatmap_signal.axes_manager[1].offset = s.axes_manager[1].offset
+heatmap_signal.metadata.General.title = 'Navigation Space Heatmap (Max Intensity)'
+heatmap_signal.plot()
 
-# Mark maximum position
-max_temp_coord = max_coords[1]
-max_time_coord = max_coords[0]
-axes[1, 1].plot(max_temp_coord, max_time_coord, 'w*', markersize=15, label='Max')
-axes[1, 1].legend()
-
-plt.tight_layout()
-plt.show()
+# Add marker for maximum position using HyperSpy marker
+if max_coords is not None:
+    max_marker = hs.plot.markers.Points(
+        offsets=[max_coords[1], max_coords[0]],  # Temperature, Time
+        sizes=200,
+        color='red'
+    )
+    heatmap_signal.add_marker(max_marker, plot_marker=True)
 
 # %%
 # Advanced Navigation Techniques
@@ -433,10 +441,10 @@ print("\n4. Safe navigation with bounds checking:")
 
 def safe_navigate(signal, time_coord, temp_coord):
     """Safely navigate to coordinates with bounds checking."""
+    # Store original position
+    original_indices = signal.axes_manager.indices
+    
     try:
-        # Store original position
-        original_indices = signal.axes_manager.indices
-        
         # Attempt navigation
         signal.axes_manager[0].value = time_coord
         signal.axes_manager[1].value = temp_coord

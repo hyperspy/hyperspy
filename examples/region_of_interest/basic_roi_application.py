@@ -74,44 +74,17 @@ span_result = span_roi(simple_1d)
 print(f"\n1D signal after span ROI: {span_result}")
 
 # %%
-# Plot the ROI applications
-import matplotlib.pyplot as plt
+# Plot the ROI applications using HyperSpy's plotting functions
 
-fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+# Use HyperSpy's plot_images for the 2D signals
+hs.plot.plot_images([s2d, s2d_cropped, circle_result],
+                   label=['Original 2D signal', 'Rectangular ROI', 'Circle ROI'],
+                   colorbar=True)
 
-# Original 2D signal
-axes[0,0].imshow(s2d.data, origin='lower')
-axes[0,0].set_title('Original 2D signal')
-
-# Rectangular ROI result
-axes[0,1].imshow(s2d_cropped.data, origin='lower')
-axes[0,1].set_title('Rectangular ROI')
-
-# Circle ROI result
-axes[0,2].imshow(circle_result.data, origin='lower')
-axes[0,2].set_title('Circle ROI')
-
-# Line ROI result - this is a 1D signal
-axes[1,0].plot(line_result.data)
-axes[1,0].set_title('Line ROI')
-axes[1,0].set_xlabel('Position along line')
-axes[1,0].set_ylabel('Intensity')
-
-# Original 1D signal
-for i in range(simple_1d.data.shape[0]):
-    axes[1,1].plot(simple_1d.data[i], alpha=0.7, label=f'Nav {i}')
-axes[1,1].set_title('Original 1D signal')
-axes[1,1].set_xlabel('Signal index')
-axes[1,1].set_ylabel('Intensity')
-
-# Span ROI result
-axes[1,2].plot(span_result.data)
-axes[1,2].set_title('Span ROI')
-axes[1,2].set_xlabel('Signal index')
-axes[1,2].set_ylabel('Intensity')
-
-plt.tight_layout()
-plt.show()
+# Plot the 1D signals using HyperSpy's native plotting
+line_result.plot()
+simple_1d.plot()
+span_result.plot()
 
 # %%
 # Example 4: ROI properties and physical coordinates

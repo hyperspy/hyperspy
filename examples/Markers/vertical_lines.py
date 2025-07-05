@@ -8,7 +8,6 @@ Vertical Line Markers
 # Create a signal
 
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 import numpy as np
 
 # Create a Signal2D with 2 navigation dimensions
@@ -44,7 +43,8 @@ for ind in np.ndindex(offsets.shape):
     offsets[ind] = rng.random(rng.integers(10)) * 100
 
 # Get list of colors
-colors = list(plt.rcParams['axes.prop_cycle'].by_key()['color'])
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+          '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 
 m = hs.plot.markers.VerticalLines(
     offsets=offsets,

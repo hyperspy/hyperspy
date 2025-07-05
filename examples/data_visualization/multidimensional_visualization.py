@@ -14,9 +14,6 @@ Key visualization concepts:
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend for examples
-import matplotlib.pyplot as plt
 
 # %%
 # **Creating sample multidimensional datasets for visualization**
@@ -84,32 +81,12 @@ print(f"Created spectrum image: {si}")
 print("\n1. Basic Spectrum Image Visualization")
 print("="*50)
 
-# Create a figure to show the navigator and a spectrum
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+# Use HyperSpy's built-in plotting capabilities
+si.plot()
 
-# Show the navigator (summed intensity image)
+# Also demonstrate the navigator separately
 navigator = si.sum(axis=si.axes_manager.signal_axes)
-nav_shape = si.axes_manager.navigation_shape
-ax1.imshow(navigator.data, 
-           extent=(0, nav_shape[1]*0.1, 0, nav_shape[0]*0.1), 
-           origin='lower', cmap='viridis')
-ax1.set_xlabel('x (μm)')
-ax1.set_ylabel('y (μm)')
-ax1.set_title('Navigator (Total Intensity)')
-
-# Show a spectrum at the center position
-center_pos = (nav_shape[0]//2, nav_shape[1]//2)
-spectrum_at_center = si.inav[center_pos[0], center_pos[1]]
-ax2.plot(spectrum_at_center.axes_manager.signal_axes[0].axis, 
-         spectrum_at_center.data, 'b-', linewidth=2)
-ax2.set_xlabel('Energy Loss (eV)')
-ax2.set_ylabel('Intensity')
-ax2.set_title(f'Spectrum at center {center_pos}')
-ax2.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.savefig('multidimensional_basic_viz.png', dpi=150, bbox_inches='tight')
-plt.show()
+navigator.plot()
 
 # %%
 # Multiple Position Analysis
@@ -118,26 +95,13 @@ plt.show()
 print("\n2. Multiple Position Analysis")
 print("="*50)
 
-# Extract and plot spectra from multiple positions
-fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-
-# Define positions that are safely within navigation bounds
+# Extract spectra from multiple positions and plot them using HyperSpy
 positions = [(2, 3), (6, 8), (9, 10), (5, 11)]
-colors = ['blue', 'red', 'green', 'orange']
+spectra = [si.inav[pos[0], pos[1]] for pos in positions]
 
-for idx, (pos, color) in enumerate(zip(positions, colors)):
-    ax = axes[idx // 2, idx % 2]
-    spectrum = si.inav[pos[0], pos[1]]
-    ax.plot(spectrum.axes_manager.signal_axes[0].axis, spectrum.data, 
-            color=color, linewidth=2)
-    ax.set_xlabel('Energy Loss (eV)')
-    ax.set_ylabel('Intensity')
-    ax.set_title(f'Spectrum at position {pos}')
-    ax.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.savefig('multidimensional_multiple_positions.png', dpi=150, bbox_inches='tight')
-plt.show()
+# Plot each spectrum using HyperSpy's plot method
+for i, (spectrum, pos) in enumerate(zip(spectra, positions)):
+    spectrum.plot()
 
 # %%
 # Programmatic Navigation
@@ -182,46 +146,16 @@ print("="*50)
 # Create a comprehensive visualization showing positions on the navigator
 positions_to_analyze = [(3, 4), (8, 6), (10, 10)]
 labels = ['Position A', 'Position B', 'Position C']
-colors = ['blue', 'red', 'green']
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
-
-# Show positions on navigator
+# Show navigator with total intensity
 navigator = si.sum(axis=si.axes_manager.signal_axes)
-nav_shape = si.axes_manager.navigation_shape
-im = ax1.imshow(navigator.data, 
-                extent=(0, nav_shape[1]*0.1, 0, nav_shape[0]*0.1), 
-                origin='lower', cmap='viridis')
+navigator.plot()
 
-# Mark the analysis positions
-for pos, label, color in zip(positions_to_analyze, labels, colors):
-    y_coord = pos[0] * 0.1  # Convert index to coordinate
-    x_coord = pos[1] * 0.1  # Convert index to coordinate
-    ax1.plot(x_coord, y_coord, 'o', color=color, markersize=10, 
-             markeredgecolor='white', markeredgewidth=2)
-    ax1.text(x_coord + 0.05, y_coord + 0.05, label, color='white', 
-             fontweight='bold', fontsize=10)
-
-ax1.set_xlabel('x (μm)')
-ax1.set_ylabel('y (μm)')
-ax1.set_title('Navigator with Analysis Positions')
-plt.colorbar(im, ax=ax1, label='Total Intensity')
-
-# Plot spectra from these positions
-for pos, label, color in zip(positions_to_analyze, labels, colors):
+# Plot spectra from selected positions using HyperSpy plotting
+for pos, label in zip(positions_to_analyze, labels):
     spectrum = si.inav[pos[0], pos[1]]
-    ax2.plot(spectrum.axes_manager.signal_axes[0].axis, spectrum.data, 
-             color=color, linewidth=2, label=label)
-
-ax2.set_xlabel('Energy Loss (eV)')
-ax2.set_ylabel('Intensity')
-ax2.set_title('Spectra from Selected Positions')
-ax2.legend()
-ax2.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.savefig('multidimensional_advanced_viz.png', dpi=150, bbox_inches='tight')
-plt.show()
+    spectrum.metadata.General.title = f'{label} at position {pos}'
+    spectrum.plot()
 
 # %%
 # Summary

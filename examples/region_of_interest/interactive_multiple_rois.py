@@ -18,7 +18,6 @@ ROI types covered:
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # Enable interactive plotting if running in Jupyter
 # %matplotlib widget
@@ -76,7 +75,6 @@ print("Y-axis range: {:.1f} to {:.1f} μm".format(
 # --------------------------
 
 signal.plot()
-plt.show()
 
 # %%
 # Create Multiple ROI Types
@@ -183,68 +181,38 @@ print(f"Polygon ROI data shape: {polygon_data.data.shape}")
 print(f"Mean intensity in polygon: {polygon_data.data.mean():.3f}")
 
 # %%
-# Visualize Extracted Data
-# ------------------------
+# Visualize Extracted Data using HyperSpy's native plotting
+# ---------------------------------------------------------
 
-fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-axes = axes.ravel()
+print("\n--- Displaying extracted ROI data ---")
 
-# 1. Original image
-im1 = axes[0].imshow(signal.data, extent=[
-    signal.axes_manager[1].offset,
-    signal.axes_manager[1].offset + signal.axes_manager[1].scale * signal.axes_manager[1].size,
-    signal.axes_manager[0].offset,
-    signal.axes_manager[0].offset + signal.axes_manager[0].scale * signal.axes_manager[0].size
-], origin='lower')
-axes[0].set_title('Original Image')
-axes[0].set_xlabel('X (μm)')
-axes[0].set_ylabel('Y (μm)')
-plt.colorbar(im1, ax=axes[0])
+# Display the original image
+signal.plot()
 
-# 2. Rectangular ROI data
-im2 = axes[1].imshow(rect_data.data, 
-                     extent=[rect_data.axes_manager[1].offset,
-                            rect_data.axes_manager[1].offset + rect_data.axes_manager[1].scale * rect_data.axes_manager[1].size,
-                            rect_data.axes_manager[0].offset,
-                            rect_data.axes_manager[0].offset + rect_data.axes_manager[0].scale * rect_data.axes_manager[0].size],
-                     origin='lower')
-axes[1].set_title('Rectangular ROI Data')
-axes[1].set_xlabel('X (μm)')
-axes[1].set_ylabel('Y (μm)')
-plt.colorbar(im2, ax=axes[1])
+# Display extracted ROI data using HyperSpy's native plotting
+rect_data.metadata.General.title = 'Rectangular ROI Data'
+rect_data.plot()
 
-# 3. Line profile
-axes[2].plot(line_data.axes_manager[0].axis, line_data.data)
-axes[2].set_title('Line Profile')
-axes[2].set_xlabel('Distance (μm)')
-axes[2].set_ylabel('Intensity')
-axes[2].grid(True, alpha=0.3)
+# Line profile data
+line_data.metadata.General.title = 'Line Profile'
+line_data.plot()
 
-# 4. Circle ROI data
-im4 = axes[3].imshow(circle_data.data,
-                     extent=[circle_data.axes_manager[1].offset,
-                            circle_data.axes_manager[1].offset + circle_data.axes_manager[1].scale * circle_data.axes_manager[1].size,
-                            circle_data.axes_manager[0].offset,
-                            circle_data.axes_manager[0].offset + circle_data.axes_manager[0].scale * circle_data.axes_manager[0].size],
-                     origin='lower')
-axes[3].set_title('Circle ROI Data')
-axes[3].set_xlabel('X (μm)')
-axes[3].set_ylabel('Y (μm)')
-plt.colorbar(im4, ax=axes[3])
+# Circle ROI data
+circle_data.metadata.General.title = 'Circle ROI Data'
+circle_data.plot()
 
-# 5. Polygon ROI data
-im5 = axes[4].imshow(polygon_data.data,
-                     extent=[polygon_data.axes_manager[1].offset,
-                            polygon_data.axes_manager[1].offset + polygon_data.axes_manager[1].scale * polygon_data.axes_manager[1].size,
-                            polygon_data.axes_manager[0].offset,
-                            polygon_data.axes_manager[0].offset + polygon_data.axes_manager[0].scale * polygon_data.axes_manager[0].size],
-                     origin='lower')
-axes[4].set_title('Polygon ROI Data')
-axes[4].set_xlabel('X (μm)')
-axes[4].set_ylabel('Y (μm)')
-plt.colorbar(im5, ax=axes[4])
+# Polygon ROI data
+polygon_data.metadata.General.title = 'Polygon ROI Data'
+polygon_data.plot()
 
-# 6. Statistical comparison
+# Use plot_images to compare 2D ROI extractions
+hs.plot.plot_images([signal, rect_data, circle_data, polygon_data],
+                   label=['Original Image', 'Rectangular ROI', 'Circle ROI', 'Polygon ROI'],
+                   cmap='viridis',
+                   colorbar=True)
+
+# Display statistics comparison
+print("\n--- ROI Statistics Comparison ---")
 roi_stats = {
     'Rectangular': rect_data.data.mean(),
     'Circle': circle_data.data.mean(),
@@ -253,20 +221,10 @@ roi_stats = {
     'Line Max': line_data.data.max()
 }
 
-bars = axes[5].bar(range(len(roi_stats)), list(roi_stats.values()))
-axes[5].set_xticks(range(len(roi_stats)))
-axes[5].set_xticklabels(roi_stats.keys(), rotation=45)
-axes[5].set_title('ROI Statistics Comparison')
-axes[5].set_ylabel('Intensity')
+for roi_type, value in roi_stats.items():
+    print(f"{roi_type:12}: {value:.3f}")
 
-# Color bars to match ROI colors
-colors = ['red', 'green', 'purple', 'blue', 'yellow']
-for bar, color in zip(bars, colors):
-    bar.set_color(color)
-    bar.set_alpha(0.7)
-
-plt.tight_layout()
-plt.show()
+print("ROI extraction and visualization completed using HyperSpy's native plotting.")
 
 # %%
 # Advanced ROI Usage

@@ -16,9 +16,6 @@ Key concepts:
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend for examples
-import matplotlib.pyplot as plt
 
 # %%
 # **Creating synthetic data for model fitting**
@@ -231,55 +228,19 @@ print(f"Gaussian sigma Y: {gaussian_2d_comp.sigma_y.value:.2f} (true: 1.5)")
 print(f"Gaussian amplitude: {gaussian_2d_comp.A.value:.2f} (true: 1000)")
 
 # %%
-# Visualization
+# Visualization using HyperSpy plotting
 # =============
 
 print("\nCreating visualization...")
 
-fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+# Plot 1D fit using HyperSpy's model plotting capabilities
+m.plot()
 
-# 1D fit
-axes[0, 0].plot(s.axes_manager.signal_axes[0].axis, s.data, 'b-', 
-                label='Data', alpha=0.7, linewidth=1)
-axes[0, 0].plot(s.axes_manager.signal_axes[0].axis, m.as_signal().data, 'r-', 
-                label='Total fit', linewidth=2)
-axes[0, 0].set_xlabel('Energy (eV)')
-axes[0, 0].set_ylabel('Intensity')
-axes[0, 0].set_title('1D Model Fit')
-axes[0, 0].legend()
-axes[0, 0].grid(True, alpha=0.3)
-
-# Individual components
-axes[0, 1].plot(s.axes_manager.signal_axes[0].axis, s.data, 'k-', 
-                label='Data', alpha=0.7, linewidth=1)
-for component in m:
-    # Use function() method to get component values
-    comp_values = component.function(s.axes_manager.signal_axes[0].axis)
-    axes[0, 1].plot(s.axes_manager.signal_axes[0].axis, comp_values, 
-                    '--', label=component.name, linewidth=2)
-axes[0, 1].set_xlabel('Energy (eV)')
-axes[0, 1].set_ylabel('Intensity')
-axes[0, 1].set_title('Individual Model Components')
-axes[0, 1].legend()
-axes[0, 1].grid(True, alpha=0.3)
-
-# 2D data
-im1 = axes[1, 0].imshow(s2d.data, extent=[-5, 5, -5, 5], origin='lower', cmap='viridis')
-axes[1, 0].set_xlabel('x')
-axes[1, 0].set_ylabel('y')
-axes[1, 0].set_title('2D Data')
-plt.colorbar(im1, ax=axes[1, 0], label='Intensity')
-
-# 2D fit
-im2 = axes[1, 1].imshow(m2d.as_signal().data, extent=[-5, 5, -5, 5], origin='lower', cmap='viridis')
-axes[1, 1].set_xlabel('x')
-axes[1, 1].set_ylabel('y')
-axes[1, 1].set_title('2D Model Fit')
-plt.colorbar(im2, ax=axes[1, 1], label='Intensity')
-
-plt.tight_layout()
-plt.savefig('model_fitting_results.png', dpi=150, bbox_inches='tight')
-plt.show()
+# Plot 2D data and fit using HyperSpy's plot_images
+hs.plot.plot_images([s2d, m2d.as_signal()],
+                   label=['2D Data', '2D Model Fit'],
+                   cmap='viridis',
+                   colorbar=True)
 
 # %%
 # Summary

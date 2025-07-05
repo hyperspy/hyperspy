@@ -24,7 +24,6 @@ Key concepts covered:
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # %%
 # # HyperSpy Events and Triggers Demonstration

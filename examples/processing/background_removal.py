@@ -66,28 +66,12 @@ s_no_bg = s.remove_background(
 #
 # Let's compare different background types on the same signal
 
-# Create a subplot to compare different background removal methods
-import matplotlib.pyplot as plt
-
-fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-fig.suptitle('Comparison of Background Removal Methods', fontsize=14)
-
-# Original signal
-axes[0, 0].plot(s.axes_manager.signal_axes[0].axis, s.data)
-axes[0, 0].set_title('Original Signal')
-axes[0, 0].set_xlabel('Energy (eV)')
-axes[0, 0].set_ylabel('Intensity')
-
 # Power law background removal
 s_powerlaw = s.remove_background(
     signal_range=(400., 900.),
     background_type='Power law',
     fast=True
 )
-axes[0, 1].plot(s.axes_manager.signal_axes[0].axis, s_powerlaw.data)
-axes[0, 1].set_title('Power Law Background Removed')
-axes[0, 1].set_xlabel('Energy (eV)')
-axes[0, 1].set_ylabel('Intensity')
 
 # Polynomial background removal
 s_poly = s.remove_background(
@@ -96,10 +80,6 @@ s_poly = s.remove_background(
     polynomial_order=3,
     fast=True
 )
-axes[1, 0].plot(s.axes_manager.signal_axes[0].axis, s_poly.data)
-axes[1, 0].set_title('Polynomial Background Removed')
-axes[1, 0].set_xlabel('Energy (eV)')
-axes[1, 0].set_ylabel('Intensity')
 
 # Gaussian background removal (more stable than exponential)
 s_gauss = s.remove_background(
@@ -107,13 +87,12 @@ s_gauss = s.remove_background(
     background_type='Gaussian',
     fast=True
 )
-axes[1, 1].plot(s.axes_manager.signal_axes[0].axis, s_gauss.data)
-axes[1, 1].set_title('Gaussian Background Removed')
-axes[1, 1].set_xlabel('Energy (eV)')
-axes[1, 1].set_ylabel('Intensity')
 
-plt.tight_layout()
-plt.show()
+# Plot using HyperSpy's built-in plotting
+s.plot()
+s_powerlaw.plot()
+s_poly.plot()
+s_gauss.plot()
 
 # %%
 # Using precise fitting (fast=False)
@@ -128,31 +107,26 @@ s_accurate = s.remove_background(
     fast=False  # Use curve fitting for better accuracy
 )
 
-# Compare fast vs accurate fitting
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+# Compare fast vs accurate fitting using HyperSpy's plotting
+# Create signals for comparison
+s_fast_copy = s_no_bg.deepcopy()
+s_fast_copy.metadata.General.title = 'Fast (analytical)'
 
-ax1.plot(s.axes_manager.signal_axes[0].axis, s_no_bg.data, label='Fast (analytical)')
-ax1.plot(s.axes_manager.signal_axes[0].axis, s_accurate.data, label='Accurate (fitted)')
-ax1.set_title('Fast vs Accurate Background Removal')
-ax1.set_xlabel('Energy (eV)')
-ax1.set_ylabel('Intensity')
-ax1.legend()
+s_accurate.metadata.General.title = 'Accurate (fitted)'
+
+# Plot the comparison
+s_fast_copy.plot()
+s_accurate.plot()
 
 # Show the background that was removed
 background_fast = s - s_no_bg
 background_accurate = s - s_accurate
 
-ax2.plot(s.axes_manager.signal_axes[0].axis, background_fast.data, 
-         label='Fast background', linestyle='--')
-ax2.plot(s.axes_manager.signal_axes[0].axis, background_accurate.data, 
-         label='Accurate background', linestyle='-')
-ax2.set_title('Estimated Backgrounds')
-ax2.set_xlabel('Energy (eV)')
-ax2.set_ylabel('Intensity')
-ax2.legend()
+background_fast.metadata.General.title = 'Fast background'
+background_accurate.metadata.General.title = 'Accurate background'
 
-plt.tight_layout()
-plt.show()
+background_fast.plot()
+background_accurate.plot()
 
 # %%
 # Working with spectrum images
@@ -195,33 +169,17 @@ si_no_bg = si.remove_background(
     fast=True
 )
 
-# Plot a comparison for one spectrum
-plt.figure(figsize=(10, 6))
-plt.subplot(1, 2, 1)
-plt.plot(si.axes_manager.signal_axes[0].axis, si.inav[2, 2].data, 
-         label='Original')
-plt.plot(si.axes_manager.signal_axes[0].axis, si_no_bg.inav[2, 2].data, 
-         label='Background removed')
-plt.xlabel('Energy (eV)')
-plt.ylabel('Intensity')
-plt.title('Single Spectrum from Image')
-plt.legend()
+# Plot a comparison for individual spectra
+single_orig = si.inav[2, 2] 
+single_no_bg = si_no_bg.inav[2, 2]
+single_orig.plot()
+single_no_bg.plot()
 
 # Show the mean spectrum from the entire image
-plt.subplot(1, 2, 2)
 mean_original = si.mean(axis=(0, 1))
 mean_no_bg = si_no_bg.mean(axis=(0, 1))
-plt.plot(mean_original.axes_manager.signal_axes[0].axis, mean_original.data, 
-         label='Original (mean)')
-plt.plot(mean_no_bg.axes_manager.signal_axes[0].axis, mean_no_bg.data, 
-         label='Background removed (mean)')
-plt.xlabel('Energy (eV)')
-plt.ylabel('Intensity')
-plt.title('Mean Spectrum from Image')
-plt.legend()
-
-plt.tight_layout()
-plt.show()
+mean_original.plot()
+mean_no_bg.plot()
 
 # %%
 # **Background removal summary and available models**

@@ -10,7 +10,6 @@ both interactively and programmatically.
 # Create a test image with known features for calibration
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # Create an image with calibration features (grid pattern)
 def create_calibration_image(size=200, grid_spacing=20):
@@ -155,22 +154,13 @@ for units, scale_factor in unit_examples:
     print(f"  {units}: {scale:.6f} {units}/pixel")
 
 # %%
-# Method 5: Calibration verification and visualization
+# Method 5: Calibration verification and visualization using HyperSpy plotting
 print("\n--- Calibration verification ---")
 
-# Plot original and calibrated images for comparison
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-
-# Original image
-s.plot(ax=axes[0])
-axes[0].set_title('Original (pixels)')
-
-# Calibrated image  
-s_calibrated.plot(ax=axes[1])
-axes[1].set_title('Calibrated (μm)')
-
-plt.tight_layout()
-plt.show()
+# Plot original and calibrated images using HyperSpy's plot_images
+hs.plot.plot_images([s, s_calibrated],
+                   label=['Original (pixels)', 'Calibrated (μm)'],
+                   colorbar=True)
 
 # %%
 # Method 6: Practical calibration workflow

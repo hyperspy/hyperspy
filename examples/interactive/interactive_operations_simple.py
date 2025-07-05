@@ -14,7 +14,6 @@ for live data analysis and responsive plotting.
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # Create a 2D signal with navigation dimensions
 data = np.random.random((10, 100)) * 100 + np.linspace(0, 50, 100)
@@ -75,33 +74,23 @@ interactive_mean = new_mean
 interactive_std = new_std
 
 # %%
-# Visualize the interactive operations
-fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+# Visualize the interactive operations using HyperSpy's native plotting
+print("\n--- Visualizing interactive operations ---")
 
 # Original signal (first spectrum)
-axes[0,0].plot(test_signal.inav[0].data)
-axes[0,0].set_title('Original signal (first spectrum)')
-axes[0,0].set_xlabel('Channel')
-axes[0,0].set_ylabel('Intensity')
+first_spectrum = test_signal.inav[0]
+first_spectrum.metadata.General.title = 'Original signal (first spectrum)'
+first_spectrum.plot()
 
-# Interactive operations results
-axes[0,1].plot(interactive_max.data)
-axes[0,1].set_title('Maximum along signal axis')
-axes[0,1].set_xlabel('Navigation index')
-axes[0,1].set_ylabel('Max value')
+# Interactive operations results - convert to Signal1D for proper plotting
+interactive_max.metadata.General.title = 'Maximum along signal axis'
+interactive_max.plot()
 
-axes[1,0].plot(interactive_std.data)
-axes[1,0].set_title('Standard deviation along signal axis')
-axes[1,0].set_xlabel('Navigation index')
-axes[1,0].set_ylabel('Std value')
+interactive_std.metadata.General.title = 'Standard deviation along signal axis'
+interactive_std.plot()
 
-axes[1,1].plot(interactive_mean.data)
-axes[1,1].set_title('Mean along signal axis')
-axes[1,1].set_xlabel('Navigation index')
-axes[1,1].set_ylabel('Mean value')
-
-plt.tight_layout()
-plt.show()
+interactive_mean.metadata.General.title = 'Mean along signal axis'
+interactive_mean.plot()
 
 # %%
 # Example of interactive-style functions
@@ -131,26 +120,17 @@ print(f"Peak positions - range: [{peak_pos.data.min()}, {peak_pos.data.max()}]")
 print(f"Integrated intensity - mean: {integrated.data.mean():.2f}")
 
 # %%
-# Plot the custom functions results
-fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+# Plot the custom functions results using HyperSpy's native plotting
+print("\n--- Visualizing custom analysis results ---")
 
-axes[0].plot(snr.data)
-axes[0].set_title('Signal-to-Noise Ratio')
-axes[0].set_xlabel('Position')
-axes[0].set_ylabel('SNR')
+snr.metadata.General.title = 'Signal-to-Noise Ratio'
+snr.plot()
 
-axes[1].plot(peak_pos.data)
-axes[1].set_title('Peak Position')
-axes[1].set_xlabel('Position')
-axes[1].set_ylabel('Channel')
+peak_pos.metadata.General.title = 'Peak Position'  
+peak_pos.plot()
 
-axes[2].plot(integrated.data)
-axes[2].set_title('Integrated Intensity')
-axes[2].set_xlabel('Position')
-axes[2].set_ylabel('Counts')
-
-plt.tight_layout()
-plt.show()
+integrated.metadata.General.title = 'Integrated Intensity'
+integrated.plot()
 
 print("\nInteractive operations example completed!")
 print("Key points:")

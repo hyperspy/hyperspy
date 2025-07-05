@@ -9,7 +9,6 @@ such as images and diffraction patterns.
 import numpy as np
 import hyperspy.api as hs
 from scipy import ndimage
-import matplotlib.pyplot as plt
 
 # %%
 # ## Creating test 2D signals with synthetic peaks
@@ -156,54 +155,58 @@ print("HyperSpy peak finding works best with 1D spectra or spectrum images")
 print("For 2D peak detection in images, use the methods above")
 
 # %%
-# Visualization of results
+# Visualization of results using HyperSpy markers
 
 print("\\n=== Visualizing Peak Detection Results ===")
 
-# Create a figure with subplots
-fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-fig.suptitle('2D Peak Finding Methods Comparison')
+# Use HyperSpy's plotting with markers for much cleaner visualization
+signal_2d.plot()
 
-# Plot 1: Original data with known peaks
-ax1 = axes[0, 0]
-im1 = ax1.imshow(signal_2d.data, cmap='viridis', origin='lower')
-ax1.scatter([c[1] for c in peak_centers], [c[0] for c in peak_centers], 
-           c='red', s=100, marker='x', linewidths=3, label='True peaks')
-ax1.set_title('Original Data with True Peaks')
-ax1.legend()
-plt.colorbar(im1, ax=ax1)
+# Add markers for true peaks
+true_peak_markers = []
+for i, center in enumerate(peak_centers):
+    marker = hs.plot.markers.Points(
+        offsets=[center[1], center[0]], 
+        sizes=100, 
+        color='red', 
+    )
+    signal_2d.add_marker(marker, plot_marker=True)
+    true_peak_markers.append(marker)
 
-# Plot 2: Template matching results
-ax2 = axes[0, 1]
-im2 = ax2.imshow(signal_2d.data, cmap='viridis', origin='lower')
-ax2.scatter(peaks_template[1], peaks_template[0], 
-           c='cyan', s=80, marker='o', alpha=0.7, label='Template matching')
-ax2.set_title('Template Matching Results')
-ax2.legend()
-plt.colorbar(im2, ax=ax2)
 
-# Plot 3: Scikit-image results (if available)
-ax3 = axes[1, 0]
-im3 = ax3.imshow(signal_2d.data, cmap='viridis', origin='lower')
+
+# Plot template matching results
+signal_2d.plot()
+if len(peaks_template[0]) > 0:
+    template_marker = hs.plot.markers.Points(
+        offsets=list(zip(peaks_template[1], peaks_template[0])),
+        sizes=80,
+        color='cyan',
+    )
+    signal_2d.add_marker(template_marker, plot_marker=True)
+
+
+# Plot scikit-image results if available
 if skimage_available and len(coordinates) > 0:
-    coord_x = [coord[1] for coord in coordinates]
-    coord_y = [coord[0] for coord in coordinates]
-    ax3.scatter(coord_x, coord_y, 
-               c='orange', s=80, marker='s', alpha=0.7, label='Scikit-image')
-ax3.set_title('Scikit-image Peak Detection')
-ax3.legend()
-plt.colorbar(im3, ax=ax3)
+    signal_2d.plot()
+    coord_points = [(coord[1], coord[0]) for coord in coordinates]
+    skimage_marker = hs.plot.markers.Points(
+        offsets=coord_points,
+        sizes=80,
+        color='orange',
+    )
+    signal_2d.add_marker(skimage_marker, plot_marker=True)
 
-# Plot 4: Threshold-based results
-ax4 = axes[1, 1]
-im4 = ax4.imshow(signal_2d.data, cmap='viridis', origin='lower')
-ax4.scatter(peak_positions[1], peak_positions[0], 
-           c='magenta', s=80, marker='^', alpha=0.7, label='Threshold-based')
-ax4.set_title('Threshold-based Detection')
-ax4.legend()
-plt.colorbar(im4, ax=ax4)
 
-plt.tight_layout()
+# Plot threshold-based results
+signal_2d.plot()
+if len(peak_positions[0]) > 0:
+    threshold_marker = hs.plot.markers.Points(
+        offsets=list(zip(peak_positions[1], peak_positions[0])),
+        sizes=80,
+        color='magenta',
+    )
+    signal_2d.add_marker(threshold_marker, plot_marker=True)
 
 # %%
 # Comparison and accuracy assessment
@@ -248,6 +251,3 @@ print("- Template matching: Good for peaks with known shape")
 print("- Scikit-image: Robust with good parameter control") 
 print("- Threshold-based: Simple and fast, good for clean data")
 print("- Choose method based on your data characteristics and noise level")
-
-# Display the plot
-plt.show()

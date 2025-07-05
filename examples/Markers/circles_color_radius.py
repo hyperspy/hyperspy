@@ -2,7 +2,7 @@
 Circle Markers with Radius Dependent Coloring
 =============================================
 
-This example shows how to draw circle with the color of the circle scaling with
+This example shows how to draw circles with the color of the circle scaling with
 the radius of the circle
 
 """
@@ -10,7 +10,6 @@ the radius of the circle
 # Create a signal
 
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 import numpy as np
 
 # Create a Signal2D
@@ -46,11 +45,6 @@ m.set_ScalarMappable_array(sizes.ravel() / 2)
 # Add corresponding colorbar
 cbar = m.plot_colorbar()
 cbar.set_label('Circle radius')
-
-# Set animated state of colorbar to support blitting
-animated = plt.gcf().canvas.supports_blit
-cbar.ax.yaxis.set_animated(animated)
-cbar.solids.set_animated(animated)
 
 # %%
 # sphinx_gallery_thumbnail_number =

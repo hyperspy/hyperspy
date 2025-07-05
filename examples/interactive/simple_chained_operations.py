@@ -8,7 +8,6 @@ data changes.
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import hyperspy.api as hs
 
 # %%
@@ -138,57 +137,23 @@ print(f"Max intensity scaling factor: {ratio_max.mean():.2f} (expected: 1.50)")
 print(f"Mean intensity scaling factor: {ratio_mean.mean():.2f} (expected: 1.50)")
 
 # %%
-# Step 5: Visualization
+# Step 5: Visualization using HyperSpy plotting
 print("\n6. VISUALIZATION")
 print("-" * 20)
 
-fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+# Plot spectrum at center position using HyperSpy
+center_spectrum = s.inav[n_nav_x//2, n_nav_y//2]
+center_spectrum.plot()
 
-# Plot spectrum at center position
-center_spectrum = s.inav[n_nav_x//2, n_nav_y//2].data
-axes[0, 0].plot(energy_axis, center_spectrum)
-axes[0, 0].set_title('Spectrum at center position')
-axes[0, 0].set_xlabel('Energy (eV)')
-axes[0, 0].set_ylabel('Intensity')
+# Use HyperSpy's plot_images for the analysis maps
+hs.plot.plot_images([new_max_intensity, peak_energy_map, snr_map, energy_ratio],
+                   label=['Max Intensity Map', 'Peak Energy Map', 'Signal-to-Noise Ratio', 'High/Low Energy Ratio'],
+                   cmap=['viridis', 'plasma', 'RdYlBu', 'coolwarm'],
+                   colorbar=True)
 
-# Plot max intensity map
-im1 = axes[0, 1].imshow(new_max_intensity.data, origin='lower', cmap='viridis')
-axes[0, 1].set_title('Max Intensity Map')
-axes[0, 1].set_xlabel('Y position')
-axes[0, 1].set_ylabel('X position')
-plt.colorbar(im1, ax=axes[0, 1])
-
-# Plot peak energy map
-im2 = axes[0, 2].imshow(peak_energy_map.data, origin='lower', cmap='plasma')
-axes[0, 2].set_title('Peak Energy Map')
-axes[0, 2].set_xlabel('Y position')
-axes[0, 2].set_ylabel('X position')
-plt.colorbar(im2, ax=axes[0, 2])
-
-# Plot SNR map
-im3 = axes[1, 0].imshow(snr_map.data, origin='lower', cmap='RdYlBu')
-axes[1, 0].set_title('Signal-to-Noise Ratio')
-axes[1, 0].set_xlabel('Y position')
-axes[1, 0].set_ylabel('X position')
-plt.colorbar(im3, ax=axes[1, 0])
-
-# Plot energy ratio map
-im4 = axes[1, 1].imshow(energy_ratio.data, origin='lower', cmap='coolwarm')
-axes[1, 1].set_title('High/Low Energy Ratio')
-axes[1, 1].set_xlabel('Y position')
-axes[1, 1].set_ylabel('X position')
-plt.colorbar(im4, ax=axes[1, 1])
-
-# Plot cropped spectrum
-cropped_spectrum = s_cropped.inav[n_nav_x//2, n_nav_y//2].data
-cropped_energy = s_cropped.axes_manager[2].axis
-axes[1, 2].plot(cropped_energy, cropped_spectrum)
-axes[1, 2].set_title('Cropped spectrum (15-35 eV)')
-axes[1, 2].set_xlabel('Energy (eV)')
-axes[1, 2].set_ylabel('Intensity')
-
-plt.tight_layout()
-plt.show()
+# Plot cropped spectrum using HyperSpy
+cropped_spectrum_signal = s_cropped.inav[n_nav_x//2, n_nav_y//2]
+cropped_spectrum_signal.plot()
 
 # %%
 # Summary

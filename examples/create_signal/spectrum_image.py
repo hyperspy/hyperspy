@@ -8,7 +8,6 @@ signal dimension 1, and plots it.
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # %%
 # **Creating a spectrum image with random data**
@@ -55,5 +54,3 @@ s.metadata.General.title = 'Random spectrum image'
 
 # Plot it
 s.plot()
-
-plt.show()  # Not necessary when running in the HyperSpy's IPython profile

@@ -10,7 +10,6 @@ spectra using known reference peaks, both interactively and programmatically.
 # Create a test spectrum with known peaks for calibration
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 def create_calibration_spectrum(size=1024, peaks=[200, 400, 600, 800]):
     """Create a spectrum with known peaks for calibration purposes"""
@@ -39,12 +38,7 @@ print(f"Original axis: scale={s.axes_manager.signal_axes[0].scale}, "
       f"offset={s.axes_manager.signal_axes[0].offset}")
 
 # Plot the original uncalibrated spectrum
-plt.figure(figsize=(10, 6))
-plt.plot(s.axes_manager.signal_axes[0].axis, s.data)
-plt.title("Uncalibrated spectrum (arbitrary units)")
-plt.xlabel("Channel")
-plt.ylabel("Intensity")
-plt.show()
+s.plot()
 
 # %%
 # Method 1: Manual calibration using known reference peaks
@@ -77,12 +71,7 @@ print(f"Calibrated axis: scale={s_calibrated.axes_manager.signal_axes[0].scale},
       f"offset={s_calibrated.axes_manager.signal_axes[0].offset}")
 
 # Plot the calibrated spectrum
-plt.figure(figsize=(10, 6))
-plt.plot(s_calibrated.axes_manager.signal_axes[0].axis, s_calibrated.data)
-plt.title("Manually calibrated spectrum")
-plt.xlabel(f"{s_calibrated.axes_manager.signal_axes[0].name} ({s_calibrated.axes_manager.signal_axes[0].units})")
-plt.ylabel("Intensity")
-plt.show()
+s_calibrated.plot()
 
 # %%
 # Method 2: Using the calibrate method programmatically
@@ -135,22 +124,8 @@ print(f"Alternative calibration applied")
 print(f"Axis range: {signal_axis.axis[0]:.1f} to {signal_axis.axis[-1]:.1f} {signal_axis.units}")
 
 # Plot comparison
-fig, axes = plt.subplots(2, 1, figsize=(10, 8))
-
-# Original spectrum - plot data directly
-axes[0].plot(s.axes_manager.signal_axes[0].axis, s.data)
-axes[0].set_title("Original (uncalibrated)")
-axes[0].set_xlabel("Channel")
-axes[0].set_ylabel("Intensity")
-
-# Calibrated spectrum - plot data directly
-axes[1].plot(s_alt.axes_manager.signal_axes[0].axis, s_alt.data)
-axes[1].set_title("Calibrated spectrum")
-axes[1].set_xlabel(f"{signal_axis.name} ({signal_axis.units})")
-axes[1].set_ylabel("Intensity")
-
-plt.tight_layout()
-plt.show()
+s.plot()
+s_alt.plot()
 
 # %%
 # Method 4: Interactive calibration (demonstration concept)
@@ -216,21 +191,7 @@ for ch, exp_energy in zip(test_channels, expected_energies):
     print(f"Channel {ch}: Expected {exp_energy} eV, Got {actual_energy:.1f} eV")
 
 # Final comparison plot
-plt.figure(figsize=(12, 6))
-
-plt.subplot(1, 2, 1)
-plt.plot(s.axes_manager.signal_axes[0].axis, s.data)
-plt.title("Before calibration")
-plt.xlabel("Channel")
-plt.ylabel("Intensity")
-
-plt.subplot(1, 2, 2)
-plt.plot(s_interactive.axes_manager.signal_axes[0].axis, s_interactive.data)
-plt.title("After calibration")
-plt.xlabel(f"{axis.name} ({axis.units})")
-plt.ylabel("Intensity")
-
-plt.tight_layout()
-plt.show()
+s.plot()
+s_interactive.plot()
 
 print("\nCalibration complete! The spectrum now has a properly calibrated energy axis.")

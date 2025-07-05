@@ -8,7 +8,6 @@ Polygon  Markers
 # Create a signal
 
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 import numpy as np
 
 # Create a Signal2D with 2 navigation dimensions
@@ -50,8 +49,9 @@ verts = np.empty(s.axes_manager.navigation_shape, dtype=object)
 for ind in np.ndindex(verts.shape):
     verts[ind] = rng.random((10, 4, 2)) * 100
 
-# Get list of colors
-colors = list(plt.rcParams['axes.prop_cycle'].by_key()['color'])
+# Get list of colors (default matplotlib color cycle)
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+          '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 
 m = hs.plot.markers.Polygons(
     verts=verts,

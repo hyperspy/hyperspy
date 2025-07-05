@@ -7,7 +7,6 @@ Filled Circle Markers
 # Create a signal
 
 import hyperspy.api as hs
-import matplotlib as mpl
 import numpy as np
 
 # Create a Signal2D with 2 navigation dimensions
@@ -42,7 +41,8 @@ s2 = hs.signals.Signal2D(data)
 
 offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
 sizes = np.empty(s.axes_manager.navigation_shape, dtype=object)
-colors = list(mpl.colors.TABLEAU_COLORS.values())[:10]
+colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple',
+          'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
 for ind in np.ndindex(offsets.shape):
     offsets[ind] = rng.random((10, 2)) * 100
