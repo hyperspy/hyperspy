@@ -2,19 +2,25 @@
 Circle Markers
 ==============
 
+This example demonstrates how to create and use circle markers in HyperSpy
+for annotating plots and highlighting features in 2D signals.
 """
-#%%
-# Create a signal
 
 import hyperspy.api as hs
 import numpy as np
+
+# %%
+# Create a Signal2D
+# ----------------
+#
+# Create a simple 2D signal to demonstrate circle markers on.
 
 # Create a Signal2D with 1 navigation dimension
 rng = np.random.default_rng(0)
 data = np.ones((50, 100, 100))
 s = hs.signals.Signal2D(data)
 
-#%%
+# %%
 # This first example shows how to draw static circles
 
 # Define the position of the circles (start at (0, 0) and increment by 10)
@@ -30,7 +36,7 @@ m = hs.plot.markers.Circles(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 #
 # Dynamic Circle Markers
 # ######################
@@ -57,5 +63,5 @@ m = hs.plot.markers.Circles(
 s2.plot()
 s2.add_marker(m)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 4

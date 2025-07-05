@@ -4,7 +4,7 @@ Star Markers
 
 """
 
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -16,7 +16,7 @@ rng = np.random.default_rng(0)
 data = np.ones((25, 25, 100, 100))
 s = hs.signals.Signal2D(data)
 
-#%%
+# %%
 # This first example shows how to draw static stars markers using the matplotlib
 # StarPolygonCollection
 
@@ -32,7 +32,7 @@ m = hs.plot.markers.Markers(collection=mpl.collections.StarPolygonCollection,
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 #
 # Dynamic Star Markers
 # ######################
@@ -57,5 +57,5 @@ m2 = hs.plot.markers.Markers(collection=mpl.collections.StarPolygonCollection,
 s2.plot()
 s2.add_marker(m2)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2

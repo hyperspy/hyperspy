@@ -9,6 +9,9 @@ Fit an arctan function.
 import numpy as np
 import hyperspy.api as hs
 
+# %%
+# Generate the data and create spectrum
+# -------------------------------------
 # Generate the data and make the spectrum
 data = np.arctan(np.arange(-500, 500))
 s = hs.signals.Signal1D(data)
@@ -20,6 +23,9 @@ s.set_signal_origin("simulation")
 
 s.add_gaussian_noise(0.1)
 
+# %%
+# Create model and add arctan component
+# -------------------------------------
 # Make the arctan component for use in the model
 arctan_component = hs.model.components1D.Arctan()
 
@@ -27,6 +33,9 @@ arctan_component = hs.model.components1D.Arctan()
 m = s.create_model()
 m.append(arctan_component)
 
+# %%
+# Fit the model and display results
+# ---------------------------------
 # Fit the arctan component to the spectrum
 m.fit()
 

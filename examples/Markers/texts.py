@@ -3,7 +3,7 @@ Text Markers
 ============
 
 """
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -14,7 +14,7 @@ rng = np.random.default_rng(0)
 data = np.ones((10, 100, 100))
 s = hs.signals.Signal2D(data)
 
-#%%
+# %%
 # This first example shows how to draw static Text markers
 
 # Define the position of the texts
@@ -30,7 +30,7 @@ m = hs.plot.markers.Texts(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 #
 # Dynamic Text Markers
 # ####################
@@ -53,5 +53,5 @@ m2 = hs.plot.markers.Texts(
 s2.plot()
 s2.add_marker(m2)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2

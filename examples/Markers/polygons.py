@@ -4,7 +4,7 @@ Polygon  Markers
 
 """
 
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -16,7 +16,7 @@ rng = np.random.default_rng(0)
 data = np.ones((25, 25, 100, 100))
 s = hs.signals.Signal2D(data)
 
-#%%
+# %%
 # This first example shows how to draw static polygon markers using the matplotlib
 # PolygonCollection
 
@@ -38,7 +38,7 @@ m = hs.plot.markers.Polygons(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 #
 # Dynamic Polygon Markers
 # #######################
@@ -62,5 +62,5 @@ m = hs.plot.markers.Polygons(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2

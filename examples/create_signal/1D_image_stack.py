@@ -8,9 +8,15 @@ This example creates an image stack and plots it.
 import numpy as np
 import hyperspy.api as hs
 
+# %%
+# Create an image stack with random data
+# ---------------------------------------
 # Create an image stack with random data
 im = hs.signals.Signal2D(np.random.random((16, 32, 32)))
 
+# %%
+# Define the axis properties
+# --------------------------
 # Define the axis properties
 im.axes_manager.signal_axes[0].name = 'X'
 im.axes_manager.signal_axes[0].units = 'nm'
@@ -27,6 +33,9 @@ im.axes_manager.navigation_axes[0].units = 'fs'
 im.axes_manager.navigation_axes[0].scale = 0.3
 im.axes_manager.navigation_axes[0].offset = 100
 
+# %%
+# Set metadata and plot
+# ---------------------
 # Give a title
 im.metadata.General.title = 'Random image stack'
 

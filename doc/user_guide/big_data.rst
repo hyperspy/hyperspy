@@ -11,6 +11,11 @@ the syntax remains the same. This chapter describes how to work with data
 larger than memory using the :class:`~._signals.lazy.LazySignal` class and
 its derivatives.
 
+.. minigallery::
+    :add-heading: Examples of lazy signal processing for big data
+
+    ../examples/big_data/lazy_signal_processing.py
+
 
 Creating Lazy Signals
 ---------------------

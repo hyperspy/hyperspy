@@ -5,18 +5,18 @@ PolygonROI
 Use a :class:`~.api.roi.PolygonROI` interactively on a :class:`~.api.signals.Signal2D`.
 
 """
-#%%
+# %%
 import hyperspy.api as hs
 
-#%%
+# %%
 # Create a signal:
 s = hs.data.atomic_resolution_image()
 
-#%%
+# %%
 # Create the ROI, here a :class:`~.api.roi.PolygonROI`:
 roi = hs.roi.PolygonROI()
 
-#%%
+# %%
 # Initializing the ROI with no arguments puts you directly into constructing the 
 # polygon. Do this by clicking where you want the vertices. Click the first vertex
 # to complete the polygon. You can reset the polygon by pressing "Esc" and you
@@ -32,12 +32,12 @@ s.plot()
 roi.vertices = [(2, 4.5), (4.5, 4.5), (4.5, 2), (3, 3)]
 s_roi = roi.interactive(s, axes=s.axes_manager.signal_axes)
 
-#%%
+# %%
 # Then we can extract the ROI from the signal and plot it.
 
 s_roi.plot()
 
-#%%
+# %%
 # The signal will contain a lot of NaNs, so take this into consideration when
 # doing further processing. E.g. use :meth:`~.api.signals.BaseSignal.nanmean`
 # instead of :meth:`~.api.signals.BaseSignal.mean`.

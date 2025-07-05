@@ -5,7 +5,7 @@ Rotation of markers
 This example shows how markers are rotated.
 
 """
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -19,7 +19,7 @@ num = 2
 angle = 25
 color = ["tab:orange", "tab:blue"]
 
-#%%
+# %%
 # Create the markers, the first and second elements are at 0 and 20 degrees
 
 # Define the position of the markers
@@ -52,11 +52,11 @@ m3 = hs.plot.markers.Squares(
     edgecolor=color,
     )
 
-#%%
+# %%
 # Plot the signals and add all the markers
 
 s.plot()
 s.add_marker([m1, m2, m3])
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 1

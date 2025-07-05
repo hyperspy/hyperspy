@@ -3,7 +3,7 @@ Arrow markers
 =============
 
 """
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -17,7 +17,7 @@ s = hs.signals.Signal2D(data)
 for axis in s.axes_manager.signal_axes:
     axis.scale = 2*np.pi / 100
 
-#%%
+# %%
 # This example shows how to draw arrows
 
 # Define the position of the arrows
@@ -31,5 +31,5 @@ m = hs.plot.markers.Arrows(offsets, U, V, C=C)
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2

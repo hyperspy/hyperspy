@@ -4,7 +4,7 @@ Vertical Line Markers
 
 """
 
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -16,7 +16,7 @@ rng = np.random.default_rng(0)
 data = rng.random((25, 25, 100))
 s = hs.signals.Signal1D(data)
 
-#%%
+# %%
 # This first example shows how to draw 3 static (same position for all
 # navigation coordinate) vetical lines
 
@@ -31,7 +31,7 @@ m = hs.plot.markers.VerticalLines(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 #
 # Dynamic Line Markers
 # ####################
@@ -55,5 +55,5 @@ m = hs.plot.markers.VerticalLines(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2

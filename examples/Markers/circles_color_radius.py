@@ -6,7 +6,7 @@ This example shows how to draw circle with the color of the circle scaling with
 the radius of the circle
 
 """
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -17,7 +17,7 @@ import numpy as np
 rng = np.random.default_rng(0)
 s = hs.signals.Signal2D(np.ones((25, 100, 100)))
 
-#%%
+# %%
 # This first example shows how to draw arrows
 
 # Define the size of the circles
@@ -35,7 +35,7 @@ m = hs.plot.markers.Circles(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # .. note::
 #     Any changes to the marker made by setting :py:class:`matplotlib.collections.Collection`
 #     attributes will not be saved when saving as ``hspy``/``zspy`` file.
@@ -52,5 +52,5 @@ animated = plt.gcf().canvas.supports_blit
 cbar.ax.yaxis.set_animated(animated)
 cbar.solids.set_animated(animated)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number =

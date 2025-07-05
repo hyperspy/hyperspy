@@ -3,7 +3,7 @@ Varying number of arrows per navigation position
 ================================================
 
 """
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -20,7 +20,7 @@ for axis in s.axes_manager.signal_axes:
 # Select navigation position 5
 s.axes_manager.indices = (5, )
 
-#%%
+# %%
 #
 # Dynamic Arrow Markers: Changing Length
 # ######################################
@@ -47,5 +47,5 @@ m = hs.plot.markers.Arrows(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2

@@ -40,6 +40,11 @@ It is possible to crop interactively using :ref:`roi-label`. For example:
     >>> s.plot()
     >>> sc = roi.interactive(s)
 
+.. minigallery::
+    :add-heading: Examples of Signal1D cropping methods
+
+    ../examples/signal_manipulation/signal1d_cropping.py
+
 .. _interactive_signal1d_cropping_image:
 
 .. figure::  images/interactive_signal1d_cropping.png
@@ -86,6 +91,12 @@ Example of usage:
    figure) click inside the axes of the figure and drag to the right
    without releasing the button.
 
+.. minigallery::
+    :add-heading: Examples of background removal from 1D signals
+
+    ../examples/processing/background_removal.py
+    ../examples/processing/baseline_removal.py
+
 .. _signal1D.remove_baseline:
 
 Baseline removal
@@ -121,6 +132,11 @@ Calibration
 The :meth:`~.api.signals.Signal1D.calibrate` method provides a user
 interface to calibrate the spectral axis.
 
+.. minigallery::
+    :add-heading: Examples of Signal1D calibration
+
+    ../examples/signal_manipulation/signal1d_calibration.py
+
 
 Alignment
 ---------
@@ -131,6 +147,11 @@ files.
 
 * :meth:`~.api.signals.Signal1D.align1D`
 * :meth:`~.api.signals.Signal1D.shift1D`
+
+.. minigallery::
+    :add-heading: Examples of Signal1D alignment
+
+    ../examples/signal_manipulation/signal1d_alignment.py
 
 
 .. _integrate_1D-label:
@@ -146,6 +167,11 @@ Otherwise, a signal subrange for integration can also be chosen with the
 .. code-block:: python
 
     >>> s.isig[0.2:0.5].integrate1D(axis=0) # doctest: +SKIP
+
+.. minigallery::
+    :add-heading: Examples of Signal1D integration
+
+    ../examples/signal_manipulation/signal1d_integration.py
 
 
 Data smoothing

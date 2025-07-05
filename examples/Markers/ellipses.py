@@ -3,7 +3,7 @@ Ellipse markers
 ===============
 
 """
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -14,7 +14,7 @@ rng = np.random.default_rng(0)
 data = np.ones((25, 25, 100, 100))
 s = hs.signals.Signal2D(data)
 
-#%%
+# %%
 # This first example shows how to draw static ellipses
 
 # Define the position of the ellipses
@@ -31,7 +31,7 @@ m = hs.plot.markers.Ellipses(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 #
 # Dynamic Ellipse Markers
 # #######################
@@ -64,5 +64,5 @@ m = hs.plot.markers.Ellipses(
 s2.plot()
 s2.add_marker(m)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2

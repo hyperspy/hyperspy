@@ -6,7 +6,7 @@ This example shows how to use both the ``offset_transform`` and ```transforms``
 parameters for markers
 """
 
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -16,10 +16,10 @@ rng = np.random.default_rng()
 data = np.arange(1, 101).reshape(10, 10)*2 + rng.random((10, 10))
 signal = hs.signals.Signal1D(data)
 
-#%%
+# %%
 # The first example shows how to draw markers which are relative to some
-# 1D signal.  This is how the EDS and EELS Lines are implemented in the
-# exspy package.
+# 1D signal. This is how spectral line markers are implemented in various
+# analysis packages.
 
 
 segments = np.zeros((10, 2, 2)) # line segemnts for realative markers
@@ -41,7 +41,7 @@ signal.plot()
 signal.add_marker(markers)
 signal.add_marker(texts)
 
-#%%
+# %%
 # The second example shows how to draw markers which extend to the edges of the
 # axes.  This is how the VerticalLines and HorizontalLines markers are implemented.
 
@@ -52,7 +52,7 @@ markers = hs.plot.markers.Lines(segments=segments,
 signal.plot()
 signal.add_marker(markers)
 
-#%%
+# %%
 # The third example shows how an ``offset_transform`` of ``'axes'`` can be
 # used to annotate a signal.
 #
@@ -137,5 +137,5 @@ signal.add_marker(marker3text)
 signal.add_marker(marker4)
 signal.add_marker(marker4text)
 
-#%%
+# %%
 #sphinx_gallery_thumbnail_number = 2

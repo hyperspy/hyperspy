@@ -27,6 +27,11 @@ prompted to provide important information not already included in the
 datafile, `e.g.` if ``s`` is EELS data, you may be asked for the accelerating
 voltage, convergence and collection semi-angles etc.
 
+.. minigallery::
+    :add-heading: Examples of model creation and basic fitting
+
+    ../../examples/model_fitting/basic_model_creation.py
+
 .. note::
 
     * Before creating a model verify that the

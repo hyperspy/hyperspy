@@ -127,3 +127,8 @@ event.
     >>> s = hs.signals.Signal1D(np.random.random((10,100)))
     >>> s.data[:] = 0
     >>> s.events.data_changed.trigger(obj=s)
+
+.. minigallery::
+    :add-heading: Examples of signal events and triggers
+
+    ../examples/events/signal_events_triggers.py

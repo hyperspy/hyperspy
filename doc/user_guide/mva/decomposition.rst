@@ -22,6 +22,11 @@ method, for example:
    >>> s = hs.load("my_file.hspy") # doctest: +SKIP
    >>> s.decomposition() # doctest: +SKIP
 
+.. minigallery::
+    :add-heading: Examples of decomposition for noise reduction
+
+    ../examples/mva/basic_decomposition.py
+
 .. note::
    The signal ``s`` must be multi-dimensional, *i.e.*
    ``s.axes_manager.navigation_size > 1``
@@ -45,6 +50,8 @@ To reconstruct your denoised or reduced model, run the
    >>> # Use components [0, 2] to reconstruct the model
    >>> sc = s.get_decomposition_model([0, 2]) # doctest: +SKIP
 
+You can perform operations on this new object ``sc`` later.
+
 Sometimes, it is useful to examine the residuals between your original data and
 the decomposition model. You can easily calculate and display the residuals,
 since :meth:`~.api.signals.BaseSignal.get_decomposition_model` returns a new
@@ -54,7 +61,11 @@ object, which in the example above we have called ``sc``:
 
    >>> (s - sc).plot() # doctest: +SKIP
 
-You can perform operations on this new object ``sc`` later.
+.. minigallery::
+    :add-heading: Examples of advanced model reconstruction techniques
+
+    ../examples/mva/decomposition_model_reconstruction.py
+
 It is a copy of the original ``s`` object, except that the data has
 been replaced by the model constructed using the chosen components.
 
@@ -112,6 +123,11 @@ links to the appropriate documentation for more information on each one.
    +--------------------------+----------------------------------------------------------------+
    | custom object            | An object implementing  ``fit()`` and  ``transform()`` methods |
    +--------------------------+----------------------------------------------------------------+
+
+.. minigallery::
+    :add-heading: Examples comparing different decomposition algorithms
+
+    ../examples/mva/different_decomposition_algorithms.py
 
 .. _mva.svd:
 

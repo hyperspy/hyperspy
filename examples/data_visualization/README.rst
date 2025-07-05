@@ -1,10 +1,19 @@
-Data Visualization
-==================
+.. _data_visualization_examples_label:
 
-This gallery shows how to plot data using the convenience functions
-:func:`~.api.plot.plot_spectra`, :func:`~.api.plot.plot_images` and
-:func:`~.api.plot.plot_signals`.
-Unlike the :meth:`~.api.signals.BaseSignal.plot`, these functions
-can plot multiple signal together and can be useful to compose figure
-comparing signals, etc.
+Data Visualization Examples
+===========================
 
+This directory contains examples demonstrating various data visualization 
+techniques in HyperSpy, including:
+
+- Custom plot layouts and subfigures
+- Multidimensional data visualization
+- Interactive plotting features
+- ROI visualization and insets
+- Customizing figure appearance
+
+These examples show how to create effective visualizations of your data
+for analysis and presentation purposes.
+
+.. Note::
+    Plotting data with subfigures is slower than using separate figures.

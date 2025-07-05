@@ -31,3 +31,8 @@ used by HyperSpy and use it to operate on this pint quantity:
     >>> s.axes_manager[0].scale_as_quantity += scale
     >>> s.axes_manager[0].scale_as_quantity
     <Quantity(4.5, 'micrometer')>
+
+.. minigallery::
+    :add-heading: Examples of working with physical units in HyperSpy
+
+    ../examples/axes/working_with_physical_units.py

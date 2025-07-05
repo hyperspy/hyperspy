@@ -49,6 +49,11 @@ in the Signal2D subclass.
     >>> im
     <Signal2D, title: , dimensions: (10, 30|20, 10)>
 
+.. minigallery::
+    :add-heading: Understanding signal dimensions
+
+    ../examples/axes/understanding_signal_dimensions.py
+
 
 .. _Setting_axis_properties:
 
@@ -120,6 +125,12 @@ The :meth:`~.misc.utils.TupleSA.get` returns a dictionary of the attributes.  Fo
     >>> s.axes_manager.navigation_axes.set(name=("X", "Y"), offset=10, units="nm")
     >>> s.axes_manager.navigation_axes.get("name", "offset", "units")
     {"name" : ("X", "Y"), "offset" : (10, 10), "units" : ("nm", "nm")}
+
+.. minigallery::
+    :add-heading: Examples of setting and managing axis properties
+
+    ../examples/axes/setting_axis_properties.py
+    ../examples/axes/batch_axis_property_setting.py
 
 
 Once the name of an axis has been defined it is possible to request it by its

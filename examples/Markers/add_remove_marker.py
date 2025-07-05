@@ -6,7 +6,7 @@ This example shows how to add or remove marker from an existing collection.
 This is done by setting the parameters (offsets, sizes, etc.) of the collection.
 
 """
-#%%
+# %%
 # Create a signal
 import hyperspy.api as hs
 import numpy as np
@@ -16,7 +16,7 @@ rng = np.random.default_rng(0)
 data = np.arange(15*100*100).reshape((15, 100, 100))
 s = hs.signals.Signal2D(data)
 
-#%%
+# %%
 # Create text marker
 
 # Define the position of the texts
@@ -34,7 +34,7 @@ print(f'Number of markers is {len(m)}.')
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # Remove the last text of the collection
 # ######################################
 
@@ -48,7 +48,7 @@ print(f'Number of markers is {len(m)} after removing one marker.')
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # Add another text of the collection
 # ##################################
 
@@ -61,5 +61,5 @@ print(f'Number of markers is {len(m)} after adding the text {texts[-1]}.')
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2

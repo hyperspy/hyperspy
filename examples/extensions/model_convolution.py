@@ -13,7 +13,7 @@ This example illustrates how to implement a model supporting convolution.
 import hyperspy.api as hs
 import numpy as np
 
-#%%
+# %%
 # Model class implementation
 # --------------------------
 #
@@ -82,7 +82,7 @@ class ConvolvedModel1D(Model1D):
         # Used during model fitting
         return self._convolved
 
-#%%
+# %%
 # Example signal
 # --------------
 #
@@ -97,7 +97,7 @@ g_signal = hs.signals.Signal1D(g.function(np.arange(-20, 20)))
 g_signal.axes_manager.signal_axes.set(offset=-20)
 g_signal.plot()
 
-#%%
+# %%
 # Generate an example signal using the same approach as in the implementation of a convolution
 # for model fitting (see :ref:`component convolution <convolution_steps-label>`):
 
@@ -110,12 +110,12 @@ convolution_axis = calculate_convolution1D_axis(
 f_padded_data = f.function(convolution_axis)
 f_signal.data = np.convolve(f_padded_data, g_signal.data, mode="valid") + 10
 
-#%%
+# %%
 # Plot signal composed of the convolution of a Lorentzian and a Gaussian
 # function:
 f_signal.plot()
 
-#%%
+# %%
 # Fit model with convolution
 # --------------------------
 #
@@ -125,7 +125,7 @@ lorentzian_component.estimate_parameters(f_signal, 200, 300)
 offset_component = hs.model.components1D.Offset()
 m.extend([lorentzian_component, offset_component])
 
-#%%
+# %%
 # The component of the model can be set to be convolved or not
 # during model fitting.
 # Specify that the Lorentzian is convolved:
@@ -133,7 +133,7 @@ lorentzian_component.convolved = True
 offset_component.convolved = False
 
 
-#%%
+# %%
 # Show the results
 m.fit()
 m.print_current_values()
@@ -141,7 +141,7 @@ m.print_current_values()
 m.plot()
 
 
-#%%
+# %%
 # Fit model without convolution
 # -----------------------------
 #

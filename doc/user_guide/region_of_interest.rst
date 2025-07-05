@@ -1,4 +1,3 @@
-
 .. _roi-label:
 
 Region Of Interest (ROI)
@@ -29,6 +28,11 @@ Once created, an ROI can be applied to the signal:
     >>> imr = roi(im)
     >>> imr
     <Signal2D, title: , dimensions: (|4, 3)>
+
+.. minigallery::
+    :add-heading: Examples of ROI application and usage
+
+    ../examples/basic_roi_application.py
 
 ROIs can also be used :ref:`interactively <interactive-label>` with widgets.
 The following example shows how to interactively apply ROIs to an image. Note
@@ -101,6 +105,14 @@ proper calibration will always point to the same region.
 .. figure::  images/roi2d.png
   :align:   center
   :width:   500
+
+.. Note::
+    Advanced ROI examples demonstrate complex region operations.
+
+.. minigallery::
+    :add-heading: Advanced ROI examples
+    
+    ../examples/region_of_interest/roi_different_navigation_signals.py
 
 
 And of course, as all interactive operations, interactive ROIs are chainable.

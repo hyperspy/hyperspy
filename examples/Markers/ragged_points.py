@@ -6,7 +6,7 @@ As for ragged signals, the number of markers at each position can vary and this
 is done by passing a ragged array to the constructor of the markers.
 
 """
-#%%
+# %%
 # Create a signal
 
 import hyperspy.api as hs
@@ -17,7 +17,7 @@ rng = np.random.default_rng(0)
 data = np.arange(25*100*100).reshape((25, 100, 100))
 s = hs.signals.Signal2D(data)
 
-#%%
+# %%
 # Create the ragged array with varying number of markers for each navigation
 # position
 
@@ -34,5 +34,5 @@ m = hs.plot.markers.Points(
 s.plot()
 s.add_marker(m)
 
-#%%
+# %%
 # sphinx_gallery_thumbnail_number = 2
