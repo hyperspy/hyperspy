@@ -40,15 +40,18 @@ for y in range(nav_size_y):
 
 # Create HyperSpy signal
 spectrum_image = hs.signals.Signal1D(data_3d)
-spectrum_image.axes_manager[0].name = 'y'
-spectrum_image.axes_manager[1].name = 'x'  
-spectrum_image.axes_manager[2].name = 'Energy'
-spectrum_image.axes_manager[0].units = 'nm'
-spectrum_image.axes_manager[1].units = 'nm'
-spectrum_image.axes_manager[2].units = 'eV'
-spectrum_image.axes_manager[0].scale = 1.0
-spectrum_image.axes_manager[1].scale = 1.0
-spectrum_image.axes_manager[2].scale = 0.1
+# Set navigation axes (spatial dimensions) using batch setting
+spectrum_image.axes_manager.navigation_axes.set(
+    name=['y', 'x'],
+    units=['nm', 'nm'],
+    scale=[1.0, 1.0]
+)
+# Set signal axis (energy dimension)
+spectrum_image.axes_manager.signal_axes.set(
+    name=['Energy'],
+    units=['eV'],
+    scale=[0.1]
+)
 spectrum_image.metadata.General.title = "Synthetic Spectrum Image"
 
 # Display information about the created signal

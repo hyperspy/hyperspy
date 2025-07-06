@@ -88,16 +88,13 @@ print(f"Energy in eV: {energy_in_eV}")
 data_2d = np.random.randn(50, 100)
 s2d = hs.signals.Signal2D(data_2d)
 
-# Set initial units and scales
-s2d.axes_manager[0].name = 'x'
-s2d.axes_manager[0].scale = 1.5e-9  # meters
-s2d.axes_manager[0].units = 'm'
-s2d.axes_manager[0].offset = 0
-
-s2d.axes_manager[1].name = 'y'  
-s2d.axes_manager[1].scale = 0.5e-9  # meters
-s2d.axes_manager[1].units = 'm'
-s2d.axes_manager[1].offset = 0
+# Set initial units and scales using efficient batch setting
+s2d.axes_manager.signal_axes.set(
+    name=['x', 'y'],
+    scale=[1.5e-9, 0.5e-9],  # meters  
+    units=['m', 'm'],
+    offset=[0, 0]
+)
 
 print(f"\nInitial 2D signal axes:")
 print(f"X-axis: scale={s2d.axes_manager[0].scale}, units={s2d.axes_manager[0].units}")
@@ -117,11 +114,11 @@ print(f"Y-axis: scale={s2d.axes_manager[1].scale}, units={s2d.axes_manager[1].un
 # Convert specific axes to specific units
 s2d_copy = s2d.deepcopy()
 
-# Reset to original units for proper conversion
-s2d_copy.axes_manager[0].scale = 1.5e-9
-s2d_copy.axes_manager[0].units = 'm'
-s2d_copy.axes_manager[1].scale = 0.5e-9
-s2d_copy.axes_manager[1].units = 'm'
+# Reset to original units for proper conversion using batch setting
+s2d_copy.axes_manager.signal_axes.set(
+    scale=[1.5e-9, 0.5e-9],
+    units=['m', 'm']
+)
 
 # Convert navigation axes to micrometers individually
 s2d_copy.axes_manager[0].convert_to_units('µm')
@@ -143,22 +140,21 @@ eels_data = np.random.poisson(energy_profile[np.newaxis, np.newaxis, :] *
                              (1 + 0.1 * nav_data[:, :, np.newaxis]))
 s_eels = hs.signals.Signal1D(eels_data)
 
-# Set spatial axes (navigation axes)
-s_eels.axes_manager[0].name = 'y'
-s_eels.axes_manager[0].scale = 0.1  # nm per pixel
-s_eels.axes_manager[0].units = 'nm'
-s_eels.axes_manager[0].offset = 0
-
-s_eels.axes_manager[1].name = 'x'
-s_eels.axes_manager[1].scale = 0.1  # nm per pixel  
-s_eels.axes_manager[1].units = 'nm'
-s_eels.axes_manager[1].offset = 0
+# Set spatial axes (navigation axes) using batch setting
+s_eels.axes_manager.navigation_axes.set(
+    name=['y', 'x'],
+    scale=[0.1, 0.1],  # nm per pixel
+    units=['nm', 'nm'],
+    offset=[0, 0]
+)
 
 # Set energy axis (signal axis)
-s_eels.axes_manager[2].name = 'Energy Loss'
-s_eels.axes_manager[2].scale = 0.25  # eV per channel
-s_eels.axes_manager[2].units = 'eV'
-s_eels.axes_manager[2].offset = 200  # start at 200 eV
+s_eels.axes_manager.signal_axes.set(
+    name=['Energy Loss'],
+    scale=[0.25],  # eV per channel
+    units=['eV'],
+    offset=[200]  # start at 200 eV
+)
 
 print(f"\nEELS signal axes:")
 for i, axis in enumerate(s_eels.axes_manager._axes):
@@ -251,14 +247,12 @@ print("\n1. TEM/STEM Imaging Example:")
 stem_data = np.random.randn(256, 256)
 stem_image = hs.signals.Signal2D(stem_data)
 
-# Typical STEM parameters
-stem_image.axes_manager[0].name = 'x'
-stem_image.axes_manager[0].scale = 0.05  # nm per pixel
-stem_image.axes_manager[0].units = 'nm'
-
-stem_image.axes_manager[1].name = 'y'
-stem_image.axes_manager[1].scale = 0.05  # nm per pixel
-stem_image.axes_manager[1].units = 'nm'
+# Typical STEM parameters using batch setting
+stem_image.axes_manager.signal_axes.set(
+    name=['x', 'y'],
+    scale=[0.05, 0.05],  # nm per pixel
+    units=['nm', 'nm']
+)
 
 print(f"STEM image field of view: {stem_image.axes_manager[0].size * stem_image.axes_manager[0].scale} × {stem_image.axes_manager[1].size * stem_image.axes_manager[1].scale} nm²")
 
@@ -271,11 +265,13 @@ print("\n2. EDS Spectrum Example:")
 eds_data = np.random.poisson(1000 * np.exp(-0.1 * np.arange(4096)))
 eds_spectrum = hs.signals.Signal1D(eds_data)
 
-# Typical EDS parameters
-eds_spectrum.axes_manager[0].name = 'Energy'
-eds_spectrum.axes_manager[0].scale = 10  # eV per channel
-eds_spectrum.axes_manager[0].units = 'eV'
-eds_spectrum.axes_manager[0].offset = 0
+# Typical EDS parameters using batch setting
+eds_spectrum.axes_manager.signal_axes.set(
+    name=['Energy'],
+    scale=[10],  # eV per channel
+    units=['eV'],
+    offset=[0]
+)
 
 print(f"EDS energy range: {eds_spectrum.axes_manager[0].offset} to {eds_spectrum.axes_manager[0].axis[-1]} eV")
 
@@ -288,14 +284,12 @@ print("\n3. Diffraction Pattern Example:")
 diffraction_data = np.random.randn(512, 512)
 diffraction = hs.signals.Signal2D(diffraction_data)
 
-# Typical diffraction units (reciprocal space)
-diffraction.axes_manager[0].name = 'qx'
-diffraction.axes_manager[0].scale = 0.01e9  # 1/m per pixel
-diffraction.axes_manager[0].units = '1/m'
-
-diffraction.axes_manager[1].name = 'qy'
-diffraction.axes_manager[1].scale = 0.01e9  # 1/m per pixel
-diffraction.axes_manager[1].units = '1/m'
+# Typical diffraction units (reciprocal space) using batch setting
+diffraction.axes_manager.signal_axes.set(
+    name=['qx', 'qy'],
+    scale=[0.01e9, 0.01e9],  # 1/m per pixel
+    units=['1/m', '1/m']
+)
 
 print(f"Diffraction pattern q-range: {diffraction.axes_manager[0].axis[-1]:.2e} 1/m")
 

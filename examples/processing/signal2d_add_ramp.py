@@ -22,12 +22,12 @@ data = np.exp(-(X**2 + Y**2) / 2)
 
 # Create Signal2D with proper scale
 s = hs.signals.Signal2D(data)
-s.axes_manager[0].scale = 0.1  # Y-axis scale: 0.1 nm/pixel
-s.axes_manager[1].scale = 0.1  # X-axis scale: 0.1 nm/pixel
-s.axes_manager[0].units = 'nm'
-s.axes_manager[1].units = 'nm'
-s.axes_manager[0].name = 'y'
-s.axes_manager[1].name = 'x'
+# Set axis properties efficiently using .set() method
+s.axes_manager.signal_axes.set(
+    name=['y', 'x'],
+    units=['nm', 'nm'],
+    scale=[0.1, 0.1]  # Y-axis and X-axis scale: 0.1 nm/pixel
+)
 s.metadata.General.title = "Original Gaussian signal"
 
 print("Original signal shape:", s.data.shape)
@@ -58,10 +58,10 @@ s_diagonal.metadata.General.title = "Strong diagonal ramp"
 
 # Example 5: Show the ramp itself (no original signal)
 s_ramp_only = hs.signals.Signal2D(np.zeros_like(data))
-s_ramp_only.axes_manager[0].scale = 0.1
-s_ramp_only.axes_manager[1].scale = 0.1
-s_ramp_only.axes_manager[0].units = 'nm'
-s_ramp_only.axes_manager[1].units = 'nm'
+s_ramp_only.axes_manager.signal_axes.set(
+    scale=[0.1, 0.1],
+    units=['nm', 'nm']
+)
 s_ramp_only.add_ramp(ramp_x=0.5, ramp_y=0.3, offset=0.2)
 s_ramp_only.metadata.General.title = "Pure linear ramp"
 

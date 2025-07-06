@@ -63,6 +63,41 @@ print("After setting properties:")
 print(s.axes_manager)
 
 # %%
+# ## Using .get() method to retrieve properties efficiently
+# 
+# The .get() method allows retrieving multiple properties at once
+
+# Get properties from navigation axes
+nav_properties = s.axes_manager.navigation_axes.get('name', 'units', 'scale', 'offset')
+print("Navigation axes properties:")
+for prop, values in nav_properties.items():
+    print(f"  {prop}: {values}")
+
+# Get properties from signal axes  
+sig_properties = s.axes_manager.signal_axes.get('name', 'units', 'scale', 'offset')
+print("\nSignal axes properties:")
+for prop, values in sig_properties.items():
+    print(f"  {prop}: {values}")
+
+# %%
+# ## Method 3: Individual setting (less efficient but sometimes needed)
+# 
+# For comparison, here's the traditional approach of setting properties individually
+
+# Create a copy to demonstrate individual setting
+s_individual = s.deepcopy()
+
+# Individual setting (less efficient for multiple axes)
+s_individual.axes_manager[0].name = "X_individual"
+s_individual.axes_manager[0].scale = 1.0
+s_individual.axes_manager[1].name = "Y_individual" 
+s_individual.axes_manager[1].scale = 1.0
+
+print("Individual setting approach:")
+print(f"X-axis: name={s_individual.axes_manager[0].name}, scale={s_individual.axes_manager[0].scale}")
+print(f"Y-axis: name={s_individual.axes_manager[1].name}, scale={s_individual.axes_manager[1].scale}")
+
+# %%
 # Method 3: Access by name (after naming)
 print("\n--- Access by name ---")
 x_axis = s.axes_manager["X"]

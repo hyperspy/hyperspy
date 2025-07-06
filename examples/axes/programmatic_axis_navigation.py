@@ -59,23 +59,20 @@ for t in range(nav_time):
 s = hs.signals.Signal2D(data_4d)
 
 # Configure axes properly
-s.axes_manager[0].name = 'Time'
-s.axes_manager[0].units = 's'
-s.axes_manager[0].scale = 0.5
-s.axes_manager[0].offset = 0
+# Set navigation axes (Time and Temperature)
+s.axes_manager.navigation_axes.set(
+    name=['Time', 'Temperature'],
+    units=['s', '°C'],
+    scale=[0.5, 10],
+    offset=[0, 300]
+)
 
-s.axes_manager[1].name = 'Temperature'
-s.axes_manager[1].units = '°C'
-s.axes_manager[1].scale = 10
-s.axes_manager[1].offset = 300
-
-s.axes_manager[2].name = 'Y'
-s.axes_manager[2].units = 'μm'
-s.axes_manager[2].scale = 0.1
-
-s.axes_manager[3].name = 'X'
-s.axes_manager[3].units = 'μm'
-s.axes_manager[3].scale = 0.1
+# Set signal axes (Y and X positions)
+s.axes_manager.signal_axes.set(
+    name=['Y', 'X'],
+    units=['μm', 'μm'],
+    scale=[0.1, 0.1]
+)
 
 s.metadata.General.title = 'Time-Temperature 2D Imaging'
 
@@ -252,18 +249,22 @@ print("\n4. Visualizing navigation results:")
 
 # Create signals for time and temperature series for better plotting
 time_signal = hs.signals.Signal1D(time_series_max)
-time_signal.axes_manager[0].name = 'Time'
-time_signal.axes_manager[0].units = 's'
-time_signal.axes_manager[0].scale = s.axes_manager[0].scale
-time_signal.axes_manager[0].offset = s.axes_manager[0].offset
+time_signal.axes_manager.signal_axes.set(
+    name=['Time'],
+    units=['s'],
+    scale=[s.axes_manager[0].scale],
+    offset=[s.axes_manager[0].offset]
+)
 time_signal.metadata.General.title = f'Time Series at {actual_temp:.1f}°C'
 time_signal.plot()
 
 temp_signal = hs.signals.Signal1D(temp_series_max)
-temp_signal.axes_manager[0].name = 'Temperature'
-temp_signal.axes_manager[0].units = '°C'
-temp_signal.axes_manager[0].scale = s.axes_manager[1].scale
-temp_signal.axes_manager[0].offset = s.axes_manager[1].offset
+temp_signal.axes_manager.signal_axes.set(
+    name=['Temperature'],
+    units=['°C'],
+    scale=[s.axes_manager[1].scale],
+    offset=[s.axes_manager[1].offset]
+)
 temp_signal.metadata.General.title = f'Temperature Series at {actual_time:.1f}s'
 temp_signal.plot()
 

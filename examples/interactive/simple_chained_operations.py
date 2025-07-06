@@ -45,11 +45,14 @@ for i in range(n_nav_x):
 
 # Create the signal
 s = hs.signals.Signal1D(data)
-s.axes_manager[0].name = "X"
-s.axes_manager[1].name = "Y" 
-s.axes_manager[2].name = "Energy"
-s.axes_manager[2].units = "eV"
-s.axes_manager[2].scale = 0.5
+# Set navigation axes (X, Y spatial dimensions)
+s.axes_manager.navigation_axes.set(name=['X', 'Y'])
+# Set signal axis (Energy spectrum)
+s.axes_manager.signal_axes.set(
+    name=['Energy'],
+    units=['eV'],
+    scale=[0.5]
+)
 s.metadata.General.title = "Synthetic spectrum image"
 
 # Signal characteristics successfully created with spatial navigation and energy axis

@@ -20,17 +20,19 @@ import os
 # Create a test signal for saving examples
 data_1d = np.random.random(100) * 1000
 signal_1d = hs.signals.Signal1D(data_1d)
-signal_1d.axes_manager[0].name = 'Energy'
-signal_1d.axes_manager[0].units = 'eV'
-signal_1d.axes_manager[0].scale = 0.1
+signal_1d.axes_manager.signal_axes.set(
+    name=['Energy'],
+    units=['eV'],
+    scale=[0.1]
+)
 signal_1d.metadata.General.title = "Test Spectrum"
 
 data_2d = np.random.random((64, 64)) * 255
 signal_2d = hs.signals.Signal2D(data_2d)
-signal_2d.axes_manager[0].name = 'x'
-signal_2d.axes_manager[1].name = 'y'
-signal_2d.axes_manager[0].units = 'nm'
-signal_2d.axes_manager[1].units = 'nm'
+signal_2d.axes_manager.signal_axes.set(
+    name=['x', 'y'],
+    units=['nm', 'nm']
+)
 signal_2d.metadata.General.title = "Test Image"
 
 # %%

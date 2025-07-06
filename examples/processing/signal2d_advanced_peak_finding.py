@@ -39,10 +39,10 @@ for center, width, amplitude in zip(peak_centers, peak_widths, peak_amplitudes):
 
 # Create HyperSpy signal
 signal_2d = hs.signals.Signal2D(base_data)
-signal_2d.axes_manager[0].name = 'y'
-signal_2d.axes_manager[1].name = 'x'
-signal_2d.axes_manager[0].units = 'pixel'
-signal_2d.axes_manager[1].units = 'pixel'
+signal_2d.axes_manager.signal_axes.set(
+    name=['y', 'x'],
+    units=['pixel', 'pixel']
+)
 signal_2d.metadata.General.title = "2D Signal with Peaks"
 
 # **Signal with known peaks created**

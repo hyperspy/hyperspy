@@ -50,14 +50,12 @@ image_data = (
 
 # Create HyperSpy Signal2D
 signal = hs.signals.Signal2D(image_data)
-signal.axes_manager[0].name = 'Y'
-signal.axes_manager[0].units = 'μm'
-signal.axes_manager[0].scale = 0.05
-signal.axes_manager[0].offset = -5
-signal.axes_manager[1].name = 'X' 
-signal.axes_manager[1].units = 'μm'
-signal.axes_manager[1].scale = 0.05
-signal.axes_manager[1].offset = -5
+signal.axes_manager.signal_axes.set(
+    name=['Y', 'X'],
+    units=['μm', 'μm'],
+    scale=[0.05, 0.05],
+    offset=[-5, -5]
+)
 signal.metadata.General.title = 'Test Image for ROI Demonstration'
 
 print("Created test image with shape:", signal.data.shape)
@@ -241,8 +239,10 @@ print("\n1. Using ROI with different navigation signal:")
 # Create a 3D signal (stack of images)
 image_stack = np.random.rand(10, 100, 100)
 stack_signal = hs.signals.Signal2D(image_stack)
-stack_signal.axes_manager[0].name = 'Time'
-stack_signal.axes_manager[0].units = 's'
+stack_signal.axes_manager.navigation_axes.set(
+    name=['Time'],
+    units=['s']
+)
 
 # Use rectangular ROI from previous signal on new signal
 roi_on_stack = rectangular_roi(stack_signal)
