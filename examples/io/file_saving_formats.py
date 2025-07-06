@@ -72,9 +72,12 @@ signal_2d.save(tiff_file)
 
 # Save as PNG (will lose axes information)
 png_file = os.path.join(temp_dir, "image.png")
-# Convert to uint8 for PNG compatibility
+# Convert to uint8 for PNG compatibility using HyperSpy's change_dtype
 signal_2d_uint8 = signal_2d.deepcopy()
-signal_2d_uint8.data = (signal_2d_uint8.data.astype(np.float64)).astype(np.uint8)
+# First normalize to 0-255 range, then convert to uint8
+signal_2d_uint8.data = ((signal_2d_uint8.data - signal_2d_uint8.data.min()) / 
+                       (signal_2d_uint8.data.max() - signal_2d_uint8.data.min()) * 255)
+signal_2d_uint8.change_dtype(np.uint8)
 signal_2d_uint8.save(png_file)
 # PNG format saved - good for web/presentations but loses scientific metadata
 

@@ -30,11 +30,20 @@ s = hs.signals.Signal1D(np.random.random((64, 64, 1024)))
 # both the spatial (navigation) and spectral (signal) axes with physical units.
 
 # Signal axis (spectral dimension) using batch assignment
-s.axes_manager.signal_axes[0].set(name='Energy', units='eV', scale=0.3, offset=100)  # 0.3 eV per channel, starting at 100 eV
+s.axes_manager.signal_axes[0].name = 'Energy'
+s.axes_manager.signal_axes[0].units = 'eV'
+s.axes_manager.signal_axes[0].scale = 0.3
+s.axes_manager.signal_axes[0].offset = 100  # 0.3 eV per channel, starting at 100 eV
 
 # Navigation axes (spatial dimensions) using batch assignment
-s.axes_manager.navigation_axes[0].set(name='X', units='nm', scale=0.1, offset=100)  # 0.1 nm per pixel
-s.axes_manager.navigation_axes[1].set(name='Y', units='nm', scale=0.1, offset=100)
+s.axes_manager.navigation_axes[0].name = 'X'
+s.axes_manager.navigation_axes[0].units = 'nm'
+s.axes_manager.navigation_axes[0].scale = 0.1
+s.axes_manager.navigation_axes[0].offset = 100  # 0.1 nm per pixel
+s.axes_manager.navigation_axes[1].name = 'Y'
+s.axes_manager.navigation_axes[1].units = 'nm'
+s.axes_manager.navigation_axes[1].scale = 0.1
+s.axes_manager.navigation_axes[1].offset = 100
 
 # %%
 # Set metadata and plot

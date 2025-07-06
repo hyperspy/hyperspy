@@ -254,3 +254,124 @@ for method_name, peaks in methods:
 # Choose method based on your data characteristics and noise level
 
 print("Peak finding comparison complete")
+
+# %%
+# Using External Peak Finders with Map Method
+# -------------------------------------------
+# The map method makes it easy to apply external peak finding libraries
+# across all navigation positions in your dataset
+
+from skimage import feature
+from scipy import signal as sp_signal
+
+print("\nDemonstrating external peak finders with map method...")
+
+# Create a simple stack of 3 images for demonstration
+stack_data = np.zeros((3, 100, 100))
+for i in range(3):
+    # Base noise
+    stack_data[i] = np.random.random((100, 100)) * noise_level
+    
+    # Add peaks at different positions for each image
+    for j, (center, width, amplitude) in enumerate(zip(peak_centers, peak_widths, peak_amplitudes)):
+        # Shift peaks slightly for each image in stack
+        shifted_center = (center[0] + i*3, center[1] + i*2)
+        stack_data[i] += create_2d_gaussian_peak((100, 100), shifted_center, width, amplitude)
+
+signal_stack = hs.signals.Signal2D(stack_data)
+signal_stack.metadata.General.title = "Stack of images with peaks"
+print(f"Created signal stack: {signal_stack}")
+
+# %%
+# Easy Peak Finding with Scikit-Image
+# -----------------------------------
+
+def find_peaks_skimage(image):
+    """
+    Simple wrapper for scikit-image peak finding.
+    Returns peak coordinates as a flat array.
+    """
+    # Apply slight smoothing to reduce noise
+    from skimage.filters import gaussian
+    smoothed = gaussian(image, sigma=1.0)
+    
+    # Find blobs (works well for Gaussian-like peaks)
+    blobs = feature.blob_log(smoothed, min_sigma=1, max_sigma=4, 
+                           num_sigma=10, threshold=0.1)
+    
+    if len(blobs) == 0:
+        return np.array([0, 0])  # No peaks found
+    
+    # Return y, x coordinates of detected blobs
+    return blobs[:, :2].flatten()  # Just coordinates, ignore radius
+
+# Apply scikit-image peak finding across all images
+print("Applying scikit-image blob detection...")
+blob_peaks = signal_stack.map(find_peaks_skimage, 
+                             inplace=False, 
+                             ragged=True)  # Variable number of peaks per image
+blob_peaks.metadata.General.title = "Scikit-image blob detection results"
+print(f"Blob detection results: {blob_peaks}")
+
+# %%
+# Easy Peak Finding with SciPy
+# ----------------------------
+
+def find_peaks_scipy(image):
+    """
+    Simple wrapper for scipy peak finding using local maxima.
+    """
+    from scipy.ndimage import maximum_filter
+    
+    # Find local maxima
+    local_maxima = maximum_filter(image, size=8) == image
+    
+    # Apply threshold
+    threshold = 0.5 * image.max()
+    peaks = local_maxima & (image > threshold)
+    
+    # Get coordinates
+    coords = np.argwhere(peaks)
+    
+    if len(coords) == 0:
+        return np.array([0, 0])
+    
+    return coords.flatten()  # Return as flat array
+
+# Apply scipy peak finding
+print("Applying scipy-based peak finding...")
+scipy_peaks = signal_stack.map(find_peaks_scipy, 
+                              inplace=False, 
+                              ragged=True)
+scipy_peaks.metadata.General.title = "SciPy peak detection results"
+print(f"SciPy peak results: {scipy_peaks}")
+
+# %%
+# Compare Results
+# --------------
+
+print("\nPeak finding results:")
+for i in range(signal_stack.axes_manager.navigation_size):
+    print(f"Image {i}:")
+    blob_result = blob_peaks.data.flat[i]
+    scipy_result = scipy_peaks.data.flat[i]
+    
+    # Reshape to get coordinate pairs
+    if len(blob_result) > 2:
+        blob_coords = blob_result.reshape(-1, 2)
+        print(f"  Scikit-image found {len(blob_coords)} peaks: {blob_coords}")
+    else:
+        print(f"  Scikit-image found no peaks")
+        
+    if len(scipy_result) > 2:
+        scipy_coords = scipy_result.reshape(-1, 2)
+        print(f"  SciPy found {len(scipy_coords)} peaks: {scipy_coords}")
+    else:
+        print(f"  SciPy found no peaks")
+
+print("\nMap method makes external libraries easy to use:")
+print("✓ Simple wrapper functions for any peak finder")
+print("✓ Automatic application across all navigation positions")
+print("✓ Ragged arrays handle variable number of peaks")
+print("✓ Results preserve navigation structure")
+print("✓ Easy to compare different algorithms")

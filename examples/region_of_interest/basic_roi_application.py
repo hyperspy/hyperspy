@@ -67,7 +67,8 @@ span_roi = hs.roi.SpanROI(left=3, right=7)
 
 # Create a simple 1D signal for demonstration
 simple_1d = hs.signals.Signal1D(np.random.randn(100))
-simple_1d.axes_manager.signal_axes[0].set(scale=0.1, offset=-5)
+simple_1d.axes_manager.signal_axes[0].scale = 0.1
+simple_1d.axes_manager.signal_axes[0].offset = -5
 
 span_result = span_roi(simple_1d)
 print(f"\n1D signal after span ROI: {span_result}")

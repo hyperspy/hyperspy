@@ -18,56 +18,71 @@ data = np.random.random((20, 30, 100))
 s = hs.signals.Signal1D(data)
 
 # Set up axes using batch assignment
-s.axes_manager.signal_axes[0].set(name='Energy', units='eV', scale=0.1, offset=100)
-s.axes_manager.navigation_axes[0].set(name='X', units='nm', scale=0.5)
-s.axes_manager.navigation_axes[1].set(name='Y', units='nm', scale=0.5)
+s.axes_manager.signal_axes[0].name = 'Energy'
+s.axes_manager.signal_axes[0].units = 'eV'
+s.axes_manager.signal_axes[0].scale = 0.1
+s.axes_manager.signal_axes[0].offset = 100
+s.axes_manager.navigation_axes[0].name = 'X'
+s.axes_manager.navigation_axes[0].units = 'nm'
+s.axes_manager.navigation_axes[0].scale = 0.5
+s.axes_manager.navigation_axes[1].name = 'Y'
+s.axes_manager.navigation_axes[1].units = 'nm'
+s.axes_manager.navigation_axes[1].scale = 0.5
 
 s.metadata.General.title = 'Sample spectrum image'
 s.metadata.General.author = 'HyperSpy example'
 
 # %%
-# Save the data in different formats
+# ## Save the data in different formats
+# 
+# HyperSpy supports multiple file formats with varying levels of metadata preservation
+
 with tempfile.TemporaryDirectory() as temp_dir:
     # Save as HyperSpy format (preserves all metadata)
     hspy_file = os.path.join(temp_dir, "sample.hspy")
     s.save(hspy_file)
-    print(f"Saved as HyperSpy format: {hspy_file}")
     
     # Save as compressed HyperSpy format
     zspy_file = os.path.join(temp_dir, "sample.zspy")
     s.save(zspy_file)
-    print(f"Saved as compressed HyperSpy format: {zspy_file}")
     
     # %%
     # ## Loading files
     # 
     # Files can be loaded using different approaches with various format specifications
     
-    # Load HyperSpy format
+    # Load HyperSpy format - metadata and axis information preserved
     s_loaded = hs.load(hspy_file)
-    print(f"Loaded from .hspy: {s_loaded}")
-    print(f"Title: {s_loaded.metadata.General.title}")
-    print(f"Author: {s_loaded.metadata.General.author}")
+    
+    # Verify the loaded signal matches original
+    assert s_loaded.metadata.General.title == s.metadata.General.title
+    assert s_loaded.metadata.General.author == s.metadata.General.author
     
     # %%
-    # Load with specific signal type (overriding automatic detection)
+    # ## Loading with specific signal type
+    # 
+    # Override automatic signal type detection when needed
+    
     s_loaded_spectrum = hs.load(hspy_file, signal_type="Signal1D") 
-    print(f"\nLoaded with specific signal type: {s_loaded_spectrum}")
     
     # %%
-    # ## Metadata structure
+    # ## Metadata structure examination
     # 
     # HyperSpy preserves both original file metadata and HyperSpy-specific metadata
-    print("Original metadata keys:", list(s_loaded.original_metadata.keys()) if hasattr(s_loaded.original_metadata, 'keys') else "None")
-    print("Metadata structure:")
-    print(s_loaded.metadata)
+    
+    # Access original metadata from file format
+    original_keys = list(s_loaded.original_metadata.keys()) if hasattr(s_loaded.original_metadata, 'keys') else []
+    
+    # HyperSpy metadata structure is organized and accessible
+    metadata_structure = s_loaded.metadata
 
 # %%
 # ## Working with built-in datasets
 # 
 # HyperSpy provides several built-in datasets for testing and demonstration
 
-# Load built-in test data
+# Load built-in test data - no file I/O required
 built_in_data = hs.data.two_gaussians()
-print(f"Built-in data: {built_in_data}")
+
+# Plot the built-in dataset to examine its structure
 built_in_data.plot()

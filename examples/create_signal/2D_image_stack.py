@@ -19,10 +19,22 @@ im = hs.signals.Signal2D(np.random.random((16, 16, 32, 32)))
 # Define the axis properties
 # --------------------------
 # Define the axis properties using batch assignment
-im.axes_manager.signal_axes[0].set(name='', units='1/nm', scale=0.1, offset=0)
-im.axes_manager.signal_axes[1].set(name='', units='1/nm', scale=0.1, offset=0)
-im.axes_manager.navigation_axes[0].set(name='X', units='nm', scale=0.3, offset=100)
-im.axes_manager.navigation_axes[1].set(name='Y', units='nm', scale=0.3, offset=100)
+im.axes_manager.signal_axes[0].name = ''
+im.axes_manager.signal_axes[0].units = '1/nm'
+im.axes_manager.signal_axes[0].scale = 0.1
+im.axes_manager.signal_axes[0].offset = 0
+im.axes_manager.signal_axes[1].name = ''
+im.axes_manager.signal_axes[1].units = '1/nm'
+im.axes_manager.signal_axes[1].scale = 0.1
+im.axes_manager.signal_axes[1].offset = 0
+im.axes_manager.navigation_axes[0].name = 'X'
+im.axes_manager.navigation_axes[0].units = 'nm'
+im.axes_manager.navigation_axes[0].scale = 0.3
+im.axes_manager.navigation_axes[0].offset = 100
+im.axes_manager.navigation_axes[1].name = 'Y'
+im.axes_manager.navigation_axes[1].units = 'nm'
+im.axes_manager.navigation_axes[1].scale = 0.3
+im.axes_manager.navigation_axes[1].offset = 100
 
 # %%
 # Set metadata and plot

@@ -151,8 +151,8 @@ m.fit()
 # Calculate R-squared
 model_signal = m.as_signal()
 residuals = s - model_signal  # Direct signal arithmetic preserves metadata
-ss_res = (residuals**2).sum(axis=None).data  # Use HyperSpy methods: square, sum, extract scalar
-ss_tot = ((s - s.mean(axis=None))**2).sum(axis=None).data  # Use HyperSpy methods for consistency
+ss_res = np.sum(residuals.data**2)        # Use NumPy for final scalar calculation
+ss_tot = np.sum((s.data - np.mean(s.data))**2)  # Use NumPy for scalar statistics
 r_squared = 1 - (ss_res / ss_tot)
 
 # %%

@@ -30,6 +30,19 @@ m = s.create_model()
 # - Ready for component addition
 
 # %%
+# **Setting up signal with physical units**
+#
+# Configure the energy axis with realistic calibration before adding components.
+# This enables string-based indexing and physical interpretation.
+
+s.axes_manager.signal_axes[0].name = 'Energy'
+s.axes_manager.signal_axes[0].units = 'eV'
+s.axes_manager.signal_axes[0].scale = 0.1
+s.axes_manager.signal_axes[0].offset = 200
+
+print(f"Energy range: {s.axes_manager[2].axis[0]:.1f} to {s.axes_manager[2].axis[-1]:.1f} eV")
+
+# %%
 # **Configuring first Gaussian component**
 #
 # We'll create a Gaussian peak that varies spatially across the spectrum image.
@@ -44,9 +57,9 @@ m.append(gs1)
 m.set_parameters_value('sigma', 10, component_list=[gs1])
 
 # **Spatial parameter variations:**
-# - Center: varies ±5 channels around position 256
+# - Center: varies ±5 channels around position 256 (~225.6 eV)
 # - Area: random values between 0 and 10,000
-# - Width: constant at 10 channels
+# - Width: constant at 10 channels (~1 eV)
 
 # Make the center vary in the -5,5 range around 256
 gs1.centre.map['values'][:] = 256 + (np.random.random((32, 32)) - 0.5) * 10
@@ -57,9 +70,9 @@ gs1.A.map['values'][:] = 10000 * np.random.random((32, 32))
 gs1.A.map['is_set'][:] = True
 
 # %%
-# Configure second Gaussian component
-# -----------------------------------
-# Second gaussian
+# **Configure second Gaussian component**
+#
+# Second gaussian at higher energy with different characteristics
 gs2 = hs.model.components1D.Gaussian()
 # Add it to the model
 m.append(gs2)
@@ -67,7 +80,7 @@ m.append(gs2)
 # Set the parameters
 m.set_parameters_value('sigma', 20, component_list=[gs2])
 
-# Make the center vary in the -10,10 range around 768
+# Make the center vary around 768 (~276.8 eV)
 gs2.centre.map['values'][:] = 768 + (np.random.random((32, 32)) - 0.5) * 20
 gs2.centre.map['is_set'][:] = True
 
@@ -76,17 +89,49 @@ gs2.A.map['values'][:] = 20000 * np.random.random((32, 32))
 gs2.A.map['is_set'][:] = True
 
 # %%
-# Generate the dataset and add noise
-# ----------------------------------
-# Create the dataset
+# **Generate the dataset and add realistic noise**
+#
+# Create the simulated spectrum and add physics-based noise
 s_model = m.as_signal()
 
-# Add noise
+# Set metadata for proper identification
 s_model.set_signal_origin("simulation")
-s_model.add_poissonian_noise()
+
+# Add realistic noise in proper sequence
+print("Adding realistic noise to simulation...")
+print(f"Signal intensity range: {s_model.data.min():.0f} to {s_model.data.max():.0f}")
+
+# 1. Convert to float for full noise compatibility
+s_model.change_dtype('float64')
+
+# 2. Add shot noise (Poisson statistics from counting)
+s_model.add_poissonian_noise(random_state=42)
+
+# 3. Add electronic noise (instrumentation)
+s_model.add_gaussian_noise(std=50, random_state=43)
+
+print(f"After noise: {s_model.data.min():.0f} to {s_model.data.max():.0f}")
 
 # %%
-# Plot the result
-# ---------------
-# Plot the result
+# **Demonstrate string-based indexing with units**
+#
+# Now that we have a calibrated signal, we can use string-based indexing
+
+# Extract first Gaussian region using physical units
+first_peak = s_model.isig['220 eV':'235 eV']
+print(f"First peak region shape: {first_peak.data.shape}")
+print(f"Energy range: {first_peak.axes_manager[2].axis[0]:.1f} to {first_peak.axes_manager[2].axis[-1]:.1f} eV")
+
+# Extract second Gaussian region  
+second_peak = s_model.isig['270 eV':'285 eV']
+print(f"Second peak region shape: {second_peak.data.shape}")
+
+# Extract a spatial subset using relative indexing
+spatial_roi = s_model.inav['rel0.25':'rel0.75', 'rel0.25':'rel0.75']
+print(f"Central spatial ROI shape: {spatial_roi.data.shape}")
+
+# %%
+# **Plot the result**
+#
+# Visualize the simulated spectrum image with both peaks
 s_model.plot()
