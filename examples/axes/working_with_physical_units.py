@@ -333,10 +333,8 @@ print(f"\nDiffraction calibration: {q_per_pixel.to('1/nm'):.3f} per pixel")
 # %%
 # Summary
 # =======
-
-print("\n" + "="*60)
-print("SUMMARY")
-print("="*60)
+#
+# HyperSpy Physical Units Features
 
 summary_text = """
 HyperSpy Physical Units Features:

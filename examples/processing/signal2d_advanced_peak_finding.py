@@ -115,8 +115,8 @@ except ImportError:
 
 # %%
 # Method 3: Simple threshold-based peak finding
-
-print("\\n=== Method 3: Threshold-based Detection ===")
+#
+# Using basic image processing techniques for peak detection
 
 # Apply Gaussian filter to smooth noise
 smoothed = ndimage.gaussian_filter(signal_2d.data, sigma=1.5)
@@ -138,9 +138,7 @@ for i, (y, x) in enumerate(zip(peak_positions[0], peak_positions[1])):
 
 # %%
 # Method 4: Using HyperSpy's built-in peak finding
-
-print("\\n=== Method 4: HyperSpy Peak Finding ===")
-
+#
 # HyperSpy provides some peak finding functionality
 # Find peaks using a simple approach with HyperSpy tools
 
@@ -155,9 +153,9 @@ print("HyperSpy peak finding works best with 1D spectra or spectrum images")
 print("For 2D peak detection in images, use the methods above")
 
 # %%
-# Visualization of results using HyperSpy markers
-
-print("\\n=== Visualizing Peak Detection Results ===")
+# Visualizing Peak Detection Results
+#
+# Compare the effectiveness of different peak detection methods
 
 # Use HyperSpy's plotting with markers for much cleaner visualization
 signal_2d.plot()
@@ -210,8 +208,8 @@ if len(peak_positions[0]) > 0:
 
 # %%
 # Comparison and accuracy assessment
-
-print("\\n=== Accuracy Assessment ===")
+#
+# Quantitative comparison of peak detection methods
 
 def calculate_detection_accuracy(true_peaks, detected_peaks, tolerance=5):
     """Calculate how many true peaks were correctly detected."""
@@ -245,9 +243,14 @@ for method_name, peaks in methods:
     else:
         print(f"{method_name}: No peaks detected")
 
-print("\\n=== Summary ===")
-print("Different peak finding methods have various strengths:")
-print("- Template matching: Good for peaks with known shape")
-print("- Scikit-image: Robust with good parameter control") 
-print("- Threshold-based: Simple and fast, good for clean data")
-print("- Choose method based on your data characteristics and noise level")
+# %%
+# Summary
+#
+# Different peak finding methods have various strengths:
+# - Template matching: Good for peaks with known shape
+# - Scikit-image: Robust with good parameter control
+# - Threshold-based: Simple and fast, good for clean data
+# 
+# Choose method based on your data characteristics and noise level
+
+print("Peak finding comparison complete")

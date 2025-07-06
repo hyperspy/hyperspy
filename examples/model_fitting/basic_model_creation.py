@@ -150,8 +150,12 @@ ss_res = np.sum(residuals**2)
 ss_tot = np.sum((s.data - np.mean(s.data))**2)
 r_squared = 1 - (ss_res / ss_tot)
 
-print("\nFitted Parameters:")
-print("==================")
+# %%
+# Fitted Parameters
+# =================
+#
+# Let's examine how well the model fitted the true parameters
+
 print(f"Background A: {background_comp.A.value:.2f} (true: 5000)")
 print(f"Background r: {background_comp.r.value:.2f} (true: 2.5)")
 print(f"Peak 1 centre: {peak1_comp.centre.value:.2f} eV (true: 250)")
@@ -164,13 +168,13 @@ print(f"Peak 3 centre: {peak3_comp.centre.value:.2f} eV (true: 600)")
 print(f"Peak 3 gamma: {peak3_comp.gamma.value:.2f} eV (true: 25)")
 print(f"Peak 3 amplitude: {peak3_comp.A.value:.2f} (true: 4000)")
 
-print(f"\nGoodness of fit (R²): {r_squared:.4f}")
+print(f"Goodness of fit (R²): {r_squared:.4f}")
 
 # %%
 # Create 2D example
 # =================
-
-print("\nCreating 2D example...")
+#
+# Now let's demonstrate model creation for 2D signals
 
 # Create 2D synthetic data
 x = np.linspace(-5, 5, 100)
@@ -245,10 +249,8 @@ hs.plot.plot_images([s2d, m2d.as_signal()],
 # %%
 # Summary
 # =======
-
-print("\n" + "="*60)
-print("MODEL FITTING SUMMARY")
-print("="*60)
+#
+# Model fitting results and key takeaways
 
 print(f"""
 1D MODEL RESULTS:

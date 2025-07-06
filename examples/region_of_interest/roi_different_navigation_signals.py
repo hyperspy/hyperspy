@@ -89,8 +89,6 @@ print("Extracted mean spectra from different spatial regions")
 # 
 # Energy ROIs allow us to extract specific spectral ranges for detailed analysis
 
-print("\\n=== Example 2: Energy ROI for Peak Analysis ===")
-
 # Create energy ROI around the first peak
 energy_roi1 = hs.roi.SpanROI(left=4.5, right=5.5)
 peak1_map = energy_roi1(spectrum_image, axes=['Energy'])
@@ -112,14 +110,14 @@ print(f"Peak 2 map shape: {peak2_intensity.data.shape}")
 
 # %%
 # Summary and best practices
+#
+# Advanced ROI operations demonstrated:
+# 1. Multiple spatial ROIs for region comparison  
+# 2. Energy ROIs for peak analysis and mapping
+#
+# Best practices:
+# - Choose ROI type based on your analysis needs
+# - Use appropriate axes specification
+# - Consider ROI size effects on statistics
 
-print("\\n=== Summary and Best Practices ===")
-print("Advanced ROI operations demonstrated:")
-print("1. Multiple spatial ROIs for region comparison")
-print("2. Energy ROIs for peak analysis and mapping")
-print("\\nBest practices:")
-print("- Choose ROI type based on your analysis needs")
-print("- Use appropriate axes specification")
-print("- Consider ROI size effects on statistics")
-
-print("\\n=== Advanced ROI Examples Complete ===")
+print("Advanced ROI Examples Complete")

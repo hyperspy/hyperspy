@@ -319,9 +319,12 @@ print(f"\n   Total event counts during demonstration:")
 for event_type, count in event_counts.items():
     print(f"   📈 {event_type}: {count} times")
 
-print("\n" + "="*70)
-print("SUMMARY")
-print("="*70)
+# %%
+# Summary
+# =======
+#
+# Event system capabilities and benefits
+
 print("✓ Events enable responsive, interactive analysis workflows")
 print("✓ Built-in events cover data changes, navigation, and axis modifications")
 print("✓ Custom events can be added for specialized analysis needs")

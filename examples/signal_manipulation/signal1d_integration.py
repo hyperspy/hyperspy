@@ -201,10 +201,12 @@ s_cumulative.metadata.General.title = 'Cumulative Integration'
 s_cumulative.axes_manager.signal_axes[0].name = 'Energy'
 s_cumulative.axes_manager.signal_axes[0].units = 'eV'
 
-s_cumulative.plot()
+# %%
+# Integration Summary
+# ==================
+#
+# Review of the different integration methods and their results
 
-print("\nIntegration Summary:")
-print("==================")
 print(f"Total signal integral: {float(total_integral.data):.2f}")
 print(f"Peak 1 (150-250 eV): {float(range_integral_1.data):.2f}")
 print(f"Peak 2 (450-550 eV): {float(range_integral_2.data):.2f}")
@@ -212,7 +214,7 @@ print(f"Peak 3 (700-800 eV): {float(range_integral_3.data):.2f}")
 print(f"ROI region (400-600 eV): {float(roi_integral.data):.2f}")
 print(f"Final cumulative value: {cumulative_integral[-1]:.2f}")
 
-print("\nIntegration methods available:")
+print("Integration methods available:")
 print("- integrate1D(): Integrate over specified axis")
 print("- isig[start:end].integrate1D(): Integrate over energy range")
 print("- ROI.integrate1D(): Interactive range selection")

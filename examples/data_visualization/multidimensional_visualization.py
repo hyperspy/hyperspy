@@ -91,9 +91,8 @@ navigator.plot()
 # %%
 # Multiple Position Analysis
 # ===========================
-
-print("\n2. Multiple Position Analysis")
-print("="*50)
+#
+# Extract spectra from multiple positions for comparison
 
 # Extract spectra from multiple positions and plot them using HyperSpy
 positions = [(2, 3), (6, 8), (9, 10), (5, 11)]
@@ -160,10 +159,8 @@ for pos, label in zip(positions_to_analyze, labels):
 # %%
 # Summary
 # =======
-
-print("\n" + "="*60)
-print("MULTIDIMENSIONAL VISUALIZATION SUMMARY")
-print("="*60)
+#
+# Multidimensional visualization techniques demonstrated
 
 print(f"""
 CREATED SIGNALS:
