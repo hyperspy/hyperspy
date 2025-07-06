@@ -122,9 +122,9 @@ print(f"   All axis names: {all_names}")
 # Practical Examples for Different Data Types
 # -------------------------------------------
 
-print("\n" + "="*50)
-print("PRACTICAL EXAMPLES FOR DIFFERENT DATA TYPES")
-print("="*50)
+# %%
+# Practical Examples for Different Data Types
+# -------------------------------------------
 
 # Example 1: EELS Spectrum Image
 print("\n1. EELS Spectrum Image Setup:")

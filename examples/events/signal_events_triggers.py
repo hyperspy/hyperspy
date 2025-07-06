@@ -107,10 +107,10 @@ s1.axes_manager.indices = (3,)
 s1.axes_manager.indices = (7,)
 
 print("\n   Modifying data (triggers data_changed):")
-s1.data *= 2.0
+s1 *= 2.0  # Using signal arithmetic preserves metadata
 s1.events.data_changed.trigger(obj=s1)
 
-s2.data += 0.5
+s2 += 0.5  # Using signal arithmetic preserves metadata  
 s2.events.data_changed.trigger(obj=s2)
 
 # %%
@@ -137,7 +137,7 @@ nav_axis_1d.events.index_changed.connect(navigation_tracker)
 
 print("\n   Testing detailed handlers:")
 s1.axes_manager.indices = (2,)
-s1.data /= 2.0
+s1 /= 2.0  # Using signal arithmetic preserves metadata
 s1.events.data_changed.trigger(obj=s1)
 
 # %%
@@ -216,11 +216,11 @@ print("\n   Creating analysis tracker:")
 tracker = AnalysisTracker(s1)
 
 print("\n   Performing operations that trigger events:")
-s1.data += 10  # Modify data
+s1 += 10  # Modify data using signal arithmetic
 s1.events.data_changed.trigger(obj=s1)
 
 s1.axes_manager.indices = (4,)  # Change navigation
-s1.data *= 1.1  # Another data change
+s1 *= 1.1  # Another data change using signal arithmetic
 s1.events.data_changed.trigger(obj=s1)
 
 print("\n   Analysis summary:")
@@ -268,7 +268,7 @@ s_test.events.data_changed.connect(logger.data_changed_logger)
 s_test.axes_manager.navigation_axes[0].events.index_changed.connect(logger.index_changed_logger)
 
 print("\n   Testing event logging:")
-s_test.data *= 1.5
+s_test *= 1.5  # Using signal arithmetic
 s_test.events.data_changed.trigger(obj=s_test)
 
 s_test.axes_manager.indices = (3,)

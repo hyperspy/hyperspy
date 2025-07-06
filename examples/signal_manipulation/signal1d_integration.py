@@ -156,19 +156,19 @@ si.axes_manager.navigation_axes[1].name = 'y'
 si.metadata.General.title = 'Spectrum Image'
 
 # Integrate the entire spectrum at each pixel to create a total intensity map
-total_intensity_map = si.integrate1D(axis=-1)  # -1 refers to the signal axis
+total_intensity_map = si.integrate1D(axis='Energy')  # Use axis name for clarity
 
 # Integrate specific energy ranges to create elemental maps
-peak1_map = si.isig[175:225].integrate1D(axis=-1)  # Around first peak
-peak2_map = si.isig[475:525].integrate1D(axis=-1)  # Around second peak
+peak1_map = si.isig[175:225].integrate1D(axis='Energy')  # Around first peak
+peak2_map = si.isig[475:525].integrate1D(axis='Energy')  # Around second peak
 
 # Plot the results using HyperSpy's plot_images for the maps
 # Sample spectrum from the middle of the image
 si.inav[5, 5].plot()
 
-# Mean and sum spectra
-mean_spectrum = si.mean(axis=(0, 1))
-sum_spectrum = si.sum(axis=(0, 1))
+# Mean and sum spectra across spatial dimensions
+mean_spectrum = si.mean(axis=('x', 'y'))  # Use axis names for clarity
+sum_spectrum = si.sum(axis=('x', 'y'))    # More readable than (0, 1)
 
 # Plot the spectra
 mean_spectrum.plot()
@@ -186,8 +186,10 @@ hs.plot.plot_images([total_intensity_map, peak1_map, peak2_map],
 #
 # Sometimes we want to see how the integral accumulates along the signal axis
 
-# Calculate cumulative integral
-cumulative_integral = np.cumsum(s.data) * s.axes_manager.signal_axes[0].scale
+# Calculate cumulative integral using signal directly with numpy
+# The __array__ protocol allows direct use with np.cumsum while preserving signal structure
+cumulative_signal = np.cumsum(s) * s.axes_manager.signal_axes[0].scale
+cumulative_integral = cumulative_signal.data  # Extract data for plotting on matplotlib axis
 
 # Plot original signal and cumulative integral
 s.plot()

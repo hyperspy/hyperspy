@@ -3,7 +3,12 @@ Basic Model Creation and Fitting
 =================================
 
 This example demonstrates how to create and fit models in HyperSpy.
-Models are composed of components that represent different physical or 
+Model# Calculate R-squared
+model_signal = m.as_signal()
+residuals = s - model_signal  # Direct signal arithmetic preserves metadata
+ss_res = np.sum(residuals.data**2)        # Use NumPy for final scalar calculation
+ss_tot = np.sum((s.data - np.mean(s.data))**2)  # Use NumPy for scalar statistics
+r_squared = 1 - (ss_res / ss_tot)composed of components that represent different physical or 
 mathematical features in your data.
 
 Key concepts:
@@ -144,10 +149,10 @@ m.fit()
 # ====================
 
 # Calculate R-squared
-model_values = m.as_signal().data
-residuals = s.data - model_values
-ss_res = np.sum(residuals**2)
-ss_tot = np.sum((s.data - np.mean(s.data))**2)
+model_signal = m.as_signal()
+residuals = s - model_signal  # Direct signal arithmetic preserves metadata
+ss_res = (residuals**2).sum(axis=None).data  # Use HyperSpy methods: square, sum, extract scalar
+ss_tot = ((s - s.mean(axis=None))**2).sum(axis=None).data  # Use HyperSpy methods for consistency
 r_squared = 1 - (ss_res / ss_tot)
 
 # %%

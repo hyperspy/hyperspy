@@ -238,9 +238,9 @@ hs.plot.plot_images([nav_map_nm, nav_map_um],
 # Practical Examples with Different Unit Systems
 # ===============================================
 
-print("\n" + "="*60)
-print("PRACTICAL EXAMPLES")
-print("="*60)
+# %%
+# Practical Examples
+# ------------------
 
 # Example 1: TEM/STEM imaging
 print("\n1. TEM/STEM Imaging Example:")

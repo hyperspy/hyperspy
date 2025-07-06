@@ -56,7 +56,7 @@ original_max = interactive_max.data.copy()
 original_mean = interactive_mean.data.copy()
 
 # Modify the signal data (add noise)
-test_signal.data += np.random.normal(0, 5, test_signal.data.shape)
+test_signal += np.random.normal(0, 5, test_signal.data.shape)  # Must use .data for shape
 
 # Recompute statistics
 new_max = test_signal.max(axis=-1)

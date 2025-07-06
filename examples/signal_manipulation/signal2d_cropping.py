@@ -20,16 +20,9 @@ X, Y = np.meshgrid(x, y)
 image_data = np.exp(-(X**2 + Y**2)/5) + 0.5*np.exp(-((X-2)**2 + (Y-2)**2)/2)
 im = hs.signals.Signal2D(image_data)
 
-# Set up axes
-im.axes_manager.signal_axes[0].name = 'Y'
-im.axes_manager.signal_axes[0].units = 'μm'
-im.axes_manager.signal_axes[0].scale = 0.1
-im.axes_manager.signal_axes[0].offset = -5
-
-im.axes_manager.signal_axes[1].name = 'X'  
-im.axes_manager.signal_axes[1].units = 'μm'
-im.axes_manager.signal_axes[1].scale = 0.1
-im.axes_manager.signal_axes[1].offset = -5
+# Set up axes using batch assignment
+im.axes_manager.signal_axes[0].set(name='Y', units='μm', scale=0.1, offset=-5)
+im.axes_manager.signal_axes[1].set(name='X', units='μm', scale=0.1, offset=-5)
 
 im.metadata.General.title = 'Test image with circular features'
 print(f"Original image: {im}")

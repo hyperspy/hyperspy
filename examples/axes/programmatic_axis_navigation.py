@@ -8,7 +8,15 @@ set positions, iterate through data, and control navigation programmatically
 for automated analysis workflows.
 
 Key concepts covered:
-- Setting navigation indices and coordinates programmatically
+- Setting navigation indices and coordinates pr        stats = {
+            'indices': indices,
+            'time': signal.axes_manager[0].value,
+            'temperature': signal.axes_manager[1].value,
+            'mean': np.mean(image.data),   # Use NumPy for scalar statistics
+            'std': np.std(image.data),     # Use NumPy for scalar statistics
+            'max': np.max(image.data),     # Use NumPy for scalar statistics
+            'min': np.min(image.data)      # Use NumPy for scalar statistics
+        }cally
 - Iterating through navigation dimensions
 - Using index vs coordinate systems
 - Automated navigation for batch processing
@@ -181,7 +189,7 @@ max_coords = None
 
 for indices in s.axes_manager:
     current_image = s.inav[indices]
-    intensity = np.max(current_image.data)
+    intensity = np.max(current_image.data)  # Use NumPy for scalar maximum of image
     
     if intensity > max_intensity:
         max_intensity = intensity
@@ -213,7 +221,7 @@ time_values = []
 for t_idx in range(s.axes_manager[0].size):
     s.axes_manager[0].index = t_idx
     current_image = s.inav[s.axes_manager.indices]
-    max_val = np.max(current_image.data)
+    max_val = np.max(current_image.data)  # Use NumPy for scalar maximum of image
     time_series_max.append(max_val)
     time_values.append(s.axes_manager[0].value)
 
@@ -235,7 +243,7 @@ temp_values = []
 for temp_idx in range(s.axes_manager[1].size):
     s.axes_manager[1].index = temp_idx
     current_image = s.inav[s.axes_manager.indices]
-    max_val = np.max(current_image.data)
+    max_val = np.max(current_image.data)  # Use NumPy for scalar maximum of image
     temp_series_max.append(max_val)
     temp_values.append(s.axes_manager[1].value)
 
@@ -282,7 +290,7 @@ nav_intensity_map = np.zeros((s.axes_manager[0].size, s.axes_manager[1].size))
 for t_idx in range(s.axes_manager[0].size):
     for temp_idx in range(s.axes_manager[1].size):
         s.axes_manager.indices = (t_idx, temp_idx)
-        nav_intensity_map[t_idx, temp_idx] = np.max(s.inav[s.axes_manager.indices].data)
+        nav_intensity_map[t_idx, temp_idx] = np.max(s.inav[s.axes_manager.indices].data)  # Use NumPy for scalar
 
 heatmap_signal = hs.signals.Signal2D(nav_intensity_map)
 heatmap_signal.axes_manager[0].name = 'Time'
@@ -355,7 +363,7 @@ high_intensity_positions = []
 
 for indices in s.axes_manager:
     current_image = s.inav[indices]
-    max_intensity = np.max(current_image.data)
+    max_intensity = np.max(current_image.data)  # Use NumPy for scalar maximum of image
     
     if max_intensity > threshold:
         coords = (s.axes_manager[0].value, s.axes_manager[1].value)
@@ -383,10 +391,10 @@ class NavigationStatistics:
             'indices': indices,
             'time': signal.axes_manager[0].value,
             'temperature': signal.axes_manager[1].value,
-            'mean': np.mean(image.data),
-            'std': np.std(image.data),
-            'max': np.max(image.data),
-            'min': np.min(image.data)
+            'mean': image.mean(axis=None),   # Use HyperSpy method for scalar mean
+            'std': image.std(axis=None),     # Use HyperSpy method for scalar std
+            'max': image.max(axis=None),     # Use HyperSpy method for scalar max
+            'min': image.min(axis=None)      # Use HyperSpy method for scalar min
         }
         self.stats.append(stats)
         return stats

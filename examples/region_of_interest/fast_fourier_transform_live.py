@@ -16,8 +16,8 @@ s = hs.data.atomic_resolution_image()
 
 # %%
 # Add noise to the signal to make it more realistic
-s.data *= 1E3
-s.data += np.random.default_rng().poisson(s.data)
+s *= 1E3  # Using signal arithmetic preserves metadata
+s += np.random.default_rng().poisson(s.data)  # Must use .data for Poisson since it needs array
 
 # %%
 # Create the ROI, here a :py:class:`~.api.roi.RectangularROI`:

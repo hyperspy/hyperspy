@@ -17,19 +17,10 @@ import os
 data = np.random.random((20, 30, 100))
 s = hs.signals.Signal1D(data)
 
-# Set up axes
-s.axes_manager.signal_axes[0].name = 'Energy'
-s.axes_manager.signal_axes[0].units = 'eV'
-s.axes_manager.signal_axes[0].scale = 0.1
-s.axes_manager.signal_axes[0].offset = 100
-
-s.axes_manager.navigation_axes[0].name = 'X'
-s.axes_manager.navigation_axes[0].units = 'nm'
-s.axes_manager.navigation_axes[0].scale = 0.5
-
-s.axes_manager.navigation_axes[1].name = 'Y'
-s.axes_manager.navigation_axes[1].units = 'nm'  
-s.axes_manager.navigation_axes[1].scale = 0.5
+# Set up axes using batch assignment
+s.axes_manager.signal_axes[0].set(name='Energy', units='eV', scale=0.1, offset=100)
+s.axes_manager.navigation_axes[0].set(name='X', units='nm', scale=0.5)
+s.axes_manager.navigation_axes[1].set(name='Y', units='nm', scale=0.5)
 
 s.metadata.General.title = 'Sample spectrum image'
 s.metadata.General.author = 'HyperSpy example'

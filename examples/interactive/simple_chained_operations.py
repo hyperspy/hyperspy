@@ -65,9 +65,9 @@ s.metadata.General.title = "Synthetic spectrum image"
 # spatial variation in the spectral data.
 
 # Calculate statistics along the signal axis
-max_intensity = s.max(axis=-1)  # Maximum intensity at each position
-mean_intensity = s.mean(axis=-1)  # Mean intensity at each position
-total_intensity = s.sum(axis=-1)  # Total intensity at each position
+max_intensity = s.max(axis='Energy')  # Maximum intensity at each position
+mean_intensity = s.mean(axis='Energy')  # Mean intensity at each position
+total_intensity = s.sum(axis='Energy')  # Total intensity at each position
 
 # Successfully created statistical maps:
 # - Maximum intensity at each spatial position
@@ -81,11 +81,11 @@ total_intensity = s.sum(axis=-1)  # Total intensity at each position
 # and extracting meaningful spectral information.
 
 # Signal-to-noise ratio (approximate)
-snr_map = mean_intensity / s.std(axis=-1)
+snr_map = mean_intensity / s.std(axis='Energy')
 # Created SNR map by calculating mean/standard deviation ratio
 
 # Peak position analysis - find channel with maximum intensity at each position
-peak_position_map = s.indexmax(axis=-1)
+peak_position_map = s.indexmax(axis='Energy')
 
 # Peak energy conversion - convert peak positions to physical energy values
 energy_axis_vals = s.axes_manager[2].axis
@@ -105,8 +105,8 @@ s_cropped = s.isig[energy_min:energy_max]
 # Energy range cropping applied: 15-35 eV window selected for analysis
 
 # Energy integration in specific ranges for ratio analysis
-low_energy_sum = s.isig[0:20].sum(axis=-1)
-high_energy_sum = s.isig[30:50].sum(axis=-1)
+low_energy_sum = s.isig[0:20].sum(axis='Energy')
+high_energy_sum = s.isig[30:50].sum(axis='Energy')
 
 # Calculate ratio
 energy_ratio = high_energy_sum / (low_energy_sum + 1e-10)  # Add small value to avoid division by zero
@@ -123,21 +123,21 @@ original_mean = mean_intensity.data.copy()
 # Original data ranges stored for comparison:
 print(f"Original mean range: [{original_mean.min():.2f}, {original_mean.max():.2f}]")
 
-# Modify the original signal
-s.data *= 1.5  # Increase intensity by 50%
+# Modify the original signal using signal arithmetic (preserves metadata)
+s = s * 1.5  # Increase intensity by 50% - creates new signal with updated title
 
 # Recalculate statistics
-new_max_intensity = s.max(axis=-1)
-new_mean_intensity = s.mean(axis=-1)
+new_max_intensity = s.max(axis='Energy')
+new_mean_intensity = s.mean(axis='Energy')
 
-print(f"New max range: [{new_max_intensity.data.min():.2f}, {new_max_intensity.data.max():.2f}]")
-print(f"New mean range: [{new_mean_intensity.data.min():.2f}, {new_mean_intensity.data.max():.2f}]")
+print(f"New max range: [{np.min(new_max_intensity.data):.2f}, {np.max(new_max_intensity.data):.2f}]")
+print(f"New mean range: [{np.min(new_mean_intensity.data):.2f}, {np.max(new_mean_intensity.data):.2f}]")
 
-# Verify the scaling
-ratio_max = new_max_intensity.data / original_max
-ratio_mean = new_mean_intensity.data / original_mean
-print(f"Max intensity scaling factor: {ratio_max.mean():.2f} (expected: 1.50)")
-print(f"Mean intensity scaling factor: {ratio_mean.mean():.2f} (expected: 1.50)")
+# Verify the scaling using signal arithmetic
+ratio_max = new_max_intensity / original_max  # Signal division preserves metadata
+ratio_mean = new_mean_intensity / original_mean
+print(f"Max intensity scaling factor: {np.mean(ratio_max.data):.2f} (expected: 1.50)")
+print(f"Mean intensity scaling factor: {np.mean(ratio_mean.data):.2f} (expected: 1.50)")
 
 # %%
 # Step 5: Visualization using HyperSpy plotting

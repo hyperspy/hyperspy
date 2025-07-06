@@ -52,11 +52,8 @@ def create_test_spectra_with_shifts(n_spectra=5, size=1024):
 spectra_data, true_shifts = create_test_spectra_with_shifts()
 s = hs.signals.Signal1D(spectra_data)
 
-# Set up axis calibration (energy scale)
-s.axes_manager.signal_axes[0].name = 'Energy'
-s.axes_manager.signal_axes[0].units = 'eV'
-s.axes_manager.signal_axes[0].scale = 0.5  # 0.5 eV per channel
-s.axes_manager.signal_axes[0].offset = 100  # Start at 100 eV
+# Set up axis calibration (energy scale) using batch assignment
+s.axes_manager.signal_axes[0].set(name='Energy', units='eV', scale=0.5, offset=100)  # 0.5 eV per channel, start at 100 eV
 
 print(f"Created signal with {s.axes_manager.navigation_size} spectra")
 print(f"Energy range: {s.axes_manager.signal_axes[0].axis[0]:.1f} to {s.axes_manager.signal_axes[0].axis[-1]:.1f} eV")
