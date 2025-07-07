@@ -17,34 +17,72 @@ import hyperspy.api as hs
 # processing steps to signals and maintaining consistency when data changes.
 
 # %%
-# **Creating test data for chained operations**
+# **Creating test data for chained operations using HyperSpy models**
 #
-# We'll create a 2D spectrum image with spatial navigation and energy signal axes.
+# We'll create a 2D spectrum image with spatial navigation and energy signal axes
+# using HyperSpy's model components for proper simulation.
 
 # Create a 2D spectrum image (spatial navigation, energy signal)
 n_nav_x, n_nav_y = 10, 10
 n_signal = 100
 
-# Create synthetic spectrum data with different peaks at different positions
-data = np.random.random((n_nav_x, n_nav_y, n_signal)) * 10
+# Create empty signal to build simulation
+s = hs.signals.Signal1D(np.zeros((n_nav_x, n_nav_y, n_signal)))
 
-# Add some peaks that vary spatially
+# Set up physical axes first
+s.axes_manager.navigation_axes.set(name=['X', 'Y'])
+s.axes_manager.signal_axes.set(
+    name=['Energy'],
+    units=['eV'],
+    scale=[0.5],
+    offset=[0]
+)
+
+# Create model for simulation
+m = s.create_model()
+
+# Add background using HyperSpy Expression component
+background = hs.model.components1D.Expression(
+    "a * x + b + c * exp(-x/d)",
+    name="Background",
+    a=0.2, b=10, c=5, d=20  # Exponential decay background
+)
+m.append(background)
+
+# Set background parameters for all navigation positions
+m.set_parameters_value('a', 0.2, component_list=[background])
+m.set_parameters_value('b', 10, component_list=[background])
+m.set_parameters_value('c', 5, component_list=[background])
+m.set_parameters_value('d', 20, component_list=[background])
+
+# Add main Gaussian peak that varies spatially
+main_peak = hs.model.components1D.Gaussian()
+m.append(main_peak)
+
+# Set spatial parameter variations using the parameter maps
 x_coords, y_coords = np.ogrid[:n_nav_x, :n_nav_y]
-energy_axis = np.linspace(0, 50, n_signal)
 
-for i in range(n_nav_x):
-    for j in range(n_nav_y):
-        # Add a peak that shifts with position
-        peak_center = 20 + 5 * (i + j) / (n_nav_x + n_nav_y)
-        peak_height = 50 + 20 * np.sin(i * np.pi / n_nav_x) * np.cos(j * np.pi / n_nav_y)
-        peak_width = 3
-        
-        # Gaussian peak
-        peak = peak_height * np.exp(-((energy_axis - peak_center) ** 2) / (2 * peak_width ** 2))
-        data[i, j, :] += peak
+# Peak center varies with position: base energy + spatial gradient
+center_values = 20 + 5 * (x_coords + y_coords) / (n_nav_x + n_nav_y)
+main_peak.centre.map['values'][:] = center_values
+main_peak.centre.map['is_set'][:] = True
 
-# Create the signal
-s = hs.signals.Signal1D(data)
+# Peak height varies sinusoidally across the field
+height_values = 50 + 20 * np.sin(x_coords * np.pi / n_nav_x) * np.cos(y_coords * np.pi / n_nav_y)
+main_peak.A.map['values'][:] = height_values
+main_peak.A.map['is_set'][:] = True
+
+# Constant peak width
+m.set_parameters_value('sigma', 3, component_list=[main_peak])
+
+# Generate the simulated signal
+s = m.as_signal()
+s.set_signal_origin("simulation")
+
+# Store the simulation and ground truth model for reproducibility
+m.signal = s
+s.models.store(m, name="ground_truth")
+
 # Set navigation axes (X, Y spatial dimensions)
 s.axes_manager.navigation_axes.set(name=['X', 'Y'])
 # Set signal axis (Energy spectrum)
@@ -55,8 +93,11 @@ s.axes_manager.signal_axes.set(
 )
 s.metadata.General.title = "Synthetic spectrum image"
 
-# Signal characteristics successfully created with spatial navigation and energy axis
-# Created spectrum image with shape (10, 10, 100) for demonstration
+# Successfully created simulation using HyperSpy model components:
+# - Background with exponential decay
+# - Gaussian peak with spatial parameter variations
+# - Proper physical units and calibration
+# - Ground truth model stored for analysis
 
 # %%
 # **Calculating basic statistics**

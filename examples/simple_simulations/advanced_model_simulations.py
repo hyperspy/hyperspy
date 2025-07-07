@@ -1,0 +1,361 @@
+"""
+Advanced Simulations with HyperSpy Models
+==========================================
+
+This example demonstrates how to create realistic simulations using HyperSpy's
+model components, including the powerful Expression component for custom
+mathematical functions, and best practices for simulation workflows.
+
+"""
+
+import numpy as np
+import hyperspy.api as hs
+
+# %%
+# **Basic Simulation with Expression Components**
+#
+# The Expression component allows you to turn any mathematical function into 
+# an optimizable component, making it extremely powerful for custom simulations.
+
+# Create empty signal for 1D simulation
+s1d = hs.signals.Signal1D(np.zeros(500))
+s1d.axes_manager.signal_axes[0].name = 'Energy'
+s1d.axes_manager.signal_axes[0].units = 'eV'
+s1d.axes_manager.signal_axes[0].scale = 0.1
+s1d.axes_manager.signal_axes[0].offset = 100
+
+# Create model
+m1d = s1d.create_model()
+
+# Add custom background using Expression component
+# Shirley-type background commonly used in XPS
+background = hs.model.components1D.Expression(
+    "a * atan((x - b) / c) + d",
+    name="Shirley_Background",
+    a=1000,     # Step height
+    b=120,      # Step position (eV)  
+    c=5,        # Step width
+    d=500       # Baseline offset
+)
+m1d.append(background)
+
+# Add multiple peaks with Expression components
+# Asymmetric peak (simplified Doniach-Sunjic lineshape)
+peak1 = hs.model.components1D.Expression(
+    "A * cos(pi*alpha/2) / ((1 + ((x-centre)/width)**2)**(1-alpha))",
+    name="Doniach_Sunjic",
+    A=5000,         # Amplitude
+    centre=110,     # Peak center (eV)
+    width=1.5,      # Width parameter
+    alpha=0.1       # Asymmetry parameter
+)
+m1d.append(peak1)
+
+# Voigt profile using Expression (simplified version)
+peak2 = hs.model.components1D.Expression(
+    "A * exp(-((x-centre)/sigma)**2/2) / (1 + ((x-centre)/width)**2)",
+    name="Pseudo_Voigt",
+    A=3000,
+    centre=125,
+    sigma=1.0,      # Gaussian width
+    width=0.5       # Lorentzian width  
+)
+m1d.append(peak2)
+
+# Set parameter values for all components
+m1d.set_parameters_value('a', 1000, component_list=[background])
+m1d.set_parameters_value('b', 120, component_list=[background])
+m1d.set_parameters_value('c', 5, component_list=[background])
+m1d.set_parameters_value('d', 500, component_list=[background])
+
+m1d.set_parameters_value('A', 5000, component_list=[peak1])
+m1d.set_parameters_value('centre', 110, component_list=[peak1])
+m1d.set_parameters_value('width', 1.5, component_list=[peak1])
+m1d.set_parameters_value('alpha', 0.1, component_list=[peak1])
+
+m1d.set_parameters_value('A', 3000, component_list=[peak2])
+m1d.set_parameters_value('centre', 125, component_list=[peak2])
+m1d.set_parameters_value('sigma', 1.0, component_list=[peak2])
+m1d.set_parameters_value('width', 0.5, component_list=[peak2])
+
+# Generate the simulation
+sim1d = m1d.as_signal()
+sim1d.set_signal_origin("simulation")
+sim1d.metadata.General.title = "Advanced 1D Simulation"
+
+# Store the simulation data and ground truth model
+# Replace the model's signal with the simulation data
+m1d.signal = sim1d
+
+# Store the model as ground truth (preserves all parameters)
+sim1d.models.store(m1d, name="ground_truth")
+
+print("Created 1D simulation with Expression components:")
+print(f"- Shirley background with arctangent step")
+print(f"- Doniach-Sunjic asymmetric peak")
+print(f"- Pseudo-Voigt profile peak")
+print("- Ground truth model stored for future reference")
+
+# %%
+# **2D Simulation with Spatial Parameter Variations**
+#
+# Create a spectrum image where peak parameters vary spatially across the sample
+
+# Create 2D signal (spectrum image)
+nx, ny, n_energy = 32, 32, 256
+s2d = hs.signals.Signal1D(np.zeros((nx, ny, n_energy)))
+
+# Set up axes
+s2d.axes_manager.navigation_axes[0].name = 'X'
+s2d.axes_manager.navigation_axes[0].units = 'μm'
+s2d.axes_manager.navigation_axes[0].scale = 0.1
+s2d.axes_manager.navigation_axes[1].name = 'Y'
+s2d.axes_manager.navigation_axes[1].units = 'μm'
+s2d.axes_manager.navigation_axes[1].scale = 0.1
+s2d.axes_manager.signal_axes[0].name = 'Energy'
+s2d.axes_manager.signal_axes[0].units = 'eV'
+s2d.axes_manager.signal_axes[0].scale = 0.5
+s2d.axes_manager.signal_axes[0].offset = 100
+
+# Create model
+m2d = s2d.create_model()
+
+# Add uniform background
+bg2d = hs.model.components1D.Polynomial(order=1)
+bg2d.a0.value = 100   # Constant term
+bg2d.a1.value = 0.5   # Linear term
+m2d.append(bg2d)
+
+# Add main peak with spatial variations
+main_peak = hs.model.components1D.Gaussian()
+m2d.append(main_peak)
+
+# Create spatial coordinate grids
+x_coords, y_coords = np.ogrid[:nx, :ny]
+
+# Peak center varies across the sample (simulating sample composition gradients)
+center_variation = 120 + 10 * np.sin(2 * np.pi * x_coords / nx) * np.cos(2 * np.pi * y_coords / ny)
+main_peak.centre.map['values'][:] = center_variation
+main_peak.centre.map['is_set'][:] = True
+
+# Peak intensity varies with distance from center (simulating beam effects)
+center_x, center_y = nx // 2, ny // 2
+distance_from_center = np.sqrt((x_coords - center_x)**2 + (y_coords - center_y)**2)
+intensity_variation = 5000 * np.exp(-distance_from_center / 10)
+main_peak.A.map['values'][:] = intensity_variation
+main_peak.A.map['is_set'][:] = True
+
+# Peak width varies slightly (simulating instrumental effects)
+width_variation = 2.0 + 0.5 * np.random.random((nx, ny))
+main_peak.sigma.map['values'][:] = width_variation
+main_peak.sigma.map['is_set'][:] = True
+
+# Set polynomial background parameters
+m2d.set_parameters_value('a0', 100, component_list=[bg2d])
+m2d.set_parameters_value('a1', 0.5, component_list=[bg2d])
+
+# Generate the simulation
+sim2d = m2d.as_signal()
+sim2d.set_signal_origin("simulation")
+sim2d.metadata.General.title = "2D Spatial Simulation"
+
+# Store the simulation data and ground truth model
+m2d.signal = sim2d
+sim2d.models.store(m2d, name="ground_truth_2d")
+
+print(f"\nCreated 2D simulation ({nx}×{ny} pixels):")
+print(f"- Peak center varies: {center_variation.min():.1f} to {center_variation.max():.1f} eV")
+print(f"- Intensity varies with position (beam effects)")
+print(f"- Width has random variations")
+print("- Ground truth model stored with spatial parameter maps")
+
+# %%
+# **Advanced Simulation: Multiple Phases with Custom Components**
+#
+# Simulate a sample with multiple crystalline phases, each with characteristic peaks
+
+# Create signal for multi-phase simulation
+s_phases = hs.signals.Signal1D(np.zeros((20, 20, 400)))
+s_phases.axes_manager.navigation_axes[0].name = 'X'
+s_phases.axes_manager.navigation_axes[0].units = 'μm'
+s_phases.axes_manager.navigation_axes[0].scale = 0.05
+s_phases.axes_manager.navigation_axes[1].name = 'Y'
+s_phases.axes_manager.navigation_axes[1].units = 'μm'
+s_phases.axes_manager.navigation_axes[1].scale = 0.05
+s_phases.axes_manager.signal_axes[0].name = '2theta'
+s_phases.axes_manager.signal_axes[0].units = 'degrees'
+s_phases.axes_manager.signal_axes[0].scale = 0.05
+s_phases.axes_manager.signal_axes[0].offset = 20
+
+# Create model
+m_phases = s_phases.create_model()
+
+# Add background (typical for diffraction)
+bg_phases = hs.model.components1D.Expression(
+    "a * exp(-b * x) + c",
+    name="Exponential_Background",
+    a=1000, b=0.1, c=50
+)
+m_phases.append(bg_phases)
+
+# Phase 1: Major phase with multiple peaks
+phase1_peak1 = hs.model.components1D.Gaussian()
+phase1_peak1.centre.value = 25.5  # degrees
+phase1_peak1.sigma.value = 0.12   # width
+phase1_peak1.A.value = 1000       # area
+m_phases.append(phase1_peak1)
+
+phase1_peak2 = hs.model.components1D.Gaussian()
+phase1_peak2.centre.value = 31.2
+phase1_peak2.sigma.value = 0.14   # width
+phase1_peak2.A.value = 800        # area
+m_phases.append(phase1_peak2)
+
+# Phase 2: Minor phase (varies spatially)
+phase2_peak = hs.model.components1D.Gaussian()
+phase2_peak.centre.value = 28.8
+phase2_peak.sigma.value = 0.16    # width
+phase2_peak.A.value = 500         # area
+m_phases.append(phase2_peak)
+
+# Set spatial variations for phases
+x_grid, y_grid = np.ogrid[:20, :20]
+
+# Phase 1 is dominant everywhere but varies in intensity
+phase1_intensity = 3000 + 1000 * np.random.random((20, 20))
+phase1_peak1.A.map['values'][:] = phase1_intensity
+phase1_peak1.A.map['is_set'][:] = True
+phase1_peak2.A.map['values'][:] = 0.6 * phase1_intensity  # Related intensity
+phase1_peak2.A.map['is_set'][:] = True
+
+# Phase 2 only appears in certain regions
+phase2_mask = (x_grid > 10) & (y_grid < 10)  # Bottom-right quadrant
+phase2_intensity = np.where(phase2_mask, 1500 + 500 * np.random.random((20, 20)), 0)
+phase2_peak.A.map['values'][:] = phase2_intensity
+phase2_peak.A.map['is_set'][:] = True
+
+# Set background parameters
+m_phases.set_parameters_value('a', 1000, component_list=[bg_phases])
+m_phases.set_parameters_value('b', 0.1, component_list=[bg_phases])
+m_phases.set_parameters_value('c', 50, component_list=[bg_phases])
+
+# Set Gaussian component parameters that haven't been set through maps
+m_phases.set_parameters_value('centre', 25.5, component_list=[phase1_peak1])
+m_phases.set_parameters_value('sigma', 0.12, component_list=[phase1_peak1])
+
+m_phases.set_parameters_value('centre', 31.2, component_list=[phase1_peak2])
+m_phases.set_parameters_value('sigma', 0.14, component_list=[phase1_peak2])
+
+m_phases.set_parameters_value('centre', 28.8, component_list=[phase2_peak])
+m_phases.set_parameters_value('sigma', 0.16, component_list=[phase2_peak])
+
+# Generate the simulation
+sim_phases = m_phases.as_signal()
+sim_phases.set_signal_origin("simulation")
+sim_phases.metadata.General.title = "Multi-phase Diffraction Simulation"
+
+# Store the simulation data and ground truth model
+m_phases.signal = sim_phases
+sim_phases.models.store(m_phases, name="ground_truth_phases")
+
+print(f"\nCreated multi-phase simulation:")
+print(f"- Phase 1: Major phase (peaks at {phase1_peak1.centre.value}°, {phase1_peak2.centre.value}°)")
+print(f"- Phase 2: Minor phase (peak at {phase2_peak.centre.value}°, spatial distribution)")
+print(f"- Realistic background and peak profiles")
+print("- Ground truth model stored with spatial phase distributions")
+
+# %%
+# **Adding Realistic Noise to Simulations**
+#
+# Demonstrate proper noise addition for different signal types
+
+# Add realistic noise to 1D simulation
+print("\nAdding realistic noise to simulations...")
+
+# For spectroscopy data: Poisson + Gaussian noise
+sim1d_noisy = sim1d.copy()
+# Ensure positive values for Poisson noise
+if sim1d_noisy.data.min() <= 0:
+    sim1d_noisy.data += abs(sim1d_noisy.data.min()) + 1
+sim1d_noisy.add_poissonian_noise(random_state=42)  # Shot noise
+sim1d_noisy.add_gaussian_noise(std=20, random_state=43)  # Electronic noise
+
+# For imaging data: primarily Poisson noise
+sim2d_noisy = sim2d.copy()
+# Ensure positive values for Poisson noise  
+if sim2d_noisy.data.min() <= 0:
+    sim2d_noisy.data += abs(sim2d_noisy.data.min()) + 1
+sim2d_noisy.add_poissonian_noise(random_state=44)
+
+# For diffraction data: Poisson noise with low background
+# Handle Poisson noise carefully to avoid numerical issues
+sim_phases_noisy = sim_phases.copy()
+
+# Clean up any NaN or infinite values
+sim_phases_noisy.data = np.nan_to_num(sim_phases_noisy.data, nan=0.0, posinf=1000.0, neginf=0.0)
+
+# Scale to realistic count range for Poisson noise (typically < 10000 for safety)
+max_val = sim_phases_noisy.data.max()
+if max_val > 5000:
+    scale_factor = 5000 / max_val
+    sim_phases_noisy.data *= scale_factor
+    print(f"Scaled diffraction data by {scale_factor:.3f} for realistic count rates")
+
+# Ensure all values are positive for Poisson noise
+min_val = sim_phases_noisy.data.min()
+if min_val <= 0:
+    sim_phases_noisy.data = sim_phases_noisy.data - min_val + 1
+
+# Verify values are in safe range
+print(f"Data range before Poisson noise: {sim_phases_noisy.data.min():.1f} to {sim_phases_noisy.data.max():.1f}")
+
+sim_phases_noisy.add_poissonian_noise(random_state=45)
+
+print("Added appropriate noise models:")
+print("- 1D spectroscopy: Poisson + Gaussian noise")
+print("- 2D imaging: Poisson noise")
+print("- Diffraction: Poisson noise")
+
+# %%
+# **Simulation Analysis and Validation**
+#
+# Demonstrate how to analyze and validate simulations
+
+# Extract peak positions from 2D simulation
+peak_map = sim2d_noisy.indexmax(axis='Energy')
+peak_map.metadata.General.title = "Peak Position Map"
+
+# Convert indices to energy values
+energy_axis = sim2d_noisy.axes_manager.signal_axes[0].axis
+peak_energy_map = peak_map.copy()
+peak_energy_map.data = energy_axis[peak_map.data]
+# Note: peak_energy_map is a 0D signal (no signal axes), so we add metadata directly
+peak_energy_map.metadata.General.title = "Peak Energy Map (eV)"
+
+# Calculate peak statistics
+print(f"\nSimulation validation:")
+print(f"Peak center range: {peak_energy_map.data.min():.1f} to {peak_energy_map.data.max():.1f} eV")
+print(f"Expected range: {center_variation.min():.1f} to {center_variation.max():.1f} eV")
+print(f"Simulation accuracy: ±{np.abs(peak_energy_map.data - center_variation).max():.2f} eV")
+
+# %%
+# **Plotting Results**
+#
+# Visualize the different simulations
+
+# Plot 1D simulation
+sim1d_noisy.plot()
+
+# Plot 2D simulation overview
+intensity_map = sim2d_noisy.max(axis='Energy')
+intensity_map.metadata.General.title = "Maximum Intensity Map"
+intensity_map.plot()
+
+# Plot peak position map
+peak_energy_map.plot()
+
+print("\nSimulation complete! Generated multiple realistic datasets:")
+print("- 1D spectroscopy with custom lineshapes")
+print("- 2D spectrum image with spatial variations")  
+print("- Multi-phase diffraction simulation")
+print("- All with appropriate noise models")

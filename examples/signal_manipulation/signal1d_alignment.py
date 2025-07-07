@@ -13,38 +13,88 @@ import numpy as np
 import hyperspy.api as hs
 
 def create_test_spectra_with_shifts(n_spectra=5, size=1024):
-    """Create a set of spectra with known energy shifts"""
-    # Base spectrum with several peaks
-    x = np.arange(size)
+    """Create a set of spectra with known energy shifts using HyperSpy models"""
     
-    # Create base spectrum with multiple characteristic peaks
-    base_spectrum = (
-        # Background
-        100 + 50 * np.exp(-x/200) + 10 * np.random.random(size) +
-        # Sharp peak at position 300
-        200 * np.exp(-((x - 300)**2) / (2 * 15**2)) +
-        # Broad peak at position 500  
-        150 * np.exp(-((x - 500)**2) / (2 * 30**2)) +
-        # Another peak at position 700
-        180 * np.exp(-((x - 700)**2) / (2 * 20**2))
+    # Create empty signal for simulation
+    s = hs.signals.Signal1D(np.zeros((n_spectra, size)))
+    s.axes_manager.signal_axes[0].name = 'Energy'
+    s.axes_manager.signal_axes[0].units = 'eV'
+    s.axes_manager.signal_axes[0].scale = 0.5
+    s.axes_manager.signal_axes[0].offset = 100
+    
+    # Create model for simulation
+    m = s.create_model()
+    
+    # Add exponential background
+    background = hs.model.components1D.Expression(
+        "a + b * exp(-x/c)",
+        name="Background",
+        a=100, b=50, c=200
     )
+    m.append(background)
     
-    # Create shifted versions
-    spectra = np.zeros((n_spectra, size))
+    # Add three peaks with different characteristics
+    # Sharp peak
+    peak1 = hs.model.components1D.Gaussian()
+    m.append(peak1)
+    
+    # Broad peak
+    peak2 = hs.model.components1D.Gaussian()
+    m.append(peak2)
+    
+    # Another peak
+    peak3 = hs.model.components1D.Gaussian()
+    m.append(peak3)
+
+    # Set all parameters for all navigation positions using set_parameters_value
+    m.set_parameters_value('a', 100, component_list=[background])
+    m.set_parameters_value('b', 50, component_list=[background])
+    m.set_parameters_value('c', 200, component_list=[background])
+    
+    # Set parameters for each Gaussian peak individually
+    m.set_parameters_value('centre', 300, component_list=[peak1])
+    m.set_parameters_value('sigma', 15, component_list=[peak1])
+    m.set_parameters_value('A', 200 * 15 * np.sqrt(2 * np.pi), component_list=[peak1])
+    
+    m.set_parameters_value('centre', 500, component_list=[peak2])
+    m.set_parameters_value('sigma', 30, component_list=[peak2])
+    m.set_parameters_value('A', 150 * 30 * np.sqrt(2 * np.pi), component_list=[peak2])
+    
+    m.set_parameters_value('centre', 700, component_list=[peak3])
+    m.set_parameters_value('sigma', 20, component_list=[peak3])
+    m.set_parameters_value('A', 180 * 20 * np.sqrt(2 * np.pi), component_list=[peak3])
+    
+    # Generate base spectra
+    base_signal = m.as_signal()
+    base_signal.set_signal_origin("simulation")
+    
+    # Store the ground truth model for analysis
+    m.signal = base_signal
+    base_signal.models.store(m, name="ground_truth")
+    
+    # Create shifted versions by modifying peak centers
     shifts = np.array([0, -10, 5, -15, 8])  # Shifts in channels
+    spectra = np.zeros((n_spectra, size))
     
     for i, shift in enumerate(shifts):
         if shift == 0:
-            spectra[i] = base_spectrum
+            spectra[i] = base_signal.data[0]
         else:
-            # Create shifted spectrum using interpolation
-            shifted_x = x - shift
-            # Use linear interpolation for the shift
-            spectrum_shifted = np.interp(x, shifted_x, base_spectrum, 
-                                       left=base_spectrum[0], right=base_spectrum[-1])
-            # Add some noise to make it more realistic
-            spectrum_shifted += 5 * np.random.random(size)
-            spectra[i] = spectrum_shifted
+            # Create shifted spectrum by updating model parameters
+            for component in [peak1, peak2, peak3]:
+                component.centre.value += shift
+            
+            # Generate shifted spectrum
+            shifted_signal = m.as_signal()
+            spectra[i] = shifted_signal.data[0]
+            
+            # Reset centers for next iteration
+            for component in [peak1, peak2, peak3]:
+                component.centre.value -= shift
+            
+            # Add realistic noise
+            noise = np.random.RandomState(i).normal(0, 5, size)
+            spectra[i] += noise
     
     return spectra, shifts
 
