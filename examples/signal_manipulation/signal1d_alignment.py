@@ -46,23 +46,24 @@ def create_test_spectra_with_shifts(n_spectra=5, size=1024):
     peak3 = hs.model.components1D.Gaussian()
     m.append(peak3)
 
-    # Set all parameters for all navigation positions using set_parameters_value
-    m.set_parameters_value('a', 100, component_list=[background])
-    m.set_parameters_value('b', 50, component_list=[background])
-    m.set_parameters_value('c', 200, component_list=[background])
+    # Set parameters for all navigation positions using set_parameters_value with only_current=False
+    # This creates a consistent base spectrum across all navigation dimensions
+    m.set_parameters_value('a', 100, component_list=[background], only_current=False)
+    m.set_parameters_value('b', 50, component_list=[background], only_current=False)
+    m.set_parameters_value('c', 200, component_list=[background], only_current=False)
     
-    # Set parameters for each Gaussian peak individually
-    m.set_parameters_value('centre', 300, component_list=[peak1])
-    m.set_parameters_value('sigma', 15, component_list=[peak1])
-    m.set_parameters_value('A', 200 * 15 * np.sqrt(2 * np.pi), component_list=[peak1])
+    # Set parameters for each Gaussian peak for all positions
+    m.set_parameters_value('centre', 300, component_list=[peak1], only_current=False)
+    m.set_parameters_value('sigma', 15, component_list=[peak1], only_current=False)
+    m.set_parameters_value('A', 200 * 15 * np.sqrt(2 * np.pi), component_list=[peak1], only_current=False)
     
-    m.set_parameters_value('centre', 500, component_list=[peak2])
-    m.set_parameters_value('sigma', 30, component_list=[peak2])
-    m.set_parameters_value('A', 150 * 30 * np.sqrt(2 * np.pi), component_list=[peak2])
+    m.set_parameters_value('centre', 500, component_list=[peak2], only_current=False)
+    m.set_parameters_value('sigma', 30, component_list=[peak2], only_current=False)
+    m.set_parameters_value('A', 150 * 30 * np.sqrt(2 * np.pi), component_list=[peak2], only_current=False)
     
-    m.set_parameters_value('centre', 700, component_list=[peak3])
-    m.set_parameters_value('sigma', 20, component_list=[peak3])
-    m.set_parameters_value('A', 180 * 20 * np.sqrt(2 * np.pi), component_list=[peak3])
+    m.set_parameters_value('centre', 700, component_list=[peak3], only_current=False)
+    m.set_parameters_value('sigma', 20, component_list=[peak3], only_current=False)
+    m.set_parameters_value('A', 180 * 20 * np.sqrt(2 * np.pi), component_list=[peak3], only_current=False)
     
     # Generate base spectra
     base_signal = m.as_signal()

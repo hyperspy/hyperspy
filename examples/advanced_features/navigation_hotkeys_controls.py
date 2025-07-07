@@ -33,7 +33,7 @@ for i in range(20):
 
 s = hs.signals.Signal1D(data)
 
-# Set up axes using individual assignments (since .set() may not be available)
+# Configure axes using direct property assignment
 s.axes_manager.signal_axes[0].name = 'Energy'
 s.axes_manager.signal_axes[0].units = 'eV'
 s.axes_manager.signal_axes[0].scale = 0.1

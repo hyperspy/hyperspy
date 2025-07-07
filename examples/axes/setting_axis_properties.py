@@ -48,11 +48,17 @@ s.axes_manager[0].units = "nm"
 s.axes_manager[0].scale = 0.5
 s.axes_manager[0].offset = 10
 
-# Method 2b: Using .set() method for multiple properties (recommended)
-s.axes_manager[1].set(name="Y", units="nm", scale=0.5, offset=20)
+# Method 2b: Direct assignment for Y axis
+s.axes_manager[1].name = "Y"
+s.axes_manager[1].units = "nm"
+s.axes_manager[1].scale = 0.5
+s.axes_manager[1].offset = 20
 
-# Set properties for signal axis using .set() method
-s.axes_manager[2].set(name="Energy", units="eV", scale=0.1, offset=100)
+# Set properties for signal axis using direct assignment
+s.axes_manager[2].name = "Energy"
+s.axes_manager[2].units = "eV"
+s.axes_manager[2].scale = 0.1
+s.axes_manager[2].offset = 100
 
 print("After setting properties:")
 print(s.axes_manager)

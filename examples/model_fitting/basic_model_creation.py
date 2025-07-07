@@ -53,23 +53,57 @@ m_true.append(peak2_true)
 peak3_true = hs.model.components1D.Lorentzian()
 m_true.append(peak3_true)
 
-# Set all parameter values using set_parameters_value method
-m_true.set_parameters_value('A', 5000, component_list=[background_true])
-m_true.set_parameters_value('r', 2.5, component_list=[background_true])
-m_true.set_parameters_value('origin', 0.0, component_list=[background_true])
-m_true.set_parameters_value('left_cutoff', 0.0, component_list=[background_true])
+# Set parameter values using direct access (recommended for single components)
+background_true.A.value = 5000
+background_true.r.value = 2.5
+background_true.origin.value = 0.0
+background_true.left_cutoff.value = 0.0
 
-m_true.set_parameters_value('centre', 215, component_list=[peak1_true])
-m_true.set_parameters_value('sigma', 20, component_list=[peak1_true])
-m_true.set_parameters_value('A', 8000, component_list=[peak1_true])
+# For simulation, ensure maps are set
+background_true.A.map['values'][:] = 5000
+background_true.A.map['is_set'][:] = True
+background_true.r.map['values'][:] = 2.5
+background_true.r.map['is_set'][:] = True
+background_true.origin.map['values'][:] = 0.0
+background_true.origin.map['is_set'][:] = True
+background_true.left_cutoff.map['values'][:] = 0.0
+background_true.left_cutoff.map['is_set'][:] = True
 
-m_true.set_parameters_value('centre', 315, component_list=[peak2_true])
-m_true.set_parameters_value('sigma', 30, component_list=[peak2_true])
-m_true.set_parameters_value('A', 6000, component_list=[peak2_true])
+peak1_true.centre.value = 215
+peak1_true.sigma.value = 20
+peak1_true.A.value = 8000
 
-m_true.set_parameters_value('centre', 450, component_list=[peak3_true])
-m_true.set_parameters_value('gamma', 25, component_list=[peak3_true])
-m_true.set_parameters_value('A', 4000, component_list=[peak3_true])
+# For simulation, ensure maps are set
+peak1_true.centre.map['values'][:] = 215
+peak1_true.centre.map['is_set'][:] = True
+peak1_true.sigma.map['values'][:] = 20
+peak1_true.sigma.map['is_set'][:] = True
+peak1_true.A.map['values'][:] = 8000
+peak1_true.A.map['is_set'][:] = True
+
+peak2_true.centre.value = 315
+peak2_true.sigma.value = 30
+peak2_true.A.value = 6000
+
+# For simulation, ensure maps are set
+peak2_true.centre.map['values'][:] = 315
+peak2_true.centre.map['is_set'][:] = True
+peak2_true.sigma.map['values'][:] = 30
+peak2_true.sigma.map['is_set'][:] = True
+peak2_true.A.map['values'][:] = 6000
+peak2_true.A.map['is_set'][:] = True
+
+peak3_true.centre.value = 450
+peak3_true.gamma.value = 25
+peak3_true.A.value = 4000
+
+# For simulation, ensure maps are set
+peak3_true.centre.map['values'][:] = 450
+peak3_true.centre.map['is_set'][:] = True
+peak3_true.gamma.map['values'][:] = 25
+peak3_true.gamma.map['is_set'][:] = True
+peak3_true.A.map['values'][:] = 4000
+peak3_true.A.map['is_set'][:] = True
 
 # Generate synthetic data from model
 s = m_true.as_signal()
@@ -230,17 +264,37 @@ background_2d_true = hs.model.components2D.Expression(
 )
 m2d_true.append(background_2d_true)
 
-# Set 2D parameter values
-m2d_true.set_parameters_value('centre_x', 1.0, component_list=[gaussian_2d_true])
-m2d_true.set_parameters_value('centre_y', -0.5, component_list=[gaussian_2d_true])
-m2d_true.set_parameters_value('sigma_x', 1.5, component_list=[gaussian_2d_true])
-m2d_true.set_parameters_value('sigma_y', 1.5, component_list=[gaussian_2d_true])
-m2d_true.set_parameters_value('A', 1000, component_list=[gaussian_2d_true])
+# Set 2D parameter values using direct access
+gaussian_2d_true.centre_x.value = 1.0
+gaussian_2d_true.centre_y.value = -0.5
+gaussian_2d_true.sigma_x.value = 1.5
+gaussian_2d_true.sigma_y.value = 1.5
+gaussian_2d_true.A.value = 1000
+
+# For 2D simulation, ensure maps are set
+gaussian_2d_true.centre_x.map['values'][:] = 1.0
+gaussian_2d_true.centre_x.map['is_set'][:] = True
+gaussian_2d_true.centre_y.map['values'][:] = -0.5
+gaussian_2d_true.centre_y.map['is_set'][:] = True
+gaussian_2d_true.sigma_x.map['values'][:] = 1.5
+gaussian_2d_true.sigma_x.map['is_set'][:] = True
+gaussian_2d_true.sigma_y.map['values'][:] = 1.5
+gaussian_2d_true.sigma_y.map['is_set'][:] = True
+gaussian_2d_true.A.map['values'][:] = 1000
+gaussian_2d_true.A.map['is_set'][:] = True
 
 # Set Expression component parameters
-m2d_true.set_parameters_value('a', 100.0, component_list=[background_2d_true])
-m2d_true.set_parameters_value('b', 0.0, component_list=[background_2d_true])
-m2d_true.set_parameters_value('c', 0.0, component_list=[background_2d_true])
+background_2d_true.a.value = 100.0
+background_2d_true.b.value = 0.0
+background_2d_true.c.value = 0.0
+
+# For 2D simulation, ensure maps are set
+background_2d_true.a.map['values'][:] = 100.0
+background_2d_true.a.map['is_set'][:] = True
+background_2d_true.b.map['values'][:] = 0.0
+background_2d_true.b.map['is_set'][:] = True
+background_2d_true.c.map['values'][:] = 0.0
+background_2d_true.c.map['is_set'][:] = True
 
 # Generate 2D simulation
 s2d = m2d_true.as_signal()

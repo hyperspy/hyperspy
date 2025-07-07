@@ -41,22 +41,33 @@ s.axes_manager.signal_axes.set(
 # Create model for simulation
 m = s.create_model()
 
-# Add background using HyperSpy Expression component
-background = hs.model.components1D.Expression(
+# Add background using HyperSpy Expression component with custom name
+m.append(hs.model.components1D.Expression(
     "a * x + b + c * exp(-x/d)",
     name="Background",
     a=0.2, b=10, c=5, d=20  # Exponential decay background
-)
-m.append(background)
+))
 
-# Set background parameters for all navigation positions
-m.set_parameters_value('a', 0.2, component_list=[background])
-m.set_parameters_value('b', 10, component_list=[background])
-m.set_parameters_value('c', 5, component_list=[background])
-m.set_parameters_value('d', 20, component_list=[background])
+# Set background parameters using component access (recommended pattern)
+# For multidimensional signals, set the same value for all navigation positions
+m.components.Background.a.value = 0.2
+m.components.Background.b.value = 10
+m.components.Background.c.value = 5
+m.components.Background.d.value = 20
 
-# Add main Gaussian peak that varies spatially
+# For simulation, ensure parameter maps are set
+m.components.Background.a.map['values'][:] = 0.2
+m.components.Background.a.map['is_set'][:] = True
+m.components.Background.b.map['values'][:] = 10
+m.components.Background.b.map['is_set'][:] = True
+m.components.Background.c.map['values'][:] = 5
+m.components.Background.c.map['is_set'][:] = True
+m.components.Background.d.map['values'][:] = 20
+m.components.Background.d.map['is_set'][:] = True
+
+# Add main Gaussian peak with custom name
 main_peak = hs.model.components1D.Gaussian()
+main_peak.name = 'MainPeak'
 m.append(main_peak)
 
 # Set spatial parameter variations using the parameter maps
@@ -72,8 +83,10 @@ height_values = 50 + 20 * np.sin(x_coords * np.pi / n_nav_x) * np.cos(y_coords *
 main_peak.A.map['values'][:] = height_values
 main_peak.A.map['is_set'][:] = True
 
-# Constant peak width
-m.set_parameters_value('sigma', 3, component_list=[main_peak])
+# Constant peak width using direct parameter access
+main_peak.sigma.value = 3
+main_peak.sigma.map['values'][:] = 3
+main_peak.sigma.map['is_set'][:] = True
 
 # Generate the simulated signal
 s = m.as_signal()
@@ -172,8 +185,8 @@ s = s * 1.5  # Increase intensity by 50% - creates new signal with updated title
 new_max_intensity = s.max(axis='Energy')
 new_mean_intensity = s.mean(axis='Energy')
 
-print(f"New max range: [{np.min(new_max_intensity):.2f}, {np.max(new_max_intensity):.2f}]")
-print(f"New mean range: [{np.min(new_mean_intensity):.2f}, {np.max(new_mean_intensity):.2f}]")
+print(f"New max range: [{np.min(new_max_intensity.data):.2f}, {np.max(new_max_intensity.data):.2f}]")
+print(f"New mean range: [{np.min(new_mean_intensity.data):.2f}, {np.max(new_mean_intensity.data):.2f}]")
 
 # Verify the scaling using signal arithmetic
 ratio_max = new_max_intensity / original_max  # Signal division preserves metadata

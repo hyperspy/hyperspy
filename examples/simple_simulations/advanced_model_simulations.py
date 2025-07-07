@@ -27,56 +27,52 @@ s1d.axes_manager.signal_axes[0].offset = 100
 # Create model
 m1d = s1d.create_model()
 
-# Add custom background using Expression component
-# Shirley-type background commonly used in XPS
-background = hs.model.components1D.Expression(
+# Add custom background using Expression component with custom name
+m1d.append(hs.model.components1D.Expression(
     "a * atan((x - b) / c) + d",
     name="Shirley_Background",
     a=1000,     # Step height
     b=120,      # Step position (eV)  
     c=5,        # Step width
     d=500       # Baseline offset
-)
-m1d.append(background)
+))
 
 # Add multiple peaks with Expression components
 # Asymmetric peak (simplified Doniach-Sunjic lineshape)
-peak1 = hs.model.components1D.Expression(
+m1d.append(hs.model.components1D.Expression(
     "A * cos(pi*alpha/2) / ((1 + ((x-centre)/width)**2)**(1-alpha))",
     name="Doniach_Sunjic",
     A=5000,         # Amplitude
     centre=110,     # Peak center (eV)
     width=1.5,      # Width parameter
     alpha=0.1       # Asymmetry parameter
-)
-m1d.append(peak1)
+))
 
 # Voigt profile using Expression (simplified version)
-peak2 = hs.model.components1D.Expression(
+m1d.append(hs.model.components1D.Expression(
     "A * exp(-((x-centre)/sigma)**2/2) / (1 + ((x-centre)/width)**2)",
     name="Pseudo_Voigt",
     A=3000,
     centre=125,
     sigma=1.0,      # Gaussian width
     width=0.5       # Lorentzian width  
-)
-m1d.append(peak2)
+))
 
-# Set parameter values for all components
-m1d.set_parameters_value('a', 1000, component_list=[background])
-m1d.set_parameters_value('b', 120, component_list=[background])
-m1d.set_parameters_value('c', 5, component_list=[background])
-m1d.set_parameters_value('d', 500, component_list=[background])
+# Set parameter values using set_parameters_value (handles maps automatically)
+m1d.set_parameters_value('a', 1000, component_list=[m1d.components.Shirley_Background], only_current=False)
+m1d.set_parameters_value('b', 120, component_list=[m1d.components.Shirley_Background], only_current=False)
+m1d.set_parameters_value('c', 5, component_list=[m1d.components.Shirley_Background], only_current=False)
+m1d.set_parameters_value('d', 500, component_list=[m1d.components.Shirley_Background], only_current=False)
 
-m1d.set_parameters_value('A', 5000, component_list=[peak1])
-m1d.set_parameters_value('centre', 110, component_list=[peak1])
-m1d.set_parameters_value('width', 1.5, component_list=[peak1])
-m1d.set_parameters_value('alpha', 0.1, component_list=[peak1])
+m1d.set_parameters_value('A', 5000, component_list=[m1d.components.Doniach_Sunjic], only_current=False)
+m1d.set_parameters_value('centre', 110, component_list=[m1d.components.Doniach_Sunjic], only_current=False)
+m1d.set_parameters_value('width', 1.5, component_list=[m1d.components.Doniach_Sunjic], only_current=False)
+m1d.set_parameters_value('alpha', 0.1, component_list=[m1d.components.Doniach_Sunjic], only_current=False)
 
-m1d.set_parameters_value('A', 3000, component_list=[peak2])
-m1d.set_parameters_value('centre', 125, component_list=[peak2])
-m1d.set_parameters_value('sigma', 1.0, component_list=[peak2])
-m1d.set_parameters_value('width', 0.5, component_list=[peak2])
+m1d.set_parameters_value('A', 3000, component_list=[m1d.components.Pseudo_Voigt], only_current=False)
+m1d.set_parameters_value('centre', 125, component_list=[m1d.components.Pseudo_Voigt], only_current=False)
+m1d.set_parameters_value('sigma', 1.0, component_list=[m1d.components.Pseudo_Voigt], only_current=False)
+m1d.set_parameters_value('width', 0.5, component_list=[m1d.components.Pseudo_Voigt], only_current=False)
 
 # Generate the simulation
 sim1d = m1d.as_signal()
@@ -122,9 +118,11 @@ m2d = s2d.create_model()
 
 # Add uniform background
 bg2d = hs.model.components1D.Polynomial(order=1)
-bg2d.a0.value = 100   # Constant term
-bg2d.a1.value = 0.5   # Linear term
 m2d.append(bg2d)
+
+# Set polynomial background parameters using set_parameters_value (handles maps automatically)
+m2d.set_parameters_value('a0', 100, component_list=[bg2d], only_current=False)
+m2d.set_parameters_value('a1', 0.5, component_list=[bg2d], only_current=False)
 
 # Add main peak with spatial variations
 main_peak = hs.model.components1D.Gaussian()
@@ -150,9 +148,9 @@ width_variation = 2.0 + 0.5 * np.random.random((nx, ny))
 main_peak.sigma.map['values'][:] = width_variation
 main_peak.sigma.map['is_set'][:] = True
 
-# Set polynomial background parameters
-m2d.set_parameters_value('a0', 100, component_list=[bg2d])
-m2d.set_parameters_value('a1', 0.5, component_list=[bg2d])
+# Set polynomial background parameters using direct access
+bg2d.a0.value = 100
+bg2d.a1.value = 0.5
 
 # Generate the simulation
 sim2d = m2d.as_signal()
@@ -235,20 +233,20 @@ phase2_intensity = np.where(phase2_mask, 1500 + 500 * np.random.random((20, 20))
 phase2_peak.A.map['values'][:] = phase2_intensity
 phase2_peak.A.map['is_set'][:] = True
 
-# Set background parameters
-m_phases.set_parameters_value('a', 1000, component_list=[bg_phases])
-m_phases.set_parameters_value('b', 0.1, component_list=[bg_phases])
-m_phases.set_parameters_value('c', 50, component_list=[bg_phases])
+# Set background parameters using set_parameters_value (handles maps automatically)
+m_phases.set_parameters_value('a', 1000, component_list=[bg_phases], only_current=False)
+m_phases.set_parameters_value('b', 0.1, component_list=[bg_phases], only_current=False)
+m_phases.set_parameters_value('c', 50, component_list=[bg_phases], only_current=False)
 
-# Set Gaussian component parameters that haven't been set through maps
-m_phases.set_parameters_value('centre', 25.5, component_list=[phase1_peak1])
-m_phases.set_parameters_value('sigma', 0.12, component_list=[phase1_peak1])
+# Set Gaussian component parameters using set_parameters_value
+m_phases.set_parameters_value('centre', 25.5, component_list=[phase1_peak1], only_current=False)
+m_phases.set_parameters_value('sigma', 0.12, component_list=[phase1_peak1], only_current=False)
 
-m_phases.set_parameters_value('centre', 31.2, component_list=[phase1_peak2])
-m_phases.set_parameters_value('sigma', 0.14, component_list=[phase1_peak2])
+m_phases.set_parameters_value('centre', 31.2, component_list=[phase1_peak2], only_current=False)
+m_phases.set_parameters_value('sigma', 0.14, component_list=[phase1_peak2], only_current=False)
 
-m_phases.set_parameters_value('centre', 28.8, component_list=[phase2_peak])
-m_phases.set_parameters_value('sigma', 0.16, component_list=[phase2_peak])
+m_phases.set_parameters_value('centre', 28.8, component_list=[phase2_peak], only_current=False)
+m_phases.set_parameters_value('sigma', 0.16, component_list=[phase2_peak], only_current=False)
 
 # Generate the simulation
 sim_phases = m_phases.as_signal()
@@ -297,8 +295,8 @@ sim_phases_noisy.data = np.nan_to_num(sim_phases_noisy.data, nan=0.0, posinf=100
 
 # Scale to realistic count range for Poisson noise (direct .data access needed for safety)
 max_val = sim_phases_noisy.data.max()
-if max_val > 5000:
-    scale_factor = 5000 / max_val
+if max_val > 1000:  # More conservative limit for diffraction data
+    scale_factor = 1000 / max_val
     sim_phases_noisy.data *= scale_factor
     print(f"Scaled diffraction data by {scale_factor:.3f} for realistic count rates")
 
@@ -307,7 +305,12 @@ min_val = sim_phases_noisy.data.min()
 if min_val <= 0:
     sim_phases_noisy.data = sim_phases_noisy.data - min_val + 1
 
-# Verify values are in safe range
+# Verify values are in safe range and cap maximum to prevent Poisson errors
+max_safe_value = 1000  # Conservative limit for NumPy Poisson generation
+if sim_phases_noisy.data.max() > max_safe_value:
+    sim_phases_noisy.data = np.clip(sim_phases_noisy.data, 0, max_safe_value)
+    print(f"Clipped data to maximum value of {max_safe_value} for safe Poisson noise generation")
+
 print(f"Data range before Poisson noise: {sim_phases_noisy.data.min():.1f} to {sim_phases_noisy.data.max():.1f}")
 
 sim_phases_noisy.add_poissonian_noise(random_state=45)
@@ -361,3 +364,66 @@ print("- 1D spectroscopy with custom lineshapes")
 print("- 2D spectrum image with spatial variations")  
 print("- Multi-phase diffraction simulation")
 print("- All with appropriate noise models")
+
+# %%
+# **Advanced Parameter Setting Demonstration**
+#
+# Show when to use set_parameters_value vs direct access
+
+# Create a simple model with multiple peaks to demonstrate batch operations
+s_demo = hs.signals.Signal1D(np.zeros(512))
+s_demo.axes_manager.signal_axes[0].name = 'Energy'
+s_demo.axes_manager.signal_axes[0].scale = 0.5
+s_demo.axes_manager.signal_axes[0].offset = 0
+
+m_demo = s_demo.create_model()
+
+# Add multiple similar peaks
+peak_a = hs.model.components1D.Gaussian()
+peak_a.name = 'Peak_A'
+peak_b = hs.model.components1D.Gaussian()
+peak_b.name = 'Peak_B'
+peak_c = hs.model.components1D.Gaussian()
+peak_c.name = 'Peak_C'
+background = hs.model.components1D.Polynomial(order=1)
+background.name = 'Background'
+
+m_demo.extend([peak_a, peak_b, peak_c, background])
+
+# ✅ Excellent use case: Set same parameter on multiple components
+print("\nBatch parameter setting with set_parameters_value:")
+all_peaks = [peak_a, peak_b, peak_c]
+
+# Set all peaks to have the same width (batch operation)
+m_demo.set_parameters_value('sigma', 5.0, component_list=all_peaks)
+print("Set sigma=5.0 for all peaks simultaneously")
+
+# Set individual peak positions (different values, use direct access for this demo)
+# Note: In practice for simulations, parameter maps should be set
+peak_a.centre.value = 50
+peak_b.centre.value = 100
+peak_c.centre.value = 150
+print("Set individual peak centers using direct access")
+
+# Set different amplitudes for demonstration
+peak_a.A.value = 1000
+peak_b.A.value = 1500
+peak_c.A.value = 800
+
+# Set background parameters using set_parameters_value (handles maps)
+m_demo.set_parameters_value('a0', 100, component_list=[background], only_current=False)
+m_demo.set_parameters_value('a1', 0.5, component_list=[background], only_current=False)
+
+# Set individual parameter maps for peaks (required for simulation)
+for peak, centre_val, amp_val in zip(all_peaks, [50, 100, 150], [1000, 1500, 800]):
+    m_demo.set_parameters_value('centre', centre_val, component_list=[peak], only_current=False)
+    m_demo.set_parameters_value('A', amp_val, component_list=[peak], only_current=False)
+
+# Generate and show the result
+demo_sim = m_demo.as_signal()
+demo_sim.set_signal_origin("simulation")
+demo_sim.metadata.General.title = "Batch Parameter Setting Demo"
+
+print(f"Created simulation with {len(all_peaks)} peaks")
+print("- All peaks have identical width (set via batch operation)")
+print("- Individual positions and amplitudes (set via direct access)")

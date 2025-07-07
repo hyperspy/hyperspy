@@ -1,9 +1,10 @@
 """
-HyperSpy Advanced Features Demo
+Advanced Integration Techniques
 ===============================
 
-This example demonstrates corrected best practices based on comprehensive testing
-of HyperSpy's capabilities with external libraries and advanced indexing.
+This example demonstrates advanced techniques for integrating HyperSpy with
+external libraries, sophisticated indexing patterns, and best practices for
+signal arithmetic and data manipulation.
 """
 
 # %%
@@ -18,6 +19,7 @@ from scipy import ndimage
 # Create test signal
 s = hs.signals.Signal2D(np.random.rand(20, 20) + 1)
 s.metadata.General.title = 'Test Image'
+# Configure axes using efficient .set() method
 s.axes_manager.signal_axes.set(
     name=['Y', 'X'],
     units=['nm', 'nm'],
@@ -50,17 +52,19 @@ print(f"Log signal title: {log_signal.metadata.General.title}")
 # Create 3D signal for indexing demonstration
 s_3d = hs.signals.Signal1D(np.random.randn(8, 12, 50))
 s_3d.metadata.General.title = 'Spectrum Image'
-s_3d.axes_manager.navigation_axes.set(
-    name=['Y', 'X'],
-    scale=[0.1, 0.2],
-    units=['µm', 'µm']
-)
-s_3d.axes_manager.signal_axes.set(
-    name=['Energy'],
-    scale=[0.5],
-    offset=[100],
-    units=['eV']
-)
+# Configure axes using direct property assignment for all axes
+s_3d.axes_manager.navigation_axes[0].name = 'Y'
+s_3d.axes_manager.navigation_axes[0].scale = 0.1
+s_3d.axes_manager.navigation_axes[0].units = 'µm'
+
+s_3d.axes_manager.navigation_axes[1].name = 'X'
+s_3d.axes_manager.navigation_axes[1].scale = 0.2
+s_3d.axes_manager.navigation_axes[1].units = 'µm'
+
+s_3d.axes_manager.signal_axes[0].name = 'Energy'
+s_3d.axes_manager.signal_axes[0].scale = 0.5
+s_3d.axes_manager.signal_axes[0].offset = 100
+s_3d.axes_manager.signal_axes[0].units = 'eV'
 
 # %%
 # ### Value-based indexing (use physical coordinates)

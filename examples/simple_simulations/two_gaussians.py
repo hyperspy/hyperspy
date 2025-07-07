@@ -48,13 +48,15 @@ print(f"Energy range: {s.axes_manager[2].axis[0]:.1f} to {s.axes_manager[2].axis
 # We'll create a Gaussian peak that varies spatially across the spectrum image.
 # This simulates realistic variations you might see in experimental data.
 
-# Define the first gaussian
-gs1 = hs.model.components1D.Gaussian()
-# Add it to the model
-m.append(gs1)
+# Add first gaussian with custom name (recommended pattern)
+peak1 = hs.model.components1D.Gaussian()
+peak1.name = 'Peak1'
+m.append(peak1)
 
-# Set the parameters with spatial variation
-m.set_parameters_value('sigma', 10, component_list=[gs1])
+# Set the width parameter using direct parameter access (recommended)
+peak1.sigma.value = 10
+peak1.sigma.map['values'][:] = 10
+peak1.sigma.map['is_set'][:] = True
 
 # **Spatial parameter variations:**
 # - Center: varies ±5 channels around position 256 (~225.6 eV)
@@ -62,31 +64,33 @@ m.set_parameters_value('sigma', 10, component_list=[gs1])
 # - Width: constant at 10 channels (~1 eV)
 
 # Make the center vary in the -5,5 range around 256
-gs1.centre.map['values'][:] = 256 + (np.random.random((32, 32)) - 0.5) * 10
-gs1.centre.map['is_set'][:] = True
+peak1.centre.map['values'][:] = 256 + (np.random.random((32, 32)) - 0.5) * 10
+peak1.centre.map['is_set'][:] = True
 
 # Make the area vary between 0 and 10000
-gs1.A.map['values'][:] = 10000 * np.random.random((32, 32))
-gs1.A.map['is_set'][:] = True
+peak1.A.map['values'][:] = 10000 * np.random.random((32, 32))
+peak1.A.map['is_set'][:] = True
 
 # %%
 # **Configure second Gaussian component**
 #
 # Second gaussian at higher energy with different characteristics
-gs2 = hs.model.components1D.Gaussian()
-# Add it to the model
-m.append(gs2)
+peak2 = hs.model.components1D.Gaussian()
+peak2.name = 'Peak2'
+m.append(peak2)
 
-# Set the parameters
-m.set_parameters_value('sigma', 20, component_list=[gs2])
+# Set the width parameter using direct parameter access
+peak2.sigma.value = 20
+peak2.sigma.map['values'][:] = 20
+peak2.sigma.map['is_set'][:] = True
 
 # Make the center vary around 768 (~276.8 eV)
-gs2.centre.map['values'][:] = 768 + (np.random.random((32, 32)) - 0.5) * 20
-gs2.centre.map['is_set'][:] = True
+peak2.centre.map['values'][:] = 768 + (np.random.random((32, 32)) - 0.5) * 20
+peak2.centre.map['is_set'][:] = True
 
 # Make the area vary between 0 and 20000
-gs2.A.map['values'][:] = 20000 * np.random.random((32, 32))
-gs2.A.map['is_set'][:] = True
+peak2.A.map['values'][:] = 20000 * np.random.random((32, 32))
+peak2.A.map['is_set'][:] = True
 
 # %%
 # **Generate the dataset and add realistic noise**
