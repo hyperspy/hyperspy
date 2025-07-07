@@ -1,0 +1,1 @@
+Fix bug where the ``name`` keyword argument was not accepted by many model components, particularly those based on :class:`~.api.model.components1D.Expression`. All 1D and 2D components now consistently accept the ``name`` parameter to set a user-friendly nickname while preserving their official component name for internal identification.

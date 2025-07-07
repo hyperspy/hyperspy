@@ -50,11 +50,17 @@ class Erf(Expression):
     """
 
     def __init__(
-        self, A=1.0, sigma=1.0, origin=0.0, module=["numpy", "scipy"], **kwargs
+        self,
+        A=1.0,
+        sigma=1.0,
+        origin=0.0,
+        module=["numpy", "scipy"],
+        name="Erf",
+        **kwargs,
     ):
         super().__init__(
             expression="A * erf((x - origin) / sqrt(2) / sigma) / 2",
-            name="Erf",
+            name=name,
             A=A,
             sigma=sigma,
             origin=origin,

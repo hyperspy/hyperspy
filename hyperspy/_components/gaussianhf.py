@@ -81,10 +81,12 @@ class GaussianHF(Expression):
 
     """
 
-    def __init__(self, height=1.0, fwhm=1.0, centre=0.0, module=None, **kwargs):
+    def __init__(
+        self, height=1.0, fwhm=1.0, centre=0.0, module=None, name="GaussianHF", **kwargs
+    ):
         super().__init__(
             expression="height * exp(-(x - centre)**2 * 4 * log(2)/fwhm**2)",
-            name="GaussianHF",
+            name=name,
             height=height,
             fwhm=fwhm,
             centre=centre,

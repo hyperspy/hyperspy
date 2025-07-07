@@ -64,8 +64,14 @@ class SplitVoigt(Component):
 
     """
 
-    def __init__(self, A=1.0, sigma1=1.0, sigma2=1.0, fraction=0.0, centre=0.0):
+    def __init__(
+        self, A=1.0, sigma1=1.0, sigma2=1.0, fraction=0.0, centre=0.0, name="SplitVoigt"
+    ):
         Component.__init__(self, ("A", "sigma1", "sigma2", "centre", "fraction"))
+
+        # Set the component name
+        self.name = name
+
         self.A.value = A
         self.sigma1.value = sigma1
         self.sigma2.value = sigma2

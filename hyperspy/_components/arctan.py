@@ -50,13 +50,13 @@ class Arctan(Expression):
 
     """
 
-    def __init__(self, A=1.0, k=1.0, x0=1.0, module="numpy", **kwargs):
+    def __init__(self, A=1.0, k=1.0, x0=1.0, module="numpy", name="Arctan", **kwargs):
         # To be able to still read old file versions that contain this argument
         if "minimum_at_zero" in kwargs:
             del kwargs["minimum_at_zero"]
         super().__init__(
             expression="A * atan(k * (x - x0))",
-            name="Arctan",
+            name=name,
             A=A,
             k=k,
             x0=x0,

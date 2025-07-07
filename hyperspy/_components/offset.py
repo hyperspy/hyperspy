@@ -43,10 +43,13 @@ class Offset(Component):
 
     """
 
-    def __init__(self, offset=0.0):
+    def __init__(self, offset=0.0, name="Offset"):
         Component.__init__(self, ("offset",), ["offset"])
         self.offset.free = True
         self.offset.value = offset
+
+        # Set the component name
+        self.name = name
 
         self.isbackground = True
         self.convolved = False

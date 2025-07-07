@@ -89,6 +89,7 @@ class Voigt(Expression):
         gamma=0.2,
         sigma=0.1,
         module=["numpy", "scipy"],
+        name="Voigt",
         **kwargs,
     ):
         # We use `gamma_` internally to workaround the use of the `gamma`
@@ -97,7 +98,7 @@ class Voigt(Expression):
             expression="area * re(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
                 z = (x - centre + 1j * gamma_) / (sigma * sqrt(2.0))",
-            name="Voigt",
+            name=name,
             centre=centre,
             area=area,
             gamma=gamma,

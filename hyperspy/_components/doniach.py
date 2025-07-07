@@ -88,6 +88,7 @@ class Doniach(Expression):
         sigma=1.0,
         alpha=0.5,
         module="numpy",
+        name="Doniach",
         **kwargs,
     ):
         super().__init__(
@@ -95,7 +96,7 @@ class Doniach(Expression):
             ((1.0 - alpha) * atan( (x-centre+offset)/sigma) ) )\
             /(sigma**2 + (x-centre+offset)**2)**(0.5 * (1.0 - alpha));\
             offset = 2.354820*sigma / (2 * tan(pi / (2 - alpha)))",
-            name="Doniach",
+            name=name,
             centre=centre,
             A=A,
             sigma=sigma,

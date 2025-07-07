@@ -67,11 +67,12 @@ class PowerLaw(Expression):
         left_cutoff=0.0,
         module=None,
         compute_gradients=False,
+        name="PowerLaw",
         **kwargs,
     ):
         super().__init__(
             expression="where(left_cutoff<x, A*(-origin + x)**-r, 0)",
-            name="PowerLaw",
+            name=name,
             A=A,
             r=r,
             origin=origin,

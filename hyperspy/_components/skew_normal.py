@@ -145,7 +145,14 @@ class SkewNormal(Expression):
     """
 
     def __init__(
-        self, x0=0.0, A=1.0, scale=1.0, shape=0.0, module=["numpy", "scipy"], **kwargs
+        self,
+        x0=0.0,
+        A=1.0,
+        scale=1.0,
+        shape=0.0,
+        module=["numpy", "scipy"],
+        name="SkewNormal",
+        **kwargs,
     ):
         # We use `_shape` internally because `shape` is already taken in sympy
         # https://github.com/sympy/sympy/pull/20791
@@ -154,7 +161,7 @@ class SkewNormal(Expression):
                 normpdf = exp(- t ** 2 / 2) / sqrt(2 * pi);\
                 normcdf = (1 + erf(_shape * t / sqrt(2))) / 2;\
                 t = (x - x0) / scale",
-            name="SkewNormal",
+            name=name,
             x0=x0,
             A=A,
             scale=scale,
