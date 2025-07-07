@@ -78,6 +78,7 @@ def create_test_spectra_with_shifts(n_spectra=5, size=1024):
     
     for i, shift in enumerate(shifts):
         if shift == 0:
+            # Note: Direct .data access needed here for numpy array construction
             spectra[i] = base_signal.data[0]
         else:
             # Create shifted spectrum by updating model parameters
@@ -86,6 +87,7 @@ def create_test_spectra_with_shifts(n_spectra=5, size=1024):
             
             # Generate shifted spectrum
             shifted_signal = m.as_signal()
+            # Note: Direct .data access needed here for numpy array construction
             spectra[i] = shifted_signal.data[0]
             
             # Reset centers for next iteration
@@ -102,7 +104,7 @@ def create_test_spectra_with_shifts(n_spectra=5, size=1024):
 spectra_data, true_shifts = create_test_spectra_with_shifts()
 s = hs.signals.Signal1D(spectra_data)
 
-# Set up axis calibration (energy scale) using batch assignment
+# Set up axis calibration (energy scale) using proper assignment
 s.axes_manager.signal_axes[0].name = 'Energy'
 s.axes_manager.signal_axes[0].units = 'eV'
 s.axes_manager.signal_axes[0].scale = 0.5
@@ -138,7 +140,8 @@ print(f"Method result type: {type(estimated_shifts)}")
 
 # The result is a Signal with the estimated shifts
 if hasattr(estimated_shifts, 'data'):
-    estimated_shift_values = estimated_shifts.data
+    # Note: Extract numerical values for comparison with ground truth
+    estimated_shift_values = np.array(estimated_shifts)
 else:
     estimated_shift_values = estimated_shifts
 
@@ -178,7 +181,8 @@ print("Alignment completed successfully")
 
 # Check the resulting shifts
 if result_shifts is not None and hasattr(result_shifts, 'data'):
-    alignment_shifts = result_shifts.data
+    # Note: Extract numerical values for logging
+    alignment_shifts = np.array(result_shifts)
     print(f"Applied alignment shifts: {alignment_shifts}")
 
 # Plot aligned spectra using HyperSpy's native plotting
@@ -304,6 +308,7 @@ peak_positions_original = []
 peak_positions_aligned = []
 
 for i in range(s.axes_manager.navigation_size):
+    # Note: find_peak_position function requires data array for numerical computation
     pos_orig = find_peak_position(s.inav[i].data, s.axes_manager.signal_axes[0].axis)
     pos_aligned = find_peak_position(s_aligned.inav[i].data, s_aligned.axes_manager.signal_axes[0].axis)
     

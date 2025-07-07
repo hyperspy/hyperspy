@@ -186,22 +186,15 @@ hs.plot.plot_images([total_intensity_map, peak1_map, peak2_map],
 #
 # Sometimes we want to see how the integral accumulates along the signal axis
 
-# Calculate cumulative integral using signal directly with numpy
-# The __array__ protocol allows direct use with np.cumsum while preserving signal structure
-cumulative_signal = np.cumsum(s) * s.axes_manager.signal_axes[0].scale
-cumulative_integral = cumulative_signal.data  # Extract data for plotting on matplotlib axis
-
-# Plot original signal and cumulative integral
-s.plot()
-ax1 = s._plot.signal_plot.ax
-ax1.set_title('Original Signal')
-
+# Calculate cumulative integral using HyperSpy signal methods
 # Create cumulative integral signal for proper plotting
 s_cumulative = s.deepcopy()
-s_cumulative.data = cumulative_integral
+s_cumulative.data = np.cumsum(s.data) * s.axes_manager.signal_axes[0].scale  # NumPy operation on data for cumulative calculation
 s_cumulative.metadata.General.title = 'Cumulative Integration'
-s_cumulative.axes_manager.signal_axes[0].name = 'Energy'
-s_cumulative.axes_manager.signal_axes[0].units = 'eV'
+
+# Plot original signal and cumulative integral using HyperSpy plotting
+s.plot()
+s_cumulative.plot()
 
 # %%
 # Integration Summary
@@ -214,7 +207,7 @@ print(f"Peak 1 (150-250 eV): {float(range_integral_1.data):.2f}")
 print(f"Peak 2 (450-550 eV): {float(range_integral_2.data):.2f}")
 print(f"Peak 3 (700-800 eV): {float(range_integral_3.data):.2f}")
 print(f"ROI region (400-600 eV): {float(roi_integral.data):.2f}")
-print(f"Final cumulative value: {cumulative_integral[-1]:.2f}")
+print(f"Final cumulative value: {s_cumulative.data[-1]:.2f}")
 
 print("Integration methods available:")
 print("- integrate1D(): Integrate over specified axis")

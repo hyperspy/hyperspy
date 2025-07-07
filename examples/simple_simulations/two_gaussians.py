@@ -97,6 +97,10 @@ s_model = m.as_signal()
 # Set metadata for proper identification
 s_model.set_signal_origin("simulation")
 
+# Store ground truth model for reproducibility
+m.signal = s_model
+s_model.models.store(m, name="ground_truth")
+
 # Add realistic noise in proper sequence
 print("Adding realistic noise to simulation...")
 print(f"Signal intensity range: {s_model.data.min():.0f} to {s_model.data.max():.0f}")

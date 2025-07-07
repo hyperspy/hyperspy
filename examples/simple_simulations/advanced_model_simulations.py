@@ -176,6 +176,7 @@ print("- Ground truth model stored with spatial parameter maps")
 
 # Create signal for multi-phase simulation
 s_phases = hs.signals.Signal1D(np.zeros((20, 20, 400)))
+# Set up axes
 s_phases.axes_manager.navigation_axes[0].name = 'X'
 s_phases.axes_manager.navigation_axes[0].units = 'μm'
 s_phases.axes_manager.navigation_axes[0].scale = 0.05
@@ -274,7 +275,7 @@ print("\nAdding realistic noise to simulations...")
 
 # For spectroscopy data: Poisson + Gaussian noise
 sim1d_noisy = sim1d.copy()
-# Ensure positive values for Poisson noise
+# Ensure positive values for Poisson noise (direct .data access needed for safety checks)
 if sim1d_noisy.data.min() <= 0:
     sim1d_noisy.data += abs(sim1d_noisy.data.min()) + 1
 sim1d_noisy.add_poissonian_noise(random_state=42)  # Shot noise
@@ -282,7 +283,7 @@ sim1d_noisy.add_gaussian_noise(std=20, random_state=43)  # Electronic noise
 
 # For imaging data: primarily Poisson noise
 sim2d_noisy = sim2d.copy()
-# Ensure positive values for Poisson noise  
+# Ensure positive values for Poisson noise (direct .data access needed for safety checks)
 if sim2d_noisy.data.min() <= 0:
     sim2d_noisy.data += abs(sim2d_noisy.data.min()) + 1
 sim2d_noisy.add_poissonian_noise(random_state=44)
@@ -291,17 +292,17 @@ sim2d_noisy.add_poissonian_noise(random_state=44)
 # Handle Poisson noise carefully to avoid numerical issues
 sim_phases_noisy = sim_phases.copy()
 
-# Clean up any NaN or infinite values
+# Clean up any NaN or infinite values (direct .data access needed for nan_to_num)
 sim_phases_noisy.data = np.nan_to_num(sim_phases_noisy.data, nan=0.0, posinf=1000.0, neginf=0.0)
 
-# Scale to realistic count range for Poisson noise (typically < 10000 for safety)
+# Scale to realistic count range for Poisson noise (direct .data access needed for safety)
 max_val = sim_phases_noisy.data.max()
 if max_val > 5000:
     scale_factor = 5000 / max_val
     sim_phases_noisy.data *= scale_factor
     print(f"Scaled diffraction data by {scale_factor:.3f} for realistic count rates")
 
-# Ensure all values are positive for Poisson noise
+# Ensure all values are positive for Poisson noise (direct .data access needed for safety)
 min_val = sim_phases_noisy.data.min()
 if min_val <= 0:
     sim_phases_noisy.data = sim_phases_noisy.data - min_val + 1
@@ -328,11 +329,12 @@ peak_map.metadata.General.title = "Peak Position Map"
 # Convert indices to energy values
 energy_axis = sim2d_noisy.axes_manager.signal_axes[0].axis
 peak_energy_map = peak_map.copy()
+# Note: Direct .data access needed here for array indexing with peak positions
 peak_energy_map.data = energy_axis[peak_map.data]
 # Note: peak_energy_map is a 0D signal (no signal axes), so we add metadata directly
 peak_energy_map.metadata.General.title = "Peak Energy Map (eV)"
 
-# Calculate peak statistics
+# Calculate peak statistics (direct .data access needed for numerical comparison)
 print(f"\nSimulation validation:")
 print(f"Peak center range: {peak_energy_map.data.min():.1f} to {peak_energy_map.data.max():.1f} eV")
 print(f"Expected range: {center_variation.min():.1f} to {center_variation.max():.1f} eV")

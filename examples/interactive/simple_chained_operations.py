@@ -131,6 +131,7 @@ peak_position_map = s.indexmax(axis='Energy')
 # Peak energy conversion - convert peak positions to physical energy values
 energy_axis_vals = s.axes_manager[2].axis
 peak_energy_map = peak_position_map.deepcopy()
+# Note: Direct .data access needed here for array indexing with peak positions
 peak_energy_map.data = energy_axis_vals[peak_position_map.data]
 peak_energy_map.metadata.General.title = "Peak energy map"
 
@@ -157,12 +158,12 @@ energy_ratio = high_energy_sum / (low_energy_sum + 1e-10)  # Add small value to 
 #
 # Demonstrating how chained operations respond when the original data is modified.
 
-# Store original values
-original_max = max_intensity.data.copy()
-original_mean = mean_intensity.data.copy()
+# Store original values using signal methods (not .data)
+original_max = max_intensity.copy()
+original_mean = mean_intensity.copy()
 
 # Original data ranges stored for comparison:
-print(f"Original mean range: [{original_mean.min():.2f}, {original_mean.max():.2f}]")
+print(f"Original mean range: [{np.min(original_mean.data):.2f}, {np.max(original_mean.data):.2f}]")
 
 # Modify the original signal using signal arithmetic (preserves metadata)
 s = s * 1.5  # Increase intensity by 50% - creates new signal with updated title
@@ -171,8 +172,8 @@ s = s * 1.5  # Increase intensity by 50% - creates new signal with updated title
 new_max_intensity = s.max(axis='Energy')
 new_mean_intensity = s.mean(axis='Energy')
 
-print(f"New max range: [{np.min(new_max_intensity.data):.2f}, {np.max(new_max_intensity.data):.2f}]")
-print(f"New mean range: [{np.min(new_mean_intensity.data):.2f}, {np.max(new_mean_intensity.data):.2f}]")
+print(f"New max range: [{np.min(new_max_intensity):.2f}, {np.max(new_max_intensity):.2f}]")
+print(f"New mean range: [{np.min(new_mean_intensity):.2f}, {np.max(new_mean_intensity):.2f}]")
 
 # Verify the scaling using signal arithmetic
 ratio_max = new_max_intensity / original_max  # Signal division preserves metadata

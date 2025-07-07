@@ -25,54 +25,76 @@ import hyperspy.api as hs
 # %%
 # **Creating synthetic data for model fitting**
 #
-# We'll create a realistic spectrum with multiple components to demonstrate 
-# the model fitting process. This synthetic data includes:
-# - A power law background (typical in many analytical datasets)
-# - Multiple peaks (Gaussian and Lorentzian)
-# - Realistic noise levels
+# We'll create a realistic spectrum using HyperSpy's model framework to demonstrate 
+# the model fitting process. This approach follows best practices by using
+# HyperSpy models for data generation and then fitting.
 
-# Create energy axis
-energy = np.linspace(100, 800, 1000)
-
-# Create synthetic spectrum with multiple components
-np.random.seed(42)
-
-# Background (power law)
-background = 5000 * energy**(-2.5)
-
-# Peak 1 (Gaussian)
-peak1 = 8000 * np.exp(-0.5 * ((energy - 250) / 20)**2)
-
-# Peak 2 (Gaussian) 
-peak2 = 6000 * np.exp(-0.5 * ((energy - 450) / 30)**2)
-
-# Peak 3 (Lorentzian)
-peak3 = 4000 * (25**2) / ((energy - 600)**2 + 25**2)
-
-# Add noise
-noise = np.random.normal(0, 100, len(energy))
-
-# Combine all components
-signal_data = background + peak1 + peak2 + peak3 + noise
-
-# Create HyperSpy signal
-s = hs.signals.Signal1D(signal_data)
+# Create empty signal with proper axis calibration
+s = hs.signals.Signal1D(np.zeros(1000))
 s.axes_manager.signal_axes[0].name = 'Energy'
 s.axes_manager.signal_axes[0].units = 'eV'
 s.axes_manager.signal_axes[0].scale = 0.7
 s.axes_manager.signal_axes[0].offset = 100.0
 s.metadata.General.title = 'Synthetic Spectrum'
 
+# Create ground truth model for simulation
+m_true = s.create_model()
+
+# Add components to ground truth model
+background_true = hs.model.components1D.PowerLaw()
+m_true.append(background_true)
+
+peak1_true = hs.model.components1D.Gaussian()
+m_true.append(peak1_true)
+
+peak2_true = hs.model.components1D.Gaussian()
+m_true.append(peak2_true)
+
+peak3_true = hs.model.components1D.Lorentzian()
+m_true.append(peak3_true)
+
+# Set all parameter values using set_parameters_value method
+m_true.set_parameters_value('A', 5000, component_list=[background_true])
+m_true.set_parameters_value('r', 2.5, component_list=[background_true])
+m_true.set_parameters_value('origin', 0.0, component_list=[background_true])
+m_true.set_parameters_value('left_cutoff', 0.0, component_list=[background_true])
+
+m_true.set_parameters_value('centre', 215, component_list=[peak1_true])
+m_true.set_parameters_value('sigma', 20, component_list=[peak1_true])
+m_true.set_parameters_value('A', 8000, component_list=[peak1_true])
+
+m_true.set_parameters_value('centre', 315, component_list=[peak2_true])
+m_true.set_parameters_value('sigma', 30, component_list=[peak2_true])
+m_true.set_parameters_value('A', 6000, component_list=[peak2_true])
+
+m_true.set_parameters_value('centre', 450, component_list=[peak3_true])
+m_true.set_parameters_value('gamma', 25, component_list=[peak3_true])
+m_true.set_parameters_value('A', 4000, component_list=[peak3_true])
+
+# Generate synthetic data from model
+s = m_true.as_signal()
+s.set_signal_origin("simulation")
+
+# Store ground truth model
+m_true.signal = s
+s.models.store(m_true, name="ground_truth")
+
+# Add realistic noise
+s.change_dtype('float64')
+np.random.seed(42)
+s.add_gaussian_noise(std=100, random_state=42)
+
 # **Signal created successfully**
 #
 # Our synthetic spectrum is ready for model fitting with realistic spectroscopic features.
+# The ground truth model is stored and can be accessed via s.models.ground_truth.restore()
 
 # %%
-# ## Create and configure the model
+# ## Create and configure the model for fitting
 # 
-# We'll build a model with multiple components to fit the synthetic data
+# We'll build a new model to fit the synthetic data (separate from ground truth)
 
-# Create model from signal
+# Create new model from noisy signal for fitting
 m = s.create_model()
 
 # Add background component
@@ -112,17 +134,17 @@ background_comp.A.value = 5000
 background_comp.r.value = 2.5
 
 # Peak 1 parameters
-peak1_comp.centre.value = 250
+peak1_comp.centre.value = 215  # Match ground truth
 peak1_comp.sigma.value = 20
 peak1_comp.A.value = 8000
 
 # Peak 2 parameters  
-peak2_comp.centre.value = 450
+peak2_comp.centre.value = 315  # Match ground truth
 peak2_comp.sigma.value = 30
 peak2_comp.A.value = 6000
 
 # Peak 3 parameters
-peak3_comp.centre.value = 600
+peak3_comp.centre.value = 450  # Match ground truth
 peak3_comp.gamma.value = 25
 peak3_comp.A.value = 4000
 
@@ -163,13 +185,13 @@ r_squared = 1 - (ss_res / ss_tot)
 
 print(f"Background A: {background_comp.A.value:.2f} (true: 5000)")
 print(f"Background r: {background_comp.r.value:.2f} (true: 2.5)")
-print(f"Peak 1 centre: {peak1_comp.centre.value:.2f} eV (true: 250)")
+print(f"Peak 1 centre: {peak1_comp.centre.value:.2f} eV (true: 215)")
 print(f"Peak 1 sigma: {peak1_comp.sigma.value:.2f} eV (true: 20)")
 print(f"Peak 1 amplitude: {peak1_comp.A.value:.2f} (true: 8000)")
-print(f"Peak 2 centre: {peak2_comp.centre.value:.2f} eV (true: 450)")
+print(f"Peak 2 centre: {peak2_comp.centre.value:.2f} eV (true: 315)")
 print(f"Peak 2 sigma: {peak2_comp.sigma.value:.2f} eV (true: 30)")
 print(f"Peak 2 amplitude: {peak2_comp.A.value:.2f} (true: 6000)")
-print(f"Peak 3 centre: {peak3_comp.centre.value:.2f} eV (true: 600)")
+print(f"Peak 3 centre: {peak3_comp.centre.value:.2f} eV (true: 450)")
 print(f"Peak 3 gamma: {peak3_comp.gamma.value:.2f} eV (true: 25)")
 print(f"Peak 3 amplitude: {peak3_comp.A.value:.2f} (true: 4000)")
 
@@ -181,21 +203,56 @@ print(f"Goodness of fit (R²): {r_squared:.4f}")
 #
 # Now let's demonstrate model creation for 2D signals
 
-# Create 2D synthetic data
-x = np.linspace(-5, 5, 100)
-y = np.linspace(-5, 5, 100)
-X, Y = np.meshgrid(x, y)
+# Create 2D synthetic data using HyperSpy models
+s2d_empty = hs.signals.Signal2D(np.zeros((100, 100)))
+s2d_empty.axes_manager.signal_axes[0].name = 'x'
+s2d_empty.axes_manager.signal_axes[1].name = 'y'
+s2d_empty.axes_manager.signal_axes[0].scale = 0.1
+s2d_empty.axes_manager.signal_axes[1].scale = 0.1
+s2d_empty.axes_manager.signal_axes[0].offset = -5.0
+s2d_empty.axes_manager.signal_axes[1].offset = -5.0
+s2d_empty.metadata.General.title = 'Synthetic 2D Data'
 
-# 2D Gaussian peak
-data_2d = 1000 * np.exp(-((X - 1)**2 + (Y + 0.5)**2) / (2 * 1.5**2)) + \
-          100 + 50 * np.random.random((100, 100))
+# Create ground truth 2D model
+m2d_true = s2d_empty.create_model()
 
-s2d = hs.signals.Signal2D(data_2d)
-s2d.axes_manager.signal_axes[0].name = 'x'
-s2d.axes_manager.signal_axes[1].name = 'y'
-s2d.axes_manager.signal_axes[0].scale = 0.1
-s2d.axes_manager.signal_axes[1].scale = 0.1
-s2d.metadata.General.title = 'Synthetic 2D Data'
+# Add 2D Gaussian component to ground truth
+gaussian_2d_true = hs.model.components2D.Gaussian2D()
+m2d_true.append(gaussian_2d_true)
+
+# Add 2D background using Expression component
+background_2d_true = hs.model.components2D.Expression(
+    expression="a + b*x + c*y",
+    name="background_2d",
+    a=100.0,  # constant term
+    b=0.0,    # x gradient
+    c=0.0     # y gradient
+)
+m2d_true.append(background_2d_true)
+
+# Set 2D parameter values
+m2d_true.set_parameters_value('centre_x', 1.0, component_list=[gaussian_2d_true])
+m2d_true.set_parameters_value('centre_y', -0.5, component_list=[gaussian_2d_true])
+m2d_true.set_parameters_value('sigma_x', 1.5, component_list=[gaussian_2d_true])
+m2d_true.set_parameters_value('sigma_y', 1.5, component_list=[gaussian_2d_true])
+m2d_true.set_parameters_value('A', 1000, component_list=[gaussian_2d_true])
+
+# Set Expression component parameters
+m2d_true.set_parameters_value('a', 100.0, component_list=[background_2d_true])
+m2d_true.set_parameters_value('b', 0.0, component_list=[background_2d_true])
+m2d_true.set_parameters_value('c', 0.0, component_list=[background_2d_true])
+
+# Generate 2D simulation
+s2d = m2d_true.as_signal()
+s2d.set_signal_origin("simulation")
+
+# Store ground truth
+m2d_true.signal = s2d
+s2d.models.store(m2d_true, name="ground_truth")
+
+# Add noise to 2D data
+s2d.change_dtype('float64')
+s2d.add_gaussian_noise(std=50, random_state=42)
 
 print(f"Created 2D signal: {s2d}")
 

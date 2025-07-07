@@ -9,7 +9,6 @@ realistic noise to signals, essential for simulation and testing.
 
 import hyperspy.api as hs
 import numpy as np
-import matplotlib.pyplot as plt
 
 # %%
 # ## Creating clean test signals
