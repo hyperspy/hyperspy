@@ -48,9 +48,8 @@ print(f"Energy range: {s.axes_manager[2].axis[0]:.1f} to {s.axes_manager[2].axis
 # We'll create a Gaussian peak that varies spatially across the spectrum image.
 # This simulates realistic variations you might see in experimental data.
 
-# Add first gaussian with custom name (recommended pattern)
-peak1 = hs.model.components1D.Gaussian()
-peak1.name = 'Peak1'
+# Add first gaussian with custom name (using best practice: name at creation)
+peak1 = hs.model.components1D.Gaussian(name='Peak1')
 m.append(peak1)
 
 # Set the width parameter using direct parameter access (recommended)
@@ -74,9 +73,8 @@ peak1.A.map['is_set'][:] = True
 # %%
 # **Configure second Gaussian component**
 #
-# Second gaussian at higher energy with different characteristics
-peak2 = hs.model.components1D.Gaussian()
-peak2.name = 'Peak2'
+# Second gaussian at higher energy with different characteristics (using best practice: name at creation)
+peak2 = hs.model.components1D.Gaussian(name='Peak2')
 m.append(peak2)
 
 # Set the width parameter using direct parameter access

@@ -73,9 +73,9 @@ print(f"EELS signal created: {eels_signal}")
 # Define pre-edge region for background fitting
 pre_edge_region = eels_signal.isig[200.:280.]
 
-# Fit power law background
+# Fit power law background (using best practice: name at creation)
 background_model = pre_edge_region.create_model()
-power_law = hs.model.components1D.PowerLaw()
+power_law = hs.model.components1D.PowerLaw(name="PowerLaw_Background")
 # Set initial parameter values for stable fitting
 power_law.A.value = 1000
 power_law.r.value = 3.0
@@ -316,14 +316,14 @@ print(f"XRD signal created: {xrd_signal}")
 # Create model for peak fitting
 xrd_model = xrd_signal.create_model()
 
-# Add background component
-background_component = hs.model.components1D.Exponential()
+# Add background component (using best practice: name at creation)
+background_component = hs.model.components1D.Exponential(name="XRD_Background")
 xrd_model.append(background_component)
 
-# Add Gaussian peaks for each phase
+# Add Gaussian peaks for each phase (using best practice: name at creation)
 phase1_components = []
 for i, (pos, intensity, width) in enumerate(zip(phase1_peaks, phase1_intensities, phase1_widths)):
-    peak = hs.model.components1D.Gaussian()
+    peak = hs.model.components1D.Gaussian(name=f"Phase1_Peak_{i+1}")
     peak.centre.value = pos
     peak.A.value = intensity
     peak.sigma.value = width
@@ -332,7 +332,7 @@ for i, (pos, intensity, width) in enumerate(zip(phase1_peaks, phase1_intensities
 
 phase2_components = []
 for i, (pos, intensity, width) in enumerate(zip(phase2_peaks, phase2_intensities, phase2_widths)):
-    peak = hs.model.components1D.Gaussian()
+    peak = hs.model.components1D.Gaussian(name=f"Phase2_Peak_{i+1}")
     peak.centre.value = pos
     peak.A.value = intensity  
     peak.sigma.value = width

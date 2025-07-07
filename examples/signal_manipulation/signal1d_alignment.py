@@ -25,7 +25,7 @@ def create_test_spectra_with_shifts(n_spectra=5, size=1024):
     # Create model for simulation
     m = s.create_model()
     
-    # Add exponential background
+    # Add exponential background (using best practice: name at creation)
     background = hs.model.components1D.Expression(
         "a + b * exp(-x/c)",
         name="Background",
@@ -33,17 +33,17 @@ def create_test_spectra_with_shifts(n_spectra=5, size=1024):
     )
     m.append(background)
     
-    # Add three peaks with different characteristics
+    # Add three peaks with different characteristics (using best practice: name at creation)
     # Sharp peak
-    peak1 = hs.model.components1D.Gaussian()
+    peak1 = hs.model.components1D.Gaussian(name="Peak1")
     m.append(peak1)
     
     # Broad peak
-    peak2 = hs.model.components1D.Gaussian()
+    peak2 = hs.model.components1D.Gaussian(name="Peak2")
     m.append(peak2)
     
     # Another peak
-    peak3 = hs.model.components1D.Gaussian()
+    peak3 = hs.model.components1D.Gaussian(name="Peak3")
     m.append(peak3)
 
     # Set parameters for all navigation positions using set_parameters_value with only_current=False

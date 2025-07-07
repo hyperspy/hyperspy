@@ -65,9 +65,8 @@ m.components.Background.c.map['is_set'][:] = True
 m.components.Background.d.map['values'][:] = 20
 m.components.Background.d.map['is_set'][:] = True
 
-# Add main Gaussian peak with custom name
-main_peak = hs.model.components1D.Gaussian()
-main_peak.name = 'MainPeak'
+# Add main Gaussian peak with custom name (using best practice: name at creation)
+main_peak = hs.model.components1D.Gaussian(name='MainPeak')
 m.append(main_peak)
 
 # Set spatial parameter variations using the parameter maps

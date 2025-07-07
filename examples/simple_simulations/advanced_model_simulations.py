@@ -116,16 +116,16 @@ s2d.axes_manager.signal_axes[0].offset = 100
 # Create model
 m2d = s2d.create_model()
 
-# Add uniform background
-bg2d = hs.model.components1D.Polynomial(order=1)
+# Add uniform background (using best practice: name at creation)
+bg2d = hs.model.components1D.Polynomial(order=1, name="Background_2D")
 m2d.append(bg2d)
 
 # Set polynomial background parameters using set_parameters_value (handles maps automatically)
 m2d.set_parameters_value('a0', 100, component_list=[bg2d], only_current=False)
 m2d.set_parameters_value('a1', 0.5, component_list=[bg2d], only_current=False)
 
-# Add main peak with spatial variations
-main_peak = hs.model.components1D.Gaussian()
+# Add main peak with spatial variations (using best practice: name at creation)
+main_peak = hs.model.components1D.Gaussian(name="Main_Peak")
 m2d.append(main_peak)
 
 # Create spatial coordinate grids
@@ -197,21 +197,21 @@ bg_phases = hs.model.components1D.Expression(
 )
 m_phases.append(bg_phases)
 
-# Phase 1: Major phase with multiple peaks
-phase1_peak1 = hs.model.components1D.Gaussian()
+# Phase 1: Major phase with multiple peaks (using best practice: name at creation)
+phase1_peak1 = hs.model.components1D.Gaussian(name="Phase1_Peak1")
 phase1_peak1.centre.value = 25.5  # degrees
 phase1_peak1.sigma.value = 0.12   # width
 phase1_peak1.A.value = 1000       # area
 m_phases.append(phase1_peak1)
 
-phase1_peak2 = hs.model.components1D.Gaussian()
+phase1_peak2 = hs.model.components1D.Gaussian(name="Phase1_Peak2")
 phase1_peak2.centre.value = 31.2
 phase1_peak2.sigma.value = 0.14   # width
 phase1_peak2.A.value = 800        # area
 m_phases.append(phase1_peak2)
 
-# Phase 2: Minor phase (varies spatially)
-phase2_peak = hs.model.components1D.Gaussian()
+# Phase 2: Minor phase (varies spatially) (using best practice: name at creation)
+phase2_peak = hs.model.components1D.Gaussian(name="Phase2_Peak")
 phase2_peak.centre.value = 28.8
 phase2_peak.sigma.value = 0.16    # width
 phase2_peak.A.value = 500         # area
@@ -378,15 +378,11 @@ s_demo.axes_manager.signal_axes[0].offset = 0
 
 m_demo = s_demo.create_model()
 
-# Add multiple similar peaks
-peak_a = hs.model.components1D.Gaussian()
-peak_a.name = 'Peak_A'
-peak_b = hs.model.components1D.Gaussian()
-peak_b.name = 'Peak_B'
-peak_c = hs.model.components1D.Gaussian()
-peak_c.name = 'Peak_C'
-background = hs.model.components1D.Polynomial(order=1)
-background.name = 'Background'
+# Add multiple similar peaks (using best practice: name at creation)
+peak_a = hs.model.components1D.Gaussian(name='Peak_A')
+peak_b = hs.model.components1D.Gaussian(name='Peak_B')
+peak_c = hs.model.components1D.Gaussian(name='Peak_C')
+background = hs.model.components1D.Polynomial(order=1, name='Background')
 
 m_demo.extend([peak_a, peak_b, peak_c, background])
 

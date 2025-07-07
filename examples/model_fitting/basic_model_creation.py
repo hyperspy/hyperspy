@@ -40,17 +40,17 @@ s.metadata.General.title = 'Synthetic Spectrum'
 # Create ground truth model for simulation
 m_true = s.create_model()
 
-# Add components to ground truth model
-background_true = hs.model.components1D.PowerLaw()
+# Add components to ground truth model (using best practice: name at creation)
+background_true = hs.model.components1D.PowerLaw(name="background_true")
 m_true.append(background_true)
 
-peak1_true = hs.model.components1D.Gaussian()
+peak1_true = hs.model.components1D.Gaussian(name="peak1_true")
 m_true.append(peak1_true)
 
-peak2_true = hs.model.components1D.Gaussian()
+peak2_true = hs.model.components1D.Gaussian(name="peak2_true")
 m_true.append(peak2_true)
 
-peak3_true = hs.model.components1D.Lorentzian()
+peak3_true = hs.model.components1D.Lorentzian(name="peak3_true")
 m_true.append(peak3_true)
 
 # Set parameter values using direct access (recommended for single components)
@@ -131,22 +131,18 @@ s.add_gaussian_noise(std=100, random_state=42)
 # Create new model from noisy signal for fitting
 m = s.create_model()
 
-# Add background component
-background_comp = hs.model.components1D.PowerLaw()
-background_comp.name = 'background'
+# Add background component (using best practice: name at creation)
+background_comp = hs.model.components1D.PowerLaw(name='background')
 m.append(background_comp)
 
-# Add peak components
-peak1_comp = hs.model.components1D.Gaussian()
-peak1_comp.name = 'peak1'
+# Add peak components (using best practice: name at creation)
+peak1_comp = hs.model.components1D.Gaussian(name='peak1')
 m.append(peak1_comp)
 
-peak2_comp = hs.model.components1D.Gaussian()
-peak2_comp.name = 'peak2'
+peak2_comp = hs.model.components1D.Gaussian(name='peak2')
 m.append(peak2_comp)
 
-peak3_comp = hs.model.components1D.Lorentzian()
-peak3_comp.name = 'peak3'
+peak3_comp = hs.model.components1D.Lorentzian(name='peak3')
 m.append(peak3_comp)
 
 # %%
@@ -250,8 +246,8 @@ s2d_empty.metadata.General.title = 'Synthetic 2D Data'
 # Create ground truth 2D model
 m2d_true = s2d_empty.create_model()
 
-# Add 2D Gaussian component to ground truth
-gaussian_2d_true = hs.model.components2D.Gaussian2D()
+# Add 2D Gaussian component to ground truth (using best practice: name at creation)
+gaussian_2d_true = hs.model.components2D.Gaussian2D(name="gaussian_2d_true")
 m2d_true.append(gaussian_2d_true)
 
 # Add 2D background using Expression component
@@ -313,9 +309,8 @@ print(f"Created 2D signal: {s2d}")
 # Create 2D model
 m2d = s2d.create_model()
 
-# Add 2D Gaussian component
-gaussian_2d_comp = hs.model.components2D.Gaussian2D()
-gaussian_2d_comp.name = 'gaussian_2d'
+# Add 2D Gaussian component (using best practice: name at creation)
+gaussian_2d_comp = hs.model.components2D.Gaussian2D(name='gaussian_2d')
 m2d.append(gaussian_2d_comp)
 
 # Add 2D constant background using Expression component

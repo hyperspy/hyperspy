@@ -26,8 +26,8 @@ s.add_gaussian_noise(0.1)
 # %%
 # Create model and add arctan component
 # -------------------------------------
-# Make the arctan component for use in the model
-arctan_component = hs.model.components1D.Arctan()
+# Make the arctan component for use in the model (using best practice: name at creation)
+arctan_component = hs.model.components1D.Arctan(name="Arctan_Fit")
 
 # Create the model and add the arctan component
 m = s.create_model()
