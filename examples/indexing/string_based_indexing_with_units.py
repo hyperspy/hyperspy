@@ -95,11 +95,11 @@ nav_slice = signal_2d.inav['1.0 µm':'3.0 µm', '0.5 µm':'2.5 µm']
 print(f"Navigation slice shape: {nav_slice.data.shape}")
 
 # Signal indexing with units  
-sig_slice = signal_2d.isig['520 nm':'560 nm']
+sig_slice = signal_2d.isig['502 nm':'506 nm']
 print(f"Signal slice shape: {sig_slice.data.shape}")
 
 # Combined indexing
-combined = signal_2d.inav['1.0 µm':'3.0 µm', :].isig['520 nm':'560 nm']
+combined = signal_2d.inav['1.0 µm':'3.0 µm', :].isig['502 nm':'506 nm']
 print(f"Combined slice shape: {combined.data.shape}")
 
 # %%

@@ -34,14 +34,16 @@ for i in range(nx):
         # Carbon K-edge at ~284 eV (varying concentration)
         carbon_conc = 0.3 + 0.4 * np.sin(2 * np.pi * i / nx) * np.cos(2 * np.pi * j / ny)
         carbon_onset = 284
-        carbon_edge = np.where(energy_axis >= carbon_onset, 
-                              carbon_conc * 2000 * (energy_axis - carbon_onset)**(-0.5), 0)
+        carbon_edge_mask = energy_axis >= carbon_onset
+        carbon_edge = np.zeros_like(energy_axis)
+        carbon_edge[carbon_edge_mask] = carbon_conc * 2000 * (energy_axis[carbon_edge_mask] - carbon_onset)**(-0.5)
         
         # Oxygen K-edge at ~532 eV (varying concentration)
         oxygen_conc = 0.2 + 0.3 * np.cos(2 * np.pi * i / (nx/2))
         oxygen_onset = 532
-        oxygen_edge = np.where(energy_axis >= oxygen_onset,
-                              oxygen_conc * 1500 * (energy_axis - oxygen_onset)**(-0.7), 0)
+        oxygen_edge_mask = energy_axis >= oxygen_onset
+        oxygen_edge = np.zeros_like(energy_axis)
+        oxygen_edge[oxygen_edge_mask] = oxygen_conc * 1500 * (energy_axis[oxygen_edge_mask] - oxygen_onset)**(-0.7)
         
         # Combine components with noise
         spectrum = background + carbon_edge + oxygen_edge

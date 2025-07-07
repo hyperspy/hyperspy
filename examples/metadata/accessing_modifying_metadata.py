@@ -23,9 +23,9 @@ signal.metadata.General.title = "Example Spectrum"
 signal.metadata.General.date = "2024-01-15"
 signal.metadata.General.time = "14:30:00"
 
-# Set acquisition parameters
-signal.metadata.Acquisition_instrument.SEM.beam_energy = 15.0
-signal.metadata.Acquisition_instrument.SEM.beam_current = 1.2
+# Set acquisition parameters - create the structure first
+signal.metadata.set_item("Acquisition_instrument.SEM.beam_energy", 15.0)
+signal.metadata.set_item("Acquisition_instrument.SEM.beam_current", 1.2)
 
 # %%
 # ## Access metadata values
@@ -39,8 +39,8 @@ print(f"Beam energy: {signal.metadata.Acquisition_instrument.SEM.beam_energy} kV
 # ## Modify existing metadata
 # 
 # Metadata can be easily modified and new entries can be added
-signal.metadata.Acquisition_instrument.SEM.beam_energy = 20.0
-signal.metadata.Sample.name = "Test Sample"
+signal.metadata.set_item("Acquisition_instrument.SEM.beam_energy", 20.0)
+signal.metadata.set_item("Sample.name", "Test Sample")
 
 # Display the updated values
 print("Updated beam energy:", signal.metadata.Acquisition_instrument.SEM.beam_energy)
