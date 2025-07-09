@@ -1,5 +1,15 @@
-Simple simulations
+Simple Simulations
 ==================
 
-Below is a gallery of examples on simulating signals which can be used to test
-HyperSpy functionalities
+Examples demonstrating how to create synthetic signals for testing HyperSpy functionalities, algorithm validation, and educational purposes.
+
+**Key Concepts:**
+- Model-based simulations using HyperSpy components
+- Adding realistic noise models (Poisson, Gaussian)
+- Ground truth preservation for validation
+- Reproducible simulation workflows
+
+**Related Examples:**
+- :ref:`model_fitting` - Fitting models to simulated data
+- :ref:`create_signal` - Basic signal creation from arrays
+- See the AI Guide for advanced simulation patterns and best practices

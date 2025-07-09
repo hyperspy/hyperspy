@@ -6,11 +6,11 @@ Data Visualization Examples
 This directory contains examples demonstrating various data visualization 
 techniques in HyperSpy, including:
 
-- Custom plot layouts and subfigures
-- Multidimensional data visualization
-- Interactive plotting features
-- ROI visualization and insets
-- Customizing figure appearance
+- **Basic Plotting**: Custom layouts, subfigures, and plot customization
+- **Multidimensional Visualization**: Navigator plots, signal visualization, ROI insets
+- **Markers**: Visual annotations including arrows, circles, lines, text, and shapes
+- **Interactive Features**: Dynamic plotting and user interaction
+- **Advanced Layouts**: Composing complex figures and custom arrangements
 
 These examples show how to create effective visualizations of your data
 for analysis and presentation purposes.
