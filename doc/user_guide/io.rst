@@ -178,6 +178,11 @@ using the :meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
     >>> s.original_metadata.export('parameters') # doctest: +SKIP
 
+.. minigallery::
+    :add-heading: Examples of metadata handling
+
+    ../examples/metadata/accessing_modifying_metadata.py
+
 .. _load_to_memory-label:
 
 Lazy loading of large datasets
