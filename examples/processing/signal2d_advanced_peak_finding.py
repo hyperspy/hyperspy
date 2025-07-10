@@ -90,14 +90,14 @@ for i, (y, x) in enumerate(zip(peaks_template[0], peaks_template[1])):
 # Scikit-image provides robust peak detection algorithms with good parameter control
 
 try:
-    from skimage.feature import peak_local_maxima
+    from skimage.feature import peak_local_max
     from skimage.filters import gaussian
     
     # Apply slight smoothing to reduce noise
     smoothed_data = gaussian(signal_2d.data, sigma=1.0)
     
     # Find local maxima
-    coordinates = peak_local_maxima(smoothed_data, 
+    coordinates = peak_local_max(smoothed_data, 
                                     min_distance=8,  # Minimum distance between peaks
                                     threshold_abs=0.5,  # Absolute threshold
                                     threshold_rel=0.3)  # Relative threshold
