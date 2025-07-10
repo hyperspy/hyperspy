@@ -43,7 +43,7 @@ print(f"\nData shape is still: {signal_1d.data.shape}")  # Still (4, 5, 6)
 
 # %%
 # **Understanding Index Mappings**
-# ===============================
+# ================================
 #
 # Let's explore how HyperSpy maps between natural order and array order
 
@@ -77,7 +77,7 @@ print(f"  Array order names: {[ax.name for ax in array_order]}")
 
 # %%
 # **Navigation vs Signal Classification**
-# ======================================
+# =======================================
 #
 # HyperSpy automatically classifies axes as navigation or signal
 
@@ -149,7 +149,7 @@ print(f"This corresponds to NumPy data[1, 0, :] = {data_simple[1, 0, :]}")
 
 # %%
 # **Advanced Index Manipulation**
-# ==============================
+# ===============================
 #
 # HyperSpy provides special indexing for different axis orders
 
@@ -284,7 +284,7 @@ print("✅ Think in terms of 'navigation' vs 'signal' rather than array indices"
 
 # %%
 # **Summary**
-# ==========
+# ===========
 
 print("\n=== SUMMARY ===")
 print("HyperSpy's axis conventions:")

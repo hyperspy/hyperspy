@@ -23,4 +23,4 @@ Comprehensive examples demonstrating HyperSpy's model fitting capabilities.
 - Uncertainty quantification
 - Component comparison workflows
 
-See the :ref:`simple_simulations` section for simulation examples that complement model fitting.
+See the :ref:`sphx_glr_auto_examples_simple_simulations` section for simulation examples that complement model fitting.

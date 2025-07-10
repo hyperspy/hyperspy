@@ -8,15 +8,7 @@ set positions, iterate through data, and control navigation programmatically
 for automated analysis workflows.
 
 Key concepts covered:
-- Setting navigation indices and coordinates pr        stats = {
-            'indices': indices,
-            'time': signal.axes_manager[0].value,
-            'temperature': signal.axes_manager[1].value,
-            'mean': np.mean(image.data),   # Use NumPy for scalar statistics
-            'std': np.std(image.data),     # Use NumPy for scalar statistics
-            'max': np.max(image.data),     # Use NumPy for scalar statistics
-            'min': np.min(image.data)      # Use NumPy for scalar statistics
-        }cally
+- Setting navigation indices and coordinates programmatically
 - Iterating through navigation dimensions
 - Using index vs coordinate systems
 - Automated navigation for batch processing
@@ -251,7 +243,7 @@ print(f"   Extracted {len(temp_series_max)} temperature points")
 
 # %%
 # Visualization of Navigation Results using HyperSpy plotting
-# -----------------------------------
+# -----------------------------------------------------------
 
 print("\n4. Visualizing navigation results:")
 

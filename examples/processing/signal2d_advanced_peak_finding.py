@@ -348,7 +348,7 @@ print(f"SciPy peak results: {scipy_peaks}")
 
 # %%
 # Compare Results
-# --------------
+# ---------------
 
 print("\nPeak finding results:")
 for i in range(signal_stack.axes_manager.navigation_size):

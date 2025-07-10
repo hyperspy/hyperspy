@@ -19,7 +19,7 @@ import hyperspy.api as hs
 
 # %%
 # **Review: HyperSpy Axis Conventions**
-# ====================================
+# ======================================
 #
 # Quick reminder of the key concepts
 
@@ -64,7 +64,7 @@ print("\n.T swapped ALL axes between navigation and signal spaces")
 
 # %%
 # **The .transpose() Method: Precise Control**
-# ===========================================
+# ============================================
 #
 # .transpose() gives you complete control over which axes go where
 
@@ -198,7 +198,7 @@ print("    Use case: Analyze 1D profiles across detector for each scan position"
 
 # %%
 # **Advanced Manipulation Techniques**
-# ===================================
+# ====================================
 #
 # Sophisticated axis manipulations for complex analysis needs
 

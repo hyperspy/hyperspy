@@ -1,5 +1,5 @@
 Advanced Features Examples
-=========================
+===========================
 
 This directory contains examples demonstrating advanced HyperSpy features
 and specialized functionality for power users and sophisticated analysis scenarios.

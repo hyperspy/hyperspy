@@ -190,7 +190,7 @@ print("- BaseSignal: 0D signal (e.g., single value at each nav position)")
 
 # %%
 # **Signal Dimension Examples Summary**
-# ====================================
+# =====================================
 
 print("\n=== Summary ===")
 print("Signal dimensions determine how HyperSpy interprets and processes your data:")

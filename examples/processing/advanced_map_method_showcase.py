@@ -355,7 +355,7 @@ print(f"Sample fitted parameters at [0,0]: {fitted_params.data[0,0]}")
 
 # %%
 # Best Practices and Tips
-# ----------------------
+# -----------------------
 
 print("\nMap method best practices demonstrated:")
 print("✓ Use inplace=False to preserve original data")

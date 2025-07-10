@@ -10,6 +10,6 @@ Examples demonstrating how to create synthetic signals for testing HyperSpy func
 - Reproducible simulation workflows
 
 **Related Examples:**
-- :ref:`model_fitting` - Fitting models to simulated data
-- :ref:`create_signal` - Basic signal creation from arrays
+- :ref:`sphx_glr_auto_examples_model_fitting` - Fitting models to simulated data
+- :ref:`sphx_glr_auto_examples_create_signal` - Basic signal creation from arrays
 - See the AI Guide for advanced simulation patterns and best practices

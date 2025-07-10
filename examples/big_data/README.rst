@@ -19,5 +19,5 @@ Examples demonstrating how to handle large datasets in HyperSpy using lazy evalu
 - Memory-efficient model fitting on large datasets
 
 **Related Examples:**
-- See :ref:`mva` for decomposition techniques
-- See :ref:`processing` for signal processing methods that work with lazy signals
+- See :ref:`sphx_glr_auto_examples_mva` for decomposition techniques
+- See :ref:`sphx_glr_auto_examples_processing` for signal processing methods that work with lazy signals

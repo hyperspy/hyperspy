@@ -198,7 +198,7 @@ s_cumulative.plot()
 
 # %%
 # Integration Summary
-# ==================
+# ===================
 #
 # Review of the different integration methods and their results
 

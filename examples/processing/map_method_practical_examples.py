@@ -15,7 +15,7 @@ import time
 
 # %%
 # Creating Realistic Test Data
-# ---------------------------
+# ----------------------------
 
 print("Creating realistic scientific test data...")
 
@@ -105,7 +105,7 @@ print(f"Created TEM signal: {s_tem}")
 
 # %%
 # Basic Map Operations
-# -------------------
+# --------------------
 
 print("\nDemonstrating basic map operations...")
 
@@ -242,7 +242,7 @@ print(f"Sample TEM analysis at [0,0]: {tem_analysis.data[0,0]}")
 
 # %%
 # Performance Demonstration
-# ------------------------
+# -------------------------
 
 print("\\nDemonstrating performance benefits...")
 
@@ -277,7 +277,7 @@ print(f"Speedup: {speedup:.2f}x")
 
 # %%
 # Real-World Integration Example
-# -----------------------------
+# ------------------------------
 
 print("\\nDemonstrating real-world analysis pipeline...")
 

@@ -1,6 +1,6 @@
 """
 Interactive Operations
-====================
+======================
 
 This example demonstrates interactive-style operations in HyperSpy
 for live data analysis and responsive plotting.

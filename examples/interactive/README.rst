@@ -14,6 +14,6 @@ Examples demonstrating HyperSpy's interactive capabilities for dynamic data expl
 - Chained operation workflows
 
 **Related Examples:**
-- :ref:`data_visualization` - Static visualization techniques
-- :ref:`region_of_interest` - ROI-based interactions
-- :ref:`events` - Event handling and callbacks
+- :ref:`sphx_glr_auto_examples_data_visualization` - Static visualization techniques
+- :ref:`sphx_glr_auto_examples_region_of_interest` - ROI-based interactions
+- :ref:`sphx_glr_auto_examples_events` - Event handling and callbacks

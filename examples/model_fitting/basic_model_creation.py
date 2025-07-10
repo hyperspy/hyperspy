@@ -344,7 +344,7 @@ print(f"Gaussian amplitude: {gaussian_2d_comp.A.value:.2f} (true: 1000)")
 
 # %%
 # Visualization using HyperSpy plotting
-# =============
+# =====================================
 
 print("\nCreating visualization...")
 
