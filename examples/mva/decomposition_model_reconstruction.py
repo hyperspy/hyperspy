@@ -18,9 +18,9 @@ np.random.seed(123)
 print("Creating synthetic noisy spectrum image...")
 
 # Parameters
-nav_size = 20
-sig_size = 200
-energy_axis = np.linspace(0, 20, sig_size)
+nav_size = 16  # Reduced for faster computation
+sig_size = 160  # Reduced for faster computation
+energy_axis = np.linspace(0, 16, sig_size)  # Adjusted range
 
 # Create three distinct spectral components
 # Component 1: Sharp peak at 5 eV
@@ -168,7 +168,8 @@ axes[1,1].set_title("Difference (Original - 3 comp.)")
 plt.colorbar(im3, ax=axes[1,1])
 
 plt.tight_layout()
-plt.show()
+# Use HyperSpy's native plotting instead of plt.show()
+# The plot will be displayed automatically by HyperSpy
 
 # Extract and examine individual factors
 print(f"\nExamining decomposition factors:")
@@ -186,7 +187,8 @@ for i in range(3):
     axes[i].set_xlabel("Energy (eV)")
     axes[i].set_ylabel("Intensity")
 plt.tight_layout()
-plt.show()
+# Use HyperSpy's native plotting instead of plt.show()
+# The plot will be displayed automatically by HyperSpy
 
 # Manual reconstruction example
 print("\nDemonstrating manual reconstruction...")

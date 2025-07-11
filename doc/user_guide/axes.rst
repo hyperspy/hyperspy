@@ -201,6 +201,11 @@ navigation dimensions:
 
     >>> s.axes_manager.indices = (5, 4)
 
+.. minigallery::
+    :add-heading: Examples of programmatic axis navigation
+
+    ../examples/axes/programmatic_axis_navigation.py
+
 .. _Axes_properties:
 
 Summary of axis properties
@@ -541,6 +546,10 @@ method of the :class:`~.axes.UniformDataAxis`:
     >>> axis.scale_as_quantity
     <Quantity(100.0, 'micrometer')>
 
+.. minigallery::
+    :add-heading: Examples of working with physical units
+
+    ../examples/axes/working_with_physical_units.py
 
 .. _Axes_storage_ordering:
 
@@ -599,6 +608,12 @@ at least when printing. As an example:
 In the background, HyperSpy also takes care of storing the data in memory in
 a "machine-friendly" way, so that iterating over the navigation axes is always
 fast.
+
+.. minigallery::
+    :add-heading: Examples of axis ordering and manipulation
+
+    ../examples/axes/axis_ordering_and_conventions.py
+    ../examples/axes/axis_manipulation_and_ordering.py
 
 .. _iterating_axesmanager:
 

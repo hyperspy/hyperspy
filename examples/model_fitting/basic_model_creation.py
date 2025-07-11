@@ -2,31 +2,28 @@
 Basic Model Creation and Fitting
 =================================
 
-This example demonstrates how to create and fit models in HyperSpy.
-Model# Calculate R-squared
-model_signal = m.as_signal()
-residuals = s - model_signal  # Direct signal arithmetic preserves metadata
-ss_res = np.sum(residuals.data**2)        # Use NumPy for final scalar calculation
-ss_tot = np.sum((s.data - np.mean(s.data))**2)  # Use NumPy for scalar statistics
-r_squared = 1 - (ss_res / ss_tot)composed of components that represent different physical or 
-mathematical features in your data.
+This example demonstrates how to create and fit models in HyperSpy following
+best practices from the AI Guide. Models are composed of components that 
+represent different physical or mathematical features in your data.
 
 Key concepts:
-- Creating models from signals
-- Adding components to models
-- Setting initial parameter values
-- Performing the fit
-- Evaluating fit quality
+- Creating models from signals using HyperSpy's model framework
+- Adding components with proper naming and parameter initialization
+- Setting initial parameter values using estimation methods
+- Performing robust fitting with error handling
+- Evaluating fit quality using statistical measures
+- Best practices for model-based data analysis
 """
 
 import numpy as np
 import hyperspy.api as hs
+import matplotlib.pyplot as plt
 
 # %%
 # **Creating synthetic data for model fitting**
 #
 # We'll create a realistic spectrum using HyperSpy's model framework to demonstrate 
-# the model fitting process. This approach follows best practices by using
+# the model fitting process. This approach follows AI Guide best practices by using
 # HyperSpy models for data generation and then fitting.
 
 # Create empty signal with proper axis calibration
@@ -37,10 +34,13 @@ s.axes_manager.signal_axes[0].scale = 0.7
 s.axes_manager.signal_axes[0].offset = 100.0
 s.metadata.General.title = 'Synthetic Spectrum'
 
+print(f"Created signal: {s}")
+print(f"Energy range: {s.axes_manager.signal_axes[0].axis[0]:.1f} to {s.axes_manager.signal_axes[0].axis[-1]:.1f} eV")
+
 # Create ground truth model for simulation
 m_true = s.create_model()
 
-# Add components to ground truth model (using best practice: name at creation)
+# ✅ BEST PRACTICE: Add components with descriptive names at creation
 background_true = hs.model.components1D.PowerLaw(name="background_true")
 m_true.append(background_true)
 
@@ -53,52 +53,313 @@ m_true.append(peak2_true)
 peak3_true = hs.model.components1D.Lorentzian(name="peak3_true")
 m_true.append(peak3_true)
 
-# Set parameter values using direct access (recommended for single components)
+# ✅ BEST PRACTICE: Set parameter values using direct access for single spectrum
+# Background parameters
 background_true.A.value = 5000
 background_true.r.value = 2.5
 background_true.origin.value = 0.0
 background_true.left_cutoff.value = 0.0
 
-# For simulation, ensure maps are set
-background_true.A.map['values'][:] = 5000
-background_true.A.map['is_set'][:] = True
-background_true.r.map['values'][:] = 2.5
-background_true.r.map['is_set'][:] = True
-background_true.origin.map['values'][:] = 0.0
-background_true.origin.map['is_set'][:] = True
-background_true.left_cutoff.map['values'][:] = 0.0
-background_true.left_cutoff.map['is_set'][:] = True
-
+# Peak parameters with realistic values
 peak1_true.centre.value = 215
 peak1_true.sigma.value = 20
 peak1_true.A.value = 8000
-
-# For simulation, ensure maps are set
-peak1_true.centre.map['values'][:] = 215
-peak1_true.centre.map['is_set'][:] = True
-peak1_true.sigma.map['values'][:] = 20
-peak1_true.sigma.map['is_set'][:] = True
-peak1_true.A.map['values'][:] = 8000
-peak1_true.A.map['is_set'][:] = True
 
 peak2_true.centre.value = 315
 peak2_true.sigma.value = 30
 peak2_true.A.value = 6000
 
-# For simulation, ensure maps are set
-peak2_true.centre.map['values'][:] = 315
-peak2_true.centre.map['is_set'][:] = True
-peak2_true.sigma.map['values'][:] = 30
-peak2_true.sigma.map['is_set'][:] = True
-peak2_true.A.map['values'][:] = 6000
-peak2_true.A.map['is_set'][:] = True
-
 peak3_true.centre.value = 450
 peak3_true.gamma.value = 25
 peak3_true.A.value = 4000
 
-# For simulation, ensure maps are set
-peak3_true.centre.map['values'][:] = 450
+# ✅ BEST PRACTICE: Store current values in arrays for parameter management
+# This ensures all parameters are properly set for model generation
+for component in m_true:
+    for param in component.parameters:
+        param.store_current_value_in_array()
+
+# ✅ BEST PRACTICE: Double-check that all parameters are set before calling as_signal
+# This ensures no parameters are unset when generating synthetic data
+print("Verifying all parameters are set...")
+for component in m_true:
+    for param in component.parameters:
+        if not hasattr(param, 'value') or param.value is None:
+            print(f"WARNING: {component.name}.{param.name} is not set!")
+            param.value = 1.0  # Set a default value
+            if hasattr(param, 'assign_current_value_to_all'):
+                param.assign_current_value_to_all()  # For multidimensional signals
+
+# ✅ BEST PRACTICE: Ensure parameters are properly set for model generation
+# For multidimensional data, we would use set_parameters_value, but for single spectrum this is sufficient
+print("Ground truth parameters set:")
+print(f"Background: A={background_true.A.value:.0f}, r={background_true.r.value:.2f}")
+print(f"Peak 1: centre={peak1_true.centre.value:.0f} eV, A={peak1_true.A.value:.0f}")
+print(f"Peak 2: centre={peak2_true.centre.value:.0f} eV, A={peak2_true.A.value:.0f}")
+print(f"Peak 3: centre={peak3_true.centre.value:.0f} eV, A={peak3_true.A.value:.0f}")
+
+# Generate synthetic data with noise
+s = m_true.as_signal()
+s.add_gaussian_noise(std=100)  # Add realistic noise
+s.metadata.General.title = 'Synthetic Spectrum with Noise'
+
+print(f"\nGenerated noisy spectrum: {s}")
+print(f"Signal range: {s.data.min():.1f} to {s.data.max():.1f}")
+
+# Plot the synthetic data
+s.plot()
+print("Synthetic data generated successfully!")
+
+# %%
+# **Model fitting workflow**
+#
+# Now we'll demonstrate the complete model fitting workflow, including
+# parameter estimation, fitting, and quality assessment.
+
+# Create a new model for fitting (separate from ground truth)
+m = s.create_model()
+
+# ✅ BEST PRACTICE: Add components with descriptive names
+background = hs.model.components1D.PowerLaw(name="background")
+m.append(background)
+
+peak1 = hs.model.components1D.Gaussian(name="peak1")
+m.append(peak1)
+
+peak2 = hs.model.components1D.Gaussian(name="peak2")
+m.append(peak2)
+
+peak3 = hs.model.components1D.Lorentzian(name="peak3")
+m.append(peak3)
+
+print(f"Created model with {len(m)} components:")
+for i, comp in enumerate(m):
+    print(f"  {i+1}. {comp.name} ({comp.__class__.__name__})")
+
+# %%
+# **Parameter initialization using estimation methods**
+#
+# Use HyperSpy's built-in parameter estimation when available.
+
+# ✅ BEST PRACTICE: Use estimate_parameters when available
+try:
+    # Estimate background parameters
+    background.estimate_parameters(s, x1=100, x2=600)
+    print("Background parameters estimated successfully")
+except Exception as e:
+    print(f"Background estimation failed: {e}")
+    # Manual initialization as fallback
+    background.A.value = 3000
+    background.r.value = 2.0
+    background.origin.value = 0.0
+    background.left_cutoff.value = 0.0
+    print("Background parameters set manually")
+
+# ✅ BEST PRACTICE: Find peak positions using HyperSpy methods
+peak_positions = []
+try:
+    # Simple peak finding using maximum values in regions
+    roi1 = s.isig[200.:230.]
+    peak_positions.append(roi1.axes_manager.signal_axes[0].index2value(roi1.data.argmax()))
+    
+    roi2 = s.isig[300.:330.]
+    peak_positions.append(roi2.axes_manager.signal_axes[0].index2value(roi2.data.argmax()))
+    
+    roi3 = s.isig[430.:470.]
+    peak_positions.append(roi3.axes_manager.signal_axes[0].index2value(roi3.data.argmax()))
+    
+    print(f"Peak positions found: {peak_positions}")
+    
+except Exception as e:
+    print(f"Peak finding failed: {e}")
+    # Use approximate positions
+    peak_positions = [215, 315, 450]
+    print(f"Using approximate peak positions: {peak_positions}")
+
+# Initialize peak parameters
+peak1.centre.value = peak_positions[0]
+peak1.sigma.value = 15  # Initial guess
+peak1.A.value = 5000    # Initial guess
+
+peak2.centre.value = peak_positions[1]
+peak2.sigma.value = 25  # Initial guess
+peak2.A.value = 4000    # Initial guess
+
+peak3.centre.value = peak_positions[2]
+peak3.gamma.value = 20  # Initial guess
+peak3.A.value = 3000    # Initial guess
+
+print("Initial parameters set:")
+print(f"Peak 1: centre={peak1.centre.value:.1f} eV, A={peak1.A.value:.0f}")
+print(f"Peak 2: centre={peak2.centre.value:.1f} eV, A={peak2.A.value:.0f}")
+print(f"Peak 3: centre={peak3.centre.value:.1f} eV, A={peak3.A.value:.0f}")
+
+# %%
+# **Robust model fitting with error handling**
+#
+# Demonstrate proper fitting workflow with error handling and monitoring.
+
+# Plot model before fitting
+m.plot()
+print("Model plotted with initial parameters")
+
+# ✅ BEST PRACTICE: Robust fitting with error handling
+try:
+    print("Starting model fitting...")
+    
+    # Fit with bounded parameters to ensure physical reasonableness
+    m.fit(bounded=True)
+    
+    print("Model fitting completed successfully!")
+    
+    # Display fitted parameters
+    print("\nFitted parameters:")
+    print(f"Background: A={background.A.value:.0f}, r={background.r.value:.3f}")
+    print(f"Peak 1: centre={peak1.centre.value:.2f} eV, σ={peak1.sigma.value:.2f}, A={peak1.A.value:.0f}")
+    print(f"Peak 2: centre={peak2.centre.value:.2f} eV, σ={peak2.sigma.value:.2f}, A={peak2.A.value:.0f}")
+    print(f"Peak 3: centre={peak3.centre.value:.2f} eV, γ={peak3.gamma.value:.2f}, A={peak3.A.value:.0f}")
+    
+except Exception as e:
+    print(f"Fitting failed: {e}")
+    print("Consider adjusting initial parameters or using different optimizer")
+    raise
+
+# %%
+# **Fit quality assessment**
+#
+# Evaluate the quality of the fit using statistical measures.
+
+# Calculate residuals and fit statistics
+model_signal = m.as_signal()
+residuals = s - model_signal  # Direct signal arithmetic preserves metadata
+
+# ✅ BEST PRACTICE: Calculate meaningful fit statistics
+ss_res = np.sum(residuals.data**2)
+ss_tot = np.sum((s.data - np.mean(s.data))**2)
+r_squared = 1 - (ss_res / ss_tot)
+
+# Calculate reduced chi-squared
+n_data_points = len(s.data)
+n_parameters = len(m.p0)  # Number of free parameters
+degrees_of_freedom = n_data_points - n_parameters
+chi_squared_red = ss_res / degrees_of_freedom
+
+# Calculate RMSE
+rmse = np.sqrt(ss_res / n_data_points)
+
+print(f"\n=== Fit Quality Assessment ===")
+print(f"R-squared: {r_squared:.4f}")
+print(f"Reduced χ²: {chi_squared_red:.2f}")
+print(f"RMSE: {rmse:.1f}")
+print(f"Degrees of freedom: {degrees_of_freedom}")
+
+# Interpretation guidelines
+print(f"\n=== Interpretation Guidelines ===")
+if r_squared > 0.95:
+    print("✅ Excellent fit (R² > 0.95)")
+elif r_squared > 0.90:
+    print("✅ Good fit (R² > 0.90)")
+elif r_squared > 0.80:
+    print("⚠️  Acceptable fit (R² > 0.80)")
+else:
+    print("❌ Poor fit (R² < 0.80) - consider model revision")
+
+if chi_squared_red < 2.0:
+    print("✅ Good fit quality (χ²_red < 2.0)")
+elif chi_squared_red < 5.0:
+    print("⚠️  Acceptable fit quality (χ²_red < 5.0)")
+else:
+    print("❌ Poor fit quality (χ²_red > 5.0) - consider model revision")
+
+# %%
+# **Visualization and result interpretation**
+#
+# Create comprehensive plots to visualize the fit results.
+
+# Plot the fit results
+m.plot()
+
+# Plot residuals
+residuals.plot()
+residuals.metadata.General.title = 'Fit Residuals'
+
+# Create a summary figure with components
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+# Plot data, model, and components
+energy_axis = s.axes_manager.signal_axes[0].axis
+ax1.plot(energy_axis, s.data, 'ko-', label='Data', markersize=3)
+ax1.plot(energy_axis, model_signal.data, 'r-', label='Model', linewidth=2)
+
+# Plot individual components by temporarily disabling others
+# Background only
+for comp in m:
+    if comp != background:
+        comp.active = False
+background_signal = m.as_signal()
+ax1.plot(energy_axis, background_signal.data, 'b--', label='Background', linewidth=1)
+
+# Peak 1 + background
+peak1.active = True
+peak1_signal = m.as_signal()
+ax1.plot(energy_axis, peak1_signal.data, 'g--', label='Peak 1', linewidth=1)
+
+# Peak 2 + background  
+peak1.active = False
+peak2.active = True
+peak2_signal = m.as_signal()
+ax1.plot(energy_axis, peak2_signal.data, 'm--', label='Peak 2', linewidth=1)
+
+# Peak 3 + background
+peak2.active = False
+peak3.active = True
+peak3_signal = m.as_signal()
+ax1.plot(energy_axis, peak3_signal.data, 'c--', label='Peak 3', linewidth=1)
+
+# Restore all components
+for comp in m:
+    comp.active = True
+ax1.set_xlabel('Energy (eV)')
+ax1.set_ylabel('Intensity')
+ax1.set_title('Model Fit Results')
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+
+# Plot residuals
+ax2.plot(energy_axis, residuals.data, 'ro-', markersize=2)
+ax2.axhline(y=0, color='k', linestyle='-', alpha=0.5)
+ax2.set_xlabel('Energy (eV)')
+ax2.set_ylabel('Residuals')
+ax2.set_title('Fit Residuals')
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("\n=== Model Fitting Summary ===")
+print(f"Successfully fitted {len(m)} components to the spectrum")
+print(f"Final R-squared: {r_squared:.4f}")
+print(f"Final χ²_red: {chi_squared_red:.2f}")
+print("Model fitting example completed successfully!")
+
+# %%
+# **Best practices summary**
+#
+# Key takeaways for model fitting in HyperSpy.
+
+print("\n=== Best Practices Summary ===")
+print("✅ Use HyperSpy models for data simulation")
+print("✅ Name components descriptively at creation")
+print("✅ Use estimate_parameters() when available")
+print("✅ Initialize parameters with reasonable values")
+print("✅ Use bounded fitting for physical constraints")
+print("✅ Always assess fit quality with multiple metrics")
+print("✅ Visualize results with data, model, and residuals")
+print("✅ Handle fitting errors gracefully")
+print("✅ Document parameter meanings and units")
+print("✅ Compare fitted parameters with known values when possible")
+
+print("\nBasic model creation and fitting example completed!")
 peak3_true.centre.map['is_set'][:] = True
 peak3_true.gamma.map['values'][:] = 25
 peak3_true.gamma.map['is_set'][:] = True

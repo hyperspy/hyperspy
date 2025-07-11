@@ -21,9 +21,9 @@ import dask.array as da
 
 # Create a spectrum image with varying spectral features
 print("Creating multidimensional test data...")
-nav_shape = (6, 4)  # Navigation dimensions (reduced for faster computation)
-sig_shape = (64, 64)  # Signal dimensions for 2D images (reduced for faster computation)
-spectrum_length = 128  # For 1D spectral data (reduced for faster computation)
+nav_shape = (8, 6)  # Navigation dimensions
+sig_shape = (256, 256)  # Signal dimensions for 2D images
+spectrum_length = 512  # For 1D spectral data
 
 # Create 2D signal (images) with different features per navigation position
 image_data = np.zeros(nav_shape + sig_shape)

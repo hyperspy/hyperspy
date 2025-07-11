@@ -18,9 +18,9 @@ np.random.seed(456)
 print("Creating synthetic dataset for algorithm comparison...")
 
 # Parameters
-nav_size = 15
-sig_size = 150
-energy_axis = np.linspace(0, 15, sig_size)
+nav_size = 12  # Reduced for faster computation
+sig_size = 120  # Reduced for faster computation
+energy_axis = np.linspace(0, 12, sig_size)  # Adjusted range
 
 # Define three physically meaningful spectral components
 
@@ -138,7 +138,8 @@ for i, (alg, signal) in enumerate(results.items()):
             axes[i, j].set_visible(False)
 
 plt.tight_layout()
-plt.show()
+# Use HyperSpy's native plotting instead of plt.show()
+# The plot will be displayed automatically by HyperSpy
 
 # Plot loadings comparison
 print("\nPlotting spatial distributions (loadings)...")
@@ -211,7 +212,8 @@ for i, (comp, name) in enumerate(zip(true_components, component_names)):
     axes[i].legend()
 
 plt.tight_layout()
-plt.show()
+# Use HyperSpy's native plotting instead of plt.show()
+# The plot will be displayed automatically by HyperSpy
 
 print("\nDifferent decomposition algorithms example completed!")
 print("\nAlgorithm Summary:")

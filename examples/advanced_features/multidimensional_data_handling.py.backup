@@ -17,7 +17,7 @@ import numpy as np
 # (temperature, scan_y, scan_x, detector_y, detector_x)
 
 print("Creating 5D dataset simulation...")
-n_temp, scan_y, scan_x, det_y, det_x = 6, 16, 16, 32, 32  # Reduced for faster computation
+n_temp, scan_y, scan_x, det_y, det_x = 8, 32, 32, 64, 64
 data_5d = np.random.random((n_temp, scan_y, scan_x, det_y, det_x))
 
 # Add temperature-dependent structure

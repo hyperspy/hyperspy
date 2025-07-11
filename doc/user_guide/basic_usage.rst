@@ -169,6 +169,10 @@ of the signal class:
 
     ../examples/create_signal/signal1d_from_numpy.py
     ../examples/create_signal/signal2d_from_numpy.py
+    ../examples/create_signal/line_spectrum.py
+    ../examples/create_signal/spectrum_image.py
+    ../examples/create_signal/1D_image_stack.py
+    ../examples/create_signal/2D_image_stack.py
 
 
 .. _navigation-signal-dimensions:
