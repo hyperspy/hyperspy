@@ -32,7 +32,7 @@ import hyperspy.api as hs
 from hyperspy import __version__ as hs_version
 from hyperspy.axes import DataAxis
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.signals import Signal1D
+from hyperspy.signals import Signal1D, Signal2D
 
 PATH = Path(__file__).resolve()
 FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")
@@ -652,14 +652,14 @@ def test_get_format_list_for_docstring_bullet_style():
     result = _get_format_list_for_docstring(write_mode=False, style="bullet")
     assert result.startswith("\n")
     assert result.endswith("\n")
-    assert "* ``'" in result
+    assert "\n        * ``" in result
     assert "for " in result
 
     # Test write mode with bullet style
     result_write = _get_format_list_for_docstring(write_mode=True, style="bullet")
     assert result_write.startswith("\n")
     assert result_write.endswith("\n")
-    assert "* ``'" in result_write
+    assert "\n        * ``" in result_write
     # Write mode should have fewer formats than read mode
     assert len(result_write) <= len(result)
 
@@ -813,13 +813,18 @@ def test_infer_file_reader_multiple_readers():
     from hyperspy.io import _infer_file_reader
 
     # Use h5 extension which might match multiple readers
-    try:
-        reader = _infer_file_reader("h5")
-        # Should succeed and return one reader
-        assert "name" in reader
-    except ValueError as e:
-        # If multiple readers, should raise specific error
-        assert "multiple file readers" in str(e)
+
+    with pytest.raises(ValueError, match="multiple file readers"):
+        #  multiple readers, should raise specific error
+        _ = _infer_file_reader("h5")
+
+    name = _infer_file_reader("arina")
+    assert name["name"] == "Arina"
+
+    name = _infer_file_reader("usid")
+    assert name["name"] == "USID"
+    name = _infer_file_reader("USID")
+    assert name["name"] == "USID"
 
 
 def test_infer_file_writer_unsupported_extension():
@@ -859,28 +864,6 @@ def test_infer_file_writer_read_only_format():
 
         with pytest.raises(ValueError, match="Writing to this format is not supported"):
             _infer_file_writer(ext)
-
-
-def test_get_supported_formats_read_mode():
-    """Test _get_supported_formats function for read mode."""
-    from hyperspy.io import _get_supported_formats
-
-    result = _get_supported_formats(write_mode=False)
-    assert "Supported formats:" in result
-    assert "provided by RosettaSciIO v" in result
-    assert len(result) > 100  # Should be a substantial list
-
-
-def test_get_supported_formats_write_mode():
-    """Test _get_supported_formats function for write mode."""
-    from hyperspy.io import _get_supported_formats
-
-    result = _get_supported_formats(write_mode=True)
-    assert "Supported formats:" in result
-    assert "provided by RosettaSciIO v" in result
-    # Write mode should have fewer formats than read mode
-    read_result = _get_supported_formats(write_mode=False)
-    assert len(result) <= len(read_result)
 
 
 def test_parse_path_with_string():
@@ -1106,7 +1089,7 @@ def test_get_format_list_for_docstring():
     # Test bullet style
     bullet_list = _get_format_list_for_docstring(write_mode=False, style="bullet")
     assert isinstance(bullet_list, str)
-    assert "* ``'" in bullet_list
+    assert "\n        * ``" in bullet_list
     assert "for" in bullet_list
 
     # Test inline style
@@ -1195,20 +1178,3 @@ def test_save_filename_none_without_tmp_parameters():
     # Should raise ValueError
     with pytest.raises(ValueError, match="File name not defined"):
         s.save(filename=None, file_format="HSPY")
-
-
-def test_get_supported_formats():
-    """Test the _get_supported_formats function."""
-    from hyperspy.io import _get_supported_formats
-
-    # Test read formats
-    read_formats = _get_supported_formats(write_mode=False)
-    assert isinstance(read_formats, str)
-    assert "Supported formats:" in read_formats
-    assert "RosettaSciIO" in read_formats
-
-    # Test write formats
-    write_formats = _get_supported_formats(write_mode=True)
-    assert isinstance(write_formats, str)
-    assert "Supported formats:" in write_formats
-    assert "RosettaSciIO" in write_formats

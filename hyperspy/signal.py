@@ -3288,9 +3288,8 @@ class BaseSignal(
     ):
         """Saves the signal in the specified format.
 
-        The function gets the format from the specified extension (see
-        :ref:`supported-formats` in the User Guide for more information):
-
+        The function gets the format from the specified extension
+        (:ref:`supported-formats`):
         %s
 
         File format support is provided by RosettaSciIO. For detailed information
@@ -3329,7 +3328,8 @@ class BaseSignal(
             True(False) it does(not) overwrite the file if it exists.
         extension : None or str
             .. deprecated:: 2.4
-                The `extension` parameter is deprecated in version 2.4 and will be removed in version 3.0. Use `file_format` instead.
+                The `extension` parameter is deprecated in version 2.4 and will
+                be removed in version 3.0. Use ``file_format`` instead.
 
             The extension of the file that defines the file format.
             Allowable string values are: %s
@@ -3338,9 +3338,9 @@ class BaseSignal(
             If ``None``, the extension is determined from the following list in
             this order:
 
-            i) the filename (if a full filename with extension is provided)
-            ii) the `file_format` parameter (mapped to corresponding extension)
-            iii) `Signal.tmp_parameters.extension`
+            i) the ``filename`` (if a full filename with extension is provided)
+            ii) the ``file_format`` parameter (mapped to corresponding extension)
+            iii) ``Signal.tmp_parameters.extension``
             iv) ``'.hspy'`` (the default extension)
         chunks : tuple or True or None (default)
             HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
@@ -3367,9 +3367,10 @@ class BaseSignal(
             Only for hdf5-based files and some zarr store. Close the file after
             writing. Default is True.
         file_format : None or str, optional
-            The file format of choice to save the file. If not given, it is inferred
-            from the file extension. Supported formats:
-            %s
+            The name or the extension of the file format of choice to save the file.
+            If not given, it is inferred from the file extension.
+            Supported formats:
+        %s
 
         Examples
         --------
@@ -3510,9 +3511,9 @@ class BaseSignal(
 
     # Format save method docstring with dynamic format list
     save.__doc__ = save.__doc__ % (
-        _get_format_list_for_docstring(write_mode=True, style="bullet"),
-        _get_format_list_for_docstring(write_mode=True, style="inline"),
-        _get_format_list_for_docstring(write_mode=True, style="bullet"),
+        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=8),
+        _get_format_list_for_docstring(write_mode=True, style="inline", indentation=8),
+        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=12),
     )
 
     def _replot(self):

@@ -50,34 +50,37 @@ _logger = logging.getLogger(__name__)
 f_error_fmt = "\tFile %d:\n\t\t%d signals\n\t\tPath: %s"
 
 
-def _get_supported_formats(write_mode=False, style="inline"):
-    """Generate a formatted string of supported file formats.
+def _get_format_list_for_docstring(write_mode=False, style="bullet", indentation=8):
+    """
+    Generate a formatted list of supported file formats for docstrings.
 
     Parameters
     ----------
     write_mode : bool, default False
-        If False (default), returns all supported read formats (all plugins).
-        If True, returns only supported write formats (plugins with write capability).
-    style : str, default "inline"
+        If False (default), returns all supported read formats.
+        If True, returns only supported write formats.
+    style : str, default "bullet"
         Format style for the list:
-        - "inline": Comma-separated inline list with rsciio version
-        - "bullet": Bullet list for docstring parameter documentation
+
+        - "bullet": Bullet list with descriptions
+        - "inline": Comma-separated inline list
+        - "extensions": Just the extensions
+
+    indentation : int, default 8
+        Number of spaces to use for indentation of the docstring.
 
     Returns
     -------
     str
-        Formatted string listing supported formats
+        Formatted string suitable for docstrings
 
     """
     if write_mode:
-        # Filter plugins that support writing
         plugins = [plugin for plugin in IO_PLUGINS if plugin["writes"]]
     else:
-        # All plugins support reading
         plugins = IO_PLUGINS
 
     if style == "bullet":
-        # Create bullet-style format for docstring parameter documentation
         format_items = []
         for plugin in sorted(plugins, key=lambda x: x["name"]):
             name = plugin["name"]
@@ -86,30 +89,39 @@ def _get_supported_formats(write_mode=False, style="inline"):
 
             # Add description if available
             description = plugin.get("description", "")
+            str_ = " " * indentation + f"* ``{name.lower()}`` (``{main_ext}``)"
             if description:
-                format_items.append(
-                    f"        * ``'{main_ext}'`` for {name} ({description})"
-                )
-            else:
-                format_items.append(f"        * ``'{main_ext}'`` for {name}")
+                str_ += f": {description}"
+            format_items.append(str_)
 
         # Add version info at the end
-        version_info = f"        \n        All formats are provided by RosettaSciIO v{rsciio.__version__}."
-        return "\n" + "\n".join(format_items) + "\n" + version_info + "\n"
+        version_info = (
+            " " * indentation
+            + f"All formats are provided by RosettaSciIO v{rsciio.__version__}."
+        )
+        return "\n" + "\n".join(format_items) + "\n\n" + version_info + "\n"
 
-    # Original inline format for backward compatibility
-    format_descriptions = []
+    elif style == "inline":
+        format_items = []
+        for plugin in sorted(plugins, key=lambda x: x["name"]):
+            extensions = plugin["file_extensions"]
+            main_ext = extensions[plugin["default_extension"]]
+            format_items.append(f"``'{main_ext}'``")
 
-    for plugin in plugins:
-        name = plugin["name"]
-        extensions = plugin["file_extensions"]
-        main_ext = extensions[plugin["default_extension"]]
+        formats_list = ", ".join(format_items)
+        return f"{formats_list} (provided by RosettaSciIO v{rsciio.__version__})"
 
-        # Create description
-        format_descriptions.append(f"'{name}' (*.{main_ext})")
+    elif style == "extensions":
+        extensions = []
+        for plugin in sorted(plugins, key=lambda x: x["name"]):
+            ext_dict = plugin["file_extensions"]
+            main_ext = ext_dict[plugin["default_extension"]]
+            extensions.append(main_ext)
 
-    formats_list = ", ".join(sorted(format_descriptions))
-    return f"Supported formats: {formats_list} (provided by RosettaSciIO v{rsciio.__version__})."
+        return ", ".join(extensions)
+
+    else:
+        raise ValueError(f"Unknown style: {style}")
 
 
 def _format_name_to_reader(format_name):
@@ -292,26 +304,26 @@ def load(
 
     File format support is provided by RosettaSciIO. For detailed information
     about supported formats, format-specific parameters, and examples, see the
-    `RosettaSciIO documentation <https://hyperspy.org/rosettasciio/>`_.
+    :ref:`RosettaSciIO documentation <supported-formats>`.
 
     Parameters
     ----------
-    filenames :  None, (list of) str or (list of) pathlib.Path, default None
+    filenames : None, (list of) str or (list of) pathlib.Path, default None
         The filename to be loaded. If None, a window will open to select
         a file to load. If a valid filename is passed, that single
         file is loaded. If multiple file names are passed in
         a list, a list of objects or a single object containing multiple
         datasets, a list of signals or a stack of signals is returned. This
-        behaviour is controlled by the `stack` parameter (see below). Multiple
+        behaviour is controlled by the ``stack`` parameter (see below). Multiple
         files can be loaded by using simple shell-style wildcards,
         e.g. 'my_file*.msa' loads all the files that start
         by 'my_file' and have the '.msa' extension. Alternatively, regular
         expression type character classes can be used (e.g. ``[a-z]`` matches
-        lowercase letters). See also the `escape_square_brackets` parameter.
+        lowercase letters). See also the ``escape_square_brackets`` parameter.
     signal_type : None, str, default None
         The acronym that identifies the signal type. May be any signal type
         provided by HyperSpy or by installed extensions as listed by
-        `hs.print_known_signal_types()`. The value provided may determines the
+        :func:`~.api.print_known_signal_types`. The value provided may determines the
         Signal subclass assigned to the data.
         If None (default), the value is read/guessed from the file.
         Any other value would override the value potentially stored in the file.
@@ -330,9 +342,9 @@ def load(
         the axis given by its integer index or its name. The data must have the
         same shape, except in the dimension corresponding to `axis`.
     new_axis_name : str, optional
-        The name of the new axis (default 'stack_element'), when `axis` is None.
+        The name of the new axis (default 'stack_element'), when ``axis`` is None.
         If an axis with this name already exists, it automatically appends '-i',
-        where `i` are integers, until it finds a name that is not yet in use.
+        where ``i`` are integers, until it finds a name that is not yet in use.
     lazy : bool, default False
         Open the data lazily - i.e. without actually reading the data from the
         disk until required. Allows opening arbitrary-sized datasets.
@@ -344,26 +356,24 @@ def load(
         then square brackets are escaped before wildcard matching with
         ``glob.glob()``. If False, square brackets are used to represent
         character classes (e.g. ``[a-z]`` matches lowercase letters).
-
     %s
-
     %s Only used with ``stack=True``.
     load_original_metadata : bool, default True
         If ``True``, all metadata contained in the input file will be added
         to ``original_metadata``.
         This does not affect parsing the metadata to ``metadata``.
     file_format : None, str, optional
-        The file format to use when loading the file(s). If None (default),
-        will use the file extension to infer the file type and appropriate
-        reader. If str, will select the appropriate file reader from the list
-        of available readers. Supported formats:
-
-        %s
-
+        The name of the textension of file format to use when loading the file(s).
+        If None (default), will use the file extension to infer the file type and
+        appropriate reader. If str, will select the appropriate file reader from
+        the list of available readers.
+        Supported formats:
+    %s
     reader : None, str, module, optional
         .. deprecated:: 2.4.0
             The ``reader`` parameter is deprecated and will be removed in
-            HyperSpy v2.4. Use ``file_format`` instead.
+            HyperSpy v3.0. Use ``file_format`` instead.
+
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
         appropriate reader. If str, will select the appropriate file reader
@@ -371,7 +381,7 @@ def load(
         implement the ``file_reader`` function, which returns
         a dictionary containing the data and metadata for conversion to
         a HyperSpy signal.
-    print_info: bool, optional
+    print_info : bool, optional
         For SEMPER unf- and EMD (Berkeley)-files. If True, additional
         information read during loading is printed for a quick overview.
         Default False.
@@ -474,9 +484,13 @@ def load(
 
     >>> s = hs.load('file*.blo', lazy=True, stack=True) # doctest: +SKIP
 
-    Specify the file reader to use
+    Specify the file format to use by specifying the extension:
 
-    >>> s = hs.load('a_nexus_file.h5', reader='nxs') # doctest: +SKIP
+    >>> s = hs.load('a_nexus_file.h5', file_format='nxs') # doctest: +SKIP
+
+    Or by specifying the name of the file format:
+
+    >>> s = hs.load('a_nexus_file.h5', file_format='nexus') # doctest: +SKIP
 
     Loading a file containing several datasets:
 
@@ -506,8 +520,8 @@ def load(
     # Issue deprecation warning if reader is used
     if reader is not None:
         warnings.warn(
-            "The 'reader' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
-            "Use 'file_format' instead.",
+            "The 'reader' parameter is deprecated in HyperSpy 2.4 and" 
+            "will be removed in HyperSpy 3.0. Use 'file_format' instead.",
             VisibleDeprecationWarning,
         )
         # Use reader value as file_format for backward compatibility
@@ -649,7 +663,7 @@ def load(
 load.__doc__ %= (
     STACK_METADATA_ARG,
     SHOW_PROGRESSBAR_ARG,
-    _get_supported_formats(write_mode=False, style="bullet"),
+    _get_format_list_for_docstring(write_mode=False, style="bullet"),
 )
 
 
@@ -1134,7 +1148,9 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
                 signal.tmp_parameters.set_item("extension", extension)
 
 
-save.__doc__ %= _get_supported_formats(write_mode=True)
+save.__doc__ %= _get_format_list_for_docstring(write_mode=True).replace(
+    "loading", "saving"
+)
 
 
 def _add_file_load_save_metadata(operation, signal, io_plugin):
@@ -1159,71 +1175,3 @@ def _add_file_load_save_metadata(operation, signal, io_plugin):
     signal.metadata.set_item(f"General.FileIO.{largest_index}", mdata_dict)
 
     return signal
-
-
-def _get_format_list_for_docstring(write_mode=False, style="bullet"):
-    """Generate a formatted list of supported file formats for docstrings.
-
-    Parameters
-    ----------
-    write_mode : bool, default False
-        If False (default), returns all supported read formats.
-        If True, returns only supported write formats.
-    style : str, default "bullet"
-        Format style for the list:
-        - "bullet": Bullet list with descriptions
-        - "inline": Comma-separated inline list
-        - "extensions": Just the extensions
-
-    Returns
-    -------
-    str
-        Formatted string suitable for docstrings
-
-    """
-    if write_mode:
-        plugins = [plugin for plugin in IO_PLUGINS if plugin["writes"]]
-    else:
-        plugins = IO_PLUGINS
-
-    if style == "bullet":
-        format_items = []
-        for plugin in sorted(plugins, key=lambda x: x["name"]):
-            name = plugin["name"]
-            extensions = plugin["file_extensions"]
-            main_ext = extensions[plugin["default_extension"]]
-
-            # Add description if available
-            description = plugin.get("description", "")
-            if description:
-                format_items.append(
-                    f"        * ``'{main_ext}'`` for {name} ({description})"
-                )
-            else:
-                format_items.append(f"        * ``'{main_ext}'`` for {name}")
-
-        # Add version info at the end
-        version_info = f"        \n        All formats are provided by RosettaSciIO v{rsciio.__version__}."
-        return "\n" + "\n".join(format_items) + "\n" + version_info + "\n"
-
-    elif style == "inline":
-        format_items = []
-        for plugin in sorted(plugins, key=lambda x: x["name"]):
-            extensions = plugin["file_extensions"]
-            main_ext = extensions[plugin["default_extension"]]
-            format_items.append(f"``'{main_ext}'``")
-
-        formats_list = ", ".join(format_items)
-        return f"{formats_list} (provided by RosettaSciIO v{rsciio.__version__})"
-
-    elif style == "extensions":
-        extensions = []
-        for plugin in sorted(plugins, key=lambda x: x["name"]):
-            ext_dict = plugin["file_extensions"]
-            main_ext = ext_dict[plugin["default_extension"]]
-            extensions.append(main_ext)
-
-        return ", ".join(extensions)
-
-    else:
-        raise ValueError(f"Unknown style: {style}")
