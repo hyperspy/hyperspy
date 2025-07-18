@@ -53,7 +53,7 @@ Export in different formats
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also export the results of a machine learning analysis to any format
-supported by HyperSpy with the following methods:
+supported by RosettaSciIO with the following methods:
 
 * :meth:`~.api.signals.BaseSignal.export_decomposition_results`
 * :meth:`~.api.signals.BaseSignal.export_bss_results`

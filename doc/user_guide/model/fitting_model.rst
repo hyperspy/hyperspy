@@ -65,7 +65,7 @@ whether the optimizers find a local or global optima.
        for more info.
 
 .. [2] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
-       supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
+       supported in HyperSpy; however, only some of them support bounds and/or gradients. For more information,
        please see the `SciPy documentation <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
 .. [3] Requires ``scipy >= 1.2.0``.

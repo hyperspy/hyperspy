@@ -2593,7 +2593,7 @@ class BaseModel(list):
             current folder is used by default.
         format : str
             The extension of the file format. It must be one of the
-            fileformats supported by HyperSpy. The default is ``"hspy"``.
+            fileformats supported by RosettaSciIO. The default is ``"hspy"``.
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool

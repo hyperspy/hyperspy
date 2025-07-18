@@ -80,7 +80,7 @@ from hyperspy.exceptions import (
 )
 from hyperspy.external.scipy.ndfilters import _get_footprint
 from hyperspy.interactive import interactive
-from hyperspy.io import assign_signal_subclass
+from hyperspy.io import _get_format_list_for_docstring, assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.misc.array_tools import rebin as array_rebin
@@ -3288,15 +3288,13 @@ class BaseSignal(
     ):
         """Saves the signal in the specified format.
 
-        The function gets the format from the specified extension (see
-        :ref:`supported-formats` in the User Guide for more information):
+        The function gets the format from the specified extension
+        (:ref:`supported-formats`):
+        %s
 
-        * ``'hspy'`` for HyperSpy's HDF5 specification
-        * ``'rpl'`` for Ripple (useful to export to Digital Micrograph)
-        * ``'msa'`` for EMSA/MSA single spectrum saving.
-        * ``'unf'`` for SEMPER unf binary format.
-        * ``'blo'`` for Blockfile diffraction stack saving.
-        * Many image formats such as ``'png'``, ``'tiff'``, ``'jpeg'``...
+        File format support is provided by RosettaSciIO. For detailed information
+        about supported formats, format-specific parameters, and examples, see the
+        `RosettaSciIO documentation <https://hyperspy.org/rosettasciio/>`_.
 
         If no extension is provided the default file format as defined
         in the `preferences` is used.
@@ -3309,28 +3307,41 @@ class BaseSignal(
 
         Parameters
         ----------
-        filename : str or None
-            If None (default) and `tmp_parameters.filename` and
-            `tmp_parameters.folder` are defined, the
-            filename and path will be taken from there. A valid
-            extension can be provided e.g. ``'my_file.rpl'``
-            (see `extension` parameter).
+        filename : str, :py:obj:`~pathlib.Path`, or None
+            The output filename or directory path. Can be:
+
+            * **Full path with extension**: ``'/path/to/my_file.hspy'``
+            * **Directory path only**: ``'/path/to/output_folder/'`` - When a
+              directory is provided, the filename is constructed from
+              `tmp_parameters.filename` and the extension is determined from
+              the `file_format` or `tmp_parameters.extension` parameters.
+            * **None**: Uses `tmp_parameters.folder` and `tmp_parameters.filename`
+              if available.
+
+            **About tmp_parameters**: These are automatically created when
+            loading files and store the original filename, folder, and extension.
+            This enables convenient workflows like batch processing where you
+            can load files, process them, and save to new locations without
+            manually specifying filenames.
         overwrite : None or bool
             If None, if the file exists it will query the user. If
             True(False) it does(not) overwrite the file if it exists.
         extension : None or str
+            .. deprecated:: 2.4
+                The `extension` parameter is deprecated in version 2.4 and will
+                be removed in version 3.0. Use ``file_format`` instead.
+
             The extension of the file that defines the file format.
-            Allowable string values are: {``'hspy'``, ``'hdf5'``, ``'rpl'``,
-            ``'msa'``, ``'unf'``, ``'blo'``, ``'emd'``, and common image
-            extensions e.g. ``'tiff'``, ``'png'``, etc.}
+            Allowable string values are: %s
             ``'hspy'`` and ``'hdf5'`` are equivalent. Use ``'hdf5'`` if
             compatibility with HyperSpy versions older than 1.2 is required.
             If ``None``, the extension is determined from the following list in
             this order:
 
-            i) the filename
-            ii)  `Signal.tmp_parameters.extension`
-            iii) ``'hspy'`` (the default extension)
+            i) the ``filename`` (if a full filename with extension is provided)
+            ii) the ``file_format`` parameter (mapped to corresponding extension)
+            iii) ``Signal.tmp_parameters.extension``
+            iv) ``'.hspy'`` (the default extension)
         chunks : tuple or True or None (default)
             HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
             saving. The chunk shape should follow the order of the array
@@ -3355,21 +3366,91 @@ class BaseSignal(
         close_file : bool, optional
             Only for hdf5-based files and some zarr store. Close the file after
             writing. Default is True.
-        file_format: string
-            The file format of choice to save the file. If not given, it is inferred
-            from the file extension.
+        file_format : None or str, optional
+            The name or the extension of the file format of choice to save the file.
+            If not given, it is inferred from the file extension.
+            Supported formats:
+        %s
+
+        Examples
+        --------
+        Save with a complete filename:
+
+        >>> s = hs.signals.Signal1D(np.arange(10))
+        >>> s.save("my_data.hspy")
+
+        Re-save a loaded signal in a different location (uses tmp_parameters):
+
+        >>> s = hs.load("original_data.hspy")  # tmp_parameters are auto-populated
+        >>> s.save("/new/output/folder/")      # Saves to /new/output/folder/original_data.hspy
+
+        Re-save a loaded signal in a different format:
+
+        >>> s = hs.load("data.hspy")           # Original format
+        >>> s.save("/output/", file_format="msa")  # Convert to MSA format
+        >>> s.save("/output/", file_format="rpl")  # Convert to Ripple format
+
+        Process multiple files and save in different format:
+
+        >>> import hyperspy.api as hs
+        >>> from pathlib import Path
+        >>>
+        >>> input_folder = Path("input_data/")
+        >>> output_folder = Path("processed_data/")
+        >>>
+        >>> for file_path in input_folder.glob("*.hspy"):
+        ...     s = hs.load(file_path)
+        ...     # Process the signal...
+        ...     s = s.remove_background()
+        ...     # Save in new location with different format
+        ...     s.save(output_folder, file_format="msa")
 
         """
+        # Check for conflicting parameters
+        if extension is not None and file_format is not None:
+            raise ValueError(
+                "Cannot specify both 'extension' and 'file_format' parameters. "
+                "Please use only 'file_format' as 'extension' is deprecated."
+            )
+
+        # Deprecation warning for extension parameter
+        if extension is not None:
+            warnings.warn(
+                "The 'extension' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
+                "Please use 'file_format' instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+
         if filename is None:
             if self.tmp_parameters.has_item(
                 "filename"
             ) and self.tmp_parameters.has_item("folder"):
+                # Determine the extension to use
+                if self.tmp_parameters.has_item("extension"):
+                    file_ext = self.tmp_parameters.extension
+                elif file_format is not None:
+                    # Get the default extension for the file format from rsciio
+                    try:
+                        from hyperspy.io import _format_name_to_reader
+
+                        writer = _format_name_to_reader(file_format)
+                        file_ext = (
+                            "." + writer["file_extensions"][writer["default_extension"]]
+                        )
+                    except (ValueError, KeyError):
+                        # If format not found in rsciio, use the file_format as extension
+                        file_ext = "." + file_format
+                else:
+                    file_ext = ".hspy"  # Default extension
+
                 filename = Path(
-                    self.tmp_parameters.folder, self.tmp_parameters.filename
+                    self.tmp_parameters.folder,
+                    self.tmp_parameters.filename + file_ext,
                 )
-                extension = (
-                    self.tmp_parameters.extension if not extension else extension
-                )
+                # Don't override extension if it was explicitly provided
+                if extension is None and self.tmp_parameters.has_item("extension"):
+                    extension = self.tmp_parameters.extension
             elif self.metadata.has_item("General.original_filename"):
                 filename = self.metadata.General.original_filename
             else:
@@ -3377,9 +3458,63 @@ class BaseSignal(
 
         if not isinstance(filename, MutableMapping):
             filename = Path(filename)
-            if extension is not None:
-                filename = filename.with_suffix(f".{extension}")
+
+            # Check if filename is clearly a directory path.
+            # We only consider it a directory path if:
+            # 1. It's an existing directory, OR
+            # 2. The path explicitly ends with a directory separator ('/' or '\')
+            # This conservative approach ensures we don't accidentally treat
+            # filenames without extensions as directories.
+            is_directory_path = filename.is_dir() or str(filename).endswith(("/", "\\"))
+
+            if is_directory_path and self.tmp_parameters.has_item("filename"):
+                # Filename is a directory path, construct full filename
+
+                # Determine extension from file_format, extension parameter, or tmp_parameters.extension
+                if extension is not None:
+                    file_extension = extension.lstrip(".")
+                elif file_format is not None:
+                    # Get the default extension for the file format from rsciio
+                    try:
+                        from hyperspy.io import _format_name_to_reader
+
+                        writer = _format_name_to_reader(file_format)
+                        file_extension = writer["file_extensions"][
+                            writer["default_extension"]
+                        ]
+                    except (ValueError, KeyError):
+                        # If format not found in rsciio, use the file_format as extension
+                        file_extension = file_format
+                elif self.tmp_parameters.has_item("extension"):
+                    file_extension = self.tmp_parameters.extension.lstrip(".")
+                else:
+                    file_extension = "hspy"  # Default extension
+
+                # Construct full filename
+                base_filename = self.tmp_parameters.filename
+                if not base_filename.endswith(f".{file_extension}"):
+                    full_filename = f"{base_filename}.{file_extension}"
+                else:
+                    full_filename = base_filename
+
+                filename = filename / full_filename
+            elif extension is not None:
+                # If extension parameter is provided, ensure filename has that extension
+                # Remove any existing extension and add the specified one
+                base_name = filename.stem
+                if filename.parent != Path("."):
+                    filename = filename.parent / f"{base_name}.{extension.lstrip('.')}"
+                else:
+                    filename = Path(f"{base_name}.{extension.lstrip('.')}")
+
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
+
+    # Format save method docstring with dynamic format list
+    save.__doc__ = save.__doc__ % (
+        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=8),
+        _get_format_list_for_docstring(write_mode=True, style="inline", indentation=8),
+        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=12),
+    )
 
     def _replot(self):
         if self._plot is not None:
