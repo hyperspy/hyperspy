@@ -32,7 +32,7 @@ import hyperspy.api as hs
 from hyperspy import __version__ as hs_version
 from hyperspy.axes import DataAxis
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.signals import Signal1D, Signal2D
+from hyperspy.signals import Signal1D
 
 PATH = Path(__file__).resolve()
 FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")
@@ -207,8 +207,11 @@ def test_file_reader_error(tmp_path):
     f = tmp_path / "temp.hspy"
     s.save(f)
 
-    with pytest.raises(ValueError, match="reader"):
-        _ = hs.load(f, reader=123)
+    with pytest.warns(
+        VisibleDeprecationWarning, match="'reader' parameter is deprecated"
+    ):
+        with pytest.raises(ValueError, match="reader"):
+            _ = hs.load(f, reader=123)
 
 
 def test_file_reader_warning(caplog, tmp_path):
@@ -219,8 +222,11 @@ def test_file_reader_warning(caplog, tmp_path):
     s.save(f)
 
     try:
-        with caplog.at_level(logging.WARNING):
-            _ = hs.load(f, reader="some_unknown_file_extension")
+        with pytest.warns(
+            VisibleDeprecationWarning, match="'reader' parameter is deprecated"
+        ):
+            with caplog.at_level(logging.WARNING):
+                _ = hs.load(f, reader="some_unknown_file_extension")
     except (ValueError, OSError, IndexError):
         # Test fallback to Pillow imaging library
         # IndexError is for oldest supported version build on Github CI
@@ -239,37 +245,44 @@ def test_file_reader_options(tmp_path):
     s.save(Path(tmp_path, "temp.emd"))
 
     # Test string reader
-    t = hs.load(Path(tmp_path, "temp.hspy"), reader="hspy")
+    with pytest.warns(VisibleDeprecationWarning):
+        t = hs.load(Path(tmp_path, "temp.hspy"), reader="hspy")
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
     # Test string reader uppercase
-    t = hs.load(Path(tmp_path, "temp.hspy"), reader="HSpy")
+    with pytest.warns(VisibleDeprecationWarning):
+        t = hs.load(Path(tmp_path, "temp.hspy"), reader="HSpy")
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
     # Test string reader alias
-    t = hs.load(Path(tmp_path, "temp.hspy"), reader="hyperspy")
+    with pytest.warns(VisibleDeprecationWarning):
+        t = hs.load(Path(tmp_path, "temp.hspy"), reader="hyperspy")
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
     # Test string reader name
-    t = hs.load(Path(tmp_path, "temp.emd"), reader="emd")
+    with pytest.warns(VisibleDeprecationWarning):
+        t = hs.load(Path(tmp_path, "temp.emd"), reader="emd")
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
     # Test string reader aliases
-    t = hs.load(Path(tmp_path, "temp.emd"), reader="Electron Microscopy Data (EMD)")
+    with pytest.warns(VisibleDeprecationWarning):
+        t = hs.load(Path(tmp_path, "temp.emd"), reader="Electron Microscopy Data (EMD)")
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
-    t = hs.load(Path(tmp_path, "temp.emd"), reader="Electron Microscopy Data")
+    with pytest.warns(VisibleDeprecationWarning):
+        t = hs.load(Path(tmp_path, "temp.emd"), reader="Electron Microscopy Data")
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
     # Test object reader
     from rsciio import hspy
 
-    t = hs.load(tmp_path / "temp.hspy", reader=hspy)
+    with pytest.warns(VisibleDeprecationWarning):
+        t = hs.load(tmp_path / "temp.hspy", reader=hspy)
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
@@ -503,7 +516,7 @@ def test_save_extension_parameter_strips_leading_dot(tmp_path):
     assert (tmp_path / "test2.hspy").exists()
 
 
-def test_save_file_format_unknown_format_error(tmp_path):
+def test_save_file_format_unknown_format_error(tmp_path, caplog):
     """Test that unknown file_format raises a ValueError."""
     s = Signal1D(np.arange(10))
 
@@ -515,9 +528,18 @@ def test_save_file_format_unknown_format_error(tmp_path):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
-    # Test with an unknown/invalid file format - should raise ValueError
-    with pytest.raises(ValueError, match="does not match any format available"):
-        s_loaded.save(output_dir, file_format="unknown_format", overwrite=True)
+    # Test with an unknown/invalid file format - should raise TypeError and warning
+    # because it will fallback on the image writer
+    with caplog.at_level(logging.WARNING):
+        with pytest.raises(
+            TypeError, match="This file format does not support this data"
+        ):
+            s_loaded.save(output_dir, file_format="unknown_format", overwrite=True)
+
+    # Check that the warning was logged
+    assert (
+        "Unable to infer file type from extension/name 'unknown_format'" in caplog.text
+    )
 
 
 def test_save_extension_parameter_current_directory_path(tmp_path):
@@ -792,6 +814,23 @@ def test_format_name_to_reader_invalid_format():
 
     with pytest.raises(ValueError, match="format_name.*does not match any format"):
         _format_name_to_reader("nonexistent_format")
+
+
+def test_save_write_file_format(tmp_path):
+    """Test that save writes the correct file format based on file_format parameter."""
+    s = Signal1D(np.arange(10 * 10).reshape(10, 10))
+    fname_extension = tmp_path / "test_file_format_extension"
+    fname_name = tmp_path / "test_file_format_name"
+
+    # Save with file_format parameter using extension
+    s.save(fname_extension, file_format="rpl")
+    s2 = hs.load(f"{fname_extension}.rpl")
+    np.testing.assert_allclose(s2.data, s.data)
+
+    # Save with file_format parameter using name
+    s.save(fname_name, file_format="ripple")
+    s3 = hs.load(f"{fname_name}.rpl")
+    np.testing.assert_allclose(s3.data, s.data)
 
 
 def test_infer_file_reader_unknown_extension(caplog):

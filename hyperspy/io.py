@@ -164,7 +164,7 @@ def _infer_file_reader(string):
     if not rdrs:
         # Try to load it with the python imaging library
         _logger.warning(
-            f"Unable to infer file type from extension '{string}'. "
+            f"Unable to infer file type from extension/name '{string}'. "
             "Will attempt to load the file with the Python imaging library."
         )
 
@@ -520,7 +520,7 @@ def load(
     # Issue deprecation warning if reader is used
     if reader is not None:
         warnings.warn(
-            "The 'reader' parameter is deprecated in HyperSpy 2.4 and" 
+            "The 'reader' parameter is deprecated in HyperSpy 2.4 and"
             "will be removed in HyperSpy 3.0. Use 'file_format' instead.",
             VisibleDeprecationWarning,
         )
@@ -1038,7 +1038,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
             "filename"
         ) and signal.tmp_parameters.has_item("folder"):
             # Construct filename from tmp_parameters
-            writer = _format_name_to_reader(file_format)
+            writer = _infer_file_reader(file_format)
             extension = "." + writer["file_extensions"][writer["default_extension"]]
             filename = Path(
                 signal.tmp_parameters.folder, signal.tmp_parameters.filename + extension
@@ -1058,21 +1058,21 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
     writer = None
     if isinstance(filename, MutableMapping):
         extension = ".zspy"
-        writer = _format_name_to_reader("ZSPY")
+        writer = _infer_file_reader("ZSPY")
     else:
         filename = Path(filename).resolve()
         extension = filename.suffix
         if extension == "":
             if file_format:
-                writer = _format_name_to_reader(file_format)
+                writer = _infer_file_reader(file_format)
                 extension = "." + writer["file_extensions"][writer["default_extension"]]
             else:
                 extension = ".hspy"
-                writer = _format_name_to_reader("HSPY")
+                writer = _infer_file_reader("HSPY")
             filename = filename.with_suffix(extension)
         else:
             if file_format:
-                writer = _format_name_to_reader(file_format)
+                writer = _infer_file_reader(file_format)
             else:
                 writer = _infer_file_writer(extension[1:])
 
