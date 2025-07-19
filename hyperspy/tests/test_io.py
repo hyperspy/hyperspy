@@ -453,12 +453,15 @@ def test_save_file_format_parameter_with_directory_path(tmp_path):
     assert (output_dir / "source.msa").exists()
 
 
-def test_save_extension_precedence_with_file_format_fallback(tmp_path):
+@pytest.mark.parametrize("file_format", ["hspy", "zspy"])
+def test_save_extension_precedence_with_file_format_fallback(tmp_path, file_format):
     """Test the precedence order when extension is deprecated."""
+    if file_format == "zspy":
+        pytest.importorskip("zspy")
     s = Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters
-    source_file = tmp_path / "source.hspy"
+    source_file = tmp_path / f"source.{file_format}"
     s.save(source_file)
     s_loaded = hs.load(source_file)
 
@@ -466,16 +469,17 @@ def test_save_extension_precedence_with_file_format_fallback(tmp_path):
     output_dir.mkdir()
 
     # When only file_format is provided (no extension), it should use file_format
-    s_loaded.save(output_dir, file_format="msa", overwrite=True)
-    assert (output_dir / "source.msa").exists()
+    s_loaded.save(output_dir, file_format=file_format, overwrite=True)
+    assert (output_dir / f"source.{file_format}").exists()
 
-    # Clean up
-    (output_dir / "source.msa").unlink()
-
+    s_loaded.data *= 2
     # When neither extension nor file_format is provided, should fall back to current tmp_parameters
-    # Note: tmp_parameters are updated after each save, so this will use .msa format
+    # Note: tmp_parameters are updated after each save, so this will use file_format
     s_loaded.save(output_dir, overwrite=True)
-    assert (output_dir / "source.msa").exists()
+    assert (output_dir / f"source.{file_format}").exists()
+    # Check that the file has been overwritten
+    s_loaded2 = hs.load(output_dir / f"source.{file_format}")
+    np.testing.assert_allclose(s_loaded2.data, s_loaded.data)
 
 
 def test_save_extension_parameter_maps_to_file_format(tmp_path):

@@ -3459,15 +3459,12 @@ class BaseSignal(
         if not isinstance(filename, MutableMapping):
             filename = Path(filename)
 
-            # Check if filename is clearly a directory path.
-            # We only consider it a directory path if:
-            # 1. It's an existing directory, OR
-            # 2. The path explicitly ends with a directory separator ('/' or '\')
-            # This conservative approach ensures we don't accidentally treat
-            # filenames without extensions as directories.
-            is_directory_path = filename.is_dir() or str(filename).endswith(("/", "\\"))
-
-            if is_directory_path and self.tmp_parameters.has_item("filename"):
+            # zspy can also be directory, make sure this is treated as a base directory
+            if (
+                filename.is_dir()
+                and not filename.suffix == ".zspy"
+                and self.tmp_parameters.has_item("filename")
+            ):
                 # Filename is a directory path, construct full filename
 
                 # Determine extension from file_format, extension parameter, or tmp_parameters.extension
