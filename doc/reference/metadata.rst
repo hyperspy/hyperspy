@@ -132,11 +132,32 @@ operation
    This value will be either ``"load"`` or ``"save"`` to indicate whether
    this node represents a load from, or save to disk operation, respectively.
 
+folder
+    type: Str
+
+    The folder where the data file was loaded from or saved to.
+
+filename
+    type: Str
+
+    The name of the data file that was loaded from or saved to disk.
+
+extension
+    type: Str
+
+    The file extension of the data file that was loaded from or saved to disk.
+
 hyperspy_version
     type: Str
 
     The version number of the HyperSpy software used to extract a Signal from
     this data file or save this Signal to disk
+
+rosettasciio_version
+    type: Str
+
+    The version number of the RosettaSciIO software used to load and save
+    data.
 
 io_plugin
     type: Str

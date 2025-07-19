@@ -332,29 +332,28 @@ Batch Processing and Re-saving
 ------------------------------
 
 HyperSpy provides convenient functionality for batch processing and re-saving 
-files using the ``tmp_parameters`` that are automatically populated when 
-loading files. This is particularly useful when you need to:
+files using the metadata from :ref:`FileIO <general-file-metadata>` that are
+automatically populated when loading files. This is particularly useful when
+you need to:
 
 * Process multiple files and save them in a different location
 * Convert files from one format to another
 * Apply the same processing to many files while preserving their original names
 
-The ``tmp_parameters`` contain the original filename, folder, and extension 
-information from loaded files, enabling you to save processed data without 
-manually specifying filenames.
+The :ref:`FileIO <general-file-metadata>` contain the filename, folder, and
+extension information from loaded files, enabling you to save processed data
+without manually specifying filenames.
 
 Basic Re-saving to Different Locations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When you load a file with HyperSpy, the ``tmp_parameters`` are automatically 
-populated:
+When you load a file with HyperSpy, the :ref:`FileIO <general-file-metadata>`
+are automatically populated:
 
 .. code-block:: python
 
     >>> s = hs.load("original_data.hspy")  # doctest: +SKIP
-    >>> print(s.tmp_parameters.filename)   # 'original_data'  # doctest: +SKIP
-    >>> print(s.tmp_parameters.extension)  # '.hspy'  # doctest: +SKIP
-    >>> print(s.tmp_parameters.folder)     # '/path/to/original/'  # doctest: +SKIP
+    >>> s.metadata.General.FileIO   # 'original_data'  # doctest: +SKIP
 
 You can then save the signal to a different directory by providing only the 
 directory path:
@@ -399,7 +398,7 @@ Here's a complete example of batch processing multiple files:
         s = s.remove_background()
         
         # Save in new location - filename is preserved automatically
-        s.save(output_folder)  # Uses original filename from tmp_parameters
+        s.save(output_folder)  # Uses original filename from metadata.General.FileIO
 
     # Convert all files to a different format
     for file_path in input_folder.glob("*.hspy"):
@@ -428,7 +427,8 @@ batch functionality:
         s = s.remove_background()
         
         # Option 1: Use automatic filename with prefix/suffix
-        base_name = s.tmp_parameters.filename
+        index = len(s.metadata.General.FileIO) - 1  # index of the last FileIO entry
+        base_name = s.metadata.General.FileIO[index].filename
         custom_filename = f"processed_{base_name}.hspy"
         s.save(output_folder / custom_filename)
         
@@ -437,6 +437,6 @@ batch functionality:
 
 .. note::
 
-    The ``tmp_parameters`` are only available for signals that were loaded from 
-    files. If you create a signal programmatically, you'll need to provide the 
-    full filename when saving.
+    The :ref:`FileIO <general-file-metadata>` are only available for signals
+    that were loaded from files. If you create a signal programmatically,
+    you'll need to provide the full filename when saving.
