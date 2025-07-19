@@ -557,3 +557,16 @@ def test_plot_spectra_ax():
 def test_plot_spectra_single(style):
     s = hs.signals.Signal1D([0, 1, 2])
     hs.plot.plot_spectra([s], style=style)
+
+
+def test_plot_spectra_ax_array():
+    n = 20
+    s = hs.signals.Signal1D(np.arange(4 * n).reshape(4, n))
+
+    # array of axes
+    fig, axes = plt.subplots(nrows=2, ncols=3)
+    hs.plot.plot_spectra(s, ax=axes, style="mosaic")
+
+    # axes object
+    fig, axes = plt.subplots()
+    hs.plot.plot_spectra(s, ax=axes, style="mosaic")
