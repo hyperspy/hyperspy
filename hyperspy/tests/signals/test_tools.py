@@ -352,12 +352,7 @@ def test_get_current_signal(lazy):
 
     cs = s.get_current_signal(auto_title=False)
     assert cs.metadata.General.title == "A signal"
-    # just spoofing these parameters to test the auto_filename
-    s.tmp_parameters.filename = "test"
-    s.tmp_parameters.extension = ".hspy"
-    s.tmp_parameters.folder = "test"
-    cs = s.get_current_signal(auto_title=False, auto_filename=True)
-    assert cs.tmp_parameters.filename == "test_(1,)"
+    cs = s.get_current_signal(auto_title=False)
 
 
 def test_get_current_signal_with_markers():

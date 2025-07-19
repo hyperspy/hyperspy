@@ -2517,7 +2517,33 @@ class BaseSignal(
         folding.original_shape = None
         folding.original_axes_manager = None
         self._original_metadata = DictionaryTreeBrowser()
-        self.tmp_parameters = DictionaryTreeBrowser()
+
+    @property
+    def _filename_parameters(self):
+        """Filename parameters for the signal."""
+        FIO_md = self._get_last_FileIO_metadata(operation="load")
+        fname_parameters = DictionaryTreeBrowser()
+
+        if FIO_md.has_item("folder"):
+            fname_parameters.folder = FIO_md.get_item("folder")
+            fname_parameters.original_folder = FIO_md.get_item("folder")
+        if FIO_md.has_item("filename"):
+            fname_parameters.filename = FIO_md.get_item("filename")
+            fname_parameters.original_filename = FIO_md.get_item("filename")
+        if FIO_md.has_item("extension"):
+            fname_parameters.extension = FIO_md.get_item("extension")
+            fname_parameters.original_extension = FIO_md.get_item("extension")
+
+        return fname_parameters
+
+    @property
+    def tmp_parameters(self):
+        warnings.warn(
+            "The `tmp_parameters` property is deprecated and will be removed in "
+            "HyperSpy v3. Use `metadata.General.FileIO` instead.",
+            VisibleDeprecationWarning,
+        )
+        return self._filename_parameters
 
     def __repr__(self):
         if self.metadata._HyperSpy.Folding.unfolded:
@@ -2986,7 +3012,7 @@ class BaseSignal(
             "data": self.data,
             "axes": self.axes_manager._get_axes_dicts(),
             "metadata": copy.deepcopy(self.metadata.as_dictionary()),
-            "tmp_parameters": self.tmp_parameters.as_dictionary(),
+            "tmp_parameters": self._filename_parameters.as_dictionary(),
             "attributes": {"_lazy": self._lazy, "ragged": self.axes_manager._ragged},
         }
         if add_original_metadata:
@@ -3105,8 +3131,8 @@ class BaseSignal(
         if self.metadata.General.title:
             title = self.metadata.General.title
             self._plot.signal_title = title
-        elif self.tmp_parameters.has_item("filename"):
-            self._plot.signal_title = self.tmp_parameters.filename
+        elif self._get_last_FileIO_metadata().has_item("filename"):
+            self._plot.signal_title = self._get_last_FileIO_metadata().filename
 
         def sum_wrapper(s, axis):
             with warnings.catch_warnings():
@@ -3283,6 +3309,17 @@ class BaseSignal(
         PLOT2D_KWARGS_DOCSTRING,
     )
 
+    def _get_last_FileIO_metadata(self, operation="load"):
+        """Returns the last FileIO metadata for the specified operation."""
+        if self.metadata.has_item("General.FileIO"):
+            # Iterate through the FileIO metadata in reverse order
+            for i in range(len(self.metadata.General.FileIO) - 1, -1, -1):
+                if self.metadata.General.FileIO[i].get_item("operation") == operation:
+                    return self.metadata.General.FileIO[i]
+
+        # Return empty dictionary if no FileIO metadata found
+        return DictionaryTreeBrowser()
+
     def save(
         self, filename=None, overwrite=None, extension=None, file_format=None, **kwds
     ):
@@ -3313,16 +3350,10 @@ class BaseSignal(
             * **Full path with extension**: ``'/path/to/my_file.hspy'``
             * **Directory path only**: ``'/path/to/output_folder/'`` - When a
               directory is provided, the filename is constructed from
-              `tmp_parameters.filename` and the extension is determined from
-              the `file_format` or `tmp_parameters.extension` parameters.
-            * **None**: Uses `tmp_parameters.folder` and `tmp_parameters.filename`
-              if available.
-
-            **About tmp_parameters**: These are automatically created when
-            loading files and store the original filename, folder, and extension.
-            This enables convenient workflows like batch processing where you
-            can load files, process them, and save to new locations without
-            manually specifying filenames.
+              ``filename`` and ``folder`` defined in ``metadata.General.FileIO``.
+              The extension is determined from the ``file_format`` or
+              ``extension`` defined in ``metadata.General.FileIO``.
+            * **None**: Uses ``metadata.General.FileIO`` if available.
         overwrite : None or bool
             If None, if the file exists it will query the user. If
             True(False) it does(not) overwrite the file if it exists.
@@ -3340,7 +3371,7 @@ class BaseSignal(
 
             i) the ``filename`` (if a full filename with extension is provided)
             ii) the ``file_format`` parameter (mapped to corresponding extension)
-            iii) ``Signal.tmp_parameters.extension``
+            iii) ``.extension`` defined in `metadata.General.FileIO`
             iv) ``'.hspy'`` (the default extension)
         chunks : tuple or True or None (default)
             HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
@@ -3379,9 +3410,9 @@ class BaseSignal(
         >>> s = hs.signals.Signal1D(np.arange(10))
         >>> s.save("my_data.hspy")
 
-        Re-save a loaded signal in a different location (uses tmp_parameters):
+        Re-save a loaded signal in a different location (uses ``metadata.General.FileIO``):
 
-        >>> s = hs.load("original_data.hspy")  # tmp_parameters are auto-populated
+        >>> s = hs.load("original_data.hspy")
         >>> s.save("/new/output/folder/")      # Saves to /new/output/folder/original_data.hspy
 
         Re-save a loaded signal in a different format:
@@ -3422,14 +3453,15 @@ class BaseSignal(
                 stacklevel=2,
             )
 
+        FileIO_md = self._get_last_FileIO_metadata(operation="load")
+
         if filename is None:
-            if self.tmp_parameters.has_item(
-                "filename"
-            ) and self.tmp_parameters.has_item("folder"):
+            FileIO_md_folder = FileIO_md.get_item("folder")
+            FileIO_md_filename = FileIO_md.get_item("filename")
+            FileIO_md_extension = FileIO_md.get_item("extension")
+            if FileIO_md_folder and FileIO_md_filename:
                 # Determine the extension to use
-                if self.tmp_parameters.has_item("extension"):
-                    file_ext = self.tmp_parameters.extension
-                elif file_format is not None:
+                if FileIO_md_extension is None and file_format is not None:
                     # Get the default extension for the file format from rsciio
                     try:
                         from hyperspy.io import _format_name_to_reader
@@ -3444,30 +3476,29 @@ class BaseSignal(
                 else:
                     file_ext = ".hspy"  # Default extension
 
-                filename = Path(
-                    self.tmp_parameters.folder,
-                    self.tmp_parameters.filename + file_ext,
-                )
+                filename = Path(FileIO_md_folder, FileIO_md_filename + file_ext)
                 # Don't override extension if it was explicitly provided
-                if extension is None and self.tmp_parameters.has_item("extension"):
-                    extension = self.tmp_parameters.extension
+                if extension is None and FileIO_md_extension:
+                    extension = FileIO_md_extension
             elif self.metadata.has_item("General.original_filename"):
                 filename = self.metadata.General.original_filename
             else:
-                raise ValueError("File name not defined")
+                raise ValueError("File name not defined.")
 
         if not isinstance(filename, MutableMapping):
             filename = Path(filename)
 
+            # filename is a directory to be used as a base directory
             # zspy can also be directory, make sure this is treated as a base directory
             if (
                 filename.is_dir()
                 and not filename.suffix == ".zspy"
-                and self.tmp_parameters.has_item("filename")
+                and FileIO_md.has_item("filename")
             ):
                 # Filename is a directory path, construct full filename
 
-                # Determine extension from file_format, extension parameter, or tmp_parameters.extension
+                # Determine extension from file_format, extension parameter, or the extension
+                # from metadata.General.FileIO
                 if extension is not None:
                     file_extension = extension.lstrip(".")
                 elif file_format is not None:
@@ -3482,13 +3513,13 @@ class BaseSignal(
                     except (ValueError, KeyError):
                         # If format not found in rsciio, use the file_format as extension
                         file_extension = file_format
-                elif self.tmp_parameters.has_item("extension"):
-                    file_extension = self.tmp_parameters.extension.lstrip(".")
+                elif FileIO_md.has_item("extension"):
+                    file_extension = FileIO_md.extension.lstrip(".")
                 else:
                     file_extension = "hspy"  # Default extension
 
                 # Construct full filename
-                base_filename = self.tmp_parameters.filename
+                base_filename = FileIO_md.filename
                 if not base_filename.endswith(f".{file_extension}"):
                     full_filename = f"{base_filename}.{file_extension}"
                 else:
@@ -3498,11 +3529,7 @@ class BaseSignal(
             elif extension is not None:
                 # If extension parameter is provided, ensure filename has that extension
                 # Remove any existing extension and add the specified one
-                base_name = filename.stem
-                if filename.parent != Path("."):
-                    filename = filename.parent / f"{base_name}.{extension.lstrip('.')}"
-                else:
-                    filename = Path(f"{base_name}.{extension.lstrip('.')}")
+                filename = filename.parent / f"{filename.stem}.{extension.lstrip('.')}"
 
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
@@ -6221,7 +6248,7 @@ class BaseSignal(
 
         return None
 
-    def get_current_signal(self, auto_title=True, auto_filename=True, as_numpy=False):
+    def get_current_signal(self, auto_title=True, as_numpy=False):
         """Returns the data at the current coordinates as a
         :class:`~hyperspy.signal.BaseSignal` subclass.
 
@@ -6234,11 +6261,6 @@ class BaseSignal(
             If ``True``, the current indices (in parentheses) are appended to
             the title, separated by a space, otherwise the title of the signal
             is used unchanged.
-        auto_filename : bool
-            If ``True`` and `tmp_parameters.filename` is defined
-            (which is always the case when the Signal has been read from a
-            file), the filename stored in the metadata is modified by
-            appending an underscore and the current indices in parentheses.
         as_numpy : bool or None
             Only with cupy array. If ``True``, return the current signal
             as numpy array, otherwise return as cupy array.
@@ -6293,12 +6315,6 @@ class BaseSignal(
                 markers_dict[key]._signal = cs
             cs.metadata.Markers = markers_dict
 
-        if auto_filename is True and self.tmp_parameters.has_item("filename"):
-            cs.tmp_parameters.filename = (
-                self.tmp_parameters.filename + "_" + str(self.axes_manager.indices)
-            )
-            cs.tmp_parameters.extension = self.tmp_parameters.extension
-            cs.tmp_parameters.folder = self.tmp_parameters.folder
         if auto_title is True:
             cs.metadata.General.title = (
                 cs.metadata.General.title + " " + str(self.axes_manager.indices)
