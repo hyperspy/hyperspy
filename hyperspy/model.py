@@ -61,7 +61,11 @@ from hyperspy.misc.export_dictionary import (
     reconstruct_object,
 )
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
+from hyperspy.misc.model_tools import (
+    CurrentModelValues,
+    _calculate_covariance,
+    _calculate_parameter_uncertainty_from_fisher_information,
+)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     display,
@@ -2177,6 +2181,146 @@ class BaseModel(list):
 
                 self.p0 = self.fit_output.x
 
+                # Calculate parameter uncertainties for ML-poisson using Fisher Information Matrix
+                # Only available for 1D models currently
+                if loss_function == "ML-poisson" and self._signal_dimension == 1:
+                    try:
+                        # Get current data for Hessian calculation
+                        current_data = self.signal._get_current_data(as_numpy=True)[
+                            np.where(self._channel_switches)
+                        ]
+                        weights = self._convert_variance_to_weights()
+
+                        # Calculate Fisher Information Matrix (Hessian of negative log-likelihood)
+                        fisher_info_matrix = self._hessian_ml(
+                            self.p0, current_data, weights
+                        )
+
+                        # Calculate parameter uncertainties from Fisher Information Matrix
+                        p_std, _ = (
+                            _calculate_parameter_uncertainty_from_fisher_information(
+                                fisher_info_matrix
+                            )
+                        )
+                        self.p_std = p_std
+
+                    except Exception as e:
+                        # If Fisher Information Matrix calculation fails, set to None
+                        _logger.warning(
+                            f"Could not calculate parameter uncertainties for ML-poisson fitting: {e}"
+                        )
+                        self.p_std = None
+
+                # Calculate parameter uncertainties for ls using Hessian matrix
+                # Only available for 1D models currently
+                elif loss_function == "ls" and self._signal_dimension == 1:
+                    try:
+                        # Get current data for Hessian calculation
+                        current_data = self.signal._get_current_data(as_numpy=True)[
+                            np.where(self._channel_switches)
+                        ]
+                        weights = self._convert_variance_to_weights()
+
+                        # Calculate Hessian matrix for least squares
+                        hessian_matrix = self._hessian_ls(
+                            self.p0, current_data, weights
+                        )
+
+                        # Calculate parameter uncertainties from Hessian matrix
+                        # For least squares, the covariance matrix is proportional to inv(H)
+                        # where H is the Hessian. The proportionality constant depends on
+                        # the residual sum of squares and degrees of freedom.
+                        p_std, _ = (
+                            _calculate_parameter_uncertainty_from_fisher_information(
+                                hessian_matrix
+                            )
+                        )
+
+                        # Scale by residual variance for proper uncertainty estimation
+                        # Get residuals and calculate variance
+                        residuals = self._errfunc(self.p0, current_data, weights)
+                        residual_variance = np.sum(residuals**2) / (
+                            len(current_data) - len(self.p0)
+                        )
+
+                        # Scale standard deviations by residual variance
+                        if residual_variance > 0:
+                            p_std = p_std * np.sqrt(residual_variance)
+
+                        self.p_std = p_std
+
+                    except Exception as e:
+                        # If Hessian calculation fails, set to None
+                        _logger.warning(
+                            f"Could not calculate parameter uncertainties for ls fitting: {e}"
+                        )
+                        self.p_std = None
+
+                # Calculate parameter uncertainties for huber using Hessian matrix
+                # Only available for 1D models currently
+                elif loss_function == "huber" and self._signal_dimension == 1:
+                    try:
+                        # Get current data for Hessian calculation
+                        current_data = self.signal._get_current_data(as_numpy=True)[
+                            np.where(self._channel_switches)
+                        ]
+                        weights = self._convert_variance_to_weights()
+
+                        # Get huber delta parameter from kwargs if available
+                        huber_delta = kwargs.get("huber_delta", 1.0)
+
+                        # Calculate Hessian matrix for Huber loss
+                        hessian_matrix = self._hessian_huber(
+                            self.p0, current_data, weights, huber_delta
+                        )
+
+                        # Calculate parameter uncertainties from Hessian matrix
+                        p_std, _ = (
+                            _calculate_parameter_uncertainty_from_fisher_information(
+                                hessian_matrix
+                            )
+                        )
+
+                        # For Huber loss, we need to scale by appropriate variance estimate
+                        # Calculate Huber residuals and effective variance
+                        residuals = self._errfunc(self.p0, current_data, weights)
+
+                        # Effective variance for Huber loss considers the robust nature
+                        # Use median absolute deviation scaled appropriately
+                        huber_weights = (np.abs(residuals) <= huber_delta).astype(float)
+                        if np.sum(huber_weights) > 0:
+                            # Use weighted variance for residuals within delta
+                            valid_residuals = residuals[huber_weights == 1]
+                            if len(valid_residuals) > len(self.p0):
+                                residual_variance = np.sum(valid_residuals**2) / (
+                                    len(valid_residuals) - len(self.p0)
+                                )
+                            else:
+                                # Fallback to full residual variance if too few valid points
+                                residual_variance = np.sum(residuals**2) / (
+                                    len(current_data) - len(self.p0)
+                                )
+                        else:
+                            # Fallback if no residuals within delta
+                            residual_variance = np.sum(residuals**2) / (
+                                len(current_data) - len(self.p0)
+                            )
+
+                        # Scale standard deviations by residual variance
+                        if residual_variance > 0:
+                            p_std = p_std * np.sqrt(residual_variance)
+
+                        self.p_std = p_std
+
+                    except Exception as e:
+                        # If Hessian calculation fails, set to None
+                        _logger.warning(
+                            f"Could not calculate parameter uncertainties for huber fitting: {e}"
+                        )
+                        self.p_std = None
+                else:
+                    self.p_std = None
+
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
 
@@ -2753,7 +2897,8 @@ class BaseModel(list):
         >>> s = hs.signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
         >>> v1 = hs.model.components1D.Voigt()
-        >>> m.append(v1)
+        >>> v2 = hs.model.components1D.Voigt()
+        >>> m.extend([v1,v2])
 
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(

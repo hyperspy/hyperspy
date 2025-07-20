@@ -33,7 +33,7 @@ whether the optimizers find a local or global optima.
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | Optimizer                       | Bounds   | Gradients | Errors   | Loss function | Type   | Linear |
     +=================================+==========+===========+==========+===============+========+========+
-    | ``"lm"`` (default)              |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    | ``"lm"`` (default) [1]_         |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"trf"``                       |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
@@ -41,40 +41,37 @@ whether the optimizers find a local or global optima.
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"odr"``                       |  No      | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"lstsq"``                     |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    | ``"lstsq"``                     |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ols"``                       |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    | ``"ols"``                       |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"nnls"``                      |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    | ``"nnls"``                      |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ridge"``                     |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    | ``"ridge"``                     |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | :func:`scipy.optimize.minimize` | Yes [2]_ | Yes [2]_  | No       | All           | local  | No     |
+    | :func:`scipy.optimize.minimize` | Yes [3]_ | Yes [3]_  | Yes      | All           | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"Differential Evolution"``    |  Yes     | No        | No       | All           | global | No     |
+    | ``"Differential Evolution"``    |  Yes     | No        | Yes      | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"Dual Annealing"`` [3]_       |  Yes     | No        | No       | All           | global | No     |
+    | ``"Dual Annealing"``            |  Yes     | No        | Yes      | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"SHGO"`` [3]_                 |  Yes     | No        | No       | All           | global | No     |
+    | ``"SHGO"``                      |  Yes     | No        | Yes      | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
 
 .. rubric:: Footnotes
 
-.. [1] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
+.. [1] The default optimizer in HyperSpy is ``"lm"``, which stands for the `Levenberg-Marquardt
+       algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_. In
+       earlier versions of HyperSpy (< 1.6) this was known as ``"leastsq"``.
+
+.. [2] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
        in most cases. See the documentation below on :ref:`linear least square fitting <linear_fitting-label>`
        for more info.
 
-.. [2] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
+.. [3] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
        supported in HyperSpy; however, only some of them support bounds and/or gradients. For more information,
        please see the `SciPy documentation <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
-.. [3] Requires ``scipy >= 1.2.0``.
-
-
-
-The default optimizer in HyperSpy is ``"lm"``, which stands for the `Levenberg-Marquardt
-algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_. In
-earlier versions of HyperSpy (< 1.6) this was known as ``"leastsq"``.
 
 Loss functions
 ^^^^^^^^^^^^^^
@@ -220,8 +217,6 @@ such as Nelder-Mead or L-BFGS-B:
    >>> line.a1.value # doctest: +SKIP
    1.0036866523183754
 
-Estimation of the parameter errors is not currently supported for Poisson
-maximum likelihood estimation.
 
 Huber loss function
 ~~~~~~~~~~~~~~~~~~~
@@ -235,9 +230,6 @@ non-linear optimization algorithms:
 .. code-block:: python
 
    >>> m.fit(optimizer="Nelder-Mead", loss_function="huber") # doctest: +SKIP
-
-Estimation of the parameter errors is not currently supported
-for the Huber loss function.
 
 Custom loss functions
 ~~~~~~~~~~~~~~~~~~~~~
@@ -323,6 +315,11 @@ passed, using the following signature:
     >>> m.fit(optimizer='L-BFGS-B',
     ...       loss_function=my_custom_function,
     ...       grad=my_custom_gradient_function) # doctest: +SKIP
+
+.. note::
+
+    Estimation of the parameter errors is not currently supported for custom loss functions.
+
 
 Using gradient information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

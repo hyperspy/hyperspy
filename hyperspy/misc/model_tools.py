@@ -237,3 +237,65 @@ def _calculate_covariance(
     k = coefficients.shape[-1]  # the number of components
     covariance = (1 / (n - k)) * (residual * inv_fit_dot.T).T
     return covariance
+
+
+def _calculate_parameter_uncertainty_from_fisher_information(fisher_information_matrix):
+    """
+    Calculate parameter uncertainties from Fisher Information Matrix.
+
+    For maximum likelihood estimation, parameter uncertainties are given by
+    the Cramér-Rao bound: Var(θ) ≥ [I(θ)]^(-1), where I(θ) is the Fisher
+    Information Matrix (the Hessian of the negative log-likelihood).
+
+    Parameters
+    ----------
+    fisher_information_matrix : ndarray
+        The Fisher Information Matrix (Hessian of negative log-likelihood)
+
+    Returns
+    -------
+    uncertainties : ndarray
+        Parameter standard deviations (square root of diagonal of covariance matrix)
+    covariance : ndarray
+        Full covariance matrix (inverse of Fisher Information Matrix)
+    """
+    try:
+        # Calculate covariance matrix as inverse of Fisher Information Matrix
+        covariance = np.linalg.inv(fisher_information_matrix)
+
+        # Parameter uncertainties are square root of diagonal elements
+        uncertainties = np.sqrt(np.diag(covariance))
+
+        # Check for invalid results
+        if (
+            np.any(np.isnan(uncertainties))
+            or np.any(np.isinf(uncertainties))
+            or np.any(uncertainties < 0)
+        ):
+            raise np.linalg.LinAlgError("Invalid uncertainties computed")
+
+        return uncertainties, covariance
+
+    except np.linalg.LinAlgError:
+        # Handle singular matrix case - use pseudo-inverse
+        try:
+            covariance = np.linalg.pinv(fisher_information_matrix)
+            uncertainties = np.sqrt(np.diag(covariance))
+
+            # Check if pseudo-inverse gives reasonable results
+            if (
+                np.any(np.isnan(uncertainties))
+                or np.any(np.isinf(uncertainties))
+                or np.any(uncertainties < 0)
+            ):
+                # If pseudo-inverse also fails, return NaN
+                uncertainties = np.full(fisher_information_matrix.shape[0], np.nan)
+                covariance = np.full_like(fisher_information_matrix, np.nan)
+
+            return uncertainties, covariance
+
+        except Exception:
+            # If all else fails, return NaN
+            uncertainties = np.full(fisher_information_matrix.shape[0], np.nan)
+            covariance = np.full_like(fisher_information_matrix, np.nan)
+            return uncertainties, covariance
