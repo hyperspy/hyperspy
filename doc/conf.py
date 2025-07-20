@@ -11,6 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import platform
 import sys
 from datetime import datetime
 
@@ -335,7 +336,6 @@ intersphinx_mapping = {
     "dask": ("https://docs.dask.org/en/latest", None),
     "dask_image": ("https://image.dask.org/en/latest", None),
     "exspy": ("https://exspy.readthedocs.io/en/latest", None),
-    "h5py": ("https://docs.h5py.org/en/stable", None),
     "holospy": ("https://holospy.readthedocs.io/en/latest", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable", None),
     "ipyparallel": ("https://ipyparallel.readthedocs.io/en/latest", None),
@@ -350,7 +350,6 @@ intersphinx_mapping = {
     "skimage": ("https://scikit-image.org/docs/stable", None),
     "sklearn": ("https://scikit-learn.org/stable", None),
     "traits": ("https://docs.enthought.com/traits/", None),
-    "zarr": ("https://zarr.readthedocs.io/en/stable", None),
 }
 
 # Check links to API when building documentation
@@ -436,16 +435,20 @@ sphinx_gallery_conf = {
     "doc_module": ("hyperspy",),
     "filename_pattern": ".py",  # pattern to define which will be executed
     "ignore_pattern": "_sgskip.py",  # pattern to define which will not be executed
-    "compress_images": (
-        "images",
-        "thumbnails",
-    ),  # use optipng to reduce image file size
     "notebook_images": "https://hyperspy.org/hyperspy-doc/current/",  # folder for loading images in gallery
     "reference_url": {"hyperspy": None},
 }
 
-# -- Sphinx-copybutton -----------
+if platform.system() != "Windows":
+    # optipng is not straightforward to install on Windows
+    # don't use compression on Windows to avoid warning when building the documentation
+    sphinx_gallery_conf["compress_images"] = (
+        "images",
+        "thumbnails",
+    )  # use optipng to reduce image file size
 
+
+# -- Sphinx-copybutton -----------
 
 copybutton_prompt_text = r">>> |\.\.\. "
 copybutton_prompt_is_regexp = True
