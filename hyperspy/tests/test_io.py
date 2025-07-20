@@ -976,15 +976,20 @@ def test_infer_file_reader_multiple_matches_error():
 
     # Mock IO_PLUGINS to have multiple readers for the same extension
     mock_plugins = [
-        {"name": "Reader1", "file_extensions": {".test": 1}},
-        {"name": "Reader2", "file_extensions": {".test": 1}},
-        {"name": "Image", "file_extensions": {".png": 1}},  # Fallback reader
+        {"name": "Reader1", "file_extensions": ["test"]},
+        {"name": "Reader2", "file_extensions": ["test"]},
+        {"name": "Image", "file_extensions": ["png"]},  # Fallback reader
     ]
 
     with unittest.mock.patch("hyperspy.io.IO_PLUGINS", mock_plugins):
         # This should raise an error because multiple readers match .test
         with pytest.raises(ValueError, match="There are multiple file readers"):
             _infer_file_reader(".test")
+
+    with unittest.mock.patch("hyperspy.io.IO_PLUGINS", mock_plugins):
+        # This should raise an error because multiple readers match test
+        with pytest.raises(ValueError, match="There are multiple file readers"):
+            _infer_file_reader("test")
 
 
 def test_infer_file_writer_multiple_matches_error():

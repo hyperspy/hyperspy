@@ -145,7 +145,7 @@ def _infer_file_reader(string):
     Parameters
     ----------
     string : str
-        File extension, without initial "." separator
+        Format name or file extension, with or without initial "." separator.
 
     Returns
     -------
@@ -159,7 +159,9 @@ def _infer_file_reader(string):
     except ValueError:
         pass
 
-    rdrs = [rdr for rdr in IO_PLUGINS if string.lower() in rdr["file_extensions"]]
+    # In rosettaSciIO, file extensions are stored without the initial "."
+    string = string.lower().lstrip(".")
+    rdrs = [rdr for rdr in IO_PLUGINS if string in rdr["file_extensions"]]
 
     if not rdrs:
         # Try to load it with the python imaging library
