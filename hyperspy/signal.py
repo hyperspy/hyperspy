@@ -3453,30 +3453,29 @@ class BaseSignal(
                 stacklevel=2,
             )
 
+        if extension is not None:
+            file_format = extension
+
         FileIO_md = self._get_last_FileIO_metadata(operation="load")
+        FileIO_md_folder = FileIO_md.get_item("folder")
+        FileIO_md_filename = FileIO_md.get_item("filename")
+        FileIO_md_extension = FileIO_md.get_item("extension")
 
         if filename is None:
-            FileIO_md_folder = FileIO_md.get_item("folder")
-            FileIO_md_filename = FileIO_md.get_item("filename")
-            FileIO_md_extension = FileIO_md.get_item("extension")
             if FileIO_md_folder and FileIO_md_filename:
                 # Determine the extension to use
-                if FileIO_md_extension is None and file_format is not None:
+                if file_format is not None:
                     # Get the default extension for the file format from rsciio
-                    try:
-                        from hyperspy.io import _format_name_to_reader
+                    from hyperspy.io import _infer_file_reader
 
-                        writer = _format_name_to_reader(file_format)
-                        file_ext = (
-                            "." + writer["file_extensions"][writer["default_extension"]]
-                        )
-                    except (ValueError, KeyError):
-                        # If format not found in rsciio, use the file_format as extension
-                        file_ext = "." + file_format
+                    writer = _infer_file_reader(file_format)
+                    file_ext = writer["file_extensions"][writer["default_extension"]]
+                elif FileIO_md_extension:
+                    file_ext = FileIO_md_extension.lstrip(".")
                 else:
-                    file_ext = ".hspy"  # Default extension
+                    file_ext = "hspy"  # Default extension
 
-                filename = Path(FileIO_md_folder, FileIO_md_filename + file_ext)
+                filename = Path(FileIO_md_folder, f"{FileIO_md_filename}.{file_ext}")
                 # Don't override extension if it was explicitly provided
                 if extension is None and FileIO_md_extension:
                     extension = FileIO_md_extension
@@ -3485,43 +3484,35 @@ class BaseSignal(
             else:
                 raise ValueError("File name not defined.")
 
+        # make sure we don't have MutableMapping (zarr v2 store)
         if not isinstance(filename, MutableMapping):
             filename = Path(filename)
-
             # filename is a directory to be used as a base directory
             # zspy can also be directory, make sure this is treated as a base directory
             if (
                 filename.is_dir()
                 and not filename.suffix == ".zspy"
-                and FileIO_md.has_item("filename")
+                and FileIO_md_filename
             ):
                 # Filename is a directory path, construct full filename
 
                 # Determine extension from file_format, extension parameter, or the extension
                 # from metadata.General.FileIO
-                if extension is not None:
-                    file_extension = extension.lstrip(".")
-                elif file_format is not None:
+                if file_format is not None:
                     # Get the default extension for the file format from rsciio
-                    try:
-                        from hyperspy.io import _format_name_to_reader
+                    from hyperspy.io import _infer_file_reader
 
-                        writer = _format_name_to_reader(file_format)
-                        file_extension = writer["file_extensions"][
-                            writer["default_extension"]
-                        ]
-                    except (ValueError, KeyError):
-                        # If format not found in rsciio, use the file_format as extension
-                        file_extension = file_format
-                elif FileIO_md.has_item("extension"):
-                    file_extension = FileIO_md.extension.lstrip(".")
+                    writer = _infer_file_reader(file_format)
+                    file_ext = writer["file_extensions"][writer["default_extension"]]
+                elif FileIO_md_extension:
+                    file_ext = FileIO_md_extension.lstrip(".")
                 else:
-                    file_extension = "hspy"  # Default extension
+                    file_ext = "hspy"  # Default extension
 
                 # Construct full filename
-                base_filename = FileIO_md.filename
-                if not base_filename.endswith(f".{file_extension}"):
-                    full_filename = f"{base_filename}.{file_extension}"
+                base_filename = FileIO_md_filename
+                if not base_filename.endswith(f".{file_ext}"):
+                    full_filename = f"{base_filename}.{file_ext}"
                 else:
                     full_filename = base_filename
 

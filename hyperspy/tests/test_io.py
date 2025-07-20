@@ -625,7 +625,7 @@ def test_save_extension_parameter_none_handling(tmp_path):
 
     # This tests the path where extension=None and we fall back to
     # the extension from metadata.General.FileIO
-    s_loaded.save(output_dir, overwrite=True)
+    s_loaded.save(output_dir)
 
     # Should use the original extension from metadata.General.FileIO
     assert (output_dir / "source.hspy").exists()
