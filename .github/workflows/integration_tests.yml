@@ -21,8 +21,8 @@ jobs:
     uses: hyperspy/.github/.github/workflows/integration_tests.yml@main
     with:
       # don't run etspy until test suite is fixed
-      # EXTENSIONS: 'exspy holospy lumispy pyxem atomap etspy'
-      EXTENSIONS: 'exspy holospy lumispy pyxem atomap'
+      # EXTENSIONS: 'exspy holospy lumispy pyxem atomap kikuchipy hyperspy-gui-ipywidgets hyperspy-gui-traitsui etspy'
+      EXTENSIONS: 'exspy holospy lumispy pyxem atomap kikuchipy hyperspy-gui-ipywidgets hyperspy-gui-traitsui'
       EXTENSION_VERSION: ${{ matrix.EXTENSION_VERSION }}
       ROSETTASCIIO_VERSION: ${{ matrix.ROSETTASCIIO_VERSION }}
       # Use `numpy-quaternion` orix optional dependency as a workaround to fix
