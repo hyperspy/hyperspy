@@ -29,4 +29,5 @@ jobs:
       # segmentation fault issue in orix, which occurs when numpy-quaternion is
       # not installed - reason unknown.
       ADDITIONAL_PACKAGES: 'numpy-quaternion'
+      PIP_EXTRAS: '[all,tests]'
       USE_CONDA: false
