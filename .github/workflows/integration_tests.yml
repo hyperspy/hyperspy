@@ -10,7 +10,7 @@ on:
 
 jobs:
   integration_test:
-    # if: ${{ contains(github.event.pull_request.labels.*.name, 'run-integration-tests') || github.event_name == 'workflow_dispatch' }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-integration-tests') || github.event_name == 'workflow_dispatch' }}
     name: rs_${{ matrix.ROSETTASCIIO_VERSION }}-ext_${{ matrix.EXTENSION_VERSION }}
     strategy:
       fail-fast: false
