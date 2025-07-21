@@ -1,7 +1,10 @@
 name: Integration tests
 
 on:
+  pull_request_review:
+    types: [submitted, edited]
   pull_request:
+    types: [labeled, ready_for_review, reopened]
   push:
     branches-ignore:
       - 'dependabot/**'
