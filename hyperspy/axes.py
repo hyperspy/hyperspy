@@ -323,15 +323,35 @@ class BaseDataAxis(t.HasTraits):
             """.format(_name, _name, _name),
             arguments=["obj", "value"],
         )
+        self.events.axis_changed = Event(
+            """
+            Event that triggers when any attribute of the `{}` changes
+
+            Triggers after the internal state of the `{}` has been
+            updated. This includes changes to name, units, size, scale,
+            offset, axis array, navigation state, binning state, and
+            any other axis properties.
+
+            Parameters
+            ----------
+            obj : The {} that the event belongs to.
+            """.format(_name, _name, _name),
+            arguments=["obj"],
+        )
 
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
+        self._suppress_axis_changed_trigger = False
         self.name = name
         self.units = units
         self.low_index = 0
         self.on_trait_change(self._update_slice, "navigate")
         self.on_trait_change(self.update_index_bounds, "size")
         self.on_trait_change(self._update_bounds, "axis")
+        # Set up comprehensive axis change tracking
+        self.on_trait_change(
+            self._axis_changed, ["name", "units", "navigate", "is_binned"]
+        )
 
         self.index = 0
         self.navigate = navigate
@@ -343,12 +363,19 @@ class BaseDataAxis(t.HasTraits):
         # change to correctly set its value.
         self._update_slice(self.navigate)
 
+    def _axis_changed(self, name, old, new):
+        """Trigger the axis_changed event when any axis property changes."""
+        if not self._suppress_axis_changed_trigger:
+            self.events.axis_changed.trigger(obj=self)
+
     @property
     def is_uniform(self):
         return self._is_uniform
 
     def _index_changed(self, name, old, new):
         self.events.index_changed.trigger(obj=self, index=self.index)
+        if not self._suppress_axis_changed_trigger:
+            self.events.axis_changed.trigger(obj=self)
         if not self._suppress_update_value:
             new_value = self.axis[self.index]
             if new_value != self.value:
@@ -361,6 +388,8 @@ class BaseDataAxis(t.HasTraits):
             self.index = new_index
             if new == self.axis[self.index]:
                 self.events.value_changed.trigger(obj=self, value=new)
+                if not self._suppress_axis_changed_trigger:
+                    self.events.axis_changed.trigger(obj=self)
         else:
             new_value = self.index2value(new_index)
             if new_value == old:
@@ -372,6 +401,8 @@ class BaseDataAxis(t.HasTraits):
 
             elif new_value == new and not self._suppress_value_changed_trigger:
                 self.events.value_changed.trigger(obj=self, value=new)
+                if not self._suppress_axis_changed_trigger:
+                    self.events.axis_changed.trigger(obj=self)
 
     @property
     def index_in_array(self):
@@ -917,6 +948,9 @@ class DataAxis(BaseDataAxis):
             if self._is_increasing_order is None:
                 raise ValueError("The non-uniform axis needs to be ordered.")
         self.size = len(self.axis)
+        # Trigger axis_changed event after updating axis
+        if not self._suppress_axis_changed_trigger:
+            self.events.axis_changed.trigger(obj=self)
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
@@ -1073,6 +1107,8 @@ class FunctionalDataAxis(BaseDataAxis):
         self.parameters_list = list(parameters.keys())
         self.update_axis()
         self.on_trait_change(self.update_axis, self.parameters_list)
+        # Add axis_changed event tracking for parameter changes
+        self.on_trait_change(self._axis_changed, self.parameters_list)
 
     def update_axis(self):
         kwargs = {}
@@ -1082,6 +1118,9 @@ class FunctionalDataAxis(BaseDataAxis):
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
         self.size = len(self.axis)
+        # Trigger axis_changed event after updating axis
+        if not self._suppress_axis_changed_trigger:
+            self.events.axis_changed.trigger(obj=self)
 
     def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
@@ -1249,6 +1288,8 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.update_axis()
         self._is_uniform = True
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
+        # Add axis_changed event tracking for scale and offset
+        self.on_trait_change(self._axis_changed, ["scale", "offset"])
 
     def _slice_me(self, _slice):
         """Returns a slice to slice the corresponding data axis and
@@ -1351,6 +1392,9 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     def update_axis(self):
         self.axis = self.offset + self.scale * np.arange(self.size)
+        # Trigger axis_changed event after updating axis
+        if not self._suppress_axis_changed_trigger:
+            self.events.axis_changed.trigger(obj=self)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) / (index_tuple[1] - index_tuple[0])
@@ -1594,9 +1638,20 @@ class AxesManager(t.HasTraits):
             """
             Event that trigger when the space defined by the axes transforms.
 
-            Specifically, it triggers when one or more of the following
-            attributes changes on one or more of the axes:
-                `offset`, `size`, `scale`
+            This event is triggered whenever any axis property changes across all
+            axis types. It unifies monitoring of all axis modifications including:
+
+            For all axis types:
+                `name`, `units`, `navigate`, `is_binned`
+            For UniformDataAxis:
+                `offset`, `scale`, `size`
+            For DataAxis:
+                `axis` array changes
+            For FunctionalDataAxis:
+                expression parameters
+
+            This replaces the previous implementation that only tracked a subset
+            of changes and only worked reliably with UniformDataAxis.
 
             Parameters
             ----------
@@ -1624,12 +1679,17 @@ class AxesManager(t.HasTraits):
             self._on_index_changed: "_axes.index",
             self._on_slice_changed: "_axes.slice",
             self._on_size_changed: "_axes.size",
-            self._on_scale_changed: "_axes.scale",
-            self._on_offset_changed: "_axes.offset",
         }
 
         for k, v in things.items():
             self.on_trait_change(k, name=v, remove=remove)
+
+        # Connect/disconnect axis_changed events for any_axis_changed
+        for axis in self._axes:
+            if remove:
+                axis.events.axis_changed.disconnect(self._on_any_axis_changed)
+            else:
+                axis.events.axis_changed.connect(self._on_any_axis_changed)
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -1774,6 +1834,8 @@ class AxesManager(t.HasTraits):
 
         """
         axis = self._axes_getter(axis)
+        # Disconnect axis_changed event before removing
+        axis.events.axis_changed.disconnect(self._on_any_axis_changed)
         axis.axes_manager = None
         self._axes.remove(axis)
 
@@ -2002,6 +2064,8 @@ class AxesManager(t.HasTraits):
     def _append_axis(self, **kwargs):
         axis = create_axis(**kwargs)
         axis.axes_manager = self
+        # Connect axis_changed event for any_axis_changed
+        axis.events.axis_changed.connect(self._on_any_axis_changed)
         self._axes.append(axis)
 
     def _on_index_changed(self):
@@ -2015,10 +2079,8 @@ class AxesManager(t.HasTraits):
         self._update_attributes()
         self.events.any_axis_changed.trigger(obj=self)
 
-    def _on_scale_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_offset_changed(self):
+    def _on_any_axis_changed(self, obj):
+        """Handle axis_changed events from individual axes to trigger any_axis_changed."""
         self.events.any_axis_changed.trigger(obj=self)
 
     def convert_units(self, axes=None, units=None, same_units=True, factor=0.25):

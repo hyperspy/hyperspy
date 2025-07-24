@@ -75,6 +75,64 @@ class TestBaseDataAxis:
         with pytest.raises(ValueError):
             self.axis._parse_value_from_string("spam")
 
+    def test_axis_changed_event_initialization(self):
+        """Test that axis_changed event is properly initialized."""
+        assert hasattr(self.axis.events, "axis_changed")
+        assert hasattr(self.axis, "_suppress_axis_changed_trigger")
+        assert self.axis._suppress_axis_changed_trigger is False
+
+    def test_axis_changed_event_basic_properties(self):
+        """Test axis_changed event triggers on basic property changes."""
+        m = mock.Mock()
+        self.axis.events.axis_changed.connect(m.trigger_me)
+
+        # Test name change
+        self.axis.name = "Test Name"
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test units change
+        self.axis.units = "eV"
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test navigate change
+        self.axis.navigate = True
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test is_binned change
+        self.axis.is_binned = True
+        assert m.trigger_me.called
+
+    def test_axis_changed_event_suppression(self):
+        """Test that axis_changed event can be suppressed."""
+        m = mock.Mock()
+        self.axis.events.axis_changed.connect(m.trigger_me)
+
+        # Suppress the event
+        self.axis._suppress_axis_changed_trigger = True
+
+        # Change properties - should not trigger
+        self.axis.name = "Suppressed Name"
+        self.axis.units = "nm"
+        assert not m.trigger_me.called
+
+        # Re-enable and test
+        self.axis._suppress_axis_changed_trigger = False
+        self.axis.name = "Enabled Name"
+        assert m.trigger_me.called
+
+    def test_axis_changed_handler_method(self):
+        """Test the _axis_changed method directly."""
+        m = mock.Mock()
+        self.axis.events.axis_changed.connect(m.trigger_me)
+
+        # Call the handler directly
+        self.axis._axis_changed("test_property", "old_value", "new_value")
+        assert m.trigger_me.called
+        assert m.trigger_me.call_args[1]["obj"] == self.axis
+
     # Note: The following methods from BaseDataAxis rely on the self.axis.axis
     # numpy array to be initialized, and are tested in the subclasses:
     # BaseDataAxis.value2index --> tested in FunctionalDataAxis
@@ -148,6 +206,19 @@ class TestDataAxis:
         assert not m.trigger_me.called
         ax.value = ax.axis[1]
         assert m.trigger_me.called
+
+    def test_axis_changed_event_data_specific(self):
+        """Test axis_changed event for DataAxis specific properties."""
+        m = mock.Mock()
+        self.axis.events.axis_changed.connect(m.trigger_me)
+
+        # Test axis array change
+        new_axis = np.arange(10) ** 2
+        self.axis.axis = new_axis
+        assert m.trigger_me.called
+        # Verify the event contains the right information
+        call_kwargs = m.trigger_me.call_args[1]
+        assert call_kwargs["obj"] == self.axis
 
     def test_deepcopy(self):
         ac = copy.deepcopy(self.axis)
@@ -408,6 +479,25 @@ class TestFunctionalDataAxis:
         arval = np.array([1.0])
         assert np.isscalar(self.axis.value2index(arval))
 
+    def test_axis_changed_event_functional_specific(self):
+        """Test axis_changed event for FunctionalDataAxis specific properties."""
+        m = mock.Mock()
+        self.axis.events.axis_changed.connect(m.trigger_me)
+
+        # Test parameter change - use getattr/setattr to avoid static type checking issues
+        if hasattr(self.axis, "power"):
+            old_power = getattr(self.axis, "power")
+            new_power = old_power + 1
+            setattr(self.axis, "power", new_power)
+            assert m.trigger_me.called
+            call_kwargs = m.trigger_me.call_args[1]
+            assert call_kwargs["obj"] == self.axis
+            m.reset_mock()
+
+        # Test size change
+        self.axis.size = 15
+        assert m.trigger_me.called
+
 
 class TestReciprocalDataAxis:
     def setup_method(self, method):
@@ -603,6 +693,27 @@ class TestUniformDataAxis:
         ax.index = ax.index
         assert not m.trigger_me.called
         ax.index += 1
+        assert m.trigger_me.called
+
+    def test_axis_changed_event_uniform_specific(self):
+        """Test axis_changed event for UniformDataAxis specific properties."""
+        m = mock.Mock()
+        self.axis.events.axis_changed.connect(m.trigger_me)
+
+        # Test scale change
+        self.axis.scale = 0.2
+        assert m.trigger_me.called
+        call_kwargs = m.trigger_me.call_args[1]
+        assert call_kwargs["obj"] == self.axis
+        m.reset_mock()
+
+        # Test offset change
+        self.axis.offset = 5.0
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test size change
+        self.axis.size = 20
         assert m.trigger_me.called
 
     def test_convert_to_non_uniform_axis(self):

@@ -598,6 +598,184 @@ def test_iterpath_function_serpentine():
             assert indices == (2, 1, 0)
 
 
+class TestAnyAxisChangedEvent:
+    """Test the any_axis_changed event implementation and coverage."""
+
+    def test_any_axis_changed_uniform_axis(self):
+        """Test any_axis_changed triggers for UniformDataAxis changes."""
+        axes_list = [{"offset": 0, "scale": 1, "size": 10}]
+        am = AxesManager(axes_list)
+
+        m = mock.Mock()
+        am.events.any_axis_changed.connect(m.trigger_me)
+
+        # Test scale change
+        am[0].scale = 2.0
+        assert m.trigger_me.called
+        call_kwargs = m.trigger_me.call_args[1]
+        assert call_kwargs["obj"] == am
+        m.reset_mock()
+
+        # Test offset change
+        am[0].offset = 5.0
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test name change
+        am[0].name = "test"
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test units change
+        am[0].units = "eV"
+        assert m.trigger_me.called
+
+    def test_any_axis_changed_data_axis(self):
+        """Test any_axis_changed triggers for DataAxis changes."""
+        axes_list = [{"axis": np.arange(10) ** 2}]
+        am = AxesManager(axes_list)
+
+        m = mock.Mock()
+        am.events.any_axis_changed.connect(m.trigger_me)
+
+        # Test axis array change
+        am[0].axis = np.arange(10) ** 3
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test basic property changes
+        am[0].name = "energy"
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        am[0].navigate = True
+        assert m.trigger_me.called
+
+    def test_any_axis_changed_functional_axis(self):
+        """Test any_axis_changed triggers for FunctionalDataAxis changes."""
+        axes_list = [{"expression": "x * a + b", "a": 1, "b": 0, "size": 10}]
+        am = AxesManager(axes_list)
+
+        m = mock.Mock()
+        am.events.any_axis_changed.connect(m.trigger_me)
+
+        # Test parameter changes
+        am[0].a = 2
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        am[0].b = 5
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test basic property change
+        am[0].name = "functional"
+        assert m.trigger_me.called
+
+    def test_any_axis_changed_mixed_axis_types(self):
+        """Test any_axis_changed works with mixed axis types."""
+        axes_list = [
+            {"offset": 0, "scale": 1, "size": 10},  # UniformDataAxis
+            {"axis": np.arange(5) ** 2},  # DataAxis
+            {"expression": "x ** power", "power": 2, "size": 8},  # FunctionalDataAxis
+        ]
+        am = AxesManager(axes_list)
+
+        m = mock.Mock()
+        am.events.any_axis_changed.connect(m.trigger_me)
+
+        # Test changes on each axis type
+        am[0].scale = 0.5  # UniformDataAxis
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        am[1].axis = np.arange(5) ** 3  # DataAxis
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        am[2].power = 3  # FunctionalDataAxis
+        assert m.trigger_me.called
+
+    def test_any_axis_changed_axis_removal(self):
+        """Test that axis removal properly disconnects events."""
+        axes_list = [{"offset": 0, "scale": 1, "size": 10}, {"axis": np.arange(5)}]
+        am = AxesManager(axes_list)
+
+        m = mock.Mock()
+        am.events.any_axis_changed.connect(m.trigger_me)
+
+        # Get reference to axis before removal
+        axis_to_remove = am[1]
+
+        # Remove axis
+        am.remove(1)
+
+        # Manually trigger axis_changed on removed axis - should not trigger any_axis_changed
+        axis_to_remove.events.axis_changed.trigger(obj=axis_to_remove)
+        assert not m.trigger_me.called
+
+        # But changes on remaining axis should still work
+        am[0].scale = 2.0
+        assert m.trigger_me.called
+
+    def test_any_axis_changed_event_suppression(self):
+        """Test that any_axis_changed respects axis_changed suppression."""
+        axes_list = [{"offset": 0, "scale": 1, "size": 10}]
+        am = AxesManager(axes_list)
+
+        m = mock.Mock()
+        am.events.any_axis_changed.connect(m.trigger_me)
+
+        # Suppress axis_changed event
+        am[0]._suppress_axis_changed_trigger = True
+        am[0].scale = 2.0
+        assert not m.trigger_me.called
+
+        # Re-enable and test
+        am[0]._suppress_axis_changed_trigger = False
+        am[0].scale = 3.0
+        assert m.trigger_me.called
+
+    def test_on_any_axis_changed_method(self):
+        """Test the _on_any_axis_changed method directly."""
+        axes_list = [{"offset": 0, "scale": 1, "size": 10}]
+        am = AxesManager(axes_list)
+
+        m = mock.Mock()
+        am.events.any_axis_changed.connect(m.trigger_me)
+
+        # Call the handler method directly
+        am._on_any_axis_changed(obj=am[0])
+
+        # Verify it triggered any_axis_changed with correct arguments
+        assert m.trigger_me.called
+        call_kwargs = m.trigger_me.call_args[1]
+        assert call_kwargs["obj"] == am
+
+    def test_update_trait_handlers_connections(self):
+        """Test that _update_trait_handlers properly manages event connections."""
+        axes_list = [{"offset": 0, "scale": 1, "size": 10}, {"axis": np.arange(5)}]
+        am = AxesManager(axes_list)
+
+        # Verify connections are set up
+        m = mock.Mock()
+        am.events.any_axis_changed.connect(m.trigger_me)
+
+        # Trigger changes on each axis to verify connections work
+        am[0].scale = 2.0
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        am[1].name = "test"
+        assert m.trigger_me.called
+        m.reset_mock()
+
+        # Test that _update_trait_handlers works with empty axes list
+        am._axes = []
+        am._update_trait_handlers(remove=False)  # Should not crash
+        am._update_trait_handlers(remove=True)  # Should not crash
+
+
 def TestAxesManagerRagged():
     def setup_method(self, method):
         axes_list = [

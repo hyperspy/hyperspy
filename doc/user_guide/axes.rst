@@ -209,6 +209,37 @@ Summary of axis properties
   depending on the type of axis, this array may be updated from the **defining
   attributes** as discussed in the following section.
 
+.. _Axis_events:
+
+Axis change events
+^^^^^^^^^^^^^^^^^^
+
+All HyperSpy axes provide an ``axis_changed`` event that triggers whenever any 
+axis property changes. This unified event system allows you to monitor all types 
+of axis modifications in a consistent way. The event is available for all axis 
+types and triggers for changes to:
+
+* Basic properties: ``name``, ``units``, ``navigate``, ``is_binned``
+* :class:`~.axes.DataAxis`: changes to the ``axis`` array
+* :class:`~.axes.UniformDataAxis`: changes to ``scale``, ``offset``, ``size``
+* :class:`~.axes.FunctionalDataAxis`: changes to expression parameters
+
+Here's an example of connecting to the ``axis_changed`` event:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.random.random((10, 100)))
+    >>> axis = s.axes_manager.signal_axes[0]
+    >>> def on_axis_changed(obj):
+    ...     print(f"Axis '{obj.name}' has been modified!")
+    >>> axis.events.axis_changed.connect(on_axis_changed)
+    >>> axis.name = "Energy"
+    Axis 'Energy' has been modified!
+    >>> axis.units = "eV"
+    Axis 'Energy' has been modified!
+
+For more details about events and event handling, see :ref:`events-label`.
+
 
 .. _Axes_types:
 

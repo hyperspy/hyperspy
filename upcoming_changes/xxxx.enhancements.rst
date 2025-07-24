@@ -1,0 +1,13 @@
+Add ``axis_changed`` event to all axis types
+===========================================
+
+The ``axis_changed`` event has been added to all HyperSpy axis types 
+(:class:`~hyperspy.axes.BaseDataAxis`, :class:`~hyperspy.axes.DataAxis`, 
+:class:`~hyperspy.axes.UniformDataAxis`, and :class:`~hyperspy.axes.FunctionalDataAxis`). 
+This event is triggered whenever any axis property changes, including name, units, 
+size, scale, offset, axis array, navigation state, binning state, and other axis properties.
+
+This provides a unified way to monitor axis changes across all axis types and enables 
+more responsive user interfaces and better event-driven programming patterns.
+
+:py:class:`~hyperspy.axes.BaseDataAxis`
