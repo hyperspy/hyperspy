@@ -1,6 +1,3 @@
-Add ``axis_changed`` event to all axis types
-===========================================
-
 The ``axis_changed`` event has been added to all HyperSpy axis types 
 (:class:`~hyperspy.axes.BaseDataAxis`, :class:`~hyperspy.axes.DataAxis`, 
 :class:`~hyperspy.axes.UniformDataAxis`, and :class:`~hyperspy.axes.FunctionalDataAxis`). 
