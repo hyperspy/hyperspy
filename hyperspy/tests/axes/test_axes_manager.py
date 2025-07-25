@@ -832,3 +832,39 @@ def TestAxesManagerRagged():
         "---------------- | ------ | ------ | ------- | ------- | ------ \n"
         "     Ragged axis |               Variable length"
         assert self.am.__repr__() == expected_string
+
+
+class TestIteratorFunctions:
+    """Test the iterator helper functions."""
+
+    def test_serpentine_iterator(self):
+        """Test the _serpentine_iter function."""
+        shape = (2, 3)
+        iterator = _serpentine_iter(shape)
+
+        # Collect first few points
+        points = []
+        for i, point in enumerate(iterator):
+            points.append(point)
+            if i >= 5:  # Get first 6 points
+                break
+
+        # Verify serpentine pattern
+        expected = [(0, 0), (1, 0), (1, 1), (0, 1), (0, 2), (1, 2)]
+        assert points == expected
+
+    def test_flyback_iterator(self):
+        """Test the _flyback_iter function."""
+        shape = (2, 3)
+        iterator = _flyback_iter(shape)
+
+        # Collect first few points
+        points = []
+        for i, point in enumerate(iterator):
+            points.append(point)
+            if i >= 5:  # Get first 6 points
+                break
+
+        # Verify flyback pattern (same as ndindex but reversed)
+        expected = [(0, 0), (1, 0), (0, 1), (1, 1), (0, 2), (1, 2)]
+        assert points == expected

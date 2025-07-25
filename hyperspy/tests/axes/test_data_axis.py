@@ -991,3 +991,113 @@ def test_rounding_consistency_axis_type_half(shift):
     nuaxis_indices = super(type(axis), axis).value2index(test_vals)
 
     np.testing.assert_allclose(uaxis_indices, nuaxis_indices)
+
+
+class TestBaseDataAxisSlicingEdgeCases:
+    """Test edge cases in BaseDataAxis slicing."""
+
+    def test_get_array_slices_step_zero_error(self):
+        """Test that step=0 raises ValueError."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)
+
+        with pytest.raises(ValueError, match="slice step cannot be zero"):
+            axis._get_array_slices(slice(0, 5, 0))
+
+    def test_get_array_slices_float_step_non_uniform(self):
+        """Test that float steps raise error for non-uniform axes."""
+        axis = DataAxis(axis=np.array([0, 1, 4, 9, 16]))
+
+        with pytest.raises(
+            ValueError, match="Float steps are only supported for uniform axes"
+        ):
+            axis._get_array_slices(slice(0, 4, 0.5))
+
+
+class TestValueParsingEdgeCases:
+    """Test edge cases in value parsing."""
+
+    def test_parse_value_from_string_empty_string(self):
+        """Test that empty string raises ValueError."""
+        axis = UniformDataAxis(size=10)
+
+        with pytest.raises(ValueError, match="Cannot index with an empty string"):
+            axis._parse_value_from_string("")
+
+    def test_parse_value_from_string_invalid_relative(self):
+        """Test invalid relative value formats."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)
+
+        # Test invalid format after 'rel'
+        with pytest.raises(ValueError, match="`rel` must be followed by a number"):
+            axis._parse_value_from_string("relABC")
+
+        # Test out of range relative value
+        with pytest.raises(ValueError, match="Relative value must be in range"):
+            axis._parse_value_from_string("rel-0.1")
+
+        with pytest.raises(ValueError, match="Relative value must be in range"):
+            axis._parse_value_from_string("rel1.5")
+
+    def test_parse_value_from_string_unit_conversion_non_uniform(self):
+        """Test that unit conversion fails for non-uniform axes."""
+        axis = DataAxis(axis=np.array([0, 1, 4, 9, 16]))
+
+        with pytest.raises(
+            ValueError, match="Unit conversion is only supported for uniform axis"
+        ):
+            axis._parse_value_from_string("5nm")
+
+    def test_parse_value_from_string_unsupported_format(self):
+        """Test unsupported string formats."""
+        axis = UniformDataAxis(size=10)
+
+        with pytest.raises(ValueError, match="is not a suitable string for slicing"):
+            axis._parse_value_from_string("abc123")
+
+
+class TestValueRangeToIndicesEdgeCases:
+    """Test error conditions in value_range_to_indices."""
+
+    def test_value_range_to_indices_wrong_order_increasing(self):
+        """Test error when values are in wrong order for increasing axis."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)  # Increasing
+
+        with pytest.raises(ValueError, match="Wrong order of the values"):
+            axis.value_range_to_indices(5, 2)  # v1 > v2 for increasing axis
+
+    def test_value_range_to_indices_wrong_order_decreasing(self):
+        """Test error when values are in wrong order for decreasing axis."""
+        axis = UniformDataAxis(size=10, scale=-1, offset=9)  # Decreasing
+
+        with pytest.raises(ValueError, match="Wrong order of the values"):
+            axis.value_range_to_indices(2, 5)  # v1 < v2 for decreasing axis
+
+
+class TestAxisConversionsEdgeCases:
+    """Test axis conversion scenarios."""
+
+    def test_functional_axis_remove_traits_on_conversion(self):
+        """Test trait removal when converting from FunctionalDataAxis."""
+        # Create functional axis
+        axis = FunctionalDataAxis(expression="a * x + b", a=2, b=1, size=10)
+
+        # Convert to non-uniform
+        axis.convert_to_non_uniform_axis()
+
+        # Verify traits were removed
+        assert not hasattr(axis, "_expression")
+        assert not hasattr(axis, "_function")
+        assert not hasattr(axis, "x")
+
+    def test_uniform_axis_remove_traits_on_conversion(self):
+        """Test trait removal when converting from UniformDataAxis."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)
+
+        # Convert to non-uniform
+        axis.convert_to_non_uniform_axis()
+
+        # Verify traits were removed
+        with pytest.raises(AttributeError):
+            _ = axis.scale
+        with pytest.raises(AttributeError):
+            _ = axis.offset
