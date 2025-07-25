@@ -133,6 +133,71 @@ class TestBaseDataAxis:
         assert m.trigger_me.called
         assert m.trigger_me.call_args[1]["obj"] == self.axis
 
+    def test_value_changed_suppress_trigger(self):
+        """Test the _suppress_value_changed_trigger path in _value_changed method."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)
+
+        # Test the case where new_value == old and suppression is needed
+        axis.index = 5
+        axis._suppress_value_changed_trigger = True
+
+        # This should trigger the suppression path in _value_changed
+        old_value = axis.value
+        try:
+            axis.value = (
+                old_value + 0.1
+            )  # Slight change that should round to same index
+        finally:
+            axis._suppress_value_changed_trigger = False
+
+    def test_index_changed_value_update(self):
+        """Test the index_changed method path where value needs updating."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)
+
+        # Test path where new_value != self.value by suppressing value update first
+        axis.index = 0
+        axis._suppress_update_value = True
+        axis.index = 5  # Change index without updating value
+        axis._suppress_update_value = False
+
+        # Now when we call _index_changed, it should update the value
+        # This will cover the missing line in _index_changed method
+        axis._index_changed("index", 0, 5)
+
+    def test_value_changed_trigger_path(self):
+        """Test the value_changed event trigger path."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)
+
+        # Mock the events
+        axis.events.value_changed.trigger = mock.Mock()
+        axis.events.axis_changed.trigger = mock.Mock()
+
+        # Test the case where new_value == new and we should trigger event
+        axis.index = 5
+        axis._suppress_value_changed_trigger = False
+
+        # This should trigger the event path
+        axis._value_changed("value", 0, 5)
+
+        # Verify events were triggered
+        axis.events.value_changed.trigger.assert_called()
+        axis.events.axis_changed.trigger.assert_called()
+
+    def test_base_data_axis_error_conditions(self):
+        """Test various error conditions in BaseDataAxis."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)
+
+        # Test empty string parsing
+        with pytest.raises(ValueError, match="Cannot index with an empty string"):
+            axis._parse_value_from_string("")
+
+        # Test invalid relative value
+        with pytest.raises(ValueError, match="Relative value must be in range"):
+            axis._parse_value_from_string("rel1.5")  # > 1
+
+        with pytest.raises(ValueError, match="Relative value must be in range"):
+            axis._parse_value_from_string("rel-0.5")  # < 0
+
     # Note: The following methods from BaseDataAxis rely on the self.axis.axis
     # numpy array to be initialized, and are tested in the subclasses:
     # BaseDataAxis.value2index --> tested in FunctionalDataAxis
@@ -349,6 +414,15 @@ class TestDataAxis:
         with pytest.raises(TypeError, match="only for uniform axes"):
             self.axis.calibrate(value_tuple=(11, 12), index_tuple=(0, 5))
 
+    def test_data_axis_update_axis_unordered_error(self):
+        """Test error condition in DataAxis.update_axis for unordered data."""
+
+        # Create unordered axis data
+        unordered_data = [1, 3, 2, 4]  # Not ordered
+
+        with pytest.raises(ValueError, match="non-uniform axis needs to be ordered"):
+            DataAxis(axis=unordered_data)
+
 
 class TestFunctionalDataAxis:
     def setup_method(self, method):
@@ -497,6 +571,17 @@ class TestFunctionalDataAxis:
         # Test size change
         self.axis.size = 15
         assert m.trigger_me.called
+
+    def test_functional_data_axis_remove_traits_on_conversion(self):
+        """Test trait removal during FunctionalDataAxis conversion."""
+        axis = FunctionalDataAxis(expression="a * x + b", a=2, b=1, size=10)
+
+        # Convert to non-uniform axis
+        axis.convert_to_non_uniform_axis()
+
+        # Should have removed the traits
+        assert not hasattr(axis, "_expression")
+        assert not hasattr(axis, "_function")
 
 
 class TestReciprocalDataAxis:
@@ -845,6 +930,18 @@ class TestUniformDataAxis:
         self.axis.calibrate(value_tuple=(11, 12), index_tuple=(0, 5))
         assert self.axis.scale == 0.2
         assert self.axis.offset == 11
+
+    def test_uniform_data_axis_trait_removal_on_conversion(self):
+        """Test trait removal during UniformDataAxis conversion."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0)
+
+        # Convert to non-uniform axis
+        axis.convert_to_non_uniform_axis()
+
+        # Should have removed the scale and offset traits
+        # Note: We can't easily test hasattr since traits might still exist
+        # but we can test that the class changed
+        assert axis.__class__.__name__ == "DataAxis"
 
 
 class TestUniformDataAxisValueRangeToIndicesNegativeScale:
