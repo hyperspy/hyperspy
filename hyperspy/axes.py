@@ -1073,7 +1073,7 @@ class FunctionalDataAxis(BaseDataAxis):
             is_binned=is_binned,
             **parameters,
         )
-        # These trait needs to added dynamically to be removed when necessary
+        # Add x as a trait
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
             if size is t.Undefined:
@@ -1102,18 +1102,19 @@ class FunctionalDataAxis(BaseDataAxis):
         self._function = lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False
         )
+        # Add all parameters as traits
         for parameter in parameters.keys():
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
+        # Add size as a trait, but do not include in parameters_list
+        self.add_trait("size", t.Int(size))
         self.parameters_list = list(parameters.keys())
         self.update_axis()
-        self.on_trait_change(self.update_axis, self.parameters_list)
-        # Add axis_changed event tracking for parameter changes
-        self.on_trait_change(self._axis_changed, self.parameters_list)
+        # Register update_axis and _axis_changed for all parameters and size
+        self.on_trait_change(self.update_axis, self.parameters_list + ["size"])
+        self.on_trait_change(self._axis_changed, self.parameters_list + ["size"])
 
     def update_axis(self):
-        kwargs = {}
-        for kwarg in self.parameters_list:
-            kwargs[kwarg] = getattr(self, kwarg)
+        kwargs = {kwarg: getattr(self, kwarg) for kwarg in self.parameters_list}
         self.axis = self._function(x=self.x.axis, **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
@@ -1683,13 +1684,6 @@ class AxesManager(t.HasTraits):
 
         for k, v in things.items():
             self.on_trait_change(k, name=v, remove=remove)
-
-        # Connect/disconnect axis_changed events for any_axis_changed
-        for axis in self._axes:
-            if remove:
-                axis.events.axis_changed.disconnect(self._on_any_axis_changed)
-            else:
-                axis.events.axis_changed.connect(self._on_any_axis_changed)
 
     def _get_positive_index(self, axis):
         if axis < 0:

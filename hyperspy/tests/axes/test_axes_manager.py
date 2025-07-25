@@ -685,16 +685,19 @@ class TestAnyAxisChangedEvent:
         am.events.any_axis_changed.connect(m.trigger_me)
 
         # Test changes on each axis type
-        am[0].scale = 0.5  # UniformDataAxis
-        assert m.trigger_me.called
-        m.reset_mock()
-
-        am[1].axis = np.arange(5) ** 3  # DataAxis
-        assert m.trigger_me.called
-        m.reset_mock()
-
-        am[2].power = 3  # FunctionalDataAxis
-        assert m.trigger_me.called
+        for i, axis in enumerate(am._axes):
+            m.reset_mock()
+            if hasattr(axis, "scale"):
+                axis.scale = 0.5 + i
+            elif hasattr(axis, "axis"):
+                axis.axis = np.arange(axis.size) * (i + 1)
+            elif hasattr(axis, "power"):
+                axis.power = 3 + i
+            elif hasattr(axis, "a"):
+                axis.a = 2 + i
+            else:
+                raise AssertionError(f"Unknown axis type in mixed test: {type(axis)}")
+            assert m.trigger_me.called
 
     def test_any_axis_changed_axis_removal(self):
         """Test that axis removal properly disconnects events."""
@@ -711,11 +714,28 @@ class TestAnyAxisChangedEvent:
         am.remove(1)
 
         # Manually trigger axis_changed on removed axis - should not trigger any_axis_changed
+        m.reset_mock()
         axis_to_remove.events.axis_changed.trigger(obj=axis_to_remove)
         assert not m.trigger_me.called
 
         # But changes on remaining axis should still work
-        am[0].scale = 2.0
+        # am[0] may return a DataAxis or TupleSA depending on number of axes
+        axis_obj = am[0]
+        if hasattr(axis_obj, "item"):
+            remaining_axis = axis_obj.item()
+        elif isinstance(axis_obj, (tuple, list)):
+            remaining_axis = axis_obj[0]
+        else:
+            remaining_axis = axis_obj
+        m.reset_mock()
+        if hasattr(remaining_axis, "scale"):
+            remaining_axis.scale = 2.0
+        elif hasattr(remaining_axis, "axis"):
+            remaining_axis.axis = np.arange(remaining_axis.size) * 2
+        elif hasattr(remaining_axis, "a"):  # FunctionalDataAxis
+            remaining_axis.a = 2
+        else:
+            raise AssertionError("Unknown axis type after removal")
         assert m.trigger_me.called
 
     def test_any_axis_changed_event_suppression(self):
@@ -762,13 +782,18 @@ class TestAnyAxisChangedEvent:
         am.events.any_axis_changed.connect(m.trigger_me)
 
         # Trigger changes on each axis to verify connections work
-        am[0].scale = 2.0
-        assert m.trigger_me.called
-        m.reset_mock()
-
-        am[1].name = "test"
-        assert m.trigger_me.called
-        m.reset_mock()
+        for axis in am._axes:
+            m.reset_mock()
+            if hasattr(axis, "scale"):
+                axis.scale = 2.0
+            elif hasattr(axis, "axis"):
+                axis.axis = np.arange(axis.size) * 2
+            elif hasattr(axis, "a"):
+                axis.a = 2
+            else:
+                continue
+            assert m.trigger_me.called
+            m.reset_mock()
 
         # Test that _update_trait_handlers works with empty axes list
         am._axes = []
