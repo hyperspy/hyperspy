@@ -26,12 +26,13 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from rsciio import IO_PLUGINS
+import rsciio
 
 import hyperspy.api as hs
 from hyperspy import __version__ as hs_version
 from hyperspy.axes import DataAxis
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Signal1D
 
 PATH = Path(__file__).resolve()
@@ -111,7 +112,7 @@ class TestNonUniformAxisCheck:
             self.s.save("tmp.msa", overwrite=True)
 
     def test_nonuniform_writer_characteristic(self):
-        for plugin in IO_PLUGINS:
+        for plugin in rsciio.IO_PLUGINS:
             if "non_uniform_axis" not in plugin:
                 print(
                     plugin.name + " IO-plugin is missing the "
@@ -122,7 +123,7 @@ class TestNonUniformAxisCheck:
         assert self.s.axes_manager[0].is_uniform is False
         incompatible_writers = [
             plugin["file_extensions"][plugin["default_extension"]]
-            for plugin in IO_PLUGINS
+            for plugin in rsciio.IO_PLUGINS
             if (
                 plugin["writes"] is True
                 or plugin["writes"] is not False
@@ -331,38 +332,35 @@ def test_load_save_filereader_metadata(tmp_path):
     fname = PATH.parent / "drawing" / "data" / "Cr_L_cl.hspy"
     with pytest.warns(VisibleDeprecationWarning):
         s = hs.load(fname)
-    assert s.metadata.General.FileIO.Number_0.io_plugin == "rsciio.hspy"
-    assert s.metadata.General.FileIO.Number_0.operation == "load"
-    assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
+    assert s.metadata.General.FileIO[0].io_plugin == "rsciio.hspy"
+    assert s.metadata.General.FileIO[0].operation == "load"
+    assert s.metadata.General.FileIO[0].hyperspy_version == hs_version
 
     f = tmp_path / "temp"
     s.save(f)
-    expected = {
-        "0": {
+    expected = {}
+    for i, operation in enumerate(["load", "save", "load"]):
+        expected[str(i)] = {
             "io_plugin": "rsciio.hspy",
-            "operation": "load",
+            "operation": operation,
             "hyperspy_version": hs_version,
-        },
-        "1": {
-            "io_plugin": "rsciio.hspy",
-            "operation": "save",
-            "hyperspy_version": hs_version,
-        },
-        "2": {
-            "io_plugin": "rsciio.hspy",
-            "operation": "load",
-            "hyperspy_version": hs_version,
-        },
-    }
-    del s.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
-    del s.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
-    assert s.metadata.General.FileIO.Number_0.as_dictionary() == expected["0"]
-    assert s.metadata.General.FileIO.Number_1.as_dictionary() == expected["1"]
+            "rosettasciio_version": rsciio.__version__,
+            "folder": str(tmp_path),
+            "extension": ".hspy",
+            "filename": "temp",
+        }
+    expected["0"]["folder"] = str(fname.parent)
+    expected["0"]["filename"] = fname.stem
+
+    del s.metadata.General.FileIO[0].timestamp  # runtime dependent
+    del s.metadata.General.FileIO[1].timestamp  # runtime dependent
+    assert s.metadata.General.FileIO[0].as_dictionary() == expected["0"]
+    assert s.metadata.General.FileIO[1].as_dictionary() == expected["1"]
 
     t = hs.load(tmp_path / "temp.hspy")
-    del t.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
-    del t.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
-    del t.metadata.General.FileIO.Number_2.timestamp  # runtime dependent
+    del t.metadata.General.FileIO[0].timestamp  # runtime dependent
+    del t.metadata.General.FileIO[1].timestamp  # runtime dependent
+    del t.metadata.General.FileIO[2].timestamp  # runtime dependent
     assert t.metadata.General.FileIO.as_dictionary() == expected
 
 
@@ -408,7 +406,7 @@ def test_save_extension_parameter_with_directory_path(tmp_path):
     """Test extension parameter works with directory paths (backward compatibility)."""
     s = Signal1D(np.arange(10))
 
-    # Create a source file to get tmp_parameters
+    # Create a source file to populate metadata.General.FileIO
     source_file = tmp_path / "source.hspy"
     s.save(source_file)
     s_loaded = hs.load(source_file)
@@ -439,7 +437,7 @@ def test_save_file_format_parameter_with_directory_path(tmp_path):
     """Test file_format parameter works correctly with directory paths."""
     s = Signal1D(np.arange(10))
 
-    # Create a source file to get tmp_parameters
+    # Create a source file to populate metadata.General.FileIO
     source_file = tmp_path / "source.hspy"
     s.save(source_file)
     s_loaded = hs.load(source_file)
@@ -453,12 +451,15 @@ def test_save_file_format_parameter_with_directory_path(tmp_path):
     assert (output_dir / "source.msa").exists()
 
 
-def test_save_extension_precedence_with_file_format_fallback(tmp_path):
+@pytest.mark.parametrize("file_format", ["hspy", "zspy"])
+def test_save_extension_precedence_with_file_format_fallback(tmp_path, file_format):
     """Test the precedence order when extension is deprecated."""
+    if file_format == "zspy":
+        pytest.importorskip("zspy")
     s = Signal1D(np.arange(10))
 
-    # Create a source file to get tmp_parameters
-    source_file = tmp_path / "source.hspy"
+    # Create a source file to populate metadata.General.FileIO
+    source_file = tmp_path / f"source.{file_format}"
     s.save(source_file)
     s_loaded = hs.load(source_file)
 
@@ -466,23 +467,25 @@ def test_save_extension_precedence_with_file_format_fallback(tmp_path):
     output_dir.mkdir()
 
     # When only file_format is provided (no extension), it should use file_format
-    s_loaded.save(output_dir, file_format="msa", overwrite=True)
-    assert (output_dir / "source.msa").exists()
+    s_loaded.save(output_dir, file_format=file_format, overwrite=True)
+    assert (output_dir / f"source.{file_format}").exists()
 
-    # Clean up
-    (output_dir / "source.msa").unlink()
-
-    # When neither extension nor file_format is provided, should fall back to current tmp_parameters
-    # Note: tmp_parameters are updated after each save, so this will use .msa format
+    s_loaded.data *= 2
+    # When neither extension nor file_format is provided, should fall back to current
+    # metadata.General.FileIO
+    # Note: metadata.General.FileIO are updated after each save, so this will use file_format
     s_loaded.save(output_dir, overwrite=True)
-    assert (output_dir / "source.msa").exists()
+    assert (output_dir / f"source.{file_format}").exists()
+    # Check that the file has been overwritten
+    s_loaded2 = hs.load(output_dir / f"source.{file_format}")
+    np.testing.assert_allclose(s_loaded2.data, s_loaded.data)
 
 
 def test_save_extension_parameter_maps_to_file_format(tmp_path):
     """Test that the deprecated extension parameter correctly determines the output file extension."""
     s = Signal1D(np.arange(10))
 
-    # Create a source file to get tmp_parameters
+    # Create a source file to populate metadata.General.FileIO
     source_file = tmp_path / "source.hspy"
     s.save(source_file)
     s_loaded = hs.load(source_file)
@@ -520,7 +523,7 @@ def test_save_file_format_unknown_format_error(tmp_path, caplog):
     """Test that unknown file_format raises a ValueError."""
     s = Signal1D(np.arange(10))
 
-    # Create a source file to get tmp_parameters
+    # Create a source file to populate metadata.General.FileIO
     source_file = tmp_path / "source.hspy"
     s.save(source_file)
     s_loaded = hs.load(source_file)
@@ -568,14 +571,13 @@ def test_save_base_filename_already_has_extension(tmp_path):
     s = Signal1D(np.arange(10))
 
     # Create a source file with a specific name that already includes the target extension
-    source_file = tmp_path / "data.msa"  # Note: saving as .msa but with .msa name
-    s.save(
-        source_file.with_suffix(".hspy")
-    )  # First save as .hspy to get tmp_parameters
-    s_loaded = hs.load(source_file.with_suffix(".hspy"))
+    # and save to populate metadata.General.FileIO
+    source_file = tmp_path / "data.hspy"
+    s.save(source_file)
+    s_loaded = hs.load(source_file)
 
-    # Manually set the tmp_parameters filename to include the extension
-    s_loaded.tmp_parameters.filename = "data.msa"
+    # Manually set the metadata.General.FileIO filename to include the extension
+    s_loaded.metadata.General.FileIO[0].filename = "data.msa"
 
     output_dir = tmp_path / "output"
     output_dir.mkdir()
@@ -611,20 +613,21 @@ def test_save_extension_parameter_none_handling(tmp_path):
     """Test the extension=None handling logic in filename construction."""
     s = Signal1D(np.arange(10))
 
-    # Create a source file to get tmp_parameters
+    # Create a source file to get metadata.General.FileIO
     source_file = tmp_path / "source.hspy"
     s.save(source_file)
     s_loaded = hs.load(source_file)
 
     # Save to None filename with no extension parameter (extension=None)
-    # This should use tmp_parameters for everything
+    # This should use metadata.General.FileIO for everything
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
-    # This tests the path where extension=None and we fall back to tmp_parameters.extension
-    s_loaded.save(output_dir, overwrite=True)
+    # This tests the path where extension=None and we fall back to
+    # the extension from metadata.General.FileIO
+    s_loaded.save(output_dir)
 
-    # Should use the original extension from tmp_parameters
+    # Should use the original extension from metadata.General.FileIO
     assert (output_dir / "source.hspy").exists()
 
 
@@ -632,7 +635,7 @@ def test_save_file_format_with_directory_ending_slash(tmp_path):
     """Test that directory path detection works with explicit trailing slash."""
     s = Signal1D(np.arange(10))
 
-    # Create a source file to get tmp_parameters
+    # Create a source file to populate metadata.General.FileIO
     source_file = tmp_path / "source.hspy"
     s.save(source_file)
     s_loaded = hs.load(source_file)
@@ -647,20 +650,20 @@ def test_save_file_format_with_directory_ending_slash(tmp_path):
     assert (output_dir / "source.msa").exists()
 
 
-def test_save_extension_parameter_overrides_tmp_parameters_extension(tmp_path):
-    """Test that explicit extension parameter overrides tmp_parameters.extension."""
+def test_save_extension_parameter_overrides_FileIO_md_extension(tmp_path):
+    """Test that explicit extension parameter overrides metadata.General.FileIO.extension."""
     s = Signal1D(np.arange(10))
 
-    # Create a source file to get tmp_parameters with .hspy extension
+    # Create a source file to get populate metadata.General.FileIO
     source_file = tmp_path / "source.hspy"
     s.save(source_file)
     s_loaded = hs.load(source_file)
 
-    # Use extension parameter to override the tmp_parameters extension
+    # Use extension parameter to override the metadata.General.FileIO extension
     with pytest.warns(FutureWarning):
         s_loaded.save(tmp_path / "test", extension="msa", overwrite=True)
 
-    # Should create .msa file, overriding the .hspy from tmp_parameters
+    # Should create .msa file, overriding the .hspy from metadata.General.FileIO
     assert (tmp_path / "test.msa").exists()
     assert not (tmp_path / "test.hspy").exists()
 
@@ -767,34 +770,45 @@ def test_load_reader_and_file_format_conflict(tmp_path):
         load_single_file(str(filename), file_format="HSPY", reader="HSPY")
 
 
-def test_save_without_filename_no_tmp_parameters():
-    """Test save without filename when tmp_parameters are not available."""
+def test_save_without_filename_no_FileIO_md():
+    """Test save without filename when metadata.General.FileIO are not available."""
     s = hs.signals.Signal1D([1, 2, 3])
 
-    # Clear tmp_parameters to simulate a signal not loaded from file
-    s.tmp_parameters = s.tmp_parameters.__class__()
+    # Make empty metadata.General.FileIO to simulate a signal without FileIO metadata
+    s.metadata.set_item("General.FileIO.Number_0", DictionaryTreeBrowser())
 
     with pytest.raises(ValueError, match="File name not defined"):
         s.save(filename=None, file_format="hspy")
 
 
-def test_save_without_filename_missing_folder(tmp_path):
-    """Test save without filename when folder is missing from tmp_parameters."""
+def test_save_without_filename_FileIO_md_missing_folder(tmp_path):
+    """Test save without filename when folder is missing from metadata.General.FileIO."""
     s = hs.signals.Signal1D([1, 2, 3])
 
-    # Set only filename, not folder
-    s.tmp_parameters.filename = "test"
+    # Make empty metadata.General.FileIO to simulate a signal without FileIO metadata
+    s.metadata.set_item("General.FileIO.Number_0", DictionaryTreeBrowser())
+    s.metadata.General.FileIO.Number_0.operation = "load"
+    s.metadata.General.FileIO.Number_0.filename = "test"
 
     with pytest.raises(ValueError, match="File name not defined"):
         s.save(filename=None, file_format="hspy")
 
+    s.metadata.General.FileIO.Number_0.folder = tmp_path
+    # check that it works with folder set
+    s.save(filename=None, file_format="msa")
+    assert (tmp_path / "test.msa").exists()
 
-def test_save_without_filename_missing_filename(tmp_path):
-    """Test save without filename when filename is missing from tmp_parameters."""
+    # check that it works with default file_format
+    s.save(filename=None)
+    assert (tmp_path / "test.hspy").exists()
+
+
+def test_save_without_filename_FileIO_md_missing_filename(tmp_path):
+    """Test save without filename when filename is missing from metadata.General.FileIO."""
     s = hs.signals.Signal1D([1, 2, 3])
 
     # Set only folder, not filename
-    s.tmp_parameters.folder = str(tmp_path)
+    s._get_last_FileIO_metadata().folder = str(tmp_path)
 
     with pytest.raises(ValueError, match="File name not defined"):
         s.save(filename=None, file_format="hspy")
@@ -876,16 +890,15 @@ def test_infer_file_writer_unsupported_extension():
 
 def test_infer_file_writer_read_only_format():
     """Test _infer_file_writer with read-only format extension."""
-    from rsciio import IO_PLUGINS
 
     from hyperspy.io import _infer_file_writer
 
     # Find a read-only format that doesn't have any writable counterparts
-    read_only_formats = [p for p in IO_PLUGINS if not p["writes"]]
+    read_only_formats = [p for p in rsciio.IO_PLUGINS if not p["writes"]]
 
     # Get all extensions from writable formats to avoid conflicts
     writable_extensions = set()
-    for p in IO_PLUGINS:
+    for p in rsciio.IO_PLUGINS:
         if p["writes"]:
             for ext in p["file_extensions"]:
                 writable_extensions.add(ext.lower())
@@ -963,15 +976,20 @@ def test_infer_file_reader_multiple_matches_error():
 
     # Mock IO_PLUGINS to have multiple readers for the same extension
     mock_plugins = [
-        {"name": "Reader1", "file_extensions": {".test": 1}},
-        {"name": "Reader2", "file_extensions": {".test": 1}},
-        {"name": "Image", "file_extensions": {".png": 1}},  # Fallback reader
+        {"name": "Reader1", "file_extensions": ["test"]},
+        {"name": "Reader2", "file_extensions": ["test"]},
+        {"name": "Image", "file_extensions": ["png"]},  # Fallback reader
     ]
 
     with unittest.mock.patch("hyperspy.io.IO_PLUGINS", mock_plugins):
         # This should raise an error because multiple readers match .test
         with pytest.raises(ValueError, match="There are multiple file readers"):
             _infer_file_reader(".test")
+
+    with unittest.mock.patch("hyperspy.io.IO_PLUGINS", mock_plugins):
+        # This should raise an error because multiple readers match test
+        with pytest.raises(ValueError, match="There are multiple file readers"):
+            _infer_file_reader("test")
 
 
 def test_infer_file_writer_multiple_matches_error():
@@ -1191,28 +1209,9 @@ def test_save_conflicting_parameters(tmp_path):
         s.save(filename, extension="hspy", file_format="MSA")
 
 
-def test_save_filename_none_with_file_format(tmp_path):
-    """Test save method with filename=None and file_format."""
+def test_save_filename_none_without_FileIO_md():
+    """Test save method with filename=None but no metadata.General.FileIO."""
     s = hs.signals.Signal1D([1, 2, 3])
-
-    # Set up tmp_parameters
-    s.tmp_parameters.filename = "test_signal"
-    s.tmp_parameters.folder = str(tmp_path)
-
-    # Save with filename=None and file_format
-    s.save(filename=None, file_format="HSPY")
-
-    # Check that file was created
-    expected_file = tmp_path / "test_signal.hspy"
-    assert expected_file.exists()
-
-
-def test_save_filename_none_without_tmp_parameters():
-    """Test save method with filename=None but no tmp_parameters."""
-    s = hs.signals.Signal1D([1, 2, 3])
-
-    # Clear tmp_parameters
-    s.tmp_parameters = s.tmp_parameters.__class__()
 
     # Should raise ValueError
     with pytest.raises(ValueError, match="File name not defined"):

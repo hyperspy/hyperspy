@@ -145,7 +145,7 @@ def _infer_file_reader(string):
     Parameters
     ----------
     string : str
-        File extension, without initial "." separator
+        Format name or file extension, with or without initial "." separator.
 
     Returns
     -------
@@ -159,7 +159,9 @@ def _infer_file_reader(string):
     except ValueError:
         pass
 
-    rdrs = [rdr for rdr in IO_PLUGINS if string.lower() in rdr["file_extensions"]]
+    # In rosettaSciIO, file extensions are stored without the initial "."
+    string = string.lower().lstrip(".")
+    rdrs = [rdr for rdr in IO_PLUGINS if string in rdr["file_extensions"]]
 
     if not rdrs:
         # Try to load it with the python imaging library
@@ -700,22 +702,17 @@ def load_single_file(filename, **kwds):
     kwds["file_format"] = file_format
 
     # in case filename is a zarr store, we want to the path and not the store
-    path = _parse_path(filename)
+    path = Path(_parse_path(filename)).resolve()
 
-    if not os.path.isfile(path) and not (
-        os.path.isdir(path) and os.path.splitext(path)[1] == ".zspy"
-    ):
+    if not path.exists():
         raise FileNotFoundError(f"File: {path} not found!")
-
-    # File extension without "." separator
-    file_ext = os.path.splitext(path)[1][1:]
 
     # Get file_format from kwds (passed from main load function)
     file_format = kwds.pop("file_format", None)
 
     if file_format is None:
-        # Infer file reader based on extension
-        reader = _infer_file_reader(file_ext)
+        # Infer file reader based on extension (without "." separator)
+        reader = _infer_file_reader(path.suffix.lstrip("."))
     elif isinstance(file_format, str):
         # Infer file reader based on provided kwarg string
         reader = _infer_file_reader(file_format)
@@ -729,7 +726,7 @@ def load_single_file(filename, **kwds):
 
     try:
         # Try and load the file
-        return load_with_reader(filename=filename, reader=reader, **kwds)
+        return load_with_reader(filename, path, reader, **kwds)
 
     except BaseException:
         _logger.error(
@@ -741,7 +738,8 @@ def load_single_file(filename, **kwds):
 
 
 def load_with_reader(
-    filename,
+    filename,  # filename can be zarr store
+    path,
     reader,
     signal_type=None,
     convert_units=False,
@@ -756,7 +754,7 @@ def load_with_reader(
         )
     else:
         # We assume it is a module
-        file_data_list = reader.file_reader(filename, **kwds)
+        file_data_list = reader.file_reader(path, **kwds)
     signal_list = []
 
     for signal_dict in file_data_list:
@@ -766,18 +764,8 @@ def load_with_reader(
             if signal_type is not None:
                 signal_dict["metadata"]["Signal"]["signal_type"] = signal_type
             signal = dict2signal(signal_dict, lazy=lazy)
-            signal = _add_file_load_save_metadata("load", signal, reader)
-            path = _parse_path(filename)
-            folder, filename = os.path.split(os.path.abspath(path))
-            filename, extension = os.path.splitext(filename)
-            signal.tmp_parameters.folder = folder
-            signal.tmp_parameters.filename = filename
-            signal.tmp_parameters.extension = extension
-            # original_filename and original_file are used to keep track of
-            # where is the file which has been open lazily
-            signal.tmp_parameters.original_folder = folder
-            signal.tmp_parameters.original_filename = filename
-            signal.tmp_parameters.original_extension = extension
+            signal = _add_file_load_save_metadata("load", signal, reader, path)
+
             # test if binned attribute is still in metadata
             if signal.metadata.has_item("Signal.binned"):
                 for axis in signal.axes_manager.signal_axes:
@@ -1013,8 +1001,8 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
     ----------
     filename : None, str, pathlib.Path
         The filename to save the signal to. If None and file_format is provided,
-        the filename will be constructed from signal.tmp_parameters.folder and
-        signal.tmp_parameters.filename with the appropriate extension.
+        the filename will be constructed from ``folder`` and ``filename`` defined
+        in ``metadata.General.FileIO`` with the appropriate extension.
     signal : Hyperspy signal
         The signal to be saved to the file.
     overwrite : None, bool, optional
@@ -1031,28 +1019,26 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
     None
 
     """
+    # Get the last load
+    FileIO_md = signal._get_last_FileIO_metadata(operation="load")
 
     # Handle case where filename is None but file_format is provided
     if filename is None and file_format is not None:
-        if signal.tmp_parameters.has_item(
-            "filename"
-        ) and signal.tmp_parameters.has_item("folder"):
-            # Construct filename from tmp_parameters
+        if FileIO_md.has_item("filename") and FileIO_md.has_item("folder"):
+            # Construct filename from FileIO_md
             writer = _infer_file_reader(file_format)
             extension = "." + writer["file_extensions"][writer["default_extension"]]
-            filename = Path(
-                signal.tmp_parameters.folder, signal.tmp_parameters.filename + extension
-            )
+            filename = Path(FileIO_md.folder, FileIO_md.filename + extension)
         else:
             raise ValueError(
-                "Cannot construct filename: signal.tmp_parameters.filename and/or "
-                "signal.tmp_parameters.folder are not defined. Please provide a filename."
+                "Cannot construct filename: filename and/or folder are not defined "
+                "in metadata.General.FileIO. Please provide a filename."
             )
     elif filename is None:
         raise ValueError(
             "Either filename or file_format must be provided. "
-            "If file_format is provided, signal.tmp_parameters.filename and "
-            "signal.tmp_parameters.folder must be defined."
+            "If file_format is provided, the filename and folder must be "
+            "defined in metadata.General.FileIO."
         )
 
     writer = None
@@ -1110,7 +1096,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
     if not isinstance(filename, MutableMapping):
         ensure_directory(filename.parent)
         is_file = filename.is_file() or (
-            filename.is_dir() and os.path.splitext(filename)[1] == ".zspy"
+            filename.is_dir() and filename.suffix == ".zspy"
         )
 
         if overwrite is None:
@@ -1124,28 +1110,14 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
     else:
         write = True  # file does not exist (creating it)
     if write:
-        # Pass as a string for now, pathlib.Path not
-        # properly supported in io_plugins
-        signal = _add_file_load_save_metadata("save", signal, writer)
+        path = Path(_parse_path(filename)).resolve()
+        signal = _add_file_load_save_metadata("save", signal, writer, path)
         signal_dic = signal._to_dictionary(add_models=True)
         signal_dic["package_info"] = get_object_package_info(signal)
-        if not isinstance(filename, MutableMapping):
-            importlib.import_module(writer["api"]).file_writer(
-                str(filename), signal_dic, **kwds
-            )
-            _logger.info(f"{filename} was created")
-            signal.tmp_parameters.set_item("folder", filename.parent)
-            signal.tmp_parameters.set_item("filename", filename.stem)
-            signal.tmp_parameters.set_item("extension", extension)
-        else:
-            importlib.import_module(writer["api"]).file_writer(
-                filename, signal_dic, **kwds
-            )
-            if hasattr(filename, "path"):
-                file = Path(filename.path).resolve()
-                signal.tmp_parameters.set_item("folder", file.parent)
-                signal.tmp_parameters.set_item("filename", file.stem)
-                signal.tmp_parameters.set_item("extension", extension)
+
+        # write the file
+        importlib.import_module(writer["api"]).file_writer(filename, signal_dic, **kwds)
+        _logger.info(f"{path} was created")
 
 
 save.__doc__ %= _get_format_list_for_docstring(write_mode=True).replace(
@@ -1153,13 +1125,17 @@ save.__doc__ %= _get_format_list_for_docstring(write_mode=True).replace(
 )
 
 
-def _add_file_load_save_metadata(operation, signal, io_plugin):
+def _add_file_load_save_metadata(operation, signal, io_plugin, path):
     mdata_dict = {
         "operation": operation,
+        "filename": path.stem,
+        "folder": str(path.parent),
+        "extension": path.suffix,
         "io_plugin": io_plugin["api"]
         if isinstance(io_plugin, dict)
         else io_plugin.__loader__.name,
         "hyperspy_version": hs_version,
+        "rosettasciio_version": rsciio.__version__,
         "timestamp": datetime.now().astimezone().isoformat(),
     }
     # get the largest integer key present under General.FileIO, returning 0

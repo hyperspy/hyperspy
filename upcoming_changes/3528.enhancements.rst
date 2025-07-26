@@ -1,0 +1,1 @@
+Deprecate poorly documented ``tmp_parameters`` in favour of :ref:`FileIO <general-file-metadata>` metadata.

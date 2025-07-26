@@ -1126,8 +1126,8 @@ def test_load_old_markers():
     s.save("signal_markers_hs1_7_5.hspy")
     """
     s = hs.load(FILE_PATH / "data" / "signal_markers_hs1_7_5.hspy")
-    s.metadata.General.original_filename = ""
-    s.tmp_parameters.filename = ""
+    # to avoid using the file name for the title of the figure
+    s.metadata.General.FileIO[1].filename = ""
     s.plot(axes_ticks=True)
     return s._plot.signal_plot.figure
 
