@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -171,7 +171,7 @@ DISPLAY_DT = """display : bool
 TOOLKIT_DT = """toolkit : str, iterable of str or None
             If None (default), all available widgets are displayed or returned.
             If string, only the widgets of the selected toolkit are displayed
-            if available. If an interable of toolkit strings, the widgets of
+            if available. If an iterable of toolkit strings, the widgets of
             all listed toolkits are displayed or returned."""
 GUI_DT = """Display or return interactive GUI element if available.
 

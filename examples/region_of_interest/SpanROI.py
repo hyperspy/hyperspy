@@ -17,8 +17,8 @@ s = hs.data.two_gaussians()
 roi = hs.roi.SpanROI(left=10, right=20)
 
 #%%
-# Slice signal with roi with the ROI. By using the `interactive` function, the
-# output signal ``s_roi`` will update automatically.
+# Slice signal with roi with the ROI. By using the :meth:`~hyperspy.roi.BaseInteractiveROI.interactive`
+# function, the output signal ``s_roi`` will update automatically.
 # The ROI will be added automatically on the signal figure.
 #
 # Specify the ``axes`` to add the ROI on either the navigation or signal dimension:

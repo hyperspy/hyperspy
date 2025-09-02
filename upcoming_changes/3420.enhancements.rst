@@ -1,1 +1,0 @@
-Add parameters to :func:`~.api.data.atomic_resolution_image` to set the spacing and rotation of the lattice and the size of the signal.

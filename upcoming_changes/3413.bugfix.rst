@@ -1,1 +1,0 @@
-Fix loading :class:`~.api.model.components1D.Polynomial` component saved with hyperspy <= 2.1.1.

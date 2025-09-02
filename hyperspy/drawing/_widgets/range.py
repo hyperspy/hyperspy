@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -52,7 +52,6 @@ class RangeWidget(ResizableDraggableWidgetBase):
             dict(
                 onselect=lambda *args, **kwargs: None,
                 interactive=True,
-                onmove_callback=self._span_changed,
                 drag_from_anywhere=True,
                 ignore_event_outside=True,
                 grab_range=preferences.Plot.pick_tolerance,
@@ -130,6 +129,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
             useblit=ax.figure.canvas.supports_blit,
         )
         self.span = SpanSelector(ax, **self._SpanSelector_kwargs)
+        self.span.connect_event("motion_notify_event", self._span_changed)
         self._set_span_extents(*self._get_range())
         self._patch = list(self.span.artists)
 

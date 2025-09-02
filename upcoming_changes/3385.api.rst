@@ -1,1 +1,0 @@
-Explicitely deprecate ``rechunk`` keyword argument in :meth:`~.api.signals.BaseSignal.derivative`, which isn't doing anything since HyperSpy 1.7.

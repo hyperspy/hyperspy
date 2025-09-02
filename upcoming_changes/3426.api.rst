@@ -1,1 +1,0 @@
-Linear optimizer ``"ridge_regression"`` is renamed to ``"ridge"`` in :meth:`~.model.BaseModel.fit`.

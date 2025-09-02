@@ -1,1 +1,0 @@
-Disable snap to axes for non uniform axis to avoid error when using ROI on non-uniform axis.

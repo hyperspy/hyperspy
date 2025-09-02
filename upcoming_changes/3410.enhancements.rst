@@ -1,1 +1,0 @@
-Add support to convert to uniform axis in :meth:`~.api.signals.BaseSignal.interpolate_on_axis`.

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -332,6 +332,12 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def _gradient_ml(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _hessian_ml(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _hessian_ls(self, param, y, weights=None):
         raise NotImplementedError
 
     def _gradient_ls(self, param, y, weights=None):

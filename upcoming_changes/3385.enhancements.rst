@@ -1,1 +1,0 @@
-Improvement of indexing of the :class:`~.axes.AxesManager`: ``"nav"`` and ``"sig"`` can be used to index the navigation and signal axes, respectively. This can also be used for the ``axes`` or ``axis`` keywords arguments, for example ``s.sum(axis="sig")`` will compute the sum over the signal axes.

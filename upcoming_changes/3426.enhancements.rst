@@ -1,5 +1,0 @@
-Linear optimizer improvements:
-
-- add linear optimizer using :class:`sklearn.linear_model.LinearRegression` with/without positive constraint; they can be used with ``optimizer="ols"`` or ``optimizer="nnls"``,
-- improve linear optimizer documentation, mention ``alpha`` parameter when using :class:`sklearn.linear_model.Ridge`,
-- pass parameters through to corresponding scikit-learn class or numpy function.

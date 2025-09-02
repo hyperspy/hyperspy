@@ -663,7 +663,7 @@ Other minor differences
 Saving Big Data
 ^^^^^^^^^^^^^^^
 
-The most efficient format supported by HyperSpy to write data is the
+The most efficient format supported by RosettaSciIO to write data is the
 :external+rsciio:ref:`ZSpy format <zspy-format>`,
 mainly because it supports writing concurrently from multiple threads or processes.
 This also allows for smooth interaction with dask-distributed for efficient scaling.

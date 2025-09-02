@@ -58,9 +58,11 @@ Background removal
     improvements.
 
 The :meth:`~.api.signals.Signal1D.remove_background` method provides
-background removal capabilities through both a CLI and a GUI. The GUI displays
-an interactive preview of the remainder after background subtraction. Currently,
-the following background types are supported: Doniach, Exponential, Gaussian,
+background removal capabilities through both a CLI and a GUI. Selected components
+from :mod:`~.api.model.components1D` are fitted in a given range to estimate the
+background and substract it from the signals.
+The GUI displays an interactive preview of the remainder after background subtraction.
+Currently, the following background types are supported: Doniach, Exponential, Gaussian,
 Lorentzian, Polynomial, Power law (default), Offset, Skew normal, Split Voigt
 and Voigt. By default, the background parameters are estimated using analytical
 approximations (keyword argument ``fast=True``). The fast option is not accurate
@@ -83,6 +85,34 @@ Example of usage:
    used to estimate the background parameters (red area in the
    figure) click inside the axes of the figure and drag to the right
    without releasing the button.
+
+.. _signal1D.remove_baseline:
+
+Baseline removal
+----------------
+
+.. versionadded:: 2.3
+
+The :meth:`~.api.signals.Signal1D.remove_baseline` method provides baseline
+removal capabilities through both a CLI and a GUI. The baseline is estimated using
+methods implemented in `pybaselines <https://pybaselines.readthedocs.io>`_.
+
+.. code-block:: python
+
+    >>> s = hs.data.two_gaussians()
+    >>> s.remove_baseline()
+
+.. figure::  images/signal_1d_remove_baseline.png
+   :align:   center
+
+   Interactive baseline removal. The estimated baseline is shown as a blue dash
+   in the signal plot. The GUI allows selecting the method and the main parameters.
+   
+
+.. minigallery::
+    :add-heading: Example using :meth:`~.api.signals.Signal1D.remove_baseline`
+
+    ../examples/processing/baseline_removal.py
 
 
 Calibration
@@ -130,43 +160,6 @@ passed) can perform data smoothing with different algorithms:
 * :meth:`~.api.signals.Signal1D.smooth_savitzky_golay`
 
 
-Spike removal
---------------
-
-:meth:`~.api.signals.Signal1D.spikes_removal_tool` provides an user
-interface to remove spikes from spectra. The ``derivative histogram`` allows to
-identify the appropriate threshold. It is possible to use this tool
-on a specific interval of the data by :ref:`slicing the data
-<signal.indexing>`. For example, to use this tool in the signal between
-indices 8 and 17:
-
-.. code-block:: python
-
-   >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
-   >>> s.isig[8:17].spikes_removal_tool() # doctest: +SKIP
-
-
-The options ``navigation_mask`` or ``signal_mask`` provide more flexibility in the
-selection of the data, but these require a mask (booleen array) as parameter, which needs
-to be created manually:
-
-.. code-block:: python
-
-   >>> s = hs.signals.Signal1D(np.arange(5*10*20).reshape((5, 10, 20)))
-   
-   To get a signal mask, get the mean over the navigation space
-
-   >>> s_mean = s.mean()
-   >>> mask = s_mean > 495
-   >>> s.spikes_removal_tool(signal_mask=mask) # doctest: +SKIP
-
-.. figure::  images/spikes_removal_tool.png
-   :align:   center
-   :width:   500
-
-   Spikes removal tool.
-
-
 Peak finding
 ------------
 
@@ -178,7 +171,7 @@ method.
 Estimate peak width
 -------------------
 
-For asymmetric peaks, `fitted functions <model.fitting>` may not provide
+For asymmetric peaks, :ref:`fitted functions <model.fitting>` may not provide
 an accurate description of the peak, in particular the peak width. The function
 :meth:`~.api.signals.Signal1D.estimate_peak_width`
 determines the width of a peak at a certain fraction of its maximum value.

@@ -1,1 +1,0 @@
-Silence unnecessary warnings when using non-uniform axis with :meth:`~.api.signals.Signal1D.smooth_lowess` and :meth:`~.api.signals.Signal1D.find_peaks1D_ohaver`.

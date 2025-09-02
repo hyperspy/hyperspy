@@ -1,1 +1,0 @@
-Add support for extensions with ``src`` layout.

@@ -11,6 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import platform
 import sys
 from datetime import datetime
 
@@ -34,12 +35,12 @@ extensions = [
     "IPython.sphinxext.ipython_directive",  # Needed in basic_usage.rst
     "numpydoc",
     "sphinxcontrib.towncrier",
+    "sphinxcontrib.mermaid",
     "sphinx_design",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.githubpages",
-    "sphinx.ext.graphviz",
     "sphinx.ext.mathjax",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
@@ -52,8 +53,10 @@ extensions = [
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
+    "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
     "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
+    "https://scholar.google.co.uk",  # 403 Client Error: Forbidden for url
     "https://software.opensuse.org",  # 400 Client Error: Bad Request for url
 ]
 
@@ -179,6 +182,7 @@ favicons = [
 # in as it is done here to make sure that they match!
 version_match = "dev" if "dev" in release else ".".join(release.split(".")[:2] + ["x"])
 
+print("version", release)
 print("version_match:", version_match)
 
 html_theme_options = {
@@ -217,7 +221,7 @@ html_theme_options = {
         "version_match": version_match,
     },
     "navbar_start": ["navbar-logo", "version-switcher"],
-    "announcement": "HyperSpy API has changed in version 2.0, see the <a href='https://hyperspy.org/hyperspy-doc/current/changes.html#changes-2-0'>release notes!</a>",
+    # "announcement": "",
 }
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -330,8 +334,8 @@ towncrier_draft_working_directory = ".."
 intersphinx_mapping = {
     "cupy": ("https://docs.cupy.dev/en/stable", None),
     "dask": ("https://docs.dask.org/en/latest", None),
+    "dask_image": ("https://image.dask.org/en/latest", None),
     "exspy": ("https://exspy.readthedocs.io/en/latest", None),
-    "h5py": ("https://docs.h5py.org/en/stable", None),
     "holospy": ("https://holospy.readthedocs.io/en/latest", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable", None),
     "ipyparallel": ("https://ipyparallel.readthedocs.io/en/latest", None),
@@ -339,13 +343,13 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "pint": ("https://pint.readthedocs.io/en/stable", None),
+    "pybaselines": ("https://pybaselines.readthedocs.io/en/stable", None),
     "python": ("https://docs.python.org/3", None),
     "rsciio": ("https://hyperspy.org/rosettasciio/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy", None),
     "skimage": ("https://scikit-image.org/docs/stable", None),
     "sklearn": ("https://scikit-learn.org/stable", None),
     "traits": ("https://docs.enthought.com/traits/", None),
-    "zarr": ("https://zarr.readthedocs.io/en/stable", None),
 }
 
 # Check links to API when building documentation
@@ -424,20 +428,27 @@ numpydoc_class_members_toctree = False
 sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    # directory where function/class granular galleries are stored
+    "backreferences_dir": "backreferences",
+    # Modules for which function/class level galleries are created. In
+    # this case hyperspy in a tuple of strings.
+    "doc_module": ("hyperspy",),
     "filename_pattern": ".py",  # pattern to define which will be executed
     "ignore_pattern": "_sgskip.py",  # pattern to define which will not be executed
-    "compress_images": (
-        "images",
-        "thumbnails",
-    ),  # use optipng to reduce image file size
     "notebook_images": "https://hyperspy.org/hyperspy-doc/current/",  # folder for loading images in gallery
     "reference_url": {"hyperspy": None},
 }
 
-graphviz_output_format = "svg"
+if platform.system() != "Windows":
+    # optipng is not straightforward to install on Windows
+    # don't use compression on Windows to avoid warning when building the documentation
+    sphinx_gallery_conf["compress_images"] = (
+        "images",
+        "thumbnails",
+    )  # use optipng to reduce image file size
+
 
 # -- Sphinx-copybutton -----------
-
 
 copybutton_prompt_text = r">>> |\.\.\. "
 copybutton_prompt_is_regexp = True

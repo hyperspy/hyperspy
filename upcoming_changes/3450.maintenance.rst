@@ -1,1 +1,0 @@
-Set ``matplotlib`` version requirement to >=3.6.

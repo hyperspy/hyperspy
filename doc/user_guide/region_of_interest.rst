@@ -14,6 +14,7 @@ available:
 * :class:`~.roi.RectangularROI`
 * :class:`~.roi.CircleROI`
 * :class:`~.roi.Line2DROI`
+* :class:`~.roi.PolygonROI`
 
 Once created, an ROI can be applied to the signal:
 

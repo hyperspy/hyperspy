@@ -9,13 +9,6 @@ Writing packages that extend HyperSpy
   External packages can extend HyperSpy by registering signals,
   components and widgets.
 
-.. warning::
-  The mechanism to register extensions is in beta state. This means that it can
-  change between minor and patch versions. Therefore, if you maintain a package
-  that registers HyperSpy extensions, please verify that it works properly with
-  any future HyperSpy release. We expect it to reach maturity with the release
-  of HyperSpy 2.0.
-
 External packages can extend HyperSpy by registering signals, components and
 widgets. Objects registered by external packages are "first-class citizens" i.e.
 they can be used, saved and loaded like any of those objects shipped with
@@ -85,61 +78,42 @@ The flowchart below can help you decide where to add
 a new data analysis function. Notice that only if no suitable package exists
 for your function, you should consider creating your own.
 
-..  This is the original mermaid code. It produces a nicer looking diagram
-    with the defaults, but, as of version 0.3.1, it raises an exception in
-    ReadTheDocs, so we use graphviz below instead.
 
-    .. mermaid::
+.. mermaid::
+    :config: {"theme": "base"}
 
-       graph TD
-
-         A(New function needed!)
-         B{Is it useful for data of any type and dimensions?}
-         C(Contribute it to BaseSignal)
-         D{Does a SignalxD for the required dimension exist in HyperSpy?}
-         E[Contribute new SignalxD to HyperSpy]
-         F{Is the function useful for a specific type of data only?}
-         G(Contribute it to SignalxD)
-         H{Does a signal for that sort of data exists?}
-         I(Contribute to package providing the relevant signal)
-         J(Create you own package and signal subclass to host the funtion)
-         A-->B
-         B-- Yes -->C
-         B-- No  -->D
-         D-- Yes -->F
-         D-- No  -->E
-         E-->F
-         F-- Yes -->H
-         F-- No  -->G
-         H-- Yes -->I
-         H-- No -->J
-
-
-.. graphviz::
-
-    digraph G {
-         A [label="New function needed!"]
-         B [label="Is it useful for data of any type and dimensions?",shape="diamond"]
-         C [label="Contribute it to BaseSignal"]
-         D [label="Does a SignalxD for the required dimension exist in HyperSpy?",shape="diamond"]
-         E [label="Contribute new SignalxD to HyperSpy"]
-         F [label="Is the function useful for a specific type of data only?",shape="diamond"]
-         G [label="Contribute it to SignalxD"]
-         H [label="Does a signal for that sort of data exist?",shape="diamond"]
-         I [label="Contribute to package providing the relevant signal"]
-         J [label="Create you own package and signal subclass to host the funtion"]
-         A->B
-         B->C [label="Yes"]
-         B->D [label="No"]
-         D->F [label="Yes"]
-         D->E [label="No"]
-         E->F
-         F->H [label="Yes"]
-         F->G [label="No"]
-         H->I [label="Yes"]
-         H->J [label="No"]
-
+    %%{
+    init: {
+        'theme': 'base',
+        'themeVariables': {
+        'primaryColor': '#AFEEEE',
+        'lineColor': '#6495ED'
+        }
     }
+    }%%
+
+    graph TD
+
+      A(New function needed!)
+      B{Is it useful for data of<br/>any type and dimensions?}
+      C(Contribute it to BaseSignal)
+      D{Does a SignalxD for the<br/>required dimension exist<br/>in HyperSpy?}
+      E[Contribute new SignalxD<br/>to HyperSpy]
+      F{Is the function useful for a<br/>specific type of data only?}
+      G(Contribute it to SignalxD)
+      H{Does a signal for that sort<br/>of data exists?}
+      I(Contribute to package<br/>providing the relevant<br/>signal)
+      J(Create your own package<br/>and signal subclass to<br/>host the function)
+      A==>B
+      B== Yes ==>C
+      B== No  ==>D
+      D== Yes ==>F
+      D== No  ==>E
+      E==>F
+      F== Yes ==>H
+      F== No  ==>G
+      H== Yes ==>I
+      H== No ==>J
 
 
 Registering a new BaseSignal subclass
@@ -193,6 +167,8 @@ This option can be used if a signal subclass is needed for certain functionaliti
 such as casting to a different signal subclass, but should usually not be set
 directly by the user.
 
+.. _extension_components_label:
+
 Creating new HyperSpy model components
 --------------------------------------
 
@@ -213,69 +189,44 @@ The flowchart below can help you decide when and where to add
 a new hyperspy model :class:`hyperspy.component.Component`
 for your function, should you consider creating your own.
 
-..  This is the original mermaid code. It produces a nicer looking diagram
-    with the defaults, but, as of version 0.3.1, it raises an exception in
-    ReadTheDocs, so we use graphviz below instead.
+.. mermaid::
+    :config: {"theme": "base"}
 
-
-    .. mermaid::
-
-       graph TD
-
-         A(New component needed!)
-         B{Can it be declared using Expression?}
-         C{Can it be useful to other users?}
-         D(Just use Expression)
-         E[Create new component using Expression]
-         F[Create new component from scratch]
-         G{Is it useful for general users?}
-         H(Contribute it to HyperSpy)
-         I{Does a suitable package exist?}
-         J[Contribute it to the relevant package]
-         K[Create your own package to host it]
-
-         A-->B
-         B-- Yes -->C
-         B-- No  -->F
-         C-- No  -->D
-         C-- Yes -->E
-         E-->G
-         F-->G
-         G-- Yes --> H
-         G-- No  --> I
-         I-- Yes --> J
-         I-- No  --> K
-
-
-.. graphviz::
-
-    digraph G {
-
-
-        A [label="New component needed!"]
-        B [label="Can it be declared using Expression?",shape="diamond"]
-        C [label="Can it be useful to other users?",shape="diamond"]
-        D [label="Just use Expression"]
-        E [label="Create new component using Expression"]
-        F [label="Create new component from scratch"]
-        G [label="Is it useful for general users?",shape="diamond"]
-        H [label="Contribute it to HyperSpy"]
-        I [label="Does a suitable package exist?",shape="diamond"]
-        J [label="Contribute it to the relevant package"]
-        K [label="Create your own package to host it"]
-
-        A->B
-        B->C [label="Yes"]
-        B->F [label="No"]
-        C->E [label="Yes"]
-        C->D [label="No"]
-        E->G
-        F->G
-        G->H [label="Yes"]
-        G->I [label="No"]
-        I->J [label="Yes"]
-        I->K [label="No"]
+    %%{
+    init: {
+        'theme': 'base',
+        'themeVariables': {
+        'primaryColor': '#AFEEEE',
+        'lineColor': '#6495ED'
+        }
     }
+    }%%
+
+    graph TD
+
+      A(New component needed!)
+      B{Can it be declared<br/>using Expression?}
+      C{Can it be useful<br/>to other users?}
+      D(Just use Expression)
+      E[Create new component<br/>using Expression]
+      F[Create new component<br/>from scratch]
+      G{Is it useful for<br/>general users?}
+      H(Contribute it to HyperSpy)
+      I{Does a suitable<br/>package exist?}
+      J[Contribute it to<br/>the relevant package]
+      K[Create your own<br/>package to host it]
+
+      A==>B
+      B== Yes ==>C
+      B== No  ==>F
+      C== No  ==>D
+      C== Yes ==>E
+      E==>G
+      F==>G
+      G== Yes ==> H
+      G== No  ==> I
+      I== Yes ==> J
+      I== No  ==> K
 
 
 Registering new components
@@ -320,6 +271,13 @@ Equivalently, to add a new component 2D:
   the component online if e.g. the package is renamed or the component
   relocated.
 
+Convoluting model components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The implementation of the convolution of components in subclasses of :class:`~hyperspy.models.model1d.Model1D`
+is explained in the :ref:`extension gallery <extension_gallery-label>`:
+
+.. minigallery:: ../examples/extensions/model_convolution*
 
 Creating and registering new widgets and toolkeys
 -------------------------------------------------

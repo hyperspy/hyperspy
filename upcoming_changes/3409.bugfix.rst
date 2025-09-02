@@ -1,1 +1,0 @@
-Fix old version warning banner in the stable documentation.

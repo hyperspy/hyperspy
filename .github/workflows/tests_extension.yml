@@ -16,13 +16,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        #EXTENSION_VERSION: ['release', 'dev']
-        EXTENSION_VERSION: ['dev']
+        EXTENSION_VERSION: ['release', 'dev']
 
     env:
       MPLBACKEND: agg
-      EXTENSION: kikuchipy lumispy pyxem atomap
+      EXTENSION: atomap etspy exspy holospy kikuchipy lumispy pyxem
       TEST_DEPS: pytest pytest-xdist pytest-rerunfailures pytest-instafail
+      PYTHON_VERSION: '3.12'
     defaults:
       run:
         shell: bash -l {0}
@@ -32,21 +32,25 @@ jobs:
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
-          # use base environment, so that when using pip, this is from the
-          # mambaforge distribution
-          auto-activate-base: true
-          activate-environment: ""
+          python-version: ${{ env.PYTHON_VERSION }}
+          activate-environment: "test"
+          conda-remove-defaults: "true"
 
+      - name: Install pip, astra-toolbox, ffmpeg and test dependencies
+        run: |
+          # astra-toolbox and ffmpeg are etspy dependencies
+          mamba install pip astra-toolbox ffmpeg ${{ env.TEST_DEPS }} 
+          
       - name: Conda info
         run: |
           conda info
           conda list
 
-      - name: Install extensions and Test dependencies
+      - name: Install extensions (release)
+        if: contains(matrix.EXTENSION_VERSION, 'release')
         run: |
-          mamba install hyperspy-base ${{ env.EXTENSION }} ${{ env.TEST_DEPS }}
+          mamba install hyperspy-base ${{ env.EXTENSION }}
 
       - name: Conda list
         run: |
@@ -56,15 +60,16 @@ jobs:
         run: |
           pip install .
 
-      - name: Install Extension Dev
+      - name: Install Extension (dev)
         if: contains(matrix.EXTENSION_VERSION, 'dev')
         run: |
-          pip install https://github.com/lumispy/lumispy/archive/main.zip
-          pip install https://github.com/pyxem/kikuchipy/archive/develop.zip
-          pip install https://github.com/pyxem/pyxem/archive/main.zip
-          pip install https://gitlab.com/atomap/atomap/-/archive/master/atomap-master.zip
-          pip install https://github.com/hyperspy/holospy/archive/main.zip
+          pip install https://github.com/atomap-dev/atomap/archive/main.zip
+          pip install https://github.com/usnistgov/etspy/archive/master.zip
           pip install https://github.com/hyperspy/exspy/archive/main.zip
+          pip install https://github.com/hyperspy/holospy/archive/main.zip
+          pip install https://github.com/pyxem/kikuchipy/archive/develop.zip
+          pip install https://github.com/lumispy/lumispy/archive/main.zip
+          pip install https://github.com/pyxem/pyxem/archive/main.zip
 
       - name: Install xvfb
         run: |
@@ -75,7 +80,6 @@ jobs:
         if: ${{ always() }}
         run: |
           # Virtual buffer (xvfb) required for tests using PyVista
-          sudo apt-get install xvfb
           xvfb-run python -m pytest --pyargs kikuchipy
 
       - name: Run LumiSpy Test Suite
@@ -98,10 +102,12 @@ jobs:
         run: |
           python -m pytest --pyargs exspy
   
-      #  The currently released version of Atomap (0.3.1) does not work with this test
-      #  environment. Thus, only the dev version is currently tested. If a newer version
-      #  of Atomap is released, the "if" can be changed to always().
       - name: Run atomap Test Suite
-        if: contains(matrix.EXTENSION_VERSION, 'dev')
+        if: ${{ always() }}
         run: |
           python -m pytest --pyargs atomap
+
+      - name: Run ETSpy Test Suite
+        if: ${{ always() }}
+        run: |
+          python -m pytest --pyargs etspy

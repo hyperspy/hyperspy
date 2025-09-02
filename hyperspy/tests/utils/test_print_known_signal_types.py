@@ -1,4 +1,10 @@
-from prettytable import MARKDOWN
+try:
+    from prettytable import TableStyle
+
+    MARKDOWN = TableStyle.MARKDOWN
+except ImportError:
+    # Deprecated in prettytable 3.12.0
+    from prettytable import MARKDOWN
 
 from hyperspy.utils import print_known_signal_types
 

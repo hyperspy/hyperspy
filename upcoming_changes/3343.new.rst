@@ -1,1 +1,0 @@
-Add support for plotting navigator and signal plot on same figure using `matplotlib subfigures <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subfigures.html>`_. See examples in the :ref:`custom layout for plots <subfigure_examples_label>` section.

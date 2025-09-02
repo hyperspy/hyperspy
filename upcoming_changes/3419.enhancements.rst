@@ -1,1 +1,0 @@
-Add parameter to normalise spectra in :func:`~.api.plot.plot_spectra`

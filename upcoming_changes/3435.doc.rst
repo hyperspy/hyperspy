@@ -1,1 +1,0 @@
-Update docstring of ``set_signal_type`` to better represent the HyperSpy2.0 ecosystem

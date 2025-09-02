@@ -1,1 +1,0 @@
-Add option to silence warning when :meth:`~.api.signals.BaseSignal.map` operates on signal containing non-uniform axes or different scales or units.

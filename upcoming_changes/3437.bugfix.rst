@@ -1,1 +1,0 @@
-Fix horizontal plotting with ipympl 0.9.4/ipython 8.24.

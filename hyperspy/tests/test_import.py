@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -200,8 +200,11 @@ def test_dir_utils_roi():
         "Line2DROI",
         "Point1DROI",
         "Point2DROI",
+        "PolygonROI",
         "RectangularROI",
         "SpanROI",
+        "combine_rois",
+        "mask_from_rois",
     ]
 
 

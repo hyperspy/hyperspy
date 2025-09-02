@@ -27,27 +27,27 @@ strategy:
   matrix:
     Linux_Python39:
       vmImage: 'ubuntu-latest'
-      PYTHON_VERSION: '3.9'
+      PYTHON_VERSION: '3.10'
       MINIFORGE_PATH: $(Agent.BuildDirectory)/miniforge3
     Linux_Python310:
       vmImage: 'ubuntu-latest'
-      PYTHON_VERSION: '3.10'
+      PYTHON_VERSION: '3.11'
       MINIFORGE_PATH: $(Agent.BuildDirectory)/miniforge3
     MacOS_Python39:
       vmImage: 'macOS-latest'
-      PYTHON_VERSION: '3.9'
+      PYTHON_VERSION: '3.10'
       MINIFORGE_PATH: $(Agent.BuildDirectory)/miniforge3
     MacOS_Python310:
       vmImage: 'macOS-latest'
-      PYTHON_VERSION: '3.10'
+      PYTHON_VERSION: '3.11'
       MINIFORGE_PATH: $(Agent.BuildDirectory)/miniforge3
     Windows_Python39:
       vmImage: 'windows-latest'
-      PYTHON_VERSION: '3.9'
+      PYTHON_VERSION: '3.10'
       MINIFORGE_PATH: $(Agent.BuildDirectory)\miniforge3
     Windows_Python310:
       vmImage: 'windows-latest'
-      PYTHON_VERSION: '3.10'
+      PYTHON_VERSION: '3.11'
       MINIFORGE_PATH: $(Agent.BuildDirectory)\miniforge3
 
 pool:

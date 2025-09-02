@@ -1,1 +1,0 @@
-Fixes :meth:`~.axes.BaseDataAxis.convert_to_uniform_axis`, which was incorrectly raising an ``AttributeError`` when used on :class:`~.axes.FunctionalDataAxis`.

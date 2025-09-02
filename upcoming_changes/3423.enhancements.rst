@@ -1,1 +1,0 @@
-Add ``ax`` parameter to :func:`~.api.plot.plot_images`, :func:`~.api.plot.plot_spectra` and :func:`~.api.plot.plot_histograms` to specify the :external+matplotlib:class:`matplotlib.axis.Axis` to use - see examples in :ref:`sphx_glr_auto_examples_data_visualization`.
