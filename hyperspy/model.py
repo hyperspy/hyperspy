@@ -1972,40 +1972,74 @@ class BaseModel(list):
 
             if optimizer == "lm":
                 if bounded:
-                    # Bounded Levenberg-Marquardt algorithm is supported
-                    # using the `mpfit` function (bundled with HyperSpy)
-                    self._set_mpfit_parameters_info(bounded=bounded)
+                    try:
+                        # Bounded Levenberg-Marquardt algorithm is supported
+                        # using the `mpfit` function (bundled with HyperSpy)
+                        self._set_mpfit_parameters_info(bounded=bounded)
 
-                    # We enforce estimation of the Jacobian if no
-                    # analytical gradients available for consistency
-                    # with `scipy.optimize.leastsq`
-                    auto_deriv = 0 if grad == "analytical" else 1
+                        # We enforce estimation of the Jacobian if no
+                        # analytical gradients available for consistency
+                        # with `scipy.optimize.leastsq`
+                        auto_deriv = 0 if grad == "analytical" else 1
 
-                    res = mpfit(
-                        self._errfunc4mpfit,
-                        self.p0[:],
-                        parinfo=self.mpfit_parinfo,
-                        functkw={
-                            "y": self.signal._get_current_data()[
-                                self._channel_switches
-                            ],
-                            "weights": weights,
-                        },
-                        autoderivative=auto_deriv,
-                        quiet=1,
-                        **kwargs,
-                    )
+                        res = mpfit(
+                            self._errfunc4mpfit,
+                            self.p0[:],
+                            parinfo=self.mpfit_parinfo,
+                            functkw={
+                                "y": self.signal._get_current_data()[
+                                    self._channel_switches
+                                ],
+                                "weights": weights,
+                            },
+                            autoderivative=auto_deriv,
+                            quiet=1,
+                            **kwargs,
+                        )
 
-                    # Return as an OptimizeResult object
-                    self.fit_output = res.optimize_result
+                        # Return as an OptimizeResult object
+                        self.fit_output = res.optimize_result
 
-                    self.p0 = self.fit_output.x
-                    ysize = len(self.fit_output.x) + self.fit_output.dof
-                    cost = self.fit_output.fnorm
-                    pcov = self.fit_output.perror**2
+                        self.p0 = self.fit_output.x
+                        ysize = len(self.fit_output.x) + self.fit_output.dof
+                        cost = self.fit_output.fnorm
+                        pcov = self.fit_output.perror**2
 
-                    # Calculate estimated parameter standard deviation
-                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+                        # Calculate estimated parameter standard deviation
+                        self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+                    except ValueError:
+                        # Unbounded Levenberg-Marquardt algorithm is supported
+                        # using the `scipy.optimize.leastsq` function. Note that
+                        # Dfun=None means the gradient is always estimated here.
+                        grad = self._jacobian if grad == "analytical" else None
+
+                        res = leastsq(
+                            self._errfunc,
+                            self.p0[:],
+                            Dfun=grad,
+                            col_deriv=1,
+                            args=args,
+                            full_output=True,
+                            **kwargs,
+                        )
+
+                        self.fit_output = OptimizeResult(
+                            x=res[0],
+                            covar=res[1],
+                            fun=res[2]["fvec"],
+                            nfev=res[2]["nfev"],
+                            success=res[4] in [1, 2, 3, 4],
+                            status=res[4],
+                            message=res[3],
+                        )
+
+                        self.p0 = self.fit_output.x
+                        ysize = len(self.fit_output.fun)
+                        cost = np.sum(self.fit_output.fun**2)
+                        pcov = self.fit_output.covar
+
+                        # Calculate estimated parameter standard deviation
+                        self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
                 else:
                     # Unbounded Levenberg-Marquardt algorithm is supported
@@ -2051,15 +2085,26 @@ class BaseModel(list):
 
                 grad = _wrap_jac if grad == "analytical" else grad
 
-                self.fit_output = least_squares(
-                    self._errfunc,
-                    self.p0[:],
-                    args=args,
-                    bounds=self._bounds_as_tuple(transpose=_transpose_bounds),
-                    jac=grad,
-                    method=optimizer,
-                    **kwargs,
-                )
+                try:
+                    self.fit_output = least_squares(
+                        self._errfunc,
+                        self.p0[:],
+                        args=args,
+                        bounds=self._bounds_as_tuple(transpose=_transpose_bounds),
+                        jac=grad,
+                        method=optimizer,
+                        **kwargs,
+                    )
+                except ValueError:
+                    self.fit_output = least_squares(
+                        self._errfunc,
+                        self.p0[:],
+                        args=args,
+                        # bounds=self._bounds_as_tuple(transpose=_transpose_bounds),
+                        jac=grad,
+                        # method=optimizer,
+                        **kwargs,
+                    )
 
                 self.p0 = self.fit_output.x
                 ysize = len(self.fit_output.fun)
