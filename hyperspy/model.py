@@ -22,6 +22,7 @@ import logging
 import os
 import tempfile
 import warnings
+from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
 
@@ -3127,6 +3128,115 @@ class BaseModel(list):
         from hyperspy.samfire import Samfire
 
         return Samfire(self, workers=workers, setup=setup, **kwargs)
+
+    def print_model_statistics(model, thresholds=None):
+        """
+        Computes and prints summary statistics (mean, standard deviation, min, max)
+        for all parameters of each component in a given model.
+
+        The function iterates over all components and their parameters. If a parameter
+        contains a map (array of values), all values are extracted; otherwise, the scalar
+        value is used. Optionally, thresholds can be applied to filter values before
+        calculating statistics.
+
+        Parameters
+        ----------
+        model : object
+            The model containing components. Each component should have a `parameters` attribute.
+        thresholds : dict, optional
+            A dictionary specifying thresholds for parameters.
+            Keys should be parameter names (param.name).
+            Values should be dictionaries with optional 'min' and/or 'max' entries.
+
+            Example:
+            thresholds = {
+                "A": {"min": 0.1, "max": 10},       # Keep values between 0.1 and 10
+                "sigma": {"min": 0.01},             # Keep values >= 0.01
+                "centre": {"max": 5}                 # Keep values <= 5
+            }
+            Parameters not listed in the dictionary are not filtered.
+
+        Returns
+        -------
+        None
+            The function prints the statistics directly to the console.
+
+        Notes
+        -----
+        - For each parameter, mean, standard deviation, minimum, and maximum are calculated
+        from the values remaining after applying thresholds (if any).
+        - Parameter maps (arrays) are automatically converted to NumPy arrays.
+        - If a parameter has no values left after filtering, it will be skipped.
+        """
+
+        if not hasattr(model, "components"):
+            raise TypeError(
+                "The provided object is not a valid HyperSpy model (missing 'components')."
+            )
+
+        # Collect all values per component and parameter
+        collected_values = []
+
+        for i, comp in enumerate(model):
+            comp_name = f"{i} - {comp.__class__.__name__}"
+            for param in comp.parameters:
+                if hasattr(param, "map") and param.map is not None:
+                    arr = np.array(param.map)
+                    values = arr["values"].flatten()
+                    collected_values.append(
+                        {
+                            "component": comp_name,
+                            "parameter": param.name,
+                            "values": values,
+                        }
+                    )
+                else:
+                    raise TypeError(
+                        "Could not extract parameter values from component (missing 'parameters')"
+                    )
+
+        # Check for thresholds
+        if thresholds is not None:
+            for entry in collected_values:
+                th = thresholds.get(entry["parameter"], {"min": None, "max": None})
+                values = np.array(entry["values"], dtype=float)
+
+                if th["min"] is not None:
+                    values = values[values >= th["min"]]
+                if th["max"] is not None:
+                    values = values[values <= th["max"]]
+
+                entry["values"] = values.tolist()
+
+        aggregated = defaultdict(lambda: defaultdict(list))
+        for entry in collected_values:
+            if len(entry["values"]) > 0:
+                comp_type = entry["component"].split(" - ")[1]
+                aggregated[comp_type][entry["parameter"]].extend(entry["values"])
+
+        for comp_type, params in aggregated.items():
+            print(f"Component type: {comp_type}")
+            print("-" * 50)
+
+            param_names = list(params.keys())
+            print("Parameter: " + " | ".join([f"{name:^15}" for name in param_names]))
+
+            stats_labels = ["mean", "std", "min", "max"]
+            for stat in stats_labels:
+                line = f"{stat:<10} "
+                for pname in param_names:
+                    values = np.array(params[pname], dtype=float)
+                    if stat == "mean":
+                        val = values.mean() if values.size > 0 else np.nan
+                    elif stat == "std":
+                        val = values.std() if values.size > 0 else np.nan
+                    elif stat == "min":
+                        val = values.min() if values.size > 0 else np.nan
+                    elif stat == "max":
+                        val = values.max() if values.size > 0 else np.nan
+                    line += f"{val:^15.2f} | "
+                print(line[:-3])
+            print("\n")
 
 
 class ModelSpecialSlicers(object):

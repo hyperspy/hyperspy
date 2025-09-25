@@ -16,7 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import io
 import logging
+import sys
 from unittest import mock
 
 import dask
@@ -836,3 +838,70 @@ class TestModel1DSetSignalRange:
         mask = np.ones(30)
         with pytest.raises(ValueError):
             m.set_signal_range_from_mask(mask)
+
+
+class TestPrintModelStatistics:
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.arange(900).reshape(30, 30))
+        m = s.create_model()
+        gaussian = hs.model.components1D.Gaussian()
+        m.append(gaussian)
+        m.fit()
+        self.signal = s
+        self.model = m
+
+    def test_print_model_statistics_normal(self):
+        m = self.model
+        old_stdout = sys.stdout
+        sys.stdout = mystdout = io.StringIO()
+        m.print_model_statistics()
+        sys.stdout = old_stdout
+        out = mystdout.getvalue()
+
+        assert "Component type: Gaussian" in out
+        assert "Parameter:" in out
+        assert "mean" in out
+        assert "std" in out
+        assert "min" in out
+        assert "max" in out
+        assert "A" in out
+        assert "centre" in out
+        assert "sigma" in out
+
+    def test_print_model_statistics_invalid_object(self):
+        from hyperspy.model import BaseModel
+
+        class DummyComponent(BaseModel):
+            __class__ = type("", (), {})
+
+        dummy_model = DummyComponent()
+
+        with pytest.raises(
+            TypeError, match="The provided object is not a valid HyperSpy model"
+        ):
+            dummy_model.print_model_statistics()
+
+    def test_print_model_statistics_dummy_model_no_param_values(self):
+        from hyperspy.model import BaseModel
+
+        class DummyParam(BaseModel):
+            name = "A"
+            map = None
+            value = None
+
+        class DummyComponent(BaseModel):
+            parameters = [DummyParam()]
+            __class__ = type("Gaussian", (), {})
+
+        class DummyModel(BaseModel):
+            components = [DummyComponent()]
+
+            def __iter__(self):
+                return iter(self.components)
+
+        dummy_model = DummyModel()
+
+        with pytest.raises(
+            TypeError, match="Could not extract parameter values from component"
+        ):
+            dummy_model.print_model_statistics()
