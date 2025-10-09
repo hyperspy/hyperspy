@@ -141,16 +141,18 @@ class BaseROI(t.HasTraits):
         The content depends on the specific ROI subclass, e.g. for a
         ``RectangularROI`` it may include ``left``, ``right``, ``top``, and
         ``bottom``.
+
         Notes
         -----
         This property is intended for serialization and restoration of ROIs.
         Subclasses must implement this property.
+
         Examples
         --------
         >>> from hyperspy.roi import RectangularROI
         >>> roi = RectangularROI(left=10, right=50, top=20, bottom=60)
         >>> params = roi.parameters
-        >>> roi2 = RectangularROI(``**params``)
+        >>> roi2 = RectangularROI(**params)
         """
         raise NotImplementedError()
 
@@ -707,8 +709,8 @@ class Point1DROI(BasePointROI):
         Dictionary containing the parameters that define the current ROI.
 
         For a ``Point1DROI``, the dictionary contains:
-        - ``position`` : float
-        The coordinate of the point along the axis.
+
+        - ``position`` : float - The coordinate of the point along the axis.
 
         Notes
         -----
@@ -717,9 +719,9 @@ class Point1DROI(BasePointROI):
         Examples
         --------
         >>> from hyperspy.roi import Point1DROI
-        >>> roi = Point1DROI(position=15)
+        >>> roi = Point1DROI(value=15)
         >>> params = roi.parameters
-        >>> roi2 = Point1DROI(``**params``)
+        >>> roi2 = Point1DROI(**params)
         """
         return {"value": self.value}
 
@@ -787,10 +789,9 @@ class Point2DROI(BasePointROI):
         Dictionary containing the parameters that define the current ROI.
 
         For a ``Point2DROI``, the dictionary contains:
-        - ``x`` : float
-        The x-coordinate of the point.
-        - ``y`` : float
-        The y-coordinate of the point.
+
+        - ``x`` : float - The x-coordinate of the point.
+        - ``y`` : float - The y-coordinate of the point.
 
         Notes
         -----
@@ -801,7 +802,7 @@ class Point2DROI(BasePointROI):
         >>> from hyperspy.roi import Point2DROI
         >>> roi = Point2DROI(x=20, y=30)
         >>> params = roi.parameters
-        >>> roi2 = Point2DROI(``**params``)
+        >>> roi2 = Point2DROI(**params)
         """
         return {"x": self.x, "y": self.y}
 
@@ -870,10 +871,9 @@ class SpanROI(BaseInteractiveROI):
         Dictionary containing the parameters that define the current ROI.
 
         For a ``SpanROI``, the dictionary contains:
-        - ``left`` : float
-        The left boundary of the span.
-        - ``right`` : float
-        The right boundary of the span.
+
+        - ``left`` : float - The left boundary of the span.
+        - ``right`` : float - The right boundary of the span.
 
         Notes
         -----
@@ -884,7 +884,7 @@ class SpanROI(BaseInteractiveROI):
         >>> from hyperspy.roi import SpanROI
         >>> roi = SpanROI(left=10, right=50)
         >>> params = roi.parameters
-        >>> roi2 = SpanROI(``**params``)
+        >>> roi2 = SpanROI(**params)
         """
         return {"left": self.left, "right": self.right}
 
@@ -979,14 +979,11 @@ class RectangularROI(BaseInteractiveROI):
         Dictionary containing the parameters that define the current ROI.
 
         For a ``RectangularROI``, the dictionary contains:
-        - ``left`` : float
-        The left boundary of the rectangle.
-        - ``right`` : float
-        The right boundary of the rectangle.
-        - ``top`` : float
-        The top boundary of the rectangle.
-        - ``bottom`` : float
-        The bottom boundary of the rectangle.
+
+        - ``left`` : float - The left boundary of the rectangle.
+        - ``right`` : float - The right boundary of the rectangle.
+        - ``top`` : float - The top boundary of the rectangle.
+        - ``bottom`` : float - The bottom boundary of the rectangle.
 
         Notes
         -----
@@ -997,7 +994,7 @@ class RectangularROI(BaseInteractiveROI):
         >>> from hyperspy.roi import RectangularROI
         >>> roi = RectangularROI(left=10, right=50, top=20, bottom=60)
         >>> params = roi.parameters
-        >>> roi2 = RectangularROI(``**params``)
+        >>> roi2 = RectangularROI(**params)
         """
         return {
             "left": self.left,
@@ -1161,14 +1158,11 @@ class CircleROI(BaseInteractiveROI):
         Dictionary containing the parameters that define the current CircleROI.
 
         For a ``CircleROI``, the dictionary contains:
-        - ``cx`` : float
-        The x-coordinate of the circle center.
-        - ``cy`` : float
-        The y-coordinate of the circle center.
-        - ``r`` : float
-        The radius of the circle.
-        - ``r_inner`` : float
-        The inner radius; if > 0, an annular region is selected.
+
+        - ``cx`` : float - The x-coordinate of the circle center.
+        - ``cy`` : float - The y-coordinate of the circle center.
+        - ``r`` : float - The radius of the circle.
+        - ``r_inner`` : float - The inner radius; if > 0, an annular region is selected.
 
         Notes
         -----
@@ -1179,7 +1173,7 @@ class CircleROI(BaseInteractiveROI):
         >>> from hyperspy.roi import CircleROI
         >>> roi = CircleROI(cx=30, cy=40, r=10, r_inner=2)
         >>> params = roi.parameters
-        >>> roi2 = CircleROI(``**params``)
+        >>> roi2 = CircleROI(**params)
         """
         return {"cx": self.cx, "cy": self.cy, "r": self.r, "r_inner": self.r_inner}
 
@@ -1333,16 +1327,12 @@ class Line2DROI(BaseInteractiveROI):
         Dictionary containing the parameters that define the current Line2DROI.
 
         For a ``Line2DROI``, the dictionary contains:
-        - ``x1`` : float
-        The x-coordinate of the first endpoint of the line.
-        - ``y1`` : float
-        The y-coordinate of the first endpoint of the line.
-        - ``x2`` : float
-        The x-coordinate of the second endpoint of the line.
-        - ``y2`` : float
-        The y-coordinate of the second endpoint of the line.
-        - ``linewidth`` : float
-        The width of the line.
+
+        - ``x1`` : float - The x-coordinate of the first endpoint of the line.
+        - ``y1`` : float - The y-coordinate of the first endpoint of the line.
+        - ``x2`` : float - The x-coordinate of the second endpoint of the line.
+        - ``y2`` : float - The y-coordinate of the second endpoint of the line.
+        - ``linewidth`` : float - The width of the line.
 
         Notes
         -----
@@ -1353,7 +1343,7 @@ class Line2DROI(BaseInteractiveROI):
         >>> from hyperspy.roi import Line2DROI
         >>> roi = Line2DROI(x1=0, y1=0, x2=10, y2=10, linewidth=2)
         >>> params = roi.parameters
-        >>> roi2 = Line2DROI(``**params``)
+        >>> roi2 = Line2DROI(**params)
         """
         return {
             "x1": self.x1,
@@ -1687,8 +1677,9 @@ class PolygonROI(BaseInteractiveROI):
         Dictionary containing the parameters that define the current ROI.
 
         For a ``PolygonROI``, the dictionary contains:
-        - ``vertices`` : list of (float, float)
-        A list of ``(x, y)`` coordinate pairs defining the polygon vertices.
+
+        - ``vertices`` : list of (float, float) - A list of ``(x, y)``
+        coordinate pairs defining the polygon vertices.
 
         Notes
         -----
@@ -1699,7 +1690,7 @@ class PolygonROI(BaseInteractiveROI):
         >>> from hyperspy.roi import PolygonROI
         >>> roi = PolygonROI(vertices=[(0, 0), (10, 0), (10, 10), (0, 10)])
         >>> params = roi.parameters
-        >>> roi2 = PolygonROI(``**params``)
+        >>> roi2 = PolygonROI(**params)
         """
         return {"vertices": self.vertices}
 
