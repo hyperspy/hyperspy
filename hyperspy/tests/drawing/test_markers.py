@@ -1240,3 +1240,17 @@ def test_position_texts_with_mathtext():
     s.add_marker([point_marker, text_marker])
 
     return s._plot.signal_plot.figure
+
+
+def test_plot_markers_relative_to_data_non_uniform_axes():
+    # create a signal with a non-uniform axis
+    s = hs.data.luminescence_signal()
+
+    index_max = s.data.argmax()
+    x_position = s.axes_manager[0].axis[index_max]
+
+    m = hs.plot.markers.Texts(
+        offsets=[x_position, 1], texts=["A peak"], offset_transform="relative", sizes=5
+    )
+    s.add_marker(m, permanent=True)
+    s.plot()
