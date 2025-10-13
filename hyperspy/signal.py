@@ -4832,8 +4832,8 @@ class BaseSignal(
 
         Examples
         --------
-        >>> import skimage
-        >>> im = hs.signals.Signal2D(skimage.data.camera())
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.datasets.face())
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
 
@@ -4928,8 +4928,8 @@ class BaseSignal(
 
         Examples
         --------
-        >>> import skimage
-        >>> im = hs.signals.Signal2D(skimage.data.camera())
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.datasets.face())
         >>> imfft = im.fft()
         >>> imfft.ifft()
         <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>

@@ -32,8 +32,7 @@ dependencies = [
     "pint>=0.10",
     "prettytable>=2.3",
     "pyyaml",
-    "rosettasciio[hdf5]",
-    "scikit-image>=0.18",
+    "rosettasciio[hdf5,image]",
     "scipy>=1.6.0",
     "sympy>=1.10",
     "tqdm>=4.59.0",
@@ -91,6 +90,7 @@ all = [
     "hyperspy[baseline]",
     "hyperspy[gui-jupyter]",
     "hyperspy[gui-traitsui]",
+    "hyperspy[image]",
     "hyperspy[ipython]",
     "hyperspy[learning]",
     "hyperspy[speed]",
@@ -120,6 +120,7 @@ doc = [
     "numpydoc",
     "pybaselines", # for docstring test
     "pydata_sphinx_theme",
+    "scikit-image",
     "setuptools_scm",
     "sphinx-copybutton",
     "sphinx-design",
@@ -136,6 +137,9 @@ gui-jupyter = [
 ]
 gui-traitsui = [
     "hyperspy_gui_traitsui>=2.0",
+]
+image = [
+    "scikit-image>=0.18",
 ]
 ipython = [
     "IPython>7.0,!=8.0",
