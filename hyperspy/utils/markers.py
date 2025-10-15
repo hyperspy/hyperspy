@@ -21,8 +21,8 @@
 Examples
 --------
 
->>> import skimage
->>> im = hs.signals.Signal2D(skimage.data.camera())
+>>> import scipy
+>>> im = hs.signals.Signal2D(scipy.datasets.face())
 >>> m = hs.plot.markers.Rectangles(
 ...    offsets=[10, 15],
 ...    widths=(5,),

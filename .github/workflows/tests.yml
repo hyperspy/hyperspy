@@ -1,6 +1,11 @@
 name: Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+      - 'pre-commit-ci-update-config'
+  pull_request:
 
 jobs:
   run_test_site:
@@ -44,12 +49,12 @@ jobs:
             PYTHON_VERSION: '3.11'
             PIP_SELECTOR: '[all, tests, coverage]'
           - os: macos
-            os_version: '13'
+            os_version: '15-intel'
             PYTHON_VERSION: '3.11'
             PIP_SELECTOR: '[all, tests, coverage]'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: 
           fetch-depth: 0
           fetch-tags: true
@@ -62,7 +67,7 @@ jobs:
           git remote add upstream https://github.com/hyperspy/hyperspy.git
           git fetch upstream --tags
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         name: Install Python
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}

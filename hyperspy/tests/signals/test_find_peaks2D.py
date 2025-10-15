@@ -26,6 +26,8 @@ from hyperspy.signal_tools import PeaksFinder2D
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 from hyperspy.ui_registry import TOOLKIT_REGISTRY
 
+pytest.importorskip("skimage")
+
 
 def _generate_dataset():
     coefficients = np.array(

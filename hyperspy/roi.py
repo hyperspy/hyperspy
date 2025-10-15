@@ -1259,16 +1259,18 @@ class Line2DROI(BaseInteractiveROI):
             The end point of the scan line.
         linewidth : int, optional
             Width of the scan, perpendicular to the line
+
         Returns
         -------
         coords : array, shape (2, N, C), float
             The coordinates of the profile along the scan line. The length of
             the profile is the ceil of the computed length of the scan line.
+
         Notes
         -----
-        This is a utility method meant to be used internally by skimage
-        functions. The destination point is included in the profile, in
-        contrast to standard numpy indexing.
+        This is a utility method meant to be used internally.
+        The destination point is included in the profile, in contrast to
+        standard numpy indexing.
 
         """
         src_row, src_col = src = np.asarray(src, dtype=float)

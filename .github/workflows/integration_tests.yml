@@ -1,0 +1,36 @@
+name: Integration tests
+
+on:
+  pull_request_review:
+    types: [submitted, edited]
+  pull_request:
+    types: [labeled, ready_for_review, reopened]
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+      - 'pre-commit-ci-update-config'
+  workflow_dispatch:
+
+jobs:
+  integration_test:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-integration-tests') || github.event_name == 'workflow_dispatch' }}
+    name: rs_${{ matrix.ROSETTASCIIO_VERSION }}-ext_${{ matrix.EXTENSION_VERSION }}
+    strategy:
+      fail-fast: false
+      matrix:
+        EXTENSION_VERSION: ['release', 'dev']
+        ROSETTASCIIO_VERSION: ['release', 'dev']
+    # Use the "reusable workflow" from the hyperspy organisation
+    uses: hyperspy/.github/.github/workflows/integration_tests.yml@main
+    with:
+      # don't run etspy until test suite is fixed
+      # EXTENSIONS: 'exspy holospy lumispy pyxem atomap kikuchipy hyperspy-gui-ipywidgets hyperspy-gui-traitsui etspy'
+      EXTENSIONS: 'exspy holospy lumispy pyxem atomap kikuchipy hyperspy-gui-ipywidgets hyperspy-gui-traitsui'
+      EXTENSION_VERSION: ${{ matrix.EXTENSION_VERSION }}
+      ROSETTASCIIO_VERSION: ${{ matrix.ROSETTASCIIO_VERSION }}
+      # Use `numpy-quaternion` orix optional dependency as a workaround to fix
+      # segmentation fault issue in orix, which occurs when numpy-quaternion is
+      # not installed - reason unknown.
+      ADDITIONAL_PACKAGES: 'numpy-quaternion'
+      PIP_EXTRAS: '[all,tests]'
+      USE_CONDA: false

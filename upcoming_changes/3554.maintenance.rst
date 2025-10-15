@@ -1,0 +1,1 @@
+Specify `dtype` and `meta` as parameters of `map_blocks` in the covariance calculation used in linear fitting.
