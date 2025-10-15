@@ -842,66 +842,49 @@ class TestModel1DSetSignalRange:
 
 class TestPrintModelStatistics:
     def setup_method(self, method):
-        s = hs.signals.Signal1D(np.arange(900).reshape(30, 30))
+        x = np.linspace(0, 20, 200)
+        y = (
+            3 * np.exp(-((x - 5) ** 2) / (2 * 0.5**2))
+            + 2 * np.exp(-((x - 10) ** 2) / (2 * 1.0**2))
+            + 4 * np.exp(-((x - 15) ** 2) / (2 * 0.8**2))
+        )
+        s = hs.signals.Signal1D(y)
         m = s.create_model()
-        gaussian = hs.model.components1D.Gaussian()
-        m.append(gaussian)
-        m.fit()
-        self.signal = s
-        self.model = m
+        gauss1 = hs.model.components1D.Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
+        gauss3 = hs.model.components1D.Gaussian()
+        lorenz1 = hs.model.components1D.Lorentzian()
+        lorenz2 = hs.model.components1D.Lorentzian()
+        m.extend([gauss1, gauss2, gauss3, lorenz1, lorenz2])
+        m.multifit()
+        self.s = s
+        self.m = m
 
-    def test_print_model_statistics_normal(self):
-        m = self.model
+    def test_print_model_statistics_no_thresholds(self):
+        self.m.print_model_statistics()
+
+    def test_print_model_statistics_with_thresholds(self):
+        thresholds = {"A": {"min": 0.1, "max": 10}, "centre": {"max": 50}}
+        self.m.print_model_statistics(thresholds=thresholds)
+
+    def test_print_model_statistics_output(self):
         old_stdout = sys.stdout
         sys.stdout = mystdout = io.StringIO()
-        m.print_model_statistics()
+        self.m.print_model_statistics()
         sys.stdout = old_stdout
         out = mystdout.getvalue()
 
-        assert "Component type: Gaussian" in out
-        assert "Parameter:" in out
-        assert "mean" in out
-        assert "std" in out
-        assert "min" in out
-        assert "max" in out
+        # Prüfen, dass die Gauss- und Lorentzian-Komponenten auftauchen
+        assert "Gaussian" in out
+        assert "Lorentzian" in out
+
+        # Prüfen, dass Parameter wie A, centre, sigma/gamma auftauchen
         assert "A" in out
         assert "centre" in out
-        assert "sigma" in out
+        assert any(param in out for param in ["sigma", "gamma"])
 
-    def test_print_model_statistics_invalid_object(self):
-        from hyperspy.model import BaseModel
-
-        class DummyComponent(BaseModel):
-            __class__ = type("", (), {})
-
-        dummy_model = DummyComponent()
-
-        with pytest.raises(
-            TypeError, match="The provided object is not a valid HyperSpy model"
-        ):
-            dummy_model.print_model_statistics()
-
-    def test_print_model_statistics_dummy_model_no_param_values(self):
-        from hyperspy.model import BaseModel
-
-        class DummyParam(BaseModel):
-            name = "A"
-            map = None
-            value = None
-
-        class DummyComponent(BaseModel):
-            parameters = [DummyParam()]
-            __class__ = type("Gaussian", (), {})
-
-        class DummyModel(BaseModel):
-            components = [DummyComponent()]
-
-            def __iter__(self):
-                return iter(self.components)
-
-        dummy_model = DummyModel()
-
-        with pytest.raises(
-            TypeError, match="Could not extract parameter values from component"
-        ):
-            dummy_model.print_model_statistics()
+        # Prüfen, dass Statistik-Spalten auftauchen
+        assert "mean" in out.lower()
+        assert "std" in out.lower()
+        assert "min" in out.lower()
+        assert "max" in out.lower()

@@ -18,6 +18,7 @@
 
 import dask.array as da
 import numpy as np
+from collections import defaultdict
 
 
 def _format_string(val):
@@ -299,3 +300,139 @@ def _calculate_parameter_uncertainty_from_fisher_information(fisher_information_
             uncertainties = np.full(fisher_information_matrix.shape[0], np.nan)
             covariance = np.full_like(fisher_information_matrix, np.nan)
             return uncertainties, covariance
+
+
+class ModelStatistics:
+    """
+    Display-class for showing mean, std, min, max of each parameter
+    in each model component in a clean text or HTML table.
+
+    Parameters
+    ----------
+    model : hyperspy model instance
+    thresholds : dict, optional
+        Same structure as in print_model_statistics().
+    """
+
+    def __init__(self, model, thresholds=None):
+        self.model = model
+        self.thresholds = thresholds
+        self.stats = self._compute_statistics()
+
+    def _compute_statistics(self):
+        """Compute statistics exactly like print_model_statistics(),
+        but return them as a nested dictionary for display."""
+        collected_values = []
+
+        for i, comp in enumerate(self.model):
+            comp_name = f"{i} - {comp.__class__.__name__}"
+            for param in comp.parameters:
+                if hasattr(param, "map") and param.map is not None:
+                    arr = np.array(param.map)
+                    values = np.array([float(arr[j][0]) for j in range(len(arr))])
+                    collected_values.append(
+                        {
+                            "component": comp_name,
+                            "parameter": param.name,
+                            "values": values,
+                        }
+                    )
+
+        # Apply thresholds if given
+        if self.thresholds is not None:
+            for entry in collected_values:
+                th = self.thresholds.get(entry["parameter"], {"min": None, "max": None})
+                values = np.array(entry["values"], dtype=float)
+                if th.get("min") is not None:
+                    values = values[values >= th["min"]]
+                if th.get("max") is not None:
+                    values = values[values <= th["max"]]
+                entry["values"] = values
+
+        # Aggregate by component and parameter
+        aggregated = defaultdict(lambda: defaultdict(list))
+
+        for entry in collected_values:
+            comp_type = entry["component"].split(" - ")[1]
+            values = np.array(entry["values"], dtype=float)
+
+            if len(values) > 0:
+                aggregated[comp_type][entry["parameter"]].extend(values.tolist())
+
+        statistics = defaultdict(lambda: defaultdict(dict))
+
+        for comp_type, params in aggregated.items():
+            for pname, values in params.items():
+                arr = np.array(values, dtype=float)
+                if len(arr) > 0:
+                    statistics[comp_type][pname] = {
+                        "mean": np.mean(arr),
+                        "std": np.std(arr),
+                        "min": np.min(arr),
+                        "max": np.max(arr),
+                    }
+        return statistics
+
+    # --- Text output (repr) ---
+    def __repr__(self):
+        # Spaltengrößen für Terminal-Layout
+        size = {
+            "param": 14,
+            "mean": 12,
+            "std": 12,
+            "min": 12,
+            "max": 12,
+        }
+
+        signature = "{{:<{param}}} | {{:>{mean}}} | {{:>{std}}} | {{:>{min}}} | {{:>{max}}}".format(
+            **size
+        )
+
+        text = ""
+        for comp_type, params in self.stats.items():
+            text += f"{comp_type}:\n"
+            text += signature.format("Parameter", "Mean", "Std", "Min", "Max") + "\n"
+            text += (
+                signature.format(
+                    "=" * size["param"],
+                    "=" * size["mean"],
+                    "=" * size["std"],
+                    "=" * size["min"],
+                    "=" * size["max"],
+                )
+                + "\n"
+            )
+
+            for pname, stats in params.items():
+                text += (
+                    signature.format(
+                        pname[: size["param"]],
+                        f"{stats['mean']:.3e}",
+                        f"{stats['std']:.3e}",
+                        f"{stats['min']:.3e}",
+                        f"{stats['max']:.3e}",
+                    )
+                    + "\n"
+                )
+            text += "\n"
+        return text
+
+    # --- HTML output (repr_html) ---
+    def _repr_html_(self):
+        html = ""
+        for comp_type, params in self.stats.items():
+            html += f"<h4>Component type: {comp_type}</h4>"
+            html += (
+                "<table style='width:100%; border-collapse:collapse; text-align:center;'>"
+                "<tr><th>Parameter</th><th>Mean</th><th>Std</th><th>Min</th><th>Max</th></tr>"
+            )
+            for pname, stats in params.items():
+                html += (
+                    f"<tr><td>{pname}</td>"
+                    f"<td>{stats['mean']:.3e}</td>"
+                    f"<td>{stats['std']:.3e}</td>"
+                    f"<td>{stats['min']:.3e}</td>"
+                    f"<td>{stats['max']:.3e}</td></tr>"
+                )
+            html += "</table><br>"
+        return html

@@ -46,32 +46,6 @@ However, this doesn't mean that you have to limit yourself to this meagre
 list of functions. As discussed below, it is very easy to turn a
 mathematical, fixed-pattern or Python function into a component.
 
-.. _compute-model-statistics:
-
-Compute model statistics
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-HyperSpy provides a method to compute and print summary statistics of all
-parameters of each component in a model. This is especially useful for
-inspecting parameter values after fitting a map of spectra using multifit,
-as it allows evaluating mean, standard deviation, minimum, and maximum across
-all navigation points.
-
-.. code-block:: python
-
-    >>> data = np.arange(1000, dtype=np.int64).reshape((10, 100))
-    >>> s = hs.signals.Signal1D(data)
-    >>> s.add_poissonian_noise(random_state=0)
-    >>> model = s.create_model()
-    >>> line = hs.model.components1D.Expression("a * x + b", name="Affine")
-    >>> model.append(line)
-    >>> model.multifit()
-    >>> print_model_statistics(model)
-
-The output includes the mean, standard deviation, minimum, and maximum for each
-parameter of each component. Thresholds can optionally be applied to filter the
-values considered in the statistics.
-
 .. _expression_component-label:
 
 Define components from a mathematical expression
