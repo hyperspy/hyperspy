@@ -23,10 +23,10 @@ jobs:
     # Use the "reusable workflow" from the hyperspy organisation
     uses: hyperspy/.github/.github/workflows/push_doc.yml@main
     with:
-      repository: 'hyperspy/hyperspy-doc'
+      external_repository: 'hyperspy/hyperspy-doc'
       output_path: 'dev'
     secrets:
-      access_token: ${{ secrets.PAT_DOCUMENTATION }}
+      personal_token: ${{ secrets.PAT_DOCUMENTATION }}
 
   Push_tag:
     needs: Build
@@ -38,7 +38,7 @@ jobs:
     # Use the "reusable workflow" from the hyperspy organisation
     uses: hyperspy/.github/.github/workflows/push_doc.yml@main
     with:
-      repository: 'hyperspy/hyperspy-doc'
+      external_repository: 'hyperspy/hyperspy-doc'
       output_path: 'current'
     secrets:
-      access_token: ${{ secrets.PAT_DOCUMENTATION }}
+      personal_token: ${{ secrets.PAT_DOCUMENTATION }}
