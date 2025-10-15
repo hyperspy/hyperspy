@@ -44,7 +44,7 @@ jobs:
             PYTHON_VERSION: '3.11'
             PIP_SELECTOR: '[all, tests, coverage]'
           - os: macos
-            os_version: '13'
+            os_version: '15-intel'
             PYTHON_VERSION: '3.11'
             PIP_SELECTOR: '[all, tests, coverage]'
 

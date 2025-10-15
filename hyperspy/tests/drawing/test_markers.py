@@ -236,6 +236,7 @@ class TestMarkers:
             _ = Points.from_signal(signal, sizes=(10,), signal_axes="test")
 
     def test_find_peaks(self):
+        pytest.importorskip("skimage")
         from skimage.draw import disk
         from skimage.morphology import disk as disk2
 
@@ -285,10 +286,9 @@ class TestMarkers:
         np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
 
     def test_find_peaks0d(self):
-        from skimage.draw import disk
-        from skimage.morphology import disk as disk2
+        skimage = pytest.importorskip("skimage")
 
-        rr, cc = disk(
+        rr, cc = skimage.draw.disk(
             center=(10, 8),
             radius=4,
         )
@@ -302,7 +302,7 @@ class TestMarkers:
         pks = s.find_peaks(
             interactive=False,
             method="template_matching",
-            template=disk2(4),
+            template=skimage.morphology.disk(4),
         )
         col = Points.from_signal(
             pks, sizes=(0.3,), signal_axes=s.axes_manager.signal_axes
