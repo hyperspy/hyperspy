@@ -1678,8 +1678,7 @@ class PolygonROI(BaseInteractiveROI):
 
         For a ``PolygonROI``, the dictionary contains:
 
-        - ``vertices`` : list of (float, float) - A list of ``(x, y)``
-        coordinate pairs defining the polygon vertices.
+        - ``vertices`` : list of (float, float) - A list of ``(x, y)`` coordinate pairs defining the polygon vertices.
 
         Notes
         -----
