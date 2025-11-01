@@ -16,25 +16,37 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import numbers
 from collections.abc import Iterable
 
 import dask.array as da
 import numpy as np
 
 
-def _format_string(val):
+def _format_string(val, format_string=".5g"):
     """
-    Returns formatted string for a value unless it equals None, then blank
+    Returns formatted string for a value unless it equals None,
+    then empty string is returned.
+
+    Parameters
+    ----------
+    val : any
+        Value to format
+    format_string : str, optional
+        For numeric types only: the format string to use. Default is ".5g".
     """
     if val is None:
         to_return = ""
     elif isinstance(val, str):
         to_return = val
     elif isinstance(val, Iterable):
-        to_return = ", ".join(f"{v:.6g}" for v in val)
+        to_return = ", ".join(
+            f"{v:{format_string}}" if isinstance(v, numbers.Number) else str(v)
+            for v in val
+        )
         to_return = f"({to_return})"
     else:
-        to_return = f"{val:.6g}"
+        to_return = f"{val:{format_string}}"
 
     return to_return
 

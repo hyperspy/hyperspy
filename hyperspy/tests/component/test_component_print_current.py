@@ -160,5 +160,9 @@ class TestSetParameters:
 def test_format_string():
     assert _format_string(None) == ""
     assert _format_string(5) == "5"
-    assert _format_string(5.123456789) == "5.12346"
+    assert _format_string(5.123456789) == "5.1235"
+    assert _format_string(5.123456789, format_string=".6g") == "5.12346"
     assert _format_string((0, 1, 2)) == "(0, 1, 2)"
+    assert (
+        _format_string((0.123, 1.234, 2.345), format_string=".2g") == "(0.12, 1.2, 2.3)"
+    )
