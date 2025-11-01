@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from collections.abc import Iterable
+
 import dask.array as da
 import numpy as np
 
@@ -24,7 +26,17 @@ def _format_string(val):
     """
     Returns formatted string for a value unless it equals None, then blank
     """
-    return "{:6g}".format(val) if val is not None else ""
+    if val is None:
+        to_return = ""
+    elif isinstance(val, str):
+        to_return = val
+    elif isinstance(val, Iterable):
+        to_return = ", ".join(f"{v:.6g}" for v in val)
+        to_return = f"({to_return})"
+    else:
+        to_return = f"{val:.6g}"
+
+    return to_return
 
 
 class CurrentComponentValues:
@@ -95,11 +107,11 @@ class CurrentComponentValues:
                 text += signature.format(
                     para.name[: size["name"]],
                     str(free)[: size["free"]],
-                    str(para.value)[: size["value"]],
-                    str(para.std)[: size["std"]],
-                    str(para.bmin)[: size["bmin"]],
-                    str(para.bmax)[: size["bmax"]],
-                    str(ln)[: size["linear"]],
+                    _format_string(para.value)[: size["value"]],
+                    _format_string(para.std)[: size["std"]],
+                    _format_string(para.bmin)[: size["bmin"]],
+                    _format_string(para.bmax)[: size["bmax"]],
+                    _format_string(str(ln))[: size["linear"]],
                 )
                 text += "\n"
         return text
