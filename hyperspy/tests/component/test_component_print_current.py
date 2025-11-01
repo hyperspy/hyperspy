@@ -166,3 +166,6 @@ def test_format_string():
     assert (
         _format_string((0.123, 1.234, 2.345), format_string=".2g") == "(0.12, 1.2, 2.3)"
     )
+    assert _format_string("Hello, World!") == "Hello, World!"
+    assert _format_string("Hello, World!", max_length=5) == "He..."
+    assert _format_string("Hello, World!", max_length=5, add_ellipsis=False) == "Hello"
