@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import io
 import logging
-import sys
 from unittest import mock
 
 import dask
@@ -868,23 +866,29 @@ class TestPrintModelStatistics:
         self.m.print_model_statistics(thresholds=thresholds)
 
     def test_print_model_statistics_output(self):
-        old_stdout = sys.stdout
-        sys.stdout = mystdout = io.StringIO()
-        self.m.print_model_statistics()
-        sys.stdout = old_stdout
-        out = mystdout.getvalue()
+        from hyperspy.misc.model_tools import ModelStatistics
 
-        # Prüfen, dass die Gauss- und Lorentzian-Komponenten auftauchen
+        out = str(ModelStatistics(self.m).__repr__())
+
+        # Check that the Gaussian and Lorentzian components appear
         assert "Gaussian" in out
+        assert "Gaussian_1" in out
         assert "Lorentzian" in out
+        assert "Lorentzian_0" in out
 
-        # Prüfen, dass Parameter wie A, centre, sigma/gamma auftauchen
+        # Check that parameters such as A, centre, sigma/gamma appear
         assert "A" in out
         assert "centre" in out
         assert any(param in out for param in ["sigma", "gamma"])
 
-        # Prüfen, dass Statistik-Spalten auftauchen
+        # Check that the statistics columns appear
         assert "mean" in out.lower()
         assert "std" in out.lower()
         assert "min" in out.lower()
         assert "max" in out.lower()
+
+    def test_html_print(self):
+        from hyperspy.misc.model_tools import ModelStatistics
+
+        """Ensure that html print is giving sensible output"""
+        assert "<td>centre</td>" in ModelStatistics(self.m)._repr_html_()

@@ -22,7 +22,6 @@ import logging
 import os
 import tempfile
 import warnings
-from collections import defaultdict
 from contextlib import contextmanager
 from functools import partial
 

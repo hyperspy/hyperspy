@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from collections import defaultdict
+
 import dask.array as da
 import numpy as np
-from collections import defaultdict
 
 
 def _format_string(val):
@@ -325,7 +326,7 @@ class ModelStatistics:
         collected_values = []
 
         for i, comp in enumerate(self.model):
-            comp_name = f"{i} - {comp.__class__.__name__}"
+            comp_name = f"{i} - {comp.name}"
             for param in comp.parameters:
                 if hasattr(param, "map") and param.map is not None:
                     arr = np.array(param.map)
