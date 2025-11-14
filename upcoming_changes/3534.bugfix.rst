@@ -1,0 +1,1 @@
+Don't calculate fitting error when mpfit parameter error is None to avoid raising an exception, log a warning instead.

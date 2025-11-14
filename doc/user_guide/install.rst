@@ -173,6 +173,10 @@ use:
 See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
 
+* ``image`` to install `scikit-image <https://scikit-image.org/>`_ for image
+  processing functionalities, such as subpixel :meth:`~hyperspy.api.signals.Signal2D.align2D`,
+  :meth:`~hyperspy.api.signals.Signal2D.find_peaks` and
+  :meth:`~hyperspy.api.signals.ComplexSignal.unwrapped_phase`.
 * ``ipython`` for integration with the `ipython` terminal and parallel processing using `ipyparallel`,
 * ``learning`` for some machine learning features,
 * ``gui-jupyter`` to use the `Jupyter widgets <https://ipywidgets.readthedocs.io/en/stable/>`_

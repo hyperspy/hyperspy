@@ -229,7 +229,9 @@ def _calculate_covariance(
     # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
     # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
     if lazy and target_signal.ndim > 1:
-        inv_fit_dot = da.map_blocks(np.linalg.inv, fit_dot, chunks=fit_dot.chunks)
+        inv_fit_dot = da.map_blocks(
+            np.linalg.inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
+        )
     else:
         inv_fit_dot = np.linalg.inv(fit_dot)
 

@@ -384,8 +384,10 @@ at the time of writing.
 The pre-release packages are obtained from `PyPI <https://pypi.org>`_ and these
 will be used for any dependency which provides a pre-release package on PyPI.
 
-A similar `Integration test  <https://github.com/hyperspy/hyperspy/actions/workflows/tests_extension.yml>`__
+A similar `Integration test  <https://github.com/hyperspy/hyperspy/actions/workflows/integration_tests.yml>`__
 workflow can run from pull requests (PR) to the
 `hyperspy <https://github.com/hyperspy/hyperspy>`_ repository when the label
-``run-extension-tests`` is added to a PR or when a PR review is edited.
+``run-integration-tests`` is added to a PR or when a PR review is edited.
 
+These workflows use the `integration_tests.yml <https://github.com/hyperspy/.github/blob/main/.github/workflows/integration_tests.yml>`_ reusable workflow
+from the https://github.com/hyperspy/.github repository.

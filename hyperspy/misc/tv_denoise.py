@@ -163,10 +163,10 @@ def _tv_denoise_2d(im, weight=50, eps=2.0e-4, keep_type=False, n_iter_max=200):
 
     Examples
     ---------
-    >>> import skimage
-    >>> camera = skimage.data.camera().astype(float)
-    >>> camera += 0.5 * camera.std() * np.random.randn(*camera.shape)
-    >>> denoised_camera = _tv_denoise_2d(camera, weight=60.0)
+    >>> import scipy
+    >>> face = scipy.datasets.face().astype(float)
+    >>> face += 0.5 * face.std() * np.random.randn(*face.shape)
+    >>> denoised_face = _tv_denoise_2d(face, weight=60.0)
     """
     im_type = im.dtype
     if im_type is not float:
@@ -349,10 +349,10 @@ def tv_denoise(im, weight=50, eps=2.0e-4, keep_type=False, n_iter_max=200):
 
     Examples
     ---------
-    >>> import skimage
-    >>> camera = skimage.data.camera().astype(float)
-    >>> camera += 0.5 * camera.std() * np.random.randn(*camera.shape)
-    >>> denoised_camera = tv_denoise(camera, weight=60)
+    >>> import scipy
+    >>> face = scipy.datasets.face().astype(float)
+    >>> face += 0.5 * face.std() * np.random.randn(*face.shape)
+    >>> denoised_face = tv_denoise(face, weight=60)
     >>> # 3D example on synthetic data
     >>> x, y, z = np.ogrid[0:40, 0:40, 0:40]
     >>> mask = (x -22)**2 + (y - 20)**2 + (z - 17)**2 < 8**2

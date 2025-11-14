@@ -2002,10 +2002,19 @@ class BaseModel(list):
                     self.p0 = self.fit_output.x
                     ysize = len(self.fit_output.x) + self.fit_output.dof
                     cost = self.fit_output.fnorm
-                    pcov = self.fit_output.perror**2
+                    if self.fit_output.perror is None:  # pragma: no cover
+                        # in case of RuntimeWarning in mpfit
+                        nav_msg = ""
+                        if self.signal.axes_manager.navigation_size > 0:
+                            nav_msg = f" for navigation position: {self.signal.axes_manager.indices}"
+                        _logger.warning(
+                            f"Covariance of the parameters could not be estimated{nav_msg}."
+                        )
+                    else:
+                        pcov = self.fit_output.perror**2
 
-                    # Calculate estimated parameter standard deviation
-                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+                        # Calculate estimated parameter standard deviation
+                        self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
                 else:
                     # Unbounded Levenberg-Marquardt algorithm is supported
