@@ -1,0 +1,1 @@
+Add support for ipykernels subshells when using ipympl matplotlib backend.
