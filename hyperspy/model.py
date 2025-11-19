@@ -52,7 +52,7 @@ from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
 from hyperspy.io import assign_signal_subclass
-from hyperspy.misc.array_tools import get_chunk_slice
+from hyperspy.misc.dask_utils import get_chunk_slice
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,

@@ -21,8 +21,6 @@ import numbers
 import warnings
 from functools import reduce
 
-import dask
-import dask.array as da
 import numpy as np
 from packaging.version import Version
 
@@ -206,6 +204,9 @@ def check_random_state(seed, lazy=False):
     np.random.Generator instance or dask.array.random.Generator
 
     """
+    import dask
+    import dask.array as da
+
     # Derived from `sklearn.utils.check_random_state`.
     # Copyright (c) 2007-2020 The scikit-learn developers.
     # All rights reserved.

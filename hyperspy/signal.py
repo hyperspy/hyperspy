@@ -84,20 +84,22 @@ from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.misc.array_tools import rebin as array_rebin
+from hyperspy.misc.dask_utils import (
+    _compute,
+    _get_block_pattern,
+    guess_output_signal_size,
+    process_function_blockwise,
+)
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
 from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
 from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
-    _compute,
-    _get_block_pattern,
     add_scalar_axis,
-    guess_output_signal_size,
     is_cupy_array,
     isiterable,
     iterable_not_string,
-    process_function_blockwise,
     rollelem,
     slugify,
     to_numpy,

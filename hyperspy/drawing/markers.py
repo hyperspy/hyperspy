@@ -26,7 +26,7 @@ from matplotlib.patches import Patch
 from matplotlib.transforms import IdentityTransform
 
 from hyperspy.events import Event, Events
-from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
+from hyperspy.misc.dask_utils import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
 
 _logger = logging.getLogger(__name__)

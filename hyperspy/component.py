@@ -22,7 +22,6 @@ from pathlib import Path
 import numpy as np
 import sympy
 import traits.api as t
-from dask.array import Array as dArray
 from rsciio.utils.path import append2pathname, incremental_filename
 from sympy.utilities.lambdify import lambdify
 from traits.trait_numeric import Array
@@ -533,9 +532,9 @@ class Parameter(t.HasTraits):
         if self.map["is_set"][indices]:
             value = self.map["values"][indices]
             std = self.map["std"][indices]
-            if isinstance(value, dArray):
+            if hasattr(value, "compute"):
                 value = value.compute()
-            if isinstance(std, dArray):
+            if hasattr(std, "compute"):
                 std = std.compute()
             self.value = value
             self.std = std

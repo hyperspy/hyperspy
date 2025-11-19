@@ -20,7 +20,6 @@ from copy import deepcopy
 from operator import attrgetter
 
 import cloudpickle
-from dask.array import Array
 
 from hyperspy.misc.utils import attrsetter
 
@@ -206,6 +205,6 @@ def reconstruct_object(flags, value):
             return cloudpickle.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")
-    if isinstance(value, Array):
+    if hasattr(value, "compute"):
         value = value.compute()
     return value

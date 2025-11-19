@@ -19,7 +19,6 @@
 import logging
 import math
 
-import dask.array as da
 import numpy as np
 
 from hyperspy.decorators import jit_ifnumba
@@ -179,6 +178,8 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
             )
         else:
             try:
+                import dask.array as da
+
                 return da.coarsen(
                     np.sum, a, {i: int(f) for i, f in enumerate(scale)}, dtype=dtype
                 )
@@ -373,105 +374,6 @@ def _numba_histogram(data, bins, ranges):
     return hist
 
 
-def get_signal_chunk_slice(index, chunks):
-    """
-    Convenience function returning the chunk slice in signal space containing
-    the specified index.
-
-    Parameters
-    ----------
-    index : int or tuple of int
-        Index determining the wanted chunk.
-    chunks : tuple
-        Dask array chunks.
-
-    Returns
-    -------
-    slice
-        Slice containing the index x,y.
-
-    """
-    if not isinstance(index, (list, tuple)):
-        index = tuple(index)
-
-    chunk_slice_raw_list = da.core.slices_from_chunks(chunks[-len(index) :])
-    chunk_slice_list = []
-    for chunk_slice_raw in chunk_slice_raw_list:
-        chunk_slice_list.append(list(chunk_slice_raw)[::-1])
-
-    for chunk_slice in chunk_slice_list:
-        _slice = chunk_slice
-        if _slice[0].start <= index[0] < _slice[0].stop:
-            if len(_slice) == 1:
-                return chunk_slice
-            elif _slice[1].start <= index[1] < _slice[1].stop:
-                return chunk_slice
-    raise ValueError("Index out of signal range.")
-
-
-def get_chunk_slice(
-    shape,
-    signal_dimension,
-    chunks="auto",
-    block_size_limit=None,
-    dtype=None,
-):
-    """
-    Takes a shape and chunks and returns an array of the slices to be used with
-    :func:`dask.array.map_blocks`.
-
-    Parameters
-    ----------
-    shape : tuple
-        Shape of the data.
-    signal_dimension : int
-        The signal dimension of the signal.
-    chunks : "auto", "dask_auto" or tuple
-        If ``"auto"``, no chunking is created in the signal dimension. If ``"dask_auto"``, the
-        dask "auto" chunking is used - see :func:`dask.array.core.normalize_chunks` for more
-        information. The default is "auto".
-    block_size_limit : int, optional
-        Maximum size of a block in bytes. The default is None. This is passed
-        to the :func:`dask.array.core.normalize_chunks` function when chunks == "auto".
-    dtype : numpy.dtype, optional
-        Data type. The default is None. This is passed to the
-        :func:`dask.array.core.normalize_chunks` function when chunks == "auto".
-
-    Returns
-    -------
-    numpy.ndarray of slices
-        Dask array of the slices.
-    tuple
-        Tuple of the chunks.
-
-    Note
-    ----
-    Adapted from https://github.com/hyperspy/rosettasciio/blob/main/rsciio/utils/distributed.py
-    """
-    if chunks == "auto":
-        # no chunking along signal_dimension
-        chunks = ("auto",) * len(shape[:-signal_dimension]) + (-1,)
-    elif chunks == "dask_auto":
-        # Use dask auto
-        chunks = "auto"
-
-    chunks = da.core.normalize_chunks(
-        chunks=chunks, shape=shape, limit=block_size_limit, dtype=dtype
-    )
-    chunks_shape = tuple([len(c) for c in chunks])
-    slices = np.empty(
-        shape=chunks_shape + (len(chunks_shape), 2),
-        dtype=int,
-    )
-    for ind in np.ndindex(chunks_shape):
-        current_chunk = [chunk[i] for i, chunk in zip(ind, chunks)]
-        starts = [int(np.sum(chunk[:i])) for i, chunk in zip(ind, chunks)]
-        stops = [s + c for s, c in zip(starts, current_chunk)]
-        slices[ind] = [[start, stop] for start, stop in zip(starts, stops)]
-
-    return slices, chunks
-
-
 @jit_ifnumba(cache=True)
 def numba_closest_index_round(axis_array, value_array):
     """For each value in value_array, find the closest value in axis_array and
@@ -654,64 +556,3 @@ def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
         np.floor(array * multiplier + 0.5) / multiplier,
         np.ceil(array * multiplier - 0.5) / multiplier,
     )
-
-
-def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
-    """Get the slice necessary to get the dask data chunk containing the
-    navigation indices.
-
-    Parameters
-    ----------
-    navigation_indices : iterable
-    chunks : iterable
-
-    Returns
-    -------
-    chunk_slice : list of slices
-
-    Examples
-    --------
-    Making all the variables
-
-
-    >>> from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
-    >>> data = da.random.random((128, 128, 256, 256), chunks=(32, 32, 32, 32))
-    >>> s = hs.signals.Signal2D(data).as_lazy()
-
-    >>> sig_dim = s.axes_manager.signal_dimension
-    >>> nav_chunks = s.data.chunks[:-sig_dim]
-    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
-
-    The navigation index here is (0, 0), giving us the slice which contains
-    this index.
-
-    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
-    >>> print(chunk_slice)
-    (slice(0, 32, None), slice(0, 32, None))
-    >>> data_chunk = data[chunk_slice]
-
-    Moving the navigator to a new position, by directly setting the indices.
-    Normally, this is done by moving the navigator while plotting the data.
-    Note the "inversion" of the axes here: the indices is given in (x, y),
-    while the chunk_slice is given in (y, x).
-
-    >>> s.axes_manager.indices = (127, 70)
-    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
-    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
-    >>> print(chunk_slice)
-    (slice(64, 96, None), slice(96, 128, None))
-    >>> data_chunk = data[chunk_slice]
-
-    """
-    chunk_slice_list = da.core.slices_from_chunks(chunks)
-    for chunk_slice in chunk_slice_list:
-        is_slice = True
-        for index_nav in range(len(navigation_indices)):
-            temp_slice = chunk_slice[index_nav]
-            nav = navigation_indices[index_nav]
-            if not (temp_slice.start <= nav < temp_slice.stop):
-                is_slice = False
-                break
-        if is_slice:
-            return chunk_slice
-    return False

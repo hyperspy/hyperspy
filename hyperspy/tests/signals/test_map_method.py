@@ -28,7 +28,8 @@ from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 import hyperspy.api as hs
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.utils import _get_block_pattern, dummy_context_manager
+from hyperspy.misc.dask_utils import _get_block_pattern
+from hyperspy.misc.utils import dummy_context_manager
 
 
 def identify_function(x):

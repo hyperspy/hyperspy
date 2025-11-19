@@ -34,14 +34,15 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import (
+from hyperspy.misc.array_tools import _requires_linear_rebin
+from hyperspy.misc.dask_utils import (
+    _compute,
     _get_navigation_dimension_chunk_slice,
-    _requires_linear_rebin,
     get_signal_chunk_slice,
 )
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import _compute, isiterable, multiply
+from hyperspy.misc.utils import isiterable, multiply
 from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
