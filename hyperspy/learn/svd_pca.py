@@ -21,10 +21,7 @@ import logging
 import numpy as np
 from numpy.linalg import svd
 
-from hyperspy.misc.machine_learning.import_sklearn import (
-    randomized_svd,
-    sklearn_installed,
-)
+from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import is_cupy_array
 
 _logger = logging.getLogger(__name__)
@@ -134,18 +131,20 @@ def svd_solve(
         elif (
             output_dimension >= 1
             and output_dimension < 0.8 * min(m, n)
-            and sklearn_installed
+            and import_sklearn.sklearn_installed
         ):
             svd_solver = "randomized"
         else:
             svd_solver = "full"
 
     if svd_solver == "randomized":
-        if not sklearn_installed:  # pragma: no cover
+        if not import_sklearn.sklearn_installed:  # pragma: no cover
             raise ImportError(
                 "svd_solver='randomized' requires scikit-learn to be installed"
             )
-        U, S, V = randomized_svd(data, n_components=output_dimension, **kwargs)
+        U, S, V = import_sklearn.randomized_svd(
+            data, n_components=output_dimension, **kwargs
+        )
     elif svd_solver == "arpack":
         if output_dimension >= min(m, n):
             raise ValueError(

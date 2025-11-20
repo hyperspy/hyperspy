@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
+import importlib
 import logging
 import types
 import warnings
@@ -54,27 +54,53 @@ except ImportError:
 _logger = logging.getLogger(__name__)
 
 
-if import_sklearn.sklearn_installed:
-    decomposition_algorithms = {
-        "sklearn_pca": import_sklearn.sklearn.decomposition.PCA,
-        "NMF": import_sklearn.sklearn.decomposition.NMF,
-        "sparse_pca": import_sklearn.sklearn.decomposition.SparsePCA,
-        "mini_batch_sparse_pca": import_sklearn.sklearn.decomposition.MiniBatchSparsePCA,
-        "sklearn_fastica": import_sklearn.sklearn.decomposition.FastICA,
-    }
-    cluster_algorithms = {
-        None: import_sklearn.sklearn.cluster.KMeans,
-        "kmeans": import_sklearn.sklearn.cluster.KMeans,
-        "agglomerative": import_sklearn.sklearn.cluster.AgglomerativeClustering,
-        "minibatchkmeans": import_sklearn.sklearn.cluster.MiniBatchKMeans,
-        "spectralclustering": import_sklearn.sklearn.cluster.SpectralClustering,
-    }
-    cluster_preprocessing_algorithms = {
-        None: None,
-        "norm": import_sklearn.sklearn.preprocessing.Normalizer,
-        "standard": import_sklearn.sklearn.preprocessing.StandardScaler,
-        "minmax": import_sklearn.sklearn.preprocessing.MinMaxScaler,
-    }
+decomposition_algorithms = {
+    "sklearn_pca": "PCA",
+    "NMF": "NMF",
+    "sparse_pca": "SparsePCA",
+    "mini_batch_sparse_pca": "MiniBatchSparsePCA",
+    "sklearn_fastica": "FastICA",
+}
+
+
+cluster_algorithms = {
+    None: "KMeans",
+    "kmeans": "KMeans",
+    "agglomerative": "AgglomerativeClustering",
+    "minibatchkmeans": "MiniBatchKMeans",
+    "spectralclustering": "SpectralClustering",
+}
+
+
+preprocessing_algorithms = {
+    None: None,
+    "norm": "Normalizer",
+    "standard": "StandardScaler",
+    "minmax": "MinMaxScaler",
+}
+
+
+def _get_sklearn_algorithms(algorithm):
+    """Get the sklearn algorithms available for decomposition."""
+
+    module = importlib.import_module("sklearn.decomposition")
+    return getattr(module, decomposition_algorithms[algorithm])
+
+
+def _get_sklearn_clustering_algorithms(algorithm):
+    """Get the sklearn algorithms available for preprocessing."""
+
+    module = importlib.import_module("sklearn.cluster")
+    return getattr(module, cluster_algorithms[algorithm])
+
+
+def _get_sklearn_preprocessing_algorithms(algorithm):
+    """Get the sklearn algorithms available for preprocessing."""
+
+    module = importlib.import_module("sklearn.preprocessing")
+    return getattr(module, preprocessing_algorithms[algorithm])
+
+    return
 
 
 def _get_derivative(signal, diff_axes, diff_order):
@@ -292,7 +318,7 @@ class MVA:
 
             # Initialize the sklearn estimator
             is_sklearn_like = True
-            estim = decomposition_algorithms[algorithm](
+            estim = _get_sklearn_algorithms(algorithm)(
                 n_components=output_dimension, **kwargs
             )
 
@@ -847,7 +873,7 @@ class MVA:
 
             # Initialize the sklearn estimator
             is_sklearn_like = True
-            estim = decomposition_algorithms[algorithm](**kwargs)
+            estim = _get_sklearn_algorithms(algorithm)(**kwargs)
 
             # Check whiten argument
             if estim.whiten and whiten_method is not None:
@@ -2201,9 +2227,11 @@ class MVA:
             if algorithm in algorithms_sklearn:
                 if not import_sklearn.sklearn_installed:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
-                cluster_algorithm = cluster_algorithms[algorithm](**kwargs)
+                cluster_algorithm = _get_sklearn_clustering_algorithms(algorithm)(
+                    **kwargs
+                )
         elif algorithm is None:
-            cluster_algorithm = cluster_algorithms[None](**kwargs)
+            cluster_algorithm = _get_sklearn_clustering_algorithms(None)(**kwargs)
         elif hasattr(algorithm, "fit"):
             cluster_algorithm = algorithm
         else:
@@ -2218,12 +2246,12 @@ class MVA:
         """Convenience method to lookup method if algorithm is a string
         or if it's an object check that the object has a fit_transform method
         """
-        preprocessing_methods = list(cluster_preprocessing_algorithms.keys())
+        preprocessing_methods = list(preprocessing_algorithms.keys())
         if algorithm in preprocessing_methods:
             if algorithm is not None:
                 if not import_sklearn.sklearn_installed:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
-                process_algorithm = cluster_preprocessing_algorithms[algorithm](
+                process_algorithm = _get_sklearn_preprocessing_algorithms(algorithm)(
                     **kwargs
                 )
             else:
@@ -2395,7 +2423,7 @@ class MVA:
                 "Estimate number of clusters only works with "
                 "supported clustering algorithms"
             )
-        if preprocessing not in cluster_preprocessing_algorithms:
+        if preprocessing not in preprocessing_algorithms:
             raise ValueError(
                 "Estimate number of clusters only works with "
                 "supported preprocessing algorithms"
