@@ -24,6 +24,7 @@ from itertools import product
 import dask
 import dask.array as da
 import numpy as np
+import scipy
 from dask.widgets import TEMPLATE_PATHS
 from rsciio.utils.file import get_file_handle
 
@@ -657,12 +658,11 @@ class LazySignal(BaseSignal):
 
     def integrate_simpson(self, axis, out=None, rechunk=False):
         axis = self.axes_manager[axis]
-        from scipy import integrate
 
         axis = self.axes_manager[axis]
         data = self._lazy_data(axis=axis, rechunk=rechunk)
         new_data = data.map_blocks(
-            integrate.simpson,
+            scipy.integrate.simpson,
             x=axis.axis,
             axis=axis.index_in_array,
             drop_axis=axis.index_in_array,

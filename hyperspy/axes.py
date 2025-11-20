@@ -26,8 +26,8 @@ from contextlib import contextmanager
 
 import numpy as np
 import pint
+import sympy
 import traits.api as t
-from sympy.utilities.lambdify import lambdify
 from traits.trait_errors import TraitError
 
 from hyperspy._components.expression import _parse_substitutions
@@ -1064,7 +1064,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}"
             )
-        self._function = lambdify(
+        self._function = sympy.utilities.lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False
         )
         for parameter in parameters.keys():

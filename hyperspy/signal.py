@@ -31,17 +31,15 @@ from pathlib import Path
 
 import dask
 import numpy as np
+import scipy
 import traits.api as t
 from matplotlib import pyplot as plt
 from pint import UndefinedUnitError
 from rsciio.utils import rgb
 from rsciio.utils.path import ensure_directory
-from scipy import integrate
-from scipy import signal as sp_signal
-from scipy.interpolate import make_interp_spline
 from tlz import concat
 
-from hyperspy.api import _ureg
+import hyperspy
 from hyperspy.axes import AxesManager, create_axis
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -3511,7 +3509,7 @@ class BaseSignal(
         """
         old_axis = self.axes_manager[axis]
         axis_idx = old_axis.index_in_array
-        interpolator = make_interp_spline(
+        interpolator = scipy.interpolate.make_interp_spline(
             old_axis.axis,
             self.data,
             axis=axis_idx,
@@ -4786,7 +4784,9 @@ class BaseSignal(
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        data = integrate.simpson(y=self.data, x=axis.axis, axis=axis.index_in_array)
+        data = scipy.integrate.simpson(
+            y=self.data, x=axis.axis, axis=axis.index_in_array
+        )
         if out is not None:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
@@ -4888,7 +4888,7 @@ class BaseSignal(
             axis.scale = 1.0 / axis.size / axis.scale
             axis.offset = 0.0
             try:
-                units = _ureg.parse_expression(str(axis.units)) ** (-1)
+                units = hyperspy.api._ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = "{:~}".format(units.units)
             except UndefinedUnitError:
                 _logger.warning("Units are not set or cannot be recognized")
@@ -4975,7 +4975,7 @@ class BaseSignal(
         for axis in im_ifft.axes_manager.signal_axes:
             axis.scale = 1.0 / axis.size / axis.scale
             try:
-                units = _ureg.parse_expression(str(axis.units)) ** (-1)
+                units = hyperspy.api._ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = "{:~}".format(units.units)
             except UndefinedUnitError:
                 _logger.warning("Units are not set or cannot be recognized")
@@ -7065,7 +7065,7 @@ class BaseSignal(
         elif window == "tukey":
 
             def window_function(m):
-                return sp_signal.windows.tukey(m, tukey_alpha)
+                return scipy.signal.windows.tukey(m, tukey_alpha)
         else:
             raise ValueError("Wrong type parameter value.")
 

@@ -494,6 +494,7 @@ class Markers:
         Get the kwargs at some index.  If the index is cached return the cached value
         otherwise compute the kwargs and cache them.
         """
+
         chunks = {key: value.chunks for key, value in self.dask_kwargs.items()}
         chunk_slices = {
             key: _get_navigation_dimension_chunk_slice(indices, chunk)
