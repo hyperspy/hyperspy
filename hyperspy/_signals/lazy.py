@@ -25,7 +25,7 @@ import dask
 import dask.array as da
 import numpy as np
 from dask.widgets import TEMPLATE_PATHS
-from rsciio.utils.tools import get_file_handle
+from rsciio.utils.file import get_file_handle
 
 from hyperspy.docstrings.signal import (
     LAZYSIGNAL_DOC,

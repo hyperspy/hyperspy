@@ -35,8 +35,8 @@ import numpy as np
 import traits.api as t
 from matplotlib import pyplot as plt
 from pint import UndefinedUnitError
-from rsciio.utils import rgb_tools
-from rsciio.utils.tools import ensure_directory
+from rsciio.utils import rgb
+from rsciio.utils.path import ensure_directory
 from scipy import integrate
 from scipy import signal as sp_signal
 from scipy.interpolate import make_interp_spline
@@ -5874,7 +5874,7 @@ class BaseSignal(
         if rechunk is True:
             rechunk = "dask_auto"
         if not isinstance(dtype, np.dtype):
-            if dtype in rgb_tools.rgb_dtypes:
+            if dtype in rgb.RGB_DTYPES.keys():
                 if self.axes_manager.signal_dimension != 1:
                     raise AttributeError(
                         "Only 1D signals can be converted to RGB images."
@@ -5892,7 +5892,7 @@ class BaseSignal(
                 if replot:
                     # Close the figure to avoid error with events
                     self._plot.close()
-                self.data = rgb_tools.regular_array2rgbx(self.data)
+                self.data = rgb.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager._set_signal_dimension(2)
                 self._assign_subclass(chunks=rechunk)
@@ -5901,7 +5901,7 @@ class BaseSignal(
                 return
             else:
                 dtype = np.dtype(dtype)
-        if rgb_tools.is_rgbx(self.data) is True:
+        if rgb.is_rgbx(self.data) is True:
             ddtype = self.data.dtype.fields["B"][0]
 
             if ddtype != dtype:
@@ -5910,7 +5910,7 @@ class BaseSignal(
             if replot:
                 # Close the figure to avoid error with events
                 self._plot.close()
-            self.data = rgb_tools.rgbx2regular_array(self.data)
+            self.data = rgb.rgbx2regular_array(self.data)
             self.axes_manager._append_axis(
                 size=self.data.shape[-1],
                 scale=1,
@@ -6572,14 +6572,14 @@ class BaseSignal(
         """
         Whether or not this signal is an RGB + alpha channel `dtype`.
         """
-        return rgb_tools.is_rgba(self.data)
+        return rgb.is_rgba(self.data)
 
     @property
     def is_rgb(self):
         """
         Whether or not this signal is an RGB `dtype`.
         """
-        return rgb_tools.is_rgb(self.data)
+        return rgb.is_rgb(self.data)
 
     @property
     def is_rgbx(self):
@@ -6587,7 +6587,7 @@ class BaseSignal(
         Whether or not this signal is either an RGB or RGB + alpha channel
         `dtype`.
         """
-        return rgb_tools.is_rgbx(self.data)
+        return rgb.is_rgbx(self.data)
 
     def add_marker(
         self,

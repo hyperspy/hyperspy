@@ -18,7 +18,7 @@
 
 import numpy as np
 import pytest
-from rsciio.utils import rgb_tools
+from rsciio.utils import rgb
 
 import hyperspy.api as hs
 
@@ -34,7 +34,7 @@ class TestRGBA8:
         self.im = hs.signals.Signal1D(
             np.array(
                 [[(1, 1, 1, 0), (2, 2, 2, 0)], [(3, 3, 3, 0), (4, 4, 4, 0)]],
-                dtype=rgb_tools.rgba8,
+                dtype=rgb.RGB_DTYPES["rgba8"],
             )
         )
 
@@ -79,7 +79,7 @@ class TestRGBA16:
         self.im = hs.signals.Signal1D(
             np.array(
                 [[(1, 1, 1, 0), (2, 2, 2, 0)], [(3, 3, 3, 0), (4, 4, 4, 0)]],
-                dtype=rgb_tools.rgba16,
+                dtype=rgb.RGB_DTYPES["rgba16"],
             )
         )
 

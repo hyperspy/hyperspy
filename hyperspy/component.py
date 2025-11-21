@@ -23,7 +23,7 @@ import numpy as np
 import sympy
 import traits.api as t
 from dask.array import Array as dArray
-from rsciio.utils.tools import append2pathname, incremental_filename
+from rsciio.utils.path import append2pathname, incremental_filename
 from sympy.utilities.lambdify import lambdify
 from traits.trait_numeric import Array
 

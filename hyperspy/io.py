@@ -29,8 +29,8 @@ from pathlib import Path
 import numpy as np
 from natsort import natsorted
 from rsciio import IO_PLUGINS
-from rsciio.utils.tools import ensure_directory
-from rsciio.utils.tools import overwrite as overwrite_method
+from rsciio.utils.path import ensure_directory
+from rsciio.utils.path import overwrite as overwrite_method
 
 from hyperspy.api import __version__ as hs_version
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG

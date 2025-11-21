@@ -34,7 +34,7 @@ import traits.api as t
 from matplotlib.backend_bases import key_press_handler
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from packaging.version import Version
-from rsciio.utils import rgb_tools
+from rsciio.utils import rgb
 
 import hyperspy
 import hyperspy.api as hs
@@ -980,7 +980,7 @@ def plot_images(
     # Check to see if there are any rgb images in list
     # and tag them using the isrgb list
     for i, img in enumerate(images):
-        if rgb_tools.is_rgbx(img.data):
+        if rgb.is_rgbx(img.data):
             isrgb[i] = True
 
     # Determine how many non-rgb images there are
@@ -1171,8 +1171,8 @@ def plot_images(
                 data = _parse_array(im)
 
                 # Enable RGB plotting
-                if rgb_tools.is_rgbx(data):
-                    data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+                if rgb.is_rgbx(data):
+                    data = rgb.rgbx2regular_array(data, plot_friendly=True)
                     _vmin, _vmax = None, None
                 elif colorbar != "single":
                     _vmin, _vmax = _parse_vmin_vmax(data, vmin, vmax, idx, centre)
