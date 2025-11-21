@@ -1,6 +1,6 @@
 """
 Signal normalisation
-==========================
+====================
 
 """
 
@@ -11,7 +11,7 @@ import numpy as np
 #%%
 #
 # Default normalisation
-# --------
+# ---------------------
 #
 # Create two unique Signal1D for example
 
@@ -36,7 +36,7 @@ hs.plot.plot_spectra([s1, s2], normalise = True)
 #%%
 #
 # Normalising to signal range
-# --------
+# ---------------------------
 #
 # In the case that we want to normalise our signals to the background noise, we can create a custom normalisation function. The mean intensity over the index range 5 - 100 is specified to normalise the signals to
 
@@ -56,7 +56,7 @@ hs.plot.plot_spectra([s1,s2], normalise = normalise_mean_range)
 #%%
 #
 # Normalising to specified signal value
-# --------
+# -------------------------------------
 #
 # In the case that we want to normalise our signals to the second weaker peak in our spectra, we adjust our function to normalise the signals to the intensity at energy position 4.5 eV
 
