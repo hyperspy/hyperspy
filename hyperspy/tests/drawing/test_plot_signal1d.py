@@ -476,16 +476,15 @@ def callable_normalisation_function(signal):
     scale_factor = 1 / normalise_range.mean()
     return data * scale_factor
 
-@pytest.mark.parametrize("normalise", (True, False, callable_normalisation_function))
-@pytest.mark.parametrize("style", ("overlap", "cascade", "mosaic", "heatmap"))
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
 )
-    
+@pytest.mark.parametrize("normalise", (True, False, callable_normalisation_function))
+@pytest.mark.parametrize("style", ("overlap", "cascade", "mosaic", "heatmap"))
+
 def test_plot_spectra_normalise(style, normalise):
     s = hs.signals.Signal1D(np.arange(100)) + 100
     s2 = s * 1000
-    
     ax = hs.plot.plot_spectra([s, s2], style=style, normalise=normalise)
     if style == "mosaic":
         ax = ax[0]
