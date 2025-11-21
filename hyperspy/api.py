@@ -27,7 +27,6 @@ from hyperspy.logger import set_log_level
 _logger = logging.getLogger(__name__)
 set_log_level(preferences.General.logging_level)
 
-from hyperspy import __version__  # noqa: E402
 from hyperspy.docstrings import START_HSPY as _START_HSPY_DOCSTRING  # noqa: E402
 
 __doc__ = (
@@ -132,6 +131,7 @@ _import_mapping = {
     "samfire": ".utils",
     "stack": ".utils",
     "transpose": ".utils",
+    "__version__": "",
 }
 
 

@@ -18,8 +18,6 @@
 
 import numpy as np
 
-from hyperspy.api import _ureg
-
 
 def check_axes_calibration(ax1, ax2, rtol=1e-7):
     """Check if the calibration of two Axis objects matches.
@@ -42,6 +40,8 @@ def check_axes_calibration(ax1, ax2, rtol=1e-7):
         If the two axes have identical calibrations.
 
     """
+    from hyperspy.api import _ureg
+
     if ax1.size == ax2.size:
         try:
             unit1 = _ureg.Unit(ax1.units)
