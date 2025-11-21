@@ -32,7 +32,12 @@ from hyperspy.misc.export_dictionary import (
     load_from_dictionary,
 )
 from hyperspy.misc.model_tools import CurrentComponentValues
-from hyperspy.misc.utils import display, get_object_package_info, slugify
+from hyperspy.misc.utils import (
+    display,
+    get_object_package_info,
+    is_dask_array,
+    slugify,
+)
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -532,9 +537,9 @@ class Parameter(t.HasTraits):
         if self.map["is_set"][indices]:
             value = self.map["values"][indices]
             std = self.map["std"][indices]
-            if hasattr(value, "compute"):
+            if is_dask_array(value):
                 value = value.compute()
-            if hasattr(std, "compute"):
+            if is_dask_array(std):
                 std = std.compute()
             self.value = value
             self.std = std

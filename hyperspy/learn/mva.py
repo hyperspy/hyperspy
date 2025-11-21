@@ -21,7 +21,6 @@ import logging
 import types
 import warnings
 
-import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
 import rsciio.utils.tools as io_tools
@@ -1284,9 +1283,11 @@ class MVA:
         """
         lr = self.learning_results
         if self._lazy:
+            import dask.array as da
+
             if isinstance(lr.bss_factors, np.ndarray):
                 lr.factors = da.from_array(lr.bss_factors, chunks=chunks)
-            if isinstance(lr.bss_factors, np.ndarray):
+            if isinstance(lr.bss_loadings, np.ndarray):
                 lr.loadings = da.from_array(lr.bss_loadings, chunks=chunks)
         rec = self._calculate_recmatrix(components=components, mva_type="bss")
         return rec

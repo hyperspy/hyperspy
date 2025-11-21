@@ -21,7 +21,6 @@ import math
 import warnings
 
 import dask
-import dask.array as da
 import numpy as np
 import numpy.ma as ma
 from scipy import interpolate
@@ -51,6 +50,7 @@ from hyperspy.docstrings.signal1d import (
 )
 from hyperspy.misc.lowess_smooth import lowess
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.misc.utils import is_dask_array
 from hyperspy.models.model1d import Model1D
 from hyperspy.signal import BaseSignal
 from hyperspy.signal_tools import (
@@ -496,6 +496,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             ilow = axis.low_index
         if expand:
             if self._lazy:
+                import dask.array as da
+
                 ind = axis.index_in_array
                 pre_shape = list(self.data.shape)
                 post_shape = list(self.data.shape)
@@ -703,9 +705,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
         self._check_navigation_mask(mask)
         # we compute for now
-        if isinstance(start, da.Array):
+        if is_dask_array(start):
             start = start.compute()
-        if isinstance(end, da.Array):
+        if is_dask_array(end):
             end = end.compute()
         i1, i2 = axis._get_index(start), axis._get_index(end)
         if reference_indices is None:
@@ -1139,6 +1141,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         if zero_fill:
             if self._lazy:
+                import dask.array as da
+
                 low_idx = result.axes_manager[-1].value2index(signal_range[0])
                 z = da.zeros(low_idx, chunks=(low_idx,))
                 cropped_da = result.data[low_idx:]
@@ -1475,6 +1479,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
         """
+        import dask.array as da
+
         if not np.issubdtype(self.data.dtype, np.floating):
             raise TypeError(
                 "The data dtype should be `float`. It can be "

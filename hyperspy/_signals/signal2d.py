@@ -21,7 +21,6 @@ import warnings
 from copy import deepcopy
 from functools import partial
 
-import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
@@ -44,6 +43,7 @@ from hyperspy.docstrings.signal import (
 )
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetrize
+from hyperspy.misc.utils import is_dask_array
 from hyperspy.signal import BaseSignal
 from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
@@ -206,8 +206,11 @@ def estimate_image_shift(
        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
+    if is_dask_array(ref) or is_dask_array(image):
+        import dask.array as da
 
-    ref, image = da.compute(ref, image)
+        ref, image = da.compute(ref, image)
+
     # Make a copy of the images to avoid modifying them
     ref = ref.copy().astype(dtype)
     image = image.copy().astype(dtype)
@@ -945,12 +948,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
-        if self._lazy:
-            ramp = offset * da.ones(
-                self.data.shape, dtype=self.data.dtype, chunks=self.data.chunks
-            )
-        else:
-            ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
+        ramp = offset * np.ones_like(self.data)
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp

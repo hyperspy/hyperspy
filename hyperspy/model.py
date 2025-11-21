@@ -27,7 +27,6 @@ from functools import partial
 
 import cloudpickle
 import dask
-import dask.array as da
 import numpy as np
 from dask.diagnostics import ProgressBar
 from packaging.version import Version
@@ -65,6 +64,7 @@ from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     display,
     dummy_context_manager,
+    is_dask_array,
     shorten_name,
     slugify,
     stash_active_state,
@@ -354,6 +354,8 @@ def _model_as_signal_lazy_data(
     data : dask array
         The calculated model data
     """
+    import dask.array as da
+
     _, data_chunks = get_chunk_slice(
         shape=model.signal.data.shape,
         chunks=chunks,
@@ -877,6 +879,8 @@ class BaseModel(list):
                     self, components_with_function_nd, out_of_range_to_nan
                 )
         else:
+            import dask.array as da
+
             xp = da if lazy_output else np
             # Make the placeholder array
             data_ = xp.full_like(self.signal.data, np.nan, dtype=float)
@@ -933,7 +937,7 @@ class BaseModel(list):
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
 
-        if out_of_range_to_nan and isinstance(data_, da.Array):
+        if out_of_range_to_nan and is_dask_array(data_):
             # requires array assignment which is not compatible with
             # dask array since dask 2024.12.0
             raise ValueError(
@@ -1570,16 +1574,12 @@ class BaseModel(list):
             )
 
         if optimizer == "lstsq":
-            if self.signal._lazy:
-                xp = da
-                kw = {}
-            else:
-                xp = np
-                kw = kwargs
-                kw.setdefault("rcond", None)
+            kwargs = {"rcond": None} if not self.signal._lazy else {}
 
             result, residual, *_ = np.linalg.lstsq(
-                xp.asanyarray(comp_values.T), target_signal.T, **kw
+                np.asanyarray(comp_values.T, like=self.signal.data),
+                target_signal.T,
+                **kwargs,
             )
             if len(residual) == 0:
                 # can be empty array, see np.linalg.lstsq docstring

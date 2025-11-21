@@ -38,6 +38,27 @@ from hyperspy.misc.signal_tools import broadcast_signals
 _logger = logging.getLogger(__name__)
 
 
+def is_dask_array(x):
+    """Check if x is a dask array.
+
+    Parameters
+    ----------
+    x : any
+        The input to check.
+
+    Returns
+    -------
+    bool
+        True if x is a dask array, False otherwise.
+    """
+    try:
+        from dask.base import is_dask_collection
+
+        return is_dask_collection(x)
+    except ImportError:
+        return hasattr(x, "__dask_keys__")
+
+
 def attrsetter(target, attrs, value):
     """
     Sets attribute of the target to specified value, supports nested
@@ -1448,7 +1469,7 @@ def to_numpy(array):
     """
     if isinstance(array, np.ndarray):
         return array
-    elif hasattr(array, "compute"):
+    elif is_dask_array(array):
         raise TypeError(
             "Implicit conversion of dask array to numpy array is not "
             "supported, conversion needs to be done explicitely."

@@ -30,7 +30,6 @@ from itertools import product
 from pathlib import Path
 
 import dask
-import dask.array as da
 import numpy as np
 import traits.api as t
 from matplotlib import pyplot as plt
@@ -98,6 +97,7 @@ from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
     add_scalar_axis,
     is_cupy_array,
+    is_dask_array,
     isiterable,
     iterable_not_string,
     rollelem,
@@ -2696,6 +2696,7 @@ class BaseSignal(
         res : :class:`~hyperspy._signals.lazy.LazySignal`
             The same signal, converted to be lazy
         """
+
         res = self._deepcopy_with_new_data(
             self.data,
             copy_variance=copy_variance,
@@ -2705,8 +2706,8 @@ class BaseSignal(
         res._lazy = True
         if chunks is None:
             # Set default values
-            chunks = False if isinstance(res.data, da.Array) else "auto"
-        elif isinstance(chunks, str) and isinstance(res.data, da.Array):
+            chunks = False if is_dask_array(res.data) else "auto"
+        elif isinstance(chunks, str) and is_dask_array(res.data):
             chunks = False
             _logger.warning(
                 "Ignoring `chunks` argument because data is already a dask array."
@@ -5600,6 +5601,8 @@ class BaseSignal(
         navigation_chunks="auto",
         **kwargs,
     ):
+        import dask.array as da
+
         if lazy_output is None:
             lazy_output = self._lazy
 
@@ -6231,7 +6234,7 @@ class BaseSignal(
             s = Signal2D(data, axes=self.axes_manager._get_navigation_axes_dicts())
         else:
             s = BaseSignal(data, axes=self.axes_manager._get_navigation_axes_dicts()).T
-        if isinstance(data, da.Array):
+        if is_dask_array(data):
             s = s.as_lazy()
         return s
 
@@ -6279,7 +6282,7 @@ class BaseSignal(
             s.set_signal_type(self.metadata.Signal.signal_type)
         else:
             s = self.__class__(data, axes=self.axes_manager._get_signal_axes_dicts())
-        if isinstance(data, da.Array):
+        if is_dask_array(data):
             s = s.as_lazy()
         return s
 
@@ -7046,7 +7049,6 @@ class BaseSignal(
         >>> wave = hs.data.wave_image()
         >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
-
         if window == "hanning" or window == "hann":
             if hann_order:
 
@@ -7072,7 +7074,9 @@ class BaseSignal(
         axes = np.array(self.axes_manager.signal_indices_in_array)
 
         for axis, axis_index in zip(self.axes_manager.signal_axes, axes):
-            if isinstance(self.data, da.Array):
+            if is_dask_array(self.data):
+                import dask.array as da
+
                 chunks = self.data.chunks[axis_index]
                 window_da = da.from_array(window_function(axis.size), chunks=(chunks,))
                 windows_1d.append(window_da)

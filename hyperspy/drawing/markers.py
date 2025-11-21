@@ -19,7 +19,6 @@
 import logging
 from copy import deepcopy
 
-import dask.array as da
 import matplotlib.collections as mpl_collections
 import numpy as np
 from matplotlib.patches import Patch
@@ -27,7 +26,7 @@ from matplotlib.transforms import IdentityTransform
 
 from hyperspy.events import Event, Events
 from hyperspy.misc.dask_utils import _get_navigation_dimension_chunk_slice
-from hyperspy.misc.utils import isiterable
+from hyperspy.misc.utils import is_dask_array, isiterable
 
 _logger = logging.getLogger(__name__)
 
@@ -201,9 +200,9 @@ class Markers:
                 self._iterable_argument_keys.append(key)
 
             # Handling dask arrays
-            if isinstance(value, da.Array) and value.dtype == object:
+            if is_dask_array(value) and value.dtype == object:
                 self.dask_kwargs[key] = self.kwargs[key]
-            elif isinstance(value, da.Array):  # and value.dtype != object:
+            elif is_dask_array(value):  # and value.dtype != object:
                 self.kwargs[key] = value.compute()
             # Patches or verts shouldn't be cast to array
             elif (
@@ -842,7 +841,7 @@ class Markers:
 
 
 def is_iterating(arg):
-    return isinstance(arg, (np.ndarray, da.Array)) and arg.dtype == object
+    return (isinstance(arg, np.ndarray) or is_dask_array(arg)) and arg.dtype == object
 
 
 def dict2vector(data, keys, return_size=True, dtype=float):
