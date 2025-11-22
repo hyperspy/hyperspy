@@ -19,7 +19,6 @@
 import logging
 
 import numpy as np
-from numpy.linalg import svd
 
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import is_cupy_array
@@ -165,7 +164,7 @@ def svd_solve(
                 U[:, ::-1], V[::-1], u_based_decision=u_based_decision
             )
     elif svd_solver == "full":
-        U, S, V = svd(data, full_matrices=False)
+        U, S, V = np.linalg.svd(data, full_matrices=False)
         # flip eigenvectors' sign to enforce deterministic output
         if svd_flip:
             U, V = svd_flip_signs(U, V, u_based_decision=u_based_decision)

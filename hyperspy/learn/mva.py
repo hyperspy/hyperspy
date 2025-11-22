@@ -23,8 +23,7 @@ import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
-import rsciio.utils.tools as io_tools
-from matplotlib.ticker import FuncFormatter, MaxNLocator
+from rsciio.utils import path as io_path
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -2753,7 +2752,7 @@ class LearningResults(object):
             kwargs[attribute] = self.__getattribute__(attribute)
         # Check overwrite
         if overwrite is None:
-            overwrite = io_tools.overwrite(filename)
+            overwrite = io_path.overwrite(filename)
         # Save, if all went well!
         if overwrite:
             np.savez(filename, **kwargs)

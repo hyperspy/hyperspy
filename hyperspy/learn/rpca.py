@@ -20,7 +20,7 @@ import logging
 from itertools import chain
 
 import numpy as np
-import scipy.linalg
+import scipy
 
 from hyperspy.external.progressbar import progressbar
 from hyperspy.learn.svd_pca import svd_solve
