@@ -39,6 +39,7 @@ from rsciio.utils.path import ensure_directory
 from tlz import concat
 
 import hyperspy
+import hyperspy.drawing
 from hyperspy.axes import AxesManager, create_axis
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -63,9 +64,6 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.docstrings.utils import REBIN_ARGS
-from hyperspy.drawing import mpl_he, mpl_hie, mpl_hse
-from hyperspy.drawing import signal as sigdraw
-from hyperspy.drawing.utils import animate_legend
 from hyperspy.events import Event, Events
 from hyperspy.exceptions import (
     DataDimensionError,
@@ -480,7 +478,7 @@ class MVATools(object):
                         f = plt.figure()
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
-                ax = sigdraw._plot_1D_component(
+                ax = hyperspy.drawing.signal._plot_1D_component(
                     factors=factors,
                     idx=comp_ids[i],
                     axes_manager=self.axes_manager,
@@ -500,7 +498,7 @@ class MVATools(object):
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
 
-                sigdraw._plot_2D_component(
+                hyperspy.drawing.signal._plot_2D_component(
                     factors=factors,
                     idx=comp_ids[i],
                     axes_manager=self.axes_manager,
@@ -581,7 +579,7 @@ class MVATools(object):
                         f = plt.figure()
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
-            sigdraw._plot_loading(
+            hyperspy.drawing.signal._plot_loading(
                 loadings,
                 idx=comp_ids[i],
                 axes_manager=self.axes_manager,
@@ -620,7 +618,7 @@ class MVATools(object):
         else:
             if self.axes_manager.navigation_dimension == 1:
                 plt.legend(ncol=loadings.shape[0] // 2, loc="best")
-                animate_legend(f)
+                hyperspy.drawing.utils.animate_legend(f)
             if with_factors:
                 return f, self._plot_factors_or_pchars(
                     factors,
@@ -3092,12 +3090,12 @@ class BaseSignal(
                 # 0d signal without navigation axis: don't make a figure
                 # and instead, we display the value
                 return
-            self._plot = mpl_he.MPL_HyperExplorer()
+            self._plot = hyperspy.drawing.mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = mpl_hse.MPL_HyperSignal1D_Explorer()
+            self._plot = hyperspy.drawing.mpl_hse.MPL_HyperSignal1D_Explorer()
         elif axes_manager.signal_dimension == 2:
-            self._plot = mpl_hie.MPL_HyperImage_Explorer()
+            self._plot = hyperspy.drawing.mpl_hie.MPL_HyperImage_Explorer()
         else:
             raise ValueError(
                 "Plotting is not supported for this view. "
