@@ -290,9 +290,9 @@ To get the development version from our git repository you need to install `git
 .. Warning::
 
     When running hyperspy from a development version, it can happen that
-    dependencies change when pulling new commits / syncing the project. You 
-    will then need to manually update dependencies in the environment 
-    (check `pyproject.toml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/pyproject.toml>`__) 
+    dependencies change when pulling new commits / syncing the project. You
+    will then need to manually update dependencies in the environment
+    (check `pyproject.toml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/pyproject.toml>`__)
     or run again the development installation procedure, as explained below.
 
 Installation in a Anaconda/Miniconda distribution
@@ -303,14 +303,14 @@ other anaconda environments (`read more about environments here
 
 .. code-block:: bash
 
-    $ conda env create -f conda_environment_dev.yml -n hspy_dev # create an environment with development dependencies
+    $ conda env create -f conda_environment.yml -n hspy_dev # create an environment with development dependencies
     $ conda activate hspy_dev # activate environment
 
-Install the runtime requirements using conda:
+Install the development requirements using conda:
 
 .. code-block:: bash
 
-    $ conda env update -f conda_environment.yml # install hyperspy dependencies
+    $ conda env update -f conda_environment_dev.yml # install hyperspy dependencies
 
 From the root folder of your hyperspy repository (folder containing the
 ``pyproject.toml`` file) run `pip <https://pip.pypa.io/>`_ in development mode:

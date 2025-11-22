@@ -26,7 +26,7 @@ is only an optional dependency.
 Writing Cython code
 -------------------
 
-.. notes::
+.. note::
 
    Currently, HyperSpy does not use Cython code and this section is relevant
    only for RosettaSciIO library.
