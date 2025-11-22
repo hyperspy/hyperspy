@@ -40,6 +40,7 @@ __all__ = [
     "ButterworthFilter",
     "SpikesRemoval",
     "SpikesRemovalInteractive",
+    "SPIKES_REMOVAL_INSTRUCTIONS",
 ]
 
 
@@ -64,6 +65,7 @@ _import_mapping = {
     "ButterworthFilter": "_smoothing",
     "SpikesRemoval": "_spikes_removal",
     "SpikesRemovalInteractive": "_spikes_removal",
+    "SPIKES_REMOVAL_INSTRUCTIONS": "_spikes_removal",
 }
 
 

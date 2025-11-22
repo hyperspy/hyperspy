@@ -23,9 +23,7 @@ import numpy as np
 import scipy
 import traits.api as t
 
-from hyperspy import drawing
-from hyperspy._signal_tools.message import SimpleMessage
-from hyperspy._signal_tools.selector import SpanSelectorInSignal1D
+from hyperspy import drawing, signal_tools
 from hyperspy.misc.math_tools import check_random_state
 from hyperspy.ui_registry import add_gui_method
 
@@ -214,7 +212,7 @@ class SpikesRemoval:
 
 
 @add_gui_method(toolkey="hyperspy.Signal1D.spikes_removal_tool")
-class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
+class SpikesRemovalInteractive(SpikesRemoval, signal_tools.SpanSelectorInSignal1D):
     threshold = t.Float(
         400, desc="the derivative magnitude threshold above\nwhich to find spikes"
     )
@@ -245,7 +243,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
     )
 
     def __init__(self, signal, max_num_bins=1000, **kwargs):
-        SpanSelectorInSignal1D.__init__(self, signal=signal)
+        signal_tools.SpanSelectorInSignal1D.__init__(self, signal=signal)
         signal._plot.auto_update_plot = False
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
@@ -282,7 +280,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
         spike = super().find(back=back)
 
         if spike is False:
-            m = SimpleMessage()
+            m = signal_tools.SimpleMessage()
             m.text = "End of dataset reached"
             try:
                 m.gui()
