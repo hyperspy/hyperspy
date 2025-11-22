@@ -76,14 +76,9 @@ from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
+from hyperspy.misc import dask_utils
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.array_tools import rebin as array_rebin
-from hyperspy.misc.dask_utils import (
-    _compute,
-    _get_block_pattern,
-    guess_output_signal_size,
-    process_function_blockwise,
-)
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
 from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
@@ -5687,25 +5682,27 @@ class BaseSignal(
             test_data = np.array(
                 old_sig.inav[(0,) * len(os_am.navigation_shape)].data.compute()
             )
-            temp_output_signal_size, temp_output_dtype = guess_output_signal_size(
-                test_data=test_data,
-                function=function,
-                ragged=ragged,
-                **testing_kwargs,
+            temp_output_signal_size, temp_output_dtype = (
+                dask_utils.guess_output_signal_size(
+                    test_data=test_data,
+                    function=function,
+                    ragged=ragged,
+                    **testing_kwargs,
+                )
             )
             if output_signal_size is None:
                 output_signal_size = temp_output_signal_size
             if output_dtype is None:
                 output_dtype = temp_output_dtype
         output_shape = self.axes_manager._navigation_shape_in_array + output_signal_size
-        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern(
-            (old_sig.data,) + args, output_shape
+        arg_pairs, adjust_chunks, new_axis, output_pattern = (
+            dask_utils._get_block_pattern((old_sig.data,) + args, output_shape)
         )
 
         axes_changed = len(new_axis) != 0 or len(adjust_chunks) != 0
 
         mapped = da.blockwise(
-            process_function_blockwise,
+            dask_utils.process_function_blockwise,
             output_pattern,
             *concat(arg_pairs),
             adjust_chunks=adjust_chunks,
@@ -5731,7 +5728,7 @@ class BaseSignal(
                 and (mapped.dtype == self.data.dtype)
             ):
                 # use `store_to` to minmize memory usage
-                _compute(
+                dask_utils._compute(
                     arrays=mapped,
                     store_to=self.data,
                     show_progressbar=show_progressbar,
@@ -5764,7 +5761,7 @@ class BaseSignal(
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = _compute(
+            sig.data = dask_utils._compute(
                 sig.data, show_progressbar=show_progressbar, num_workers=num_workers
             )
 
