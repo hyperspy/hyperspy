@@ -518,7 +518,7 @@ def _parse_array(signal, normalise=False):
     # Check if normalise is a function
     if callable(normalise):
         data = normalise(signal)
-        
+
     # Otherwise, if normalise is True, use default min-max normalization
     elif normalise:
         data = (data - data.min()) / (data.max() - data.min())
@@ -1556,8 +1556,8 @@ def plot_spectra(
         If True, applies default min-max normalization:
             (x - x.min()) / (x.max() - x.min()).
         If a callable is provided, it should be a function that takes a
-        NumPy array as input and returns a transformed NumPy array.
-      
+        HyperSpy signal as input and returns the normalised array.
+
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 

@@ -469,25 +469,33 @@ def test_plot_spectra_linestyle_error():
         hs.plot.plot_spectra(s, linestyle="invalid")
 
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
+@pytest.mark.parametrize("style", ("overlap", "cascade", "mosaic", "heatmap"))
+def test_plot_spectra_normalise(style):
+    s = hs.signals.Signal1D(np.arange(100)) + 100
+    s2 = s * 1000
+    ax = hs.plot.plot_spectra([s, s2], style=style, normalise=True)
+    if style == "mosaic":
+        ax = ax[0]
 
-def callable_normalisation_function(signal):
-    data = signal.data
-    normalise_range = signal.isig[40:50].data
-    scale_factor = 1 / normalise_range.mean()
-    return data * scale_factor
+    return ax.get_figure()
+
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
 )
-@pytest.mark.parametrize("normalise", (True, False, callable_normalisation_function))
-@pytest.mark.parametrize("style", ("overlap", "cascade", "mosaic", "heatmap"))
+def test_plot_spectra_normalise_callable():
+    def normalisation_function(signal):
+        data = signal.data
+        normalise_range = signal.isig[40:50].data
+        scale_factor = 1 / abs(normalise_range.mean())
+        return data * scale_factor
 
-def test_plot_spectra_normalise(style, normalise):
     s = hs.signals.Signal1D(np.arange(100)) + 100
-    s2 = s * 1000
-    ax = hs.plot.plot_spectra([s, s2], style=style, normalise=normalise)
-    if style == "mosaic":
-        ax = ax[0]
+    s2 = s * -1000
+    ax = hs.plot.plot_spectra([s, s2], normalise=normalisation_function)
 
     return ax.get_figure()
 
