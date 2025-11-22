@@ -26,11 +26,9 @@ from contextlib import contextmanager
 
 import numpy as np
 import pint
-import sympy
 import traits.api as t
 from traits.trait_errors import TraitError
 
-from hyperspy._components.expression import _parse_substitutions
 from hyperspy.api import _ureg
 from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
@@ -1038,6 +1036,10 @@ class FunctionalDataAxis(BaseDataAxis):
             is_binned=is_binned,
             **parameters,
         )
+        import sympy
+
+        from hyperspy._components.expression import _parse_substitutions
+
         # These trait needs to added dynamically to be removed when necessary
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:

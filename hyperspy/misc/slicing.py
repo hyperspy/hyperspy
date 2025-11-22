@@ -20,7 +20,6 @@ from operator import attrgetter
 
 import numpy as np
 
-from hyperspy import roi
 from hyperspy.misc.export_dictionary import parse_flag_string
 from hyperspy.misc.utils import attrsetter, is_dask_array
 
@@ -188,6 +187,8 @@ class SpecialSlicers(object):
 
 class FancySlicing(object):
     def _get_array_slices(self, slices, isNavigation=None):
+        from hyperspy import roi
+
         try:
             len(slices)
         except TypeError:
