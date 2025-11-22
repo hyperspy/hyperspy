@@ -22,9 +22,8 @@ import numpy as np
 import scipy
 import traits.api as t
 
-import hyperspy.drawing.signal1d
+import hyperspy.drawing
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
 from hyperspy.events import EventSuppressor
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.misc.utils import dummy_context_manager
@@ -821,9 +820,9 @@ class Model1D(BaseModel):
             return
         axis = self.axes_manager.signal_axes[0]
         # Create the vertical line and labels
-        widgets = [VerticalLineWidget(self.axes_manager)]
+        widgets = [hyperspy.drawing.widgets.VerticalLineWidget(self.axes_manager)]
         if show_label:
-            label = LabelWidget(self.axes_manager)
+            label = hyperspy.drawing.widgets.LabelWidget(self.axes_manager)
             label.string = component._get_short_description().replace(" component", "")
             widgets.append(label)
 

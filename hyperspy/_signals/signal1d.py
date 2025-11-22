@@ -25,6 +25,7 @@ import numpy as np
 import numpy.ma as ma
 import scipy
 
+from hyperspy import signal_tools
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import interactive_range_selector
@@ -51,18 +52,7 @@ from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.misc.utils import is_dask_array
 from hyperspy.models.model1d import Model1D
 from hyperspy.signal import BaseSignal
-from hyperspy.signal_tools import (
-    BackgroundRemoval,
-    ButterworthFilter,
-    Signal1DCalibration,
-    SimpleMessage,
-    SmoothingLowess,
-    SmoothingSavitzkyGolay,
-    SmoothingTV,
-    SpikesRemoval,
-    SpikesRemovalInteractive,
-    _get_background_estimator,
-)
+from hyperspy.signal_tools._background_removal import _get_background_estimator
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
@@ -337,7 +327,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if s_.data.size == 1:
             message = "The derivative of the data is constant."
             if use_gui:
-                m = SimpleMessage(text=message)
+                m = signal_tools.SimpleMessage(text=message)
                 try:
                     m.gui()
                 except (NotImplementedError, ImportError):
@@ -392,7 +382,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     ):
         self._check_signal_dimension_equals_one()
         if interactive:
-            sr = SpikesRemovalInteractive(
+            sr = signal_tools.SpikesRemovalInteractive(
                 self,
                 signal_mask=signal_mask,
                 navigation_mask=navigation_mask,
@@ -400,7 +390,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
             return sr.gui(display=display, toolkit=toolkit)
         else:
-            sr = SpikesRemoval(
+            sr = signal_tools.SpikesRemoval(
                 self,
                 signal_mask=signal_mask,
                 navigation_mask=navigation_mask,
@@ -888,7 +878,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If called with a non-uniform axes.
         """
         self._check_signal_dimension_equals_one()
-        calibration = Signal1DCalibration(self)
+        calibration = signal_tools.Signal1DCalibration(self)
         return calibration.gui(display=display, toolkit=toolkit)
 
     calibrate.__doc__ %= (DISPLAY_DT, TOOLKIT_DT)
@@ -951,7 +941,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
         else:
             # Interactive mode
-            smoother = SmoothingSavitzkyGolay(self)
+            smoother = signal_tools.SmoothingSavitzkyGolay(self)
             smoother.differential_order = differential_order
             if polynomial_order is not None:
                 smoother.polynomial_order = polynomial_order
@@ -996,7 +986,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         self._check_signal_dimension_equals_one()
         if smoothing_parameter is None or number_of_iterations is None:
-            smoother = SmoothingLowess(self)
+            smoother = signal_tools.SmoothingLowess(self)
             if smoothing_parameter is not None:
                 smoother.smoothing_parameter = smoothing_parameter
             if number_of_iterations is not None:
@@ -1056,7 +1046,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 "Consider using `smooth_lowess` instead."
             )
         if smoothing_parameter is None:
-            smoother = SmoothingTV(self)
+            smoother = signal_tools.SmoothingTV(self)
             return smoother.gui(display=display, toolkit=toolkit)
         else:
             self.map(
@@ -1098,7 +1088,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 "Consider using `smooth_lowess` instead."
             )
         self._check_signal_dimension_equals_one()
-        smoother = ButterworthFilter(self)
+        smoother = signal_tools.ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
             smoother.cutoff_frequency_ratio = cutoff_frequency_ratio
             smoother.type = type
@@ -1264,7 +1254,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         model = Model1D(self)
         if signal_range == "interactive":
-            br = BackgroundRemoval(
+            br = signal_tools.BackgroundRemoval(
                 self,
                 background_type=background_type,
                 polynomial_order=polynomial_order,
