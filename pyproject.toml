@@ -105,7 +105,7 @@ dask-image = [
     "dask-image",
 ]
 dev = [
-    "black",
+    "ruff",
     "hyperspy[all]",
     "hyperspy[coverage]",
     "hyperspy[doc]",
