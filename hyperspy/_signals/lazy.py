@@ -35,15 +35,9 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import _requires_linear_rebin
-from hyperspy.misc.dask_utils import (
-    _compute,
-    _get_navigation_dimension_chunk_slice,
-    get_signal_chunk_slice,
-)
+from hyperspy.misc import array_tools, dask_utils, utils
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import isiterable, multiply
 from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
@@ -243,7 +237,9 @@ class LazySignal(BaseSignal):
         >>> s3.compute(scheduler='single-threaded')
 
         """
-        self.data = _compute(self.data, show_progressbar=show_progressbar, **kwargs)
+        self.data = dask_utils._compute(
+            self.data, show_progressbar=show_progressbar, **kwargs
+        )
         if close_file:
             self.close_file()
 
@@ -339,7 +335,7 @@ class LazySignal(BaseSignal):
         elif not isinstance(dtype, np.dtype):
             dtype = np.dtype(dtype)
         typesize = max(dtype.itemsize, dc.dtype.itemsize)
-        want_to_keep = multiply([ax.size for ax in need_axes]) * typesize
+        want_to_keep = utils.multiply([ax.size for ax in need_axes]) * typesize
 
         # @mrocklin reccomends to have around 100MB chunks, so we do that:
         num_that_fit = int(100.0 * 2.0**20 / want_to_keep)
@@ -357,7 +353,7 @@ class LazySignal(BaseSignal):
         ]
 
         while True:
-            if multiply(sizes) <= num_that_fit:
+            if utils.multiply(sizes) <= num_that_fit:
                 break
 
             i = np.argmax(sizes)
@@ -548,7 +544,9 @@ class LazySignal(BaseSignal):
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         navigation_indices = indices[:-sig_dim]
-        chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
+        chunk_slice = dask_utils._get_navigation_dimension_chunk_slice(
+            navigation_indices, chunks
+        )
 
         if (
             chunk_slice != self._cache_dask_chunk_slice
@@ -576,7 +574,7 @@ class LazySignal(BaseSignal):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape, scale=scale
         )
-        if _requires_linear_rebin(arr=self.data, scale=factors):
+        if array_tools._requires_linear_rebin(arr=self.data, scale=factors):
             if new_shape:
                 raise NotImplementedError(
                     "Lazy rebin requires that the new shape is a divisor "
@@ -965,8 +963,8 @@ class LazySignal(BaseSignal):
         sig_chunks = _al_data.chunks[self.axes_manager.navigation_dimension :]
 
         num_chunks = 1 if num_chunks is None else num_chunks
-        blocksize = np.min([multiply(ar) for ar in product(*nav_chunks)])
-        nblocks = multiply([len(c) for c in nav_chunks])
+        blocksize = np.min([utils.multiply(ar) for ar in product(*nav_chunks)])
+        nblocks = utils.multiply([len(c) for c in nav_chunks])
 
         if output_dimension and blocksize / output_dimension < num_chunks:
             num_chunks = np.ceil(blocksize / output_dimension)
@@ -1252,7 +1250,7 @@ class LazySignal(BaseSignal):
         if index is None:
             index = [round(shape / 2) for shape in signal_shape]
         else:
-            if not isiterable(index):
+            if not utils.isiterable(index):
                 index = [index] * len(signal_shape)
             index = [
                 axis._get_index(_idx)
@@ -1263,7 +1261,7 @@ class LazySignal(BaseSignal):
         if chunks_number is None:
             chunks = self.data.chunks
         else:
-            if not isiterable(chunks_number):
+            if not utils.isiterable(chunks_number):
                 chunks_number = [chunks_number] * len(signal_shape)
             # Determine the chunk size
             signal_chunks = da.core.normalize_chunks(
@@ -1282,7 +1280,7 @@ class LazySignal(BaseSignal):
         signal_size = len(signal_shape)
         signal_chunks = tuple(chunks[i - signal_size] for i in range(signal_size))
         _logger.info(f"Signal chunks: {signal_chunks}")
-        isig_slice = get_signal_chunk_slice(index, chunks)
+        isig_slice = dask_utils.get_signal_chunk_slice(index, chunks)
 
         _logger.info(f"Computing sum over signal dimension: {isig_slice}")
         axes = [axis.index_in_array for axis in self.axes_manager.signal_axes]
@@ -1307,7 +1305,9 @@ def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
     sshape : tuple of ints
         The shape
     """
-    splits = np.cumsum([multiply(ar) for ar in product(*nav_chunks)][:-1]).tolist()
+    splits = np.cumsum(
+        [utils.multiply(ar) for ar in product(*nav_chunks)][:-1]
+    ).tolist()
     if splits:
         all_chunks = [
             ar.reshape(shape + sshape)

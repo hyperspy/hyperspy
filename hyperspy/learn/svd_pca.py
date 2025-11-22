@@ -20,8 +20,8 @@ import logging
 
 import numpy as np
 
+from hyperspy.misc import utils
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import is_cupy_array
 
 _logger = logging.getLogger(__name__)
 
@@ -150,7 +150,7 @@ def svd_solve(
                 "svd_solver='arpack' requires output_dimension "
                 "to be strictly less than min(data.shape)."
             )
-        if is_cupy_array(data):  # pragma: no cover
+        if utils.is_cupy_array(data):  # pragma: no cover
             from cupyx.scipy.sparse.linalg import svds
         else:
             from scipy.sparse.linalg import svds

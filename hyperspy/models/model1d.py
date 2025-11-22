@@ -23,17 +23,17 @@ import scipy
 import traits.api as t
 
 import hyperspy.drawing
+from hyperspy import signal_tools
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.events import EventSuppressor
 from hyperspy.exceptions import SignalDimensionError
-from hyperspy.misc.utils import dummy_context_manager
+from hyperspy.misc import utils
 from hyperspy.model import BaseModel, ModelComponents
-from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
-class ComponentFit(SpanSelectorInSignal1D):
+class ComponentFit(signal_tools.SpanSelectorInSignal1D):
     only_current = t.Bool(True)
     iterpath = t.Enum(
         "flyback",
@@ -277,7 +277,7 @@ class Model1D(BaseModel):
         thing : :class:`~.component.Component`
             The component to add to the model.
         """
-        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        cm = self.suspend_update if self._plot_active else utils.dummy_context_manager
         with cm(update_on_resume=False):
             super().append(thing)
         if self._plot_components:

@@ -29,7 +29,7 @@ from hyperspy.docstrings.signal import (
 )
 from hyperspy.external.astropy.bayesian_blocks import bayesian_blocks
 from hyperspy.external.astropy.histogram import knuth_bin_width
-from hyperspy.misc.utils import is_dask_array
+from hyperspy.misc import utils
 
 
 def _set_histogram_metadata(signal, histogram, **kwargs):
@@ -77,7 +77,7 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
     * :func:`numpy.histogram`
 
     """
-    if is_dask_array(a):
+    if utils.is_dask_array(a):
         return histogram_dask(
             a,
             bins=bins,
@@ -175,7 +175,7 @@ def histogram_dask(a, bins="fd", range=None, max_num_bins=250, weights=None, **k
     """
     import dask.array as da
 
-    if not is_dask_array(a):
+    if not utils.is_dask_array(a):
         raise TypeError("Expected a dask array")
 
     if a.ndim != 1:
@@ -258,7 +258,7 @@ def _scott_bw_dask(data, return_bins=True):
     """
     import dask.array as da
 
-    if not is_dask_array(data):
+    if not utils.is_dask_array(data):
         raise TypeError("Expected a dask array")
 
     if data.ndim != 1:
@@ -308,7 +308,7 @@ def _freedman_bw_dask(data, return_bins=True):
     """
     import dask.array as da
 
-    if not is_dask_array(data):
+    if not utils.is_dask_array(data):
         raise TypeError("Expected a dask array")
 
     if data.ndim != 1:

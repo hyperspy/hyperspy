@@ -27,17 +27,12 @@ from sympy.utilities.lambdify import lambdify
 from traits.trait_numeric import Array
 
 from hyperspy.events import Event, Events
+from hyperspy.misc import utils
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
 )
 from hyperspy.misc.model_tools import CurrentComponentValues
-from hyperspy.misc.utils import (
-    display,
-    get_object_package_info,
-    is_dask_array,
-    slugify,
-)
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -537,9 +532,9 @@ class Parameter(t.HasTraits):
         if self.map["is_set"][indices]:
             value = self.map["values"][indices]
             std = self.map["std"][indices]
-            if is_dask_array(value):
+            if utils.is_dask_array(value):
                 value = value.compute()
-            if is_dask_array(std):
+            if utils.is_dask_array(std):
                 std = std.compute()
             self.value = value
             self.std = std
@@ -684,7 +679,7 @@ class Parameter(t.HasTraits):
             format = "hspy"
         if name is None:
             name = self.component.name + "_" + self.name
-        filename = incremental_filename(slugify(name) + "." + format)
+        filename = incremental_filename(utils.slugify(name) + "." + format)
         if folder is not None:
             filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
@@ -888,10 +883,12 @@ class Component(t.HasTraits):
                     )
             self._name = value
             setattr(
-                self.model._components, slugify(value, valid_variable_name=True), self
+                self.model._components,
+                utils.slugify(value, valid_variable_name=True),
+                self,
             )
             self.model._components.__delattr__(
-                slugify(old_value, valid_variable_name=True)
+                utils.slugify(old_value, valid_variable_name=True)
             )
         else:
             self._name = value
@@ -1293,7 +1290,7 @@ class Component(t.HasTraits):
 
         """
         dic = {"parameters": [p.as_dictionary(fullcopy) for p in self.parameters]}
-        dic.update(get_object_package_info(self))
+        dic.update(utils.get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         from hyperspy.model import _COMPONENTS
 
@@ -1371,7 +1368,7 @@ class Component(t.HasTraits):
         only_free : bool
             If True, only free parameters will be printed.
         """
-        display(CurrentComponentValues(self, only_free=only_free))
+        utils.display(CurrentComponentValues(self, only_free=only_free))
 
     @property
     def _constant_term(self):

@@ -32,17 +32,15 @@ import scipy
 from packaging.version import Version
 
 from hyperspy.component import Component
-from hyperspy.components1d import Expression
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.events import Event, Events, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
-from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
 from hyperspy.io import assign_signal_subclass
-from hyperspy.misc.dask_utils import get_chunk_slice
+from hyperspy.misc import dask_utils, utils
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
@@ -52,14 +50,6 @@ from hyperspy.misc.export_dictionary import (
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.misc.utils import (
-    display,
-    dummy_context_manager,
-    is_dask_array,
-    shorten_name,
-    slugify,
-    stash_active_state,
-)
 from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
 
@@ -347,7 +337,7 @@ def _model_as_signal_lazy_data(
     """
     import dask.array as da
 
-    _, data_chunks = get_chunk_slice(
+    _, data_chunks = dask_utils.get_chunk_slice(
         shape=model.signal.data.shape,
         chunks=chunks,
         signal_dimension=model.axes_manager.signal_dimension,
@@ -385,12 +375,12 @@ class ModelComponents(object):
             for i, c in enumerate(self._model):
                 ans += "\n"
                 name_string = c.name
-                variable_name = slugify(name_string, valid_variable_name=True)
+                variable_name = utils.slugify(name_string, valid_variable_name=True)
                 component_type = c.__class__.__name__
 
-                variable_name = shorten_name(variable_name, 19)
-                name_string = shorten_name(name_string, 19)
-                component_type = shorten_name(component_type, 19)
+                variable_name = utils.shorten_name(variable_name, 19)
+                name_string = utils.shorten_name(name_string, 19)
+                component_type = utils.shorten_name(component_type, 19)
 
                 ans += signature % (i, variable_name, name_string, component_type)
         return ans
@@ -733,7 +723,11 @@ class BaseModel(list):
         thing._create_arrays()
         list.append(self, thing)
         thing.model = self
-        setattr(self._components, slugify(name_string, valid_variable_name=True), thing)
+        setattr(
+            self._components,
+            utils.slugify(name_string, valid_variable_name=True),
+            thing,
+        )
         if self._plot_active:
             self._connect_parameters2update_plot(components=[thing])
             self.signal._plot.signal_plot.update()
@@ -928,7 +922,7 @@ class BaseModel(list):
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
 
-        if out_of_range_to_nan and is_dask_array(data_):
+        if out_of_range_to_nan and utils.is_dask_array(data_):
             # requires array assignment which is not compatible with
             # dask array since dask 2024.12.0
             raise ValueError(
@@ -939,7 +933,7 @@ class BaseModel(list):
         if show_progressbar is None:  # pragma: no cover
             show_progressbar = preferences.General.show_progressbar
 
-        with stash_active_state(self if component_list else []):
+        with utils.stash_active_state(self if component_list else []):
             if component_list:
                 component_list = [self._get_component(x) for x in component_list]
                 for component_ in self:
@@ -1267,7 +1261,7 @@ class BaseModel(list):
         store_current_values
 
         """
-        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        cm = self.suspend_update if self._plot_active else utils.dummy_context_manager
         with cm(update_on_resume=update_on_resume):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
@@ -1421,6 +1415,8 @@ class BaseModel(list):
         fitting is hence currently only useful for fitting a dataset in the
         vectorized manner.
         """
+        from hyperspy import components1d
+
         if optimizer == "ridge_regression":
             warnings.warn(
                 "`'ridge_regression'` has been renamed to `'ridge'`. "
@@ -1499,7 +1495,7 @@ class BaseModel(list):
             ]
 
             if len(free_parameters) > 1:
-                if not isinstance(component, Expression):
+                if not isinstance(component, components1d.Expression):
                     raise AttributeError(
                         f"Component {component} has more than one free "
                         "parameter,  which is only supported for "
@@ -1806,7 +1802,7 @@ class BaseModel(list):
         cm = (
             self.suspend_update
             if (update_plot != self._plot_active) and not update_plot
-            else dummy_context_manager
+            else utils.dummy_context_manager
         )
 
         # Supported losses and optimizers
@@ -1968,6 +1964,8 @@ class BaseModel(list):
 
             if optimizer == "lm":
                 if bounded:
+                    from hyperspy.external.mpfit.mpfit import mpfit
+
                     # Bounded Levenberg-Marquardt algorithm is supported
                     # using the `mpfit` function (bundled with HyperSpy)
                     self._set_mpfit_parameters_info(bounded=bounded)
@@ -2443,11 +2441,11 @@ class BaseModel(list):
         ):
             with self.axes_manager.switch_iterpath(iterpath):
                 if interactive_plot:
-                    outer = dummy_context_manager
+                    outer = utils.dummy_context_manager
                     inner = self.suspend_update
                 else:
                     outer = self.suspend_update
-                    inner = dummy_context_manager
+                    inner = utils.dummy_context_manager
 
                 with outer(update_on_resume=True):
                     with progressbar(
@@ -2666,7 +2664,7 @@ class BaseModel(list):
         component_list : None or list of :class:`~hyperspy.component.Component`
             If None, print all components.
         """
-        display(
+        utils.display(
             CurrentModelValues(
                 model=self,
                 only_free=only_free,

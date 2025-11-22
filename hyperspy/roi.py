@@ -58,7 +58,7 @@ from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.events import Event, Events
 from hyperspy.interactive import interactive
-from hyperspy.misc.utils import is_cupy_array
+from hyperspy.misc import utils
 from hyperspy.ui_registry import add_gui_method
 
 not_set_error_msg = (
@@ -1123,7 +1123,7 @@ class CircleROI(BaseInteractiveROI):
         vy = axes[1].axis[ir[1]] - cy
 
         # convert to cupy array when necessary
-        if is_cupy_array(signal.data):  # pragma: no cover
+        if utils.is_cupy_array(signal.data):  # pragma: no cover
             import cupy as cp
 
             vx, vy = cp.array(vx), cp.array(vy)

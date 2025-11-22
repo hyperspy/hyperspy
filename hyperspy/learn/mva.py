@@ -33,13 +33,8 @@ from hyperspy.learn.orthomax import orthomax
 from hyperspy.learn.rpca import orpca, rpca_godec
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.whitening import whiten_data
+from hyperspy.misc import utils
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import (
-    is_cupy_array,
-    is_hyperspy_signal,
-    ordinal,
-    stack,
-)
 
 try:
     import mdp
@@ -118,7 +113,7 @@ def _get_derivative(signal, diff_axes, diff_order):
         diffs = [signal.derivative(order=diff_order, axis=i) for i in iaxes]
         for signal in diffs:
             signal.unfold()
-        signal = stack(diffs, axis=-1)
+        signal = utils.stack(diffs, axis=-1)
         del diffs
     return signal
 
@@ -260,7 +255,7 @@ class MVA:
         plot_decomposition_results, plot_explained_variance_ratio
 
         """
-        if is_cupy_array(self.data):  # pragma: no cover
+        if utils.is_cupy_array(self.data):  # pragma: no cover
             if algorithm == "SVD":
                 if svd_solver == "randomized":
                     raise ValueError(
@@ -852,13 +847,13 @@ class MVA:
             else:
                 raise ValueError("No `number_of_components` or `comp_list` provided.")
 
-        factors = stack([factors.inav[i] for i in comp_list])
+        factors = utils.stack([factors.inav[i] for i in comp_list])
 
         # Check sklearn-like algorithms
         is_sklearn_like = False
         algorithms_sklearn = ["sklearn_fastica"]
         if algorithm in algorithms_sklearn:
-            if is_cupy_array(self.data):  # pragma: no cover
+            if utils.is_cupy_array(self.data):  # pragma: no cover
                 raise TypeError(
                     "cupy arrays are not supported with scikit-learn algorithms."
                 )
@@ -1452,7 +1447,7 @@ class MVA:
         from matplotlib.ticker import FuncFormatter, MaxNLocator
 
         s = self.get_explained_variance_ratio()
-        if is_cupy_array(s.data):  # pragma: no cover
+        if utils.is_cupy_array(s.data):  # pragma: no cover
             s.to_host()
 
         n_max = len(self.learning_results.explained_variance_ratio)
@@ -1581,7 +1576,7 @@ class MVA:
             ax.plot(range(index_offset, index_offset + n), s.isig[:n].data, **noise_fmt)
 
         if xaxis_labeling == "cardinal":
-            ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: ordinal(x)))
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: utils.ordinal(x)))
 
         ax.set_ylabel(axes_titles["y"])
         ax.set_xlabel(axes_titles["x"])
@@ -1917,7 +1912,7 @@ class MVA:
         if isinstance(cluster_source, str) and cluster_source == "signal":
             cluster_source = self
 
-        if is_hyperspy_signal(cluster_source):
+        if utils.is_hyperspy_signal(cluster_source):
             if (
                 cluster_source.axes_manager.navigation_size
                 != self.axes_manager.navigation_size
@@ -1928,7 +1923,7 @@ class MVA:
                 )
         else:
             if cluster_source not in ("bss", "decomposition", "signal"):
-                if not is_hyperspy_signal(cluster_source):
+                if not utils.is_hyperspy_signal(cluster_source):
                     raise ValueError(
                         "cluster source needs to be set "
                         "to `decomposition` , `signal` , `bss` "
@@ -1963,7 +1958,7 @@ class MVA:
                 raise ValueError(
                     "Navigation mask size does not match signal navigation size"
                 )
-        if is_hyperspy_signal(cluster_source):
+        if utils.is_hyperspy_signal(cluster_source):
             signal_mask = self._mask_for_clustering(signal_mask)
             if not isinstance(signal_mask, slice):
                 if signal_mask.size != cluster_source.axes_manager.signal_size:
@@ -2091,7 +2086,7 @@ class MVA:
         if import_sklearn.sklearn_installed is False:
             raise ImportError("sklearn is not installed. Nothing done")
 
-        if is_cupy_array(self.data):  # pragma: no cover
+        if utils.is_cupy_array(self.data):  # pragma: no cover
             raise TypeError("cupy arrays are not supported.")
 
         if source_for_centers is None:
@@ -2194,8 +2189,8 @@ class MVA:
             target.cluster_labels = cluster_labels
             target.cluster_algorithm = algorithm
             target.number_of_clusters = n_clusters
-            target.cluster_sum_signals = np.stack(cluster_sum_signals)
-            target.cluster_centroid_signals = np.stack(cluster_centroid_signals)
+            target.cluster_sum_signals = np.utils.stack(cluster_sum_signals)
+            target.cluster_centroid_signals = np.utils.stack(cluster_centroid_signals)
             target.cluster_distances = distances
             target.cluster_centroids = np.asarray(centroids)
 
@@ -2210,11 +2205,11 @@ class MVA:
                     if self.unfolded4clustering:
                         self.fold()
 
-            if is_hyperspy_signal(cluster_source):
+            if utils.is_hyperspy_signal(cluster_source):
                 if hasattr(cluster_source, "unfolded4clustering"):
                     if cluster_source.unfolded4clustering:
                         cluster_source.fold()
-            if is_hyperspy_signal(source_for_centers):
+            if utils.is_hyperspy_signal(source_for_centers):
                 if hasattr(source_for_centers, "unfolded4clustering"):
                     if source_for_centers.unfolded4clustering:
                         source_for_centers.fold()
@@ -2606,7 +2601,7 @@ class MVA:
                     if self.unfolded4clustering:
                         self.fold()
 
-            if is_hyperspy_signal(cluster_source):
+            if utils.is_hyperspy_signal(cluster_source):
                 if hasattr(cluster_source, "unfolded4clustering"):
                     if cluster_source.unfolded4clustering:
                         cluster_source.fold()

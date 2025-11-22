@@ -104,12 +104,12 @@ def simple_decorator(decorator):
 
 @simple_decorator
 def interactive_range_selector(cm):
-    from hyperspy.signal_tools import Signal1DRangeSelector
+    from hyperspy import signal_tools
     from hyperspy.ui_registry import get_gui
 
     def wrapper(self, *args, **kwargs):
         if not args and not kwargs:
-            range_selector = Signal1DRangeSelector(self)
+            range_selector = signal_tools.Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
             get_gui(range_selector, toolkey="hyperspy.interactive_range_selector")
         else:

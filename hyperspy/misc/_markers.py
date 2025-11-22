@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.misc.utils import isiterable
+from hyperspy.misc import utils
 
 
 def dict2vector(data, keys, return_size=True, dtype=float):
@@ -35,7 +35,8 @@ def dict2vector(data, keys, return_size=True, dtype=float):
     # check to see if the array should be ragged
     unique_keys = np.unique(keys)
     is_key_iter = [
-        isiterable(data[key]) and not isinstance(data[key], str) for key in unique_keys
+        utils.isiterable(data[key]) and not isinstance(data[key], str)
+        for key in unique_keys
     ]
     if not any(is_key_iter):  # no iterable keys
         if dtype is str:
@@ -67,7 +68,7 @@ def dict2vector(data, keys, return_size=True, dtype=float):
                     vect[j] = data[keys[j]][i]
             vector[i] = vect
     if return_size:
-        if not isiterable(data["size"]):
+        if not utils.isiterable(data["size"]):
             size = data["size"]
         else:
             size = np.empty(data["size"].shape, dtype=object)

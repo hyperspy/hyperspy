@@ -32,9 +32,8 @@ from traits.trait_errors import TraitError
 from hyperspy.api import _ureg
 from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
-from hyperspy.misc import array_tools
+from hyperspy.misc import array_tools, utils
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.misc.utils import TupleSA, is_dask_array, isiterable, ordinal
 from hyperspy.ui_registry import add_gui_method, get_gui
 
 _logger = logging.getLogger(__name__)
@@ -479,7 +478,7 @@ class BaseDataAxis(t.HasTraits):
         name = (
             self.name
             if self.name is not t.Undefined
-            else ("Unnamed " + ordinal(self.index_in_axes_manager))
+            else ("Unnamed " + utils.ordinal(self.index_in_axes_manager))
             if self.axes_manager is not None
             else "Unnamed"
         )
@@ -560,7 +559,7 @@ class BaseDataAxis(t.HasTraits):
         return the same value."""
         if isinstance(value, str):
             value = self._parse_value_from_string(value)
-        elif isinstance(value, (list, tuple, np.ndarray)) or is_dask_array(value):
+        elif isinstance(value, (list, tuple, np.ndarray)) or utils.is_dask_array(value):
             value = np.asarray(value)
             if value.dtype.type is np.str_:
                 value = np.array([self._parse_value_from_string(v) for v in value])
@@ -640,7 +639,7 @@ class BaseDataAxis(t.HasTraits):
             )
 
     def index2value(self, index):
-        if is_dask_array(index):
+        if utils.is_dask_array(index):
             index = index.compute()
         if isinstance(index, np.ndarray):
             return self.axis[index.ravel()].reshape(index.shape)
@@ -1670,7 +1669,7 @@ class AxesManager(t.HasTraits):
         else:
             axes = [self._axes_getter(ax) for ax in y]
         _, indices = np.unique([_id for _id in map(id, axes)], return_index=True)
-        ans = TupleSA(axes[i] for i in sorted(indices))
+        ans = utils.TupleSA(axes[i] for i in sorted(indices))
         return ans
 
     def _axes_getter(self, y):
@@ -2200,7 +2199,7 @@ class AxesManager(t.HasTraits):
         A TupleSA object is a tuple with a `set` method
         to easily set the attributes of its items.
         """
-        return TupleSA(self._signal_axes)
+        return utils.TupleSA(self._signal_axes)
 
     @property
     def navigation_axes(self):
@@ -2209,7 +2208,7 @@ class AxesManager(t.HasTraits):
         A TupleSA object is a tuple with a `set` method
         to easily set the attributes of its items.
         """
-        return TupleSA(self._navigation_axes)
+        return utils.TupleSA(self._navigation_axes)
 
     @property
     def signal_shape(self):
@@ -2544,7 +2543,7 @@ class AxesManager(t.HasTraits):
             the attribute of all the axes are set to the given value.
 
         """
-        if not isiterable(values):
+        if not utils.isiterable(values):
             values = [
                 values,
             ] * len(self._axes)

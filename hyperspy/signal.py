@@ -76,24 +76,11 @@ from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
-from hyperspy.misc import array_tools, dask_utils
+from hyperspy.misc import array_tools, dask_utils, signal_tools, utils
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
 from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
-from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
-from hyperspy.misc.utils import (
-    DictionaryTreeBrowser,
-    add_scalar_axis,
-    is_cupy_array,
-    is_dask_array,
-    isiterable,
-    iterable_not_string,
-    rollelem,
-    slugify,
-    to_numpy,
-    underline,
-)
 
 _logger = logging.getLogger(__name__)
 
@@ -193,7 +180,7 @@ class ModelManager(object):
 
     def __init__(self, signal, dictionary=None):
         self._signal = signal
-        self._models = DictionaryTreeBrowser()
+        self._models = utils.DictionaryTreeBrowser()
         self._add_dictionary(dictionary)
 
     def _add_dictionary(self, dictionary=None):
@@ -201,7 +188,7 @@ class ModelManager(object):
             for k, v in dictionary.items():
                 if k.startswith("_") or k in ["restore", "remove"]:
                     raise KeyError("Can't add dictionary with key '%s'" % k)
-                k = slugify(k, True)
+                k = utils.slugify(k, True)
                 self._models.set_item(k, v)
                 setattr(self, k, self.ModelStub(self, k))
 
@@ -278,7 +265,7 @@ class ModelManager(object):
             raise KeyError('Name cannot start with "_" symbol')
         if "." in name:
             raise KeyError('Name cannot contain dots (".")')
-        name = slugify(name, True)
+        name = utils.slugify(name, True)
         if existing:
             if name not in self._models:
                 raise KeyError("Model named '%s' is not currently stored" % name)
@@ -2504,7 +2491,7 @@ class BaseSignal(
             self.axes_manager._set_signal_dimension(self._signal_dimension)
 
     def _create_metadata(self):
-        self._metadata = DictionaryTreeBrowser()
+        self._metadata = utils.DictionaryTreeBrowser()
         mp = self.metadata
         mp.add_node("_HyperSpy")
         mp.add_node("General")
@@ -2515,8 +2502,8 @@ class BaseSignal(
         folding.signal_unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
-        self._original_metadata = DictionaryTreeBrowser()
-        self.tmp_parameters = DictionaryTreeBrowser()
+        self._original_metadata = utils.DictionaryTreeBrowser()
+        self.tmp_parameters = utils.DictionaryTreeBrowser()
 
     def __repr__(self):
         if self.metadata._HyperSpy.Folding.unfolded:
@@ -2561,11 +2548,11 @@ class BaseSignal(
                     return ns
             else:
                 # Different navigation and/or signal shapes
-                if not are_signals_aligned(self, other):
+                if not signal_tools.signal_tools.are_signals_aligned(self, other):
                     raise ValueError(exception_message)
                 else:
                     # They are broadcastable but have different number of axes
-                    ns, no = broadcast_signals(self, other)
+                    ns, no = signal_tools.broadcast_signals(self, other)
                     sdata = ns.data
                     odata = no.data
                     if op_name in INPLACE_OPERATORS:
@@ -2643,7 +2630,7 @@ class BaseSignal(
             if not copy_learning_results:
                 old_learning_results = self.learning_results
                 del self.learning_results
-            self.models._models = DictionaryTreeBrowser()
+            self.models._models = utils.DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = data
             return ns
@@ -2703,8 +2690,8 @@ class BaseSignal(
         res._lazy = True
         if chunks is None:
             # Set default values
-            chunks = False if is_dask_array(res.data) else "auto"
-        elif isinstance(chunks, str) and is_dask_array(res.data):
+            chunks = False if utils.is_dask_array(res.data) else "auto"
+        elif isinstance(chunks, str) and utils.is_dask_array(res.data):
             chunks = False
             _logger.warning(
                 "Ignoring `chunks` argument because data is already a dask array."
@@ -3024,7 +3011,7 @@ class BaseSignal(
         else:
             value = self.data.__getitem__(indices)
         if as_numpy:
-            value = to_numpy(value)
+            value = utils.to_numpy(value)
         value = np.atleast_1d(value)
         if fft_shift:
             value = np.fft.fftshift(value)
@@ -3127,7 +3114,7 @@ class BaseSignal(
             # Sum over all but the first navigation axis.
             am = self.axes_manager
             navigator = sum_wrapper(self, am.signal_axes + am.navigation_axes[1:])
-            return np.nan_to_num(to_numpy(navigator.data)).squeeze()
+            return np.nan_to_num(utils.to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_image_explorer(*args, **kwargs):
             am = self.axes_manager
@@ -3140,7 +3127,7 @@ class BaseSignal(
             ind = new_nav.isig.__getitem__(
                 slices=slices
             )  # Get the value from the nav reverse because hyperspy
-            return np.nan_to_num(to_numpy(ind.data)).squeeze()
+            return np.nan_to_num(utils.to_numpy(ind.data)).squeeze()
 
         # function to disconnect when closing the navigator
         function_to_disconnect = None
@@ -3234,11 +3221,11 @@ class BaseSignal(
                 elif navigator == "data":
                     if np.issubdtype(self.data.dtype, np.complexfloating):
                         self._plot.navigator_data_function = (
-                            lambda axes_manager=None: to_numpy(abs(self.data))
+                            lambda axes_manager=None: utils.to_numpy(abs(self.data))
                         )
                     else:
                         self._plot.navigator_data_function = (
-                            lambda axes_manager=None: to_numpy(self.data)
+                            lambda axes_manager=None: utils.to_numpy(self.data)
                         )
                 elif navigator == "spectrum":
                     self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
@@ -3628,14 +3615,14 @@ class BaseSignal(
         to_index = self.axes_manager[to_axis].index_in_array
         if axis == to_index:
             return self.deepcopy()
-        new_axes_indices = rollelem(
+        new_axes_indices = utils.rollelem(
             [axis_.index_in_array for axis_ in self.axes_manager._axes],
             index=axis,
             to_index=to_index,
         )
 
         s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
-        s.axes_manager._axes = rollelem(
+        s.axes_manager._axes = utils.rollelem(
             s.axes_manager._axes, index=axis, to_index=to_index
         )
         s.axes_manager._update_attributes()
@@ -4201,7 +4188,7 @@ class BaseSignal(
         if not self.axes_manager._axes and not self.ragged:
             # Create a "Scalar" axis because the axis is the last one left and
             # HyperSpy does not # support 0 dimensions
-            add_scalar_axis(self)
+            utils.add_scalar_axis(self)
 
     def _ma_workaround(self, s, function, axes, ar_axes, out):
         # TODO: Remove if and when numpy.ma accepts tuple `axis`
@@ -5662,7 +5649,7 @@ class BaseSignal(
         autodetermine = (
             output_signal_size is None or output_dtype is None
         )  # try to guess output dtype and sig size?
-        if autodetermine and is_cupy_array(self.data):  # pragma: no cover
+        if autodetermine and utils.is_cupy_array(self.data):  # pragma: no cover
             raise ValueError(
                 "Autodetermination of `output_signal_size` and "
                 "`output_dtype` is not supported for cupy array."
@@ -5755,7 +5742,7 @@ class BaseSignal(
         if not ragged:
             sig.axes_manager._ragged = False
             if output_signal_size == () and am.navigation_dimension == 0:
-                add_scalar_axis(sig)
+                utils.add_scalar_axis(sig)
             sig.get_dimensions_from_data()
         sig._assign_subclass()
 
@@ -6237,7 +6224,7 @@ class BaseSignal(
             s = Signal2D(data, axes=self.axes_manager._get_navigation_axes_dicts())
         else:
             s = BaseSignal(data, axes=self.axes_manager._get_navigation_axes_dicts()).T
-        if is_dask_array(data):
+        if utils.is_dask_array(data):
             s = s.as_lazy()
         return s
 
@@ -6285,7 +6272,7 @@ class BaseSignal(
             s.set_signal_type(self.metadata.Signal.signal_type)
         else:
             s = self.__class__(data, axes=self.axes_manager._get_signal_axes_dicts())
-        if is_dask_array(data):
+        if utils.is_dask_array(data):
             s = s.as_lazy()
         return s
 
@@ -6551,7 +6538,7 @@ class BaseSignal(
         _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics(
             rechunk=rechunk
         )
-        print(underline("Summary statistics"))
+        print(utils.underline("Summary statistics"))
         print("mean:\t" + formatter % _mean)
         print("std:\t" + formatter % _std)
         print()
@@ -6671,7 +6658,7 @@ class BaseSignal(
             warnings.warn("`plot_marker=False` and `permanent=False` does nothing")
             return
 
-        if isiterable(marker):
+        if utils.isiterable(marker):
             marker_list = marker
         else:
             marker_list = [marker]
@@ -6907,13 +6894,13 @@ class BaseSignal(
             else:
                 navigation_axes = ax_list[:-signal_axes][::-1]
                 signal_axes = ax_list[-signal_axes:][::-1]
-        elif iterable_not_string(signal_axes):
+        elif utils.iterable_not_string(signal_axes):
             signal_axes = tuple(am[ax] for ax in signal_axes)
             if navigation_axes is None:
                 navigation_axes = tuple(ax for ax in ax_list if ax not in signal_axes)[
                     ::-1
                 ]
-            elif iterable_not_string(navigation_axes):
+            elif utils.iterable_not_string(navigation_axes):
                 # want to keep the order
                 navigation_axes = tuple(am[ax] for ax in navigation_axes)
                 intersection = set(signal_axes).intersection(navigation_axes)
@@ -6942,7 +6929,7 @@ class BaseSignal(
                 else:
                     signal_axes = ax_list[navigation_axes:][::-1]
                     navigation_axes = ax_list[:navigation_axes][::-1]
-            elif iterable_not_string(navigation_axes):
+            elif utils.iterable_not_string(navigation_axes):
                 navigation_axes = tuple(am[ax] for ax in navigation_axes)
                 signal_axes = tuple(ax for ax in ax_list if ax not in navigation_axes)[
                     ::-1
@@ -7077,7 +7064,7 @@ class BaseSignal(
         axes = np.array(self.axes_manager.signal_indices_in_array)
 
         for axis, axis_index in zip(self.axes_manager.signal_axes, axes):
-            if is_dask_array(self.data):
+            if utils.is_dask_array(self.data):
                 import dask.array as da
 
                 chunks = self.data.chunks[axis_index]
@@ -7227,7 +7214,7 @@ class BaseSignal(
         """
         if self._lazy:  # pragma: no cover
             raise LazyCupyConversion
-        self.data = to_numpy(self.data)
+        self.data = utils.to_numpy(self.data)
 
     def remove_spikes(self, threshold_factor=5, axes=None, inplace=True, **kwargs):
         r"""
@@ -7341,7 +7328,7 @@ class BaseSignal(
             except ImportError:
                 raise RuntimeError("`dask_image` is required to remove spikes lazily.")
         else:
-            if is_cupy_array(self.data):  # pragma: no cover
+            if utils.is_cupy_array(self.data):  # pragma: no cover
                 from cupyx.scipy.ndimage import median_filter
             else:
                 from scipy.ndimage import median_filter

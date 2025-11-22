@@ -20,8 +20,8 @@ from operator import attrgetter
 
 import numpy as np
 
+from hyperspy.misc import utils
 from hyperspy.misc.export_dictionary import parse_flag_string
-from hyperspy.misc.utils import attrsetter, is_dask_array
 
 
 def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
@@ -54,7 +54,7 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         sl = tuple(array_slices[:nav_dims])
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[sl])
-        if is_dask_array(target):
+        if utils.is_dask_array(target):
             return target[sl]
         raise ValueError(
             "tried to slice with navigation dimensions, but was neither a "
@@ -66,7 +66,7 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         sl = tuple(array_slices[-sig_dims:])
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[sl])
-        if is_dask_array(target):
+        if utils.is_dask_array(target):
             return target[sl]
         raise ValueError(
             "tried to slice with navigation dimensions, but was neither a "
@@ -147,11 +147,11 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav, order=None):
         if "inav" in flags or "isig" in flags:
             slice_nav = make_slice_navigation_decision(flags, isNav)
             result = _slice_target(target, dims, both_slices, slice_nav, "sig" in flags)
-            attrsetter(_to, key, result)
+            utils.attrsetter(_to, key, result)
             continue
         else:
             # 'fn' in flag or no flags at all
-            attrsetter(_to, key, target)
+            utils.attrsetter(_to, key, target)
             continue
 
 
@@ -318,7 +318,7 @@ class FancySlicing(object):
                     t = attrgetter(ta)(self)
                     if out is None:
                         if hasattr(t, "_slicer"):
-                            attrsetter(_obj, ta, t._slicer(slices, isNavigation))
+                            utils.attrsetter(_obj, ta, t._slicer(slices, isNavigation))
                     else:
                         target = attrgetter(ta)(_obj)
                         t._slicer(slices, isNavigation, out=target)

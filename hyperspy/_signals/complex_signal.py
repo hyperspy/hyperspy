@@ -34,7 +34,7 @@ from hyperspy.docstrings.signal import (
     NUM_WORKERS_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
-from hyperspy.misc.utils import parse_quantity
+from hyperspy.misc import utils
 from hyperspy.signal import BaseSignal
 
 ERROR_MESSAGE_SETTER = (
@@ -392,7 +392,7 @@ class ComplexSignal(BaseSignal):
         )
 
         if self.real.metadata.Signal.has_item("quantity"):
-            quantity_real, units_real = parse_quantity(
+            quantity_real, units_real = utils.parse_quantity(
                 self.real.metadata.Signal.quantity
             )
             argand_diagram.axes_manager.signal_axes[0].name = quantity_real
@@ -405,7 +405,7 @@ class ComplexSignal(BaseSignal):
         )
 
         if self.imag.metadata.Signal.has_item("quantity"):
-            quantity_imag, units_imag = parse_quantity(
+            quantity_imag, units_imag = utils.parse_quantity(
                 self.imag.metadata.Signal.quantity
             )
             argand_diagram.axes_manager.signal_axes[1].name = quantity_imag

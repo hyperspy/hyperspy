@@ -37,9 +37,8 @@ from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
+from hyperspy.misc import utils
 from hyperspy.misc._markers import markers_dict_to_markers
-from hyperspy.misc.utils import get_object_package_info, strlist2enumeration
-from hyperspy.misc.utils import stack as stack_function
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
@@ -139,12 +138,12 @@ def _infer_file_writer(string):
         if not plugins:
             raise ValueError(
                 f"The .{string} extension does not correspond to any supported format. "
-                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+                f"Supported file extensions are: {utils.strlist2enumeration(extensions)}."
             )
         else:
             raise ValueError(
                 "Writing to this format is not supported. "
-                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+                f"Supported file extensions are: {utils.strlist2enumeration(extensions)}."
             )
 
     elif len(writers) > 1:
@@ -520,7 +519,7 @@ def load(
         objects = []
         for i in range(n):
             signal = signals[i]  # Sublist, with len = len(filenames)
-            signal = stack_function(
+            signal = utils.stack(
                 signal,
                 axis=stack_axis,
                 new_axis_name=new_axis_name,
@@ -930,7 +929,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
 
         raise TypeError(
             "This file format does not support this data. "
-            f"Please try one of {strlist2enumeration(compatible_writers)}"
+            f"Please try one of {utils.strlist2enumeration(compatible_writers)}"
         )
 
     if not writer["non_uniform_axis"] and not signal.axes_manager.all_uniform:
@@ -942,7 +941,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         raise TypeError(
             "Writing to this format is not supported for "
             "non-uniform axes. Use one of the following "
-            f"formats: {strlist2enumeration(compatible_writers)}"
+            f"formats: {utils.strlist2enumeration(compatible_writers)}"
         )
 
     # Create the directory if it does not exist
@@ -967,7 +966,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         # properly supported in io_plugins
         signal = _add_file_load_save_metadata("save", signal, writer)
         signal_dic = signal._to_dictionary(add_models=True)
-        signal_dic["package_info"] = get_object_package_info(signal)
+        signal_dic["package_info"] = utils.get_object_package_info(signal)
         if not isinstance(filename, MutableMapping):
             importlib.import_module(writer["api"]).file_writer(
                 str(filename), signal_dic, **kwds
