@@ -32,13 +32,7 @@ from traits.trait_errors import TraitError
 from hyperspy.api import _ureg
 from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
-from hyperspy.misc.array_tools import (
-    numba_closest_index_ceil,
-    numba_closest_index_floor,
-    numba_closest_index_round,
-    round_half_away_from_zero,
-    round_half_towards_zero,
-)
+from hyperspy.misc import array_tools
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.misc.utils import TupleSA, is_dask_array, isiterable, ordinal
 from hyperspy.ui_registry import add_gui_method, get_gui
@@ -609,17 +603,23 @@ class BaseDataAxis(t.HasTraits):
             if rounding is round:
                 # Use argmin(abs) which will return the closest value
                 # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_round(self.axis, value).astype(
+                    int
+                )
             elif rounding is math.ceil:
                 # Ceiling means finding index of the closest xi with xi - v >= 0
                 # we look for argmin of strictly non-negative part of self.axis-v.
                 # The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_ceil(self.axis, value).astype(
+                    int
+                )
             elif rounding is math.floor:
                 # flooring means finding index of the closest xi with xi - v <= 0
                 # we look for armgax of strictly non-positive part of self.axis-v.
                 # The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_floor(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_floor(self.axis, value).astype(
+                    int
+                )
             else:
                 raise ValueError(
                     "Non-supported rounding function. Use "
@@ -1324,8 +1324,8 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             # approach on the index, because the index is always positive
             index = np.where(
                 value >= 0 if np.sign(self.scale) > 0 else value < 0,
-                round_half_towards_zero(index, decimals=0),
-                round_half_away_from_zero(index, decimals=0),
+                array_tools.round_half_towards_zero(index, decimals=0),
+                array_tools.round_half_away_from_zero(index, decimals=0),
             )
         else:
             if rounding is math.ceil:

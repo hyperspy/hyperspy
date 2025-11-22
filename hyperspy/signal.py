@@ -76,9 +76,8 @@ from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
-from hyperspy.misc import dask_utils
+from hyperspy.misc import array_tools, dask_utils
 from hyperspy.misc._markers import markers_dict_to_markers
-from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
 from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
@@ -3771,7 +3770,7 @@ class BaseSignal(
             scale=scale,
         )
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = array_rebin(self.data, scale=factors, crop=crop, dtype=dtype)
+        data = array_tools.rebin(self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
             if out._lazy:
