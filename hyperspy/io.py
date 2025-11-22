@@ -35,11 +35,11 @@ from rsciio.utils.path import overwrite as overwrite_method
 import hyperspy
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
-from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
+from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.utils import get_object_package_info, strlist2enumeration
-from hyperspy.misc.utils import stack as stack_method
+from hyperspy.misc.utils import stack as stack_function
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
@@ -520,7 +520,7 @@ def load(
         objects = []
         for i in range(n):
             signal = signals[i]  # Sublist, with len = len(filenames)
-            signal = stack_method(
+            signal = stack_function(
                 signal,
                 axis=stack_axis,
                 new_axis_name=new_axis_name,

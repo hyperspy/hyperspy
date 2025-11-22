@@ -65,7 +65,6 @@ from hyperspy.docstrings.signal import (
 from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.drawing import mpl_he, mpl_hie, mpl_hse
 from hyperspy.drawing import signal as sigdraw
-from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.events import Event, Events
 from hyperspy.exceptions import (
@@ -79,6 +78,7 @@ from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
+from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.misc.dask_utils import (
     _compute,

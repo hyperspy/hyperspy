@@ -35,7 +35,6 @@ from matplotlib.transforms import (
 import hyperspy.api as hs
 from hyperspy._signals.signal2d import BaseSignal, Signal1D, Signal2D
 from hyperspy.axes import UniformDataAxis
-from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.external.matplotlib.collections import (
     CircleCollection,
     EllipseCollection,
@@ -44,6 +43,7 @@ from hyperspy.external.matplotlib.collections import (
     TextCollection,
 )
 from hyperspy.external.matplotlib.quiver import Quiver
+from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
     Arrows,
