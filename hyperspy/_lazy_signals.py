@@ -16,12 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy._signals.complex_signal import LazyComplexSignal
-from hyperspy._signals.complex_signal1d import LazyComplexSignal1D
-from hyperspy._signals.complex_signal2d import LazyComplexSignal2D
-from hyperspy._signals.lazy import LazySignal
-from hyperspy._signals.signal1d import LazySignal1D
-from hyperspy._signals.signal2d import LazySignal2D
+import importlib
+
+# ruff: noqa: F822
 
 __all__ = [
     "LazyComplexSignal",
@@ -32,6 +29,23 @@ __all__ = [
     "LazySignal2D",
 ]
 
+_import_mapping = {
+    "LazyComplexSignal": "complex_signal",
+    "LazyComplexSignal1D": "complex_signal1d",
+    "LazyComplexSignal2D": "complex_signal2d",
+    "LazySignal": "lazy",
+    "LazySignal1D": "signal1d",
+    "LazySignal2D": "signal2d",
+}
+
 
 def __dir__():
     return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:
+        import_name = f"hyperspy._signals.{_import_mapping[name]}"
+        return getattr(importlib.import_module(import_name), name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

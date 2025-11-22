@@ -20,14 +20,12 @@ import logging
 import math
 import warnings
 
-import dask
 import numpy as np
 import numpy.ma as ma
 import scipy
 
-from hyperspy import signal_tools
+from hyperspy import _lazy_signals, signal_tools
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.plot import (
@@ -47,12 +45,9 @@ from hyperspy.docstrings.signal1d import (
     CROP_PARAMETER_DOC,
     SPIKES_REMOVAL_TOOL_DOCSTRING,
 )
-from hyperspy.misc.lowess_smooth import lowess
+from hyperspy.misc import lowess_smooth, utils
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.misc.utils import is_dask_array
-from hyperspy.models.model1d import Model1D
 from hyperspy.signal import BaseSignal
-from hyperspy.signal_tools._background_removal import _get_background_estimator
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
@@ -416,6 +411,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         model : `Model1D` instance.
 
         """
+        from hyperspy.models.model1d import Model1D
 
         model = Model1D(self, dictionary=dictionary)
         return model
@@ -695,9 +691,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
         self._check_navigation_mask(mask)
         # we compute for now
-        if is_dask_array(start):
+        if utils.is_dask_array(start):
             start = start.compute()
-        if is_dask_array(end):
+        if utils.is_dask_array(end):
             end = end.compute()
         i1, i2 = axis._get_index(start), axis._get_index(end)
         if reference_indices is None:
@@ -994,7 +990,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return smoother.gui(display=display, toolkit=toolkit)
         else:
             self.map(
-                lowess,
+                lowess_smooth.lowess,
                 x=self.axes_manager[-1].axis,
                 f=smoothing_parameter,
                 n_iter=number_of_iterations,
@@ -1271,7 +1267,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 # for testing purposes
                 return gui_dict
         else:
-            background_estimator = _get_background_estimator(
+            background_estimator = signal_tools._get_background_estimator(
                 background_type, polynomial_order
             )[0]
             result = self._remove_background_cli(
@@ -1343,6 +1339,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         >>> s = hs.data.two_gaussians()
         >>> s.remove_baselines(method="aspls", lam=1e7)
         """
+        import dask
+
         from hyperspy._signals._signal1d_tool import _remove_baseline
 
         if method is None:  # pragma: no cover
@@ -1758,7 +1756,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     )
 
 
-class LazySignal1D(LazySignal, Signal1D):
+class LazySignal1D(_lazy_signals.LazySignal, Signal1D):
     """Lazy general 1D signal class."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal1D")
