@@ -9,7 +9,7 @@ for code consistency that you can read all about in the `Python Style Guide
 <https://www.python.org/dev/peps/pep-0008/>`_. You can use the `ruff`_ code
 formatter to automatically fix the style of your code using pre-commit hooks.
 
-Linting error can be suppressed in the code using the ``# noqa`` marker,
+Linting errors can be suppressed in the code using the ``# noqa`` marker,
 more information in the `ruff documentation <https://docs.astral.sh/ruff/linter/#error-suppression>`_.
 
 Pre-commit hooks
