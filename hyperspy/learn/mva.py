@@ -21,7 +21,6 @@ import logging
 import types
 import warnings
 
-import matplotlib.pyplot as plt
 import numpy as np
 from rsciio.utils import path as io_path
 
@@ -1449,6 +1448,9 @@ class MVA:
         get_decomposition_factors
 
         """
+        import matplotlib.pyplot as plt
+        from matplotlib.ticker import FuncFormatter, MaxNLocator
+
         s = self.get_explained_variance_ratio()
         if is_cupy_array(s.data):  # pragma: no cover
             s.to_host()
@@ -1608,6 +1610,8 @@ class MVA:
         plot_explained_variance_ratio
 
         """
+        import matplotlib.pyplot as plt
+
         target = self.learning_results
         if n > target.explained_variance.shape[0]:
             n = target.explained_variance.shape[0]
@@ -1617,7 +1621,6 @@ class MVA:
         ax.scatter(range(n), cumu[:n])
         ax.set_xlabel("Principal component")
         ax.set_ylabel("Cumulative explained variance ratio")
-        plt.draw()
 
         return ax
 
@@ -1837,6 +1840,8 @@ class MVA:
         plot_cluster_labels
 
         """
+        import matplotlib.pyplot as plt
+
         target = self.learning_results
 
         if target.cluster_metric_data is not None:
@@ -1869,7 +1874,6 @@ class MVA:
             else:
                 ax.axvline(nclusters, linewidth=2, color="green", linestyle="dashed")
 
-        plt.draw()
         return ax
 
     def _get_cluster_signal(

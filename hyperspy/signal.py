@@ -33,7 +33,6 @@ import dask
 import numpy as np
 import scipy
 import traits.api as t
-from matplotlib import pyplot as plt
 from pint import UndefinedUnitError
 from rsciio.utils import rgb
 from rsciio.utils.path import ensure_directory
@@ -388,7 +387,7 @@ class MVATools(object):
         img_data=None,
         plot_shifts=True,
         plot_char=4,
-        cmap=plt.cm.gray,
+        cmap="gray",
         quiver_color="white",
         vector_scale=1,
         per_row=3,
@@ -415,7 +414,7 @@ class MVATools(object):
         cmap : a matplotlib colormap
             The colormap used for factor images or any peak characteristic
             scatter map overlay. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
 
         Other Parameters
         ----------------
@@ -448,6 +447,8 @@ class MVATools(object):
         matplotlib figure or list of figure if same_window=False
 
         """
+        import matplotlib.pyplot as plt
+
         if same_window is None:
             same_window = True
         if comp_ids is None:
@@ -534,11 +535,13 @@ class MVATools(object):
         comp_label=None,
         with_factors=False,
         factors=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
     ):
+        import matplotlib.pyplot as plt
+
         if same_window is None:
             same_window = True
         if comp_ids is None:
@@ -641,7 +644,7 @@ class MVATools(object):
         factor_prefix=None,
         factor_format=None,
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         plot_shifts=True,
         plot_char=4,
         img_data=None,
@@ -652,6 +655,8 @@ class MVATools(object):
         no_nans=True,
         per_row=3,
     ):
+        import matplotlib.pyplot as plt
+
         from hyperspy._signals.signal1d import Signal1D
         from hyperspy._signals.signal2d import Signal2D
 
@@ -819,13 +824,15 @@ class MVATools(object):
         loading_format="hspy",
         save_figures_format="png",
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         save_figures=False,
         same_window=False,
         calibrate=True,
         no_nans=True,
         per_row=3,
     ):
+        import matplotlib.pyplot as plt
+
         from hyperspy._signals.signal1d import Signal1D
         from hyperspy._signals.signal2d import Signal2D
 
@@ -972,7 +979,7 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         title=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         per_row=3,
         **kwargs,
     ):
@@ -1003,7 +1010,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1059,7 +1066,7 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         title=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         per_row=3,
         **kwargs,
     ):
@@ -1134,7 +1141,7 @@ class MVATools(object):
         same_window=True,
         title=None,
         with_factors=False,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
@@ -1170,7 +1177,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the loadings images, or for peak
             characteristics. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
         per_row : int
@@ -1247,7 +1254,7 @@ class MVATools(object):
         same_window=True,
         title=None,
         with_factors=False,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
@@ -1280,7 +1287,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the loading image, or for peak
             characteristics,. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
         per_row : int
@@ -1354,7 +1361,7 @@ class MVATools(object):
         loading_prefix="loading",
         loading_format="hspy",
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         same_window=False,
         multiple_files=True,
         no_nans=True,
@@ -1423,7 +1430,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for images, such as factors, loadings, or for peak
             characteristics. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         per_row : :class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1479,7 +1486,7 @@ class MVATools(object):
         membership_prefix="cluster_label",
         membership_format="hspy",
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         same_window=False,
         multiple_files=True,
         no_nans=True,
@@ -1612,7 +1619,7 @@ class MVATools(object):
         loading_prefix="bss_loading",
         loading_format="hspy",
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         same_window=False,
         no_nans=True,
         per_row=3,
@@ -1679,7 +1686,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for images, such as factors, loadings, or
             for peak characteristics. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         per_row : :class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -2109,7 +2116,7 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         with_centers=False,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
@@ -2204,7 +2211,7 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         with_centers=False,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
@@ -3045,6 +3052,8 @@ class BaseSignal(
         %s
         %s
         """
+        import matplotlib.pyplot as plt
+
         if self.axes_manager.ragged:
             raise RuntimeError("Plotting ragged signal is not supported.")
         if self._plot is not None:

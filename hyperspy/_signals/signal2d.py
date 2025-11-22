@@ -21,7 +21,6 @@ import warnings
 from copy import deepcopy
 from functools import partial
 
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 import scipy
@@ -206,6 +205,8 @@ def estimate_image_shift(
        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
+    import matplotlib.pyplot as plt
+
     if is_dask_array(ref) or is_dask_array(image):
         import dask.array as da
 
@@ -528,6 +529,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         nrows = None
         images_number = self.axes_manager._max_index + 1
         if plot == "reuse":
+            import matplotlib.pyplot as plt
+
             # Reuse figure for plots
             plot = plt.figure()
         if reference == "stat":
