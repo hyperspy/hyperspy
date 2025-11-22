@@ -26,6 +26,11 @@ is only an optional dependency.
 Writing Cython code
 -------------------
 
+.. notes::
+
+   Currently, HyperSpy does not use Cython code and this section is relevant
+   only for RosettaSciIO library.
+
 Cython code should only be considered if:
 
 1. It is not possible to speed up the function using Numba, and instead,

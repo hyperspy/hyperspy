@@ -303,7 +303,7 @@ other anaconda environments (`read more about environments here
 
 .. code-block:: bash
 
-    $ conda env create -f conda_environment_dev.yml # create an env with development dependencies
+    $ conda env create -f conda_environment_dev.yml -n hspy_dev # create an environment with development dependencies
     $ conda activate hspy_dev # activate environment
 
 Install the runtime requirements using conda:
@@ -313,41 +313,17 @@ Install the runtime requirements using conda:
     $ conda env update -f conda_environment.yml # install hyperspy dependencies
 
 From the root folder of your hyperspy repository (folder containing the
-``setup.py`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
+``pyproject.toml`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
 
 .. code-block:: bash
 
     $ pip install -e . --no-deps # install the currently checked-out branch of hyperspy
 
-Note that some tests only pass on specific package versions (see :ref:`Plot testing<plot-test-label>`).
-Consequently, a previous version of python (such as 3.10) can end up being 
-installed in the ``hspy_dev`` environment. If this is a problem, ``hyperspy-dev`` should be 
-removed from environment creation. This will ensure that the latest python release is used. 
-
-Skipping ``hyperspy-dev`` will not prevent a successful installation from source, 
-but will require manually installing some packages. Notably, ``gui-ipywidgets`` 
-and ``gui-traitsui`` will be missing. More generally, all dependencies from ``dev`` 
-will be absent (see :ref:`install-with-pip`). These can be installed manually 
-using conda (inspect ``project.optional-dependencies`` section of 
-`pyproject.toml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/pyproject.toml>`__ 
-and install them using ``conda install -c conda-forge``). Alternatively, the
-installation of all optional dependencies can be left to ``pip``:
-
-.. code-block:: bash
-
-    $ conda create -n hspy_dev python # create an env with latest stable python
-    $ conda activate hspy_dev # activate environment
-    $ conda install hyperspy-base -c conda-forge --only-deps # install hyperspy dependencies
-    $ pip install -e .[dev] # Install hyperspy from source + dev dependencies (run from source folder)
-
-Because this will result in many conflict risks being cleared by pip, this is not 
-necessarily the cleanest way to proceed.
-
 Installation in other (non-system) Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 From the root folder of your hyperspy repository (folder containing the
-``setup.py`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
+``pyproject.toml`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
 
 .. code-block:: bash
 

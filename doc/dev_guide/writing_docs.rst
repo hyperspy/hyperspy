@@ -75,12 +75,6 @@ html format. See the ``make`` command documentation for more details.
 
 To install the documentation dependencies, run either
 
-.. code-block:: bash    
-
-    $ conda install hyperspy-dev
-
-or
-
 .. code-block:: bash
 
     $ pip install hyperspy[doc]
