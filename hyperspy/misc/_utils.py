@@ -1127,6 +1127,7 @@ def stack(
     import dask.array as da
 
     from hyperspy.axes import DataAxis, FunctionalDataAxis, UniformDataAxis
+    from hyperspy.signal import BaseSignal
 
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
@@ -1134,14 +1135,14 @@ def stack(
     # Get the real signal with the most axes to get metadata/class/etc
     # first = sorted(filter(lambda _s: isinstance(_s, BaseSignal), signal_list),
     #                key=lambda _s: _s.data.ndim)[-1]
-    first = next(filter(lambda _s: isinstance(_s, signals.BaseSignal), signal_list))
+    first = next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list))
 
     # Cast numbers as signals. Will broadcast later.
     for i, _s in enumerate(signal_list):
-        if isinstance(_s, signals.BaseSignal):
+        if isinstance(_s, BaseSignal):
             pass
         elif isinstance(_s, Number):
-            sig = signals.BaseSignal(_s)
+            sig = BaseSignal(_s)
             signal_list[i] = sig
         else:
             raise ValueError(f"Objects of type {type(_s)} cannot be stacked")

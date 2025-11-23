@@ -2543,7 +2543,7 @@ class BaseSignal(
                     return ns
             else:
                 # Different navigation and/or signal shapes
-                if not signal_tools.signal_tools.are_signals_aligned(self, other):
+                if not signal_tools.are_signals_aligned(self, other):
                     raise ValueError(exception_message)
                 else:
                     # They are broadcastable but have different number of axes

@@ -2188,8 +2188,8 @@ class MVA:
             target.cluster_labels = cluster_labels
             target.cluster_algorithm = algorithm
             target.number_of_clusters = n_clusters
-            target.cluster_sum_signals = utils.stack(cluster_sum_signals)
-            target.cluster_centroid_signals = utils.stack(cluster_centroid_signals)
+            target.cluster_sum_signals = np.stack(cluster_sum_signals)
+            target.cluster_centroid_signals = np.stack(cluster_centroid_signals)
             target.cluster_distances = distances
             target.cluster_centroids = np.asarray(centroids)
 
