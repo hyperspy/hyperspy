@@ -25,7 +25,7 @@ import numpy as np
 import numpy.ma as ma
 import scipy
 
-from hyperspy import _lazy_signals, signal_tools, signals
+from hyperspy import signal_tools, signals
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.plot import (
@@ -1121,7 +1121,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
     )
 
 
-class LazySignal2D(_lazy_signals.LazySignal, Signal2D):
+class LazySignal2D(signals.LazySignal, Signal2D):
     """Lazy general 2D signal class."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")

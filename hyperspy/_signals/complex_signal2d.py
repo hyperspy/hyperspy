@@ -16,9 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
+from hyperspy import signals
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy._signals.complex_signal import ComplexSignal, LazyComplexSignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
     BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -29,7 +28,7 @@ from hyperspy.docstrings.plot import (
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 
 
-class ComplexSignal2D(ComplexSignal, CommonSignal2D):
+class ComplexSignal2D(signals.ComplexSignal, CommonSignal2D):
     """Signal class for complex 2-dimensional data."""
 
     _signal_dimension = 2
@@ -124,7 +123,7 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
     )
 
 
-class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
+class LazyComplexSignal2D(ComplexSignal2D, signals.LazyComplexSignal):
     """Lazy Signal class for complex 2-dimensional data."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal2D")

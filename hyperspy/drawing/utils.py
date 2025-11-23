@@ -37,6 +37,7 @@ from rsciio.utils import rgb
 
 import hyperspy
 import hyperspy.api as hs
+from hyperspy import signals
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS
 from hyperspy.misc.utils import is_dask_array, isiterable, to_numpy
@@ -342,9 +343,6 @@ def plot_signals(
     ...    ) # doctest: +SKIP
 
     """
-
-    from hyperspy.signal import BaseSignal
-
     if navigator_list:
         if not (len(signal_list) == len(navigator_list)):
             raise ValueError("signal_list and navigator_list must have the same size")
@@ -358,7 +356,7 @@ def plot_signals(
             navigator_list = []
         if navigator is None:
             navigator_list.extend([None] * len(signal_list))
-        elif isinstance(navigator, BaseSignal):
+        elif isinstance(navigator, signals.BaseSignal):
             navigator_list.append(navigator)
             navigator_list.extend([None] * (len(signal_list) - 1))
         elif navigator == "slider":
@@ -404,9 +402,7 @@ def plot_signals(
 
 
 def _make_heatmap_subplot(spectra, normalise, **plot_kwargs):
-    from hyperspy._signals.signal2d import Signal2D
-
-    im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
+    im = signals.Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     if normalise:
         im.data = (
             (im.data.T - im.data.min(-1)) / (im.data.max(-1) - im.data.min(-1))
@@ -729,12 +725,11 @@ def plot_images(
             )
 
     from hyperspy.drawing.widgets import ScaleBar
-    from hyperspy.signal import BaseSignal
 
     # Check that we have a hyperspy signal
     im = [images] if not isinstance(images, (list, tuple)) else images
     for image in im:
-        if not isinstance(image, BaseSignal):
+        if not isinstance(image, signals.BaseSignal):
             raise ValueError(
                 "`images` must be a list of image signals or a "
                 "multi-dimensional signal. "
@@ -747,7 +742,7 @@ def plot_images(
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
-    if isinstance(images, BaseSignal):
+    if isinstance(images, signals.BaseSignal):
         images = [im_ for im_ in images]
 
     n = 0
@@ -1569,7 +1564,6 @@ def plot_spectra(
         An array is returned when `style` is 'mosaic'.
 
     """
-    from hyperspy.signal import BaseSignal
 
     def _reverse_legend(ax_, legend_loc_):
         """
@@ -1719,15 +1713,15 @@ def plot_spectra(
             if legend_ is not None:
                 ax_.set_title(legend_)
             # Add xlabel for each axes (list of BaseSignal)
-            if not isinstance(spectra, BaseSignal):
+            if not isinstance(spectra, signals.BaseSignal):
                 _set_spectrum_xlabel(spectra_, ax_)
         # Add xlabel at the very bottom (single BaseSignal)
-        if isinstance(spectra, BaseSignal):
+        if isinstance(spectra, signals.BaseSignal):
             _set_spectrum_xlabel(spectra, ax[-1])
         fig.tight_layout()
 
     elif style == "heatmap":
-        if not isinstance(spectra, BaseSignal):
+        if not isinstance(spectra, signals.BaseSignal):
             import hyperspy.utils
 
             spectra = [_transpose_if_required(spectrum, 1) for spectrum in spectra]

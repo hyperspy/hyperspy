@@ -17,12 +17,12 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+from hyperspy import signals
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy._signals.complex_signal import ComplexSignal, LazyComplexSignal
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 
 
-class ComplexSignal1D(ComplexSignal, CommonSignal1D):
+class ComplexSignal1D(signals.ComplexSignal, CommonSignal1D):
     """Signal class for complex 1-dimensional data."""
 
     _signal_dimension = 1
@@ -31,7 +31,7 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
         super().__init__(*args, **kwargs)
 
 
-class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
+class LazyComplexSignal1D(ComplexSignal1D, signals.LazyComplexSignal):
     """Lazy signal class for complex 1-dimensional data."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal1D")

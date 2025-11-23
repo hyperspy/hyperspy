@@ -31,6 +31,7 @@ import numpy as np
 import scipy
 from packaging.version import Version
 
+from hyperspy import signals
 from hyperspy.component import Component
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
@@ -50,7 +51,6 @@ from hyperspy.misc.export_dictionary import (
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -1670,7 +1670,7 @@ class BaseModel(list):
         """
         variance = self.signal.get_noise_variance()
         if variance is not None:
-            if isinstance(variance, BaseSignal):
+            if isinstance(variance, signals.BaseSignal):
                 if only_current:
                     variance = variance.data.__getitem__(
                         self.axes_manager._getitem_tuple
@@ -2384,7 +2384,7 @@ class BaseModel(list):
                     "iterating over the navigation dimensions, which is "
                     "significantly slower."
                 )
-            elif isinstance(self.signal.get_noise_variance(), BaseSignal):
+            elif isinstance(self.signal.get_noise_variance(), signals.BaseSignal):
                 warnings.warn(
                     "The noise of the signal is not homoscedastic, i.e. the "
                     "variance of the signal is not constant, which is not "

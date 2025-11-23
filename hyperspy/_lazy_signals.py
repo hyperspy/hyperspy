@@ -17,26 +17,14 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import importlib
+import warnings
 
-# ruff: noqa: F822
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.extensions import EXTENSIONS as EXTENSIONS_
 
 __all__ = [
-    "LazyComplexSignal",
-    "LazyComplexSignal1D",
-    "LazyComplexSignal2D",
-    "LazySignal",
-    "LazySignal1D",
-    "LazySignal2D",
+    signal_ for signal_, specs_ in EXTENSIONS_["signals"].items() if specs_["lazy"]
 ]
-
-_import_mapping = {
-    "LazyComplexSignal": "complex_signal",
-    "LazyComplexSignal1D": "complex_signal1d",
-    "LazyComplexSignal2D": "complex_signal2d",
-    "LazySignal": "lazy",
-    "LazySignal1D": "signal1d",
-    "LazySignal2D": "signal2d",
-}
 
 
 def __dir__():
@@ -44,8 +32,13 @@ def __dir__():
 
 
 def __getattr__(name):
+    warnings.warn(
+        "The private module `_lazy_signals` is deprecated and will be removed "
+        "in the HyperSpy 3.0 release. Please use the public module "
+        "`hyperspy.lazy_signals` instead.",
+        VisibleDeprecationWarning,
+    )
     if name in __all__:
-        import_name = f"hyperspy._signals.{_import_mapping[name]}"
-        return getattr(importlib.import_module(import_name), name)
-
+        spec = EXTENSIONS_["signals"][name]
+        return getattr(importlib.import_module(spec["module"]), name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

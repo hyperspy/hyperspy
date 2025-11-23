@@ -24,7 +24,7 @@ import numpy as np
 import numpy.ma as ma
 import scipy
 
-from hyperspy import _lazy_signals, signal_tools
+from hyperspy import signal_tools, signals
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.defaults_parser import preferences
@@ -1756,7 +1756,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     )
 
 
-class LazySignal1D(_lazy_signals.LazySignal, Signal1D):
+class LazySignal1D(signals.LazySignal, Signal1D):
     """Lazy general 1D signal class."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal1D")

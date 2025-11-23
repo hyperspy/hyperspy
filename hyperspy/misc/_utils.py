@@ -30,10 +30,10 @@ from operator import attrgetter
 
 import numpy as np
 
+from hyperspy import signal_tools, signals
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
-from hyperspy.misc.signal_tools import broadcast_signals
 
 _logger = logging.getLogger(__name__)
 
@@ -491,9 +491,8 @@ class DictionaryTreeBrowser:
 
         if key.startswith("_sig_"):
             key = key[5:]
-            from hyperspy.signal import BaseSignal
 
-            value = BaseSignal(**value)
+            value = signals.BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if slugified_key in self.__dict__.keys() and keep_existing:
@@ -526,8 +525,8 @@ class DictionaryTreeBrowser:
 
         par_dict = {}
 
+        from hyperspy import signals
         from hyperspy.axes import AxesManager, BaseDataAxis
-        from hyperspy.signal import BaseSignal
 
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -536,7 +535,7 @@ class DictionaryTreeBrowser:
                 key = item_["key"]
                 if isinstance(item_["_dtb_value_"], DictionaryTreeBrowser):
                     item = item_["_dtb_value_"].as_dictionary()
-                elif isinstance(item_["_dtb_value_"], BaseSignal):
+                elif isinstance(item_["_dtb_value_"], signals.BaseSignal):
                     item = item_["_dtb_value_"]._to_dictionary()
                     key = "_sig_" + key
                 elif hasattr(item_["_dtb_value_"], "_to_dictionary"):
@@ -552,7 +551,7 @@ class DictionaryTreeBrowser:
                     container = item_["_dtb_value_"]
                     # Support storing signals in containers
                     for i, item in enumerate(container):
-                        if isinstance(item, BaseSignal):
+                        if isinstance(item, signals.BaseSignal):
                             signals.append(i)
                     if signals:
                         to_tuple = False
@@ -1128,7 +1127,6 @@ def stack(
     import dask.array as da
 
     from hyperspy.axes import DataAxis, FunctionalDataAxis, UniformDataAxis
-    from hyperspy.signals import BaseSignal
 
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
@@ -1136,14 +1134,14 @@ def stack(
     # Get the real signal with the most axes to get metadata/class/etc
     # first = sorted(filter(lambda _s: isinstance(_s, BaseSignal), signal_list),
     #                key=lambda _s: _s.data.ndim)[-1]
-    first = next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list))
+    first = next(filter(lambda _s: isinstance(_s, signals.BaseSignal), signal_list))
 
     # Cast numbers as signals. Will broadcast later.
     for i, _s in enumerate(signal_list):
-        if isinstance(_s, BaseSignal):
+        if isinstance(_s, signals.BaseSignal):
             pass
         elif isinstance(_s, Number):
-            sig = BaseSignal(_s)
+            sig = signals.BaseSignal(_s)
             signal_list[i] = sig
         else:
             raise ValueError(f"Objects of type {type(_s)} cannot be stacked")
@@ -1161,7 +1159,9 @@ def stack(
 
     if len(signal_list) > 1:
         # Matching axis calibration is checked here
-        broadcasted_sigs = broadcast_signals(*signal_list, ignore_axis=axis_input)
+        broadcasted_sigs = signal_tools.broadcast_signals(
+            *signal_list, ignore_axis=axis_input
+        )
 
         if axis_input is not None:
             step_sizes = [s.axes_manager[axis_input].size for s in broadcasted_sigs]
@@ -1318,9 +1318,7 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     <Signal1D, title: , dimensions: (2, 2|2)>]
 
     """
-    from hyperspy.signal import BaseSignal
-
-    if not all(map(isinstance, args, (BaseSignal for _ in args))):
+    if not all(map(isinstance, args, (signals.BaseSignal for _ in args))):
         raise ValueError("Not all pased objects are signals")
     return [
         sig.transpose(
@@ -1355,12 +1353,10 @@ def iterable_not_string(thing):
 
 def add_scalar_axis(signal, lazy=None):
     am = signal.axes_manager
-    from hyperspy._signals.lazy import LazySignal
-    from hyperspy.signal import BaseSignal
 
     if lazy is None:
         lazy = signal._lazy
-    signal.__class__ = LazySignal if lazy else BaseSignal
+    signal.__class__ = signals.LazySignal if lazy else signals.BaseSignal
     am.remove(am._axes)
     am._append_axis(size=1, scale=1, offset=0, name="Scalar", navigate=False)
 
@@ -1407,9 +1403,7 @@ def is_hyperspy_signal(input_object):
         If true the object is a subclass of hyperspy.signal.BaseSignal
 
     """
-    from hyperspy.signals import BaseSignal
-
-    return isinstance(input_object, BaseSignal)
+    return isinstance(input_object, signals.BaseSignal)
 
 
 def nested_dictionary_merge(dict1, dict2):

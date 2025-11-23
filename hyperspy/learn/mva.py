@@ -24,6 +24,7 @@ import warnings
 import numpy as np
 from rsciio.utils import path as io_path
 
+from hyperspy import signals
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.external.progressbar import progressbar
@@ -1327,8 +1328,6 @@ class MVA:
         get_decomposition_loadings, get_decomposition_factors
 
         """
-        from hyperspy._signals.signal1d import Signal1D
-
         target = self.learning_results
         if target.explained_variance_ratio is None:
             raise AttributeError(
@@ -1336,7 +1335,7 @@ class MVA:
                 "`None`, did you forget to perform a PCA "
                 "decomposition?"
             )
-        s = Signal1D(target.explained_variance_ratio)
+        s = signals.Signal1D(target.explained_variance_ratio)
         s.metadata.General.title = self.metadata.General.title + "\nPCA Scree Plot"
         s.axes_manager[-1].name = "Principal component index"
         s.axes_manager[-1].units = ""
@@ -2189,8 +2188,8 @@ class MVA:
             target.cluster_labels = cluster_labels
             target.cluster_algorithm = algorithm
             target.number_of_clusters = n_clusters
-            target.cluster_sum_signals = np.utils.stack(cluster_sum_signals)
-            target.cluster_centroid_signals = np.utils.stack(cluster_centroid_signals)
+            target.cluster_sum_signals = utils.stack(cluster_sum_signals)
+            target.cluster_centroid_signals = utils.stack(cluster_centroid_signals)
             target.cluster_distances = distances
             target.cluster_centroids = np.asarray(centroids)
 

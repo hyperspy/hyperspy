@@ -53,7 +53,7 @@ from functools import partial
 import numpy as np
 import traits.api as t
 
-import hyperspy.api as hs
+from hyperspy import signals
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.events import Event, Events
@@ -608,7 +608,7 @@ class BaseInteractiveROI(BaseROI):
         """
         if signal is None:
             signal = list(self.signal_map.keys())
-        elif isinstance(signal, hs.signals.BaseSignal):
+        elif isinstance(signal, signals.BaseSignal):
             signal = [signal]
 
         for s in signal:
@@ -1491,9 +1491,8 @@ class Line2DROI(BaseInteractiveROI):
             )
             axis.axes_manager = axm
             axm._axes.insert(i0, axis)
-            from hyperspy.signals import BaseSignal
 
-            roi = BaseSignal(
+            roi = signals.BaseSignal(
                 profile,
                 axes=axm._get_axes_dicts(),
                 metadata=signal.metadata.deepcopy().as_dictionary(),

@@ -21,8 +21,7 @@ from functools import wraps
 import numpy as np
 from packaging.version import Version
 
-from hyperspy._signals.lazy import LazySignal
-from hyperspy._signals.signal2d import Signal2D
+from hyperspy import signals
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
     BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -35,7 +34,6 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.misc import utils
-from hyperspy.signal import BaseSignal
 
 ERROR_MESSAGE_SETTER = (
     "Setting the {} with a complex signal is ambiguous, "
@@ -63,7 +61,7 @@ def format_title(thing):
     return title_decorator
 
 
-class ComplexSignal(BaseSignal):
+class ComplexSignal(signals.BaseSignal):
     """General signal class for complex data."""
 
     _dtype = "complex"
@@ -92,7 +90,7 @@ class ComplexSignal(BaseSignal):
     def _set_real(self, real):
         if isinstance(real, self.__class__):
             raise TypeError(ERROR_MESSAGE_SETTER.format("real part"))
-        elif isinstance(real, BaseSignal):
+        elif isinstance(real, signals.BaseSignal):
             real = real.data
         self.data = real + 1j * self.data.imag
         self.events.data_changed.trigger(self)
@@ -112,7 +110,7 @@ class ComplexSignal(BaseSignal):
     def _set_imag(self, imag):
         if isinstance(imag, self.__class__):
             raise TypeError(ERROR_MESSAGE_SETTER.format("imaginary part"))
-        elif isinstance(imag, BaseSignal):
+        elif isinstance(imag, signals.BaseSignal):
             imag = imag.data
         self.data = self.data.real + 1j * imag
         self.events.data_changed.trigger(self)
@@ -132,7 +130,7 @@ class ComplexSignal(BaseSignal):
     def _set_amplitude(self, amplitude):
         if isinstance(amplitude, self.__class__):
             raise TypeError(ERROR_MESSAGE_SETTER.format("amplitude"))
-        elif isinstance(amplitude, BaseSignal):
+        elif isinstance(amplitude, signals.BaseSignal):
             amplitude = amplitude.data.real
         self.data = amplitude * np.exp(1j * np.angle(self.data))
         self.events.data_changed.trigger(self)
@@ -152,7 +150,7 @@ class ComplexSignal(BaseSignal):
     def _set_phase(self, phase):
         if isinstance(phase, self.__class__):
             raise TypeError(ERROR_MESSAGE_SETTER.format("phase"))
-        elif isinstance(phase, BaseSignal):
+        elif isinstance(phase, signals.BaseSignal):
             phase = phase.data
         self.data = abs(self.data) * np.exp(1j * phase)
         self.events.data_changed.trigger(self)
@@ -383,7 +381,7 @@ class ComplexSignal(BaseSignal):
         argand_diagram, real_edges, imag_edges = np.histogram2d(
             re, im, bins=size, range=range
         )
-        argand_diagram = Signal2D(
+        argand_diagram = signals.Signal2D(
             argand_diagram.T,
             metadata=self.metadata.as_dictionary(),
         )
@@ -424,7 +422,7 @@ class ComplexSignal(BaseSignal):
         return argand_diagram
 
 
-class LazyComplexSignal(ComplexSignal, LazySignal):
+class LazyComplexSignal(ComplexSignal, signals.LazySignal):
     """Lazy general signal class for complex data."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal")

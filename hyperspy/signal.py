@@ -40,6 +40,7 @@ from tlz import concat
 
 import hyperspy
 import hyperspy.drawing
+from hyperspy import signals
 from hyperspy.axes import AxesManager, create_axis
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -636,9 +637,6 @@ class MVATools(object):
     ):
         import matplotlib.pyplot as plt
 
-        from hyperspy._signals.signal1d import Signal1D
-        from hyperspy._signals.signal2d import Signal2D
-
         if multiple_files is None:
             multiple_files = True
 
@@ -702,7 +700,7 @@ class MVATools(object):
                         "index_in_array": 0,
                     }
                 )
-                s = Signal2D(
+                s = signals.Signal2D(
                     factor_data,
                     axes=axes_dicts,
                     metadata={
@@ -725,7 +723,7 @@ class MVATools(object):
                     },
                 ]
                 axes[0]["index_in_array"] = 1
-                s = Signal1D(
+                s = signals.Signal1D(
                     factors.T,
                     axes=axes,
                     metadata={
@@ -744,7 +742,7 @@ class MVATools(object):
                 axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
                 axis_dict["index_in_array"] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal1D(
+                    s = signals.Signal1D(
                         factors[:, index],
                         axes=[
                             axis_dict,
@@ -778,7 +776,7 @@ class MVATools(object):
                 )
 
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    im = Signal2D(
+                    im = signals.Signal2D(
                         factor_data[..., index],
                         axes=axes_dicts,
                         metadata={
@@ -811,9 +809,6 @@ class MVATools(object):
         per_row=3,
     ):
         import matplotlib.pyplot as plt
-
-        from hyperspy._signals.signal1d import Signal1D
-        from hyperspy._signals.signal2d import Signal2D
 
         if multiple_files is None:
             multiple_files = True
@@ -874,7 +869,7 @@ class MVATools(object):
                         "index_in_array": 0,
                     }
                 )
-                s = Signal2D(
+                s = signals.Signal2D(
                     loading_data,
                     axes=axes_dicts,
                     metadata={
@@ -898,7 +893,7 @@ class MVATools(object):
                     },
                     cal_axis,
                 ]
-                s = Signal2D(
+                s = signals.Signal2D(
                     loadings,
                     axes=axes,
                     metadata={
@@ -917,7 +912,7 @@ class MVATools(object):
                 axis_dict = self.axes_manager.navigation_axes[0].get_axis_dictionary()
                 axis_dict["index_in_array"] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal1D(
+                    s = signals.Signal1D(
                         loadings[index],
                         axes=[
                             axis_dict,
@@ -937,7 +932,7 @@ class MVATools(object):
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]["index_in_array"] = 1
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal2D(
+                    s = signals.Signal2D(
                         loading_data[index, ...],
                         axes=axes_dicts,
                         metadata={
@@ -6215,15 +6210,17 @@ class BaseSignal(
         if self.axes_manager.navigation_dimension == 0:
             s = BaseSignal(data)
         elif self.axes_manager.navigation_dimension == 1:
-            from hyperspy._signals.signal1d import Signal1D
-
-            s = Signal1D(data, axes=self.axes_manager._get_navigation_axes_dicts())
+            s = signals.Signal1D(
+                data, axes=self.axes_manager._get_navigation_axes_dicts()
+            )
         elif self.axes_manager.navigation_dimension == 2:
-            from hyperspy._signals.signal2d import Signal2D
-
-            s = Signal2D(data, axes=self.axes_manager._get_navigation_axes_dicts())
+            s = signals.Signal2D(
+                data, axes=self.axes_manager._get_navigation_axes_dicts()
+            )
         else:
-            s = BaseSignal(data, axes=self.axes_manager._get_navigation_axes_dicts()).T
+            s = signals.BaseSignal(
+                data, axes=self.axes_manager._get_navigation_axes_dicts()
+            ).T
         if utils.is_dask_array(data):
             s = s.as_lazy()
         return s

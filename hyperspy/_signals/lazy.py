@@ -28,6 +28,7 @@ import scipy
 from dask.widgets import TEMPLATE_PATHS
 from rsciio.utils.file import get_file_handle
 
+from hyperspy import signals
 from hyperspy.docstrings.signal import (
     LAZYSIGNAL_DOC,
     MANY_AXIS_PARAMETER,
@@ -38,7 +39,6 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import array_tools, dask_utils, utils
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ def to_array(thing, chunks=None):
     """
     if thing is None:
         return None
-    if isinstance(thing, BaseSignal):
+    if isinstance(thing, signals.BaseSignal):
         thing = thing.data
     if chunks is None:
         if isinstance(thing, da.Array):
@@ -101,7 +101,7 @@ def to_array(thing, chunks=None):
             raise ValueError
 
 
-class LazySignal(BaseSignal):
+class LazySignal(signals.BaseSignal):
     """Lazy general signal class."""
 
     _lazy = True
@@ -120,7 +120,7 @@ class LazySignal(BaseSignal):
         if self._clear_cache_dask_data not in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
-    __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
+    __init__.__doc__ = signals.BaseSignal.__init__.__doc__.replace(
         ":class:`numpy.ndarray`", ":class:`dask.array.Array`"
     )
 
@@ -594,7 +594,7 @@ class LazySignal(BaseSignal):
             new_shape=new_shape, scale=scale, crop=crop, dtype=dtype, out=out
         )
 
-    rebin.__doc__ = BaseSignal.rebin.__doc__
+    rebin.__doc__ = signals.BaseSignal.rebin.__doc__
 
     def __array__(self, dtype=None, copy=None):
         return self.data.__array__(dtype=dtype, copy=copy)
@@ -652,7 +652,7 @@ class LazySignal(BaseSignal):
         else:
             out.events.data_changed.trigger(obj=out)
 
-    diff.__doc__ = BaseSignal.diff.__doc__
+    diff.__doc__ = signals.BaseSignal.diff.__doc__
 
     def integrate_simpson(self, axis, out=None, rechunk=False):
         axis = self.axes_manager[axis]
@@ -680,7 +680,7 @@ class LazySignal(BaseSignal):
             s._remove_axis(axis.index_in_axes_manager)
             return s
 
-    integrate_simpson.__doc__ = BaseSignal.integrate_simpson.__doc__
+    integrate_simpson.__doc__ = signals.BaseSignal.integrate_simpson.__doc__
 
     def valuemax(self, axis, out=None, rechunk=False):
         idx = self.indexmax(axis, rechunk=rechunk)
@@ -693,7 +693,7 @@ class LazySignal(BaseSignal):
             out.data = data
             out.events.data_changed.trigger(obj=out)
 
-    valuemax.__doc__ = BaseSignal.valuemax.__doc__
+    valuemax.__doc__ = signals.BaseSignal.valuemax.__doc__
 
     def valuemin(self, axis, out=None, rechunk=False):
         idx = self.indexmin(axis, rechunk=rechunk)
@@ -706,17 +706,15 @@ class LazySignal(BaseSignal):
             out.data = data
             out.events.data_changed.trigger(obj=out)
 
-    valuemin.__doc__ = BaseSignal.valuemin.__doc__
+    valuemin.__doc__ = signals.BaseSignal.valuemin.__doc__
 
     def get_histogram(
         self, bins="fd", range_bins=None, out=None, rechunk=False, **kwargs
     ):
-        from hyperspy.signals import Signal1D
-
         data = self._lazy_data(rechunk=rechunk).flatten()
         hist, bin_edges = histogram_dask(data, bins=bins, range=range_bins, **kwargs)
         if out is None:
-            hist_spec = Signal1D(hist)
+            hist_spec = signals.Signal1D(hist)
             hist_spec._lazy = True
             hist_spec._assign_subclass()
         else:
@@ -736,7 +734,7 @@ class LazySignal(BaseSignal):
         else:
             out.events.data_changed.trigger(obj=out)
 
-    get_histogram.__doc__ = BaseSignal.get_histogram.__doc__
+    get_histogram.__doc__ = signals.BaseSignal.get_histogram.__doc__
 
     @staticmethod
     def _estimate_poissonian_noise_variance(
@@ -750,12 +748,12 @@ class LazySignal(BaseSignal):
     # def _get_navigation_signal(self, data=None, dtype=None):
     # return super()._get_navigation_signal(data=data, dtype=dtype).as_lazy()
 
-    # _get_navigation_signal.__doc__ = BaseSignal._get_navigation_signal.__doc__
+    # _get_navigation_signal.__doc__ = signals.BaseSignal._get_navigation_signal.__doc__
 
     # def _get_signal_signal(self, data=None, dtype=None):
     #     return super()._get_signal_signal(data=data, dtype=dtype).as_lazy()
 
-    # _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
+    # _get_signal_signal.__doc__ = signals.BaseSignal._get_signal_signal.__doc__
 
     def _calculate_summary_statistics(self, rechunk=False):
         if rechunk is True:
