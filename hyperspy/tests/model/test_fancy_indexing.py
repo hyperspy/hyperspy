@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy._signals.signal1d import Signal1D
+import hyperspy.api as hs
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 
@@ -38,7 +38,7 @@ class TestModelIndexing:
         g.centre.value = 300.0
         g.sigma.value = 150.0
         data = g.function(axes)
-        s = Signal1D(data)
+        s = hs.signals.Signal1D(data)
         s.axes_manager[-1].offset = -150.0
         s.axes_manager[-1].scale = 0.5
         s.add_gaussian_noise(2.0)
@@ -104,7 +104,7 @@ class TestModelIndexing:
 @lazifyTestClass
 class TestModelIndexingClass:
     def setup_method(self, method):
-        s = Signal1D([list(range(10))] * 3)
+        s = hs.signals.Signal1D([list(range(10))] * 3)
         m = s.create_model()
         self.m = m
 

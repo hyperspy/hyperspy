@@ -21,8 +21,8 @@ import itertools
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.components1d import Exponential
-from hyperspy.signals import Signal1D
 from hyperspy.utils import stack
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
@@ -43,7 +43,7 @@ def test_function():
 @pytest.mark.parametrize(("uniform"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
-    s = Signal1D(np.empty((100,)))
+    s = hs.signals.Signal1D(np.empty((100,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 0.2
@@ -72,7 +72,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("binned"), (True, False))
 def test_function_nd(binned, lazy):
-    s = Signal1D(np.empty((100,)))
+    s = hs.signals.Signal1D(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 0.2
     axis.offset = 15

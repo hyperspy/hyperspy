@@ -21,8 +21,6 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.signal2d import Signal2D
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.misc.machine_learning.tools import amari
@@ -78,7 +76,7 @@ def test_bss_FastICA_object():
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 1000))
     A = rng.random_sample(size=(3, 3))
-    s = Signal1D(A @ S)
+    s = hs.signals.Signal1D(A @ S)
     s.decomposition()
 
     from sklearn.decomposition import FastICA
@@ -96,7 +94,7 @@ def test_bss_pipeline():
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 1000))
     A = rng.random_sample(size=(3, 3))
-    s = Signal1D(A @ S)
+    s = hs.signals.Signal1D(A @ S)
     s.decomposition()
 
     from sklearn.decomposition import FastICA
@@ -119,7 +117,7 @@ def test_orthomax(whiten_method):
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 500))
     A = rng.random_sample(size=(3, 3))
-    s = Signal1D(A @ S)
+    s = hs.signals.Signal1D(A @ S)
     s.decomposition()
     s.blind_source_separation(3, algorithm="orthomax", whiten_method=whiten_method)
 
@@ -200,7 +198,7 @@ def test_algorithm_error():
 @skip_sklearn
 def test_normalize_components_errors():
     rng = np.random.RandomState(123)
-    s = Signal1D(rng.random_sample(size=(20, 100)))
+    s = hs.signals.Signal1D(rng.random_sample(size=(20, 100)))
     s.decomposition()
 
     with pytest.raises(ValueError, match="called after s.blind_source_separation"):
@@ -220,7 +218,7 @@ def test_sklearn_convergence_warning():
     rng = np.random.RandomState(123)
     ics = rng.laplace(size=(3, 1000))
     mixing_matrix = rng.random_sample(size=(100, 3))
-    s = Signal1D(mixing_matrix @ ics)
+    s = hs.signals.Signal1D(mixing_matrix @ ics)
     s.decomposition()
 
     with pytest.warns(ConvergenceWarning):
@@ -240,7 +238,7 @@ def test_fastica_whiten_method(whiten_method):
     rng = np.random.RandomState(123)
     S = rng.laplace(size=(3, 1000))
     A = rng.random_sample(size=(3, 3))
-    s = Signal1D(A @ S)
+    s = hs.signals.Signal1D(A @ S)
     s.decomposition()
     s.blind_source_separation(
         3, algorithm="sklearn_fastica", whiten_method=whiten_method
@@ -256,7 +254,7 @@ class TestReverseBSS:
         S = rng.laplace(size=(3, 500))
         S -= 2 * S.min()  # Required to give us a positive dataset
         A = rng.random_sample(size=(3, 3))
-        s = Signal1D(A @ S)
+        s = hs.signals.Signal1D(A @ S)
         s.decomposition()
         s.blind_source_separation(2)
         self.s = s
@@ -285,7 +283,7 @@ class TestBSS1D:
         rng = np.random.RandomState(123)
         ics = rng.laplace(size=(3, 500))
         mixing_matrix = rng.random_sample(size=(100, 3))
-        s = Signal1D(mixing_matrix @ ics)
+        s = hs.signals.Signal1D(mixing_matrix @ ics)
         s.decomposition()
 
         mask_sig = s._get_signal_signal(dtype="bool")
@@ -347,7 +345,7 @@ class TestBSS2D:
         rng = np.random.RandomState(123)
         ics = rng.laplace(size=(3, 256))
         mixing_matrix = rng.random_sample(size=(100, 3))
-        s = Signal2D((mixing_matrix @ ics).reshape((100, 16, 16)))
+        s = hs.signals.Signal2D((mixing_matrix @ ics).reshape((100, 16, 16)))
         for axis, name in zip(s.axes_manager._axes, ("z", "y", "x")):
             axis.name = name
         s.decomposition()
@@ -494,7 +492,7 @@ class TestBSS2D:
 class TestPrintInfo:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        self.s = Signal1D(rng.random_sample(size=(20, 100)))
+        self.s = hs.signals.Signal1D(rng.random_sample(size=(20, 100)))
         self.s.decomposition(output_dimension=2)
 
     def test_bss(self, capfd):
@@ -513,7 +511,7 @@ class TestPrintInfo:
 class TestReturnInfo:
     def setup_method(self, method):
         rng = np.random.RandomState(123)
-        self.s = Signal1D(rng.random_sample(size=(20, 100)))
+        self.s = hs.signals.Signal1D(rng.random_sample(size=(20, 100)))
         self.s.decomposition(output_dimension=2)
 
     def test_bss_not_supported(self):

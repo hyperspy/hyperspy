@@ -18,13 +18,13 @@
 
 import numpy as np
 
-from hyperspy._signals.signal1d import Signal1D
+import hyperspy.api as hs
 from hyperspy.components1d import Expression
 
 
 class TestLinearFitting:
     def setup_method(self, method):
-        self.s = Signal1D(np.zeros((4, 5, 20)))
+        self.s = hs.signals.Signal1D(np.zeros((4, 5, 20)))
         self.m = self.s.create_model()
 
     def test_constant_term_without_model(self):

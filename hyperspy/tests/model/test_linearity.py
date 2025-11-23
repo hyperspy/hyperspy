@@ -19,15 +19,15 @@
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy._components.expression import _check_parameter_linearity
-from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Expression, Gaussian
 
 
 class TestModelLinearity:
     def setup_method(self, method):
         np.random.seed(1)
-        s = Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
+        s = hs.signals.Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
         self.g = Gaussian()
         m = s.create_model()
         m.append(self.g)

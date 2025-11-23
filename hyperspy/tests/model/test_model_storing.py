@@ -24,9 +24,8 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from hyperspy._signals.signal1d import Signal1D
+import hyperspy.api as hs
 from hyperspy.components1d import Expression, Gaussian, GaussianHF
-from hyperspy.io import load
 
 
 def clean_model_dictionary(d):
@@ -38,7 +37,7 @@ def clean_model_dictionary(d):
 
 class TestModelStoring:
     def setup_method(self, method):
-        s = Signal1D(range(100))
+        s = hs.signals.Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
         m.fit()
@@ -140,7 +139,7 @@ class TestModelStoring:
 @pytest.mark.parametrize("only_free", [True, False])
 @pytest.mark.parametrize("only_active", [True, False])
 def test_model_export(tmp_path, save_std, only_free, only_active):
-    s = Signal1D(range(100))
+    s = hs.signals.Signal1D(range(100))
     m = s.create_model()
     m.append(Gaussian())
     m.fit()
@@ -151,7 +150,7 @@ def test_model_export(tmp_path, save_std, only_free, only_active):
 
 class TestModelSaving:
     def setup_method(self, method):
-        s = Signal1D(range(100))
+        s = hs.signals.Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian(A=13))
         m[-1].name = "something"
@@ -167,7 +166,7 @@ class TestModelSaving:
     def test_save_and_load_model(self):
         m = self.m
         m.save("tmp.hspy", overwrite=True)
-        s = load("tmp.hspy")
+        s = hs.load("tmp.hspy")
         assert hasattr(s.models, "a")
         mr = s.models.restore("a")
         assert mr.components.something.A.value == 13
@@ -184,7 +183,7 @@ class TestModelSaving:
 def test_EELSModel_saving(tmp_path):
     pytest.importorskip("exspy")
 
-    s = Signal1D(range(100))
+    s = hs.signals.Signal1D(range(100))
     s.axes_manager[0].offset = 280
     s.set_signal_type("EELS")
     s.add_elements(["C"])
@@ -195,7 +194,7 @@ def test_EELSModel_saving(tmp_path):
     m.components.C_K.fine_structure_active = True
 
     m.save(tmp_path / "tmp.hspy")
-    s2 = load(tmp_path / "tmp.hspy")
+    s2 = hs.load(tmp_path / "tmp.hspy")
     assert hasattr(s2.models, "a")
     n = s2.models.restore("a")
     assert n[0].fine_structure_width == 50

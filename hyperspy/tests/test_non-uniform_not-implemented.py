@@ -19,14 +19,11 @@
 import numpy as np
 import pytest
 
-from hyperspy.signals import (
-    Signal1D,
-    Signal2D,
-)
+import hyperspy.api as hs
 
 
 def test_signal():
-    s = Signal1D([10, 10])
+    s = hs.signals.Signal1D([10, 10])
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.fft()
@@ -39,7 +36,7 @@ def test_signal():
 
 
 def test_signal1d():
-    s = Signal1D(([0, 1]))
+    s = hs.signals.Signal1D(([0, 1]))
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.calibrate()
@@ -58,14 +55,14 @@ def test_signal1d():
 
 
 def test_signal2d():
-    s = Signal2D([[10, 10], [10, 10]])
+    s = hs.signals.Signal2D([[10, 10], [10, 10]])
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.align2D()
 
 
 def test_lazy():
-    s = Signal1D([10, 10]).as_lazy()
+    s = hs.signals.Signal1D([10, 10]).as_lazy()
     s.axes_manager[0].convert_to_non_uniform_axis()
     print(s)
     with pytest.raises(NotImplementedError):
@@ -73,7 +70,7 @@ def test_lazy():
 
 
 def test_rebin():
-    s = Signal1D(np.arange(100).reshape(10, 10))
+    s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
     s.axes_manager[-1].convert_to_non_uniform_axis()
     s.rebin(scale=(2, 1))
     s.rebin(new_shape=(5, 10))

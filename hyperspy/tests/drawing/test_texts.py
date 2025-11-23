@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from hyperspy._signals.signal2d import Signal2D
+import hyperspy.api as hs
 from hyperspy.drawing._markers.texts import Texts
 from hyperspy.misc.test_utils import update_close_figure
 
@@ -59,7 +59,7 @@ class TestTextCollection:
     @pytest.mark.parametrize("iter_data", ("lazy_data", "data"))
     def test_iterating_marker(self, texts, request, iter_data):
         data = request.getfixturevalue(iter_data)
-        s = Signal2D(np.ones((3, 5, 6)))
+        s = hs.signals.Signal2D(np.ones((3, 5, 6)))
         s.plot()
         ragged_texts = texts == "ragged_text"
         if ragged_texts:
@@ -78,7 +78,7 @@ class TestTextCollection:
         baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
     )
     def test_text_marker_plot(self):
-        s = Signal2D(np.ones((3, 5, 6)))
+        s = hs.signals.Signal2D(np.ones((3, 5, 6)))
         s.data[:, :, ::2] = np.nan
         markers = Texts(offsets=[[2.0, 3.0]], texts=("test",), sizes=(20,))
         s.add_marker(markers, render_figure=True)
@@ -86,7 +86,7 @@ class TestTextCollection:
 
 
 def _test_text_collection_close():
-    signal = Signal2D(np.ones((10, 10)))
+    signal = hs.signals.Signal2D(np.ones((10, 10)))
     markers = Texts(offsets=[[1, 1], [4, 4]], texts=("test",))
     signal.add_marker(markers)
     return signal
@@ -98,7 +98,7 @@ def test_text_collection_close():
 
 
 def test_text_collection_close_render():
-    s = Signal2D(np.ones((2, 10, 10)))
+    s = hs.signals.Signal2D(np.ones((2, 10, 10)))
     markers = Texts(
         offsets=[[1, 1], [4, 4]], texts=("test",), sizes=(10,), color=("black",)
     )
