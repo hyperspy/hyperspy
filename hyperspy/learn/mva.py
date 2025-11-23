@@ -37,12 +37,7 @@ from hyperspy.learn.whitening import whiten_data
 from hyperspy.misc import utils
 from hyperspy.misc.machine_learning import import_sklearn
 
-try:
-    import mdp
-
-    mdp_installed = True
-except ImportError:
-    mdp_installed = False
+mdp = importlib.util.find_spec("mdp")
 
 
 _logger = logging.getLogger(__name__)
@@ -946,7 +941,7 @@ class MVA:
             lr.bss_node = None
 
         elif algorithm in ["FastICA", "JADE", "CuBICA", "TDSEP"]:
-            if not mdp_installed:
+            if mdp is None:
                 raise ImportError(f"algorithm='{algorithm}' requires MDP toolbox")
 
             temp_function = getattr(mdp.nodes, algorithm + "Node")

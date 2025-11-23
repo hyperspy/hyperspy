@@ -1492,13 +1492,14 @@ def get_array_module(array):
 
     """
     module = np
-    try:
+    if importlib.util.find_spec("cupy") is None:
+        # cupy is not installed
+        return module
+
+    if is_cupy_array(array):
         import cupy as cp
 
-        if isinstance(array, cp.ndarray):
-            module = cp
-    except ImportError:
-        pass
+        module = cp
 
     return module
 

@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+import importlib
 import inspect
 import logging
 import numbers
@@ -85,12 +86,7 @@ from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
 
 _logger = logging.getLogger(__name__)
 
-try:
-    import cupy as cp
-
-    CUPY_INSTALLED = True  # pragma: no cover
-except ImportError:
-    CUPY_INSTALLED = False
+CUPY_INSTALLED = importlib.util.find_spec("cupy") is not None
 
 
 def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers, axes):
@@ -7193,6 +7189,8 @@ class BaseSignal(
         if not CUPY_INSTALLED:
             raise BaseException("cupy is required.")
         else:  # pragma: no cover
+            import cupy as cp
+
             self.data = cp.asarray(self.data)
 
     def to_host(self):
