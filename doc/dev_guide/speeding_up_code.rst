@@ -29,7 +29,7 @@ Writing Cython code
 .. note::
 
    Currently, HyperSpy does not use Cython code and this section is relevant
-   only for RosettaSciIO library.
+   only for the RosettaSciIO library.
 
 Cython code should only be considered if:
 
