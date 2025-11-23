@@ -73,11 +73,22 @@ the documentation by running the ``make`` command in the ``hyperspy/doc``
 directory. For example ``make html`` will build the whole documentation in
 html format. See the ``make`` command documentation for more details.
 
-To install the documentation dependencies, run either
+To install the documentation dependencies, you can use either
+``pip`` or ``conda`` from the root folder of the repository:
 
-.. code-block:: bash
+.. tab-set::
 
-    $ pip install hyperspy[doc]
+    .. tab-item:: pip
+
+        .. code-block:: bash
+
+            $ pip install -e .[doc]
+
+    .. tab-item:: conda
+
+        .. code-block:: bash
+
+            $ conda env update -f conda_environment_doc.yml
 
 
 When writing documentation, the Python package `sphobjinv
