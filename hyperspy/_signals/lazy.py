@@ -22,7 +22,6 @@ from functools import partial
 from itertools import product
 
 import dask
-import dask.array as da
 import numpy as np
 import scipy
 from dask.widgets import TEMPLATE_PATHS
@@ -84,7 +83,7 @@ def to_array(thing, chunks=None):
     if isinstance(thing, signals.BaseSignal):
         thing = thing.data
     if chunks is None:
-        if isinstance(thing, da.Array):
+        if utils.is_dask_array(thing):
             thing = thing.compute()
         if isinstance(thing, np.ndarray):
             return thing
@@ -92,8 +91,10 @@ def to_array(thing, chunks=None):
             raise ValueError
     else:
         if isinstance(thing, np.ndarray):
+            import dask.array as da
+
             thing = da.from_array(thing, chunks=chunks)
-        if isinstance(thing, da.Array):
+        if utils.is_dask_array(thing):
             if thing.chunks != chunks:
                 thing = thing.rechunk(chunks)
             return thing
@@ -425,6 +426,8 @@ class LazySignal(signals.BaseSignal):
         dask.array
             The data as dask array and rechunked if necessary.
         """
+        import dask.array as da
+
         if rechunk == "dask_auto":
             new_chunks = "auto"
         elif isinstance(rechunk, tuple):
@@ -438,7 +441,7 @@ class LazySignal(signals.BaseSignal):
                 "`rechunk` argument must be a tuple, a boolean or "
                 "a str ('auto' or 'dask_auto') "
             )
-        if isinstance(self.data, da.Array):
+        if utils.is_dask_array(self.data):
             res = self.data
             # rechunk when necessary when rechunk is True, "auto" or "dask_auto"
             if rechunk and res.chunks != new_chunks:
@@ -451,7 +454,7 @@ class LazySignal(signals.BaseSignal):
             else:
                 data = self.data
             res = da.from_array(data, chunks=new_chunks)
-        assert isinstance(res, da.Array)
+
         return res
 
     _lazy_data.__doc__ %= RECHUNK_ARG
@@ -459,6 +462,8 @@ class LazySignal(signals.BaseSignal):
     def _apply_function_on_data_and_remove_axis(
         self, function, axes, out=None, rechunk=False
     ):
+        import dask.array as da
+
         def get_dask_function(numpy_name):
             # Translate from the default numpy to dask functions
             translations = {"amax": "max", "amin": "min"}
@@ -740,6 +745,8 @@ class LazySignal(signals.BaseSignal):
     def _estimate_poissonian_noise_variance(
         dc, gain_factor, gain_offset, correlation_factor
     ):
+        import dask.array as da
+
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         # The lower bound of the variance is the gaussian noise.
         variance = da.clip(variance, gain_offset * correlation_factor, np.inf)
@@ -756,6 +763,8 @@ class LazySignal(signals.BaseSignal):
     # _get_signal_signal.__doc__ = signals.BaseSignal._get_signal_signal.__doc__
 
     def _calculate_summary_statistics(self, rechunk=False):
+        import dask.array as da
+
         if rechunk is True:
             # Use dask auto rechunk instead of HyperSpy's one, what should be
             # better for these operations
@@ -818,6 +827,8 @@ class LazySignal(signals.BaseSignal):
             to NaN or 0.
 
         """
+        import dask.array as da
+
         if get is None:
             get = _get()
         data = self._data_aligned_with_axes
@@ -944,6 +955,8 @@ class LazySignal(signals.BaseSignal):
         hyperspy.learn.rpca.ORPCA, hyperspy.learn.ornmf.ORNMF
 
         """
+        import dask.array as da
+
         if get is None:
             get = _get()
         # Check algorithms requiring output_dimension
@@ -1242,6 +1255,7 @@ class LazySignal(signals.BaseSignal):
         odd number, so that the middle is centered.
 
         """
+        import dask.array as da
 
         signal_shape = self.axes_manager.signal_shape
 

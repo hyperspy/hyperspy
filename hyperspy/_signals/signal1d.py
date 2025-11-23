@@ -47,7 +47,6 @@ from hyperspy.docstrings.signal1d import (
 )
 from hyperspy.misc import lowess_smooth, utils
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
@@ -269,7 +268,7 @@ def _shift1D(data, **kwargs):
     return si(original_axis - shift)
 
 
-class Signal1D(BaseSignal, CommonSignal1D):
+class Signal1D(signals.BaseSignal, CommonSignal1D):
     """General 1D signal class."""
 
     _signal_dimension = 1
@@ -306,7 +305,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         # arbitrary cutoff for number of spectra necessary before histogram
         # data is compressed by finding maxima of each spectrum
-        tmp = BaseSignal(der) if n < 2000 else BaseSignal(np.ravel(der.max(-1)))
+        tmp = (
+            signals.BaseSignal(der)
+            if n < 2000
+            else signals.BaseSignal(np.ravel(der.max(-1)))
+        )
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
@@ -525,7 +528,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
         if isinstance(shift_array, np.ndarray):
-            shift_array = BaseSignal(shift_array.squeeze()).T
+            shift_array = signals.BaseSignal(shift_array.squeeze()).T
 
         self.map(
             _shift1D,

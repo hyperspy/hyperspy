@@ -42,7 +42,6 @@ from hyperspy.docstrings.signal import (
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import utils
 from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetrize
-from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
@@ -328,7 +327,7 @@ def estimate_image_shift(
         return -shifts
 
 
-class Signal2D(BaseSignal, CommonSignal2D):
+class Signal2D(signals.BaseSignal, CommonSignal2D):
     """General 2D signal class."""
 
     _signal_dimension = 2
@@ -1091,7 +1090,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             axes_dict = self.axes_manager._get_axes_dicts(
                 self.axes_manager.navigation_axes
             )
-            peaks = BaseSignal(
+            peaks = signals.BaseSignal(
                 np.empty(self.axes_manager.navigation_shape), axes=axes_dict
             )
             pf2D = signal_tools.PeaksFinder2D(
