@@ -30,10 +30,11 @@ from operator import attrgetter
 
 import numpy as np
 
-from hyperspy import signal_tools, signals
+from hyperspy import signals
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
+from hyperspy.misc import signal_tools
 
 _logger = logging.getLogger(__name__)
 
@@ -525,7 +526,6 @@ class DictionaryTreeBrowser:
 
         par_dict = {}
 
-        from hyperspy import signals
         from hyperspy.axes import AxesManager, BaseDataAxis
 
         for key_, item_ in self.__dict__.items():
@@ -547,18 +547,18 @@ class DictionaryTreeBrowser:
                     item = item_["_dtb_value_"].get_axis_dictionary()
                     key = "_hspy_Axis_" + key
                 elif type(item_["_dtb_value_"]) in (list, tuple):
-                    signals = []
+                    signals_ = []
                     container = item_["_dtb_value_"]
                     # Support storing signals in containers
                     for i, item in enumerate(container):
                         if isinstance(item, signals.BaseSignal):
-                            signals.append(i)
-                    if signals:
+                            signals_.append(i)
+                    if signals_:
                         to_tuple = False
                         if type(container) is tuple:
                             container = list(container)
                             to_tuple = True
-                        for i in signals:
+                        for i in signals_:
                             container[i] = {"_sig_": container[i]._to_dictionary()}
                         if to_tuple:
                             container = tuple(container)

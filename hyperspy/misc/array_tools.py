@@ -31,6 +31,7 @@ __all__ = [
     "round_half_towards_zero",
     "round_half_away_from_zero",
     "get_value_at_index",
+    "rebin",
 ]
 
 
