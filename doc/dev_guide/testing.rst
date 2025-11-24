@@ -57,22 +57,24 @@ Running tests
 Before running tests, ensure that pytest and its plugins are installed. Using ``pip``,
 this can be done by running either one of the following commands:
 
-.. code:: bash
+.. tab-set::
 
-   # If using a standard hyperspy install
-   $ pip install hyperspy[tests]
+    .. tab-item:: pip
 
-   # From a local hyperspy development directory
-   $ pip install -e .[tests]
+        .. code-block:: bash
 
-Using conda, test dependencies can be installed using the ``conda_environment_dev.yml`` file:
+          # From the root folder of the repository
+          $ pip install -e .[tests]
 
-.. code:: bash
+    .. tab-item:: conda
 
-  # Installing test dependencies using conda
-  $ conda env update -f conda_environment_dev.yml
+        .. code-block:: bash
 
-To run them:
+          # From the root folder of the repository
+          $ conda env update -f conda_environment_dev.yml
+
+
+To run the test suite:
 
 .. code:: bash
 
