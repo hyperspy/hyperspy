@@ -289,35 +289,31 @@ To get the development version from our git repository you need to install `git
 
 .. Warning::
 
-    When running hyperspy from a development version, it can happen that the
-    dependency requirement changes in which you will need to keep this
-    this requirement up to date (check dependency requirement in ``setup.py``)
-    or run again the installation in development mode using ``pip`` as explained
-    below.
+    When running hyperspy from a development version, it can happen that
+    dependencies change when pulling new commits / syncing the project. You
+    will then need to manually update dependencies in the environment
+    (check `pyproject.toml <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/pyproject.toml>`__)
+    or run again the development installation procedure, as explained below.
 
 Installation in a Anaconda/Miniconda distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Optionally, create an environment to separate your hyperspy installation from
 other anaconda environments (`read more about environments here
-<https://conda.io/projects/conda/en/latest/user-guide/concepts/environments.html>`_):
+<https://conda.io/projects/conda/en/latest/user-guide/concepts/environments.html>`_).
 
 .. code-block:: bash
 
-    $ conda create -n hspy_dev python # create an empty environment with latest python
+    $ conda env create -f conda_environment.yml -n hspy_dev # create an environment with development dependencies
     $ conda activate hspy_dev # activate environment
 
-Install the runtime and development dependencies requirements using conda:
+Install the development requirements using conda:
 
 .. code-block:: bash
 
-    $ conda install hyperspy-base -c conda-forge --only-deps # install hyperspy dependencies
-    $ conda install hyperspy-dev -c conda-forge # install developer dependencies
-
-The package ``hyperspy-dev`` will install the development dependencies required
-for testing and building the documentation.
+    $ conda env update -f conda_environment_dev.yml # install hyperspy dependencies
 
 From the root folder of your hyperspy repository (folder containing the
-``setup.py`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
+``pyproject.toml`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
 
 .. code-block:: bash
 
@@ -327,7 +323,7 @@ Installation in other (non-system) Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 From the root folder of your hyperspy repository (folder containing the
-``setup.py`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
+``pyproject.toml`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
 
 .. code-block:: bash
 
