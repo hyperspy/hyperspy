@@ -54,8 +54,8 @@ all the work that you do.
 Running tests
 ^^^^^^^^^^^^^
 
-Before running tests, ensure that pytest and its plugins are installed. Using ``pip``,
-this can be done by running either one of the following commands:
+Before running tests, ensure that pytest and its plugins are installed. To install them, you can use either
+``pip`` or ``conda`` from the root folder of the repository:
 
 .. tab-set::
 
