@@ -1496,7 +1496,7 @@ def plot_spectra(
     normalise=False,
     **kwargs,
 ):
-    """Plot several spectra in the same figure.
+    r"""Plot several spectra in the same figure.
 
     Parameters
     ----------
@@ -1554,7 +1554,7 @@ def plot_spectra(
         If None (default), update the plot only for style='overlap'.
     normalise : bool or callable, default False
         If True, applies default min-max normalization:
-            (x - x.min()) / (x.max() - x.min()).
+        :math:`(x - \min{x}) / (\max{x} - \min{x})`.
         If a callable is provided, it should be a function that takes a
         HyperSpy signal as input and returns the normalised array.
 
