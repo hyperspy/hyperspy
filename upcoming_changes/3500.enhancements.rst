@@ -1,0 +1,1 @@
+Use the rosettasciio ``file_handle`` API in favour of the ``get_file_handle`` function to get file handle when closing file loaded lazily.

@@ -19,7 +19,9 @@
 import dask.array as da
 import numpy as np
 import pytest
+import rsciio
 from dask.threaded import get
+from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy import _lazy_signals
@@ -430,3 +432,19 @@ def test_compute_kwargs():
     s1 = s.deepcopy()
     s1.compute(show_progressbar=False)
     s.compute(scheduler="processes", num_workers=2, show_progressbar=False)
+
+
+def test_compute_close_file(tmp_path):
+    s = hs.signals.Signal1D(np.ones((20, 30, 40)))
+    fname = tmp_path / "test_compute_close_file.hspy"
+    s.save(fname)
+
+    s2 = hs.load(fname, lazy=True)
+    if Version(rsciio.__version__) <= Version("0.7.1"):
+        # not using rosettasciio file_handle API
+        # _file_handle is not set
+        assert s2._file_handle is None
+    else:
+        assert s2._file_handle is not None
+    s2.compute(close_file=True)
+    assert s2._file_handle is None

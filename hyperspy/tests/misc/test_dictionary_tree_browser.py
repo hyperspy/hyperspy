@@ -174,7 +174,7 @@ class TestDictionaryBrowser:
                 "Node21": {"leaf211": 211},
             },
             "_sig_Some name": {
-                "attributes": {"_lazy": False, "ragged": False},
+                "attributes": {"_file_handle": None, "_lazy": False, "ragged": False},
                 "axes": [
                     {
                         "_type": "UniformDataAxis",
