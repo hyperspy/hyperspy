@@ -1,0 +1,1 @@
+Fix compatibility of `'flyback'` axes iterator with numpy 2.4.0.
