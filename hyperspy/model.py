@@ -1152,7 +1152,7 @@ class BaseModel(list):
                     else:
                         self.free_parameters_boundaries.extend((param._bounds))
 
-    def _bounds_as_tuple(self, transpose):
+    def _bounds_as_tuple(self, transpose, as_array=False):
         """
         Converts parameter bounds to tuples for scipy optimizer. For scipy
         ``least_squares``, ``transpose=True`` needs to be used, as the order of the
@@ -1166,9 +1166,13 @@ class BaseModel(list):
             for a, b in self.free_parameters_boundaries
         )
         if transpose:
-            return tuple(zip(*bounds))
-        else:
-            return bounds
+            bounds = tuple(zip(*bounds))
+
+        if as_array:
+            # odrpack needs numpy arrays
+            bounds = tuple(np.array(bounds_) for bounds_ in bounds)
+
+        return bounds
 
     def _set_mpfit_parameters_info(self, bounded=True):
         """Generate the boundary list for mpfit.
@@ -1829,6 +1833,7 @@ class BaseModel(list):
             "lm",
             "trf",
             "dogbox",
+            "odr",
             "Powell",
             "TNC",
             "L-BFGS-B",
@@ -1846,6 +1851,7 @@ class BaseModel(list):
             in [
                 "trf",  # Use least_squares
                 "dogbox",  # Use least_squares
+                "odr",  # Use odrpack
             ]
             else False
         )
@@ -2073,6 +2079,7 @@ class BaseModel(list):
                 self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
             elif optimizer == "odr":
+                self._set_boundaries(bounded=bounded)
                 try:
                     import odrpack
                 except ModuleNotFoundError:  # pragma: no cover
@@ -2085,8 +2092,10 @@ class BaseModel(list):
                         "`optimizer='odr'` is not implemented for Model2D"
                     )
 
-                odr_jacobian = self._jacobian4odr if grad == "analytical" else None
-
+                kwargs.setdefault("task", "OLS")
+                bounds = self._bounds_as_tuple(
+                    transpose=_transpose_bounds, as_array=True
+                )
                 res = odrpack.odr_fit(
                     self._function4odr,
                     xdata=self.axis.axis[np.where(self._channel_switches)],
@@ -2096,8 +2105,8 @@ class BaseModel(list):
                     beta0=np.array(self.p0[:]),
                     weight_x=None,
                     weight_y=(1.0 / weights if weights is not None else None),
-                    jac_beta=odr_jacobian,
-                    task="OLS",
+                    jac_beta=self._jacobian4odr if grad == "analytical" else None,
+                    bounds=bounds if bounded else None,
                     **kwargs,
                 )
 

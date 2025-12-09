@@ -145,6 +145,16 @@ class TestModelFitBinnedLeastSquares:
         assert len(self.m.p_std) == 3
         assert np.all(~np.isnan(self.m.p_std))
 
+    def test_fit_odr_bounded(self):
+        pytest.importorskip("odrpack", reason="odrpack not installed")
+        self.m.fit(optimizer="odr", bounded=True)
+        self._check_model_values(self.m[0], (250.66282746, 50.0, 5.0), rtol=TOL)
+
+        assert isinstance(self.m.fit_output, OptimizeResult)
+        assert self.m.p_std is not None
+        assert len(self.m.p_std) == 3
+        assert np.all(~np.isnan(self.m.p_std))
+
     def test_fit_bounded_bad_starting_values(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
@@ -481,10 +491,6 @@ class TestFitErrorsAndWarnings:
             NotImplementedError, match=r".* only supports least-squares fitting"
         ):
             self.m.fit(loss_function="ML-poisson", optimizer="lm")
-
-    def test_not_support_bounds(self):
-        with pytest.raises(ValueError, match="Bounded optimization is only supported"):
-            self.m.fit(optimizer="odr", bounded=True)
 
     def test_wrong_grad(self):
         with pytest.raises(ValueError, match="`grad` must be one of"):

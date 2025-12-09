@@ -39,36 +39,38 @@ whether the optimizers find a local or global optima.
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"dogbox"``                    |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"odr"``                       |  No      | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    | ``"odr"`` [1]_                  |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"lstsq"``                     |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    | ``"lstsq"``                     |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ols"``                       |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    | ``"ols"``                       |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"nnls"``                      |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    | ``"nnls"``                      |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ridge"``                     |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    | ``"ridge"``                     |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | :func:`scipy.optimize.minimize` | Yes [2]_ | Yes [2]_  | No       | All           | local  | No     |
+    | :func:`scipy.optimize.minimize` | Yes [3]_ | Yes [3]_  | No       | All           | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"Differential Evolution"``    |  Yes     | No        | No       | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"Dual Annealing"`` [3]_       |  Yes     | No        | No       | All           | global | No     |
+    | ``"Dual Annealing"`` [4]_       |  Yes     | No        | No       | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"SHGO"`` [3]_                 |  Yes     | No        | No       | All           | global | No     |
+    | ``"SHGO"`` [4]_                 |  Yes     | No        | No       | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
 
 .. rubric:: Footnotes
 
-.. [1] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
+.. [1] Requires the ``odrpack`` library to be installed.
+
+.. [2] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
        in most cases. See the documentation below on :ref:`linear least square fitting <linear_fitting-label>`
        for more info.
 
-.. [2] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
+.. [3] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
        supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
        please see the `SciPy documentation <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
-.. [3] Requires ``scipy >= 1.2.0``.
+.. [4] Requires ``scipy >= 1.2.0``.
 
 
 
