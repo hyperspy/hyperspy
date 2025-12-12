@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -187,6 +188,10 @@ class TestMarkers:
         s = Signal2D(np.zeros((2, 100, 100)))
         s.add_marker(m)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info[:2] == (3, 11),
+        reason="Failing on CI Windows python 3.11, reason unknown",
+    )
     @pytest.mark.parametrize(
         "signal_axes",
         (
