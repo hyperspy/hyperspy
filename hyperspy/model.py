@@ -29,7 +29,6 @@ import cloudpickle
 import dask
 import dask.array as da
 import numpy as np
-import scipy.odr as odr
 from dask.diagnostics import ProgressBar
 from packaging.version import Version
 from scipy.linalg import svd
@@ -2074,6 +2073,13 @@ class BaseModel(list):
                 self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
             elif optimizer == "odr":
+                try:
+                    import odrpack
+                except ModuleNotFoundError:  # pragma: no cover
+                    raise ImportError(
+                        "The 'odrpack' package is required for optimizer='odr'."
+                    )
+
                 if not hasattr(self, "axis"):
                     raise NotImplementedError(
                         "`optimizer='odr'` is not implemented for Model2D"
@@ -2081,15 +2087,19 @@ class BaseModel(list):
 
                 odr_jacobian = self._jacobian4odr if grad == "analytical" else None
 
-                modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
-                mydata = odr.RealData(
-                    self.axis.axis[np.where(self._channel_switches)],
-                    self.signal._get_current_data()[np.where(self._channel_switches)],
-                    sx=None,
-                    sy=(1.0 / weights if weights is not None else None),
+                res = odrpack.odr_fit(
+                    self._function4odr,
+                    xdata=self.axis.axis[np.where(self._channel_switches)],
+                    ydata=self.signal._get_current_data()[
+                        np.where(self._channel_switches)
+                    ],
+                    beta0=np.array(self.p0[:]),
+                    weight_x=None,
+                    weight_y=(1.0 / weights if weights is not None else None),
+                    jac_beta=odr_jacobian,
+                    task="OLS",
+                    **kwargs,
                 )
-                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:], **kwargs)
-                res = myodr.run()
 
                 dd = {
                     "x": res.beta,
@@ -2098,7 +2108,7 @@ class BaseModel(list):
                 }
                 if hasattr(res, "info"):
                     dd["status"] = res.info
-                    dd["message"] = ", ".join(res.stopreason)
+                    dd["message"] = res.stopreason
                     # Note that a value of 5 means maximum iterations reached
                     dd["success"] = (res.info >= 0) and (res.info < 4)
 

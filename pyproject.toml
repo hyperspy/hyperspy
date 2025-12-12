@@ -93,6 +93,7 @@ all = [
     "hyperspy[image]",
     "hyperspy[ipython]",
     "hyperspy[learning]",
+    "hyperspy[odr]",
     "hyperspy[speed]",
 ]
 baseline = [
@@ -147,6 +148,9 @@ ipython = [
 ]
 learning = [
     "scikit-learn>=1.1.0",
+]
+odr = [
+    "odrpack>=0.3.1",
 ]
 speed = [
     "numba>=0.56.0",

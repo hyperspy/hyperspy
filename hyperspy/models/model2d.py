@@ -322,10 +322,10 @@ class Model2D(BaseModel):
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError
 
-    def _function4odr(self, param, x):
+    def _function4odr(self, x, param):
         raise NotImplementedError
 
-    def _jacobian4odr(self, param, x):
+    def _jacobian4odr(self, x, param):
         raise NotImplementedError
 
     def _poisson_likelihood_function(self, param, y, weights=None):

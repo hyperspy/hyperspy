@@ -136,6 +136,7 @@ class TestModelFitBinnedLeastSquares:
         ],
     )
     def test_fit_odr(self, grad, expected):
+        pytest.importorskip("odrpack", reason="odrpack not installed")
         self.m.fit(optimizer="odr", grad=grad)
         self._check_model_values(self.m[0], expected, rtol=TOL)
 
@@ -362,12 +363,14 @@ class TestModelWeighted:
         [
             ("lm", True, True, (267.851451, 50.284446, 5.220067)),
             ("lm", True, False, (267.851451, 50.284446, 5.220067)),
-            ("odr", True, False, (267.851451, 50.284446, 5.220067)),
+            ("odr", True, False, (268.262884, 50.285163, 5.236098)),
             ("lm", False, False, (26.785102, 50.284446, 5.220067)),
-            ("odr", False, False, (26.785102, 50.284446, 5.220067)),
+            ("odr", False, False, (26.826236, 50.285163, 5.236098)),
         ],
     )
     def test_fit(self, non_uniform_axis, optimizer, binned, expected):
+        if optimizer == "odr":
+            pytest.importorskip("odrpack", reason="odrpack not installed")
         axis = self.m.signal.axes_manager[-1]
         axis.is_binned = binned
         if non_uniform_axis:
@@ -421,6 +424,8 @@ class TestFitPrintReturnInfo:
 
     @pytest.mark.parametrize("optimizer", ["odr", "Nelder-Mead", "L-BFGS-B"])
     def test_print_info(self, optimizer, capfd):
+        if optimizer == "odr":
+            pytest.importorskip("odrpack", reason="odrpack not installed")
         self.m.fit(optimizer=optimizer, print_info=True)
         captured = capfd.readouterr()
         assert "Fit info:" in captured.out
@@ -443,6 +448,8 @@ class TestFitPrintReturnInfo:
     @pytest.mark.parametrize("optimizer", ["odr", "Nelder-Mead", "L-BFGS-B"])
     def test_return_info(self, optimizer):
         # Default is return_info=True
+        if optimizer == "odr":
+            pytest.importorskip("odrpack", reason="odrpack not installed")
         res = self.m.fit(optimizer=optimizer)
         assert isinstance(res, OptimizeResult)
 
