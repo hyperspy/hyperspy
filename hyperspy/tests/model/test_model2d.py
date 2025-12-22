@@ -99,6 +99,7 @@ class TestModel2D:
             self.m.fit(optimizer="L-BFGS-B", grad="analytical")
 
     def test_fit_no_odr_error(self):
+        pytest.importorskip("odrpack", reason="odrpack not installed")
         with pytest.raises(NotImplementedError, match="is not implemented for Model2D"):
             self.m.fit(optimizer="odr")
 

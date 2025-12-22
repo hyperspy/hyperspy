@@ -179,6 +179,8 @@ dependencies required by specific functionalities:
   :meth:`~hyperspy.api.signals.ComplexSignal.unwrapped_phase`.
 * ``ipython`` for integration with the `ipython` terminal and parallel processing using `ipyparallel`,
 * ``learning`` for some machine learning features,
+* ``odr`` for weighted orthogonal distance regression (ODR) fitting using the `odrpack95 <https://hugomvale.github.io/odrpack-python/>`_
+  library,
 * ``gui-jupyter`` to use the `Jupyter widgets <https://ipywidgets.readthedocs.io/en/stable/>`_
   GUI elements,
 * ``gui-traitsui`` to use the GUI elements based on `traitsui <https://docs.enthought.com/traitsui/>`_,
