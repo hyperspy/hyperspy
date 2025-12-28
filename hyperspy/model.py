@@ -1621,19 +1621,18 @@ class BaseModel(list):
             fit_output["covar"] = covariance
             fit_output["perror"] = abs(fit_output["x"]) * std_error
 
-        # TODO: reorganise to do lazy computation (coeff and error together)
         if self.signal._lazy:
             from hyperspy.misc.dask_utils import _compute
 
-            fit_output["x"] = _compute(
-                fit_output["x"], show_progressbar=kwargs.get("show_progressbar")
-            )
-
+            arrays = [fit_output["x"]]
             if calculate_errors:
-                fit_output["perror"] = _compute(
-                    fit_output["perror"],
-                    show_progressbar=kwargs.get("show_progressbar"),
-                )
+                arrays.append(fit_output["perror"])
+
+            outputs = _compute(arrays, show_progressbar=kwargs.get("show_progressbar"))
+
+            fit_output["x"] = outputs[0]
+            if calculate_errors:
+                fit_output["perror"] = outputs[1]
 
         if not only_current:
             # The nav shape will have been flattened. We reshape it here.

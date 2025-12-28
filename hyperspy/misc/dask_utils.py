@@ -160,7 +160,25 @@ def guess_output_signal_size(test_data, function, ragged, **kwargs):
     return output_signal_size, output_dtype
 
 
-def _compute(array, store_to=None, show_progressbar=None, **kwargs):
+def _compute(arrays, store_to=None, show_progressbar=None, **kwargs):
+    """Compute a dask array with optional progressbar and storing to disk.
+
+    Parameters
+    ----------
+    arrays : dask.array or list of dask.array
+        The dask array(s) to compute.
+    store_to : str or list of str or None
+        If not None, the location to store the dask array to disk.
+    show_progressbar : bool or None
+        Whether to show a progressbar during computation. If None, the value
+        from preferences.General.show_progressbar is used.
+    **kwargs : dict
+        Additional keyword arguments passed to dask.array.compute or
+
+    Returns
+    -------
+    computed_array : numpy.ndarray or list of numpy.ndarray
+    """
     if show_progressbar is None:
         show_progressbar = preferences.General.show_progressbar
     # this isn't compatible with distributed scheduler
@@ -169,11 +187,9 @@ def _compute(array, store_to=None, show_progressbar=None, **kwargs):
 
     with cm():
         if store_to is not None:
-            da.store(
-                array, store_to, dtype=array.dtype, compute=True, lock=False, **kwargs
-            )
+            da.store(arrays, store_to, compute=True, lock=False, **kwargs)
         else:
-            return array.compute(**kwargs)
+            return da.compute(arrays, **kwargs)[0]
 
 
 def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):

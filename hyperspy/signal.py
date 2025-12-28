@@ -5725,7 +5725,7 @@ class BaseSignal(
             ):
                 # use `store_to` to minmize memory usage
                 _compute(
-                    array=mapped,
+                    arrays=mapped,
                     store_to=self.data,
                     show_progressbar=show_progressbar,
                     num_workers=num_workers,
