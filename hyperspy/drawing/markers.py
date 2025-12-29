@@ -25,7 +25,6 @@ import numpy as np
 from matplotlib.patches import Patch
 from matplotlib.transforms import IdentityTransform
 
-import hyperspy
 from hyperspy.events import Event, Events
 from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
@@ -1071,4 +1070,6 @@ def markers_dict_to_markers(marker_dict):
     if "size" in kwargs:
         kwargs["sizes"] = kwargs.pop("size")
 
-    return getattr(hyperspy.utils.markers, markers_class)(**marker_dict, **kwargs)
+    from hyperspy.utils import markers
+
+    return getattr(markers, markers_class)(**marker_dict, **kwargs)

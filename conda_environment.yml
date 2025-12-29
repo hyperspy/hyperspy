@@ -8,17 +8,17 @@ dependencies:
 - jinja2
 - matplotlib-base >=3.6
 - natsort
-- numba >=0.53
-- numexpr >=2.8
-- numpy >=1.20
+- numba >=0.56.0
+- numexpr >=2.8.0
+- numpy >=1.22
 - packaging
 - pint >=0.10
 - prettytable >=2.3
 - pyyaml
 - rosettasciio-base
-- scikit-image >=0.18
-- scikit-learn >=1.0.1
-- scipy >=1.6.0
+- scikit-image >=0.19.0
+- scikit-learn >=1.1.0
+- scipy >=1.8.0
 - sympy >=1.10
 - tqdm >=4.59.0
-- traits >=4.5.0
+- traits >=6.4.0

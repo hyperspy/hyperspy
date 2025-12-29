@@ -1487,8 +1487,7 @@ def _flyback_iter(shape):
 
     class ndindex_reversed(np.ndindex):
         def __next__(self):
-            next(self._it)
-            return self._it.multi_index[::-1]
+            return super().__next__()[::-1]
 
     return ndindex_reversed(shape)
 

@@ -595,10 +595,10 @@ class Model1D(BaseModel):
 
         return to_return
 
-    def _function4odr(self, param, x):
+    def _function4odr(self, x, param):
         return self._model_function(param)
 
-    def _jacobian4odr(self, param, x):
+    def _jacobian4odr(self, x, param):
         return self._jacobian(param, x)
 
     def _poisson_likelihood_function(self, param, y, weights=None):

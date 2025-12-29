@@ -28,9 +28,23 @@ from hyperspy.utils.baseline_removal_tool import (
     BaselineRemoval,
 )
 
-pytest.importorskip("pybaselines")
+try:
+    from pybaselines import Baseline  # noqa: F401
+
+    PYBASELINES_INSTALLED = True
+except (ImportError, ModuleNotFoundError):
+    PYBASELINES_INSTALLED = False
 
 
+@pytest.mark.skipif(PYBASELINES_INSTALLED, reason="pybaselines is installed")
+def test_pybaselines_not_installed():
+    """Test that an ImportError is raised when pybaselines is not installed."""
+    s = hs.data.two_gaussians().inav[:2, :2]
+    with pytest.raises(ImportError):
+        s.remove_baseline(method="aspls", lam=1e7)
+
+
+@pytest.mark.skipif(not PYBASELINES_INSTALLED, reason="pybaselines is not installed")
 @pytest.mark.parametrize("single", (True, False))
 def test_remove_baseline(single):
     # 100 navigation size with 16 workers
@@ -49,6 +63,7 @@ def test_remove_baseline(single):
     assert s.isig[:10].data.mean() < 5
 
 
+@pytest.mark.skipif(not PYBASELINES_INSTALLED, reason="pybaselines is not installed")
 def test_remove_baseline_apply_close():
     s = hs.data.two_gaussians().inav[:2, :4]
     assert s.isig[:10].data.mean() > 20
@@ -71,6 +86,7 @@ def test_remove_baseline_apply_close():
     assert s.isig[:10].data.mean() < 5
 
 
+@pytest.mark.skipif(not PYBASELINES_INSTALLED, reason="pybaselines is not installed")
 def test_baseline_removal_tool_enable():
     s = hs.data.two_gaussians().inav[:4, :2]
 
@@ -129,6 +145,7 @@ def test_baseline_removal_tool_enable():
         assert br._enable_penalized_spline is False
 
 
+@pytest.mark.skipif(not PYBASELINES_INSTALLED, reason="pybaselines is not installed")
 def test_remove_baseline_warning(caplog):
     s = hs.data.two_gaussians().inav[:2, :2]
 

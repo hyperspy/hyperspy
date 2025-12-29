@@ -12,7 +12,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Nightly Merge
       uses: robotology/gh-action-nightly-merge@81570ba03dd370f582bd3f52d47672d29191829f

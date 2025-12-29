@@ -39,6 +39,9 @@ jobs:
     uses: hyperspy/.github/.github/workflows/push_doc.yml@main
     with:
       external_repository: 'hyperspy/hyperspy-doc'
-      output_path: 'current'
+      output_path: ${{ github.ref_name }}
+      # Update the current version.
+      create_stable_copy: true
+      persistent_name: current
     secrets:
       personal_token: ${{ secrets.PAT_DOCUMENTATION }}
