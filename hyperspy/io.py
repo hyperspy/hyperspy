@@ -29,8 +29,7 @@ from pathlib import Path
 import numpy as np
 from natsort import natsorted
 from rsciio import IO_PLUGINS
-from rsciio.utils.path import ensure_directory
-from rsciio.utils.path import overwrite as overwrite_method
+from rsciio.utils import path
 
 import hyperspy
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -946,13 +945,13 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
 
     # Create the directory if it does not exist
     if not isinstance(filename, MutableMapping):
-        ensure_directory(filename.parent)
+        path.ensure_directory(filename.parent)
         is_file = filename.is_file() or (
             filename.is_dir() and os.path.splitext(filename)[1] == ".zspy"
         )
 
         if overwrite is None:
-            write = overwrite_method(filename)  # Ask what to do
+            write = path.overwrite(filename)  # Ask what to do
         elif overwrite is True or (overwrite is False and not is_file):
             write = True  # Write the file
         elif overwrite is False and is_file:

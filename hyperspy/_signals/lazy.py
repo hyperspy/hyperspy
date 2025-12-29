@@ -25,7 +25,7 @@ import dask
 import numpy as np
 import scipy
 from dask.widgets import TEMPLATE_PATHS
-from rsciio.utils.file import get_file_handle
+from rsciio.utils import file
 
 from hyperspy import signals
 from hyperspy.docstrings.signal import (
@@ -288,7 +288,7 @@ class LazySignal(signals.BaseSignal):
 
         """
         try:
-            get_file_handle(self.data).close()
+            file.get_file_handle(self.data).close()
         except AttributeError:
             _logger.warning("Failed to close lazy signal file")
 

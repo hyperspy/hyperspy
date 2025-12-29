@@ -22,7 +22,7 @@ import types
 import warnings
 
 import numpy as np
-from rsciio.utils import path as io_path
+from rsciio.utils import path
 
 from hyperspy import signals
 from hyperspy.defaults_parser import preferences
@@ -2745,7 +2745,7 @@ class LearningResults(object):
             kwargs[attribute] = self.__getattribute__(attribute)
         # Check overwrite
         if overwrite is None:
-            overwrite = io_path.overwrite(filename)
+            overwrite = path.overwrite(filename)
         # Save, if all went well!
         if overwrite:
             np.savez(filename, **kwargs)

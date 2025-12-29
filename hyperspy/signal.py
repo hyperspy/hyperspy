@@ -35,8 +35,7 @@ import numpy as np
 import scipy
 import traits.api as t
 from pint import UndefinedUnitError
-from rsciio.utils import rgb
-from rsciio.utils.path import ensure_directory
+from rsciio.utils import path, rgb
 from tlz import concat
 
 import hyperspy
@@ -672,7 +671,7 @@ class MVATools(object):
                 )
                 if folder is not None:
                     filename = Path(folder, filename)
-                ensure_directory(filename)
+                path.ensure_directory(filename)
                 _args = {"dpi": 600, "format": save_figures_format}
                 fac_plots[idx].savefig(filename, **_args)
             plt.ion()
@@ -841,7 +840,7 @@ class MVATools(object):
                 )
                 if folder is not None:
                     filename = Path(folder, filename)
-                ensure_directory(filename)
+                path.ensure_directory(filename)
                 _args = {"dpi": 600, "format": save_figures_format}
                 sc_plots[idx].savefig(filename, **_args)
             plt.ion()
