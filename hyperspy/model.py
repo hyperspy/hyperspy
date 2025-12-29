@@ -26,7 +26,6 @@ from contextlib import contextmanager
 from functools import partial
 
 import cloudpickle
-import dask
 import numpy as np
 import scipy
 from packaging.version import Version
@@ -853,6 +852,8 @@ class BaseModel(list):
         if components_with_function_nd:
             # Get data array for all components with function_nd
             if lazy_output:
+                import dask
+
                 # Issue with passing the model object to _get_model_data_chunk
                 if Version(dask.__version__) < Version("2024.12.0"):
                     raise RuntimeError("Lazy support needs dask >= 2024.12.0")

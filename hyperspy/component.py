@@ -20,10 +20,8 @@ import logging
 from pathlib import Path
 
 import numpy as np
-import sympy
 import traits.api as t
-from rsciio.utils.path import append2pathname, incremental_filename
-from sympy.utilities.lambdify import lambdify
+from rsciio.utils import path
 from traits.trait_numeric import Array
 
 from hyperspy.events import Event, Events
@@ -204,6 +202,9 @@ class Parameter(t.HasTraits):
 
     @twin_function_expr.setter
     def twin_function_expr(self, value):
+        import sympy
+        from sympy.utilities.lambdify import lambdify
+
         if not value:
             self._twin_function = None
             self.__twin_inverse_function = None
@@ -252,6 +253,9 @@ class Parameter(t.HasTraits):
 
     @twin_inverse_function_expr.setter
     def twin_inverse_function_expr(self, value):
+        import sympy
+        from sympy.utilities.lambdify import lambdify
+
         if not value:
             self.__twin_inverse_function = None
             self._twin_inverse_function_expr = ""
@@ -679,12 +683,12 @@ class Parameter(t.HasTraits):
             format = "hspy"
         if name is None:
             name = self.component.name + "_" + self.name
-        filename = incremental_filename(utils.slugify(name) + "." + format)
+        filename = path.incremental_filename(utils.slugify(name) + "." + format)
         if folder is not None:
             filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
         if save_std is True:
-            self.as_signal(field="std").save(append2pathname(filename, "_std"))
+            self.as_signal(field="std").save(path.append2pathname(filename, "_std"))
 
     def as_dictionary(self, fullcopy=True):
         """Returns parameter as a dictionary, saving all attributes from
