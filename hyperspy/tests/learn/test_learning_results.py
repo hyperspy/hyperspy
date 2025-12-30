@@ -29,9 +29,9 @@ skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed
 
 
 def test_learning_results_decom():
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
 
-    s1 = Signal1D(rng.random_sample(size=(20, 100)))
+    s1 = Signal1D(rng.random(size=(20, 100)))
     s1.decomposition(output_dimension=2)
 
     out = str(s1.learning_results)
@@ -43,9 +43,9 @@ def test_learning_results_decom():
 
 @skip_sklearn
 def test_learning_results_bss():
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
 
-    s1 = Signal1D(rng.random_sample(size=(20, 100)))
+    s1 = Signal1D(rng.random(size=(20, 100)))
     s1.decomposition(output_dimension=2)
     s1.blind_source_separation(number_of_components=2)
 

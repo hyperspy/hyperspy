@@ -146,7 +146,7 @@ class TestCluster1D:
 @skip_sklearn
 class TestClusterSignalSources:
     def setup_method(self):
-        rng2 = np.random.RandomState(123)
+        rng2 = np.random.default_rng(123)
         s = signals.Signal2D(rng2.uniform(size=(7, 5, 7)))
         s.decomposition()
         self.signal = s
@@ -219,7 +219,7 @@ class TestClusterSignalSources:
 @skip_sklearn
 class TestClusterEstimate:
     def setup_method(self):
-        rng = np.random.RandomState(123)
+        rng = np.random.default_rng(123)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
         n_samples = [100] * 3
@@ -299,8 +299,8 @@ class DummyScalingAlgorithm:
 @skip_sklearn
 class TestClusterExceptions:
     def setup_method(self):
-        self.rng = np.random.RandomState(123)
-        self.s = signals.Signal1D(self.rng.random_sample(size=(20, 100)))
+        self.rng = np.random.default_rng(123)
+        self.s = signals.Signal1D(self.rng.random(size=(20, 100)))
 
     def test_cluster_source_error(self):
         with pytest.raises(
@@ -312,7 +312,7 @@ class TestClusterExceptions:
             self.s.cluster_analysis("randtest", n_clusters=2)
 
     def test_cluster_source_size_error(self):
-        x2 = self.rng.random_sample(size=(10, 80))
+        x2 = self.rng.random(size=(10, 80))
         s2 = signals.Signal1D(x2)
         with pytest.raises(
             ValueError,
@@ -322,7 +322,7 @@ class TestClusterExceptions:
             self.s.cluster_analysis(s2, n_clusters=2)
 
     def test_cluster_source_center_size_error(self):
-        x2 = self.rng.random_sample(size=(10, 80))
+        x2 = self.rng.random(size=(10, 80))
         s2 = signals.Signal1D(x2)
         with pytest.raises(
             ValueError,
@@ -435,8 +435,8 @@ class TestClusterExceptions:
 
 @skip_sklearn
 def test_get_methods():
-    rng = np.random.RandomState(123)
-    signal = signals.Signal1D(rng.random_sample(size=(11, 5, 7)))
+    rng = np.random.default_rng(123)
+    signal = signals.Signal1D(rng.random(size=(11, 5, 7)))
     signal.decomposition()
     signal.cluster_analysis("signal", n_clusters=2)
     signal.unfold()
