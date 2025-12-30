@@ -933,7 +933,7 @@ class MVA:
             _, unmixing_matrix = learn.orthomax(factors, **kwargs)
             lr.bss_node = None
 
-        elif algorithm in ["FastICA", "JADE", "CuBICA", "TDSEP"]:
+        elif algorithm in ["FastICA", "JADE", "CuBICA", "TDSEP"]:  # pragma: no cover
             if not MDP_INSTALLED:
                 raise ImportError(f"algorithm='{algorithm}' requires MDP toolbox")
 
@@ -969,11 +969,6 @@ class MVA:
             # We need to the components_ to set factors
             if hasattr(estim_, "components_"):
                 unmixing_matrix = estim_.components_
-            elif hasattr(estim_, "unmixing_matrix_"):
-                # unmixing_matrix_ was renamed to components_ for FastICA
-                # https://github.com/scikit-learn/scikit-learn/pull/858,
-                # so this legacy only
-                unmixing_matrix = estim_.unmixing_matrix_
             else:
                 raise AttributeError(
                     f"Fitted estimator {str(estim_)} has no attribute 'components_'"
