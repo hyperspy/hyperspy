@@ -1,0 +1,1 @@
+Speed up import of hyperspy modules and reduce memory usage using lazy loading of modules. Add :class:`~.api.signals.LazySignal` to public API.
