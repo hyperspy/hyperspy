@@ -20,27 +20,55 @@ import numpy as np
 import pytest
 
 from hyperspy import signals
-from hyperspy.misc.machine_learning import import_sklearn
 
-sklearn = pytest.importorskip("sklearn", reason="sklearn not installed")
+try:
+    import sklearn
+except ImportError:
+    sklearn = None
 
-if import_sklearn.sklearn_installed:
-    # Create the data once, since the parametrizations
-    # will repeat the decomposition and BSS unnecessarily
-    rng1 = np.random.RandomState(123)
-    signal1 = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
-    signal1.decomposition()
-    signal1.blind_source_separation(number_of_components=3, max_iter=500)
-else:
-    # No need to create the data, since BSS will fail
-    # if sklearn is missing, and the pytest.importorskip
-    # will skip the rest of the file anyway
-    pass
+skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
+# @pytest.fixture
+# def signal1d():
+#     # Create the data once, since the parametrizations
+#     # will repeat the decomposition and BSS unnecessarily
+#     rng1 = np.random.default_rng(123)
+#     s = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
+#     s.decomposition()
+#     s.blind_source_separation(number_of_components=3, max_iter=500)
+
+#     return s
+
+
+@pytest.mark.skipif(sklearn is not None, reason="sklearn is installed")
+class TestSklearnNotInstalled:
+    def setup_method(self):
+        rng = np.random.RandomState(123)
+        self.s = signals.Signal1D(rng.random(size=(20, 100)))
+
+    def test_sklearn_exception(self):
+        with pytest.raises(ImportError):
+            self.s.cluster_analysis("signal", n_clusters=2)
+
+    def test_sklearn_exception2(self):
+        with pytest.raises(ImportError):
+            self.s._get_cluster_algorithm("kmeans")
+
+    def test_sklearn_exception3(self):
+        with pytest.raises(ImportError):
+            self.s._get_cluster_preprocessing_algorithm("norm")
+
+
+@skip_sklearn
 class TestCluster1D:
     def setup_method(self):
-        self.signal = signal1.deepcopy()
+        rng1 = np.random.default_rng(123)
+        s = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
+        s.decomposition()
+        s.blind_source_separation(number_of_components=3, max_iter=500)
+        self.signal = s
+
         self.navigation_mask = np.zeros((7, 5), dtype=bool)
         self.navigation_mask[4:6, 1:4] = True
         self.signal_mask = np.zeros((7,), dtype=bool)
@@ -100,7 +128,7 @@ class TestCluster1D:
         )
 
     def test_custom_preprocessing(self):
-        custom_method = import_sklearn.sklearn.preprocessing.Normalizer()
+        custom_method = sklearn.preprocessing.Normalizer()
         self.signal.cluster_analysis(
             "signal", n_clusters=3, preprocessing=custom_method, algorithm="kmeans"
         )
@@ -115,6 +143,7 @@ class TestCluster1D:
         )
 
 
+@skip_sklearn
 class TestClusterSignalSources:
     def setup_method(self):
         rng2 = np.random.RandomState(123)
@@ -187,6 +216,7 @@ class TestClusterSignalSources:
         )
 
 
+@skip_sklearn
 class TestClusterEstimate:
     def setup_method(self):
         rng = np.random.RandomState(123)
@@ -266,6 +296,7 @@ class DummyScalingAlgorithm:
         pass
 
 
+@skip_sklearn
 class TestClusterExceptions:
     def setup_method(self):
         self.rng = np.random.RandomState(123)
@@ -389,24 +420,6 @@ class TestClusterExceptions:
         ):
             self.s.estimate_number_of_clusters("signal", preprocessing="orange")
 
-    def test_sklearn_exception(self):
-        import_sklearn.sklearn_installed = False
-        with pytest.raises(ImportError):
-            self.s.cluster_analysis("signal", n_clusters=2)
-        import_sklearn.sklearn_installed = True
-
-    def test_sklearn_exception2(self):
-        import_sklearn.sklearn_installed = False
-        with pytest.raises(ImportError):
-            self.s._get_cluster_algorithm("kmeans")
-        import_sklearn.sklearn_installed = True
-
-    def test_sklearn_exception3(self):
-        import_sklearn.sklearn_installed = False
-        with pytest.raises(ImportError):
-            self.s._get_cluster_preprocessing_algorithm("norm")
-        import_sklearn.sklearn_installed = True
-
     def test_preprocess_alg_exception(self):
         sc = DummyScalingAlgorithm()
         with pytest.raises(
@@ -420,6 +433,7 @@ class TestClusterExceptions:
             self.s.cluster_analysis("signal", n_clusters=2, algorithm=sc)
 
 
+@skip_sklearn
 def test_get_methods():
     rng = np.random.RandomState(123)
     signal = signals.Signal1D(rng.random_sample(size=(11, 5, 7)))

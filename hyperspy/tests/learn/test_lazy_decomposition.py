@@ -16,12 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 import dask.array as da
 import numpy as np
 import pytest
 
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.signals import Signal1D
+
+sklearn = importlib.util.find_spec("sklearn")
+skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
 class TestLazyDecomposition:
@@ -76,7 +80,7 @@ class TestLazyDecomposition:
             explained_variance_norm[: self.rank].sum(), 1.0, atol=1e-6
         )
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     @pytest.mark.parametrize("normalize_poissonian_noise", [True, False])
     def test_pca(self, normalize_poissonian_noise):
         self.s.decomposition(
@@ -105,7 +109,7 @@ class TestLazyDecomposition:
             explained_variance_norm[: self.rank].sum(), 1.0, atol=1e-6
         )
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_pca_mask(self):
         s = self.s
         sig_mask = (s.inav[0, 0].data < 1.0).compute()
@@ -206,7 +210,7 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["PCA"])
     def test_decomposition_sklearn(self, capfd, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=3)
@@ -230,7 +234,7 @@ class TestPrintInfo:
         with pytest.raises(NotImplementedError):
             s.decomposition(algorithm="SVD", navigation_mask=nav_mask)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_decomposition_mask_wrong_Shape(self):
         s = self.s
         sig_mask = (s.inav[0].data < 0.5).compute()[:-2]

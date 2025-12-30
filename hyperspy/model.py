@@ -47,10 +47,15 @@ from hyperspy.misc.export_dictionary import (
     parse_flag_string,
     reconstruct_object,
 )
-from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.ui_registry import add_gui_method
+
+try:
+    import sklearn
+except ImportError:
+    sklearn = None
+
 
 _logger = logging.getLogger(__name__)
 
@@ -1579,7 +1584,10 @@ class BaseModel(list):
             if optimizer == "nnls":
                 kwargs["positive"] = True
             kwargs.setdefault("fit_intercept", False)
-            reg = import_sklearn.sklearn.linear_model.LinearRegression(**kwargs)
+            if sklearn is None:
+                raise ImportError(f"'{optimizer}' optimizer requires scikit-learn.")
+
+            reg = sklearn.linear_model.LinearRegression(**kwargs)
             results = reg.fit(X=comp_values.T, y=target_signal.T)
             coefficient_array = results.coef_
             residual = None
@@ -1590,7 +1598,10 @@ class BaseModel(list):
             # https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
             kwargs.setdefault("alpha", 0.01)
             kwargs.setdefault("fit_intercept", False)
-            reg = import_sklearn.sklearn.linear_model.Ridge(**kwargs)
+            if sklearn is None:
+                raise ImportError(f"'{optimizer}' optimizer requires scikit-learn.")
+
+            reg = sklearn.linear_model.Ridge(**kwargs)
             results = reg.fit(X=comp_values.T, y=target_signal.T)
             coefficient_array = results.coef_
             residual = None

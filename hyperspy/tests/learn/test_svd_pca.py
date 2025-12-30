@@ -16,11 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 import numpy as np
 import pytest
 
 from hyperspy.learn.svd_pca import svd_pca
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+
+sklearn = importlib.util.find_spec("sklearn")
+skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
 class TestSVDPCA:
@@ -98,7 +102,7 @@ class TestSVDPCA:
         explained_variance_norm = explained_variance / np.sum(explained_variance)
         np.testing.assert_allclose(explained_variance_norm[: self.rank].sum(), 1.0)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     @pytest.mark.parametrize("output_dimension", [None, 3])
     @pytest.mark.parametrize("auto_transpose", [True, False])
     @pytest.mark.parametrize("centre", [None, "signal", "navigation"])
@@ -120,7 +124,7 @@ class TestSVDPCA:
         explained_variance_norm = explained_variance / np.sum(explained_variance)
         np.testing.assert_allclose(explained_variance_norm[: self.rank].sum(), 1.0)
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_solver_auto(self):
         # Uses "full"
         U = self.rng.randn(100, 5)

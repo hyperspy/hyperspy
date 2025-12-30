@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -24,9 +25,9 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
-skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+sklearn = importlib.util.find_spec("sklearn")
+skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
 def generate_low_rank_matrix(m=20, n=100, rank=5, random_seed=123):

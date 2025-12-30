@@ -35,8 +35,11 @@ from hyperspy.learn.rpca import orpca, rpca_godec
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.whitening import whiten_data
 from hyperspy.misc import utils
-from hyperspy.misc.machine_learning import import_sklearn
 
+try:
+    import sklearn
+except ImportError:
+    sklearn = None
 mdp = importlib.util.find_spec("mdp")
 
 
@@ -302,8 +305,8 @@ class MVA:
             "mini_batch_sparse_pca",
         ]
         if algorithm in algorithms_sklearn:
-            if not import_sklearn.sklearn_installed:
-                raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
+            if sklearn is None:
+                raise ImportError(f"algorithm='{algorithm}' requires scikit-learn.")
 
             # Initialize the sklearn estimator
             is_sklearn_like = True
@@ -853,7 +856,7 @@ class MVA:
                 raise TypeError(
                     "cupy arrays are not supported with scikit-learn algorithms."
                 )
-            if not import_sklearn.sklearn_installed:
+            if sklearn is None:
                 raise ImportError(f"algorithm='{algorithm}' requires scikit-learn.")
 
             # Set smaller convergence tolerance than sklearn default
@@ -2077,8 +2080,8 @@ class MVA:
             used for clustering. Useful if you wish to examine inertia or other outputs.
 
         """
-        if import_sklearn.sklearn_installed is False:
-            raise ImportError("sklearn is not installed. Nothing done")
+        if sklearn is None:
+            raise ImportError("Clustering requires scikit-learn.")
 
         if utils.is_cupy_array(self.data):  # pragma: no cover
             raise TypeError("cupy arrays are not supported.")
@@ -2217,7 +2220,7 @@ class MVA:
         algorithms_sklearn = list(cluster_algorithms.keys())
         if isinstance(algorithm, str):
             if algorithm in algorithms_sklearn:
-                if not import_sklearn.sklearn_installed:
+                if sklearn is None:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
                 cluster_algorithm = _get_sklearn_clustering_algorithms(algorithm)(
                     **kwargs
@@ -2241,7 +2244,7 @@ class MVA:
         preprocessing_methods = list(preprocessing_algorithms.keys())
         if algorithm in preprocessing_methods:
             if algorithm is not None:
-                if not import_sklearn.sklearn_installed:
+                if sklearn is None:
                     raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
                 process_algorithm = _get_sklearn_preprocessing_algorithms(algorithm)(
                     **kwargs
@@ -2284,7 +2287,7 @@ class MVA:
 
         """
         distances = [
-            import_sklearn.sklearn.metrics.pairwise.euclidean_distances(
+            sklearn.metrics.pairwise.euclidean_distances(
                 cluster_data[memberships == c, :], squared=squared
             )
             for c in range(np.max(memberships) + 1)
@@ -2399,6 +2402,9 @@ class MVA:
         plot_cluster_signals, plot_cluster_labels
 
         """
+        if sklearn is None:
+            raise ImportError("Clustering requires scikit-learn.")
+
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
@@ -2494,7 +2500,7 @@ class MVA:
                         alg = self._cluster_analysis(scaled_data, cluster_algorithm)
                         cluster_labels = alg.labels_
                         silhouette_avg.append(
-                            import_sklearn.sklearn.metrics.silhouette_score(
+                            sklearn.metrics.silhouette_score(
                                 scaled_data, cluster_labels
                             )
                         )
@@ -2646,6 +2652,9 @@ class MVA:
         get_explained_variance_ratio, plot_explained_variance_ratio
 
         """
+        if sklearn is None:
+            raise ImportError("Clustering requires scikit-learn.")
+
         if explained_variance_ratio is None:
             if self.learning_results.explained_variance_ratio is None:
                 raise ValueError(

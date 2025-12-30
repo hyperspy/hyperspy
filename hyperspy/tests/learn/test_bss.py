@@ -16,17 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 import dask.array as da
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
-from hyperspy.misc.machine_learning.tools import amari
+from hyperspy.misc.machine_learning import amari
 from hyperspy.signals import BaseSignal
 
-skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+sklearn = importlib.util.find_spec("sklearn")
+skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):

@@ -36,7 +36,12 @@ from hyperspy.docstrings.signal import (
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import array_tools, dask_utils, utils
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
-from hyperspy.misc.machine_learning import import_sklearn
+
+try:
+    import sklearn
+except ImportError:
+    sklearn = None
+
 
 _logger = logging.getLogger(__name__)
 
@@ -993,12 +998,10 @@ class LazySignal(signals.BaseSignal):
 
         # LEARN
         if algorithm == "PCA":
-            if not import_sklearn.sklearn_installed:
+            if sklearn is None:
                 raise ImportError("algorithm='PCA' requires scikit-learn")
 
-            obj = import_sklearn.sklearn.decomposition.IncrementalPCA(
-                n_components=output_dimension
-            )
+            obj = sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
             reproject = True
             to_print.extend(["scikit-learn estimator:", obj])

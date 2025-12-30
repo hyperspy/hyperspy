@@ -21,7 +21,12 @@ import logging
 import numpy as np
 
 from hyperspy.misc import utils
-from hyperspy.misc.machine_learning import import_sklearn
+
+try:
+    import sklearn
+except ImportError:
+    sklearn = None
+
 
 _logger = logging.getLogger(__name__)
 
@@ -130,18 +135,18 @@ def svd_solve(
         elif (
             output_dimension >= 1
             and output_dimension < 0.8 * min(m, n)
-            and import_sklearn.sklearn_installed
+            and sklearn is not None
         ):
             svd_solver = "randomized"
         else:
             svd_solver = "full"
 
     if svd_solver == "randomized":
-        if not import_sklearn.sklearn_installed:  # pragma: no cover
+        if sklearn is None:
             raise ImportError(
                 "svd_solver='randomized' requires scikit-learn to be installed"
             )
-        U, S, V = import_sklearn.sklearn.utils.extmath.randomized_svd(
+        U, S, V = sklearn.utils.extmath.randomized_svd(
             data, n_components=output_dimension, **kwargs
         )
     elif svd_solver == "arpack":
