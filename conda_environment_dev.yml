@@ -9,6 +9,7 @@ dependencies:
 - pytest
 - pytest-mpl
 # Regression introduced in https://github.com/pytest-dev/pytest-xdist/pull/778
+# doesn't play well with some plotting tests, most likely related to copying reference images.
 - pytest-xdist <3.5
 - pytest-rerunfailures
 - pytest-instafail
