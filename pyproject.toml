@@ -147,7 +147,7 @@ ipython = [
     "ipyparallel",
 ]
 learning = [
-    "scikit-learn>=1.1.0",
+    "scikit-learn>=1.6.0",
 ]
 odr = [
     "odrpack>=0.3.1",

@@ -17,21 +17,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 """
-Import sklearn.* and randomized_svd from scikit-learn
+Import sklearn if installed.
 """
 
 import importlib
 
-sklearn_spec = importlib.util.find_spec("sklearn")
-sklearn_installed = False if sklearn_spec is None else True
+sklearn_installed = False if importlib.util.find_spec("sklearn") is None else True
 
 
 def __getattr__(name):
     if name == "sklearn":
         return importlib.import_module("sklearn")
-    elif name == "randomized_svd":
-        if sklearn_installed:
-            return importlib.import_module("sklearn.utils.extmath").randomized_svd
-        else:
-            return
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

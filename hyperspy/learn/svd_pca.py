@@ -142,7 +142,7 @@ def svd_solve(
             raise ImportError(
                 "svd_solver='randomized' requires scikit-learn to be installed"
             )
-        U, S, V = import_sklearn.randomized_svd(
+        U, S, V = import_sklearn.sklearn.utils.extmath.randomized_svd(
             data, n_components=output_dimension, **kwargs
         )
     elif svd_solver == "arpack":
