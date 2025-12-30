@@ -2,7 +2,7 @@ name: test_env
 channels:
 - conda-forge
 dependencies:
-- dask-core >=2022.9.2
+- dask-core >=2023.2.1
 - dill
 - importlib-metadata
 - h5py
