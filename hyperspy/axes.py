@@ -25,11 +25,10 @@ from collections.abc import Iterable
 from contextlib import contextmanager
 
 import numpy as np
-import pint
 import traits.api as t
 from traits.trait_errors import TraitError
 
-from hyperspy.api import _ureg
+import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
 from hyperspy.misc import array_tools, utils
@@ -106,8 +105,8 @@ class UnitConversion:
         if units == t.Undefined:
             return True
         try:
-            _ureg(units)
-        except pint.errors.UndefinedUnitError:
+            hs._ureg(units)
+        except Exception:
             warnings.warn(f"Unit {units} not supported for conversion. Nothing done.")
             return True
         return False
@@ -123,7 +122,7 @@ class UnitConversion:
         """
         if self._ignore_conversion(self.units):
             return
-        scale = self.scale * _ureg(self.units)
+        scale = self.scale * hs._ureg(self.units)
         scale_size = factor * scale * self.size
         converted_units = "{:~}".format(scale_size.to_compact().units)
         return self._convert_units(converted_units, inplace=inplace)
@@ -137,7 +136,7 @@ class UnitConversion:
                 f"because the axis '{self}' doesn't have "
                 "units."
             )
-        value = _ureg.parse_expression(value)
+        value = hs._ureg.parse_expression(value)
         if not hasattr(value, "units"):
             raise ValueError(f"`{value}` should contain an units.")
 
@@ -148,11 +147,11 @@ class UnitConversion:
             self.units
         ):
             return
-        scale_pint = self.scale * _ureg(self.units)
-        offset_pint = self.offset * _ureg(self.units)
-        scale = float(scale_pint.to(_ureg(converted_units)).magnitude)
-        offset = float(offset_pint.to(_ureg(converted_units)).magnitude)
-        units = "{:~}".format(scale_pint.to(_ureg(converted_units)).units)
+        scale_pint = self.scale * hs._ureg(self.units)
+        offset_pint = self.offset * hs._ureg(self.units)
+        scale = float(scale_pint.to(hs._ureg(converted_units)).magnitude)
+        offset = float(offset_pint.to(hs._ureg(converted_units)).magnitude)
+        units = "{:~}".format(scale_pint.to(hs._ureg(converted_units)).units)
         if inplace:
             self.scale = scale
             self.offset = offset
@@ -192,7 +191,7 @@ class UnitConversion:
             units = self.units
             if units == t.Undefined:
                 units = ""
-            return getattr(self, attribute) * _ureg(units)
+            return getattr(self, attribute) * hs._ureg(units)
         else:
             raise ValueError(
                 "`attribute` argument can only take the `scale` or the `offset` value."
@@ -202,9 +201,9 @@ class UnitConversion:
         if attribute == "scale" or attribute == "offset":
             units = "" if self.units == t.Undefined else self.units
             if isinstance(value, str):
-                value = _ureg.parse_expression(value)
+                value = hs._ureg.parse_expression(value)
             if isinstance(value, float):
-                value = value * _ureg(units)
+                value = value * hs._ureg(units)
 
             # to be consistent, we also need to convert the other one
             # (scale or offset) when both units differ.
@@ -2125,7 +2124,7 @@ class AxesManager(t.HasTraits):
         unit = axes[0].units  # after conversion, in case units[0] was None.
         for axis in axes[1:]:
             # Convert only the units have the same dimensionality
-            if _ureg(axis.units).dimensionality == _ureg(unit).dimensionality:
+            if hs._ureg(axis.units).dimensionality == hs._ureg(unit).dimensionality:
                 axis.convert_to_units(unit, factor=factor)
 
     def update_axes_attributes_from(self, axes, attributes=None):

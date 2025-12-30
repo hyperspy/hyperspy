@@ -30,11 +30,9 @@ from functools import partial
 from itertools import product
 from pathlib import Path
 
-import dask
 import numpy as np
 import scipy
 import traits.api as t
-from pint import UndefinedUnitError
 from rsciio.utils import path, rgb
 from tlz import concat
 
@@ -4868,7 +4866,7 @@ class BaseSignal(
             try:
                 units = hyperspy.api._ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = "{:~}".format(units.units)
-            except UndefinedUnitError:
+            except Exception:
                 _logger.warning("Units are not set or cannot be recognized")
             if shift:
                 axis.offset = -axis.high_value / 2.0
@@ -4955,7 +4953,7 @@ class BaseSignal(
             try:
                 units = hyperspy.api._ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = "{:~}".format(units.units)
-            except UndefinedUnitError:
+            except Exception:
                 _logger.warning("Units are not set or cannot be recognized")
             axis.offset = 0.0
         return im_ifft
@@ -5579,6 +5577,7 @@ class BaseSignal(
         navigation_chunks="auto",
         **kwargs,
     ):
+        import dask
         import dask.array as da
 
         if lazy_output is None:

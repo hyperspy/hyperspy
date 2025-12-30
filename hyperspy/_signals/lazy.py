@@ -21,7 +21,6 @@ import os
 from functools import partial
 from itertools import product
 
-import dask
 import numpy as np
 import scipy
 from dask.widgets import TEMPLATE_PATHS
@@ -50,6 +49,8 @@ TEMPLATE_PATHS.append(templates_path)
 
 
 def _get():
+    import dask
+
     try:
         get = dask.threaded.get
     except AttributeError:  # pragma: no cover
