@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from hyperspy.learn.rpca import orpca, rpca_godec
+from hyperspy.learn._rpca import orpca, rpca_godec
 from hyperspy.signals import Signal1D
 
 

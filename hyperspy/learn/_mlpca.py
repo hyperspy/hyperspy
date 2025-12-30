@@ -27,7 +27,7 @@ import logging
 
 import numpy as np
 
-from hyperspy.learn.svd_pca import svd_solve
+from hyperspy import learn
 
 _logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ def mlpca(
 
     # Generate initial estimates
     _logger.info("Generating initial estimates")
-    U, _, _ = svd_solve(np.cov(X), svd_solver=svd_solver, **kwargs)
+    U, _, _ = learn.svd_solve(np.cov(X), svd_solver=svd_solver, **kwargs)
     U = U[:, :output_dimension]
     s_old = 0.0
 
@@ -139,7 +139,7 @@ def mlpca(
 
         # Transpose for next iteration
         s_old = s_obj
-        _, _, V = svd_solve(M, svd_solver=svd_solver, **kwargs)
+        _, _, V = learn.svd_solve(M, svd_solver=svd_solver, **kwargs)
 
         X = X.T
         inv_v = inv_v.T
@@ -149,7 +149,7 @@ def mlpca(
         m, n = X.shape
         U = V[:output_dimension].T
 
-    U, S, V = svd_solve(M, svd_solver=svd_solver, **kwargs)
+    U, S, V = learn.svd_solve(M, svd_solver=svd_solver, **kwargs)
     V = V.T
 
     return U, S, V, s_obj

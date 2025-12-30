@@ -59,6 +59,7 @@ __all__ = [
     "get_array_module",
     "display",
     "TupleSA",
+    "_get_block_pattern",
 ]
 
 

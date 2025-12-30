@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.learn.svd_pca import svd_solve
+from hyperspy import learn
 
 
 def whiten_data(X, centre=True, method="PCA", epsilon=1e-10):
@@ -70,7 +70,7 @@ def whiten_data(X, centre=True, method="PCA", epsilon=1e-10):
 
     # Calculate the whitening matrix
     R = (Y.T @ Y) / Y.shape[0]
-    U, S, _ = svd_solve(R, svd_solver="full")
+    U, S, _ = learn.svd_solve(R, svd_solver="full")
     S = np.sqrt(S + epsilon)[:, np.newaxis]
 
     if method == "PCA":

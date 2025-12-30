@@ -16,16 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 
 import numpy as np
 
 from hyperspy.misc import utils
 
-try:
-    import sklearn
-except ImportError:
-    sklearn = None
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 
 _logger = logging.getLogger(__name__)
@@ -135,17 +133,19 @@ def svd_solve(
         elif (
             output_dimension >= 1
             and output_dimension < 0.8 * min(m, n)
-            and sklearn is not None
+            and SKLEARN_INSTALLED
         ):
             svd_solver = "randomized"
         else:
             svd_solver = "full"
 
     if svd_solver == "randomized":
-        if sklearn is None:
+        if not SKLEARN_INSTALLED:
             raise ImportError(
                 "svd_solver='randomized' requires scikit-learn to be installed"
             )
+        import sklearn
+
         U, S, V = sklearn.utils.extmath.randomized_svd(
             data, n_components=output_dimension, **kwargs
         )

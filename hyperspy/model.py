@@ -51,11 +51,7 @@ from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.ui_registry import add_gui_method
 
-try:
-    import sklearn
-except ImportError:
-    sklearn = None
-
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 _logger = logging.getLogger(__name__)
 
@@ -1584,10 +1580,12 @@ class BaseModel(list):
             if optimizer == "nnls":
                 kwargs["positive"] = True
             kwargs.setdefault("fit_intercept", False)
-            if sklearn is None:
+            if not SKLEARN_INSTALLED:
                 raise ImportError(f"'{optimizer}' optimizer requires scikit-learn.")
 
-            reg = sklearn.linear_model.LinearRegression(**kwargs)
+            from sklearn.linear_model import LinearRegression
+
+            reg = LinearRegression(**kwargs)
             results = reg.fit(X=comp_values.T, y=target_signal.T)
             coefficient_array = results.coef_
             residual = None
@@ -1598,10 +1596,12 @@ class BaseModel(list):
             # https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
             kwargs.setdefault("alpha", 0.01)
             kwargs.setdefault("fit_intercept", False)
-            if sklearn is None:
+            if not SKLEARN_INSTALLED:
                 raise ImportError(f"'{optimizer}' optimizer requires scikit-learn.")
 
-            reg = sklearn.linear_model.Ridge(**kwargs)
+            from sklearn.linear_model import Ridge
+
+            reg = Ridge(**kwargs)
             results = reg.fit(X=comp_values.T, y=target_signal.T)
             coefficient_array = results.coef_
             residual = None
@@ -1630,13 +1630,13 @@ class BaseModel(list):
             fit_output["perror"] = abs(fit_output["x"]) * std_error
 
         if self.signal._lazy:
-            from hyperspy.misc.dask_utils import _compute
-
             arrays = [fit_output["x"]]
             if calculate_errors:
                 arrays.append(fit_output["perror"])
 
-            outputs = _compute(arrays, show_progressbar=kwargs.get("show_progressbar"))
+            outputs = dask_utils._compute(
+                arrays, show_progressbar=kwargs.get("show_progressbar")
+            )
 
             fit_output["x"] = outputs[0]
             if calculate_errors:

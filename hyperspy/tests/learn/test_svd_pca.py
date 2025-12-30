@@ -21,7 +21,7 @@ import importlib
 import numpy as np
 import pytest
 
-from hyperspy.learn.svd_pca import svd_pca
+from hyperspy.learn._svd_pca import svd_pca
 
 sklearn = importlib.util.find_spec("sklearn")
 skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")

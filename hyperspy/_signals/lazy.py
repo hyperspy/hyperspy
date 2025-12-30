@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 import os
 from functools import partial
@@ -37,11 +38,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import array_tools, dask_utils, utils
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 
-try:
-    import sklearn
-except ImportError:
-    sklearn = None
-
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 _logger = logging.getLogger(__name__)
 
@@ -998,8 +995,10 @@ class LazySignal(signals.BaseSignal):
 
         # LEARN
         if algorithm == "PCA":
-            if sklearn is None:
+            if not SKLEARN_INSTALLED:
                 raise ImportError("algorithm='PCA' requires scikit-learn")
+
+            import sklearn
 
             obj = sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
@@ -1007,14 +1006,14 @@ class LazySignal(signals.BaseSignal):
             to_print.extend(["scikit-learn estimator:", obj])
 
         elif algorithm == "ORPCA":
-            from hyperspy.learn.rpca import ORPCA
+            from hyperspy.learn._rpca import ORPCA
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORPCA(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
         elif algorithm == "ORNMF":
-            from hyperspy.learn.ornmf import ORNMF
+            from hyperspy.learn._ornmf import ORNMF
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORNMF(output_dimension, **kwargs)

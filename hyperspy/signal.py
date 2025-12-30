@@ -74,7 +74,7 @@ from hyperspy.external.scipy.ndfilters import _get_footprint
 from hyperspy.interactive import interactive
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
-from hyperspy.learn.mva import MVA, LearningResults
+from hyperspy.learn._mva import MVA, LearningResults
 from hyperspy.misc import array_tools, dask_utils, signal_tools, utils
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
