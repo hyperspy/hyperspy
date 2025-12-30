@@ -955,7 +955,7 @@ class LazySignal(signals.BaseSignal):
         See Also
         --------
         dask.array.linalg.svd, sklearn.decomposition.IncrementalPCA,
-        hyperspy.learn.rpca.ORPCA, hyperspy.learn.ornmf.ORNMF
+        hyperspy.learn.orpca, hyperspy.learn.ornmf
 
         """
         import dask.array as da

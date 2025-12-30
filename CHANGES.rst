@@ -289,7 +289,7 @@ Release Highlights
 New features
 ------------
 
-- :py:meth:`~._signals.lazy.LazySignal.compute` will now pass keyword arguments to the dask :meth:`dask.array.Array.compute` method. This enables setting the scheduler and the number of computational workers. (`#2971 <https://github.com/hyperspy/hyperspy/issues/2971>`_)
+- :py:meth:`~.api.signals.LazySignal.compute` will now pass keyword arguments to the dask :meth:`dask.array.Array.compute` method. This enables setting the scheduler and the number of computational workers. (`#2971 <https://github.com/hyperspy/hyperspy/issues/2971>`_)
 - Changes to :meth:`~.api.signals.BaseSignal.plot`:
   
   - Added horizontal figure layout choice when using the ``ipympl`` backend. The default layour can be set in the plot section of the preferences GUI. (`#3140 <https://github.com/hyperspy/hyperspy/issues/3140>`_)
@@ -500,7 +500,7 @@ Machine Learning
      * - variables
        - signal
 - For lazy signals, a possible value of the ``algorithm`` keyword argument of the
-  :py:meth:`~._signals.lazy.LazySignal.decomposition` method has been changed
+  :py:meth:`~.api.signals.LazySignal.decomposition` method has been changed
   from ``"ONMF"`` to ``"ORNMF"``.
 - Setting the ``metadata`` and ``original_metadata`` attribute of signals is removed, use
   the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
@@ -591,7 +591,7 @@ Signal
 
 - The ``integrate_in_range`` method has been removed, use :py:class:`~.roi.SpanROI`
   followed by :py:meth:`~.api.signals.BaseSignal.integrate1D` instead.
-- The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.LazySignal.compute` method
+- The ``progressbar`` keyword argument of the :py:meth:`~.api.signals.LazySignal.compute` method
   has been removed, use ``show_progressbar`` instead.
 - The deprecated ``comp_label`` argument of the methods :py:meth:`~.api.signals.BaseSignal.plot_decomposition_loadings`,
   :py:meth:`~.api.signals.BaseSignal.plot_decomposition_factors`, :py:meth:`~.api.signals.BaseSignal.plot_bss_loadings`,
@@ -825,7 +825,7 @@ New features
 - Support for reading :external+rsciio:ref:`DENSsolutions Impulse data<dens-format>` (`#2828 <https://github.com/hyperspy/hyperspy/issues/2828>`_)
 - Add lazy loading for :external+rsciio:ref:`JEOL EDS data<jeol-format>` (`#2846 <https://github.com/hyperspy/hyperspy/issues/2846>`_)
 - Add :ref:`html representation<lazy._repr_html_>` for lazy signals and the
-  :py:meth:`~._signals.lazy.LazySignal.get_chunk_size` method to get the chunk size
+  :py:meth:`~.api.signals.LazySignal.get_chunk_size` method to get the chunk size
   of given axes (`#2855 <https://github.com/hyperspy/hyperspy/issues/2855>`_)
 - Add support for Hamamatsu HPD-TA Streak Camera tiff files,
   with axes and metadata parsing. (`#2908 <https://github.com/hyperspy/hyperspy/issues/2908>`_)
@@ -1225,17 +1225,17 @@ API changes
 
 * The ``comp_label`` keyword of the machine learning plotting functions
   has been renamed to ``title``.
-* The :py:class:`~hyperspy.learn.rpca.orpca` constructor's ``learning_rate``
+* The :py:class:`~hyperspy.learn.orpca` constructor's ``learning_rate``
   keyword has been renamed to ``subspace_learning_rate``
-* The :py:class:`~hyperspy.learn.rpca.orpca` constructor's ``momentum``
+* The :py:class:`~hyperspy.learn.orpca` constructor's ``momentum``
   keyword has been renamed to ``subspace_momentum``
-* The :py:class:`~hyperspy.learn.svd_pca.svd_pca` constructor's ``centre`` keyword
+* The :py:class:`~hyperspy.learn.svd_pca` constructor's ``centre`` keyword
   values have been renamed as follows:
 
   * ``"trials"`` -> ``"navigation"``
   * ``"variables"`` -> ``"signal"``
 * The ``bounds`` keyword argument of the
-  :py:meth:`~._signals.lazy.LazySignal.decomposition` is deprecated and will be removed.
+  :py:meth:`~.api.signals.LazySignal.decomposition` is deprecated and will be removed.
 * Several syntax changes in the :py:meth:`~.api.signals.BaseSignal.decomposition` method:
 
   * Several ``algorithm`` keyword values have been renamed as follows:

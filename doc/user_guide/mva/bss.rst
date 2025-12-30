@@ -73,7 +73,7 @@ links to the appropriate documentation for more information on each one.
    +=============================+================================================================+
    | "sklearn_fastica" (default) | :class:`sklearn.decomposition.FastICA`                         |
    +-----------------------------+----------------------------------------------------------------+
-   | "orthomax"                  | :func:`~.learn.orthomax.orthomax`                              |
+   | "orthomax"                  | :func:`~.learn.orthomax`                                       |
    +-----------------------------+----------------------------------------------------------------+
    | "FastICA"                   | :class:`mdp.nodes.FastICANode`                                 |
    +-----------------------------+----------------------------------------------------------------+
@@ -88,7 +88,7 @@ links to the appropriate documentation for more information on each one.
 
 .. note::
 
-   Except :func:`~.learn.orthomax.orthomax`, all of the implemented BSS algorithms listed above
+   Except :func:`~.learn.orthomax`, all of the implemented BSS algorithms listed above
    rely on external packages being available on your system. ``sklearn_fastica``, requires
    `scikit-learn <https://scikit-learn.org/>`_ while ``FastICA, JADE, CuBICA, TDSEP``
    require the `Modular toolkit for Data Processing (MDP) <https://mdp-toolkit.github.io/>`_.

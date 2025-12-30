@@ -29,7 +29,9 @@ __all__ = [
     "rpca_godec",
     "svd_pca",
     "svd_solve",
+    "svd_flip_signs",
     "whiten_data",
+    "LearningResults",
 ]
 
 
@@ -42,7 +44,9 @@ _import_mapping = {
     "rpca_godec": "_rpca",
     "svd_pca": "_svd_pca",
     "svd_solve": "_svd_pca",
+    "svd_flip_signs": "_svd_pca",
     "whiten_data": "_whitening",
+    "LearningResults": "_mva",
 }
 
 

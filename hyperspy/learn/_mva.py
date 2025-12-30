@@ -716,7 +716,7 @@ class MVA:
             component needs to be reversed.
         whiten_method : {``"PCA"`` | ``"ZCA"``} or None, default "PCA"
             How to whiten the data prior to blind source separation.
-            If None, no whitening is applied. See :func:`~.learn.whitening.whiten_data`
+            If None, no whitening is applied. See :func:`~.learn.whiten_data`
             for more details.
         return_info: bool, default False
             The result of the decomposition is stored internally. However,

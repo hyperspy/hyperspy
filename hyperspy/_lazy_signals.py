@@ -35,7 +35,7 @@ def __getattr__(name):
     warnings.warn(
         "The private module `_lazy_signals` is deprecated and will be removed "
         "in the HyperSpy 3.0 release. Please use the public module "
-        "`hyperspy.lazy_signals` instead.",
+        "`hyperspy.signals` instead.",
         VisibleDeprecationWarning,
     )
     if name in __all__:

@@ -2370,11 +2370,7 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
-class BaseSignal(
-    FancySlicing,
-    MVA,
-    MVATools,
-):
+class BaseSignal(FancySlicing, MVA, MVATools):
     """
 
     Attributes
@@ -2642,7 +2638,7 @@ class BaseSignal(
     ):
         """
         Create a copy of the given Signal as a
-        :class:`~hyperspy._signals.lazy.LazySignal`.
+        :class:`~hyperspy.api.signals.LazySignal`.
 
         Parameters
         ----------
@@ -2665,7 +2661,7 @@ class BaseSignal(
 
         Returns
         -------
-        res : :class:`~hyperspy._signals.lazy.LazySignal`
+        res : :class:`~hyperspy.api.signals.LazySignal`
             The same signal, converted to be lazy
         """
 
