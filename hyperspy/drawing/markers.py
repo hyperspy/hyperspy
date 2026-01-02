@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
 from copy import deepcopy
 
 import matplotlib.collections as mpl_collections
@@ -25,11 +24,7 @@ from matplotlib.patches import Patch
 from matplotlib.transforms import IdentityTransform
 
 from hyperspy.events import Event, Events
-from hyperspy.misc._markers import markers_dict_to_markers
-from hyperspy.misc.dask_utils import _get_navigation_dimension_chunk_slice
-from hyperspy.misc.utils import is_dask_array, isiterable
-
-_logger = logging.getLogger(__name__)
+from hyperspy.misc import _markers, dask_utils, utils
 
 
 def convert_positions(peaks, signal_axes):
@@ -194,16 +189,16 @@ class Markers:
         for key, value in self.kwargs.items():
             # Populate `_iterable_argument_keys`
             if (
-                isiterable(value)
+                utils.isiterable(value)
                 and not isinstance(value, str)
                 and key != self._position_key
             ):
                 self._iterable_argument_keys.append(key)
 
             # Handling dask arrays
-            if is_dask_array(value) and value.dtype == object:
+            if utils.is_dask_array(value) and value.dtype == object:
                 self.dask_kwargs[key] = self.kwargs[key]
-            elif is_dask_array(value):  # and value.dtype != object:
+            elif utils.is_dask_array(value):  # and value.dtype != object:
                 self.kwargs[key] = value.compute()
             # Patches or verts shouldn't be cast to array
             elif (
@@ -414,7 +409,7 @@ class Markers:
             # Don't remove when it doesn't have the same length as the
             # position kwargs because it is a "cycling" argument
             if (
-                isiterable(value)
+                utils.isiterable(value)
                 and not isinstance(value, str)
                 and len(value) == len(self.kwargs[self._position_key])
             ):
@@ -498,7 +493,7 @@ class Markers:
 
         chunks = {key: value.chunks for key, value in self.dask_kwargs.items()}
         chunk_slices = {
-            key: _get_navigation_dimension_chunk_slice(indices, chunk)
+            key: dask_utils._get_navigation_dimension_chunk_slice(indices, chunk)
             for key, chunk in chunks.items()
         }
         to_compute = {}
@@ -612,7 +607,7 @@ class Markers:
         return cls(**kwargs)
 
     def __deepcopy__(self, memo):
-        new_marker = markers_dict_to_markers(self._to_dictionary())
+        new_marker = _markers.markers_dict_to_markers(self._to_dictionary())
         return new_marker
 
     def _to_dictionary(self):
@@ -843,4 +838,6 @@ class Markers:
 
 
 def is_iterating(arg):
-    return (isinstance(arg, np.ndarray) or is_dask_array(arg)) and arg.dtype == object
+    return (
+        isinstance(arg, np.ndarray) or utils.is_dask_array(arg)
+    ) and arg.dtype == object
