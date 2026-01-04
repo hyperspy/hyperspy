@@ -24,6 +24,8 @@ from collections.abc import Iterable
 import dask.array as da
 import numpy as np
 
+from hyperspy.misc.utils import _parse_percentile_value
+
 
 def _format_string(val, format_string=".5g", max_length=None, add_ellipsis=True):
     """
@@ -354,17 +356,17 @@ class ModelStatistics:
         Same structure as in print_model_statistics().
     """
 
-    def __init__(self, model, thresholds=None):
+    def __init__(self, model, thresholds=None, component_list=None):
         self.model = model
         self.thresholds = thresholds
+        self.component_list = model if component_list is None else component_list
         self.stats = self._compute_statistics()
 
     def _compute_statistics(self):
         """Compute statistics exactly like print_model_statistics(),
         but return them as a nested dictionary for display."""
         collected_values = []
-
-        for i, comp in enumerate(self.model):
+        for i, comp in enumerate(self.component_list):
             comp_name = f"{i} - {comp.name}"
             for param in comp.parameters:
                 if hasattr(param, "map") and param.map is not None:
@@ -384,8 +386,16 @@ class ModelStatistics:
                 th = self.thresholds.get(entry["parameter"], {"min": None, "max": None})
                 values = np.array(entry["values"], dtype=float)
                 if th.get("min") is not None:
+                    if not isinstance(th.get("min"), (float, int)):
+                        th["min"] = np.nanpercentile(
+                            values, _parse_percentile_value(th.get("min"), "min")
+                        )
                     values = values[values >= th["min"]]
                 if th.get("max") is not None:
+                    if not isinstance(th.get("max"), (float, int)):
+                        th["max"] = np.nanpercentile(
+                            values, _parse_percentile_value(th.get("max"), "max")
+                        )
                     values = values[values <= th["max"]]
                 entry["values"] = values
 

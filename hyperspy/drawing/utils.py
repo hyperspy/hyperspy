@@ -40,7 +40,7 @@ import hyperspy
 import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS
-from hyperspy.misc.utils import isiterable, to_numpy
+from hyperspy.misc.utils import _parse_percentile_value, isiterable, to_numpy
 
 _logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ def contrast_stretching(data, vmin=None, vmax=None):
         of the highest value will be ignored in the estimation of the maximum
         value. See :func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
-        If float of integer, keep this value as bounds.
+        If float or integer, keep this value as bounds.
 
     Returns
     -------
@@ -77,18 +77,6 @@ def contrast_stretching(data, vmin=None, vmax=None):
         # in case of boolean, simply return 0, 1
         return 0, 1
 
-    def _parse_value(value, value_name):
-        if value is None:
-            if value_name == "vmin":
-                value = "0th"
-            elif value_name == "vmax":
-                value = "100th"
-        if isinstance(value, str):
-            value = float(value.split("th")[0])
-            if not 0 <= value <= 100:
-                raise ValueError(f"{value_name} must be in the range[0, 100].")
-        return value
-
     if np.ma.is_masked(data):
         # If there is a mask, compressed the data to remove the masked data
         data = np.ma.masked_less_equal(data, 0).compressed()
@@ -96,9 +84,9 @@ def contrast_stretching(data, vmin=None, vmax=None):
     # If vmin, vmax are float or int, we keep the value, if not we calculate
     # the precentile value
     if not isinstance(vmin, (float, int)):
-        vmin = np.nanpercentile(data, _parse_value(vmin, "vmin"))
+        vmin = np.nanpercentile(data, _parse_percentile_value(vmin, "vmin"))
     if not isinstance(vmax, (float, int)):
-        vmax = np.nanpercentile(data, _parse_value(vmax, "vmax"))
+        vmax = np.nanpercentile(data, _parse_percentile_value(vmax, "vmax"))
 
     return vmin, vmax
 

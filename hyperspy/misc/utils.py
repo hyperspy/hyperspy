@@ -1720,3 +1720,16 @@ class TupleSA(tuple):
 
     def __mul__(self, *args, **kwargs):
         return type(self)(super().__mul__(*args, **kwargs))
+
+
+def _parse_percentile_value(value, value_name):
+    if value is None:
+        if value_name == "vmin":
+            value = "0th"
+        elif value_name == "vmax":
+            value = "100th"
+    if isinstance(value, str):
+        value = float(value.split("th")[0])
+        if not 0 <= value <= 100:
+            raise ValueError(f"{value_name} must be in the range[0, 100].")
+    return value

@@ -3159,7 +3159,7 @@ class BaseModel(list):
 
         return Samfire(self, workers=workers, setup=setup, **kwargs)
 
-    def print_model_statistics(self, thresholds=None):
+    def print_model_statistics(self, thresholds=None, component_list=None):
         """
         Computes and prints summary statistics (mean, standard deviation, min, max)
         for all parameters of each component in a given model.
@@ -3169,7 +3169,23 @@ class BaseModel(list):
         thresholds : dict, optional
             A dictionary specifying thresholds for parameters.
             Keys should be parameter names (param.name).
-            Values should be dictionaries with optional 'min' and/or 'max' entries.
+            Values should be dictionaries with optional 'min' and/or 'max' entries
+            given as float or integer. If str, formatted as 'xth', use this value
+            to calculate the threshold percentage. For example, for a min of '1th',
+            the lowest 1% of values will be ignored and for max of '1th', the
+            highest 1% of values will be ignored. See :func:`numpy.percentile`
+            for more details.
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
+            If None, will return statistics for all components in the model.
+            If list of components, will calculate statistics for the components
+            in the list. The components can be specified by name, index or
+            themselves.
+
+        Raises
+        ------
+        ValueError
+            If the value of `min` `max` is out of the valid range for percentile
+            calculation (in case of string values).
 
         Examples
         --------
@@ -3193,7 +3209,11 @@ class BaseModel(list):
         >>> m.print_model_statistics(thresholds)
         """
 
-        display(ModelStatistics(model=self, thresholds=thresholds))
+        display(
+            ModelStatistics(
+                model=self, thresholds=thresholds, component_list=component_list
+            )
+        )
 
 
 class ModelSpecialSlicers(object):

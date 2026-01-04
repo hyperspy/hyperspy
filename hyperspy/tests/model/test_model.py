@@ -865,6 +865,13 @@ class TestPrintModelStatistics:
         thresholds = {"A": {"min": 0.1, "max": 10}, "centre": {"max": 50}}
         self.m.print_model_statistics(thresholds=thresholds)
 
+    def test_print_model_statistics_percentile_thresholds(self):
+        thresholds = {"A": {"min": "1th", "max": "1th"}, "centre": {"max": "2th"}}
+        self.m.print_model_statistics(thresholds=thresholds)
+
+    def test_print_model_statistics_component_list(self):
+        self.m.print_model_statistics(component_list=list(self.m))
+
     def test_print_model_statistics_output(self):
         from hyperspy.misc.model_tools import ModelStatistics
 
