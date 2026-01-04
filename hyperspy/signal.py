@@ -80,7 +80,11 @@ from hyperspy.exceptions import (
 )
 from hyperspy.external.scipy.ndfilters import _get_footprint
 from hyperspy.interactive import interactive
-from hyperspy.io import _get_format_list_for_docstring, assign_signal_subclass
+from hyperspy.io import (
+    ZARR_STORE_BASE_CLASS,
+    _get_format_list_for_docstring,
+    assign_signal_subclass,
+)
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.misc.array_tools import rebin as array_rebin
@@ -3456,7 +3460,7 @@ class BaseSignal(
             else:
                 raise ValueError("File name not defined")
 
-        if not isinstance(filename, MutableMapping):
+        if not isinstance(filename, (MutableMapping, ZARR_STORE_BASE_CLASS)):
             filename = Path(filename)
 
             # zspy can also be directory, make sure this is treated as a base directory
@@ -4964,8 +4968,8 @@ class BaseSignal(
 
         Examples
         --------
-        >>> import skimage
-        >>> im = hs.signals.Signal2D(skimage.data.camera())
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.datasets.face())
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
 
@@ -5060,8 +5064,8 @@ class BaseSignal(
 
         Examples
         --------
-        >>> import skimage
-        >>> im = hs.signals.Signal2D(skimage.data.camera())
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.datasets.face())
         >>> imfft = im.fft()
         >>> imfft.ifft()
         <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>

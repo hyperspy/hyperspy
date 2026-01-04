@@ -85,11 +85,11 @@ There may be several causes for a warning, for example:
 - the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
   backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
 
-   - If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
-   - Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
-     and if you don't want to see the (harmless) warning, make sure that you have the
-     ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
-     GUI in the :ref:`preferences <configuring-hyperspy-label>`.
+  - If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
+  - Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
+    and if you don't want to see the (harmless) warning, make sure that you have the
+    ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
+    GUI in the :ref:`preferences <configuring-hyperspy-label>`.
 
 .. versionchanged:: v1.3
     HyperSpy works with all matplotlib backends, including the ``notebook``

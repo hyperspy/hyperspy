@@ -140,7 +140,7 @@ class TestSetParameters:
     def test_zero_in_html_print(self):
         """Ensure parameters with value=0 are printed too"""
         assert (
-            "<td>a1</td><td>True</td><td>     0</td>"
+            "<td>a1</td><td>True</td><td>0</td>"
             in CurrentComponentValues(self.model[0])._repr_html_()
         )
 
@@ -156,7 +156,16 @@ class TestSetParameters:
             in str(CurrentComponentValues(self.model[2]).__repr__()).split("\n")[4]
         )
 
-    def test_related_tools(self):
-        assert _format_string(None) == ""
-        assert _format_string(5) == "     5"
-        assert _format_string(5.123456789) == "5.12346"
+
+def test_format_string():
+    assert _format_string(None) == ""
+    assert _format_string(5) == "5"
+    assert _format_string(5.123456789) == "5.1235"
+    assert _format_string(5.123456789, format_string=".6g") == "5.12346"
+    assert _format_string((0, 1, 2)) == "(0, 1, 2)"
+    assert (
+        _format_string((0.123, 1.234, 2.345), format_string=".2g") == "(0.12, 1.2, 2.3)"
+    )
+    assert _format_string("Hello, World!") == "Hello, World!"
+    assert _format_string("Hello, World!", max_length=5) == "He..."
+    assert _format_string("Hello, World!", max_length=5, add_ellipsis=False) == "Hello"

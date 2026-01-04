@@ -514,8 +514,15 @@ def _parse_array(signal, normalise=False):
     data = signal.data
     if isinstance(data, da.Array):
         data = data.compute()
-    if normalise:
+
+    # Check if normalise is a function
+    if callable(normalise):
+        data = normalise(signal)
+
+    # Otherwise, if normalise is True, use default min-max normalization
+    elif normalise:
         data = (data - data.min()) / (data.max() - data.min())
+
     return to_numpy(data)
 
 
@@ -1489,7 +1496,7 @@ def plot_spectra(
     normalise=False,
     **kwargs,
 ):
-    """Plot several spectra in the same figure.
+    r"""Plot several spectra in the same figure.
 
     Parameters
     ----------
@@ -1545,8 +1552,12 @@ def plot_spectra(
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
         If None (default), update the plot only for style='overlap'.
-    normalise : bool, default False
-        If True, the data are normalised to the [0, 1] interval in the plot.
+    normalise : bool or callable, default False
+        If True, applies default min-max normalization:
+        :math:`(x - \min{x}) / (\max{x} - \min{x})`.
+        If a callable is provided, it should be a function that takes a
+        HyperSpy signal as input and returns the normalised array.
+
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 

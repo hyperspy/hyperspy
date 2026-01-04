@@ -25,7 +25,6 @@ import numpy as np
 from matplotlib.patches import Patch
 from matplotlib.transforms import IdentityTransform
 
-import hyperspy
 from hyperspy.events import Event, Events
 from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
@@ -689,14 +688,14 @@ class Markers:
             key = self._position_key
 
         x_positions = kwds[key][..., 0]
-        if len(x_positions) == 0:
+        if x_positions.size == 0:
             # can't scale as there is no marker at this coordinate
             return kwds
 
         new_kwds = deepcopy(kwds)
         current_data = self._signal._get_current_data(as_numpy=True)
         axis = self._axes_manager.signal_axes[0]
-        indexes = np.round((x_positions - axis.offset) / axis.scale).astype(int)
+        indexes = axis.value2index(x_positions)
         y_positions = new_kwds[key][..., 1]
         new_y_positions = current_data[indexes] * y_positions
 
@@ -1071,4 +1070,6 @@ def markers_dict_to_markers(marker_dict):
     if "size" in kwargs:
         kwargs["sizes"] = kwargs.pop("size")
 
-    return getattr(hyperspy.utils.markers, markers_class)(**marker_dict, **kwargs)
+    from hyperspy.utils import markers
+
+    return getattr(markers, markers_class)(**marker_dict, **kwargs)

@@ -16,17 +16,54 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+
+import numbers
 from collections import defaultdict
+from collections.abc import Iterable
 
 import dask.array as da
 import numpy as np
 
 
-def _format_string(val):
+def _format_string(val, format_string=".5g", max_length=None, add_ellipsis=True):
     """
-    Returns formatted string for a value unless it equals None, then blank
+    Returns formatted string for a value unless it equals None,
+    then empty string is returned.
+
+    Parameters
+    ----------
+    val : any
+        Value to format
+    format_string : str, optional
+        For numeric types only: the format string to use. Default is ".5g".
+    max_length : int or None, optional
+        Maximum length of the returned string. If None, no maximum length
+        is applied. Default is None.
+    add_ellipsis : bool, optional
+        Whether to add ellipsis when truncating the string.
+        Default is True.
     """
-    return "{:6g}".format(val) if val is not None else ""
+    if val is None:
+        to_return = ""
+    elif isinstance(val, str):
+        to_return = val
+    elif isinstance(val, Iterable):
+        to_return = ", ".join(
+            f"{v:{format_string}}" if isinstance(v, numbers.Number) else str(v)
+            for v in val
+        )
+        to_return = f"({to_return})"
+    else:
+        to_return = f"{val:{format_string}}"
+
+    if max_length is not None and len(to_return) > max_length:
+        if add_ellipsis:
+            # Add ellipsis to indicate truncation
+            to_return = to_return[: max_length - 3] + "..."
+        else:
+            to_return = to_return[:max_length]
+
+    return to_return
 
 
 class CurrentComponentValues:
@@ -95,13 +132,13 @@ class CurrentComponentValues:
                 free = para.free if para.twin is None else "Twinned"
                 ln = para._linear
                 text += signature.format(
-                    para.name[: size["name"]],
-                    str(free)[: size["free"]],
-                    str(para.value)[: size["value"]],
-                    str(para.std)[: size["std"]],
-                    str(para.bmin)[: size["bmin"]],
-                    str(para.bmax)[: size["bmax"]],
-                    str(ln)[: size["linear"]],
+                    _format_string(para.name, max_length=size["name"]),
+                    _format_string(str(free), max_length=size["free"]),
+                    _format_string(para.value, max_length=size["value"]),
+                    _format_string(para.std, max_length=size["std"]),
+                    _format_string(para.bmin, max_length=size["bmin"]),
+                    _format_string(para.bmax, max_length=size["bmax"]),
+                    _format_string(str(ln), max_length=size["linear"]),
                 )
                 text += "\n"
         return text
@@ -231,7 +268,9 @@ def _calculate_covariance(
     # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
     # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
     if lazy and target_signal.ndim > 1:
-        inv_fit_dot = da.map_blocks(np.linalg.inv, fit_dot, chunks=fit_dot.chunks)
+        inv_fit_dot = da.map_blocks(
+            np.linalg.inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
+        )
     else:
         inv_fit_dot = np.linalg.inv(fit_dot)
 

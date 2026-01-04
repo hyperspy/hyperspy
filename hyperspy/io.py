@@ -29,6 +29,7 @@ from pathlib import Path
 import numpy as np
 import rsciio
 from natsort import natsorted
+from packaging.version import Version
 from rsciio import IO_PLUGINS
 from rsciio.utils.tools import ensure_directory
 from rsciio.utils.tools import overwrite as overwrite_method
@@ -48,6 +49,18 @@ _logger = logging.getLogger(__name__)
 
 # Utility string:
 f_error_fmt = "\tFile %d:\n\t\t%d signals\n\t\tPath: %s"
+
+# Support for zarr 2 and zarr 3
+ZARR_STORE_BASE_CLASS = MutableMapping
+try:
+    import zarr
+
+    if Version(zarr.__version__) >= Version("3.0.0"):  # pragma: no cover
+        ZARR_STORE_BASE_CLASS = zarr.abc.store.Store
+except ImportError:
+    # zarr is not installed, so we don't need to check for it
+    # keep MutableMapping as the default
+    pass
 
 
 def _get_format_list_for_docstring(write_mode=False, style="bullet", indentation=8):
@@ -270,9 +283,12 @@ def _escape_square_brackets(text):
 
 def _parse_path(arg):
     """Convenience function to get the path from zarr store or string."""
-    # In case of zarr store, get the path
-    if isinstance(arg, MutableMapping):
+    # For zarr.storage.ZipStore, get the path
+    if hasattr(arg, "path"):
         fname = arg.path
+    # For zarr.storage.LocalStore, get the root
+    elif hasattr(arg, "root"):  # pragma: no cover
+        fname = arg.root
     else:
         fname = arg
 
@@ -573,7 +589,7 @@ def load(
         filenames = list(filenames)
 
     # pathlib.Path.glob returns a map object in python 3.13
-    elif not isinstance(filenames, (list, tuple, MutableMapping, map)):
+    elif not isinstance(filenames, (list, tuple, ZARR_STORE_BASE_CLASS, map)):
         raise ValueError(
             "The filenames parameter must be a list, tuple, "
             f"string or None, not {type(filenames)}"
@@ -583,7 +599,7 @@ def load(
         # in case, the file doesn't exist
         raise ValueError(f'No filename matches the pattern "{pattern}"')
 
-    if isinstance(filenames, MutableMapping):
+    if isinstance(filenames, ZARR_STORE_BASE_CLASS):
         filenames = [filenames]
     else:
         # pathlib.Path not fully supported in io_plugins,
@@ -1056,7 +1072,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         )
 
     writer = None
-    if isinstance(filename, MutableMapping):
+    if isinstance(filename, ZARR_STORE_BASE_CLASS):
         extension = ".zspy"
         writer = _infer_file_reader("ZSPY")
     else:
@@ -1107,7 +1123,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         )
 
     # Create the directory if it does not exist
-    if not isinstance(filename, MutableMapping):
+    if not isinstance(filename, ZARR_STORE_BASE_CLASS):
         ensure_directory(filename.parent)
         is_file = filename.is_file() or (
             filename.is_dir() and os.path.splitext(filename)[1] == ".zspy"
@@ -1129,7 +1145,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         signal = _add_file_load_save_metadata("save", signal, writer)
         signal_dic = signal._to_dictionary(add_models=True)
         signal_dic["package_info"] = get_object_package_info(signal)
-        if not isinstance(filename, MutableMapping):
+        if not isinstance(filename, ZARR_STORE_BASE_CLASS):
             importlib.import_module(writer["api"]).file_writer(
                 str(filename), signal_dic, **kwds
             )

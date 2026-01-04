@@ -39,17 +39,17 @@ whether the optimizers find a local or global optima.
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"dogbox"``                    |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"odr"``                       |  No      | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    | ``"odr"`` [2]_                  |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"lstsq"``                     |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
+    | ``"lstsq"``                     |  No      | No        | Yes [3]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ols"``                       |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
+    | ``"ols"``                       |  No      | No        | Yes [3]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"nnls"``                      |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
+    | ``"nnls"``                      |  No      | No        | Yes [3]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ridge"``                     |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
+    | ``"ridge"``                     |  No      | No        | Yes [3]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | :func:`scipy.optimize.minimize` | Yes [3]_ | Yes [3]_  | Yes      | All           | local  | No     |
+    | :func:`scipy.optimize.minimize` | Yes [4]_ | Yes [4]_  | Yes      | All           | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"Differential Evolution"``    |  Yes     | No        | Yes      | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
@@ -64,11 +64,13 @@ whether the optimizers find a local or global optima.
        algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_. In
        earlier versions of HyperSpy (< 1.6) this was known as ``"leastsq"``.
 
-.. [2] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
+.. [2] Requires the ``odrpack`` library to be installed.
+
+.. [3] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
        in most cases. See the documentation below on :ref:`linear least square fitting <linear_fitting-label>`
        for more info.
 
-.. [3] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
+.. [4] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
        supported in HyperSpy; however, only some of them support bounds and/or gradients. For more information,
        please see the `SciPy documentation <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 

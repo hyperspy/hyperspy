@@ -29,7 +29,6 @@ import cloudpickle
 import dask
 import dask.array as da
 import numpy as np
-import scipy.odr as odr
 from dask.diagnostics import ProgressBar
 from packaging.version import Version
 from scipy.linalg import svd
@@ -1160,7 +1159,7 @@ class BaseModel(list):
                     else:
                         self.free_parameters_boundaries.extend((param._bounds))
 
-    def _bounds_as_tuple(self, transpose):
+    def _bounds_as_tuple(self, transpose, as_array=False):
         """
         Converts parameter bounds to tuples for scipy optimizer. For scipy
         ``least_squares``, ``transpose=True`` needs to be used, as the order of the
@@ -1174,9 +1173,13 @@ class BaseModel(list):
             for a, b in self.free_parameters_boundaries
         )
         if transpose:
-            return tuple(zip(*bounds))
-        else:
-            return bounds
+            bounds = tuple(zip(*bounds))
+
+        if as_array:
+            # odrpack needs numpy arrays
+            bounds = tuple(np.array(bounds_) for bounds_ in bounds)
+
+        return bounds
 
     def _set_mpfit_parameters_info(self, bounded=True):
         """Generate the boundary list for mpfit.
@@ -1837,6 +1840,7 @@ class BaseModel(list):
             "lm",
             "trf",
             "dogbox",
+            "odr",
             "Powell",
             "TNC",
             "L-BFGS-B",
@@ -1854,6 +1858,7 @@ class BaseModel(list):
             in [
                 "trf",  # Use least_squares
                 "dogbox",  # Use least_squares
+                "odr",  # Use odrpack
             ]
             else False
         )
@@ -2005,10 +2010,19 @@ class BaseModel(list):
                     self.p0 = self.fit_output.x
                     ysize = len(self.fit_output.x) + self.fit_output.dof
                     cost = self.fit_output.fnorm
-                    pcov = self.fit_output.perror**2
+                    if self.fit_output.perror is None:  # pragma: no cover
+                        # in case of RuntimeWarning in mpfit
+                        nav_msg = ""
+                        if self.signal.axes_manager.navigation_size > 0:
+                            nav_msg = f" for navigation position: {self.signal.axes_manager.indices}"
+                        _logger.warning(
+                            f"Covariance of the parameters could not be estimated{nav_msg}."
+                        )
+                    else:
+                        pcov = self.fit_output.perror**2
 
-                    # Calculate estimated parameter standard deviation
-                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+                        # Calculate estimated parameter standard deviation
+                        self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
                 else:
                     # Unbounded Levenberg-Marquardt algorithm is supported
@@ -2081,22 +2095,36 @@ class BaseModel(list):
                 self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
             elif optimizer == "odr":
+                self._set_boundaries(bounded=bounded)
+                try:
+                    import odrpack
+                except ModuleNotFoundError:  # pragma: no cover
+                    raise ImportError(
+                        "The 'odrpack' package is required for optimizer='odr'."
+                    )
+
                 if not hasattr(self, "axis"):
                     raise NotImplementedError(
                         "`optimizer='odr'` is not implemented for Model2D"
                     )
 
-                odr_jacobian = self._jacobian4odr if grad == "analytical" else None
-
-                modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
-                mydata = odr.RealData(
-                    self.axis.axis[np.where(self._channel_switches)],
-                    self.signal._get_current_data()[np.where(self._channel_switches)],
-                    sx=None,
-                    sy=(1.0 / weights if weights is not None else None),
+                kwargs.setdefault("task", "OLS")
+                bounds = self._bounds_as_tuple(
+                    transpose=_transpose_bounds, as_array=True
                 )
-                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:], **kwargs)
-                res = myodr.run()
+                res = odrpack.odr_fit(
+                    self._function4odr,
+                    xdata=self.axis.axis[np.where(self._channel_switches)],
+                    ydata=self.signal._get_current_data()[
+                        np.where(self._channel_switches)
+                    ],
+                    beta0=np.array(self.p0[:]),
+                    weight_x=None,
+                    weight_y=(1.0 / weights if weights is not None else None),
+                    jac_beta=self._jacobian4odr if grad == "analytical" else None,
+                    bounds=bounds if bounded else None,
+                    **kwargs,
+                )
 
                 dd = {
                     "x": res.beta,
@@ -2105,7 +2133,7 @@ class BaseModel(list):
                 }
                 if hasattr(res, "info"):
                     dd["status"] = res.info
-                    dd["message"] = ", ".join(res.stopreason)
+                    dd["message"] = res.stopreason
                     # Note that a value of 5 means maximum iterations reached
                     dd["success"] = (res.info >= 0) and (res.info < 4)
 
