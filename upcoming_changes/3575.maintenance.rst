@@ -1,0 +1,1 @@
+Fix readthedocs documentation build on tag.
