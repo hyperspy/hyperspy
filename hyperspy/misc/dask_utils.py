@@ -44,10 +44,10 @@ def process_function_blockwise(
     data : np.ndarray
         The data for one chunk
     *args : tuple
-        Any signal the is iterated alongside the data in. In the form
+        Any signal that is iterated alongside the input data. In the form
         ((key1, value1), (key2, value2))
     function : function
-        The function to applied to the signal axis
+        The function to be applied to the signal axis
     nav_indexes : tuple
         The indexes of the navigation axes for the dataset.
     output_signal_size: tuple
@@ -95,7 +95,7 @@ def process_function_blockwise(
 
 def _get_block_pattern(args, output_shape):
     """Returns the block pattern used by the `blockwise` function for a
-    set of arguments give a resulting output_shape
+    set of arguments given a resulting output_shape
 
     Parameters
     ----------
