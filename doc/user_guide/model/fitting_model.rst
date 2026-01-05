@@ -763,3 +763,38 @@ The :class:`~.model.BaseModel` :meth:`~.model.BaseModel.plot_results`,
 :class:`~.component.Parameter` :meth:`~.component.Parameter.plot` methods
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
+
+.. _compute-model-statistics:
+
+Compute model statistics
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+HyperSpy provides a method to compute and print summary statistics of all
+parameters of each component in a model. This is especially useful for
+inspecting parameter values after fitting a map of spectra using multifit,
+as it allows evaluating mean, standard deviation, minimum, and maximum across
+all navigation points.
+
+.. code-block:: python
+
+
+    >>> x = np.linspace(0, 20, 200)
+    >>> y = (
+    ...     3 * np.exp(-((x - 5) ** 2) / (2 * 0.5**2))
+    ...     + 2 * np.exp(-((x - 10) ** 2) / (2 * 1.0**2))
+    ...     + 4 * np.exp(-((x - 15) ** 2) / (2 * 0.8**2))
+    ... )
+    >>> s = hs.signals.Signal1D(y)
+    >>> m = s.create_model()
+    >>> gauss1 = hs.model.components1D.Gaussian()
+    >>> gauss2 = hs.model.components1D.Gaussian()
+    >>> gauss3 = hs.model.components1D.Gaussian()
+    >>> lorenz1 = hs.model.components1D.Lorentzian()
+    >>> lorenz2 = hs.model.components1D.Lorentzian()
+    >>> m.extend([gauss1, gauss2, gauss3, lorenz1, lorenz2])
+    >>> m.multifit()
+    >>> m.print_model_statistics()
+
+The output includes the mean, standard deviation, minimum, and maximum for each
+parameter of each component. Thresholds can optionally be applied to filter the
+values considered in the statistics.

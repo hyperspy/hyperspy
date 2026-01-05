@@ -1,0 +1,1 @@
+Adds new method :meth:`~.model.BaseModel.print_model_statistics` that computes and prints summary statistics (mean, std, min, max) for all parameters of a model.

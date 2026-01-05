@@ -836,3 +836,66 @@ class TestModel1DSetSignalRange:
         mask = np.ones(30)
         with pytest.raises(ValueError):
             m.set_signal_range_from_mask(mask)
+
+
+class TestPrintModelStatistics:
+    def setup_method(self, method):
+        x = np.linspace(0, 20, 200)
+        y = (
+            3 * np.exp(-((x - 5) ** 2) / (2 * 0.5**2))
+            + 2 * np.exp(-((x - 10) ** 2) / (2 * 1.0**2))
+            + 4 * np.exp(-((x - 15) ** 2) / (2 * 0.8**2))
+        )
+        s = hs.signals.Signal1D(y)
+        m = s.create_model()
+        gauss1 = hs.model.components1D.Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
+        gauss3 = hs.model.components1D.Gaussian()
+        lorenz1 = hs.model.components1D.Lorentzian()
+        lorenz2 = hs.model.components1D.Lorentzian()
+        m.extend([gauss1, gauss2, gauss3, lorenz1, lorenz2])
+        m.multifit()
+        self.s = s
+        self.m = m
+
+    def test_print_model_statistics_no_thresholds(self):
+        self.m.print_model_statistics()
+
+    def test_print_model_statistics_with_thresholds(self):
+        thresholds = {"A": {"min": 0.1, "max": 10}, "centre": {"max": 50}}
+        self.m.print_model_statistics(thresholds=thresholds)
+
+    def test_print_model_statistics_percentile_thresholds(self):
+        thresholds = {"A": {"min": "1th", "max": "1th"}, "centre": {"max": "2th"}}
+        self.m.print_model_statistics(thresholds=thresholds)
+
+    def test_print_model_statistics_component_list(self):
+        self.m.print_model_statistics(component_list=list(self.m))
+
+    def test_print_model_statistics_output(self):
+        from hyperspy.misc.model_tools import ModelStatistics
+
+        out = str(ModelStatistics(self.m).__repr__())
+
+        # Check that the Gaussian and Lorentzian components appear
+        assert "Gaussian" in out
+        assert "Gaussian_1" in out
+        assert "Lorentzian" in out
+        assert "Lorentzian_0" in out
+
+        # Check that parameters such as A, centre, sigma/gamma appear
+        assert "A" in out
+        assert "centre" in out
+        assert any(param in out for param in ["sigma", "gamma"])
+
+        # Check that the statistics columns appear
+        assert "mean" in out.lower()
+        assert "std" in out.lower()
+        assert "min" in out.lower()
+        assert "max" in out.lower()
+
+    def test_html_print(self):
+        from hyperspy.misc.model_tools import ModelStatistics
+
+        """Ensure that html print is giving sensible output"""
+        assert "<td>centre</td>" in ModelStatistics(self.m)._repr_html_()

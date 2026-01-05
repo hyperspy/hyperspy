@@ -62,6 +62,7 @@ from hyperspy.misc.export_dictionary import (
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.model_tools import (
     CurrentModelValues,
+    ModelStatistics,
     _calculate_covariance,
     _calculate_parameter_uncertainty_from_fisher_information,
 )
@@ -481,6 +482,8 @@ class BaseModel(list):
         Plot the value of all parameters at all positions.
     print_current_values
         Print the value of the parameters at the current position.
+    print_model_statistics
+        Prints summary statistics for all parameters of each component.
     as_dictionary
         Exports the model to a dictionary that can be saved in a file.
 
@@ -3155,6 +3158,62 @@ class BaseModel(list):
         from hyperspy.samfire import Samfire
 
         return Samfire(self, workers=workers, setup=setup, **kwargs)
+
+    def print_model_statistics(self, thresholds=None, component_list=None):
+        """
+        Computes and prints summary statistics (mean, standard deviation, min, max)
+        for all parameters of each component in a given model.
+
+        Parameters
+        ----------
+        thresholds : dict, optional
+            A dictionary specifying thresholds for parameters.
+            Keys should be parameter names (param.name).
+            Values should be dictionaries with optional 'min' and/or 'max' entries
+            given as float or integer. If str, formatted as 'xth', use this value
+            to calculate the threshold percentage. For example, for a min of '1th',
+            the lowest 1% of values will be ignored and for max of '1th', the
+            highest 1% of values will be ignored. See :func:`numpy.percentile`
+            for more details.
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
+            If None, will return statistics for all components in the model.
+            If list of components, will calculate statistics for the components
+            in the list. The components can be specified by name, index or
+            themselves.
+
+        Raises
+        ------
+        ValueError
+            If the value of `min` `max` is out of the valid range for percentile
+            calculation (in case of string values).
+
+        Examples
+        --------
+        >>> x = np.linspace(0, 20, 200)
+        >>> y = (
+        ... 3 * np.exp(-(x - 5)**2 / (2 * 0.5**2)) +
+        ... 2 * np.exp(-(x - 10)**2 / (2 * 1.0**2)) +
+        ... 4 * np.exp(-(x - 15)**2 / (2 * 0.8**2)))
+        >>> s = hs.signals.Signal1D(y)
+        >>> m = s.create_model()
+        >>> gauss1 = hs.model.components1D.Gaussian()
+        >>> gauss2 = hs.model.components1D.Gaussian()
+        >>> gauss3 = hs.model.components1D.Gaussian()
+        >>> Lorenz1 = hs.model.components1D.Lorentzian()
+        >>> lorenz2 = hs.model.components1D.Lorentzian()
+        >>> m.extend([gauss1, gauss2, gauss3, Lorenz1, lorenz2])
+        >>> m.multifit()
+        >>> thresholds = {
+        ... "A": {"min": 0.1, "max": 10}, "sigma": {"min": 0.01}, "centre": {"max": 5}
+        ... }
+        >>> m.print_model_statistics(thresholds)
+        """
+
+        display(
+            ModelStatistics(
+                model=self, thresholds=thresholds, component_list=component_list
+            )
+        )
 
 
 class ModelSpecialSlicers(object):
