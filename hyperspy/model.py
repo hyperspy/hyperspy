@@ -27,19 +27,9 @@ from functools import partial
 
 import cloudpickle
 import dask
-import dask.array as da
 import numpy as np
-from dask.diagnostics import ProgressBar
+import scipy
 from packaging.version import Version
-from scipy.linalg import svd
-from scipy.optimize import (
-    OptimizeResult,
-    differential_evolution,
-    least_squares,
-    leastsq,
-    minimize,
-)
-from scipy.signal import fftconvolve
 
 from hyperspy.component import Component
 from hyperspy.components1d import Expression
@@ -52,7 +42,7 @@ from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
 from hyperspy.io import assign_signal_subclass
-from hyperspy.misc.array_tools import get_chunk_slice
+from hyperspy.misc.dask_utils import get_chunk_slice
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
@@ -65,6 +55,7 @@ from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     display,
     dummy_context_manager,
+    is_dask_array,
     shorten_name,
     slugify,
     stash_active_state,
@@ -250,7 +241,7 @@ def _get_model_data_function_nd(
                 )
             # add all components, take the convolution for components that need
             # to be convolved, do it here only once instead of each component individually
-            data_ = sum_ + fftconvolve(
+            data_ = sum_ + scipy.signal.fftconvolve(
                 sum_convolved,
                 model._signal_to_convolve.inav[nav_slices].data,
                 mode="valid",
@@ -354,6 +345,8 @@ def _model_as_signal_lazy_data(
     data : dask array
         The calculated model data
     """
+    import dask.array as da
+
     _, data_chunks = get_chunk_slice(
         shape=model.signal.data.shape,
         chunks=chunks,
@@ -877,6 +870,8 @@ class BaseModel(list):
                     self, components_with_function_nd, out_of_range_to_nan
                 )
         else:
+            import dask.array as da
+
             xp = da if lazy_output else np
             # Make the placeholder array
             data_ = xp.full_like(self.signal.data, np.nan, dtype=float)
@@ -933,7 +928,7 @@ class BaseModel(list):
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
 
-        if out_of_range_to_nan and isinstance(data_, da.Array):
+        if out_of_range_to_nan and is_dask_array(data_):
             # requires array assignment which is not compatible with
             # dask array since dask 2024.12.0
             raise ValueError(
@@ -1570,16 +1565,12 @@ class BaseModel(list):
             )
 
         if optimizer == "lstsq":
-            if self.signal._lazy:
-                xp = da
-                kw = {}
-            else:
-                xp = np
-                kw = kwargs
-                kw.setdefault("rcond", None)
+            kwargs = {"rcond": None} if not self.signal._lazy else {}
 
             result, residual, *_ = np.linalg.lstsq(
-                xp.asanyarray(comp_values.T), target_signal.T, **kw
+                np.asanyarray(comp_values.T, like=self.signal.data),
+                target_signal.T,
+                **kwargs,
             )
             if len(residual) == 0:
                 # can be empty array, see np.linalg.lstsq docstring
@@ -1614,14 +1605,6 @@ class BaseModel(list):
 
         fit_output = {"x": coefficient_array}
 
-        # TODO: reorganise to do lazy computation (coeff and error together)
-        if self.signal._lazy:
-            cm = (
-                ProgressBar if kwargs.get("show_progressbar") else dummy_context_manager
-            )
-            with cm():
-                fit_output["x"] = fit_output["x"].compute()
-
         # Calculate errors
         # We only do this if going pixel-by-pixel or if `calculate_errors=True`
         # is specified in multifit. This is because it is a very large
@@ -1638,6 +1621,19 @@ class BaseModel(list):
             fit_output["covar"] = covariance
             fit_output["perror"] = abs(fit_output["x"]) * std_error
 
+        if self.signal._lazy:
+            from hyperspy.misc.dask_utils import _compute
+
+            arrays = [fit_output["x"]]
+            if calculate_errors:
+                arrays.append(fit_output["perror"])
+
+            outputs = _compute(arrays, show_progressbar=kwargs.get("show_progressbar"))
+
+            fit_output["x"] = outputs[0]
+            if calculate_errors:
+                fit_output["perror"] = outputs[1]
+
         if not only_current:
             # The nav shape will have been flattened. We reshape it here.
             fit_output["x"] = fit_output["x"].reshape(nav_shape + (n_parameters,))
@@ -1649,10 +1645,6 @@ class BaseModel(list):
                 fit_output["perror"] = fit_output["perror"].reshape(
                     nav_shape + (n_parameters,)
                 )
-
-        if self.signal._lazy and calculate_errors:
-            with cm():
-                fit_output["perror"] = fit_output["perror"].compute()
 
         fit_output["success"] = True
 
@@ -1819,13 +1811,16 @@ class BaseModel(list):
 
         # Supported losses and optimizers
         _supported_global = {
-            "Differential Evolution": differential_evolution,
+            "Differential Evolution": scipy.optimize.differential_evolution,
         }
 
         if optimizer in ["Dual Annealing", "SHGO"]:
-            from scipy.optimize import dual_annealing, shgo
-
-            _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})
+            _supported_global.update(
+                {
+                    "Dual Annealing": scipy.optimize.dual_annealing,
+                    "SHGO": scipy.optimize.shgo,
+                }
+            )
 
         _supported_fd_schemes = ["2-point", "3-point", "cs"]
         _supported_losses = ["ls", "ML-poisson", "huber"]
@@ -2014,7 +2009,7 @@ class BaseModel(list):
                     # Dfun=None means the gradient is always estimated here.
                     grad = self._jacobian if grad == "analytical" else None
 
-                    res = leastsq(
+                    res = scipy.optimize.leastsq(
                         self._errfunc,
                         self.p0[:],
                         Dfun=grad,
@@ -2024,7 +2019,7 @@ class BaseModel(list):
                         **kwargs,
                     )
 
-                    self.fit_output = OptimizeResult(
+                    self.fit_output = scipy.optimize.OptimizeResult(
                         x=res[0],
                         covar=res[1],
                         fun=res[2]["fvec"],
@@ -2052,7 +2047,7 @@ class BaseModel(list):
 
                 grad = _wrap_jac if grad == "analytical" else grad
 
-                self.fit_output = least_squares(
+                self.fit_output = scipy.optimize.least_squares(
                     self._errfunc,
                     self.p0[:],
                     args=args,
@@ -2069,7 +2064,7 @@ class BaseModel(list):
 
                 # Do Moore-Penrose inverse, discarding zero singular values
                 # to get pcov (as per scipy.optimize.curve_fit())
-                _, s, VT = svd(jac, full_matrices=False)
+                _, s, VT = scipy.linalg.svd(jac, full_matrices=False)
                 threshold = np.finfo(float).eps * max(jac.shape) * s[0]
                 s = s[s > threshold]
                 VT = VT[: s.size]
@@ -2121,7 +2116,7 @@ class BaseModel(list):
                     # Note that a value of 5 means maximum iterations reached
                     dd["success"] = (res.info >= 0) and (res.info < 4)
 
-                self.fit_output = OptimizeResult(**dd)
+                self.fit_output = scipy.optimize.OptimizeResult(**dd)
                 self.p0 = self.fit_output.x
                 self.p_std = self.fit_output.perror
 
@@ -2135,7 +2130,7 @@ class BaseModel(list):
                 fit_output = self._linear_fit(
                     optimizer=optimizer, weights=weights, **kwargs
                 )
-                self.fit_output = OptimizeResult(**fit_output)
+                self.fit_output = scipy.optimize.OptimizeResult(**fit_output)
 
                 if only_current:
                     # fit_output will have only one entry
@@ -2184,7 +2179,7 @@ class BaseModel(list):
                     )
 
                 else:
-                    self.fit_output = minimize(
+                    self.fit_output = scipy.optimize.minimize(
                         f_min,
                         self.p0,
                         jac=f_der,

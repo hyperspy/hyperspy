@@ -23,6 +23,7 @@ For use in things like docstrings or to test HyperSpy functionalities.
 """
 
 import numpy as np
+import scipy
 
 from hyperspy import components1d, components2d, signals
 from hyperspy.axes import UniformDataAxis
@@ -130,9 +131,7 @@ def atomic_resolution_image(
     s = signals.Signal2D(array)
 
     if rotation_angle != 0:
-        from scipy.ndimage import rotate
-
-        s.map(rotate, angle=rotation_angle, reshape=False)
+        s.map(scipy.ndimage.rotate, angle=rotation_angle, reshape=False)
 
         w, h = s.axes_manager.signal_axes[0].size, s.axes_manager.signal_axes[1].size
         wr, hr = _get_largest_rectangle_from_rotation(w, h, rotation_angle)

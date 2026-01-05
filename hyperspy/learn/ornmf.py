@@ -20,7 +20,7 @@ import logging
 from itertools import chain
 
 import numpy as np
-from scipy.stats import halfnorm
+import scipy
 
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import check_random_state
@@ -209,7 +209,7 @@ class ORNMF:
         self.n_features = m
         self.iterating = iterating
 
-        self.W = halfnorm.rvs(
+        self.W = scipy.stats.halfnorm.rvs(
             size=(self.n_features, self.rank), random_state=self.random_state
         )
         self.W = abs(avg * self.W / np.sqrt(self.rank))

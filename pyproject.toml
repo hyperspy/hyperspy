@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "cloudpickle",
-    "dask[array]>=2022.9.2",
+    "dask[array]>=2023.2.1",
     "importlib-metadata>=3.6",
     "jinja2", # improves representation of lazy signals by dask
     "matplotlib>=3.6",
@@ -32,7 +32,7 @@ dependencies = [
     "pint>=0.10",
     "prettytable>=2.3",
     "pyyaml",
-    "rosettasciio[hdf5,image]",
+    "rosettasciio[hdf5,image]>=0.12.0",
     "scipy>=1.8.0",
     "sympy>=1.10",
     "tqdm>=4.59.0",
@@ -147,7 +147,7 @@ ipython = [
     "ipyparallel",
 ]
 learning = [
-    "scikit-learn>=1.1.0",
+    "scikit-learn>=1.6.0",
 ]
 odr = [
     "odrpack>=0.3.1",

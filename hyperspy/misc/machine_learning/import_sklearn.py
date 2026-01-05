@@ -17,25 +17,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 """
-Import sklearn.* and randomized_svd from scikit-learn
+Import sklearn if installed.
 """
 
 import importlib
-import warnings
 
-sklearn_spec = importlib.util.find_spec("sklearn")
+sklearn_installed = False if importlib.util.find_spec("sklearn") is None else True
 
-if sklearn_spec is None:  # pragma: no cover
-    randomized_svd = None
-    sklearn_installed = False
-else:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import sklearn  # noqa: F401
-        import sklearn.cluster  # noqa: F401
-        import sklearn.decomposition  # noqa: F401
-        import sklearn.metrics  # noqa: F401
-        import sklearn.preprocessing  # noqa: F401
-        from sklearn.utils.extmath import randomized_svd  # noqa: F401
 
-        sklearn_installed = True
+def __getattr__(name):
+    if name == "sklearn":
+        return importlib.import_module("sklearn")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

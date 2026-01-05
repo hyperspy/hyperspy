@@ -24,8 +24,9 @@ from itertools import product
 import dask
 import dask.array as da
 import numpy as np
+import scipy
 from dask.widgets import TEMPLATE_PATHS
-from rsciio.utils.tools import get_file_handle
+from rsciio.utils.file import get_file_handle
 
 from hyperspy.docstrings.signal import (
     LAZYSIGNAL_DOC,
@@ -34,14 +35,15 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import (
+from hyperspy.misc.array_tools import _requires_linear_rebin
+from hyperspy.misc.dask_utils import (
+    _compute,
     _get_navigation_dimension_chunk_slice,
-    _requires_linear_rebin,
     get_signal_chunk_slice,
 )
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import _compute, isiterable, multiply
+from hyperspy.misc.utils import isiterable, multiply
 from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
@@ -656,12 +658,11 @@ class LazySignal(BaseSignal):
 
     def integrate_simpson(self, axis, out=None, rechunk=False):
         axis = self.axes_manager[axis]
-        from scipy import integrate
 
         axis = self.axes_manager[axis]
         data = self._lazy_data(axis=axis, rechunk=rechunk)
         new_data = data.map_blocks(
-            integrate.simpson,
+            scipy.integrate.simpson,
             x=axis.axis,
             axis=axis.index_in_array,
             drop_axis=axis.index_in_array,

@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import dask.array as da
 import numpy as np
 import pytest
 
@@ -57,9 +58,9 @@ class TestLazyDecomposition:
         factors = self.s.learning_results.factors
         loadings = self.s.learning_results.loadings
 
-        if hasattr(factors, "compute"):
+        if isinstance(factors, da.Array):
             factors = factors.compute()
-        if hasattr(loadings, "compute"):
+        if isinstance(loadings, da.Array):
             loadings = loadings.compute()
 
         explained_variance = self.s.learning_results.explained_variance
@@ -86,9 +87,9 @@ class TestLazyDecomposition:
         factors = self.s.learning_results.factors
         loadings = self.s.learning_results.loadings
 
-        if hasattr(factors, "compute"):
+        if isinstance(factors, da.Array):
             factors = factors.compute()
-        if hasattr(loadings, "compute"):
+        if isinstance(loadings, da.Array):
             loadings = loadings.compute()
 
         explained_variance = self.s.learning_results.explained_variance
@@ -145,9 +146,9 @@ class TestLazyDecomposition:
         factors = self.s.learning_results.factors
         loadings = self.s.learning_results.loadings
 
-        if hasattr(factors, "compute"):
+        if isinstance(factors, da.Array):
             factors = factors.compute()
-        if hasattr(loadings, "compute"):
+        if isinstance(loadings, da.Array):
             loadings = loadings.compute()
 
         explained_variance = self.s.learning_results.explained_variance
@@ -170,9 +171,9 @@ class TestLazyDecomposition:
         factors = self.s.learning_results.factors
         loadings = self.s.learning_results.loadings
 
-        if hasattr(factors, "compute"):
+        if isinstance(factors, da.Array):
             factors = factors.compute()
-        if hasattr(loadings, "compute"):
+        if isinstance(loadings, da.Array):
             loadings = loadings.compute()
 
         explained_variance = self.s.learning_results.explained_variance

@@ -24,7 +24,6 @@ import textwrap
 import warnings
 from functools import partial
 
-import dask.array as da
 import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
@@ -34,13 +33,13 @@ import traits.api as t
 from matplotlib.backend_bases import key_press_handler
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from packaging.version import Version
-from rsciio.utils import rgb_tools
+from rsciio.utils import rgb
 
 import hyperspy
 import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS
-from hyperspy.misc.utils import isiterable, to_numpy
+from hyperspy.misc.utils import is_dask_array, isiterable, to_numpy
 
 _logger = logging.getLogger(__name__)
 
@@ -512,7 +511,7 @@ def _transpose_if_required(signal, expected_dimension):
 def _parse_array(signal, normalise=False):
     """Convenience function to parse array from a signal."""
     data = signal.data
-    if isinstance(data, da.Array):
+    if is_dask_array(data):
         data = data.compute()
     if normalise:
         data = (data - data.min()) / (data.max() - data.min())
@@ -980,7 +979,7 @@ def plot_images(
     # Check to see if there are any rgb images in list
     # and tag them using the isrgb list
     for i, img in enumerate(images):
-        if rgb_tools.is_rgbx(img.data):
+        if rgb.is_rgbx(img.data):
             isrgb[i] = True
 
     # Determine how many non-rgb images there are
@@ -1171,8 +1170,8 @@ def plot_images(
                 data = _parse_array(im)
 
                 # Enable RGB plotting
-                if rgb_tools.is_rgbx(data):
-                    data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+                if rgb.is_rgbx(data):
+                    data = rgb.rgbx2regular_array(data, plot_friendly=True)
                     _vmin, _vmax = None, None
                 elif colorbar != "single":
                     _vmin, _vmax = _parse_vmin_vmax(data, vmin, vmax, idx, centre)

@@ -21,12 +21,9 @@ import math
 import warnings
 
 import dask
-import dask.array as da
 import numpy as np
 import numpy.ma as ma
-from scipy import interpolate
-from scipy.ndimage import gaussian_filter1d
-from scipy.signal import medfilt, savgol_filter
+import scipy
 
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy._signals.lazy import LazySignal
@@ -51,6 +48,7 @@ from hyperspy.docstrings.signal1d import (
 )
 from hyperspy.misc.lowess_smooth import lowess
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.misc.utils import is_dask_array
 from hyperspy.models.model1d import Model1D
 from hyperspy.signal import BaseSignal
 from hyperspy.signal_tools import (
@@ -149,7 +147,7 @@ def find_peaks_ohaver(
         amp_thresh = 0.1 * y.max()
     peakgroup = np.round(peakgroup)
     if medfilt_radius:
-        d = np.gradient(medfilt(y, medfilt_radius))
+        d = np.gradient(scipy.signal.medfilt(y, medfilt_radius))
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
@@ -241,7 +239,7 @@ def interpolate1D(number_of_interpolation_points, data):
     new_ax = np.linspace(0, 100, ch * ip - (ip - 1))
 
     data = ma.masked_invalid(data)
-    interpolator = interpolate.make_interp_spline(
+    interpolator = scipy.interpolate.make_interp_spline(
         old_ax,
         data,
         k=1,
@@ -278,7 +276,9 @@ def _shift1D(data, **kwargs):
 
     data = ma.masked_invalid(data)
     # #This is the interpolant function
-    si = interpolate.make_interp_spline(original_axis, data, k=1, check_finite=False)
+    si = scipy.interpolate.make_interp_spline(
+        original_axis, data, k=1, check_finite=False
+    )
 
     # Evaluate interpolated data at shifted positions
     return si(original_axis - shift)
@@ -496,6 +496,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             ilow = axis.low_index
         if expand:
             if self._lazy:
+                import dask.array as da
+
                 ind = axis.index_in_array
                 pre_shape = list(self.data.shape)
                 post_shape = list(self.data.shape)
@@ -613,7 +615,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             i3 = int(np.clip(i2 + delta, 0, axis.size))
 
         def interpolating_function(dat):
-            dat_int = interpolate.interp1d(
+            dat_int = scipy.interpolate.interp1d(
                 list(range(i0, i1)) + list(range(i2, i3)),
                 dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs,
@@ -703,9 +705,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
         self._check_navigation_mask(mask)
         # we compute for now
-        if isinstance(start, da.Array):
+        if is_dask_array(start):
             start = start.compute()
-        if isinstance(end, da.Array):
+        if is_dask_array(end):
             end = end.compute()
         i1, i2 = axis._get_index(start), axis._get_index(end)
         if reference_indices is None:
@@ -939,7 +941,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if polynomial_order is not None and window_length is not None:
             axis = self.axes_manager.signal_axes[0]
             self.map(
-                savgol_filter,
+                scipy.signal.savgol_filter,
                 window_length=window_length,
                 polyorder=polynomial_order,
                 deriv=differential_order,
@@ -1139,6 +1141,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         if zero_fill:
             if self._lazy:
+                import dask.array as da
+
                 low_idx = result.axes_manager[-1].value2index(signal_range[0])
                 z = da.zeros(low_idx, chunks=(low_idx,))
                 cropped_da = result.data[low_idx:]
@@ -1452,7 +1456,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             raise ValueError("FWHM must be greater than zero")
         axis = self.axes_manager.signal_axes[0]
         FWHM *= 1 / axis.scale
-        self.map(gaussian_filter1d, sigma=FWHM / 2.35482, ragged=False)
+        self.map(scipy.ndimage.gaussian_filter1d, sigma=FWHM / 2.35482, ragged=False)
 
     def hanning_taper(self, side="both", channels=None, offset=0):
         """Apply a hanning taper to the data in place.
@@ -1475,6 +1479,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
         """
+        import dask.array as da
+
         if not np.issubdtype(self.data.dtype, np.floating):
             raise TypeError(
                 "The data dtype should be `float`. It can be "
@@ -1673,7 +1679,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 )
                 spectrum = spectrum[slices]
                 x = x[slices]
-            spline = interpolate.UnivariateSpline(
+            spline = scipy.interpolate.UnivariateSpline(
                 x, spectrum - factor * spectrum.max(), s=0
             )
             roots = spline.roots()

@@ -16,15 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from packaging.version import Version
-from tqdm import __version__ as tqdm_version
-
-if Version(tqdm_version) >= Version("4.36.0"):
-    # API change for 5.0 https://github.com/tqdm/tqdm/pull/800
-    from tqdm import tqdm
-    from tqdm.notebook import tqdm as tqdm_notebook
-else:
-    from tqdm import tqdm, tqdm_notebook
+import tqdm
 
 from hyperspy.defaults_parser import preferences
 
@@ -39,8 +31,9 @@ def progressbar(*args, **kwargs):
     """
     if preferences.General.nb_progressbar:
         try:
-            return tqdm_notebook(*args, **kwargs)
+            return tqdm.notebook(*args, **kwargs)
         except:
             pass
-    return tqdm(*args, **kwargs)
+    return tqdm.tqdm(*args, **kwargs)
+
 progressbar.__doc__ %= (tqdm.__doc__, tqdm.__init__.__doc__)

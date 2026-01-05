@@ -2,7 +2,7 @@ name: test_env
 channels:
 - conda-forge
 dependencies:
-- dask-core >=2022.9.2
+- dask-core >=2023.2.1
 - dill
 - importlib-metadata
 - h5py
@@ -16,9 +16,9 @@ dependencies:
 - pint >=0.10
 - prettytable >=2.3
 - pyyaml
-- rosettasciio-base
+- rosettasciio-base >=0.12.0
 - scikit-image >=0.19.0
-- scikit-learn >=1.1.0
+- scikit-learn >=1.6.0
 - scipy >=1.8.0
 - sympy >=1.10
 - tqdm >=4.59.0

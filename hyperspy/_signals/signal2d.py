@@ -21,11 +21,10 @@ import warnings
 from copy import deepcopy
 from functools import partial
 
-import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
-from scipy import ndimage
+import scipy
 
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy._signals.lazy import LazySignal
@@ -44,6 +43,7 @@ from hyperspy.docstrings.signal import (
 )
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetrize
+from hyperspy.misc.utils import is_dask_array
 from hyperspy.signal import BaseSignal
 from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
@@ -61,7 +61,7 @@ def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
         else:
             # Disable interpolation
             order = 0
-        return ndimage.shift(im, shift, cval=fill_value, order=order)
+        return scipy.ndimage.shift(im, shift, cval=fill_value, order=order)
 
 
 def triu_indices_minus_diag(n):
@@ -87,8 +87,8 @@ def hanning2d(M, N):
 
 
 def sobel_filter(im):
-    sx = ndimage.sobel(im, axis=0, mode="constant")
-    sy = ndimage.sobel(im, axis=1, mode="constant")
+    sx = scipy.ndimage.sobel(im, axis=0, mode="constant")
+    sy = scipy.ndimage.sobel(im, axis=1, mode="constant")
     sob = np.hypot(sx, sy)
     return sob
 
@@ -206,8 +206,11 @@ def estimate_image_shift(
        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
+    if is_dask_array(ref) or is_dask_array(image):
+        import dask.array as da
 
-    ref, image = da.compute(ref, image)
+        ref, image = da.compute(ref, image)
+
     # Make a copy of the images to avoid modifying them
     ref = ref.copy().astype(dtype)
     image = image.copy().astype(dtype)
@@ -231,7 +234,7 @@ def estimate_image_shift(
             # which was the previous implementation.
             # The size is fixed at 3 to be consistent
             # with the previous implementation.
-            im[:] = ndimage.median_filter(im, size=3)
+            im[:] = scipy.ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
 
@@ -945,12 +948,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
-        if self._lazy:
-            ramp = offset * da.ones(
-                self.data.shape, dtype=self.data.dtype, chunks=self.data.chunks
-            )
-        else:
-            ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
+        ramp = offset * np.ones_like(self.data)
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
+import dask.array as da
 import numpy as np
 import pytest
 
@@ -475,7 +475,7 @@ class TestBSS2D:
     def test_mask_diff_order_1_on_loadings(self):
         s = self.s.to_signal1D()
         s.decomposition()
-        if hasattr(s.learning_results.loadings, "compute"):
+        if isinstance(s.learning_results.loadings, da.Array):
             s.learning_results.loadings = s.learning_results.loadings.compute()
         s.learning_results.loadings[5, :] = np.nan
         s.blind_source_separation(3, diff_order=1, mask=self.mask_sig, on_loadings=True)
@@ -483,7 +483,7 @@ class TestBSS2D:
     def test_mask_diff_order_1_on_loadings_diff_axes(self):
         s = self.s.to_signal1D()
         s.decomposition()
-        if hasattr(s.learning_results.loadings, "compute"):
+        if isinstance(s.learning_results.loadings, da.Array):
             s.learning_results.loadings = s.learning_results.loadings.compute()
         s.learning_results.loadings[5, :] = np.nan
         s.blind_source_separation(

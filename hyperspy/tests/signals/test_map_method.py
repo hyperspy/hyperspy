@@ -28,7 +28,8 @@ from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 import hyperspy.api as hs
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.utils import _get_block_pattern, dummy_context_manager
+from hyperspy.misc.dask_utils import _get_block_pattern
+from hyperspy.misc.utils import dummy_context_manager
 
 
 def identify_function(x):
@@ -1120,9 +1121,9 @@ class TestLazyInputMapAll:
             lazy_output=False,
         )
         assert not s_rot._lazy
-        assert not hasattr(s_rot.data, "compute")
+        assert not isinstance(s_rot.data, da.Array)
         assert s._lazy
-        assert hasattr(s.data, "compute")
+        assert isinstance(s.data, da.Array)
         assert s_rot.data[0, 0] == 0.0
         assert s_rot.data[0, -1] == 0.0
         assert s_rot.data[-1, 0] == 0.0
@@ -1143,7 +1144,7 @@ class TestLazyInputMapAll:
             lazy_output=False,
         )
         assert not s._lazy
-        assert not hasattr(s.data, "compute")
+        assert not isinstance(s.data, da.Array)
         assert s.data[0, 0] == 0.0
         assert s.data[0, -1] == 0.0
         assert s.data[-1, 0] == 0.0

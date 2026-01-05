@@ -19,7 +19,6 @@
 import numbers
 from collections.abc import Iterable
 
-import dask.array as da
 import numpy as np
 
 
@@ -266,6 +265,8 @@ def _calculate_covariance(
     # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
     # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
     if lazy and target_signal.ndim > 1:
+        import dask.array as da
+
         inv_fit_dot = da.map_blocks(
             np.linalg.inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
         )

@@ -24,11 +24,10 @@ import warnings
 from collections.abc import Iterable
 from contextlib import contextmanager
 
-import dask.array as da
 import numpy as np
 import pint
+import sympy
 import traits.api as t
-from sympy.utilities.lambdify import lambdify
 from traits.trait_errors import TraitError
 
 from hyperspy._components.expression import _parse_substitutions
@@ -43,7 +42,7 @@ from hyperspy.misc.array_tools import (
     round_half_towards_zero,
 )
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.misc.utils import TupleSA, isiterable, ordinal
+from hyperspy.misc.utils import TupleSA, is_dask_array, isiterable, ordinal
 from hyperspy.ui_registry import add_gui_method, get_gui
 
 _logger = logging.getLogger(__name__)
@@ -569,7 +568,7 @@ class BaseDataAxis(t.HasTraits):
         return the same value."""
         if isinstance(value, str):
             value = self._parse_value_from_string(value)
-        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
+        elif isinstance(value, (list, tuple, np.ndarray)) or is_dask_array(value):
             value = np.asarray(value)
             if value.dtype.type is np.str_:
                 value = np.array([self._parse_value_from_string(v) for v in value])
@@ -643,7 +642,7 @@ class BaseDataAxis(t.HasTraits):
             )
 
     def index2value(self, index):
-        if isinstance(index, da.Array):
+        if is_dask_array(index):
             index = index.compute()
         if isinstance(index, np.ndarray):
             return self.axis[index.ravel()].reshape(index.shape)
@@ -1065,7 +1064,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}"
             )
-        self._function = lambdify(
+        self._function = sympy.utilities.lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False
         )
         for parameter in parameters.keys():

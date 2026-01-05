@@ -24,9 +24,8 @@ import matplotlib
 import matplotlib.colors
 import matplotlib.text as mpl_text
 import numpy as np
+import scipy
 import traits.api as t
-from scipy import interpolate
-from scipy import signal as sp_signal
 
 from hyperspy import components1d, drawing
 from hyperspy.axes import AxesManager, UniformDataAxis
@@ -741,13 +740,13 @@ class ButterworthFilter(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio, self.type)
-        smoothed = sp_signal.filtfilt(b, a, self.signal._get_current_data())
+        b, a = scipy.signal.butter(self.order, self.cutoff_frequency_ratio, self.type)
+        smoothed = scipy.signal.filtfilt(b, a, self.signal._get_current_data())
         return smoothed
 
     def apply(self):
-        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio, self.type)
-        f = functools.partial(sp_signal.filtfilt, b, a)
+        b, a = scipy.signal.butter(self.order, self.cutoff_frequency_ratio, self.type)
+        f = functools.partial(scipy.signal.filtfilt, b, a)
         self.signal.map(f)
 
 
@@ -1682,7 +1681,7 @@ class SpikesRemoval:
             # Interpolate
             x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
             y = np.hstack((data[ileft:left], data[right:iright]))
-            intp = interpolate.make_interp_spline(x, y, k=self.spline_order)
+            intp = scipy.interpolate.make_interp_spline(x, y, k=self.spline_order)
             data[left:right] = intp(axis.axis[left:right])
 
         # Add noise

@@ -20,9 +20,8 @@ from copy import deepcopy
 from operator import attrgetter
 
 import cloudpickle
-from dask.array import Array
 
-from hyperspy.misc.utils import attrsetter
+from hyperspy.misc.utils import attrsetter, is_dask_array
 
 
 def check_that_flags_make_sense(flags):
@@ -206,6 +205,6 @@ def reconstruct_object(flags, value):
             return cloudpickle.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")
-    if isinstance(value, Array):
+    if is_dask_array(value):
         value = value.compute()
     return value

@@ -19,8 +19,8 @@
 import copy
 
 import numpy as np
+import scipy
 import traits.api as t
-from scipy.special import huber
 
 import hyperspy.drawing.signal1d
 from hyperspy.decorators import interactive_range_selector
@@ -622,7 +622,7 @@ class Model1D(BaseModel):
             weights = 1.0
         if huber_delta is None:
             huber_delta = 1.0
-        return huber(huber_delta, weights * self._errfunc(param, y)).sum()
+        return scipy.special.huber(huber_delta, weights * self._errfunc(param, y)).sum()
 
     def _gradient_huber(self, param, y, weights=None, huber_delta=None):
         if huber_delta is None:

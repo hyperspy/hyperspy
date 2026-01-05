@@ -29,10 +29,10 @@ from pathlib import Path
 import numpy as np
 from natsort import natsorted
 from rsciio import IO_PLUGINS
-from rsciio.utils.tools import ensure_directory
-from rsciio.utils.tools import overwrite as overwrite_method
+from rsciio.utils.path import ensure_directory
+from rsciio.utils.path import overwrite as overwrite_method
 
-from hyperspy.api import __version__ as hs_version
+import hyperspy
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 from hyperspy.drawing.markers import markers_dict_to_markers
@@ -993,7 +993,7 @@ def _add_file_load_save_metadata(operation, signal, io_plugin):
         "io_plugin": io_plugin["api"]
         if isinstance(io_plugin, dict)
         else io_plugin.__loader__.name,
-        "hyperspy_version": hs_version,
+        "hyperspy_version": hyperspy.__version__,
         "timestamp": datetime.now().astimezone().isoformat(),
     }
     # get the largest integer key present under General.FileIO, returning 0

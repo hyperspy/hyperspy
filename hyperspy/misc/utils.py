@@ -28,9 +28,7 @@ from contextlib import contextmanager
 from io import StringIO
 from operator import attrgetter
 
-import dask.array as da
 import numpy as np
-from tqdm.dask import TqdmCallback
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -38,6 +36,27 @@ from hyperspy.docstrings.utils import STACK_METADATA_ARG
 from hyperspy.misc.signal_tools import broadcast_signals
 
 _logger = logging.getLogger(__name__)
+
+
+def is_dask_array(x):
+    """Check if x is a dask array.
+
+    Parameters
+    ----------
+    x : any
+        The input to check.
+
+    Returns
+    -------
+    bool
+        True if x is a dask array, False otherwise.
+    """
+    try:
+        from dask.base import is_dask_collection
+
+        return is_dask_collection(x)
+    except ImportError:
+        return hasattr(x, "__dask_keys__")
 
 
 def attrsetter(target, attrs, value):
@@ -293,7 +312,6 @@ class DictionaryTreeBrowser:
 
     def _get_print_items(self, padding="", max_len=78):
         """Prints only the attributes that are not methods"""
-        from hyperspy.defaults_parser import preferences
 
         string = ""
         eoi = len(self)
@@ -349,7 +367,6 @@ class DictionaryTreeBrowser:
         of metadata.
         """
         recursive_level += 1
-        from hyperspy.defaults_parser import preferences
 
         string = ""  # Final return string
 
@@ -1108,6 +1125,8 @@ def stack(
     """
     from numbers import Number
 
+    import dask.array as da
+
     from hyperspy.axes import DataAxis, FunctionalDataAxis, UniformDataAxis
     from hyperspy.signals import BaseSignal
 
@@ -1311,158 +1330,6 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     ]
 
 
-def process_function_blockwise(
-    data,
-    *args,
-    function,
-    nav_indexes=None,
-    output_signal_size=None,
-    output_dtype=None,
-    arg_keys=None,
-    **kwargs,
-):
-    """
-    Convenience function for processing a function blockwise. By design, its
-    output is used as an argument of the dask ``map_blocks`` so that the
-    function only gets applied to the signal axes.
-
-    Parameters
-    ----------
-    data : np.ndarray
-        The data for one chunk
-    *args : tuple
-        Any signal the is iterated alongside the data in. In the form
-        ((key1, value1), (key2, value2))
-    function : function
-        The function to applied to the signal axis
-    nav_indexes : tuple
-        The indexes of the navigation axes for the dataset.
-    output_signal_size: tuple
-        The shape of the output signal. For a ragged signal, this is equal to 1
-    output_dtype : dtype
-        The data type for the output.
-    arg_keys : tuple
-        The list of keys for the passed arguments (args).  Together this makes
-        a set of key:value pairs to be passed to the function.
-    **kwargs : dict
-        Any additional key value pairs to be used by the function
-        (Note that these are the constants that are applied.)
-
-    """
-    # Both of these values need to be passed in
-    dtype = output_dtype
-    chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
-    output_shape = chunk_nav_shape + tuple(output_signal_size)
-    # Pre-allocating the output array
-    output_array = np.empty(output_shape, dtype=dtype, like=data)
-    if len(args) == 0:
-        # There aren't any BaseSignals for iterating
-        for nav_index in np.ndindex(chunk_nav_shape):
-            islice = np.s_[nav_index]
-            output_array[islice] = function(data[islice], **kwargs)
-    else:
-        # There are BaseSignals which iterate alongside the data
-        for index in np.ndindex(chunk_nav_shape):
-            islice = np.s_[index]
-            iter_dict = {}
-            for key, a in zip(arg_keys, args):
-                arg_i = np.squeeze(a[islice])
-                # Some functions do not handle 0-dimension NumPy arrays
-                if hasattr(arg_i, "shape") and arg_i.shape == ():
-                    arg_i = arg_i[()]
-                iter_dict[key] = arg_i
-            output_array[islice] = function(data[islice], **iter_dict, **kwargs)
-    if not (chunk_nav_shape == output_array.shape):
-        try:
-            output_array = output_array.squeeze(-1)
-        except ValueError:
-            pass
-    return output_array
-
-
-def _get_block_pattern(args, output_shape):
-    """Returns the block pattern used by the `blockwise` function for a
-    set of arguments give a resulting output_shape
-
-    Parameters
-    ----------
-    args: list
-        A list of all the arguments which are used for `da.blockwise`
-    output_shape: tuple
-        The output shape for the function passed to `da.blockwise` given args
-    """
-    arg_patterns = tuple(tuple(range(a.ndim)) for a in args)
-    arg_shapes = tuple(a.shape for a in args)
-    output_pattern = tuple(range(len(output_shape)))
-    all_ind = arg_shapes + (output_shape,)
-    max_len = max((len(i) for i in all_ind))  # max number of dimensions
-    max_arg_len = max((len(i) for i in arg_shapes))
-    adjust_chunks = {}
-    new_axis = {}
-    output_shape = output_shape + (0,) * (max_len - len(output_shape))
-    for i in range(max_len):
-        shapes = np.array(
-            [s[i] if len(s) > i else -1 for s in (output_shape,) + arg_shapes]
-        )
-        is_equal_shape = shapes == shapes[0]  # if in shapes == output shapes
-        if not all(is_equal_shape):
-            if i > max_arg_len - 1:  # output shape is a new axis
-                new_axis[i] = output_shape[i]
-            else:  # output shape is an existing axis
-                adjust_chunks[i] = output_shape[i]  # adjusting chunks based on output
-    arg_pairs = [(a, p) for a, p in zip(args, arg_patterns)]
-    return arg_pairs, adjust_chunks, new_axis, output_pattern
-
-
-def guess_output_signal_size(test_data, function, ragged, **kwargs):
-    """This function is for guessing the output signal shape and size.
-    It will attempt to apply the function to some test data and then output
-    the resulting signal shape and datatype.
-
-    Parameters
-    ----------
-    test_data : NumPy array
-        Data from a test signal for the function to be applied to.
-        The data must be from a signal with 0 navigation dimensions.
-    function : function
-        The function to be applied to the data
-    ragged : bool
-        If the data is ragged then the output signal size is () and the
-        data type is 'object'
-    **kwargs : dict
-        Any other keyword arguments passed to the function.
-    """
-    if ragged:
-        output_dtype = object
-        output_signal_size = ()
-    else:
-        output = function(test_data, **kwargs)
-        try:
-            output_dtype = output.dtype
-            output_signal_size = output.shape
-        except AttributeError:
-            output = np.asarray(output)
-            output_dtype = output.dtype
-            output_signal_size = output.shape
-    return output_signal_size, output_dtype
-
-
-def _compute(array, store_to=None, show_progressbar=None, **kwargs):
-    if show_progressbar is None:
-        show_progressbar = preferences.General.show_progressbar
-    # this isn't compatible with distributed scheduler
-    # https://docs.dask.org/en/stable/diagnostics-distributed.html#progress-bar
-    cm = TqdmCallback if show_progressbar else dummy_context_manager
-
-    with cm():
-        if store_to is not None:
-            da.store(
-                array, store_to, dtype=array.dtype, compute=True, lock=False, **kwargs
-            )
-        else:
-            return array.compute(**kwargs)
-
-
 def multiply(iterable):
     """Return product of sequence of numbers.
 
@@ -1602,7 +1469,7 @@ def to_numpy(array):
     """
     if isinstance(array, np.ndarray):
         return array
-    elif isinstance(array, da.Array):
+    elif is_dask_array(array):
         raise TypeError(
             "Implicit conversion of dask array to numpy array is not "
             "supported, conversion needs to be done explicitely."

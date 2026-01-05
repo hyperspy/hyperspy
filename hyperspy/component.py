@@ -22,8 +22,7 @@ from pathlib import Path
 import numpy as np
 import sympy
 import traits.api as t
-from dask.array import Array as dArray
-from rsciio.utils.tools import append2pathname, incremental_filename
+from rsciio.utils.path import append2pathname, incremental_filename
 from sympy.utilities.lambdify import lambdify
 from traits.trait_numeric import Array
 
@@ -33,7 +32,12 @@ from hyperspy.misc.export_dictionary import (
     load_from_dictionary,
 )
 from hyperspy.misc.model_tools import CurrentComponentValues
-from hyperspy.misc.utils import display, get_object_package_info, slugify
+from hyperspy.misc.utils import (
+    display,
+    get_object_package_info,
+    is_dask_array,
+    slugify,
+)
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -533,9 +537,9 @@ class Parameter(t.HasTraits):
         if self.map["is_set"][indices]:
             value = self.map["values"][indices]
             std = self.map["std"][indices]
-            if isinstance(value, dArray):
+            if is_dask_array(value):
                 value = value.compute()
-            if isinstance(std, dArray):
+            if is_dask_array(std):
                 std = std.compute()
             self.value = value
             self.std = std

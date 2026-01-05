@@ -22,8 +22,8 @@ import time
 from multiprocessing import Manager
 
 import numpy as np
-from dask.array import Array as dar
 
+from hyperspy.misc.utils import is_dask_array
 from hyperspy.samfire_utils.samfire_worker import create_worker
 from hyperspy.utils.parallel_pool import ParallelPool
 
@@ -34,7 +34,7 @@ def _walk_compute(athing):
     if isinstance(athing, dict):
         this = {}
         for key, val in athing.items():
-            if isinstance(key, dar):
+            if is_dask_array(key):
                 raise ValueError("Dask arrays should not be used as keys")
             value = _walk_compute(val)
             this[key] = value
@@ -43,7 +43,7 @@ def _walk_compute(athing):
         return [_walk_compute(val) for val in athing]
     elif isinstance(athing, tuple):
         return tuple(_walk_compute(val) for val in athing)
-    elif isinstance(athing, dar):
+    elif is_dask_array(athing):
         _logger.debug("found a dask array!")
         return athing.compute()
     else:

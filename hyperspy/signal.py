@@ -30,19 +30,16 @@ from itertools import product
 from pathlib import Path
 
 import dask
-import dask.array as da
 import numpy as np
+import scipy
 import traits.api as t
 from matplotlib import pyplot as plt
 from pint import UndefinedUnitError
-from rsciio.utils import rgb_tools
-from rsciio.utils.tools import ensure_directory
-from scipy import integrate
-from scipy import signal as sp_signal
-from scipy.interpolate import make_interp_spline
+from rsciio.utils import rgb
+from rsciio.utils.path import ensure_directory
 from tlz import concat
 
-from hyperspy.api import _ureg
+import hyperspy
 from hyperspy.axes import AxesManager, create_axis
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -84,20 +81,23 @@ from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.misc.array_tools import rebin as array_rebin
+from hyperspy.misc.dask_utils import (
+    _compute,
+    _get_block_pattern,
+    guess_output_signal_size,
+    process_function_blockwise,
+)
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
 from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
 from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
-    _compute,
-    _get_block_pattern,
     add_scalar_axis,
-    guess_output_signal_size,
     is_cupy_array,
+    is_dask_array,
     isiterable,
     iterable_not_string,
-    process_function_blockwise,
     rollelem,
     slugify,
     to_numpy,
@@ -2694,6 +2694,7 @@ class BaseSignal(
         res : :class:`~hyperspy._signals.lazy.LazySignal`
             The same signal, converted to be lazy
         """
+
         res = self._deepcopy_with_new_data(
             self.data,
             copy_variance=copy_variance,
@@ -2703,8 +2704,8 @@ class BaseSignal(
         res._lazy = True
         if chunks is None:
             # Set default values
-            chunks = False if isinstance(res.data, da.Array) else "auto"
-        elif isinstance(chunks, str) and isinstance(res.data, da.Array):
+            chunks = False if is_dask_array(res.data) else "auto"
+        elif isinstance(chunks, str) and is_dask_array(res.data):
             chunks = False
             _logger.warning(
                 "Ignoring `chunks` argument because data is already a dask array."
@@ -3508,7 +3509,7 @@ class BaseSignal(
         """
         old_axis = self.axes_manager[axis]
         axis_idx = old_axis.index_in_array
-        interpolator = make_interp_spline(
+        interpolator = scipy.interpolate.make_interp_spline(
             old_axis.axis,
             self.data,
             axis=axis_idx,
@@ -4783,7 +4784,9 @@ class BaseSignal(
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        data = integrate.simpson(y=self.data, x=axis.axis, axis=axis.index_in_array)
+        data = scipy.integrate.simpson(
+            y=self.data, x=axis.axis, axis=axis.index_in_array
+        )
         if out is not None:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
@@ -4885,7 +4888,7 @@ class BaseSignal(
             axis.scale = 1.0 / axis.size / axis.scale
             axis.offset = 0.0
             try:
-                units = _ureg.parse_expression(str(axis.units)) ** (-1)
+                units = hyperspy.api._ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = "{:~}".format(units.units)
             except UndefinedUnitError:
                 _logger.warning("Units are not set or cannot be recognized")
@@ -4972,7 +4975,7 @@ class BaseSignal(
         for axis in im_ifft.axes_manager.signal_axes:
             axis.scale = 1.0 / axis.size / axis.scale
             try:
-                units = _ureg.parse_expression(str(axis.units)) ** (-1)
+                units = hyperspy.api._ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = "{:~}".format(units.units)
             except UndefinedUnitError:
                 _logger.warning("Units are not set or cannot be recognized")
@@ -5598,6 +5601,8 @@ class BaseSignal(
         navigation_chunks="auto",
         **kwargs,
     ):
+        import dask.array as da
+
         if lazy_output is None:
             lazy_output = self._lazy
 
@@ -5720,7 +5725,7 @@ class BaseSignal(
             ):
                 # use `store_to` to minmize memory usage
                 _compute(
-                    array=mapped,
+                    arrays=mapped,
                     store_to=self.data,
                     show_progressbar=show_progressbar,
                     num_workers=num_workers,
@@ -5874,7 +5879,7 @@ class BaseSignal(
         if rechunk is True:
             rechunk = "dask_auto"
         if not isinstance(dtype, np.dtype):
-            if dtype in rgb_tools.rgb_dtypes:
+            if dtype in rgb.RGB_DTYPES.keys():
                 if self.axes_manager.signal_dimension != 1:
                     raise AttributeError(
                         "Only 1D signals can be converted to RGB images."
@@ -5892,7 +5897,7 @@ class BaseSignal(
                 if replot:
                     # Close the figure to avoid error with events
                     self._plot.close()
-                self.data = rgb_tools.regular_array2rgbx(self.data)
+                self.data = rgb.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager._set_signal_dimension(2)
                 self._assign_subclass(chunks=rechunk)
@@ -5901,7 +5906,7 @@ class BaseSignal(
                 return
             else:
                 dtype = np.dtype(dtype)
-        if rgb_tools.is_rgbx(self.data) is True:
+        if rgb.is_rgbx(self.data) is True:
             ddtype = self.data.dtype.fields["B"][0]
 
             if ddtype != dtype:
@@ -5910,7 +5915,7 @@ class BaseSignal(
             if replot:
                 # Close the figure to avoid error with events
                 self._plot.close()
-            self.data = rgb_tools.rgbx2regular_array(self.data)
+            self.data = rgb.rgbx2regular_array(self.data)
             self.axes_manager._append_axis(
                 size=self.data.shape[-1],
                 scale=1,
@@ -6229,7 +6234,7 @@ class BaseSignal(
             s = Signal2D(data, axes=self.axes_manager._get_navigation_axes_dicts())
         else:
             s = BaseSignal(data, axes=self.axes_manager._get_navigation_axes_dicts()).T
-        if isinstance(data, da.Array):
+        if is_dask_array(data):
             s = s.as_lazy()
         return s
 
@@ -6277,7 +6282,7 @@ class BaseSignal(
             s.set_signal_type(self.metadata.Signal.signal_type)
         else:
             s = self.__class__(data, axes=self.axes_manager._get_signal_axes_dicts())
-        if isinstance(data, da.Array):
+        if is_dask_array(data):
             s = s.as_lazy()
         return s
 
@@ -6572,14 +6577,14 @@ class BaseSignal(
         """
         Whether or not this signal is an RGB + alpha channel `dtype`.
         """
-        return rgb_tools.is_rgba(self.data)
+        return rgb.is_rgba(self.data)
 
     @property
     def is_rgb(self):
         """
         Whether or not this signal is an RGB `dtype`.
         """
-        return rgb_tools.is_rgb(self.data)
+        return rgb.is_rgb(self.data)
 
     @property
     def is_rgbx(self):
@@ -6587,7 +6592,7 @@ class BaseSignal(
         Whether or not this signal is either an RGB or RGB + alpha channel
         `dtype`.
         """
-        return rgb_tools.is_rgbx(self.data)
+        return rgb.is_rgbx(self.data)
 
     def add_marker(
         self,
@@ -7044,7 +7049,6 @@ class BaseSignal(
         >>> wave = hs.data.wave_image()
         >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
-
         if window == "hanning" or window == "hann":
             if hann_order:
 
@@ -7061,7 +7065,7 @@ class BaseSignal(
         elif window == "tukey":
 
             def window_function(m):
-                return sp_signal.windows.tukey(m, tukey_alpha)
+                return scipy.signal.windows.tukey(m, tukey_alpha)
         else:
             raise ValueError("Wrong type parameter value.")
 
@@ -7070,7 +7074,9 @@ class BaseSignal(
         axes = np.array(self.axes_manager.signal_indices_in_array)
 
         for axis, axis_index in zip(self.axes_manager.signal_axes, axes):
-            if isinstance(self.data, da.Array):
+            if is_dask_array(self.data):
+                import dask.array as da
+
                 chunks = self.data.chunks[axis_index]
                 window_da = da.from_array(window_function(axis.size), chunks=(chunks,))
                 windows_1d.append(window_da)
