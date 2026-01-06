@@ -23,6 +23,7 @@ import inspect
 import logging
 import types
 import unicodedata
+import warnings
 from collections.abc import Iterable, Mapping
 from contextlib import contextmanager
 from io import StringIO
@@ -33,9 +34,68 @@ import numpy as np
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.signal_tools import broadcast_signals
 
 _logger = logging.getLogger(__name__)
+
+# ruff: noqa: F822
+
+__all__ = [
+    "is_dask_array",
+    "attrsetter",
+    "stash_active_state",
+    "dummy_context_manager",
+    "str2num",
+    "parse_quantity",
+    "slugify",
+    "DictionaryTreeBrowser",
+    "strlist2enumeration",
+    "ensure_unicode",
+    "check_long_string",
+    "replace_html_symbols",
+    "add_key_value",
+    "swapelem",
+    "rollelem",
+    "fsdict",
+    "find_subclasses",
+    "isiterable",
+    "ordinal",
+    "underline",
+    "closest_power_of_two",
+    "stack",
+    "shorten_name",
+    "transpose",
+    "multiply",
+    "iterable_not_string",
+    "add_scalar_axis",
+    "get_object_package_info",
+    "is_hyperspy_signal",
+    "nested_dictionary_merge",
+    "is_cupy_array",
+    "to_numpy",
+    "get_array_module",
+    "display",
+    "TupleSA",
+    "_get_block_pattern",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if name == "_get_block_pattern":
+        warnings.warn(
+            "`_get_block_pattern` has moved to `hyperspy.misc.dask_utils`. "
+            "It is for internal use only and may be removed in the future.",
+            VisibleDeprecationWarning,
+        )
+        return getattr(importlib.import_module("hyperspy.misc.dask_utils"), name)
+    if name in __all__:
+        return globals()[name]
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 def is_dask_array(x):
