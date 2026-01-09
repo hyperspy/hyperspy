@@ -29,16 +29,16 @@ except ImportError:
 skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
-# @pytest.fixture
-# def signal1d():
-#     # Create the data once, since the parametrizations
-#     # will repeat the decomposition and BSS unnecessarily
-#     rng1 = np.random.default_rng(123)
-#     s = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
-#     s.decomposition()
-#     s.blind_source_separation(number_of_components=3, max_iter=500)
+@pytest.fixture
+def signal1d():
+    # Create the data once, since the parametrizations
+    # will repeat the decomposition and BSS unnecessarily
+    rng1 = np.random.default_rng(123)
+    s = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
+    s.decomposition()
+    s.blind_source_separation(number_of_components=3, max_iter=500)
 
-#     return s
+    return s
 
 
 @pytest.mark.skipif(sklearn is not None, reason="sklearn is installed")
@@ -63,12 +63,6 @@ class TestSklearnNotInstalled:
 @skip_sklearn
 class TestCluster1D:
     def setup_method(self):
-        rng1 = np.random.default_rng(123)
-        s = signals.Signal1D(rng1.uniform(size=(7, 5, 7)))
-        s.decomposition()
-        s.blind_source_separation(number_of_components=3, max_iter=500)
-        self.signal = s
-
         self.navigation_mask = np.zeros((7, 5), dtype=bool)
         self.navigation_mask[4:6, 1:4] = True
         self.signal_mask = np.zeros((7,), dtype=bool)
@@ -82,7 +76,13 @@ class TestCluster1D:
     @pytest.mark.parametrize("preprocessing", (None, "standard", "norm", "minmax"))
     @pytest.mark.parametrize("use_masks", (True, False))
     def test_combinations(
-        self, algorithm, cluster_source, preprocessing, source_for_centers, use_masks
+        self,
+        signal1d,
+        algorithm,
+        cluster_source,
+        preprocessing,
+        source_for_centers,
+        use_masks,
     ):
         if use_masks:
             navigation_mask = self.navigation_mask
@@ -90,7 +90,7 @@ class TestCluster1D:
         else:
             navigation_mask = None
             signal_mask = None
-        self.signal.cluster_analysis(
+        signal1d.cluster_analysis(
             cluster_source,
             n_clusters=3,
             source_for_centers=source_for_centers,
@@ -100,46 +100,46 @@ class TestCluster1D:
             algorithm=algorithm,
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_labels.shape, (3, 35)
+            signal1d.learning_results.cluster_labels.shape, (3, 35)
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centroid_signals.shape, (3, 7)
+            signal1d.learning_results.cluster_centroid_signals.shape, (3, 7)
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_sum_signals.shape, (3, 7)
+            signal1d.learning_results.cluster_sum_signals.shape, (3, 7)
         )
-        self.signal.get_cluster_labels()
-        self.signal.get_cluster_signals()
+        signal1d.get_cluster_labels()
+        signal1d.get_cluster_signals()
 
-    def test_custom_algorithm(self):
-        self.signal.cluster_analysis(
+    def test_custom_algorithm(self, signal1d):
+        signal1d.cluster_analysis(
             "signal",
             n_clusters=3,
             preprocessing="norm",
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_labels.shape, (3, 35)
+            signal1d.learning_results.cluster_labels.shape, (3, 35)
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centroid_signals.shape, (3, 7)
+            signal1d.learning_results.cluster_centroid_signals.shape, (3, 7)
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_sum_signals.shape, (3, 7)
+            signal1d.learning_results.cluster_sum_signals.shape, (3, 7)
         )
 
-    def test_custom_preprocessing(self):
+    def test_custom_preprocessing(self, signal1d):
         custom_method = sklearn.preprocessing.Normalizer()
-        self.signal.cluster_analysis(
+        signal1d.cluster_analysis(
             "signal", n_clusters=3, preprocessing=custom_method, algorithm="kmeans"
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_labels.shape, (3, 35)
+            signal1d.learning_results.cluster_labels.shape, (3, 35)
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_centroid_signals.shape, (3, 7)
+            signal1d.learning_results.cluster_centroid_signals.shape, (3, 7)
         )
         np.testing.assert_array_equal(
-            self.signal.learning_results.cluster_sum_signals.shape, (3, 7)
+            signal1d.learning_results.cluster_sum_signals.shape, (3, 7)
         )
 
 

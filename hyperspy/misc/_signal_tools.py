@@ -32,6 +32,7 @@ def _get_shapes(am, ignore_axis):
         try:
             ignore_axis = am[ignore_axis]
         except ValueError:
+            # Axis not found in axes manager
             pass
     sigsh = (
         tuple(
@@ -152,6 +153,7 @@ def broadcast_signals(*args, ignore_axis=None):
                     ignore_axis = s.axes_manager[ignore_axis]
                     break
                 except ValueError:
+                    # Axis not found in axes manager
                     pass
         new_nav_axes = []
         new_nav_shapes = []

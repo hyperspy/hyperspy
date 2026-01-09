@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import codecs
 import copy
 import importlib
 import inspect
@@ -307,9 +306,8 @@ class DictionaryTreeBrowser:
 
         """
         self.process_lazy_attributes()
-        f = codecs.open(filename, "w", encoding=encoding)
-        f.write(self._get_print_items(max_len=None))
-        f.close()
+        with open(filename, "wt", encoding=encoding) as f:
+            f.write(self._get_print_items(max_len=None))
 
     def _get_print_items(self, padding="", max_len=78):
         """Prints only the attributes that are not methods"""

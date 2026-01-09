@@ -82,8 +82,6 @@ def _get_sklearn_preprocessing_algorithms(algorithm):
     module = importlib.import_module("sklearn.preprocessing")
     return getattr(module, preprocessing_algorithms[algorithm])
 
-    return
-
 
 def _get_derivative(signal, diff_axes, diff_order):
     """Calculate the derivative of a signal."""
