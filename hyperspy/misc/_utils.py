@@ -22,6 +22,7 @@ import inspect
 import logging
 import types
 import unicodedata
+import warnings
 from collections.abc import Iterable, Mapping
 from contextlib import contextmanager
 from io import StringIO
@@ -29,7 +30,7 @@ from operator import attrgetter
 
 import numpy as np
 
-from hyperspy import signals
+from hyperspy import exceptions, signals
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
@@ -1581,3 +1582,14 @@ class TupleSA(tuple):
 
     def __mul__(self, *args, **kwargs):
         return type(self)(super().__mul__(*args, **kwargs))
+
+
+def lazy_signal_import_deprecation_warning(name, module_name):
+    """Warn about deprecation of LazySignal in future versions."""
+
+    warnings.warn(
+        f"Importing `{name}` from `{__name__}` is deprecated and will be "
+        "removed in the HyperSpy 3.0 release. Import it from "
+        "`hyperspy.signals` instead.",
+        exceptions.VisibleDeprecationWarning,
+    )

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 from hyperspy import signals
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import (
@@ -25,7 +27,7 @@ from hyperspy.docstrings.plot import (
     PLOT2D_DOCSTRING,
     PLOT2D_KWARGS_DOCSTRING,
 )
-from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
+from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
 
 
 class ComplexSignal2D(signals.ComplexSignal, CommonSignal2D):
@@ -123,7 +125,23 @@ class ComplexSignal2D(signals.ComplexSignal, CommonSignal2D):
     )
 
 
-class LazyComplexSignal2D(ComplexSignal2D, signals.LazyComplexSignal):
-    """Lazy Signal class for complex 2-dimensional data."""
+# ruff: noqa: F822
 
-    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal2D")
+__all__ = [
+    "ComplexSignal2D",
+    "LazyComplexSignal2D",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if "Lazy" in name:
+        lazy_signal_import_deprecation_warning
+        return getattr(importlib.import_module("hyperspy.signals"), name)
+    if name in __all__:
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

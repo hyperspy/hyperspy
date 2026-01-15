@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 import warnings
 from copy import deepcopy
@@ -35,12 +36,12 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
-    LAZYSIGNAL_DOC,
     NUM_WORKERS_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import utils
+from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
 from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetrize
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
@@ -1120,7 +1121,24 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
     )
 
 
-class LazySignal2D(signals.LazySignal, Signal2D):
-    """Lazy general 2D signal class."""
+# ruff: noqa: F822
 
-    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")
+__all__ = [
+    "Signal2D",
+    "LazySignal2D",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if "Lazy" in name:
+        lazy_signal_import_deprecation_warning(name, __name__)
+
+        return getattr(importlib.import_module("hyperspy.signals"), name)
+    if name in __all__:
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

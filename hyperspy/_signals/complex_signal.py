@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 from functools import wraps
 
 import numpy as np
@@ -29,11 +30,11 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
-    LAZYSIGNAL_DOC,
     NUM_WORKERS_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.misc import utils
+from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
 
 ERROR_MESSAGE_SETTER = (
     "Setting the {} with a complex signal is ambiguous, "
@@ -422,7 +423,24 @@ class ComplexSignal(signals.BaseSignal):
         return argand_diagram
 
 
-class LazyComplexSignal(ComplexSignal, signals.LazySignal):
-    """Lazy general signal class for complex data."""
+# ruff: noqa: F822
 
-    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal")
+__all__ = [
+    "ComplexSignal",
+    "LazyComplexSignal",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if "Lazy" in name:
+        lazy_signal_import_deprecation_warning(name, __name__)
+
+        return getattr(importlib.import_module("hyperspy.signals"), name)
+    if name in __all__:
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

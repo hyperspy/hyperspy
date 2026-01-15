@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 import math
 import warnings
@@ -35,7 +36,6 @@ from hyperspy.docstrings.plot import (
 )
 from hyperspy.docstrings.signal import (
     IN_PLACE,
-    LAZYSIGNAL_DOC,
     NAVIGATION_MASK_ARG,
     NUM_WORKERS_ARG,
     SHOW_PROGRESSBAR_ARG,
@@ -46,6 +46,7 @@ from hyperspy.docstrings.signal1d import (
     SPIKES_REMOVAL_TOOL_DOCSTRING,
 )
 from hyperspy.misc import lowess_smooth, utils
+from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
@@ -1759,7 +1760,24 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
     )
 
 
-class LazySignal1D(signals.LazySignal, Signal1D):
-    """Lazy general 1D signal class."""
+# ruff: noqa: F822
 
-    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal1D")
+__all__ = [
+    "Signal1D",
+    "LazySignal1D",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if "Lazy" in name:
+        lazy_signal_import_deprecation_warning(name, __name__)
+        return getattr(importlib.import_module("hyperspy.signals"), name)
+
+    if name in __all__:
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
