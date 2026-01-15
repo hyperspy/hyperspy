@@ -36,8 +36,7 @@ from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
-from hyperspy.misc import utils
-from hyperspy.misc._markers import markers_dict_to_markers
+from hyperspy.misc import _markers, utils
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
@@ -857,7 +856,9 @@ def dict2signal(signal_dict, lazy=False):
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
         for key in mp["Markers"]:
-            signal.metadata.Markers[key] = markers_dict_to_markers(mp["Markers"][key])
+            signal.metadata.Markers[key] = _markers.markers_dict_to_markers(
+                mp["Markers"][key]
+            )
             signal.metadata.Markers[key]._signal = signal
 
     return signal

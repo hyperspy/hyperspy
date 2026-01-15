@@ -37,8 +37,7 @@ from rsciio.utils import path, rgb
 from tlz import concat
 
 import hyperspy
-import hyperspy.drawing
-from hyperspy import signals
+from hyperspy import drawing, signals
 from hyperspy.axes import AxesManager, create_axis
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -453,7 +452,7 @@ class MVATools(object):
                         f = plt.figure()
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
-                ax = hyperspy.drawing.signal._plot_1D_component(
+                ax = drawing.signal._plot_1D_component(
                     factors=factors,
                     idx=comp_ids[i],
                     axes_manager=self.axes_manager,
@@ -473,7 +472,7 @@ class MVATools(object):
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
 
-                hyperspy.drawing.signal._plot_2D_component(
+                drawing.signal._plot_2D_component(
                     factors=factors,
                     idx=comp_ids[i],
                     axes_manager=self.axes_manager,
@@ -554,7 +553,7 @@ class MVATools(object):
                         f = plt.figure()
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
-            hyperspy.drawing.signal._plot_loading(
+            drawing.signal._plot_loading(
                 loadings,
                 idx=comp_ids[i],
                 axes_manager=self.axes_manager,
@@ -593,7 +592,7 @@ class MVATools(object):
         else:
             if self.axes_manager.navigation_dimension == 1:
                 plt.legend(ncol=loadings.shape[0] // 2, loc="best")
-                hyperspy.drawing.utils.animate_legend(f)
+                drawing.utils.animate_legend(f)
             if with_factors:
                 return f, self._plot_factors_or_pchars(
                     factors,
@@ -3055,12 +3054,12 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 # 0d signal without navigation axis: don't make a figure
                 # and instead, we display the value
                 return
-            self._plot = hyperspy.drawing.mpl_he.MPL_HyperExplorer()
+            self._plot = drawing.mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = hyperspy.drawing.mpl_hse.MPL_HyperSignal1D_Explorer()
+            self._plot = drawing.mpl_hse.MPL_HyperSignal1D_Explorer()
         elif axes_manager.signal_dimension == 2:
-            self._plot = hyperspy.drawing.mpl_hie.MPL_HyperImage_Explorer()
+            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
         else:
             raise ValueError(
                 "Plotting is not supported for this view. "
