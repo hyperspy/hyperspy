@@ -420,46 +420,32 @@ class ModelStatistics:
 
     # --- Text output (repr) ---
     def __repr__(self):
-        # Spaltengrößen für Terminal-Layout
-        size = {
-            "param": 14,
-            "mean": 12,
-            "std": 12,
-            "min": 12,
-            "max": 12,
-        }
-
-        signature = "{{:<{param}}} | {{:>{mean}}} | {{:>{std}}} | {{:>{min}}} | {{:>{max}}}".format(
-            **size
-        )
-
         text = ""
         for comp_type, params in self.stats.items():
             text += f"{comp_type}:\n"
-            text += signature.format("Parameter", "Mean", "Std", "Min", "Max") + "\n"
-            text += (
-                signature.format(
-                    "=" * size["param"],
-                    "=" * size["mean"],
-                    "=" * size["std"],
-                    "=" * size["min"],
-                    "=" * size["max"],
-                )
-                + "\n"
-            )
+
+            # create a table for this component type
+            table = PrettyTable()
+            table.field_names = ["Parameter", "Mean", "Std", "Min", "Max"]
+            table.align["Parameter"] = "l"
+            table.align["Mean"] = "r"
+            table.align["Std"] = "r"
+            table.align["Min"] = "r"
+            table.align["Max"] = "r"
 
             for pname, stats in params.items():
-                text += (
-                    signature.format(
-                        pname[: size["param"]],
+                table.add_row(
+                    [
+                        pname[:14],  # Truncate to 14 chars
                         f"{stats['mean']:.3e}",
                         f"{stats['std']:.3e}",
                         f"{stats['min']:.3e}",
                         f"{stats['max']:.3e}",
-                    )
-                    + "\n"
+                    ]
                 )
-            text += "\n"
+
+            text += str(table) + "\n\n"
+
         return text
 
     # --- HTML output (repr_html) ---
