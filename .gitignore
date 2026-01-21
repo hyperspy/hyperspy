@@ -50,3 +50,7 @@ jsconfig.json
 *__pycache__*
 
 *sg_execution_times.rst
+
+# virtual environments
+venv/
+
