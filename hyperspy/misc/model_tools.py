@@ -23,6 +23,7 @@ from collections.abc import Iterable
 
 import dask.array as da
 import numpy as np
+from prettytable import PrettyTable
 
 from hyperspy.misc.utils import _parse_percentile_value
 
@@ -93,57 +94,51 @@ class CurrentComponentValues:
         self.only_active = only_active
 
     def __repr__(self):
-        # Number of digits for each label for the terminal-style view.
-        size = {
-            "name": 14,
-            "free": 7,
-            "value": 10,
-            "std": 10,
-            "bmin": 10,
-            "bmax": 10,
-            "linear": 6,
-        }
-        # Using nested string formatting for flexibility in future updates
-        signature = "{{:>{name}}} | {{:>{free}}} | {{:>{value}}} | {{:>{std}}} | {{:>{bmin}}} | {{:>{bmax}}} | {{:>{linear}}}".format(
-            **size
-        )
-
+        # Create header text
         if self.only_active:
-            text = "{0}: {1}".format(self.__class__.__name__, self.name)
+            header = "{0}: {1}".format(self.__class__.__name__, self.name)
         else:
-            text = "{0}: {1}\nActive: {2}".format(
+            header = "{0}: {1}\nActive: {2}".format(
                 self.__class__.__name__, self.name, self.active
             )
-        text += "\n"
-        text += signature.format(
-            "Parameter Name", "Free", "Value", "Std", "Min", "Max", "Linear"
-        )
-        text += "\n"
-        text += signature.format(
-            "=" * size["name"],
-            "=" * size["free"],
-            "=" * size["value"],
-            "=" * size["std"],
-            "=" * size["bmin"],
-            "=" * size["bmax"],
-            "=" * size["linear"],
-        )
-        text += "\n"
+
+        # Create table
+        table = PrettyTable()
+        table.field_names = [
+            "Parameter Name",
+            "Free",
+            "Value",
+            "Std",
+            "Min",
+            "Max",
+            "Linear",
+        ]
+        table.align["Parameter Name"] = "r"
+        table.align["Free"] = "r"
+        table.align["Value"] = "r"
+        table.align["Std"] = "r"
+        table.align["Min"] = "r"
+        table.align["Max"] = "r"
+        table.align["Linear"] = "r"
+
+        # Add rows
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
                 free = para.free if para.twin is None else "Twinned"
                 ln = para._linear
-                text += signature.format(
-                    _format_string(para.name, max_length=size["name"]),
-                    _format_string(str(free), max_length=size["free"]),
-                    _format_string(para.value, max_length=size["value"]),
-                    _format_string(para.std, max_length=size["std"]),
-                    _format_string(para.bmin, max_length=size["bmin"]),
-                    _format_string(para.bmax, max_length=size["bmax"]),
-                    _format_string(str(ln), max_length=size["linear"]),
+                table.add_row(
+                    [
+                        _format_string(para.name, max_length=14),
+                        _format_string(str(free), max_length=7),
+                        _format_string(para.value, max_length=10),
+                        _format_string(para.std, max_length=10),
+                        _format_string(para.bmin, max_length=10),
+                        _format_string(para.bmax, max_length=10),
+                        _format_string(str(ln), max_length=6),
+                    ]
                 )
-                text += "\n"
-        return text
+
+        return header + "\n" + str(table)
 
     def _repr_html_(self):
         if self.only_active:
