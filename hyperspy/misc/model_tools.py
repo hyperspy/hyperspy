@@ -105,7 +105,7 @@ class CurrentComponentValues:
         # Create table
         table = PrettyTable()
         table.field_names = [
-            "Parameter Name",
+            "Parameter",
             "Free",
             "Value",
             "Std",
@@ -113,7 +113,7 @@ class CurrentComponentValues:
             "Max",
             "Linear",
         ]
-        table.align["Parameter Name"] = "r"
+        table.align["Parameter"] = "r"
         table.align["Free"] = "r"
         table.align["Value"] = "r"
         table.align["Std"] = "r"
@@ -436,11 +436,19 @@ class ModelStatistics:
             for pname, stats in params.items():
                 table.add_row(
                     [
-                        pname[:14],  # Truncate to 14 chars
-                        f"{stats['mean']:.3e}",
-                        f"{stats['std']:.3e}",
-                        f"{stats['min']:.3e}",
-                        f"{stats['max']:.3e}",
+                        _format_string(pname, max_length=14),
+                        _format_string(
+                            stats["mean"], format_string=".3e", max_length=12
+                        ),
+                        _format_string(
+                            stats["std"], format_string=".3e", max_length=12
+                        ),
+                        _format_string(
+                            stats["min"], format_string=".3e", max_length=12
+                        ),
+                        _format_string(
+                            stats["max"], format_string=".3e", max_length=12
+                        ),
                     ]
                 )
 
