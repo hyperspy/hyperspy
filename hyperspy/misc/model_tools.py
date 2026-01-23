@@ -446,7 +446,7 @@ class ModelStatistics:
     def _repr_html_(self):
         html = ""
         for comp_type, params in self.stats.items():
-            html += f"<h4>Component type: {comp_type}</h4>"
+            html += f"<h4>{comp_type}</h4>"
             table = self._build_table(params)
             html += table.get_html_string(
                 attributes={
