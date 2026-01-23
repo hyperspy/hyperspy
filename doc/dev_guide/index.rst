@@ -23,5 +23,6 @@ HyperSpy is a community project maintained for and by its users. There are many 
     plotting.rst
     speeding_up_code.rst
     writing_extensions.rst
+    lazy_import.rst
     useful_information.rst
     maintenance.rst
