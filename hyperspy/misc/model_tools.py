@@ -93,16 +93,9 @@ class CurrentComponentValues:
         self.only_free = only_free
         self.only_active = only_active
 
-    def __repr__(self):
-        # Create header text
-        if self.only_active:
-            header = "{0}: {1}".format(self.__class__.__name__, self.name)
-        else:
-            header = "{0}: {1}\nActive: {2}".format(
-                self.__class__.__name__, self.name, self.active
-            )
+    def _build_table(self):
+        """Build and return a PrettyTable with parameter data."""
 
-        # Create table
         table = PrettyTable()
         table.field_names = [
             "Parameter",
@@ -137,35 +130,36 @@ class CurrentComponentValues:
                         _format_string(str(ln), max_length=6),
                     ]
                 )
+        return table
 
+    def __repr__(self):
+        if self.only_active:
+            header = "{0}: {1}".format(self.__class__.__name__, self.name)
+        else:
+            header = "{0}: {1}\nActive: {2}".format(
+                self.__class__.__name__, self.name, self.active
+            )
+
+        table = self._build_table()
         return header + "\n" + str(table)
 
     def _repr_html_(self):
         if self.only_active:
-            text = "<p><b>{0}: {1}</b></p>".format(self.__class__.__name__, self.name)
+            header = "<p><b>{0}: {1}</b></p>".format(self.__class__.__name__, self.name)
         else:
-            text = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
+            header = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
                 self.__class__.__name__, self.name, self.active
             )
 
-        para_head = """<table style="width:100%"><tr><th>Parameter Name</th><th>Free</th>
-            <th>Value</th><th>Std</th><th>Min</th><th>Max</th><th>Linear</th></tr>"""
-        text += para_head
-        for para in self.parameters:
-            if not self.only_free or self.only_free and para.free:
-                free = para.free if para.twin is None else "Twinned"
-                linear = para._linear
-                value = _format_string(para.value)
-                std = _format_string(para.std)
-                bmin = _format_string(para.bmin)
-                bmax = _format_string(para.bmax)
+        table = self._build_table()
+        table_html = table.get_html_string(
+            attributes={
+                "style": "width:100%; border-collapse:collapse; text-align:center;",
+                "border": "1",
+            }
+        )
 
-                text += """<tr><td>{0}</td><td>{1}</td><td>{2}</td>
-                    <td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td></tr>""".format(
-                    para.name, free, value, std, bmin, bmax, linear
-                )
-        text += "</table>"
-        return text
+        return header + table_html
 
 
 class CurrentModelValues:
@@ -418,60 +412,47 @@ class ModelStatistics:
                     }
         return statistics
 
-    # --- Text output (repr) ---
+    # --- Table Output ---
+    def _build_table(self, params):
+        """Build and return a PrettyTable for a component type's statistics."""
+        table = PrettyTable()
+        table.field_names = ["Parameter", "Mean", "Std", "Min", "Max"]
+        table.align["Parameter"] = "l"
+        table.align["Mean"] = "r"
+        table.align["Std"] = "r"
+        table.align["Min"] = "r"
+        table.align["Max"] = "r"
+
+        for pname, stats in params.items():
+            table.add_row(
+                [
+                    _format_string(pname, max_length=14),
+                    _format_string(stats["mean"], format_string=".3e", max_length=12),
+                    _format_string(stats["std"], format_string=".3e", max_length=12),
+                    _format_string(stats["min"], format_string=".3e", max_length=12),
+                    _format_string(stats["max"], format_string=".3e", max_length=12),
+                ]
+            )
+        return table
+
     def __repr__(self):
         text = ""
         for comp_type, params in self.stats.items():
             text += f"{comp_type}:\n"
-
-            # create a table for this component type
-            table = PrettyTable()
-            table.field_names = ["Parameter", "Mean", "Std", "Min", "Max"]
-            table.align["Parameter"] = "l"
-            table.align["Mean"] = "r"
-            table.align["Std"] = "r"
-            table.align["Min"] = "r"
-            table.align["Max"] = "r"
-
-            for pname, stats in params.items():
-                table.add_row(
-                    [
-                        _format_string(pname, max_length=14),
-                        _format_string(
-                            stats["mean"], format_string=".3e", max_length=12
-                        ),
-                        _format_string(
-                            stats["std"], format_string=".3e", max_length=12
-                        ),
-                        _format_string(
-                            stats["min"], format_string=".3e", max_length=12
-                        ),
-                        _format_string(
-                            stats["max"], format_string=".3e", max_length=12
-                        ),
-                    ]
-                )
-
+            table = self._build_table(params)
             text += str(table) + "\n\n"
-
         return text
 
-    # --- HTML output (repr_html) ---
     def _repr_html_(self):
         html = ""
         for comp_type, params in self.stats.items():
             html += f"<h4>Component type: {comp_type}</h4>"
-            html += (
-                "<table style='width:100%; border-collapse:collapse; text-align:center;'>"
-                "<tr><th>Parameter</th><th>Mean</th><th>Std</th><th>Min</th><th>Max</th></tr>"
+            table = self._build_table(params)
+            html += table.get_html_string(
+                attributes={
+                    "style": "width:100%; border-collapse:collapse; text-align:center;",
+                    "border": "1",
+                }
             )
-            for pname, stats in params.items():
-                html += (
-                    f"<tr><td>{pname}</td>"
-                    f"<td>{stats['mean']:.3e}</td>"
-                    f"<td>{stats['std']:.3e}</td>"
-                    f"<td>{stats['min']:.3e}</td>"
-                    f"<td>{stats['max']:.3e}</td></tr>"
-                )
-            html += "</table><br>"
+            html += "<br>"
         return html
