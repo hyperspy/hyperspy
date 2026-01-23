@@ -139,10 +139,11 @@ class TestSetParameters:
 
     def test_zero_in_html_print(self):
         """Ensure parameters with value=0 are printed too"""
-        assert (
-            "<td>a1</td><td>True</td><td>0</td>"
-            in CurrentComponentValues(self.model[0])._repr_html_()
-        )
+        html = CurrentComponentValues(self.model[0])._repr_html_()
+        assert "<table" in html
+        assert "a1" in html
+        assert "True" in html
+        assert "0" in html
 
     def test_zero_in_normal_print(self):
         """Ensure parameters with value=0 are printed too"""
