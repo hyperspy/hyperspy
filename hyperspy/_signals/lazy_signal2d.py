@@ -16,16 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""
-Import sklearn if installed.
-"""
-
-import importlib
-
-sklearn_installed = False if importlib.util.find_spec("sklearn") is None else True
+from hyperspy import signals
+from hyperspy._signals.signal2d import Signal2D
+from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 
 
-def __getattr__(name):
-    if name == "sklearn":
-        return importlib.import_module("sklearn")
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+class LazySignal2D(signals.LazySignal, Signal2D):
+    """Lazy general 2D signal class."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")

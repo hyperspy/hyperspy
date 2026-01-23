@@ -33,9 +33,7 @@ from matplotlib.transforms import (
 )
 
 import hyperspy.api as hs
-from hyperspy._signals.signal2d import BaseSignal, Signal1D, Signal2D
 from hyperspy.axes import UniformDataAxis
-from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.external.matplotlib.collections import (
     CircleCollection,
     EllipseCollection,
@@ -44,6 +42,7 @@ from hyperspy.external.matplotlib.collections import (
     TextCollection,
 )
 from hyperspy.external.matplotlib.quiver import Quiver
+from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
     Arrows,
@@ -88,7 +87,7 @@ class TestMarkers:
 
     @pytest.fixture
     def signal(self, data):
-        sig = BaseSignal(data, ragged=True)
+        sig = hs.signals.BaseSignal(data, ragged=True)
         sig.metadata.set_item(
             "Peaks.signal_axes",
             (
@@ -129,7 +128,7 @@ class TestMarkers:
     )
     def test_multi_collections_signal(self, collections):
         num_col = len(collections)
-        s = Signal2D(np.zeros((2, num_col, num_col)))
+        s = hs.signals.Signal2D(np.zeros((2, num_col, num_col)))
         s.axes_manager.signal_axes[0].offset = 0
         s.axes_manager.signal_axes[1].offset = 0
         s.plot(interpolation=None)
@@ -141,7 +140,7 @@ class TestMarkers:
     )
     def test_multi_collections_navigator(self, collections):
         num_col = len(collections)
-        s = Signal2D(np.zeros((num_col, num_col, 1, 1)))
+        s = hs.signals.Signal2D(np.zeros((num_col, num_col, 1, 1)))
         s.axes_manager.signal_axes[0].offset = 0
         s.axes_manager.signal_axes[1].offset = 0
         s.plot(interpolation=None)
@@ -157,7 +156,7 @@ class TestMarkers:
     @pytest.mark.parametrize("iter_data", ("lazy_data", "data"))
     def test_iterating_markers(self, request, iter_data):
         data = request.getfixturevalue(iter_data)
-        s = Signal2D(np.ones((3, 5, 6)))
+        s = hs.signals.Signal2D(np.ones((3, 5, 6)))
         markers = Points(offsets=data, sizes=(50,))
         s.add_marker(markers)
         s.axes_manager.navigation_axes[0].index = 2
@@ -169,12 +168,12 @@ class TestMarkers:
             color="g",
             sizes=(3,),
         )
-        s = Signal2D(np.zeros((100, 100)))
+        s = hs.signals.Signal2D(np.zeros((100, 100)))
         s.add_marker(m)
 
     def test_parameters_singletons(self, signal, data):
         m = Points(offsets=np.array([[100, 70], [70, 100]]), color="b", sizes=3)
-        s = Signal2D(np.zeros((2, 100, 100)))
+        s = hs.signals.Signal2D(np.zeros((2, 100, 100)))
         s.add_marker(m)
 
     def test_parameters_singletons_iterating(self):
@@ -185,7 +184,7 @@ class TestMarkers:
         sizes[0] = 3
         sizes[1] = 4
         m = Points(offsets=np.array([[100, 70], [70, 100]]), color="b", sizes=sizes)
-        s = Signal2D(np.zeros((2, 100, 100)))
+        s = hs.signals.Signal2D(np.zeros((2, 100, 100)))
         s.add_marker(m)
 
     @pytest.mark.skipif(
@@ -206,7 +205,7 @@ class TestMarkers:
     def test_from_signal(self, signal, data, signal_axes):
         col = Points.from_signal(signal, sizes=(10,), signal_axes=signal_axes)
 
-        s = Signal2D(np.ones((3, 5, 6)))
+        s = hs.signals.Signal2D(np.ones((3, 5, 6)))
         s.add_marker(col)
         s.axes_manager.navigation_axes[0].index = 1
         if isinstance(signal_axes, (tuple, str)):
@@ -222,9 +221,9 @@ class TestMarkers:
         for i in np.ndindex(data.shape):
             data[i] = np.ones((10, 2, 2)) * i
 
-        signal = BaseSignal(data, ragged=True)
+        signal = hs.signals.BaseSignal(data, ragged=True)
         lines = Lines.from_signal(signal, key="segments", signal_axes=None)
-        s = Signal2D(np.ones((3, 5, 6)))
+        s = hs.signals.Signal2D(np.ones((3, 5, 6)))
         s.add_marker(lines)
 
     def test_from_signal_not_ragged(self):
@@ -299,7 +298,7 @@ class TestMarkers:
         )
         img = np.zeros((1, 20, 20))
         img[:, rr, cc] = 1
-        s = Signal2D(img)
+        s = hs.signals.Signal2D(img)
         s.axes_manager.signal_axes[0].scale = 1.5
         s.axes_manager.signal_axes[1].scale = 2
         s.axes_manager.signal_axes[0].offset = -1
@@ -317,7 +316,7 @@ class TestMarkers:
 
     def test_deepcopy_signal_with_markers(self, collections):
         num_col = len(collections)
-        s = Signal2D(np.zeros((2, num_col, num_col)))
+        s = hs.signals.Signal2D(np.zeros((2, num_col, num_col)))
         s.plot()
         [s.add_marker(c, permanent=True) for c in collections]
         new_s = deepcopy(s)
@@ -326,7 +325,7 @@ class TestMarkers:
     def test_deepcopy_signal_with_muultiple_markers_same_class(self):
         markers_list = [Points(offsets=np.array([1, 2]) * i) for i in range(3)]
         num_markers = len(markers_list)
-        s = Signal2D(np.zeros((2, 10, 10)))
+        s = hs.signals.Signal2D(np.zeros((2, 10, 10)))
         s.plot()
         [s.add_marker(m, permanent=True) for m in markers_list]
         s2 = deepcopy(s)
@@ -336,7 +335,7 @@ class TestMarkers:
 
     def test_get_current_signal(self, collections):
         num_col = len(collections)
-        s = Signal2D(np.zeros((2, num_col, num_col)))
+        s = hs.signals.Signal2D(np.zeros((2, num_col, num_col)))
         s.plot()
         [s.add_marker(c, permanent=True) for c in collections]
         cs = s.get_current_signal()
@@ -345,7 +344,7 @@ class TestMarkers:
 
     def test_plot_and_render(self):
         markers = Points(offsets=[[1, 1], [4, 4]])
-        s = Signal1D(np.arange(100).reshape((10, 10)))
+        s = hs.signals.Signal1D(np.arange(100).reshape((10, 10)))
         s.add_marker(markers)
         markers.plot(render_figure=True)
 
@@ -353,7 +352,7 @@ class TestMarkers:
 class TestInitMarkers:
     @pytest.fixture
     def signal(self):
-        signal = Signal2D(np.zeros((3, 10, 10)))
+        signal = hs.signals.Signal2D(np.zeros((3, 10, 10)))
         return signal
 
     @pytest.fixture
@@ -436,7 +435,7 @@ class TestInitMarkers:
         assert it_2 is not iterating_line_collection
 
     def test_wrong_navigation_size(self):
-        s = Signal2D(np.zeros((2, 3, 3)))
+        s = hs.signals.Signal2D(np.zeros((2, 3, 3)))
         offsets = np.empty((3, 2), dtype=object)
         for i in np.ndindex(offsets.shape):
             offsets[i] = np.ones((3, 2))
@@ -445,22 +444,22 @@ class TestInitMarkers:
             s.add_marker(m)
 
     def test_add_markers_to_multiple_signals(self):
-        s = Signal2D(np.zeros((2, 3, 3)))
-        s2 = Signal2D(np.zeros((2, 3, 3)))
+        s = hs.signals.Signal2D(np.zeros((2, 3, 3)))
+        s2 = hs.signals.Signal2D(np.zeros((2, 3, 3)))
         m = Points(offsets=[[1, 1], [2, 2]])
         s.add_marker(m, permanent=True)
         with pytest.raises(ValueError):
             s2.add_marker(m, permanent=True)
 
     def test_add_markers_to_same_signal(self):
-        s = Signal2D(np.zeros((2, 3, 3)))
+        s = hs.signals.Signal2D(np.zeros((2, 3, 3)))
         m = Points(offsets=[[1, 1], [2, 2]])
         s.add_marker(m, permanent=True)
         with pytest.raises(ValueError):
             s.add_marker(m, permanent=True)
 
     def test_add_markers_to_navigator_without_nav(self):
-        s = Signal2D(np.zeros((3, 3)))
+        s = hs.signals.Signal2D(np.zeros((3, 3)))
         m = Points(offsets=[[1, 1], [2, 2]])
         with pytest.raises(ValueError):
             s.add_marker(m, plot_on_signal=False)
@@ -490,7 +489,7 @@ class TestInitMarkers:
 
     def test_update_static(self):
         m = Points(offsets=([[1, 1], [2, 2]]))
-        s = Signal1D(np.ones((10, 10)))
+        s = hs.signals.Signal1D(np.ones((10, 10)))
         s.plot()
         s.add_marker(m)
         s.axes_manager.navigation_axes[0].index = 2
@@ -778,7 +777,7 @@ class TestMarkersDictToMarkers:
 
     @pytest.fixture
     def signal(self):
-        return Signal1D(np.ones((10, 20)))
+        return hs.signals.Signal1D(np.ones((10, 20)))
 
     @pytest.mark.parametrize(
         "data", ("iter_data", "static_data", "static_and_iter_data")
@@ -834,7 +833,7 @@ class TestMarkersDictToMarkers:
 
 
 def _test_marker_collection_close():
-    signal = Signal2D(np.ones((10, 10)))
+    signal = hs.signals.Signal2D(np.ones((10, 10)))
     segments = np.ones((10, 2, 2))
     markers = Lines(segments=segments)
     signal.add_marker(markers)
@@ -866,7 +865,7 @@ class TestMarkersTransform:
             offset_transform=offset_transform,
         )
         assert m.offset_transform == offset_transform
-        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+        signal = hs.signals.Signal1D((np.arange(100) + 1).reshape(10, 10))
 
         signal.plot()
         signal.add_marker(m)
@@ -891,7 +890,7 @@ class TestMarkersTransform:
             offset_transform="display",
         )
         assert markers.offset_transform == "display"
-        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+        signal = hs.signals.Signal1D((np.arange(100) + 1).reshape(10, 10))
         signal.plot()
         signal.add_marker(markers)
         assert isinstance(markers.transform, IdentityTransform)
@@ -913,7 +912,7 @@ class TestMarkersTransform:
 
 class TestRelativeMarkers:
     def test_relative_marker_collection(self):
-        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+        signal = hs.signals.Signal1D((np.arange(100) + 1).reshape(10, 10))
         segments = np.zeros((10, 2, 2))
         segments[:, 1, 1] = 1  # set y values end
         segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
@@ -932,7 +931,7 @@ class TestRelativeMarkers:
         assert offs[0][1] == 11
 
     def test_relative_marker_collection_with_shifts(self):
-        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+        signal = hs.signals.Signal1D((np.arange(100) + 1).reshape(10, 10))
         segments = np.zeros((10, 2, 2))
         segments[:, 1, 1] = 1  # set y values end
         segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
@@ -963,7 +962,7 @@ class TestLines:
 
     def test_vertical_line_collection(self, offsets):
         vert = VerticalLines(offsets=offsets)
-        s = Signal2D(np.zeros((3, 3, 3)))
+        s = hs.signals.Signal2D(np.zeros((3, 3, 3)))
         # s.axes_manager.signal_axes[0].offset = 0
         # s.axes_manager.signal_axes[1].offset = 0
         s.plot()
@@ -983,7 +982,7 @@ class TestLines:
 
     def test_horizontal_line_collection(self, offsets):
         hor = HorizontalLines(offsets=offsets)
-        s = Signal2D(np.zeros((3, 3, 3)))
+        s = hs.signals.Signal2D(np.zeros((3, 3, 3)))
         s.axes_manager.signal_axes[0].offset = 0
         s.axes_manager.signal_axes[1].offset = 0
         s.plot(interpolation=None)
@@ -999,7 +998,7 @@ class TestLines:
 
 
 def test_marker_collection_close_render():
-    signal = Signal2D(np.ones((2, 10, 10)))
+    signal = hs.signals.Signal2D(np.ones((2, 10, 10)))
     markers = Points(offsets=[[1, 1], [4, 4]], sizes=(10,), color=("black",))
     signal.plot()
     signal.add_marker(markers, render_figure=True)
@@ -1037,7 +1036,7 @@ class TestMarkers2:
 
     @pytest.fixture
     def signal(self):
-        return Signal2D(np.ones((3, 10, 10)))
+        return hs.signals.Signal2D(np.ones((3, 10, 10)))
 
     @pytest.mark.parametrize("MarkerClass", [Points, Circles, Ellipses, Arrows])
     def test_offsest_markers(self, extra_kwargs, MarkerClass, offsets, signal):
@@ -1065,7 +1064,7 @@ class TestMarkers2:
 
 
 def test_polygons():
-    s = Signal2D(np.zeros((100, 100)))
+    s = hs.signals.Signal2D(np.zeros((100, 100)))
     poylgon1 = [[1, 1], [20, 20], [1, 20], [25, 5]]
     poylgon2 = [[50, 60], [90, 40], [60, 40], [23, 60]]
     verts = [poylgon1, poylgon2]
@@ -1075,7 +1074,7 @@ def test_polygons():
 
 
 def test_warning_logger():
-    s = Signal2D(np.ones((10, 10)))
+    s = hs.signals.Signal2D(np.ones((10, 10)))
     m = Points(
         offsets=[
             [1, 1],
@@ -1141,7 +1140,7 @@ def test_load_old_markers():
     baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
 )
 def test_colorbar_collection():
-    s = Signal2D(np.ones((100, 100)))
+    s = hs.signals.Signal2D(np.ones((100, 100)))
     rng = np.random.default_rng(0)
     sizes = rng.random((10,)) * 20 + 5
     offsets = rng.random((10, 2)) * 100
@@ -1175,7 +1174,7 @@ def test_collection_error():
 
 
 def test_permanent_markers_close_open_cycle():
-    s = Signal2D(np.ones((100, 100)))
+    s = hs.signals.Signal2D(np.ones((100, 100)))
     rng = np.random.default_rng(0)
     offsets = rng.random((10, 2)) * 100
     m = hs.plot.markers.Points(offsets=offsets)

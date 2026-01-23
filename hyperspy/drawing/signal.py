@@ -58,7 +58,7 @@ def _plot_2D_component(
     calibrate=True,
     ax=None,
     comp_label=None,
-    cmap=plt.cm.gray,
+    cmap="gray",
     axes_decor="all",
 ):
     shape = axes_manager._signal_shape_in_array
@@ -95,7 +95,7 @@ def _plot_loading(
     comp_label=None,
     no_nans=True,
     calibrate=True,
-    cmap=plt.cm.gray,
+    cmap="gray",
     same_window=False,
     axes_decor="all",
 ):

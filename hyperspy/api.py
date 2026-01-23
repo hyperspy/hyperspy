@@ -17,14 +17,12 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import importlib
-import logging
 import sys
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.logger import set_log_level
 
 # Need to run before other import to use the logger during import
-_logger = logging.getLogger(__name__)
 set_log_level(preferences.General.logging_level)
 
 from hyperspy.docstrings import START_HSPY as _START_HSPY_DOCSTRING  # noqa: E402

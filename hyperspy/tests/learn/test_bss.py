@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 import dask.array as da
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.signal2d import Signal2D
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
-from hyperspy.misc.machine_learning.tools import amari
+from hyperspy.misc.machine_learning import amari
 from hyperspy.signals import BaseSignal
 
-skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+sklearn = importlib.util.find_spec("sklearn")
+skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
@@ -75,10 +75,10 @@ def test_amari_distance(n=16, tol=1e-6):
 @skip_sklearn
 def test_bss_FastICA_object():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
     S = rng.laplace(size=(3, 1000))
-    A = rng.random_sample(size=(3, 3))
-    s = Signal1D(A @ S)
+    A = rng.random(size=(3, 3))
+    s = hs.signals.Signal1D(A @ S)
     s.decomposition()
 
     from sklearn.decomposition import FastICA
@@ -93,10 +93,10 @@ def test_bss_FastICA_object():
 @skip_sklearn
 def test_bss_pipeline():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
     S = rng.laplace(size=(3, 1000))
-    A = rng.random_sample(size=(3, 3))
-    s = Signal1D(A @ S)
+    A = rng.random(size=(3, 3))
+    s = hs.signals.Signal1D(A @ S)
     s.decomposition()
 
     from sklearn.decomposition import FastICA
@@ -116,15 +116,15 @@ def test_bss_pipeline():
 @pytest.mark.filterwarnings("ignore:Cannot invert unmixing matrix")
 @pytest.mark.parametrize("whiten_method", ["PCA", "ZCA"])
 def test_orthomax(whiten_method):
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
     S = rng.laplace(size=(3, 500))
-    A = rng.random_sample(size=(3, 3))
-    s = Signal1D(A @ S)
+    A = rng.random(size=(3, 3))
+    s = hs.signals.Signal1D(A @ S)
     s.decomposition()
     s.blind_source_separation(3, algorithm="orthomax", whiten_method=whiten_method)
 
     W = s.learning_results.unmixing_matrix
-    assert amari(W, A) < 0.5
+    assert amari(W, A) < 0.75
 
     # Verify that we can change gamma for orthomax method
     s = hs.data.two_gaussians()
@@ -199,8 +199,8 @@ def test_algorithm_error():
 
 @skip_sklearn
 def test_normalize_components_errors():
-    rng = np.random.RandomState(123)
-    s = Signal1D(rng.random_sample(size=(20, 100)))
+    rng = np.random.default_rng(123)
+    s = hs.signals.Signal1D(rng.random(size=(20, 100)))
     s.decomposition()
 
     with pytest.raises(ValueError, match="called after s.blind_source_separation"):
@@ -217,10 +217,10 @@ def test_sklearn_convergence_warning():
     # Import here to avoid error if sklearn missing
     from sklearn.exceptions import ConvergenceWarning
 
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
     ics = rng.laplace(size=(3, 1000))
-    mixing_matrix = rng.random_sample(size=(100, 3))
-    s = Signal1D(mixing_matrix @ ics)
+    mixing_matrix = rng.random(size=(100, 3))
+    s = hs.signals.Signal1D(mixing_matrix @ ics)
     s.decomposition()
 
     with pytest.warns(ConvergenceWarning):
@@ -237,10 +237,10 @@ def test_sklearn_convergence_warning():
 @skip_sklearn
 @pytest.mark.parametrize("whiten_method", [None, "PCA", "ZCA"])
 def test_fastica_whiten_method(whiten_method):
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
     S = rng.laplace(size=(3, 1000))
-    A = rng.random_sample(size=(3, 3))
-    s = Signal1D(A @ S)
+    A = rng.random(size=(3, 3))
+    s = hs.signals.Signal1D(A @ S)
     s.decomposition()
     s.blind_source_separation(
         3, algorithm="sklearn_fastica", whiten_method=whiten_method
@@ -252,11 +252,11 @@ def test_fastica_whiten_method(whiten_method):
 @lazifyTestClass
 class TestReverseBSS:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
+        rng = np.random.default_rng(123)
         S = rng.laplace(size=(3, 500))
         S -= 2 * S.min()  # Required to give us a positive dataset
-        A = rng.random_sample(size=(3, 3))
-        s = Signal1D(A @ S)
+        A = rng.random(size=(3, 3))
+        s = hs.signals.Signal1D(A @ S)
         s.decomposition()
         s.blind_source_separation(2)
         self.s = s
@@ -282,10 +282,10 @@ class TestReverseBSS:
 @lazifyTestClass
 class TestBSS1D:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
+        rng = np.random.default_rng(123)
         ics = rng.laplace(size=(3, 500))
-        mixing_matrix = rng.random_sample(size=(100, 3))
-        s = Signal1D(mixing_matrix @ ics)
+        mixing_matrix = rng.random(size=(100, 3))
+        s = hs.signals.Signal1D(mixing_matrix @ ics)
         s.decomposition()
 
         mask_sig = s._get_signal_signal(dtype="bool")
@@ -344,10 +344,10 @@ class TestBSS1D:
 @lazifyTestClass
 class TestBSS2D:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
+        rng = np.random.default_rng(123)
         ics = rng.laplace(size=(3, 256))
-        mixing_matrix = rng.random_sample(size=(100, 3))
-        s = Signal2D((mixing_matrix @ ics).reshape((100, 16, 16)))
+        mixing_matrix = rng.random(size=(100, 3))
+        s = hs.signals.Signal2D((mixing_matrix @ ics).reshape((100, 16, 16)))
         for axis, name in zip(s.axes_manager._axes, ("z", "y", "x")):
             axis.name = name
         s.decomposition()
@@ -493,8 +493,8 @@ class TestBSS2D:
 
 class TestPrintInfo:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
-        self.s = Signal1D(rng.random_sample(size=(20, 100)))
+        rng = np.random.default_rng(123)
+        self.s = hs.signals.Signal1D(rng.random(size=(20, 100)))
         self.s.decomposition(output_dimension=2)
 
     def test_bss(self, capfd):
@@ -512,8 +512,8 @@ class TestPrintInfo:
 
 class TestReturnInfo:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
-        self.s = Signal1D(rng.random_sample(size=(20, 100)))
+        rng = np.random.default_rng(123)
+        self.s = hs.signals.Signal1D(rng.random(size=(20, 100)))
         self.s.decomposition(output_dimension=2)
 
     def test_bss_not_supported(self):

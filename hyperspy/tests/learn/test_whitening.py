@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from hyperspy.learn.whitening import whiten_data
+from hyperspy.learn._whitening import whiten_data
 
 
 @pytest.mark.parametrize("method", ["PCA", "ZCA"])

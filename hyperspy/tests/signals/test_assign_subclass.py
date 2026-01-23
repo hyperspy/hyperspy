@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy import _lazy_signals
+from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.io import assign_signal_subclass
 
@@ -69,7 +69,7 @@ def test_assignment_class(caplog):
             lazy=True,
         )
 
-        assert new_subclass is getattr(_lazy_signals, lazyclass)
+        assert new_subclass is getattr(signals, lazyclass)
 
 
 def test_id_set_signal_type():
@@ -94,7 +94,7 @@ class TestToBaseSignalScalar:
         assert self.s.axes_manager.signal_dimension == 0
         assert self.s.axes_manager.signal_shape == (1,)
         if self.s._lazy:
-            assert isinstance(self.s, _lazy_signals.LazySignal)
+            assert isinstance(self.s, signals.LazySignal)
 
 
 class TestConvertBaseSignal:
@@ -105,7 +105,7 @@ class TestConvertBaseSignal:
         assert not self.s._lazy
         self.s._lazy = True
         self.s._assign_subclass()
-        assert isinstance(self.s, _lazy_signals.LazySignal)
+        assert isinstance(self.s, signals.LazySignal)
         assert self.s._lazy
 
     def test_base_to_1d(self):

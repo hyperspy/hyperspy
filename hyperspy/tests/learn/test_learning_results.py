@@ -17,17 +17,21 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+import importlib
+
 import numpy as np
 import pytest
 
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.signals import Signal1D
+
+sklearn = importlib.util.find_spec("sklearn")
+skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
 def test_learning_results_decom():
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
 
-    s1 = Signal1D(rng.random_sample(size=(20, 100)))
+    s1 = Signal1D(rng.random(size=(20, 100)))
     s1.decomposition(output_dimension=2)
 
     out = str(s1.learning_results)
@@ -37,11 +41,11 @@ def test_learning_results_decom():
     assert "Demixing parameters" not in out
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_learning_results_bss():
-    rng = np.random.RandomState(123)
+    rng = np.random.default_rng(123)
 
-    s1 = Signal1D(rng.random_sample(size=(20, 100)))
+    s1 = Signal1D(rng.random(size=(20, 100)))
     s1.decomposition(output_dimension=2)
     s1.blind_source_separation(number_of_components=2)
 

@@ -21,7 +21,7 @@ from operator import attrgetter
 
 import cloudpickle
 
-from hyperspy.misc.utils import attrsetter, is_dask_array
+from hyperspy.misc import utils
 
 
 def check_that_flags_make_sense(flags):
@@ -172,7 +172,7 @@ def load_from_dictionary(target, dic):
             if "init" in flags:
                 new_whitelist[key] = (flags_str, value)
             else:
-                attrsetter(target, key, value)
+                utils.attrsetter(target, key, value)
                 if len(flags_str):
                     new_whitelist[key] = (flags_str, None)
                 else:
@@ -181,7 +181,7 @@ def load_from_dictionary(target, dic):
         if isinstance(target._whitelist, dict):
             target._whitelist.update(new_whitelist)
     else:
-        attrsetter(target, "_whitelist", new_whitelist)
+        utils.attrsetter(target, "_whitelist", new_whitelist)
 
 
 def reconstruct_object(flags, value):
@@ -205,6 +205,6 @@ def reconstruct_object(flags, value):
             return cloudpickle.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")
-    if is_dask_array(value):
+    if utils.is_dask_array(value):
         value = value.compute()
     return value

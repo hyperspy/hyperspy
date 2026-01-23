@@ -20,8 +20,7 @@
 import numpy as np
 import pytest
 
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.signal2d import Signal2D
+import hyperspy.api as hs
 from hyperspy.components1d import Gaussian, Offset
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import SignalDimensionError, VisibleDeprecationWarning
@@ -36,7 +35,7 @@ class TestFitOneComponent:
         g.centre.value = 5000.0
         g.sigma.value = 500.0
         axis = np.arange(10000)
-        s = Signal1D(g.function(axis))
+        s = hs.signals.Signal1D(g.function(axis))
         m = s.create_model()
         self.model = m
         self.g = g
@@ -64,7 +63,7 @@ class TestFitOneComponent:
 
 
 def test_Component_fit_wrong_signal():
-    s = Signal2D(np.arange(2 * 3 * 4).reshape(2, 3, 4))
+    s = hs.signals.Signal2D(np.arange(2 * 3 * 4).reshape(2, 3, 4))
     m = s.create_model()
     with pytest.raises(SignalDimensionError):
         ComponentFit(m, Gaussian())
@@ -90,7 +89,7 @@ class TestFitSeveralComponent:
         axis = np.arange(10000)
         total_signal = gs1.function(axis) + gs2.function(axis) + gs3.function(axis)
 
-        s = Signal1D(total_signal)
+        s = hs.signals.Signal1D(total_signal)
         m = s.create_model()
 
         g1 = Gaussian()
@@ -166,7 +165,7 @@ class TestFitSeveralComponent:
 
 class TestFitSI:
     def setup_method(self, method):
-        s = Signal1D(np.random.random((2, 2, 8)))
+        s = hs.signals.Signal1D(np.random.random((2, 2, 8)))
         m = s.create_model()
         G = Gaussian()
         m.append(G)
@@ -204,7 +203,7 @@ class TestStdWithMultipleFitters:
         error = np.random.normal(size=y.shape)
         y = y + error
 
-        s = Signal1D(y)
+        s = hs.signals.Signal1D(y)
         s.axes_manager[-1].scale = x[1] - x[0]
 
         self.m = s.create_model()

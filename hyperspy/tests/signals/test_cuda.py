@@ -21,7 +21,6 @@ import dask
 import numpy as np
 import pytest
 
-import hyperspy
 import hyperspy.api as hs
 
 try:
@@ -155,7 +154,7 @@ def test_to_device(lazy):
     s = hs.signals.Signal1D(data)
     if lazy:
         s = s.as_lazy()
-        assert isinstance(s, hyperspy._signals.signal1d.LazySignal1D)
+        assert isinstance(s, hs.signals.LazySignal1D)
         with pytest.raises(BaseException):
             s.to_device()
     else:

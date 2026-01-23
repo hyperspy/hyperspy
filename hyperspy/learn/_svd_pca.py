@@ -16,13 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 
 import numpy as np
-from numpy.linalg import svd
 
-from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import is_cupy_array
+from hyperspy.misc import utils
+
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
+
 
 _logger = logging.getLogger(__name__)
 
@@ -102,7 +104,7 @@ def svd_solve(
     svd_flip : bool, default True
         If True, adjusts the signs of the loadings and factors such that
         the loadings that are largest in absolute value are always positive.
-        See :func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
+        See :func:`~hyperspy.learn.svd_flip_signs` for more details.
     u_based_decision : bool, default True
         If True, and svd_flip is True, use the columns of u as the basis for sign-flipping.
         Otherwise, use the rows of v. The choice of which variable to base the
@@ -131,18 +133,20 @@ def svd_solve(
         elif (
             output_dimension >= 1
             and output_dimension < 0.8 * min(m, n)
-            and import_sklearn.sklearn_installed
+            and SKLEARN_INSTALLED
         ):
             svd_solver = "randomized"
         else:
             svd_solver = "full"
 
     if svd_solver == "randomized":
-        if not import_sklearn.sklearn_installed:  # pragma: no cover
+        if not SKLEARN_INSTALLED:
             raise ImportError(
                 "svd_solver='randomized' requires scikit-learn to be installed"
             )
-        U, S, V = import_sklearn.sklearn.utils.extmath.randomized_svd(
+        import sklearn
+
+        U, S, V = sklearn.utils.extmath.randomized_svd(
             data, n_components=output_dimension, **kwargs
         )
     elif svd_solver == "arpack":
@@ -151,7 +155,7 @@ def svd_solve(
                 "svd_solver='arpack' requires output_dimension "
                 "to be strictly less than min(data.shape)."
             )
-        if is_cupy_array(data):  # pragma: no cover
+        if utils.is_cupy_array(data):  # pragma: no cover
             from cupyx.scipy.sparse.linalg import svds
         else:
             from scipy.sparse.linalg import svds
@@ -165,7 +169,7 @@ def svd_solve(
                 U[:, ::-1], V[::-1], u_based_decision=u_based_decision
             )
     elif svd_solver == "full":
-        U, S, V = svd(data, full_matrices=False)
+        U, S, V = np.linalg.svd(data, full_matrices=False)
         # flip eigenvectors' sign to enforce deterministic output
         if svd_flip:
             U, V = svd_flip_signs(U, V, u_based_decision=u_based_decision)
@@ -223,7 +227,7 @@ def svd_pca(
     svd_flip : bool, default True
         If True, adjusts the signs of the loadings and factors such that
         the loadings that are largest in absolute value are always positive.
-        See :func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
+        See :func:`~hyperspy.learn.svd_flip_signs` for more details.
 
     Returns
     -------

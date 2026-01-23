@@ -31,7 +31,6 @@ import hyperspy.api as hs
 from hyperspy import __version__ as hs_version
 from hyperspy.axes import DataAxis
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.signals import Signal1D
 
 PATH = Path(__file__).resolve()
 FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")
@@ -39,8 +38,8 @@ FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")
 
 class TestIOOverwriting:
     def setup_method(self, method):
-        self.s = Signal1D(np.arange(10))
-        self.new_s = Signal1D(np.ones(5))
+        self.s = hs.signals.Signal1D(np.arange(10))
+        self.new_s = hs.signals.Signal1D(np.ones(5))
         # make sure we start from a clean state
         self._clean_file()
         self.s.save(FULLFILENAME)
@@ -100,7 +99,7 @@ class TestIOOverwriting:
 class TestNonUniformAxisCheck:
     def setup_method(self, method):
         axis = DataAxis(axis=1 / (np.arange(10) + 1), navigate=False)
-        self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(),))
+        self.s = hs.signals.Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(),))
         # make sure we start from a clean state
 
     def test_io_nonuniform(self):
@@ -142,7 +141,7 @@ class TestNonUniformAxisCheck:
 
 
 def test_glob_wildcards():
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     with tempfile.TemporaryDirectory() as dirpath:
         fnames = [os.path.join(dirpath, f"temp[1x{x}].hspy") for x in range(2)]
@@ -201,7 +200,7 @@ def test_file_not_found_error():
 
 def test_file_reader_error(tmp_path):
     # Only None, str or objects with attr "file_reader" are supported
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     f = tmp_path / "temp.hspy"
     s.save(f)
@@ -212,7 +211,7 @@ def test_file_reader_error(tmp_path):
 
 def test_file_reader_warning(caplog, tmp_path):
     # Test fallback to Pillow imaging library
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     f = tmp_path / "temp.hspy"
     s.save(f)
@@ -232,7 +231,7 @@ def test_file_reader_options(tmp_path):
     # Remove when fixed in rosettasciio
     # it should be possible to read emd file without having to install sparse
     pytest.importorskip("sparse")
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     s.save(Path(tmp_path, "temp.hspy"))
     s.save(Path(tmp_path, "temp.emd"))
@@ -274,7 +273,7 @@ def test_file_reader_options(tmp_path):
 
 
 def test_save_default_format(tmp_path):
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     s.save(tmp_path / "temp")
 
@@ -283,7 +282,7 @@ def test_save_default_format(tmp_path):
 
 
 def test_load_original_metadata(tmp_path):
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
     s.original_metadata.a = 0
 
     s.save(tmp_path / "temp")

@@ -19,8 +19,6 @@
 from pathlib import Path
 from time import strftime
 
-from packaging.version import Version
-
 import __main__
 
 
@@ -57,14 +55,8 @@ def turn_logging_on(verbose=1):
     ip = get_ipython()
     if ip is None:
         return
-    from IPython import __version__ as ipythonversion
 
-    ipy_version = Version(ipythonversion)
-    if ipy_version < Version("0.11"):
-        if verbose == 1:
-            print("Logging is not supported by this version of IPython")
-        return
-    elif ip.logger.log_active is True:
+    if ip.logger.log_active is True:
         if verbose == 1:
             print("Already logging to " + ip.logger.logfname)
         return
@@ -90,13 +82,7 @@ def turn_logging_off():
     ip = get_ipython()
     if ip is None:
         return
-    from IPython import __version__ as ipythonversion
-
-    ipy_version = Version(ipythonversion)
-    if ipy_version < Version("0.11"):
-        print("Logging is not supported by this version of IPython")
-        return
-    elif ip.logger.log_active is False:
+    if ip.logger.log_active is False:
         return
 
     ip.logger.logstop()

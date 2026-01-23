@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from hyperspy.learn.ornmf import ornmf
+from hyperspy.learn._ornmf import ornmf
 from hyperspy.signals import Signal1D
 
 

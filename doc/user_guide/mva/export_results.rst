@@ -39,7 +39,7 @@ Save to an external file
 
 Alternatively, you can save the results of the current machine learning
 analysis to a separate file with the
-:meth:`~.learn.mva.LearningResults.save` method:
+:meth:`~.learn.LearningResults.save` method:
 
 .. code-block:: python
 

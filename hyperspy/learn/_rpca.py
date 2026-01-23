@@ -20,10 +20,10 @@ import logging
 from itertools import chain
 
 import numpy as np
-import scipy.linalg
+import scipy
 
+from hyperspy import learn
 from hyperspy.external.progressbar import progressbar
-from hyperspy.learn.svd_pca import svd_solve
 from hyperspy.misc.math_tools import check_random_state
 
 _logger = logging.getLogger(__name__)
@@ -136,7 +136,7 @@ def rpca_godec(
     Ehat = E
 
     # Do final SVD
-    U, S, Vh = svd_solve(Xhat, output_dimension=rank, **kwargs)
+    U, S, Vh = learn.svd_solve(Xhat, output_dimension=rank, **kwargs)
     V = Vh.T
 
     # Chop small singular values which
@@ -570,7 +570,7 @@ def orpca(
         Ehat = np.array(_orpca.E).T
 
         # Do final SVD
-        U, S, Vh = svd_solve(Xhat, output_dimension=rank)
+        U, S, Vh = learn.svd_solve(Xhat, output_dimension=rank)
         V = Vh.T
 
         # Chop small singular values which

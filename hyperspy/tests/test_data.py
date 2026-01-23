@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.data.artificial_data import _get_largest_rectangle_from_rotation
+from hyperspy.data._artificial_data import _get_largest_rectangle_from_rotation
 
 
 @pytest.mark.parametrize("add_noise", (True, False))

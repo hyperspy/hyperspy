@@ -16,19 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 import warnings
 from copy import deepcopy
 from functools import partial
 
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 import scipy
 
+from hyperspy import signal_tools, signals
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy._signals.lazy import LazySignal
-from hyperspy._signals.signal1d import Signal1D
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -37,15 +36,13 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
-    LAZYSIGNAL_DOC,
     NUM_WORKERS_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
+from hyperspy.misc import utils
+from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
 from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetrize
-from hyperspy.misc.utils import is_dask_array
-from hyperspy.signal import BaseSignal
-from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
@@ -206,7 +203,9 @@ def estimate_image_shift(
        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
-    if is_dask_array(ref) or is_dask_array(image):
+    import matplotlib.pyplot as plt
+
+    if utils.is_dask_array(ref) or utils.is_dask_array(image):
         import dask.array as da
 
         ref, image = da.compute(ref, image)
@@ -329,7 +328,7 @@ def estimate_image_shift(
         return -shifts
 
 
-class Signal2D(BaseSignal, CommonSignal2D):
+class Signal2D(signals.BaseSignal, CommonSignal2D):
     """General 2D signal class."""
 
     _signal_dimension = 2
@@ -528,6 +527,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         nrows = None
         images_number = self.axes_manager._max_index + 1
         if plot == "reuse":
+            import matplotlib.pyplot as plt
+
             # Reuse figure for plots
             plot = plt.figure()
         if reference == "stat":
@@ -723,7 +724,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             )
             return None
         if isinstance(shifts, np.ndarray):
-            signal_shifts = Signal1D(-shifts)
+            signal_shifts = signals.Signal1D(-shifts)
         else:
             signal_shifts = shifts
         if expand:
@@ -860,7 +861,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """
         self._check_signal_dimension_equals_two()
         if interactive:
-            calibration = Signal2DCalibration(self)
+            calibration = signal_tools.Signal2DCalibration(self)
             calibration.gui(display=display, toolkit=toolkit)
         else:
             if None in (x0, y0, x1, y1, new_length):
@@ -1090,10 +1091,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
             axes_dict = self.axes_manager._get_axes_dicts(
                 self.axes_manager.navigation_axes
             )
-            peaks = BaseSignal(
+            peaks = signals.BaseSignal(
                 np.empty(self.axes_manager.navigation_shape), axes=axes_dict
             )
-            pf2D = PeaksFinder2D(self, method=method, peaks=peaks, **kwargs)
+            pf2D = signal_tools.PeaksFinder2D(
+                self, method=method, peaks=peaks, **kwargs
+            )
             pf2D.gui(display=display, toolkit=toolkit)
         elif current_index:
             peaks = method_func(self._get_current_data(), **kwargs)
@@ -1118,7 +1121,24 @@ class Signal2D(BaseSignal, CommonSignal2D):
     )
 
 
-class LazySignal2D(LazySignal, Signal2D):
-    """Lazy general 2D signal class."""
+# ruff: noqa: F822
 
-    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")
+__all__ = [
+    "Signal2D",
+    "LazySignal2D",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if "Lazy" in name:
+        lazy_signal_import_deprecation_warning(name, __name__)
+
+        return getattr(importlib.import_module("hyperspy.signals"), name)
+    if name in __all__:
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -34,18 +34,9 @@ Examples
 
 """
 
-from hyperspy.drawing._markers.arrows import Arrows
-from hyperspy.drawing._markers.circles import Circles
-from hyperspy.drawing._markers.ellipses import Ellipses
-from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
-from hyperspy.drawing._markers.lines import Lines
-from hyperspy.drawing._markers.points import Points
-from hyperspy.drawing._markers.polygons import Polygons
-from hyperspy.drawing._markers.rectangles import Rectangles
-from hyperspy.drawing._markers.squares import Squares
-from hyperspy.drawing._markers.texts import Texts
-from hyperspy.drawing._markers.vertical_lines import VerticalLines
-from hyperspy.drawing.markers import Markers
+import importlib
+
+# ruff: noqa: F822
 
 __all__ = [
     "Arrows",
@@ -62,6 +53,29 @@ __all__ = [
     "VerticalLines",
 ]
 
+_import_mapping = {
+    "Arrows": "_markers.arrows",
+    "Circles": "_markers.circles",
+    "Ellipses": "_markers.ellipses",
+    "HorizontalLines": "_markers.horizontal_lines",
+    "Lines": "_markers.lines",
+    "Markers": "markers",
+    "Points": "_markers.points",
+    "Polygons": "_markers.polygons",
+    "Rectangles": "_markers.rectangles",
+    "Squares": "_markers.squares",
+    "Texts": "_markers.texts",
+    "VerticalLines": "_markers.vertical_lines",
+}
+
 
 def __dir__():
     return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:
+        import_path = f"hyperspy.drawing.{_import_mapping.get(name)}"
+        return getattr(importlib.import_module(import_path), name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
