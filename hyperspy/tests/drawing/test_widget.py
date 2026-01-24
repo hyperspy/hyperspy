@@ -74,6 +74,36 @@ def test_remove_widget_line():
     assert len(im._plot.pointer.patch) == 1
 
 
+def test_add_widget_line():
+    s = signals.Signal1D(np.arange(10 * 25).reshape(10, 25))
+    s.plot()
+
+    # check the default position of the line on the signal axis
+    line = widgets.VerticalLineWidget(s.axes_manager, color="blue")
+    axis = s.axes_manager.signal_axes[0]
+    line.axes = (axis,)
+    line.set_mpl_ax(s._plot.signal_plot.ax)
+    assert line.position == (0,)
+    line.position = (15,)
+    assert line.position == (15,)
+    line.position = (100,)
+    # high value is used
+    assert line.position == (24,)
+
+    # check the default position of the line on the navigation axis
+    s.plot(navigator="spectrum")
+    line = widgets.VerticalLineWidget(s.axes_manager, color="blue")
+    axis = s.axes_manager.navigation_axes[0]
+    line.axes = (axis,)
+    line.set_mpl_ax(s._plot.navigator_plot.ax)
+    assert line.position == (0,)
+    line.position = (5,)
+    assert line.position == (5,)
+    line.position = (15,)
+    # high value is used
+    assert line.position == (9,)
+
+
 def test_calculate_size():
     s = signals.Signal2D(np.arange(10000).reshape(10, 10, 10, 10))
 

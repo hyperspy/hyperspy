@@ -36,9 +36,7 @@ class Signal2DCalibration(LineInSignal2D):
     units = t.Unicode()
 
     def __init__(self, signal):
-        super(Signal2DCalibration, self).__init__(signal)
-        if signal.axes_manager.signal_dimension != 2:
-            raise SignalDimensionError(signal.axes_manager.signal_dimension, 2)
+        LineInSignal2D.__init__(signal)
         self.units = self.signal.axes_manager.signal_axes[0].units
         self.scale = self.signal.axes_manager.signal_axes[0].scale
         self.on = True
@@ -96,7 +94,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
     units = t.Unicode()
 
     def __init__(self, signal):
-        super().__init__(signal)
+        SpanSelectorInSignal1D.__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
         if not isinstance(self.axis, UniformDataAxis):

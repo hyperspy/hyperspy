@@ -31,14 +31,6 @@ _logger = logging.getLogger(__name__)
 
 
 class Smoothing(t.HasTraits):
-    # The following is disabled because as of traits 4.6 the Color trait
-    # imports traitsui (!)
-    # try:
-    #     line_color = t.Color("blue")
-    # except ModuleNotFoundError:
-    #     # traitsui is required to define this trait so it is not defined when
-    #     # traitsui is not installed.
-    #     pass
     line_color_ipy = t.Str("blue")
     differential_order = t.Int(0)
 

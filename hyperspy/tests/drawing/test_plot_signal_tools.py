@@ -24,6 +24,7 @@ from hyperspy import components1d, signals
 from hyperspy.signal_tools import (
     BackgroundRemoval,
     ImageContrastEditor,
+    LineInSignal1D,
     Signal1DCalibration,
     SpanSelectorInSignal1D,
 )
@@ -306,3 +307,25 @@ def test_signal1d_calibration():
     calibration_tool.span_selector_changed()
     np.testing.assert_allclose(calibration_tool.ss_left_value, 3.0)
     np.testing.assert_allclose(calibration_tool.ss_right_value, 5.1)
+
+
+def test_line_in_signal1d():
+    s = signals.Signal1D(np.arange(1000).reshape(10, 100))
+    axis = s.axes_manager.signal_axes[0]
+    line = LineInSignal1D(s)
+    # default position is in the middle of the signal axis
+    assert line.position == int((axis.high_value - axis.low_value) / 2)
+    line.position = 30
+    assert line.position == 30
+    assert len(s._plot.signal_plot.ax.get_lines()) == 2
+
+    # Remove the line
+    line.on = False
+    assert line._line is None
+    assert len(s._plot.signal_plot.ax.get_lines()) == 1
+
+    # Add the line; default position is used
+    line.on = True
+    assert line._line is not None
+    assert line.position == int((axis.high_value - axis.low_value) / 2)
+    assert len(s._plot.signal_plot.ax.get_lines()) == 2
