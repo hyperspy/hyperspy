@@ -87,6 +87,7 @@ class CurrentComponentValues:
 
     def __init__(self, component, only_free=False, only_active=False):
         self.name = component.name
+        self.component_type = component.__class__.__name__
         self.active = component.active
         self.parameters = component.parameters
         self._id_name = component._id_name
@@ -134,10 +135,10 @@ class CurrentComponentValues:
 
     def __repr__(self):
         if self.only_active:
-            header = "{0}: {1}".format(self.__class__.__name__, self.name)
+            header = "{0}: {1}".format(self.component_type, self.name)
         else:
             header = "{0}: {1}\nActive: {2}".format(
-                self.__class__.__name__, self.name, self.active
+                self.component_type, self.name, self.active
             )
 
         table = self._build_table()
@@ -145,10 +146,10 @@ class CurrentComponentValues:
 
     def _repr_html_(self):
         if self.only_active:
-            header = "<p><b>{0}: {1}</b></p>".format(self.__class__.__name__, self.name)
+            header = "<p><b>{0}: {1}</b></p>".format(self.component_type, self.name)
         else:
             header = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
-                self.__class__.__name__, self.name, self.active
+                self.component_type, self.name, self.active
             )
 
         table = self._build_table()
@@ -181,11 +182,10 @@ class CurrentModelValues:
         self.only_free = only_free
         self.only_active = only_active
         self.component_list = model if component_list is None else component_list
-        self.model_type = str(self.model.__class__).split("'")[1].split(".")[-1]
 
     def __repr__(self):
         text = "{}: {}\n".format(
-            self.model_type, self.model.signal.metadata.General.title
+            self.model.__class__.__name__, self.model.signal.metadata.General.title
         )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
@@ -202,7 +202,7 @@ class CurrentModelValues:
 
     def _repr_html_(self):
         html = "<h4>{}: {}</h4>".format(
-            self.model_type, self.model.signal.metadata.General.title
+            self.model.__class__.__name__, self.model.signal.metadata.General.title
         )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
