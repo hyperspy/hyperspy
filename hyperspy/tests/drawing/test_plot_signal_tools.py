@@ -21,11 +21,14 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy import components1d, signals
+from hyperspy.exceptions import SignalDimensionError
 from hyperspy.signal_tools import (
     BackgroundRemoval,
     ImageContrastEditor,
     LineInSignal1D,
+    LineInSignal2D,
     Signal1DCalibration,
+    Signal2DCalibration,
     SpanSelectorInSignal1D,
 )
 
@@ -329,3 +332,134 @@ def test_line_in_signal1d():
     assert line._line is not None
     assert line.position == int((axis.high_value - axis.low_value) / 2)
     assert len(s._plot.signal_plot.ax.get_lines()) == 2
+
+
+def test_line_in_signal2d():
+    s = signals.Signal2D(np.arange(10000).reshape(100, 100))
+    xaxis = s.axes_manager.signal_axes[0]
+    yaxis = s.axes_manager.signal_axes[1]
+    line = LineInSignal2D(s)
+
+    # Check initial position is set to default values
+    expected_x0 = xaxis.low_value + (xaxis.high_value - xaxis.low_value) / 4
+    expected_y0 = yaxis.low_value + (yaxis.high_value - yaxis.low_value) / 4
+    expected_x1 = xaxis.high_value - (xaxis.high_value - xaxis.low_value) / 4
+    expected_y1 = yaxis.high_value - (yaxis.high_value - yaxis.low_value) / 4
+
+    # Check that line coordinates are properly initialized
+    np.testing.assert_allclose(line.x0, expected_x0)
+    np.testing.assert_allclose(line.y0, expected_y0)
+    np.testing.assert_allclose(line.x1, expected_x1)
+    np.testing.assert_allclose(line.y1, expected_y1)
+
+    # Check that the line widget was created
+    assert line._line is not None
+    assert line.on is True
+
+    # Test setting custom line position
+    line.x0 = 10
+    line.y0 = 20
+    line.x1 = 30
+    line.y1 = 40
+    assert line.x0 == 10
+    assert line.y0 == 20
+    assert line.x1 == 30
+    assert line.y1 == 40
+
+    # Check that length is calculated correctly
+    expected_length = np.sqrt((30 - 10) ** 2 + (40 - 20) ** 2)
+    np.testing.assert_allclose(line.length, expected_length)
+
+    # Remove the line
+    line.on = False
+    assert line._line is None
+
+    # Add the line back - should restore to default position
+    line.on = True
+    assert line._line is not None
+    np.testing.assert_allclose(line.x0, expected_x0)
+    np.testing.assert_allclose(line.y0, expected_y0)
+    np.testing.assert_allclose(line.x1, expected_x1)
+    np.testing.assert_allclose(line.y1, expected_y1)
+
+    # Check disconnection on figure close
+    s._plot.close()
+    assert line.on is False
+    assert line._line is None
+
+    # this does nothing because the figure is closed
+    line.on = True
+    assert line._line is None
+
+    # Re-open the signal plot and add the line back
+    s.plot()
+    line.on = True
+    assert line._line is not None
+
+
+def test_line_in_signal2d_wrong_dimension():
+    # Test that LineInSignal2D raises error for non-2D signals
+    s1d = signals.Signal1D(np.arange(100))
+    with pytest.raises(SignalDimensionError):
+        LineInSignal2D(s1d)
+
+
+def test_line_in_signal2d_with_navigation():
+    # Check the correct axis are used for the line
+    s = signals.Signal2D(np.arange(1000).reshape(2, 5, 10, 10))
+    line = LineInSignal2D(s)
+    assert line._xaxis is s.axes_manager.signal_axes[0]
+    assert line._yaxis is s.axes_manager.signal_axes[1]
+    assert line._line.axes[0] is s.axes_manager.signal_axes[0]
+    assert line._line.axes[1] is s.axes_manager.signal_axes[1]
+
+
+def test_signal2d_calibration():
+    s = signals.Signal2D(np.arange(10000).reshape(100, 100))
+    s.axes_manager[0].scale = 0.5
+    s.axes_manager[1].scale = 0.5
+    s.axes_manager[0].units = "nm"
+    s.axes_manager[1].units = "nm"
+
+    calibration_tool = Signal2DCalibration(s)
+
+    # Check initialization
+    assert calibration_tool.units == "nm"
+    assert calibration_tool.scale == 0.5
+    assert calibration_tool.on is True
+    assert calibration_tool._line is not None
+
+    # Set line position
+    position = (10.0, 10.0), (30.0, 30.0)
+    calibration_tool.x0 = position[0][0]
+    calibration_tool.y0 = position[0][1]
+    calibration_tool.x1 = position[1][0]
+    calibration_tool.y1 = position[1][1]
+
+    # Check that length is calculated
+    expected_length = np.sqrt((30.0 - 10.0) ** 2 + (30.0 - 10.0) ** 2)
+    np.testing.assert_allclose(calibration_tool.length, expected_length)
+
+    # Set new length and check scale calculation is called
+    new_length = 50.0
+    calibration_tool.new_length = new_length
+    expected_scale = s._get_signal2d_scale(*position[0], *position[1], new_length)
+    np.testing.assert_allclose(calibration_tool.scale, expected_scale)
+
+    # Test that changing line position updates scale
+    new_position = (40.0, 40.0)
+    calibration_tool.x1 = new_position[0]
+    calibration_tool.y1 = new_position[1]
+    expected_scale = s._get_signal2d_scale(*position[0], *new_position, new_length)
+    np.testing.assert_allclose(calibration_tool.scale, expected_scale)
+
+    # Test units change
+    calibration_tool.units = "um"
+    assert calibration_tool.units == "um"
+
+
+def test_signal2d_calibration_wrong_dimension():
+    # Test that Signal2DCalibration raises error for non-2D signals
+    s1d = signals.Signal1D(np.arange(100))
+    with pytest.raises(SignalDimensionError):
+        Signal2DCalibration(s1d)
