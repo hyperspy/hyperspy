@@ -23,6 +23,7 @@ from collections.abc import Iterable
 
 import dask.array as da
 import numpy as np
+from prettytable import PrettyTable
 
 from hyperspy.misc.utils import _parse_percentile_value
 
@@ -86,91 +87,80 @@ class CurrentComponentValues:
 
     def __init__(self, component, only_free=False, only_active=False):
         self.name = component.name
+        self.component_type = component.__class__.__name__
         self.active = component.active
         self.parameters = component.parameters
         self._id_name = component._id_name
         self.only_free = only_free
         self.only_active = only_active
 
-    def __repr__(self):
-        # Number of digits for each label for the terminal-style view.
-        size = {
-            "name": 14,
-            "free": 7,
-            "value": 10,
-            "std": 10,
-            "bmin": 10,
-            "bmax": 10,
-            "linear": 6,
-        }
-        # Using nested string formatting for flexibility in future updates
-        signature = "{{:>{name}}} | {{:>{free}}} | {{:>{value}}} | {{:>{std}}} | {{:>{bmin}}} | {{:>{bmax}}} | {{:>{linear}}}".format(
-            **size
-        )
+    def _build_table(self):
+        """Build and return a PrettyTable with parameter data."""
 
-        if self.only_active:
-            text = "{0}: {1}".format(self.__class__.__name__, self.name)
-        else:
-            text = "{0}: {1}\nActive: {2}".format(
-                self.__class__.__name__, self.name, self.active
-            )
-        text += "\n"
-        text += signature.format(
-            "Parameter Name", "Free", "Value", "Std", "Min", "Max", "Linear"
-        )
-        text += "\n"
-        text += signature.format(
-            "=" * size["name"],
-            "=" * size["free"],
-            "=" * size["value"],
-            "=" * size["std"],
-            "=" * size["bmin"],
-            "=" * size["bmax"],
-            "=" * size["linear"],
-        )
-        text += "\n"
+        table = PrettyTable()
+        table.field_names = [
+            "Parameter",
+            "Free",
+            "Value",
+            "Std",
+            "Min",
+            "Max",
+            "Linear",
+        ]
+        table.align["Parameter"] = "r"
+        table.align["Free"] = "r"
+        table.align["Value"] = "r"
+        table.align["Std"] = "r"
+        table.align["Min"] = "r"
+        table.align["Max"] = "r"
+        table.align["Linear"] = "r"
+
+        # Add rows
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
                 free = para.free if para.twin is None else "Twinned"
                 ln = para._linear
-                text += signature.format(
-                    _format_string(para.name, max_length=size["name"]),
-                    _format_string(str(free), max_length=size["free"]),
-                    _format_string(para.value, max_length=size["value"]),
-                    _format_string(para.std, max_length=size["std"]),
-                    _format_string(para.bmin, max_length=size["bmin"]),
-                    _format_string(para.bmax, max_length=size["bmax"]),
-                    _format_string(str(ln), max_length=size["linear"]),
+                table.add_row(
+                    [
+                        _format_string(para.name, max_length=14),
+                        _format_string(str(free), max_length=7),
+                        _format_string(para.value, max_length=10),
+                        _format_string(para.std, max_length=10),
+                        _format_string(para.bmin, max_length=10),
+                        _format_string(para.bmax, max_length=10),
+                        _format_string(str(ln), max_length=6),
+                    ]
                 )
-                text += "\n"
-        return text
+        return table
+
+    def __repr__(self):
+        if self.only_active:
+            header = "{0}: {1}".format(self.component_type, self.name)
+        else:
+            header = "{0}: {1}\nActive: {2}".format(
+                self.component_type, self.name, self.active
+            )
+
+        table = self._build_table()
+        return header + "\n" + str(table)
 
     def _repr_html_(self):
         if self.only_active:
-            text = "<p><b>{0}: {1}</b></p>".format(self.__class__.__name__, self.name)
+            header = "<p><b>{0}: {1}</b></p>".format(self.component_type, self.name)
         else:
-            text = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
-                self.__class__.__name__, self.name, self.active
+            header = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
+                self.component_type, self.name, self.active
             )
 
-        para_head = """<table style="width:100%"><tr><th>Parameter Name</th><th>Free</th>
-            <th>Value</th><th>Std</th><th>Min</th><th>Max</th><th>Linear</th></tr>"""
-        text += para_head
-        for para in self.parameters:
-            if not self.only_free or self.only_free and para.free:
-                free = para.free if para.twin is None else "Twinned"
-                linear = para._linear
-                value = _format_string(para.value)
-                std = _format_string(para.std)
-                bmin = _format_string(para.bmin)
-                bmax = _format_string(para.bmax)
+        table = self._build_table()
+        table_html = table.get_html_string(
+            attributes={
+                "style": "width:100%; border-collapse:collapse; text-align:center;",
+                "border": "1",
+            }
+        )
 
-                text += """<tr><td>{0}</td><td>{1}</td><td>{2}</td>
-                    <td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td></tr>""".format(
-                    para.name, free, value, std, bmin, bmax, linear
-                )
-        text += "</table>"
-        return text
+        return header + table_html
 
 
 class CurrentModelValues:
@@ -192,11 +182,10 @@ class CurrentModelValues:
         self.only_free = only_free
         self.only_active = only_active
         self.component_list = model if component_list is None else component_list
-        self.model_type = str(self.model.__class__).split("'")[1].split(".")[-1]
 
     def __repr__(self):
         text = "{}: {}\n".format(
-            self.model_type, self.model.signal.metadata.General.title
+            self.model.__class__.__name__, self.model.signal.metadata.General.title
         )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
@@ -213,7 +202,7 @@ class CurrentModelValues:
 
     def _repr_html_(self):
         html = "<h4>{}: {}</h4>".format(
-            self.model_type, self.model.signal.metadata.General.title
+            self.model.__class__.__name__, self.model.signal.metadata.General.title
         )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
@@ -423,66 +412,47 @@ class ModelStatistics:
                     }
         return statistics
 
-    # --- Text output (repr) ---
+    # --- Table Output ---
+    def _build_table(self, params):
+        """Build and return a PrettyTable for a component type's statistics."""
+        table = PrettyTable()
+        table.field_names = ["Parameter", "Mean", "Std", "Min", "Max"]
+        table.align["Parameter"] = "l"
+        table.align["Mean"] = "r"
+        table.align["Std"] = "r"
+        table.align["Min"] = "r"
+        table.align["Max"] = "r"
+
+        for pname, stats in params.items():
+            table.add_row(
+                [
+                    _format_string(pname, max_length=14),
+                    _format_string(stats["mean"], format_string=".3e", max_length=12),
+                    _format_string(stats["std"], format_string=".3e", max_length=12),
+                    _format_string(stats["min"], format_string=".3e", max_length=12),
+                    _format_string(stats["max"], format_string=".3e", max_length=12),
+                ]
+            )
+        return table
+
     def __repr__(self):
-        # Spaltengrößen für Terminal-Layout
-        size = {
-            "param": 14,
-            "mean": 12,
-            "std": 12,
-            "min": 12,
-            "max": 12,
-        }
-
-        signature = "{{:<{param}}} | {{:>{mean}}} | {{:>{std}}} | {{:>{min}}} | {{:>{max}}}".format(
-            **size
-        )
-
         text = ""
         for comp_type, params in self.stats.items():
             text += f"{comp_type}:\n"
-            text += signature.format("Parameter", "Mean", "Std", "Min", "Max") + "\n"
-            text += (
-                signature.format(
-                    "=" * size["param"],
-                    "=" * size["mean"],
-                    "=" * size["std"],
-                    "=" * size["min"],
-                    "=" * size["max"],
-                )
-                + "\n"
-            )
-
-            for pname, stats in params.items():
-                text += (
-                    signature.format(
-                        pname[: size["param"]],
-                        f"{stats['mean']:.3e}",
-                        f"{stats['std']:.3e}",
-                        f"{stats['min']:.3e}",
-                        f"{stats['max']:.3e}",
-                    )
-                    + "\n"
-                )
-            text += "\n"
+            table = self._build_table(params)
+            text += str(table) + "\n\n"
         return text
 
-    # --- HTML output (repr_html) ---
     def _repr_html_(self):
         html = ""
         for comp_type, params in self.stats.items():
-            html += f"<h4>Component type: {comp_type}</h4>"
-            html += (
-                "<table style='width:100%; border-collapse:collapse; text-align:center;'>"
-                "<tr><th>Parameter</th><th>Mean</th><th>Std</th><th>Min</th><th>Max</th></tr>"
+            html += f"<h4>{comp_type}</h4>"
+            table = self._build_table(params)
+            html += table.get_html_string(
+                attributes={
+                    "style": "width:100%; border-collapse:collapse; text-align:center;",
+                    "border": "1",
+                }
             )
-            for pname, stats in params.items():
-                html += (
-                    f"<tr><td>{pname}</td>"
-                    f"<td>{stats['mean']:.3e}</td>"
-                    f"<td>{stats['std']:.3e}</td>"
-                    f"<td>{stats['min']:.3e}</td>"
-                    f"<td>{stats['max']:.3e}</td></tr>"
-                )
-            html += "</table><br>"
+            html += "<br>"
         return html
