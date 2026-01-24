@@ -1588,7 +1588,7 @@ def lazy_signal_import_deprecation_warning(name, module_name):
     """Warn about deprecation of LazySignal in future versions."""
 
     warnings.warn(
-        f"Importing `{name}` from `{__name__}` is deprecated and will be "
+        f"Importing `{name}` from `{module_name}` is deprecated and will be "
         "removed in the HyperSpy 3.0 release. Import it from "
         "`hyperspy.signals` instead.",
         exceptions.VisibleDeprecationWarning,

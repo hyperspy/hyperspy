@@ -139,7 +139,7 @@ def __dir__():
 
 def __getattr__(name):
     if "Lazy" in name:
-        lazy_signal_import_deprecation_warning
+        lazy_signal_import_deprecation_warning(name, __name__)
         return getattr(importlib.import_module("hyperspy.signals"), name)
     if name in __all__:
         return globals()[name]
