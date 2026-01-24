@@ -1258,3 +1258,31 @@ def test_plot_markers_relative_to_data_non_uniform_axes():
     )
     s.add_marker(m, permanent=True)
     s.plot()
+
+
+@pytest.mark.parametrize("marker_type", ("Ellipse", "Rectangle"))
+def test_markers_conversion_fill(marker_type):
+    # Default from old markers API
+    marker_dict = {
+        "marker_type": marker_type,
+        "data": {"y1": 1.0, "x1": 2.0, "y2": 3.0, "x2": 4.0},
+    }
+    markers_ = markers_dict_to_markers(marker_dict)
+    assert markers_.kwargs["facecolor"] == "none"
+
+    marker_dict = {
+        "marker_type": marker_type,
+        "data": {"y1": 1.0, "x1": 2.0, "y2": 3.0, "x2": 4.0},
+        "fill": False,
+    }
+    markers_ = markers_dict_to_markers(marker_dict)
+    assert markers_.kwargs["facecolor"] == "none"
+
+    marker_dict = {
+        "marker_type": marker_type,
+        "data": {"y1": 1.0, "x1": 2.0, "y2": 3.0, "x2": 4.0},
+        "fill": True,
+    }
+    markers_ = markers_dict_to_markers(marker_dict)
+    # default to
+    assert "facecolor" not in markers_.kwargs["facecolor"]
