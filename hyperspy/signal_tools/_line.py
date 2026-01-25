@@ -16,15 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
-
 import numpy as np
 import traits.api as t
 
 from hyperspy.drawing.widgets import Line2DWidget, VerticalLineWidget
 from hyperspy.exceptions import SignalDimensionError
-
-_logger = logging.getLogger(__name__)
 
 
 class LineInSignal2D(t.HasTraits):
@@ -61,10 +57,11 @@ class LineInSignal2D(t.HasTraits):
     length = t.Property(observe="x0,y0,x1,y1")
 
     def __init__(self, signal, color="blue", linewidth=2, snap=False):
-        LineInSignal2D.__init__(self)
+        super().__init__()
         if signal.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 2)
 
+        self._line = None
         self.signal = signal
         if (self.signal._plot is None) or (not self.signal._plot.is_active):
             self.signal.plot()
@@ -76,8 +73,8 @@ class LineInSignal2D(t.HasTraits):
         self._snap_position = snap
         self.on = True
 
-        # disconnect the line when the plot is closed
-        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
+        # close the tool when the plot is closed
+        self.signal._plot.signal_plot.events.closed.connect(self.close, [])
 
     def _get_length(self):
         # length is a property that observes x0, y0, x1, y1
@@ -101,7 +98,7 @@ class LineInSignal2D(t.HasTraits):
 
         if new is True and old is False:
             self._line = Line2DWidget(self.signal.axes_manager, color=self._color)
-            # self._line.snap_position = self._snap_position
+            self._line.snap_position = self._snap_position
             # The default axis is the navigation axis; specify the signal axis instead.
             self._line.axes = (self._xaxis, self._yaxis)
             self._line.events.changed.connect(self._update_position_from_line, [])
@@ -116,27 +113,36 @@ class LineInSignal2D(t.HasTraits):
     # "position" traits change handler
     def _x0_changed(self, old, new):
         if old != new and self._line is not None:
-            self._line.x0 = new
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = ((new, self.y0), (self.x1, self.y1))
 
     def _y0_changed(self, old, new):
         if old != new and self._line is not None:
-            self._line.y0 = new
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = ((self.x0, new), (self.x1, self.y1))
 
     def _x1_changed(self, old, new):
         if old != new and self._line is not None:
-            self._line.x1 = new
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = ((self.x0, self.y0), (new, self.y1))
 
     def _y1_changed(self, old, new):
         if old != new and self._line is not None:
-            self._line.y1 = new
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = ((self.x0, self.y0), (self.x1, new))
 
     def _update_position_from_line(self, *args, **kwargs):
-        if self._line is None:
-            return
-
         (self.x0, self.y0), (self.x1, self.y1) = self._line.position
 
-    def disconnect(self):
+    def close(self):
         if self._line is not None:
             self._line.events.changed.disconnect(self._update_position_from_line)
         self.on = False
@@ -169,6 +175,7 @@ class LineInSignal1D(t.HasTraits):
     on = t.Bool(False)
 
     def __init__(self, signal, color="blue", linewidth=2, snap=False):
+        super().__init__()
         self._line = None
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
@@ -183,10 +190,10 @@ class LineInSignal1D(t.HasTraits):
         self._snap_position = snap
         self.on = True
 
-        # disconnect the line when the plot is closed
-        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
+        # close the tool when the plot is closed
+        self.signal._plot.signal_plot.events.closed.connect(self.close, [])
 
-    def _get_initial_position(self):
+    def _get_initial_position(self, *args, **kwargs):
         # Set the position of the line in the middle of the spectral
         # range by default
         return (self._axis.high_value - self._axis.low_value) / 2
@@ -199,14 +206,14 @@ class LineInSignal1D(t.HasTraits):
 
         if new is True and old is False:
             self._line = VerticalLineWidget(self.signal.axes_manager, color=self._color)
-            # self._line.snap_position = self._snap_position
             # The default axis is the navigation axis; specify the signal axis instead.
             self._line.axes = (self._axis,)
+            # connect callback to update position of the tool from the widget
             self._line.events.changed.connect(self._update_position_from_line, [])
+            # to enable _onjumpclick
+            self._line.is_pointer = True
+            self._line.snap_position = self._snap_position
             self._line.position = (self._get_initial_position(),)
-            if self._snap_position:
-                # when snap is on, update position to the nearest axis value
-                self._update_position_from_line
             self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
             self._line.patch[0].set_linewidth(self._linewidth)
 
@@ -217,13 +224,15 @@ class LineInSignal1D(t.HasTraits):
     # "position" traits change handler
     def _position_changed(self, old, new):
         if old != new and self._line is not None:
-            self._line.position = (new,)
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = (new,)
 
     def _update_position_from_line(self):
-        if self._line is not None:
-            self.position = self._line.position[0]
+        self.position = self._line.position[0]
 
-    def disconnect(self):
+    def close(self):
         if self._line is not None:
             self._line.events.changed.disconnect(self._update_position_from_line)
         self.on = False

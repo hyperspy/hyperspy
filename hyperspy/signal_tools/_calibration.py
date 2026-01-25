@@ -36,10 +36,9 @@ class Signal2DCalibration(LineInSignal2D):
     units = t.Unicode()
 
     def __init__(self, signal, **kwargs):
-        LineInSignal2D.__init__(self, signal, **kwargs)
+        super().__init__(signal, **kwargs)
         self.units = self.signal.axes_manager.signal_axes[0].units
         self.scale = self.signal.axes_manager.signal_axes[0].scale
-        self.on = True
 
     def _new_length_changed(self, old, new):
         if old != new and self._line is not None:
@@ -75,7 +74,7 @@ class Signal2DCalibration(LineInSignal2D):
         self.signal._calibrate(
             x0=x0, y0=y0, x1=x1, y1=y1, new_length=self.new_length, units=self.units
         )
-        self.disconnect()
+        self.close()
         self.signal._replot()
 
 
@@ -88,7 +87,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
     units = t.Unicode()
 
     def __init__(self, signal):
-        SpanSelectorInSignal1D.__init__(signal)
+        super().__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
         if not isinstance(self.axis, UniformDataAxis):

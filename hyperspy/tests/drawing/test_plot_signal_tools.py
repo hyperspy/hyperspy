@@ -317,9 +317,9 @@ def test_line_in_signal1d():
     axis = s.axes_manager.signal_axes[0]
     line = LineInSignal1D(s)
     # default position is in the middle of the signal axis
-    assert line.position == int((axis.high_value - axis.low_value) / 2)
+    assert line.position == (axis.high_value - axis.low_value) / 2
     line.position = 30
-    assert line.position == 30
+    assert line.position == line._line.position[0] == 30
     assert len(s._plot.signal_plot.ax.get_lines()) == 2
 
     # Remove the line
@@ -330,8 +330,38 @@ def test_line_in_signal1d():
     # Add the line; default position is used
     line.on = True
     assert line._line is not None
-    assert line.position == int((axis.high_value - axis.low_value) / 2)
+    assert line.position == (axis.high_value - axis.low_value) / 2
     assert len(s._plot.signal_plot.ax.get_lines()) == 2
+
+    # Check disconnection on figure close
+    s._plot.close()
+    assert line.on is False
+    assert line._line is None
+
+    # this does nothing because the figure is closed
+    line.on = True
+    assert line.on is False
+    assert line._line is None
+
+    # Re-open the signal plot and add the line back
+    s.plot()
+    line.on = True
+    assert line._line is not None
+
+
+def test_line_in_signal1d_wrong_dimension():
+    # Test that LineInSignal1D raises error for non-1D signals
+    s2d = signals.Signal2D(np.arange(100).reshape(10, 10))
+    with pytest.raises(SignalDimensionError):
+        LineInSignal1D(s2d)
+
+
+def test_line_in_signal1d_with_navigation():
+    # Check the correct axis are used for the line
+    s = signals.Signal1D(np.arange(50).reshape(5, 10))
+    line = LineInSignal1D(s)
+    assert line._axis is s.axes_manager.signal_axes[0]
+    assert line._line.axes[0] is s.axes_manager.signal_axes[0]
 
 
 def test_line_in_signal2d():
@@ -361,10 +391,10 @@ def test_line_in_signal2d():
     line.y0 = 20
     line.x1 = 30
     line.y1 = 40
-    assert line.x0 == 10
-    assert line.y0 == 20
-    assert line.x1 == 30
-    assert line.y1 == 40
+    assert line.x0 == line._line.position[0][0] == 10
+    assert line.y0 == line._line.position[0][1] == 20
+    assert line.x1 == line._line.position[1][0] == 30
+    assert line.y1 == line._line.position[1][1] == 40
 
     # Check that length is calculated correctly
     expected_length = np.sqrt((30 - 10) ** 2 + (40 - 20) ** 2)
@@ -405,7 +435,7 @@ def test_line_in_signal2d_wrong_dimension():
 
 
 def test_line_in_signal2d_with_navigation():
-    # Check the correct axis are used for the line
+    # Check the correct axes are used for the line
     s = signals.Signal2D(np.arange(1000).reshape(2, 5, 10, 10))
     line = LineInSignal2D(s)
     assert line._xaxis is s.axes_manager.signal_axes[0]
