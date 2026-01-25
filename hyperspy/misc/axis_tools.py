@@ -1,4 +1,4 @@
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,8 +17,6 @@
 
 
 import numpy as np
-
-from hyperspy.api import _ureg
 
 
 def check_axes_calibration(ax1, ax2, rtol=1e-7):
@@ -42,6 +40,8 @@ def check_axes_calibration(ax1, ax2, rtol=1e-7):
         If the two axes have identical calibrations.
 
     """
+    from hyperspy.api import _ureg
+
     if ax1.size == ax2.size:
         try:
             unit1 = _ureg.Unit(ax1.units)

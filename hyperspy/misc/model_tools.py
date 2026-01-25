@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,11 +21,10 @@ import numbers
 from collections import defaultdict
 from collections.abc import Iterable
 
-import dask.array as da
 import numpy as np
 from prettytable import PrettyTable
 
-from hyperspy.misc.utils import _parse_percentile_value
+from hyperspy.misc._utils import _parse_percentile_value
 
 
 def _format_string(val, format_string=".5g", max_length=None, add_ellipsis=True):
@@ -259,6 +258,8 @@ def _calculate_covariance(
     # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
     # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
     if lazy and target_signal.ndim > 1:
+        import dask.array as da
+
         inv_fit_dot = da.map_blocks(
             np.linalg.inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
         )

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -42,7 +42,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = """navigator : str, None, or :class:`~hyperspy.
                 and "Z" axes will be raised. Notice that changing the "Z"-axis
                 index changes the navigator in this case.
               - For lazy signals, the navigator will be calculated using the
-                :func:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
+                :func:`~hyperspy.api.signals.LazySignal.compute_navigator`
                 method.
 
             - If ``'slider'``:

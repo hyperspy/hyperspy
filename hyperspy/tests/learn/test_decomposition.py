@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -24,9 +25,9 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
-skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+sklearn = importlib.util.find_spec("sklearn")
+skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
 
 def generate_low_rank_matrix(m=20, n=100, rank=5, random_seed=123):
@@ -56,8 +57,8 @@ class TestNdAxes:
 
         Where s12 data is transposed in respect to s2
         """
-        rng = np.random.RandomState(123)
-        dc1 = rng.random_sample(size=(2, 3, 4, 3, 2))
+        rng = np.random.default_rng(123)
+        dc1 = rng.random(size=(2, 3, 4, 3, 2))
         dc2 = np.rollaxis(np.rollaxis(dc1, -1), -1)
         s1 = signals.BaseSignal(dc1.copy())
         s2 = signals.BaseSignal(dc2)
@@ -489,9 +490,9 @@ class TestLoadDecompositionResults:
 
 class TestComplexSignalDecomposition:
     def setup_method(self, method):
-        rng = np.random.RandomState(123)
-        real = rng.random_sample(size=(8, 8))
-        imag = rng.random_sample(size=(8, 8))
+        rng = np.random.default_rng(123)
+        real = rng.random(size=(8, 8))
+        imag = rng.random(size=(8, 8))
         s_complex_dtype = signals.ComplexSignal1D(real + 1j * imag - 1j * imag)
         s_real_dtype = signals.ComplexSignal1D(real)
         s_complex_dtype.decomposition()
@@ -514,10 +515,10 @@ class TestComplexSignalDecomposition:
         The first r values of scree plot / singular values should be non-zero.
         """
         m, n, r = 32, 32, 3
-        rng = np.random.RandomState(123)
+        rng = np.random.default_rng(123)
 
-        A = rng.random_sample(size=(m, r)) + 1j * rng.random_sample(size=(m, r))
-        B = rng.random_sample(size=(n, r)) + 1j * rng.random_sample(size=(n, r))
+        A = rng.random(size=(m, r)) + 1j * rng.random(size=(m, r))
+        B = rng.random(size=(n, r)) + 1j * rng.random(size=(n, r))
 
         s = signals.ComplexSignal1D(A @ B.T)
         s.decomposition()

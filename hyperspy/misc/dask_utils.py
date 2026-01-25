@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,26 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""
-Import sklearn.* and randomized_svd from scikit-learn
-"""
-
 import importlib
-import warnings
 
-sklearn_spec = importlib.util.find_spec("sklearn")
+# ruff: noqa: F822
 
-if sklearn_spec is None:  # pragma: no cover
-    randomized_svd = None
-    sklearn_installed = False
-else:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import sklearn  # noqa: F401
-        import sklearn.cluster  # noqa: F401
-        import sklearn.decomposition  # noqa: F401
-        import sklearn.metrics  # noqa: F401
-        import sklearn.preprocessing  # noqa: F401
-        from sklearn.utils.extmath import randomized_svd  # noqa: F401
+__all__ = [
+    "process_function_blockwise",
+    "_get_block_pattern",
+    "guess_output_signal_size",
+    "_compute",
+    "_get_navigation_dimension_chunk_slice",
+    "get_signal_chunk_slice",
+    "get_chunk_slice",
+]
 
-        sklearn_installed = True
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:
+        return getattr(importlib.import_module("hyperspy.misc._dask_utils"), name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

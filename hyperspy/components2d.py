@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,7 +21,7 @@ import importlib
 
 from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
 
-__all__ = [component for component, specs_ in _EXTENSIONS["components2D"].items()]
+__all__ = [component for component, _ in _EXTENSIONS["components2D"].items()]
 
 
 def __dir__():

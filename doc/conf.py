@@ -354,8 +354,8 @@ nitpicky = True
 nitpick_ignore_regex = (
     # No need to be added to the API: documented in subclass
     ("py:class", "hyperspy.misc.slicing.FancySlicing"),
-    ("py:class", "hyperspy.learn.mva.MVA"),
     ("py:class", "hyperspy.signal.MVATools"),
+    ("py:class", "hyperspy.learn._mva.MVA"),
     ("py:class", "hyperspy.samfire_utils.strategy.SamfireStrategy"),
     ("py:class", ".*goodness_test"),
     ("py:class", "hyperspy.roi.BasePointROI"),
@@ -365,7 +365,7 @@ nitpick_ignore_regex = (
     # Need to be made a property
     ("py:attr", "api.signals.BaseSignal.learning_results"),
     ("py:attr", "api.signals.BaseSignal.axes_manager"),
-    ("py:attr", "hyperspy._signals.lazy.LazySignal.navigator"),
+    ("py:attr", "hyperspy.api.signals.LazySignal.navigator"),
     # Skip for now
     ("py:attr", "axes.BaseDataAxis.is_binned.*"),
     ("py:attr", "api.model.components1D.ScalableFixedPattern.*"),

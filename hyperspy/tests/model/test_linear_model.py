@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import warnings
 
 import dask
@@ -883,6 +884,21 @@ def test_fitter(optimizer):
     np.testing.assert_allclose(p_ref.a1.value, p.a1.value, rtol=rtol)
     np.testing.assert_allclose(p_ref.a2.value, p.a2.value, rtol=rtol)
     np.testing.assert_allclose(m.as_signal().data, s.data, rtol=rtol)
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("sklearn") is not None, reason="sklearn is installed"
+)
+def test_fit_using_sklearn():
+    s = hs.signals.Signal1D(np.ones(20))
+
+    m = s.create_model()
+    p = hs.model.components1D.Polynomial(order=2)
+    m.append(p)
+
+    for optimizer in ["ols", "nnls", "ridge"]:
+        with pytest.raises(ImportError, match="scikit-learn"):
+            m.fit(optimizer=optimizer)
 
 
 def test_rank_lstsq_residual():

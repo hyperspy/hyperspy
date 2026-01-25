@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,17 +31,14 @@ import rsciio
 from natsort import natsorted
 from packaging.version import Version
 from rsciio import IO_PLUGINS
-from rsciio.utils.tools import ensure_directory
-from rsciio.utils.tools import overwrite as overwrite_method
+from rsciio.utils import path
 
-from hyperspy.api import __version__ as hs_version
+import hyperspy
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
-from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
-from hyperspy.misc.utils import get_object_package_info, strlist2enumeration
-from hyperspy.misc.utils import stack as stack_method
+from hyperspy.misc import _markers, utils
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
@@ -227,12 +224,12 @@ def _infer_file_writer(string):
         if not plugins:
             raise ValueError(
                 f"The .{string} extension does not correspond to any supported format. "
-                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+                f"Supported file extensions are: {utils.strlist2enumeration(extensions)}."
             )
         else:
             raise ValueError(
                 "Writing to this format is not supported. "
-                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+                f"Supported file extensions are: {utils.strlist2enumeration(extensions)}."
             )
 
     elif len(writers) > 1:
@@ -652,7 +649,7 @@ def load(
         objects = []
         for i in range(n):
             signal = signals[i]  # Sublist, with len = len(filenames)
-            signal = stack_method(
+            signal = utils.stack(
                 signal,
                 axis=stack_axis,
                 new_axis_name=new_axis_name,
@@ -1010,7 +1007,9 @@ def dict2signal(signal_dict, lazy=False):
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
         for key in mp["Markers"]:
-            signal.metadata.Markers[key] = markers_dict_to_markers(mp["Markers"][key])
+            signal.metadata.Markers[key] = _markers.markers_dict_to_markers(
+                mp["Markers"][key]
+            )
             signal.metadata.Markers[key]._signal = signal
 
     return signal
@@ -1107,7 +1106,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
 
         raise TypeError(
             "This file format does not support this data. "
-            f"Please try one of {strlist2enumeration(compatible_writers)}"
+            f"Please try one of {utils.strlist2enumeration(compatible_writers)}"
         )
 
     if not writer["non_uniform_axis"] and not signal.axes_manager.all_uniform:
@@ -1119,18 +1118,18 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         raise TypeError(
             "Writing to this format is not supported for "
             "non-uniform axes. Use one of the following "
-            f"formats: {strlist2enumeration(compatible_writers)}"
+            f"formats: {utils.strlist2enumeration(compatible_writers)}"
         )
 
     # Create the directory if it does not exist
     if not isinstance(filename, ZARR_STORE_BASE_CLASS):
-        ensure_directory(filename.parent)
+        path.ensure_directory(filename.parent)
         is_file = filename.is_file() or (
             filename.is_dir() and os.path.splitext(filename)[1] == ".zspy"
         )
 
         if overwrite is None:
-            write = overwrite_method(filename)  # Ask what to do
+            write = path.overwrite(filename)  # Ask what to do
         elif overwrite is True or (overwrite is False and not is_file):
             write = True  # Write the file
         elif overwrite is False and is_file:
@@ -1144,7 +1143,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         # properly supported in io_plugins
         signal = _add_file_load_save_metadata("save", signal, writer)
         signal_dic = signal._to_dictionary(add_models=True)
-        signal_dic["package_info"] = get_object_package_info(signal)
+        signal_dic["package_info"] = utils.get_object_package_info(signal)
         if not isinstance(filename, ZARR_STORE_BASE_CLASS):
             importlib.import_module(writer["api"]).file_writer(
                 str(filename), signal_dic, **kwds
@@ -1175,7 +1174,7 @@ def _add_file_load_save_metadata(operation, signal, io_plugin):
         "io_plugin": io_plugin["api"]
         if isinstance(io_plugin, dict)
         else io_plugin.__loader__.name,
-        "hyperspy_version": hs_version,
+        "hyperspy_version": hyperspy.__version__,
         "timestamp": datetime.now().astimezone().isoformat(),
     }
     # get the largest integer key present under General.FileIO, returning 0

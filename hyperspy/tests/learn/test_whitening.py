@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from hyperspy.learn.whitening import whiten_data
+from hyperspy.learn._whitening import whiten_data
 
 
 @pytest.mark.parametrize("method", ["PCA", "ZCA"])

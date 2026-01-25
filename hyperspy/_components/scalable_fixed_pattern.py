@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-from scipy.interpolate import make_interp_spline
+import scipy
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
@@ -119,7 +119,7 @@ class ScalableFixedPattern(Component):
             :func:`scipy.interpolate.make_interp_spline`
         """
 
-        self.f = make_interp_spline(
+        self.f = scipy.interpolate.make_interp_spline(
             self.signal.axes_manager.signal_axes[0].axis,
             self.signal.data.squeeze(),
             **kwargs,

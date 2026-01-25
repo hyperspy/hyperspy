@@ -1,4 +1,4 @@
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,15 +18,17 @@
 
 import numpy as np
 
+import hyperspy.api as hs
 from hyperspy.components1d import Gaussian
 from hyperspy.misc.utils import stash_active_state
-from hyperspy.signals import Signal1D
 
 
 class TestParametersAsSignals:
     def setup_method(self, method):
         self.gaussian = Gaussian()
-        self.gaussian._axes_manager = Signal1D(np.zeros((3, 3, 1))).axes_manager
+        self.gaussian._axes_manager = hs.signals.Signal1D(
+            np.zeros((3, 3, 1))
+        ).axes_manager
 
     def test_always_active(self):
         g = self.gaussian

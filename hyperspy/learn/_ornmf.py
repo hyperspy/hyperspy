@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,16 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
 from itertools import chain
 
 import numpy as np
-from scipy.stats import halfnorm
+import scipy
 
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import check_random_state
-
-_logger = logging.getLogger(__name__)
 
 
 def _thresh(X, lambda1, vmax):
@@ -209,7 +206,7 @@ class ORNMF:
         self.n_features = m
         self.iterating = iterating
 
-        self.W = halfnorm.rvs(
+        self.W = scipy.stats.halfnorm.rvs(
             size=(self.n_features, self.rank), random_state=self.random_state
         )
         self.W = abs(avg * self.W / np.sqrt(self.rank))

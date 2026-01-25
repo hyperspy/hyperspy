@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,8 +21,8 @@ import itertools
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.components1d import GaussianHF
-from hyperspy.signals import Signal1D
 from hyperspy.utils import stack
 
 sqrt2pi = np.sqrt(2 * np.pi)
@@ -41,7 +41,7 @@ def test_function():
 
 
 def test_integral_as_signal():
-    s = Signal1D(np.zeros((2, 3, 100)))
+    s = hs.signals.Signal1D(np.zeros((2, 3, 100)))
     g1 = GaussianHF(fwhm=3.33, centre=20.0)
     h_ref = np.linspace(0.1, 3.0, s.axes_manager.navigation_size)
     for d, h in zip(s._iterate_signal("flyback"), h_ref):
@@ -61,7 +61,7 @@ def test_integral_as_signal():
 @pytest.mark.parametrize(("uniform"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
-    s = Signal1D(np.empty((100,)))
+    s = hs.signals.Signal1D(np.empty((100,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 2.0
@@ -91,7 +91,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("binned"), (True, False))
 def test_function_nd(binned, lazy):
-    s = Signal1D(np.empty((100,)))
+    s = hs.signals.Signal1D(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 2.0
     axis.offset = -30

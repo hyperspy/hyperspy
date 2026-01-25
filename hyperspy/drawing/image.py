@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm, Normalize, PowerNorm, SymLogNorm
 from matplotlib.figure import SubFigure
-from rsciio.utils import rgb_tools
+from rsciio.utils import rgb
 from traits.api import Undefined
 
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
@@ -433,9 +433,9 @@ class ImagePlot(BlittedFigure):
             _logger.debug("Updating image slowly because `data_changed=True`")
             self._update_data()
         data = self._current_data
-        if rgb_tools.is_rgbx(data):
+        if rgb.is_rgbx(data):
             self.colorbar = False
-            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+            data = rgb.rgbx2regular_array(data, plot_friendly=True)
             data = self._current_data = data
             self._is_rgb = True
 

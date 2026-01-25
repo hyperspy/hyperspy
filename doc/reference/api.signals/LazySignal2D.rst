@@ -1,4 +1,4 @@
-.. currentmodule:: hyperspy._lazy_signals
+.. currentmodule:: hyperspy.api.signals
 
 :class:`LazySignal2D`
 ---------------------
