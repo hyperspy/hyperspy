@@ -1,1 +1,0 @@
-Update documentation on how to set up development installation.

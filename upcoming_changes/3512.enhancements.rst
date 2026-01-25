@@ -1,1 +1,0 @@
-Makes scalebars more agreable by constraining their lengths to 1,2,2.5,5 multiplied by a power of 10.

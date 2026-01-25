@@ -1,1 +1,0 @@
-Fix conversion of markers with hyperspy v1 API and fix loading ``.bcf`` files containing markers.

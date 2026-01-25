@@ -1,1 +1,0 @@
-Fix scalebar and axes values in :func:`~.api.plot.plot_images` when using ``overlay=True``.

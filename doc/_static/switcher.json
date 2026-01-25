@@ -5,9 +5,13 @@
         "url": "https://hyperspy.org/hyperspy-doc/dev/"
     },
     {
-        "version": "2.3.0",
-        "url": "https://hyperspy.org/hyperspy-doc/v2.3.0/",
+        "version": "2.4.0",
+        "url": "https://hyperspy.org/hyperspy-doc/v2.4.0/",
         "preferred": true
+    },
+    {
+        "version": "2.3.0",
+        "url": "https://hyperspy.org/hyperspy-doc/v2.3.0/"
     },
     {
         "version": "2.2.0",
