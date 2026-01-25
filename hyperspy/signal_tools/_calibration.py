@@ -35,30 +35,20 @@ class Signal2DCalibration(LineInSignal2D):
     scale = t.Float()
     units = t.Unicode()
 
-    def __init__(self, signal):
-        super(Signal2DCalibration, self).__init__(signal)
-        if signal.axes_manager.signal_dimension != 2:
-            raise SignalDimensionError(signal.axes_manager.signal_dimension, 2)
+    def __init__(self, signal, **kwargs):
+        super().__init__(signal, **kwargs)
         self.units = self.signal.axes_manager.signal_axes[0].units
         self.scale = self.signal.axes_manager.signal_axes[0].scale
-        self.on = True
 
     def _new_length_changed(self, old, new):
-        # If the line position is invalid or the new length is not defined do
-        # nothing
-        if (
-            np.isnan(self.x0)
-            or np.isnan(self.y0)
-            or np.isnan(self.x1)
-            or np.isnan(self.y1)
-            or self.new_length is t.Undefined
-        ):
-            return
-        self.scale = self.signal._get_signal2d_scale(
-            self.x0, self.y0, self.x1, self.y1, self.new_length
-        )
+        if old != new and self._line is not None:
+            self._calculate_scale()
 
     def _length_changed(self, old, new):
+        if old != new and self._line is not None:
+            self._calculate_scale()
+
+    def _calculate_scale(self):
         # If the line position is invalid or the new length is not defined do
         # nothing
         if (
@@ -84,6 +74,7 @@ class Signal2DCalibration(LineInSignal2D):
         self.signal._calibrate(
             x0=x0, y0=y0, x1=x1, y1=y1, new_length=self.new_length, units=self.units
         )
+        self.close()
         self.signal._replot()
 
 

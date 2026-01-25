@@ -19,183 +19,220 @@
 import numpy as np
 import traits.api as t
 
-from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import Line2DWidget, VerticalLineWidget
 from hyperspy.exceptions import SignalDimensionError
 
 
 class LineInSignal2D(t.HasTraits):
     """
-    Adds a vertical draggable line to a spectrum that reports its
+    Adds a draggable line to a Signal2D that reports its
     position to the position attribute of the class.
+
+    Parameters
+    ----------
+    signal : Signal2D
+        The signal to which the line is added.
+    color : str, optional
+        The color of the line. Default is 'blue'.
+    linewidth : float, optional
+        The width of the line. Default is 2.
+    snap : bool, optional
+        If True, the line will snap to the nearest axis value. Default is False.
 
     Attributes
     ----------
-    x0, y0, x1, y1 : floats
+    x0, y0, x1, y1 : float
         Position of the line in scaled units.
-    length : float
-        Length of the line in scaled units.
     on : bool
         Turns on and off the line
-    color : wx.Colour
-        The color of the line. It automatically redraws the line.
 
+    Properties
+    ----------
+    length : float
+        Length of the line in scaled units.
     """
 
     x0, y0, x1, y1 = t.Float(0.0), t.Float(0.0), t.Float(1.0), t.Float(1.0)
-    length = t.Float(1.0)
-    is_ok = t.Bool(False)
     on = t.Bool(False)
-    # The following is disabled because as of traits 4.6 the Color trait
-    # imports traitsui (!)
-    # try:
-    #     color = t.Color("black")
-    # except ModuleNotFoundError:  # traitsui is not installed
-    #     pass
-    color_str = t.Str("black")
+    length = t.Property(observe="x0,y0,x1,y1")
 
-    def __init__(self, signal):
+    def __init__(self, signal, color="blue", linewidth=2, snap=False):
+        super().__init__()
         if signal.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 2)
 
+        self._line = None
         self.signal = signal
         if (self.signal._plot is None) or (not self.signal._plot.is_active):
             self.signal.plot()
-        axis_dict0 = signal.axes_manager.signal_axes[0].get_axis_dictionary()
-        axis_dict1 = signal.axes_manager.signal_axes[1].get_axis_dictionary()
-        am = AxesManager([axis_dict1, axis_dict0])
-        am._axes[0].navigate = True
-        am._axes[1].navigate = True
-        self.axes_manager = am
-        self.on_trait_change(self.switch_on_off, "on")
 
-    def draw(self):
-        self.signal._plot.signal_plot.figure.canvas.draw_idle()
+        self._xaxis = self.signal.axes_manager.signal_axes[0]
+        self._yaxis = self.signal.axes_manager.signal_axes[1]
+        self._color = color
+        self._linewidth = linewidth
+        self._snap_position = snap
+        self.on = True
+
+        # close the tool when the plot is closed
+        self.signal._plot.signal_plot.events.closed.connect(self.close, [])
+
+    def _get_length(self):
+        # length is a property that observes x0, y0, x1, y1
+        # this function is called when x0, y0, x1, y1 are changed
+        position = (self.x0, self.y0), (self.x1, self.y1)
+        return np.linalg.norm(np.diff(position, axis=0), axis=1)[0]
 
     def _get_initial_position(self):
-        am = self.axes_manager
-        d0 = (am[0].high_value - am[0].low_value) / 10
-        d1 = (am[1].high_value - am[1].low_value) / 10
-        position = (
-            (am[0].low_value + d0, am[1].low_value + d1),
-            (am[0].high_value - d0, am[1].high_value - d1),
+        d0 = (self._xaxis.high_value - self._xaxis.low_value) / 4
+        d1 = (self._yaxis.high_value - self._yaxis.low_value) / 4
+        return (
+            (self._xaxis.low_value + d0, self._yaxis.low_value + d1),
+            (self._xaxis.high_value - d0, self._yaxis.high_value - d1),
         )
-        return position
 
-    def switch_on_off(self, obj, trait_name, old, new):
+    # "on" traits change handler
+    def _on_changed(self, old, new):
         if not self.signal._plot.is_active:
+            self.on = False
             return
 
         if new is True and old is False:
-            self._line = Line2DWidget(self.axes_manager)
+            self._line = Line2DWidget(self.signal.axes_manager, color=self._color)
+            self._line.snap_position = self._snap_position
+            # The default axis is the navigation axis; specify the signal axis instead.
+            self._line.axes = (self._xaxis, self._yaxis)
+            self._line.events.changed.connect(self._update_position_from_line, [])
             self._line.position = self._get_initial_position()
+            self._line.linewidth = self._linewidth
             self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
-            self._line.linewidth = 1
-            self._color_changed("black", "black")
-            self.update_position()
-            self._line.events.changed.connect(self.update_position)
-            # There is not need to call draw because setting the
-            # color calls it.
 
         elif new is False and old is True:
             self._line.close()
             self._line = None
-            self.draw()
 
-    def update_position(self, *args, **kwargs):
-        if not self.signal._plot.is_active:
-            return
-        pos = self._line.position
-        (self.x0, self.y0), (self.x1, self.y1) = pos
-        self.length = np.linalg.norm(np.diff(pos, axis=0), axis=1)[0]
+    # "position" traits change handler
+    def _x0_changed(self, old, new):
+        if old != new and self._line is not None:
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = ((new, self.y0), (self.x1, self.y1))
 
-    def _color_changed(self, old, new):
-        if self.on is False:
-            return
-        self.draw()
+    def _y0_changed(self, old, new):
+        if old != new and self._line is not None:
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = ((self.x0, new), (self.x1, self.y1))
+
+    def _x1_changed(self, old, new):
+        if old != new and self._line is not None:
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = ((self.x0, self.y0), (new, self.y1))
+
+    def _y1_changed(self, old, new):
+        if old != new and self._line is not None:
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = ((self.x0, self.y0), (self.x1, new))
+
+    def _update_position_from_line(self, *args, **kwargs):
+        (self.x0, self.y0), (self.x1, self.y1) = self._line.position
+
+    def close(self):
+        if self._line is not None:
+            self._line.events.changed.disconnect(self._update_position_from_line)
+        self.on = False
 
 
 class LineInSignal1D(t.HasTraits):
-    """Adds a vertical draggable line to a spectrum that reports its
+    """Adds a vertical draggable line to a Signal1D that reports its
     position to the position attribute of the class.
+
+    Parameters
+    ----------
+    signal : Signal1D
+        The signal to which the line is added.
+    color : str, optional
+        The color of the line. Default is 'blue'.
+    linewidth : float, optional
+        The width of the line. Default is 2.
+    snap : bool, optional
+        If True, the line will snap to the nearest axis value. Default is False.
 
     Attributes
     ----------
     position : float
-        The position of the vertical line in the one dimensional signal. Moving
-        the line changes the position but the reverse is not true.
+        The position of the vertical line in the one dimensional signal.
     on : bool
         Turns on and off the line
-    color : wx.Colour
-        The color of the line. It automatically redraws the line.
-
     """
 
-    position = t.Float()
-    is_ok = t.Bool(False)
+    position = t.Float(0.0)
     on = t.Bool(False)
-    # The following is disabled because as of traits 4.6 the Color trait
-    # imports traitsui (!)
-    # try:
-    #     color = t.Color("black")
-    # except ModuleNotFoundError:  # traitsui is not installed
-    #     pass
-    color_str = t.Str("black")
 
-    def __init__(self, signal):
+    def __init__(self, signal, color="blue", linewidth=2, snap=False):
+        super().__init__()
+        self._line = None
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
 
         self.signal = signal
-        self.signal.plot()
-        axis_dict = signal.axes_manager.signal_axes[0].get_axis_dictionary()
-        am = AxesManager(
-            [
-                axis_dict,
-            ]
-        )
-        am._axes[0].navigate = True
+        if self.signal._plot is None or not self.signal._plot.is_active:
+            self.signal.plot()
+
+        self._axis = self.signal.axes_manager.signal_axes[0]
+        self._color = color
+        self._linewidth = linewidth
+        self._snap_position = snap
+        self.on = True
+
+        # close the tool when the plot is closed
+        self.signal._plot.signal_plot.events.closed.connect(self.close, [])
+
+    def _get_initial_position(self, *args, **kwargs):
         # Set the position of the line in the middle of the spectral
         # range by default
-        am._axes[0].index = int(round(am._axes[0].size / 2))
-        self.axes_manager = am
-        self.axes_manager.events.indices_changed.connect(self.update_position, [])
-        self.on_trait_change(self.switch_on_off, "on")
+        return (self._axis.high_value - self._axis.low_value) / 2
 
-    def draw(self):
-        self.signal._plot.signal_plot.figure.canvas.draw_idle()
-
-    def switch_on_off(self, obj, trait_name, old, new):
+    # "on" traits change handler
+    def _on_changed(self, old, new):
         if not self.signal._plot.is_active:
+            self.on = False
             return
 
         if new is True and old is False:
-            self._line = VerticalLineWidget(self.axes_manager)
+            self._line = VerticalLineWidget(self.signal.axes_manager, color=self._color)
+            # The default axis is the navigation axis; specify the signal axis instead.
+            self._line.axes = (self._axis,)
+            # connect callback to update position of the tool from the widget
+            self._line.events.changed.connect(self._update_position_from_line, [])
+            # to enable _onjumpclick
+            self._line.is_pointer = True
+            self._line.snap_position = self._snap_position
+            self._line.position = (self._get_initial_position(),)
             self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
-            self._line.patch.set_linewidth(2)
-            self._color_changed("black", "black")
-            # There is not need to call draw because setting the
-            # color calls it.
+            self._line.patch[0].set_linewidth(self._linewidth)
 
         elif new is False and old is True:
             self._line.close()
             self._line = None
-            self.draw()
 
-    def update_position(self, *args, **kwargs):
-        if not self.signal._plot.is_active:
-            return
-        self.position = self.axes_manager.coordinates[0]
+    # "position" traits change handler
+    def _position_changed(self, old, new):
+        if old != new and self._line is not None:
+            with self._line.events.changed.suppress_callback(
+                self._update_position_from_line
+            ):
+                self._line.position = (new,)
 
-    def _color_changed(self, old, new):
-        if self.on is False:
-            return
+    def _update_position_from_line(self):
+        self.position = self._line.position[0]
 
-        self._line.patch.set_color(
-            (
-                self.color.Red() / 255.0,
-                self.color.Green() / 255.0,
-                self.color.Blue() / 255.0,
-            )
-        )
-        self.draw()
+    def close(self):
+        if self._line is not None:
+            self._line.events.changed.disconnect(self._update_position_from_line)
+        self.on = False
