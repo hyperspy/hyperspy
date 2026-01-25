@@ -30,7 +30,7 @@ jobs:
     - name: Download dist
       uses: actions/download-artifact@v7
       with:
-        name: artifacts
+        name: dist
         path: dist
 
     - name: Display downloaded files
