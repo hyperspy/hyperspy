@@ -1,1 +1,0 @@
-Remove mention of ``black`` in the contributor guide in favour of ``ruff`` to avoid settings conflict between ``ruff`` and ``black``.

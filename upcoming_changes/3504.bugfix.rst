@@ -1,1 +1,0 @@
-Fix regression in :meth:`~.api.signals.Signal1D.remove_background` when used interactively and the navigation dimension is > 0. The regression was introduced in hyperspy 2.0.1 (`#3320 <https://github.com/hyperspy/hyperspy/pull/3320>`__) when fixing numpy deprecation warnings.

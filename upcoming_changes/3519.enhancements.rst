@@ -1,1 +1,0 @@
-Add support for passing array of :class:`matplotlib.axes.Axes` in :func:`~.api.plot.plot_images` and :func:`~.api.plot.plot_spectra`.

@@ -1,3 +1,0 @@
-The `print_current_values` and `print_model_statistics` display classes now use
-PrettyTable to render terminal and notebook HTML outputs consistently and
-with improved readability.

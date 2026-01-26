@@ -1,1 +1,0 @@
-Migrate from deprecated ``scipy.odr`` to ``odrpack`` in the implementation of weighted orthogonal distance regression (ODR) fitting, which now needs the optional dependency `odrpack <https://pypi.org/project/odrpack/>`_.
