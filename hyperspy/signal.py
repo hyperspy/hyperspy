@@ -72,8 +72,9 @@ from hyperspy.exceptions import (
 from hyperspy.external.scipy.ndfilters import _get_footprint
 from hyperspy.interactive import interactive
 from hyperspy.io import (
-    ZARR_STORE_BASE_CLASS,
     _get_format_list_for_docstring,
+    _is_zarr_store,
+    _LazyDocstring,
     assign_signal_subclass,
 )
 from hyperspy.io import save as io_save
@@ -3395,7 +3396,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 "The 'extension' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
                 "Please use 'file_format' instead.",
                 FutureWarning,
-                stacklevel=2,
+                stacklevel=3,  # Account for _LazyDocstring wrapper
             )
 
         if filename is None:
@@ -3432,7 +3433,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             else:
                 raise ValueError("File name not defined")
 
-        if not isinstance(filename, (MutableMapping, ZARR_STORE_BASE_CLASS)):
+        if not _is_zarr_store(filename) and not isinstance(filename, MutableMapping):
             filename = Path(filename)
 
             # zspy can also be directory, make sure this is treated as a base directory
@@ -3482,11 +3483,20 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
-    # Format save method docstring with dynamic format list
-    save.__doc__ = save.__doc__ % (
-        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=8),
-        _get_format_list_for_docstring(write_mode=True, style="inline", indentation=8),
-        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=12),
+    # Lazily format save method docstring with dynamic format list
+    save = _LazyDocstring(
+        save,
+        lambda: (
+            _get_format_list_for_docstring(
+                write_mode=True, style="bullet", indentation=8
+            ),
+            _get_format_list_for_docstring(
+                write_mode=True, style="inline", indentation=8
+            ),
+            _get_format_list_for_docstring(
+                write_mode=True, style="bullet", indentation=12
+            ),
+        ),
     )
 
     def _replot(self):
