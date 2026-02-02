@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 import numpy as np
 import pytest
-from packaging.version import Version
 
 from hyperspy import signals
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
+sklearn = importlib.util.find_spec("sklearn")
 baseline_dir = "plot_mva"
 default_tol = 2.0
 
@@ -85,7 +86,7 @@ class TestPlotDecomposition:
         )
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 class TestPlotClusterAnalysis:
     def setup_method(self, method):
         rng = np.random.default_rng(1)
@@ -105,10 +106,6 @@ class TestPlotClusterAnalysis:
         # nav2, sig1
         s2 = signals.Signal1D(data.reshape(40, 10, 3))
 
-        import sklearn
-
-        n_init = "auto" if Version(sklearn.__version__) >= Version("1.3") else 10
-
         # Run decomposition and cluster analysis
         s.decomposition()
         s.cluster_analysis(
@@ -117,12 +114,10 @@ class TestPlotClusterAnalysis:
             algorithm="kmeans",
             preprocessing="minmax",
             random_state=0,
-            n_init=n_init,
         )
         s.estimate_number_of_clusters(
             "decomposition",
             metric="elbow",
-            n_init=n_init,
         )
 
         s2.decomposition()
@@ -132,7 +127,6 @@ class TestPlotClusterAnalysis:
             algorithm="kmeans",
             preprocessing="minmax",
             random_state=0,
-            n_init=n_init,
         )
 
         data = np.zeros((2000, 5))
@@ -149,7 +143,6 @@ class TestPlotClusterAnalysis:
             algorithm="kmeans",
             preprocessing="minmax",
             random_state=0,
-            n_init=n_init,
         )
 
         self.s = s

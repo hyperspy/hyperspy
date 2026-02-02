@@ -14,6 +14,12 @@
    ComplexSignal2D
    Signal1D
    Signal2D
+   LazyComplexSignal
+   LazyComplexSignal1D
+   LazyComplexSignal2D
+   LazySignal
+   LazySignal1D
+   LazySignal2D
 
 .. toctree::
    :caption: Submodules
@@ -26,3 +32,9 @@
    ComplexSignal2D
    Signal1D
    Signal2D
+   LazyComplexSignal
+   LazyComplexSignal1D
+   LazyComplexSignal2D
+   LazySignal
+   LazySignal1D
+   LazySignal2D

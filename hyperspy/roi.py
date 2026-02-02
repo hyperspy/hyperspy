@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -53,12 +53,12 @@ from functools import partial
 import numpy as np
 import traits.api as t
 
-import hyperspy.api as hs
+from hyperspy import signals
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.events import Event, Events
 from hyperspy.interactive import interactive
-from hyperspy.misc.utils import is_cupy_array
+from hyperspy.misc import utils
 from hyperspy.ui_registry import add_gui_method
 
 not_set_error_msg = (
@@ -625,7 +625,7 @@ class BaseInteractiveROI(BaseROI):
         """
         if signal is None:
             signal = list(self.signal_map.keys())
-        elif isinstance(signal, hs.signals.BaseSignal):
+        elif isinstance(signal, signals.BaseSignal):
             signal = [signal]
 
         for s in signal:
@@ -1238,7 +1238,7 @@ class CircleROI(BaseInteractiveROI):
         vy = axes[1].axis[ir[1]] - cy
 
         # convert to cupy array when necessary
-        if is_cupy_array(signal.data):  # pragma: no cover
+        if utils.is_cupy_array(signal.data):  # pragma: no cover
             import cupy as cp
 
             vx, vy = cp.array(vx), cp.array(vy)
@@ -1628,9 +1628,8 @@ class Line2DROI(BaseInteractiveROI):
             )
             axis.axes_manager = axm
             axm._axes.insert(i0, axis)
-            from hyperspy.signals import BaseSignal
 
-            roi = BaseSignal(
+            roi = signals.BaseSignal(
                 profile,
                 axes=axm._get_axes_dicts(),
                 metadata=signal.metadata.deepcopy().as_dictionary(),

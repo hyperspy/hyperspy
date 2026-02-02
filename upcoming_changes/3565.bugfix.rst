@@ -1,1 +1,0 @@
-Improve error message in :meth:`~.api.signals.Signal1D.remove_baseline` when pybaseline is not installed. Fix markers import.

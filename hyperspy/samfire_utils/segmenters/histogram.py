@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-from scipy.signal import argrelextrema
+import scipy
 
 from hyperspy.misc.hist_tools import histogram
 
@@ -43,7 +43,7 @@ class HistogramSegmenter(object):
             comp_dict = {}
             for p_n, (hist, bin_edges) in comp.items():
                 # calculate frequent values
-                maxima_hist_ind = argrelextrema(
+                maxima_hist_ind = scipy.signal.argrelextrema(
                     np.append(0, hist), np.greater, mode="wrap"
                 )
                 middles_of_maxima = 0.5 * (

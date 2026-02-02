@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -24,26 +24,15 @@ import warnings
 from collections.abc import Iterable
 from contextlib import contextmanager
 
-import dask.array as da
 import numpy as np
-import pint
 import traits.api as t
-from sympy.utilities.lambdify import lambdify
 from traits.trait_errors import TraitError
 
-from hyperspy._components.expression import _parse_substitutions
-from hyperspy.api import _ureg
+import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
-from hyperspy.misc.array_tools import (
-    numba_closest_index_ceil,
-    numba_closest_index_floor,
-    numba_closest_index_round,
-    round_half_away_from_zero,
-    round_half_towards_zero,
-)
+from hyperspy.misc import array_tools, utils
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.misc.utils import TupleSA, isiterable, ordinal
 from hyperspy.ui_registry import add_gui_method, get_gui
 
 _logger = logging.getLogger(__name__)
@@ -116,8 +105,8 @@ class UnitConversion:
         if units == t.Undefined:
             return True
         try:
-            _ureg(units)
-        except pint.errors.UndefinedUnitError:
+            hs._ureg(units)
+        except Exception:
             warnings.warn(f"Unit {units} not supported for conversion. Nothing done.")
             return True
         return False
@@ -133,7 +122,7 @@ class UnitConversion:
         """
         if self._ignore_conversion(self.units):
             return
-        scale = self.scale * _ureg(self.units)
+        scale = self.scale * hs._ureg(self.units)
         scale_size = factor * scale * self.size
         converted_units = "{:~}".format(scale_size.to_compact().units)
         return self._convert_units(converted_units, inplace=inplace)
@@ -147,7 +136,7 @@ class UnitConversion:
                 f"because the axis '{self}' doesn't have "
                 "units."
             )
-        value = _ureg.parse_expression(value)
+        value = hs._ureg.parse_expression(value)
         if not hasattr(value, "units"):
             raise ValueError(f"`{value}` should contain an units.")
 
@@ -158,11 +147,11 @@ class UnitConversion:
             self.units
         ):
             return
-        scale_pint = self.scale * _ureg(self.units)
-        offset_pint = self.offset * _ureg(self.units)
-        scale = float(scale_pint.to(_ureg(converted_units)).magnitude)
-        offset = float(offset_pint.to(_ureg(converted_units)).magnitude)
-        units = "{:~}".format(scale_pint.to(_ureg(converted_units)).units)
+        scale_pint = self.scale * hs._ureg(self.units)
+        offset_pint = self.offset * hs._ureg(self.units)
+        scale = float(scale_pint.to(hs._ureg(converted_units)).magnitude)
+        offset = float(offset_pint.to(hs._ureg(converted_units)).magnitude)
+        units = "{:~}".format(scale_pint.to(hs._ureg(converted_units)).units)
         if inplace:
             self.scale = scale
             self.offset = offset
@@ -202,7 +191,7 @@ class UnitConversion:
             units = self.units
             if units == t.Undefined:
                 units = ""
-            return getattr(self, attribute) * _ureg(units)
+            return getattr(self, attribute) * hs._ureg(units)
         else:
             raise ValueError(
                 "`attribute` argument can only take the `scale` or the `offset` value."
@@ -212,9 +201,9 @@ class UnitConversion:
         if attribute == "scale" or attribute == "offset":
             units = "" if self.units == t.Undefined else self.units
             if isinstance(value, str):
-                value = _ureg.parse_expression(value)
+                value = hs._ureg.parse_expression(value)
             if isinstance(value, float):
-                value = value * _ureg(units)
+                value = value * hs._ureg(units)
 
             # to be consistent, we also need to convert the other one
             # (scale or offset) when both units differ.
@@ -488,7 +477,7 @@ class BaseDataAxis(t.HasTraits):
         name = (
             self.name
             if self.name is not t.Undefined
-            else ("Unnamed " + ordinal(self.index_in_axes_manager))
+            else ("Unnamed " + utils.ordinal(self.index_in_axes_manager))
             if self.axes_manager is not None
             else "Unnamed"
         )
@@ -569,7 +558,7 @@ class BaseDataAxis(t.HasTraits):
         return the same value."""
         if isinstance(value, str):
             value = self._parse_value_from_string(value)
-        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
+        elif isinstance(value, (list, tuple, np.ndarray)) or utils.is_dask_array(value):
             value = np.asarray(value)
             if value.dtype.type is np.str_:
                 value = np.array([self._parse_value_from_string(v) for v in value])
@@ -612,17 +601,23 @@ class BaseDataAxis(t.HasTraits):
             if rounding is round:
                 # Use argmin(abs) which will return the closest value
                 # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_round(self.axis, value).astype(
+                    int
+                )
             elif rounding is math.ceil:
                 # Ceiling means finding index of the closest xi with xi - v >= 0
                 # we look for argmin of strictly non-negative part of self.axis-v.
                 # The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_ceil(self.axis, value).astype(
+                    int
+                )
             elif rounding is math.floor:
                 # flooring means finding index of the closest xi with xi - v <= 0
                 # we look for armgax of strictly non-positive part of self.axis-v.
                 # The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_floor(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_floor(self.axis, value).astype(
+                    int
+                )
             else:
                 raise ValueError(
                     "Non-supported rounding function. Use "
@@ -643,7 +638,7 @@ class BaseDataAxis(t.HasTraits):
             )
 
     def index2value(self, index):
-        if isinstance(index, da.Array):
+        if utils.is_dask_array(index):
             index = index.compute()
         if isinstance(index, np.ndarray):
             return self.axis[index.ravel()].reshape(index.shape)
@@ -1039,6 +1034,10 @@ class FunctionalDataAxis(BaseDataAxis):
             is_binned=is_binned,
             **parameters,
         )
+        import sympy
+
+        from hyperspy._components.expression import _parse_substitutions
+
         # These trait needs to added dynamically to be removed when necessary
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
@@ -1065,7 +1064,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}"
             )
-        self._function = lambdify(
+        self._function = sympy.utilities.lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False
         )
         for parameter in parameters.keys():
@@ -1323,8 +1322,8 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             # approach on the index, because the index is always positive
             index = np.where(
                 value >= 0 if np.sign(self.scale) > 0 else value < 0,
-                round_half_towards_zero(index, decimals=0),
-                round_half_away_from_zero(index, decimals=0),
+                array_tools.round_half_towards_zero(index, decimals=0),
+                array_tools.round_half_away_from_zero(index, decimals=0),
             )
         else:
             if rounding is math.ceil:
@@ -1669,7 +1668,7 @@ class AxesManager(t.HasTraits):
         else:
             axes = [self._axes_getter(ax) for ax in y]
         _, indices = np.unique([_id for _id in map(id, axes)], return_index=True)
-        ans = TupleSA(axes[i] for i in sorted(indices))
+        ans = utils.TupleSA(axes[i] for i in sorted(indices))
         return ans
 
     def _axes_getter(self, y):
@@ -2125,7 +2124,7 @@ class AxesManager(t.HasTraits):
         unit = axes[0].units  # after conversion, in case units[0] was None.
         for axis in axes[1:]:
             # Convert only the units have the same dimensionality
-            if _ureg(axis.units).dimensionality == _ureg(unit).dimensionality:
+            if hs._ureg(axis.units).dimensionality == hs._ureg(unit).dimensionality:
                 axis.convert_to_units(unit, factor=factor)
 
     def update_axes_attributes_from(self, axes, attributes=None):
@@ -2199,7 +2198,7 @@ class AxesManager(t.HasTraits):
         A TupleSA object is a tuple with a `set` method
         to easily set the attributes of its items.
         """
-        return TupleSA(self._signal_axes)
+        return utils.TupleSA(self._signal_axes)
 
     @property
     def navigation_axes(self):
@@ -2208,7 +2207,7 @@ class AxesManager(t.HasTraits):
         A TupleSA object is a tuple with a `set` method
         to easily set the attributes of its items.
         """
-        return TupleSA(self._navigation_axes)
+        return utils.TupleSA(self._navigation_axes)
 
     @property
     def signal_shape(self):
@@ -2543,7 +2542,7 @@ class AxesManager(t.HasTraits):
             the attribute of all the axes are set to the given value.
 
         """
-        if not isiterable(values):
+        if not utils.isiterable(values):
             values = [
                 values,
             ] * len(self._axes)

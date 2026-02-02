@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,17 +17,14 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import importlib
-import logging
 import sys
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.logger import set_log_level
 
 # Need to run before other import to use the logger during import
-_logger = logging.getLogger(__name__)
 set_log_level(preferences.General.logging_level)
 
-from hyperspy import __version__  # noqa: E402
 from hyperspy.docstrings import START_HSPY as _START_HSPY_DOCSTRING  # noqa: E402
 
 __doc__ = (
@@ -132,6 +129,7 @@ _import_mapping = {
     "samfire": ".utils",
     "stack": ".utils",
     "transpose": ".utils",
+    "__version__": "",
 }
 
 

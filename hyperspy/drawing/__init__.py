@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -15,3 +15,29 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import importlib
+
+__all__ = [
+    "mpl_he",
+    "mpl_hie",
+    "mpl_hse",
+    "signal",
+    "signal1d",
+    "utils",
+    "widgets",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:  # pragma: no cover
+        # We can't get this block covered in the test suite because it is
+        # already imported, when running the test suite.
+        # If this is broken, a lot of things will be broken!
+        return importlib.import_module("." + name, "hyperspy.drawing")
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

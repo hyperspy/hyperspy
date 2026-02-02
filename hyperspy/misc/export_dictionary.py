@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,9 +20,8 @@ from copy import deepcopy
 from operator import attrgetter
 
 import cloudpickle
-from dask.array import Array
 
-from hyperspy.misc.utils import attrsetter
+from hyperspy.misc import utils
 
 
 def check_that_flags_make_sense(flags):
@@ -173,7 +172,7 @@ def load_from_dictionary(target, dic):
             if "init" in flags:
                 new_whitelist[key] = (flags_str, value)
             else:
-                attrsetter(target, key, value)
+                utils.attrsetter(target, key, value)
                 if len(flags_str):
                     new_whitelist[key] = (flags_str, None)
                 else:
@@ -182,7 +181,7 @@ def load_from_dictionary(target, dic):
         if isinstance(target._whitelist, dict):
             target._whitelist.update(new_whitelist)
     else:
-        attrsetter(target, "_whitelist", new_whitelist)
+        utils.attrsetter(target, "_whitelist", new_whitelist)
 
 
 def reconstruct_object(flags, value):
@@ -206,6 +205,6 @@ def reconstruct_object(flags, value):
             return cloudpickle.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")
-    if isinstance(value, Array):
+    if utils.is_dask_array(value):
         value = value.compute()
     return value

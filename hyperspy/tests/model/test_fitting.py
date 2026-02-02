@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -28,6 +28,9 @@ from scipy.optimize import OptimizeResult
 import hyperspy.api as hs
 from hyperspy.axes import GeneratorLen
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.misc.model_tools import (
+    _calculate_parameter_uncertainty_from_fisher_information,
+)
 
 TOL = 5e-4
 
@@ -1378,9 +1381,6 @@ class TestFisherInformationExceptionHandling:
 
     def test_singular_fisher_matrix_handling(self):
         """Test handling of singular Fisher Information Matrix"""
-        from hyperspy.misc.model_tools import (
-            _calculate_parameter_uncertainty_from_fisher_information,
-        )
 
         # Create a singular matrix (rank deficient)
         singular_matrix = np.array([[1.0, 2.0], [2.0, 4.0]])  # rank 1, not invertible
@@ -1396,9 +1396,6 @@ class TestFisherInformationExceptionHandling:
 
     def test_invalid_fisher_matrix_values(self):
         """Test handling of Fisher matrices with invalid values"""
-        from hyperspy.misc.model_tools import (
-            _calculate_parameter_uncertainty_from_fisher_information,
-        )
 
         # Test matrix with NaN values
         nan_matrix = np.array([[np.nan, 0.0], [0.0, 1.0]])
@@ -1425,9 +1422,6 @@ class TestFisherInformationExceptionHandling:
 
     def test_completely_invalid_matrix(self):
         """Test a matrix that fails all recovery attempts"""
-        from hyperspy.misc.model_tools import (
-            _calculate_parameter_uncertainty_from_fisher_information,
-        )
 
         # Create a matrix that should trigger the final exception handling
         # This is a bit tricky - we need something that fails both inverse and pinv

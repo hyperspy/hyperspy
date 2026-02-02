@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,11 +18,11 @@
 
 import math
 
-import dask.array as da
 import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy.component import _get_scaling_factor
+from hyperspy.misc.utils import is_dask_array
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -61,7 +61,9 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
     )
     height = data.max(i)
 
-    if isinstance(data, da.Array):
+    if is_dask_array(data):
+        import dask.array as da
+
         return da.compute(centre, height, sigma)
     else:
         return centre, height, sigma

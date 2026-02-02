@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2026 The HyperSpy developers
+# Copyright 2007-2025 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -345,7 +345,7 @@ def plot_signals(
             navigator_list = []
         if navigator is None:
             navigator_list.extend([None] * len(signal_list))
-        elif isinstance(navigator, BaseSignal):
+        elif isinstance(navigator, signals.BaseSignal):
             navigator_list.append(navigator)
             navigator_list.extend([None] * (len(signal_list) - 1))
         elif navigator == "slider":
@@ -979,7 +979,7 @@ def plot_images(
     # Check to see if there are any rgb images in list
     # and tag them using the isrgb list
     for i, img in enumerate(images):
-        if rgb_tools.is_rgbx(img.data):
+        if rgb.is_rgbx(img.data):
             isrgb[i] = True
 
     # Determine how many non-rgb images there are
@@ -1062,7 +1062,7 @@ def plot_images(
                 ax = fig.add_axes([0, 0, 1, 1])
             else:
                 ax = fig.add_subplot()
-        elif isiterable(ax):
+        elif utils.isiterable(ax):
             raise ValueError(
                 "When using `overlay=True`, `ax` must be a matplotlib axis."
             )
@@ -1138,7 +1138,7 @@ def plot_images(
     # Below is for non-overlayed images
     else:
         if ax is not None:
-            if not isiterable(ax):
+            if not utils.isiterable(ax):
                 ax = (ax,)
 
         # Loop through each image, adding subplot for each one
@@ -1578,7 +1578,6 @@ def plot_spectra(
         An array is returned when `style` is 'mosaic'.
 
     """
-    from hyperspy.signal import BaseSignal
 
     def _reverse_legend(ax_, legend_loc_):
         """
