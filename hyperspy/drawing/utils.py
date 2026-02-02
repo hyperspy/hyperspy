@@ -392,17 +392,16 @@ def plot_signals(
             signal.plot(navigator=navigator, **kwargs)
 
 
-def _make_heatmap_subplot(spectra, normalise, **plot_kwargs):
+def _make_heatmap_subplot(spectra, normalise, yscale='linear', **plot_kwargs):
     from hyperspy._signals.signal2d import Signal2D
-
+    import matplotlib.colors as mcolors
     im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     if normalise:
         im.data = (
             (im.data.T - im.data.min(-1)) / (im.data.max(-1) - im.data.min(-1))
         ).T
-
     im.metadata.General.title = spectra.metadata.General.title
-    im.plot(**plot_kwargs)
+    im.plot(norm=yscale, **plot_kwargs)
     return im._plot.signal_plot.ax
 
 
@@ -422,7 +421,7 @@ def set_xaxis_lims(mpl_ax, hs_axis):
     mpl_ax.set_xlim(x_axis_lower_lim, x_axis_upper_lim)
 
 
-def _make_overlap_plot(spectra, ax, color, linestyle, normalise, **kwargs):
+def _make_overlap_plot(spectra, ax, color, linestyle, normalise, yscale='linear', **kwargs):
     for spectrum_index, (spectrum, color, linestyle) in enumerate(
         zip(spectra, color, linestyle)
     ):
@@ -437,11 +436,12 @@ def _make_overlap_plot(spectra, ax, color, linestyle, normalise, **kwargs):
         )
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra, ax)
+    ax.set_yscale(yscale)
     ax.autoscale(tight=True)
 
 
 def _make_cascade_subplot(
-    spectra, ax, color, linestyle, normalise, padding=1, **kwargs
+    spectra, ax, color, linestyle, normalise, padding=1, yscale='linear', **kwargs
 ):
     max_value = 0
     factors = [1] * len(spectra)
@@ -454,20 +454,28 @@ def _make_cascade_subplot(
     if normalise:
         # when using normalise, we don't use need `max_value`
         max_value = 1
+    multiplier_log = np.logspace(0, padding*(len(spectra)-1), len(spectra))
     for i, (spectrum, color, linestyle, factor) in enumerate(
         zip(spectra, color, linestyle, factors)
     ):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data = _parse_array(_transpose_if_required(spectrum, 1))
-        data_to_plot = (data - data.min()) / float(max_value) / factor + i * padding
+        if yscale == 'linear':
+            data_to_plot = (data - data.min()) / float(max_value) / factor + i * padding
+        elif yscale == 'log':
+            data_to_plot = (data - data.min()) / float(max_value) / factor * multiplier_log[i]
+        else:
+            text = ('Only implemented for linear and log scale in cascade mode.')
+            raise NotImplementedError(text)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=linestyle, **kwargs)
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra, ax)
     ax.set_yticks([])
+    ax.set_yscale(yscale)
     ax.autoscale(tight=True)
 
 
-def _plot_spectrum(spectrum, ax, normalise, color="blue", linestyle="-", **kwargs):
+def _plot_spectrum(spectrum, ax, normalise, yscale='linear', color="blue", linestyle="-", **kwargs):
     x_axis = spectrum.axes_manager.signal_axes[0]
     ax.plot(
         x_axis.axis,
@@ -477,6 +485,7 @@ def _plot_spectrum(spectrum, ax, normalise, color="blue", linestyle="-", **kwarg
         **kwargs,
     )
     set_xaxis_lims(ax, x_axis)
+    ax.set_yscale(yscale)
 
 
 def _set_spectrum_xlabel(spectrum, ax):
@@ -1482,6 +1491,7 @@ def plot_spectra(
     ax=None,
     auto_update=None,
     normalise=False,
+    yscale='linear',
     **kwargs,
 ):
     r"""Plot several spectra in the same figure.
@@ -1545,6 +1555,10 @@ def plot_spectra(
         :math:`(x - \min{x}) / (\max{x} - \min{x})`.
         If a callable is provided, it should be a function that takes a
         HyperSpy signal as input and returns the normalised array.
+    yscale : str, default ``'linear'``
+        yscale type as in :meth:`matplotlib.axes.Axes.set_yscale`.
+        For ``'cascade'`` style only implemented for ``'linear'``
+        and ``'log'`` scales.
 
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
@@ -1673,7 +1687,13 @@ def plot_spectra(
 
     if style == "overlap":
         _make_overlap_plot(
-            spectra, ax, color, linestyle, normalise, drawstyle=drawstyle
+            spectra,
+            ax,
+            color,
+            linestyle,
+            normalise,
+            yscale=yscale,
+            drawstyle=drawstyle
         )
         ax.set_ylabel(ylabel)
         if legend is not None:
@@ -1689,6 +1709,7 @@ def plot_spectra(
             linestyle,
             normalise,
             padding=padding,
+            yscale=yscale,
             drawstyle=drawstyle,
         )
         if legend is not None:
@@ -1711,6 +1732,7 @@ def plot_spectra(
                 spectra_,
                 ax_,
                 normalise,
+                yscale=yscale,
                 color=color_,
                 linestyle=linestyle_,
                 drawstyle=drawstyle,
@@ -1733,7 +1755,7 @@ def plot_spectra(
             spectra = [_transpose_if_required(spectrum, 1) for spectrum in spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
-            ax = _make_heatmap_subplot(spectra, normalise, **kwargs)
+            ax = _make_heatmap_subplot(spectra, normalise, yscale=yscale, **kwargs)
             ax.set_ylabel("Spectra")
 
     def update_line(spectrum, line, normalise):
