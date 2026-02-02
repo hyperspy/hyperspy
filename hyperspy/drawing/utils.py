@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -24,7 +24,6 @@ import textwrap
 import warnings
 from functools import partial
 
-import dask.array as da
 import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
@@ -34,13 +33,15 @@ import traits.api as t
 from matplotlib.backend_bases import key_press_handler
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from packaging.version import Version
-from rsciio.utils import rgb_tools
+from rsciio.utils import rgb
 
 import hyperspy
 import hyperspy.api as hs
+from hyperspy import signals
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS
-from hyperspy.misc.utils import _parse_percentile_value, isiterable, to_numpy
+from hyperspy.misc import utils
+from hyperspy.misc._utils import _parse_percentile_value
 
 _logger = logging.getLogger(__name__)
 
@@ -331,9 +332,6 @@ def plot_signals(
     ...    ) # doctest: +SKIP
 
     """
-
-    from hyperspy.signal import BaseSignal
-
     if navigator_list:
         if not (len(signal_list) == len(navigator_list)):
             raise ValueError("signal_list and navigator_list must have the same size")
@@ -393,9 +391,7 @@ def plot_signals(
 
 
 def _make_heatmap_subplot(spectra, normalise, yscale='linear', **plot_kwargs):
-    from hyperspy._signals.signal2d import Signal2D
-    import matplotlib.colors as mcolors
-    im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
+    im = signals.Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     if normalise:
         im.data = (
             (im.data.T - im.data.min(-1)) / (im.data.max(-1) - im.data.min(-1))
@@ -509,7 +505,7 @@ def _transpose_if_required(signal, expected_dimension):
 def _parse_array(signal, normalise=False):
     """Convenience function to parse array from a signal."""
     data = signal.data
-    if isinstance(data, da.Array):
+    if utils.is_dask_array(data):
         data = data.compute()
 
     # Check if normalise is a function
@@ -520,7 +516,7 @@ def _parse_array(signal, normalise=False):
     elif normalise:
         data = (data - data.min()) / (data.max() - data.min())
 
-    return to_numpy(data)
+    return utils.to_numpy(data)
 
 
 def plot_images(
@@ -734,12 +730,11 @@ def plot_images(
             )
 
     from hyperspy.drawing.widgets import ScaleBar
-    from hyperspy.signal import BaseSignal
 
     # Check that we have a hyperspy signal
     im = [images] if not isinstance(images, (list, tuple)) else images
     for image in im:
-        if not isinstance(image, BaseSignal):
+        if not isinstance(image, signals.BaseSignal):
             raise ValueError(
                 "`images` must be a list of image signals or a "
                 "multi-dimensional signal. "
@@ -752,7 +747,7 @@ def plot_images(
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
-    if isinstance(images, BaseSignal):
+    if isinstance(images, signals.BaseSignal):
         images = [im_ for im_ in images]
 
     n = 0
@@ -939,7 +934,7 @@ def plot_images(
 
     # Get the figure from ax is provided
     if ax is not None:
-        if isiterable(ax):
+        if utils.isiterable(ax):
             if isinstance(ax, np.ndarray):
                 # plt.subplots can return numpy array
                 # convert and flatten to support list and array
@@ -1175,8 +1170,8 @@ def plot_images(
                 data = _parse_array(im)
 
                 # Enable RGB plotting
-                if rgb_tools.is_rgbx(data):
-                    data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+                if rgb.is_rgbx(data):
+                    data = rgb.rgbx2regular_array(data, plot_friendly=True)
                     _vmin, _vmax = None, None
                 elif colorbar != "single":
                     _vmin, _vmax = _parse_vmin_vmax(data, vmin, vmax, idx, centre)
@@ -1653,13 +1648,13 @@ def plot_spectra(
             raise ValueError("The `ax` parameter is not supported for 'heatmap' style.")
         # To avoid ambiguity, don't support iterable with overalp and cascase style
         elif style in ["overlap", "cascade"]:
-            if isiterable(ax):
+            if utils.isiterable(ax):
                 raise ValueError(
                     "When using 'overlap' or 'cascade' style, `ax` must be a matplotlib axis."
                 )
             fig = ax.get_figure()
         else:
-            if isiterable(ax):
+            if utils.isiterable(ax):
                 if isinstance(ax, np.ndarray):
                     # plt.subplots can return numpy array
                     # convert and flatten to support list and array
@@ -1741,15 +1736,15 @@ def plot_spectra(
             if legend_ is not None:
                 ax_.set_title(legend_)
             # Add xlabel for each axes (list of BaseSignal)
-            if not isinstance(spectra, BaseSignal):
+            if not isinstance(spectra, signals.BaseSignal):
                 _set_spectrum_xlabel(spectra_, ax_)
         # Add xlabel at the very bottom (single BaseSignal)
-        if isinstance(spectra, BaseSignal):
+        if isinstance(spectra, signals.BaseSignal):
             _set_spectrum_xlabel(spectra, ax[-1])
         fig.tight_layout()
 
     elif style == "heatmap":
-        if not isinstance(spectra, BaseSignal):
+        if not isinstance(spectra, signals.BaseSignal):
             import hyperspy.utils
 
             spectra = [_transpose_if_required(spectrum, 1) for spectrum in spectra]
