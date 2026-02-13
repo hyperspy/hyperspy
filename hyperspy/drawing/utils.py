@@ -410,7 +410,6 @@ def plot_signals(
 
 
 def _make_heatmap_subplot(spectra, normalise, norm='linear', **kwargs):
-    kwargs, _ =_parse_kwargs(norm, kwargs)
     im = signals.Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     if normalise:
         im.data = (
