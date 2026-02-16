@@ -49,6 +49,27 @@ from hyperspy.misc._utils import _parse_percentile_value
 _logger = logging.getLogger(__name__)
 
 def _get_scale_args(scale):
+    """Retrieve parameters expected by the constructor of the
+    matplotlib.scale name given as input.
+    
+    Parameters
+    ----------
+    scale : str
+        The name of the matplotlib.scale
+        See also https://matplotlib.org/stable/gallery/scales/scales.html
+    
+    Returns
+    -------
+    Parameters : dict
+    
+    Examples
+    --------
+    >>> _get_scale_args("log")
+    {'axis': <Parameter "axis">,
+    'base': <Parameter "base=10">,
+    'subs': <Parameter "subs=None">,
+    'nonpositive': <Parameter "nonpositive='clip'">}
+    """
     clsmembers = inspect.getmembers(sc, inspect.isclass)
     for cl in clsmembers:
         class_name = getattr(sc, cl[0])
@@ -57,6 +78,22 @@ def _get_scale_args(scale):
                     return inspect.signature(class_name).parameters
 
 def _parse_kwargs(scale, kwargs):
+    """ Extract from `kwargs` the keyword arguments that have to be passed
+    to the matplotlib.scale `scale` constructor.
+    
+    Parameters
+    ----------
+    scale : str
+        The name of the matplotlib.scale.
+    
+    kwargs : dict
+        Kwargs dictionary to be parsed.
+        
+    Returns
+    -------
+    kwargs : a copy of input `kwargs` without the `scale` keyword arguments.
+    scale_kwargs : keyword arguments to be passed to the `matplotlib.scale` constructor.
+    """
     common = set.intersection(set(kwargs.keys()), set(_get_scale_args(scale).keys()))
     scale_kwargs = {k:kwargs[k] for k in common}
     kwargs_aux = dict(kwargs)
