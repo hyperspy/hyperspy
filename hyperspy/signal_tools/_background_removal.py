@@ -39,9 +39,11 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         "Skew normal",
         "Split Voigt",
         "Voigt",
+        "Signal1D",
         default="Power law",
     )
     polynomial_order = t.Range(1, 10)
+    background_signal = t.Instance("hyperspy.signals.Signal1D")
     fast = t.Bool(
         True,
         desc=(
@@ -69,6 +71,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         signal,
         background_type="Power law",
         polynomial_order=2,
+        background_signal=None,
         fast=True,
         plot_remainder=True,
         zero_fill=False,
@@ -95,6 +98,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             model = Model1D(signal)
         self.model = model
         self.polynomial_order = polynomial_order
+        self.background_signal = background_signal
         if background_type in ["Power Law", "PowerLaw"]:
             background_type = "Power law"
         if background_type in ["Skew Normal", "SkewNormal"]:
@@ -122,7 +126,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             for component in self.model:
                 self.model.remove(component)
         self.background_estimator, self.bg_line_range = _get_background_estimator(
-            self.background_type, self.polynomial_order
+            self.background_type, self.polynomial_order, self.background_signal
         )
         if self.model is not None and len(self.model) == 0:
             self.model.append(self.background_estimator)
@@ -261,7 +265,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 axes_manager.events.indices_changed.disconnect(f)
 
 
-def _get_background_estimator(background_type, polynomial_order=1):
+def _get_background_estimator(
+    background_type, polynomial_order=1, background_signal=None
+):
     """
     Assign 1D component to specified background type.
 
@@ -271,6 +277,9 @@ def _get_background_estimator(background_type, polynomial_order=1):
         The name of the component to model the background.
     polynomial_order : int, optional
         The polynomial order used in the polynomial component
+    background_signal : Signal1D, optional
+        The background signal used for the ScalableFixedPattern component. Required
+        if background_type is ``ScalableFixedPattern``.
 
     Raises
     ------
@@ -280,7 +289,7 @@ def _get_background_estimator(background_type, polynomial_order=1):
     Returns
     -------
     background_estimator : Component1D
-        The component mdeling the background.
+        The component modeling the background.
     bg_line_range : 'full' or 'from_left_range'
         The range to draw the component (used in the BackgroundRemoval tool)
 
@@ -315,6 +324,14 @@ def _get_background_estimator(background_type, polynomial_order=1):
         bg_line_range = "full"
     elif background_type == "voigt":
         background_estimator = components1d.Voigt()
+        bg_line_range = "full"
+    elif background_type == "signal1d":
+        if background_signal is None:
+            raise ValueError(
+                "A background signal must be provided when using the 'Signal1D' \
+                background type."
+            )
+        background_estimator = components1d.ScalableFixedPattern(background_signal)
         bg_line_range = "full"
     else:
         raise ValueError(f"Background type '{background_type}' not recognized.")

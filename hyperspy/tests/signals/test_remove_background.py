@@ -295,11 +295,18 @@ def compare_axes_manager_metadata(s0, s1):
         "Split voigt",
         "SplitVoigt",
         "Voigt",
+        "Signal1D",
     ],
 )
 def test_remove_backgound_type(background_type):
     s = hs.signals.Signal1D(np.arange(100))
-    s.remove_background(background_type=background_type, signal_range=(2, 98))
+    bkg = hs.signals.Signal1D(
+        0.2 * np.ones_like(np.arange(100)),
+        axes=[{"offset": 0, "scale": 1, "size": 100}],
+    )
+    s.remove_background(
+        background_type=background_type, signal_range=(2, 98), background_signal=bkg
+    )
 
 
 @pytest.mark.parametrize("nav_dim", [0, 1])

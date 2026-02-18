@@ -1,0 +1,2 @@
+implemented remove_background_signal from lumispy issues #124 into the remove_background function,
+using Signal1D as background type

@@ -170,3 +170,23 @@ class ScalableFixedPattern(Component):
 
     def grad_yscale(self, x):
         return self.function(x) / self.yscale.value
+
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
+        super()._estimate_parameters(signal)
+
+        if only_current:
+            self.xscale.value = 1.0
+            self.yscale.value = 1.0
+            self.shift.value = 0.0
+            self.fetch_stored_values()
+            return True
+        else:
+            if self.xscale.map is None:
+                self._create_arrays()
+            self.xscale.map["values"][:] = 1.0
+            self.xscale.map["is_set"][:] = True
+            self.yscale.map["values"][:] = 1.0
+            self.yscale.map["is_set"][:] = True
+            self.shift.map["values"][:] = 0.0
+            self.shift.map["is_set"][:] = True
+            return True

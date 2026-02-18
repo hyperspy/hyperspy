@@ -1116,6 +1116,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             model = Model1D(self)
         if background_estimator not in model:
             model.append(background_estimator)
+
         background_estimator.estimate_parameters(
             self, signal_range[0], signal_range[1], only_current=False
         )
@@ -1156,6 +1157,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         signal_range="interactive",
         background_type="Power law",
         polynomial_order=2,
+        background_signal=None,
         fast=True,
         zero_fill=False,
         plot_remainder=True,
@@ -1173,17 +1175,21 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        signal_range : "interactive", tuple of int or float, optional
+        signal_range : "interactive", tuple of int or float or "full", optional
             If this argument is not specified, the signal range has to be
             selected using a GUI. And the original spectrum will be replaced.
-            If tuple is given, a spectrum will be returned.
+            If tuple is given, a spectrum will be returned. If "full" is given, the
+            whole spectrum will be used.
         background_type : str
             The type of component which should be used to fit the background.
             Possible components: Doniach, Gaussian, Lorentzian, Offset,
-            Polynomial, PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt.
-            If Polynomial is used, the polynomial order can be specified
+            Polynomial, PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt,
+            Signal1D. If Polynomial is used, the polynomial order can be
+            specified, if Signal1D is used, the background has to be passed
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
+        background_signal : Signal1D, optional
+            Pass the background if a Signal1D background is used.
         fast : bool
             If True, perform an approximative estimation of the parameters.
             If False, the signal is fitted using non-linear least squares
@@ -1258,6 +1264,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
                 self,
                 background_type=background_type,
                 polynomial_order=polynomial_order,
+                background_signal=background_signal,
                 fast=fast,
                 plot_remainder=plot_remainder,
                 show_progressbar=show_progressbar,
@@ -1271,8 +1278,13 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
                 # for testing purposes
                 return gui_dict
         else:
+            if signal_range == "full":
+                signal_range = (
+                    self.axes_manager[-1].offset,
+                    self.axes_manager[-1].high_value,
+                )
             background_estimator = signal_tools._get_background_estimator(
-                background_type, polynomial_order
+                background_type, polynomial_order, background_signal
             )[0]
             result = self._remove_background_cli(
                 signal_range=signal_range,
