@@ -35,14 +35,19 @@ def test_spikes_removal_tool():
     s.data[1, 2, 14] += 1
 
     sr = SpikesRemovalInteractive(s, random_state=1)
+    ax = s._plot.signal_plot.ax
     sr._show_derivative_histogram_fired()
     sr.threshold = 1.5
     sr.find()
     assert s.axes_manager.indices == (0, 1)
+    # check that the y limits of the plot have been updated to show the spike
+    assert ax.get_ylim()[1] > 2.5
     sr.threshold = 0.5
     assert s.axes_manager.indices == (0, 0)
     sr.find()
     assert s.axes_manager.indices == (2, 0)
+    # check that the y limits of the plot have been updated to show the spike
+    assert ax.get_ylim()[1] < 2.5
     sr.find()
     assert s.axes_manager.indices == (0, 1)
     sr.find(back=True)
