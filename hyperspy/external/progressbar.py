@@ -30,10 +30,13 @@ def progressbar(*args, **kwargs):
     %s
     """
     if preferences.General.nb_progressbar:
-        try:
-            return tqdm.notebook(*args, **kwargs)
-        except:
-            pass
+        # use tqdm.auto to use tqdm.std in terminal and
+        # tqdm.notebook in a jupyter environment.
+        from tqdm.auto import tqdm
+
+        return tqdm(*args, **kwargs)
+
+    # use tqdm.std all the time, even in a jupyter environment.
     return tqdm.tqdm(*args, **kwargs)
 
 progressbar.__doc__ %= (tqdm.__doc__, tqdm.__init__.__doc__)
