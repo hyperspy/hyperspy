@@ -1,0 +1,1 @@
+Improve caching of eXSpy GOS and RosettaSciIO test data files on GitHub CI by sharing cache across different jobs.
