@@ -16,29 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import importlib
-import tqdm
+import pytest
 
-from hyperspy.defaults_parser import preferences
-
-
-def progressbar(*args, **kwargs):
-    """Uses tqdm progressbar. This function exists for wrapping purposes only.
-
-    Original docstring follows:
-    ---------------------------
-    %s
-    %s
-    """
-    if preferences.General.nb_progressbar:
-        # use tqdm.auto to use "standard" tqdm in a terminal and
-        # tqdm.notebook in a jupyter notebook.
-        submodule = ".auto"
-    else:
-        # use "standard" tqdm
-        submodule = ""
-    
-    return getattr(importlib.import_module(f"tqdm{submodule}"), "tqdm")(*args, **kwargs)
+import hyperspy.api as hs
+from hyperspy.external.progressbar import progressbar
 
 
-progressbar.__doc__ %= (tqdm.__doc__, tqdm.__init__.__doc__)
+@pytest.mark.parametrize("nb_progressbar", [False, True])
+def test_progressbar(nb_progressbar):
+    hs.preferences.General.nb_progressbar = nb_progressbar
+
+    for i in progressbar(range(10), desc="Testing progressbar"):
+        print(i)
