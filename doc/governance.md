@@ -83,8 +83,7 @@ Because rarely used, we refer to BDFL’s final authority as a “special” or 
 ## Steering Council
 
 The Project will have a Steering Council that consists of Project Contributors
-who have produced contributions that are substantial in quality and quantity,
-and sustained over at least one year. The overall role of the Council is to ensure,
+who have produced contributions that are substantial in quality and quantity. The overall role of the Council is to ensure,
 with input from the Community, the long-term well-being of the project, both technically and as a community.
 
 During the everyday project activities, council members participate in all
@@ -105,9 +104,7 @@ The chair of the Steering Council is elected by the Steering Council and voted e
 ### Council membership
 
 The Steering Council is currently fixed in size [to be defined] members. This number may increase in the future. The initial Steering Council (in alphabetical order) consists of [to be determined].
-To become eligible for being a Steering Council Member an individual must be a
-Project Contributor who has produced contributions that are substantial in quality
-and quantity, and sustained over at least one year. Potential Council Members are
+Potential Council Members are
 nominated by existing Council members and voted upon by the existing Council.
 
 When considering potential Members, the Council will look at candidates with a
