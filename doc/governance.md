@@ -80,7 +80,7 @@ The list of core developers, active and emeritus, is public.
 
 ## BDFL
 
-The Project’s Benevolent dictator for life (BDFL) is Francisco de La Peña.
+The Project’s Benevolent dictator for life (BDFL) is Francisco de la Peña.
 The BDFL has the authority to make all final decisions for The Project. In practice
 the BDFL chooses to defer that authority to the consensus of the Steering Council
 (see below). It is expected that the BDFL will only rarely assert his final authority.
@@ -91,7 +91,7 @@ Because rarely used, we refer to BDFL’s final authority as a “special” or 
 The Project will have a Steering Council that consists of Project Contributors
 who have produced contributions that are substantial in quality and quantity,
 and sustained over at least one year. The overall role of the Council is to ensure,
-with input from the Community the long-term well-being of the project, both technically and as a community.
+with input from the Community, the long-term well-being of the project, both technically and as a community.
 
 During the everyday project activities, council members participate in all
 discussions, code review and other project activities as peers with all other
@@ -109,7 +109,7 @@ In particular, the Council may:
 - Make decisions about strategic collaborations with other organizations or individuals.
 - Make decisions about specific technical issues, features, bugs and pull requests.
   They are the primary mechanism of guiding the code review process and merging pull requests.
-- Make decisions when regular community discussion doesn’t produce consensus on
+- Make decisions when a regular community discussion does not produce consensus on
   an issue in a reasonable time frame.
 
 The chair of the Steering Council is elected by the Steering Council and voted every year. The chair may delegate their authority on a particular decision or set of decisions to any other Council member at their discretion. The chair is responsible for ensuring that all Steering Council activities that require a vote are properly documented.
@@ -125,7 +125,7 @@ nominated by existing Council members and voted upon by the existing Council.
 When considering potential Members, the Council will look at candidates with a
 comprehensive view of their contributions. This will include but is not limited
 to code, code review, infrastructure work, chat participation, community
-help/building, education and outreach, design work, etc. We are deliberately
+help/building, education and outreach, contributions to other projects of the HyperSpy ecosystem, design work, etc. We are deliberately
 not setting arbitrary quantitative metrics (like “100 commits in this repo”) to
 avoid encouraging behavior that plays to the metrics rather than the project’s
 overall well-being. We want to encourage a diverse array of backgrounds, viewpoints
@@ -155,7 +155,7 @@ The HyperSpy steering council may be contacted at `EMAIL ADDRESS` or via the
 
 It is expected that the SC Members will be employed at a wide range of companies,
 universities and non-profit organizations. Because of this, it is possible that
-Members will have conflict of interests. Such conflict of interests include,
+Members will have conflicts of interests. Such conflicts of interests include,
 but are not limited to:
 
 - Financial interests, such as investments, employment, or contracting work,
@@ -174,9 +174,9 @@ themselves for a particular decision, they will appoint a substitute BDFL for th
 # Decision Making Process
 
 Decisions about the future of the project are made through discussion with all
-members of the community. All non-sensitive project management discussion takes
+members of the community. All non-sensitive project management discussions take
 place on the [issue tracker](https://github.com/hyperspy/hyperspy/issues). Occasionally,
-sensitive discussion may occur on a private communication channel.
+sensitive discussions may occur on a private communication channel.
 
 Decisions should be made in accordance with the [mission and values](MISSION_AND_VALUES.md)
 of the HyperSpy project.
