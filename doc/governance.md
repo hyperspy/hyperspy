@@ -97,10 +97,6 @@ During the everyday project activities, council members participate in all
 discussions, code review and other project activities as peers with all other
 Contributors and the Community. In these everyday activities, Council Members do
 not have any special power or privilege through their membership on the Council.
-However, it is expected that because of the quality and quantity of their contributions
-and their expert knowledge of the Project Software and Services that Council Members
-will provide useful guidance, both technical and in terms of project direction,
-to potentially less experienced contributors.
 
 The Steering Council and its Members play a special role in certain situations.
 In particular, the Council may:
