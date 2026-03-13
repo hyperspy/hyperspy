@@ -122,7 +122,7 @@ sole metric on which council membership will be evaluated.
 
 If a Council member becomes inactive in the project for a period of one year,
 they will be considered for removal from the Council. Before removal, the inactive
-Member will be approached by the BDFL to see if they plan
+Member will be approached by the chair to see if they plan
 on returning to active participation. If not, they will be removed immediately
 upon a Council vote. If they plan on returning to active participation soon,
 they will be given a grace period of one year. If they don’t return to active
