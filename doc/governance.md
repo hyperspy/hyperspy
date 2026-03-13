@@ -65,18 +65,12 @@ Core developers are trusted community members that have demonstrated continued
 commitment to the project through ongoing contributions. They
 have shown they can be trusted to maintain HyperSpy with care. Becoming a
 core developer allows contributors to merge approved pull requests, and thereby more easily carry on with their project related
-activities. Core developers appear as organization members on the HyperSpy
-[GitHub organization](https://github.com/orgs/hyperspy/people) and are on our
-[@hyperspy/developers](https://github.com/orgs/hyperspy/teams/developers) GitHub
-team. Core developers are expected to review code contributions while adhering to the
-[core developer guide](CORE_DEV_GUIDE.md). New core developers can be nominated
-by any existing core developer, and for details on that process see our core
-developer guide.
+activities. New core developers can be nominated by any existing core developer.
 
 Core developers that have not contributed to the project (commits or GitHub comments)
 in the past 12 months will be asked if they want to become emeritus core developers
 and recant their commit rights until they become active again.
-The list of core developers, active and emeritus, is public.
+The list of core developers, active and emeritus, is public at the following page [TODO: setup the page].
 
 ## BDFL
 
@@ -103,8 +97,6 @@ In particular, the Council may:
 
 - Make decisions about the overall scope, vision and direction of the project.
 - Make decisions about strategic collaborations with other organizations or individuals.
-- Make decisions about specific technical issues, features, bugs and pull requests.
-  They are the primary mechanism of guiding the code review process and merging pull requests.
 - Make decisions when a regular community discussion does not produce consensus on
   an issue in a reasonable time frame.
 
@@ -203,15 +195,11 @@ are made according to the following rules:
   core developers are expected to give “reasonable time” after approval and before
   merging for others to weigh in on the pull request in its final state.
 
-- **Changes to the API principles** require a dedicated issue on our
+- **Changes to the public API** require a dedicated issue on our
   [issue tracker](https://github.com/hyperspy/hyperspy/issues) and follow the
   decision-making process outlined above.
 
-- **Changes to this governance model or our mission, vision, and values**
-  require a dedicated issue on our [issue tracker](https://github.com/hyperspy/hyperspy/issues)
-  and follow the decision-making process outlined above,
-  *unless* there is unanimous agreement from core developers on the change in
-  which case it can move forward faster.
+- **Suggestion for changes to this governance model or our mission and principles** are welcome and require a dedicated issue on our [issue tracker](https://github.com/hyperspy/hyperspy/issues). Changes to this governance requires approval of the Steering Council.
 
 If an objection is raised on a lazy consensus, the proposer can appeal to the
 community and core developers and the change can be approved or rejected by
@@ -219,6 +207,6 @@ escalating to the SC.
 
 # Acknowledgements
 
-This document is adapted from the [Jupyter Project governance](https://jupyter.org/governance/governance.html).
+This document has been inspired by the [scikit-image governance](https://scikit-image.org/docs/stable/skips/1-governance.html).
 
 
