@@ -1411,6 +1411,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     @property
     def scale_as_quantity(self):
+        """
+        Get the scale as a :meth:`pint.Quantity` object. It can be set
+        using a :meth:`pint.Quantity` or a string, e.g. "0.1 nm".
+        If string, it will parse using
+        :meth:`pint.facets.plain.GenericPlainRegistry.parse_expression`.
+        """
         return self._get_quantity("scale")
 
     @scale_as_quantity.setter
@@ -1419,6 +1425,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     @property
     def offset_as_quantity(self):
+        """
+        Get the offset as a :meth:`pint.Quantity` object. It can be set
+        using a :meth:`pint.Quantity` or a string, e.g. "0.1 nm".
+        If string, it will parse using
+        :meth:`pint.facets.plain.GenericPlainRegistry.parse_expression`.
+        """
         return self._get_quantity("offset")
 
     @offset_as_quantity.setter
