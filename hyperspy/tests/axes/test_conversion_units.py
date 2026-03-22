@@ -24,6 +24,7 @@ from packaging.version import Version
 
 from hyperspy.api import _ureg
 from hyperspy.axes import AxesManager, DataAxis, UniformDataAxis, UnitConversion
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -234,7 +235,11 @@ class TestUniformDataAxis:
         assert self.axis.units == ""
 
     def test_scale_offset_as_quantity_setter_float(self):
-        self.axis.scale_as_quantity = 2.5e-9
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match="is deprecated and will be removed in HyperSpy 3.0.",
+        ):
+            self.axis.scale_as_quantity = 2.5e-9
         assert self.axis.scale == 2.5e-9
         assert self.axis.units == "m"
 
