@@ -401,6 +401,7 @@ numpydoc_xref_ignore = {
     "scheduler",
     "matplotlib",
     "color",
+    "length",
     "line",
     "style",
     "hyperspy",

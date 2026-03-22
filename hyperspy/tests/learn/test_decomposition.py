@@ -20,6 +20,7 @@ import importlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import dask.array as da
 import numpy as np
 import pytest
 
@@ -174,20 +175,39 @@ class TestGetModel:
         )
 
     @pytest.mark.parametrize("centre", [None, "signal"])
-    def test_get_decomposition_model(self, centre):
+    def test_get_decomposition_model_centre(self, centre):
         s = self.s
         s.decomposition(algorithm="SVD", centre=centre)
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
+        if isinstance(rms, da.Array):
+            rms = rms.compute()
         assert rms < 5e-7
 
+    @pytest.mark.parametrize("lazy_output", [True, False, None])
+    def test_get_decomposition_model(self, lazy_output):
+        s = self.s
+        s.decomposition(algorithm="SVD")
+        sc = self.s.get_decomposition_model(3, lazy_output=lazy_output)
+        if lazy_output or (lazy_output is None and self.s._lazy):
+            assert isinstance(sc.data, da.Array)
+        else:
+            assert isinstance(sc.data, np.ndarray)
+
     @skip_sklearn
-    def test_get_bss_model(self):
+    @pytest.mark.parametrize("lazy_output", [True, False, None])
+    def test_get_bss_model(self, lazy_output):
         s = self.s
         s.decomposition(algorithm="SVD")
         s.blind_source_separation(3)
-        sc = self.s.get_bss_model()
+        sc = self.s.get_bss_model(lazy_output=lazy_output)
+        if lazy_output or (lazy_output is None and self.s._lazy):
+            assert isinstance(sc.data, da.Array)
+        else:
+            assert isinstance(sc.data, np.ndarray)
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
+        if isinstance(rms, da.Array):
+            rms = rms.compute()
         assert rms < 5e-7
 
 

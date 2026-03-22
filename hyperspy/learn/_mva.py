@@ -27,7 +27,7 @@ from rsciio.utils import path
 from hyperspy import learn, signals
 from hyperspy.decorators import deprecated
 from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.signal import LAZY_OUTPUT_ARG, SHOW_PROGRESSBAR_ARG
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import utils
 
@@ -35,6 +35,14 @@ MDP_INSTALLED = importlib.util.find_spec("mdp") is not None
 SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 _logger = logging.getLogger(__name__)
+
+
+CHUNKS_ARGS = """chunks : str, int, tuple of length 2, default "auto"
+            If lazy_output is True, determines the chunk size of the output dask array.
+            The chunking of the loadings and factors will be set to -1 for the first and
+            the last dimension respectively to optimise for the matrix multiplication
+            If tuple of length 2, the first element sets the chunk size for the factors
+            and the second element sets the chunk size for the loadings."""
 
 
 decomposition_algorithms = {
@@ -1192,7 +1200,13 @@ class MVA:
                     f"on the {reverse_component_criterion}"
                 )
 
-    def _calculate_recmatrix(self, components=None, mva_type="decomposition"):
+    def _calculate_recmatrix(
+        self,
+        components=None,
+        mva_type="decomposition",
+        chunks="auto",
+        lazy_output=None,
+    ):
         """Rebuilds data from selected components.
 
         Parameters
@@ -1203,6 +1217,8 @@ class MVA:
             * If list of ints, rebuilds signal instance from only components in given list
         mva_type : str {'decomposition', 'bss'}
             Decomposition type (not case sensitive)
+        %s
+        %s
 
         Returns
         -------
@@ -1221,7 +1237,6 @@ class MVA:
             loadings = target.bss_loadings.T
 
         if components is None:
-            a = factors @ loadings
             signal_name = f"model from {mva_type} with {factors.shape[1]} components"
         elif hasattr(components, "__iter__"):
             tfactors = np.zeros((factors.shape[0], len(components)))
@@ -1229,11 +1244,43 @@ class MVA:
             for i in range(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
-            a = tfactors @ tloadings
+            factors = tfactors
+            loadings = tloadings
             signal_name = f"model from {mva_type} with components {components}"
         else:
-            a = factors[:, :components] @ loadings[:components, :]
+            factors = factors[:, :components]
+            loadings = loadings[:components, :]
             signal_name = f"model from {mva_type} with {components} components"
+
+        if lazy_output is None:
+            lazy_output = self._lazy
+
+        if lazy_output:
+            import dask.array as da
+
+            if isinstance(chunks, (tuple, list)) and len(chunks) == 2:
+                factors_chunks, loadings_chunks = chunks
+            elif chunks == "auto" or isinstance(chunks, int):
+                # Scalar or "auto": use the same setting on both outer axes.
+                factors_chunks = loadings_chunks = chunks
+            else:
+                raise ValueError(
+                    "If provided, `chunks` must be a tuple of two elements, "
+                    "a scalar integer or 'auto'."
+                )
+
+            # For matrix multiplication (N, K) @ (K, M), keep K in one chunk.
+            if isinstance(factors, da.Array):
+                factors = factors.rechunk((factors_chunks, -1))
+            else:
+                factors = da.from_array(factors, chunks=(factors_chunks, -1))
+
+            if isinstance(loadings, da.Array):
+                loadings = loadings.rechunk((-1, loadings_chunks))
+            else:
+                loadings = da.from_array(loadings, chunks=(-1, loadings_chunks))
+
+        a = np.matmul(factors, loadings)
 
         self._unfolded4decomposition = self.unfold()
         try:
@@ -1248,9 +1295,19 @@ class MVA:
                 sc.fold()
                 self._unfolded4decomposition = False
 
+        if lazy_output and not sc._lazy:
+            sc = sc.as_lazy()
+        elif not lazy_output and sc._lazy:
+            sc.compute()
+
         return sc
 
-    def get_decomposition_model(self, components=None):
+    _calculate_recmatrix.__doc__ = _calculate_recmatrix.__doc__ % (
+        CHUNKS_ARGS,
+        LAZY_OUTPUT_ARG,
+    )
+
+    def get_decomposition_model(self, components=None, chunks="auto", lazy_output=None):
         """Generate model with the selected number of principal components.
 
         Parameters
@@ -1259,6 +1316,8 @@ class MVA:
             * If None, rebuilds signal instance from all components
             * If int, rebuilds signal instance from components in range 0-given int
             * If list of ints, rebuilds signal instance from only components in given list
+        %s
+        %s
 
         Returns
         -------
@@ -1266,10 +1325,20 @@ class MVA:
             A model built from the given components.
 
         """
-        rec = self._calculate_recmatrix(components=components, mva_type="decomposition")
+        rec = self._calculate_recmatrix(
+            components=components,
+            mva_type="decomposition",
+            chunks=chunks,
+            lazy_output=lazy_output,
+        )
         return rec
 
-    def get_bss_model(self, components=None, chunks="auto"):
+    get_decomposition_model.__doc__ = get_decomposition_model.__doc__ % (
+        CHUNKS_ARGS,
+        LAZY_OUTPUT_ARG,
+    )
+
+    def get_bss_model(self, components=None, chunks="auto", lazy_output=None):
         """Generate model with the selected number of independent components.
 
         Parameters
@@ -1278,6 +1347,8 @@ class MVA:
             If None, rebuilds signal instance from all components
             If int, rebuilds signal instance from components in range 0-given int
             If list of ints, rebuilds signal instance from only components in given list
+        %s
+        %s
 
         Returns
         -------
@@ -1290,24 +1361,38 @@ class MVA:
             import dask.array as da
 
             # Save originals because _calculate_recmatrix reads from
-            # lr.factors/lr.loadings.  We temporarily swap in dask-wrapped
+            # lr.bss_factors/lr.bss_loadings.  We temporarily swap in dask-wrapped
             # bss arrays so the computation stays lazy, then restore the
             # original decomposition results to avoid permanent corruption.
-            saved_factors = lr.factors
-            saved_loadings = lr.loadings
+            saved_factors = lr.bss_factors
+            saved_loadings = lr.bss_loadings
             try:
                 if isinstance(lr.bss_factors, np.ndarray):
-                    lr.factors = da.from_array(lr.bss_factors, chunks=chunks)
+                    lr.bss_factors = da.from_array(lr.bss_factors, chunks=chunks)
                 if isinstance(lr.bss_loadings, np.ndarray):
-                    lr.loadings = da.from_array(lr.bss_loadings, chunks=chunks)
-                rec = self._calculate_recmatrix(components=components, mva_type="bss")
+                    lr.bss_loadings = da.from_array(lr.bss_loadings, chunks=chunks)
+                rec = self._calculate_recmatrix(
+                    components=components,
+                    mva_type="bss",
+                    chunks=chunks,
+                    lazy_output=lazy_output,
+                )
             finally:
-                lr.factors = saved_factors
-                lr.loadings = saved_loadings
+                lr.bss_factors = saved_factors
+                lr.bss_loadings = saved_loadings
             return rec
-        rec = self._calculate_recmatrix(components=components, mva_type="bss")
+
+        rec = self._calculate_recmatrix(
+            components=components,
+            mva_type="bss",
+            chunks=chunks,
+            lazy_output=lazy_output,
+        )
+
         return rec
 
+    get_bss_model.__doc__ = get_bss_model.__doc__ % (CHUNKS_ARGS, LAZY_OUTPUT_ARG)
+        
     def get_scree_plot_data(self):
         """Return the scree plot data as a Signal1D.
 

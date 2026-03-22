@@ -552,6 +552,8 @@ class TestBSSModelCorruptionFix:
         saved_loadings = s.learning_results.loadings
         model = s.get_bss_model()
         assert model is not None
+        assert isinstance(model, hs.signals.LazySignal1D)
+        assert isinstance(model.data, da.Array)
         # learning_results must be unchanged
         assert s.learning_results.factors is saved_factors
         assert s.learning_results.loadings is saved_loadings
