@@ -60,6 +60,7 @@ linkcheck_ignore = [
     "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
     "https://scholar.google.co.uk",  # 403 Client Error: Forbidden for url
     "https://software.opensuse.org",  # 400 Client Error: Bad Request for url
+    "https://zenodo.org",  # 403 Client Error: Forbidden for url
 ]
 
 linkcheck_exclude_documents = []
