@@ -26,6 +26,7 @@ import numpy.ma as ma
 import scipy
 
 from hyperspy import signal_tools, signals
+from hyperspy._components.scalable_fixed_pattern import ScalableFixedPattern
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.defaults_parser import preferences
@@ -1103,6 +1104,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         self,
         signal_range,
         background_estimator,
+        yscale=False,
         fast=True,
         zero_fill=False,
         show_progressbar=None,
@@ -1117,9 +1119,21 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         if background_estimator not in model:
             model.append(background_estimator)
 
-        background_estimator.estimate_parameters(
-            self, signal_range[0], signal_range[1], only_current=False
-        )
+        if isinstance(background_estimator, ScalableFixedPattern):
+            yscale = signal_tools._configure_scalable_fixed_pattern(
+                background_estimator, yscale
+            )
+            background_estimator.estimate_parameters(
+                self,
+                signal_range[0],
+                signal_range[1],
+                only_current=False,
+                yscale=yscale,
+            )
+        else:
+            background_estimator.estimate_parameters(
+                self, signal_range[0], signal_range[1], only_current=False
+            )
 
         if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
@@ -1158,6 +1172,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         background_type="Power law",
         polynomial_order=2,
         background_signal=None,
+        yscale=False,
         fast=True,
         zero_fill=False,
         plot_remainder=True,
@@ -1184,12 +1199,18 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             The type of component which should be used to fit the background.
             Possible components: Doniach, Gaussian, Lorentzian, Offset,
             Polynomial, PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt,
-            Signal1D. If Polynomial is used, the polynomial order can be
-            specified, if Signal1D is used, the background has to be passed
+            Scalable fixed pattern. If Polynomial is used, the polynomial order can be
+            specified. If Scalable fixed pattern is used, the ``background_signal`` has
+            to be passed and optionally the ``yscale`` parameter.
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
         background_signal : Signal1D, optional
-            Pass the background if a Signal1D background is used.
+            Pass the background signal object, if a Scalable fixed pattern background is
+            used. Can be used to e.g. subtract a measured "dark" background signal.
+        yscale : bool or float, optional
+            If True, the yscale will be estimated. If False, the yscale will be set to 1.
+            If a float is given, the yscale will be set to this value.
+            This option is only relevant for scaling background signals of the "Scalable fixed pattern" type.
         fast : bool
             If True, perform an approximative estimation of the parameters.
             If False, the signal is fitted using non-linear least squares
@@ -1265,6 +1286,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
                 background_type=background_type,
                 polynomial_order=polynomial_order,
                 background_signal=background_signal,
+                yscale=yscale,
                 fast=fast,
                 plot_remainder=plot_remainder,
                 show_progressbar=show_progressbar,
@@ -1280,7 +1302,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         else:
             if signal_range == "full":
                 signal_range = (
-                    self.axes_manager[-1].offset,
+                    self.axes_manager[-1].low_value,
                     self.axes_manager[-1].high_value,
                 )
             background_estimator = signal_tools._get_background_estimator(
@@ -1289,6 +1311,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             result = self._remove_background_cli(
                 signal_range=signal_range,
                 background_estimator=background_estimator,
+                yscale=yscale,
                 fast=fast,
                 zero_fill=zero_fill,
                 show_progressbar=show_progressbar,

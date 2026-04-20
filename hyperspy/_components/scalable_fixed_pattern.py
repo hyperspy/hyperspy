@@ -171,22 +171,54 @@ class ScalableFixedPattern(Component):
     def grad_yscale(self, x):
         return self.function(x) / self.yscale.value
 
-    def estimate_parameters(self, signal, x1, x2, only_current=False):
+    def estimate_parameters(self, signal, x1, x2, only_current=False, yscale=False):
         super()._estimate_parameters(signal)
+
+        if yscale is not False:
+            axis = signal.axes_manager[-1]
+            i1, i2 = axis.value_range_to_indices(x1, x2)
+            signal_axis = axis.axis[i1:i2]
+            component = np.asarray(
+                self._function(signal_axis, 1.0, 1.0, 0.0),
+                dtype=float
+            )
+            valid = np.isfinite(component) & (component != 0)
+
+        def _estimate_yscale(data):
+            data = np.asarray(data, dtype=float)
+            ratio = np.full(data.shape, np.nan, dtype=float)
+            np.divide(data, component, out=ratio, where=valid)
+            value = np.nanmean(ratio, axis=-1)
+            return np.where(np.isfinite(value), value, 1.0)
 
         if only_current:
             self.xscale.value = 1.0
-            self.yscale.value = 1.0
             self.shift.value = 0.0
-            self.fetch_stored_values()
-            return True
+            if yscale is False:
+                self.yscale.value = 1.0
+            elif yscale is True:
+                current_data = signal._get_current_data()[i1:i2]
+                self.yscale.value = float(_estimate_yscale(current_data))
+            else:
+                self.yscale.value = yscale
         else:
             if self.xscale.map is None:
                 self._create_arrays()
             self.xscale.map["values"][:] = 1.0
             self.xscale.map["is_set"][:] = True
-            self.yscale.map["values"][:] = 1.0
-            self.yscale.map["is_set"][:] = True
             self.shift.map["values"][:] = 0.0
             self.shift.map["is_set"][:] = True
-            return True
+            if yscale is False:
+                self.yscale.map["values"][:] = 1.0
+                self.yscale.map["is_set"][:] = True
+            elif yscale is True:
+                data = np.moveaxis(signal.data, axis.index_in_array, -1)[..., i1:i2]
+                self.yscale.map["values"][:] = _estimate_yscale(data) 
+                self.yscale.map["is_set"][:] = True
+            else:
+                self.yscale.map["values"][:] = yscale
+                self.yscale.map["is_set"][:] = True
+
+        self.fetch_stored_values()
+        return True
+

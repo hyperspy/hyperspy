@@ -3207,11 +3207,13 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                     self._plot.navigator_data_function = "slider"
                 elif navigator == "data":
                     if np.issubdtype(self.data.dtype, np.complexfloating):
-                        self._plot.navigator_data_function = lambda axes_manager=None: (
+                        self._plot.navigator_data_function = (
+                            lambda axes_manager=None:
                             utils.to_numpy(abs(self.data))
                         )
                     else:
-                        self._plot.navigator_data_function = lambda axes_manager=None: (
+                        self._plot.navigator_data_function = (
+                            lambda axes_manager=None:
                             utils.to_numpy(self.data)
                         )
                 elif navigator == "spectrum":

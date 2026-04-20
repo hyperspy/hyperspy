@@ -1,2 +1,4 @@
-implemented remove_background_signal from lumispy issues #124 into the remove_background function,
-using Signal1D as background type
+Add ``scalable fixed pattern`` method to
+:meth:`~.api.signals.Signal1D.remove_background` to remove
+background defined from a :class:`~.api.signals.Signal1D`, see
+this lumispy `issue #124 <https://github.com/LumiSpy/lumispy/issues/124>`_ for context.
