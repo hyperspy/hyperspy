@@ -1092,7 +1092,7 @@ class LazySignal(signals.BaseSignal):
                 finally:
                     if self._unfolded4decomposition is True:
                         self.fold()
-                        self._unfolded4decomposition is False
+                        self._unfolded4decomposition = False
             else:
                 self._check_navigation_mask(navigation_mask)
                 self._check_signal_mask(signal_mask)
