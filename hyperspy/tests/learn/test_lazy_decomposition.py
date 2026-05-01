@@ -1530,3 +1530,89 @@ class TestLazyDecompositionMaskTypes:
         # reproject='signal' or 'both' → no NaN in factors
         if reproject in ("signal", "both"):
             assert not np.any(np.isnan(t.factors))
+
+
+class TestLazyCentreMaskParity:
+    """Regression tests for centre= bugs in lazy SVD decomposition.
+
+    B2: centre='navigation' mean must be computed over unmasked nav positions
+        only, matching the non-lazy behaviour.
+    B4: centre='navigation' + signal_mask + reproject='signal' must not raise
+        a TypeError from trying to boolean-index-assign a 2-D mean array.
+    """
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(42)
+        # Asymmetric: nav (14,) ≠ sig 23 so any transposition is caught.
+        nav = 14
+        sig = 23
+        rank = 3
+        U = np.abs(rng.standard_normal((nav, rank)))
+        V = np.abs(rng.standard_normal((sig, rank)))
+        self.data = (U @ V.T) + 1.0  # strictly positive
+        self.nav_mask = np.zeros(nav, dtype=bool)
+        self.nav_mask[::3] = True  # mask every third position
+        self.sig_mask = np.zeros(sig, dtype=bool)
+        self.sig_mask[:4] = True  # mask first 4 channels
+
+    def _make_signals(self):
+        s_nl = Signal1D(self.data.copy())
+        s_lz = Signal1D(self.data.copy()).as_lazy()
+        return s_nl, s_lz
+
+    def test_centre_navigation_mean_is_mask_aware(self):
+        """B2: lazy centre='navigation' mean must equal the non-lazy mean
+        (computed over unmasked rows only, not the full data)."""
+        s_nl, s_lz = self._make_signals()
+        kw = dict(
+            output_dimension=3,
+            centre="navigation",
+            navigation_mask=self.nav_mask,
+            print_info=False,
+        )
+        s_nl.decomposition(**kw)
+        s_lz.decomposition(**kw)
+        nl_mean = s_nl.learning_results.mean
+        lz_mean = s_lz.learning_results.mean
+        # Both should equal the mean computed only over unmasked rows.
+        expected = self.data[~self.nav_mask].mean(axis=0, keepdims=True)
+        np.testing.assert_allclose(nl_mean, expected, rtol=1e-10)
+        np.testing.assert_allclose(lz_mean, expected, rtol=1e-10)
+
+    def test_centre_navigation_mean_differs_from_full_mean(self):
+        """B2 (regression guard): with masked nav positions, the mask-aware
+        mean must differ from the full-data mean when the mask is non-trivial."""
+        _, s_lz = self._make_signals()
+        s_lz.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            navigation_mask=self.nav_mask,
+            print_info=False,
+        )
+        lz_mean = s_lz.learning_results.mean.ravel()
+        full_mean = self.data.mean(axis=0)
+        # They should NOT be equal (masked rows have different values).
+        assert not np.allclose(lz_mean, full_mean), (
+            "Lazy mean unexpectedly equals full-data mean; "
+            "mask was not applied when computing the centre."
+        )
+
+    @pytest.mark.parametrize("reproject", ["signal", "both"])
+    def test_centre_with_both_masks_and_signal_reproject(self, reproject):
+        """B4: centre='navigation' + signal_mask + reproject='signal'/'both'
+        must not raise TypeError (mean was 2-D, boolean-index assignment
+        failed when expanding to full signal size)."""
+        _, s_lz = self._make_signals()
+        s_lz.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject=reproject,
+            print_info=False,
+        )
+        t = s_lz.learning_results
+        assert t.factors.shape == (len(self.sig_mask), 3)
+        assert not np.any(np.isnan(t.factors)), (
+            "factors should have no NaN after signal reproject"
+        )
