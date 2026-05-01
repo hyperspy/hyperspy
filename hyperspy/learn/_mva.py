@@ -1296,14 +1296,20 @@ class MVA:
         return rec
 
     def get_explained_variance_ratio(self):
-        """Return explained variance ratio of the PCA components as a Signal1D.
+        """Return the scree plot data as a Signal1D.
+
+        Returns the explained variance ratio (when the decomposition was
+        performed with mean-centring, i.e. true PCA) or the proportion of
+        total variation (ratio of squared singular values, for uncentred SVD
+        and other algorithms) as a function of component index.
 
         Read more in the :ref:`User Guide <mva.scree_plot>`.
 
         Returns
         -------
         s : Signal1D
-            Explained variance ratio.
+            Explained variance ratio (centred decomposition) or proportion of
+            total variation (uncentred decomposition).
 
         See Also
         --------
@@ -1315,12 +1321,17 @@ class MVA:
         if target.explained_variance_ratio is None:
             raise AttributeError(
                 "The explained_variance_ratio attribute is "
-                "`None`, did you forget to perform a PCA "
-                "decomposition?"
+                "`None`, did you forget to run decomposition()?"
             )
+        is_centred = target.centre is not None
+        algorithm = target.decomposition_algorithm or "Decomposition"
+        scree_title = f"{algorithm} Scree Plot"
+        component_label = (
+            "Principal component index" if is_centred else "Component index"
+        )
         s = signals.Signal1D(target.explained_variance_ratio)
-        s.metadata.General.title = self.metadata.General.title + "\nPCA Scree Plot"
-        s.axes_manager[-1].name = "Principal component index"
+        s.metadata.General.title = self.metadata.General.title + "\n" + scree_title
+        s.axes_manager[-1].name = component_label
         s.axes_manager[-1].units = ""
         return s
 
@@ -1339,9 +1350,13 @@ class MVA:
         ax=None,
         **kwargs,
     ):
-        """Plot the decomposition explained variance ratio vs index number.
+        """Plot the decomposition scree plot (explained variance ratio vs component index).
 
-        This is commonly known as a scree plot.
+        For centred decompositions (e.g. PCA), the y-axis shows the
+        explained variance ratio. For uncentred decompositions (e.g. plain
+        SVD without mean-centring), it shows the proportion of total
+        variation (ratio of squared singular values), which is not the same
+        as explained variance.
 
         Read more in the :ref:`User Guide <mva.scree_plot>`.
 
@@ -1355,10 +1370,10 @@ class MVA:
             Threshold used to determine how many components should be
             highlighted as signal (as opposed to noise).
             If a float (between 0 and 1), ``threshold`` will be
-            interpreted as a cutoff value, defining the variance at which to
-            draw a line showing the cutoff between signal and noise;
-            the number of signal components will be automatically determined
-            by the cutoff value.
+            interpreted as a cutoff value, defining the proportion of
+            variation at which to draw a line showing the cutoff between
+            signal and noise; the number of signal components will be
+            automatically determined by the cutoff value.
             If an int, ``threshold`` is interpreted as the number of
             components to highlight as signal (and no cutoff line will be
             drawn)
@@ -1506,9 +1521,18 @@ class MVA:
         if xaxis_labeling is None:
             xaxis_labeling = "cardinal" if xaxis_type == "index" else "ordinal"
 
+        is_centred = self.learning_results.centre is not None
         axes_titles = {
-            "y": "Proportion of variance",
-            "x": f"Principal component {xaxis_type}",
+            "y": (
+                "Explained variance ratio"
+                if is_centred
+                else "Proportion of total variation"
+            ),
+            "x": (
+                f"Principal component {xaxis_type}"
+                if is_centred
+                else f"Component {xaxis_type}"
+            ),
         }
 
         if n < s.axes_manager[-1].size:
@@ -1570,17 +1594,21 @@ class MVA:
         return ax
 
     def plot_cumulative_explained_variance_ratio(self, n=50):
-        """Plot cumulative explained variance up to n principal components.
+        """Plot the cumulative scree plot up to n components.
+
+        For centred decompositions (e.g. PCA), the y-axis shows the
+        cumulative explained variance ratio. For uncentred decompositions,
+        it shows the cumulative proportion of total variation.
 
         Parameters
         ----------
         n : int
-            Number of principal components to show.
+            Number of components to show.
 
         Returns
         -------
         ax : matplotlib.axes
-            Axes object containing the cumulative explained variance plot.
+            Axes object containing the cumulative plot.
 
         See Also
         --------
@@ -1590,14 +1618,21 @@ class MVA:
         import matplotlib.pyplot as plt
 
         target = self.learning_results
+        is_centred = target.centre is not None
+        ylabel = (
+            "Cumulative explained variance ratio"
+            if is_centred
+            else "Cumulative proportion of total variation"
+        )
+        xlabel = "Principal component" if is_centred else "Component"
         if n > target.explained_variance.shape[0]:
             n = target.explained_variance.shape[0]
         cumu = np.cumsum(target.explained_variance) / np.sum(target.explained_variance)
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.scatter(range(n), cumu[:n])
-        ax.set_xlabel("Principal component")
-        ax.set_ylabel("Cumulative explained variance ratio")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
 
         return ax
 
