@@ -1201,6 +1201,10 @@ class LazySignal(signals.BaseSignal):
                 )
 
             # LEARN
+            # For non-SVD algorithms _navigation_mask_for_reproject stays equal
+            # to navigation_mask (no unfolding/ravelling occurs).  For SVD it
+            # is updated below after the BaseSignal unwrap but before ravel.
+            _navigation_mask_for_reproject = navigation_mask
             if algorithm == "SVD":
                 from hyperspy.learn.incremental_svd import ISVD
 
@@ -1217,6 +1221,11 @@ class LazySignal(signals.BaseSignal):
                     if navigation_mask is not None:
                         if isinstance(navigation_mask, signals.BaseSignal):
                             navigation_mask = navigation_mask.data
+                        # Save the original (possibly N-D) mask before ravelling.
+                        # The ravelled form is needed while the signal is unfolded
+                        # (1-D nav); the original form is needed after fold() for
+                        # reproject _block_iterator calls.
+                        _navigation_mask_for_reproject = navigation_mask
                         if isinstance(navigation_mask, da.Array):
                             if navigation_mask.ndim > 1:
                                 navigation_mask = navigation_mask.ravel()
@@ -1424,7 +1433,7 @@ class LazySignal(signals.BaseSignal):
                             flat_signal=True,
                             get=get,
                             signal_mask=signal_mask,
-                            navigation_mask=navigation_mask,
+                            navigation_mask=_navigation_mask_for_reproject,
                         ),
                     )
                     H = []
@@ -1451,7 +1460,7 @@ class LazySignal(signals.BaseSignal):
                             flat_signal=True,
                             get=get,
                             signal_mask=signal_mask,
-                            navigation_mask=navigation_mask,
+                            navigation_mask=_navigation_mask_for_reproject,
                         ),
                     )
                     H = []
@@ -1474,7 +1483,7 @@ class LazySignal(signals.BaseSignal):
                             flat_signal=True,
                             get=get,
                             signal_mask=signal_mask,
-                            navigation_mask=navigation_mask,
+                            navigation_mask=_navigation_mask_for_reproject,
                         ),
                     )
                     H = []
@@ -1498,7 +1507,7 @@ class LazySignal(signals.BaseSignal):
                             flat_signal=True,
                             get=get,
                             signal_mask=None,
-                            navigation_mask=navigation_mask,
+                            navigation_mask=_navigation_mask_for_reproject,
                         ),
                         total=nblocks,
                         leave=True,
