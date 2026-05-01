@@ -1239,7 +1239,26 @@ class LazySignal(signals.BaseSignal):
                     # (which is restored via original_data in the outer
                     # finally block).
                     if centre == "navigation":
-                        mean = self.data.mean(axis=0, keepdims=True).compute()
+                        # Compute mean only over unmasked navigation positions
+                        # so that masked pixels do not bias the centring.
+                        # After unfold() the data is 2-D: (nav, sig).
+                        if navigation_mask is not None:
+                            # navigation_mask here is the already-ravelled 1-D
+                            # bool array (True = masked out).
+                            import dask.array as _da
+
+                            nav_mask_1d = (
+                                navigation_mask.compute()
+                                if isinstance(navigation_mask, _da.Array)
+                                else np.asarray(navigation_mask, dtype=bool)
+                            ).ravel()
+                            mean = (
+                                self.data[~nav_mask_1d, :]
+                                .mean(axis=0, keepdims=True)
+                                .compute()
+                            )
+                        else:
+                            mean = self.data.mean(axis=0, keepdims=True).compute()
                         self.data = self.data - mean
                     elif centre == "signal":
                         mean = self.data.mean(axis=1, keepdims=True).compute()
@@ -1516,15 +1535,18 @@ class LazySignal(signals.BaseSignal):
                         D_chunks.append(chunk)
                     D = np.concatenate(D_chunks, axis=0)  # (n_unmasked_nav, sig_size)
                     if mean is not None:
-                        # mean was computed over unmasked signal channels only;
+                        # mean may be 2-D (keepdims=True from centre='navigation');
+                        # ravel to 1-D so length and boolean-index assignment work.
+                        mean_1d = np.asarray(mean).ravel()
+                        # mean_1d was computed over unmasked signal channels only;
                         # expand to full signal size (zeros at masked positions)
                         # so it can be broadcast against D which covers all channels.
-                        if _flat_sig_mask is not None and len(mean) < D.shape[1]:
-                            mean_full = np.zeros(D.shape[1], dtype=mean.dtype)
-                            mean_full[~_flat_sig_mask] = mean
+                        if _flat_sig_mask is not None and len(mean_1d) < D.shape[1]:
+                            mean_full = np.zeros(D.shape[1], dtype=mean_1d.dtype)
+                            mean_full[~_flat_sig_mask] = mean_1d
                             D = D - mean_full
                         else:
-                            D = D - mean
+                            D = D - mean_1d
                     # loadings here has shape (n_unmasked_nav, n_components)
                     # (either from the learn pass or from reproject='navigation')
                     if reproject == "both":
