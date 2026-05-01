@@ -1057,7 +1057,7 @@ class LazySignal(signals.BaseSignal):
                 coeff = (
                     raG[(...,) + (None,) * rbH.ndim] * rbH[(None,) * raG.ndim + (...,)]
                 )
-                coeff.map_blocks(np.nan_to_num)
+                coeff = coeff.map_blocks(np.nan_to_num)
                 coeff = da.where(coeff == 0, 1, coeff)
                 data = data / coeff
                 self.data = data
