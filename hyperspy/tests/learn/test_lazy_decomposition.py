@@ -1288,134 +1288,245 @@ class TestSubSignalChunking:
         assert s.learning_results.factors.shape[0] == sig_size
 
 
+def _make_mask_test_signal(nav_shape, sig_size, seed=123):
+    """Build a lazy Signal1D with asymmetric nav and signal shapes.
+
+    Using non-equal dimensions (e.g. nav (6, 8) and sig 40) ensures that any
+    accidental axis transposition or shape assumption in the code is caught.
+    """
+    rng = np.random.default_rng(seed)
+    rank = 3
+    nav_size = int(np.prod(nav_shape))
+    U = np.abs(rng.standard_normal((nav_size, rank)))
+    V = np.abs(rng.standard_normal((sig_size, rank)))
+    data = (U @ V.T).reshape(nav_shape + (sig_size,)) + 0.1
+    # Use asymmetric chunk sizes: nav chunks that don't divide evenly,
+    # and sig in one chunk.
+    if len(nav_shape) == 1:
+        chunks = (nav_shape[0] // 3 + 1, sig_size)
+    else:
+        chunks = tuple(n // 3 + 1 for n in nav_shape) + (sig_size,)
+    s = Signal1D(da.from_array(data, chunks=chunks)).as_lazy()
+    return s, nav_size
+
+
+def _build_nav_masks(s, nav_shape):
+    """Return a dict of all four navigation mask types for *s*."""
+    nm_np = np.zeros(nav_shape, dtype=bool)
+    # Mask a corner: different rows/cols to expose transposition bugs.
+    nm_np[0, :2] = True  # first row, first 2 cols  (only valid for 2-D nav)
+    nm_dask = da.from_array(nm_np, chunks=tuple(max(1, n // 2) for n in nav_shape))
+    nm_signal_std = s._get_navigation_signal(dtype="bool")
+    nm_signal_std.data[0, :2] = True
+    nm_signal_lazy = nm_signal_std.as_lazy()
+    return {
+        "numpy": nm_np,
+        "dask": nm_dask,
+        "BaseSignal": nm_signal_std.T,
+        "LazySignal": nm_signal_lazy.T,
+    }
+
+
+def _build_nav_masks_1d(s, nav_size):
+    """Return a dict of all four navigation mask types for 1-D nav *s*."""
+    nm_np = np.zeros(nav_size, dtype=bool)
+    nm_np[::4] = True
+    nm_dask = da.from_array(nm_np, chunks=nav_size // 3 + 1)
+    nm_signal_std = s._get_navigation_signal(dtype="bool")
+    nm_signal_std.data[::4] = True
+    nm_signal_lazy = nm_signal_std.as_lazy()
+    return {
+        "numpy": nm_np,
+        "dask": nm_dask,
+        "BaseSignal": nm_signal_std.T,
+        "LazySignal": nm_signal_lazy.T,
+    }
+
+
+def _build_sig_masks(s, sig_size):
+    """Return a dict of all four signal mask types."""
+    sm_np = np.zeros(sig_size, dtype=bool)
+    sm_np[:5] = True
+    sm_dask = da.from_array(sm_np, chunks=sig_size // 3 + 1)
+    sm_signal_std = s._get_signal_signal(dtype="bool")
+    sm_signal_std.data[:5] = True
+    sm_signal_lazy = sm_signal_std.as_lazy()
+    return {
+        "numpy": sm_np,
+        "dask": sm_dask,
+        "BaseSignal": sm_signal_std,
+        "LazySignal": sm_signal_lazy,
+    }
+
+
 class TestLazyDecompositionMaskTypes:
     """Verify that lazy SVD decomposition accepts every supported mask type for
-    both navigation_mask and signal_mask:
+    both navigation_mask and signal_mask, for both 1-D and 2-D navigation
+    spaces with **asymmetric** shapes to catch axis-transposition bugs.
 
+    Mask types tested:
     - numpy boolean array
     - dask boolean array
     - standard (in-memory) BaseSignal
     - lazy (dask-backed) BaseSignal
 
-    Two additional regression cases are covered:
-    - BaseSignal nav mask was not unwrapped before unfold(), causing a dask
-      chunk-shape mismatch (fixed in lazy.py SVD path).
-    - With normalize_poissonian_noise=True, _root_aG was applied to the full
-      nav size even though loadings only covered unmasked positions (fixed by
-      indexing _root_aG/bH with the flat mask complement).
+    Regression cases covered:
+    - BaseSignal nav mask not unwrapped before unfold() → dask chunk mismatch.
+    - _root_aG/_root_bH broadcast error with Poisson noise + masks.
+    - 2-D nav mask ravelled before fold() but used post-fold for reproject.
     """
 
-    def setup_method(self, method):
-        rng = np.random.default_rng(123)
-        nav_shape = (8, 8)
-        sig_size = 64
-        rank = 3
-        nav_size = int(np.prod(nav_shape))
-        U = np.abs(rng.standard_normal((nav_size, rank)))
-        V = np.abs(rng.standard_normal((sig_size, rank)))
-        data = (U @ V.T).reshape(nav_shape + (sig_size,)) + 0.1
-        chunks = (4, 4, sig_size)
-        self.s = Signal1D(da.from_array(data, chunks=chunks)).as_lazy()
-        self.nav_shape = nav_shape
-        self.sig_size = sig_size
-        self.nav_size = nav_size
-
-        # --- navigation masks (True = masked) ---
-        nm_np = np.zeros(nav_shape, dtype=bool)
-        nm_np[:2, :2] = True  # mask 4 of 64 nav pixels
-        nm_dask = da.from_array(nm_np, chunks=(4, 4))
-        # standard BaseSignal: _get_navigation_signal returns Signal2D;
-        # transpose to signal_dimension=0 as required by _check_navigation_mask
-        nm_signal_std = self.s._get_navigation_signal(dtype="bool")
-        nm_signal_std.data[:2, :2] = True
-        nm_signal_lazy = nm_signal_std.as_lazy()
-
-        self.nav_masks = {
-            "numpy": nm_np,
-            "dask": nm_dask,
-            "BaseSignal": nm_signal_std.T,
-            "LazySignal": nm_signal_lazy.T,
-        }
-
-        # --- signal masks (True = masked) ---
-        sm_np = np.zeros(sig_size, dtype=bool)
-        sm_np[:5] = True  # mask 5 of 64 signal channels
-        sm_dask = da.from_array(sm_np, chunks=16)
-        sm_signal_std = self.s._get_signal_signal(dtype="bool")
-        sm_signal_std.data[:5] = True
-        sm_signal_lazy = sm_signal_std.as_lazy()
-
-        self.sig_masks = {
-            "numpy": sm_np,
-            "dask": sm_dask,
-            "BaseSignal": sm_signal_std,
-            "LazySignal": sm_signal_lazy,
-        }
-
+    # nav_shape (6, 8) × sig 40: all three dimensions deliberately differ so
+    # that a swapped axis would produce the wrong size and be caught immediately.
+    @pytest.mark.parametrize(
+        "nav_shape,sig_size",
+        [
+            ((18,), 40),  # 1-D nav: 18 ≠ 40
+            ((6, 8), 40),  # 2-D nav: 6 ≠ 8 ≠ 40
+        ],
+    )
     @pytest.mark.parametrize("mask_type", ["numpy", "dask", "BaseSignal", "LazySignal"])
-    def test_nav_mask_types(self, mask_type):
-        """Every navigation mask type produces correct loadings shape and NaN
-        at masked positions."""
-        self.s.decomposition(
+    def test_nav_mask_types(self, nav_shape, sig_size, mask_type):
+        """Every navigation mask type produces correct loadings shape."""
+        s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
+        if len(nav_shape) == 1:
+            nav_masks = _build_nav_masks_1d(s, nav_size)
+        else:
+            nav_masks = _build_nav_masks(s, nav_shape)
+        s.decomposition(
             algorithm="SVD",
             output_dimension=3,
-            navigation_mask=self.nav_masks[mask_type],
+            navigation_mask=nav_masks[mask_type],
             print_info=False,
         )
-        t = self.s.learning_results
-        assert t.loadings.shape[0] == self.nav_size
+        assert s.learning_results.loadings.shape[0] == nav_size
 
+    @pytest.mark.parametrize(
+        "nav_shape,sig_size",
+        [
+            ((18,), 40),
+            ((6, 8), 40),
+        ],
+    )
     @pytest.mark.parametrize("mask_type", ["numpy", "dask", "BaseSignal", "LazySignal"])
-    def test_sig_mask_types(self, mask_type):
+    def test_sig_mask_types(self, nav_shape, sig_size, mask_type):
         """Every signal mask type produces correct factors shape."""
-        self.s.decomposition(
+        s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
+        sig_masks = _build_sig_masks(s, sig_size)
+        s.decomposition(
             algorithm="SVD",
             output_dimension=3,
-            signal_mask=self.sig_masks[mask_type],
+            signal_mask=sig_masks[mask_type],
             print_info=False,
         )
-        t = self.s.learning_results
-        assert t.factors.shape[0] == self.sig_size
+        assert s.learning_results.factors.shape[0] == sig_size
 
+    @pytest.mark.parametrize(
+        "nav_shape,sig_size",
+        [
+            ((18,), 40),
+            ((6, 8), 40),
+        ],
+    )
     @pytest.mark.parametrize("mask_type", ["numpy", "dask", "BaseSignal", "LazySignal"])
-    def test_nav_mask_with_poisson(self, mask_type):
-        """Navigation mask of every type works with normalize_poissonian_noise
-        (regression: _root_aG broadcast error when nav pixels are masked)."""
-        self.s.decomposition(
+    def test_nav_mask_with_poisson(self, nav_shape, sig_size, mask_type):
+        """Navigation mask + Poisson normalisation: regression for _root_aG
+        broadcast error when nav pixels are masked."""
+        s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
+        if len(nav_shape) == 1:
+            nav_masks = _build_nav_masks_1d(s, nav_size)
+        else:
+            nav_masks = _build_nav_masks(s, nav_shape)
+        s.decomposition(
             True,
             algorithm="SVD",
             output_dimension=3,
-            navigation_mask=self.nav_masks[mask_type],
+            navigation_mask=nav_masks[mask_type],
             print_info=False,
         )
-        t = self.s.learning_results
-        assert t.loadings.shape[0] == self.nav_size
+        assert s.learning_results.loadings.shape[0] == nav_size
 
+    @pytest.mark.parametrize(
+        "nav_shape,sig_size",
+        [
+            ((18,), 40),
+            ((6, 8), 40),
+        ],
+    )
     @pytest.mark.parametrize("mask_type", ["numpy", "dask", "BaseSignal", "LazySignal"])
-    def test_sig_mask_with_poisson(self, mask_type):
-        """Signal mask of every type works with normalize_poissonian_noise
-        (regression: _root_bH broadcast error when signal channels are masked)."""
-        self.s.decomposition(
+    def test_sig_mask_with_poisson(self, nav_shape, sig_size, mask_type):
+        """Signal mask + Poisson normalisation: regression for _root_bH
+        broadcast error when signal channels are masked."""
+        s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
+        sig_masks = _build_sig_masks(s, sig_size)
+        s.decomposition(
             True,
             algorithm="SVD",
             output_dimension=3,
-            signal_mask=self.sig_masks[mask_type],
+            signal_mask=sig_masks[mask_type],
             print_info=False,
         )
-        t = self.s.learning_results
-        assert t.factors.shape[0] == self.sig_size
+        assert s.learning_results.factors.shape[0] == sig_size
 
+    @pytest.mark.parametrize(
+        "nav_shape,sig_size",
+        [
+            ((18,), 40),
+            ((6, 8), 40),
+        ],
+    )
     @pytest.mark.parametrize("mask_type", ["numpy", "dask", "BaseSignal", "LazySignal"])
-    def test_both_masks_with_poisson(self, mask_type):
+    def test_both_masks_with_poisson(self, nav_shape, sig_size, mask_type):
         """Both mask types together work with Poisson normalisation."""
-        self.s.decomposition(
+        s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
+        if len(nav_shape) == 1:
+            nav_masks = _build_nav_masks_1d(s, nav_size)
+        else:
+            nav_masks = _build_nav_masks(s, nav_shape)
+        sig_masks = _build_sig_masks(s, sig_size)
+        s.decomposition(
             True,
             algorithm="SVD",
             output_dimension=3,
-            navigation_mask=self.nav_masks[mask_type],
-            signal_mask=self.sig_masks[mask_type],
+            navigation_mask=nav_masks[mask_type],
+            signal_mask=sig_masks[mask_type],
             print_info=False,
         )
-        t = self.s.learning_results
-        assert t.loadings.shape[0] == self.nav_size
-        assert t.factors.shape[0] == self.sig_size
+        assert s.learning_results.loadings.shape[0] == nav_size
+        assert s.learning_results.factors.shape[0] == sig_size
+
+    @pytest.mark.parametrize(
+        "nav_shape,sig_size",
+        [
+            ((18,), 40),
+            ((6, 8), 40),
+        ],
+    )
+    @pytest.mark.parametrize("reproject", ["navigation", "signal", "both"])
+    def test_reproject_2d_nav_numpy_mask(self, nav_shape, sig_size, reproject):
+        """reproject with a 2-D nav numpy mask must not raise a dask shape
+        error (regression: nav mask was ravelled before fold() but then used
+        post-fold in _block_iterator, causing a chunk-shape mismatch)."""
+        s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
+        if len(nav_shape) == 1:
+            nav_mask = _build_nav_masks_1d(s, nav_size)["numpy"]
+        else:
+            nav_mask = _build_nav_masks(s, nav_shape)["numpy"]
+        sig_mask = _build_sig_masks(s, sig_size)["numpy"]
+        s.decomposition(
+            algorithm="SVD",
+            output_dimension=3,
+            navigation_mask=nav_mask,
+            signal_mask=sig_mask,
+            reproject=reproject,
+            print_info=False,
+        )
+        t = s.learning_results
+        assert t.loadings.shape[0] == nav_size
+        assert t.factors.shape[0] == sig_size
+        # reproject='navigation' or 'both' → no NaN in loadings
+        if reproject in ("navigation", "both"):
+            assert not np.any(np.isnan(t.loadings))
+        # reproject='signal' or 'both' → no NaN in factors
+        if reproject in ("signal", "both"):
+            assert not np.any(np.isnan(t.factors))
