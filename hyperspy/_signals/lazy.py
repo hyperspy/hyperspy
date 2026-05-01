@@ -1316,7 +1316,30 @@ class LazySignal(signals.BaseSignal):
                 loadings = loadings.T
                 mean = None
 
+            # Pre-compute flat boolean masks needed by the reproject blocks
+            # below.  (The same masks are recomputed later outside the try
+            # block for storing in learning_results; that duplication is
+            # intentional to keep the two concerns separate.)
+            import dask.array as _da
+
+            def _to_flat_bool_early(mask, size):
+                if mask is None:
+                    return None
+                if isinstance(mask, _da.Array):
+                    mask = mask.compute()
+                if hasattr(mask, "data"):
+                    mask = mask.data
+                return np.asarray(mask, dtype=bool).ravel()
+
+            _flat_nav_mask = _to_flat_bool_early(
+                navigation_mask, self.axes_manager.navigation_size
+            )
+            _flat_sig_mask = _to_flat_bool_early(
+                signal_mask, self.axes_manager.signal_size
+            )
+
             # REPROJECT NAVIGATION (recompute loadings over full nav)
+            _nav_reprojected = False
             if reproject in ("navigation", "both"):
                 if algorithm == "SVD":
                     # SVD already did a projection pass; redo it to get
@@ -1380,12 +1403,40 @@ class LazySignal(signals.BaseSignal):
                     except KeyboardInterrupt:  # pragma: no cover
                         pass
                     loadings = post(H)
+                _nav_reprojected = True
 
             elif reproject is None:
                 # Default behaviour: for PCA/ORPCA/ORNMF always project to
                 # get loadings (preserves the pre-existing default of
                 # reproject=True).  For SVD, loadings were already computed
                 # in the learn pass above so nothing extra is needed.
+                if algorithm == "PCA":
+                    method = obj.transform
+
+                    def post(a):
+                        return np.concatenate(a, axis=0)
+
+                    _map = map(
+                        lambda thing: method(thing),
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask,
+                        ),
+                    )
+                    H = []
+                    try:
+                        for thing in progressbar(_map, total=nblocks, desc="Project"):
+                            H.append(thing)
+                    except KeyboardInterrupt:  # pragma: no cover
+                        pass
+                    loadings = post(H)
+
+            # For reproject='signal', non-SVD algorithms need loadings computed
+            # first (over masked nav + masked signal), which mirrors reproject=None.
+            # SVD already computed loadings in the learn pass.
+            if reproject == "signal" and algorithm != "SVD" and loadings is None:
                 if algorithm == "PCA":
                     method = obj.transform
 
@@ -1433,15 +1484,49 @@ class LazySignal(signals.BaseSignal):
                     loadings = post(H)
 
             # REPROJECT SIGNAL (recompute factors over full signal)
+            _signal_reprojected = False
             if reproject in ("signal", "both"):
-                if algorithm == "SVD":
-                    import warnings
-
-                    warnings.warn(
-                        "Reprojecting the signal is not supported for "
-                        "algorithm='SVD' on lazy signals; the step is skipped.",
-                        UserWarning,
-                    )
+                if algorithm in ("SVD", "PCA"):
+                    # Collect all navigation-unmasked rows with the full signal
+                    # (no signal mask), then solve: factors = pinv(L) @ D_full
+                    # This mirrors the non-lazy SVD path in _mva.py line 596.
+                    D_chunks = []
+                    for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=None,
+                            navigation_mask=navigation_mask,
+                        ),
+                        total=nblocks,
+                        leave=True,
+                        desc="Reproject signal",
+                    ):
+                        D_chunks.append(chunk)
+                    D = np.concatenate(D_chunks, axis=0)  # (n_unmasked_nav, sig_size)
+                    if mean is not None:
+                        # mean was computed over unmasked signal channels only;
+                        # expand to full signal size (zeros at masked positions)
+                        # so it can be broadcast against D which covers all channels.
+                        if _flat_sig_mask is not None and len(mean) < D.shape[1]:
+                            mean_full = np.zeros(D.shape[1], dtype=mean.dtype)
+                            mean_full[~_flat_sig_mask] = mean
+                            D = D - mean_full
+                        else:
+                            D = D - mean
+                    # loadings here has shape (n_unmasked_nav, n_components)
+                    # (either from the learn pass or from reproject='navigation')
+                    if reproject == "both":
+                        # loadings already covers all nav positions after the
+                        # 'navigation' reproject above; restrict to unmasked rows
+                        if _flat_nav_mask is not None:
+                            L = loadings[~_flat_nav_mask, :]
+                        else:
+                            L = loadings
+                    else:
+                        L = loadings  # already unmasked-nav only
+                    factors = (np.linalg.pinv(L) @ D).T
+                    _signal_reprojected = True
                 else:
                     import warnings
 
@@ -1526,7 +1611,7 @@ class LazySignal(signals.BaseSignal):
             )
             # Only NaN-fill if signal was not reprojected (reprojection already
             # covers all signal channels).
-            if reproject not in ("signal", "both"):
+            if not _signal_reprojected:
                 # Expand factors back to full signal size; NaN at excluded channels.
                 # factors rows correspond to kept (unmasked) signal channels,
                 # i.e. positions where flat_sig_mask is False.
@@ -1542,7 +1627,7 @@ class LazySignal(signals.BaseSignal):
             )
             # Only NaN-fill if navigation was not reprojected (reprojection
             # already covers all navigation positions).
-            if reproject not in ("navigation", "both"):
+            if not _nav_reprojected:
                 # Expand loadings back to full nav size; NaN at excluded positions.
                 # loadings rows correspond to kept (unmasked) nav positions,
                 # i.e. positions where flat_nav_mask is False.

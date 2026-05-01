@@ -567,39 +567,33 @@ class TestLazyDecompositionParityFixes:
         assert not np.any(np.isnan(loadings))
 
     @skip_sklearn
-    def test_reproject_both_warns_for_signal(self):
-        """reproject='both' emits a UserWarning about signal reprojection."""
-        import warnings
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            self.s.decomposition(
-                algorithm="PCA",
-                output_dimension=2,
-                navigation_mask=self.nav_mask,
-                signal_mask=self.sig_mask,
-                reproject="both",
-                print_info=False,
-            )
-        messages = [str(x.message) for x in w if issubclass(x.category, UserWarning)]
-        assert any("signal" in m.lower() for m in messages)
+    def test_reproject_both_signal_fills_factors(self):
+        """reproject='both' fills masked signal channels in factors (no NaN)."""
+        self.s.decomposition(
+            algorithm="PCA",
+            output_dimension=2,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject="both",
+            print_info=False,
+        )
+        factors = self.s.learning_results.factors
+        assert factors.shape[0] == 30  # full signal size
+        assert not np.any(np.isnan(factors))
 
     @skip_sklearn
-    def test_reproject_signal_warns(self):
-        """reproject='signal' emits a UserWarning (not yet supported)."""
-        import warnings
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            self.s.decomposition(
-                algorithm="PCA",
-                output_dimension=2,
-                signal_mask=self.sig_mask,
-                reproject="signal",
-                print_info=False,
-            )
-        messages = [str(x.message) for x in w if issubclass(x.category, UserWarning)]
-        assert any("signal" in m.lower() for m in messages)
+    def test_reproject_signal_fills_factors(self):
+        """reproject='signal' produces factors with no NaN at masked channels."""
+        self.s.decomposition(
+            algorithm="PCA",
+            output_dimension=2,
+            signal_mask=self.sig_mask,
+            reproject="signal",
+            print_info=False,
+        )
+        factors = self.s.learning_results.factors
+        assert factors.shape[0] == 30  # full signal size
+        assert not np.any(np.isnan(factors))
 
     # ------------------------------------------------------------------
     # Fix 6: mean stored for PCA
