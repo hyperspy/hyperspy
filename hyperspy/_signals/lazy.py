@@ -1174,6 +1174,21 @@ class LazySignal(signals.BaseSignal):
                 try:
                     self._unfolded4decomposition = self.unfold()
 
+                    # After unfolding, the navigation space is always 1-D.
+                    # If the caller passed a multi-dimensional navigation mask
+                    # (matching the original N-D navigation space), flatten it
+                    # to 1-D in C order so that _block_iterator can match it
+                    # against the now-1-D navigation chunks.
+                    import dask.array as da
+
+                    if navigation_mask is not None:
+                        if isinstance(navigation_mask, da.Array):
+                            if navigation_mask.ndim > 1:
+                                navigation_mask = navigation_mask.ravel()
+                        elif hasattr(navigation_mask, "ravel"):
+                            if navigation_mask.ndim > 1:
+                                navigation_mask = navigation_mask.ravel()
+
                     obj = ISVD(n_components=output_dimension)
 
                     # Apply centring by temporarily modifying self.data
