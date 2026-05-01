@@ -996,3 +996,152 @@ class TestLazyVsNonLazyDecomposition:
             assert np.all(np.diff(ev) <= 0), (
                 f"{label} explained_variance not monotonically decreasing: {ev}"
             )
+
+
+class TestSubSignalChunking:
+    """Decomposition on lazy signals whose on-disk chunk size is smaller than
+    the full signal size.
+
+    This is the common case for files saved with per-spectrum chunking
+    (e.g. HDF5 files written by acquisition software where each spatial pixel
+    is its own chunk).  Before the fix in _block_iterator, the signal
+    dimension was not rechunked to a single chunk, so only the first signal
+    chunk was read per navigation block, producing factors with the wrong
+    number of rows and a broadcast error when Poisson rescaling was applied.
+    """
+
+    def _make_signal(self, nav_shape, sig_size, sig_chunk, nav_chunk, rank=3):
+        """Build a rank-*rank* lazy Signal1D with controlled chunk sizes.
+
+        Parameters
+        ----------
+        nav_shape : tuple of int
+            Navigation shape, e.g. (8, 8) for a 2-D map.
+        sig_size : int
+            Number of signal channels.
+        sig_chunk : int
+            Chunk size along the signal axis (< sig_size to trigger the bug).
+        nav_chunk : int or tuple
+            Chunk size(s) along each navigation axis.
+        rank : int
+            Rank of the underlying low-rank matrix.
+        """
+        rng = np.random.default_rng(42)
+        nav_size = int(np.prod(nav_shape))
+        # Non-negative data (compatible with Poisson noise normalisation)
+        U = np.abs(rng.standard_normal((nav_size, rank)))
+        V = np.abs(rng.standard_normal((sig_size, rank)))
+        data = (U @ V.T).reshape(nav_shape + (sig_size,))
+        # Ensure strictly positive for Poisson noise normalisation
+        data += 0.1
+        chunks = tuple(
+            nav_chunk if np.isscalar(nav_chunk) else nav_chunk[i]
+            for i in range(len(nav_shape))
+        ) + (sig_chunk,)
+        da_data = da.from_array(data, chunks=chunks)
+        return Signal1D(da_data).as_lazy(), data, rank
+
+    # ------------------------------------------------------------------
+    # Basic correctness: factors must have sig_size rows
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        "nav_shape,sig_size,sig_chunk,nav_chunk",
+        [
+            # 1-D navigation, signal chunked into 8 pieces
+            ((16,), 64, 8, 4),
+            # 2-D navigation, signal chunked into 4 pieces
+            ((8, 8), 64, 16, 4),
+            # 2-D navigation, signal chunk == 1 (extreme case)
+            ((4, 4), 32, 1, 2),
+        ],
+    )
+    def test_factors_have_correct_signal_size(
+        self, nav_shape, sig_size, sig_chunk, nav_chunk
+    ):
+        """factors.shape[0] must equal sig_size regardless of chunk layout."""
+        s, _, rank = self._make_signal(nav_shape, sig_size, sig_chunk, nav_chunk)
+        s.decomposition(algorithm="SVD", output_dimension=rank, print_info=False)
+        assert s.learning_results.factors.shape[0] == sig_size
+
+    # ------------------------------------------------------------------
+    # normalize_poissonian_noise must not raise a broadcast error
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        "nav_shape,sig_size,sig_chunk,nav_chunk",
+        [
+            ((16,), 64, 8, 4),
+            ((8, 8), 64, 16, 4),
+        ],
+    )
+    def test_normalize_poissonian_noise_no_broadcast_error(
+        self, nav_shape, sig_size, sig_chunk, nav_chunk
+    ):
+        """decomposition(normalize_poissonian_noise=True) must not raise
+        ValueError when the signal has multiple chunks."""
+        s, _, rank = self._make_signal(nav_shape, sig_size, sig_chunk, nav_chunk)
+        # Should not raise
+        s.decomposition(
+            algorithm="SVD",
+            output_dimension=rank,
+            normalize_poissonian_noise=True,
+            print_info=False,
+        )
+        assert s.learning_results.factors.shape[0] == sig_size
+
+    # ------------------------------------------------------------------
+    # Reconstruction quality must be preserved despite sub-signal chunking
+    # ------------------------------------------------------------------
+
+    def test_reconstruction_quality_sub_signal_chunks(self):
+        """SVD on sub-signal-chunked data gives the same reconstruction
+        quality as SVD on a signal-contiguous chunked version."""
+        nav_shape = (8, 8)
+        sig_size = 64
+        rank = 3
+        rng = np.random.default_rng(7)
+        nav_size = int(np.prod(nav_shape))
+        U = np.abs(rng.standard_normal((nav_size, rank)))
+        V = np.abs(rng.standard_normal((sig_size, rank)))
+        data = (U @ V.T).reshape(nav_shape + (sig_size,)) + 0.1
+
+        # Signal-contiguous chunking (signal in one chunk)
+        s_cont = Signal1D(da.from_array(data, chunks=(4, 4, sig_size))).as_lazy()
+        # Sub-signal chunking (signal split across 8 chunks of 8)
+        s_sub = Signal1D(da.from_array(data, chunks=(4, 4, 8))).as_lazy()
+
+        s_cont.decomposition(algorithm="SVD", output_dimension=rank, print_info=False)
+        s_sub.decomposition(algorithm="SVD", output_dimension=rank, print_info=False)
+
+        t_cont = s_cont.learning_results
+        t_sub = s_sub.learning_results
+
+        flat = data.reshape(nav_size, sig_size)
+        rms_cont = np.sqrt(np.mean((t_cont.loadings @ t_cont.factors.T - flat) ** 2))
+        rms_sub = np.sqrt(np.mean((t_sub.loadings @ t_sub.factors.T - flat) ** 2))
+        # Both chunk layouts should give the same reconstruction quality
+        np.testing.assert_allclose(
+            rms_sub,
+            rms_cont,
+            rtol=1e-5,
+            err_msg="sub-signal chunking changed reconstruction quality",
+        )
+
+    # ------------------------------------------------------------------
+    # PCA and ORPCA also go through _block_iterator — verify shapes
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["PCA", "ORPCA"])
+    def test_factors_shape_pca_orpca(self, algorithm):
+        """PCA and ORPCA also produce factors with sig_size rows when signal
+        has sub-signal chunking."""
+        nav_shape = (8, 8)
+        sig_size = 64
+        sig_chunk = 8  # 8 signal chunks
+        nav_chunk = 4
+        rank = 3
+        s, _, _ = self._make_signal(nav_shape, sig_size, sig_chunk, nav_chunk, rank)
+        s.decomposition(algorithm=algorithm, output_dimension=rank, print_info=False)
+        assert s.learning_results.factors.shape[0] == sig_size
