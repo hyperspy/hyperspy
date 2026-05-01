@@ -1215,6 +1215,8 @@ class LazySignal(signals.BaseSignal):
                     import dask.array as da
 
                     if navigation_mask is not None:
+                        if isinstance(navigation_mask, signals.BaseSignal):
+                            navigation_mask = navigation_mask.data
                         if isinstance(navigation_mask, da.Array):
                             if navigation_mask.ndim > 1:
                                 navigation_mask = navigation_mask.ravel()
@@ -1601,8 +1603,16 @@ class LazySignal(signals.BaseSignal):
 
         # ── rescale if Poisson noise was normalised ──────────────────────
         if normalize_poissonian_noise:
-            factors = factors * self._root_bH.ravel().compute()[:, np.newaxis]
-            loadings = loadings * self._root_aG.ravel().compute()[:, np.newaxis]
+            root_bH_flat = self._root_bH.ravel().compute()
+            if _flat_sig_mask is not None and not _signal_reprojected:
+                # factors only covers unmasked signal channels
+                root_bH_flat = root_bH_flat[~_flat_sig_mask]
+            factors = factors * root_bH_flat[:, np.newaxis]
+            root_aG_flat = self._root_aG.ravel().compute()
+            if _flat_nav_mask is not None and not _nav_reprojected:
+                # loadings only covers unmasked nav positions
+                root_aG_flat = root_aG_flat[~_flat_nav_mask]
+            loadings = loadings * root_aG_flat[:, np.newaxis]
 
         # ── store masks and NaN-fill excluded positions ──────────────────
         if flat_sig_mask is not None:

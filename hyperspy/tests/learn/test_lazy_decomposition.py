@@ -1286,3 +1286,75 @@ class TestSubSignalChunking:
         s, _, _ = self._make_signal(nav_shape, sig_size, sig_chunk, nav_chunk, rank)
         s.decomposition(algorithm=algorithm, output_dimension=rank, print_info=False)
         assert s.learning_results.factors.shape[0] == sig_size
+
+
+class TestLazyNavMaskAsSignal:
+    """Regression tests for passing a navigation mask as a BaseSignal
+    (i.e. the result of s._get_navigation_signal().T) to lazy decomposition.
+
+    Before the fix, the BaseSignal was not unwrapped before the unfold step,
+    causing a dask chunk-shape mismatch inside _block_iterator.  A second bug
+    caused the Poisson rescaling vector (_root_aG) to be applied over all nav
+    positions even though loadings only covered the unmasked subset.
+    """
+
+    def _make_signal(self, nav_shape=(8, 8), sig_size=64, rank=3, positive=True):
+        rng = np.random.default_rng(123)
+        nav_size = int(np.prod(nav_shape))
+        U = np.abs(rng.standard_normal((nav_size, rank)))
+        V = np.abs(rng.standard_normal((sig_size, rank)))
+        data = (U @ V.T).reshape(nav_shape + (sig_size,)) + 0.1
+        if not positive:
+            data -= data.mean()
+        chunks = (4,) * len(nav_shape) + (sig_size,)
+        return Signal1D(da.from_array(data, chunks=chunks)).as_lazy(), data
+
+    def test_nav_mask_as_basesignal_no_poisson(self):
+        """BaseSignal nav mask works without Poisson normalisation."""
+        s, _ = self._make_signal()
+        nmask = s._get_navigation_signal(dtype="bool")
+        nmask.data[:2, :2] = True  # mask a 2×2 corner
+        s.decomposition(
+            algorithm="SVD",
+            output_dimension=3,
+            navigation_mask=nmask.T,
+            print_info=False,
+        )
+        t = s.learning_results
+        assert t.loadings.shape[0] == s.axes_manager.navigation_size
+        # masked corner rows must be NaN
+        assert np.all(np.isnan(t.loadings[: 2 * 8 : 8, :]))
+
+    def test_nav_mask_as_basesignal_with_poisson(self):
+        """BaseSignal nav mask works with Poisson normalisation (regression:
+        _root_aG shape mismatch when nav pixels are masked)."""
+        s, _ = self._make_signal(positive=True)
+        nmask = s._get_navigation_signal(dtype="bool")
+        nmask.data[:2, :2] = True  # mask a 2×2 corner (4 pixels of 64)
+        s.decomposition(
+            True,  # normalize_poissonian_noise
+            algorithm="SVD",
+            output_dimension=3,
+            navigation_mask=nmask.T,
+            print_info=False,
+        )
+        t = s.learning_results
+        nav_size = s.axes_manager.navigation_size
+        assert t.loadings.shape[0] == nav_size, (
+            f"loadings has {t.loadings.shape[0]} rows, expected {nav_size}"
+        )
+
+    def test_nav_mask_numpy_array_with_poisson(self):
+        """Numpy array nav mask also works with Poisson normalisation."""
+        s, _ = self._make_signal(positive=True)
+        nmask = np.zeros(s.axes_manager.navigation_shape, dtype=bool)
+        nmask[:2, :2] = True
+        s.decomposition(
+            True,
+            algorithm="SVD",
+            output_dimension=3,
+            navigation_mask=nmask,
+            print_info=False,
+        )
+        t = s.learning_results
+        assert t.loadings.shape[0] == s.axes_manager.navigation_size
