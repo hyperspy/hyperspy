@@ -27,20 +27,6 @@ from hyperspy.signals import Signal1D
 sklearn = importlib.util.find_spec("sklearn")
 skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
-# PCA and ORNMF with any mask hang on lazy signals — pre-existing bugs, not
-# introduced here.  Call _xfail_masked_algorithm() at the top of any
-# parametrized test that receives one of these algorithms and uses a mask.
-_MASKED_ALGO_BUG_MSG = (
-    "{algorithm} with navigation_mask or signal_mask hangs on lazy signals — "
-    "pre-existing bug reproducible on main branch, unrelated to this PR"
-)
-_HANGING_MASKED_ALGORITHMS = {"PCA", "ORNMF"}
-
-
-def _xfail_pca_with_mask(algorithm):
-    if algorithm in _HANGING_MASKED_ALGORITHMS:
-        pytest.xfail(_MASKED_ALGO_BUG_MSG.format(algorithm=algorithm))
-
 
 class TestLazyDecomposition:
     def setup_method(self, method):
@@ -675,10 +661,14 @@ class TestLazyDecompositionParityFixes:
 
 
 def _make_lazy_lowrank(nav=20, sig=100, rank=3, seed=11):
-    """Return a lazy rank-*rank* Signal1D and its raw data array."""
+    """Return a lazy rank-*rank* Signal1D and its raw data array.
+
+    The data is non-negative (abs of a Gaussian low-rank product) so that
+    it is also valid input for NMF-based algorithms (ORNMF).
+    """
     rng = np.random.default_rng(seed)
-    U = rng.standard_normal((nav, rank))
-    V = rng.standard_normal((sig, rank))
+    U = np.abs(rng.standard_normal((nav, rank)))
+    V = np.abs(rng.standard_normal((sig, rank)))
     data = U @ V.T
     return Signal1D(data.copy()).as_lazy(), data
 
@@ -713,7 +703,6 @@ class TestLazyDecompositionBothMasks:
     @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
     def test_both_masks_nan_pattern(self, algorithm):
         """Nav-masked → NaN loadings rows; sig-masked → NaN factor rows."""
-        _xfail_pca_with_mask(algorithm)
         self.s.decomposition(
             algorithm=algorithm,
             output_dimension=3,
@@ -732,7 +721,6 @@ class TestLazyDecompositionBothMasks:
     @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
     def test_both_masks_nan_pattern_online(self, algorithm):
         """Online algorithms (ORPCA/ORNMF) also produce correct NaN patterns."""
-        _xfail_pca_with_mask(algorithm)  # guards ORNMF
         self.s.decomposition(
             algorithm=algorithm,
             output_dimension=3,
@@ -747,12 +735,12 @@ class TestLazyDecompositionBothMasks:
         assert not np.any(np.isnan(t.factors[~self.sig_mask, :]))
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_both_masks_reconstruction_quality(self, algorithm):
-        """Unmasked region reconstructed near-exactly for a rank-3 lazy signal."""
-        _xfail_pca_with_mask(algorithm)
+    def test_both_masks_reconstruction_quality(self):
+        """Unmasked region reconstructed near-exactly by SVD for a rank-3 signal."""
+        # Only SVD gives an exact rank-k factorisation; IncrementalPCA is
+        # approximate and does not guarantee 1e-10 accuracy.
         self.s.decomposition(
-            algorithm=algorithm,
+            algorithm="SVD",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             signal_mask=self.sig_mask,
@@ -797,7 +785,6 @@ class TestLazyDecompositionReprojectionNumerical:
     @pytest.mark.parametrize("algorithm", ["SVD", "PCA", "ORPCA", "ORNMF"])
     def test_reproject_navigation_no_nan(self, algorithm):
         """reproject='navigation' → full loadings, no NaN, correct shape."""
-        _xfail_pca_with_mask(algorithm)
         self.s.decomposition(
             algorithm=algorithm,
             output_dimension=3,
@@ -809,13 +796,13 @@ class TestLazyDecompositionReprojectionNumerical:
         assert loadings.shape == (20, 3)
         assert not np.any(np.isnan(loadings))
 
-    @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_reproject_navigation_reconstruction(self, algorithm):
-        """Reprojected loadings × factors reconstruct the full data (rank-3)."""
-        _xfail_pca_with_mask(algorithm)
+    def test_reproject_navigation_reconstruction(self):
+        """Reprojected loadings × factors reconstruct the full data (rank-3).
+
+        Only SVD gives exact reconstruction; PCA (incremental) is approximate.
+        """
         self.s.decomposition(
-            algorithm=algorithm,
+            algorithm="SVD",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             reproject="navigation",
@@ -830,7 +817,6 @@ class TestLazyDecompositionReprojectionNumerical:
     @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
     def test_reproject_navigation_unmasked_rows_unchanged(self, algorithm):
         """reproject='navigation' does not alter the unmasked rows of loadings."""
-        _xfail_pca_with_mask(algorithm)
         # Baseline: no reproject, unmasked positions only
         self.s.decomposition(
             algorithm=algorithm,
@@ -855,7 +841,6 @@ class TestLazyDecompositionReprojectionNumerical:
     @pytest.mark.parametrize("algorithm", ["SVD", "PCA", "ORPCA", "ORNMF"])
     def test_reproject_both_nav_loadings_filled(self, algorithm):
         """reproject='both' fills nav-masked positions (signal reproject warns)."""
-        _xfail_pca_with_mask(algorithm)
         import warnings
 
         with warnings.catch_warnings(record=True):
@@ -872,13 +857,13 @@ class TestLazyDecompositionReprojectionNumerical:
         assert loadings.shape == (20, 3)
         assert not np.any(np.isnan(loadings))
 
-    @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_reproject_navigation_with_both_masks_reconstruction(self, algorithm):
-        """With both masks + reproject='navigation', full data reconstructed."""
-        _xfail_pca_with_mask(algorithm)
+    def test_reproject_navigation_with_both_masks_reconstruction(self):
+        """With both masks + reproject='navigation', full data reconstructed.
+
+        Only SVD gives exact reconstruction; PCA (incremental) is approximate.
+        """
         self.s.decomposition(
-            algorithm=algorithm,
+            algorithm="SVD",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             signal_mask=self.sig_mask,
