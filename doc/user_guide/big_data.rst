@@ -139,11 +139,9 @@ Machine learning
 :ref:`mva.decomposition` algorithms for machine learning often perform
 large matrix manipulations, requiring significantly more memory than the data size.
 To perform decomposition operation lazily, HyperSpy provides access to several "online"
-algorithms  as well as `dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
-Online algorithms perform the decomposition by operating serially on chunks of
-data, enabling the lazy decomposition of large datasets. In line with the
-standard HyperSpy signals, lazy :meth:`~.api.signals.LazySignal.decomposition`
-offers the following online algorithms:
+algorithms that operate serially on chunks of data, enabling the lazy decomposition
+of large datasets. In line with the standard HyperSpy signals, lazy
+:meth:`~.api.signals.LazySignal.decomposition` offers the following algorithms:
 
 .. _lazy_decomposition-table:
 
@@ -152,7 +150,7 @@ offers the following online algorithms:
    +--------------------------+---------------------------------------------------+
    | Algorithm                | Method                                            |
    +==========================+===================================================+
-   | "SVD" (default)          | :func:`dask.array.linalg.svd`                     |
+   | "SVD" (default)          | :class:`~.learn.incremental_svd.ISVD`             |
    +--------------------------+---------------------------------------------------+
    | "PCA"                    | :class:`sklearn.decomposition.IncrementalPCA`     |
    +--------------------------+---------------------------------------------------+
@@ -160,6 +158,17 @@ offers the following online algorithms:
    +--------------------------+---------------------------------------------------+
    | "ORNMF"                  | :func:`~.learn.ornmf`                             |
    +--------------------------+---------------------------------------------------+
+
+The default "SVD" algorithm uses :class:`~.learn.incremental_svd.ISVD`, an
+incremental (out-of-core) SVD that processes data in chunks without ever loading
+the full dataset into memory. Unlike ``dask.array.linalg.svd``, it:
+
+- requires ``output_dimension`` to be specified;
+- supports ``navigation_mask`` and ``signal_mask``;
+- supports optional mean-subtraction via the ``centre`` parameter
+  (``'navigation'`` or ``'signal'``);
+- is incompatible with ``normalize_poissonian_noise=True`` when ``centre``
+  is also set.
 
 .. seealso::
 
