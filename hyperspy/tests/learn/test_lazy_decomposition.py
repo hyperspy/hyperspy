@@ -408,3 +408,248 @@ class TestNormalizePoissonianNoise:
         # Loose check: reconstruction is in the original data space
         assert reconstruction.min() > -1e3
         assert reconstruction.max() < 1e5
+
+
+class TestLazyDecompositionParityFixes:
+    """Tests for parity with the non-lazy MVA.decomposition() (fixes 1-7).
+
+    Uses a small Signal1D with 2-D navigation so that masks are non-trivial.
+    Shape: nav (4, 5) = 20 positions, signal 30 channels.
+    """
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(7)
+        self.s = Signal1D(rng.random((20, 30))).as_lazy()
+        # 1-D navigation of size 20; mask out first 4 positions
+        nav_arr = np.zeros(20, dtype=bool)
+        nav_arr[:4] = True
+        self.nav_mask = nav_arr
+        # Mask out first 3 signal channels
+        sig_arr = np.zeros(30, dtype=bool)
+        sig_arr[:3] = True
+        self.sig_mask = sig_arr
+
+    # ------------------------------------------------------------------
+    # Fix 1: poissonian_noise_normalized stored in LearningResults
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
+    def test_poissonian_flag_stored_true(self, algorithm):
+        """poissonian_noise_normalized is True when normalisation was applied."""
+        s = Signal1D(np.abs(self.s.data.compute()) + 1).as_lazy()
+        s.decomposition(
+            algorithm=algorithm,
+            output_dimension=2,
+            normalize_poissonian_noise=True,
+            print_info=False,
+        )
+        assert s.learning_results.poissonian_noise_normalized is True
+
+    @skip_sklearn
+    def test_poissonian_flag_stored_false(self):
+        """poissonian_noise_normalized is False when normalisation was not applied."""
+        self.s.decomposition(output_dimension=2, print_info=False)
+        assert self.s.learning_results.poissonian_noise_normalized is False
+
+    # ------------------------------------------------------------------
+    # Fix 2: number_significant_components stored (elbow estimate)
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
+    def test_number_significant_components(self, algorithm):
+        """number_significant_components is a plain Python int after decomposition."""
+        self.s.decomposition(algorithm=algorithm, output_dimension=5, print_info=False)
+        nsc = self.s.learning_results.number_significant_components
+        assert isinstance(nsc, int)
+        assert 1 <= nsc <= 5
+
+    def test_number_significant_components_none_without_variance(self):
+        """number_significant_components is None for algorithms without variance."""
+        self.s.decomposition(algorithm="ORPCA", output_dimension=3, print_info=False)
+        assert self.s.learning_results.number_significant_components is None
+
+    # ------------------------------------------------------------------
+    # Fix 3: navigation_mask and signal_mask stored in LearningResults
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    def test_navigation_mask_stored(self):
+        """navigation_mask is stored as an array on LearningResults."""
+        self.s.decomposition(
+            output_dimension=2,
+            navigation_mask=self.nav_mask,
+            print_info=False,
+        )
+        t = self.s.learning_results
+        assert t.navigation_mask is not None
+        assert t.navigation_mask.shape == (20,)  # _navigation_shape_in_array order
+        assert t.navigation_mask.sum() == self.nav_mask.sum()
+
+    @skip_sklearn
+    def test_signal_mask_stored(self):
+        """signal_mask is stored as an array on LearningResults."""
+        self.s.decomposition(
+            output_dimension=2,
+            signal_mask=self.sig_mask,
+            print_info=False,
+        )
+        t = self.s.learning_results
+        assert t.signal_mask is not None
+        assert t.signal_mask.shape == (30,)
+        np.testing.assert_array_equal(t.signal_mask, self.sig_mask)
+
+    # ------------------------------------------------------------------
+    # Fix 4: NaN-fill excluded positions in factors / loadings
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    def test_nan_fill_loadings_navigation_mask(self):
+        """Masked nav positions become NaN rows in loadings (no reproject)."""
+        n_components = 2
+        self.s.decomposition(
+            output_dimension=n_components,
+            navigation_mask=self.nav_mask,
+            print_info=False,
+        )
+        loadings = self.s.learning_results.loadings
+        # loadings shape should be (nav_size, n_components) = (20, 2)
+        assert loadings.shape == (20, n_components)
+        flat_mask = self.nav_mask.ravel()
+        # Masked positions (True) should be NaN
+        assert np.all(np.isnan(loadings[flat_mask, :]))
+        # Unmasked positions should not be NaN
+        assert not np.any(np.isnan(loadings[~flat_mask, :]))
+
+    @skip_sklearn
+    def test_nan_fill_factors_signal_mask(self):
+        """Masked signal channels become NaN rows in factors (no reproject)."""
+        n_components = 2
+        self.s.decomposition(
+            output_dimension=n_components,
+            signal_mask=self.sig_mask,
+            print_info=False,
+        )
+        factors = self.s.learning_results.factors
+        # factors shape should be (sig_size, n_components) = (30, 2)
+        assert factors.shape == (30, n_components)
+        # Masked channels (first 3) should be NaN
+        assert np.all(np.isnan(factors[: self.sig_mask.sum(), :]))
+        # Unmasked channels should not be NaN
+        assert not np.any(np.isnan(factors[self.sig_mask.sum() :, :]))
+
+    # ------------------------------------------------------------------
+    # Fix 5: reproject as string enum
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    def test_reproject_invalid_raises(self):
+        """Invalid reproject value raises ValueError."""
+        with pytest.raises(ValueError, match="`reproject` must be"):
+            self.s.decomposition(
+                output_dimension=2, reproject="invalid", print_info=False
+            )
+
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["PCA", "ORPCA", "ORNMF"])
+    def test_reproject_navigation_full_loadings(self, algorithm):
+        """reproject='navigation' returns full (unmasked) loadings without NaN."""
+        self.s.decomposition(
+            algorithm=algorithm,
+            output_dimension=2,
+            navigation_mask=self.nav_mask,
+            reproject="navigation",
+            print_info=False,
+        )
+        loadings = self.s.learning_results.loadings
+        assert loadings.shape == (20, 2)
+        assert not np.any(np.isnan(loadings))
+
+    @skip_sklearn
+    def test_reproject_both_warns_for_signal(self):
+        """reproject='both' emits a UserWarning about signal reprojection."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.s.decomposition(
+                algorithm="PCA",
+                output_dimension=2,
+                navigation_mask=self.nav_mask,
+                signal_mask=self.sig_mask,
+                reproject="both",
+                print_info=False,
+            )
+        messages = [str(x.message) for x in w if issubclass(x.category, UserWarning)]
+        assert any("signal" in m.lower() for m in messages)
+
+    @skip_sklearn
+    def test_reproject_signal_warns(self):
+        """reproject='signal' emits a UserWarning (not yet supported)."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.s.decomposition(
+                algorithm="PCA",
+                output_dimension=2,
+                signal_mask=self.sig_mask,
+                reproject="signal",
+                print_info=False,
+            )
+        messages = [str(x.message) for x in w if issubclass(x.category, UserWarning)]
+        assert any("signal" in m.lower() for m in messages)
+
+    # ------------------------------------------------------------------
+    # Fix 6: mean stored for PCA
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    def test_mean_stored_for_pca(self):
+        """mean is a 1-D array of signal size after PCA."""
+        self.s.decomposition(algorithm="PCA", output_dimension=2, print_info=False)
+        mean = self.s.learning_results.mean
+        assert mean is not None
+        assert mean.shape == (30,)
+
+    def test_mean_none_for_orpca(self):
+        """mean is None after ORPCA (algorithm does not compute it)."""
+        self.s.decomposition(algorithm="ORPCA", output_dimension=2, print_info=False)
+        assert self.s.learning_results.mean is None
+
+    def test_mean_none_for_ornmf(self):
+        """mean is None after ORNMF (algorithm does not compute it)."""
+        self.s.decomposition(algorithm="ORNMF", output_dimension=2, print_info=False)
+        assert self.s.learning_results.mean is None
+
+    # ------------------------------------------------------------------
+    # Fix 7: return_info
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    def test_return_info_true_pca(self):
+        """return_info=True returns the fitted sklearn IncrementalPCA object."""
+        import sklearn.decomposition
+
+        obj = self.s.decomposition(
+            algorithm="PCA", output_dimension=2, return_info=True, print_info=False
+        )
+        assert isinstance(obj, sklearn.decomposition.IncrementalPCA)
+        assert hasattr(obj, "components_")
+
+    @skip_sklearn
+    def test_return_info_false(self):
+        """return_info=False (default) returns None."""
+        result = self.s.decomposition(
+            algorithm="PCA", output_dimension=2, return_info=False, print_info=False
+        )
+        assert result is None
+
+    @skip_sklearn
+    def test_return_info_svd_returns_none(self):
+        """return_info=True with SVD returns None (no persistent estimator object)."""
+        result = self.s.decomposition(
+            algorithm="SVD", output_dimension=2, return_info=True, print_info=False
+        )
+        assert result is None
