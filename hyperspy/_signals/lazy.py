@@ -892,6 +892,127 @@ class LazySignal(signals.BaseSignal):
                     chunk.shape[:-1] + self.axes_manager.signal_shape[::-1]
                 )
 
+    def normalize_poissonian_noise(self, navigation_mask=None, signal_mask=None):
+        """Normalize the signal under the assumption of Poisson noise.
+
+        Scales the signal to normalise Poisson noise for subsequent
+        decomposition analysis as described in [Keenan2004]_.  The scaling
+        is performed lazily so the full dataset is never loaded into memory.
+
+        The Keenan-Kotula scaling computes::
+
+            D_scaled[i, j] = D[i, j] / (sqrt(aG[i]) * sqrt(bH[j]))
+
+        where ``aG[i]`` is the total counts for navigation position ``i``
+        (summed over unmasked signal channels) and ``bH[j]`` is the total
+        counts for signal channel ``j`` (summed over unmasked navigation
+        positions).
+
+        The square-root arrays ``sqrt(aG)`` and ``sqrt(bH)`` are stored as
+        ``self._root_aG`` and ``self._root_bH`` so that
+        :py:meth:`decomposition` can rescale the factors and loadings back to
+        the original data space after decomposition.
+
+        Parameters
+        ----------
+        navigation_mask : {None, boolean numpy array or BaseSignal}, default None
+            Navigation positions marked as ``True`` are excluded from the
+            computation of the scaling coefficients and are not scaled.
+        signal_mask : {None, boolean numpy array or BaseSignal}, default None
+            Signal channels marked as ``True`` are excluded from the
+            computation of the scaling coefficients and are not scaled.
+
+        Raises
+        ------
+        ValueError
+            If all data points are masked or if negative values are found
+            in the (unmasked) data.
+
+        References
+        ----------
+        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+            in the multivariate analysis of ToF-SIMS spectrum images", Surf.
+            Interface Anal 36(3) (2004): 203-212.
+
+        See Also
+        --------
+        :py:meth:`~.learn._mva.MVA.normalize_poissonian_noise` for the
+        non-lazy equivalent.
+        """
+        import dask.array as da
+
+        _logger.info("Scaling the data to normalize Poissonian noise")
+
+        data = self._data_aligned_with_axes
+        ndim = self.axes_manager.navigation_dimension
+        sdim = self.axes_manager.signal_dimension
+        nav_chunks = data.chunks[:ndim]
+        sig_chunks = data.chunks[ndim:]
+
+        # Build boolean keep-masks (True = use this position)
+        if navigation_mask is None:
+            nm = da.ones(
+                self.axes_manager.navigation_shape[::-1],
+                chunks=nav_chunks,
+                dtype=bool,
+            )
+        else:
+            nm = da.logical_not(to_array(navigation_mask, chunks=nav_chunks))
+
+        if signal_mask is None:
+            sm = da.ones(
+                self.axes_manager.signal_shape[::-1],
+                chunks=sig_chunks,
+                dtype=bool,
+            )
+        else:
+            sm = da.logical_not(to_array(signal_mask, chunks=sig_chunks))
+
+        # Zero out masked entries before summing so that masked positions
+        # do not contribute to aG or bH — matching the non-lazy behaviour.
+        # Broadcasting: data is (nav..., sig...), nm is (nav...,), sm is (sig...,)
+        nm_broadcast = nm[(...,) + (None,) * sdim]  # (nav..., 1...) for sig dims
+        sm_broadcast = sm[(None,) * ndim + (...,)]  # (1..., sig...) for nav dims
+        combined_mask = nm_broadcast & sm_broadcast
+        masked_data = da.where(combined_mask, data, 0.0)
+
+        # Check for negative values in the unmasked region
+        min_val = masked_data.min().compute()
+        if min_val < 0.0:
+            raise ValueError(
+                "Negative values found in data!\n"
+                "Are you sure that the data follow a Poisson distribution?"
+            )
+
+        nav_axes = tuple(range(ndim, ndim + sdim))  # axes to sum over for aG
+        sig_axes = tuple(range(ndim))  # axes to sum over for bH
+
+        aG, bH = da.compute(
+            masked_data.sum(axis=nav_axes),  # shape: navigation_shape[::-1]
+            masked_data.sum(axis=sig_axes),  # shape: signal_shape[::-1]
+        )
+        aG = da.from_array(aG)
+        bH = da.from_array(bH)
+
+        # Check that not everything is masked
+        if float(aG.sum().compute()) == 0.0:
+            raise ValueError("All the data are masked, change the mask.")
+
+        # Replace zeros with 1 to avoid division by zero (masked positions
+        # already contribute 0 to the sum so their sqrt would be 0)
+        aG = da.where(aG == 0, 1, aG)
+        bH = da.where(bH == 0, 1, bH)
+
+        self._root_aG = da.sqrt(aG)  # shape: navigation_shape[::-1]
+        self._root_bH = da.sqrt(bH)  # shape: signal_shape[::-1]
+
+        # Build the full scaling coefficient via broadcasting and divide
+        coeff = (
+            self._root_aG[(...,) + (None,) * sdim]
+            * self._root_bH[(None,) * ndim + (...,)]
+        )
+        self.data = da.where(combined_mask, data / coeff, data)
+
     def decomposition(
         self,
         normalize_poissonian_noise=False,
@@ -963,8 +1084,6 @@ class LazySignal(signals.BaseSignal):
         hyperspy.learn.orpca, hyperspy.learn.ornmf
 
         """
-        import dask.array as da
-
         if get is None:
             get = _get()
         # Check algorithms requiring output_dimension
@@ -984,7 +1103,6 @@ class LazySignal(signals.BaseSignal):
 
         _al_data = self._data_aligned_with_axes
         nav_chunks = _al_data.chunks[: self.axes_manager.navigation_dimension]
-        sig_chunks = _al_data.chunks[self.axes_manager.navigation_dimension :]
 
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([utils.multiply(ar) for ar in product(*nav_chunks)])
@@ -1038,40 +1156,15 @@ class LazySignal(signals.BaseSignal):
             _logger.info("Performing decomposition analysis")
 
             if normalize_poissonian_noise:
-                _logger.info("Scaling the data to normalize Poissonian noise")
-
-                data = self._data_aligned_with_axes
-                ndim = self.axes_manager.navigation_dimension
-                sdim = self.axes_manager.signal_dimension
-                nm = da.logical_not(
-                    da.zeros(
-                        self.axes_manager.navigation_shape[::-1], chunks=nav_chunks
+                if centre is not None:
+                    raise ValueError(
+                        "normalize_poissonian_noise=True is only compatible "
+                        f"with centre=None, not centre={centre!r}."
                     )
-                    if navigation_mask is None
-                    else to_array(navigation_mask, chunks=nav_chunks)
+                self.normalize_poissonian_noise(
+                    navigation_mask=navigation_mask,
+                    signal_mask=signal_mask,
                 )
-                sm = da.logical_not(
-                    da.zeros(self.axes_manager.signal_shape[::-1], chunks=sig_chunks)
-                    if signal_mask is None
-                    else to_array(signal_mask, chunks=sig_chunks)
-                )
-                bH, aG = da.compute(
-                    data.sum(axis=tuple(range(ndim))),
-                    data.sum(axis=tuple(range(ndim, ndim + sdim))),
-                )
-                bH = da.where(sm, bH, 1)
-                aG = da.where(nm, aG, 1)
-
-                raG = da.sqrt(aG)
-                rbH = da.sqrt(bH)
-
-                coeff = (
-                    raG[(...,) + (None,) * rbH.ndim] * rbH[(None,) * raG.ndim + (...,)]
-                )
-                coeff = coeff.map_blocks(np.nan_to_num)
-                coeff = da.where(coeff == 0, 1, coeff)
-                data = data / coeff
-                self.data = data
 
             # LEARN
             if algorithm == "SVD":
@@ -1241,8 +1334,12 @@ class LazySignal(signals.BaseSignal):
 
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
-            target.factors = target.factors * rbH.ravel()[:, np.newaxis]
-            target.loadings = target.loadings * raG.ravel()[:, np.newaxis]
+            target.factors = (
+                target.factors * self._root_bH.ravel().compute()[:, np.newaxis]
+            )
+            target.loadings = (
+                target.loadings * self._root_aG.ravel().compute()[:, np.newaxis]
+            )
 
         # Print details about the decomposition we just performed
         if print_info:
