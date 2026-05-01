@@ -168,7 +168,23 @@ the full dataset into memory. Unlike ``dask.array.linalg.svd``, it:
 - supports optional mean-subtraction via the ``centre`` parameter
   (``'navigation'`` or ``'signal'``);
 - is incompatible with ``normalize_poissonian_noise=True`` when ``centre``
-  is also set.
+  is also set;
+- supports ``reproject='navigation'``, ``reproject='signal'``, and
+  ``reproject='both'`` to fill masked positions after learning.
+  ``reproject='navigation'`` projects all navigation positions through
+  the learned factors, filling NaN in loadings at masked navigation pixels.
+  ``reproject='signal'`` projects all signal channels through the learned
+  loadings, filling NaN in factors at masked signal channels.
+  ``reproject='both'`` applies both operations.  For ORPCA and ORNMF,
+  ``reproject='signal'`` is not yet implemented and emits a warning.
+
+.. note::
+
+   Lazy signals with per-spectrum (sub-signal) chunking — where the on-disk
+   chunk size along the signal axis is smaller than the full signal — are fully
+   supported.  HyperSpy rechunks the signal axis internally before processing,
+   so all signal channels are read correctly regardless of the original chunk
+   layout.
 
 .. seealso::
 
