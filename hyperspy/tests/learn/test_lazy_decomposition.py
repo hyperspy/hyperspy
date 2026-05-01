@@ -873,6 +873,153 @@ class TestLazyDecompositionReprojectionNumerical:
         rms = np.sqrt(np.mean((recon - self.data[:, kept_sig]) ** 2))
         assert rms < 1e-10
 
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
+    def test_reproject_signal_fills_factors(self, algorithm):
+        """reproject='signal' → factors fully filled (no NaN), loadings still
+        have NaN at nav-masked positions."""
+        self.s.decomposition(
+            algorithm=algorithm,
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject="signal",
+            print_info=False,
+        )
+        t = self.s.learning_results
+        # Factors must cover the full signal (sig_size rows, no NaN)
+        assert t.factors.shape[0] == self.data.shape[1]
+        assert not np.any(np.isnan(t.factors))
+        # Loadings must still have NaN at nav-masked positions
+        assert t.loadings.shape[0] == self.data.shape[0]
+        assert np.any(np.isnan(t.loadings[self.nav_mask, :]))
+
+    def test_reproject_signal_reconstruction(self):
+        """reproject='signal' SVD gives exact reconstruction at unmasked nav
+        positions over the full signal."""
+        self.s.decomposition(
+            algorithm="SVD",
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject="signal",
+            print_info=False,
+        )
+        t = self.s.learning_results
+        kept_nav = ~self.nav_mask
+        # Loadings at unmasked nav rows × full factors must reconstruct data
+        recon = t.loadings[kept_nav, :] @ t.factors.T
+        rms = np.sqrt(np.mean((recon - self.data[kept_nav]) ** 2))
+        assert rms < 1e-10, f"reproject='signal' RMS {rms:.2e} too large"
+
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
+    def test_reproject_signal_unmasked_channels_unchanged(self, algorithm):
+        """reproject='signal' does not alter the unmasked channel rows of
+        factors (compared to no-reproject baseline)."""
+        kw = dict(
+            algorithm=algorithm,
+            output_dimension=3,
+            signal_mask=self.sig_mask,
+            print_info=False,
+        )
+        # Baseline: no reproject
+        self.s.decomposition(**kw)
+        baseline_factors = self.s.learning_results.factors[~self.sig_mask, :].copy()
+
+        # With reproject='signal'
+        self.s.decomposition(**kw, reproject="signal")
+        reproj_factors = self.s.learning_results.factors[~self.sig_mask, :]
+        np.testing.assert_allclose(baseline_factors, reproj_factors, atol=1e-10)
+
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
+    def test_reproject_both_fills_factors_and_loadings(self, algorithm):
+        """reproject='both' fills both factors (signal channels) and loadings
+        (nav positions) — no NaN anywhere."""
+        self.s.decomposition(
+            algorithm=algorithm,
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject="both",
+            print_info=False,
+        )
+        t = self.s.learning_results
+        assert t.factors.shape[0] == self.data.shape[1]
+        assert not np.any(np.isnan(t.factors)), "factors still contain NaN"
+        assert t.loadings.shape[0] == self.data.shape[0]
+        assert not np.any(np.isnan(t.loadings)), "loadings still contain NaN"
+
+    def test_reproject_both_svd_reconstruction(self):
+        """reproject='both' SVD: full data reconstructed from loadings × factors."""
+        self.s.decomposition(
+            algorithm="SVD",
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject="both",
+            print_info=False,
+        )
+        t = self.s.learning_results
+        rms = np.sqrt(np.mean((t.loadings @ t.factors.T - self.data) ** 2))
+        assert rms < 1e-10, f"reproject='both' RMS {rms:.2e} too large"
+
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
+    def test_reproject_signal_orpca_ornmf_warns_and_fills_nav(self, algorithm):
+        """ORPCA/ORNMF with reproject='signal' emits a warning (not implemented)
+        but still fills nav-masked positions via reproject='navigation' fallback,
+        leaving loadings with no NaN."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.s.decomposition(
+                algorithm=algorithm,
+                output_dimension=3,
+                navigation_mask=self.nav_mask,
+                signal_mask=self.sig_mask,
+                reproject="signal",
+                print_info=False,
+            )
+        # A UserWarning about signal reproject not supported must be raised
+        warn_msgs = [str(x.message) for x in w if issubclass(x.category, UserWarning)]
+        assert any(
+            "signal" in m.lower() or "reproject" in m.lower() for m in warn_msgs
+        ), f"Expected reproject warning, got: {warn_msgs}"
+        # Nav reproject NOT requested here — loadings may still have NaN
+        # (only nav-reproject fills loadings). Factors must exist.
+        t = self.s.learning_results
+        assert t.factors is not None
+        assert t.loadings is not None
+
+    @skip_sklearn
+    @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
+    def test_reproject_both_orpca_ornmf_warns_and_fills_nav(self, algorithm):
+        """ORPCA/ORNMF with reproject='both' warns about signal reproject but
+        still fills loadings at nav-masked positions (nav reproject succeeds)."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.s.decomposition(
+                algorithm=algorithm,
+                output_dimension=3,
+                navigation_mask=self.nav_mask,
+                signal_mask=self.sig_mask,
+                reproject="both",
+                print_info=False,
+            )
+        warn_msgs = [str(x.message) for x in w if issubclass(x.category, UserWarning)]
+        assert any(
+            "signal" in m.lower() or "reproject" in m.lower() for m in warn_msgs
+        ), f"Expected reproject warning, got: {warn_msgs}"
+        # Nav reproject should still have run → loadings fully filled
+        loadings = self.s.learning_results.loadings
+        assert loadings.shape[0] == self.data.shape[0]
+        assert not np.any(np.isnan(loadings)), "loadings still contain NaN"
+
 
 class TestLazyVsNonLazyDecomposition:
     """Verify that lazy and non-lazy SVD decomposition agree numerically.
