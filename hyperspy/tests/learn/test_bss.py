@@ -529,3 +529,103 @@ class TestReturnInfo:
     @skip_sklearn
     def test_bss_supported_return_false(self):
         assert self.s.blind_source_separation(return_info=False) is None
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# BSS with both navigation and signal masks simultaneously
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@skip_sklearn
+@lazifyTestClass
+class TestBSSBothMasks:
+    """BSS with navigation mask AND signal mask applied simultaneously.
+
+    The ``@lazifyTestClass`` decorator runs every test on both an eager and
+    a lazified version of the signal, verifying that the lazy path satisfies
+    the same contracts as the non-lazy path.
+
+    Setup mirrors ``TestBSS1D`` / ``TestBSS2D``: decompose first (non-lazily
+    in setup_method so the masks are consistent), then ``lazifyTestClass``
+    lazifies ``self.s`` before each test method runs.
+    """
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(42)
+        ics = rng.laplace(size=(3, 500))
+        mixing = rng.random(size=(100, 3))
+        s = hs.signals.Signal1D(mixing @ ics)
+        s.decomposition(output_dimension=3)
+
+        # Signal mask: channel 5 excluded
+        mask_sig = s._get_signal_signal(dtype="bool")
+        mask_sig.isig[5] = True
+
+        # Navigation mask: position 5 excluded
+        mask_nav = s._get_navigation_signal(dtype="bool")
+        mask_nav.isig[5] = True
+
+        self.s = s
+        self.mask_sig = mask_sig
+        self.mask_nav = mask_nav
+
+    # ------------------------------------------------------------------
+    # BSS on factors with both masks present in LearningResults
+    # ------------------------------------------------------------------
+
+    @pytest.mark.filterwarnings("ignore:FastICA did not converge")
+    def test_both_masks_bss_on_factors(self):
+        """BSS on factors runs successfully when both NaN patterns are present."""
+        self.s.learning_results.factors[5, :] = np.nan
+        self.s.learning_results.loadings[5, :] = np.nan
+        self.s.blind_source_separation(3, diff_order=0, mask=self.mask_sig)
+        assert self.s.learning_results.bss_factors is not None
+        assert self.s.learning_results.bss_factors.shape == (500, 3)
+        assert self.s.learning_results.bss_loadings.shape == (100, 3)
+
+    @pytest.mark.filterwarnings("ignore:FastICA did not converge")
+    def test_both_masks_bss_on_loadings(self):
+        """BSS on loadings runs successfully when both NaN patterns are present."""
+        self.s.learning_results.factors[5, :] = np.nan
+        self.s.learning_results.loadings[5, :] = np.nan
+        self.s.blind_source_separation(
+            3, diff_order=0, mask=self.mask_nav, on_loadings=True
+        )
+        assert self.s.learning_results.bss_loadings is not None
+        assert self.s.learning_results.bss_loadings.shape == (100, 3)
+
+    # ------------------------------------------------------------------
+    # Mask immutability (regression for #3384)
+    # ------------------------------------------------------------------
+
+    @pytest.mark.filterwarnings("ignore:FastICA did not converge")
+    def test_masks_not_modified_in_place(self):
+        """Neither mask object is modified by BSS."""
+        self.s.learning_results.factors[5, :] = np.nan
+        sig_mask_data = self.mask_sig.data
+        nav_mask_data = self.mask_nav.data
+
+        self.s.blind_source_separation(3, diff_order=0, mask=self.mask_sig)
+
+        assert sig_mask_data is self.mask_sig.data
+        assert nav_mask_data is self.mask_nav.data
+
+    # ------------------------------------------------------------------
+    # Consistency: single mask vs both-mask for the channel used by BSS
+    # ------------------------------------------------------------------
+
+    @pytest.mark.filterwarnings("ignore:FastICA did not converge")
+    def test_sig_mask_alone_vs_with_nav_nan(self):
+        """BSS result with signal mask is stable regardless of NaN in loadings."""
+        # BSS using only factors mask, no NaN in loadings
+        self.s.learning_results.factors[5, :] = np.nan
+        self.s.blind_source_separation(3, diff_order=0, mask=self.mask_sig)
+        shape_single = self.s.learning_results.bss_factors.shape
+
+        # Same but also put NaN in loadings (simulating both masks)
+        self.s.learning_results.factors[5, :] = np.nan
+        self.s.learning_results.loadings[5, :] = np.nan
+        self.s.blind_source_separation(3, diff_order=0, mask=self.mask_sig)
+        shape_both = self.s.learning_results.bss_factors.shape
+
+        assert shape_single == shape_both

@@ -694,3 +694,272 @@ def test_decomposition_mask_all_data(normalise_poissonian_noise):
         s = signals.Signal1D(generate_low_rank_matrix())
         navigation_mask = s.sum(-1) >= 0
         s.decomposition(normalise_poissonian_noise, navigation_mask=navigation_mask)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Comprehensive mask × reproject tests
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _make_lowrank_signal(nav=20, sig=100, rank=3, seed=7, lazy=False):
+    """Return a rank-*rank* Signal1D (optionally lazy) and its raw data array."""
+    rng = np.random.default_rng(seed)
+    U = rng.standard_normal((nav, rank))
+    V = rng.standard_normal((sig, rank))
+    data = U @ V.T
+    s = signals.Signal1D(data.copy())
+    if lazy:
+        s = s.as_lazy()
+    return s, data
+
+
+def _nav_mask(nav=20, step=4):
+    """Boolean 1-D navigation mask: every *step*-th position masked."""
+    m = np.zeros(nav, dtype=bool)
+    m[::step] = True
+    return m
+
+
+def _sig_mask(sig=100, step=10):
+    """Boolean 1-D signal mask: every *step*-th channel masked."""
+    m = np.zeros(sig, dtype=bool)
+    m[::step] = True
+    return m
+
+
+class TestDecompositionBothMasks:
+    """Non-lazy decomposition with navigation + signal masks simultaneously.
+
+    Mirrors the per-mask tests (`test_decomposition_navigation_mask`,
+    `test_decomposition_signal_mask`) but applies both at once and verifies
+    the NaN pattern in both factors and loadings.
+    """
+
+    def setup_method(self, method):
+        self.s, self.data = _make_lowrank_signal()
+        self.nav_mask = _nav_mask()
+        self.sig_mask = _sig_mask()
+
+    def test_both_masks_nan_pattern(self):
+        """Masked nav → NaN in loadings; masked sig → NaN in factors."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+        )
+        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.factors
+
+        # Masked nav positions should be NaN rows in loadings
+        assert np.all(np.isnan(loadings[self.nav_mask, :]))
+        assert not np.any(np.isnan(loadings[~self.nav_mask, :]))
+
+        # Masked signal channels should be NaN rows in factors
+        assert np.all(np.isnan(factors[self.sig_mask, :]))
+        assert not np.any(np.isnan(factors[~self.sig_mask, :]))
+
+    def test_both_masks_shapes(self):
+        """Factors and loadings span the full data dimensions."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+        )
+        assert self.s.learning_results.factors.shape == (100, 3)
+        assert self.s.learning_results.loadings.shape == (20, 3)
+
+    def test_both_masks_reconstruction_quality(self):
+        """Rank-3 approx of unmasked region should be near-exact."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+        )
+        kept_nav = ~self.nav_mask
+        kept_sig = ~self.sig_mask
+        f = self.s.learning_results.factors[kept_sig, :]
+        l_ = self.s.learning_results.loadings[kept_nav, :]
+        recon = l_ @ f.T
+        rms = np.sqrt(np.mean((recon - self.data[kept_nav][:, kept_sig]) ** 2))
+        assert rms < 1e-10
+
+
+class TestDecompositionReprojectionNumerical:
+    """Numerical assertions for the reproject parameter (non-lazy).
+
+    Verifies that reprojection actually fills the previously-masked positions
+    and that the result is sensible.
+    """
+
+    def setup_method(self, method):
+        self.s, self.data = _make_lowrank_signal()
+        self.nav_mask = _nav_mask()
+        self.sig_mask = _sig_mask()
+
+    def test_reproject_navigation_fills_loadings(self):
+        """reproject='navigation' → no NaN in loadings, full shape."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            reproject="navigation",
+        )
+        loadings = self.s.learning_results.loadings
+        assert loadings.shape == (20, 3)
+        assert not np.any(np.isnan(loadings))
+
+    def test_reproject_navigation_vs_nan_fill(self):
+        """reproject='navigation' fills previously-NaN rows; unmasked rows are
+        finite under both runs."""
+        # Without reproject: masked positions are NaN
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+        )
+        nan_loadings = self.s.learning_results.loadings.copy()
+
+        # With reproject: masked positions filled, all rows finite
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            reproject="navigation",
+        )
+        reproj_loadings = self.s.learning_results.loadings.copy()
+
+        # Previously-masked rows are NaN without reproject but finite with it
+        assert np.all(np.isnan(nan_loadings[self.nav_mask, :]))
+        assert np.all(np.isfinite(reproj_loadings[self.nav_mask, :]))
+        # Unmasked rows are finite in both cases
+        assert np.all(np.isfinite(nan_loadings[~self.nav_mask, :]))
+        assert np.all(np.isfinite(reproj_loadings[~self.nav_mask, :]))
+
+    def test_reproject_navigation_reconstruction_unmasked(self):
+        """Without reproject, unmasked nav positions are reconstructed exactly."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+        )
+        kept_nav = ~self.nav_mask
+        l_ = self.s.learning_results.loadings[kept_nav, :]
+        f = self.s.learning_results.factors
+        rms = np.sqrt(np.mean((l_ @ f.T - self.data[kept_nav]) ** 2))
+        assert rms < 1e-10
+
+    def test_reproject_none_vs_navigation_unmasked_finite(self):
+        """Both reproject=None and reproject='navigation' give finite loadings
+        at unmasked positions (structural sanity check)."""
+        s2 = signals.Signal1D(self.data.copy())
+
+        self.s.decomposition(
+            output_dimension=3, navigation_mask=self.nav_mask, reproject=None
+        )
+        s2.decomposition(
+            output_dimension=3, navigation_mask=self.nav_mask, reproject="navigation"
+        )
+        assert np.all(np.isfinite(self.s.learning_results.loadings[~self.nav_mask, :]))
+        assert np.all(np.isfinite(s2.learning_results.loadings[~self.nav_mask, :]))
+
+    @pytest.mark.parametrize("reproject", ["navigation", "both"])
+    def test_reproject_with_both_masks_nav_loadings_filled(self, reproject):
+        """With both masks, reproject fills nav-masked rows in loadings."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject=reproject,
+        )
+        loadings = self.s.learning_results.loadings
+        assert loadings.shape == (20, 3)
+        assert not np.any(np.isnan(loadings))
+
+    @skip_sklearn
+    @pytest.mark.parametrize("reproject", ["signal", "both"])
+    def test_reproject_signal_fills_factors(self, reproject):
+        """reproject='signal'/'both' → no NaN in factors."""
+        self.s.decomposition(
+            output_dimension=3,
+            signal_mask=self.sig_mask,
+            reproject=reproject,
+        )
+        factors = self.s.learning_results.factors
+        assert factors.shape == (100, 3)
+        assert not np.any(np.isnan(factors))
+
+
+@lazifyTestClass
+class TestDecompositionMasksLazyVsNonLazy:
+    """Run the same mask scenarios on both lazy and non-lazy signals.
+
+    ``@lazifyTestClass`` runs every test twice: once on the eager signal
+    created in *setup_method*, and once after lazifying it.  The tests
+    therefore check that lazy and non-lazy paths satisfy the same structural
+    contracts (shape, NaN placement, reconstruction quality).
+    """
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(7)
+        rank = 3
+        U = rng.standard_normal((20, rank))
+        V = rng.standard_normal((100, rank))
+        self.data = U @ V.T
+        self.s = signals.Signal1D(self.data.copy())
+        self.nav_mask = _nav_mask(nav=20, step=4)  # 5 masked positions
+        self.sig_mask = _sig_mask(sig=100, step=10)  # 10 masked channels
+
+    def test_navigation_mask_nan_pattern(self):
+        """Nav-masked positions → NaN rows in loadings; factors intact."""
+        self.s.decomposition(output_dimension=3, navigation_mask=self.nav_mask)
+        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.factors
+        assert loadings.shape == (20, 3)
+        assert np.all(np.isnan(loadings[self.nav_mask, :]))
+        assert not np.any(np.isnan(loadings[~self.nav_mask, :]))
+        assert not np.any(np.isnan(factors))
+
+    def test_signal_mask_nan_pattern(self):
+        """Sig-masked channels → NaN rows in factors; loadings intact."""
+        self.s.decomposition(output_dimension=3, signal_mask=self.sig_mask)
+        factors = self.s.learning_results.factors
+        loadings = self.s.learning_results.loadings
+        assert factors.shape == (100, 3)
+        assert np.all(np.isnan(factors[self.sig_mask, :]))
+        assert not np.any(np.isnan(factors[~self.sig_mask, :]))
+        assert not np.any(np.isnan(loadings))
+
+    def test_both_masks_nan_pattern(self):
+        """Both masks applied together produce expected NaN patterns."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+        )
+        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.factors
+        assert np.all(np.isnan(loadings[self.nav_mask, :]))
+        assert not np.any(np.isnan(loadings[~self.nav_mask, :]))
+        assert np.all(np.isnan(factors[self.sig_mask, :]))
+        assert not np.any(np.isnan(factors[~self.sig_mask, :]))
+
+    def test_both_masks_reconstruction_quality(self):
+        """Unmasked region reconstructed near-exactly for a rank-3 signal."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+        )
+        kept_nav = ~self.nav_mask
+        kept_sig = ~self.sig_mask
+        f = self.s.learning_results.factors[kept_sig, :]
+        l_ = self.s.learning_results.loadings[kept_nav, :]
+        rms = np.sqrt(np.mean((l_ @ f.T - self.data[kept_nav][:, kept_sig]) ** 2))
+        assert rms < 1e-10
+
+    def test_reproject_navigation_no_nan(self):
+        """reproject='navigation' produces full loadings without NaN."""
+        self.s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            reproject="navigation",
+        )
+        loadings = self.s.learning_results.loadings
+        assert loadings.shape == (20, 3)
+        assert not np.any(np.isnan(loadings))
