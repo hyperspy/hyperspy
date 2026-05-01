@@ -407,6 +407,82 @@ alternative is available, although it is typically much slower.
 
    >>> s.decomposition(algorithm="ORNMF", output_dimension=3, method="RobustPGD") # doctest: +SKIP
 
+.. _mva.masks_and_reproject:
+
+Masks and reprojection
+----------------------
+
+Navigation and signal masks can be passed to
+:meth:`~.api.signals.BaseSignal.decomposition` to restrict which pixels or
+channels are used during learning.  Masked positions are excluded from the
+data matrix before the algorithm runs, and the resulting factors and loadings
+contain ``NaN`` at those positions by default.
+
+.. code-block:: python
+
+   >>> import numpy as np
+   >>> s = hs.signals.Signal1D(np.random.randn(10, 10, 200))
+
+   # Boolean array: True = exclude this navigation pixel
+   >>> nav_mask = np.zeros((10, 10), dtype=bool)
+   >>> nav_mask[0, :] = True   # mask the first row of navigation pixels
+
+   # Boolean array: True = exclude this signal channel
+   >>> sig_mask = np.zeros(200, dtype=bool)
+   >>> sig_mask[:10] = True    # mask the first 10 channels
+
+   >>> s.decomposition(
+   ...     navigation_mask=nav_mask,
+   ...     signal_mask=sig_mask,
+   ... ) # doctest: +SKIP
+
+After decomposition the masked positions contain ``NaN``:
+
+- ``learning_results.loadings`` has ``NaN`` rows for masked navigation pixels.
+- ``learning_results.factors`` has ``NaN`` rows for masked signal channels.
+
+The ``reproject`` parameter can be used to fill those ``NaN`` positions by
+projecting the *full* (unmasked) data through the learned basis after learning
+is complete:
+
+``reproject='navigation'``
+   Projects all navigation pixels (including the masked ones) through the
+   learned factors.  This fills ``NaN`` in the loadings at masked navigation
+   positions.  Factors still contain ``NaN`` at masked signal channels.
+
+``reproject='signal'``
+   Projects all signal channels (including the masked ones) through the
+   learned loadings via a pseudo-inverse.  This fills ``NaN`` in the factors
+   at masked signal channels.  Loadings still contain ``NaN`` at masked
+   navigation positions.
+
+``reproject='both'``
+   Applies both reprojections: factors and loadings are fully filled with no
+   ``NaN`` remaining.
+
+.. code-block:: python
+
+   >>> s.decomposition(
+   ...     navigation_mask=nav_mask,
+   ...     signal_mask=sig_mask,
+   ...     reproject="both",
+   ... ) # doctest: +SKIP
+
+   # loadings and factors both have no NaN after reproject='both'
+   >>> np.any(np.isnan(s.learning_results.loadings))  # doctest: +SKIP
+   False
+   >>> np.any(np.isnan(s.learning_results.factors))   # doctest: +SKIP
+   False
+
+.. note::
+
+   For lazy signals, ``reproject='signal'`` and ``reproject='both'`` are
+   supported for the ``"SVD"`` and ``"PCA"`` algorithms only.  Using
+   ``reproject='signal'`` with ``"ORPCA"`` or ``"ORNMF"`` on a lazy signal
+   will emit a warning and leave the signal-masked channels as ``NaN`` in
+   the factors; navigation reprojection still proceeds as normal.
+   See :ref:`big_data.decomposition` for more details.
+
 .. _mva.custom_decomposition:
 
 Custom decomposition algorithms
