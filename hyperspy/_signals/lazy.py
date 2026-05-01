@@ -897,6 +897,7 @@ class LazySignal(signals.BaseSignal):
         normalize_poissonian_noise=False,
         algorithm="SVD",
         output_dimension=None,
+        centre=None,
         signal_mask=None,
         navigation_mask=None,
         get=None,
@@ -921,8 +922,12 @@ class LazySignal(signals.BaseSignal):
         algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF'}, default 'SVD'
             The decomposition algorithm to use.
         output_dimension : int or None, default None
-            Number of components to keep/calculate. If None, keep all
-            (only valid for 'SVD' algorithm)
+            Number of components to keep/calculate. Required for all
+            algorithms including 'SVD'.
+        centre : {None, 'navigation', 'signal'}, default None
+            Subtract the mean along the 'navigation' or 'signal' axis
+            before decomposition. Only used for the 'SVD' algorithm;
+            incompatible with ``normalize_poissonian_noise=True``.
         get : dask scheduler or None
             The dask scheduler to use for computations. If ``None``,
             ``dask.threaded.get` will be used if possible, otherwise
@@ -933,10 +938,10 @@ class LazySignal(signals.BaseSignal):
             increased to contain at least ``output_dimension`` signals.
         navigation_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The navigation locations marked as True are not used in the
-            decomposition. Not implemented for the 'SVD' algorithm.
+            decomposition.
         signal_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The signal locations marked as True are not used in the
-            decomposition. Not implemented for the 'SVD' algorithm.
+            decomposition.
         reproject : bool, default True
             Reproject data on the learnt components (factors) after learning.
         print_info : bool, default True
@@ -954,7 +959,7 @@ class LazySignal(signals.BaseSignal):
 
         See Also
         --------
-        dask.array.linalg.svd, sklearn.decomposition.IncrementalPCA,
+        hyperspy.learn.incremental_svd.ISVD, sklearn.decomposition.IncrementalPCA,
         hyperspy.learn.orpca, hyperspy.learn.ornmf
 
         """
@@ -963,10 +968,15 @@ class LazySignal(signals.BaseSignal):
         if get is None:
             get = _get()
         # Check algorithms requiring output_dimension
-        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
+        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF", "SVD"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
+            )
+
+        if centre not in (None, "navigation", "signal"):
+            raise ValueError(
+                f"`centre` must be None, 'navigation' or 'signal', not {centre!r}"
             )
 
         explained_variance = None
@@ -991,6 +1001,7 @@ class LazySignal(signals.BaseSignal):
             f"  normalize_poissonian_noise={normalize_poissonian_noise}",
             f"  algorithm={algorithm}",
             f"  output_dimension={output_dimension}",
+            f"  centre={centre}",
         ]
 
         # LEARN
@@ -1064,31 +1075,58 @@ class LazySignal(signals.BaseSignal):
 
             # LEARN
             if algorithm == "SVD":
-                reproject = False
-                from dask.array.linalg import svd
+                from hyperspy.learn.incremental_svd import ISVD
 
+                reproject = False
                 try:
                     self._unfolded4decomposition = self.unfold()
-                    # TODO: implement masking
-                    if navigation_mask is not None or signal_mask is not None:
-                        raise NotImplementedError(
-                            "Masking is not yet implemented for lazy SVD"
-                        )
 
-                    U, S, V = svd(self.data)
+                    obj = ISVD(n_components=output_dimension)
 
-                    if output_dimension is None:
-                        min_shape = min(min(U.shape), min(V.shape))
+                    # Apply centring by temporarily modifying self.data
+                    # (which is restored via original_data in the outer
+                    # finally block).
+                    if centre == "navigation":
+                        mean = self.data.mean(axis=0, keepdims=True).compute()
+                        self.data = self.data - mean
+                    elif centre == "signal":
+                        mean = self.data.mean(axis=1, keepdims=True).compute()
+                        self.data = self.data - mean
                     else:
-                        min_shape = output_dimension
+                        mean = None
 
-                    U = U[:, :min_shape]
-                    S = S[:min_shape]
-                    V = V[:min_shape]
+                    for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask,
+                        ),
+                        total=nblocks,
+                        leave=True,
+                        desc="Learn",
+                    ):
+                        obj.partial_fit(chunk)
 
-                    factors = V.T
-                    explained_variance = S**2 / self.data.shape[0]
-                    loadings = U * S
+                    factors = obj.components_.T  # (n_sig, n_components)
+                    explained_variance = obj.explained_variance_
+                    explained_variance_ratio = obj.explained_variance_ratio_
+
+                    # Reproject to get loadings
+                    H = []
+                    for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask,
+                        ),
+                        total=nblocks,
+                        leave=True,
+                        desc="Project",
+                    ):
+                        H.append(obj.transform(chunk))
+                    loadings = np.concatenate(H, axis=0)
                 finally:
                     if self._unfolded4decomposition is True:
                         self.fold()
@@ -1197,6 +1235,9 @@ class LazySignal(signals.BaseSignal):
         target.loadings = loadings
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
+        if algorithm == "SVD":
+            target.mean = mean
+            target.centre = centre
 
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
