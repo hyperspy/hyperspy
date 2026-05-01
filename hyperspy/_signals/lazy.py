@@ -1023,7 +1023,8 @@ class LazySignal(signals.BaseSignal):
         navigation_mask=None,
         get=None,
         num_chunks=None,
-        reproject=True,
+        reproject=None,
+        return_info=False,
         print_info=True,
         **kwargs,
     ):
@@ -1063,8 +1064,27 @@ class LazySignal(signals.BaseSignal):
         signal_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The signal locations marked as True are not used in the
             decomposition.
-        reproject : bool, default True
-            Reproject data on the learnt components (factors) after learning.
+        reproject : {None, "navigation", "signal", "both"}, default None
+            If not None, the decomposition results will be projected onto the
+            full (unmasked) data after learning:
+
+            * ``None``: use the default for the chosen algorithm.
+              For ``"PCA"``, ``"ORPCA"`` and ``"ORNMF"`` this is equivalent
+              to ``"navigation"``; for ``"SVD"`` loadings are always computed
+              during the learn pass (reprojection is a no-op).
+            * ``"navigation"``: reproject onto navigation space to get full
+              loadings (useful when a navigation mask was applied).
+            * ``"signal"``: reproject onto signal space to get full factors
+              (useful when a signal mask was applied).  Not currently
+              supported for any lazy algorithm; a warning is raised and
+              the step is skipped.
+            * ``"both"``: perform both reprojections.  Signal reprojection
+              is skipped with a warning (see above).
+        return_info : bool, default False
+            The result of the decomposition is stored internally. However,
+            some algorithms generate extra information that is not stored. If
+            True, return any extra information if available. For sklearn-based
+            algorithms (``"PCA"``), this is the fitted estimator object.
         print_info : bool, default True
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
@@ -1098,8 +1118,17 @@ class LazySignal(signals.BaseSignal):
                 f"`centre` must be None, 'navigation' or 'signal', not {centre!r}"
             )
 
+        if reproject not in (None, "navigation", "signal", "both"):
+            raise ValueError(
+                "`reproject` must be None, 'navigation', 'signal' or 'both', "
+                f"not {reproject!r}"
+            )
+
         explained_variance = None
         explained_variance_ratio = None
+        mean = None
+        loadings = None
+        factors = None
 
         _al_data = self._data_aligned_with_axes
         nav_chunks = _al_data.chunks[: self.axes_manager.navigation_dimension]
@@ -1131,7 +1160,6 @@ class LazySignal(signals.BaseSignal):
 
             obj = sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
-            reproject = True
             to_print.extend(["scikit-learn estimator:", obj])
 
         elif algorithm == "ORPCA":
@@ -1170,7 +1198,6 @@ class LazySignal(signals.BaseSignal):
             if algorithm == "SVD":
                 from hyperspy.learn.incremental_svd import ISVD
 
-                reproject = False
                 try:
                     self._unfolded4decomposition = self.unfold()
 
@@ -1271,58 +1298,160 @@ class LazySignal(signals.BaseSignal):
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
                 factors = obj.components_.T
+                mean = obj.mean_
 
             elif algorithm == "ORPCA":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
+                mean = None
 
             elif algorithm == "ORNMF":
                 factors, loadings = obj.finish()
                 loadings = loadings.T
+                mean = None
 
-            # REPROJECT
-            if reproject:
+            # REPROJECT NAVIGATION (recompute loadings over full nav)
+            if reproject in ("navigation", "both"):
+                if algorithm == "SVD":
+                    # SVD already did a projection pass; redo it to get
+                    # full-nav loadings (unmasked positions included).
+                    H = []
+                    for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=None,
+                        ),
+                        total=nblocks,
+                        leave=True,
+                        desc="Reproject",
+                    ):
+                        H.append(obj.transform(chunk))
+                    loadings = np.concatenate(H, axis=0)
+                elif algorithm == "PCA":
+                    method = obj.transform
+
+                    def post(a):
+                        return np.concatenate(a, axis=0)
+
+                    _map = map(
+                        lambda thing: method(thing),
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=None,
+                        ),
+                    )
+                    H = []
+                    try:
+                        for thing in progressbar(_map, total=nblocks, desc="Reproject"):
+                            H.append(thing)
+                    except KeyboardInterrupt:  # pragma: no cover
+                        pass
+                    loadings = post(H)
+                else:
+                    # ORPCA / ORNMF
+                    method = obj.project
+
+                    def post(a):
+                        return np.concatenate(a, axis=1).T
+
+                    _map = map(
+                        lambda thing: method(thing),
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=None,
+                        ),
+                    )
+                    H = []
+                    try:
+                        for thing in progressbar(_map, total=nblocks, desc="Reproject"):
+                            H.append(thing)
+                    except KeyboardInterrupt:  # pragma: no cover
+                        pass
+                    loadings = post(H)
+
+            elif reproject is None:
+                # Default behaviour: for PCA/ORPCA/ORNMF always project to
+                # get loadings (preserves the pre-existing default of
+                # reproject=True).  For SVD, loadings were already computed
+                # in the learn pass above so nothing extra is needed.
                 if algorithm == "PCA":
                     method = obj.transform
 
                     def post(a):
                         return np.concatenate(a, axis=0)
 
-                elif algorithm == "ORPCA":
+                    _map = map(
+                        lambda thing: method(thing),
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask,
+                        ),
+                    )
+                    H = []
+                    try:
+                        for thing in progressbar(_map, total=nblocks, desc="Project"):
+                            H.append(thing)
+                    except KeyboardInterrupt:  # pragma: no cover
+                        pass
+                    loadings = post(H)
+
+                elif algorithm in ("ORPCA", "ORNMF"):
                     method = obj.project
 
                     def post(a):
                         return np.concatenate(a, axis=1).T
 
-                elif algorithm == "ORNMF":
-                    method = obj.project
+                    _map = map(
+                        lambda thing: method(thing),
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask,
+                        ),
+                    )
+                    H = []
+                    try:
+                        for thing in progressbar(_map, total=nblocks, desc="Project"):
+                            H.append(thing)
+                    except KeyboardInterrupt:  # pragma: no cover
+                        pass
+                    loadings = post(H)
 
-                    def post(a):
-                        return np.concatenate(a, axis=1).T
+            # REPROJECT SIGNAL (recompute factors over full signal)
+            if reproject in ("signal", "both"):
+                if algorithm == "SVD":
+                    import warnings
 
-                _map = map(
-                    lambda thing: method(thing),
-                    self._block_iterator(
-                        flat_signal=True,
-                        get=get,
-                        signal_mask=signal_mask,
-                        navigation_mask=navigation_mask,
-                    ),
-                )
-                H = []
-                try:
-                    for thing in progressbar(_map, total=nblocks, desc="Project"):
-                        H.append(thing)
-                except KeyboardInterrupt:  # pragma: no cover
-                    pass
-                loadings = post(H)
+                    warnings.warn(
+                        "Reprojecting the signal is not supported for "
+                        "algorithm='SVD' on lazy signals; the step is skipped.",
+                        UserWarning,
+                    )
+                else:
+                    import warnings
+
+                    warnings.warn(
+                        f"Reprojecting the signal is not yet supported for "
+                        f"algorithm='{algorithm}' on lazy signals; "
+                        "the step is skipped.",
+                        UserWarning,
+                    )
 
             if explained_variance is not None and explained_variance_ratio is None:
                 explained_variance_ratio = explained_variance / explained_variance.sum()
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            if algorithm != "SVD":  # Only needed for online algorithms
+            if algorithm != "SVD" and loadings is not None:
                 try:
                     loadings = _reshuffle_mixed_blocks(
                         loadings, ndim, (output_dimension,), nav_chunks
@@ -1335,30 +1464,97 @@ class LazySignal(signals.BaseSignal):
             self.data = original_data
 
         target = self.learning_results
+
+        # ── explained variance ratio and elbow estimate ──────────────────
+        if explained_variance is not None and explained_variance_ratio is None:
+            explained_variance_ratio = explained_variance / explained_variance.sum()
+        number_significant_components = None
+        if explained_variance_ratio is not None:
+            number_significant_components = int(
+                self.estimate_elbow_position(explained_variance_ratio) + 1
+            )
+
+        # ── normalise masks to flat bool arrays ──────────────────────────
+        # We need 1-D boolean numpy arrays (True = kept) to NaN-fill excluded
+        # positions; mirrors what the non-lazy path does in _mva.py.
+        import dask.array as da
+
+        def _to_flat_bool(mask, size):
+            """Return a flat boolean numpy array, True where mask is True."""
+            if mask is None:
+                return None
+            if isinstance(mask, da.Array):
+                mask = mask.compute()
+            if hasattr(mask, "data"):
+                mask = mask.data  # BaseSignal
+            return np.asarray(mask, dtype=bool).ravel()
+
+        nav_size = self.axes_manager.navigation_size
+        sig_size = self.axes_manager.signal_size
+        flat_nav_mask = _to_flat_bool(navigation_mask, nav_size)
+        flat_sig_mask = _to_flat_bool(signal_mask, sig_size)
+
+        # ── store core results ───────────────────────────────────────────
         target.decomposition_algorithm = algorithm
         target.output_dimension = output_dimension
-        if algorithm != "SVD":
-            target._object = obj
-        target.factors = factors
-        target.loadings = loadings
+        target.poissonian_noise_normalized = normalize_poissonian_noise
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
-        if algorithm == "SVD":
-            target.mean = mean
-            target.centre = centre
+        target.number_significant_components = number_significant_components
+        target.centre = centre
+        target.mean = mean
+        target.unmixing_matrix = None
+        target.bss_algorithm = None
+        if algorithm != "SVD":
+            target._object = obj
 
-        # Rescale the results if the noise was normalized
-        if normalize_poissonian_noise is True:
-            target.factors = (
-                target.factors * self._root_bH.ravel().compute()[:, np.newaxis]
+        # ── rescale if Poisson noise was normalised ──────────────────────
+        if normalize_poissonian_noise:
+            factors = factors * self._root_bH.ravel().compute()[:, np.newaxis]
+            loadings = loadings * self._root_aG.ravel().compute()[:, np.newaxis]
+
+        # ── store masks and NaN-fill excluded positions ──────────────────
+        if flat_sig_mask is not None:
+            target.signal_mask = flat_sig_mask.reshape(
+                self.axes_manager._signal_shape_in_array
             )
-            target.loadings = (
-                target.loadings * self._root_aG.ravel().compute()[:, np.newaxis]
+            # Only NaN-fill if signal was not reprojected (reprojection already
+            # covers all signal channels).
+            if reproject not in ("signal", "both"):
+                # Expand factors back to full signal size; NaN at excluded channels.
+                # factors rows correspond to kept (unmasked) signal channels,
+                # i.e. positions where flat_sig_mask is False.
+                full_factors = np.full(
+                    (sig_size, factors.shape[1]), np.nan, dtype=float
+                )
+                full_factors[~flat_sig_mask, :] = factors
+                factors = full_factors
+
+        if flat_nav_mask is not None:
+            target.navigation_mask = flat_nav_mask.reshape(
+                self.axes_manager._navigation_shape_in_array
             )
+            # Only NaN-fill if navigation was not reprojected (reprojection
+            # already covers all navigation positions).
+            if reproject not in ("navigation", "both"):
+                # Expand loadings back to full nav size; NaN at excluded positions.
+                # loadings rows correspond to kept (unmasked) nav positions,
+                # i.e. positions where flat_nav_mask is False.
+                full_loadings = np.full(
+                    (nav_size, loadings.shape[1]), np.nan, dtype=float
+                )
+                full_loadings[~flat_nav_mask, :] = loadings
+                loadings = full_loadings
+
+        target.factors = factors
+        target.loadings = loadings
 
         # Print details about the decomposition we just performed
         if print_info:
             print("\n".join([str(pr) for pr in to_print]))
+
+        if return_info:
+            return obj if algorithm != "SVD" else None
 
     def plot(self, navigator="auto", **kwargs):
         if self.axes_manager.ragged:
