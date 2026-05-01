@@ -1,0 +1,154 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2026 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+"""Out-of-core (incremental) SVD via a no-centering subclass of
+:class:`sklearn.decomposition.IncrementalPCA`.
+
+:class:`sklearn.decomposition.IncrementalPCA` always subtracts a running mean
+from each batch, which turns the decomposition into a PCA rather than a plain
+SVD.  :class:`ISVD` disables this centering by overriding the ``mean_``
+property so that it always reads back as zeros, making both the
+``partial_fit`` mean-correction step and the ``transform`` mean-shift
+step no-ops while leaving the rest of the sklearn implementation intact.
+"""
+
+import numpy as np
+
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+
+
+def _check_sklearn():
+    if not sklearn_installed:
+        raise ImportError(
+            "The 'SVD' algorithm for lazy signals requires scikit-learn. "
+            "Install it with:  pip install scikit-learn"
+        )
+
+
+class ISVD:
+    """Out-of-core incremental SVD (no centering).
+
+    A thin wrapper around :class:`sklearn.decomposition.IncrementalPCA` that
+    disables centering so the decomposition computes a plain SVD rather than
+    PCA.  Data is fed in batches via :meth:`partial_fit`; after all batches
+    have been processed, call :meth:`transform` to obtain the loadings.
+
+    The centering is disabled by overriding the ``mean_`` property to always
+    return an array of zeros.  This neutralises both the mean-correction term
+    computed during :meth:`partial_fit` and the mean-shift applied during
+    :meth:`transform`, without touching any other part of the sklearn
+    implementation.
+
+    Parameters
+    ----------
+    n_components : int
+        Number of singular components to compute.
+    **kwargs
+        Additional keyword arguments forwarded to
+        :class:`sklearn.decomposition.IncrementalPCA`.
+
+    Attributes
+    ----------
+    singular_values_ : ndarray, shape (n_components,)
+        Singular values after fitting.
+    components_ : ndarray, shape (n_components, n_features)
+        Right singular vectors (rows are components).
+    explained_variance_ : ndarray, shape (n_components,)
+        Approximate explained variance per component.
+    explained_variance_ratio_ : ndarray, shape (n_components,)
+        Fraction of total variance explained by each component.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from hyperspy.learn.incremental_svd import ISVD
+    >>> X = np.random.randn(200, 50)
+    >>> obj = ISVD(n_components=3)
+    >>> for chunk in np.array_split(X, 4):
+    ...     obj.partial_fit(chunk)
+    >>> factors = obj.components_.T          # shape (n_features, n_components)
+    >>> loadings = obj.transform(X)          # shape (n_samples, n_components)
+    """
+
+    def __init__(self, n_components, **kwargs):
+        _check_sklearn()
+        from sklearn.decomposition import IncrementalPCA
+
+        class _NoCentreIncrementalPCA(IncrementalPCA):
+            """IncrementalPCA subclass that forces mean_ to zero."""
+
+            @property
+            def mean_(self):
+                return self.__mean
+
+            @mean_.setter
+            def mean_(self, value):
+                # sklearn initialises mean_ to the scalar 0.0 on first call;
+                # on subsequent calls it passes a float array.  We always store
+                # zeros so that centering has no effect.
+                if np.isscalar(value):
+                    self.__mean = value
+                else:
+                    self.__mean = np.zeros_like(value)
+
+        self._obj = _NoCentreIncrementalPCA(n_components=n_components, **kwargs)
+
+    # ------------------------------------------------------------------
+    # Delegate everything to the inner sklearn object
+    # ------------------------------------------------------------------
+
+    def partial_fit(self, X):
+        """Process one batch of data.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_batch, n_features)
+        """
+        self._obj.partial_fit(X)
+        return self
+
+    def transform(self, X):
+        """Project X onto the fitted components.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_samples, n_features)
+
+        Returns
+        -------
+        loadings : ndarray, shape (n_samples, n_components)
+        """
+        return self._obj.transform(X)
+
+    # Expose the most useful fitted attributes directly.
+
+    @property
+    def components_(self):
+        return self._obj.components_
+
+    @property
+    def singular_values_(self):
+        return self._obj.singular_values_
+
+    @property
+    def explained_variance_(self):
+        return self._obj.explained_variance_
+
+    @property
+    def explained_variance_ratio_(self):
+        return self._obj.explained_variance_ratio_
