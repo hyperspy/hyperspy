@@ -840,6 +840,12 @@ class LazySignal(signals.BaseSignal):
         signalsize = self.axes_manager.signal_size
         sig_reshape = (signalsize,) if signalsize else ()
         data = data.reshape((self.axes_manager.navigation_shape[::-1] + sig_reshape))
+        # Ensure the signal dimension is a single chunk so that the index
+        # ``(0,)`` appended in the loop below retrieves the full signal vector
+        # rather than only the first chunk.  This matters when the on-disk
+        # chunk size is smaller than the signal size (e.g. after unfold()).
+        if signalsize:
+            data = data.rechunk({-1: -1})
 
         if signal_mask is None:
             signal_mask = (
