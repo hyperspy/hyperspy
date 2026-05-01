@@ -176,7 +176,7 @@ class TestGetModel:
     @pytest.mark.parametrize("centre", [None, "signal"])
     def test_get_decomposition_model(self, centre):
         s = self.s
-        s.decomposition(algorithm="SVD", centre=centre)
+        s.decomposition(algorithm="SVD", centre=centre, output_dimension=3)
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
         assert rms < 5e-7
@@ -184,7 +184,7 @@ class TestGetModel:
     @skip_sklearn
     def test_get_bss_model(self):
         s = self.s
-        s.decomposition(algorithm="SVD")
+        s.decomposition(algorithm="SVD", output_dimension=3)
         s.blind_source_separation(3)
         sc = self.s.get_bss_model()
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())

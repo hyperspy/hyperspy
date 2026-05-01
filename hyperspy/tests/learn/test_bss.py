@@ -257,7 +257,7 @@ class TestReverseBSS:
         S -= 2 * S.min()  # Required to give us a positive dataset
         A = rng.random(size=(3, 3))
         s = hs.signals.Signal1D(A @ S)
-        s.decomposition()
+        s.decomposition(output_dimension=3)
         s.blind_source_separation(2)
         self.s = s
 
@@ -286,7 +286,7 @@ class TestBSS1D:
         ics = rng.laplace(size=(3, 500))
         mixing_matrix = rng.random(size=(100, 3))
         s = hs.signals.Signal1D(mixing_matrix @ ics)
-        s.decomposition()
+        s.decomposition(output_dimension=3)
 
         mask_sig = s._get_signal_signal(dtype="bool")
         mask_sig.isig[5] = True
@@ -309,7 +309,7 @@ class TestBSS1D:
     def test_on_loadings(self):
         self.s.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=False)
         s2 = self.s.as_signal1D(0)
-        s2.decomposition()
+        s2.decomposition(output_dimension=3)
         s2.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=True)
         assert are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings()
@@ -350,7 +350,7 @@ class TestBSS2D:
         s = hs.signals.Signal2D((mixing_matrix @ ics).reshape((100, 16, 16)))
         for axis, name in zip(s.axes_manager._axes, ("z", "y", "x")):
             axis.name = name
-        s.decomposition()
+        s.decomposition(output_dimension=3)
 
         mask_sig = s._get_signal_signal(dtype="bool")
         mask_sig.unfold()
@@ -449,7 +449,7 @@ class TestBSS2D:
     def test_on_loadings(self):
         self.s.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=False)
         s2 = self.s.as_signal1D(0)
-        s2.decomposition()
+        s2.decomposition(output_dimension=3)
         s2.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=True)
         assert are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings()
@@ -474,7 +474,7 @@ class TestBSS2D:
 
     def test_mask_diff_order_1_on_loadings(self):
         s = self.s.to_signal1D()
-        s.decomposition()
+        s.decomposition(output_dimension=3)
         if isinstance(s.learning_results.loadings, da.Array):
             s.learning_results.loadings = s.learning_results.loadings.compute()
         s.learning_results.loadings[5, :] = np.nan
@@ -482,7 +482,7 @@ class TestBSS2D:
 
     def test_mask_diff_order_1_on_loadings_diff_axes(self):
         s = self.s.to_signal1D()
-        s.decomposition()
+        s.decomposition(output_dimension=3)
         if isinstance(s.learning_results.loadings, da.Array):
             s.learning_results.loadings = s.learning_results.loadings.compute()
         s.learning_results.loadings[5, :] = np.nan
