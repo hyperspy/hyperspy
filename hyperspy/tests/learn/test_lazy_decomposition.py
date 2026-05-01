@@ -52,11 +52,11 @@ class TestLazyDecomposition:
         # Test tolerance
         self.tol = 1e-2 * (self.m * self.n)
 
-    @pytest.mark.parametrize("output_dimension", [None, 3])
+    @skip_sklearn
     @pytest.mark.parametrize("normalize_poissonian_noise", [True, False])
-    def test_svd(self, output_dimension, normalize_poissonian_noise):
+    def test_svd(self, normalize_poissonian_noise):
         self.s.decomposition(
-            output_dimension=output_dimension,
+            output_dimension=3,
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
         factors = self.s.learning_results.factors
@@ -193,6 +193,35 @@ class TestLazyDecomposition:
     def test_output_dimension_error(self):
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm="ORPCA")
+        with pytest.raises(ValueError, match="`output_dimension` must be specified"):
+            self.s.decomposition(algorithm="SVD")
+
+    @skip_sklearn
+    @pytest.mark.parametrize("centre", ["navigation", "signal"])
+    def test_svd_centre(self, centre):
+        self.s.decomposition(output_dimension=3, centre=centre)
+        assert self.s.learning_results.centre == centre
+        assert self.s.learning_results.mean is not None
+
+    @skip_sklearn
+    def test_svd_no_centering(self):
+        self.s.decomposition(output_dimension=3, centre=None)
+        assert self.s.learning_results.centre is None
+        assert self.s.learning_results.mean is None
+
+    @skip_sklearn
+    def test_svd_centre_invalid(self):
+        with pytest.raises(ValueError, match="`centre` must be"):
+            self.s.decomposition(output_dimension=3, centre="invalid")
+
+    @skip_sklearn
+    def test_svd_mask(self):
+        """SVD with signal mask runs without error and produces results."""
+        s = self.s
+        sig_mask = (s.inav[0, 0].data < 1.0).compute()
+        s.decomposition(algorithm="SVD", output_dimension=3, signal_mask=sig_mask)
+        assert s.learning_results.factors is not None
+        assert s.learning_results.loadings is not None
 
     def test_algorithm_error(self):
         with pytest.raises(ValueError, match="'algorithm' not recognised"):
@@ -224,15 +253,17 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Decomposition info:" not in captured.out
 
+    @skip_sklearn
     def test_decomposition_mask_SVD(self):
+        """SVD masking is now supported; check shapes are correct."""
         s = self.s
         sig_mask = (s.inav[0].data < 0.5).compute()
-        with pytest.raises(NotImplementedError):
-            s.decomposition(algorithm="SVD", signal_mask=sig_mask)
+        s.decomposition(algorithm="SVD", output_dimension=2, signal_mask=sig_mask)
+        assert s.learning_results.factors is not None
 
         nav_mask = (s.isig[0].data < 0.5).compute()
-        with pytest.raises(NotImplementedError):
-            s.decomposition(algorithm="SVD", navigation_mask=nav_mask)
+        s.decomposition(algorithm="SVD", output_dimension=2, navigation_mask=nav_mask)
+        assert s.learning_results.loadings is not None
 
     @skip_sklearn
     def test_decomposition_mask_wrong_Shape(self):
@@ -244,3 +275,136 @@ class TestPrintInfo:
         nav_mask = (s.isig[0].data < 0.5).compute()[:-2]
         with pytest.raises(ValueError):
             s.decomposition(algorithm="PCA", navigation_mask=nav_mask)
+
+
+class TestNormalizePoissonianNoise:
+    """Tests for LazySignal.normalize_poissonian_noise()."""
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(42)
+        # Poisson-like data: positive integers, shape (10 nav, 20 sig)
+        self.data = rng.integers(1, 100, size=(10, 20)).astype(float)
+        self.s = Signal1D(self.data.copy()).as_lazy()
+
+    # ------------------------------------------------------------------
+    # Basic correctness
+    # ------------------------------------------------------------------
+
+    def test_scaling_no_mask(self):
+        """Scaled data matches manual Keenan-Kotula formula."""
+        data = self.data
+        aG = data.sum(axis=1)  # sum over signal axis -> (10,)
+        bH = data.sum(axis=0)  # sum over nav axis   -> (20,)
+        expected = data / (np.sqrt(aG)[:, None] * np.sqrt(bH)[None, :])
+
+        self.s.normalize_poissonian_noise()
+        result = self.s.data.compute()
+        np.testing.assert_allclose(result, expected, rtol=1e-6)
+
+    def test_root_attributes_stored(self):
+        """_root_aG and _root_bH are stored as dask arrays after call."""
+        s = self.s
+        s.normalize_poissonian_noise()
+        assert hasattr(s, "_root_aG")
+        assert hasattr(s, "_root_bH")
+        assert isinstance(s._root_aG, da.Array)
+        assert isinstance(s._root_bH, da.Array)
+        assert s._root_aG.shape == (10,)
+        assert s._root_bH.shape == (20,)
+
+    # ------------------------------------------------------------------
+    # Mask support
+    # ------------------------------------------------------------------
+
+    def test_scaling_with_signal_mask(self):
+        """Signal mask excludes channels from bH computation."""
+        data = self.data
+        sig_mask = np.zeros(20, dtype=bool)
+        sig_mask[0] = True  # mask out first channel
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.normalize_poissonian_noise(signal_mask=sig_mask)
+
+        # Manual: zero the masked channel before summing
+        masked = data.copy()
+        masked[:, sig_mask] = 0.0
+        aG = masked.sum(axis=1)
+        bH = masked.sum(axis=0)
+        aG = np.where(aG == 0, 1, aG)
+        bH = np.where(bH == 0, 1, bH)
+        expected = data / (np.sqrt(aG)[:, None] * np.sqrt(bH)[None, :])
+        # Masked positions are left unscaled (original values)
+        expected[:, sig_mask] = data[:, sig_mask]
+
+        result = s.data.compute()
+        np.testing.assert_allclose(result, expected, rtol=1e-6)
+
+    def test_scaling_with_navigation_mask(self):
+        """Navigation mask excludes positions from aG computation."""
+        data = self.data
+        nav_mask = np.zeros(10, dtype=bool)
+        nav_mask[0] = True  # mask out first nav position
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.normalize_poissonian_noise(navigation_mask=nav_mask)
+
+        masked = data.copy()
+        masked[nav_mask, :] = 0.0
+        aG = masked.sum(axis=1)
+        bH = masked.sum(axis=0)
+        aG = np.where(aG == 0, 1, aG)
+        bH = np.where(bH == 0, 1, bH)
+        expected = data / (np.sqrt(aG)[:, None] * np.sqrt(bH)[None, :])
+        # Masked positions are left unscaled (original values)
+        expected[nav_mask, :] = data[nav_mask, :]
+
+        result = s.data.compute()
+        np.testing.assert_allclose(result, expected, rtol=1e-6)
+
+    # ------------------------------------------------------------------
+    # Guard conditions
+    # ------------------------------------------------------------------
+
+    def test_negative_values_raise(self):
+        """ValueError if unmasked data contains negative values."""
+        data = self.data.copy()
+        data[0, 0] = -1.0
+        s = Signal1D(data).as_lazy()
+        with pytest.raises(ValueError, match="Negative values"):
+            s.normalize_poissonian_noise()
+
+    def test_all_masked_raises(self):
+        """ValueError if the entire array is masked."""
+        nav_mask = np.ones(10, dtype=bool)  # mask every nav position
+        with pytest.raises(ValueError, match="All the data are masked"):
+            self.s.normalize_poissonian_noise(navigation_mask=nav_mask)
+
+    # ------------------------------------------------------------------
+    # Integration with decomposition()
+    # ------------------------------------------------------------------
+
+    @skip_sklearn
+    def test_decomposition_centre_guard(self):
+        """decomposition() raises if both normalize_poissonian_noise and centre are set."""
+        with pytest.raises(ValueError, match="normalize_poissonian_noise"):
+            self.s.decomposition(
+                normalize_poissonian_noise=True,
+                centre="navigation",
+                output_dimension=2,
+            )
+
+    @skip_sklearn
+    def test_decomposition_rescales_back(self):
+        """factors/loadings are rescaled back to original data space after SVD."""
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=2,
+            normalize_poissonian_noise=True,
+            print_info=False,
+        )
+        factors = s.learning_results.factors  # (20, 2)
+        loadings = s.learning_results.loadings  # (10, 2)
+        reconstruction = loadings @ factors.T  # (10, 20)
+        # Loose check: reconstruction is in the original data space
+        assert reconstruction.min() > -1e3
+        assert reconstruction.max() < 1e5

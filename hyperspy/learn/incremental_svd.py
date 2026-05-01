@@ -27,13 +27,15 @@ property so that it always reads back as zeros, making both the
 step no-ops while leaving the rest of the sklearn implementation intact.
 """
 
+import importlib
+
 import numpy as np
 
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 
 def _check_sklearn():
-    if not sklearn_installed:
+    if not SKLEARN_INSTALLED:
         raise ImportError(
             "The 'SVD' algorithm for lazy signals requires scikit-learn. "
             "Install it with:  pip install scikit-learn"
