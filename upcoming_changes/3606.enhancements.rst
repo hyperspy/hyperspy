@@ -1,0 +1,5 @@
+Scree plot titles and axis labels now correctly reflect the decomposition
+algorithm and whether mean-centring was applied. Labels such as
+"Explained variance ratio" and "Principal component" are used only for
+centred decompositions (true PCA); uncentred SVD and other algorithms now
+show "Proportion of total variation" and "Component" instead.
