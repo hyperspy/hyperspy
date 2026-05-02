@@ -177,22 +177,17 @@ The default ``"SVD"`` algorithm uses :class:`~.learn.incremental_svd.ISVD`,
 an incremental (out-of-core) SVD implemented as a thin wrapper around
 :class:`sklearn.decomposition.IncrementalPCA` with centering disabled.
 It processes the data one chunk at a time, so the full dataset is never loaded
-into memory.
+into memory at once.  Compared to ``"DaskSVD"``, it additionally supports:
 
-The previous implementation loaded all data into ``dask`` and then called
-``dask.array.linalg.svd``, which triggered a full in-memory materialisation
-for most chunk layouts and did not support masks, centering, or reprojection.
-:class:`~.learn.incremental_svd.ISVD` addresses all of these limitations:
-
-- ``output_dimension`` is **required** (the number of components to retain
-  must be known before streaming begins);
-- ``navigation_mask`` and ``signal_mask`` are supported;
-- optional mean-subtraction is available via the ``centre`` parameter
+- ``navigation_mask`` and ``signal_mask``;
+- optional mean-subtraction via the ``centre`` parameter
   (``'navigation'`` subtracts the per-feature mean, ``'signal'`` subtracts
   the per-sample mean);
 - ``reproject='navigation'``, ``reproject='signal'``, and ``reproject='both'``
-  are all supported to fill masked positions after learning (see
-  :ref:`mva.masks_and_reproject`).
+  to fill masked positions after learning (see :ref:`mva.masks_and_reproject`).
+
+``output_dimension`` is **required** because the number of components to retain
+must be known before streaming begins.
 
 .. code-block:: python
 
@@ -228,11 +223,25 @@ Dask SVD
 
 .. versionadded:: 2.5
 
-The ``"DaskSVD"`` algorithm uses :func:`dask.array.linalg.svd` to compute
-the full SVD lazily without streaming the data in chunks.  The entire dataset
-is kept as a dask graph and the computation is triggered in a single call.
-This is the approach used by HyperSpy prior to v2.5, restored here for users
-who need the purely lazy, graph-based path.
+The ``"DaskSVD"`` algorithm uses :func:`dask.array.linalg.svd`, which
+internally uses the TSQR (Tall-and-Skinny QR) algorithm for multi-chunk
+arrays.  The computation is expressed as a dask task graph and executed
+lazily; memory use scales as ``k × signal_size²`` (where ``k`` is the
+number of navigation chunks) rather than the full dataset size.  This is
+the approach used by HyperSpy prior to v2.5, restored here for users who
+prefer the graph-based path or who work with data that is already chunked
+in a tall-and-skinny layout.
+
+Unlike ``"SVD"``, ``"DaskSVD"``:
+
+- does **not** support ``navigation_mask`` or ``signal_mask`` (a
+  :exc:`NotImplementedError` is raised if masks are passed);
+- does **not** support the ``centre`` parameter;
+- does **not** require ``output_dimension`` (if omitted, all components up
+  to ``min(nav_size, sig_size)`` are returned);
+- requires the unfolded data array to be chunked in one dimension only
+  (tall-and-skinny or short-and-fat); arrays chunked in both dimensions
+  will raise a :exc:`NotImplementedError` from dask.
 
 Unlike ``"SVD"``, ``"DaskSVD"``:
 
