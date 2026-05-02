@@ -1627,3 +1627,38 @@ class TestLazyCentreMaskParity:
         assert not np.any(np.isnan(t.factors)), (
             "factors should have no NaN after signal reproject"
         )
+
+
+class TestLazyDecompositionInputValidation:
+    """Verify that lazy decomposition raises the same guards as non-lazy.
+
+    m1 - TypeError for non-float data.
+    m2 - AttributeError when navigation_size < 2.
+    m3 - ValueError from _check_navigation_mask when mask shape is wrong.
+
+    All tests use asymmetric shapes and the SVD algorithm so that the
+    previously-missing SVD path validation is exercised.
+    """
+
+    def test_non_float_dtype_raises(self):
+        """m1: integer data must raise TypeError (mirrors _mva.py:262)."""
+        s = Signal1D(np.ones((10, 15), dtype=np.int32)).as_lazy()
+        with pytest.raises(TypeError, match="float or complex"):
+            s.decomposition(output_dimension=3, print_info=False)
+
+    def test_navigation_size_lt2_raises(self):
+        """m2: navigation_size < 2 must raise AttributeError."""
+        s = Signal1D(np.ones((1, 15), dtype=float)).as_lazy()
+        with pytest.raises(AttributeError, match="navigation_size < 2"):
+            s.decomposition(output_dimension=3, print_info=False)
+
+    def test_bad_nav_mask_shape_raises(self):
+        """m3: a numpy navigation mask with wrong shape must raise ValueError
+        from _check_navigation_mask (previously skipped for SVD)."""
+        s = Signal1D(np.ones((12, 15), dtype=float)).as_lazy()
+        # navigation_shape is (12,); pass a mask with wrong length
+        bad_mask = np.zeros(7, dtype=bool)
+        with pytest.raises(ValueError, match="navigation mask"):
+            s.decomposition(
+                output_dimension=3, navigation_mask=bad_mask, print_info=False
+            )
