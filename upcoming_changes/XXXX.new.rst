@@ -16,3 +16,15 @@ Improve lazy signal decomposition:
   reconstructed by projecting through the learned loadings, filling NaN at
   previously masked signal positions.  ``reproject='both'`` now fills both
   navigation and signal masked positions for SVD and PCA.
+- Add ``algorithm='NMF'`` support for lazy signals via
+  ``sklearn.decomposition.MiniBatchNMF`` (requires scikit-learn >= 1.1),
+  enabling out-of-core non-negative matrix factorisation.
+- Accept any custom sklearn-like estimator object as the ``algorithm``
+  parameter.  Objects that implement ``partial_fit`` are used incrementally
+  (out-of-core); those with only ``fit`` / ``fit_transform`` fall back to
+  loading all data into memory before fitting.
+- Add ``svd_solver`` and ``auto_transpose`` parameters to
+  :meth:`~hyperspy._signals.lazy.LazySignal.decomposition` for API parity with
+  the non-lazy interface.  ``svd_solver`` is accepted but has no effect for the
+  incremental ``"SVD"`` and ``"PCA"`` algorithms; ``auto_transpose`` is
+  accepted but ignored for incremental algorithms (a log message is emitted).

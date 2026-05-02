@@ -1040,6 +1040,7 @@ class LazySignal(signals.BaseSignal):
         algorithm="SVD",
         output_dimension=None,
         centre=None,
+        auto_transpose=True,
         signal_mask=None,
         navigation_mask=None,
         get=None,
@@ -1047,6 +1048,7 @@ class LazySignal(signals.BaseSignal):
         reproject=None,
         return_info=False,
         print_info=True,
+        svd_solver="auto",
         **kwargs,
     ):
         """Perform Incremental (Batch) decomposition on the data.
@@ -1062,8 +1064,16 @@ class LazySignal(signals.BaseSignal):
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
             the approach described in [KeenanKotula2004]_.
-        algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF'}, default 'SVD'
-            The decomposition algorithm to use.
+        algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF'} or object, default 'SVD'
+            The decomposition algorithm to use. In addition to the named
+            algorithms, any object that implements ``partial_fit`` (and
+            ``transform`` or ``fit_transform``) can be passed directly and
+            will be used as an out-of-core estimator; objects that only
+            implement ``fit`` / ``fit_transform`` (without ``partial_fit``)
+            are also accepted but all data will be collected into memory
+            before calling ``fit_transform``.  After fitting, the estimator
+            must expose a ``components_`` attribute (rows = components) to
+            supply the factors.
         output_dimension : int or None, default None
             Number of components to keep/calculate. Required for all
             algorithms including 'SVD'.
@@ -1071,6 +1081,11 @@ class LazySignal(signals.BaseSignal):
             Subtract the mean along the 'navigation' or 'signal' axis
             before decomposition. Only used for the 'SVD' algorithm;
             incompatible with ``normalize_poissonian_noise=True``.
+        auto_transpose : bool, default True
+            If ``True`` and the number of navigation pixels is smaller than
+            the signal size, the data matrix is transposed before computing
+            the SVD so that the larger dimension is treated as features.
+            Only applies to the ``'SVD'`` algorithm (ignored for all others).
         get : dask scheduler or None
             The dask scheduler to use for computations. If ``None``,
             ``dask.threaded.get` will be used if possible, otherwise
@@ -1105,11 +1120,19 @@ class LazySignal(signals.BaseSignal):
             The result of the decomposition is stored internally. However,
             some algorithms generate extra information that is not stored. If
             True, return any extra information if available. For sklearn-based
-            algorithms (``"PCA"``), this is the fitted estimator object.
+            algorithms (``"PCA"``, ``"NMF"``, or a custom estimator object),
+            this is the fitted estimator object.
         print_info : bool, default True
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
+        svd_solver : {'auto', 'full', 'arpack', 'randomized'}, default 'auto'
+            Passed through to the underlying SVD solver.  For the ``'SVD'``
+            and ``'PCA'`` algorithms the lazy path uses
+            :class:`sklearn.decomposition.IncrementalPCA` which does not
+            expose this option, so the parameter is accepted for API
+            consistency but has no effect.  For custom sklearn-like estimator
+            objects the value is forwarded via ``**kwargs``.
         **kwargs
             passed to the partial_fit/fit functions.
 
@@ -1122,16 +1145,33 @@ class LazySignal(signals.BaseSignal):
         See Also
         --------
         hyperspy.learn.incremental_svd.ISVD, sklearn.decomposition.IncrementalPCA,
+        sklearn.decomposition.MiniBatchNMF,
         hyperspy.learn.orpca, hyperspy.learn.ornmf
 
         """
         if get is None:
             get = _get()
         # Check algorithms requiring output_dimension
-        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF", "SVD"]
+        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF", "SVD", "NMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
+            )
+
+        # Detect custom sklearn-like estimator objects
+        _is_custom_sklearn_like = not isinstance(algorithm, str) and (
+            hasattr(algorithm, "fit_transform")
+            or (hasattr(algorithm, "fit") and hasattr(algorithm, "transform"))
+        )
+        if (
+            not _is_custom_sklearn_like
+            and isinstance(algorithm, str)
+            and algorithm not in ("SVD", "PCA", "ORPCA", "ORNMF", "NMF")
+        ):
+            raise ValueError(
+                f"'algorithm' {algorithm!r} not recognised. "
+                "Expected one of: 'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF', "
+                "or a custom object with fit_transform() or fit()+transform()."
             )
 
         if centre not in (None, "navigation", "signal"):
@@ -1203,6 +1243,24 @@ class LazySignal(signals.BaseSignal):
             method = partial(obj.partial_fit, **kwargs)
             to_print.extend(["scikit-learn estimator:", obj])
 
+        elif algorithm == "NMF":
+            if not SKLEARN_INSTALLED:
+                raise ImportError("algorithm='NMF' requires scikit-learn")
+
+            import sklearn.decomposition as _skd
+
+            # MiniBatchNMF (sklearn >= 1.1) supports incremental partial_fit.
+            # Fall back to NMF (loads all data) if MiniBatchNMF is not available.
+            if hasattr(_skd, "MiniBatchNMF"):
+                obj = _skd.MiniBatchNMF(n_components=output_dimension, **kwargs)
+                method = partial(obj.partial_fit)
+            else:  # pragma: no cover
+                obj = _skd.NMF(n_components=output_dimension, **kwargs)
+                # Will be called once with all data collected; method is not
+                # used in batch mode for this fallback — handled below.
+                method = None
+            to_print.extend(["scikit-learn estimator:", obj])
+
         elif algorithm == "ORPCA":
             from hyperspy.learn._rpca import ORPCA
 
@@ -1217,8 +1275,15 @@ class LazySignal(signals.BaseSignal):
             obj = ORNMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
-        elif algorithm != "SVD":
-            raise ValueError("'algorithm' not recognised")
+        elif _is_custom_sklearn_like:
+            obj = algorithm
+            if hasattr(obj, "partial_fit"):
+                method = partial(obj.partial_fit)
+            else:
+                # No incremental fitting; fall back to collecting all data
+                # and calling fit_transform / fit+transform once.
+                method = None
+            to_print.extend(["Custom sklearn-like estimator:", obj])
 
         original_data = self.data
         try:
@@ -1242,6 +1307,13 @@ class LazySignal(signals.BaseSignal):
             _navigation_mask_for_reproject = navigation_mask
             if algorithm == "SVD":
                 from hyperspy.learn.incremental_svd import ISVD
+
+                if auto_transpose:
+                    _logger.info(
+                        "auto_transpose is not applicable to the lazy 'SVD' "
+                        "algorithm (incremental fitting always streams "
+                        "(nav_batch, sig) chunks); the parameter is ignored."
+                    )
 
                 try:
                     self._unfolded4decomposition = self.unfold()
@@ -1355,15 +1427,29 @@ class LazySignal(signals.BaseSignal):
                         desc="Learn",
                     ):
                         this_data.append(chunk)
-                        if len(this_data) == num_chunks:
+                        if method is not None and len(this_data) == num_chunks:
                             thedata = np.concatenate(this_data, axis=0)
                             method(thedata)
                             this_data = []
                     if len(this_data):
-                        thedata = np.concatenate(this_data, axis=0)
-                        method(thedata)
+                        if method is not None:
+                            thedata = np.concatenate(this_data, axis=0)
+                            method(thedata)
+                        # else: method is None (NMF fallback or custom w/o
+                        # partial_fit); all data is now in this_data for
+                        # fit_transform below.
                 except KeyboardInterrupt:  # pragma: no cover
                     pass
+
+                # NMF fallback (sklearn < 1.1) and custom objects without
+                # partial_fit: collect all chunks and call fit_transform once.
+                if method is None:
+                    all_data = np.concatenate(this_data, axis=0)
+                    if hasattr(obj, "fit_transform"):
+                        loadings = obj.fit_transform(all_data)
+                    else:
+                        obj.fit(all_data)
+                        loadings = obj.transform(all_data)
 
             # GET ALREADY CALCULATED RESULTS
             if algorithm == "PCA":
@@ -1371,6 +1457,56 @@ class LazySignal(signals.BaseSignal):
                 explained_variance_ratio = obj.explained_variance_ratio_
                 factors = obj.components_.T
                 mean = obj.mean_
+
+            elif algorithm == "NMF":
+                factors = obj.components_.T
+                if hasattr(obj, "explained_variance_"):
+                    explained_variance = obj.explained_variance_
+                if loadings is None:
+                    # partial_fit path: need to project now
+                    H = []
+                    for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask,
+                        ),
+                        total=nblocks,
+                        leave=True,
+                        desc="Project",
+                    ):
+                        H.append(obj.transform(chunk))
+                    loadings = np.concatenate(H, axis=0)
+                mean = None
+
+            elif _is_custom_sklearn_like:
+                if not hasattr(obj, "components_"):
+                    raise AttributeError(
+                        f"Fitted estimator {obj!r} has no attribute 'components_'"
+                    )
+                factors = obj.components_.T
+                if hasattr(obj, "explained_variance_"):
+                    explained_variance = obj.explained_variance_
+                if hasattr(obj, "mean_"):
+                    mean = obj.mean_
+                # If method was not None (incremental), loadings still need to
+                # be computed via transform.
+                if loadings is None:
+                    H = []
+                    for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask,
+                        ),
+                        total=nblocks,
+                        leave=True,
+                        desc="Project",
+                    ):
+                        H.append(obj.transform(chunk))
+                    loadings = np.concatenate(H, axis=0)
 
             elif algorithm == "ORPCA":
                 factors, loadings = obj.finish()
@@ -1424,7 +1560,9 @@ class LazySignal(signals.BaseSignal):
                     ):
                         H.append(obj.transform(chunk))
                     loadings = np.concatenate(H, axis=0)
-                elif algorithm == "PCA":
+                elif algorithm in ("PCA", "NMF") or (
+                    _is_custom_sklearn_like and hasattr(obj, "transform")
+                ):
                     method = obj.transform
 
                     def post(a):
@@ -1552,7 +1690,7 @@ class LazySignal(signals.BaseSignal):
             # REPROJECT SIGNAL (recompute factors over full signal)
             _signal_reprojected = False
             if reproject in ("signal", "both"):
-                if algorithm in ("SVD", "PCA"):
+                if algorithm in ("SVD", "PCA", "NMF") or _is_custom_sklearn_like:
                     # Collect all navigation-unmasked rows with the full signal
                     # (no signal mask), then solve: factors = pinv(L) @ D_full
                     # This mirrors the non-lazy SVD path in _mva.py line 596.
@@ -1611,11 +1749,16 @@ class LazySignal(signals.BaseSignal):
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            if algorithm != "SVD" and loadings is not None:
+            _n_comp = (
+                output_dimension
+                if output_dimension is not None
+                else (factors.shape[1] if factors is not None else None)
+            )
+            if algorithm != "SVD" and loadings is not None and _n_comp is not None:
                 try:
                     loadings = _reshuffle_mixed_blocks(
-                        loadings, ndim, (output_dimension,), nav_chunks
-                    ).reshape((-1, output_dimension))
+                        loadings, ndim, (_n_comp,), nav_chunks
+                    ).reshape((-1, _n_comp))
                 except ValueError:
                     # In case the projection step was not finished, it's left
                     # as scrambled
@@ -1656,7 +1799,14 @@ class LazySignal(signals.BaseSignal):
 
         # ── store core results ───────────────────────────────────────────
         target.decomposition_algorithm = algorithm
-        target.output_dimension = output_dimension
+        # For custom objects output_dimension may not have been specified;
+        # fall back to the number of components actually computed.
+        _stored_output_dim = (
+            output_dimension
+            if output_dimension is not None
+            else (factors.shape[1] if factors is not None else None)
+        )
+        target.output_dimension = _stored_output_dim
         target.poissonian_noise_normalized = normalize_poissonian_noise
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio

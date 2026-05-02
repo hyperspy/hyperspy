@@ -224,7 +224,7 @@ class TestLazyDecomposition:
         assert s.learning_results.loadings is not None
 
     def test_algorithm_error(self):
-        with pytest.raises(ValueError, match="'algorithm' not recognised"):
+        with pytest.raises(ValueError, match="not recognised"):
             self.s.decomposition(algorithm="random")
 
 
@@ -1662,3 +1662,189 @@ class TestLazyDecompositionInputValidation:
             s.decomposition(
                 output_dimension=3, navigation_mask=bad_mask, print_info=False
             )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# New algorithms and parameters added for parity with non-lazy decomposition
+# ─────────────────────────────────────────────────────────────────────────────
+
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
+skip_no_sklearn = pytest.mark.skipif(
+    not SKLEARN_INSTALLED, reason="scikit-learn not installed"
+)
+
+
+def _make_lazy_signal(nav=(6, 8), sig=40, n_components=3, seed=42):
+    """Create a rank-*n_components* lazy Signal1D with asymmetric nav shape."""
+    rng = np.random.default_rng(seed)
+    nav_size = int(np.prod(nav))
+    L = rng.standard_normal((nav_size, n_components))
+    F = rng.standard_normal((n_components, sig))
+    data = (L @ F + 0.01 * rng.standard_normal((nav_size, sig))).reshape(nav + (sig,))
+    return Signal1D(data.astype(float)).as_lazy()
+
+
+@skip_no_sklearn
+class TestLazyNMFAlgorithm:
+    """Tests for algorithm='NMF' (MiniBatchNMF) on lazy signals."""
+
+    def setup_method(self, method):
+        # NMF requires non-negative data
+        rng = np.random.default_rng(0)
+        nav_size = 6 * 8
+        L = np.abs(rng.standard_normal((nav_size, 3)))
+        F = np.abs(rng.standard_normal((3, 40)))
+        data = (L @ F + 0.01 * np.abs(rng.standard_normal((nav_size, 40)))).reshape(
+            (6, 8, 40)
+        )
+        self.s = Signal1D(data.astype(float)).as_lazy()
+
+    def test_nmf_requires_output_dimension(self):
+        with pytest.raises(ValueError, match="output_dimension"):
+            self.s.decomposition(algorithm="NMF", print_info=False)
+
+    def test_nmf_runs(self):
+        self.s.decomposition(algorithm="NMF", output_dimension=3, print_info=False)
+        lr = self.s.learning_results
+        assert lr.factors is not None
+        assert lr.loadings is not None
+        assert lr.factors.shape[1] == 3
+        assert lr.loadings.shape[1] == 3
+
+    def test_nmf_factors_shape(self):
+        self.s.decomposition(algorithm="NMF", output_dimension=3, print_info=False)
+        lr = self.s.learning_results
+        # factors: (sig_size, n_components), loadings: (nav_size, n_components)
+        assert lr.factors.shape == (40, 3)
+        assert lr.loadings.shape == (6 * 8, 3)
+
+    def test_nmf_return_info(self):
+        obj = self.s.decomposition(
+            algorithm="NMF", output_dimension=3, print_info=False, return_info=True
+        )
+
+        assert hasattr(obj, "components_")
+
+    def test_nmf_reproject_navigation(self):
+        self.s.decomposition(
+            algorithm="NMF",
+            output_dimension=3,
+            reproject="navigation",
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert lr.loadings.shape[0] == 6 * 8  # full nav
+
+
+@skip_no_sklearn
+class TestLazyCustomSklearnObject:
+    """Tests for passing a custom sklearn-like object to lazy decomposition."""
+
+    def setup_method(self, method):
+        self.s = _make_lazy_signal(nav=(6, 8), sig=40, n_components=3)
+
+    def _make_incremental_estimator(self, n_components):
+        """Return an IncrementalPCA-based estimator (has partial_fit)."""
+        import sklearn.decomposition
+
+        obj = sklearn.decomposition.IncrementalPCA(n_components=n_components)
+        return obj
+
+    def _make_batch_estimator(self, n_components):
+        """Return a PCA estimator (no partial_fit, uses fit_transform)."""
+        import sklearn.decomposition
+
+        return sklearn.decomposition.PCA(n_components=n_components)
+
+    def test_custom_incremental_estimator(self):
+        """Object with partial_fit is used incrementally."""
+        obj = self._make_incremental_estimator(3)
+        returned = self.s.decomposition(
+            algorithm=obj, output_dimension=3, print_info=False, return_info=True
+        )
+        lr = self.s.learning_results
+        assert lr.factors is not None
+        assert lr.loadings is not None
+        assert lr.factors.shape[1] == 3
+        # return_info should give back the estimator
+        assert returned is obj
+
+    def test_custom_batch_estimator(self):
+        """Object without partial_fit falls back to fit_transform."""
+        obj = self._make_batch_estimator(3)
+        self.s.decomposition(algorithm=obj, print_info=False)
+        lr = self.s.learning_results
+        assert lr.factors is not None
+        assert lr.factors.shape[1] == 3
+
+    def test_custom_estimator_missing_components_raises(self):
+        """Estimator without components_ attribute must raise AttributeError."""
+
+        class BadEstimator:
+            def fit_transform(self, X):
+                return X[:, :3]
+
+        obj = BadEstimator()
+        with pytest.raises(AttributeError, match="components_"):
+            self.s.decomposition(algorithm=obj, print_info=False)
+
+    def test_unrecognised_string_raises(self):
+        with pytest.raises(ValueError, match="not recognised"):
+            self.s.decomposition(
+                algorithm="bogus_algo", output_dimension=3, print_info=False
+            )
+
+    def test_custom_estimator_return_info(self):
+        obj = self._make_incremental_estimator(3)
+        ret = self.s.decomposition(
+            algorithm=obj, output_dimension=3, print_info=False, return_info=True
+        )
+        assert ret is obj
+
+
+@skip_no_sklearn
+class TestLazySVDSolverAndAutoTranspose:
+    """Tests that svd_solver and auto_transpose are accepted without error."""
+
+    def setup_method(self, method):
+        self.s = _make_lazy_signal(nav=(6, 8), sig=40, n_components=3)
+
+    def test_svd_solver_accepted_svd(self):
+        """svd_solver is accepted for SVD algorithm without error."""
+        self.s.decomposition(
+            algorithm="SVD",
+            output_dimension=3,
+            svd_solver="auto",
+            print_info=False,
+        )
+
+    def test_svd_solver_accepted_pca(self):
+        """svd_solver is accepted for PCA algorithm without error."""
+        self.s.decomposition(
+            algorithm="PCA",
+            output_dimension=3,
+            svd_solver="full",
+            print_info=False,
+        )
+
+    def test_auto_transpose_true_ignored_for_svd(self, caplog):
+        """auto_transpose=True is silently ignored for SVD with an info log."""
+        import logging
+
+        with caplog.at_level(logging.INFO, logger="hyperspy._signals.lazy"):
+            self.s.decomposition(
+                algorithm="SVD",
+                output_dimension=3,
+                auto_transpose=True,
+                print_info=False,
+            )
+        assert any("auto_transpose" in r.message for r in caplog.records)
+
+    def test_auto_transpose_false_no_error(self):
+        """auto_transpose=False is accepted without error."""
+        self.s.decomposition(
+            algorithm="SVD",
+            output_dimension=3,
+            auto_transpose=False,
+            print_info=False,
+        )
