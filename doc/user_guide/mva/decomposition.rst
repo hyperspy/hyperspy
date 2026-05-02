@@ -510,11 +510,10 @@ is complete:
 
 .. note::
 
-   For lazy signals, ``reproject='signal'`` and ``reproject='both'`` are
-   supported for the ``"SVD"`` and ``"PCA"`` algorithms only.  Using
-   ``reproject='signal'`` with ``"ORPCA"`` or ``"ORNMF"`` on a lazy signal
-   will emit a warning and leave the signal-masked channels as ``NaN`` in
-   the factors; navigation reprojection still proceeds as normal.
+   For lazy signals, all ``reproject`` modes (``'navigation'``, ``'signal'``,
+   and ``'both'``) are supported for all algorithms, including ``"ORPCA"``
+   and ``"ORNMF"``.  Signal reprojection is performed via the pseudo-inverse
+   of the loadings, so it does not depend on the specific learning algorithm.
    See :ref:`big_data.decomposition` for more details.
 
 .. _mva.custom_decomposition:
