@@ -147,17 +147,21 @@ of large datasets. In line with the standard HyperSpy signals, lazy
 
 .. table:: Available lazy decomposition algorithms in HyperSpy
 
-   +--------------------------+---------------------------------------------------+
-   | Algorithm                | Method                                            |
-   +==========================+===================================================+
-   | "SVD" (default)          | :class:`~.learn.incremental_svd.ISVD`             |
-   +--------------------------+---------------------------------------------------+
-   | "PCA"                    | :class:`sklearn.decomposition.IncrementalPCA`     |
-   +--------------------------+---------------------------------------------------+
-   | "ORPCA"                  | :func:`~.learn.orpca`                             |
-   +--------------------------+---------------------------------------------------+
-   | "ORNMF"                  | :func:`~.learn.ornmf`                             |
-   +--------------------------+---------------------------------------------------+
+   +--------------------------+-----------------------------------------------------------+
+   | Algorithm                | Method                                                    |
+   +==========================+===========================================================+
+   | "SVD" (default)          | :class:`~.learn.incremental_svd.ISVD`                     |
+   +--------------------------+-----------------------------------------------------------+
+   | "PCA"                    | :class:`sklearn.decomposition.IncrementalPCA`             |
+   +--------------------------+-----------------------------------------------------------+
+   | "NMF"                    | :class:`sklearn.decomposition.MiniBatchNMF`               |
+   +--------------------------+-----------------------------------------------------------+
+   | "ORPCA"                  | :func:`~.learn.orpca`                                     |
+   +--------------------------+-----------------------------------------------------------+
+   | "ORNMF"                  | :func:`~.learn.ornmf`                                     |
+   +--------------------------+-----------------------------------------------------------+
+   | custom object            | Any object with ``partial_fit`` or ``fit`` + ``transform``|
+   +--------------------------+-----------------------------------------------------------+
 
 The default "SVD" algorithm uses :class:`~.learn.incremental_svd.ISVD`, an
 incremental (out-of-core) SVD that processes data in chunks without ever loading
@@ -177,6 +181,54 @@ the full dataset into memory. Unlike ``dask.array.linalg.svd``, it:
   loadings, filling NaN in factors at masked signal channels.
   ``reproject='both'`` applies both operations.  For ORPCA and ORNMF,
   ``reproject='signal'`` is not yet implemented and emits a warning.
+
+The ``"PCA"`` algorithm wraps :class:`sklearn.decomposition.IncrementalPCA` and
+shares most of the same parameters (including ``centre`` and all ``reproject``
+modes) as ``"SVD"``.  The ``svd_solver`` and ``auto_transpose`` parameters are
+accepted for API parity but have no effect for the incremental algorithms.
+
+The ``"NMF"`` algorithm uses :class:`sklearn.decomposition.MiniBatchNMF`
+(requires scikit-learn ≥ 1.1) for out-of-core non-negative matrix
+factorisation.  ``output_dimension`` is required.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm="NMF", output_dimension=3) # doctest: +SKIP
+
+Any custom sklearn-like estimator can also be passed as the ``algorithm``
+argument.  If the object has a ``partial_fit`` method it is called
+incrementally on each chunk (true out-of-core); otherwise ``fit`` or
+``fit_transform`` is called on the full in-memory dataset.
+
+.. code-block:: python
+
+   >>> from sklearn.decomposition import MiniBatchDictionaryLearning
+   >>> s.decomposition(
+   ...     algorithm=MiniBatchDictionaryLearning(n_components=5),
+   ...     output_dimension=5,
+   ... ) # doctest: +SKIP
+
+.. _big_data.normalize_poissonian_noise:
+
+Poissonian noise normalisation for lazy signals
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Lazy signals expose
+:meth:`~hyperspy._signals.lazy.LazySignal.normalize_poissonian_noise` as a
+standalone method, independently of decomposition.  It rescales the data
+in-place (lazily) using the same square-root variance-stabilising transform
+used internally by :meth:`~.api.signals.BaseSignal.decomposition`.  This is
+useful when you want to apply the normalisation yourself and then run a custom
+decomposition pipeline.
+
+.. code-block:: python
+
+   >>> s.normalize_poissonian_noise() # doctest: +SKIP
+
+.. note::
+
+   Poissonian noise normalisation cannot be combined with the ``centre``
+   parameter.  Attempting to use both will raise a ``ValueError``.
 
 .. note::
 

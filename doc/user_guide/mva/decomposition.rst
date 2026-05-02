@@ -345,6 +345,19 @@ i.e. the underlying low-rank component, to be tracked as it changes
 with each sample update. The default method instead assumes a fixed,
 static subspace.
 
+.. note::
+
+   The internal :class:`~.learn.ORPCA` class now provides a scikit-learn
+   compatible API.  If you use ``ORPCA`` directly (rather than through
+   :meth:`~.api.signals.BaseSignal.decomposition`), prefer the new methods:
+
+   - ``partial_fit(X)`` — replaces the deprecated ``fit(X)``
+   - ``transform(X)`` — replaces the deprecated ``project(X)``
+   - ``components_`` — replaces the deprecated ``finish()``
+
+   The old methods still work but emit a ``DeprecationWarning`` and will be
+   removed in a future release.
+
 .. _mva.nmf:
 
 Non-negative matrix factorization (NMF)
@@ -367,6 +380,14 @@ of components to keep. Setting this to a small number is recommended to keep
 the computation time small. Often it is useful to run a PCA decomposition first
 and use the :ref:`scree plot <mva.scree_plot>` to determine a suitable value
 for ``output_dimension``.
+
+.. note::
+
+   For lazy signals, ``algorithm="NMF"`` is implemented via
+   :class:`sklearn.decomposition.MiniBatchNMF` (requires scikit-learn ≥ 1.1),
+   which processes the data in chunks without loading the full dataset into
+   memory.  ``output_dimension`` is required in this case.  See
+   :ref:`big_data.decomposition` for the full list of available lazy algorithms.
 
 .. _mva.rnmf:
 
@@ -406,6 +427,19 @@ alternative is available, although it is typically much slower.
 .. code-block:: python
 
    >>> s.decomposition(algorithm="ORNMF", output_dimension=3, method="RobustPGD") # doctest: +SKIP
+
+.. note::
+
+   The internal :class:`~.learn.ORNMF` class now provides a scikit-learn
+   compatible API.  If you use ``ORNMF`` directly (rather than through
+   :meth:`~.api.signals.BaseSignal.decomposition`), prefer the new methods:
+
+   - ``partial_fit(X)`` — replaces the deprecated ``fit(X)``
+   - ``transform(X)`` — replaces the deprecated ``project(X)``
+   - ``components_`` — replaces the deprecated ``finish()``
+
+   The old methods still work but emit a ``DeprecationWarning`` and will be
+   removed in a future release.
 
 .. _mva.masks_and_reproject:
 
