@@ -949,6 +949,21 @@ class LazySignal(signals.BaseSignal):
 
         _logger.info("Scaling the data to normalize Poissonian noise")
 
+        # Convert masks from HyperSpy navigation_shape / signal_shape order to
+        # underlying array axis order.  This mirrors _mva.py which ravels the
+        # already-converted masks before calling normalize_poissonian_noise.
+        # BaseSignal masks expose .data already in array order; numpy/dask
+        # masks are provided in navigation_shape order (HyperSpy convention)
+        # and must be transposed (navigation_shape is the reverse of array
+        # axis order for multi-dimensional navigation spaces).
+        if isinstance(navigation_mask, signals.BaseSignal):
+            navigation_mask = navigation_mask.data
+        elif navigation_mask is not None and hasattr(navigation_mask, "T"):
+            navigation_mask = navigation_mask.T
+
+        if isinstance(signal_mask, signals.BaseSignal):
+            signal_mask = signal_mask.data
+
         data = self._data_aligned_with_axes
         ndim = self.axes_manager.navigation_dimension
         sdim = self.axes_manager.signal_dimension
@@ -1130,6 +1145,26 @@ class LazySignal(signals.BaseSignal):
                 f"not {reproject!r}"
             )
 
+        # ── input validation (mirrors non-lazy MVA.decomposition) ────────────
+        if self.data.dtype.char not in np.typecodes["AllFloat"]:
+            raise TypeError(
+                "To perform a decomposition the data must be of the "
+                f"float or complex type, but the current type is '{self.data.dtype}'. "
+                "To fix this issue, you can change the type using the "
+                "change_dtype method (e.g. s.change_dtype('float64')) "
+                "and then repeat the decomposition.\n"
+                "No decomposition was performed."
+            )
+
+        if self.axes_manager.navigation_size < 2:
+            raise AttributeError(
+                "It is not possible to decompose a dataset with navigation_size < 2"
+            )
+
+        self._check_navigation_mask(navigation_mask)
+        self._check_signal_mask(signal_mask)
+        # ─────────────────────────────────────────────────────────────────────
+
         explained_variance = None
         explained_variance_ratio = None
         mean = None
@@ -1212,26 +1247,29 @@ class LazySignal(signals.BaseSignal):
                     self._unfolded4decomposition = self.unfold()
 
                     # After unfolding, the navigation space is always 1-D.
-                    # If the caller passed a multi-dimensional navigation mask
-                    # (matching the original N-D navigation space), flatten it
-                    # to 1-D in C order so that _block_iterator can match it
-                    # against the now-1-D navigation chunks.
+                    # Flatten the navigation mask to 1-D, mirroring the
+                    # non-lazy path in _mva.py (BaseSignal → .data.ravel();
+                    # array-like → .T.ravel() to account for HyperSpy's
+                    # reversed axis convention between navigation_shape and
+                    # the underlying array axis order).
                     import dask.array as da
 
                     if navigation_mask is not None:
                         if isinstance(navigation_mask, signals.BaseSignal):
+                            # .data is already in array axis order
                             navigation_mask = navigation_mask.data
-                        # Save the original (possibly N-D) mask before ravelling.
-                        # The ravelled form is needed while the signal is unfolded
-                        # (1-D nav); the original form is needed after fold() for
-                        # reproject _block_iterator calls.
+                        elif hasattr(navigation_mask, "T"):
+                            # numpy/dask mask is in navigation_shape order
+                            # (HyperSpy convention); transpose to array axis order
+                            # so _block_iterator and _navigation_mask_for_reproject
+                            # both receive the correct N-D array-order shape.
+                            navigation_mask = navigation_mask.T
+                        # Save the N-D array-axis-order mask for post-fold
+                        # _block_iterator calls (reproject).
                         _navigation_mask_for_reproject = navigation_mask
-                        if isinstance(navigation_mask, da.Array):
-                            if navigation_mask.ndim > 1:
-                                navigation_mask = navigation_mask.ravel()
-                        elif hasattr(navigation_mask, "ravel"):
-                            if navigation_mask.ndim > 1:
-                                navigation_mask = navigation_mask.ravel()
+                        # Ravel for use during the unfolded learn pass.
+                        if hasattr(navigation_mask, "ravel"):
+                            navigation_mask = navigation_mask.ravel()
 
                     obj = ISVD(n_components=output_dimension)
 
@@ -1303,8 +1341,6 @@ class LazySignal(signals.BaseSignal):
                         self.fold()
                         self._unfolded4decomposition = False
             else:
-                self._check_navigation_mask(navigation_mask)
-                self._check_signal_mask(signal_mask)
                 this_data = []
                 try:
                     for chunk in progressbar(
