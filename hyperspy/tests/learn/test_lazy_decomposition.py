@@ -273,11 +273,20 @@ class TestPrintInfo:
 
     @pytest.mark.parametrize(
         "algorithm,svd_solver",
-        [("SVD", "incremental"), ("ORPCA", None), ("ORNMF", None)],
+        [("ORPCA", None), ("ORNMF", None)],
     )
     def test_decomposition(self, algorithm, svd_solver, capfd):
         self.s.decomposition(
             algorithm=algorithm, svd_solver=svd_solver, output_dimension=3
+        )
+        captured = capfd.readouterr()
+        assert "Decomposition info:" in captured.out
+
+    @skip_sklearn
+    def test_decomposition_incremental_svd(self, capfd):
+        """SVD with svd_solver='incremental' prints decomposition info."""
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="incremental", output_dimension=3
         )
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
@@ -290,11 +299,11 @@ class TestPrintInfo:
         assert "Decomposition info:" in captured.out
         assert "scikit-learn estimator:" in captured.out
 
-    @pytest.mark.parametrize("algorithm,svd_solver", [("SVD", "incremental")])
-    def test_no_print(self, algorithm, svd_solver, capfd):
+    @skip_sklearn
+    def test_no_print(self, capfd):
         self.s.decomposition(
-            algorithm=algorithm,
-            svd_solver=svd_solver,
+            algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=2,
             print_info=False,
         )
@@ -868,6 +877,7 @@ class TestLazyDecompositionReprojectionNumerical:
         assert loadings.shape == (20, 3)
         assert not np.any(np.isnan(loadings))
 
+    @skip_sklearn
     def test_reproject_navigation_reconstruction(self):
         """Reprojected loadings × factors reconstruct the full data (rank-3).
 
@@ -935,6 +945,7 @@ class TestLazyDecompositionReprojectionNumerical:
         assert loadings.shape == (20, 3)
         assert not np.any(np.isnan(loadings))
 
+    @skip_sklearn
     def test_reproject_navigation_with_both_masks_reconstruction(self):
         """With both masks + reproject='navigation', full data reconstructed.
 
@@ -981,6 +992,7 @@ class TestLazyDecompositionReprojectionNumerical:
         assert t.loadings.shape[0] == self.data.shape[0]
         assert np.any(np.isnan(t.loadings[self.nav_mask, :]))
 
+    @skip_sklearn
     def test_reproject_signal_reconstruction(self):
         """reproject='signal' SVD gives exact reconstruction at unmasked nav
         positions over the full signal."""
@@ -1045,6 +1057,7 @@ class TestLazyDecompositionReprojectionNumerical:
         assert t.loadings.shape[0] == self.data.shape[0]
         assert not np.any(np.isnan(t.loadings)), "loadings still contain NaN"
 
+    @skip_sklearn
     def test_reproject_both_svd_reconstruction(self):
         """reproject='both' SVD: full data reconstructed from loadings × factors."""
         self.s.decomposition(
@@ -1283,6 +1296,7 @@ class TestSubSignalChunking:
     # Basic correctness: factors must have sig_size rows
     # ------------------------------------------------------------------
 
+    @skip_sklearn
     @pytest.mark.parametrize(
         "nav_shape,sig_size,sig_chunk,nav_chunk",
         [
@@ -1311,6 +1325,7 @@ class TestSubSignalChunking:
     # normalize_poissonian_noise must not raise a broadcast error
     # ------------------------------------------------------------------
 
+    @skip_sklearn
     @pytest.mark.parametrize(
         "nav_shape,sig_size,sig_chunk,nav_chunk",
         [
@@ -1338,6 +1353,7 @@ class TestSubSignalChunking:
     # Reconstruction quality must be preserved despite sub-signal chunking
     # ------------------------------------------------------------------
 
+    @skip_sklearn
     def test_reconstruction_quality_sub_signal_chunks(self):
         """SVD on sub-signal-chunked data gives the same reconstruction
         quality as SVD on a signal-contiguous chunked version."""
@@ -1483,6 +1499,7 @@ def _build_sig_masks(s, sig_size):
     }
 
 
+@skip_sklearn
 class TestLazyDecompositionMaskTypes:
     """Verify that lazy SVD decomposition accepts every supported mask type for
     both navigation_mask and signal_mask, for both 1-D and 2-D navigation
