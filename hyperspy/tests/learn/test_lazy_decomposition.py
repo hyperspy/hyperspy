@@ -1835,3 +1835,107 @@ class TestLazySVDSolverAndAutoTranspose:
             auto_transpose=False,
             print_info=False,
         )
+
+
+class TestDaskSVDAlgorithm:
+    """Tests for algorithm='DaskSVD' (dask.array.linalg.svd) on lazy signals."""
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(42)
+        # Use asymmetric nav/sig shapes to catch any axis-transposition bugs.
+        # Rank-3 signal: nav=(7, 5), sig=30
+        L = rng.standard_normal((35, 3))
+        F = rng.standard_normal((3, 30))
+        data = (L @ F + 0.01 * rng.standard_normal((35, 30))).reshape((7, 5, 30))
+        self.s = Signal1D(data.astype(float)).as_lazy()
+
+    def test_basic_run(self):
+        """DaskSVD runs without error and returns results."""
+        self.s.decomposition(algorithm="DaskSVD", print_info=False)
+        lr = self.s.learning_results
+        assert lr.factors is not None
+        assert lr.loadings is not None
+
+    def test_output_dimension_optional(self):
+        """output_dimension is optional for DaskSVD."""
+        self.s.decomposition(algorithm="DaskSVD", print_info=False)
+        lr = self.s.learning_results
+        # Without output_dimension, all components up to min(nav, sig) are kept.
+        assert lr.factors.shape[1] <= min(35, 30)
+
+    def test_output_dimension_respected(self):
+        """When output_dimension is given, exactly that many components are returned."""
+        k = 4
+        self.s.decomposition(algorithm="DaskSVD", output_dimension=k, print_info=False)
+        lr = self.s.learning_results
+        assert lr.factors.shape == (30, k)
+        assert lr.loadings.shape == (35, k)
+
+    def test_factors_and_loadings_shapes(self):
+        """Factors shape is (sig_size, k); loadings shape is (nav_size, k)."""
+        k = 3
+        self.s.decomposition(algorithm="DaskSVD", output_dimension=k, print_info=False)
+        lr = self.s.learning_results
+        assert lr.factors.shape == (30, k)
+        assert lr.loadings.shape == (35, k)
+
+    def test_explained_variance_set(self):
+        """explained_variance is populated after DaskSVD."""
+        self.s.decomposition(algorithm="DaskSVD", output_dimension=3, print_info=False)
+        lr = self.s.learning_results
+        assert lr.explained_variance is not None
+        assert lr.explained_variance.shape == (3,)
+
+    def test_reconstruction_quality(self):
+        """First 3 components should reconstruct the (near rank-3) signal well."""
+        self.s.decomposition(algorithm="DaskSVD", output_dimension=3, print_info=False)
+        lr = self.s.learning_results
+        recon = (lr.loadings @ lr.factors.T).reshape(7, 5, 30)
+        original = self.s.data.compute()
+        rel_error = np.linalg.norm(recon - original) / np.linalg.norm(original)
+        assert rel_error < 0.1
+
+    def test_masks_raise_not_implemented(self):
+        """DaskSVD raises NotImplementedError when masks are passed."""
+        # navigation_shape is reversed vs array shape: data (7,5,30) → nav_shape (5,7)
+        nav_mask = np.zeros((5, 7), dtype=bool)
+        nav_mask[0, 0] = True
+        with pytest.raises(
+            NotImplementedError, match="not supported for algorithm='DaskSVD'"
+        ):
+            self.s.decomposition(
+                algorithm="DaskSVD",
+                navigation_mask=nav_mask,
+                print_info=False,
+            )
+        sig_mask = np.zeros(30, dtype=bool)
+        sig_mask[0] = True
+        with pytest.raises(
+            NotImplementedError, match="not supported for algorithm='DaskSVD'"
+        ):
+            self.s.decomposition(
+                algorithm="DaskSVD",
+                signal_mask=sig_mask,
+                print_info=False,
+            )
+
+    def test_centre_raises_not_implemented(self):
+        """DaskSVD raises NotImplementedError when centre is set."""
+        with pytest.raises(NotImplementedError, match="centre is not supported"):
+            self.s.decomposition(
+                algorithm="DaskSVD",
+                centre="navigation",
+                print_info=False,
+            )
+
+    def test_reproject_navigation(self):
+        """reproject='navigation' works for DaskSVD."""
+        self.s.decomposition(
+            algorithm="DaskSVD",
+            output_dimension=3,
+            reproject="navigation",
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert lr.loadings.shape == (35, 3)
+        assert not np.any(np.isnan(lr.loadings))

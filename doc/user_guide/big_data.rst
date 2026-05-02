@@ -149,9 +149,9 @@ standard HyperSpy signals, lazy
 .. table:: Available lazy decomposition algorithms in HyperSpy
 
    +--------------------------+-----------------------------------------------------------+
-   | Algorithm                | Method                                                    |
-   +==========================+===========================================================+
    | ``"SVD"`` (default)      | :class:`~.learn.incremental_svd.ISVD`                     |
+   +--------------------------+-----------------------------------------------------------+
+   | ``"DaskSVD"``            | :func:`dask.array.linalg.svd`                             |
    +--------------------------+-----------------------------------------------------------+
    | ``"PCA"``                | :class:`sklearn.decomposition.IncrementalPCA`             |
    +--------------------------+-----------------------------------------------------------+
@@ -220,6 +220,34 @@ directly (centering is *enabled*, unlike ``"SVD"``), and shares the same
 support for ``centre``, masks, and all ``reproject`` modes.  The
 ``svd_solver`` and ``auto_transpose`` parameters are accepted for API parity
 with non-lazy decomposition but have no effect for incremental algorithms.
+
+.. _big_data.dask_svd:
+
+Dask SVD
+^^^^^^^^
+
+.. versionadded:: 2.5
+
+The ``"DaskSVD"`` algorithm uses :func:`dask.array.linalg.svd` to compute
+the full SVD lazily without streaming the data in chunks.  The entire dataset
+is kept as a dask graph and the computation is triggered in a single call.
+This is the approach used by HyperSpy prior to v2.5, restored here for users
+who need the purely lazy, graph-based path.
+
+Unlike ``"SVD"``, ``"DaskSVD"``:
+
+- does **not** support ``navigation_mask`` or ``signal_mask`` (a
+  :exc:`NotImplementedError` is raised if masks are passed);
+- does **not** support the ``centre`` parameter;
+- does **not** require ``output_dimension`` (if omitted, all components up
+  to ``min(nav_size, sig_size)`` are returned).
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm="DaskSVD", output_dimension=10) # doctest: +SKIP
+
+   # output_dimension is optional
+   >>> s.decomposition(algorithm="DaskSVD") # doctest: +SKIP
 
 .. _big_data.nmf:
 

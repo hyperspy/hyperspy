@@ -23,6 +23,10 @@ Improve lazy signal decomposition:
   parameter.  Objects that implement ``partial_fit`` are used incrementally
   (out-of-core); those with only ``fit`` / ``fit_transform`` fall back to
   loading all data into memory before fitting.
+- Restore ``algorithm='DaskSVD'`` for lazy signals: uses
+  ``dask.array.linalg.svd`` to compute the full SVD lazily without streaming
+  in chunks, for users who need the purely graph-based path.
+  ``output_dimension`` is optional; masks and ``centre`` are not supported.
 - Add ``svd_solver`` and ``auto_transpose`` parameters to
   :meth:`~hyperspy._signals.lazy.LazySignal.decomposition` for API parity with
   the non-lazy interface.
