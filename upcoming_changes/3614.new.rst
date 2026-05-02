@@ -11,11 +11,11 @@ Improve lazy signal decomposition:
 - Add :meth:`~hyperspy._signals.lazy.LazySignal.normalize_poissonian_noise` as
   a dedicated method on :class:`~hyperspy._signals.lazy.LazySignal`, available
   independently of decomposition.
-- Implement ``reproject='signal'`` for lazy SVD and PCA: after learning on
-  signal-masked data, the full signal (including masked channels) is
-  reconstructed by projecting through the learned loadings, filling NaN at
-  previously masked signal positions.  ``reproject='both'`` now fills both
-  navigation and signal masked positions for SVD and PCA.
+- Implement ``reproject='signal'`` for all lazy decomposition algorithms:
+  after learning on signal-masked data, the full signal (including masked
+  channels) is reconstructed via the pseudo-inverse of the loadings, filling
+  NaN at previously masked signal positions.  ``reproject='both'`` fills both
+  navigation and signal masked positions for all algorithms.
 - Add ``algorithm='NMF'`` support for lazy signals via
   ``sklearn.decomposition.MiniBatchNMF`` (requires scikit-learn >= 1.1),
   enabling out-of-core non-negative matrix factorisation.
