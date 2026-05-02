@@ -138,9 +138,10 @@ Machine learning
 
 :ref:`mva.decomposition` algorithms for machine learning often perform
 large matrix manipulations, requiring significantly more memory than the data size.
-To perform decomposition operation lazily, HyperSpy provides access to several "online"
-algorithms that operate serially on chunks of data, enabling the lazy decomposition
-of large datasets. In line with the standard HyperSpy signals, lazy
+To perform decomposition lazily, HyperSpy provides access to several *online*
+(incremental) algorithms that operate serially on chunks of data, enabling the
+decomposition of datasets that are larger than available RAM. In line with the
+standard HyperSpy signals, lazy
 :meth:`~.api.signals.LazySignal.decomposition` offers the following algorithms:
 
 .. _lazy_decomposition-table:
@@ -150,55 +151,102 @@ of large datasets. In line with the standard HyperSpy signals, lazy
    +--------------------------+-----------------------------------------------------------+
    | Algorithm                | Method                                                    |
    +==========================+===========================================================+
-   | "SVD" (default)          | :class:`~.learn.incremental_svd.ISVD`                     |
+   | ``"SVD"`` (default)      | :class:`~.learn.incremental_svd.ISVD`                     |
    +--------------------------+-----------------------------------------------------------+
-   | "PCA"                    | :class:`sklearn.decomposition.IncrementalPCA`             |
+   | ``"PCA"``                | :class:`sklearn.decomposition.IncrementalPCA`             |
    +--------------------------+-----------------------------------------------------------+
-   | "NMF"                    | :class:`sklearn.decomposition.MiniBatchNMF`               |
+   | ``"NMF"``                | :class:`sklearn.decomposition.MiniBatchNMF`               |
    +--------------------------+-----------------------------------------------------------+
-   | "ORPCA"                  | :func:`~.learn.orpca`                                     |
+   | ``"ORPCA"``              | :func:`~.learn.orpca`                                     |
    +--------------------------+-----------------------------------------------------------+
-   | "ORNMF"                  | :func:`~.learn.ornmf`                                     |
+   | ``"ORNMF"``              | :func:`~.learn.ornmf`                                     |
    +--------------------------+-----------------------------------------------------------+
    | custom object            | Any object with ``partial_fit`` or ``fit`` + ``transform``|
    +--------------------------+-----------------------------------------------------------+
 
-The default "SVD" algorithm uses :class:`~.learn.incremental_svd.ISVD`, an
-incremental (out-of-core) SVD that processes data in chunks without ever loading
-the full dataset into memory. Unlike ``dask.array.linalg.svd``, it:
+.. _big_data.svd:
 
-- requires ``output_dimension`` to be specified;
-- supports ``navigation_mask`` and ``signal_mask``;
-- supports optional mean-subtraction via the ``centre`` parameter
-  (``'navigation'`` or ``'signal'``);
-- is incompatible with ``normalize_poissonian_noise=True`` when ``centre``
-  is also set;
-- supports ``reproject='navigation'``, ``reproject='signal'``, and
-  ``reproject='both'`` to fill masked positions after learning.
-  ``reproject='navigation'`` projects all navigation positions through
-  the learned factors, filling NaN in loadings at masked navigation pixels.
-  ``reproject='signal'`` projects all signal channels through the learned
-  loadings, filling NaN in factors at masked signal channels.
-  ``reproject='both'`` applies both operations.  For ORPCA and ORNMF,
-  ``reproject='signal'`` is not yet implemented and emits a warning.
+Incremental SVD (default)
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``"PCA"`` algorithm wraps :class:`sklearn.decomposition.IncrementalPCA` and
-shares most of the same parameters (including ``centre`` and all ``reproject``
-modes) as ``"SVD"``.  The ``svd_solver`` and ``auto_transpose`` parameters are
-accepted for API parity but have no effect for the incremental algorithms.
+.. versionchanged:: 2.5
+   The default ``"SVD"`` algorithm for lazy signals was changed from
+   ``dask.array.linalg.svd`` to :class:`~.learn.incremental_svd.ISVD`.
+
+The default ``"SVD"`` algorithm uses :class:`~.learn.incremental_svd.ISVD`,
+an incremental (out-of-core) SVD implemented as a thin wrapper around
+:class:`sklearn.decomposition.IncrementalPCA` with centering disabled.
+It processes the data one chunk at a time, so the full dataset is never loaded
+into memory.
+
+The previous implementation loaded all data into ``dask`` and then called
+``dask.array.linalg.svd``, which triggered a full in-memory materialisation
+for most chunk layouts and did not support masks, centering, or reprojection.
+:class:`~.learn.incremental_svd.ISVD` addresses all of these limitations:
+
+- ``output_dimension`` is **required** (the number of components to retain
+  must be known before streaming begins);
+- ``navigation_mask`` and ``signal_mask`` are supported;
+- optional mean-subtraction is available via the ``centre`` parameter
+  (``'navigation'`` subtracts the per-feature mean, ``'signal'`` subtracts
+  the per-sample mean);
+- ``reproject='navigation'``, ``reproject='signal'``, and ``reproject='both'``
+  are all supported to fill masked positions after learning (see
+  :ref:`mva.masks_and_reproject`).
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm="SVD", output_dimension=10) # doctest: +SKIP
+
+   # With navigation masking and mean-centring
+   >>> import numpy as np
+   >>> nav_mask = np.zeros(s.axes_manager.navigation_shape[::-1], dtype=bool)
+   >>> nav_mask[0] = True  # exclude first row
+   >>> s.decomposition(
+   ...     algorithm="SVD",
+   ...     output_dimension=10,
+   ...     centre="navigation",
+   ...     navigation_mask=nav_mask,
+   ...     reproject="navigation",
+   ... ) # doctest: +SKIP
+
+.. note::
+
+   ``centre`` and ``normalize_poissonian_noise=True`` cannot be used together.
+   Attempting to do so will raise a ``ValueError``.
+
+The ``"PCA"`` algorithm wraps :class:`sklearn.decomposition.IncrementalPCA`
+directly (centering is *enabled*, unlike ``"SVD"``), and shares the same
+support for ``centre``, masks, and all ``reproject`` modes.  The
+``svd_solver`` and ``auto_transpose`` parameters are accepted for API parity
+with non-lazy decomposition but have no effect for incremental algorithms.
+
+.. _big_data.nmf:
+
+Out-of-core NMF
+^^^^^^^^^^^^^^^
+
+.. versionadded:: 2.5
 
 The ``"NMF"`` algorithm uses :class:`sklearn.decomposition.MiniBatchNMF`
-(requires scikit-learn ≥ 1.1) for out-of-core non-negative matrix
-factorisation.  ``output_dimension`` is required.
+(requires scikit-learn ≥ 1.1) to perform non-negative matrix factorisation
+out-of-core.  ``output_dimension`` is required.
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm="NMF", output_dimension=3) # doctest: +SKIP
 
-Any custom sklearn-like estimator can also be passed as the ``algorithm``
-argument.  If the object has a ``partial_fit`` method it is called
-incrementally on each chunk (true out-of-core); otherwise ``fit`` or
-``fit_transform`` is called on the full in-memory dataset.
+.. _big_data.custom_algorithm:
+
+Custom sklearn-like estimators
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 2.5
+
+Any custom sklearn-like estimator can be passed as the ``algorithm`` argument.
+If the object implements ``partial_fit`` it is called incrementally on each
+chunk (true out-of-core); otherwise ``fit`` or ``fit_transform`` is called
+on the full dataset loaded into memory.
 
 .. code-block:: python
 
@@ -213,13 +261,15 @@ incrementally on each chunk (true out-of-core); otherwise ``fit`` or
 Poissonian noise normalisation for lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 2.5
+
 Lazy signals expose
 :meth:`~hyperspy._signals.lazy.LazySignal.normalize_poissonian_noise` as a
 standalone method, independently of decomposition.  It rescales the data
-in-place (lazily) using the same square-root variance-stabilising transform
-used internally by :meth:`~.api.signals.BaseSignal.decomposition`.  This is
-useful when you want to apply the normalisation yourself and then run a custom
-decomposition pipeline.
+lazily using the same square-root variance-stabilising transform used
+internally by :meth:`~.api.signals.BaseSignal.decomposition`.  This is
+useful when you want to apply the normalisation yourself before running a
+custom decomposition pipeline.
 
 .. code-block:: python
 
