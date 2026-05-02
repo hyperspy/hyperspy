@@ -1311,13 +1311,24 @@ def _make_mask_test_signal(nav_shape, sig_size, seed=123):
 
 
 def _build_nav_masks(s, nav_shape):
-    """Return a dict of all four navigation mask types for *s*."""
-    nm_np = np.zeros(nav_shape, dtype=bool)
-    # Mask a corner: different rows/cols to expose transposition bugs.
-    nm_np[0, :2] = True  # first row, first 2 cols  (only valid for 2-D nav)
-    nm_dask = da.from_array(nm_np, chunks=tuple(max(1, n // 2) for n in nav_shape))
+    """Return a dict of all four navigation mask types for 2-D nav *s*.
+
+    numpy and dask masks are created with shape == navigation_shape
+    (HyperSpy convention: reversed from the underlying array axis order)
+    because both _check_navigation_mask and the non-lazy .T.ravel() path
+    expect the mask in navigation_shape order.
+    """
+    # navigation_shape is the HyperSpy-convention shape (reversed from array).
+    hs_nav_shape = s.axes_manager.navigation_shape
+    nm_np = np.zeros(hs_nav_shape, dtype=bool)
+    # Mask a corner using indices in navigation_shape order.
+    # Use first two elements along the last nav axis to expose transposition.
+    nm_np[0, :2] = True
+    nm_dask = da.from_array(nm_np, chunks=tuple(max(1, n // 2) for n in hs_nav_shape))
+    # BaseSignal mask: _get_navigation_signal().data is in array axis order,
+    # so index it directly and transpose to get signal_dimension=0.
     nm_signal_std = s._get_navigation_signal(dtype="bool")
-    nm_signal_std.data[0, :2] = True
+    nm_signal_std.data[0, :2] = True  # array-axis-order indexing
     nm_signal_lazy = nm_signal_std.as_lazy()
     return {
         "numpy": nm_np,
