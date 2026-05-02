@@ -967,58 +967,45 @@ class TestLazyDecompositionReprojectionNumerical:
 
     @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
-    def test_reproject_signal_orpca_ornmf_warns_and_fills_nav(self, algorithm):
-        """ORPCA/ORNMF with reproject='signal' emits a warning (not implemented)
-        but still fills nav-masked positions via reproject='navigation' fallback,
-        leaving loadings with no NaN."""
-        import warnings
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            self.s.decomposition(
-                algorithm=algorithm,
-                output_dimension=3,
-                navigation_mask=self.nav_mask,
-                signal_mask=self.sig_mask,
-                reproject="signal",
-                print_info=False,
-            )
-        # A UserWarning about signal reproject not supported must be raised
-        warn_msgs = [str(x.message) for x in w if issubclass(x.category, UserWarning)]
-        assert any(
-            "signal" in m.lower() or "reproject" in m.lower() for m in warn_msgs
-        ), f"Expected reproject warning, got: {warn_msgs}"
-        # Nav reproject NOT requested here — loadings may still have NaN
-        # (only nav-reproject fills loadings). Factors must exist.
+    def test_reproject_signal_orpca_ornmf(self, algorithm):
+        """ORPCA/ORNMF with reproject='signal' now works: factors cover the full
+        signal (no NaN at masked signal channels)."""
+        self.s.decomposition(
+            algorithm=algorithm,
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject="signal",
+            print_info=False,
+        )
         t = self.s.learning_results
         assert t.factors is not None
+        assert t.loadings is not None
+        # After signal reprojection, factors must cover all signal channels
+        assert t.factors.shape[0] == self.s.axes_manager.signal_size
+        assert not np.any(np.isnan(t.factors)), "factors must not contain NaN"
         assert t.loadings is not None
 
     @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
-    def test_reproject_both_orpca_ornmf_warns_and_fills_nav(self, algorithm):
-        """ORPCA/ORNMF with reproject='both' warns about signal reproject but
-        still fills loadings at nav-masked positions (nav reproject succeeds)."""
-        import warnings
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            self.s.decomposition(
-                algorithm=algorithm,
-                output_dimension=3,
-                navigation_mask=self.nav_mask,
-                signal_mask=self.sig_mask,
-                reproject="both",
-                print_info=False,
-            )
-        warn_msgs = [str(x.message) for x in w if issubclass(x.category, UserWarning)]
-        assert any(
-            "signal" in m.lower() or "reproject" in m.lower() for m in warn_msgs
-        ), f"Expected reproject warning, got: {warn_msgs}"
+    def test_reproject_both_orpca_ornmf(self, algorithm):
+        """ORPCA/ORNMF with reproject='both' fills both loadings and factors."""
+        self.s.decomposition(
+            algorithm=algorithm,
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject="both",
+            print_info=False,
+        )
         # Nav reproject should still have run → loadings fully filled
         loadings = self.s.learning_results.loadings
         assert loadings.shape[0] == self.data.shape[0]
         assert not np.any(np.isnan(loadings)), "loadings still contain NaN"
+        # Signal reproject should have run → factors fully filled
+        factors = self.s.learning_results.factors
+        assert factors.shape[0] == self.s.axes_manager.signal_size
+        assert not np.any(np.isnan(factors)), "factors still contain NaN"
 
 
 class TestLazyVsNonLazyDecomposition:

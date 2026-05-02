@@ -473,6 +473,46 @@ class ORPCA:
         else:
             return self.L, 1
 
+    # ------------------------------------------------------------------
+    # sklearn-compatible API
+    # ------------------------------------------------------------------
+
+    def partial_fit(self, X, batch_size=None):
+        """Process one batch of data (sklearn-compatible alias for :meth:`fit`).
+
+        Parameters
+        ----------
+        X : numpy.ndarray, shape (n_samples, n_features)
+            Batch of observations.
+        batch_size : int or None
+            Forwarded to :meth:`fit`.
+
+        Returns
+        -------
+        self
+        """
+        self.fit(X, batch_size=batch_size)
+        return self
+
+    @property
+    def components_(self):
+        """Learnt subspace, shape ``(rank, n_features)`` — sklearn convention."""
+        return self.L.T
+
+    def transform(self, X):
+        """Project *X* onto the learnt subspace.
+
+        Parameters
+        ----------
+        X : numpy.ndarray, shape (n_samples, n_features)
+
+        Returns
+        -------
+        loadings : numpy.ndarray, shape (n_samples, rank)
+            Coordinates of each sample in the learnt subspace.
+        """
+        return self.project(X).T
+
 
 def orpca(
     X,
