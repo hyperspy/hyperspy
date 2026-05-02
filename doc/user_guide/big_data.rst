@@ -131,17 +131,17 @@ operations are only performed lazily, use the
 Machine learning
 ----------------
 
-.. warning:: The machine learning features are in beta state.
-
-   Although most of them work as described, their operation may not always
-   be optimal, well-documented and/or consistent with their in-memory counterparts.
-
 :ref:`mva.decomposition` algorithms for machine learning often perform
 large matrix manipulations, requiring significantly more memory than the data size.
-To perform decomposition lazily, HyperSpy provides access to several *online*
-(incremental) algorithms that operate serially on chunks of data, enabling the
-decomposition of datasets that are larger than available RAM. In line with the
-standard HyperSpy signals, lazy
+To decompose datasets that are larger than available RAM, HyperSpy provides two
+complementary strategies for lazy signals:
+
+- **Deferred (lazy graph)**: the computation is expressed as a dask task graph and
+  only executed when `.compute()` is called — either explicitly by the user or
+  internally by HyperSpy.  No data is moved until that point.
+- **Incremental (out-of-core)**: the algorithm streams the data one chunk (mini-batch)
+  at a time, so only a small portion of the data resides in memory at once.
+
 :meth:`~.api.signals.LazySignal.decomposition` offers the following algorithms:
 
 .. _lazy_decomposition-table:
@@ -149,9 +149,7 @@ standard HyperSpy signals, lazy
 .. table:: Available lazy decomposition algorithms in HyperSpy
 
    +--------------------------+-----------------------------------------------------------+
-   | ``"SVD"`` (default)      | :class:`~.learn.incremental_svd.ISVD`                     |
-   +--------------------------+-----------------------------------------------------------+
-   | ``"DaskSVD"``            | :func:`dask.array.linalg.svd`                             |
+   | ``"SVD"`` (default)      | See ``svd_solver`` below; two backends available          |
    +--------------------------+-----------------------------------------------------------+
    | ``"PCA"``                | :class:`sklearn.decomposition.IncrementalPCA`             |
    +--------------------------+-----------------------------------------------------------+
@@ -166,39 +164,59 @@ standard HyperSpy signals, lazy
 
 .. _big_data.svd:
 
-Incremental SVD (default)
+SVD (``algorithm='SVD'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The default ``algorithm='SVD'`` supports two backends, selected via
+``svd_solver``:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - ``svd_solver``
+     - Backend
+   * - ``'dask'`` (**current default**, deprecated — will change to
+       ``'incremental'`` in v2.6)
+     - :func:`dask.array.linalg.svd` — **deferred**: builds the full SVD as a
+       lazy dask task graph (using the TSQR algorithm for multi-chunk arrays).
+       No data is moved and no computation is performed until ``.compute()`` is
+       called explicitly; this allows dask to optimise the entire graph
+       before execution.
+       ``output_dimension`` is **optional** (all components up to
+       ``min(nav_size, sig_size)`` are returned if omitted).
+       Requires the unfolded array to be chunked in one dimension only
+       (tall-and-skinny or short-and-fat); use ``'incremental'`` for arrays
+       chunked in both dimensions.
+   * - ``'incremental'`` (future default in v2.6)
+     - :class:`~.learn.incremental_svd.ISVD` — **incremental (out-of-core)**:
+       streams the data one mini-batch at a time so that only a small number of
+       chunks reside in memory simultaneously.
+       ``output_dimension`` is **required**.
+
 .. versionchanged:: 2.5
-   The default ``"SVD"`` algorithm for lazy signals was changed from
-   ``dask.array.linalg.svd`` to :class:`~.learn.incremental_svd.ISVD`.
-
-The default ``"SVD"`` algorithm uses :class:`~.learn.incremental_svd.ISVD`,
-an incremental (out-of-core) SVD implemented as a thin wrapper around
-:class:`sklearn.decomposition.IncrementalPCA` with centering disabled.
-It processes the data one chunk at a time, so the full dataset is never loaded
-into memory at once.  Compared to ``"DaskSVD"``, it additionally supports:
-
-- ``navigation_mask`` and ``signal_mask``;
-- optional mean-subtraction via the ``centre`` parameter
-  (``'navigation'`` subtracts the per-feature mean, ``'signal'`` subtracts
-  the per-sample mean);
-- ``reproject='navigation'``, ``reproject='signal'``, and ``reproject='both'``
-  to fill masked positions after learning (see :ref:`mva.masks_and_reproject`).
-
-``output_dimension`` is **required** because the number of components to retain
-must be known before streaming begins.
+   The ``svd_solver`` parameter now selects between the dask and incremental
+   SVD backends.  The default is currently ``'dask'`` but will change to
+   ``'incremental'`` in v2.6.  The old ``algorithm`` aliases ``'DaskSVD'``
+   and ``'ISVD'`` are deprecated and will be removed in v2.6.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm="SVD", output_dimension=10) # doctest: +SKIP
+   # Dask SVD (current default) — output_dimension optional
+   >>> s.decomposition(algorithm="SVD", svd_solver="dask") # doctest: +SKIP
+   >>> s.decomposition(algorithm="SVD", svd_solver="dask", output_dimension=10) # doctest: +SKIP
 
-   # With navigation masking and mean-centring
+   # Incremental SVD (future default) — output_dimension required
+   >>> s.decomposition(algorithm="SVD", svd_solver="incremental",
+   ...                 output_dimension=10) # doctest: +SKIP
+
+   # With navigation masking and mean-centring (both backends)
    >>> import numpy as np
    >>> nav_mask = np.zeros(s.axes_manager.navigation_shape[::-1], dtype=bool)
    >>> nav_mask[0] = True  # exclude first row
    >>> s.decomposition(
    ...     algorithm="SVD",
+   ...     svd_solver="incremental",
    ...     output_dimension=10,
    ...     centre="navigation",
    ...     navigation_mask=nav_mask,
@@ -211,52 +229,8 @@ must be known before streaming begins.
    Attempting to do so will raise a ``ValueError``.
 
 The ``"PCA"`` algorithm wraps :class:`sklearn.decomposition.IncrementalPCA`
-directly (centering is *enabled*, unlike ``"SVD"``), and shares the same
-support for ``centre``, masks, and all ``reproject`` modes.  The
-``svd_solver`` and ``auto_transpose`` parameters are accepted for API parity
-with non-lazy decomposition but have no effect for incremental algorithms.
-
-.. _big_data.dask_svd:
-
-Dask SVD
-^^^^^^^^
-
-.. versionadded:: 2.5
-
-The ``"DaskSVD"`` algorithm uses :func:`dask.array.linalg.svd`, which
-internally uses the TSQR (Tall-and-Skinny QR) algorithm for multi-chunk
-arrays.  The computation is expressed as a dask task graph and executed
-lazily; memory use scales as ``k × signal_size²`` (where ``k`` is the
-number of navigation chunks) rather than the full dataset size.  This is
-the approach used by HyperSpy prior to v2.5, restored here for users who
-prefer the graph-based path or who work with data that is already chunked
-in a tall-and-skinny layout.
-
-Unlike ``"SVD"``, ``"DaskSVD"``:
-
-- does **not** support ``navigation_mask`` or ``signal_mask`` (a
-  :exc:`NotImplementedError` is raised if masks are passed);
-- does **not** support the ``centre`` parameter;
-- does **not** require ``output_dimension`` (if omitted, all components up
-  to ``min(nav_size, sig_size)`` are returned);
-- requires the unfolded data array to be chunked in one dimension only
-  (tall-and-skinny or short-and-fat); arrays chunked in both dimensions
-  will raise a :exc:`NotImplementedError` from dask.
-
-Unlike ``"SVD"``, ``"DaskSVD"``:
-
-- does **not** support ``navigation_mask`` or ``signal_mask`` (a
-  :exc:`NotImplementedError` is raised if masks are passed);
-- does **not** support the ``centre`` parameter;
-- does **not** require ``output_dimension`` (if omitted, all components up
-  to ``min(nav_size, sig_size)`` are returned).
-
-.. code-block:: python
-
-   >>> s.decomposition(algorithm="DaskSVD", output_dimension=10) # doctest: +SKIP
-
-   # output_dimension is optional
-   >>> s.decomposition(algorithm="DaskSVD") # doctest: +SKIP
+and always centres the data internally.  Like the ``"SVD"`` backends, it
+supports ``centre``, masks, and all ``reproject`` modes.
 
 .. _big_data.nmf:
 

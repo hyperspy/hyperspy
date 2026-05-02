@@ -27,6 +27,12 @@ from hyperspy.signals import Signal1D
 sklearn = importlib.util.find_spec("sklearn")
 skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
 
+# Suppress the svd_solver-default-change DeprecationWarning in all tests except
+# the dedicated deprecation warning tests.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:The default svd_solver for algorithm='SVD':DeprecationWarning"
+)
+
 
 class TestLazyDecomposition:
     def setup_method(self, method):
@@ -194,18 +200,20 @@ class TestLazyDecomposition:
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm="ORPCA")
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
-            self.s.decomposition(algorithm="SVD")
+            self.s.decomposition(algorithm="SVD", svd_solver="incremental")
 
     @skip_sklearn
     @pytest.mark.parametrize("centre", ["navigation", "signal"])
     def test_svd_centre(self, centre):
         self.s.decomposition(output_dimension=3, centre=centre)
+
         assert self.s.learning_results.centre == centre
         assert self.s.learning_results.mean is not None
 
     @skip_sklearn
     def test_svd_no_centering(self):
         self.s.decomposition(output_dimension=3, centre=None)
+
         assert self.s.learning_results.centre is None
         assert self.s.learning_results.mean is None
 
@@ -219,7 +227,12 @@ class TestLazyDecomposition:
         """SVD with signal mask runs without error and produces results."""
         s = self.s
         sig_mask = (s.inav[0, 0].data < 1.0).compute()
-        s.decomposition(algorithm="SVD", output_dimension=3, signal_mask=sig_mask)
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=3,
+            signal_mask=sig_mask,
+        )
         assert s.learning_results.factors is not None
         assert s.learning_results.loadings is not None
 
@@ -227,15 +240,45 @@ class TestLazyDecomposition:
         with pytest.raises(ValueError, match="not recognised"):
             self.s.decomposition(algorithm="random")
 
+    def test_svd_default_solver_deprecation_warning(self):
+        """algorithm='SVD' without svd_solver warns that the default will change."""
+        with pytest.warns(
+            DeprecationWarning,
+            match="The default svd_solver for algorithm='SVD'",
+        ):
+            self.s.decomposition(algorithm="SVD", output_dimension=3)
+
+    @skip_sklearn
+    def test_isvd_alias_deprecation_warning(self):
+        """algorithm='ISVD' (deprecated alias) raises DeprecationWarning."""
+        with pytest.warns(
+            DeprecationWarning,
+            match="algorithm='ISVD' is deprecated",
+        ):
+            self.s.decomposition(algorithm="ISVD", output_dimension=3)
+
+    def test_dasksvd_alias_deprecation_warning(self):
+        """algorithm='DaskSVD' (deprecated alias) raises DeprecationWarning."""
+        with pytest.warns(
+            DeprecationWarning,
+            match="algorithm='DaskSVD' is deprecated",
+        ):
+            self.s.decomposition(algorithm="DaskSVD")
+
 
 class TestPrintInfo:
     def setup_method(self, method):
         rng = np.random.default_rng(123)
         self.s = Signal1D(rng.random(size=(20, 100))).as_lazy()
 
-    @pytest.mark.parametrize("algorithm", ["SVD", "ORPCA", "ORNMF"])
-    def test_decomposition(self, algorithm, capfd):
-        self.s.decomposition(algorithm=algorithm, output_dimension=3)
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver",
+        [("SVD", "incremental"), ("ORPCA", None), ("ORNMF", None)],
+    )
+    def test_decomposition(self, algorithm, svd_solver, capfd):
+        self.s.decomposition(
+            algorithm=algorithm, svd_solver=svd_solver, output_dimension=3
+        )
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
 
@@ -247,9 +290,14 @@ class TestPrintInfo:
         assert "Decomposition info:" in captured.out
         assert "scikit-learn estimator:" in captured.out
 
-    @pytest.mark.parametrize("algorithm", ["SVD"])
-    def test_no_print(self, algorithm, capfd):
-        self.s.decomposition(algorithm=algorithm, output_dimension=2, print_info=False)
+    @pytest.mark.parametrize("algorithm,svd_solver", [("SVD", "incremental")])
+    def test_no_print(self, algorithm, svd_solver, capfd):
+        self.s.decomposition(
+            algorithm=algorithm,
+            svd_solver=svd_solver,
+            output_dimension=2,
+            print_info=False,
+        )
         captured = capfd.readouterr()
         assert "Decomposition info:" not in captured.out
 
@@ -258,11 +306,21 @@ class TestPrintInfo:
         """SVD masking is now supported; check shapes are correct."""
         s = self.s
         sig_mask = (s.inav[0].data < 0.5).compute()
-        s.decomposition(algorithm="SVD", output_dimension=2, signal_mask=sig_mask)
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=2,
+            signal_mask=sig_mask,
+        )
         assert s.learning_results.factors is not None
 
         nav_mask = (s.isig[0].data < 0.5).compute()
-        s.decomposition(algorithm="SVD", output_dimension=2, navigation_mask=nav_mask)
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=2,
+            navigation_mask=nav_mask,
+        )
         assert s.learning_results.loadings is not None
 
     @skip_sklearn
@@ -411,7 +469,7 @@ class TestNormalizePoissonianNoise:
 
 
 class TestLazyDecompositionParityFixes:
-    """Tests for parity with the non-lazy MVA.decomposition() (fixes 1-7).
+    """Tests for parity with the non-lazy MVA.decomposition(svd_solver="incremental") (fixes 1-7).
 
     Uses a small Signal1D with 2-D navigation so that masks are non-trivial.
     Shape: nav (4, 5) = 20 positions, signal 30 channels.
@@ -434,8 +492,10 @@ class TestLazyDecompositionParityFixes:
     # ------------------------------------------------------------------
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_poissonian_flag_stored_true(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
+    )
+    def test_poissonian_flag_stored_true(self, algorithm, svd_solver):
         """poissonian_noise_normalized is True when normalisation was applied."""
         s = Signal1D(np.abs(self.s.data.compute()) + 1).as_lazy()
         s.decomposition(
@@ -450,6 +510,7 @@ class TestLazyDecompositionParityFixes:
     def test_poissonian_flag_stored_false(self):
         """poissonian_noise_normalized is False when normalisation was not applied."""
         self.s.decomposition(output_dimension=2, print_info=False)
+
         assert self.s.learning_results.poissonian_noise_normalized is False
 
     # ------------------------------------------------------------------
@@ -457,10 +518,17 @@ class TestLazyDecompositionParityFixes:
     # ------------------------------------------------------------------
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_number_significant_components(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
+    )
+    def test_number_significant_components(self, algorithm, svd_solver):
         """number_significant_components is a plain Python int after decomposition."""
-        self.s.decomposition(algorithm=algorithm, output_dimension=5, print_info=False)
+        self.s.decomposition(
+            algorithm=algorithm,
+            svd_solver=svd_solver,
+            output_dimension=5,
+            print_info=False,
+        )
         nsc = self.s.learning_results.number_significant_components
         assert isinstance(nsc, int)
         assert 1 <= nsc <= 5
@@ -644,7 +712,11 @@ class TestLazyDecompositionParityFixes:
     def test_return_info_svd_returns_none(self):
         """return_info=True with SVD returns None (no persistent estimator object)."""
         result = self.s.decomposition(
-            algorithm="SVD", output_dimension=2, return_info=True, print_info=False
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=2,
+            return_info=True,
+            print_info=False,
         )
         assert result is None
 
@@ -694,8 +766,10 @@ class TestLazyDecompositionBothMasks:
         self.sig_mask = _sig_mask_1d()
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_both_masks_nan_pattern(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
+    )
+    def test_both_masks_nan_pattern(self, algorithm, svd_solver):
         """Nav-masked → NaN loadings rows; sig-masked → NaN factor rows."""
         self.s.decomposition(
             algorithm=algorithm,
@@ -735,6 +809,7 @@ class TestLazyDecompositionBothMasks:
         # approximate and does not guarantee 1e-10 accuracy.
         self.s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             signal_mask=self.sig_mask,
@@ -776,8 +851,11 @@ class TestLazyDecompositionReprojectionNumerical:
         self.sig_mask = _sig_mask_1d()
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA", "ORPCA", "ORNMF"])
-    def test_reproject_navigation_no_nan(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver",
+        [("SVD", "incremental"), ("PCA", None), ("ORPCA", None), ("ORNMF", None)],
+    )
+    def test_reproject_navigation_no_nan(self, algorithm, svd_solver):
         """reproject='navigation' → full loadings, no NaN, correct shape."""
         self.s.decomposition(
             algorithm=algorithm,
@@ -797,6 +875,7 @@ class TestLazyDecompositionReprojectionNumerical:
         """
         self.s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             reproject="navigation",
@@ -808,8 +887,10 @@ class TestLazyDecompositionReprojectionNumerical:
         assert rms < 1e-10
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_reproject_navigation_unmasked_rows_unchanged(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
+    )
+    def test_reproject_navigation_unmasked_rows_unchanged(self, algorithm, svd_solver):
         """reproject='navigation' does not alter the unmasked rows of loadings."""
         # Baseline: no reproject, unmasked positions only
         self.s.decomposition(
@@ -832,8 +913,11 @@ class TestLazyDecompositionReprojectionNumerical:
         np.testing.assert_allclose(baseline_loadings, reproj_loadings, atol=1e-10)
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA", "ORPCA", "ORNMF"])
-    def test_reproject_both_nav_loadings_filled(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver",
+        [("SVD", "incremental"), ("PCA", None), ("ORPCA", None), ("ORNMF", None)],
+    )
+    def test_reproject_both_nav_loadings_filled(self, algorithm, svd_solver):
         """reproject='both' fills nav-masked positions (signal reproject warns)."""
         import warnings
 
@@ -858,6 +942,7 @@ class TestLazyDecompositionReprojectionNumerical:
         """
         self.s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             signal_mask=self.sig_mask,
@@ -874,8 +959,10 @@ class TestLazyDecompositionReprojectionNumerical:
         assert rms < 1e-10
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_reproject_signal_fills_factors(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
+    )
+    def test_reproject_signal_fills_factors(self, algorithm, svd_solver):
         """reproject='signal' → factors fully filled (no NaN), loadings still
         have NaN at nav-masked positions."""
         self.s.decomposition(
@@ -899,6 +986,7 @@ class TestLazyDecompositionReprojectionNumerical:
         positions over the full signal."""
         self.s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             signal_mask=self.sig_mask,
@@ -913,8 +1001,10 @@ class TestLazyDecompositionReprojectionNumerical:
         assert rms < 1e-10, f"reproject='signal' RMS {rms:.2e} too large"
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_reproject_signal_unmasked_channels_unchanged(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
+    )
+    def test_reproject_signal_unmasked_channels_unchanged(self, algorithm, svd_solver):
         """reproject='signal' does not alter the unmasked channel rows of
         factors (compared to no-reproject baseline)."""
         kw = dict(
@@ -925,16 +1015,20 @@ class TestLazyDecompositionReprojectionNumerical:
         )
         # Baseline: no reproject
         self.s.decomposition(**kw)
+
         baseline_factors = self.s.learning_results.factors[~self.sig_mask, :].copy()
 
         # With reproject='signal'
         self.s.decomposition(**kw, reproject="signal")
+
         reproj_factors = self.s.learning_results.factors[~self.sig_mask, :]
         np.testing.assert_allclose(baseline_factors, reproj_factors, atol=1e-10)
 
     @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["SVD", "PCA"])
-    def test_reproject_both_fills_factors_and_loadings(self, algorithm):
+    @pytest.mark.parametrize(
+        "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
+    )
+    def test_reproject_both_fills_factors_and_loadings(self, algorithm, svd_solver):
         """reproject='both' fills both factors (signal channels) and loadings
         (nav positions) — no NaN anywhere."""
         self.s.decomposition(
@@ -955,6 +1049,7 @@ class TestLazyDecompositionReprojectionNumerical:
         """reproject='both' SVD: full data reconstructed from loadings × factors."""
         self.s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             signal_mask=self.sig_mask,
@@ -1035,7 +1130,13 @@ class TestLazyVsNonLazyDecomposition:
     def test_no_mask_reconstruction(self):
         """Both paths reconstruct exact rank-3 data without masks."""
         self.s_nl.decomposition(output_dimension=3, print_info=False)
-        self.s_lz.decomposition(algorithm="SVD", output_dimension=3, print_info=False)
+
+        self.s_lz.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=3,
+            print_info=False,
+        )
         for s, label in [(self.s_nl, "non-lazy"), (self.s_lz, "lazy")]:
             t = s.learning_results
             rms = np.sqrt(np.mean((t.loadings @ t.factors.T - self.data) ** 2))
@@ -1046,7 +1147,8 @@ class TestLazyVsNonLazyDecomposition:
         """Both paths reconstruct unmasked region accurately with nav mask."""
         kw = dict(output_dimension=3, navigation_mask=self.nav_mask, print_info=False)
         self.s_nl.decomposition(**kw)
-        self.s_lz.decomposition(algorithm="SVD", **kw)
+
+        self.s_lz.decomposition(algorithm="SVD", svd_solver="incremental", **kw)
 
         kept_nav = ~self.nav_mask
         for s, label in [(self.s_nl, "non-lazy"), (self.s_lz, "lazy")]:
@@ -1061,7 +1163,8 @@ class TestLazyVsNonLazyDecomposition:
         """Both paths reconstruct unmasked region accurately with sig mask."""
         kw = dict(output_dimension=3, signal_mask=self.sig_mask, print_info=False)
         self.s_nl.decomposition(**kw)
-        self.s_lz.decomposition(algorithm="SVD", **kw)
+
+        self.s_lz.decomposition(algorithm="SVD", svd_solver="incremental", **kw)
 
         kept_sig = ~self.sig_mask
         for s, label in [(self.s_nl, "non-lazy"), (self.s_lz, "lazy")]:
@@ -1081,7 +1184,8 @@ class TestLazyVsNonLazyDecomposition:
             print_info=False,
         )
         self.s_nl.decomposition(**kw)
-        self.s_lz.decomposition(algorithm="SVD", **kw)
+
+        self.s_lz.decomposition(algorithm="SVD", svd_solver="incremental", **kw)
 
         kept_nav = ~self.nav_mask
         kept_sig = ~self.sig_mask
@@ -1105,7 +1209,7 @@ class TestLazyVsNonLazyDecomposition:
             reproject="navigation",
             print_info=False,
         )
-        self.s_lz.decomposition(algorithm="SVD", **kw)
+        self.s_lz.decomposition(algorithm="SVD", svd_solver="incremental", **kw)
 
         t = self.s_lz.learning_results
         rms = np.sqrt(np.mean((t.loadings @ t.factors.T - self.data) ** 2))
@@ -1118,7 +1222,13 @@ class TestLazyVsNonLazyDecomposition:
         # different singular value estimates, so we only verify the ordering,
         # not the exact values.
         self.s_nl.decomposition(output_dimension=5, print_info=False)
-        self.s_lz.decomposition(algorithm="SVD", output_dimension=5, print_info=False)
+
+        self.s_lz.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=5,
+            print_info=False,
+        )
         for s, label in [(self.s_nl, "non-lazy"), (self.s_lz, "lazy")]:
             ev = s.learning_results.explained_variance
             assert np.all(np.diff(ev) <= 0), (
@@ -1189,7 +1299,12 @@ class TestSubSignalChunking:
     ):
         """factors.shape[0] must equal sig_size regardless of chunk layout."""
         s, _, rank = self._make_signal(nav_shape, sig_size, sig_chunk, nav_chunk)
-        s.decomposition(algorithm="SVD", output_dimension=rank, print_info=False)
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=rank,
+            print_info=False,
+        )
         assert s.learning_results.factors.shape[0] == sig_size
 
     # ------------------------------------------------------------------
@@ -1212,6 +1327,7 @@ class TestSubSignalChunking:
         # Should not raise
         s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=rank,
             normalize_poissonian_noise=True,
             print_info=False,
@@ -1239,8 +1355,18 @@ class TestSubSignalChunking:
         # Sub-signal chunking (signal split across 8 chunks of 8)
         s_sub = Signal1D(da.from_array(data, chunks=(4, 4, 8))).as_lazy()
 
-        s_cont.decomposition(algorithm="SVD", output_dimension=rank, print_info=False)
-        s_sub.decomposition(algorithm="SVD", output_dimension=rank, print_info=False)
+        s_cont.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=rank,
+            print_info=False,
+        )
+        s_sub.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=rank,
+            print_info=False,
+        )
 
         t_cont = s_cont.learning_results
         t_sub = s_sub.learning_results
@@ -1393,6 +1519,7 @@ class TestLazyDecompositionMaskTypes:
             nav_masks = _build_nav_masks(s, nav_shape)
         s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=nav_masks[mask_type],
             print_info=False,
@@ -1413,6 +1540,7 @@ class TestLazyDecompositionMaskTypes:
         sig_masks = _build_sig_masks(s, sig_size)
         s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             signal_mask=sig_masks[mask_type],
             print_info=False,
@@ -1438,6 +1566,7 @@ class TestLazyDecompositionMaskTypes:
         s.decomposition(
             True,
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=nav_masks[mask_type],
             print_info=False,
@@ -1460,6 +1589,7 @@ class TestLazyDecompositionMaskTypes:
         s.decomposition(
             True,
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             signal_mask=sig_masks[mask_type],
             print_info=False,
@@ -1485,6 +1615,7 @@ class TestLazyDecompositionMaskTypes:
         s.decomposition(
             True,
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=nav_masks[mask_type],
             signal_mask=sig_masks[mask_type],
@@ -1513,6 +1644,7 @@ class TestLazyDecompositionMaskTypes:
         sig_mask = _build_sig_masks(s, sig_size)["numpy"]
         s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             navigation_mask=nav_mask,
             signal_mask=sig_mask,
@@ -1569,7 +1701,9 @@ class TestLazyCentreMaskParity:
             print_info=False,
         )
         s_nl.decomposition(**kw)
+
         s_lz.decomposition(**kw)
+
         nl_mean = s_nl.learning_results.mean
         lz_mean = s_lz.learning_results.mean
         # Both should equal the mean computed only over unmasked rows.
@@ -1760,6 +1894,7 @@ class TestLazyCustomSklearnObject:
         """Object without partial_fit falls back to fit_transform."""
         obj = self._make_batch_estimator(3)
         self.s.decomposition(algorithm=obj, print_info=False)
+
         lr = self.s.learning_results
         assert lr.factors is not None
         assert lr.factors.shape[1] == 3
@@ -1800,8 +1935,8 @@ class TestLazySVDSolverAndAutoTranspose:
         """svd_solver is accepted for SVD algorithm without error."""
         self.s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
-            svd_solver="auto",
             print_info=False,
         )
 
@@ -1821,6 +1956,7 @@ class TestLazySVDSolverAndAutoTranspose:
         with caplog.at_level(logging.INFO, logger="hyperspy._signals.lazy"):
             self.s.decomposition(
                 algorithm="SVD",
+                svd_solver="incremental",
                 output_dimension=3,
                 auto_transpose=True,
                 print_info=False,
@@ -1831,14 +1967,15 @@ class TestLazySVDSolverAndAutoTranspose:
         """auto_transpose=False is accepted without error."""
         self.s.decomposition(
             algorithm="SVD",
+            svd_solver="incremental",
             output_dimension=3,
             auto_transpose=False,
             print_info=False,
         )
 
 
-class TestDaskSVDAlgorithm:
-    """Tests for algorithm='DaskSVD' (dask.array.linalg.svd) on lazy signals."""
+class TestSVDAlgorithm:
+    """Tests for algorithm='SVD' (dask.array.linalg.svd) on lazy signals."""
 
     def setup_method(self, method):
         rng = np.random.default_rng(42)
@@ -1850,15 +1987,15 @@ class TestDaskSVDAlgorithm:
         self.s = Signal1D(data.astype(float)).as_lazy()
 
     def test_basic_run(self):
-        """DaskSVD runs without error and returns results."""
-        self.s.decomposition(algorithm="DaskSVD", print_info=False)
+        """SVD runs without error and returns results."""
+        self.s.decomposition(algorithm="SVD", svd_solver="dask", print_info=False)
         lr = self.s.learning_results
         assert lr.factors is not None
         assert lr.loadings is not None
 
     def test_output_dimension_optional(self):
-        """output_dimension is optional for DaskSVD."""
-        self.s.decomposition(algorithm="DaskSVD", print_info=False)
+        """output_dimension is optional for SVD."""
+        self.s.decomposition(algorithm="SVD", svd_solver="dask", print_info=False)
         lr = self.s.learning_results
         # Without output_dimension, all components up to min(nav, sig) are kept.
         assert lr.factors.shape[1] <= min(35, 30)
@@ -1866,7 +2003,9 @@ class TestDaskSVDAlgorithm:
     def test_output_dimension_respected(self):
         """When output_dimension is given, exactly that many components are returned."""
         k = 4
-        self.s.decomposition(algorithm="DaskSVD", output_dimension=k, print_info=False)
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="dask", output_dimension=k, print_info=False
+        )
         lr = self.s.learning_results
         assert lr.factors.shape == (30, k)
         assert lr.loadings.shape == (35, k)
@@ -1874,64 +2013,98 @@ class TestDaskSVDAlgorithm:
     def test_factors_and_loadings_shapes(self):
         """Factors shape is (sig_size, k); loadings shape is (nav_size, k)."""
         k = 3
-        self.s.decomposition(algorithm="DaskSVD", output_dimension=k, print_info=False)
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="dask", output_dimension=k, print_info=False
+        )
         lr = self.s.learning_results
         assert lr.factors.shape == (30, k)
         assert lr.loadings.shape == (35, k)
 
     def test_explained_variance_set(self):
-        """explained_variance is populated after DaskSVD."""
-        self.s.decomposition(algorithm="DaskSVD", output_dimension=3, print_info=False)
+        """explained_variance is populated after SVD."""
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="dask", output_dimension=3, print_info=False
+        )
         lr = self.s.learning_results
         assert lr.explained_variance is not None
         assert lr.explained_variance.shape == (3,)
 
     def test_reconstruction_quality(self):
         """First 3 components should reconstruct the (near rank-3) signal well."""
-        self.s.decomposition(algorithm="DaskSVD", output_dimension=3, print_info=False)
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="dask", output_dimension=3, print_info=False
+        )
         lr = self.s.learning_results
         recon = (lr.loadings @ lr.factors.T).reshape(7, 5, 30)
         original = self.s.data.compute()
         rel_error = np.linalg.norm(recon - original) / np.linalg.norm(original)
         assert rel_error < 0.1
 
-    def test_masks_raise_not_implemented(self):
-        """DaskSVD raises NotImplementedError when masks are passed."""
+    def test_navigation_mask(self):
+        """SVD respects navigation_mask: masked rows excluded from SVD."""
         # navigation_shape is reversed vs array shape: data (7,5,30) → nav_shape (5,7)
         nav_mask = np.zeros((5, 7), dtype=bool)
-        nav_mask[0, 0] = True
-        with pytest.raises(
-            NotImplementedError, match="not supported for algorithm='DaskSVD'"
-        ):
-            self.s.decomposition(
-                algorithm="DaskSVD",
-                navigation_mask=nav_mask,
-                print_info=False,
-            )
-        sig_mask = np.zeros(30, dtype=bool)
-        sig_mask[0] = True
-        with pytest.raises(
-            NotImplementedError, match="not supported for algorithm='DaskSVD'"
-        ):
-            self.s.decomposition(
-                algorithm="DaskSVD",
-                signal_mask=sig_mask,
-                print_info=False,
-            )
+        nav_mask[0, :] = True  # mask first row (7 pixels)
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="dask",
+            output_dimension=3,
+            navigation_mask=nav_mask,
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        # Factors computed over 28 unmasked nav positions → shape (30, 3)
+        assert lr.factors.shape == (30, 3)
+        # Loadings only cover unmasked nav pixels during learn pass
+        assert lr.loadings.shape[1] == 3
 
-    def test_centre_raises_not_implemented(self):
-        """DaskSVD raises NotImplementedError when centre is set."""
-        with pytest.raises(NotImplementedError, match="centre is not supported"):
-            self.s.decomposition(
-                algorithm="DaskSVD",
-                centre="navigation",
-                print_info=False,
-            )
+    def test_signal_mask(self):
+        """SVD respects signal_mask: masked channels excluded from SVD."""
+        sig_mask = np.zeros(30, dtype=bool)
+        sig_mask[:5] = True  # mask first 5 channels
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="dask",
+            output_dimension=3,
+            signal_mask=sig_mask,
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        # Factors are stored at full signal size with NaN at masked channels
+        assert lr.factors.shape == (30, 3)
+        assert np.all(np.isnan(lr.factors[:5, :]))
+
+    def test_centre_navigation(self):
+        """SVD supports centre='navigation'."""
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="dask",
+            output_dimension=3,
+            centre="navigation",
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert lr.factors is not None
+        assert lr.factors.shape == (30, 3)
+
+    def test_centre_signal(self):
+        """SVD supports centre='signal'."""
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="dask",
+            output_dimension=3,
+            centre="signal",
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert lr.factors is not None
+        assert lr.factors.shape == (30, 3)
 
     def test_reproject_navigation(self):
-        """reproject='navigation' works for DaskSVD."""
+        """reproject='navigation' works for SVD."""
         self.s.decomposition(
-            algorithm="DaskSVD",
+            algorithm="SVD",
+            svd_solver="dask",
             output_dimension=3,
             reproject="navigation",
             print_info=False,

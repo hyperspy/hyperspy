@@ -1,0 +1,5 @@
+Document the ``svd_solver`` parameter for ``algorithm='SVD'`` on lazy signals:
+``svd_solver='dask'`` uses ``dask.array.linalg.svd`` and builds the computation
+as a **lazy dask task graph** that is not materialised until ``.compute()`` is
+called internally; ``svd_solver='incremental'`` uses
+:class:`~.learn.incremental_svd.ISVD` for mini-batch streaming.

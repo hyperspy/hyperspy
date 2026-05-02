@@ -1,0 +1,8 @@
+For lazy decomposition, ``algorithm='SVD'`` now selects the SVD backend via
+a new ``svd_solver`` parameter: ``svd_solver='dask'`` uses
+``dask.array.linalg.svd`` (current default, lazy task-graph execution) and
+``svd_solver='incremental'`` uses :class:`~.learn.incremental_svd.ISVD`
+(future default in v2.6, mini-batch streaming).  The old aliases
+``algorithm='ISVD'`` and ``algorithm='DaskSVD'`` are deprecated and will be
+removed in v2.6.  Not specifying ``svd_solver`` when using ``algorithm='SVD'``
+also emits a :exc:`DeprecationWarning` to prepare users for the default change.
