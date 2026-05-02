@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import warnings
 from itertools import chain
 
 import numpy as np
@@ -223,6 +224,9 @@ class ORNMF:
     def fit(self, X, batch_size=None):
         """Learn NMF components from the data.
 
+        .. deprecated::
+            Use :meth:`partial_fit` instead.
+
         Parameters
         ----------
         X : array-like
@@ -233,6 +237,16 @@ class ORNMF:
             or less.
 
         """
+        warnings.warn(
+            "ORNMF.fit() is deprecated and will be removed in a future release. "
+            "Use ORNMF.partial_fit() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._fit_impl(X, batch_size=batch_size)
+
+    def _fit_impl(self, X, batch_size=None):
+        """Internal implementation shared by :meth:`fit` and :meth:`partial_fit`."""
         if self.n_features is None:
             X = self._setup(X)
 
@@ -310,6 +324,9 @@ class ORNMF:
     def project(self, X, return_error=False):
         """Project the learnt components on the data.
 
+        .. deprecated::
+            Use :meth:`transform` instead.
+
         Parameters
         ----------
         X : array-like
@@ -320,6 +337,16 @@ class ORNMF:
             the weights (loadings)
 
         """
+        warnings.warn(
+            "ORNMF.project() is deprecated and will be removed in a future release. "
+            "Use ORNMF.transform() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._project_impl(X, return_error=return_error)
+
+    def _project_impl(self, X, return_error=False):
+        """Internal projection shared by :meth:`project` and :meth:`transform`."""
         H = []
         if return_error:
             E = []
@@ -341,7 +368,18 @@ class ORNMF:
             return H
 
     def finish(self):
-        """Return the learnt factors and loadings."""
+        """Return the learnt factors and loadings.
+
+        .. deprecated::
+            Use :attr:`components_` for factors and the result of
+            :meth:`transform` for loadings instead.
+        """
+        warnings.warn(
+            "ORNMF.finish() is deprecated and will be removed in a future release. "
+            "Use ORNMF.components_ for factors and ORNMF.transform() for loadings.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if len(self.H) > 0:
             if len(self.H[0].shape) == 1:
                 H = np.stack(self.H, axis=-1)
@@ -356,20 +394,20 @@ class ORNMF:
     # ------------------------------------------------------------------
 
     def partial_fit(self, X, batch_size=None):
-        """Process one batch of data (sklearn-compatible alias for :meth:`fit`).
+        """Process one batch of data.
 
         Parameters
         ----------
         X : numpy.ndarray, shape (n_samples, n_features)
             Batch of observations.
         batch_size : int or None
-            Forwarded to :meth:`fit`.
+            If not None, split *X* into sub-batches of this size.
 
         Returns
         -------
         self
         """
-        self.fit(X, batch_size=batch_size)
+        self._fit_impl(X, batch_size=batch_size)
         return self
 
     @property
@@ -389,7 +427,7 @@ class ORNMF:
         loadings : numpy.ndarray, shape (n_samples, rank)
             Non-negative coordinates of each sample in the learnt dictionary.
         """
-        return self.project(X).T
+        return self._project_impl(X).T
 
 
 def ornmf(
@@ -465,13 +503,20 @@ def ornmf(
         subspace_momentum=subspace_momentum,
         random_state=random_state,
     )
-    _ornmf.fit(X, batch_size=batch_size)
+    _ornmf.partial_fit(X, batch_size=batch_size)
 
     if project:
         W = _ornmf.W
-        H = _ornmf.project(X)
+        H = _ornmf._project_impl(X)
     else:
-        W, H = _ornmf.finish()
+        H = (
+            np.stack(_ornmf.H, axis=-1)
+            if len(_ornmf.H) > 0 and len(_ornmf.H[0].shape) == 1
+            else np.concatenate(_ornmf.H, axis=1)
+            if len(_ornmf.H) > 0
+            else 1
+        )
+        W = _ornmf.W
 
     if store_error:
         Xhat = W @ H

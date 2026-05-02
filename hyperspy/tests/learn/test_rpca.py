@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from hyperspy.learn._rpca import orpca, rpca_godec
+from hyperspy.learn._rpca import ORPCA, orpca, rpca_godec
 from hyperspy.signals import Signal1D
 
 
@@ -235,3 +235,83 @@ class TestORPCA:
             return_info=True,
         )
         compare_norms(X, self.A.T)
+
+
+class TestORPCASklearnAPI:
+    """Test the sklearn-compatible API (partial_fit / transform / components_)."""
+
+    def setup_method(self, method):
+        m = 128
+        n = 256
+        r = 3
+        s = 0.01
+
+        rng = np.random.RandomState(101)
+        U = scipy.linalg.orth(rng.randn(m, r))
+        V = rng.randn(n, r)
+        A = U @ V.T
+        E = 10 * rng.binomial(1, s, (m, n))
+        X = A + E
+
+        self.m = m
+        self.n = n
+        self.rank = r
+        self.A = A
+        # ORPCA / partial_fit expect (n_samples, n_features)
+        self.X = X.T  # shape (n, m)
+
+    def test_partial_fit_transform(self):
+        """partial_fit then transform gives correct loadings shape."""
+        obj = ORPCA(self.rank)
+        obj.partial_fit(self.X)
+
+        loadings = obj.transform(self.X)
+        assert loadings.shape == (self.n, self.rank)
+
+    def test_components_shape(self):
+        """components_ has shape (rank, n_features) after partial_fit."""
+        obj = ORPCA(self.rank)
+        obj.partial_fit(self.X)
+
+        assert obj.components_.shape == (self.rank, self.m)
+
+    def test_reconstruction(self):
+        """Low-rank reconstruction via components_ and transform is accurate."""
+        obj = ORPCA(self.rank)
+        obj.partial_fit(self.X)
+
+        loadings = obj.transform(self.X)  # (n, rank)
+        Xhat = loadings @ obj.components_  # (n, m)
+        compare_norms(Xhat.T, self.A)
+
+    def test_partial_fit_batch_size(self):
+        """partial_fit with batch_size produces the correct output shapes."""
+        obj = ORPCA(self.rank)
+        obj.partial_fit(self.X, batch_size=16)
+
+        assert obj.components_.shape == (self.rank, self.m)
+        assert obj.transform(self.X).shape == (self.n, self.rank)
+
+    def test_deprecated_fit_warns(self):
+        """ORPCA.fit() raises DeprecationWarning."""
+        obj = ORPCA(self.rank)
+        with pytest.warns(DeprecationWarning, match="ORPCA.fit\\(\\) is deprecated"):
+            obj.fit(self.X)
+
+    def test_deprecated_project_warns(self):
+        """ORPCA.project() raises DeprecationWarning."""
+        obj = ORPCA(self.rank)
+        obj.partial_fit(self.X)
+        with pytest.warns(
+            DeprecationWarning, match="ORPCA.project\\(\\) is deprecated"
+        ):
+            R = obj.project(self.X)
+        assert R.shape == (self.rank, self.n)
+
+    def test_deprecated_finish_warns(self):
+        """ORPCA.finish() raises DeprecationWarning."""
+        obj = ORPCA(self.rank)
+        obj.partial_fit(self.X)
+        with pytest.warns(DeprecationWarning, match="ORPCA.finish\\(\\) is deprecated"):
+            L, R = obj.finish()
+        assert L.shape == (self.m, self.rank)

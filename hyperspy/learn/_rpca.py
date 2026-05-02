@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
+import warnings
 from itertools import chain
 
 import numpy as np
@@ -358,6 +359,9 @@ class ORPCA:
     def fit(self, X, batch_size=None):
         """Learn RPCA components from the data.
 
+        .. deprecated::
+            Use :meth:`partial_fit` instead.
+
         Parameters
         ----------
         X : array-like
@@ -368,6 +372,16 @@ class ORPCA:
             or less.
 
         """
+        warnings.warn(
+            "ORPCA.fit() is deprecated and will be removed in a future release. "
+            "Use ORPCA.partial_fit() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._fit_impl(X, batch_size=batch_size)
+
+    def _fit_impl(self, X, batch_size=None):
+        """Internal implementation shared by :meth:`fit` and :meth:`partial_fit`."""
         if self.n_features is None:
             X = self._setup(X)
 
@@ -432,6 +446,9 @@ class ORPCA:
     def project(self, X, return_error=False):
         """Project the learnt components on the data.
 
+        .. deprecated::
+            Use :meth:`transform` instead.
+
         Parameters
         ----------
         X : array-like
@@ -442,6 +459,16 @@ class ORPCA:
             the weights (loadings)
 
         """
+        warnings.warn(
+            "ORPCA.project() is deprecated and will be removed in a future release. "
+            "Use ORPCA.transform() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._project_impl(X, return_error=return_error)
+
+    def _project_impl(self, X, return_error=False):
+        """Internal projection shared by :meth:`project` and :meth:`transform`."""
         R = []
         if return_error:
             E = []
@@ -463,7 +490,18 @@ class ORPCA:
             return R
 
     def finish(self, **kwargs):
-        """Return the learnt factors and loadings."""
+        """Return the learnt factors and loadings.
+
+        .. deprecated::
+            Use :attr:`components_` for factors and the result of
+            :meth:`transform` for loadings instead.
+        """
+        warnings.warn(
+            "ORPCA.finish() is deprecated and will be removed in a future release. "
+            "Use ORPCA.components_ for factors and ORPCA.transform() for loadings.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if len(self.R) > 0:
             if len(self.R[0].shape) == 1:
                 R = np.stack(self.R, axis=-1)
@@ -478,20 +516,20 @@ class ORPCA:
     # ------------------------------------------------------------------
 
     def partial_fit(self, X, batch_size=None):
-        """Process one batch of data (sklearn-compatible alias for :meth:`fit`).
+        """Process one batch of data.
 
         Parameters
         ----------
         X : numpy.ndarray, shape (n_samples, n_features)
             Batch of observations.
         batch_size : int or None
-            Forwarded to :meth:`fit`.
+            If not None, split *X* into sub-batches of this size.
 
         Returns
         -------
         self
         """
-        self.fit(X, batch_size=batch_size)
+        self._fit_impl(X, batch_size=batch_size)
         return self
 
     @property
@@ -511,7 +549,7 @@ class ORPCA:
         loadings : numpy.ndarray, shape (n_samples, rank)
             Coordinates of each sample in the learnt subspace.
         """
-        return self.project(X).T
+        return self._project_impl(X).T
 
 
 def orpca(
@@ -597,13 +635,22 @@ def orpca(
         subspace_momentum=subspace_momentum,
         random_state=random_state,
     )
-    _orpca.fit(X, batch_size=batch_size)
+    _orpca.partial_fit(X, batch_size=batch_size)
 
     if project:
         L = _orpca.L
-        R = _orpca.project(X)
+        R = _orpca._project_impl(X)
     else:
-        L, R = _orpca.finish()
+        L, R = (
+            _orpca.L,
+            (
+                np.stack(_orpca.R, axis=-1)
+                if len(_orpca.R) > 0 and len(_orpca.R[0].shape) == 1
+                else np.concatenate(_orpca.R, axis=1)
+                if len(_orpca.R) > 0
+                else 1
+            ),
+        )
 
     if store_error:
         Xhat = L @ R
