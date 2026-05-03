@@ -1,7 +1,10 @@
-Update the :ref:`big_data.decomposition` section of the User Guide to document
+ Update the :ref:`big_data.decomposition` section of the User Guide to document
 all three ``svd_solver`` options for ``algorithm='SVD'`` on lazy signals:
 ``'randomized'`` (default, randomised truncated SVD via
 ``dask.array.linalg.svd_compressed``), ``'incremental'`` (out-of-core
 mini-batch streaming via :class:`~hyperspy.learn.incremental_svd.ISVD`), and
 ``'full'`` (exact lazy SVD via ``dask.array.linalg.svd``, reproducing
-pre-v2.5 behaviour).
+pre-v2.5 behaviour).  Update the array-type table to correctly reflect that
+``svd_solver='full'`` with ``reproject`` keeps the unrequested result (factors
+or loadings) as a lazy dask array, rather than computing both to numpy.
+

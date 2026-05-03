@@ -1221,26 +1221,38 @@ class LazySignal(signals.BaseSignal):
            * - ``'SVD'``, ``svd_solver='full'`` (no ``reproject``)
              - **dask** (lazy)
              - **dask** (lazy)
-           * - ``'SVD'``, ``svd_solver='full'`` (with ``reproject``)
+           * - ``'SVD'``, ``svd_solver='full'``, ``reproject='navigation'``
+             - **dask** (lazy)
+             - numpy (computed)
+           * - ``'SVD'``, ``svd_solver='full'``, ``reproject='signal'``
+             - numpy (computed)
+             - **dask** (lazy)
+           * - ``'SVD'``, ``svd_solver='full'``, ``reproject='both'``
              - numpy (computed)
              - numpy (computed)
-           * - ``'PCA'``, ``'NMF'``, ``'ORPCA'``, ``'ORNMF'``, custom
-             - numpy (computed)
-             - numpy (computed)
 
-        **Fully lazy pipeline with** ``svd_solver='full'``
+         **Fully lazy pipeline with** ``svd_solver='full'``
 
-        When ``svd_solver='full'`` is used *without* ``reproject``, the entire
-        pipeline from decomposition to reconstruction can be kept lazy::
+         ``svd_solver='full'`` keeps the entire pipeline lazy — including when
+         ``reproject`` is used.  Reproject steps are performed with dask
+         matmuls that stream over chunks; only the *produced* array (small:
+         ``nav × k`` or ``sig × k``) is computed eagerly.  The unrequested
+         array remains lazy::
 
-            s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
-            # learning_results.factors and .loadings are dask arrays
+             s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
+             # learning_results.factors and .loadings are dask arrays
 
-            model = s.get_decomposition_model()
-            # model is a LazySignal; model.data is a dask array
+             model = s.get_decomposition_model()
+             # model is a LazySignal; model.data is a dask array
 
-            model.save("model.hspy")
-            # triggers computation chunk by chunk while writing to disk
+             model.save("model.hspy")
+             # triggers computation chunk by chunk while writing to disk
+
+             # With reproject: factors stay lazy (only loadings are computed)
+             s.decomposition(algorithm="SVD", svd_solver="full",
+                             output_dimension=3, reproject="navigation")
+             model = s.get_decomposition_model()  # still lazy
+             model.save("model_reprojected.hspy")
 
         See Also
         --------
@@ -1584,6 +1596,9 @@ class LazySignal(signals.BaseSignal):
                     # Build the data matrix, applying masks if present.
                     # After unfold() self.data is 2-D: (nav, sig).
                     D = self.data  # dask array (nav, sig)
+                    # Keep an unmasked reference for reproject use (after fold
+                    # self.data is N-D again, so we capture it here).
+                    _D_unfolded = self.data
                     if nav_mask_1d is not None:
                         D = D[~nav_mask_1d, :]
                     if sig_mask_1d is not None:
@@ -1591,11 +1606,13 @@ class LazySignal(signals.BaseSignal):
 
                     if svd_solver == "full":
                         # Exact full SVD via da.linalg.svd (TSQR algorithm).
-                        # Results are lazy dask arrays until .compute() is called.
-                        # If reproject is requested we materialise them now so the
-                        # shared reproject block (which operates on numpy arrays)
-                        # works correctly.  Without reproject the arrays stay lazy
-                        # and are stored as-is in learning_results.
+                        # TSQR requires the array to be chunked in one dimension
+                        # only (tall-and-skinny: full signal columns per chunk).
+                        # Rechunk the signal dimension to a single chunk if
+                        # needed; the signal axis is typically small so this is
+                        # cheap and does not materialise any data.
+                        if D.numblocks[1] > 1:
+                            D = D.rechunk({1: -1})
                         U, S, V = da.linalg.svd(D)
                         if output_dimension is not None:
                             U = U[:, :output_dimension]
@@ -1604,11 +1621,9 @@ class LazySignal(signals.BaseSignal):
                         factors = V.T
                         explained_variance = S**2 / D.shape[0]
                         loadings = U * S
-                        if reproject is not None:
-                            # Materialise so the reproject block can use numpy ops.
-                            factors = factors.compute()
-                            explained_variance = explained_variance.compute()
-                            loadings = loadings.compute()
+                        # factors/loadings remain as lazy dask arrays.
+                        # The reproject blocks below handle dask arrays directly
+                        # via dask matmuls, so no eager materialisation is needed.
                     else:
                         # Apply centring (not supported for svd_solver='full').
                         if centre == "navigation":
@@ -1742,9 +1757,28 @@ class LazySignal(signals.BaseSignal):
             # REPROJECT NAVIGATION (recompute loadings over full nav)
             _nav_reprojected = False
             if reproject in ("navigation", "both"):
-                if algorithm == "SVD" and svd_solver in ("randomized", "full"):
-                    # dask SVD has no obj.transform; project via factors directly.
-                    # loadings = D @ factors  (factors shape: n_sig × k)
+                if algorithm == "SVD" and svd_solver == "full":
+                    # factors is a dask array (n_sig × k); _D_unfolded is the
+                    # unfolded dask array (nav × sig) captured before fold().
+                    # Apply signal mask in the column dimension only (all nav
+                    # rows included) and compute the matmul lazily — dask
+                    # streams over nav chunks without materialising the full matrix.
+                    import dask.array as da
+
+                    D_nav = _D_unfolded  # (nav, sig)
+                    if sig_mask_1d is not None:
+                        D_nav = D_nav[:, ~sig_mask_1d]
+                    # factors may still be a dask array here
+                    _factors_da = (
+                        factors
+                        if isinstance(factors, da.Array)
+                        else da.from_array(factors)
+                    )
+                    # Result shape: (nav, k) — small; compute to get numpy array
+                    loadings = (D_nav @ _factors_da).compute()
+                elif algorithm == "SVD" and svd_solver == "randomized":
+                    # factors is a numpy array (n_sig × k); iterate chunks and
+                    # project via matrix multiply (no obj.transform available).
                     D_chunks = []
                     for chunk in progressbar(
                         self._block_iterator(
@@ -1828,48 +1862,74 @@ class LazySignal(signals.BaseSignal):
             if reproject in ("signal", "both"):
                 # All algorithms support signal reprojection via the pseudo-
                 # inverse: factors = pinv(loadings) @ D_full_signal.
-                # Collect all navigation-unmasked rows with the full signal
-                # (no signal mask), then solve: factors = pinv(L) @ D_full
-                # This mirrors the non-lazy SVD path in _mva.py line 596.
-                D_chunks = []
-                for chunk in progressbar(
-                    self._block_iterator(
-                        flat_signal=True,
-                        get=get,
-                        signal_mask=None,
-                        navigation_mask=_navigation_mask_for_reproject,
-                    ),
-                    total=nblocks,
-                    leave=True,
-                    desc="Reproject signal",
-                ):
-                    D_chunks.append(chunk)
-                D = np.concatenate(D_chunks, axis=0)  # (n_unmasked_nav, sig_size)
-                if mean is not None:
-                    # mean may be 2-D (keepdims=True from centre='navigation');
-                    # ravel to 1-D so length and boolean-index assignment work.
-                    mean_1d = np.asarray(mean).ravel()
-                    # mean_1d was computed over unmasked signal channels only;
-                    # expand to full signal size (zeros at masked positions)
-                    # so it can be broadcast against D which covers all channels.
-                    if _flat_sig_mask is not None and len(mean_1d) < D.shape[1]:
-                        mean_full = np.zeros(D.shape[1], dtype=mean_1d.dtype)
-                        mean_full[~_flat_sig_mask] = mean_1d
-                        D = D - mean_full
+                # This mirrors the non-lazy SVD path in _mva.py.
+                if algorithm == "SVD" and svd_solver == "full":
+                    # Use dask to avoid materialising the full data matrix.
+                    # _D_unfolded is the unfolded dask array (nav, sig) captured
+                    # before fold().  Apply nav mask only (full signal needed).
+                    import dask.array as da
+
+                    D_sig = _D_unfolded  # (nav, sig)
+                    if nav_mask_1d is not None:
+                        D_sig = D_sig[~nav_mask_1d, :]
+                    if reproject == "both":
+                        # loadings covers all nav after nav-reproject; restrict
+                        # to unmasked rows before computing pinv.
+                        if _flat_nav_mask is not None:
+                            L = loadings[~_flat_nav_mask, :]
+                        else:
+                            L = loadings
                     else:
-                        D = D - mean_1d
-                # loadings here has shape (n_unmasked_nav, n_components)
-                # (either from the learn pass or from reproject='navigation')
-                if reproject == "both":
-                    # loadings already covers all nav positions after the
-                    # 'navigation' reproject above; restrict to unmasked rows
-                    if _flat_nav_mask is not None:
-                        L = loadings[~_flat_nav_mask, :]
-                    else:
-                        L = loadings
+                        L = loadings  # already unmasked-nav only
+                    # pinv(L) is (k, n_unmasked_nav) — small; compute eagerly.
+                    pinv_L = np.linalg.pinv(
+                        L.compute() if isinstance(L, da.Array) else L
+                    )
+                    # (k, n_unmasked_nav) @ (n_unmasked_nav, sig) = (k, sig)
+                    # Dask streams over nav chunks; result is small.
+                    factors = (da.from_array(pinv_L) @ D_sig).T.compute()
                 else:
-                    L = loadings  # already unmasked-nav only
-                factors = (np.linalg.pinv(L) @ D).T
+                    # Collect all navigation-unmasked rows with the full signal
+                    # (no signal mask), then solve: factors = pinv(L) @ D_full
+                    D_chunks = []
+                    for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=None,
+                            navigation_mask=_navigation_mask_for_reproject,
+                        ),
+                        total=nblocks,
+                        leave=True,
+                        desc="Reproject signal",
+                    ):
+                        D_chunks.append(chunk)
+                    D = np.concatenate(D_chunks, axis=0)  # (n_unmasked_nav, sig_size)
+                    if mean is not None:
+                        # mean may be 2-D (keepdims=True from centre='navigation');
+                        # ravel to 1-D so length and boolean-index assignment work.
+                        mean_1d = np.asarray(mean).ravel()
+                        # mean_1d was computed over unmasked signal channels only;
+                        # expand to full signal size (zeros at masked positions)
+                        # so it can be broadcast against D which covers all channels.
+                        if _flat_sig_mask is not None and len(mean_1d) < D.shape[1]:
+                            mean_full = np.zeros(D.shape[1], dtype=mean_1d.dtype)
+                            mean_full[~_flat_sig_mask] = mean_1d
+                            D = D - mean_full
+                        else:
+                            D = D - mean_1d
+                    # loadings here has shape (n_unmasked_nav, n_components)
+                    # (either from the learn pass or from reproject='navigation')
+                    if reproject == "both":
+                        # loadings already covers all nav positions after the
+                        # 'navigation' reproject above; restrict to unmasked rows
+                        if _flat_nav_mask is not None:
+                            L = loadings[~_flat_nav_mask, :]
+                        else:
+                            L = loadings
+                    else:
+                        L = loadings  # already unmasked-nav only
+                    factors = (np.linalg.pinv(L) @ D).T
                 _signal_reprojected = True
 
             if explained_variance is not None and explained_variance_ratio is None:
@@ -2027,108 +2087,11 @@ class LazySignal(signals.BaseSignal):
         if return_info:
             return obj if algorithm != "SVD" else None
 
-    def _calculate_recmatrix(self, components=None, mva_type="decomposition"):
-        """Reconstruct the data matrix from decomposition components.
-
-        Overrides the base-class implementation to propagate lazy dask arrays
-        when ``learning_results.factors`` and ``learning_results.loadings`` are
-        dask arrays (as produced by ``svd_solver='full'`` without
-        ``reproject``).  In that case the returned signal is a
-        :class:`~hyperspy.api.signals.LazySignal` whose ``.data`` is a lazy
-        dask array — no computation is triggered until ``.compute()`` or
-        ``.save()`` is called.
-
-        When factors and loadings are numpy arrays (all other solvers) the
-        behaviour is identical to the base class.
-
-        Parameters
-        ----------
-        components : None, int or list of int, default None
-            * ``None``: use all components.
-            * ``int``: use the first *N* components.
-            * list of int: use the components at the given indices.
-        mva_type : str, default ``'decomposition'``
-            ``'decomposition'`` or ``'bss'``.
-
-        Returns
-        -------
-        :class:`~hyperspy.api.signals.BaseSignal` or subclass
-            Reconstructed signal.  If factors/loadings are dask arrays the
-            returned object is a lazy signal.
-        """
-        import dask.array as da
-
-        target = self.learning_results
-
-        if mva_type.lower() == "decomposition":
-            factors = target.factors
-            loadings = target.loadings.T
-        elif mva_type.lower() == "bss":
-            factors = target.bss_factors
-            loadings = target.bss_loadings.T
-
-        _is_lazy = isinstance(factors, da.Array) or isinstance(loadings, da.Array)
-
-        if components is None:
-            a = factors @ loadings
-            signal_name = f"model from {mva_type} with {factors.shape[1]} components"
-        elif hasattr(components, "__iter__"):
-            idx = list(components)
-            if _is_lazy:
-                # Fancy index on dask arrays: slice and concatenate columns/rows.
-                tfactors = da.concatenate([factors[:, i : i + 1] for i in idx], axis=1)
-                tloadings = da.concatenate(
-                    [loadings[i : i + 1, :] for i in idx], axis=0
-                )
-            else:
-                tfactors = np.zeros((factors.shape[0], len(idx)))
-                tloadings = np.zeros((len(idx), loadings.shape[1]))
-                for k, i in enumerate(idx):
-                    tfactors[:, k] = factors[:, i]
-                    tloadings[k, :] = loadings[i, :]
-            a = tfactors @ tloadings
-            signal_name = f"model from {mva_type} with components {components}"
-        else:
-            a = factors[:, :components] @ loadings[:components, :]
-            signal_name = f"model from {mva_type} with {components} components"
-
-        self._unfolded4decomposition = self.unfold()
-        try:
-            sc = self.deepcopy()
-            sc.data = a.T.reshape(self.data.shape)
-            sc.metadata.General.title += " " + signal_name
-            if target.mean is not None:
-                sc.data = sc.data + target.mean
-        finally:
-            if self._unfolded4decomposition:
-                self.fold()
-                sc.fold()
-                self._unfolded4decomposition = False
-
-        # Ensure the returned signal type matches the data: if data is a dask
-        # array, return a LazySignal regardless of what deepcopy produced.
-        if _is_lazy and not sc._lazy:
-            sc = sc.as_lazy()
-
-        return sc
-
-    def get_decomposition_model(self, components=None):
+    def get_decomposition_model(self, components=None, lazy=None):
         """Generate model with the selected number of principal components.
 
-        If ``learning_results.factors`` and ``learning_results.loadings`` are
-        dask arrays (as produced by ``svd_solver='full'`` without
-        ``reproject``), the returned signal is a
-        :class:`~hyperspy.api.signals.LazySignal` whose ``.data`` is a lazy
-        dask array.  No computation is triggered until ``.compute()`` or
-        ``.save()`` is called, enabling a fully lazy pipeline::
-
-            s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
-            model = s.get_decomposition_model()   # lazy signal
-            model.save("model.hspy")              # computes chunk-by-chunk
-
-        For all other solvers, factors and loadings are numpy arrays and the
-        returned signal is an eager (non-lazy) signal, identical to the
-        base-class behaviour.
+        Delegates to the base-class implementation, which handles both lazy
+        and non-lazy signals via the ``lazy`` keyword argument.
 
         Parameters
         ----------
@@ -2136,14 +2099,18 @@ class LazySignal(signals.BaseSignal):
             * ``None``: use all components.
             * ``int``: use the first *N* components.
             * list of int: use the components at the given indices.
+        lazy : bool or None, default None
+            Whether to return a lazy signal.  ``None`` means lazy if the
+            signal itself is lazy, eager otherwise.
 
         Returns
         -------
         :class:`~hyperspy.api.signals.BaseSignal` or subclass
-            Reconstructed signal.  Lazy if factors/loadings are dask arrays.
+            Reconstructed signal.  Lazy if ``lazy=True`` or if the signal is
+            lazy and ``lazy`` is ``None``.
         """
         return self._calculate_recmatrix(
-            components=components, mva_type="decomposition"
+            components=components, mva_type="decomposition", lazy=lazy
         )
 
     def plot(self, navigator="auto", **kwargs):

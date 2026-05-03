@@ -34,3 +34,15 @@
 - Add ``svd_solver`` and ``auto_transpose`` parameters to
   :meth:`~hyperspy.api.signals.LazySignal.decomposition` for API parity with
   the non-lazy interface.
+- Add a ``lazy`` keyword argument to
+  :meth:`~hyperspy.api.signals.BaseSignal.get_decomposition_model` (and the
+  underlying ``_calculate_recmatrix``).  ``lazy=True`` forces a lazy dask-backed
+  signal even when factors/loadings are numpy arrays (they are wrapped with
+  ``da.from_array`` locally, without mutating ``learning_results``); ``lazy=False``
+  forces an eager signal even on a lazy input; ``lazy=None`` (default) auto-detects
+  based on whether the signal is lazy.
+- The ``reproject`` steps for ``svd_solver='full'`` now use dask matmuls
+  instead of materialising the full data matrix via chunk loops.  Only the
+  small result array (``nav × k`` loadings or ``sig × k`` factors) is
+  computed eagerly; the unrequested array remains a lazy dask array, keeping
+  the end-to-end pipeline lazy even when ``reproject`` is used.

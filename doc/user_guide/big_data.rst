@@ -261,7 +261,13 @@ After :meth:`~.api.signals.LazySignal.decomposition` completes,
    * - ``'SVD'``, ``svd_solver='full'``, no ``reproject``
      - **dask** (lazy)
      - **dask** (lazy)
-   * - ``'SVD'``, ``svd_solver='full'``, with ``reproject``
+   * - ``'SVD'``, ``svd_solver='full'``, ``reproject='navigation'``
+     - **dask** (lazy)
+     - numpy (computed)
+   * - ``'SVD'``, ``svd_solver='full'``, ``reproject='signal'``
+     - numpy (computed)
+     - **dask** (lazy)
+   * - ``'SVD'``, ``svd_solver='full'``, ``reproject='both'``
      - numpy (computed)
      - numpy (computed)
    * - ``'PCA'``, ``'NMF'``, ``'ORPCA'``, ``'ORNMF'``, custom
@@ -273,13 +279,19 @@ After :meth:`~.api.signals.LazySignal.decomposition` completes,
 Fully lazy pipeline
 """""""""""""""""""
 
-``svd_solver='full'`` without ``reproject`` is the only configuration that
-keeps the entire pipeline lazy from decomposition through to model
-reconstruction and saving.  Because :meth:`~.api.signals.LazySignal.decomposition`
-leaves ``factors`` and ``loadings`` as dask arrays, calling
-:meth:`~.api.signals.LazySignal.get_decomposition_model` returns a
-:class:`~hyperspy.api.signals.LazySignal` whose ``.data`` is a dask array.
-No data is materialised until ``.compute()`` or ``.save()`` is called:
+``svd_solver='full'`` keeps the entire pipeline lazy from decomposition
+through to model reconstruction and saving — including when ``reproject`` is
+used.  :meth:`~.api.signals.LazySignal.decomposition` leaves factors and
+loadings as dask arrays, and the reproject steps (when requested) are
+performed with dask matmuls that stream over chunks without materialising the
+full dataset.  Only the array that is *produced* by a reproject step is
+computed eagerly (it is typically small: ``nav × k`` for loadings or
+``sig × k`` for factors).  The unrequested array stays lazy.
+
+Calling :meth:`~.api.signals.BaseSignal.get_decomposition_model` then returns
+a :class:`~hyperspy.api.signals.LazySignal` whose ``.data`` is a dask array.
+No full-dataset materialisation occurs until ``.compute()`` or ``.save()`` is
+called:
 
 .. code-block:: python
 
@@ -298,11 +310,45 @@ No data is materialised until ``.compute()`` or ``.save()`` is called:
    >>> model3 = s.get_decomposition_model(components=3) # doctest: +SKIP
    >>> model3.save("model3.hspy") # doctest: +SKIP
 
+   # With reproject: reprojection itself is lazy too.
+   # Factors stay lazy (only loadings are computed by nav-reproject).
+   >>> s.decomposition(algorithm="SVD", svd_solver="full",
+   ...                 output_dimension=3,
+   ...                 reproject="navigation") # doctest: +SKIP
+   >>> model = s.get_decomposition_model()  # still lazy # doctest: +SKIP
+   >>> model.save("model_reprojected.hspy") # doctest: +SKIP
+
 For comparison, ``svd_solver='randomized'`` (the default) and
 ``svd_solver='incremental'`` always compute numpy arrays during
 decomposition, so ``get_decomposition_model()`` returns an eager signal.
 Use ``svd_solver='full'`` when the reconstructed model is too large to
 fit in memory and you want to stream it to disk via ``save()``.
+
+The ``lazy`` keyword argument of
+:meth:`~.api.signals.BaseSignal.get_decomposition_model` gives explicit
+control over the laziness of the returned signal, regardless of the solver
+or whether the input signal is lazy:
+
+- ``lazy=None`` (default): auto-detect — lazy if the signal is lazy, eager
+  otherwise.
+- ``lazy=True``: always return a lazy signal.  If factors/loadings are numpy
+  arrays (e.g. from ``svd_solver='randomized'``) they are wrapped in dask
+  arrays locally without modifying ``learning_results``.  Useful when a
+  non-lazy decomposition was run but the model is too large to materialise:
+
+  .. code-block:: python
+
+     s.decomposition(algorithm="SVD", svd_solver="randomized", output_dimension=3)
+     model = s.get_decomposition_model(lazy=True)  # force lazy
+     model.save("model.hspy")  # streams chunk-by-chunk
+
+- ``lazy=False``: always return an eager (non-lazy) signal, computing
+  immediately.  Use this on a lazy signal when you need the model in memory:
+
+  .. code-block:: python
+
+     s.decomposition(algorithm="SVD", svd_solver="full")
+     model = s.get_decomposition_model(lazy=False)  # trigger computation now
 
 .. note::
 

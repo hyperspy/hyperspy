@@ -2164,8 +2164,10 @@ class TestLazyGetDecompositionModel:
         assert isinstance(lr.factors, da.Array), "factors should be a dask array"
         assert isinstance(lr.loadings, da.Array), "loadings should be a dask array"
 
-    def test_factors_loadings_are_numpy_with_reproject(self):
-        """svd_solver='full' with reproject computes factors/loadings to numpy."""
+    def test_factors_loadings_after_reproject_navigation(self):
+        """svd_solver='full' with reproject='navigation': loadings computed to
+        numpy, factors remain lazy (signal reproject was not requested)."""
+        import dask.array as da
 
         self.s.decomposition(
             algorithm="SVD",
@@ -2175,11 +2177,50 @@ class TestLazyGetDecompositionModel:
             print_info=False,
         )
         lr = self.s.learning_results
+        assert isinstance(lr.loadings, np.ndarray), (
+            "loadings should be numpy after reproject='navigation'"
+        )
+        assert isinstance(lr.factors, da.Array), (
+            "factors should remain lazy dask array when only nav-reproject was done"
+        )
+
+    def test_factors_loadings_after_reproject_signal(self):
+        """svd_solver='full' with reproject='signal': factors computed to
+        numpy, loadings remain lazy (nav reproject was not requested)."""
+        import dask.array as da
+
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            reproject="signal",
+            print_info=False,
+        )
+        lr = self.s.learning_results
         assert isinstance(lr.factors, np.ndarray), (
-            "factors should be numpy after reproject"
+            "factors should be numpy after reproject='signal'"
+        )
+        assert isinstance(lr.loadings, da.Array), (
+            "loadings should remain lazy dask array when only signal-reproject was done"
+        )
+
+    def test_factors_loadings_after_reproject_both(self):
+        """svd_solver='full' with reproject='both': both factors and loadings
+        are computed to numpy arrays."""
+
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            reproject="both",
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert isinstance(lr.factors, np.ndarray), (
+            "factors should be numpy after reproject='both'"
         )
         assert isinstance(lr.loadings, np.ndarray), (
-            "loadings should be numpy after reproject"
+            "loadings should be numpy after reproject='both'"
         )
 
     def test_get_decomposition_model_returns_lazy_signal(self):
@@ -2251,3 +2292,29 @@ class TestLazyGetDecompositionModel:
         assert isinstance(lr.loadings, np.ndarray), (
             "loadings should be numpy for randomized solver"
         )
+
+    def test_full_svd_with_signal_chunked_data(self):
+        """svd_solver='full' works even when the signal dimension is chunked.
+
+        da.linalg.svd (TSQR) requires chunking in one dimension only.  HyperSpy
+        should transparently rechunk the signal axis to a single chunk before
+        calling svd, so users never need to think about this.
+        """
+        import dask.array as da
+
+        rng = np.random.default_rng(7)
+        data = da.from_array(
+            rng.random((7, 5, 30)),
+            chunks=(4, 3, 15),  # signal dim chunked
+        )
+        s = Signal1D(data).as_lazy()
+        # Should not raise NotImplementedError
+        s.decomposition(
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
+        )
+        lr = s.learning_results
+        assert isinstance(lr.factors, da.Array)
+        assert isinstance(lr.loadings, da.Array)
+        model = s.get_decomposition_model()
+        assert model._lazy
+        assert model.data.shape == s.data.shape
