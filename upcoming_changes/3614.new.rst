@@ -8,8 +8,8 @@ Improve lazy signal decomposition:
   control mean-centring before decomposition, consistent with the non-lazy
   interface.
 - Navigation and signal masks are now respected during lazy SVD.
-- Add :meth:`~hyperspy._signals.lazy.LazySignal.normalize_poissonian_noise` as
-  a dedicated method on :class:`~hyperspy._signals.lazy.LazySignal`, available
+- Add :meth:`~hyperspy.api.signals.LazySignal.normalize_poissonian_noise` as
+  a dedicated method on :class:`~hyperspy.api.signals.LazySignal`, available
   independently of decomposition.
 - Implement ``reproject='signal'`` for all lazy decomposition algorithms:
   after learning on signal-masked data, the full signal (including masked
@@ -28,5 +28,5 @@ Improve lazy signal decomposition:
   in chunks, for users who need the purely graph-based path.
   ``output_dimension`` is optional; masks and ``centre`` are not supported.
 - Add ``svd_solver`` and ``auto_transpose`` parameters to
-  :meth:`~hyperspy._signals.lazy.LazySignal.decomposition` for API parity with
+  :meth:`~hyperspy.api.signals.LazySignal.decomposition` for API parity with
   the non-lazy interface.

@@ -66,13 +66,13 @@ class ISVD:
 
     Attributes
     ----------
-    singular_values_ : ndarray, shape (n_components,)
+    singular_values_ : ndarray of shape (n_components,)
         Singular values after fitting.
-    components_ : ndarray, shape (n_components, n_features)
+    components_ : ndarray of shape (n_components, n_features)
         Right singular vectors (rows are components).
-    explained_variance_ : ndarray, shape (n_components,)
+    explained_variance_ : ndarray of shape (n_components,)
         Approximate explained variance per component.
-    explained_variance_ratio_ : ndarray, shape (n_components,)
+    explained_variance_ratio_ : ndarray of shape (n_components,)
         Fraction of total variance explained by each component.
 
     Examples
@@ -119,7 +119,7 @@ class ISVD:
 
         Parameters
         ----------
-        X : ndarray, shape (n_batch, n_features)
+        X : ndarray of shape (n_batch, n_features)
         """
         self._obj.partial_fit(X)
         return self
@@ -129,11 +129,11 @@ class ISVD:
 
         Parameters
         ----------
-        X : ndarray, shape (n_samples, n_features)
+        X : ndarray of shape (n_samples, n_features)
 
         Returns
         -------
-        loadings : ndarray, shape (n_samples, n_components)
+        loadings : ndarray of shape (n_samples, n_components)
         """
         return self._obj.transform(X)
 

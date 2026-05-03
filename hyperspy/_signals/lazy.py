@@ -942,7 +942,7 @@ class LazySignal(signals.BaseSignal):
 
         See Also
         --------
-        :meth:`~hyperspy.learn._mva.MVA.normalize_poissonian_noise` :
+        :meth:`~hyperspy.api.signals.Signal1D.normalize_poissonian_noise` :
             Non-lazy equivalent.
         """
         import dask.array as da
