@@ -178,7 +178,9 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
    * - ``'randomized'`` (**default**)
      - :func:`dask.array.linalg.svd_compressed` — **randomised truncated SVD**.
        Builds a dask task graph, then materialises only the top-*k* singular
-       vectors.  Fastest in practice with moderate memory use.
+       vectors.  **Best general-purpose choice**: fast decomposition and low
+       peak memory relative to the dataset size, at the cost of a small
+       approximation error in the singular vectors.
        ``output_dimension`` is **required**.
        Supports ``centre``, navigation/signal masks, and ``reproject``.
        Requires the unfolded array to be chunked in one dimension only;
@@ -186,16 +188,20 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
    * - ``'incremental'``
      - :class:`~hyperspy.learn.incremental_svd.ISVD` — **incremental (out-of-core)**:
        streams the data one mini-batch at a time so that only a small number of
-       chunks reside in memory simultaneously.  Lowest peak memory of the three
-       solvers; deterministic result; supports ``centre``, masks, and all
-       ``reproject`` modes.
+       chunks reside in memory simultaneously.  **Lowest peak memory** of the
+       three solvers — the best choice when RAM is the primary constraint —
+       at the cost of significantly longer wall-clock time.  Result is
+       deterministic.  Supports ``centre``, masks, and all ``reproject`` modes.
        ``output_dimension`` is **required**.
    * - ``'full'``
      - :func:`dask.array.linalg.svd` — **exact full SVD** (TSQR algorithm).
        Returns *lazy* dask arrays — no computation is triggered until
        ``.compute()`` is called on the results (or until ``reproject`` is
        used, which materialises the arrays internally).  Reproduces the
-       behaviour of HyperSpy prior to v2.5.
+       behaviour of HyperSpy prior to v2.5.  Provides exact singular values
+       but requires substantially more memory than ``'randomized'`` and is
+       considerably slower; prefer ``'randomized'`` unless exact SVD
+       factorisation is required.
        ``output_dimension`` is **optional** (all components are returned if
        omitted, but materialising them requires significantly more memory).
        Supports navigation and signal masks and ``reproject``.  Does not
