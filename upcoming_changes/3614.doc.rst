@@ -1,7 +1,7 @@
 Add a :ref:`mva.masks_and_reproject` section to the User Guide documenting
 navigation and signal masks, the ``reproject`` parameter, and how ``NaN``
 positions are filled after decomposition.  Improve the
-:ref:`big_data.decomposition` section with a detailed description of the
-:class:`~.learn.incremental_svd.ISVD` algorithm, the rationale for making it
-the default lazy ``"SVD"`` backend, and dedicated sub-sections for NMF,
-custom estimators, and Poissonian noise normalisation.
+:ref:`big_data.decomposition` section with a detailed description of the three
+``svd_solver`` options (``'randomized'``, ``'incremental'``,  ``'full'``) and
+dedicated sub-sections for NMF, custom estimators, and Poissonian noise
+normalisation.

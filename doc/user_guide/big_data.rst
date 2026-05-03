@@ -133,14 +133,13 @@ Machine learning
 
 :ref:`mva.decomposition` algorithms for machine learning often perform
 large matrix manipulations, requiring significantly more memory than the data size.
-To decompose datasets that are larger than available RAM, HyperSpy provides two
-complementary strategies for lazy signals:
-
-- **Deferred (lazy graph)**: the computation is expressed as a dask task graph and
-  only executed when `.compute()` is called — either explicitly by the user or
-  internally by HyperSpy.  No data is moved until that point.
-- **Incremental (out-of-core)**: the algorithm streams the data one chunk (mini-batch)
-  at a time, so only a small portion of the data resides in memory at once.
+To decompose datasets that are larger than available RAM, HyperSpy's lazy
+decomposition algorithms minimise memory use in one of two ways: by building a
+**deferred task graph** (computation is expressed as a dask graph and only
+executed when ``.compute()`` is called) or by **streaming** the data one
+mini-batch at a time so that only a small portion resides in memory at once.
+Which strategy is used depends on the algorithm and, for ``algorithm='SVD'``,
+on the ``svd_solver`` parameter (see :ref:`big_data.svd`).
 
 :meth:`~.api.signals.LazySignal.decomposition` offers the following algorithms:
 
@@ -149,7 +148,7 @@ complementary strategies for lazy signals:
 .. table:: Available lazy decomposition algorithms in HyperSpy
 
    +--------------------------+-----------------------------------------------------------+
-   | ``"SVD"`` (default)      | See ``svd_solver`` below; two backends available          |
+   | ``"SVD"`` (default)      | See ``svd_solver`` below; three solvers available         |
    +--------------------------+-----------------------------------------------------------+
    | ``"PCA"``                | :class:`sklearn.decomposition.IncrementalPCA`             |
    +--------------------------+-----------------------------------------------------------+
@@ -167,7 +166,7 @@ complementary strategies for lazy signals:
 SVD (``algorithm='SVD'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The default ``algorithm='SVD'`` supports two backends, selected via
+The default ``algorithm='SVD'`` supports three solvers, selected via
 ``svd_solver``:
 
 .. list-table::
@@ -175,42 +174,54 @@ The default ``algorithm='SVD'`` supports two backends, selected via
    :widths: 20 80
 
    * - ``svd_solver``
-     - Backend
-   * - ``'dask'`` (**current default**, deprecated — will change to
-       ``'incremental'`` in v2.6)
-     - :func:`dask.array.linalg.svd` — **deferred**: builds the full SVD as a
-       lazy dask task graph (using the TSQR algorithm for multi-chunk arrays).
-       No data is moved and no computation is performed until ``.compute()`` is
-       called explicitly; this allows dask to optimise the entire graph
-       before execution.
-       ``output_dimension`` is **optional** (all components up to
-       ``min(nav_size, sig_size)`` are returned if omitted).
-       Requires the unfolded array to be chunked in one dimension only
-       (tall-and-skinny or short-and-fat); use ``'incremental'`` for arrays
-       chunked in both dimensions.
-   * - ``'incremental'`` (future default in v2.6)
+     - Description
+   * - ``'randomized'`` (**default**)
+     - :func:`dask.array.linalg.svd_compressed` — **randomised truncated SVD**.
+       Builds a dask task graph, then materialises only the top-*k* singular
+       vectors.  Fastest in practice with moderate memory use.
+       ``output_dimension`` is **required**.
+       Does not support ``centre``, masks, or ``reproject``.
+       Requires the unfolded array to be chunked in one dimension only;
+       use ``'incremental'`` for arrays chunked in both dimensions.
+   * - ``'incremental'``
      - :class:`~hyperspy.learn.incremental_svd.ISVD` — **incremental (out-of-core)**:
        streams the data one mini-batch at a time so that only a small number of
-       chunks reside in memory simultaneously.
+       chunks reside in memory simultaneously.  Lowest peak memory of the three
+       solvers; deterministic result; supports ``centre``, masks, and all
+       ``reproject`` modes.
        ``output_dimension`` is **required**.
+   * - ``'full'``
+     - :func:`dask.array.linalg.svd` — **exact full SVD** (TSQR algorithm).
+       Returns *lazy* dask arrays — no computation is triggered until
+       ``.compute()`` is called on the results.  Reproduces the behaviour of
+       HyperSpy prior to v2.5.
+       ``output_dimension`` is **optional** (all components are returned if
+       omitted, but materialising them requires significantly more memory).
+       Does not support ``centre``, masks, or ``reproject``.
 
 .. versionchanged:: 2.5
-   The ``svd_solver`` parameter now selects between the dask and incremental
-   SVD backends.  The default is currently ``'dask'`` but will change to
-   ``'incremental'`` in v2.6.  The old ``algorithm`` aliases ``'DaskSVD'``
-   and ``'ISVD'`` are deprecated and will be removed in v2.6.
+   The ``svd_solver`` parameter was introduced, offering three backends:
+   ``'randomized'`` (default, fast randomised truncated SVD),
+   ``'incremental'`` (lowest memory, out-of-core streaming), and
+   ``'full'`` (exact SVD, lazy dask output, reproduces pre-v2.5 behaviour).
 
 .. code-block:: python
 
-   # Dask SVD (current default) — output_dimension optional
-   >>> s.decomposition(algorithm="SVD", svd_solver="dask") # doctest: +SKIP
-   >>> s.decomposition(algorithm="SVD", svd_solver="dask", output_dimension=10) # doctest: +SKIP
+   # Randomised SVD (default) — output_dimension required
+   >>> s.decomposition(algorithm="SVD", output_dimension=10) # doctest: +SKIP
+   >>> s.decomposition(algorithm="SVD", svd_solver="randomized",
+   ...                 output_dimension=10) # doctest: +SKIP
 
-   # Incremental SVD (future default) — output_dimension required
+   # Incremental SVD — output_dimension required; supports masks and centring
    >>> s.decomposition(algorithm="SVD", svd_solver="incremental",
    ...                 output_dimension=10) # doctest: +SKIP
 
-   # With navigation masking and mean-centring (both backends)
+   # Full SVD — output_dimension optional; returns lazy dask arrays
+   >>> s.decomposition(algorithm="SVD", svd_solver="full") # doctest: +SKIP
+   >>> s.decomposition(algorithm="SVD", svd_solver="full",
+   ...                 output_dimension=10) # doctest: +SKIP
+
+   # With navigation masking and mean-centring (incremental solver)
    >>> import numpy as np
    >>> nav_mask = np.zeros(s.axes_manager.navigation_shape[::-1], dtype=bool)
    >>> nav_mask[0] = True  # exclude first row

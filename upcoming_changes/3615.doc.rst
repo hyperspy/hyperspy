@@ -1,5 +1,7 @@
-Document the ``svd_solver`` parameter for ``algorithm='SVD'`` on lazy signals:
-``svd_solver='dask'`` uses ``dask.array.linalg.svd`` and builds the computation
-as a **lazy dask task graph** that is not materialised until ``.compute()`` is
-called internally; ``svd_solver='incremental'`` uses
-:class:`~hyperspy.learn.incremental_svd.ISVD` for mini-batch streaming.
+Update the :ref:`big_data.decomposition` section of the User Guide to document
+all three ``svd_solver`` options for ``algorithm='SVD'`` on lazy signals:
+``'randomized'`` (default, randomised truncated SVD via
+``dask.array.linalg.svd_compressed``), ``'incremental'`` (out-of-core
+mini-batch streaming via :class:`~hyperspy.learn.incremental_svd.ISVD`), and
+``'full'`` (exact lazy SVD via ``dask.array.linalg.svd``, reproducing
+pre-v2.5 behaviour).
