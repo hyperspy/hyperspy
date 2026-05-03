@@ -2116,3 +2116,28 @@ class TestSVDFullSolver:
         )
         assert factors.shape == (30, k)
         assert loadings.shape == (35, k)
+
+    def test_centre_raises(self):
+        """svd_solver='full' raises ValueError when centre is set."""
+        with pytest.raises(
+            ValueError, match="svd_solver='full' does not support centre"
+        ):
+            self.s.decomposition(
+                algorithm="SVD",
+                svd_solver="full",
+                centre="navigation",
+                print_info=False,
+            )
+
+    def test_reproject_raises(self):
+        """svd_solver='full' raises ValueError when reproject is set."""
+        with pytest.raises(
+            ValueError, match="svd_solver='full' does not support reproject"
+        ):
+            self.s.decomposition(
+                algorithm="SVD",
+                svd_solver="full",
+                reproject="navigation",
+                output_dimension=3,
+                print_info=False,
+            )

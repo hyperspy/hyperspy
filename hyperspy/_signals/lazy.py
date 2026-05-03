@@ -1141,17 +1141,18 @@ class LazySignal(signals.BaseSignal):
               graph, then materialises only the top-*k* singular vectors.
               Fast in practice (typically the fastest of the three options)
               with moderate memory use.  ``output_dimension`` is required.
-              Does not support ``centre``, ``auto_transpose``, masks, or
+              Supports ``centre``, navigation/signal masks, and
               ``reproject``.  Requires the unfolded array to be chunked in
               one dimension only; arrays chunked in both dimensions raise
               :exc:`NotImplementedError`.
 
               *Advantages*: fastest; graph-based scheduling lets dask
-              optimise I/O and computation together.
+              optimise I/O and computation together; supports masking and
+              centring.
 
               *Disadvantages*: randomised algorithm — results differ
               slightly between runs and from exact SVD; ``output_dimension``
-              must be set; no mask or centring support.
+              must be set.
 
             * ``'incremental'``: exact incremental SVD via
               :class:`~hyperspy.learn.incremental_svd.ISVD` (a subclass of
@@ -1174,16 +1175,17 @@ class LazySignal(signals.BaseSignal):
               on the results.  ``output_dimension`` is optional; if given,
               only the top-*k* columns of U/rows of V are retained before
               computing.  Reproduces the behaviour of HyperSpy prior to
-              v2.5.
+              v2.5.  Supports navigation and signal masks.  Does not
+              support ``centre`` or ``reproject``.
 
               *Advantages*: exact SVD; deferred computation — the caller
               decides when and how much to materialise; ``output_dimension``
-              optional.
+              optional; masks supported.
 
               *Disadvantages*: materialising the full result requires
               significantly more memory than the other solvers (the full U
               matrix is ``nav_size × nav_size`` before truncation); slow for
-              large datasets; no mask or centring support.
+              large datasets; ``centre`` and ``reproject`` not supported.
         **kwargs
             passed to the partial_fit/fit functions.
 
@@ -1250,6 +1252,18 @@ class LazySignal(signals.BaseSignal):
                 f"svd_solver={svd_solver!r} not recognised. "
                 "Expected one of: 'randomized', 'incremental', 'full'."
             )
+
+        if algorithm == "SVD" and svd_solver == "full":
+            if centre is not None:
+                raise ValueError(
+                    "svd_solver='full' does not support centre. "
+                    "Use svd_solver='randomized' or 'incremental' instead."
+                )
+            if reproject is not None:
+                raise ValueError(
+                    "svd_solver='full' does not support reproject. "
+                    "Use svd_solver='randomized' or 'incremental' instead."
+                )
 
         if centre not in (None, "navigation", "signal"):
             raise ValueError(

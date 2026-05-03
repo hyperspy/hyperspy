@@ -180,7 +180,7 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
        Builds a dask task graph, then materialises only the top-*k* singular
        vectors.  Fastest in practice with moderate memory use.
        ``output_dimension`` is **required**.
-       Does not support ``centre``, masks, or ``reproject``.
+       Supports ``centre``, navigation/signal masks, and ``reproject``.
        Requires the unfolded array to be chunked in one dimension only;
        use ``'incremental'`` for arrays chunked in both dimensions.
    * - ``'incremental'``
@@ -197,7 +197,8 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
        HyperSpy prior to v2.5.
        ``output_dimension`` is **optional** (all components are returned if
        omitted, but materialising them requires significantly more memory).
-       Does not support ``centre``, masks, or ``reproject``.
+       Supports navigation and signal masks.  Does not support ``centre`` or
+       ``reproject``.
 
 .. versionchanged:: 2.5
    The ``svd_solver`` parameter was introduced, offering three backends:
