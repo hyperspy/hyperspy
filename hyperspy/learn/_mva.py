@@ -270,9 +270,23 @@ class MVA:
             )
 
         if self.axes_manager.navigation_size < 2:
-            raise AttributeError(
+            raise ValueError(
                 "It is not possible to decompose a dataset with navigation_size < 2"
             )
+
+        if output_dimension is not None:
+            if not isinstance(output_dimension, (int, np.integer)) or isinstance(
+                output_dimension, bool
+            ):
+                raise ValueError(
+                    f"`output_dimension` must be a positive integer, "
+                    f"not {output_dimension!r}."
+                )
+            if output_dimension <= 0:
+                raise ValueError(
+                    f"`output_dimension` must be a positive integer, "
+                    f"got {output_dimension}."
+                )
 
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [

@@ -43,8 +43,26 @@ def generate_low_rank_matrix(m=20, n=100, rank=5, random_seed=123):
 def test_error_axes():
     s = signals.BaseSignal(generate_low_rank_matrix())
 
-    with pytest.raises(AttributeError, match="not possible to decompose a dataset"):
+    with pytest.raises(ValueError, match="not possible to decompose a dataset"):
         s.decomposition()
+
+
+def test_output_dimension_zero_raises():
+    s = signals.Signal1D(np.random.randn(10, 20))
+    with pytest.raises(ValueError, match="positive integer"):
+        s.decomposition(output_dimension=0)
+
+
+def test_output_dimension_negative_raises():
+    s = signals.Signal1D(np.random.randn(10, 20))
+    with pytest.raises(ValueError, match="positive integer"):
+        s.decomposition(output_dimension=-1)
+
+
+def test_output_dimension_float_raises():
+    s = signals.Signal1D(np.random.randn(10, 20))
+    with pytest.raises(ValueError, match="positive integer"):
+        s.decomposition(output_dimension=3.5)
 
 
 class TestNdAxes:
