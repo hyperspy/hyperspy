@@ -201,6 +201,8 @@ class TestLazyDecomposition:
             self.s.decomposition(algorithm="ORPCA")
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm="SVD", svd_solver="incremental")
+        with pytest.raises(ValueError, match="`output_dimension` must be specified"):
+            self.s.decomposition(algorithm="SVD", svd_solver="dask")
 
     @skip_sklearn
     @pytest.mark.parametrize("centre", ["navigation", "signal"])
@@ -240,12 +242,12 @@ class TestLazyDecomposition:
         with pytest.raises(ValueError, match="not recognised"):
             self.s.decomposition(algorithm="random")
 
-    def test_svd_default_solver_deprecation_warning(self):
-        """algorithm='SVD' without svd_solver warns that the default will change."""
-        with pytest.warns(
-            DeprecationWarning,
-            match="The default svd_solver for algorithm='SVD'",
-        ):
+    def test_svd_default_solver_uses_dask(self):
+        """algorithm='SVD' without svd_solver defaults to 'dask' without warning."""
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
             self.s.decomposition(algorithm="SVD", output_dimension=3)
 
     @skip_sklearn
@@ -263,7 +265,7 @@ class TestLazyDecomposition:
             DeprecationWarning,
             match="algorithm='DaskSVD' is deprecated",
         ):
-            self.s.decomposition(algorithm="DaskSVD")
+            self.s.decomposition(algorithm="DaskSVD", output_dimension=3)
 
 
 class TestPrintInfo:
@@ -2005,17 +2007,17 @@ class TestSVDAlgorithm:
 
     def test_basic_run(self):
         """SVD runs without error and returns results."""
-        self.s.decomposition(algorithm="SVD", svd_solver="dask", print_info=False)
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="dask", output_dimension=3, print_info=False
+        )
         lr = self.s.learning_results
         assert lr.factors is not None
         assert lr.loadings is not None
 
-    def test_output_dimension_optional(self):
-        """output_dimension is optional for SVD."""
-        self.s.decomposition(algorithm="SVD", svd_solver="dask", print_info=False)
-        lr = self.s.learning_results
-        # Without output_dimension, all components up to min(nav, sig) are kept.
-        assert lr.factors.shape[1] <= min(35, 30)
+    def test_output_dimension_required(self):
+        """output_dimension is required for svd_solver='dask'."""
+        with pytest.raises(ValueError, match="`output_dimension` must be specified"):
+            self.s.decomposition(algorithm="SVD", svd_solver="dask", print_info=False)
 
     def test_output_dimension_respected(self):
         """When output_dimension is given, exactly that many components are returned."""

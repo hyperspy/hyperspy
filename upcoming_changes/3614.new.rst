@@ -1,9 +1,13 @@
 Improve lazy signal decomposition:
 
-- Replace ``dask.array.linalg.svd`` with an incremental SVD (``ISVD``) based
-  on scikit-learn's ``IncrementalPCA``, which processes data in chunks and
-  therefore scales to datasets larger than RAM.  ``output_dimension`` is now
-  required when using the ``"SVD"`` algorithm on a lazy signal.
+- Switch the ``svd_solver='dask'`` backend from ``dask.array.linalg.svd``
+  (full SVD) to ``dask.array.linalg.svd_compressed`` (randomised truncated
+  SVD), which avoids materialising the full data matrix in memory.
+  ``output_dimension`` is now required for all lazy SVD solvers.
+- Add ``svd_solver='incremental'``: uses :class:`~hyperspy.learn.incremental_svd.ISVD`
+  (a subclass of ``sklearn.decomposition.IncrementalPCA`` with centering
+  disabled), which streams the data in mini-batches and scales to datasets
+  larger than RAM.
 - Add a ``centre`` parameter (``"navigation"``, ``"signal"``, or ``None``) to
   control mean-centring before decomposition, consistent with the non-lazy
   interface.
@@ -23,10 +27,6 @@ Improve lazy signal decomposition:
   parameter.  Objects that implement ``partial_fit`` are used incrementally
   (out-of-core); those with only ``fit`` / ``fit_transform`` fall back to
   loading all data into memory before fitting.
-- Restore ``algorithm='DaskSVD'`` for lazy signals: uses
-  ``dask.array.linalg.svd`` to compute the full SVD lazily without streaming
-  in chunks, for users who need the purely graph-based path.
-  ``output_dimension`` is optional; masks and ``centre`` are not supported.
 - Add ``svd_solver`` and ``auto_transpose`` parameters to
   :meth:`~hyperspy.api.signals.LazySignal.decomposition` for API parity with
   the non-lazy interface.

@@ -1085,9 +1085,10 @@ class LazySignal(signals.BaseSignal):
                respectively.  The aliases will be removed in v2.6.
         output_dimension : int or None, default None
             Number of components to keep/calculate. Required for all
-            algorithms except ``'SVD'`` with ``svd_solver='dask'`` (where it
-            is optional; all components up to ``min(nav_size, sig_size)`` are
-            returned if omitted).
+            algorithms including ``'SVD'`` (regardless of ``svd_solver``).
+            Without a truncation target, dask would need to materialise the
+            full data matrix in memory, negating the benefits of lazy
+            computation.
         centre : {None, 'navigation', 'signal'}, default None
             Subtract the mean along the 'navigation' or 'signal' axis
             before decomposition. Only used for the ``'SVD'`` and ``'PCA'``
@@ -1140,28 +1141,20 @@ class LazySignal(signals.BaseSignal):
             Selects the SVD backend when ``algorithm='SVD'``.  Ignored for
             all other algorithms.
 
-            * ``'dask'`` (default for v2.5, will change to ``'incremental'``
-              in v2.6): uses ``dask.array.linalg.svd`` (TSQR algorithm for
-              multi-chunk arrays).  The computation is expressed as a **dask
-              task graph** and remains **lazy** until HyperSpy calls
-              ``.compute()`` internally on the top-*k* singular vectors,
-              allowing dask to optimise and schedule the graph before
-              materialising any data.  ``output_dimension`` is optional with
-              this solver.  Requires the unfolded array to be chunked in one
-              dimension only; arrays chunked in both dimensions will raise
-              :exc:`NotImplementedError`.
+            * ``'dask'`` (default): uses ``dask.array.linalg.svd_compressed``
+              (a randomised, truncated SVD built on the TSQR algorithm).  The
+              computation is expressed as a **dask task graph**, allowing dask
+              to optimise and schedule the work before materialising any data.
+              Well-suited when the dataset fits in memory or when graph-based
+              scheduling is preferred.  Requires the unfolded array to be
+              chunked in one dimension only; arrays chunked in both dimensions
+              will raise :exc:`NotImplementedError`.
 
             * ``'incremental'``: uses :class:`~hyperspy.learn.incremental_svd.ISVD`,
               which streams the data in mini-batches so that only a small
-              number of chunks reside in memory at a time.  ``output_dimension``
-              is required.  Supports ``centre``, ``auto_transpose``, masks,
-              and all ``reproject`` modes.
-
-            .. deprecated:: 2.5
-               The default ``svd_solver='dask'`` will change to
-               ``svd_solver='incremental'`` in HyperSpy v2.6.  To suppress
-               this warning and opt in to the future default, pass
-               ``svd_solver='incremental'`` explicitly.
+              number of chunks reside in memory at a time.  Preferable when
+              the dataset is too large to fit in memory.  Supports ``centre``,
+              ``auto_transpose``, masks, and all ``reproject`` modes.
         **kwargs
             passed to the partial_fit/fit functions.
 
@@ -1215,34 +1208,28 @@ class LazySignal(signals.BaseSignal):
             algorithm = "SVD"
             svd_solver = "dask"
 
-        # Warn when SVD is used without an explicit svd_solver so users are
-        # aware that the default will change from 'dask' to 'incremental' in
-        # v2.6.
-        _SVD_DEFAULT_SOLVER = "dask"
         if algorithm == "SVD" and svd_solver == "auto":
-            import warnings
-
-            warnings.warn(
-                "The default svd_solver for algorithm='SVD' on lazy signals "
-                "is currently 'dask' (dask.array.linalg.svd) and will change "
-                "to 'incremental' (ISVD) in HyperSpy v2.6.  To suppress this "
-                "warning, pass svd_solver='dask' to keep the current behaviour "
-                "or svd_solver='incremental' to opt in to the future default.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            svd_solver = _SVD_DEFAULT_SOLVER
+            svd_solver = "dask"
 
         # Check algorithms requiring output_dimension.
-        # algorithm='SVD' with svd_solver='dask' does not require it.
-        _svd_needs_dim = algorithm == "SVD" and svd_solver != "dask"
         algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF", "NMF"]
-        if (
-            algorithm in algorithms_require_dimension or _svd_needs_dim
-        ) and output_dimension is None:
+        if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
             )
+        if algorithm == "SVD" and output_dimension is None:
+            if svd_solver == "dask":
+                raise ValueError(
+                    "`output_dimension` must be specified when using "
+                    "algorithm='SVD' with svd_solver='dask'.  Without a "
+                    "truncation target, dask must materialise the full data "
+                    "matrix in memory, which defeats the purpose of lazy "
+                    "computation.  Set `output_dimension` to the number of "
+                    "components you need, or use svd_solver='incremental' to "
+                    "stream the data in batches."
+                )
+            else:
+                raise ValueError("`output_dimension` must be specified for 'SVD'.")
 
         # Detect custom sklearn-like estimator objects
         _is_custom_sklearn_like = not isinstance(algorithm, str) and (
@@ -1561,18 +1548,13 @@ class LazySignal(signals.BaseSignal):
                     else:
                         mean = None
 
-                    U, S, V = da.linalg.svd(D)
+                    U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
 
-                    if output_dimension is None:
-                        k = min(D.shape)
-                    else:
-                        k = output_dimension
+                    U = U.compute()
+                    S = S.compute()
+                    V = V.compute()
 
-                    U = U[:, :k].compute()
-                    S = S[:k].compute()
-                    V = V[:k].compute()
-
-                    factors = V.T  # (n_unmasked_sig, k)
+                    factors = V.T  # (n_unmasked_sig, output_dimension)
                     explained_variance = S**2 / D.shape[0]
                     loadings = U * S  # (n_unmasked_nav, k)
                 finally:
