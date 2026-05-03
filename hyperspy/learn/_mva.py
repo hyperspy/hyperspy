@@ -1297,7 +1297,7 @@ class MVA:
         if lazy and not sc._lazy:
             sc = sc.as_lazy()
         elif not lazy and sc._lazy:
-            sc = sc.compute()
+            sc.compute()
 
         return sc
 
@@ -1362,7 +1362,7 @@ class MVA:
             components=components, mva_type="decomposition", lazy=lazy
         )
 
-    def get_bss_model(self, components=None, chunks="auto"):
+    def get_bss_model(self, components=None, lazy=None):
         """Generate model with the selected number of independent components.
 
         Parameters
@@ -1371,23 +1371,32 @@ class MVA:
             If None, rebuilds signal instance from all components
             If int, rebuilds signal instance from components in range 0-given int
             If list of ints, rebuilds signal instance from only components in given list
+        lazy : bool or None, default None
+            Whether to return a lazy signal backed by a dask array.
+
+            * ``None`` (default): lazy if the signal itself is lazy, eager
+              otherwise.
+            * ``True``: always return a :class:`~hyperspy.api.signals.LazySignal`.
+              BSS factors and loadings are wrapped in ``dask.array.from_array``
+              if they are numpy arrays, so the matrix multiplication is
+              expressed as a dask graph and never fully materialised in RAM.
+              Useful when the reconstructed model is too large to fit in
+              memory — call ``.save()`` afterwards to stream it to disk
+              chunk by chunk.
+            * ``False``: always return an eager (non-lazy) signal, computing
+              the result immediately.
 
         Returns
         -------
         :class:`~hyperspy.api.signals.BaseSignal` or subclass
-            A model built from the given components.
+            A model built from the given components.  The type is a lazy
+            signal subclass when ``lazy=True`` (or ``lazy=None`` on a lazy
+            signal), and an eager signal subclass otherwise.
 
         """
-        lr = self.learning_results
-        if self._lazy:
-            import dask.array as da
-
-            if isinstance(lr.bss_factors, np.ndarray):
-                lr.factors = da.from_array(lr.bss_factors, chunks=chunks)
-            if isinstance(lr.bss_loadings, np.ndarray):
-                lr.loadings = da.from_array(lr.bss_loadings, chunks=chunks)
-        rec = self._calculate_recmatrix(components=components, mva_type="bss")
-        return rec
+        return self._calculate_recmatrix(
+            components=components, mva_type="bss", lazy=lazy
+        )
 
     def get_explained_variance_ratio(self):
         """Return explained variance ratio of the PCA components as a Signal1D.

@@ -208,6 +208,57 @@ class TestGetModel:
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
         assert rms < 5e-7
 
+    @skip_sklearn
+    def test_get_bss_model_lazy_none_matches_signal_laziness(self):
+        """lazy=None (default) returns lazy iff the signal is lazy."""
+        import dask.array as da
+
+        s = self.s
+        s.decomposition(algorithm="SVD", output_dimension=3)
+        s.blind_source_separation(3)
+        model = s.get_bss_model()
+        assert isinstance(model.data, da.Array) == s._lazy
+
+    @skip_sklearn
+    def test_get_bss_model_lazy_true_returns_lazy(self):
+        """lazy=True always returns a lazy signal regardless of source signal."""
+        import dask.array as da
+
+        s = self.s
+        s.decomposition(algorithm="SVD", output_dimension=3)
+        s.blind_source_separation(3)
+        model = s.get_bss_model(lazy=True)
+        assert isinstance(model.data, da.Array)
+
+    @skip_sklearn
+    def test_get_bss_model_lazy_false_returns_eager(self):
+        """lazy=False always returns an eager signal regardless of source signal."""
+        import dask.array as da
+
+        s = self.s
+        s.decomposition(algorithm="SVD", output_dimension=3)
+        s.blind_source_separation(3)
+        model = s.get_bss_model(lazy=False)
+        assert not isinstance(model.data, da.Array)
+
+    @skip_sklearn
+    def test_get_bss_model_does_not_mutate_learning_results(self):
+        """get_bss_model() must not overwrite lr.factors / lr.loadings with
+        bss_factors / bss_loadings (pre-existing mutation bug)."""
+        s = self.s
+        s.decomposition(algorithm="SVD", output_dimension=3)
+        s.blind_source_separation(3)
+        lr = s.learning_results
+        factors_before = lr.factors
+        loadings_before = lr.loadings
+        s.get_bss_model()
+        assert lr.factors is factors_before, (
+            "get_bss_model() must not overwrite lr.factors"
+        )
+        assert lr.loadings is loadings_before, (
+            "get_bss_model() must not overwrite lr.loadings"
+        )
+
 
 @lazifyTestClass
 class TestGetExplainedVarinaceRatio:
