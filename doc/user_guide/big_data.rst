@@ -189,7 +189,7 @@ The default ``algorithm='SVD'`` supports two backends, selected via
        (tall-and-skinny or short-and-fat); use ``'incremental'`` for arrays
        chunked in both dimensions.
    * - ``'incremental'`` (future default in v2.6)
-     - :class:`~.learn.incremental_svd.ISVD` — **incremental (out-of-core)**:
+     - :class:`~hyperspy.learn.incremental_svd.ISVD` — **incremental (out-of-core)**:
        streams the data one mini-batch at a time so that only a small number of
        chunks reside in memory simultaneously.
        ``output_dimension`` is **required**.
@@ -275,7 +275,7 @@ Poissonian noise normalisation for lazy signals
 .. versionadded:: 2.5
 
 Lazy signals expose
-:meth:`~hyperspy._signals.lazy.LazySignal.normalize_poissonian_noise` as a
+:meth:`~hyperspy.api.signals.LazySignal.normalize_poissonian_noise` as a
 standalone method, independently of decomposition.  It rescales the data
 lazily using the same square-root variance-stabilising transform used
 internally by :meth:`~.api.signals.BaseSignal.decomposition`.  This is

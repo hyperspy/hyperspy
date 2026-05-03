@@ -347,7 +347,7 @@ static subspace.
 
 .. note::
 
-   The internal :class:`~.learn.ORPCA` class now provides a scikit-learn
+   The internal ``ORPCA`` class now provides a scikit-learn
    compatible API.  If you use ``ORPCA`` directly (rather than through
    :meth:`~.api.signals.BaseSignal.decomposition`), prefer the new methods:
 
@@ -430,7 +430,7 @@ alternative is available, although it is typically much slower.
 
 .. note::
 
-   The internal :class:`~.learn.ORNMF` class now provides a scikit-learn
+   The internal ``ORNMF`` class now provides a scikit-learn
    compatible API.  If you use ``ORNMF`` directly (rather than through
    :meth:`~.api.signals.BaseSignal.decomposition`), prefer the new methods:
 

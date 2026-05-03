@@ -942,8 +942,8 @@ class LazySignal(signals.BaseSignal):
 
         See Also
         --------
-        :py:meth:`~.learn._mva.MVA.normalize_poissonian_noise` for the
-        non-lazy equivalent.
+        :meth:`~hyperspy.learn._mva.MVA.normalize_poissonian_noise` :
+            Non-lazy equivalent.
         """
         import dask.array as da
 
@@ -1173,9 +1173,16 @@ class LazySignal(signals.BaseSignal):
 
         See Also
         --------
-        hyperspy.learn.incremental_svd.ISVD, sklearn.decomposition.IncrementalPCA,
-        sklearn.decomposition.MiniBatchNMF,
-        hyperspy.learn.orpca, hyperspy.learn.ornmf
+        hyperspy.learn.incremental_svd.ISVD :
+            Incremental SVD backend.
+        sklearn.decomposition.IncrementalPCA :
+            Used by the ``'PCA'`` algorithm.
+        sklearn.decomposition.MiniBatchNMF :
+            Used by the ``'NMF'`` algorithm.
+        hyperspy.learn.orpca :
+            Online robust PCA.
+        hyperspy.learn.ornmf :
+            Online robust NMF.
 
         """
         if get is None:
