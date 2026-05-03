@@ -1048,7 +1048,7 @@ class LazySignal(signals.BaseSignal):
         reproject=None,
         return_info=False,
         print_info=True,
-        svd_solver="auto",
+        svd_solver="dask",
         **kwargs,
     ):
         """Perform Incremental (Batch) decomposition on the data.
@@ -1077,18 +1077,13 @@ class LazySignal(signals.BaseSignal):
 
             For ``'SVD'``, the specific backend is chosen via ``svd_solver``
             (see below).
-
-            .. deprecated:: 2.5
-               ``'ISVD'`` and ``'DaskSVD'`` are deprecated aliases for
-               ``algorithm='SVD'``; use ``algorithm='SVD'`` with
-               ``svd_solver='incremental'`` or ``svd_solver='dask'``
-               respectively.  The aliases will be removed in v2.6.
         output_dimension : int or None, default None
             Number of components to keep/calculate. Required for all
-            algorithms including ``'SVD'`` (regardless of ``svd_solver``).
-            Without a truncation target, dask would need to materialise the
-            full data matrix in memory, negating the benefits of lazy
-            computation.
+            algorithms and for ``svd_solver='dask'`` and
+            ``svd_solver='incremental'``.  Optional for
+            ``svd_solver='full'``, in which case all components up to
+            ``min(nav_size, sig_size)`` are returned as a lazy dask array
+            without triggering any computation.
         centre : {None, 'navigation', 'signal'}, default None
             Subtract the mean along the 'navigation' or 'signal' axis
             before decomposition. Only used for the ``'SVD'`` and ``'PCA'``
@@ -1137,24 +1132,58 @@ class LazySignal(signals.BaseSignal):
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
-        svd_solver : str, default 'dask'
+        svd_solver : {'dask', 'incremental', 'full'}, default 'dask'
             Selects the SVD backend when ``algorithm='SVD'``.  Ignored for
             all other algorithms.
 
-            * ``'dask'`` (default): uses ``dask.array.linalg.svd_compressed``
-              (a randomised, truncated SVD built on the TSQR algorithm).  The
-              computation is expressed as a **dask task graph**, allowing dask
-              to optimise and schedule the work before materialising any data.
-              Well-suited when the dataset fits in memory or when graph-based
-              scheduling is preferred.  Requires the unfolded array to be
-              chunked in one dimension only; arrays chunked in both dimensions
-              will raise :exc:`NotImplementedError`.
+            * ``'dask'`` (default): randomised truncated SVD via
+              ``dask.array.linalg.svd_compressed``.  Builds a dask task
+              graph, then materialises only the top-*k* singular vectors.
+              Fast in practice (typically the fastest of the three options)
+              with moderate memory use.  ``output_dimension`` is required.
+              Does not support ``centre``, ``auto_transpose``, masks, or
+              ``reproject``.  Requires the unfolded array to be chunked in
+              one dimension only; arrays chunked in both dimensions raise
+              :exc:`NotImplementedError`.
 
-            * ``'incremental'``: uses :class:`~hyperspy.learn.incremental_svd.ISVD`,
-              which streams the data in mini-batches so that only a small
-              number of chunks reside in memory at a time.  Preferable when
-              the dataset is too large to fit in memory.  Supports ``centre``,
+              *Advantages*: fastest; graph-based scheduling lets dask
+              optimise I/O and computation together.
+
+              *Disadvantages*: randomised algorithm — results differ
+              slightly between runs and from exact SVD; ``output_dimension``
+              must be set; no mask or centring support.
+
+            * ``'incremental'``: exact incremental SVD via
+              :class:`~hyperspy.learn.incremental_svd.ISVD` (a subclass of
+              ``sklearn.decomposition.IncrementalPCA`` with centering
+              disabled).  Streams the data in mini-batches; peak memory is
+              proportional to the chunk size rather than the full dataset.
+              ``output_dimension`` is required.
+
+              *Advantages*: lowest peak memory — scales to datasets larger
+              than RAM; deterministic result; supports ``centre``,
               ``auto_transpose``, masks, and all ``reproject`` modes.
+
+              *Disadvantages*: slowest of the three; requires scikit-learn;
+              incremental algorithm accumulates floating-point errors over
+              many batches.
+
+            * ``'full'``: exact full SVD via ``dask.array.linalg.svd``
+              (TSQR algorithm).  Returns *lazy* dask arrays — no
+              computation is triggered until the caller calls ``.compute()``
+              on the results.  ``output_dimension`` is optional; if given,
+              only the top-*k* columns of U/rows of V are retained before
+              computing.  Reproduces the behaviour of HyperSpy prior to
+              v2.5.
+
+              *Advantages*: exact SVD; deferred computation — the caller
+              decides when and how much to materialise; ``output_dimension``
+              optional.
+
+              *Disadvantages*: materialising the full result requires
+              significantly more memory than the other solvers (the full U
+              matrix is ``nav_size × nav_size`` before truncation); slow for
+              large datasets; no mask or centring support.
         **kwargs
             passed to the partial_fit/fit functions.
 
@@ -1180,56 +1209,21 @@ class LazySignal(signals.BaseSignal):
         """
         if get is None:
             get = _get()
-        # Handle deprecated algorithm aliases.
-        # 'ISVD'    → algorithm='SVD', svd_solver='incremental'
-        # 'DaskSVD' → algorithm='SVD', svd_solver='dask'
-        if isinstance(algorithm, str) and algorithm == "ISVD":
-            import warnings
-
-            warnings.warn(
-                "algorithm='ISVD' is deprecated.  Use "
-                "algorithm='SVD', svd_solver='incremental' instead. "
-                "The alias will be removed in HyperSpy v2.6.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            algorithm = "SVD"
-            svd_solver = "incremental"
-        elif isinstance(algorithm, str) and algorithm == "DaskSVD":
-            import warnings
-
-            warnings.warn(
-                "algorithm='DaskSVD' is deprecated.  Use "
-                "algorithm='SVD', svd_solver='dask' instead. "
-                "The alias will be removed in HyperSpy v2.6.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            algorithm = "SVD"
-            svd_solver = "dask"
-
-        if algorithm == "SVD" and svd_solver == "auto":
-            svd_solver = "dask"
-
         # Check algorithms requiring output_dimension.
         algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF", "NMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
             )
-        if algorithm == "SVD" and output_dimension is None:
-            if svd_solver == "dask":
-                raise ValueError(
-                    "`output_dimension` must be specified when using "
-                    "algorithm='SVD' with svd_solver='dask'.  Without a "
-                    "truncation target, dask must materialise the full data "
-                    "matrix in memory, which defeats the purpose of lazy "
-                    "computation.  Set `output_dimension` to the number of "
-                    "components you need, or use svd_solver='incremental' to "
-                    "stream the data in batches."
-                )
-            else:
-                raise ValueError("`output_dimension` must be specified for 'SVD'.")
+        if (
+            algorithm == "SVD"
+            and svd_solver in ("dask", "incremental")
+            and output_dimension is None
+        ):
+            raise ValueError(
+                f"`output_dimension` must be specified when using "
+                f"algorithm='SVD' with svd_solver={svd_solver!r}."
+            )
 
         # Detect custom sklearn-like estimator objects
         _is_custom_sklearn_like = not isinstance(algorithm, str) and (
@@ -1245,6 +1239,12 @@ class LazySignal(signals.BaseSignal):
                 f"'algorithm' {algorithm!r} not recognised. "
                 "Expected one of: 'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF', "
                 "or a custom object with fit_transform() or fit()+transform()."
+            )
+
+        if algorithm == "SVD" and svd_solver not in ("dask", "incremental", "full"):
+            raise ValueError(
+                f"svd_solver={svd_solver!r} not recognised. "
+                "Expected one of: 'dask', 'incremental', 'full'."
             )
 
         if centre not in (None, "navigation", "signal"):
@@ -1488,19 +1488,12 @@ class LazySignal(signals.BaseSignal):
                         self._unfolded4decomposition = False
 
             elif algorithm == "SVD":
-                # Lazy SVD via dask.array.linalg.svd (TSQR for multi-chunk
-                # tall-and-skinny arrays).  The SVD is built as a dask task
-                # graph and remains **lazy** until .compute() is called on U,
-                # S and V below, at which point dask materialises only the
-                # top-k singular vectors.  Masking and centring are applied
-                # at the dask-array level before calling svd.
                 import dask.array as da
 
                 try:
                     self._unfolded4decomposition = self.unfold()
 
-                    # Resolve navigation mask to a 1-D boolean numpy array,
-                    # using the same axis-order convention as the SVD path.
+                    # Resolve navigation mask to a 1-D boolean numpy array.
                     nav_mask_1d = None
                     if navigation_mask is not None:
                         if isinstance(navigation_mask, signals.BaseSignal):
@@ -1514,8 +1507,6 @@ class LazySignal(signals.BaseSignal):
                             nav_mask_1d = _nm.ravel().compute().astype(bool)
                         else:
                             nav_mask_1d = np.asarray(_nm).ravel().astype(bool)
-                        # Use the ravelled 1-D form for _block_iterator calls
-                        # (signal reproject) so it aligns with the unfolded nav axis.
                         _navigation_mask_for_reproject = nav_mask_1d
 
                     # Resolve signal mask to a 1-D boolean numpy array.
@@ -1538,25 +1529,47 @@ class LazySignal(signals.BaseSignal):
                     if sig_mask_1d is not None:
                         D = D[:, ~sig_mask_1d]
 
-                    # Apply centring lazily.
-                    if centre == "navigation":
-                        mean = D.mean(axis=0, keepdims=True).compute()
-                        D = D - mean
-                    elif centre == "signal":
-                        mean = D.mean(axis=1, keepdims=True).compute()
-                        D = D - mean
+                    if svd_solver == "full":
+                        # Exact full SVD via da.linalg.svd (TSQR algorithm).
+                        # Returns lazy dask arrays — no computation is triggered
+                        # here.  The caller can call .compute() on the results
+                        # stored in learning_results at any time.
+                        # Masks and centring are not supported for this solver.
+                        U, S, V = da.linalg.svd(D)
+                        if output_dimension is not None:
+                            U = U[:, :output_dimension]
+                            S = S[:output_dimension]
+                            V = V[:output_dimension]
+                        # Keep results as lazy dask arrays.
+                        factors = V.T
+                        explained_variance = S**2 / D.shape[0]
+                        loadings = U * S
                     else:
-                        mean = None
+                        # Apply centring (not supported for svd_solver='full').
+                        if centre == "navigation":
+                            mean = D.mean(axis=0, keepdims=True).compute()
+                            D = D - mean
+                        elif centre == "signal":
+                            mean = D.mean(axis=1, keepdims=True).compute()
+                            D = D - mean
+                        else:
+                            mean = None
 
-                    U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
+                        if svd_solver == "dask":
+                            # Randomised truncated SVD via svd_compressed.
+                            U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
+                        else:
+                            # svd_solver == 'incremental' — handled in the
+                            # ISVD branch above; this branch is unreachable.
+                            pass  # pragma: no cover
 
-                    U = U.compute()
-                    S = S.compute()
-                    V = V.compute()
+                        U = U.compute()
+                        S = S.compute()
+                        V = V.compute()
 
-                    factors = V.T  # (n_unmasked_sig, output_dimension)
-                    explained_variance = S**2 / D.shape[0]
-                    loadings = U * S  # (n_unmasked_nav, k)
+                        factors = V.T  # (n_unmasked_sig, output_dimension)
+                        explained_variance = S**2 / D.shape[0]
+                        loadings = U * S
                 finally:
                     if self._unfolded4decomposition is True:
                         self.fold()

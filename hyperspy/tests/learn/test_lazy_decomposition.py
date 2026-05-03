@@ -250,22 +250,12 @@ class TestLazyDecomposition:
             warnings.simplefilter("error", DeprecationWarning)
             self.s.decomposition(algorithm="SVD", output_dimension=3)
 
-    @skip_sklearn
-    def test_isvd_alias_deprecation_warning(self):
-        """algorithm='ISVD' (deprecated alias) raises DeprecationWarning."""
-        with pytest.warns(
-            DeprecationWarning,
-            match="algorithm='ISVD' is deprecated",
-        ):
-            self.s.decomposition(algorithm="ISVD", output_dimension=3)
-
-    def test_dasksvd_alias_deprecation_warning(self):
-        """algorithm='DaskSVD' (deprecated alias) raises DeprecationWarning."""
-        with pytest.warns(
-            DeprecationWarning,
-            match="algorithm='DaskSVD' is deprecated",
-        ):
-            self.s.decomposition(algorithm="DaskSVD", output_dimension=3)
+    def test_svd_solver_invalid(self):
+        """Unrecognised svd_solver raises ValueError."""
+        with pytest.raises(ValueError, match="svd_solver="):
+            self.s.decomposition(
+                algorithm="SVD", svd_solver="unknown", output_dimension=3
+            )
 
 
 class TestPrintInfo:
@@ -1994,7 +1984,7 @@ class TestLazySVDSolverAndAutoTranspose:
 
 
 class TestSVDAlgorithm:
-    """Tests for algorithm='SVD' (dask.array.linalg.svd) on lazy signals."""
+    """Tests for algorithm='SVD' with svd_solver='dask' (svd_compressed)."""
 
     def setup_method(self, method):
         rng = np.random.default_rng(42)
@@ -2059,75 +2049,53 @@ class TestSVDAlgorithm:
         rel_error = np.linalg.norm(recon - original) / np.linalg.norm(original)
         assert rel_error < 0.1
 
-    def test_navigation_mask(self):
-        """SVD respects navigation_mask: masked rows excluded from SVD."""
-        # navigation_shape is reversed vs array shape: data (7,5,30) → nav_shape (5,7)
-        nav_mask = np.zeros((5, 7), dtype=bool)
-        nav_mask[0, :] = True  # mask first row (7 pixels)
-        self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="dask",
-            output_dimension=3,
-            navigation_mask=nav_mask,
-            print_info=False,
-        )
-        lr = self.s.learning_results
-        # Factors computed over 28 unmasked nav positions → shape (30, 3)
-        assert lr.factors.shape == (30, 3)
-        # Loadings only cover unmasked nav pixels during learn pass
-        assert lr.loadings.shape[1] == 3
 
-    def test_signal_mask(self):
-        """SVD respects signal_mask: masked channels excluded from SVD."""
-        sig_mask = np.zeros(30, dtype=bool)
-        sig_mask[:5] = True  # mask first 5 channels
-        self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="dask",
-            output_dimension=3,
-            signal_mask=sig_mask,
-            print_info=False,
-        )
-        lr = self.s.learning_results
-        # Factors are stored at full signal size with NaN at masked channels
-        assert lr.factors.shape == (30, 3)
-        assert np.all(np.isnan(lr.factors[:5, :]))
+class TestSVDFullSolver:
+    """Tests for algorithm='SVD' with svd_solver='full' (da.linalg.svd)."""
 
-    def test_centre_navigation(self):
-        """SVD supports centre='navigation'."""
+    def setup_method(self, method):
+        rng = np.random.default_rng(42)
+        L = rng.standard_normal((35, 3))
+        F = rng.standard_normal((3, 30))
+        data = (L @ F + 0.01 * rng.standard_normal((35, 30))).reshape((7, 5, 30))
+        self.s = Signal1D(data.astype(float)).as_lazy()
+
+    def test_basic_run_with_output_dimension(self):
+        """svd_solver='full' runs without error when output_dimension is set."""
+
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="dask",
-            output_dimension=3,
-            centre="navigation",
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
         )
         lr = self.s.learning_results
         assert lr.factors is not None
-        assert lr.factors.shape == (30, 3)
+        assert lr.loadings is not None
 
-    def test_centre_signal(self):
-        """SVD supports centre='signal'."""
+    def test_output_dimension_optional(self):
+        """svd_solver='full' accepts output_dimension=None and returns lazy arrays."""
+        import dask.array as da
+
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="dask",
-            output_dimension=3,
-            centre="signal",
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=None, print_info=False
         )
         lr = self.s.learning_results
-        assert lr.factors is not None
-        assert lr.factors.shape == (30, 3)
+        assert isinstance(lr.factors, da.Array)
+        assert isinstance(lr.loadings, da.Array)
 
-    def test_reproject_navigation(self):
-        """reproject='navigation' works for SVD."""
+    def test_output_dimension_respected(self):
+        """When output_dimension is given, the results are truncated accordingly."""
+        import dask.array as da
+
+        k = 4
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="dask",
-            output_dimension=3,
-            reproject="navigation",
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=k, print_info=False
         )
         lr = self.s.learning_results
-        assert lr.loadings.shape == (35, 3)
-        assert not np.any(np.isnan(lr.loadings))
+        # Results may be lazy; compute to check shape.
+        factors = (
+            lr.factors.compute() if isinstance(lr.factors, da.Array) else lr.factors
+        )
+        loadings = (
+            lr.loadings.compute() if isinstance(lr.loadings, da.Array) else lr.loadings
+        )
+        assert factors.shape == (30, k)
+        assert loadings.shape == (35, k)
