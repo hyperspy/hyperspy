@@ -42,115 +42,73 @@ def _check_sklearn():
         )
 
 
-class ISVD:
-    """Out-of-core incremental SVD (no centering).
+if SKLEARN_INSTALLED:
+    from sklearn.decomposition import IncrementalPCA as _IncrementalPCA
 
-    A thin wrapper around :class:`sklearn.decomposition.IncrementalPCA` that
-    disables centering so the decomposition computes a plain SVD rather than
-    PCA.  Data is fed in batches via :meth:`partial_fit`; after all batches
-    have been processed, call :meth:`transform` to obtain the loadings.
+    class ISVD(_IncrementalPCA):
+        """Out-of-core incremental SVD (no centering).
 
-    The centering is disabled by overriding the ``mean_`` property to always
-    return an array of zeros.  This neutralises both the mean-correction term
-    computed during :meth:`partial_fit` and the mean-shift applied during
-    :meth:`transform`, without touching any other part of the sklearn
-    implementation.
+        A subclass of :class:`sklearn.decomposition.IncrementalPCA` that
+        disables centering so the decomposition computes a plain SVD rather
+        than PCA.  Data is fed in batches via :meth:`partial_fit`; after all
+        batches have been processed, call :meth:`transform` to obtain the
+        loadings.
 
-    Parameters
-    ----------
-    n_components : int
-        Number of singular components to compute.
-    **kwargs
-        Additional keyword arguments forwarded to
-        :class:`sklearn.decomposition.IncrementalPCA`.
-
-    Attributes
-    ----------
-    singular_values_ : ndarray of shape (n_components,)
-        Singular values after fitting.
-    components_ : ndarray of shape (n_components, n_features)
-        Right singular vectors (rows are components).
-    explained_variance_ : ndarray of shape (n_components,)
-        Approximate explained variance per component.
-    explained_variance_ratio_ : ndarray of shape (n_components,)
-        Fraction of total variance explained by each component.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from hyperspy.learn.incremental_svd import ISVD
-    >>> X = np.random.randn(200, 50)
-    >>> obj = ISVD(n_components=3)
-    >>> for chunk in np.array_split(X, 4):
-    ...     obj.partial_fit(chunk)
-    >>> factors = obj.components_.T          # shape (n_features, n_components)
-    >>> loadings = obj.transform(X)          # shape (n_samples, n_components)
-    """
-
-    def __init__(self, n_components, **kwargs):
-        _check_sklearn()
-        from sklearn.decomposition import IncrementalPCA
-
-        class _NoCentreIncrementalPCA(IncrementalPCA):
-            """IncrementalPCA subclass that forces mean_ to zero."""
-
-            @property
-            def mean_(self):
-                return self.__mean
-
-            @mean_.setter
-            def mean_(self, value):
-                # sklearn initialises mean_ to the scalar 0.0 on first call;
-                # on subsequent calls it passes a float array.  We always store
-                # zeros so that centering has no effect.
-                if np.isscalar(value):
-                    self.__mean = value
-                else:
-                    self.__mean = np.zeros_like(value)
-
-        self._obj = _NoCentreIncrementalPCA(n_components=n_components, **kwargs)
-
-    # ------------------------------------------------------------------
-    # Delegate everything to the inner sklearn object
-    # ------------------------------------------------------------------
-
-    def partial_fit(self, X):
-        """Process one batch of data.
+        The centering is disabled by overriding the ``mean_`` property to
+        always return an array of zeros.  This neutralises both the
+        mean-correction term computed during :meth:`partial_fit` and the
+        mean-shift applied during :meth:`transform`, without touching any
+        other part of the sklearn implementation.
 
         Parameters
         ----------
-        X : ndarray of shape (n_batch, n_features)
-        """
-        self._obj.partial_fit(X)
-        return self
+        n_components : int
+            Number of singular components to compute.
+        **kwargs
+            Additional keyword arguments forwarded to
+            :class:`sklearn.decomposition.IncrementalPCA`.
 
-    def transform(self, X):
-        """Project X onto the fitted components.
-
-        Parameters
+        Attributes
         ----------
-        X : ndarray of shape (n_samples, n_features)
+        singular_values_ : ndarray of shape (n_components,)
+            Singular values after fitting.
+        components_ : ndarray of shape (n_components, n_features)
+            Right singular vectors (rows are components).
+        explained_variance_ : ndarray of shape (n_components,)
+            Approximate explained variance per component.
+        explained_variance_ratio_ : ndarray of shape (n_components,)
+            Fraction of total variance explained by each component.
 
-        Returns
-        -------
-        loadings : ndarray of shape (n_samples, n_components)
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from hyperspy.learn.incremental_svd import ISVD
+        >>> X = np.random.randn(200, 50)
+        >>> obj = ISVD(n_components=3)
+        >>> for chunk in np.array_split(X, 4):
+        ...     obj.partial_fit(chunk)
+        >>> factors = obj.components_.T          # shape (n_features, n_components)
+        >>> loadings = obj.transform(X)          # shape (n_samples, n_components)
         """
-        return self._obj.transform(X)
 
-    # Expose the most useful fitted attributes directly.
+        @property
+        def mean_(self):
+            return self.__dict__.get("_isvd_mean", 0.0)
 
-    @property
-    def components_(self):
-        return self._obj.components_
+        @mean_.setter
+        def mean_(self, value):
+            # sklearn initialises mean_ to the scalar 0.0 on first call;
+            # on subsequent calls it passes a float array.  We always store
+            # zeros so that centering has no effect.
+            if np.isscalar(value):
+                self.__dict__["_isvd_mean"] = value
+            else:
+                self.__dict__["_isvd_mean"] = np.zeros_like(value)
 
-    @property
-    def singular_values_(self):
-        return self._obj.singular_values_
+else:
 
-    @property
-    def explained_variance_(self):
-        return self._obj.explained_variance_
+    class ISVD:  # type: ignore[no-redef]
+        """Placeholder raised when scikit-learn is not installed."""
 
-    @property
-    def explained_variance_ratio_(self):
-        return self._obj.explained_variance_ratio_
+        def __init__(self, *args, **kwargs):
+            _check_sklearn()
