@@ -236,6 +236,74 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
    ...     reproject="navigation",
    ... ) # doctest: +SKIP
 
+.. _big_data.svd.array_types:
+
+Array types stored in ``learning_results``
+""""""""""""""""""""""""""""""""""""""""""
+
+After :meth:`~.api.signals.LazySignal.decomposition` completes,
+``learning_results.factors`` and ``learning_results.loadings`` are either
+**numpy** or **dask** arrays depending on the solver:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 27 28
+
+   * - Algorithm / solver
+     - ``factors``
+     - ``loadings``
+   * - ``'SVD'``, ``svd_solver='randomized'`` (default)
+     - numpy (computed)
+     - numpy (computed)
+   * - ``'SVD'``, ``svd_solver='incremental'``
+     - numpy (computed)
+     - numpy (computed)
+   * - ``'SVD'``, ``svd_solver='full'``, no ``reproject``
+     - **dask** (lazy)
+     - **dask** (lazy)
+   * - ``'SVD'``, ``svd_solver='full'``, with ``reproject``
+     - numpy (computed)
+     - numpy (computed)
+   * - ``'PCA'``, ``'NMF'``, ``'ORPCA'``, ``'ORNMF'``, custom
+     - numpy (computed)
+     - numpy (computed)
+
+.. _big_data.svd.lazy_pipeline:
+
+Fully lazy pipeline
+"""""""""""""""""""
+
+``svd_solver='full'`` without ``reproject`` is the only configuration that
+keeps the entire pipeline lazy from decomposition through to model
+reconstruction and saving.  Because :meth:`~.api.signals.LazySignal.decomposition`
+leaves ``factors`` and ``loadings`` as dask arrays, calling
+:meth:`~.api.signals.LazySignal.get_decomposition_model` returns a
+:class:`~hyperspy.api.signals.LazySignal` whose ``.data`` is a dask array.
+No data is materialised until ``.compute()`` or ``.save()`` is called:
+
+.. code-block:: python
+
+   # Step 1 — decompose; factors and loadings remain lazy dask arrays
+   >>> s.decomposition(algorithm="SVD", svd_solver="full",
+   ...                 output_dimension=3) # doctest: +SKIP
+
+   # Step 2 — build the model; model.data is still a lazy dask array
+   >>> model = s.get_decomposition_model() # doctest: +SKIP
+   >>> isinstance(model.data, da.Array)  # True # doctest: +SKIP
+
+   # Step 3 — save triggers computation chunk by chunk while writing to disk
+   >>> model.save("model.hspy") # doctest: +SKIP
+
+   # Alternatively, select a subset of components (still lazy)
+   >>> model3 = s.get_decomposition_model(components=3) # doctest: +SKIP
+   >>> model3.save("model3.hspy") # doctest: +SKIP
+
+For comparison, ``svd_solver='randomized'`` (the default) and
+``svd_solver='incremental'`` always compute numpy arrays during
+decomposition, so ``get_decomposition_model()`` returns an eager signal.
+Use ``svd_solver='full'`` when the reconstructed model is too large to
+fit in memory and you want to stream it to disk via ``save()``.
+
 .. note::
 
    ``centre`` and ``normalize_poissonian_noise=True`` cannot be used together.

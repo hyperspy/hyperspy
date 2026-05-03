@@ -2141,3 +2141,113 @@ class TestSVDFullSolver:
         lr = self.s.learning_results
         assert lr.loadings.shape == (35, 3)
         assert not np.any(np.isnan(lr.loadings))
+
+
+class TestLazyGetDecompositionModel:
+    """Tests for the lazy get_decomposition_model() pipeline with svd_solver='full'."""
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(42)
+        L = rng.standard_normal((35, 3))
+        F = rng.standard_normal((3, 30))
+        data = (L @ F + 0.01 * rng.standard_normal((35, 30))).reshape((7, 5, 30))
+        self.s = Signal1D(data.astype(float)).as_lazy()
+
+    def test_factors_loadings_are_lazy_without_reproject(self):
+        """svd_solver='full' without reproject keeps factors/loadings as dask arrays."""
+        import dask.array as da
+
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
+        )
+        lr = self.s.learning_results
+        assert isinstance(lr.factors, da.Array), "factors should be a dask array"
+        assert isinstance(lr.loadings, da.Array), "loadings should be a dask array"
+
+    def test_factors_loadings_are_numpy_with_reproject(self):
+        """svd_solver='full' with reproject computes factors/loadings to numpy."""
+
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            reproject="navigation",
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert isinstance(lr.factors, np.ndarray), (
+            "factors should be numpy after reproject"
+        )
+        assert isinstance(lr.loadings, np.ndarray), (
+            "loadings should be numpy after reproject"
+        )
+
+    def test_get_decomposition_model_returns_lazy_signal(self):
+        """get_decomposition_model() returns a LazySignal when factors/loadings are dask."""
+        import dask.array as da
+
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
+        )
+        model = self.s.get_decomposition_model()
+        assert isinstance(model.data, da.Array), "model.data should be a dask array"
+        assert model._lazy, "returned signal should be lazy"
+
+    def test_get_decomposition_model_correct_shape(self):
+        """Reconstructed model has the same shape as the original signal."""
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
+        )
+        model = self.s.get_decomposition_model()
+        assert model.data.shape == self.s.data.shape
+
+    def test_get_decomposition_model_no_computation_until_compute(self):
+        """get_decomposition_model() builds a task graph without triggering computation."""
+
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
+        )
+        model = self.s.get_decomposition_model()
+        # model.data is a dask array; calling .compute() should succeed and give
+        # an array of the correct shape.
+        result = model.data.compute()
+        assert result.shape == self.s.data.compute().shape
+
+    def test_get_decomposition_model_components_int(self):
+        """get_decomposition_model(components=N) works lazily."""
+        import dask.array as da
+
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="full", output_dimension=5, print_info=False
+        )
+        model = self.s.get_decomposition_model(components=2)
+        assert isinstance(model.data, da.Array)
+        assert model.data.shape == self.s.data.shape
+
+    def test_get_decomposition_model_components_list(self):
+        """get_decomposition_model(components=[...]) works lazily."""
+        import dask.array as da
+
+        self.s.decomposition(
+            algorithm="SVD", svd_solver="full", output_dimension=5, print_info=False
+        )
+        model = self.s.get_decomposition_model(components=[0, 2])
+        assert isinstance(model.data, da.Array)
+        assert model.data.shape == self.s.data.shape
+
+    def test_get_decomposition_model_randomized_uses_numpy_factors(self):
+        """With svd_solver='randomized', factors/loadings are numpy (not dask)."""
+
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=3,
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert isinstance(lr.factors, np.ndarray), (
+            "factors should be numpy for randomized solver"
+        )
+        assert isinstance(lr.loadings, np.ndarray), (
+            "loadings should be numpy for randomized solver"
+        )

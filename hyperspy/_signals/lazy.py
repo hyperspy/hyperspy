@@ -1197,6 +1197,51 @@ class LazySignal(signals.BaseSignal):
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
 
+        Notes
+        -----
+        **Array types stored in** ``learning_results``
+
+        After decomposition, ``learning_results.factors`` and
+        ``learning_results.loadings`` hold either **numpy** or **dask** arrays
+        depending on the algorithm and solver:
+
+        .. list-table::
+           :header-rows: 1
+           :widths: 30 35 35
+
+           * - Algorithm / solver
+             - ``factors``
+             - ``loadings``
+           * - ``'SVD'``, ``svd_solver='randomized'``
+             - numpy (computed)
+             - numpy (computed)
+           * - ``'SVD'``, ``svd_solver='incremental'``
+             - numpy (computed)
+             - numpy (computed)
+           * - ``'SVD'``, ``svd_solver='full'`` (no ``reproject``)
+             - **dask** (lazy)
+             - **dask** (lazy)
+           * - ``'SVD'``, ``svd_solver='full'`` (with ``reproject``)
+             - numpy (computed)
+             - numpy (computed)
+           * - ``'PCA'``, ``'NMF'``, ``'ORPCA'``, ``'ORNMF'``, custom
+             - numpy (computed)
+             - numpy (computed)
+
+        **Fully lazy pipeline with** ``svd_solver='full'``
+
+        When ``svd_solver='full'`` is used *without* ``reproject``, the entire
+        pipeline from decomposition to reconstruction can be kept lazy::
+
+            s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
+            # learning_results.factors and .loadings are dask arrays
+
+            model = s.get_decomposition_model()
+            # model is a LazySignal; model.data is a dask array
+
+            model.save("model.hspy")
+            # triggers computation chunk by chunk while writing to disk
+
         See Also
         --------
         hyperspy.learn.incremental_svd.ISVD :
@@ -1853,7 +1898,14 @@ class LazySignal(signals.BaseSignal):
 
         # ── explained variance ratio and elbow estimate ──────────────────
         if explained_variance is not None and explained_variance_ratio is None:
-            explained_variance_ratio = explained_variance / explained_variance.sum()
+            import dask.array as _da_ev
+
+            _ev = (
+                explained_variance.compute()
+                if isinstance(explained_variance, _da_ev.Array)
+                else explained_variance
+            )
+            explained_variance_ratio = _ev / _ev.sum()
         number_significant_components = None
         if explained_variance_ratio is not None:
             number_significant_components = int(
@@ -1915,6 +1967,38 @@ class LazySignal(signals.BaseSignal):
             loadings = loadings * root_aG_flat[:, np.newaxis]
 
         # ── store masks and NaN-fill excluded positions ──────────────────
+        import dask.array as _da
+
+        def _nan_expand_rows(arr, mask, total_rows):
+            """Return arr expanded to total_rows, NaN at positions where mask is True.
+
+            Works for both numpy and dask arrays.  ``mask`` is a flat bool array
+            of length ``total_rows``; rows where mask is True are NaN-filled and
+            rows where mask is False are filled from ``arr`` in order.
+            """
+            unmasked_idx = np.where(~mask)[0]
+            n_comp = arr.shape[1]
+            if isinstance(arr, _da.Array):
+                # Build the expanded array lazily by placing each row of arr at
+                # its correct position.  We split arr into single-row slices,
+                # interleave them with NaN rows, then concatenate — all lazily.
+                nan_row = _da.full(
+                    (1, n_comp), np.nan, dtype=float, chunks=(1, arr.chunks[1])
+                )
+                rows = []
+                arr_row = 0
+                for i in range(total_rows):
+                    if mask[i]:
+                        rows.append(nan_row)
+                    else:
+                        rows.append(arr[arr_row : arr_row + 1, :])
+                        arr_row += 1
+                return _da.concatenate(rows, axis=0)
+            else:
+                out = np.full((total_rows, n_comp), np.nan, dtype=float)
+                out[unmasked_idx, :] = arr
+                return out
+
         if flat_sig_mask is not None:
             target.signal_mask = flat_sig_mask.reshape(
                 self.axes_manager._signal_shape_in_array
@@ -1922,14 +2006,7 @@ class LazySignal(signals.BaseSignal):
             # Only NaN-fill if signal was not reprojected (reprojection already
             # covers all signal channels).
             if not _signal_reprojected:
-                # Expand factors back to full signal size; NaN at excluded channels.
-                # factors rows correspond to kept (unmasked) signal channels,
-                # i.e. positions where flat_sig_mask is False.
-                full_factors = np.full(
-                    (sig_size, factors.shape[1]), np.nan, dtype=float
-                )
-                full_factors[~flat_sig_mask, :] = factors
-                factors = full_factors
+                factors = _nan_expand_rows(factors, flat_sig_mask, sig_size)
 
         if flat_nav_mask is not None:
             target.navigation_mask = flat_nav_mask.reshape(
@@ -1938,14 +2015,7 @@ class LazySignal(signals.BaseSignal):
             # Only NaN-fill if navigation was not reprojected (reprojection
             # already covers all navigation positions).
             if not _nav_reprojected:
-                # Expand loadings back to full nav size; NaN at excluded positions.
-                # loadings rows correspond to kept (unmasked) nav positions,
-                # i.e. positions where flat_nav_mask is False.
-                full_loadings = np.full(
-                    (nav_size, loadings.shape[1]), np.nan, dtype=float
-                )
-                full_loadings[~flat_nav_mask, :] = loadings
-                loadings = full_loadings
+                loadings = _nan_expand_rows(loadings, flat_nav_mask, nav_size)
 
         target.factors = factors
         target.loadings = loadings
@@ -1956,6 +2026,125 @@ class LazySignal(signals.BaseSignal):
 
         if return_info:
             return obj if algorithm != "SVD" else None
+
+    def _calculate_recmatrix(self, components=None, mva_type="decomposition"):
+        """Reconstruct the data matrix from decomposition components.
+
+        Overrides the base-class implementation to propagate lazy dask arrays
+        when ``learning_results.factors`` and ``learning_results.loadings`` are
+        dask arrays (as produced by ``svd_solver='full'`` without
+        ``reproject``).  In that case the returned signal is a
+        :class:`~hyperspy.api.signals.LazySignal` whose ``.data`` is a lazy
+        dask array — no computation is triggered until ``.compute()`` or
+        ``.save()`` is called.
+
+        When factors and loadings are numpy arrays (all other solvers) the
+        behaviour is identical to the base class.
+
+        Parameters
+        ----------
+        components : None, int or list of int, default None
+            * ``None``: use all components.
+            * ``int``: use the first *N* components.
+            * list of int: use the components at the given indices.
+        mva_type : str, default ``'decomposition'``
+            ``'decomposition'`` or ``'bss'``.
+
+        Returns
+        -------
+        :class:`~hyperspy.api.signals.BaseSignal` or subclass
+            Reconstructed signal.  If factors/loadings are dask arrays the
+            returned object is a lazy signal.
+        """
+        import dask.array as da
+
+        target = self.learning_results
+
+        if mva_type.lower() == "decomposition":
+            factors = target.factors
+            loadings = target.loadings.T
+        elif mva_type.lower() == "bss":
+            factors = target.bss_factors
+            loadings = target.bss_loadings.T
+
+        _is_lazy = isinstance(factors, da.Array) or isinstance(loadings, da.Array)
+
+        if components is None:
+            a = factors @ loadings
+            signal_name = f"model from {mva_type} with {factors.shape[1]} components"
+        elif hasattr(components, "__iter__"):
+            idx = list(components)
+            if _is_lazy:
+                # Fancy index on dask arrays: slice and concatenate columns/rows.
+                tfactors = da.concatenate([factors[:, i : i + 1] for i in idx], axis=1)
+                tloadings = da.concatenate(
+                    [loadings[i : i + 1, :] for i in idx], axis=0
+                )
+            else:
+                tfactors = np.zeros((factors.shape[0], len(idx)))
+                tloadings = np.zeros((len(idx), loadings.shape[1]))
+                for k, i in enumerate(idx):
+                    tfactors[:, k] = factors[:, i]
+                    tloadings[k, :] = loadings[i, :]
+            a = tfactors @ tloadings
+            signal_name = f"model from {mva_type} with components {components}"
+        else:
+            a = factors[:, :components] @ loadings[:components, :]
+            signal_name = f"model from {mva_type} with {components} components"
+
+        self._unfolded4decomposition = self.unfold()
+        try:
+            sc = self.deepcopy()
+            sc.data = a.T.reshape(self.data.shape)
+            sc.metadata.General.title += " " + signal_name
+            if target.mean is not None:
+                sc.data = sc.data + target.mean
+        finally:
+            if self._unfolded4decomposition:
+                self.fold()
+                sc.fold()
+                self._unfolded4decomposition = False
+
+        # Ensure the returned signal type matches the data: if data is a dask
+        # array, return a LazySignal regardless of what deepcopy produced.
+        if _is_lazy and not sc._lazy:
+            sc = sc.as_lazy()
+
+        return sc
+
+    def get_decomposition_model(self, components=None):
+        """Generate model with the selected number of principal components.
+
+        If ``learning_results.factors`` and ``learning_results.loadings`` are
+        dask arrays (as produced by ``svd_solver='full'`` without
+        ``reproject``), the returned signal is a
+        :class:`~hyperspy.api.signals.LazySignal` whose ``.data`` is a lazy
+        dask array.  No computation is triggered until ``.compute()`` or
+        ``.save()`` is called, enabling a fully lazy pipeline::
+
+            s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
+            model = s.get_decomposition_model()   # lazy signal
+            model.save("model.hspy")              # computes chunk-by-chunk
+
+        For all other solvers, factors and loadings are numpy arrays and the
+        returned signal is an eager (non-lazy) signal, identical to the
+        base-class behaviour.
+
+        Parameters
+        ----------
+        components : None, int or list of int, default None
+            * ``None``: use all components.
+            * ``int``: use the first *N* components.
+            * list of int: use the components at the given indices.
+
+        Returns
+        -------
+        :class:`~hyperspy.api.signals.BaseSignal` or subclass
+            Reconstructed signal.  Lazy if factors/loadings are dask arrays.
+        """
+        return self._calculate_recmatrix(
+            components=components, mva_type="decomposition"
+        )
 
     def plot(self, navigator="auto", **kwargs):
         if self.axes_manager.ragged:
