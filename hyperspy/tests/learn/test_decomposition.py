@@ -259,6 +259,25 @@ class TestGetModel:
             "get_bss_model() must not overwrite lr.loadings"
         )
 
+    @skip_sklearn
+    def test_get_decomposition_model_after_bss_not_corrupted(self):
+        """Calling get_bss_model() followed by get_decomposition_model() must
+        return a valid decomposition model (the old mutation bug overwrote
+        lr.factors/lr.loadings with bss_factors/bss_loadings, so the
+        decomposition model would silently use BSS components instead)."""
+        s = self.s
+        s.decomposition(algorithm="SVD", output_dimension=3)
+        decomp_model_before = s.get_decomposition_model()
+        s.blind_source_separation(3)
+        s.get_bss_model()
+        decomp_model_after = s.get_decomposition_model()
+        np.testing.assert_array_equal(
+            decomp_model_before.data,
+            decomp_model_after.data,
+            err_msg="get_decomposition_model() returned different data after "
+            "get_bss_model() was called — lr.factors/lr.loadings were mutated.",
+        )
+
 
 @lazifyTestClass
 class TestGetExplainedVarinaceRatio:
