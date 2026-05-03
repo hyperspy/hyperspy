@@ -1,9 +1,13 @@
-Improve lazy signal decomposition:
+ Improve lazy signal decomposition:
 
-- Switch the ``svd_solver='dask'`` backend from ``dask.array.linalg.svd``
-  (full SVD) to ``dask.array.linalg.svd_compressed`` (randomised truncated
-  SVD), which avoids materialising the full data matrix in memory.
-  ``output_dimension`` is now required for all lazy SVD solvers.
+- Rename ``svd_solver='dask'`` to ``svd_solver='randomized'`` (consistent with
+  ``sklearn`` naming conventions) and switch its backend from
+  ``dask.array.linalg.svd`` (full SVD) to ``dask.array.linalg.svd_compressed``
+  (randomised truncated SVD), which avoids materialising the full data matrix
+  in memory.  ``output_dimension`` is required for ``'randomized'``.
+- Add ``svd_solver='full'``: reproduces pre-v2.5 behaviour using
+  ``dask.array.linalg.svd``; returns lazy dask arrays without triggering any
+  computation; ``output_dimension`` is optional.
 - Add ``svd_solver='incremental'``: uses :class:`~hyperspy.learn.incremental_svd.ISVD`
   (a subclass of ``sklearn.decomposition.IncrementalPCA`` with centering
   disabled), which streams the data in mini-batches and scales to datasets

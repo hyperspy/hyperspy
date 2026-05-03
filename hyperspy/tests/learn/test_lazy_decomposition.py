@@ -202,7 +202,7 @@ class TestLazyDecomposition:
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm="SVD", svd_solver="incremental")
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
-            self.s.decomposition(algorithm="SVD", svd_solver="dask")
+            self.s.decomposition(algorithm="SVD", svd_solver="randomized")
 
     @skip_sklearn
     @pytest.mark.parametrize("centre", ["navigation", "signal"])
@@ -242,8 +242,8 @@ class TestLazyDecomposition:
         with pytest.raises(ValueError, match="not recognised"):
             self.s.decomposition(algorithm="random")
 
-    def test_svd_default_solver_uses_dask(self):
-        """algorithm='SVD' without svd_solver defaults to 'dask' without warning."""
+    def test_svd_default_solver_uses_randomized(self):
+        """algorithm='SVD' without svd_solver defaults to 'randomized' without warning."""
         import warnings
 
         with warnings.catch_warnings():
@@ -1998,22 +1998,30 @@ class TestSVDAlgorithm:
     def test_basic_run(self):
         """SVD runs without error and returns results."""
         self.s.decomposition(
-            algorithm="SVD", svd_solver="dask", output_dimension=3, print_info=False
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=3,
+            print_info=False,
         )
         lr = self.s.learning_results
         assert lr.factors is not None
         assert lr.loadings is not None
 
     def test_output_dimension_required(self):
-        """output_dimension is required for svd_solver='dask'."""
+        """output_dimension is required for svd_solver='randomized'."""
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
-            self.s.decomposition(algorithm="SVD", svd_solver="dask", print_info=False)
+            self.s.decomposition(
+                algorithm="SVD", svd_solver="randomized", print_info=False
+            )
 
     def test_output_dimension_respected(self):
         """When output_dimension is given, exactly that many components are returned."""
         k = 4
         self.s.decomposition(
-            algorithm="SVD", svd_solver="dask", output_dimension=k, print_info=False
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=k,
+            print_info=False,
         )
         lr = self.s.learning_results
         assert lr.factors.shape == (30, k)
@@ -2023,7 +2031,10 @@ class TestSVDAlgorithm:
         """Factors shape is (sig_size, k); loadings shape is (nav_size, k)."""
         k = 3
         self.s.decomposition(
-            algorithm="SVD", svd_solver="dask", output_dimension=k, print_info=False
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=k,
+            print_info=False,
         )
         lr = self.s.learning_results
         assert lr.factors.shape == (30, k)
@@ -2032,7 +2043,10 @@ class TestSVDAlgorithm:
     def test_explained_variance_set(self):
         """explained_variance is populated after SVD."""
         self.s.decomposition(
-            algorithm="SVD", svd_solver="dask", output_dimension=3, print_info=False
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=3,
+            print_info=False,
         )
         lr = self.s.learning_results
         assert lr.explained_variance is not None
@@ -2041,7 +2055,10 @@ class TestSVDAlgorithm:
     def test_reconstruction_quality(self):
         """First 3 components should reconstruct the (near rank-3) signal well."""
         self.s.decomposition(
-            algorithm="SVD", svd_solver="dask", output_dimension=3, print_info=False
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=3,
+            print_info=False,
         )
         lr = self.s.learning_results
         recon = (lr.loadings @ lr.factors.T).reshape(7, 5, 30)

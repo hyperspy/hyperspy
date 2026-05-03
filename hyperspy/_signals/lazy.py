@@ -1048,7 +1048,7 @@ class LazySignal(signals.BaseSignal):
         reproject=None,
         return_info=False,
         print_info=True,
-        svd_solver="dask",
+        svd_solver="randomized",
         **kwargs,
     ):
         """Perform Incremental (Batch) decomposition on the data.
@@ -1079,7 +1079,7 @@ class LazySignal(signals.BaseSignal):
             (see below).
         output_dimension : int or None, default None
             Number of components to keep/calculate. Required for all
-            algorithms and for ``svd_solver='dask'`` and
+            algorithms and for ``svd_solver='randomized'`` and
             ``svd_solver='incremental'``.  Optional for
             ``svd_solver='full'``, in which case all components up to
             ``min(nav_size, sig_size)`` are returned as a lazy dask array
@@ -1102,7 +1102,7 @@ class LazySignal(signals.BaseSignal):
             the number of dask chunks to pass to the decomposition model.
             More chunks require more memory, but should run faster. Will be
             increased to contain at least ``output_dimension`` signals.
-            Not used for ``'SVD'`` with ``svd_solver='dask'``.
+            Not used for ``'SVD'`` with ``svd_solver='randomized'``.
         navigation_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The navigation locations marked as True are not used in the
             decomposition.
@@ -1132,11 +1132,11 @@ class LazySignal(signals.BaseSignal):
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
-        svd_solver : {'dask', 'incremental', 'full'}, default 'dask'
+        svd_solver : {'randomized', 'incremental', 'full'}, default 'randomized'
             Selects the SVD backend when ``algorithm='SVD'``.  Ignored for
             all other algorithms.
 
-            * ``'dask'`` (default): randomised truncated SVD via
+            * ``'randomized'`` (default): randomised truncated SVD via
               ``dask.array.linalg.svd_compressed``.  Builds a dask task
               graph, then materialises only the top-*k* singular vectors.
               Fast in practice (typically the fastest of the three options)
@@ -1217,7 +1217,7 @@ class LazySignal(signals.BaseSignal):
             )
         if (
             algorithm == "SVD"
-            and svd_solver in ("dask", "incremental")
+            and svd_solver in ("randomized", "incremental")
             and output_dimension is None
         ):
             raise ValueError(
@@ -1241,10 +1241,14 @@ class LazySignal(signals.BaseSignal):
                 "or a custom object with fit_transform() or fit()+transform()."
             )
 
-        if algorithm == "SVD" and svd_solver not in ("dask", "incremental", "full"):
+        if algorithm == "SVD" and svd_solver not in (
+            "randomized",
+            "incremental",
+            "full",
+        ):
             raise ValueError(
                 f"svd_solver={svd_solver!r} not recognised. "
-                "Expected one of: 'dask', 'incremental', 'full'."
+                "Expected one of: 'randomized', 'incremental', 'full'."
             )
 
         if centre not in (None, "navigation", "signal"):
@@ -1555,7 +1559,7 @@ class LazySignal(signals.BaseSignal):
                         else:
                             mean = None
 
-                        if svd_solver == "dask":
+                        if svd_solver == "randomized":
                             # Randomised truncated SVD via svd_compressed.
                             U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
                         else:
@@ -1677,7 +1681,7 @@ class LazySignal(signals.BaseSignal):
             # REPROJECT NAVIGATION (recompute loadings over full nav)
             _nav_reprojected = False
             if reproject in ("navigation", "both"):
-                if algorithm == "SVD" and svd_solver == "dask":
+                if algorithm == "SVD" and svd_solver == "randomized":
                     # dask SVD has no obj.transform; project via factors directly.
                     # loadings = D @ factors  (factors shape: n_sig × k)
                     D_chunks = []
