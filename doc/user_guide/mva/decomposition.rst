@@ -146,6 +146,14 @@ documentation for :func:`~.hyperspy.learn.svd_pca`.
    the output of the ``"SVD"`` algorithm and, for example,
    :class:`sklearn.decomposition.PCA`, which **does** apply centering.
 
+.. note::
+
+   For lazy signals, the ``"SVD"`` algorithm supports additional parameters
+   such as ``svd_solver`` (``'randomized'``, ``'incremental'``, or ``'full'``)
+   and ``centre``.  Not all combinations are supported; for example,
+   ``svd_solver='full'`` does not support ``centre``.  See
+   :ref:`big_data.svd` for the full details.
+
 .. _mva.pca:
 
 Principal component analysis (PCA)

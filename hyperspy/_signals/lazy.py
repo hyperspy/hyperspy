@@ -1286,6 +1286,20 @@ class LazySignal(signals.BaseSignal):
                 f"algorithm='SVD' with svd_solver={svd_solver!r}."
             )
 
+        if output_dimension is not None:
+            if not isinstance(output_dimension, (int, np.integer)) or isinstance(
+                output_dimension, bool
+            ):
+                raise ValueError(
+                    f"`output_dimension` must be a positive integer, "
+                    f"not {output_dimension!r}."
+                )
+            if output_dimension <= 0:
+                raise ValueError(
+                    f"`output_dimension` must be a positive integer, "
+                    f"got {output_dimension}."
+                )
+
         # Detect custom sklearn-like estimator objects
         _is_custom_sklearn_like = not isinstance(algorithm, str) and (
             hasattr(algorithm, "fit_transform")
@@ -1296,10 +1310,29 @@ class LazySignal(signals.BaseSignal):
             and isinstance(algorithm, str)
             and algorithm not in ("SVD", "PCA", "ORPCA", "ORNMF", "NMF")
         ):
+            _lazy_unsupported = {
+                "MLPCA",
+                "RPCA",
+                "sklearn_pca",
+                "sparse_pca",
+                "mini_batch_sparse_pca",
+            }
+            if algorithm in _lazy_unsupported:
+                raise NotImplementedError(
+                    f"algorithm={algorithm!r} is not supported for lazy signals. "
+                    "Supported algorithms are: 'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF', "
+                    "or a custom object with fit_transform() or fit()+transform()."
+                )
             raise ValueError(
                 f"'algorithm' {algorithm!r} not recognised. "
                 "Expected one of: 'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF', "
                 "or a custom object with fit_transform() or fit()+transform()."
+            )
+
+        if kwargs.get("var_array") is not None or kwargs.get("var_func") is not None:
+            raise NotImplementedError(
+                "`var_array` and `var_func` are only used by the 'MLPCA' algorithm, "
+                "which is not supported for lazy signals."
             )
 
         if algorithm == "SVD" and svd_solver not in (
@@ -1342,7 +1375,7 @@ class LazySignal(signals.BaseSignal):
             )
 
         if self.axes_manager.navigation_size < 2:
-            raise AttributeError(
+            raise ValueError(
                 "It is not possible to decompose a dataset with navigation_size < 2"
             )
 
@@ -1359,6 +1392,14 @@ class LazySignal(signals.BaseSignal):
         _al_data = self._data_aligned_with_axes
         nav_chunks = _al_data.chunks[: self.axes_manager.navigation_dimension]
 
+        if num_chunks is not None and (
+            not isinstance(num_chunks, (int, np.integer))
+            or isinstance(num_chunks, bool)
+            or num_chunks <= 0
+        ):
+            raise ValueError(
+                f"`num_chunks` must be a positive integer, got {num_chunks!r}."
+            )
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([utils.multiply(ar) for ar in product(*nav_chunks)])
         nblocks = utils.multiply([len(c) for c in nav_chunks])

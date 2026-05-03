@@ -1758,13 +1758,63 @@ class TestLazyCentreMaskParity:
             "factors should have no NaN after signal reproject"
         )
 
+    @pytest.mark.parametrize("svd_solver", ["randomized", "incremental"])
+    def test_centre_signal_mean_is_per_spectrum(self, svd_solver):
+        """centre='signal' subtracts each spectrum's own mean (axis=1 in the
+        unfolded (nav, sig) array).  The stored mean must have shape
+        (nav, 1) and each row must equal the corresponding spectrum mean."""
+        _, s_lz = self._make_signals()
+        s_lz.decomposition(
+            output_dimension=3,
+            centre="signal",
+            svd_solver=svd_solver,
+            print_info=False,
+        )
+        stored_mean = s_lz.learning_results.mean
+        assert stored_mean is not None, "mean should be stored when centre='signal'"
+        # stored_mean has shape (nav, 1) or (1, nav) depending on axis convention;
+        # either way its flat values should match per-spectrum means.
+        expected = self.data.mean(axis=1)  # shape (nav,)
+        np.testing.assert_allclose(
+            stored_mean.ravel(),
+            expected,
+            rtol=1e-10,
+            err_msg="centre='signal' mean does not match per-spectrum mean",
+        )
+
+    @pytest.mark.parametrize("svd_solver", ["randomized", "incremental"])
+    def test_centre_navigation_mean_is_per_channel(self, svd_solver):
+        """centre='navigation' subtracts the per-channel mean (axis=0 in the
+        unfolded (nav, sig) array).  Stored mean shape must broadcast as (1, sig)
+        and values must match the column-wise mean of the full (unmasked) data."""
+        _, s_lz = self._make_signals()
+        s_lz.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            svd_solver=svd_solver,
+            print_info=False,
+        )
+        stored_mean = s_lz.learning_results.mean
+        assert stored_mean is not None, "mean should be stored when centre='navigation'"
+        expected = self.data.mean(axis=0)  # shape (sig,)
+        np.testing.assert_allclose(
+            stored_mean.ravel(),
+            expected,
+            rtol=1e-10,
+            err_msg="centre='navigation' mean does not match per-channel mean",
+        )
+
 
 class TestLazyDecompositionInputValidation:
     """Verify that lazy decomposition raises the same guards as non-lazy.
 
     m1 - TypeError for non-float data.
-    m2 - AttributeError when navigation_size < 2.
+    m2 - ValueError when navigation_size < 2.
     m3 - ValueError from _check_navigation_mask when mask shape is wrong.
+    m4 - ValueError for output_dimension <= 0 or non-integer.
+    m5 - ValueError for num_chunks <= 0 or non-integer.
+    m6 - NotImplementedError for algorithms unsupported on lazy signals.
+    m7 - NotImplementedError for var_array / var_func (MLPCA-only params).
 
     All tests use asymmetric shapes and the SVD algorithm so that the
     previously-missing SVD path validation is exercised.
@@ -1777,9 +1827,9 @@ class TestLazyDecompositionInputValidation:
             s.decomposition(output_dimension=3, print_info=False)
 
     def test_navigation_size_lt2_raises(self):
-        """m2: navigation_size < 2 must raise AttributeError."""
+        """m2: navigation_size < 2 must raise ValueError."""
         s = Signal1D(np.ones((1, 15), dtype=float)).as_lazy()
-        with pytest.raises(AttributeError, match="navigation_size < 2"):
+        with pytest.raises(ValueError, match="navigation_size < 2"):
             s.decomposition(output_dimension=3, print_info=False)
 
     def test_bad_nav_mask_shape_raises(self):
@@ -1791,6 +1841,70 @@ class TestLazyDecompositionInputValidation:
         with pytest.raises(ValueError, match="navigation mask"):
             s.decomposition(
                 output_dimension=3, navigation_mask=bad_mask, print_info=False
+            )
+
+    def test_output_dimension_zero_raises(self):
+        """m4a: output_dimension=0 must raise ValueError."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(ValueError, match="positive integer"):
+            s.decomposition(output_dimension=0, print_info=False)
+
+    def test_output_dimension_negative_raises(self):
+        """m4b: negative output_dimension must raise ValueError."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(ValueError, match="positive integer"):
+            s.decomposition(output_dimension=-1, print_info=False)
+
+    def test_output_dimension_float_raises(self):
+        """m4c: float output_dimension must raise ValueError."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(ValueError, match="positive integer"):
+            s.decomposition(output_dimension=3.5, print_info=False)
+
+    def test_num_chunks_zero_raises(self):
+        """m5a: num_chunks=0 must raise ValueError."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(ValueError, match="positive integer"):
+            s.decomposition(output_dimension=3, num_chunks=0, print_info=False)
+
+    def test_num_chunks_negative_raises(self):
+        """m5b: negative num_chunks must raise ValueError."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(ValueError, match="positive integer"):
+            s.decomposition(output_dimension=3, num_chunks=-2, print_info=False)
+
+    def test_mlpca_raises_not_implemented(self):
+        """m6a: MLPCA is not supported for lazy signals."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(NotImplementedError, match="not supported for lazy"):
+            s.decomposition(algorithm="MLPCA", output_dimension=3, print_info=False)
+
+    def test_rpca_raises_not_implemented(self):
+        """m6b: RPCA is not supported for lazy signals."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(NotImplementedError, match="not supported for lazy"):
+            s.decomposition(algorithm="RPCA", output_dimension=3, print_info=False)
+
+    def test_var_array_raises_not_implemented(self):
+        """m7a: var_array is an MLPCA-only param; passing it to a lazy signal
+        must raise NotImplementedError."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(NotImplementedError, match="var_array"):
+            s.decomposition(
+                output_dimension=3,
+                var_array=np.ones((10, 15)),
+                print_info=False,
+            )
+
+    def test_var_func_raises_not_implemented(self):
+        """m7b: var_func is an MLPCA-only param; passing it to a lazy signal
+        must raise NotImplementedError."""
+        s = Signal1D(np.ones((10, 15), dtype=float)).as_lazy()
+        with pytest.raises(NotImplementedError, match="var_func"):
+            s.decomposition(
+                output_dimension=3,
+                var_func=lambda x: x,
+                print_info=False,
             )
 
 

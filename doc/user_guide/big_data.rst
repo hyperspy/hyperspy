@@ -205,7 +205,9 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
        ``output_dimension`` is **optional** (all components are returned if
        omitted, but materialising them requires significantly more memory).
        Supports navigation and signal masks and ``reproject``.  Does not
-       support ``centre``.
+       support ``centre`` (``da.linalg.svd`` operates on the raw dask graph
+       and cannot incorporate a mean-subtraction step lazily; use
+       ``'randomized'`` or ``'incremental'`` if centring is required).
 
 .. versionchanged:: 2.5
    The ``svd_solver`` parameter was introduced, offering three backends:
