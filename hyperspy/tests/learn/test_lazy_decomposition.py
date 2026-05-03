@@ -2129,15 +2129,15 @@ class TestSVDFullSolver:
                 print_info=False,
             )
 
-    def test_reproject_raises(self):
-        """svd_solver='full' raises ValueError when reproject is set."""
-        with pytest.raises(
-            ValueError, match="svd_solver='full' does not support reproject"
-        ):
-            self.s.decomposition(
-                algorithm="SVD",
-                svd_solver="full",
-                reproject="navigation",
-                output_dimension=3,
-                print_info=False,
-            )
+    def test_reproject_navigation(self):
+        """svd_solver='full' supports reproject='navigation'."""
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            reproject="navigation",
+            output_dimension=3,
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert lr.loadings.shape == (35, 3)
+        assert not np.any(np.isnan(lr.loadings))

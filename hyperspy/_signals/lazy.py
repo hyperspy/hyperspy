@@ -1172,20 +1172,22 @@ class LazySignal(signals.BaseSignal):
             * ``'full'``: exact full SVD via ``dask.array.linalg.svd``
               (TSQR algorithm).  Returns *lazy* dask arrays — no
               computation is triggered until the caller calls ``.compute()``
-              on the results.  ``output_dimension`` is optional; if given,
-              only the top-*k* columns of U/rows of V are retained before
-              computing.  Reproduces the behaviour of HyperSpy prior to
-              v2.5.  Supports navigation and signal masks.  Does not
-              support ``centre`` or ``reproject``.
+              on the results (or until ``reproject`` is used, in which case
+              the arrays are materialised internally).  ``output_dimension``
+              is optional; if given, only the top-*k* columns of U/rows of V
+              are retained before computing.  Reproduces the behaviour of
+              HyperSpy prior to v2.5.  Supports navigation and signal masks
+              and ``reproject``.  Does not support ``centre``.
 
-              *Advantages*: exact SVD; deferred computation — the caller
-              decides when and how much to materialise; ``output_dimension``
-              optional; masks supported.
+              *Advantages*: exact SVD; deferred computation when ``reproject``
+              is not used — the caller decides when and how much to
+              materialise; ``output_dimension`` optional; masks and reproject
+              supported.
 
               *Disadvantages*: materialising the full result requires
               significantly more memory than the other solvers (the full U
               matrix is ``nav_size × nav_size`` before truncation); slow for
-              large datasets; ``centre`` and ``reproject`` not supported.
+              large datasets; ``centre`` not supported.
         **kwargs
             passed to the partial_fit/fit functions.
 
@@ -1257,11 +1259,6 @@ class LazySignal(signals.BaseSignal):
             if centre is not None:
                 raise ValueError(
                     "svd_solver='full' does not support centre. "
-                    "Use svd_solver='randomized' or 'incremental' instead."
-                )
-            if reproject is not None:
-                raise ValueError(
-                    "svd_solver='full' does not support reproject. "
                     "Use svd_solver='randomized' or 'incremental' instead."
                 )
 
@@ -1549,19 +1546,24 @@ class LazySignal(signals.BaseSignal):
 
                     if svd_solver == "full":
                         # Exact full SVD via da.linalg.svd (TSQR algorithm).
-                        # Returns lazy dask arrays — no computation is triggered
-                        # here.  The caller can call .compute() on the results
-                        # stored in learning_results at any time.
-                        # Masks and centring are not supported for this solver.
+                        # Results are lazy dask arrays until .compute() is called.
+                        # If reproject is requested we materialise them now so the
+                        # shared reproject block (which operates on numpy arrays)
+                        # works correctly.  Without reproject the arrays stay lazy
+                        # and are stored as-is in learning_results.
                         U, S, V = da.linalg.svd(D)
                         if output_dimension is not None:
                             U = U[:, :output_dimension]
                             S = S[:output_dimension]
                             V = V[:output_dimension]
-                        # Keep results as lazy dask arrays.
                         factors = V.T
                         explained_variance = S**2 / D.shape[0]
                         loadings = U * S
+                        if reproject is not None:
+                            # Materialise so the reproject block can use numpy ops.
+                            factors = factors.compute()
+                            explained_variance = explained_variance.compute()
+                            loadings = loadings.compute()
                     else:
                         # Apply centring (not supported for svd_solver='full').
                         if centre == "navigation":
@@ -1695,7 +1697,7 @@ class LazySignal(signals.BaseSignal):
             # REPROJECT NAVIGATION (recompute loadings over full nav)
             _nav_reprojected = False
             if reproject in ("navigation", "both"):
-                if algorithm == "SVD" and svd_solver == "randomized":
+                if algorithm == "SVD" and svd_solver in ("randomized", "full"):
                     # dask SVD has no obj.transform; project via factors directly.
                     # loadings = D @ factors  (factors shape: n_sig × k)
                     D_chunks = []

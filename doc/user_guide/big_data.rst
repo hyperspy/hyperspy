@@ -193,12 +193,13 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
    * - ``'full'``
      - :func:`dask.array.linalg.svd` — **exact full SVD** (TSQR algorithm).
        Returns *lazy* dask arrays — no computation is triggered until
-       ``.compute()`` is called on the results.  Reproduces the behaviour of
-       HyperSpy prior to v2.5.
+       ``.compute()`` is called on the results (or until ``reproject`` is
+       used, which materialises the arrays internally).  Reproduces the
+       behaviour of HyperSpy prior to v2.5.
        ``output_dimension`` is **optional** (all components are returned if
        omitted, but materialising them requires significantly more memory).
-       Supports navigation and signal masks.  Does not support ``centre`` or
-       ``reproject``.
+       Supports navigation and signal masks and ``reproject``.  Does not
+       support ``centre``.
 
 .. versionchanged:: 2.5
    The ``svd_solver`` parameter was introduced, offering three backends:
