@@ -204,7 +204,7 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
        factorisation is required.
        ``output_dimension`` is **optional** (all components are returned if
        omitted, but materialising them requires significantly more memory).
-        Supports navigation and signal masks, ``reproject``, and ``centre``.
+       Supports navigation and signal masks, ``reproject``, and ``centre``.
 
 .. note::
 

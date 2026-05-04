@@ -50,14 +50,14 @@ if SKLEARN_INSTALLED:
 
         A subclass of :class:`sklearn.decomposition.IncrementalPCA` that
         disables centering so the decomposition computes a plain SVD rather
-        than PCA.  Data is fed in batches via :meth:`partial_fit`; after all
-        batches have been processed, call :meth:`transform` to obtain the
+        than PCA.  Data is fed in batches via ``partial_fit``; after all
+        batches have been processed, call ``transform`` to obtain the
         loadings.
 
         The centering is disabled by overriding the ``mean_`` property to
         always return an array of zeros.  This neutralises both the
-        mean-correction term computed during :meth:`partial_fit` and the
-        mean-shift applied during :meth:`transform`, without touching any
+        mean-correction term computed during ``partial_fit`` and the
+        mean-shift applied during ``transform``, without touching any
         other part of the sklearn implementation.
 
         Parameters
@@ -70,14 +70,17 @@ if SKLEARN_INSTALLED:
 
         Attributes
         ----------
-        singular_values_ : ndarray of shape (n_components,)
-            Singular values after fitting.
-        components_ : ndarray of shape (n_components, n_features)
-            Right singular vectors (rows are components).
-        explained_variance_ : ndarray of shape (n_components,)
-            Approximate explained variance per component.
-        explained_variance_ratio_ : ndarray of shape (n_components,)
-            Fraction of total variance explained by each component.
+        singular_values_ : ndarray
+            Singular values after fitting, shape ``(n_components,)``.
+        components_ : ndarray
+            Right singular vectors (rows are components), shape
+            ``(n_components, n_features)``.
+        explained_variance_ : ndarray
+            Approximate explained variance per component, shape
+            ``(n_components,)``.
+        explained_variance_ratio_ : ndarray
+            Fraction of total variance explained by each component, shape
+            ``(n_components,)``.
 
         Examples
         --------
