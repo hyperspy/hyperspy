@@ -328,9 +328,9 @@ called:
 
 For comparison, ``svd_solver='randomized'`` (the default) and
 ``svd_solver='incremental'`` always compute numpy arrays during
-decomposition, so ``get_decomposition_model()`` returns an eager signal.
-Use ``svd_solver='full'`` when the reconstructed model is too large to
-fit in memory and you want to stream it to disk via ``save()``.
+decomposition, so by default ``get_decomposition_model()`` returns an eager
+signal.  The ``lazy`` keyword argument described below gives explicit control
+over this regardless of the solver.
 
 The ``lazy`` keyword argument of
 :meth:`~.api.signals.BaseSignal.get_decomposition_model` gives explicit
@@ -364,8 +364,9 @@ or whether the input signal is lazy:
    Attempting to do so will raise a ``ValueError``.
 
 The ``"PCA"`` algorithm wraps :class:`sklearn.decomposition.IncrementalPCA`
-and always centres the data internally.  Like the ``"SVD"`` backends, it
-supports ``centre``, masks, and all ``reproject`` modes.
+and always centres the data internally (the ``centre`` keyword argument is
+ignored for this algorithm — centering is handled by the estimator itself).
+Like the ``"SVD"`` backends, it supports masks and all ``reproject`` modes.
 
 .. _big_data.nmf:
 

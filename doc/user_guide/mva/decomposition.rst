@@ -110,7 +110,9 @@ links to the appropriate documentation for more information on each one.
    +--------------------------+----------------------------------------------------------------+
    | "ORNMF"                  | :func:`~.learn.ornmf`                                          |
    +--------------------------+----------------------------------------------------------------+
-   | custom object            | An object implementing  ``fit()`` and  ``transform()`` methods |
+   | custom object            | An object implementing ``fit()`` and ``transform()`` methods   |
+   |                          | (or ``partial_fit()`` for lazy signals; see                    |
+   |                          | :ref:`big_data.custom_algorithm`)                              |
    +--------------------------+----------------------------------------------------------------+
 
 .. _mva.svd:
