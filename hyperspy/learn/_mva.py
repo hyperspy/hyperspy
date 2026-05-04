@@ -694,7 +694,8 @@ class MVA:
 
             if reproject in ("navigation", "both"):
                 if not is_sklearn_like:
-                    loadings_ = (dc[:, signal_mask] - mean) @ factors
+                    s_sq = np.einsum("ij,ij->j", factors, factors)
+                    loadings_ = ((dc[:, signal_mask] - mean) @ factors) / s_sq
                 else:
                     loadings_ = estim.transform(dc[:, signal_mask])
                 target.loadings = loadings_

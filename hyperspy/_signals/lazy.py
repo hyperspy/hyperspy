@@ -1455,24 +1455,24 @@ class LazySignal(signals.BaseSignal):
             if algorithm == "SVD" and svd_solver == "incremental":
                 from hyperspy.learn.incremental_svd import ISVD
 
-                if auto_transpose:
-                    _logger.info(
-                        "auto_transpose is not applicable to the lazy 'SVD' "
-                        "algorithm with svd_solver='incremental' (incremental "
-                        "fitting always streams (nav_batch, sig) chunks); "
-                        "the parameter is ignored."
-                    )
-
+                _did_transpose = False
+                _D_unfolded = None
                 try:
                     self._unfolded4decomposition = self.unfold()
 
-                    # After unfolding, the navigation space is always 1-D.
-                    # Flatten the navigation mask to 1-D, mirroring the
-                    # non-lazy path in _mva.py (BaseSignal → .data.ravel();
-                    # array-like → .T.ravel() to account for HyperSpy's
-                    # reversed axis convention between navigation_shape and
-                    # the underlying array axis order).
+                    # After unfolding, the data is 2-D: (nav, sig).
+                    # Decide whether to transpose (auto_transpose logic):
+                    # when there are fewer navigation positions than signal
+                    # channels the transpose (sig, nav) is smaller and
+                    # IncrementalPCA converges faster.
                     import dask.array as da
+
+                    n_nav_total = self.data.shape[0]
+                    n_sig_total = self.data.shape[1]
+                    _D_unfolded = self.data
+                    if auto_transpose and n_nav_total < n_sig_total:
+                        _logger.info("Auto-transposing the data")
+                        _did_transpose = True
 
                     if navigation_mask is not None:
                         if isinstance(navigation_mask, signals.BaseSignal):
@@ -1493,69 +1493,142 @@ class LazySignal(signals.BaseSignal):
 
                     obj = ISVD(n_components=output_dimension)
 
-                    # Apply centring by temporarily modifying self.data
-                    # (which is restored via original_data in the outer
-                    # finally block).
-                    if centre == "navigation":
-                        # Compute mean only over unmasked navigation positions
-                        # so that masked pixels do not bias the centring.
-                        # After unfold() the data is 2-D: (nav, sig).
-                        if navigation_mask is not None:
-                            # navigation_mask here is the already-ravelled 1-D
-                            # bool array (True = masked out).
-                            import dask.array as _da
+                    if _did_transpose:
+                        # In transposed mode signal_mask masks rows (sig dim)
+                        # and navigation_mask masks columns (nav dim).
+                        # Apply signal mask by removing those rows.
+                        sig_mask_1d = None
+                        if signal_mask is not None:
+                            if isinstance(signal_mask, signals.BaseSignal):
+                                _sm = signal_mask.data.ravel()
+                            else:
+                                _sm = np.asarray(signal_mask).ravel()
+                            sig_mask_1d = _sm.astype(bool)
 
-                            nav_mask_1d = (
+                        nav_mask_1d_t = None
+                        if navigation_mask is not None:
+                            nav_mask_1d_t = (
                                 navigation_mask.compute()
-                                if isinstance(navigation_mask, _da.Array)
+                                if isinstance(navigation_mask, da.Array)
                                 else np.asarray(navigation_mask, dtype=bool)
                             ).ravel()
-                            mean = (
-                                self.data[~nav_mask_1d, :]
-                                .mean(axis=0, keepdims=True)
-                                .compute()
-                            )
+
+                        # Apply centring before transpose.
+                        if centre == "navigation":
+                            # mean over nav rows → shape (1, sig)
+                            if nav_mask_1d_t is not None:
+                                mean = (
+                                    self.data[~nav_mask_1d_t, :]
+                                    .mean(axis=0, keepdims=True)
+                                    .compute()
+                                )
+                            else:
+                                mean = self.data.mean(axis=0, keepdims=True).compute()
+                            self.data = self.data - mean
+                        elif centre == "signal":
+                            mean = self.data.mean(axis=1, keepdims=True).compute()
+                            self.data = self.data - mean
                         else:
-                            mean = self.data.mean(axis=0, keepdims=True).compute()
-                        self.data = self.data - mean
-                    elif centre == "signal":
-                        mean = self.data.mean(axis=1, keepdims=True).compute()
-                        self.data = self.data - mean
+                            mean = None
+
+                        # Transpose: (nav, sig) → (sig, nav)
+                        D_T = self.data.T  # dask array, (sig, nav)
+                        if sig_mask_1d is not None:
+                            D_T = D_T[~sig_mask_1d, :]
+                        if nav_mask_1d_t is not None:
+                            D_T = D_T[:, ~nav_mask_1d_t]
+
+                        # Ensure each batch has at least output_dimension rows.
+                        # After boolean indexing dask may not know chunk sizes,
+                        # so rechunk to a concrete size.
+                        batch_size = max(output_dimension, output_dimension * 4)
+                        if np.isnan(D_T.shape[0]):
+                            D_T = D_T.compute_chunk_sizes()
+                        D_T = D_T.rechunk({0: batch_size, 1: -1})
+                        _chunk0 = int(D_T.chunks[0][0])
+                        for i in range(0, D_T.shape[0], _chunk0):
+                            chunk = D_T[i : i + _chunk0, :].compute()
+                            obj.partial_fit(chunk)
+
+                        # In transposed SVD (fitting D^T of shape sig × nav):
+                        # - components_ = (k, nav) → transpose gives loadings (nav, k)
+                        # - transform(D^T) = D^T @ components_.T gives factors (sig, k)
+                        loadings = obj.components_.T  # (nav_unmasked, k)
+                        F_chunks = []
+                        for i in range(0, D_T.shape[0], _chunk0):
+                            chunk = D_T[i : i + _chunk0, :].compute()
+                            F_chunks.append(obj.transform(chunk))
+                        factors = np.concatenate(F_chunks, axis=0)  # (sig_unmasked, k)
+
+                        explained_variance = obj.explained_variance_
+                        explained_variance_ratio = obj.explained_variance_ratio_
+
                     else:
-                        mean = None
+                        # Normal (non-transposed) path.
+                        # Apply centring by temporarily modifying self.data
+                        # (which is restored via original_data in the outer
+                        # finally block).
+                        if centre == "navigation":
+                            # Compute mean only over unmasked navigation
+                            # positions so that masked pixels do not bias the
+                            # centring.  After unfold() the data is 2-D:
+                            # (nav, sig).
+                            if navigation_mask is not None:
+                                # navigation_mask here is the already-ravelled
+                                # 1-D bool array (True = masked out).
+                                import dask.array as _da
 
-                    for chunk in progressbar(
-                        self._block_iterator(
-                            flat_signal=True,
-                            get=get,
-                            signal_mask=signal_mask,
-                            navigation_mask=navigation_mask,
-                        ),
-                        total=nblocks,
-                        leave=True,
-                        desc="Learn",
-                    ):
-                        obj.partial_fit(chunk)
+                                nav_mask_1d = (
+                                    navigation_mask.compute()
+                                    if isinstance(navigation_mask, _da.Array)
+                                    else np.asarray(navigation_mask, dtype=bool)
+                                ).ravel()
+                                mean = (
+                                    self.data[~nav_mask_1d, :]
+                                    .mean(axis=0, keepdims=True)
+                                    .compute()
+                                )
+                            else:
+                                mean = self.data.mean(axis=0, keepdims=True).compute()
+                            self.data = self.data - mean
+                        elif centre == "signal":
+                            mean = self.data.mean(axis=1, keepdims=True).compute()
+                            self.data = self.data - mean
+                        else:
+                            mean = None
 
-                    factors = obj.components_.T  # (n_sig, n_components)
-                    explained_variance = obj.explained_variance_
-                    explained_variance_ratio = obj.explained_variance_ratio_
+                        for chunk in progressbar(
+                            self._block_iterator(
+                                flat_signal=True,
+                                get=get,
+                                signal_mask=signal_mask,
+                                navigation_mask=navigation_mask,
+                            ),
+                            total=nblocks,
+                            leave=True,
+                            desc="Learn",
+                        ):
+                            obj.partial_fit(chunk)
 
-                    # Reproject to get loadings
-                    H = []
-                    for chunk in progressbar(
-                        self._block_iterator(
-                            flat_signal=True,
-                            get=get,
-                            signal_mask=signal_mask,
-                            navigation_mask=navigation_mask,
-                        ),
-                        total=nblocks,
-                        leave=True,
-                        desc="Project",
-                    ):
-                        H.append(obj.transform(chunk))
-                    loadings = np.concatenate(H, axis=0)
+                        factors = obj.components_.T  # (n_sig, n_components)
+                        explained_variance = obj.explained_variance_
+                        explained_variance_ratio = obj.explained_variance_ratio_
+
+                        # Reproject to get loadings
+                        H = []
+                        for chunk in progressbar(
+                            self._block_iterator(
+                                flat_signal=True,
+                                get=get,
+                                signal_mask=signal_mask,
+                                navigation_mask=navigation_mask,
+                            ),
+                            total=nblocks,
+                            leave=True,
+                            desc="Project",
+                        ):
+                            H.append(obj.transform(chunk))
+                        loadings = np.concatenate(H, axis=0)
                 finally:
                     if self._unfolded4decomposition is True:
                         self.fold()
@@ -1776,8 +1849,8 @@ class LazySignal(signals.BaseSignal):
                         if isinstance(factors, da.Array)
                         else da.from_array(factors)
                     )
-                    # Result shape: (nav, k) — small; compute to get numpy array
-                    loadings = (D_nav @ _factors_da).compute()
+                    _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
+                    loadings = ((D_nav @ _factors_da) / _s_sq).compute()
                 elif algorithm == "SVD" and svd_solver == "randomized":
                     # Use a dask matmul so the full data matrix is never
                     # materialised in RAM.  _D_unfolded is the unfolded dask
@@ -1790,18 +1863,29 @@ class LazySignal(signals.BaseSignal):
                     if sig_mask_1d is not None:
                         D_nav = D_nav[:, ~sig_mask_1d]
                     if mean is not None and centre == "navigation":
-                        # mean is a (1, sig) array — safe to broadcast over
-                        # all nav rows.  For centre='signal' the mean is
-                        # per-row (nav_unmasked, 1) and cannot be applied to
-                        # the full (nav, sig) matrix, so we skip it there.
                         D_nav = D_nav - mean
                     _factors_da = (
                         factors
                         if isinstance(factors, da.Array)
                         else da.from_array(factors)
                     )
-                    # Result shape: (nav, k) — small; compute to get numpy.
-                    loadings = (D_nav @ _factors_da).compute()
+                    _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
+                    loadings = ((D_nav @ _factors_da) / _s_sq).compute()
+                elif (
+                    algorithm == "SVD"
+                    and svd_solver == "incremental"
+                    and _did_transpose
+                ):
+                    import dask.array as da
+
+                    D_nav = _D_unfolded  # (nav, sig)
+                    if sig_mask_1d is not None:
+                        D_nav = D_nav[:, ~sig_mask_1d]
+                    if mean is not None and centre == "navigation":
+                        D_nav = D_nav - mean
+                    _factors_da = da.from_array(factors)
+                    _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
+                    loadings = ((D_nav @ _factors_da) / _s_sq).compute()
                 else:
                     # All other algorithms expose obj.transform(X).
                     H = []
