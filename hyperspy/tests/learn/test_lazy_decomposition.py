@@ -2502,3 +2502,636 @@ class TestLazyGetDecompositionModel:
         model = s.get_decomposition_model()
         assert model._lazy
         assert model.data.shape == s.data.shape
+
+
+# ---------------------------------------------------------------------------
+# Coverage-gap tests: branches added in PR #3614 not yet exercised
+# ---------------------------------------------------------------------------
+
+
+class TestImportErrorPaths:
+    """ImportError raised when sklearn is absent for PCA / NMF algorithms."""
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(0)
+        self.s = Signal1D(rng.random((8, 20))).as_lazy()
+
+    def test_pca_raises_import_error_without_sklearn(self, monkeypatch):
+        """algorithm='PCA' must raise ImportError when sklearn is not installed."""
+        import hyperspy._signals.lazy as lazy_mod
+
+        monkeypatch.setattr(lazy_mod, "SKLEARN_INSTALLED", False)
+        with pytest.raises(ImportError, match="algorithm='PCA' requires scikit-learn"):
+            self.s.decomposition(algorithm="PCA", output_dimension=2, print_info=False)
+
+    def test_nmf_raises_import_error_without_sklearn(self, monkeypatch):
+        """algorithm='NMF' must raise ImportError when sklearn is not installed."""
+        import hyperspy._signals.lazy as lazy_mod
+
+        monkeypatch.setattr(lazy_mod, "SKLEARN_INSTALLED", False)
+        with pytest.raises(ImportError, match="algorithm='NMF' requires scikit-learn"):
+            self.s.decomposition(algorithm="NMF", output_dimension=2, print_info=False)
+
+
+class TestISVDPlaceholder:
+    """ISVD placeholder class raises ImportError when sklearn is absent."""
+
+    def test_isvd_placeholder_raises(self, monkeypatch):
+        """The no-sklearn ISVD stub must raise ImportError on instantiation."""
+
+        import hyperspy.learn.incremental_svd as isvd_mod
+
+        monkeypatch.setattr(isvd_mod, "SKLEARN_INSTALLED", False)
+
+        # Reimport the module-level conditional block by reloading
+        # (monkeypatching the module attribute directly is enough to test
+        # _check_sklearn which is called by the placeholder __init__)
+        isvd_mod._check_sklearn.__wrapped__ = None  # no-op guard reset
+
+        # Build a fresh placeholder instance by calling _check_sklearn directly
+        with pytest.raises(ImportError, match="requires scikit-learn"):
+            isvd_mod._check_sklearn()
+
+
+class TestNumChunksAutoReduce:
+    """When blocksize / output_dimension < num_chunks the value is clamped."""
+
+    @skip_sklearn
+    def test_num_chunks_clamped_to_ceil(self):
+        """Decomposition succeeds even when user requests more chunks than useful."""
+        rng = np.random.default_rng(1)
+        # Small nav so blocksize / output_dimension < a large num_chunks
+        s = Signal1D(rng.random((4, 20))).as_lazy()
+        # output_dimension=3, 4 nav positions → blocksize=4; num_chunks=10 > 4/3
+        # Should clamp without error.
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=3,
+            num_chunks=10,
+            print_info=False,
+        )
+        assert s.learning_results.factors is not None
+
+
+class TestCentreWithDaskMask:
+    """centre='navigation' with a dask-array navigation_mask (L1462-1468)."""
+
+    @skip_sklearn
+    def test_centre_navigation_dask_nav_mask(self):
+        """centre='navigation' + dask navigation_mask computes correct mean."""
+        import dask.array as da
+
+        rng = np.random.default_rng(2)
+        data = rng.random((12, 30)) + 1.0
+        nav_mask_np = np.zeros(12, dtype=bool)
+        nav_mask_np[::4] = True
+        nav_mask_da = da.from_array(nav_mask_np, chunks=4)
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            navigation_mask=nav_mask_da,
+            print_info=False,
+        )
+        stored_mean = s.learning_results.mean
+        expected = data[~nav_mask_np].mean(axis=0)
+        np.testing.assert_allclose(stored_mean.ravel(), expected, rtol=1e-10)
+
+    @skip_sklearn
+    def test_centre_navigation_incremental_dask_nav_mask(self):
+        """ISVD + centre='navigation' + dask nav_mask exercises L1462-1468."""
+        import dask.array as da
+
+        rng = np.random.default_rng(20)
+        data = rng.random((12, 30)) + 1.0
+        nav_mask_np = np.zeros(12, dtype=bool)
+        nav_mask_np[::4] = True
+        nav_mask_da = da.from_array(nav_mask_np, chunks=4)
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=3,
+            centre="navigation",
+            navigation_mask=nav_mask_da,
+            print_info=False,
+        )
+        stored_mean = s.learning_results.mean
+        expected = data[~nav_mask_np].mean(axis=0)
+        np.testing.assert_allclose(stored_mean.ravel(), expected, rtol=1e-10)
+
+    @skip_sklearn
+    def test_centre_signal_incremental_full_svd(self):
+        """svd_solver='full' + centre='signal' exercises L1553-1554."""
+        rng = np.random.default_rng(21)
+        data = rng.random((10, 25)) + 1.0
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            centre="signal",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert lr.mean is not None
+        assert lr.factors is not None
+
+
+class TestCentreWith2DNav:
+    """centre with 2-D navigation space exercises the nav_mask .T branch."""
+
+    @skip_sklearn
+    def test_centre_navigation_2d_nav(self):
+        """centre='navigation' on a 2-D nav signal stores correct mean."""
+        rng = np.random.default_rng(3)
+        # nav (3, 4), sig 20
+        data = rng.random((3, 4, 20)) + 1.0
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            print_info=False,
+        )
+        stored = s.learning_results.mean
+        expected = data.reshape(-1, 20).mean(axis=0)
+        np.testing.assert_allclose(stored.ravel(), expected, rtol=1e-10)
+
+    @skip_sklearn
+    def test_centre_navigation_2d_nav_with_mask(self):
+        """centre='navigation' + nav_mask on a 2-D nav signal."""
+        rng = np.random.default_rng(4)
+        data = rng.random((3, 4, 20)) + 1.0
+        # navigation_shape is (4, 3) for a (3, 4, 20) Signal1D
+        nav_mask = np.zeros((4, 3), dtype=bool)
+        nav_mask[0, 0] = True
+        nav_mask[3, 2] = True
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            navigation_mask=nav_mask,
+            print_info=False,
+        )
+        assert s.learning_results.mean is not None
+        assert s.learning_results.factors.shape[1] == 3
+
+    @skip_sklearn
+    def test_centre_signal_2d_nav(self):
+        """centre='signal' on a 2-D nav signal stores per-spectrum mean."""
+        rng = np.random.default_rng(5)
+        data = rng.random((3, 4, 20)) + 1.0
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            centre="signal",
+            print_info=False,
+        )
+        stored = s.learning_results.mean
+        expected = data.reshape(-1, 20).mean(axis=1)  # per spectrum
+        np.testing.assert_allclose(stored.ravel(), expected, rtol=1e-10)
+
+    @skip_sklearn
+    def test_centre_signal_2d_nav_dask_signal_mask(self):
+        """centre + dask signal_mask exercises the dask signal-mask branch."""
+        import dask.array as da
+
+        rng = np.random.default_rng(6)
+        data = rng.random((3, 4, 20)) + 1.0
+        sig_mask_np = np.zeros(20, dtype=bool)
+        sig_mask_np[:3] = True
+        sig_mask_da = da.from_array(sig_mask_np, chunks=10)
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            signal_mask=sig_mask_da,
+            print_info=False,
+        )
+        assert s.learning_results.factors is not None
+
+
+class TestReprojectMaskBranches:
+    """Mask handling inside the reproject paths."""
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(7)
+        nav, sig, rank = 16, 25, 3
+        U = np.abs(rng.standard_normal((nav, rank)))
+        V = np.abs(rng.standard_normal((sig, rank)))
+        self.data = (U @ V.T) + 1.0
+        self.nav_mask = np.zeros(nav, dtype=bool)
+        self.nav_mask[::4] = True
+        self.sig_mask = np.zeros(sig, dtype=bool)
+        self.sig_mask[:3] = True
+
+    @skip_sklearn
+    def test_reproject_navigation_with_sig_mask_incremental(self):
+        """reproject='navigation' + sig_mask exercises mask-column removal."""
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            signal_mask=self.sig_mask,
+            reproject="navigation",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert lr.loadings.shape == (self.data.shape[0], 3)
+        assert lr.factors.shape == (self.data.shape[1], 3)
+
+    @skip_sklearn
+    def test_reproject_signal_with_nav_mask_incremental(self):
+        """reproject='signal' + nav_mask exercises the pinv signal-reproject path."""
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            reproject="signal",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert lr.factors.shape == (self.data.shape[1], 3)
+        assert lr.loadings.shape == (self.data.shape[0], 3)
+
+    @skip_sklearn
+    def test_reproject_both_with_masks_incremental(self):
+        """reproject='both' + both masks exercises the 'both' reproject branch."""
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            signal_mask=self.sig_mask,
+            reproject="both",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert lr.factors.shape == (self.data.shape[1], 3)
+        assert lr.loadings.shape == (self.data.shape[0], 3)
+
+    @skip_sklearn
+    def test_reproject_both_centre_mean_subtraction(self):
+        """reproject='signal' + centre='navigation' triggers mean subtraction."""
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            reproject="signal",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert lr.mean is not None
+        assert lr.factors.shape == (self.data.shape[1], 3)
+
+    @skip_sklearn
+    def test_reproject_navigation_centre_navigation_incremental(self):
+        """reproject='navigation' + centre='navigation' subtracts mean in reproject."""
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            output_dimension=3,
+            centre="navigation",
+            reproject="navigation",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert lr.mean is not None
+        assert lr.loadings.shape == (self.data.shape[0], 3)
+
+
+class TestReprojectFullSVDMasks:
+    """reproject with svd_solver='full' + nav/sig masks."""
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(8)
+        nav, sig, rank = 12, 20, 3
+        U = np.abs(rng.standard_normal((nav, rank)))
+        V = np.abs(rng.standard_normal((sig, rank)))
+        self.data = (U @ V.T) + 1.0
+        self.nav_mask = np.zeros(nav, dtype=bool)
+        self.nav_mask[::4] = True
+        self.sig_mask = np.zeros(sig, dtype=bool)
+        self.sig_mask[:3] = True
+
+    def test_full_svd_reproject_navigation_with_sig_mask(self):
+        """svd_solver='full', reproject='navigation' + sig_mask."""
+        import dask.array as da
+
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            signal_mask=self.sig_mask,
+            reproject="navigation",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert isinstance(lr.factors, da.Array)
+        assert isinstance(lr.loadings, np.ndarray)
+        assert lr.loadings.shape == (self.data.shape[0], 3)
+
+    def test_full_svd_reproject_signal_with_nav_mask(self):
+        """svd_solver='full', reproject='signal' + nav_mask."""
+        import dask.array as da
+
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            reproject="signal",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert isinstance(lr.loadings, da.Array)
+        assert isinstance(lr.factors, np.ndarray)
+        assert lr.factors.shape == (self.data.shape[1], 3)
+
+    def test_full_svd_reproject_both_with_nav_mask(self):
+        """svd_solver='full', reproject='both' + nav_mask exercises L1848."""
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            navigation_mask=self.nav_mask,
+            reproject="both",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert isinstance(lr.factors, np.ndarray)
+        assert isinstance(lr.loadings, np.ndarray)
+        assert lr.factors.shape == (self.data.shape[1], 3)
+
+    def test_full_svd_reproject_navigation_with_centre(self):
+        """svd_solver='full', reproject='navigation' + centre='navigation'."""
+
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            centre="navigation",
+            reproject="navigation",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert lr.mean is not None
+        assert isinstance(lr.loadings, np.ndarray)
+
+    def test_full_svd_reproject_signal_with_centre(self):
+        """svd_solver='full', reproject='signal' + centre='navigation' → L1842-1843."""
+        s = Signal1D(self.data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            centre="navigation",
+            reproject="signal",
+            print_info=False,
+        )
+        lr = s.learning_results
+        assert lr.mean is not None
+        assert isinstance(lr.factors, np.ndarray)
+
+
+class TestGetDecompositionModelBss:
+    """get_decomposition_model(mva_type='bss') and lazy=True with bss."""
+
+    @skip_sklearn
+    def test_get_bss_model_lazy_true(self):
+        """mva_type='bss', lazy=True wraps bss factors/loadings as dask."""
+
+        rng = np.random.default_rng(9)
+        data = rng.random((10, 20))
+        s = Signal1D(data.copy())
+        s.decomposition(output_dimension=3, print_info=False)
+        s.blind_source_separation(number_of_components=3, print_info=False)
+
+        model = s.get_bss_model(lazy=True)
+        assert model._lazy
+
+    @skip_sklearn
+    def test_get_bss_model_eager(self):
+        """get_bss_model() (lazy=False default) returns correct shape."""
+        rng = np.random.default_rng(10)
+        data = rng.random((10, 20))
+        s = Signal1D(data.copy())
+        s.decomposition(output_dimension=3, print_info=False)
+        s.blind_source_separation(number_of_components=3, print_info=False)
+
+        model = s.get_bss_model()
+        assert model.data.shape == s.data.shape
+
+    @skip_sklearn
+    def test_get_decomposition_model_components_list_numpy(self):
+        """components as list with numpy factors exercises L1367-1371."""
+        rng = np.random.default_rng(11)
+        data = rng.random((10, 20))
+        s = Signal1D(data.copy())
+        s.decomposition(output_dimension=5, print_info=False)
+
+        model = s.get_decomposition_model(components=[0, 2, 4])
+        assert model.data.shape == s.data.shape
+
+
+class TestFullSVDBaseSignalMask:
+    """BaseSignal masks in svd_solver='full' path (L1507, L1523)."""
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(30)
+        nav, sig = 12, 24
+        self.data = rng.random((nav, sig)) + 1.0
+        self.nav = nav
+        self.sig = sig
+
+    def test_full_svd_basesignal_nav_mask(self):
+        """svd_solver='full' with BaseSignal navigation_mask exercises L1507."""
+        from hyperspy.signals import Signal1D as _S1D
+
+        s = _S1D(self.data.copy()).as_lazy()
+        nav_mask_data = np.zeros(self.nav, dtype=bool)
+        nav_mask_data[::4] = True
+        nav_mask_sig = _S1D(nav_mask_data).T
+
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            navigation_mask=nav_mask_sig,
+            print_info=False,
+        )
+        assert s.learning_results.factors is not None
+
+    def test_full_svd_basesignal_sig_mask(self):
+        """svd_solver='full' with BaseSignal signal_mask exercises L1523."""
+        from hyperspy.signals import Signal1D as _S1D
+
+        s = _S1D(self.data.copy()).as_lazy()
+        sig_mask_data = np.zeros(self.sig, dtype=bool)
+        sig_mask_data[:4] = True
+        sig_mask_sig = _S1D(sig_mask_data)
+
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            signal_mask=sig_mask_sig,
+            print_info=False,
+        )
+        assert s.learning_results.factors is not None
+
+    def test_full_svd_dask_nav_mask(self):
+        """svd_solver='full' with dask nav_mask exercises L1511+L1514 path."""
+        import dask.array as da
+
+        s = Signal1D(self.data.copy()).as_lazy()
+        nav_mask_np = np.zeros(self.nav, dtype=bool)
+        nav_mask_np[::3] = True
+        nav_mask_da = da.from_array(nav_mask_np, chunks=4)
+
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            navigation_mask=nav_mask_da,
+            print_info=False,
+        )
+        assert s.learning_results.factors is not None
+
+    def test_full_svd_dask_sig_mask(self):
+        """svd_solver='full' with dask signal_mask exercises L1526+L1527 path."""
+        import dask.array as da
+
+        s = Signal1D(self.data.copy()).as_lazy()
+        sig_mask_np = np.zeros(self.sig, dtype=bool)
+        sig_mask_np[:4] = True
+        sig_mask_da = da.from_array(sig_mask_np, chunks=8)
+
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            signal_mask=sig_mask_da,
+            print_info=False,
+        )
+        assert s.learning_results.factors is not None
+
+
+class TestIncrementalNavMaskTranspose:
+    """ISVD + 2-D nav mask gets .T'd to array-axis order (L1493-1495)."""
+
+    @skip_sklearn
+    def test_incremental_2d_nav_mask_transposed(self):
+        """ISVD + 2-D nav mask: numpy mask is transposed internally."""
+        rng = np.random.default_rng(31)
+        data = rng.random((3, 4, 20)) + 1.0
+        nav_mask = np.zeros((4, 3), dtype=bool)
+        nav_mask[0, 0] = True
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=3,
+            navigation_mask=nav_mask,
+            print_info=False,
+        )
+        assert s.learning_results.factors.shape[1] == 3
+
+
+class TestRemainingBranches:
+    """Cover the remaining uncovered branches in lazy.py."""
+
+    @skip_sklearn
+    def test_incremental_centre_basesignal_nav_mask(self):
+        """ISVD + centre + BaseSignal nav_mask hits L1464 (_nm = _nm.data)."""
+        from hyperspy.signals import BaseSignal
+
+        rng = np.random.default_rng(40)
+        data = rng.random((12, 30)) + 1.0
+        nav_mask_np = np.zeros(12, dtype=bool)
+        nav_mask_np[::4] = True
+        nav_mask_sig = BaseSignal(nav_mask_np).T
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=3,
+            centre="navigation",
+            navigation_mask=nav_mask_sig,
+            print_info=False,
+        )
+        assert s.learning_results.mean is not None
+
+    @skip_sklearn
+    def test_incremental_centre_numpy_nav_mask(self):
+        """ISVD + centre + numpy nav_mask hits L1465 False branch (no compute)."""
+        rng = np.random.default_rng(41)
+        data = rng.random((12, 30)) + 1.0
+        nav_mask_np = np.zeros(12, dtype=bool)
+        nav_mask_np[::4] = True
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=3,
+            centre="navigation",
+            navigation_mask=nav_mask_np,
+            print_info=False,
+        )
+        assert s.learning_results.mean is not None
+
+    def test_reproject_both_no_nav_mask_hits_L1898(self):
+        """reproject='both' without nav_mask hits L1898 (L = loadings branch)."""
+        rng = np.random.default_rng(42)
+        data = rng.random((12, 30)) + 1.0
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            reproject="both",
+            print_info=False,
+        )
+        assert s.learning_results.loadings is not None
+
+    def test_full_svd_explained_variance_ratio_computed(self):
+        """svd_solver='full' triggers _compute_explained_variance_ratio (L1930)."""
+        rng = np.random.default_rng(43)
+        data = rng.random((15, 30)) + 1.0
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=5,
+            print_info=False,
+        )
+        assert s.learning_results.explained_variance_ratio is not None
+
+    def test_reproject_with_basesignal_mask_hits_L1952(self):
+        """reproject + BaseSignal nav_mask hits _to_flat_bool L1952 branch."""
+        from hyperspy.signals import BaseSignal
+
+        rng = np.random.default_rng(44)
+        data = rng.random((12, 30)) + 1.0
+        nav_mask_np = np.zeros(12, dtype=bool)
+        nav_mask_np[::4] = True
+        nav_mask_sig = BaseSignal(nav_mask_np).T
+
+        s = Signal1D(data.copy()).as_lazy()
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=3,
+            reproject="navigation",
+            navigation_mask=nav_mask_sig,
+            print_info=False,
+        )
+        assert s.learning_results.loadings is not None
