@@ -1175,18 +1175,18 @@ class LazySignal(signals.BaseSignal):
               the arrays are materialised internally).  ``output_dimension``
               is optional; if given, only the top-*k* columns of U/rows of V
               are retained before computing.  Reproduces the behaviour of
-              HyperSpy prior to v2.5.  Supports navigation and signal masks
-              and ``reproject``.  Does not support ``centre``.
+              HyperSpy prior to v2.5.  Supports navigation and signal masks,
+              ``reproject``, and ``centre``.
 
               *Advantages*: exact SVD; deferred computation when ``reproject``
               is not used — the caller decides when and how much to
-              materialise; ``output_dimension`` optional; masks and reproject
-              supported.
+              materialise; ``output_dimension`` optional; masks, reproject,
+              and centre supported.
 
               *Disadvantages*: materialising the full result requires
               significantly more memory than the other solvers (the full U
               matrix is ``nav_size × nav_size`` before truncation); slow for
-              large datasets; ``centre`` not supported.
+              large datasets.
         **kwargs
             passed to the partial_fit/fit functions.
 
@@ -1329,13 +1329,6 @@ class LazySignal(signals.BaseSignal):
                 f"svd_solver={svd_solver!r} not recognised. "
                 "Expected one of: 'randomized', 'incremental', 'full'."
             )
-
-        if algorithm == "SVD" and svd_solver == "full":
-            if centre is not None:
-                raise ValueError(
-                    "svd_solver='full' does not support centre. "
-                    "Use svd_solver='randomized' or 'incremental' instead."
-                )
 
         # ── input validation (mirrors non-lazy MVA.decomposition) ────────────
         self._validate_decomposition_inputs(output_dimension, centre, reproject)
@@ -1686,6 +1679,14 @@ class LazySignal(signals.BaseSignal):
                         # Rechunk the signal dimension to a single chunk if
                         # needed; the signal axis is typically small so this is
                         # cheap and does not materialise any data.
+                        if centre == "navigation":
+                            mean = D.mean(axis=0, keepdims=True).compute()
+                            D = D - mean
+                        elif centre == "signal":
+                            mean = D.mean(axis=1, keepdims=True).compute()
+                            D = D - mean
+                        else:
+                            mean = None
                         if D.numblocks[1] > 1:
                             D = D.rechunk({1: -1})
                         U, S, V = da.linalg.svd(D)
@@ -1843,6 +1844,8 @@ class LazySignal(signals.BaseSignal):
                     D_nav = _D_unfolded  # (nav, sig)
                     if sig_mask_1d is not None:
                         D_nav = D_nav[:, ~sig_mask_1d]
+                    if mean is not None and centre == "navigation":
+                        D_nav = D_nav - mean
                     # factors may still be a dask array here
                     _factors_da = (
                         factors
@@ -1965,6 +1968,8 @@ class LazySignal(signals.BaseSignal):
                     D_sig = _D_unfolded  # (nav, sig)
                     if nav_mask_1d is not None:
                         D_sig = D_sig[~nav_mask_1d, :]
+                    if mean is not None and centre == "navigation":
+                        D_sig = D_sig - mean
                     if reproject == "both":
                         # loadings covers all nav after nav-reproject; restrict
                         # to unmasked rows before computing pinv.

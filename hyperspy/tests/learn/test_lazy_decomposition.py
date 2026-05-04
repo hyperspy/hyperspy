@@ -2293,17 +2293,28 @@ class TestSVDFullSolver:
         assert factors.shape == (30, k)
         assert loadings.shape == (35, k)
 
-    def test_centre_raises(self):
-        """svd_solver='full' raises ValueError when centre is set."""
-        with pytest.raises(
-            ValueError, match="svd_solver='full' does not support centre"
-        ):
-            self.s.decomposition(
-                algorithm="SVD",
-                svd_solver="full",
-                centre="navigation",
-                print_info=False,
-            )
+    def test_centre_navigation(self):
+        """svd_solver='full' supports centre='navigation'."""
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            centre="navigation",
+            output_dimension=3,
+            print_info=False,
+        )
+        lr = self.s.learning_results
+        assert lr.centre == "navigation"
+        assert lr.mean is not None
+        factors = (
+            lr.factors.compute() if isinstance(lr.factors, da.Array) else lr.factors
+        )
+        loadings = (
+            lr.loadings.compute() if isinstance(lr.loadings, da.Array) else lr.loadings
+        )
+        assert factors.shape[1] == 3
+        assert loadings.shape[1] == 3
+        assert not np.any(np.isnan(factors))
+        assert not np.any(np.isnan(loadings))
 
     def test_reproject_navigation(self):
         """svd_solver='full' supports reproject='navigation'."""
