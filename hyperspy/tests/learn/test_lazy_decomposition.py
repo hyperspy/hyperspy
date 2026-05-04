@@ -2137,23 +2137,18 @@ class TestLazySVDSolverAndAutoTranspose:
             print_info=False,
         )
 
-    def test_auto_transpose_triggers_and_logs_when_nav_lt_sig(self, caplog):
-        """auto_transpose=True transposes when nav < sig."""
-        import logging
-
+    def test_auto_transpose_no_op_when_nav_lt_sig(self):
+        """auto_transpose is a no-op; nav<sig runs correctly without transposing."""
         rng = np.random.default_rng(0)
-        # nav=10 < sig=50 → transposition should be triggered.
         data = rng.standard_normal((10, 50)).astype("float32")
         s = Signal1D(data).as_lazy()
-        with caplog.at_level(logging.INFO, logger="hyperspy._signals.lazy"):
-            s.decomposition(
-                algorithm="SVD",
-                svd_solver="incremental",
-                output_dimension=3,
-                auto_transpose=True,
-                print_info=False,
-            )
-        assert any("Auto-transposing" in r.message for r in caplog.records)
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="incremental",
+            output_dimension=3,
+            auto_transpose=True,
+            print_info=False,
+        )
         lr = s.learning_results
         assert lr.factors.shape == (50, 3)
         assert lr.loadings.shape == (10, 3)
