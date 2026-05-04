@@ -1421,6 +1421,12 @@ class LazySignal(signals.BaseSignal):
                 method = None
             to_print.extend(["Custom sklearn-like estimator:", obj])
 
+        elif algorithm == "SVD" and svd_solver == "incremental":
+            from hyperspy.learn.incremental_svd import ISVD
+
+            obj = ISVD(n_components=output_dimension)
+            method = partial(obj.partial_fit)
+
         original_data = self.data
         try:
             _logger.info("Performing decomposition analysis")
@@ -1441,112 +1447,54 @@ class LazySignal(signals.BaseSignal):
             # to navigation_mask (no unfolding/ravelling occurs).  For SVD it
             # is updated below after the BaseSignal unwrap but before ravel.
             _navigation_mask_for_reproject = navigation_mask
-            if algorithm == "SVD" and svd_solver == "incremental":
-                from hyperspy.learn.incremental_svd import ISVD
+            if (
+                algorithm == "SVD"
+                and svd_solver == "incremental"
+                and centre is not None
+            ):
+                import dask.array as _da
 
-                _D_unfolded = None
-                try:
-                    self._unfolded4decomposition = self.unfold()
-
-                    # After unfolding, the data is 2-D: (nav, sig).
-                    import dask.array as da
-
-                    # Rechunk nav axis to stream genuine batches.
-                    # unfold() often collapses multi-axis nav into one giant
-                    # chunk (e.g. a 200×200 image → single 40000-row chunk),
-                    # so IncrementalPCA would receive the entire dataset at
-                    # once and lose all memory benefit.  We force a nav-axis
-                    # chunk size that is large enough for ISVD stability
-                    # (>= n_components) but small enough to stream.
-                    _n_nav = self.data.shape[0]
-                    _batch_size = min(
-                        _n_nav,
-                        max(output_dimension * 5, 256),
-                    )
-                    self.data = self.data.rechunk({0: _batch_size, 1: -1})
-                    _isvd_nblocks = len(self.data.chunks[0])
-
-                    _D_unfolded = self.data
-
+                _nav_size = self.axes_manager.navigation_size
+                _sig_size = self.axes_manager.signal_size
+                _D_flat = self._data_aligned_with_axes.reshape((_nav_size, _sig_size))
+                if centre == "navigation":
                     if navigation_mask is not None:
-                        if isinstance(navigation_mask, signals.BaseSignal):
-                            # .data is already in array axis order
-                            navigation_mask = navigation_mask.data
-                        elif hasattr(navigation_mask, "T"):
-                            # numpy/dask mask is in navigation_shape order
-                            # (HyperSpy convention); transpose to array axis order
-                            # so _block_iterator and _navigation_mask_for_reproject
-                            # both receive the correct N-D array-order shape.
-                            navigation_mask = navigation_mask.T
-                        # Save the N-D array-axis-order mask for post-fold
-                        # _block_iterator calls (reproject).
-                        _navigation_mask_for_reproject = navigation_mask
-                        # Ravel for use during the unfolded learn pass.
-                        if hasattr(navigation_mask, "ravel"):
-                            navigation_mask = navigation_mask.ravel()
-
-                    obj = ISVD(n_components=output_dimension)
-
-                    if centre == "navigation":
-                        if navigation_mask is not None:
-                            import dask.array as _da
-
-                            nav_mask_1d = (
-                                navigation_mask.compute()
-                                if isinstance(navigation_mask, _da.Array)
-                                else np.asarray(navigation_mask, dtype=bool)
-                            ).ravel()
-                            mean = (
-                                self.data[~nav_mask_1d, :]
-                                .mean(axis=0, keepdims=True)
-                                .compute()
-                            )
-                        else:
-                            mean = self.data.mean(axis=0, keepdims=True).compute()
-                        self.data = self.data - mean
-                    elif centre == "signal":
-                        mean = self.data.mean(axis=1, keepdims=True).compute()
-                        self.data = self.data - mean
+                        _nm = navigation_mask
+                        if isinstance(_nm, signals.BaseSignal):
+                            _nm = _nm.data
+                        if isinstance(_nm, _da.Array):
+                            _nm = _nm.compute()
+                        _nm_1d = np.asarray(_nm, dtype=bool).ravel()
+                        mean = _D_flat[~_nm_1d, :].mean(axis=0, keepdims=True).compute()
                     else:
-                        mean = None
+                        mean = _D_flat.mean(axis=0, keepdims=True).compute()
+                else:
+                    mean = (
+                        _D_flat.mean(axis=1, keepdims=True)
+                        .compute()
+                        .reshape(self._data_aligned_with_axes.shape[:-1] + (1,))
+                    )
+                self.data = self.data - mean
+            elif algorithm != "SVD" or svd_solver != "incremental":
+                mean = None
 
-                    for chunk in progressbar(
-                        self._block_iterator(
-                            flat_signal=True,
-                            get=get,
-                            signal_mask=signal_mask,
-                            navigation_mask=navigation_mask,
-                        ),
-                        total=_isvd_nblocks,
-                        leave=True,
-                        desc="Learn",
-                    ):
-                        obj.partial_fit(chunk)
+            # For ISVD, normalise navigation_mask to array-axis order so that
+            # _block_iterator (which expects array-axis-order masks) can accept
+            # it.  numpy/dask masks arrive in HyperSpy navigation_shape order
+            # (axes reversed relative to the underlying array), so they must be
+            # transposed.  BaseSignal masks have .data already in array order.
+            if (
+                algorithm == "SVD"
+                and svd_solver == "incremental"
+                and navigation_mask is not None
+            ):
+                if isinstance(navigation_mask, signals.BaseSignal):
+                    navigation_mask = navigation_mask.data
+                elif hasattr(navigation_mask, "T"):
+                    navigation_mask = navigation_mask.T
+                _navigation_mask_for_reproject = navigation_mask
 
-                    factors = obj.components_.T
-                    explained_variance = obj.explained_variance_
-                    explained_variance_ratio = obj.explained_variance_ratio_
-
-                    H = []
-                    for chunk in progressbar(
-                        self._block_iterator(
-                            flat_signal=True,
-                            get=get,
-                            signal_mask=signal_mask,
-                            navigation_mask=navigation_mask,
-                        ),
-                        total=_isvd_nblocks,
-                        leave=True,
-                        desc="Project",
-                    ):
-                        H.append(obj.transform(chunk))
-                    loadings = np.concatenate(H, axis=0)
-                finally:
-                    if self._unfolded4decomposition is True:
-                        self.fold()
-                        self._unfolded4decomposition = False
-
-            elif algorithm == "SVD":
+            if algorithm == "SVD" and svd_solver != "incremental":
                 import dask.array as da
 
                 try:
@@ -1633,10 +1581,8 @@ class LazySignal(signals.BaseSignal):
                         if svd_solver == "randomized":
                             # Randomised truncated SVD via svd_compressed.
                             U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
-                        else:
-                            # svd_solver == 'incremental' — handled in the
-                            # ISVD branch above; this branch is unreachable.
-                            pass  # pragma: no cover
+                        else:  # pragma: no cover
+                            pass
 
                         U = U.compute()
                         S = S.compute()
@@ -1690,7 +1636,28 @@ class LazySignal(signals.BaseSignal):
                         loadings = obj.transform(all_data)
 
             # GET ALREADY CALCULATED RESULTS
-            if algorithm == "PCA":
+            if algorithm == "SVD" and svd_solver == "incremental":
+                explained_variance = obj.explained_variance_
+                explained_variance_ratio = obj.explained_variance_ratio_
+                factors = obj.components_.T
+                if centre is None:
+                    mean = None
+                H = []
+                for chunk in progressbar(
+                    self._block_iterator(
+                        flat_signal=True,
+                        get=get,
+                        signal_mask=signal_mask,
+                        navigation_mask=navigation_mask,
+                    ),
+                    total=nblocks,
+                    leave=True,
+                    desc="Project",
+                ):
+                    H.append(obj.transform(chunk))
+                loadings = np.concatenate(H, axis=0)
+
+            elif algorithm == "PCA":
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
                 factors = obj.components_.T
