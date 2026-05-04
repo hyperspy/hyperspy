@@ -58,6 +58,26 @@ You can perform operations on this new object ``sc`` later.
 It is a copy of the original ``s`` object, except that the data has
 been replaced by the model constructed using the chosen components.
 
+.. _mva.model_output_laziness:
+
+Controlling laziness of reconstructed models
+--------------------------------------------
+
+Both :meth:`~.api.signals.BaseSignal.get_decomposition_model` and
+:meth:`~.api.signals.BaseSignal.get_bss_model` accept a ``lazy`` keyword
+argument that controls whether the returned model is backed by a dask array:
+
+- ``lazy=None`` (default): return a lazy signal if the original signal is
+  lazy, and an eager signal otherwise.
+- ``lazy=True``: always return a lazy signal. This is useful when the
+  reconstructed model is too large to keep in memory; you can call
+  ``.save()`` afterwards to stream it to disk chunk by chunk.
+- ``lazy=False``: always return an eager signal, computing the result
+  immediately.
+
+For lazy decomposition workflows, including ``svd_solver='full'`` and
+out-of-core saving, see :ref:`big_data.svd.lazy_kwarg`.
+
 If you provide the ``output_dimension`` argument, which takes an integer value,
 the decomposition algorithm attempts to find the best approximation for the
 dataset :math:`X` with only a limited set of factors :math:`A` and loadings :math:`B`,
