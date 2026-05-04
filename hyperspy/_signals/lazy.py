@@ -942,7 +942,7 @@ class LazySignal(signals.BaseSignal):
 
         See Also
         --------
-        :meth:`~hyperspy.api.signals.Signal1D.normalize_poissonian_noise` :
+        :meth:`~hyperspy.learn._mva.MVA.normalize_poissonian_noise` :
             Non-lazy equivalent.
         """
         import dask.array as da
@@ -1226,13 +1226,13 @@ class LazySignal(signals.BaseSignal):
              - numpy (computed)
              - numpy (computed)
 
-         **Fully lazy pipeline with** ``svd_solver='full'``
+        **Fully lazy pipeline with** ``svd_solver='full'``
 
-         ``svd_solver='full'`` keeps the entire pipeline lazy — including when
-         ``reproject`` is used.  Reproject steps are performed with dask
-         matmuls that stream over chunks; only the *produced* array (small:
-         ``nav × k`` or ``sig × k``) is computed eagerly.  The unrequested
-         array remains lazy::
+        ``svd_solver='full'`` keeps the entire pipeline lazy — including when
+        ``reproject`` is used.  Reproject steps are performed with dask
+        matmuls that stream over chunks; only the *produced* array (small:
+        ``nav × k`` or ``sig × k``) is computed eagerly.  The unrequested
+        array remains lazy::
 
              s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
              # learning_results.factors and .loadings are dask arrays

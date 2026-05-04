@@ -1799,6 +1799,7 @@ class TestLazyCentreMaskParity:
             "factors should have no NaN after signal reproject"
         )
 
+    @skip_sklearn
     @pytest.mark.parametrize("svd_solver", ["randomized", "incremental"])
     def test_centre_signal_mean_is_per_spectrum(self, svd_solver):
         """centre='signal' subtracts each spectrum's own mean (axis=1 in the
@@ -1823,6 +1824,7 @@ class TestLazyCentreMaskParity:
             err_msg="centre='signal' mean does not match per-spectrum mean",
         )
 
+    @skip_sklearn
     @pytest.mark.parametrize("svd_solver", ["randomized", "incremental"])
     def test_centre_navigation_mean_is_per_channel(self, svd_solver):
         """centre='navigation' subtracts the per-channel mean (axis=0 in the
