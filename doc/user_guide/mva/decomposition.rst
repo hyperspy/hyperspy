@@ -152,8 +152,7 @@ documentation for :func:`~.hyperspy.learn.svd_pca`.
 
    For lazy signals, the ``"SVD"`` algorithm supports additional parameters
    such as ``svd_solver`` (``'randomized'``, ``'incremental'``, or ``'full'``)
-   and ``centre``.  Not all combinations are supported; for example,
-   ``svd_solver='full'`` does not support ``centre``.  See
+   and ``centre``.  All three solvers support ``centre``.  See
    :ref:`big_data.svd` for the full details.
 
 .. _mva.pca:

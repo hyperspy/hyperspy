@@ -203,10 +203,7 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
        factorisation is required.
        ``output_dimension`` is **optional** (all components are returned if
        omitted, but materialising them requires significantly more memory).
-       Supports navigation and signal masks and ``reproject``.  Does not
-       support ``centre`` (``da.linalg.svd`` operates on the raw dask graph
-       and cannot incorporate a mean-subtraction step lazily; use
-       ``'randomized'`` or ``'incremental'`` if centring is required).
+        Supports navigation and signal masks, ``reproject``, and ``centre``.
 
 .. versionchanged:: 2.5
    The ``svd_solver`` parameter was introduced, offering three backends:
@@ -230,7 +227,7 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
    >>> s.decomposition(algorithm="SVD", svd_solver="full",
    ...                 output_dimension=10) # doctest: +SKIP
 
-   # With navigation masking and mean-centring (incremental solver)
+   # With navigation masking and mean-centring (all three solvers support centre)
    >>> import numpy as np
    >>> nav_mask = np.zeros(s.axes_manager.navigation_shape[::-1], dtype=bool)
    >>> nav_mask[0] = True  # exclude first row
