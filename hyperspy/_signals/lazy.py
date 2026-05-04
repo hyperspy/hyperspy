@@ -1779,22 +1779,29 @@ class LazySignal(signals.BaseSignal):
                     # Result shape: (nav, k) — small; compute to get numpy array
                     loadings = (D_nav @ _factors_da).compute()
                 elif algorithm == "SVD" and svd_solver == "randomized":
-                    # factors is a numpy array (n_sig × k); iterate chunks and
-                    # project via matrix multiply (no obj.transform available).
-                    D_chunks = []
-                    for chunk in progressbar(
-                        self._block_iterator(
-                            flat_signal=True,
-                            get=get,
-                            signal_mask=signal_mask,
-                            navigation_mask=None,
-                        ),
-                        total=nblocks,
-                        desc="Reproject",
-                    ):
-                        D_chunks.append(chunk)
-                    D = np.concatenate(D_chunks, axis=0)
-                    loadings = D @ factors
+                    # Use a dask matmul so the full data matrix is never
+                    # materialised in RAM.  _D_unfolded is the unfolded dask
+                    # array (nav, sig) captured before fold().  Apply the
+                    # signal mask column-wise only (all nav rows included),
+                    # then project: loadings = D_nav @ factors.
+                    import dask.array as da
+
+                    D_nav = _D_unfolded  # (nav, sig)
+                    if sig_mask_1d is not None:
+                        D_nav = D_nav[:, ~sig_mask_1d]
+                    if mean is not None and centre == "navigation":
+                        # mean is a (1, sig) array — safe to broadcast over
+                        # all nav rows.  For centre='signal' the mean is
+                        # per-row (nav_unmasked, 1) and cannot be applied to
+                        # the full (nav, sig) matrix, so we skip it there.
+                        D_nav = D_nav - mean
+                    _factors_da = (
+                        factors
+                        if isinstance(factors, da.Array)
+                        else da.from_array(factors)
+                    )
+                    # Result shape: (nav, k) — small; compute to get numpy.
+                    loadings = (D_nav @ _factors_da).compute()
                 else:
                     # All other algorithms expose obj.transform(X).
                     H = []

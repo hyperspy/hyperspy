@@ -271,6 +271,33 @@ class TestLazyDecomposition:
         assert s.learning_results.factors is not None
         assert s.learning_results.loadings is not None
 
+    @skip_sklearn
+    @pytest.mark.parametrize("centre", [None, "navigation", "signal"])
+    def test_randomized_reproject_navigation_lazy(self, centre):
+        """reproject='navigation' for svd_solver='randomized' uses a lazy dask
+        matmul and never materialises the full dataset in memory.
+
+        The reprojected loadings must cover all navigation positions (no NaN)
+        and be consistent with the factors learned on the masked data.
+        """
+        nav_mask = np.zeros((10, 10), dtype=bool)
+        nav_mask[0, :] = True  # mask the first row
+
+        self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=3,
+            centre=centre,
+            navigation_mask=nav_mask,
+            reproject="navigation",
+        )
+        lr = self.s.learning_results
+        loadings = lr.loadings
+        assert loadings.shape[0] == self.s.axes_manager.navigation_size
+        assert not np.any(np.isnan(loadings)), (
+            "reproject='navigation' should fill all rows"
+        )
+
 
 class TestPrintInfo:
     def setup_method(self, method):
