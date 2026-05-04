@@ -1286,20 +1286,6 @@ class LazySignal(signals.BaseSignal):
                 f"algorithm='SVD' with svd_solver={svd_solver!r}."
             )
 
-        if output_dimension is not None:
-            if not isinstance(output_dimension, (int, np.integer)) or isinstance(
-                output_dimension, bool
-            ):
-                raise ValueError(
-                    f"`output_dimension` must be a positive integer, "
-                    f"not {output_dimension!r}."
-                )
-            if output_dimension <= 0:
-                raise ValueError(
-                    f"`output_dimension` must be a positive integer, "
-                    f"got {output_dimension}."
-                )
-
         # Detect custom sklearn-like estimator objects
         _is_custom_sklearn_like = not isinstance(algorithm, str) and (
             hasattr(algorithm, "fit_transform")
@@ -1352,32 +1338,8 @@ class LazySignal(signals.BaseSignal):
                     "Use svd_solver='randomized' or 'incremental' instead."
                 )
 
-        if centre not in (None, "navigation", "signal"):
-            raise ValueError(
-                f"`centre` must be None, 'navigation' or 'signal', not {centre!r}"
-            )
-
-        if reproject not in (None, "navigation", "signal", "both"):
-            raise ValueError(
-                "`reproject` must be None, 'navigation', 'signal' or 'both', "
-                f"not {reproject!r}"
-            )
-
         # ── input validation (mirrors non-lazy MVA.decomposition) ────────────
-        if self.data.dtype.char not in np.typecodes["AllFloat"]:
-            raise TypeError(
-                "To perform a decomposition the data must be of the "
-                f"float or complex type, but the current type is '{self.data.dtype}'. "
-                "To fix this issue, you can change the type using the "
-                "change_dtype method (e.g. s.change_dtype('float64')) "
-                "and then repeat the decomposition.\n"
-                "No decomposition was performed."
-            )
-
-        if self.axes_manager.navigation_size < 2:
-            raise ValueError(
-                "It is not possible to decompose a dataset with navigation_size < 2"
-            )
+        self._validate_decomposition_inputs(output_dimension, centre, reproject)
 
         self._check_navigation_mask(navigation_mask)
         self._check_signal_mask(signal_mask)
@@ -1999,19 +1961,16 @@ class LazySignal(signals.BaseSignal):
 
         # ── explained variance ratio and elbow estimate ──────────────────
         if explained_variance is not None and explained_variance_ratio is None:
-            import dask.array as _da_ev
-
-            _ev = (
-                explained_variance.compute()
-                if isinstance(explained_variance, _da_ev.Array)
-                else explained_variance
-            )
-            explained_variance_ratio = _ev / _ev.sum()
-        number_significant_components = None
-        if explained_variance_ratio is not None:
+            (
+                explained_variance_ratio,
+                number_significant_components,
+            ) = self._compute_explained_variance_ratio(explained_variance)
+        elif explained_variance_ratio is not None:
             number_significant_components = int(
                 self.estimate_elbow_position(explained_variance_ratio) + 1
             )
+        else:
+            number_significant_components = None
 
         # ── normalise masks to flat bool arrays ──────────────────────────
         # We need 1-D boolean numpy arrays (True = kept) to NaN-fill excluded
@@ -2068,37 +2027,9 @@ class LazySignal(signals.BaseSignal):
             loadings = loadings * root_aG_flat[:, np.newaxis]
 
         # ── store masks and NaN-fill excluded positions ──────────────────
-        import dask.array as _da
+        import dask.array as _da  # noqa: F401 – kept for other uses below
 
-        def _nan_expand_rows(arr, mask, total_rows):
-            """Return arr expanded to total_rows, NaN at positions where mask is True.
-
-            Works for both numpy and dask arrays.  ``mask`` is a flat bool array
-            of length ``total_rows``; rows where mask is True are NaN-filled and
-            rows where mask is False are filled from ``arr`` in order.
-            """
-            unmasked_idx = np.where(~mask)[0]
-            n_comp = arr.shape[1]
-            if isinstance(arr, _da.Array):
-                # Build the expanded array lazily by placing each row of arr at
-                # its correct position.  We split arr into single-row slices,
-                # interleave them with NaN rows, then concatenate — all lazily.
-                nan_row = _da.full(
-                    (1, n_comp), np.nan, dtype=float, chunks=(1, arr.chunks[1])
-                )
-                rows = []
-                arr_row = 0
-                for i in range(total_rows):
-                    if mask[i]:
-                        rows.append(nan_row)
-                    else:
-                        rows.append(arr[arr_row : arr_row + 1, :])
-                        arr_row += 1
-                return _da.concatenate(rows, axis=0)
-            else:
-                out = np.full((total_rows, n_comp), np.nan, dtype=float)
-                out[unmasked_idx, :] = arr
-                return out
+        from hyperspy.learn._mva import _nan_expand_rows
 
         if flat_sig_mask is not None:
             target.signal_mask = flat_sig_mask.reshape(

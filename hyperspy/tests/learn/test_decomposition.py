@@ -738,7 +738,7 @@ def test_centering_error():
     ):
         s.decomposition(normalize_poissonian_noise=True, centre="navigation")
 
-    with pytest.raises(ValueError, match="'centre' must be one of"):
+    with pytest.raises(ValueError, match="`centre` must be None"):
         s.decomposition(centre="random")
 
 

@@ -105,6 +105,49 @@ def _get_derivative(signal, diff_axes, diff_order):
     return signal
 
 
+def _nan_expand_rows(arr, mask, total_rows):
+    """Return *arr* expanded to *total_rows*, NaN at positions where *mask* is True.
+
+    Works for both numpy and dask arrays.  ``mask`` is a flat boolean array of
+    length ``total_rows``; rows where mask is True are NaN-filled and rows where
+    mask is False are filled from ``arr`` in order.
+
+    Parameters
+    ----------
+    arr : numpy.ndarray or dask.array.Array, shape (n_kept, n_components)
+    mask : numpy.ndarray of bool, shape (total_rows,)
+        True where the row was *excluded* from decomposition.
+    total_rows : int
+
+    Returns
+    -------
+    numpy.ndarray or dask.array.Array, shape (total_rows, n_components)
+    """
+    try:
+        import dask.array as _da
+    except ImportError:
+        _da = None
+
+    unmasked_idx = np.where(~mask)[0]
+    n_comp = arr.shape[1]
+
+    if _da is not None and isinstance(arr, _da.Array):
+        nan_row = _da.full((1, n_comp), np.nan, dtype=float, chunks=(1, arr.chunks[1]))
+        rows = []
+        arr_row = 0
+        for i in range(total_rows):
+            if mask[i]:
+                rows.append(nan_row)
+            else:
+                rows.append(arr[arr_row : arr_row + 1, :])
+                arr_row += 1
+        return _da.concatenate(rows, axis=0)
+    else:
+        out = np.full((total_rows, n_comp), np.nan, dtype=float)
+        out[unmasked_idx, :] = arr
+        return out
+
+
 def _normalize_components(target, other, function=np.sum):
     """Normalize components according to a function."""
     coeff = function(target, axis=0)
@@ -118,6 +161,85 @@ class MVA:
     def __init__(self):
         if not hasattr(self, "learning_results"):
             self.learning_results = LearningResults()
+
+    def _validate_decomposition_inputs(self, output_dimension, centre, reproject):
+        """Validate inputs shared by lazy and non-lazy decomposition().
+
+        Raises
+        ------
+        TypeError
+            If the data is not a float or complex array.
+        ValueError
+            If any of the other inputs are invalid.
+        """
+        if self.data.dtype.char not in np.typecodes["AllFloat"]:
+            raise TypeError(
+                "To perform a decomposition the data must be of the "
+                f"float or complex type, but the current type is '{self.data.dtype}'. "
+                "To fix this issue, you can change the type using the "
+                "change_dtype method (e.g. s.change_dtype('float64')) "
+                "and then repeat the decomposition.\n"
+                "No decomposition was performed."
+            )
+
+        if self.axes_manager.navigation_size < 2:
+            raise ValueError(
+                "It is not possible to decompose a dataset with navigation_size < 2"
+            )
+
+        if output_dimension is not None:
+            if not isinstance(output_dimension, (int, np.integer)) or isinstance(
+                output_dimension, bool
+            ):
+                raise ValueError(
+                    f"`output_dimension` must be a positive integer, "
+                    f"not {output_dimension!r}."
+                )
+            if output_dimension <= 0:
+                raise ValueError(
+                    f"`output_dimension` must be a positive integer, "
+                    f"got {output_dimension}."
+                )
+
+        if centre not in (None, "navigation", "signal"):
+            raise ValueError(
+                f"`centre` must be None, 'navigation' or 'signal', not {centre!r}"
+            )
+
+        if reproject not in (None, "navigation", "signal", "both"):
+            raise ValueError(
+                "`reproject` must be None, 'navigation', 'signal' or 'both', "
+                f"not {reproject!r}"
+            )
+
+    def _compute_explained_variance_ratio(self, explained_variance):
+        """Compute explained variance ratio and elbow position from raw variances.
+
+        Parameters
+        ----------
+        explained_variance : numpy.ndarray or dask.array.Array or None
+
+        Returns
+        -------
+        explained_variance_ratio : numpy.ndarray or None
+        number_significant_components : int or None
+        """
+        if explained_variance is None:
+            return None, None
+
+        try:
+            import dask.array as da
+
+            if isinstance(explained_variance, da.Array):
+                explained_variance = explained_variance.compute()
+        except ImportError:
+            pass
+
+        explained_variance_ratio = explained_variance / explained_variance.sum()
+        number_significant_components = int(
+            self.estimate_elbow_position(explained_variance_ratio) + 1
+        )
+        return explained_variance_ratio, number_significant_components
 
     def decomposition(
         self,
@@ -258,35 +380,7 @@ class MVA:
 
         from hyperspy.signal import BaseSignal
 
-        # Check data is suitable for decomposition
-        if self.data.dtype.char not in np.typecodes["AllFloat"]:
-            raise TypeError(
-                "To perform a decomposition the data must be of the "
-                f"float or complex type, but the current type is '{self.data.dtype}'. "
-                "To fix this issue, you can change the type using the "
-                "change_dtype method (e.g. s.change_dtype('float64')) "
-                "and then repeat the decomposition.\n"
-                "No decomposition was performed."
-            )
-
-        if self.axes_manager.navigation_size < 2:
-            raise ValueError(
-                "It is not possible to decompose a dataset with navigation_size < 2"
-            )
-
-        if output_dimension is not None:
-            if not isinstance(output_dimension, (int, np.integer)) or isinstance(
-                output_dimension, bool
-            ):
-                raise ValueError(
-                    f"`output_dimension` must be a positive integer, "
-                    f"not {output_dimension!r}."
-                )
-            if output_dimension <= 0:
-                raise ValueError(
-                    f"`output_dimension` must be a positive integer, "
-                    f"got {output_dimension}."
-                )
+        self._validate_decomposition_inputs(output_dimension, centre, reproject)
 
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [
@@ -564,10 +658,10 @@ class MVA:
             # information can be lost if the user subsequently calls
             # crop_decomposition_dimension()
             if explained_variance is not None and explained_variance_ratio is None:
-                explained_variance_ratio = explained_variance / explained_variance.sum()
-                number_significant_components = (
-                    self.estimate_elbow_position(explained_variance_ratio) + 1
-                )
+                (
+                    explained_variance_ratio,
+                    number_significant_components,
+                ) = self._compute_explained_variance_ratio(explained_variance)
 
             # Store the results in learning_results
             target.factors = factors
