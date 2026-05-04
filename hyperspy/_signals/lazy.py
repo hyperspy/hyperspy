@@ -1451,6 +1451,21 @@ class LazySignal(signals.BaseSignal):
                     # After unfolding, the data is 2-D: (nav, sig).
                     import dask.array as da
 
+                    # Rechunk nav axis to stream genuine batches.
+                    # unfold() often collapses multi-axis nav into one giant
+                    # chunk (e.g. a 200×200 image → single 40000-row chunk),
+                    # so IncrementalPCA would receive the entire dataset at
+                    # once and lose all memory benefit.  We force a nav-axis
+                    # chunk size that is large enough for ISVD stability
+                    # (>= n_components) but small enough to stream.
+                    _n_nav = self.data.shape[0]
+                    _batch_size = min(
+                        _n_nav,
+                        max(output_dimension * 5, 256),
+                    )
+                    self.data = self.data.rechunk({0: _batch_size, 1: -1})
+                    _isvd_nblocks = len(self.data.chunks[0])
+
                     _D_unfolded = self.data
 
                     if navigation_mask is not None:
@@ -1502,7 +1517,7 @@ class LazySignal(signals.BaseSignal):
                             signal_mask=signal_mask,
                             navigation_mask=navigation_mask,
                         ),
-                        total=nblocks,
+                        total=_isvd_nblocks,
                         leave=True,
                         desc="Learn",
                     ):
@@ -1520,7 +1535,7 @@ class LazySignal(signals.BaseSignal):
                             signal_mask=signal_mask,
                             navigation_mask=navigation_mask,
                         ),
-                        total=nblocks,
+                        total=_isvd_nblocks,
                         leave=True,
                         desc="Project",
                     ):
