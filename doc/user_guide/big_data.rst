@@ -187,11 +187,12 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
    * - ``'incremental'``
      - :class:`~hyperspy.learn.incremental_svd.ISVD` — **incremental (out-of-core)**:
        streams the data one mini-batch at a time so that only a small number of
-       chunks reside in memory simultaneously.  **Lowest peak memory** of the
-       three solvers — the best choice when RAM is the primary constraint —
-       at the cost of significantly longer wall-clock time.  Result is
-       deterministic.  Supports ``centre``, masks, and all ``reproject`` modes.
-       ``output_dimension`` is **required**.
+       chunks reside in memory simultaneously.  **Lowest peak memory of the
+       three SVD solvers** — a good choice when RAM is the primary constraint
+       and the sklearn-based algorithms (``"PCA"``, ``"NMF"``) are not
+       suitable — at the cost of significantly longer wall-clock time.  Result
+       is deterministic.  Supports ``centre``, masks, and all ``reproject``
+       modes.  ``output_dimension`` is **required**.
    * - ``'full'``
      - :func:`dask.array.linalg.svd` — **exact full SVD** (TSQR algorithm).
        Returns *lazy* dask arrays — no computation is triggered until
@@ -205,10 +206,27 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
        omitted, but materialising them requires significantly more memory).
         Supports navigation and signal masks, ``reproject``, and ``centre``.
 
+.. note::
+
+   **Choosing an algorithm for memory-constrained workflows.**
+   Among all lazy decomposition algorithms, ``"NMF"`` and ``"ORPCA"``/``"ORNMF"``
+   typically use the least peak memory because they stream tiny batches and
+   never form a large intermediate matrix.  ``"PCA"``
+   (:class:`sklearn.decomposition.IncrementalPCA`) also has a very low memory
+   footprint and is substantially faster than ``"ORPCA"``/``"ORNMF"``.
+   Among the three SVD solvers, ``svd_solver='incremental'`` uses the least
+   memory (it streams mini-batches like PCA), while ``svd_solver='full'``
+   uses the most (it holds the full factorisation in memory).
+   ``svd_solver='randomized'`` (the default) offers the best balance of speed
+   and memory for most datasets.  When non-negativity or robustness
+   constraints are not needed and SVD is acceptable, prefer
+   ``svd_solver='randomized'`` unless RAM is severely limited, in which case
+   ``"PCA"`` or ``svd_solver='incremental'`` are better choices.
+
 .. versionchanged:: 2.5
    The ``svd_solver`` parameter was introduced, offering three backends:
    ``'randomized'`` (default, fast randomised truncated SVD),
-   ``'incremental'`` (lowest memory, out-of-core streaming), and
+   ``'incremental'`` (lowest peak memory among SVD solvers, out-of-core streaming), and
    ``'full'`` (exact SVD, lazy dask output, reproduces pre-v2.5 behaviour).
 
 .. code-block:: python
