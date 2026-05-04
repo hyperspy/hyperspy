@@ -257,6 +257,20 @@ class TestLazyDecomposition:
                 algorithm="SVD", svd_solver="unknown", output_dimension=3
             )
 
+    @skip_sklearn
+    def test_randomized_svd_2d_chunked(self):
+        """svd_solver='randomized' works with arrays chunked in both dimensions.
+
+        dask.array.linalg.svd_compressed accepts 2D-chunked arrays; there is no
+        need to restrict users to 1D chunking.
+        """
+        # Force 2D chunking on the unfolded (nav x sig) array.
+        data = da.from_array(self.X.reshape(10, 10, 128), chunks=(5, 5, 64))
+        s = Signal1D(data).as_lazy()
+        s.decomposition(algorithm="SVD", svd_solver="randomized", output_dimension=3)
+        assert s.learning_results.factors is not None
+        assert s.learning_results.loadings is not None
+
 
 class TestPrintInfo:
     def setup_method(self, method):

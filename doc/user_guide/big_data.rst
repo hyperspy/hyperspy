@@ -183,8 +183,7 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
        approximation error in the singular vectors.
        ``output_dimension`` is **required**.
        Supports ``centre``, navigation/signal masks, and ``reproject``.
-       Requires the unfolded array to be chunked in one dimension only;
-       use ``'incremental'`` for arrays chunked in both dimensions.
+       Works with arrays chunked in one or both dimensions.
    * - ``'incremental'``
      - :class:`~hyperspy.learn.incremental_svd.ISVD` — **incremental (out-of-core)**:
        streams the data one mini-batch at a time so that only a small number of

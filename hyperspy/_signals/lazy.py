@@ -1142,9 +1142,8 @@ class LazySignal(signals.BaseSignal):
               Fast in practice (typically the fastest of the three options)
               with moderate memory use.  ``output_dimension`` is required.
               Supports ``centre``, navigation/signal masks, and
-              ``reproject``.  Requires the unfolded array to be chunked in
-              one dimension only; arrays chunked in both dimensions raise
-              :exc:`NotImplementedError`.
+              ``reproject``.  Works with arrays chunked in one or both
+              dimensions.
 
               *Advantages*: fastest; graph-based scheduling lets dask
               optimise I/O and computation together; supports masking and
