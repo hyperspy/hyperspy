@@ -162,8 +162,20 @@ class MVA:
         if not hasattr(self, "learning_results"):
             self.learning_results = LearningResults()
 
-    def _validate_decomposition_inputs(self, output_dimension, centre, reproject):
+    def _validate_decomposition_inputs(
+        self, output_dimension, centre, reproject, svd_solver=None
+    ):
         """Validate inputs shared by lazy and non-lazy decomposition().
+
+        Parameters
+        ----------
+        output_dimension : int or None
+        centre : str or None
+        reproject : str or None
+        svd_solver : str or None, default None
+            When provided (lazy path only), also validates that
+            ``output_dimension`` is supplied for solvers that require it
+            (``'randomized'`` and ``'incremental'``).
 
         Raises
         ------
@@ -200,6 +212,16 @@ class MVA:
                     f"`output_dimension` must be a positive integer, "
                     f"got {output_dimension}."
                 )
+
+        # Solvers that cannot determine rank automatically require the caller
+        # to supply output_dimension.  Checked here (rather than inline in
+        # lazy.decomposition) so that all output_dimension constraints live in
+        # one place and stay consistent if new solvers are added later.
+        if svd_solver in ("randomized", "incremental") and output_dimension is None:
+            raise ValueError(
+                f"`output_dimension` must be specified when using "
+                f"algorithm='SVD' with svd_solver={svd_solver!r}."
+            )
 
         if centre not in (None, "navigation", "signal"):
             raise ValueError(

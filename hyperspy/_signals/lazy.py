@@ -1271,16 +1271,6 @@ class LazySignal(signals.BaseSignal):
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
             )
-        if (
-            algorithm == "SVD"
-            and svd_solver in ("randomized", "incremental")
-            and output_dimension is None
-        ):
-            raise ValueError(
-                f"`output_dimension` must be specified when using "
-                f"algorithm='SVD' with svd_solver={svd_solver!r}."
-            )
-
         # Detect custom sklearn-like estimator objects
         _is_custom_sklearn_like = not isinstance(algorithm, str) and (
             hasattr(algorithm, "fit_transform")
@@ -1327,7 +1317,11 @@ class LazySignal(signals.BaseSignal):
             )
 
         # ── input validation (mirrors non-lazy MVA.decomposition) ────────────
-        self._validate_decomposition_inputs(output_dimension, centre, reproject)
+        # svd_solver is passed so _validate_decomposition_inputs can check the
+        # output_dimension requirement for solver-specific constraints in one place.
+        self._validate_decomposition_inputs(
+            output_dimension, centre, reproject, svd_solver=svd_solver
+        )
 
         self._check_navigation_mask(navigation_mask)
         self._check_signal_mask(signal_mask)
