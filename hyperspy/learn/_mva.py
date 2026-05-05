@@ -115,9 +115,11 @@ def _nan_expand_rows(arr, mask, total_rows):
     Parameters
     ----------
     arr : numpy.ndarray or dask.array.Array, shape (n_kept, n_components)
+        The unmasked rows of the factor or loading matrix.
     mask : numpy.ndarray of bool, shape (total_rows,)
         True where the row was *excluded* from decomposition.
     total_rows : int
+        Total number of rows in the expanded output (masked + unmasked).
 
     Returns
     -------
@@ -170,8 +172,11 @@ class MVA:
         Parameters
         ----------
         output_dimension : int or None
+            Number of components to compute; ``None`` means all.
         centre : str or None
+            Centering strategy (``'navigation'``, ``'signal'``, or ``None``).
         reproject : str or None
+            Reprojection mode (``'navigation'``, ``'signal'``, ``'both'``, or ``None``).
         svd_solver : str or None, default None
             When provided (lazy path only), also validates that
             ``output_dimension`` is supplied for solvers that require it
@@ -244,7 +249,9 @@ class MVA:
         Returns
         -------
         explained_variance_ratio : numpy.ndarray or None
+            Fraction of variance explained by each component; ``None`` if input is ``None``.
         number_significant_components : int or None
+            Index of the scree-plot elbow plus one; ``None`` if input is ``None``.
         """
         if explained_variance is None:
             return None, None
@@ -1433,7 +1440,7 @@ class MVA:
 
             * ``None`` (default): lazy if the signal itself is lazy, eager
               otherwise.  For lazy signals that used ``svd_solver='full'``
-              without ``reproject`` the factors and loadings are already dask
+              without ``reproject``, the factors and loadings are already dask
               arrays and laziness is preserved automatically.  For all other
               solvers (and for non-lazy signals) the reconstruction is computed
               eagerly.
@@ -1491,9 +1498,9 @@ class MVA:
         Parameters
         ----------
         components : None, int or list of int, default None
-            If None, rebuilds signal instance from all components
-            If int, rebuilds signal instance from components in range 0-given int
-            If list of ints, rebuilds signal instance from only components in given list
+            * If None, rebuilds signal instance from all components
+            * If int, rebuilds signal instance from components in range 0-given int
+            * If list of ints, rebuilds signal instance from only components in given list
         lazy : bool or None, default None
             Whether to return a lazy signal backed by a dask array.
 
