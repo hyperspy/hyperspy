@@ -942,7 +942,7 @@ class LazySignal(signals.BaseSignal):
 
         See Also
         --------
-        :meth:`~hyperspy.api.signals.LazySignal.normalize_poissonian_noise` :
+        :meth:`~hyperspy.api.signals.BaseSignal.normalize_poissonian_noise` :
             Non-lazy equivalent.
         """
         import dask.array as da
@@ -1051,7 +1051,7 @@ class LazySignal(signals.BaseSignal):
         svd_solver="randomized",
         **kwargs,
     ):
-        """Perform Incremental (Batch) decomposition on the data.
+        """Apply decomposition to a lazy dataset.
 
         The results are stored in the
         :attr:`~.api.signals.BaseSignal.learning_results`
@@ -1099,10 +1099,10 @@ class LazySignal(signals.BaseSignal):
             More chunks require more memory, but should run faster. Will be
             increased to contain at least ``output_dimension`` signals.
             Not used for ``'SVD'`` with ``svd_solver='randomized'``.
-        navigation_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
+        navigation_mask : :class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array
             The navigation locations marked as True are not used in the
             decomposition.
-        signal_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
+        signal_mask : :class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array
             The signal locations marked as True are not used in the
             decomposition.
         reproject : {None, "navigation", "signal", "both"}, default None
@@ -1110,7 +1110,7 @@ class LazySignal(signals.BaseSignal):
             full (unmasked) data after learning:
 
             * ``None``: use the default for the chosen algorithm.
-              For ``"PCA"``, ``"ORPCA"`` and ``"ORNMF"`` this is equivalent
+              For ``"PCA"``, ``"NMF"``, ``"ORPCA"`` and ``"ORNMF"`` this is equivalent
               to ``"navigation"``; for ``"SVD"`` loadings are computed during
               the learn pass (reprojection is a no-op).
             * ``"navigation"``: reproject onto navigation space to get full
@@ -1179,10 +1179,11 @@ class LazySignal(signals.BaseSignal):
               materialise; ``output_dimension`` optional; masks, reproject,
               and centre supported.
 
-              *Disadvantages*: materialising the full result requires
-              significantly more memory than the other solvers (the full U
-              matrix is ``nav_size × nav_size`` before truncation); slow for
-              large datasets.
+              *Disadvantages*: materialising the full result without
+              ``output_dimension`` requires significantly more memory than the
+              other solvers (the full U matrix is ``nav_size × nav_size``
+              before truncation); when ``output_dimension`` is set only the
+              top-k columns are retained.  Slow for large datasets.
         **kwargs
             passed to the partial_fit/fit functions.
 
