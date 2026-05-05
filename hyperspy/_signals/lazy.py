@@ -1318,10 +1318,14 @@ class LazySignal(signals.BaseSignal):
             )
 
         # ── input validation (mirrors non-lazy MVA.decomposition) ────────────
-        # svd_solver is passed so _validate_decomposition_inputs can check the
-        # output_dimension requirement for solver-specific constraints in one place.
+        # Only pass svd_solver for the SVD path so solver-specific
+        # output_dimension constraints do not leak into PCA or custom
+        # sklearn-like estimators.
         self._validate_decomposition_inputs(
-            output_dimension, centre, reproject, svd_solver=svd_solver
+            output_dimension,
+            centre,
+            reproject,
+            svd_solver=svd_solver if algorithm == "SVD" else None,
         )
 
         self._check_navigation_mask(navigation_mask)
