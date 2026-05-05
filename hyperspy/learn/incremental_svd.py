@@ -111,7 +111,7 @@ if SKLEARN_INSTALLED:
 else:
 
     class ISVD:  # type: ignore[no-redef]
-        """Placeholder raised when scikit-learn is not installed."""
+        """Stub that raises ``ImportError`` on instantiation when scikit-learn is not installed."""
 
         def __init__(self, *args, **kwargs):
             _check_sklearn()

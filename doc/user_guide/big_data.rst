@@ -199,8 +199,7 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
      - :func:`dask.array.linalg.svd` — **exact full SVD** (TSQR algorithm).
        Returns *lazy* dask arrays; no computation is triggered until
        ``.compute()`` is called (or until ``reproject`` is used, which
-       materialises the arrays internally).  Reproduces the behaviour of
-       HyperSpy prior to v2.5.  Requires substantially more memory than
+       materialises the arrays internally).  Uses the same ``dask.array.linalg.svd`` backend as HyperSpy prior to v2.5.  Requires substantially more memory than
        ``'randomized'`` and is considerably slower.
 
        ``output_dimension`` is **optional** (all components are returned if
@@ -225,7 +224,7 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
    The ``svd_solver`` parameter was introduced, offering three backends:
    ``'randomized'`` (default, fast randomised truncated SVD),
    ``'incremental'`` (lowest peak memory among SVD solvers, out-of-core streaming), and
-   ``'full'`` (exact SVD, lazy dask output, reproduces pre-v2.5 behaviour).
+   ``'full'`` (exact SVD, lazy dask output; uses the same ``dask.array.linalg.svd`` backend as pre-v2.5).
 
 .. code-block:: python
 
