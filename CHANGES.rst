@@ -1330,7 +1330,7 @@ API changes
 
 This is a maintenance release that adds compatibility with Numpy 1.17 and Dask
 2.3.0 and fixes a bug in the Bruker reader. See `the issue tracker
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.2>`__
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.5.2>`__
 for details.
 
 
@@ -1341,7 +1341,7 @@ for details.
 
 This is a maintenance release that fixes some regressions introduced in v1.5.
 Follow the following links for details on all the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.5.1>`__.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.5.1>`__.
 
 
 .. _changes_1.5:
@@ -1410,9 +1410,9 @@ For developers
 This is a maintenance release. Among many other fixes and enhancements, this
 release fixes compatibility issues with Matplotlib v 3.1. Follow the
 following links for details on all the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.4.2>`__
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.4.2>`__
 and `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.2+label%3A"type%3A+enhancement">`__.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.2+label%3A%22type%3A+enhancement">`__.
 
 
 .. _changes_1.4.1:
@@ -1422,9 +1422,9 @@ and `enhancements
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.4.1>`__
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.4.1>`__
 and `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.1+label%3A"type%3A+enhancement">`__.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.1+label%3A%22type%3A+enhancement">`__.
 
 This release fixes compatibility issues with Python 3.7.
 
@@ -1489,8 +1489,8 @@ Enhancements
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.2>`__
-and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.2+label%3A"type%3A+enhancement">`__.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.3.2>`__
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.2+label%3A%22type%3A+enhancement">`__.
 
 
 .. _changes_1.3.1:
@@ -1500,8 +1500,8 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.1>`__
-and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.1+label%3A"type%3A+enhancement">`__.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.3.1>`__
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.1+label%3A%22type%3A+enhancement">`__.
 
 Starting with this version, the HyperSpy WinPython Bundle distribution is
 no longer released in sync with HyperSpy. For HyperSpy WinPython Bundle
@@ -1515,13 +1515,13 @@ releases see https://github.com/hyperspy/hyperspy-bundle
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3>`__,
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.3>`__,
 `feature
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+enhancement">`__
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A%22type%3A+enhancement">`__
 and `documentation
 <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed%20milestone%3Av1.3%20label%3A%22affects%3A%20documentation%22%20>`__ enhancements,
 and `new features
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+New+feature">`__.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A%22type%3A+New+feature">`__.
 
 NEW
 ---
@@ -1624,11 +1624,11 @@ For developers
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.2>`__,
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.2>`__,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+enhancement">`__
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A%22type%3A+enhancement">`__
 and `new features
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+New+feature">`__.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A%22type%3A+New+feature">`__.
 
 NEW
 ---
@@ -1676,8 +1676,8 @@ For developers
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.1.2>`__
-and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3A"type%3A+enhancement">`__.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3Av1.1.2>`__
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3A%22type%3A+enhancement%22>`__.
 
 
 .. _changes_1.1.1:
@@ -1687,7 +1687,7 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 This is a maintenance release. Follow the following link for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1.1>`__.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3A1.1.1>`__.
 
 Enhancements
 ------------
@@ -1709,7 +1709,7 @@ Enhancements
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1>`__.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3A1.1>`__.
 
 NEW
 ---
@@ -1735,7 +1735,7 @@ Enhancements
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.0.1>`__.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A%22type%3A+bug%22+is%3Aclosed+milestone%3A1.0.1>`__.
 
 
 1.0.0 (2016-07-14)
@@ -1818,8 +1818,8 @@ API changes
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3A"type%3A+bug"+is%3Aclosed>`__,
-`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3A"type%3A+enhancement"+>`__
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3A%22type%3A+bug%22+is%3Aclosed>`__,
+`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3A%22type%3A+enhancement%22+>`__
 and `documentation
 <https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3A0.8.5+label%3Adocumentation+is%3Aclosed+>`__ enhancements.
 
@@ -1867,15 +1867,15 @@ The broadcasting rules have also changed. See :ref:`signal.operations`
 for details.
 
 Follow the following links for details on all the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+bug"&utf8=%E2%9C%93>`__,
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3A%22type%3A+bug"&utf8=%E2%9C%93>`__,
 `documentation enhancements
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Adocumentation>`__,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+enhancement">`__,
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A%22type%3A+enhancement">`__,
 `new features
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3ANew>`__
 `and API changes
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"Api+change">`__
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A%22Api+change%22>`__
 
 
 .. _changes_0.8.2:
@@ -1892,9 +1892,9 @@ This is a maintenance release that fixes an issue with the Python installers. Th
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3A"type%3A+bug"&utf8=%E2%9C%93>`__,
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3A%22type%3A+bug"&utf8=%E2%9C%93>`__,
 `feature
-<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3A"type%3A+enhancement"+>`__
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3A%22type%3A+enhancement%22+>`__
 and `documentation
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.1+label%3Adocumentation>`__ enhancements.
 
