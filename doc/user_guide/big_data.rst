@@ -189,8 +189,9 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
        (out-of-core) SVD**: streams data one mini-batch at a time so only a
        small number of chunks reside in memory simultaneously.  Result is
        deterministic.  **Lowest peak memory of the three SVD solvers** — a good
-       choice when RAM is the primary constraint and ``"PCA"`` / ``"NMF"`` are
-       not suitable — at the cost of significantly longer wall-clock time.
+       choice when RAM is the primary constraint and you still need an
+       SVD-based decomposition — at the cost of typically longer wall-clock
+       time than ``'randomized'``.
 
        ``output_dimension`` is **required**.
        Supports ``centre``, navigation/signal masks, and all ``reproject`` modes.
@@ -208,15 +209,17 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
 
 .. note::
 
-   **Choosing an algorithm for memory-constrained workflows.**
-   ``"NMF"``, ``"ORPCA"``, and ``"ORNMF"`` typically use the least peak memory
-   (tiny streaming batches, no large intermediate matrix).  ``"PCA"``
-   (:class:`sklearn.decomposition.IncrementalPCA`) is similarly memory-efficient
-   and substantially faster.  Among the SVD solvers, ``svd_solver='incremental'``
-   uses the least memory and ``svd_solver='full'`` uses the most.
-   ``svd_solver='randomized'`` (the default) offers the best balance of speed
-   and memory for most datasets; switch to ``"PCA"`` or ``'incremental'`` only
-   when RAM is the primary constraint.
+   **Choosing an algorithm.**
+   For ``"PCA"``, ``"NMF"``, ``"ORPCA"``, and ``"ORNMF"``, the main criterion is
+   usually the statistical model or constraint you need (for example,
+   centering, non-negativity, or robustness), not just speed or memory use.
+   The comparison below therefore focuses on the three ``svd_solver`` backends
+   of ``algorithm="SVD"``.  Among those, ``svd_solver='incremental'`` usually
+   has the lowest peak memory, ``svd_solver='full'`` the highest, and
+   ``svd_solver='randomized'`` generally offers the best speed/memory trade-off
+   for most datasets.  Choose ``'full'`` when you need the exact
+   factorisation, and ``'incremental'`` when minimizing RAM is the main
+   priority.
 
 .. versionchanged:: 2.5
    The ``svd_solver`` parameter was introduced, offering three backends:
