@@ -2938,6 +2938,35 @@ class TestGetDecompositionModelBss:
         model = s.get_decomposition_model(components=[0, 2, 4])
         assert model.data.shape == s.data.shape
 
+    @skip_sklearn
+    def test_get_bss_model_chunks_parameter(self):
+        """chunks= is forwarded to da.from_array; chunking is respected."""
+        import dask.array as da
+
+        rng = np.random.default_rng(12)
+        data = rng.random((10, 20))
+        s = Signal1D(data.copy())
+        s.decomposition(output_dimension=3, print_info=False)
+        s.blind_source_separation(number_of_components=3, print_info=False)
+
+        model = s.get_bss_model(lazy=True, chunks=(5, 20))
+        assert isinstance(model.data, da.Array)
+        assert model.data.shape == s.data.shape
+
+    @skip_sklearn
+    def test_get_decomposition_model_chunks_parameter(self):
+        """chunks= is forwarded to da.from_array by get_decomposition_model."""
+        import dask.array as da
+
+        rng = np.random.default_rng(13)
+        data = rng.random((10, 20))
+        s = Signal1D(data.copy())
+        s.decomposition(output_dimension=3, print_info=False)
+
+        model = s.get_decomposition_model(lazy=True, chunks=(5, 20))
+        assert isinstance(model.data, da.Array)
+        assert model.data.shape == s.data.shape
+
 
 class TestFullSVDBaseSignalMask:
     """BaseSignal masks in svd_solver='full' path (L1507, L1523)."""

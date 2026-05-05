@@ -2025,7 +2025,7 @@ class LazySignal(signals.BaseSignal):
         if return_info:
             return obj if algorithm != "SVD" else None
 
-    def get_decomposition_model(self, components=None, lazy=None):
+    def get_decomposition_model(self, components=None, lazy=None, chunks="auto"):
         """Generate model with the selected number of principal components.
 
         Delegates to the base-class implementation, which handles both lazy
@@ -2040,6 +2040,10 @@ class LazySignal(signals.BaseSignal):
         lazy : bool or None, default None
             Whether to return a lazy signal.  ``None`` means lazy if the
             signal itself is lazy, eager otherwise.
+        chunks : int, tuple, dict, or "auto", default "auto"
+            Chunk shape passed to :func:`dask.array.from_array` when numpy
+            factors or loadings are wrapped as dask arrays.  Only relevant
+            when ``lazy=True`` or the signal is already lazy.
 
         Returns
         -------
@@ -2048,7 +2052,7 @@ class LazySignal(signals.BaseSignal):
             lazy and ``lazy`` is ``None``.
         """
         return self._calculate_recmatrix(
-            components=components, mva_type="decomposition", lazy=lazy
+            components=components, mva_type="decomposition", lazy=lazy, chunks=chunks
         )
 
     def plot(self, navigator="auto", **kwargs):

@@ -1301,7 +1301,7 @@ class MVA:
                 )
 
     def _calculate_recmatrix(
-        self, components=None, mva_type="decomposition", lazy=None
+        self, components=None, mva_type="decomposition", lazy=None, chunks="auto"
     ):
         """Rebuilds data from selected components.
 
@@ -1320,6 +1320,11 @@ class MVA:
             compute eagerly and return a regular (non-lazy) signal.  If
             ``None`` (default), behave as ``True`` when the signal is lazy
             and ``False`` otherwise.
+        chunks : int, tuple, dict, or "auto", default "auto"
+            Chunk shape passed to :func:`dask.array.from_array` when wrapping
+            numpy factors or loadings as dask arrays (only relevant when
+            ``lazy=True`` or when the signal is lazy).  The default ``"auto"``
+            lets dask choose a suitable chunk size.
 
         Returns
         -------
@@ -1344,14 +1349,10 @@ class MVA:
 
         if lazy:
             # Wrap numpy arrays as dask; dask arrays pass through unchanged.
-            # Factors shape: (sig_size, k) — keep as a single chunk along k
-            # since k is small (typically 3–50 components).  Along the signal
-            # axis use the signal's own chunk structure if available, otherwise
-            # let dask choose via "auto".
             if isinstance(factors, np.ndarray):
-                factors = da.from_array(factors, chunks="auto")
+                factors = da.from_array(factors, chunks=chunks)
             if isinstance(loadings, np.ndarray):
-                loadings = da.from_array(loadings, chunks="auto")
+                loadings = da.from_array(loadings, chunks=chunks)
 
         if components is None:
             a = factors @ loadings
@@ -1396,7 +1397,7 @@ class MVA:
 
         return sc
 
-    def get_decomposition_model(self, components=None, lazy=None):
+    def get_decomposition_model(self, components=None, lazy=None, chunks="auto"):
         """Generate model with the selected number of principal components.
 
         Parameters
@@ -1424,6 +1425,11 @@ class MVA:
             * ``False``: always return an eager (non-lazy) signal, computing
               the result immediately.  Use this on a lazy signal when you want
               an in-memory result.
+        chunks : int, tuple, dict, or "auto", default "auto"
+            Chunk shape passed to :func:`dask.array.from_array` when numpy
+            factors or loadings are wrapped as dask arrays (only applies when
+            ``lazy=True`` or when the signal is lazy).  The default ``"auto"``
+            lets dask choose a suitable chunk size.
 
         Returns
         -------
@@ -1454,10 +1460,10 @@ class MVA:
 
         """
         return self._calculate_recmatrix(
-            components=components, mva_type="decomposition", lazy=lazy
+            components=components, mva_type="decomposition", lazy=lazy, chunks=chunks
         )
 
-    def get_bss_model(self, components=None, lazy=None):
+    def get_bss_model(self, components=None, lazy=None, chunks="auto"):
         """Generate model with the selected number of independent components.
 
         Parameters
@@ -1480,6 +1486,11 @@ class MVA:
               chunk by chunk.
             * ``False``: always return an eager (non-lazy) signal, computing
               the result immediately.
+        chunks : int, tuple, dict, or "auto", default "auto"
+            Chunk shape passed to :func:`dask.array.from_array` when numpy
+            BSS factors or loadings are wrapped as dask arrays (only applies
+            when ``lazy=True`` or when the signal is lazy).  The default
+            ``"auto"`` lets dask choose a suitable chunk size.
 
         Returns
         -------
@@ -1490,7 +1501,7 @@ class MVA:
 
         """
         return self._calculate_recmatrix(
-            components=components, mva_type="bss", lazy=lazy
+            components=components, mva_type="bss", lazy=lazy, chunks=chunks
         )
 
     def get_explained_variance_ratio(self):
