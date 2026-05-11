@@ -26,6 +26,7 @@ and the plot cursor never accidentally drives a fit.
 """
 
 import inspect
+import math
 from contextlib import contextmanager
 from typing import Generator
 
@@ -365,6 +366,230 @@ class FitIndices:
             if skip_fitted and self.is_fitted(index):
                 continue
             yield index
+
+    # ------------------------------------------------------------------
+    # Display helpers
+    # ------------------------------------------------------------------
+
+    def _compute_grid(self, max_cells=64):
+        """Bin ``fitted`` into a ≤ *max_cells* × *max_cells* display grid.
+
+        Each cell of the returned grid holds the **fraction** [0, 1] of
+        navigation positions in the corresponding block that have been
+        marked fitted.  Padding positions (when the navigation shape is not
+        a multiple of the block size) are ``NaN`` and are excluded from the
+        mean.
+
+        Parameters
+        ----------
+        max_cells : int, default 64
+            Maximum number of display cells along each axis.
+
+        Returns
+        -------
+        grid : numpy.ndarray of float32, shape (display_rows, display_cols)
+        current_row : int
+            Row in *grid* that contains :attr:`current_index`; -1 if none.
+        current_col : int
+            Column in *grid* that contains :attr:`current_index`; -1 if none.
+        """
+        if not self.navigation_shape:
+            # 0-D signal — single cell.
+            grid = np.array([[float(self.fitted[0])]], dtype=np.float32)
+            cr = 0 if self.current_index is not None else -1
+            cc = 0 if self.current_index is not None else -1
+            return grid, cr, cc
+
+        # -------------------------------------------------------------------
+        # Flatten to 2-D: shape (n_flat_rows, n_cols)
+        #   The last numpy axis  == the x-axis (HyperSpy dim 0, fastest).
+        #   All leading axes are flattened into a single row-axis.
+        # -------------------------------------------------------------------
+        flat_2d = self.fitted.reshape(-1, self.fitted.shape[-1]).astype(np.float32)
+        n_flat_rows, n_cols = flat_2d.shape
+
+        # Block sizes
+        bs_row = max(1, math.ceil(n_flat_rows / max_cells))
+        bs_col = max(1, math.ceil(n_cols / max_cells))
+
+        disp_rows = math.ceil(n_flat_rows / bs_row)
+        disp_cols = math.ceil(n_cols / bs_col)
+
+        # Pad so the array is exactly divisible
+        pad_r = disp_rows * bs_row - n_flat_rows
+        pad_c = disp_cols * bs_col - n_cols
+        if pad_r > 0 or pad_c > 0:
+            flat_2d = np.pad(flat_2d, ((0, pad_r), (0, pad_c)), constant_values=np.nan)
+
+        # nanmean over each block
+        grid = np.nanmean(
+            flat_2d.reshape(disp_rows, bs_row, disp_cols, bs_col),
+            axis=(1, 3),
+        ).astype(np.float32)
+
+        # -------------------------------------------------------------------
+        # Locate current_index in the grid
+        # -------------------------------------------------------------------
+        cur_row, cur_col = -1, -1
+        if self.current_index is not None:
+            ix = self.current_index[0]  # HyperSpy x → last numpy axis → col
+
+            if len(self.current_index) > 1:
+                # Leading HyperSpy indices (iy, iz,  …) → reverse to numpy
+                # order (… iz, iy) to match the C-order leading shape.
+                leading_hs = self.current_index[1:]  # (iy, iz, …) HS order
+                leading_np = tuple(reversed(leading_hs))
+                leading_shape = self.fitted.shape[:-1]  # (nz, ny, …) numpy
+                flat_row = int(np.ravel_multi_index(leading_np, leading_shape))
+            else:
+                flat_row = 0
+
+            cur_row = flat_row // bs_row
+            cur_col = ix // bs_col
+
+        return grid, cur_row, cur_col
+
+    # ------------------------------------------------------------------
+
+    def _repr_html_(self):
+        """Static HTML snapshot of the fitting progress grid.
+
+        Renders the ≤ 64 × 64 binned grid as an HTML table.  Each cell is
+        coloured by the fraction fitted (grey → green).  The cell containing
+        :attr:`current_index` gets an amber border.
+
+        This is the *non-widget* fallback used by IDEs and by Jupyter when
+        ``anywidget`` is not installed.  For a live-updating display call
+        :meth:`display` instead.
+        """
+        grid, cur_row, cur_col = self._compute_grid()
+        rows, cols = grid.shape
+
+        strat = self.strategy if isinstance(self.strategy, str) else "custom"
+        pct = (
+            f"{self.fitted_count / self.total_count * 100:.1f}"
+            if self.total_count
+            else "0.0"
+        )
+        cur_str = (
+            str(self.current_index)
+            if self.current_index is not None and self.current_index != ()
+            else "—"
+        )
+
+        # Info bar
+        html = (
+            '<div style="display:inline-block;font-family:monospace;">'
+            '<div style="font-size:12px;padding:3px 6px;background:#f0f0f0;'
+            "border:1px solid #ccc;border-bottom:none;"
+            'border-radius:3px 3px 0 0;white-space:nowrap;">'
+            f"{self.fitted_count}\u00a0/\u00a0{self.total_count} fitted "
+            f"({pct}\u00a0%) \u2022 {strat} \u2022 current\u00a0{cur_str}"
+            "</div>"
+        )
+
+        # Grid table
+        CELL = 9  # px
+        html += (
+            '<table style="border-collapse:collapse;border:1px solid #ccc;'
+            "border-radius:0 0 3px 3px;background:#e8e8e8;"
+            f'padding:{CELL // 3}px;">'
+        )
+
+        for r in range(rows):
+            html += "<tr>"
+            for c in range(cols):
+                frac = float(grid[r, c])
+                if math.isnan(frac):
+                    frac = 0.0
+                # Grey (220,220,220) → Green (76,175,80)
+                ri = int(220 + (76 - 220) * frac)
+                gi = int(220 + (175 - 220) * frac)
+                bi = int(220 + (80 - 220) * frac)
+                bg = f"rgb({ri},{gi},{bi})"
+
+                if r == cur_row and c == cur_col:
+                    border = "2px solid #ffc107"
+                else:
+                    border = f"1px solid {bg}"
+
+                html += (
+                    f'<td style="width:{CELL}px;height:{CELL}px;'
+                    f"background:{bg};border:{border};"
+                    'padding:0;margin:1px;"></td>'
+                )
+            html += "</tr>"
+
+        html += "</table></div>"
+        return html
+
+    # ------------------------------------------------------------------
+
+    def display(self):
+        """Display a live-updating fit-map widget in Jupyter.
+
+        Connects :attr:`events.index_changed` and
+        :attr:`events.fitting_complete` to the widget so the grid redraws
+        automatically on every pixel fit.
+
+        Returns
+        -------
+        widget : FitIndicesWidget or IPython DisplayHandle or None
+            * :class:`~hyperspy.viewer.fit_indices_widget.FitIndicesWidget`
+              when ``anywidget`` is available.
+            * An ``IPython.display.DisplayHandle`` when only IPython is
+              available (falls back to static HTML snapshots pushed via
+              ``update_display``).
+            * ``None`` when neither is available (falls back to
+              ``print(self)``).
+
+        Notes
+        -----
+        The widget stays live as long as its ``index_changed`` callback is
+        connected.  The callback is disconnected automatically when
+        ``fitting_complete`` fires.  If ``multifit`` raises before all
+        pixels are fitted, call ``widget.disconnect()`` (anywidget) or
+        ignore the orphaned callback (it is a no-op once the fitting object
+        is garbage-collected).
+
+        Examples
+        --------
+        >>> widget = model.fit_indices.display()   # show grid before fitting
+        >>> model.multifit()                       # grid updates live
+        """
+        # ── Try anywidget first ───────────────────────────────────────────
+        try:
+            from IPython.display import display as _ipy_display
+
+            from hyperspy.viewer.fit_indices_widget import FitIndicesWidget
+
+            widget = FitIndicesWidget.from_fit_indices(self)
+            _ipy_display(widget)
+            return widget
+        except ImportError:
+            pass
+
+        # ── Fall back: IPython display_id with static HTML snapshots ───────
+        try:
+            from IPython.display import HTML
+            from IPython.display import display as _ipy_display
+
+            handle = _ipy_display(HTML(self._repr_html_()), display_id=True)
+
+            def _on_change(obj, **_):
+                handle.update(HTML(obj._repr_html_()))
+
+            self.events.index_changed.connect(_on_change, ["obj"])
+            self.events.fitting_complete.connect(_on_change, ["obj"])
+            return handle
+        except ImportError:
+            pass
+
+        # ── Last resort: plain text ────────────────────────────────────────
+        print(self)
+        return None
+
+    # ------------------------------------------------------------------
 
     def __repr__(self):
         return (

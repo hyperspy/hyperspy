@@ -2517,6 +2517,7 @@ class BaseModel(list):
         interactive_plot=False,
         iterpath=None,
         resume=False,
+        show_fit_map=False,
         **kwargs,
     ):
         """Fit the data to the model at all positions of the navigation dimensions.
@@ -2621,6 +2622,11 @@ class BaseModel(list):
 
         if not resume:
             self.fit_indices.reset(clear_fitted=True)
+
+        # Live fit-map widget (optional) — create before the loop so the
+        # initial all-grey grid is visible while fitting starts.
+        if show_fit_map:
+            self.fit_indices.display()
 
         # Progress bar length
         try:
