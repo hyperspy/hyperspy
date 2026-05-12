@@ -323,10 +323,13 @@ class FitIndices:
         if not self.navigation_shape:
             # 0-D signal — single pixel, represented as empty tuple
             return iter([()])
-        if self.strategy == "serpentine":
-            return _serpentine_iter(self.navigation_shape)
-        if self.strategy == "flyback":
-            return _flyback_iter(self.navigation_shape)
+        # Guard against non-string strategies (e.g. numpy arrays) where
+        # `== "serpentine"` would raise a ValueError in boolean context.
+        if isinstance(self.strategy, str):
+            if self.strategy == "serpentine":
+                return _serpentine_iter(self.navigation_shape)
+            if self.strategy == "flyback":
+                return _flyback_iter(self.navigation_shape)
         # Custom iterable/generator — wrap as iterator
         return iter(self.strategy)
 
@@ -338,6 +341,12 @@ class FitIndices:
     def __next__(self):
         """Advance to the next index, update ``current_index``, fire event."""
         index = next(self._generator)  # propagates StopIteration when done
+        # Normalize to a plain tuple so downstream code can safely test
+        # ``if index``, unpack it, reverse it, etc.  This matters when the
+        # strategy is a numpy array whose rows are ndarray objects rather
+        # than tuples.
+        if not isinstance(index, tuple):
+            index = tuple(int(i) for i in index)
         self.current_index = index
         self.events.index_changed.trigger(obj=self, index=index)
         return index

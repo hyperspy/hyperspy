@@ -512,6 +512,12 @@ class BaseModel(list):
         # fit() or multifit() is called, once a signal is attached.
         self.fit_indices: "FitIndices | None" = None
 
+        # Flag set to True only while multifit() is running its iteration loop.
+        # fit() reads this to reliably distinguish "called from multifit" from
+        # "standalone call whose fit_indices.current_index is stale from a
+        # previous standalone call".
+        self._multifit_active: bool = False
+
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
         # raise an exception when using windows.connect
@@ -1896,11 +1902,12 @@ class BaseModel(list):
         # ------------------------------------------------------------------
         self._ensure_fit_indices()
 
-        _called_from_multifit = (
-            self.fit_indices is not None
-            and self.fit_indices.current_index is not None
-            and index == "auto"
-        )
+        # True when fit() is called from inside multifit's pixel loop.
+        # We use the explicit _multifit_active flag instead of checking
+        # current_index is not None, because a previous standalone fit()
+        # call may have left current_index set from its resolved index,
+        # and we must not mistake that for a live multifit context.
+        _called_from_multifit = self._multifit_active and index == "auto"
 
         if _called_from_multifit:
             # multifit already set fit_indices.current_index — use it as-is
@@ -2757,44 +2764,48 @@ class BaseModel(list):
         # Fitting in a vectorized fashion is not supported. We iterate over the
         # navigation indices and fit the dataset one by one, driven by FitIndices.
         i = 0
-        with self.axes_manager.events.indices_changed.suppress_callback(
-            self.fetch_stored_values
-        ):
-            if interactive_plot:
-                outer = utils.dummy_context_manager
-                inner = self.suspend_update
-            else:
-                outer = self.suspend_update
-                inner = utils.dummy_context_manager
+        self._multifit_active = True
+        try:
+            with self.axes_manager.events.indices_changed.suppress_callback(
+                self.fetch_stored_values
+            ):
+                if interactive_plot:
+                    outer = utils.dummy_context_manager
+                    inner = self.suspend_update
+                else:
+                    outer = self.suspend_update
+                    inner = utils.dummy_context_manager
 
-            with outer(update_on_resume=True):
-                with progressbar(
-                    total=maxval, disable=not show_progressbar, leave=True
-                ) as pbar:
-                    for index in self.fit_indices.as_generator(
-                        mask=mask, skip_fitted=resume
-                    ):
-                        # Transitional shim: sync axes_manager so that
-                        # component fetch/store still works.  Removed in Part 3.
-                        self.axes_manager.indices = index
+                with outer(update_on_resume=True):
+                    with progressbar(
+                        total=maxval, disable=not show_progressbar, leave=True
+                    ) as pbar:
+                        for index in self.fit_indices.as_generator(
+                            mask=mask, skip_fitted=resume
+                        ):
+                            # Transitional shim: sync axes_manager so that
+                            # component fetch/store still works.  Removed in Part 3.
+                            self.axes_manager.indices = index
 
-                        with inner(update_on_resume=True):
-                            # Fetch initial parameter values for this pixel
-                            self.fetch_stored_values(only_fixed=fetch_only_fixed)
-                            # fit() sees fit_indices.current_index set by
-                            # as_generator / __next__ — uses it via the
-                            # _called_from_multifit branch.
-                            self.fit(**kwargs)
-                            self.fit_indices.mark_fitted(index)
-                            i += 1
-                            pbar.update(1)
+                            with inner(update_on_resume=True):
+                                # Fetch initial parameter values for this pixel
+                                self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                                # fit() sees fit_indices.current_index set by
+                                # as_generator / __next__ — uses it via the
+                                # _called_from_multifit branch.
+                                self.fit(**kwargs)
+                                self.fit_indices.mark_fitted(index)
+                                i += 1
+                                pbar.update(1)
 
-                        if autosave and i % autosave_every == 0:
-                            self.save_parameters2file(autosave_fn)
+                            if autosave and i % autosave_every == 0:
+                                self.save_parameters2file(autosave_fn)
 
-            # Trigger the indices_changed event to update to current indices,
-            # since the callback was suppressed.
-            self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+                # Trigger the indices_changed event to update to current indices,
+                # since the callback was suppressed.
+                self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+        finally:
+            self._multifit_active = False
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
