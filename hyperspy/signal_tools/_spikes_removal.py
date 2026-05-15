@@ -339,7 +339,7 @@ class SpikesRemovalInteractive(SpikesRemoval, signal_tools.SpanSelectorInSignal1
 
     def update_spectrum_line(self):
         self.line.auto_update = True
-        self.line.update()
+        self.line.update(update_ylimits=True)
         self.line.auto_update = False
 
     def on_disabling_span_selector(self):

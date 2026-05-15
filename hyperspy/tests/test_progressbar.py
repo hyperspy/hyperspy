@@ -16,24 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import matplotlib
-
-matplotlib.use("agg")
-
 import pytest
 
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
-import numpy as np
+from hyperspy.external.progressbar import progressbar
 
 
-@pytest.fixture(autouse=True)
-def add_np(doctest_namespace):
-    doctest_namespace["np"] = np
-    doctest_namespace["plt"] = plt
-    doctest_namespace["hs"] = hs
+@pytest.mark.parametrize("nb_progressbar", [False, True])
+def test_progressbar(nb_progressbar):
+    hs.preferences.General.nb_progressbar = nb_progressbar
 
-
-# Don't show progressbar since it contains the runtime which
-# will make the doctest fail
-hs.preferences.General.show_progressbar = False
+    for i in progressbar(range(10), desc="Testing progressbar"):
+        print(i)
