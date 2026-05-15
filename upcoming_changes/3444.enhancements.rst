@@ -1,0 +1,2 @@
+Added `yscale` argument to :meth:`~.api.plot.plot_spectra`, following :meth:`matplotlib.axes.Axes.set_yscale`.
+For cascade only log, symlog and linear are implemented.
