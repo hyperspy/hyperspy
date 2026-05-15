@@ -308,6 +308,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             self._patch.remove(patch)
             patch.remove()
         self._width_indicator_patches = []
+        # Patches were removed from the axes but the blit background
+        # still shows their pixels — invalidate and force a full redraw.
+        if hasattr(self.ax, "hspy_fig"):
+            self.ax.hspy_fig._background = None
+            self.draw_patch()
 
     def _get_vertex(self, event):
         """Check bitfield on self.func, and return vertex index."""

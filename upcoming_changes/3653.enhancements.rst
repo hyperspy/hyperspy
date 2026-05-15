@@ -1,0 +1,9 @@
+Poisson-noise normalization and centering in eager decomposition now reverse
+their data modifications mathematically after decomposition, so the original
+signal data is always preserved — even with ``copy=False``.  The ``copy``
+parameter is deprecated; a backup copy is now created only when Poisson
+noise normalization will modify the data (``copy and
+normalize_poissonian_noise``), in which case ``undo_treatments`` restores the
+original data bit-exactly.  For centering-only pre-treatments, restoration
+remains mathematical.  When no pre-treatments modify the data, no copy is
+made, reducing peak memory by one full dataset copy.

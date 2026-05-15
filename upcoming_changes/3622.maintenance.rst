@@ -1,0 +1,4 @@
+Add pre-commit hook (``scripts/check-ai-co-author.py``) blocking
+``Co-authored-by:`` trailers from AI tools, CI compliance checks for
+AI trailer adherence and changelog entries, and ``.gitignore`` entries
+for AI tool local state files.

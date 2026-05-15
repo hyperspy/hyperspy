@@ -1,0 +1,1 @@
+Fix deprecation warning about license specification when building package using ``python -m build``.

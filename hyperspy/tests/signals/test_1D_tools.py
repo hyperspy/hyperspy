@@ -325,6 +325,7 @@ class TestSmoothing:
         self.rtol = 1e-7
         self.atol = 0
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("dtype", ["<f4", "f4", ">f4"])
     def test_lowess(self, dtype):
         from hyperspy.misc.lowess_smooth import lowess

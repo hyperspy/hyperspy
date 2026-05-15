@@ -1,0 +1,1 @@
+Fix two bugs in SAMFire plot cleanup: a lambda was missing ``()`` so ``mark._plot.close`` was never actually called (the method object was returned instead of invoked), and ``connect_other_navigation2`` was connected but never disconnected on plot close, leaking the handler.

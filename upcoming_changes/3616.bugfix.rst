@@ -1,0 +1,5 @@
+Fix ``navigation_size < 2`` raising ``AttributeError`` instead of
+``ValueError`` in non-lazy decomposition. Fix ``get_bss_model()``
+permanently corrupting ``learning_results.factors`` and
+``learning_results.loadings`` by overwriting them with dask-wrapped BSS
+arrays on lazy signals.

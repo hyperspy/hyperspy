@@ -182,9 +182,13 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                 # Add the inner circle
                 if len(self.patch) == 1:
                     # Need to remove the previous patch before using
-                    # `_add_patch_to`
+                    # `_add_patch_to`; invalidate the blit cache so the
+                    # repaint below does a full redraw instead of restoring
+                    # pixels from the old patch.
                     self._patch[0].remove()
                     self._patch = []
+                    if hasattr(self.ax, "hspy_fig"):
+                        self.ax.hspy_fig._background = None
                     self._add_patch_to(self.ax)
                 self.patch[1].radius = ri
             self._update_resizers()

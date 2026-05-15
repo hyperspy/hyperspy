@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import tqdm
 
 from hyperspy.defaults_parser import preferences
@@ -30,10 +31,14 @@ def progressbar(*args, **kwargs):
     %s
     """
     if preferences.General.nb_progressbar:
-        try:
-            return tqdm.notebook(*args, **kwargs)
-        except:
-            pass
-    return tqdm.tqdm(*args, **kwargs)
+        # use tqdm.auto to use "standard" tqdm in a terminal and
+        # tqdm.notebook in a jupyter notebook.
+        submodule = ".auto"
+    else:
+        # use "standard" tqdm
+        submodule = ""
+    
+    return getattr(importlib.import_module(f"tqdm{submodule}"), "tqdm")(*args, **kwargs)
+
 
 progressbar.__doc__ %= (tqdm.__doc__, tqdm.__init__.__doc__)

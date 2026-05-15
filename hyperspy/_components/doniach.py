@@ -76,7 +76,7 @@ class Doniach(Expression):
     This is an asymmetric lineshape, originially design for xps but generally
     useful for fitting peaks with low side tails
     See Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970)
-    or http://www.casaxps.com/help_manual/line_shapes.htm for a more detailed
+    or https://web.archive.org/web/20260220110441/http://www.casaxps.com/help_manual/line_shapes.htm for a more detailed
     description
 
     """

@@ -9,7 +9,6 @@ classifiers = [
     "Framework :: Matplotlib",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -22,21 +21,21 @@ classifiers = [
 ]
 dependencies = [
     "cloudpickle",
-    "dask[array]>=2023.2.1",
+    "dask[array]>=2024.12.0",
     "importlib-metadata>=3.6",
     "jinja2", # improves representation of lazy signals by dask
     "matplotlib>=3.6",
     "natsort",
-    "numpy>=1.22.0",
+    "numpy>=1.25.0", # needed for ContratEditorTool
     "packaging",
     "pint>=0.10",
     "prettytable>=2.3",
     "pyyaml",
     "rosettasciio[hdf5,image]>=0.12.0",
-    "scipy>=1.8.0",
+    "scipy>=1.10.0", # for compatibility with numpy version
     "sympy>=1.10",
     "tqdm>=4.59.0",
-    "traits>=6.4.0",
+    "traits>=7.0.0",
 ]
 description = "Multidimensional data analysis toolbox"
 dynamic = ["version"]
@@ -77,12 +76,11 @@ keywords = [
     "spectroscopy",
     "spectrum image",
 ]
+license = "GPL-3.0-or-later"
+license-files = ["COPYING.txt"]
 name = "hyperspy"
 readme = "README.md"
 requires-python = ">=3.10"
-
-[project.license]
-file = "COPYING.txt"
 
 [project.optional-dependencies]
 all = [
@@ -150,7 +148,7 @@ odr = [
     "odrpack>=0.3.1",
 ]
 speed = [
-    "numba>=0.56.0",
+    "numba>=0.58.0", # for compatibility with numpy version
     "numexpr>=2.8.0",
 ]
 tests = [

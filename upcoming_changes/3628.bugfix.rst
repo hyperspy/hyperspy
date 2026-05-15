@@ -1,0 +1,1 @@
+Fix ``PeaksFinder2D`` not disconnecting ``on_trait_change`` observers on close, causing parameter changes to trigger updates on a potentially stale signal.

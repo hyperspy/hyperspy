@@ -42,6 +42,7 @@ __all__ = [
     "SpikesRemoval",
     "SpikesRemovalInteractive",
     "SPIKES_REMOVAL_INSTRUCTIONS",
+    "_configure_scalable_fixed_pattern",
 ]
 
 
@@ -68,6 +69,7 @@ _import_mapping = {
     "SpikesRemoval": "_spikes_removal",
     "SpikesRemovalInteractive": "_spikes_removal",
     "SPIKES_REMOVAL_INSTRUCTIONS": "_spikes_removal",
+    "_configure_scalable_fixed_pattern": "_background_removal",
 }
 
 

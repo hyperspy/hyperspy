@@ -20,6 +20,26 @@ These can be run locally by using `pre-commit <https://pre-commit.com>`__.
 Alternatively, the comment ``pre-commit.ci autofix`` can be added to a PR to fix the formatting
 using `pre-commit.ci <https://pre-commit.ci>`_.
 
+Pre-CI validation
+=================
+
+Before pushing your changes, run these checks locally to catch errors that
+would otherwise only surface in CI — saving you a round-trip:
+
+- **Pre-CI checks**: run ``python scripts/check-docs.py`` to validate
+  changelog fragments and build the documentation with warnings-as-errors
+  — the same checks the CI doc build runs.  For a fast check of changelog
+  fragments only, use ``python scripts/check-docs.py --quick``.
+
+  Common mistakes caught by this script include using the wrong fragment
+  type (``enhancement`` instead of ``enhancements``, ``fix`` instead of
+  ``bugfix``), broken RST cross-references in fragment text, and broken
+  ``:meth:``, ``:class:``, ``:func:``, or ``:doc:`` links.
+
+See `the changelog README
+<https://github.com/hyperspy/hyperspy/blob/RELEASE_next_patch/upcoming_changes/README.rst>`_
+for more details on writing changelog fragments.
+
 Deprecations
 ============
 HyperSpy follows `semantic versioning <https://semver.org>`_ where changes follow such that:
@@ -49,3 +69,82 @@ This will update the docstring, and print a visible deprecation warning telling
 the user to use the alternative function or argument.
 
 These deprecation wrappers are inspired by those in ``kikuchipy``.
+
+Traits conventions
+==================
+
+HyperSpy uses `Enthought traits <https://docs.enthought.com/traits/>`_ (not Jupyter ``traitlets``) for
+observable attributes on interactive tools, components, and axes. All trait handlers must use the modern
+``@observe`` pattern. The minimum supported version is traits 7.0.
+
+Handler pattern
+---------------
+
+Use ``@t.observe("trait_name")`` decorator with ``(self, event=None)`` signature:
+
+.. code-block:: python
+
+    import traits.api as t
+
+    class MyTool(t.HasTraits):
+        threshold = t.Range(0.0, 1.0, value=0.5)
+
+        @t.observe("threshold", post_init=True)
+        def _threshold_changed(self, event=None):
+            self.update_plot()
+
+The ``event`` parameter has ``.old``, ``.new``, and ``.name`` attributes. Use ``post_init=True`` for
+handlers that should not fire during ``__init__``.
+
+Plain classes (not ``HasTraits``)
+---------------------------------
+
+If a class does not inherit from ``t.HasTraits``, the ``@t.observe`` decorator will not register.
+Use ``self.observe()`` in ``__init__`` instead:
+
+.. code-block:: python
+
+    class SpikesRemoval:
+        def __init__(self):
+            if hasattr(self, "observe"):
+                self.observe(self._index_changed, "index")
+
+        def _index_changed(self, event=None):
+            ...
+
+ROI validation/revert
+---------------------
+
+Handlers that validate and revert invalid values must use ``self.trait_setq()`` to prevent
+infinite recursion:
+
+.. code-block:: python
+
+    @t.observe("left")
+    def _left_changed(self, event=None):
+        if event.new < 0:
+            self.trait_setq(left=0)  # does NOT trigger observer again
+
+List item observation
+---------------------
+
+When observing traits on items in a ``t.List``, use the expression API with ``optional=True``
+to handle items that may not have the trait:
+
+.. code-block:: python
+
+    from traits.observation.api import trait as trait_expr
+
+    expr = trait_expr("_axes").list_items().trait("scale", optional=True)
+    self.observe(handler, expr)
+
+Deprecated patterns
+-------------------
+
+The following patterns are deprecated and must not be used in new code:
+
+- ``self.on_trait_change(handler, "name")`` — use ``self.observe(handler, "name")``
+- ``def _name_changed(self, old, new)`` — use ``@t.observe("name")`` with ``(self, event=None)``
+- ``t.Unicode()`` — use ``t.Str()``
+- ``t.Either([...])`` — use ``t.Union(...)``
+- ``Property(depends_on="x")`` — use ``Property(observe="x")`` with ``@cached_property``

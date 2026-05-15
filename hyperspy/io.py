@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import functools
 import glob
 import importlib
 import logging
@@ -47,17 +48,80 @@ _logger = logging.getLogger(__name__)
 # Utility string:
 f_error_fmt = "\tFile %d:\n\t\t%d signals\n\t\tPath: %s"
 
-# Support for zarr 2 and zarr 3
-ZARR_STORE_BASE_CLASS = MutableMapping
-try:
-    import zarr
 
-    if Version(zarr.__version__) >= Version("3.0.0"):  # pragma: no cover
-        ZARR_STORE_BASE_CLASS = zarr.abc.store.Store
-except ImportError:
-    # zarr is not installed, so we don't need to check for it
-    # keep MutableMapping as the default
-    pass
+def _is_zarr_store(obj):
+    ZARR_STORE_BASE_CLASS = MutableMapping
+    try:
+        import zarr
+
+        if Version(zarr.__version__) >= Version("3.0.0"):  # pragma: no cover
+            ZARR_STORE_BASE_CLASS = zarr.abc.store.Store
+    except ImportError:
+        # zarr is not installed, so we don't need to check for it
+        # keep MutableMapping as the default
+        pass
+
+    return isinstance(obj, ZARR_STORE_BASE_CLASS)
+
+
+class _LazyDocstring:
+    """Wrapper to lazily format a function/method's docstring on first access.
+
+    Works as both a callable wrapper (for functions) and a descriptor (for methods).
+
+    Parameters
+    ----------
+    func : callable
+        The function or method to wrap.
+    format_args_func : callable
+        A callable that returns the format arguments tuple.
+        This enables fully lazy evaluation (deferred until docstring access).
+    """
+
+    def __init__(self, func, format_args_func):
+        self._func = func
+        self._format_args_func = format_args_func
+        self._formatted_doc = None
+        # Exclude __doc__ from update_wrapper to preserve our lazy property
+        functools.update_wrapper(
+            self,
+            func,
+            assigned=(
+                "__module__",
+                "__name__",
+                "__qualname__",
+                "__annotations__",
+                "__wrapped__",
+            ),
+        )
+
+    def __call__(self, *args, **kwargs):
+        return self._func(*args, **kwargs)
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        # Return a bound method that preserves our lazy docstring
+        bound_method = self._func.__get__(obj, objtype)
+
+        # Create a wrapper that has our lazy __doc__
+        @functools.wraps(bound_method)
+        def wrapper(*args, **kwargs):
+            return bound_method(*args, **kwargs)
+
+        # Replace the wrapper's __doc__ with our lazy-formatted docstring
+        wrapper.__doc__ = self.__doc__
+        return wrapper
+
+    @property
+    def __doc__(self):
+        if self._formatted_doc is None:
+            self._formatted_doc = self._func.__doc__ % self._format_args_func()
+        return self._formatted_doc
+
+    @__doc__.setter
+    def __doc__(self, value):
+        self._formatted_doc = value
 
 
 def _get_format_list_for_docstring(write_mode=False, style="bullet", indentation=8):
@@ -536,6 +600,7 @@ def load(
             "The 'reader' parameter is deprecated in HyperSpy 2.4 and"
             "will be removed in HyperSpy 3.0. Use 'file_format' instead.",
             VisibleDeprecationWarning,
+            stacklevel=3,  # Account for _LazyDocstring wrapper
         )
         # Use reader value as file_format for backward compatibility
         effective_file_format = reader
@@ -586,7 +651,9 @@ def load(
         filenames = list(filenames)
 
     # pathlib.Path.glob returns a map object in python 3.13
-    elif not isinstance(filenames, (list, tuple, ZARR_STORE_BASE_CLASS, map)):
+    elif not isinstance(filenames, (list, tuple, map)) and not _is_zarr_store(
+        filenames
+    ):
         raise ValueError(
             "The filenames parameter must be a list, tuple, "
             f"string or None, not {type(filenames)}"
@@ -596,7 +663,7 @@ def load(
         # in case, the file doesn't exist
         raise ValueError(f'No filename matches the pattern "{pattern}"')
 
-    if isinstance(filenames, ZARR_STORE_BASE_CLASS):
+    if _is_zarr_store(filenames):
         filenames = [filenames]
     else:
         # pathlib.Path not fully supported in io_plugins,
@@ -673,10 +740,13 @@ def load(
     return objects
 
 
-load.__doc__ %= (
-    STACK_METADATA_ARG,
-    SHOW_PROGRESSBAR_ARG,
-    _get_format_list_for_docstring(write_mode=False, style="bullet"),
+load = _LazyDocstring(
+    load,
+    lambda: (
+        STACK_METADATA_ARG,
+        SHOW_PROGRESSBAR_ARG,
+        _get_format_list_for_docstring(write_mode=False, style="bullet"),
+    ),
 )
 
 
@@ -802,6 +872,7 @@ def load_with_reader(
                     "axis.is_binned. Setting this attribute for all "
                     "signal axes instead.",
                     VisibleDeprecationWarning,
+                    stacklevel=4,  # Account for _LazyDocstring wrapper + load_single_file
                 )
             if convert_units:
                 signal.axes_manager.convert_units()
@@ -1071,7 +1142,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         )
 
     writer = None
-    if isinstance(filename, ZARR_STORE_BASE_CLASS):
+    if _is_zarr_store(filename):
         extension = ".zspy"
         writer = _infer_file_reader("ZSPY")
     else:
@@ -1122,7 +1193,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         )
 
     # Create the directory if it does not exist
-    if not isinstance(filename, ZARR_STORE_BASE_CLASS):
+    if not _is_zarr_store(filename):
         path.ensure_directory(filename.parent)
         is_file = filename.is_file() or (
             filename.is_dir() and os.path.splitext(filename)[1] == ".zspy"
@@ -1144,7 +1215,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         signal = _add_file_load_save_metadata("save", signal, writer)
         signal_dic = signal._to_dictionary(add_models=True)
         signal_dic["package_info"] = utils.get_object_package_info(signal)
-        if not isinstance(filename, ZARR_STORE_BASE_CLASS):
+        if not _is_zarr_store(filename):
             importlib.import_module(writer["api"]).file_writer(
                 str(filename), signal_dic, **kwds
             )
@@ -1163,8 +1234,11 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
                 signal.tmp_parameters.set_item("extension", extension)
 
 
-save.__doc__ %= _get_format_list_for_docstring(write_mode=True).replace(
-    "loading", "saving"
+save = _LazyDocstring(
+    save,
+    lambda: (
+        _get_format_list_for_docstring(write_mode=True).replace("loading", "saving"),
+    ),
 )
 
 

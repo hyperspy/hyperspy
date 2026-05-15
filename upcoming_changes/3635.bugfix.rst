@@ -1,0 +1,1 @@
+Fix residual line not being updated by ``update_plot`` and not having its events suppressed during ``suspend_update``, which could leave the residual stale after batched parameter changes.

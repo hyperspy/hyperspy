@@ -17,12 +17,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
+import pint
 import pytest
 import traits.api as t
+from packaging.version import Version
 
 from hyperspy.api import _ureg
 from hyperspy.axes import AxesManager, DataAxis, UniformDataAxis, UnitConversion
-from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.test_utils import assert_deep_almost_equal, normalize_micro
 
 
 class TestUnitConversion:
@@ -69,7 +72,7 @@ class TestUnitConversion:
         self._set_units_scale_size("m", 1.0e-3)
         out = self.uc._convert_units("µm")
         assert out is None
-        assert self.uc.units == "µm"
+        assert normalize_micro(self.uc.units) == "µm"
         np.testing.assert_almost_equal(self.uc.scale, 1e3)
 
         self._set_units_scale_size("µm", 0.5)
@@ -105,7 +108,7 @@ class TestUnitConversion:
 
         self._set_units_scale_size("m", 1.0e-3)
         out = self.uc.convert_to_units("µm", inplace=False)
-        assert out == (1e3, 0.0, "µm")
+        assert normalize_micro(out) == (1e3, 0.0, "µm")
         assert self.uc.units == "m"
         np.testing.assert_almost_equal(self.uc.scale, 1.0e-3)
         np.testing.assert_almost_equal(self.uc.offset, 0.0)
@@ -143,7 +146,7 @@ class TestUnitConversion:
         # typical TEM diffraction
         self._set_units_scale_size("1/m", 0.01e9, 256)
         self.uc._convert_compact_units()
-        assert self.uc.units == "1 / µm"
+        assert normalize_micro(self.uc.units) == "1 / µm"
         np.testing.assert_almost_equal(self.uc.scale, 10.0)
 
         # high camera length diffraction
@@ -217,14 +220,26 @@ class TestUniformDataAxis:
         assert self.axis.offset == 5e-3
         assert self.axis.units == "mm"
 
-    def test_offset_as_quantity_setter_string_no_units(self):
+    @pytest.mark.skipif(
+        Version(pint.__version__) < Version("0.25.3"),
+        reason="requires pint>=0.25.3",
+    )
+    def test_offset_as_quantity_setter_string_dimensionless(self):
+        # Check that setting dimensionless quantity works
+        # Change in `pint.UnitRegistry.parse_expression` in 0.25.3,
+        # which now correctly returns a dimensionless quantity
+        # https://github.com/hgrecco/pint/pull/2260
         self.axis.offset_as_quantity = "5e-3"
         assert self.axis.offset == 5e-3
         assert self.axis.scale == 12e-12
-        assert self.axis.units == "m"
+        assert self.axis.units == ""
 
     def test_scale_offset_as_quantity_setter_float(self):
-        self.axis.scale_as_quantity = 2.5e-9
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match="is deprecated and will be removed in HyperSpy 3.0.",
+        ):
+            self.axis.scale_as_quantity = 2.5e-9
         assert self.axis.scale == 2.5e-9
         assert self.axis.units == "m"
 
@@ -246,7 +261,7 @@ class TestUniformDataAxis:
     def test_convert_to_units(self):
         self.axis.convert_to_units(units="µm")
         np.testing.assert_almost_equal(self.axis.scale, 12e-6)
-        assert self.axis.units == "µm"
+        assert normalize_micro(self.axis.units) == "µm"
         np.testing.assert_almost_equal(self.axis.offset, 0.005)
 
     def test_units_not_supported_by_pint_warning_raised(self):
@@ -440,14 +455,14 @@ class TestAxesManager:
         np.testing.assert_almost_equal(self.am["x"].scale, 1.5)
         assert self.am["x"].units == "nm"
         np.testing.assert_almost_equal(self.am["y"].scale, 0.5e-3)
-        assert self.am["y"].units == "µm"
+        assert normalize_micro(self.am["y"].units) == "µm"
         np.testing.assert_almost_equal(self.am["energy"].scale, 5e3)
         assert self.am["energy"].units == "meV"
 
     def test_convert_to_units_list_same_units(self):
         self.am2.convert_units(units=["µm", "eV", "meV"], same_units=True)
         np.testing.assert_almost_equal(self.am2["x"].scale, 0.0015)
-        assert self.am2["x"].units == "µm"
+        assert normalize_micro(self.am2["x"].units) == "µm"
         np.testing.assert_almost_equal(
             self.am2["energy"].scale, self.axes_list2[1]["scale"]
         )
@@ -460,7 +475,7 @@ class TestAxesManager:
     def test_convert_to_units_list_signal2D(self):
         self.am2.convert_units(units=["µm", "eV", "meV"], same_units=False)
         np.testing.assert_almost_equal(self.am2["x"].scale, 0.0015)
-        assert self.am2["x"].units == "µm"
+        assert normalize_micro(self.am2["x"].units) == "µm"
         np.testing.assert_almost_equal(self.am2["energy"].scale, 2500)
         assert self.am2["energy"].units == "meV"
         np.testing.assert_almost_equal(self.am2["energy2"].scale, 5.0)

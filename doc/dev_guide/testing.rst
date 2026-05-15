@@ -117,6 +117,20 @@ that all tests in a file run in the same worker.
     `pytest-sugar <https://pypi.org/project/pytest-sugar/>`_ to produce
     nicer-looking output including an animated progressbar.
 
+Slow tests
+^^^^^^^^^^
+
+Some tests are computationally expensive and can significantly slow down the test suite.
+These are marked with ``@pytest.mark.slow``. To skip them during development:
+
+.. code:: bash
+
+   # Skip slow tests
+   $ pytest -m "not slow"
+
+   # Run only slow tests (useful for pre-release validation)
+   $ pytest -m slow
+
 To test docstring examples, assuming the current location is the HyperSpy root
 directory:
 

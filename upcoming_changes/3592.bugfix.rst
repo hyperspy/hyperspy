@@ -1,0 +1,1 @@
+Fix using ipywidgets progressbar, the standard tqdm progress was used instead. The regression was introduced in HyperSpy 2.4.0.

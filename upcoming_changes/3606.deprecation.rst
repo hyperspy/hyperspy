@@ -1,0 +1,10 @@
+Scree plot titles and axis labels now correctly reflect the decomposition
+algorithm and whether mean-centring was applied. Labels such as
+"Explained variance ratio" and "Principal component" are used only for
+centred decompositions (a.k.a. PCA); uncentred SVD and other algorithms now
+show "Proportion of total variation" and "Component" instead.
+Additionally, ``get_explained_variance_ratio``,
+``plot_explained_variance_ratio`` and
+``plot_cumulative_explained_variance_ratio`` have been renamed to
+``get_scree_plot_data``, ``plot_scree_plot`` and ``plot_cumulative_scree_plot``,
+respectively (the old names remain available but are deprecated since 2.5).

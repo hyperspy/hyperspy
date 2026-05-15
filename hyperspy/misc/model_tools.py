@@ -96,6 +96,9 @@ class CurrentComponentValues:
     def _build_table(self):
         """Build and return a PrettyTable with parameter data."""
 
+        def _num_fmt(f, v):
+            return "" if v is None else "%.5g" % v
+
         table = PrettyTable()
         table.field_names = [
             "Parameter",
@@ -113,21 +116,43 @@ class CurrentComponentValues:
         table.align["Min"] = "r"
         table.align["Max"] = "r"
         table.align["Linear"] = "r"
+        table.custom_format = {
+            "Value": _num_fmt,
+            "Std": _num_fmt,
+            "Min": _num_fmt,
+            "Max": _num_fmt,
+        }
+        _widths = {
+            "Parameter": 14,
+            "Free": 7,
+            "Value": 10,
+            "Std": 10,
+            "Min": 10,
+            "Max": 10,
+            "Linear": 6,
+        }
+        table.min_width = _widths
+        table.max_width = _widths
 
         # Add rows
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
                 free = para.free if para.twin is None else "Twinned"
                 ln = para._linear
+                value = (
+                    _format_string(para.value)
+                    if isinstance(para.value, Iterable)
+                    else para.value
+                )
                 table.add_row(
                     [
-                        _format_string(para.name, max_length=14),
-                        _format_string(str(free), max_length=7),
-                        _format_string(para.value, max_length=10),
-                        _format_string(para.std, max_length=10),
-                        _format_string(para.bmin, max_length=10),
-                        _format_string(para.bmax, max_length=10),
-                        _format_string(str(ln), max_length=6),
+                        para.name,
+                        str(free),
+                        value,
+                        para.std,
+                        para.bmin,
+                        para.bmax,
+                        str(ln),
                     ]
                 )
         return table
@@ -254,17 +279,41 @@ def _calculate_covariance(
 
     fit_dot = np.matmul(fit.swapaxes(-2, -1), fit)
 
-    # Prefer to find another way than matrix inverse
-    # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
-    # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
-    if lazy and target_signal.ndim > 1:
+    # A coefficient that is (numerically) exactly zero -- e.g. a component
+    # that doesn't contribute for a given pixel -- makes the corresponding
+    # row/column of fit_dot structurally zero, i.e. genuinely singular
+    # rather than merely ill-conditioned. np.linalg.inv() cannot invert
+    # that, so fall back to the Moore-Penrose pseudo-inverse, which is
+    # well-defined for singular matrices.
+    #
+    # Try inv() first rather than always using pinv() because the two are
+    # not interchangeable: pinv() truncates singular values below its
+    # rcond threshold, so on a merely ill-conditioned (but invertible)
+    # fit_dot it silently returns a different, regularised answer instead
+    # of the exact one inv() gives -- and it does so ~6-12x slower (SVD
+    # vs. LU), which matters here since this runs per-pixel over a whole
+    # navigation map when lazy. Only fall back to pinv()'s approximation
+    # when the matrix is actually singular and inv() has no answer at all.
+    def _safe_inv(matrix):
+        try:
+            return np.linalg.inv(matrix)
+        except np.linalg.LinAlgError:
+            return np.linalg.pinv(matrix)
+
+    # Always go through map_blocks (rather than a direct dask.array.linalg.inv)
+    # when lazy: dask's own inv() uses a QR-based solve that is more prone to
+    # hitting exact singularities than numpy's LU-based inv()/pinv(), and
+    # map_blocks lets the LinAlgError fallback above run per-chunk on
+    # materialised numpy arrays. This also sidesteps dask.array.linalg.inv's
+    # lack of support for the batched (3-D) case.
+    if lazy:
         import dask.array as da
 
         inv_fit_dot = da.map_blocks(
-            np.linalg.inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
+            _safe_inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
         )
     else:
-        inv_fit_dot = np.linalg.inv(fit_dot)
+        inv_fit_dot = _safe_inv(fit_dot)
 
     n = fit.shape[-2]  # the signal axis length
     k = coefficients.shape[-1]  # the number of components
@@ -416,6 +465,10 @@ class ModelStatistics:
     # --- Table Output ---
     def _build_table(self, params):
         """Build and return a PrettyTable for a component type's statistics."""
+
+        def _num_fmt(f, v):
+            return "%.3e" % v
+
         table = PrettyTable()
         table.field_names = ["Parameter", "Mean", "Std", "Min", "Max"]
         table.align["Parameter"] = "l"
@@ -423,15 +476,30 @@ class ModelStatistics:
         table.align["Std"] = "r"
         table.align["Min"] = "r"
         table.align["Max"] = "r"
+        table.custom_format = {
+            "Mean": _num_fmt,
+            "Std": _num_fmt,
+            "Min": _num_fmt,
+            "Max": _num_fmt,
+        }
+        _widths = {
+            "Parameter": 14,
+            "Mean": 12,
+            "Std": 12,
+            "Min": 12,
+            "Max": 12,
+        }
+        table.min_width = _widths
+        table.max_width = _widths
 
         for pname, stats in params.items():
             table.add_row(
                 [
-                    _format_string(pname, max_length=14),
-                    _format_string(stats["mean"], format_string=".3e", max_length=12),
-                    _format_string(stats["std"], format_string=".3e", max_length=12),
-                    _format_string(stats["min"], format_string=".3e", max_length=12),
-                    _format_string(stats["max"], format_string=".3e", max_length=12),
+                    pname,
+                    stats["mean"],
+                    stats["std"],
+                    stats["min"],
+                    stats["max"],
                 ]
             )
         return table
@@ -457,3 +525,112 @@ class ModelStatistics:
             )
             html += "<br>"
         return html
+
+
+def _intervals_to_tuples(intervals):
+    """Normalize and validate the ``intervals`` parameter for
+    :meth:`~.api.model.components.Component.estimate_parameters`.
+
+    Parameters
+    ----------
+    intervals
+        One of:
+        - A bare ``(left, right)`` tuple (auto-wrapped to a single-interval
+          list).
+        - A tuple or list of ``(left, right)`` tuples.
+        - A tuple or list of :class:`~.api.roi.SpanROI` objects.
+
+    Returns
+    -------
+    list of tuple
+        ``[(left_0, right_0), (left_1, right_1), ...]``
+
+    Raises
+    ------
+    ValueError
+        If ``intervals`` is not a list or tuple, or if any element has an
+        invalid format.
+    """
+    if not isinstance(intervals, (list, tuple)):
+        raise ValueError("`intervals` must be a list of tuples or SpanROI objects.")
+    if isinstance(intervals, tuple):
+        if len(intervals) == 0:
+            intervals = []
+        else:
+            first = intervals[0]
+            if (
+                isinstance(first, (tuple, list))
+                and len(first) == 2
+                and not isinstance(first[0], (tuple, list))
+            ):
+                # tuple of intervals — use as-is
+                pass
+            elif hasattr(first, "left") and hasattr(first, "right"):
+                # tuple of SpanROIs — use as-is
+                pass
+            else:
+                # bare (left, right) pair — wrap in list
+                intervals = [intervals]
+    interval_tuples = []
+    for interval in intervals:
+        if hasattr(interval, "left") and hasattr(interval, "right"):
+            interval_tuples.append((interval.left, interval.right))
+        elif isinstance(interval, (tuple, list)) and len(interval) == 2:
+            interval_tuples.append(tuple(interval))
+        else:
+            raise ValueError(
+                f"Invalid interval format: {interval}. "
+                "Expected tuple (left, right) or SpanROI object."
+            )
+    return interval_tuples
+
+
+class SummaryStatistics:
+    """
+    Display class for the five-number summary statistics of a signal.
+
+    Parameters
+    ----------
+    mean, std, min, q1, median, q3, max : float
+        The statistics to display.
+    formatter : str, optional
+        Printf-style format string for numeric values. Default is ``"%.3g"``.
+    """
+
+    def __init__(self, mean, std, min, q1, median, q3, max, formatter="%.3g"):
+        self.stats = [
+            ("mean", mean),
+            ("std", std),
+            ("min", min),
+            ("Q1", q1),
+            ("median", median),
+            ("Q3", q3),
+            ("max", max),
+        ]
+        self.formatter = formatter
+
+    def _build_table(self):
+        table = PrettyTable()
+        table.field_names = ["Statistic", "Value"]
+        table.align["Statistic"] = "r"
+        table.align["Value"] = "r"
+        _fmt = self.formatter
+        table.custom_format = {
+            "Value": lambda f, v: "" if v is None else _fmt % v,
+        }
+        table.min_width = {"Statistic": 12, "Value": 10}
+        table.max_width = {"Statistic": 12, "Value": 10}
+        for name, val in self.stats:
+            table.add_row([name, val])
+        return table
+
+    def __repr__(self):
+        return "Summary statistics\n" + str(self._build_table())
+
+    def _repr_html_(self):
+        return "<h4>Summary statistics</h4>" + self._build_table().get_html_string(
+            attributes={
+                "style": "width:100%; border-collapse:collapse; text-align:center;",
+                "border": "1",
+            }
+        )

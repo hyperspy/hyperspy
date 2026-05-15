@@ -119,6 +119,22 @@ def sanitize_dict(dictionary):
     return new_dictionary
 
 
+def normalize_micro(obj):
+    """Normalize the micro prefix glyph to the micro sign (U+00B5).
+
+    pint >= 0.26 renders the micro prefix with the Greek mu (U+03BC),
+    following the Unicode standard recommendation, while older versions
+    render the micro sign. The two glyphs are visually identical, so
+    tests comparing pint-formatted units strings normalize both sides
+    with this helper to stay independent of the pint version.
+    """
+    if isinstance(obj, str):
+        return obj.replace("\u03bc", "\u00b5")
+    if isinstance(obj, tuple):
+        return tuple(normalize_micro(o) for o in obj)
+    return obj
+
+
 def check_running_tests_in_CI():
     if "CI" in os.environ:
         return os.environ.get("CI")

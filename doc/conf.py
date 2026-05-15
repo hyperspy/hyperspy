@@ -11,6 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import os
 import platform
 import sys
 from datetime import datetime
@@ -52,17 +53,26 @@ extensions = [
 
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
+    "https://conda.io",  # 403 Client Error: Forbidden for url
+    r"https://docs\.conda\.io/.*",  # 429 rate limit from CI IPs
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
     "https://doi.org/10.1364/OL.33.000156",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
     "https://doi.org/10.1364/AO.41.007437",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
+    "https://doi.org/10.1038/nature12469",  # read timeout (nature.com)
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
     "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
     "https://scholar.google.co.uk",  # 403 Client Error: Forbidden for url
     "https://software.opensuse.org",  # 400 Client Error: Bad Request for url
+    "https://zenodo.org",  # 403 Client Error: Forbidden for url
 ]
 
 linkcheck_exclude_documents = []
+
+# Some hosts (aur.archlinux.org, docs.scipy.org) intermittently close the
+# connection when requests come from CI runners; retry instead of adding them
+# to linkcheck_ignore, which would also hide links that are actually broken.
+linkcheck_retries = 3
 
 # Specify a standard user agent, as Sphinx default is blocked on some sites
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54"
@@ -359,6 +369,12 @@ nitpick_ignore_regex = (
     ("py:class", "hyperspy.samfire_utils.strategy.SamfireStrategy"),
     ("py:class", ".*goodness_test"),
     ("py:class", "hyperspy.roi.BasePointROI"),
+    # Internal classes not in the public API reference
+    ("py:class", "hyperspy.learn.incremental_svd.ISVD"),
+    ("py:obj", "hyperspy.learn.incremental_svd.ISVD"),
+    # MVA mixin methods — class is already ignored above
+    ("py:meth", "learn.mva.MVA.decomposition"),
+    ("py:meth", "learn.mva.MVA.undo_treatments"),
     # Add exception to API
     ("py:obj", "SignalDimensionError"),
     ("py:obj", "DataDimensionError"),
@@ -398,6 +414,7 @@ numpydoc_xref_ignore = {
     "scheduler",
     "matplotlib",
     "color",
+    "length",
     "line",
     "style",
     "hyperspy",
@@ -438,10 +455,17 @@ sphinx_gallery_conf = {
 if platform.system() != "Windows":
     # optipng is not straightforward to install on Windows
     # don't use compression on Windows to avoid warning when building the documentation
-    sphinx_gallery_conf["compress_images"] = (
-        "images",
-        "thumbnails",
-    )  # use optipng to reduce image file size
+    from shutil import which
+
+    if which("optipng") is not None:
+        sphinx_gallery_conf["compress_images"] = (
+            "images",
+            "thumbnails",
+        )  # use optipng to reduce image file size
+
+# ``check-docs.py`` sets this to skip slow gallery execution during validation.
+if os.environ.get("HYPERSPY_FAST_CHECK"):
+    sphinx_gallery_conf["plot_gallery"] = False
 
 
 # -- Sphinx-copybutton -----------

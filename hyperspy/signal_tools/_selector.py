@@ -29,6 +29,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
     is_ok = t.Bool(False)
 
     def __init__(self, signal):
+        super().__init__()
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
 

@@ -23,6 +23,7 @@ import pytest
 
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.test_utils import normalize_micro
 from hyperspy.signal import BaseSignal
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -195,8 +196,8 @@ class Test2D:
         s.crop(1, 0.0, 5.0, convert_units=True)
         np.testing.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         np.testing.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "µm"
-        assert s.axes_manager[1].units == "µm"
+        assert normalize_micro(s.axes_manager[0].units) == "µm"
+        assert normalize_micro(s.axes_manager[1].units) == "µm"
         np.testing.assert_allclose(s.data, d[:500, :500])
 
     def test_crop_image_unit_convertion_signal2D(self):
@@ -212,8 +213,8 @@ class Test2D:
         s.crop_signal(0, 0.5, 0.0, 0.5)
         np.testing.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         np.testing.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "µm"
-        assert s.axes_manager[1].units == "µm"
+        assert normalize_micro(s.axes_manager[0].units) == "µm"
+        assert normalize_micro(s.axes_manager[1].units) == "µm"
         np.testing.assert_allclose(s.data, d[:50, :50])
 
         # Should convert the unit to nm
@@ -244,8 +245,8 @@ class Test2D:
         s.crop_signal(0, 5.0, 0.0, 5.0, convert_units=True)
         np.testing.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         np.testing.assert_almost_equal(s.axes_manager[1].scale, 0.01)
-        assert s.axes_manager[0].units == "µm"
-        assert s.axes_manager[1].units == "µm"
+        assert normalize_micro(s.axes_manager[0].units) == "µm"
+        assert normalize_micro(s.axes_manager[1].units) == "µm"
         np.testing.assert_allclose(s.data, d[:500, :500])
 
     def test_split_axis0(self):
@@ -358,6 +359,13 @@ class Test2D:
         self.signal.print_summary_statistics()
         if self.signal._lazy:
             self.signal.print_summary_statistics(rechunk=False)
+
+    def test_summary_statistics_repr(self):
+        from hyperspy.misc.model_tools import SummaryStatistics
+
+        s = SummaryStatistics(1.0, 0.5, 0.0, 0.25, 0.5, 0.75, 1.0)
+        assert "Summary statistics" in repr(s)
+        assert "<table" in s._repr_html_()
 
     def test_numpy_unfunc_one_arg_titled(self):
         self.signal.metadata.General.title = "yes"

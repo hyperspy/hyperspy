@@ -83,8 +83,8 @@ class TestContrastEditorTool:
         np.testing.assert_allclose(ceditor._vmin, 0.0)
         np.testing.assert_allclose(ceditor._vmax, 99.0)
 
-        ceditor._vmin_percentile_changed(0, 10)
-        ceditor._vmax_percentile_changed(100, 99)
+        ceditor.vmin_percentile = 10
+        ceditor.vmax_percentile = 99
         np.testing.assert_allclose(ceditor._vmin, 9.9)
         np.testing.assert_allclose(ceditor._vmax, 98.01)
 

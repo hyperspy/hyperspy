@@ -769,6 +769,11 @@ class Markers:
         self._closing = True
         self._collection.remove()
         self._collection = None
+        # Collection removal leaves the blit background stale —
+        # invalidate it so the next _render_figure does a full repaint
+        # instead of restoring the removed markers' pixels.
+        if render_figure and hasattr(self.ax, "hspy_fig"):
+            self.ax.hspy_fig._background = None
         self.events.closed.trigger(obj=self)
         self._signal = None
         for f in self.events.closed.connected:

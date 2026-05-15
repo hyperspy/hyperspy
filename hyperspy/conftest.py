@@ -83,8 +83,13 @@ def setup_module(mod, pdb_cmdopt):
 pytest_mpl_spec = importlib.util.find_spec("pytest_mpl")
 
 if pytest_mpl_spec is None:
-    # Register dummy marker to allow running the test suite without pytest-mpl
+
     def pytest_configure(config):
+        config.addinivalue_line(
+            "markers",
+            "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+        )
+        # Register dummy marker to allow running the test suite without pytest-mpl
         config.addinivalue_line(
             "markers",
             "mpl_image_compare: dummy marker registration to allow running "
@@ -93,6 +98,10 @@ if pytest_mpl_spec is None:
 else:
 
     def pytest_configure(config):
+        config.addinivalue_line(
+            "markers",
+            "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+        )
         # raise an error if the baseline images are not present
         # which is the case when installing from a wheel
         baseline_images_path = (

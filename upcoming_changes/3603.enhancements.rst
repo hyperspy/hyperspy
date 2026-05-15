@@ -1,0 +1,1 @@
+Add ``lazy_output`` parameter to :meth:`~.signals.BaseSignal.get_decomposition_model` and :meth:`~.signals.BaseSignal.get_bss_model` methods.

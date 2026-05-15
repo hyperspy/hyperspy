@@ -1,0 +1,4 @@
+Add ``.github/copilot-instructions.md`` and path-scoped ``.github/instructions/``
+files for GitHub Copilot Code Review, encoding HyperSpy-specific conventions
+(axis ordering, parameter map patterns, event triggers, lazy evaluation, test
+quality) mined from 30+ PR reviews (2019–2026).

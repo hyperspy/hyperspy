@@ -1,0 +1,1 @@
+Fix inverted disconnect logic in ``_remove_widget``: the ``any_axis_changed`` handler was disconnected from the wrong signal (non-matching ones) and never disconnected from the matching signal, due to a misplaced ``break`` in the iteration.

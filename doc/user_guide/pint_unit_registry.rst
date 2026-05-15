@@ -22,6 +22,12 @@ the default pint :class:`pint.UnitRegistry` is used:
     >>> s.axes_manager[0].scale_as_quantity
     <Quantity(2.5, 'micrometer')>
 
+Setting dimensionless units is also supported (requires pint 0.25.3 or later):
+
+    >>> s.axes_manager[0].scale_as_quantity = "1.5"
+    >>> s.axes_manager[0].scale_as_quantity
+    <Quantity(1.5, 'dimensionless')>
+
 Then, using :func:`pint.get_application_registry` get the handle of the same instance of :class:`pint.UnitRegistry`
 used by HyperSpy and use it to operate on this pint quantity:
 

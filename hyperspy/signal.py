@@ -72,8 +72,9 @@ from hyperspy.exceptions import (
 from hyperspy.external.scipy.ndfilters import _get_footprint
 from hyperspy.interactive import interactive
 from hyperspy.io import (
-    ZARR_STORE_BASE_CLASS,
     _get_format_list_for_docstring,
+    _is_zarr_store,
+    _LazyDocstring,
     assign_signal_subclass,
 )
 from hyperspy.io import save as io_save
@@ -3207,12 +3208,12 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                     self._plot.navigator_data_function = "slider"
                 elif navigator == "data":
                     if np.issubdtype(self.data.dtype, np.complexfloating):
-                        self._plot.navigator_data_function = (
-                            lambda axes_manager=None: utils.to_numpy(abs(self.data))
+                        self._plot.navigator_data_function = lambda axes_manager=None: (
+                            utils.to_numpy(abs(self.data))
                         )
                     else:
-                        self._plot.navigator_data_function = (
-                            lambda axes_manager=None: utils.to_numpy(self.data)
+                        self._plot.navigator_data_function = lambda axes_manager=None: (
+                            utils.to_numpy(self.data)
                         )
                 elif navigator == "spectrum":
                     self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
@@ -3395,7 +3396,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 "The 'extension' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
                 "Please use 'file_format' instead.",
                 FutureWarning,
-                stacklevel=2,
+                stacklevel=3,  # Account for _LazyDocstring wrapper
             )
 
         if filename is None:
@@ -3432,7 +3433,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             else:
                 raise ValueError("File name not defined")
 
-        if not isinstance(filename, (MutableMapping, ZARR_STORE_BASE_CLASS)):
+        if not _is_zarr_store(filename) and not isinstance(filename, MutableMapping):
             filename = Path(filename)
 
             # zspy can also be directory, make sure this is treated as a base directory
@@ -3482,11 +3483,20 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
-    # Format save method docstring with dynamic format list
-    save.__doc__ = save.__doc__ % (
-        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=8),
-        _get_format_list_for_docstring(write_mode=True, style="inline", indentation=8),
-        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=12),
+    # Lazily format save method docstring with dynamic format list
+    save = _LazyDocstring(
+        save,
+        lambda: (
+            _get_format_list_for_docstring(
+                write_mode=True, style="bullet", indentation=8
+            ),
+            _get_format_list_for_docstring(
+                write_mode=True, style="inline", indentation=8
+            ),
+            _get_format_list_for_docstring(
+                write_mode=True, style="bullet", indentation=12
+            ),
+        ),
     )
 
     def _replot(self):
@@ -3705,8 +3715,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         Parameters
         ----------
         axis %s The axis to roll backwards.
+
             The positions of the other axes do not change relative to one
             another.
+
         to_axis %s The axis is rolled until it lies before this other axis.
         %s
 
@@ -3915,12 +3927,14 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         Parameters
         ----------
         axis %s
+
             If ``'auto'`` and if the object has been created with
             :func:`~hyperspy.api.stack` (and ``stack_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
             If it was not created with :func:`~hyperspy.api.stack`,
             the last navigation axis will be used.
+
         number_of_parts : str or int
             Number of parts in which the spectrum image will be split. The
             splitting is homogeneous. When the axis size is not divisible
@@ -6393,7 +6407,16 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             s = BaseSignal(data)
             s.set_signal_type(self.metadata.Signal.signal_type)
         else:
-            s = self.__class__(data, axes=self.axes_manager._get_signal_axes_dicts())
+            # When called on a lazy signal with numpy data, we must return
+            # a non-lazy signal of the same kind (e.g. LazySignal1D -> Signal1D).
+            # We walk up the MRO to find the first non-lazy equivalent class.
+            if self._lazy and not utils.is_dask_array(data):
+                for signal_cls in self.__class__.__mro__[1:]:
+                    if not issubclass(signal_cls, signals.LazySignal):
+                        break
+            else:
+                signal_cls = self.__class__
+            s = signal_cls(data, axes=self.axes_manager._get_signal_axes_dicts())
         if utils.is_dask_array(data):
             s = s.as_lazy()
         return s
@@ -6657,18 +6680,17 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         get_histogram
 
         """
+        from hyperspy.misc.model_tools import SummaryStatistics
+        from hyperspy.misc.utils import display
+
         _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics(
             rechunk=rechunk
         )
-        print(utils.underline("Summary statistics"))
-        print("mean:\t" + formatter % _mean)
-        print("std:\t" + formatter % _std)
-        print()
-        print("min:\t" + formatter % _min)
-        print("Q1:\t" + formatter % _q1)
-        print("median:\t" + formatter % _q2)
-        print("Q3:\t" + formatter % _q3)
-        print("max:\t" + formatter % _max)
+        display(
+            SummaryStatistics(
+                _mean, _std, _min, _q1, _q2, _q3, _max, formatter=formatter
+            )
+        )
 
     print_summary_statistics.__doc__ %= RECHUNK_ARG
 

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from unittest import mock
+
 import numpy as np
 
 from hyperspy import roi, signals
@@ -189,3 +191,76 @@ def test_adding_removing_resizers_on_pick_event():
     assert not widget0._resizers_on
     assert not widget1.picked
     assert not widget1._resizers_on
+
+
+class TestGuardsPreventRecursion:
+    def test_drag_guard_prevents_redundant_navigate(self):
+        s = signals.Signal1D(np.arange(100).reshape(10, 10))
+        s.axes_manager[0].name = "x"
+        s.axes_manager[1].name = "y"
+        s.plot()
+
+        r = roi.SpanROI(left=3.0, right=7.0)
+        w = r.add_widget(s, axes=(s.axes_manager[1],))
+
+        # Verify the guard prevents _on_navigate from updating position
+        w._updating_indices_from_drag = True
+        old_pos = w.position[0]
+
+        w._on_navigate(s.axes_manager)
+        assert w.position[0] == old_pos
+
+        # Verify the guard resets between calls
+        w._updating_indices_from_drag = False
+        assert w._updating_indices_from_drag is False
+
+
+class TestPolygonWidgetCleanup:
+    def test_polygon_selector_cleaned_up_on_set_off(self):
+        from hyperspy.drawing._widgets.polygon import PolygonWidget
+
+        s = signals.Signal2D(np.random.random((13, 17)))
+        s.plot()
+        ax = s._plot.signal_plot.ax
+
+        widget = PolygonWidget(s.axes_manager)
+        widget.color = "red"
+        widget.set_mpl_ax(ax)
+
+        assert widget._widget is not None
+        widget.set_on(False)
+        assert widget._widget is None
+        s._plot.close()
+
+
+def test_set_resizers_false_resets_blit_background():
+    """Verify _set_resizers(False) invalidates blit cache and repaints."""
+    s = signals.Signal2D(np.random.random((10, 20, 80)))
+    s.plot()
+    r = roi.RectangularROI(0, 0, 2, 2)
+    r.interactive(s)
+    widget = list(r.widgets)[0]
+    widget._set_resizers(True, widget.ax)
+    hspy_fig = widget.ax.hspy_fig
+    hspy_fig._background = object()
+    with mock.patch.object(widget, "draw_patch") as mock_draw:
+        widget._set_resizers(False, widget.ax)
+    assert hspy_fig._background is None
+    mock_draw.assert_called_once()
+
+
+def test_set_on_false_resets_blit_background():
+    """Verify WidgetBase.set_on(False) invalidates blit cache after patch removal."""
+    s = signals.Signal2D(np.random.random((10, 20, 80)))
+    s.plot()
+    r = roi.RectangularROI(0, 0, 2, 2)
+    r.interactive(s)
+    widget = list(r.widgets)[0]
+    widget.set_on(True)
+    assert len(widget.patch) > 0
+    hspy_fig = widget.ax.hspy_fig
+    hspy_fig._background = object()
+    with mock.patch.object(widget, "draw_patch") as mock_draw:
+        widget.set_on(False)
+    assert hspy_fig._background is None
+    mock_draw.assert_called()

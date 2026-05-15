@@ -17,6 +17,7 @@
 import sys
 from copy import deepcopy
 from pathlib import Path
+from unittest import mock
 
 import dask.array as da
 import matplotlib.pyplot as plt
@@ -1003,6 +1004,20 @@ def test_marker_collection_close_render():
     signal.plot()
     signal.add_marker(markers, render_figure=True)
     markers.close(render_figure=True)
+
+
+def test_marker_close_resets_blit_background():
+    """Verify MarkerBase.close() invalidates blit cache and calls render_figure."""
+    signal = hs.signals.Signal2D(np.ones((2, 10, 10)))
+    markers = Points(offsets=[[1, 1], [4, 4]], sizes=(10,), color=("black",))
+    signal.plot()
+    signal.add_marker(markers, render_figure=True)
+    sig_plot = signal._plot.signal_plot
+    sig_plot._background = object()
+    with mock.patch.object(sig_plot, "render_figure") as mock_render:
+        markers.close(render_figure=True)
+    assert sig_plot._background is None
+    mock_render.assert_called_once()
 
 
 class TestMarkers2:

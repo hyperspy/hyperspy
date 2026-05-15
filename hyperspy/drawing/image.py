@@ -117,6 +117,10 @@ class ImagePlot(BlittedFigure):
         self._auto_scalebar = False
         self._user_axes_ticks = None
         self._auto_axes_ticks = True
+        # Store mpl_connect cid so we can disconnect before reconnecting;
+        # unlike Event.connect which deduplicates via connected list,
+        # canvas.mpl_connect always creates a new handler each call.
+        self._key_press_cid = None
         self._is_rgb = False
 
     @property
@@ -619,7 +623,11 @@ class ImagePlot(BlittedFigure):
     def connect(self):
         # in case the figure is not displayed
         if self.figure is not None:
-            self.figure.canvas.mpl_connect("key_press_event", self.on_key_press)
+            if self._key_press_cid is not None:
+                self.figure.canvas.mpl_disconnect(self._key_press_cid)
+            self._key_press_cid = self.figure.canvas.mpl_connect(
+                "key_press_event", self.on_key_press
+            )
         if self.axes_manager:
             if self.update not in self.axes_manager.events.indices_changed.connected:
                 self.axes_manager.events.indices_changed.connect(self.update, [])
@@ -643,7 +651,9 @@ class ImagePlot(BlittedFigure):
         if self.colorbar:
             self._colorbar.remove()
             self._add_colorbar()
-            self.figure.canvas.draw_idle()
+            # Use render_figure instead of canvas.draw_idle() to go through the
+            # blit render pipeline when supported (see BlittedFigure.render_figure).
+            self.figure.render_figure()
 
     def set_quantity_label(self):
         if "power_spectrum" in self.data_function_kwargs.keys():

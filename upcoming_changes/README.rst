@@ -1,3 +1,5 @@
+.. _upcoming_changes-readme:
+
 This directory contains "news fragments" which are short files that contain a small **ReST**-formatted
 text that will be added to the next ``CHANGELOG``.
 
@@ -32,5 +34,21 @@ To make a draft of the changelog, run from the command line:
    .. code-block:: bash
 
        $ towncrier build --draft
+
+To validate fragment filenames and run the draft check in one step, use:
+
+   .. code-block:: bash
+
+       $ python scripts/check-docs.py --quick
+
+This catches filename errors and ``towncrier`` parse failures before pushing,
+without waiting for CI.
+
+To also validate that fragments build correctly as part of the full
+documentation (Sphinx cross-references, etc.), run without ``--quick``:
+
+   .. code-block:: bash
+
+       $ python scripts/check-docs.py
 
 See https://github.com/twisted/towncrier for more details.

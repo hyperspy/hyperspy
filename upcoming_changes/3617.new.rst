@@ -1,0 +1,3 @@
+Add ``ISVD`` class, a subclass of ``sklearn.decomposition.IncrementalPCA``
+that disables centering by overriding the ``mean_`` property to always return
+zeros. This enables out-of-core incremental singular value decomposition.

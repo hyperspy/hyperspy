@@ -19,7 +19,6 @@
 
 from __future__ import division
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from hyperspy.drawing.figure import BlittedFigure
@@ -81,8 +80,4 @@ class HistogramTilePlot(BlittedFigure):
         self.figure.canvas.draw_idle()
 
     def close(self):
-        try:
-            plt.close(self.figure)
-        except BaseException:
-            pass
-        self.figure = None
+        super().close()

@@ -142,7 +142,7 @@ class ParallelPool:
         if not self.has_pool:
             if not _ipyparallel_installed:
                 if ipyparallel is True:
-                    raise ValueError("ipyparralel must be installed")
+                    raise ValueError("ipyparallel must be installed")
                 else:
                     _logger.info(
                         "ipyparallel is not installed, "

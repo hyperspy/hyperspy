@@ -1,0 +1,5 @@
+Add support for the ``anywidget`` GUI toolkit via ``hyperspy_gui_anywidget``,
+enabling interactive HyperSpy widgets on platforms that do not support
+ipywidgets or TraitsUI, such as `Marimo <https://marimo.io/>`_.
+Controlled by the ``enable_anywidget_gui`` preference
+(see :ref:`configuring-hyperspy-label`).
