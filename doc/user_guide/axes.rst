@@ -291,10 +291,12 @@ Corresponding output of :class:`~.axes.AxesManager`:
 
     >>> s.axes_manager
     <Axes manager, axes: (|500)>
-                Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-         <undefined> |    500 |      0 |   3e+02 |       1 | <undefined> 
+    Signal axes:
+    +-------------+------+--------+-------+-------------+
+    |     Name    | size | offset | scale |    units    |
+    +-------------+------+--------+-------+-------------+
+    | <undefined> | 500  | 300.0  |  1.0  | <undefined> |
+    +-------------+------+--------+-------+-------------+
 
 
 .. _functional-data-axis:
@@ -332,10 +334,12 @@ Corresponding output of :class:`~.axes.AxesManager`:
 
     >>> s.axes_manager
     <Axes manager, axes: (|500)>
-                Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-         <undefined> |    500 |      0 | non-uniform axis | <undefined> 
+    Signal axes:
+    +-------------+------+-------------+-------------+-------------+
+    |     Name    | size |    offset   |    scale    |    units    |
+    +-------------+------+-------------+-------------+-------------+
+    | <undefined> | 500  | non-uniform | non-uniform | <undefined> |
+    +-------------+------+-------------+-------------+-------------+
 
 
 Initializing ``x`` with ``offset`` and ``scale``:
@@ -398,10 +402,12 @@ Corresponding output of :class:`~.axes.AxesManager`:
 
     >>> s.axes_manager
     <Axes manager, axes: (|12)>
-                Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-         <undefined> |     12 |      0 | non-uniform axis | <undefined> 
+    Signal axes:
+    +-------------+------+-------------+-------------+-------------+
+    |     Name    | size |    offset   |    scale    |    units    |
+    +-------------+------+-------------+-------------+-------------+
+    | <undefined> |  12  | non-uniform | non-uniform | <undefined> |
+    +-------------+------+-------------+-------------+-------------+
 
 
 .. _defining-axes:
