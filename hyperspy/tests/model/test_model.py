@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
 from unittest import mock
 
+import dask
 import numpy as np
 import pytest
+from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -607,54 +610,51 @@ def test_fetch_values_from_arrays():
 class TestAsSignal:
     def setup_method(self, method):
         self.m = hs.signals.Signal1D(np.arange(20).reshape(2, 2, 5)).create_model()
-        self.comps = [hs.model.components1D.Offset(), hs.model.components1D.Offset()]
-        self.m.extend(self.comps)
-        for c in self.comps:
-            c.offset.value = 2
+        self.m.extend([hs.model.components1D.Offset(), hs.model.components1D.Offset()])
+        for c, value in zip(self.m, (2, 3)):
+            c.offset.value = value
+
         self.m.assign_current_values_to_all()
 
     def test_all_components_simple(self):
         s = self.m.as_signal()
-        assert np.all(s.data == 4.0)
+        np.testing.assert_allclose(s.data, 5.0)
 
     def test_one_component_simple(self):
         s = self.m.as_signal(component_list=[0])
-        assert np.all(s.data == 2.0)
+        np.testing.assert_allclose(s.data, 2.0)
         assert self.m[1].active
 
     def test_all_components_multidim(self):
         self.m[0].active_is_multidimensional = True
 
         s = self.m.as_signal()
-        assert np.all(s.data == 4.0)
+        np.testing.assert_allclose(s.data, 5.0)
 
         self.m[0]._active_array[0] = False
         s = self.m.as_signal()
-        np.testing.assert_array_equal(
-            s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4])
-        )
+        np.testing.assert_allclose(s.data, np.ones((2, 2, 5)) * 3)
         assert self.m[0].active_is_multidimensional
 
     def test_one_component_multidim(self):
         self.m[0].active_is_multidimensional = True
 
         s = self.m.as_signal(component_list=[0])
-        assert np.all(s.data == 2.0)
+        np.testing.assert_allclose(s.data, 2.0)
         assert self.m[1].active
         assert not self.m[1].active_is_multidimensional
 
         s = self.m.as_signal(component_list=[1])
-        np.testing.assert_equal(s.data, 2.0)
+        np.testing.assert_allclose(s.data, 3.0)
         assert self.m[0].active_is_multidimensional
 
         self.m[0]._active_array[0] = False
         s = self.m.as_signal(component_list=[1])
-        assert np.all(s.data == 2.0)
+        np.testing.assert_allclose(s.data, 3.0)
 
         s = self.m.as_signal(component_list=[0])
-        np.testing.assert_array_equal(
-            s.data, np.array([np.zeros((2, 5)), np.ones((2, 5)) * 2])
-        )
+        # selected component is not active
+        np.testing.assert_allclose(s.data, np.full((2, 2, 5), np.nan))
 
     def test_out_of_range_to_nan(self):
         index = 2
@@ -679,8 +679,59 @@ class TestAsSignal:
     def test_out_argument(self):
         out = self.m.as_signal()
         out.data.fill(0)
-        s = self.m.as_signal(out=out)
-        assert np.all(s.data == 4.0)
+        self.m.as_signal(out=out)
+        np.testing.assert_allclose(out.data, 5.0)
+
+    def test_component_out_of_range_to_nan_old_dask_lazy(self):
+        m = self.m
+        m.signal = m.signal.as_lazy()
+        if Version(dask.__version__) < Version("2024.12.0"):
+            with pytest.raises(RuntimeError):
+                _ = m.as_signal()
+        else:
+            m.as_signal(out_of_range_to_nan=False)
+
+    def test_component_no_function_nd(self, caplog):
+        from hyperspy.component import Component
+
+        class CustomComponent(Component):
+            def __init__(self, p1=1, p2=2):
+                Component.__init__(self, ("p1", "p2"))
+
+                self.p1.value = p1
+                self.p2.value = p2
+
+            def function(self, x):
+                p1 = self.p1.value
+                p2 = self.p2.value
+                return p1 + x * p2
+
+        s = self.m.signal
+        m = s.create_model()
+        m.append(CustomComponent())
+
+        _ = m.as_signal()
+        with pytest.raises(ValueError):
+            # out_of_range_to_nan not supported with lazy output
+            _ = m.as_signal(lazy_output=True)
+
+        if Version(dask.__version__) >= Version("2024.12.0"):
+            with caplog.at_level(logging.WARNING):
+                # should warn about slow implementation
+                _ = m.as_signal(out_of_range_to_nan=False, lazy_output=True)
+            assert "don't implement the `function_nd`" in caplog.text
+
+    def test_value_unset(self):
+        s = self.m.signal
+        m = s.create_model()
+        m.append(hs.model.components1D.Offset())
+        with pytest.raises(ValueError):
+            # the value are not set
+            m.as_signal()
+
+        m.set_parameters_value("offset", 1)
+        out = m.as_signal()
+        np.testing.assert_allclose(out.data, np.ones_like(out.data))
 
 
 @lazifyTestClass
@@ -785,3 +836,66 @@ class TestModel1DSetSignalRange:
         mask = np.ones(30)
         with pytest.raises(ValueError):
             m.set_signal_range_from_mask(mask)
+
+
+class TestPrintModelStatistics:
+    def setup_method(self, method):
+        x = np.linspace(0, 20, 200)
+        y = (
+            3 * np.exp(-((x - 5) ** 2) / (2 * 0.5**2))
+            + 2 * np.exp(-((x - 10) ** 2) / (2 * 1.0**2))
+            + 4 * np.exp(-((x - 15) ** 2) / (2 * 0.8**2))
+        )
+        s = hs.signals.Signal1D(y)
+        m = s.create_model()
+        gauss1 = hs.model.components1D.Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
+        gauss3 = hs.model.components1D.Gaussian()
+        lorenz1 = hs.model.components1D.Lorentzian()
+        lorenz2 = hs.model.components1D.Lorentzian()
+        m.extend([gauss1, gauss2, gauss3, lorenz1, lorenz2])
+        m.multifit()
+        self.s = s
+        self.m = m
+
+    def test_print_model_statistics_no_thresholds(self):
+        self.m.print_model_statistics()
+
+    def test_print_model_statistics_with_thresholds(self):
+        thresholds = {"A": {"min": 0.1, "max": 10}, "centre": {"max": 50}}
+        self.m.print_model_statistics(thresholds=thresholds)
+
+    def test_print_model_statistics_percentile_thresholds(self):
+        thresholds = {"A": {"min": "1th", "max": "1th"}, "centre": {"max": "2th"}}
+        self.m.print_model_statistics(thresholds=thresholds)
+
+    def test_print_model_statistics_component_list(self):
+        self.m.print_model_statistics(component_list=list(self.m))
+
+    def test_print_model_statistics_output(self):
+        from hyperspy.misc.model_tools import ModelStatistics
+
+        out = str(ModelStatistics(self.m).__repr__())
+
+        # Check that the Gaussian and Lorentzian components appear
+        assert "Gaussian" in out
+        assert "Gaussian_1" in out
+        assert "Lorentzian" in out
+        assert "Lorentzian_0" in out
+
+        # Check that parameters such as A, centre, sigma/gamma appear
+        assert "A" in out
+        assert "centre" in out
+        assert any(param in out for param in ["sigma", "gamma"])
+
+        # Check that the statistics columns appear
+        assert "mean" in out.lower()
+        assert "std" in out.lower()
+        assert "min" in out.lower()
+        assert "max" in out.lower()
+
+    def test_html_print(self):
+        from hyperspy.misc.model_tools import ModelStatistics
+
+        """Ensure that html print is giving sensible output"""
+        assert "<td>centre</td>" in ModelStatistics(self.m)._repr_html_()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,6 +19,7 @@
 import logging
 import warnings
 from functools import partial
+from threading import Lock
 
 import matplotlib
 from traits.api import Undefined
@@ -28,6 +29,7 @@ from hyperspy.drawing import image, signal1d, widgets
 from hyperspy.events import Event, Events
 
 _logger = logging.getLogger(__name__)
+_lock = Lock()
 
 
 def _is_widget_backend():
@@ -241,30 +243,33 @@ class MPL_HyperExplorer:
                 from IPython.display import display
                 from ipywidgets.widgets import HBox, VBox
 
-                if self.signal_plot is None and self.navigator_plot is not None:
-                    # in case the signal is navigation only
-                    display(self.navigator_plot.figure.canvas)
-                elif self.navigator_plot is None:
-                    # in case the signal is signal  only
-                    display(self.signal_plot.figure.canvas)
-                elif plot_style == "horizontal":
-                    display(
-                        HBox(
-                            [
-                                self.navigator_plot.figure.canvas,
-                                self.signal_plot.figure.canvas,
-                            ]
+                # lock to use IPython.display.display with kernel subshells
+                # See https://github.com/matplotlib/ipympl/pull/603
+                with _lock:
+                    if self.signal_plot is None and self.navigator_plot is not None:
+                        # in case the signal is navigation only
+                        display(self.navigator_plot.figure.canvas)
+                    elif self.navigator_plot is None:
+                        # in case the signal is signal  only
+                        display(self.signal_plot.figure.canvas)
+                    elif plot_style == "horizontal":
+                        display(
+                            HBox(
+                                [
+                                    self.navigator_plot.figure.canvas,
+                                    self.signal_plot.figure.canvas,
+                                ]
+                            )
                         )
-                    )
-                else:  # plot_style == "vertical":
-                    display(
-                        VBox(
-                            [
-                                self.navigator_plot.figure.canvas,
-                                self.signal_plot.figure.canvas,
-                            ]
+                    else:  # plot_style == "vertical":
+                        display(
+                            VBox(
+                                [
+                                    self.navigator_plot.figure.canvas,
+                                    self.signal_plot.figure.canvas,
+                                ]
+                            )
                         )
-                    )
 
         if _is_widget_backend() and "fig" not in kwargs:
             with matplotlib.pyplot.ioff():

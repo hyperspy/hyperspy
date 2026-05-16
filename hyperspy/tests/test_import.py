@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import pytest
 
 
 def test_import_version():
@@ -262,3 +264,38 @@ def test_pint_default_unit_registry():
     # See https://github.com/hgrecco/pint/issues/108
     # and https://github.com/hgrecco/pint/issues/623
     assert id(hs._ureg) == id(pint.get_application_registry())
+
+
+def test_deprecation_lazy_signals_module():
+    from hyperspy.exceptions import VisibleDeprecationWarning
+
+    with pytest.warns(
+        VisibleDeprecationWarning,
+        match="The private module `_lazy_signals` is deprecated",
+    ):
+        from hyperspy._lazy_signals import LazySignal  # noqa: F401
+
+
+def test_lazy_signals_module():
+    import hyperspy
+
+    d = dir(hyperspy._lazy_signals)
+
+    assert d == [
+        "LazyComplexSignal",
+        "LazyComplexSignal1D",
+        "LazyComplexSignal2D",
+        "LazySignal",
+        "LazySignal1D",
+        "LazySignal2D",
+    ]
+
+
+def test_warning_misc_utils():
+    from hyperspy.exceptions import VisibleDeprecationWarning
+
+    with pytest.warns(
+        VisibleDeprecationWarning,
+        match="`_get_block_pattern` has moved to `hyperspy.misc.dask_utils`",
+    ):
+        from hyperspy.misc.utils import _get_block_pattern  # noqa: F401

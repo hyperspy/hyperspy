@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import dask.array as da
 import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy.component import _get_scaling_factor
+from hyperspy.misc.utils import is_dask_array
 
 
 def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
@@ -49,7 +49,9 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
     igamma1 = np.argmin(abs(0.75 - cdfnorm), i)
     igamma2 = np.argmin(abs(0.25 - cdfnorm), i)
 
-    if isinstance(data, da.Array):
+    if is_dask_array(data):
+        import dask.array as da
+
         icentre, igamma1, igamma2 = da.compute(icentre, igamma1, igamma2)
 
     centre = X[icentre]

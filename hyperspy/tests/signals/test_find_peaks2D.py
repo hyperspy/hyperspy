@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -25,6 +25,8 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import PeaksFinder2D
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 from hyperspy.ui_registry import TOOLKIT_REGISTRY
+
+pytest.importorskip("skimage")
 
 
 def _generate_dataset():

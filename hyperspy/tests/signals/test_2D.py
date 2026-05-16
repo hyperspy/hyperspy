@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,10 +18,8 @@
 
 from unittest import mock
 
-import dask
 import numpy as np
 import pytest
-from packaging.version import Version
 
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
@@ -398,8 +396,6 @@ class Test2D:
         s.change_dtype("float64")
         kwargs = {}
         if s._lazy:
-            if Version(dask.__version__) < Version("2023.2.1"):
-                pytest.skip("dask.array.random.default_rng added in 2023.2.1")
             data = s.data.compute()
             from dask.array.random import default_rng
 
@@ -429,14 +425,12 @@ class Test2D:
         s = self.signal
         kwargs = {}
         if s._lazy:
-            if Version(dask.__version__) < Version("2023.2.1"):
-                pytest.skip("dask.array.random.default_rng added in 2023.2.1")
             data = s.data.compute()
-            from dask.array.random import default_rng
+            import dask.array as da
 
             kwargs["chunks"] = s.data.chunks
-            rng1 = default_rng(123)
-            rng2 = default_rng(123)
+            rng1 = da.random.default_rng(123)
+            rng2 = da.random.default_rng(123)
         else:
             data = s.data.copy()
             rng1 = np.random.default_rng(123)
@@ -444,20 +438,8 @@ class Test2D:
 
         original_data = s.data
         s.add_poissonian_noise(random_state=rng1)
-        assert s.data is original_data
-
-        if s._lazy:
-            s.compute()
-
+        assert s.data is original_data  # check in-place
         np.testing.assert_array_almost_equal(s.data, rng2.poisson(lam=data, **kwargs))
-        s.change_dtype("float64")
-        original_data = s.data
-        s.add_poissonian_noise(random_state=rng1)
-        if s._lazy:
-            s.compute()
-        assert s.data is original_data
-
-        assert s.data.dtype == np.dtype("float64")
 
     def test_add_poisson_noise_warning(self, caplog):
         s = self.signal

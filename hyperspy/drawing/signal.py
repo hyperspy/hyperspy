@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -58,7 +58,7 @@ def _plot_2D_component(
     calibrate=True,
     ax=None,
     comp_label=None,
-    cmap=plt.cm.gray,
+    cmap="gray",
     axes_decor="all",
 ):
     shape = axes_manager._signal_shape_in_array
@@ -95,7 +95,7 @@ def _plot_loading(
     comp_label=None,
     no_nans=True,
     calibrate=True,
-    cmap=plt.cm.gray,
+    cmap="gray",
     same_window=False,
     axes_decor="all",
 ):

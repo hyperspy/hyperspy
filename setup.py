@@ -14,6 +14,14 @@ def custom_version_scheme(version):
 
         return ".".join(str(i) for i in parts)
 
+    from setuptools_scm import get_version
+
+    version_from_scm = get_version()
+    if "dev" not in version_from_scm:
+        # this is a tag version, return it
+        # used when building dist and wheel
+        return version_from_scm
+
     # On RELEASE_next_major, "retain" needs to be 1
     # On RELEASE_next_minor, "retain" needs to be 2
     # On RELEASE_next_patch, "retain" needs to be 3

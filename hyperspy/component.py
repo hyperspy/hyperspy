@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,20 +20,17 @@ import logging
 from pathlib import Path
 
 import numpy as np
-import sympy
 import traits.api as t
-from dask.array import Array as dArray
-from rsciio.utils.tools import append2pathname, incremental_filename
-from sympy.utilities.lambdify import lambdify
+from rsciio.utils import path
 from traits.trait_numeric import Array
 
 from hyperspy.events import Event, Events
+from hyperspy.misc import utils
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
 )
 from hyperspy.misc.model_tools import CurrentComponentValues
-from hyperspy.misc.utils import display, get_object_package_info, slugify
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -205,6 +202,9 @@ class Parameter(t.HasTraits):
 
     @twin_function_expr.setter
     def twin_function_expr(self, value):
+        import sympy
+        from sympy.utilities.lambdify import lambdify
+
         if not value:
             self._twin_function = None
             self.__twin_inverse_function = None
@@ -253,6 +253,9 @@ class Parameter(t.HasTraits):
 
     @twin_inverse_function_expr.setter
     def twin_inverse_function_expr(self, value):
+        import sympy
+        from sympy.utilities.lambdify import lambdify
+
         if not value:
             self.__twin_inverse_function = None
             self._twin_inverse_function_expr = ""
@@ -262,7 +265,7 @@ class Parameter(t.HasTraits):
             raise ValueError("The expression must contain only one variable.")
         elif len(expr.free_symbols) == 0:
             raise ValueError(
-                "The expression must contain one variable, " "it contains none."
+                "The expression must contain one variable, it contains none."
             )
         x = tuple(expr.free_symbols)[0]
         self.__twin_inverse_function = lambdify(x, expr.evalf())
@@ -451,9 +454,7 @@ class Parameter(t.HasTraits):
         if self.__number_of_elements == arg:
             return
         if arg < 1:
-            raise ValueError(
-                "Please provide an integer number equal " "or greater to 1"
-            )
+            raise ValueError("Please provide an integer number equal or greater to 1")
         self._bounds = ((self.bmin, self.bmax),) * arg
         self.__number_of_elements = arg
 
@@ -535,9 +536,9 @@ class Parameter(t.HasTraits):
         if self.map["is_set"][indices]:
             value = self.map["values"][indices]
             std = self.map["std"][indices]
-            if isinstance(value, dArray):
+            if utils.is_dask_array(value):
                 value = value.compute()
-            if isinstance(std, dArray):
+            if utils.is_dask_array(std):
                 std = std.compute()
             self.value = value
             self.std = std
@@ -674,7 +675,7 @@ class Parameter(t.HasTraits):
         save_std : bool
             If True, also the standard deviation will be saved
         format: str
-            The extension of any file format supported by HyperSpy, default
+            The extension of any file format supported by RosettaSciIO, default
             ``hspy``.
 
         """
@@ -682,12 +683,12 @@ class Parameter(t.HasTraits):
             format = "hspy"
         if name is None:
             name = self.component.name + "_" + self.name
-        filename = incremental_filename(slugify(name) + "." + format)
+        filename = path.incremental_filename(utils.slugify(name) + "." + format)
         if folder is not None:
             filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
         if save_std is True:
-            self.as_signal(field="std").save(append2pathname(filename, "_std"))
+            self.as_signal(field="std").save(path.append2pathname(filename, "_std"))
 
     def as_dictionary(self, fullcopy=True):
         """Returns parameter as a dictionary, saving all attributes from
@@ -882,14 +883,16 @@ class Component(t.HasTraits):
             for component in self.model:
                 if value == component.name:
                     raise ValueError(
-                        "Another component already has " "the name " + str(value)
+                        "Another component already has the name " + str(value)
                     )
             self._name = value
             setattr(
-                self.model._components, slugify(value, valid_variable_name=True), self
+                self.model._components,
+                utils.slugify(value, valid_variable_name=True),
+                self,
             )
             self.model._components.__delattr__(
-                slugify(old_value, valid_variable_name=True)
+                utils.slugify(old_value, valid_variable_name=True)
             )
         else:
             self._name = value
@@ -1291,7 +1294,7 @@ class Component(t.HasTraits):
 
         """
         dic = {"parameters": [p.as_dictionary(fullcopy) for p in self.parameters]}
-        dic.update(get_object_package_info(self))
+        dic.update(utils.get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         from hyperspy.model import _COMPONENTS
 
@@ -1369,7 +1372,7 @@ class Component(t.HasTraits):
         only_free : bool
             If True, only free parameters will be printed.
         """
-        display(CurrentComponentValues(self, only_free=only_free))
+        utils.display(CurrentComponentValues(self, only_free=only_free))
 
     @property
     def _constant_term(self):

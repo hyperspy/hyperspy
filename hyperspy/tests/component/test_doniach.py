@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,7 +19,7 @@
 import numpy as np
 import pytest
 
-from hyperspy._signals.signal1d import Signal1D
+import hyperspy.api as hs
 from hyperspy.components1d import Doniach
 
 sqrt2pi = np.sqrt(2 * np.pi)
@@ -41,7 +41,7 @@ def test_function():
 @pytest.mark.parametrize(("only_current"), (True, False))
 @pytest.mark.parametrize(("binned"), (True, False))
 def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
-    s = Signal1D(np.empty((200,)))
+    s = hs.signals.Signal1D(np.empty((200,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 0.05

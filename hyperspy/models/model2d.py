@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -322,16 +322,22 @@ class Model2D(BaseModel):
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError
 
-    def _function4odr(self, param, x):
+    def _function4odr(self, x, param):
         raise NotImplementedError
 
-    def _jacobian4odr(self, param, x):
+    def _jacobian4odr(self, x, param):
         raise NotImplementedError
 
     def _poisson_likelihood_function(self, param, y, weights=None):
         raise NotImplementedError
 
     def _gradient_ml(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _hessian_ml(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _hessian_ls(self, param, y, weights=None):
         raise NotImplementedError
 
     def _gradient_ls(self, param, y, weights=None):

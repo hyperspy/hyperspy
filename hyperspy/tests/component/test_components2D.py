@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -415,7 +415,7 @@ class TestExpression2D:
             ),
         )
 
-    def test_no_function_nd(self):
+    def test_function_nd_no_signal(self):
         g = hs.model.components2D.Expression(
             GAUSSIAN2D_EXPR,
             name="gaussian2d",
@@ -429,7 +429,10 @@ class TestExpression2D:
         g.y0.value = 1
         values = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(values, values)
-        np.testing.assert_allclose(g.function_nd(x, y), self.array0)
+        parameters_values = [p.value for p in g.parameters]
+        np.testing.assert_allclose(
+            g.function_nd(x, y, parameters_values=parameters_values), self.array0
+        )
 
     def test_no_function_nd_signal(self):
         g = hs.model.components2D.Expression(

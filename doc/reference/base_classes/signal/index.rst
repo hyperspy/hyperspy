@@ -34,26 +34,6 @@ Common Signals
    CommonSignal2D
 
 
-Lazy Signals
-^^^^^^^^^^^^
-.. currentmodule:: hyperspy._signals.lazy
-
-.. autosummary::
-   :nosignatures:
-
-   LazySignal
-
-.. currentmodule:: hyperspy._lazy_signals
-
-.. autosummary::
-   :nosignatures:
-
-   LazyComplexSignal
-   LazyComplexSignal1D
-   LazyComplexSignal2D
-   LazySignal1D
-   LazySignal2D
-
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -61,9 +41,3 @@ Lazy Signals
    ModelManager
    CommonSignal1D
    CommonSignal2D
-   LazyComplexSignal
-   LazyComplexSignal1D
-   LazyComplexSignal2D
-   LazySignal
-   LazySignal1D
-   LazySignal2D

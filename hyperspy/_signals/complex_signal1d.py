@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 
+from hyperspy import signals
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy._signals.complex_signal import ComplexSignal, LazyComplexSignal
-from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
+from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
 
 
-class ComplexSignal1D(ComplexSignal, CommonSignal1D):
+class ComplexSignal1D(signals.ComplexSignal, CommonSignal1D):
     """Signal class for complex 1-dimensional data."""
 
     _signal_dimension = 1
@@ -31,7 +32,23 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
         super().__init__(*args, **kwargs)
 
 
-class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
-    """Lazy signal class for complex 1-dimensional data."""
+# ruff: noqa: F822
 
-    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal1D")
+__all__ = [
+    "ComplexSignal1D",
+    "LazyComplexSignal1D",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if "Lazy" in name:
+        lazy_signal_import_deprecation_warning(name, __name__)
+        return getattr(importlib.import_module("hyperspy.signals"), name)
+    if name in __all__:
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -15,3 +15,29 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import importlib
+
+# ruff: noqa: F822
+
+__all__ = [
+    "Model1D",
+    "Model2D",
+]
+
+_import_mapping = {
+    "Model1D": "model1d",
+    "Model2D": "model2d",
+}
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:
+        import_path = "hyperspy.models." + _import_mapping.get(name)
+        return getattr(importlib.import_module(import_path), name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

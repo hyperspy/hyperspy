@@ -39,7 +39,7 @@ Save to an external file
 
 Alternatively, you can save the results of the current machine learning
 analysis to a separate file with the
-:meth:`~.learn.mva.LearningResults.save` method:
+:meth:`~.learn.LearningResults.save` method:
 
 .. code-block:: python
 
@@ -53,7 +53,7 @@ Export in different formats
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also export the results of a machine learning analysis to any format
-supported by HyperSpy with the following methods:
+supported by RosettaSciIO with the following methods:
 
 * :meth:`~.api.signals.BaseSignal.export_decomposition_results`
 * :meth:`~.api.signals.BaseSignal.export_bss_results`

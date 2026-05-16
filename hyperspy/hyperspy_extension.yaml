@@ -22,7 +22,7 @@ signals:
     signal_dimension: 1
     dtype: real
     lazy: True
-    module: hyperspy._signals.signal1d
+    module: hyperspy._signals.lazy_signal1d
   Signal2D:
     signal_type: ""
     signal_dimension: 2
@@ -34,7 +34,7 @@ signals:
     signal_dimension: 2
     dtype: real
     lazy: True
-    module: hyperspy._signals.signal2d
+    module: hyperspy._signals.lazy_signal2d
   ComplexSignal:
     signal_type: ""
     signal_dimension: -1
@@ -46,7 +46,7 @@ signals:
     signal_dimension: -1
     dtype: complex
     lazy: True
-    module: hyperspy._signals.complex_signal
+    module: hyperspy._signals.lazy_complex_signal
   ComplexSignal1D:
     signal_type: ""
     signal_dimension: 1
@@ -58,7 +58,7 @@ signals:
     signal_dimension: 1
     dtype: complex
     lazy: True
-    module: hyperspy._signals.complex_signal1d
+    module: hyperspy._signals.lazy_complex_signal1d
   ComplexSignal2D:
     signal_type: ""
     signal_dimension: 2
@@ -70,7 +70,7 @@ signals:
     signal_dimension: 2
     dtype: complex
     lazy: True
-    module: hyperspy._signals.complex_signal2d
+    module: hyperspy._signals.lazy_complex_signal2d
 
 components1D:
   Arctan:
@@ -157,6 +157,7 @@ GUI:
     - hyperspy.Signal1D.smooth_butterworth
     - hyperspy.Signal1D.contrast_editor
     - hyperspy.Signal1D.remove_background
+    - hyperspy.Signal1D.remove_baseline
     - hyperspy.SimpleMessage
     - hyperspy.Signal1D.spikes_removal_tool
     - hyperspy.Signal2D.find_peaks

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,15 +16,56 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import dask.array as da
+
+import numbers
+from collections import defaultdict
+from collections.abc import Iterable
+
 import numpy as np
+from prettytable import PrettyTable
+
+from hyperspy.misc._utils import _parse_percentile_value
 
 
-def _format_string(val):
+def _format_string(val, format_string=".5g", max_length=None, add_ellipsis=True):
     """
-    Returns formatted string for a value unless it equals None, then blank
+    Returns formatted string for a value unless it equals None,
+    then empty string is returned.
+
+    Parameters
+    ----------
+    val : any
+        Value to format
+    format_string : str, optional
+        For numeric types only: the format string to use. Default is ".5g".
+    max_length : int or None, optional
+        Maximum length of the returned string. If None, no maximum length
+        is applied. Default is None.
+    add_ellipsis : bool, optional
+        Whether to add ellipsis when truncating the string.
+        Default is True.
     """
-    return "{:6g}".format(val) if val is not None else ""
+    if val is None:
+        to_return = ""
+    elif isinstance(val, str):
+        to_return = val
+    elif isinstance(val, Iterable):
+        to_return = ", ".join(
+            f"{v:{format_string}}" if isinstance(v, numbers.Number) else str(v)
+            for v in val
+        )
+        to_return = f"({to_return})"
+    else:
+        to_return = f"{val:{format_string}}"
+
+    if max_length is not None and len(to_return) > max_length:
+        if add_ellipsis:
+            # Add ellipsis to indicate truncation
+            to_return = to_return[: max_length - 3] + "..."
+        else:
+            to_return = to_return[:max_length]
+
+    return to_return
 
 
 class CurrentComponentValues:
@@ -45,91 +86,80 @@ class CurrentComponentValues:
 
     def __init__(self, component, only_free=False, only_active=False):
         self.name = component.name
+        self.component_type = component.__class__.__name__
         self.active = component.active
         self.parameters = component.parameters
         self._id_name = component._id_name
         self.only_free = only_free
         self.only_active = only_active
 
-    def __repr__(self):
-        # Number of digits for each label for the terminal-style view.
-        size = {
-            "name": 14,
-            "free": 7,
-            "value": 10,
-            "std": 10,
-            "bmin": 10,
-            "bmax": 10,
-            "linear": 6,
-        }
-        # Using nested string formatting for flexibility in future updates
-        signature = "{{:>{name}}} | {{:>{free}}} | {{:>{value}}} | {{:>{std}}} | {{:>{bmin}}} | {{:>{bmax}}} | {{:>{linear}}}".format(
-            **size
-        )
+    def _build_table(self):
+        """Build and return a PrettyTable with parameter data."""
 
-        if self.only_active:
-            text = "{0}: {1}".format(self.__class__.__name__, self.name)
-        else:
-            text = "{0}: {1}\nActive: {2}".format(
-                self.__class__.__name__, self.name, self.active
-            )
-        text += "\n"
-        text += signature.format(
-            "Parameter Name", "Free", "Value", "Std", "Min", "Max", "Linear"
-        )
-        text += "\n"
-        text += signature.format(
-            "=" * size["name"],
-            "=" * size["free"],
-            "=" * size["value"],
-            "=" * size["std"],
-            "=" * size["bmin"],
-            "=" * size["bmax"],
-            "=" * size["linear"],
-        )
-        text += "\n"
+        table = PrettyTable()
+        table.field_names = [
+            "Parameter",
+            "Free",
+            "Value",
+            "Std",
+            "Min",
+            "Max",
+            "Linear",
+        ]
+        table.align["Parameter"] = "r"
+        table.align["Free"] = "r"
+        table.align["Value"] = "r"
+        table.align["Std"] = "r"
+        table.align["Min"] = "r"
+        table.align["Max"] = "r"
+        table.align["Linear"] = "r"
+
+        # Add rows
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
                 free = para.free if para.twin is None else "Twinned"
                 ln = para._linear
-                text += signature.format(
-                    para.name[: size["name"]],
-                    str(free)[: size["free"]],
-                    str(para.value)[: size["value"]],
-                    str(para.std)[: size["std"]],
-                    str(para.bmin)[: size["bmin"]],
-                    str(para.bmax)[: size["bmax"]],
-                    str(ln)[: size["linear"]],
+                table.add_row(
+                    [
+                        _format_string(para.name, max_length=14),
+                        _format_string(str(free), max_length=7),
+                        _format_string(para.value, max_length=10),
+                        _format_string(para.std, max_length=10),
+                        _format_string(para.bmin, max_length=10),
+                        _format_string(para.bmax, max_length=10),
+                        _format_string(str(ln), max_length=6),
+                    ]
                 )
-                text += "\n"
-        return text
+        return table
+
+    def __repr__(self):
+        if self.only_active:
+            header = "{0}: {1}".format(self.component_type, self.name)
+        else:
+            header = "{0}: {1}\nActive: {2}".format(
+                self.component_type, self.name, self.active
+            )
+
+        table = self._build_table()
+        return header + "\n" + str(table)
 
     def _repr_html_(self):
         if self.only_active:
-            text = "<p><b>{0}: {1}</b></p>".format(self.__class__.__name__, self.name)
+            header = "<p><b>{0}: {1}</b></p>".format(self.component_type, self.name)
         else:
-            text = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
-                self.__class__.__name__, self.name, self.active
+            header = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
+                self.component_type, self.name, self.active
             )
 
-        para_head = """<table style="width:100%"><tr><th>Parameter Name</th><th>Free</th>
-            <th>Value</th><th>Std</th><th>Min</th><th>Max</th><th>Linear</th></tr>"""
-        text += para_head
-        for para in self.parameters:
-            if not self.only_free or self.only_free and para.free:
-                free = para.free if para.twin is None else "Twinned"
-                linear = para._linear
-                value = _format_string(para.value)
-                std = _format_string(para.std)
-                bmin = _format_string(para.bmin)
-                bmax = _format_string(para.bmax)
+        table = self._build_table()
+        table_html = table.get_html_string(
+            attributes={
+                "style": "width:100%; border-collapse:collapse; text-align:center;",
+                "border": "1",
+            }
+        )
 
-                text += """<tr><td>{0}</td><td>{1}</td><td>{2}</td>
-                    <td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td></tr>""".format(
-                    para.name, free, value, std, bmin, bmax, linear
-                )
-        text += "</table>"
-        return text
+        return header + table_html
 
 
 class CurrentModelValues:
@@ -151,11 +181,10 @@ class CurrentModelValues:
         self.only_free = only_free
         self.only_active = only_active
         self.component_list = model if component_list is None else component_list
-        self.model_type = str(self.model.__class__).split("'")[1].split(".")[-1]
 
     def __repr__(self):
         text = "{}: {}\n".format(
-            self.model_type, self.model.signal.metadata.General.title
+            self.model.__class__.__name__, self.model.signal.metadata.General.title
         )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
@@ -172,7 +201,7 @@ class CurrentModelValues:
 
     def _repr_html_(self):
         html = "<h4>{}: {}</h4>".format(
-            self.model_type, self.model.signal.metadata.General.title
+            self.model.__class__.__name__, self.model.signal.metadata.General.title
         )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
@@ -229,7 +258,11 @@ def _calculate_covariance(
     # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
     # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
     if lazy and target_signal.ndim > 1:
-        inv_fit_dot = da.map_blocks(np.linalg.inv, fit_dot, chunks=fit_dot.chunks)
+        import dask.array as da
+
+        inv_fit_dot = da.map_blocks(
+            np.linalg.inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
+        )
     else:
         inv_fit_dot = np.linalg.inv(fit_dot)
 
@@ -237,3 +270,190 @@ def _calculate_covariance(
     k = coefficients.shape[-1]  # the number of components
     covariance = (1 / (n - k)) * (residual * inv_fit_dot.T).T
     return covariance
+
+
+def _calculate_parameter_uncertainty_from_fisher_information(fisher_information_matrix):
+    """
+    Calculate parameter uncertainties from Fisher Information Matrix.
+
+    For maximum likelihood estimation, parameter uncertainties are given by
+    the Cramér-Rao bound: Var(θ) ≥ [I(θ)]^(-1), where I(θ) is the Fisher
+    Information Matrix (the Hessian of the negative log-likelihood).
+
+    Parameters
+    ----------
+    fisher_information_matrix : ndarray
+        The Fisher Information Matrix (Hessian of negative log-likelihood)
+
+    Returns
+    -------
+    uncertainties : ndarray
+        Parameter standard deviations (square root of diagonal of covariance matrix)
+    covariance : ndarray
+        Full covariance matrix (inverse of Fisher Information Matrix)
+    """
+    try:
+        # Calculate covariance matrix as inverse of Fisher Information Matrix
+        covariance = np.linalg.inv(fisher_information_matrix)
+
+        # Parameter uncertainties are square root of diagonal elements
+        uncertainties = np.sqrt(np.diag(covariance))
+
+        # Check for invalid results
+        if (
+            np.any(np.isnan(uncertainties))
+            or np.any(np.isinf(uncertainties))
+            or np.any(uncertainties < 0)
+        ):
+            raise np.linalg.LinAlgError("Invalid uncertainties computed")
+
+        return uncertainties, covariance
+
+    except np.linalg.LinAlgError:
+        # Handle singular matrix case - use pseudo-inverse
+        try:
+            covariance = np.linalg.pinv(fisher_information_matrix)
+            uncertainties = np.sqrt(np.diag(covariance))
+
+            # Check if pseudo-inverse gives reasonable results
+            if (
+                np.any(np.isnan(uncertainties))
+                or np.any(np.isinf(uncertainties))
+                or np.any(uncertainties < 0)
+            ):
+                # If pseudo-inverse also fails, return NaN
+                uncertainties = np.full(fisher_information_matrix.shape[0], np.nan)
+                covariance = np.full_like(fisher_information_matrix, np.nan)
+
+            return uncertainties, covariance
+
+        except Exception:
+            # If all else fails, return NaN
+            uncertainties = np.full(fisher_information_matrix.shape[0], np.nan)
+            covariance = np.full_like(fisher_information_matrix, np.nan)
+            return uncertainties, covariance
+
+
+class ModelStatistics:
+    """
+    Display-class for showing mean, std, min, max of each parameter
+    in each model component in a clean text or HTML table.
+
+    Parameters
+    ----------
+    model : hyperspy model instance
+    thresholds : dict, optional
+        Same structure as in print_model_statistics().
+    """
+
+    def __init__(self, model, thresholds=None, component_list=None):
+        self.model = model
+        self.thresholds = thresholds
+        self.component_list = model if component_list is None else component_list
+        self.stats = self._compute_statistics()
+
+    def _compute_statistics(self):
+        """Compute statistics exactly like print_model_statistics(),
+        but return them as a nested dictionary for display."""
+        collected_values = []
+        for i, comp in enumerate(self.component_list):
+            comp_name = f"{i} - {comp.name}"
+            for param in comp.parameters:
+                if hasattr(param, "map") and param.map is not None:
+                    arr = np.array(param.map)
+                    values = np.array([float(arr[j][0]) for j in range(len(arr))])
+                    collected_values.append(
+                        {
+                            "component": comp_name,
+                            "parameter": param.name,
+                            "values": values,
+                        }
+                    )
+
+        # Apply thresholds if given
+        if self.thresholds is not None:
+            for entry in collected_values:
+                th = self.thresholds.get(entry["parameter"], {"min": None, "max": None})
+                values = np.array(entry["values"], dtype=float)
+                if th.get("min") is not None:
+                    if not isinstance(th.get("min"), (float, int)):
+                        th["min"] = np.nanpercentile(
+                            values, _parse_percentile_value(th.get("min"), "min")
+                        )
+                    values = values[values >= th["min"]]
+                if th.get("max") is not None:
+                    if not isinstance(th.get("max"), (float, int)):
+                        th["max"] = np.nanpercentile(
+                            values, _parse_percentile_value(th.get("max"), "max")
+                        )
+                    values = values[values <= th["max"]]
+                entry["values"] = values
+
+        # Aggregate by component and parameter
+        aggregated = defaultdict(lambda: defaultdict(list))
+
+        for entry in collected_values:
+            comp_type = entry["component"].split(" - ")[1]
+            values = np.array(entry["values"], dtype=float)
+
+            if len(values) > 0:
+                aggregated[comp_type][entry["parameter"]].extend(values.tolist())
+
+        statistics = defaultdict(lambda: defaultdict(dict))
+
+        for comp_type, params in aggregated.items():
+            for pname, values in params.items():
+                arr = np.array(values, dtype=float)
+                if len(arr) > 0:
+                    statistics[comp_type][pname] = {
+                        "mean": np.mean(arr),
+                        "std": np.std(arr),
+                        "min": np.min(arr),
+                        "max": np.max(arr),
+                    }
+        return statistics
+
+    # --- Table Output ---
+    def _build_table(self, params):
+        """Build and return a PrettyTable for a component type's statistics."""
+        table = PrettyTable()
+        table.field_names = ["Parameter", "Mean", "Std", "Min", "Max"]
+        table.align["Parameter"] = "l"
+        table.align["Mean"] = "r"
+        table.align["Std"] = "r"
+        table.align["Min"] = "r"
+        table.align["Max"] = "r"
+
+        for pname, stats in params.items():
+            table.add_row(
+                [
+                    _format_string(pname, max_length=14),
+                    _format_string(stats["mean"], format_string=".3e", max_length=12),
+                    _format_string(stats["std"], format_string=".3e", max_length=12),
+                    _format_string(stats["min"], format_string=".3e", max_length=12),
+                    _format_string(stats["max"], format_string=".3e", max_length=12),
+                ]
+            )
+        return table
+
+    def __repr__(self):
+        text = ""
+        for comp_type, params in self.stats.items():
+            text += f"{comp_type}:\n"
+            table = self._build_table(params)
+            text += str(table) + "\n\n"
+        return text
+
+    def _repr_html_(self):
+        html = ""
+        for comp_type, params in self.stats.items():
+            html += f"<h4>{comp_type}</h4>"
+            table = self._build_table(params)
+            html += table.get_html_string(
+                attributes={
+                    "style": "width:100%; border-collapse:collapse; text-align:center;",
+                    "border": "1",
+                }
+            )
+            html += "<br>"
+        return html

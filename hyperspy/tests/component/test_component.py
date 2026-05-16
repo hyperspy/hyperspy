@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,7 +23,6 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy._signals.signal1d import Signal1D
 from hyperspy.axes import AxesManager
 from hyperspy.component import Component, Parameter, _get_scaling_factor
 
@@ -295,7 +294,7 @@ class TestCallMethods:
 @pytest.mark.parametrize("dim", [1, 2, 3])
 def test_get_scaling_parameter(is_binned, non_uniform, dim):
     shape = [10 + i for i in range(dim)]
-    signal = Signal1D(np.arange(np.prod(shape)).reshape(shape[::-1]))
+    signal = hs.signals.Signal1D(np.arange(np.prod(shape)).reshape(shape[::-1]))
     axis = signal.axes_manager.signal_axes[0]
     axis.is_binned = is_binned
     axis.scale = 0.5

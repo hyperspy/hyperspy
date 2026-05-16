@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -26,6 +26,7 @@ import pytest
 import traits.api as t
 from numpy.testing import assert_allclose
 
+import hyperspy.api as hs
 from hyperspy.axes import (
     BaseDataAxis,
     DataAxis,
@@ -34,7 +35,6 @@ from hyperspy.axes import (
     create_axis,
 )
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-from hyperspy.signals import Signal1D
 
 
 class TestBaseDataAxis:
@@ -171,7 +171,7 @@ class TestDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        s = Signal1D(np.arange(10), axes=[self.axis])
+        s = hs.signals.Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
         s.axes_manager[0].convert_to_uniform_axis()
         assert isinstance(s.axes_manager[0], UniformDataAxis)
@@ -188,7 +188,7 @@ class TestDataAxis:
 
     def test_convert_to_uniform_axis_keep_bounds_False(self):
         # estimated offset, scale using numpy polyfit
-        s = Signal1D(np.arange(10), axes=[self.axis])
+        s = hs.signals.Signal1D(np.arange(10), axes=[self.axis])
         s.axes_manager[0].convert_to_uniform_axis(keep_bounds=False)
         assert s.axes_manager[0].size == 16
         np.testing.assert_allclose(s.axes_manager[0].scale, 15)
@@ -323,7 +323,7 @@ class TestFunctionalDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        s = Signal1D(np.arange(10), axes=[self.axis])
+        s = hs.signals.Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
         s.axes_manager[0].convert_to_non_uniform_axis()
         assert isinstance(s.axes_manager[0], DataAxis)
@@ -611,7 +611,7 @@ class TestUniformDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        s = Signal1D(np.arange(10), axes=[self.axis])
+        s = hs.signals.Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
         s.axes_manager[0].convert_to_non_uniform_axis()
         assert isinstance(s.axes_manager[0], DataAxis)
@@ -635,7 +635,7 @@ class TestUniformDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        s = Signal1D(np.arange(10), axes=[self.axis])
+        s = hs.signals.Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
         s.axes_manager[0].convert_to_functional_data_axis(expression="x**2")
         assert isinstance(s.axes_manager[0], FunctionalDataAxis)

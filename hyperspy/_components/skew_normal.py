@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import dask.array as da
 import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy.component import _get_scaling_factor
+from hyperspy.misc.utils import is_dask_array
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
@@ -68,7 +68,9 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     iheight = np.argmin(abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
     # height is the value of the function at x0, shich has to be computed
     # differently for dask array (lazy) and depending on the dimension
-    if isinstance(data, da.Array):
+    if is_dask_array(data):
+        import dask.array as da
+
         x0, iheight, scale, shape = da.compute(x0, iheight, scale, shape)
         if only_current is True or signal.axes_manager.navigation_dimension == 0:
             height = data.vindex[iheight].compute()

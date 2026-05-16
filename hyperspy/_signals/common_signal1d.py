@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -56,4 +56,4 @@ class CommonSignal1D:
         )
         return im
 
-    to_signal2D.__doc__ %= OPTIMIZE_ARG.replace("False", "True")
+    to_signal2D.__doc__ %= OPTIMIZE_ARG

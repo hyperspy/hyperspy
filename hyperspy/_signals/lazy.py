@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,51 +16,43 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 import os
 from functools import partial
 from itertools import product
 
-import dask
-import dask.array as da
 import numpy as np
-from rsciio.utils import rgb_tools
-from rsciio.utils.tools import get_file_handle
+import scipy
+from dask.widgets import TEMPLATE_PATHS
+from rsciio.utils import file
 
-from hyperspy.defaults_parser import preferences
+from hyperspy import signals
 from hyperspy.docstrings.signal import (
     LAZYSIGNAL_DOC,
     MANY_AXIS_PARAMETER,
+    RECHUNK_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import (
-    _get_navigation_dimension_chunk_slice,
-    _requires_linear_rebin,
-    get_signal_chunk_slice,
-)
+from hyperspy.misc import array_tools, dask_utils, utils
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram_dask
-from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import dummy_context_manager, isiterable, multiply
-from hyperspy.signal import BaseSignal
+
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 _logger = logging.getLogger(__name__)
 
 lazyerror = NotImplementedError("This method is not available in lazy signals")
 
-
-try:
-    from dask.widgets import TEMPLATE_PATHS
-
-    templates_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "misc", "dask_widgets"
-    )
-    TEMPLATE_PATHS.append(templates_path)
-except ModuleNotFoundError:
-    _logger.info("Dask widgets not loaded (dask >=2021.11.1 is required)")
+templates_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "misc", "dask_widgets"
+)
+TEMPLATE_PATHS.append(templates_path)
 
 
 def _get():
+    import dask
+
     try:
         get = dask.threaded.get
     except AttributeError:  # pragma: no cover
@@ -91,10 +83,10 @@ def to_array(thing, chunks=None):
     """
     if thing is None:
         return None
-    if isinstance(thing, BaseSignal):
+    if isinstance(thing, signals.BaseSignal):
         thing = thing.data
     if chunks is None:
-        if isinstance(thing, da.Array):
+        if utils.is_dask_array(thing):
             thing = thing.compute()
         if isinstance(thing, np.ndarray):
             return thing
@@ -102,8 +94,10 @@ def to_array(thing, chunks=None):
             raise ValueError
     else:
         if isinstance(thing, np.ndarray):
+            import dask.array as da
+
             thing = da.from_array(thing, chunks=chunks)
-        if isinstance(thing, da.Array):
+        if utils.is_dask_array(thing):
             if thing.chunks != chunks:
                 thing = thing.rechunk(chunks)
             return thing
@@ -111,7 +105,7 @@ def to_array(thing, chunks=None):
             raise ValueError
 
 
-class LazySignal(BaseSignal):
+class LazySignal(signals.BaseSignal):
     """Lazy general signal class."""
 
     _lazy = True
@@ -130,7 +124,7 @@ class LazySignal(BaseSignal):
         if self._clear_cache_dask_data not in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
-    __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
+    __init__.__doc__ = signals.BaseSignal.__init__.__doc__.replace(
         ":class:`numpy.ndarray`", ":class:`dask.array.Array`"
     )
 
@@ -247,17 +241,11 @@ class LazySignal(BaseSignal):
         >>> s3.compute(scheduler='single-threaded')
 
         """
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
-
-        cm = dask.diagnostics.ProgressBar if show_progressbar else dummy_context_manager
-
-        with cm():
-            da = self.data
-            data = da.compute(**kwargs)
-            if close_file:
-                self.close_file()
-            self.data = data
+        self.data = dask_utils._compute(
+            self.data, show_progressbar=show_progressbar, **kwargs
+        )
+        if close_file:
+            self.close_file()
 
         self._lazy = False
         self._assign_subclass()
@@ -265,18 +253,19 @@ class LazySignal(BaseSignal):
     compute.__doc__ %= SHOW_PROGRESSBAR_ARG
 
     def rechunk(self, nav_chunks="auto", sig_chunks=-1, inplace=True, **kwargs):
-        """Rechunks the data using the same rechunking formula from Dask
+        """
+        Rechunks the data using the same rechunking formula from Dask
         expect that the navigation and signal chunks are defined seperately.
         Note, for most functions sig_chunks should remain ``None`` so that it
         spans the entire signal axes.
 
         Parameters
         ----------
-        nav_chunks : {tuple, int, "auto", None}
+        nav_chunks : {tuple, int, "auto"}
             The navigation block dimensions to create.
             -1 indicates the full size of the corresponding dimension.
             Default is “auto” which automatically determines chunk sizes.
-        sig_chunks : {tuple, int, "auto", None}
+        sig_chunks : {tuple, int, "auto"}
             The signal block dimensions to create.
             -1 indicates the full size of the corresponding dimension.
             Default is -1 which automatically spans the full signal dimension
@@ -287,11 +276,12 @@ class LazySignal(BaseSignal):
             sig_chunks = (sig_chunks,) * len(self.axes_manager.signal_shape)
         if not isinstance(nav_chunks, tuple):
             nav_chunks = (nav_chunks,) * len(self.axes_manager.navigation_shape)
-        new_chunks = nav_chunks + sig_chunks
+
+        data_ = self.data.rechunk(nav_chunks + sig_chunks, **kwargs)
         if inplace:
-            self.data = self.data.rechunk(new_chunks, **kwargs)
+            self.data = data_
         else:
-            return self._deepcopy_with_new_data(self.data.rechunk(new_chunks, **kwargs))
+            return self._deepcopy_with_new_data(data_)
 
     def close_file(self):
         """Closes the associated data file if any.
@@ -301,7 +291,7 @@ class LazySignal(BaseSignal):
 
         """
         try:
-            get_file_handle(self.data).close()
+            file.get_file_handle(self.data).close()
         except AttributeError:
             _logger.warning("Failed to close lazy signal file")
 
@@ -349,7 +339,7 @@ class LazySignal(BaseSignal):
         elif not isinstance(dtype, np.dtype):
             dtype = np.dtype(dtype)
         typesize = max(dtype.itemsize, dc.dtype.itemsize)
-        want_to_keep = multiply([ax.size for ax in need_axes]) * typesize
+        want_to_keep = utils.multiply([ax.size for ax in need_axes]) * typesize
 
         # @mrocklin reccomends to have around 100MB chunks, so we do that:
         num_that_fit = int(100.0 * 2.0**20 / want_to_keep)
@@ -367,7 +357,7 @@ class LazySignal(BaseSignal):
         ]
 
         while True:
-            if multiply(sizes) <= num_that_fit:
+            if utils.multiply(sizes) <= num_that_fit:
                 break
 
             i = np.argmax(sizes)
@@ -421,60 +411,62 @@ class LazySignal(BaseSignal):
 
     get_chunk_size.__doc__ %= MANY_AXIS_PARAMETER
 
-    def _make_lazy(self, axis=None, rechunk=False, dtype=None):
-        self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
-
-    def change_dtype(self, dtype, rechunk=False):
-        # To be consistent with the rechunk argument of other method, we use
-        # 'dask_auto' in favour of a chunking which doesn't split signal space.
-        if rechunk:
-            rechunk = "dask_auto"
-
-        if not isinstance(dtype, np.dtype) and (dtype not in rgb_tools.rgb_dtypes):
-            dtype = np.dtype(dtype)
-        super().change_dtype(dtype)
-        self._make_lazy(rechunk=rechunk, dtype=dtype)
-
-    change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
-
     def _lazy_data(self, axis=None, rechunk=False, dtype=None):
-        """Return the data as a dask array, rechunked if necessary.
+        """
+        Return the data as a dask array, rechunked if necessary.
 
         Parameters
         ----------
-        axis: None, :class:`~.axes.DataAxis` or tuple of data axes
+        axis : None, :class:`~.axes.DataAxis` or tuple of data axes
             The data axis that must not be broken into chunks when `rechunk`
-            is `True`. If None, it defaults to the current signal axes.
-        rechunk: bool, "dask_auto"
-            If `True`, it rechunks the data if necessary making sure that the
-            axes in ``axis`` are not split into chunks. If `False` it does
-            not rechunk at least the data is not a dask array, in which case
-            it chunks as if rechunk was `True`. If "dask_auto", rechunk if
-            necessary using dask's automatic chunk guessing.
+            is ``True``. If None, it defaults to the current signal axes.
+        %s
+        dtype : numpy.dtype
+            The array dtype used to calculate chunking.
 
+        Returns
+        -------
+        dask.array
+            The data as dask array and rechunked if necessary.
         """
+        import dask.array as da
+
         if rechunk == "dask_auto":
             new_chunks = "auto"
-        else:
+        elif isinstance(rechunk, tuple):
+            new_chunks = rechunk
+        elif isinstance(rechunk, bool) or rechunk == "auto":
+            # when rechunk is False, still need new_chunks
+            # da.from_array call in case of numpy array
             new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
-        if isinstance(self.data, da.Array):
+        else:
+            raise ValueError(
+                "`rechunk` argument must be a tuple, a boolean or "
+                "a str ('auto' or 'dask_auto') "
+            )
+        if utils.is_dask_array(self.data):
             res = self.data
-            if self.data.chunks != new_chunks and rechunk:
-                _logger.info("Rechunking.\nOriginal chunks: %s" % str(self.data.chunks))
+            # rechunk when necessary when rechunk is True, "auto" or "dask_auto"
+            if rechunk and res.chunks != new_chunks:
+                _logger.info("Rechunking.\nOriginal chunks: %s." % str(res.chunks))
                 res = self.data.rechunk(new_chunks)
-                _logger.info("Final chunks: %s " % str(res.chunks))
+                _logger.info("Final chunks: %s." % str(res.chunks))
         else:
             if isinstance(self.data, np.ma.masked_array):
                 data = np.where(self.data.mask, np.nan, self.data)
             else:
                 data = self.data
             res = da.from_array(data, chunks=new_chunks)
-        assert isinstance(res, da.Array)
+
         return res
+
+    _lazy_data.__doc__ %= RECHUNK_ARG
 
     def _apply_function_on_data_and_remove_axis(
         self, function, axes, out=None, rechunk=False
     ):
+        import dask.array as da
+
         def get_dask_function(numpy_name):
             # Translate from the default numpy to dask functions
             translations = {"amax": "max", "amin": "min"}
@@ -560,14 +552,15 @@ class LazySignal(BaseSignal):
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         navigation_indices = indices[:-sig_dim]
-        chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
+        chunk_slice = dask_utils._get_navigation_dimension_chunk_slice(
+            navigation_indices, chunks
+        )
 
         if (
             chunk_slice != self._cache_dask_chunk_slice
             or self._cache_dask_chunk is None
         ):
-            with dummy_context_manager():
-                self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
+            self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
             self._cache_dask_chunk_slice = chunk_slice
 
         indices = list(indices)
@@ -589,7 +582,7 @@ class LazySignal(BaseSignal):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape, scale=scale
         )
-        if _requires_linear_rebin(arr=self.data, scale=factors):
+        if array_tools._requires_linear_rebin(arr=self.data, scale=factors):
             if new_shape:
                 raise NotImplementedError(
                     "Lazy rebin requires that the new shape is a divisor "
@@ -604,18 +597,18 @@ class LazySignal(BaseSignal):
         axis = {ax.index_in_array: ax for ax in self.axes_manager._axes}[
             factors.argmax()
         ]
-        self._make_lazy(axis=axis, rechunk=rechunk)
+        self.data = self._lazy_data(axis=axis, rechunk=rechunk)
         return super().rebin(
             new_shape=new_shape, scale=scale, crop=crop, dtype=dtype, out=out
         )
 
-    rebin.__doc__ = BaseSignal.rebin.__doc__
+    rebin.__doc__ = signals.BaseSignal.rebin.__doc__
 
     def __array__(self, dtype=None, copy=None):
         return self.data.__array__(dtype=dtype, copy=copy)
 
     def _make_sure_data_is_contiguous(self):
-        self._make_lazy(rechunk=True)
+        self.data = self._lazy_data(rechunk=True)
 
     def diff(self, axis, order=1, out=None, rechunk=False):
         if not self.axes_manager[axis].is_uniform:
@@ -667,16 +660,15 @@ class LazySignal(BaseSignal):
         else:
             out.events.data_changed.trigger(obj=out)
 
-    diff.__doc__ = BaseSignal.diff.__doc__
+    diff.__doc__ = signals.BaseSignal.diff.__doc__
 
     def integrate_simpson(self, axis, out=None, rechunk=False):
         axis = self.axes_manager[axis]
-        from scipy import integrate
 
         axis = self.axes_manager[axis]
         data = self._lazy_data(axis=axis, rechunk=rechunk)
         new_data = data.map_blocks(
-            integrate.simpson,
+            scipy.integrate.simpson,
             x=axis.axis,
             axis=axis.index_in_array,
             drop_axis=axis.index_in_array,
@@ -696,7 +688,7 @@ class LazySignal(BaseSignal):
             s._remove_axis(axis.index_in_axes_manager)
             return s
 
-    integrate_simpson.__doc__ = BaseSignal.integrate_simpson.__doc__
+    integrate_simpson.__doc__ = signals.BaseSignal.integrate_simpson.__doc__
 
     def valuemax(self, axis, out=None, rechunk=False):
         idx = self.indexmax(axis, rechunk=rechunk)
@@ -709,7 +701,7 @@ class LazySignal(BaseSignal):
             out.data = data
             out.events.data_changed.trigger(obj=out)
 
-    valuemax.__doc__ = BaseSignal.valuemax.__doc__
+    valuemax.__doc__ = signals.BaseSignal.valuemax.__doc__
 
     def valuemin(self, axis, out=None, rechunk=False):
         idx = self.indexmin(axis, rechunk=rechunk)
@@ -722,17 +714,15 @@ class LazySignal(BaseSignal):
             out.data = data
             out.events.data_changed.trigger(obj=out)
 
-    valuemin.__doc__ = BaseSignal.valuemin.__doc__
+    valuemin.__doc__ = signals.BaseSignal.valuemin.__doc__
 
     def get_histogram(
         self, bins="fd", range_bins=None, out=None, rechunk=False, **kwargs
     ):
-        from hyperspy.signals import Signal1D
-
         data = self._lazy_data(rechunk=rechunk).flatten()
         hist, bin_edges = histogram_dask(data, bins=bins, range=range_bins, **kwargs)
         if out is None:
-            hist_spec = Signal1D(hist)
+            hist_spec = signals.Signal1D(hist)
             hist_spec._lazy = True
             hist_spec._assign_subclass()
         else:
@@ -752,12 +742,14 @@ class LazySignal(BaseSignal):
         else:
             out.events.data_changed.trigger(obj=out)
 
-    get_histogram.__doc__ = BaseSignal.get_histogram.__doc__
+    get_histogram.__doc__ = signals.BaseSignal.get_histogram.__doc__
 
     @staticmethod
     def _estimate_poissonian_noise_variance(
         dc, gain_factor, gain_offset, correlation_factor
     ):
+        import dask.array as da
+
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         # The lower bound of the variance is the gaussian noise.
         variance = da.clip(variance, gain_offset * correlation_factor, np.inf)
@@ -766,14 +758,16 @@ class LazySignal(BaseSignal):
     # def _get_navigation_signal(self, data=None, dtype=None):
     # return super()._get_navigation_signal(data=data, dtype=dtype).as_lazy()
 
-    # _get_navigation_signal.__doc__ = BaseSignal._get_navigation_signal.__doc__
+    # _get_navigation_signal.__doc__ = signals.BaseSignal._get_navigation_signal.__doc__
 
     # def _get_signal_signal(self, data=None, dtype=None):
     #     return super()._get_signal_signal(data=data, dtype=dtype).as_lazy()
 
-    # _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
+    # _get_signal_signal.__doc__ = signals.BaseSignal._get_signal_signal.__doc__
 
     def _calculate_summary_statistics(self, rechunk=False):
+        import dask.array as da
+
         if rechunk is True:
             # Use dask auto rechunk instead of HyperSpy's one, what should be
             # better for these operations
@@ -836,9 +830,10 @@ class LazySignal(BaseSignal):
             to NaN or 0.
 
         """
+        import dask.array as da
+
         if get is None:
             get = _get()
-        self._make_lazy()
         data = self._data_aligned_with_axes
         nav_chunks = data.chunks[: self.axes_manager.navigation_dimension]
         indices = product(*[range(len(c)) for c in nav_chunks])
@@ -960,9 +955,11 @@ class LazySignal(BaseSignal):
         See Also
         --------
         dask.array.linalg.svd, sklearn.decomposition.IncrementalPCA,
-        hyperspy.learn.rpca.ORPCA, hyperspy.learn.ornmf.ORNMF
+        hyperspy.learn.orpca, hyperspy.learn.ornmf
 
         """
+        import dask.array as da
+
         if get is None:
             get = _get()
         # Check algorithms requiring output_dimension
@@ -980,8 +977,8 @@ class LazySignal(BaseSignal):
         sig_chunks = _al_data.chunks[self.axes_manager.navigation_dimension :]
 
         num_chunks = 1 if num_chunks is None else num_chunks
-        blocksize = np.min([multiply(ar) for ar in product(*nav_chunks)])
-        nblocks = multiply([len(c) for c in nav_chunks])
+        blocksize = np.min([utils.multiply(ar) for ar in product(*nav_chunks)])
+        nblocks = utils.multiply([len(c) for c in nav_chunks])
 
         if output_dimension and blocksize / output_dimension < num_chunks:
             num_chunks = np.ceil(blocksize / output_dimension)
@@ -998,25 +995,25 @@ class LazySignal(BaseSignal):
 
         # LEARN
         if algorithm == "PCA":
-            if not import_sklearn.sklearn_installed:
+            if not SKLEARN_INSTALLED:
                 raise ImportError("algorithm='PCA' requires scikit-learn")
 
-            obj = import_sklearn.sklearn.decomposition.IncrementalPCA(
-                n_components=output_dimension
-            )
+            import sklearn
+
+            obj = sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
             reproject = True
             to_print.extend(["scikit-learn estimator:", obj])
 
         elif algorithm == "ORPCA":
-            from hyperspy.learn.rpca import ORPCA
+            from hyperspy.learn._rpca import ORPCA
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORPCA(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
 
         elif algorithm == "ORNMF":
-            from hyperspy.learn.ornmf import ORNMF
+            from hyperspy.learn._ornmf import ORNMF
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORNMF(output_dimension, **kwargs)
@@ -1261,13 +1258,14 @@ class LazySignal(BaseSignal):
         odd number, so that the middle is centered.
 
         """
+        import dask.array as da
 
         signal_shape = self.axes_manager.signal_shape
 
         if index is None:
             index = [round(shape / 2) for shape in signal_shape]
         else:
-            if not isiterable(index):
+            if not utils.isiterable(index):
                 index = [index] * len(signal_shape)
             index = [
                 axis._get_index(_idx)
@@ -1278,7 +1276,7 @@ class LazySignal(BaseSignal):
         if chunks_number is None:
             chunks = self.data.chunks
         else:
-            if not isiterable(chunks_number):
+            if not utils.isiterable(chunks_number):
                 chunks_number = [chunks_number] * len(signal_shape)
             # Determine the chunk size
             signal_chunks = da.core.normalize_chunks(
@@ -1297,7 +1295,7 @@ class LazySignal(BaseSignal):
         signal_size = len(signal_shape)
         signal_chunks = tuple(chunks[i - signal_size] for i in range(signal_size))
         _logger.info(f"Signal chunks: {signal_chunks}")
-        isig_slice = get_signal_chunk_slice(index, chunks)
+        isig_slice = dask_utils.get_signal_chunk_slice(index, chunks)
 
         _logger.info(f"Computing sum over signal dimension: {isig_slice}")
         axes = [axis.index_in_array for axis in self.axes_manager.signal_axes]
@@ -1322,7 +1320,9 @@ def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
     sshape : tuple of ints
         The shape
     """
-    splits = np.cumsum([multiply(ar) for ar in product(*nav_chunks)][:-1]).tolist()
+    splits = np.cumsum(
+        [utils.multiply(ar) for ar in product(*nav_chunks)][:-1]
+    ).tolist()
     if splits:
         all_chunks = [
             ar.reshape(shape + sshape)

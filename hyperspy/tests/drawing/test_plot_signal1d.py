@@ -1,4 +1,4 @@
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -74,14 +74,15 @@ def _matplotlib_pick_event(figure, click, artist):
 
 @pytest.fixture
 def setup_teardown(request, scope="class"):
-    plot_testing = request.config.getoption("--mpl")
     pytest_mpl_spec = importlib.util.find_spec("pytest_mpl")
 
     if pytest_mpl_spec is None:
         mpl_generate_path_cmdopt = None
+        plot_testing = False
     else:
         # This option is available only when pytest-mpl is installed
         mpl_generate_path_cmdopt = request.config.getoption("--mpl-generate-path")
+        plot_testing = request.config.getoption("--mpl")
 
     # SETUP
     # duplicate baseline images to match the test_name when the
@@ -475,10 +476,26 @@ def test_plot_spectra_linestyle_error():
 def test_plot_spectra_normalise(style):
     s = hs.signals.Signal1D(np.arange(100)) + 100
     s2 = s * 1000
-
     ax = hs.plot.plot_spectra([s, s2], style=style, normalise=True)
     if style == "mosaic":
         ax = ax[0]
+
+    return ax.get_figure()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
+)
+def test_plot_spectra_normalise_callable():
+    def normalisation_function(signal):
+        data = signal.data
+        normalise_range = signal.isig[40:50].data
+        scale_factor = 1 / abs(normalise_range.mean())
+        return data * scale_factor
+
+    s = hs.signals.Signal1D(np.arange(100)) + 100
+    s2 = s * -1000
+    ax = hs.plot.plot_spectra([s, s2], normalise=normalisation_function)
 
     return ax.get_figure()
 
@@ -550,3 +567,22 @@ def test_plot_spectra_ax():
     ax[4].set_title("mosaic 1")
 
     return fig
+
+
+@pytest.mark.parametrize("style", ("overlap", "cascade", "mosaic"))
+def test_plot_spectra_single(style):
+    s = hs.signals.Signal1D([0, 1, 2])
+    hs.plot.plot_spectra([s], style=style)
+
+
+def test_plot_spectra_ax_array():
+    n = 20
+    s = hs.signals.Signal1D(np.arange(4 * n).reshape(4, n))
+
+    # array of axes
+    fig, axes = plt.subplots(nrows=2, ncols=3)
+    hs.plot.plot_spectra(s, ax=axes, style="mosaic")
+
+    # axes object
+    fig, axes = plt.subplots()
+    hs.plot.plot_spectra(s, ax=axes, style="mosaic")

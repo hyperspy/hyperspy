@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.data.artificial_data import _get_largest_rectangle_from_rotation
+from hyperspy.data._artificial_data import _get_largest_rectangle_from_rotation
 
 
 @pytest.mark.parametrize("add_noise", (True, False))

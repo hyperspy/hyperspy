@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,13 +17,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+import importlib
 
 import numpy as np
 import scipy.ndimage as ndi
 from skimage.feature import blob_dog, blob_log, match_template, peak_local_max
 
 from hyperspy.decorators import jit_ifnumba
-from hyperspy.misc.machine_learning import import_sklearn
+
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
@@ -379,7 +381,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
     8. Repeat #4-7 until the number of peaks found in the previous step
        converges to within the user defined convergence_ratio.
     """
-    if not import_sklearn.sklearn_installed:
+    if not SKLEARN_INSTALLED:
         raise ImportError("This method requires scikit-learn.")
 
     def normalize(image):
@@ -430,9 +432,11 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
 
     def separate_peaks(binarised_image):
         """Identify adjacent 'on' coordinates via DBSCAN."""
+        import sklearn
+
         bi = binarised_image.astype("bool")
         coordinates = np.indices(bi.shape).reshape(2, -1).T[bi.flatten()]
-        db = import_sklearn.sklearn.cluster.DBSCAN(2, min_samples=3)
+        db = sklearn.cluster.DBSCAN(2, min_samples=3)
         peaks = []
         if coordinates.shape[0] > 0:  # we have at least some peaks
             labeled_points = db.fit_predict(coordinates)

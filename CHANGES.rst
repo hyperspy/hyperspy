@@ -1,3 +1,7 @@
+.. _RosettaSciIO: https://hyperspy.org/rosettasciio
+.. _eXSpy: https://hyperspy.org/exspy
+.. _holoSpy: https://hyperspy.org/holospy
+
 .. _changelog:
 
 Changelog
@@ -9,6 +13,121 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 .. towncrier-draft-entries:: |release| [UNRELEASED]
 
 .. towncrier release notes start
+
+2.4.0 (2026-01-26)
+==================
+
+New features
+------------
+
+- HyperSpy now automatically calculates parameter uncertainties when fitting 1D models 
+  with ``"ls"``, ``"ML-poisson"``, and ``"huber"`` loss functions. Uncertainties are 
+  computed using Fisher Information Matrix (for ML-Poisson) and Hessian matrix 
+  approaches.
+
+  The uncertainty estimates are accessible through the individual parameter ``std`` attributes. (`#3517 <https://github.com/hyperspy/hyperspy/issues/3517>`_)
+- Added new capability to :meth:`~.api.signals.BaseSignal.save` where providing only ``file_format`` (without filename) will automatically construct the filename using information stored in ``tmp_parameters`` from when the signal was loaded. See :ref:`io` for more information about file format support. (`#3525 <https://github.com/hyperspy/hyperspy/issues/3525>`_)
+- Adds new method :meth:`~.model.BaseModel.print_model_statistics` that computes and prints summary statistics (mean, std, min, max) for all parameters of a model. (`#3548 <https://github.com/hyperspy/hyperspy/issues/3548>`_)
+
+
+Enhancements
+------------
+
+- Makes scalebars more agreable by constraining their lengths to 1,2,2.5,5 multiplied by a power of 10. (`#3512 <https://github.com/hyperspy/hyperspy/issues/3512>`_)
+- Add support for passing array of :class:`matplotlib.axes.Axes` in :func:`~.api.plot.plot_images` and :func:`~.api.plot.plot_spectra`. (`#3519 <https://github.com/hyperspy/hyperspy/issues/3519>`_)
+- Speed up import of hyperspy modules. (`#3566 <https://github.com/hyperspy/hyperspy/issues/3566>`_)
+- Speed up import of hyperspy modules and reduce memory usage using lazy loading of modules. Add :class:`~.api.signals.LazySignal` to public API. (`#3569 <https://github.com/hyperspy/hyperspy/issues/3569>`_)
+- The :meth:`~.model.BaseModel.print_current_values` and :meth:`~.model.BaseModel.print_model_statistics` display classes now use
+  PrettyTable to render terminal and notebook HTML outputs consistently and
+  with improved readability. (`#3579 <https://github.com/hyperspy/hyperspy/issues/3579>`_)
+
+
+Bug Fixes
+---------
+
+- Fix conversion of markers with hyperspy v1 API and fix loading ``.bcf`` files containing markers. (`#3501 <https://github.com/hyperspy/hyperspy/issues/3501>`_)
+- Fix regression in :meth:`~.api.signals.Signal1D.remove_background` when used interactively and the navigation dimension is > 0. The regression was introduced in hyperspy 2.0.1 (`#3320 <https://github.com/hyperspy/hyperspy/pull/3320>`__) when fixing numpy deprecation warnings. (`#3504 <https://github.com/hyperspy/hyperspy/issues/3504>`_)
+- Fix rendering mermaid graph in the contributor guide. (`#3514 <https://github.com/hyperspy/hyperspy/issues/3514>`_)
+- Fix scalebar and axes values in :func:`~.api.plot.plot_images` when using ``overlay=True``. (`#3519 <https://github.com/hyperspy/hyperspy/issues/3519>`_)
+- Don't calculate fitting error when mpfit parameter error is None to avoid raising an exception, log a warning instead. (`#3534 <https://github.com/hyperspy/hyperspy/issues/3534>`_)
+- Fix plotting marker using relative transform on non-uniform axes. (`#3551 <https://github.com/hyperspy/hyperspy/issues/3551>`_)
+- Fix generating html code when printing iterable components values and improve string representation of components. (`#3558 <https://github.com/hyperspy/hyperspy/issues/3558>`_)
+- Add support for ipykernels subshells when using ipympl matplotlib backend. (`#3563 <https://github.com/hyperspy/hyperspy/issues/3563>`_)
+- Fix and modernise line tools implementation. (`#3564 <https://github.com/hyperspy/hyperspy/issues/3564>`_)
+- Improve error message in :meth:`~.api.signals.Signal1D.remove_baseline` when pybaseline is not installed. Fix markers import. (`#3565 <https://github.com/hyperspy/hyperspy/issues/3565>`_)
+- Remove mention of ``black`` in the contributor guide in favour of ``ruff`` to avoid settings conflict between ``ruff`` and ``black``. (`#3567 <https://github.com/hyperspy/hyperspy/issues/3567>`_)
+- Fix compatibility of ``'flyback'`` axes iterator with numpy 2.4.0. (`#3571 <https://github.com/hyperspy/hyperspy/issues/3571>`_)
+
+
+API changes
+-----------
+
+- Deprecate ``extension`` parameter in :meth:`~.api.signals.BaseSignal.save` and ``reader`` parameter in :func:`~.api.load` in favor of the ``file_format`` parameter. Both deprecated parameters now show deprecation warnings and will be removed in HyperSpy 3.0. (`#3525 <https://github.com/hyperspy/hyperspy/issues/3525>`_)
+
+
+Improved Documentation
+----------------------
+
+- Update documentation on how to set up development installation. (`#3383 <https://github.com/hyperspy/hyperspy/issues/3383>`_)
+- The IO documentation has been improved to clearly reference RosettaSciIO as the provider of file format support, with dynamic format listings and links to the RosettaSciIO documentation. (`#3525 <https://github.com/hyperspy/hyperspy/issues/3525>`_)
+
+
+Maintenance
+-----------
+
+- Add pre-commit hook to check if the json file defining the documentation version is valid. (`#3520 <https://github.com/hyperspy/hyperspy/issues/3520>`_)
+- Support handling of zarr v3 store. (`#3529 <https://github.com/hyperspy/hyperspy/issues/3529>`_)
+- Add integration tests to run the test suites of software packages in the HyperSpy ecosystem. (`#3530 <https://github.com/hyperspy/hyperspy/issues/3530>`_)
+- Scikit-image is now an optional dependency. (`#3553 <https://github.com/hyperspy/hyperspy/issues/3553>`_)
+- Specify ``dtype`` and ``meta`` as parameters of :func:`dask.array.map_blocks` in the covariance calculation used in linear fitting. (`#3554 <https://github.com/hyperspy/hyperspy/issues/3554>`_)
+- Push versioned documentation automatically. (`#3556 <https://github.com/hyperspy/hyperspy/issues/3556>`_)
+- Drop python 3.9 and add explicit support for python 3.14. (`#3573 <https://github.com/hyperspy/hyperspy/issues/3573>`_)
+- Migrate from deprecated ``scipy.odr`` to ``odrpack`` in the implementation of weighted orthogonal distance regression (ODR) fitting, which now needs the optional dependency `odrpack <https://pypi.org/project/odrpack/>`_. (`#3574 <https://github.com/hyperspy/hyperspy/issues/3574>`_)
+- Fix readthedocs documentation build on tag. (`#3575 <https://github.com/hyperspy/hyperspy/issues/3575>`_)
+
+
+2.3.0 (2025-03-02)
+==================
+
+New features
+------------
+
+- Add :meth:`~.api.signals.BaseSignal.remove_spikes` method to remove spikes on :class:`~.api.signals.Signal1D` and :class:`~.api.signals.Signal2D` using local median. (`#3436 <https://github.com/hyperspy/hyperspy/issues/3436>`_)
+- Add :meth:`~.api.signals.Signal1D.remove_baseline` to remove baseline using `pybaselines <https://pybaselines.readthedocs.io>`_; see the :ref:`baseline removal <signal1D.remove_baseline>` section in the user guide. (`#3441 <https://github.com/hyperspy/hyperspy/issues/3441>`_)
+
+
+Enhancements
+------------
+
+- Fix and improve :meth:`~.model.BaseModel.as_signal`:
+
+  -  Fix lazy support which stops working from dask version 2024.12.0.
+  -  Add vectorised implementation using ``function_nd`` method of Components. For components not implementing ``function_nd`` (for example, in HyperSpy extensions, old or custom components), the old slow implementation is used. All :class:`~.api.model.components1D.Expression` based-components have the ``function_nd`` created automatically. (`#3476 <https://github.com/hyperspy/hyperspy/issues/3476>`_)
+- Improve setting chunking:
+
+  - add automatic chunking in :meth:`~.api.signals.BaseSignal.map` for non-lazy signal to optimize chunking for multiple core processing,
+  - :meth:`~.api.signals.BaseSignal.as_lazy` can now take the ``chunks`` argument,
+  - improve documentation of the ``rechunk`` argument. (`#3489 <https://github.com/hyperspy/hyperspy/issues/3489>`_)
+
+
+Bug Fixes
+---------
+
+- Fix plotting single spectra in :func:`~.api.plot.plot_spectra` with ``style="mosaic"``. (`#3483 <https://github.com/hyperspy/hyperspy/issues/3483>`_)
+
+
+Improved Documentation
+----------------------
+
+- Document implementation of model convolution for subclassing :class:`~hyperspy.models.model1d.Model1D` in the :ref:`extension guide <extension_components_label>`. (`#3494 <https://github.com/hyperspy/hyperspy/issues/3494>`_)
+
+
+Maintenance
+-----------
+
+- Add support for python 3.13. (`#3468 <https://github.com/hyperspy/hyperspy/issues/3468>`_)
+- Clean up dependencies, which are now used in eXSpy_ and RosettaSciIO_. (`#3482 <https://github.com/hyperspy/hyperspy/issues/3482>`_)
+
 
 2.2.0 (2024-11-08)
 ==================
@@ -211,11 +330,11 @@ Release Highlights
 ------------------
 - Hyperspy has split off some of the file reading/writing and domain specific functionalities into separate libraries!
   
-  - `RosettaSciIO <https://hyperspy.org/rosettasciio>`_: A library for reading and writing scientific data files.
+  - RosettaSciIO_: A library for reading and writing scientific data files.
     See `RosettaSciIO release notes <https://hyperspy.org/rosettasciio/changes.html>`_ for new features and supported formats.
-  - `exSpy <https://exspy.readthedocs.io>`_: A library for EELS and EDS analysis.
-    See `exSpy release notes <https://hyperspy.org/exspy/changes.html>`_ for new features.
-  - `holoSpy <https://holospy.readthedocs.io>`_: A library for analysis of (off-axis) electron holography data.
+  - eXSpy_: A library for EELS and EDS analysis.
+    See `eXSpy release notes <https://hyperspy.org/exspy/changes.html>`_ for new features.
+  - holoSpy_: A library for analysis of (off-axis) electron holography data.
     See `holoSpy release notes <https://holospy.readthedocs.io/en/latest/changes.html>`_ for new features.
 
 - The :py:mod:`~.api.plot.markers` API has been refactored
@@ -242,7 +361,7 @@ Release Highlights
 New features
 ------------
 
-- :py:meth:`~._signals.lazy.LazySignal.compute` will now pass keyword arguments to the dask :meth:`dask.array.Array.compute` method. This enables setting the scheduler and the number of computational workers. (`#2971 <https://github.com/hyperspy/hyperspy/issues/2971>`_)
+- :py:meth:`~.api.signals.LazySignal.compute` will now pass keyword arguments to the dask :meth:`dask.array.Array.compute` method. This enables setting the scheduler and the number of computational workers. (`#2971 <https://github.com/hyperspy/hyperspy/issues/2971>`_)
 - Changes to :meth:`~.api.signals.BaseSignal.plot`:
   
   - Added horizontal figure layout choice when using the ``ipympl`` backend. The default layour can be set in the plot section of the preferences GUI. (`#3140 <https://github.com/hyperspy/hyperspy/issues/3140>`_)
@@ -453,7 +572,7 @@ Machine Learning
      * - variables
        - signal
 - For lazy signals, a possible value of the ``algorithm`` keyword argument of the
-  :py:meth:`~._signals.lazy.LazySignal.decomposition` method has been changed
+  :py:meth:`~.api.signals.LazySignal.decomposition` method has been changed
   from ``"ONMF"`` to ``"ORNMF"``.
 - Setting the ``metadata`` and ``original_metadata`` attribute of signals is removed, use
   the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
@@ -544,7 +663,7 @@ Signal
 
 - The ``integrate_in_range`` method has been removed, use :py:class:`~.roi.SpanROI`
   followed by :py:meth:`~.api.signals.BaseSignal.integrate1D` instead.
-- The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.LazySignal.compute` method
+- The ``progressbar`` keyword argument of the :py:meth:`~.api.signals.LazySignal.compute` method
   has been removed, use ``show_progressbar`` instead.
 - The deprecated ``comp_label`` argument of the methods :py:meth:`~.api.signals.BaseSignal.plot_decomposition_loadings`,
   :py:meth:`~.api.signals.BaseSignal.plot_decomposition_factors`, :py:meth:`~.api.signals.BaseSignal.plot_bss_loadings`,
@@ -576,7 +695,7 @@ Maintenance
 - Drop support for python 3.7, update oldest supported dependencies and simplify code accordingly (`#3144 <https://github.com/hyperspy/hyperspy/issues/3144>`_)
 - IPython and IParallel are now optional dependencies (`#3145 <https://github.com/hyperspy/hyperspy/issues/3145>`_)
 - Fix Numpy 1.25 deprecation: implicit array to scalar conversion in :py:meth:`~.signals.Signal2D.align2D` (`#3189 <https://github.com/hyperspy/hyperspy/issues/3189>`_)
-- Replace deprecated :mod:`scipy.misc` by :mod:`scipy.datasets` in documentation (`#3225 <https://github.com/hyperspy/hyperspy/issues/3225>`_)
+- Replace deprecated ``scipy.misc`` by :mod:`scipy.datasets` in documentation (`#3225 <https://github.com/hyperspy/hyperspy/issues/3225>`_)
 - Fix documentation version switcher (`#3228 <https://github.com/hyperspy/hyperspy/issues/3228>`_)
 - Replace deprecated :py:class:`scipy.interpolate.interp1d` with :py:func:`scipy.interpolate.make_interp_spline` (`#3233 <https://github.com/hyperspy/hyperspy/issues/3233>`_)
 - Add support for python 3.12 (`#3256 <https://github.com/hyperspy/hyperspy/issues/3256>`_)
@@ -778,7 +897,7 @@ New features
 - Support for reading :external+rsciio:ref:`DENSsolutions Impulse data<dens-format>` (`#2828 <https://github.com/hyperspy/hyperspy/issues/2828>`_)
 - Add lazy loading for :external+rsciio:ref:`JEOL EDS data<jeol-format>` (`#2846 <https://github.com/hyperspy/hyperspy/issues/2846>`_)
 - Add :ref:`html representation<lazy._repr_html_>` for lazy signals and the
-  :py:meth:`~._signals.lazy.LazySignal.get_chunk_size` method to get the chunk size
+  :py:meth:`~.api.signals.LazySignal.get_chunk_size` method to get the chunk size
   of given axes (`#2855 <https://github.com/hyperspy/hyperspy/issues/2855>`_)
 - Add support for Hamamatsu HPD-TA Streak Camera tiff files,
   with axes and metadata parsing. (`#2908 <https://github.com/hyperspy/hyperspy/issues/2908>`_)
@@ -998,7 +1117,7 @@ Enhancements
 * Improve error message when file not found (`#2597 <https://github.com/hyperspy/hyperspy/pull/2597>`_)
 * Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
 * Improve plotting navigator of lazy signals, add ``navigator`` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
-* Use ``'dask_auto'`` when rechunk=True in :py:meth:`~._signals.lazy.LazySignal.change_dtype` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
+* Use ``'dask_auto'`` when rechunk=True in :py:meth:`~.api.signals.BaseSignal.change_dtype` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
 * Use dask chunking when saving lazy signal instead of rechunking and leave the user to decide what is the suitable chunking (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
 * Added lazy reading support for FFT and DPC datasets in FEI emd datasets (`#2651 <https://github.com/hyperspy/hyperspy/pull/2651>`_).
 * Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
@@ -1178,17 +1297,17 @@ API changes
 
 * The ``comp_label`` keyword of the machine learning plotting functions
   has been renamed to ``title``.
-* The :py:class:`~hyperspy.learn.rpca.orpca` constructor's ``learning_rate``
+* The :py:class:`~hyperspy.learn.orpca` constructor's ``learning_rate``
   keyword has been renamed to ``subspace_learning_rate``
-* The :py:class:`~hyperspy.learn.rpca.orpca` constructor's ``momentum``
+* The :py:class:`~hyperspy.learn.orpca` constructor's ``momentum``
   keyword has been renamed to ``subspace_momentum``
-* The :py:class:`~hyperspy.learn.svd_pca.svd_pca` constructor's ``centre`` keyword
+* The :py:class:`~hyperspy.learn.svd_pca` constructor's ``centre`` keyword
   values have been renamed as follows:
 
   * ``"trials"`` -> ``"navigation"``
   * ``"variables"`` -> ``"signal"``
 * The ``bounds`` keyword argument of the
-  :py:meth:`~._signals.lazy.LazySignal.decomposition` is deprecated and will be removed.
+  :py:meth:`~.api.signals.LazySignal.decomposition` is deprecated and will be removed.
 * Several syntax changes in the :py:meth:`~.api.signals.BaseSignal.decomposition` method:
 
   * Several ``algorithm`` keyword values have been renamed as follows:
