@@ -3059,12 +3059,20 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 # 0d signal without navigation axis: don't make a figure
                 # and instead, we display the value
                 return
-            self._plot = drawing.mpl_he.MPL_HyperExplorer()
+            from hyperspy.drawing.backends.mpl.mpl_he import MPL_HyperExplorer
+
+            self._plot = MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = drawing.mpl_hse.MPL_HyperSignal1D_Explorer()
+            from hyperspy.drawing.backends.mpl.mpl_hse import (
+                MPL_HyperSignal1D_Explorer,
+            )
+
+            self._plot = MPL_HyperSignal1D_Explorer()
         elif axes_manager.signal_dimension == 2:
-            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
+            from hyperspy.drawing.backends.mpl.mpl_hie import MPL_HyperImage_Explorer
+
+            self._plot = MPL_HyperImage_Explorer()
         else:
             raise ValueError(
                 "Plotting is not supported for this view. "
