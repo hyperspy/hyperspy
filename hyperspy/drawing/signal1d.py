@@ -26,6 +26,7 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from hyperspy.drawing import utils
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.events import Event, Events
 from hyperspy.misc.test_utils import ignore_warning
@@ -62,10 +63,7 @@ class Signal1DFigure(BlittedFigure):
         }
 
     def create_axis(self):
-        self.ax = self.figure.add_subplot(111)
-        animated = self.figure.canvas.supports_blit
-        self.ax.yaxis.set_animated(animated)
-        self.ax.xaxis.set_animated(animated)
+        self.ax = get_backend().create_axes(self.figure)
         self.ax.hspy_fig = self
 
     def create_right_axis(self, color="black", adjust_layout=True):
@@ -85,16 +83,8 @@ class Signal1DFigure(BlittedFigure):
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
-            self.right_ax = self.ax.twinx()
+            self.right_ax = get_backend().add_right_axis(self.ax, color=color)
             self.right_ax.hspy_fig = self
-            self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
-            self.right_ax.tick_params(axis="y", labelcolor=color)
-            # Needs to set the zorder of the ax to get the mouse event for ax
-            # See https://github.com/matplotlib/matplotlib/issues/10009
-            self.ax.set_zorder(self.right_ax.get_zorder() + 1)
-            self.ax.patch.set_visible(False)
-        if adjust_layout:
-            plt.tight_layout()
 
     def close_right_axis(self, adjust_layout=True):
         """
@@ -113,7 +103,7 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is not None:
             for lines in self.right_ax_lines:
                 lines.close()
-            self.right_ax.remove()
+            get_backend().remove_right_axis(self.ax, self.right_ax)
             self.right_ax = None
             # Invalidate the blit background then force a full redraw
             # so the canvas repaints without the removed axis.
@@ -173,9 +163,10 @@ class Signal1DFigure(BlittedFigure):
                 self._color_cycles[line.type].color_cycle.remove(rgba_color)
 
     def plot(self, data_function_kwargs={}, **kwargs):
-        self.ax.set_xlabel(self.xlabel)
-        self.ax.set_ylabel(self.ylabel)
-        self.ax.set_title(self.title)
+        backend = get_backend()
+        backend.set_xlabel(self.ax, self.xlabel)
+        backend.set_ylabel(self.ax, self.ylabel)
+        backend.set_title(self.ax, self.title)
         x_axis_upper_lims = []
         x_axis_lower_lims = []
 
@@ -188,22 +179,18 @@ class Signal1DFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.plot(render_figure=False)
 
-        plt.xlim(
-            min(x_axis_lower_lims, default=None), max(x_axis_upper_lims, default=None)
-        )
+        if x_axis_lower_lims:
+            backend.set_xlim(
+                self.ax,
+                min(x_axis_lower_lims),
+                max(x_axis_upper_lims),
+            )
 
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
             lambda: self.axes_manager.events.indices_changed.disconnect(self.update), []
         )
 
-        if hasattr(self.figure, "tight_layout"):
-            try:
-                self.figure.tight_layout()
-            except BaseException:
-                # tight_layout is a bit brittle, we do this just in case it
-                # complains
-                pass
         self.render_figure()
 
     def _on_close(self):
@@ -230,7 +217,7 @@ class Signal1DFigure(BlittedFigure):
                 line._auto_update_line(render_figure=False, update_ylimits=False)
                 y_min = np.nanmin([y_min, line._y_min])
                 y_max = np.nanmax([y_max, line._y_max])
-            ax.set_ylim(y_min, y_max)
+            get_backend().set_ylim(ax, y_min, y_max)
 
         for marker in self.ax_markers:
             marker.update()
@@ -333,8 +320,8 @@ class Signal1DLine(object):
             else:
                 self._line_properties[key] = item
         if self.line is not None:
-            plt.setp(self.line, **self.line_properties)
-            self.ax.figure.canvas.draw_idle()
+            get_backend().set_line_props(self.line, **self.line_properties)
+            get_backend().draw_idle(self.ax.figure)
 
     def set_line_properties(self, **kwargs):
         self.line_properties = kwargs
@@ -395,8 +382,8 @@ class Signal1DLine(object):
             self.set_line_properties(markeredgecolor=None)
 
         if self.line is not None:
-            plt.setp(self.line, **self.line_properties)
-            self.ax.figure.canvas.draw_idle()
+            get_backend().set_line_props(self.line, **self.line_properties)
+            get_backend().draw_idle(self.ax.figure)
 
     def plot(self, data=1, **kwargs):
         for key, value in kwargs.items():
@@ -404,47 +391,43 @@ class Signal1DLine(object):
                 setattr(self, key, value)
 
         data = self._get_data()
+        backend = get_backend()
         if self.line is not None:
-            self.line.remove()
+            backend.remove_line(self.ax, self.line)
 
         norm = self.norm
-        if norm == "log":
-            plot = self.ax.semilogy
-        elif isinstance(norm, mpl.colors.Normalize) or (
+        if isinstance(norm, mpl.colors.Normalize) or (
             inspect.isclass(norm) and issubclass(norm, mpl.colors.Normalize)
         ):
             raise ValueError(
                 "Matplotlib Normalize instance or subclass can "
                 "be used for Signal2D only."
             )
-        elif norm not in ["auto", "linear"]:
+        elif norm not in ["auto", "linear", "log"]:
             raise ValueError(
                 "`norm` paramater should be 'auto', 'linear' or 'log' for Signal1D."
             )
-        else:
-            plot = self.ax.plot
+
+        props = dict(self.line_properties)
+        props["norm"] = norm
         # If axis is a DataAxis instance, take the axis attribute
         axis = getattr(self.axis, "axis", self.axis)
-        (self.line,) = plot(
-            axis,
-            data,
-            **self.line_properties,
-            animated=self.ax.figure.canvas.supports_blit,
-        )
+        self.line = backend.plot_line(self.ax, axis, data, **props)
+
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
             if self.text is not None:
-                self.text.remove()
-            self.text = self.ax.text(
+                backend.remove_text(self.ax, self.text)
+            self.text = backend.add_text(
+                self.ax,
                 *self.text_position,
                 s=str(self.axes_manager.indices),
-                transform=self.ax.transAxes,
+                transform="axes",
                 fontsize=12,
-                color=self.line.get_color(),
-                animated=self.ax.figure.canvas.supports_blit,
+                color=backend.line_get_color(self.line),
             )
-        self._y_min, self._y_max = self.ax.get_ylim()
+        self._y_min, self._y_max = backend.get_ylim(self.ax)
         self.ax.hspy_fig.render_figure()
 
     def _get_data(self, real_part=False):
@@ -491,16 +474,15 @@ class Signal1DLine(object):
         if force_replot is True:
             self.close()
             self.plot(data_function_kwargs=self.data_function_kwargs, norm=self.norm)
+            return
 
-        self._y_min, self._y_max = self.ax.get_ylim()
+        backend = get_backend()
+        self._y_min, self._y_max = backend.get_ylim(self.ax)
         ydata = self._get_data()
 
         # If axis is a DataAxis instance, take the axis attribute
         axis = getattr(self.axis, "axis", self.axis)
-        if not np.array_equiv(self.line.get_xdata(), axis):
-            self.line.set_data(axis, ydata)
-        else:
-            self.line.set_ydata(ydata)
+        backend.update_line(self.line, axis, ydata)
 
         # Don't change xlim if axis has 0 length (unnecessary)
         if "x" in self.autoscale and len(axis) > 0:
@@ -508,14 +490,14 @@ class Signal1DLine(object):
             if x_min == x_max:
                 # To avoid matplotlib UserWarning when calling `set_ylim`
                 x_min, x_max = (x_min - 0.1, x_min + 0.1)
-            self.ax.set_xlim(x_min, x_max)
+            backend.set_xlim(self.ax, x_min, x_max)
 
         # Don't change ymin if data has 0 length (unnecessary)
         if "v" in self.autoscale and len(ydata) > 0:
-            self.ax.relim()
             # Based on the current zoom of the x axis, find the corresponding
             # y range of data and calculate the y_min, y_max accordingly
-            i1, i2 = np.searchsorted(axis, self.ax.get_xbound())
+            x_lo, x_hi = backend.get_xbound(self.ax)
+            i1, i2 = np.searchsorted(axis, (x_lo, x_hi))
             # Make interval wider on both side and clip to allowed range
             i1, i2 = np.clip((i1 - 1, i2 + 1), 0, len(ydata - 1))
             ydata = ydata[i1:i2]
@@ -547,27 +529,28 @@ class Signal1DLine(object):
                 # Most of the time, we don't want to call `set_ylim` now to
                 # avoid flickering of the figure. However, we use the values
                 # `self._y_min` and `self._y_max` in `Signal1DFigure.update`
-                self.ax.set_ylim(self._y_min, self._y_max)
+                backend.set_ylim(self.ax, self._y_min, self._y_max)
 
         if self.plot_indices is True:
-            self.text.set_text(self.axes_manager.indices)
+            backend.update_text(self.text, str(self.axes_manager.indices))
 
         if render_figure:
             self.ax.hspy_fig.render_figure()
 
     def close(self):
         _logger.debug("Closing `Signal1DLine`.")
-        if self.line in self.ax.lines:
-            self.line.remove()
-        if self.text and self.text in self.ax.texts:
-            self.text.remove()
+        backend = get_backend()
+        if self.line is not None:
+            backend.remove_line(self.ax, self.line)
+        if self.text is not None:
+            backend.remove_text(self.ax, self.text)
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         try:
-            self.ax.figure.canvas.draw_idle()
+            backend.draw_idle(self.ax.figure)
         except BaseException:
             pass
         _logger.debug("`Signal1DLine` closed.")
