@@ -43,15 +43,14 @@ class MplBackend:
 
     def disconnect_event(self, fig_or_ax, cid):
         try:
-            canvas = getattr(fig_or_ax, "canvas", fig_or_ax.figure.canvas)
-            canvas.mpl_disconnect(cid)
+            self._canvas(fig_or_ax).mpl_disconnect(cid)
         except Exception:
             pass
 
     # ── Axes setup ───────────────────────────────────────────────────────
 
     def create_axes(self, fig, **kwargs):
-        ax = fig.add_subplot(111)
+        ax = fig.add_subplot(111, **kwargs)
         animated = fig.canvas.supports_blit
         ax.yaxis.set_animated(animated)
         ax.xaxis.set_animated(animated)
@@ -93,7 +92,10 @@ class MplBackend:
         return right_ax
 
     def remove_right_axis(self, ax, right_ax):
-        right_ax.remove()
+        try:
+            right_ax.remove()
+        except Exception:
+            pass
 
     # ── 1-D line plotting ─────────────────────────────────────────────────
 
@@ -179,8 +181,7 @@ class MplBackend:
         handle.set_extent(extent)
 
     def image_set_clim(self, handle, vmin, vmax):
-        handle.norm.vmin = vmin
-        handle.norm.vmax = vmax
+        handle.set_clim(vmin, vmax)
 
     def image_set_norm(self, handle, norm):
         handle.set_norm(norm)
