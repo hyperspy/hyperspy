@@ -64,6 +64,26 @@ class HyperExplorer:
             arguments=["obj"],
         )
 
+    def plot(self, **kwargs):
+        for key in ["power_spectrum", "fft_shift"]:
+            if key in kwargs:
+                self.signal_data_function_kwargs[key] = kwargs.pop(key)
+        plot_style = kwargs.pop("plot_style", None)
+        self._display(plot_style=plot_style, **kwargs)
+
+    def _display(self, plot_style=None, **kwargs):
+        """Set up pointer, call plot_navigator then plot_signal."""
+        if self.pointer is None:
+            pointer_cls = self.assign_pointer()
+            if pointer_cls is not None:
+                self.pointer = pointer_cls(self.axes_manager)
+                self.pointer.is_pointer = True
+                self.pointer.color = "red"
+                self.pointer.connect_navigate()
+                self.events.closed.connect(self.pointer.disconnect, [])
+            self.plot_navigator(**kwargs.pop("navigator_kwds", {}))
+        self.plot_signal(**kwargs)
+
     def plot_signal(self, **kwargs):
         # This method should be implemented by the subclasses.
         # Doing nothing is good enough for signal_dimension==0 though.

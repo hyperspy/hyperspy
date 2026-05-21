@@ -128,72 +128,42 @@ class MPL_HyperExplorer(HyperExplorer):
                 "key_press_event", self.axes_manager.key_navigator
             )
 
-    def plot(self, **kwargs):
-        # Parse the kwargs for plotting complex data
-        for key in ["power_spectrum", "fft_shift"]:
-            if key in kwargs:
-                self.signal_data_function_kwargs[key] = kwargs.pop(key)
-        if not _is_widget_backend() and "plot_style" in kwargs:
-            warnings.warn(
-                "The `plot_style` keyword is only used when the `ipympl` or `widget`"
-                "plotting backends are used."
-            )
-        plot_style = kwargs.pop("plot_style", None)
+    def _display(self, plot_style=None, **kwargs):
+        if not _is_widget_backend():
+            if plot_style is not None:
+                warnings.warn(
+                    "The `plot_style` keyword is only used with the ipympl backend."
+                )
+            super()._display(plot_style=plot_style, **kwargs)
+            return
 
-        # matplotlib plotting backend
-        def plot_sig_and_nav(plot_style):
-            if self.pointer is None:
-                pointer = self.assign_pointer()
-                if pointer is not None:
-                    self.pointer = pointer(self.axes_manager)
-                    self.pointer.is_pointer = True
-                    self.pointer.color = "red"
-                    self.pointer.connect_navigate()
-                self.plot_navigator(**kwargs.pop("navigator_kwds", {}))
-                if pointer is not None:
-                    self.events.closed.connect(self.pointer.disconnect, [])
-            self.plot_signal(**kwargs)
-            if _is_widget_backend() and "fig" not in kwargs:
-                if plot_style not in ["vertical", "horizontal", None]:
-                    raise ValueError(
-                        "plot_style must be one of ['vertical', 'horizontal', None]"
-                    )
-                if plot_style is None:
-                    plot_style = preferences.Plot.widget_plot_style
-                # If widgets do not already exist, we will `display` them at the end
-                from IPython.display import display
-                from ipywidgets.widgets import HBox, VBox
+        def _do_plot():
+            super(MPL_HyperExplorer, self)._display(plot_style=plot_style, **kwargs)
 
-                # lock to use IPython.display.display with kernel subshells
-                # See https://github.com/matplotlib/ipympl/pull/603
-                with _lock:
-                    if self.signal_plot is None and self.navigator_plot is not None:
-                        # in case the signal is navigation only
-                        display(self.navigator_plot.figure.canvas)
-                    elif self.navigator_plot is None:
-                        # in case the signal is signal  only
-                        display(self.signal_plot.figure.canvas)
-                    elif plot_style == "horizontal":
-                        display(
-                            HBox(
-                                [
-                                    self.navigator_plot.figure.canvas,
-                                    self.signal_plot.figure.canvas,
-                                ]
-                            )
-                        )
-                    else:  # plot_style == "vertical":
-                        display(
-                            VBox(
-                                [
-                                    self.navigator_plot.figure.canvas,
-                                    self.signal_plot.figure.canvas,
-                                ]
-                            )
-                        )
+        with matplotlib.pyplot.ioff():
+            _do_plot()
 
-        if _is_widget_backend() and "fig" not in kwargs:
-            with matplotlib.pyplot.ioff():
-                plot_sig_and_nav(plot_style)
-        else:
-            plot_sig_and_nav(plot_style)
+        if "fig" not in kwargs:
+            from IPython.display import display
+            from ipywidgets.widgets import HBox, VBox
+
+            if plot_style not in ["vertical", "horizontal", None]:
+                raise ValueError(
+                    "plot_style must be one of ['vertical', 'horizontal', None]"
+                )
+            if plot_style is None:
+                plot_style = preferences.Plot.widget_plot_style
+
+            # lock to use IPython.display.display with kernel subshells
+            # See https://github.com/matplotlib/ipympl/pull/603
+            with _lock:
+                sp = self.signal_plot
+                np_ = self.navigator_plot
+                if sp is None and np_ is not None:
+                    display(np_.figure.canvas)
+                elif np_ is None:
+                    display(sp.figure.canvas)
+                elif plot_style == "horizontal":
+                    display(HBox([np_.figure.canvas, sp.figure.canvas]))
+                else:
+                    display(VBox([np_.figure.canvas, sp.figure.canvas]))
