@@ -18,12 +18,10 @@
 
 from __future__ import division
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.backend_bases import MouseEvent, PickEvent
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.drawing.utils import on_figure_window_close
+from hyperspy.drawing.backends import get_backend
 from hyperspy.events import Event, Events
 
 
@@ -150,8 +148,9 @@ class WidgetBase(object):
     @color.setter
     def color(self, color):
         self._color = color
+        backend = get_backend()
         for p in self.patch:
-            p.set_color(self._color)
+            backend.set_patch_color(p, color)
 
     @property
     def alpha(self):
@@ -160,8 +159,9 @@ class WidgetBase(object):
     @alpha.setter
     def alpha(self, alpha):
         self._alpha = alpha
+        backend = get_backend()
         for p in self.patch:
-            p.set_alpha(self._alpha)
+            backend.set_patch_alpha(p, alpha)
 
     def _set_patch(self):
         """Create the matplotlib patch(es), and store it in self.patch"""
@@ -171,11 +171,12 @@ class WidgetBase(object):
 
     def _add_patch_to(self, ax):
         """Create and add the matplotlib patches to 'ax'"""
-        self.blit = hasattr(ax, "hspy_fig") and ax.figure.canvas.supports_blit
+        backend = get_backend()
+        self.blit = hasattr(ax, "hspy_fig") and backend.supports_blit(ax.figure)
         self._set_patch()
         for p in self.patch:
-            ax.add_artist(p)
-            p.set_animated(self.blit)
+            backend.add_artist(ax, p)
+            backend.set_patch_animated(p, self.blit)
         if hasattr(super(WidgetBase, self), "_add_patch_to"):
             super(WidgetBase, self)._add_patch_to(ax)
 
@@ -193,7 +194,7 @@ class WidgetBase(object):
         if self.is_on is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            ax.figure.canvas.draw_idle()
+            get_backend().draw_idle(ax.figure)
             self.select()
 
     def select(self):
@@ -203,23 +204,30 @@ class WidgetBase(object):
         """
         if not self.patch or not self.is_on or not self.ax:
             return
+        try:
+            from matplotlib.backend_bases import MouseEvent, PickEvent
 
-        figure = self.ax.figure
-        # Simulate a pick event
-        x, y = self.patch[0].get_transform().transform_point((0, 0))
-        mouseevent = MouseEvent("pick_event", figure.canvas, x, y)
-        if mouseevent.button:
-            try:
-                # Introduced in matplotlib 3.6 and `pick_event` deprecated
-                event = PickEvent("pick_event", figure, mouseevent, self.patch[0])
-                figure.canvas.callbacks.process("pick_event", event)
-            except Exception:  # Deprecated in matplotlib 3.6
-                figure.canvas.pick_event(mouseevent, self.patch[0])
+            figure = self.ax.figure
+            # Simulate a pick event
+            x, y = self.patch[0].get_transform().transform_point((0, 0))
+            mouseevent = MouseEvent("pick_event", figure.canvas, x, y)
+            if mouseevent.button:
+                try:
+                    # Introduced in matplotlib 3.6 and `pick_event` deprecated
+                    event = PickEvent("pick_event", figure, mouseevent, self.patch[0])
+                    figure.canvas.callbacks.process("pick_event", event)
+                except Exception:  # Deprecated in matplotlib 3.6
+                    figure.canvas.pick_event(mouseevent, self.patch[0])
+        except (ImportError, AttributeError):
+            pass
         self.picked = False
 
     def connect(self, ax):
         """Connect to the matplotlib Axes' events."""
-        on_figure_window_close(ax.figure, self.close)
+        if hasattr(getattr(ax, "figure", None), "canvas"):
+            from hyperspy.drawing.utils import on_figure_window_close
+
+            on_figure_window_close(ax.figure, self.close)
         if self._navigating:
             self.connect_navigate()
 
@@ -246,11 +254,10 @@ class WidgetBase(object):
 
     def disconnect(self):
         """Disconnect from all events (both matplotlib and navigation)."""
+        backend = get_backend()
         for cid in self.cids:
-            try:
-                self.ax.figure.canvas.mpl_disconnect(cid)
-            except BaseException:
-                pass
+            backend.disconnect_event(self.ax, cid)
+        self.cids = []
         if self._navigating:
             self.disconnect_navigate()
 
@@ -266,8 +273,8 @@ class WidgetBase(object):
         try:
             if hasattr(self.ax, "hspy_fig"):
                 self.ax.hspy_fig.render_figure()
-            elif self.ax.figure is not None:
-                self.ax.figure.canvas.draw_idle()
+            elif self.ax is not None and self.ax.figure is not None:
+                get_backend().draw_idle(self.ax.figure)
         except AttributeError:
             pass  # When figure is None, typically when closing
 
@@ -452,13 +459,11 @@ class DraggableWidgetBase(WidgetBase):
 
     def connect(self, ax):
         super(DraggableWidgetBase, self).connect(ax)
-        canvas = ax.figure.canvas
-        self.cids.append(canvas.mpl_connect("motion_notify_event", self._onmousemove))
-        self.cids.append(canvas.mpl_connect("pick_event", self.onpick))
-        self.cids.append(
-            canvas.mpl_connect("button_release_event", self.button_release)
-        )
-        canvas.mpl_connect("button_press_event", self._onjumpclick)
+        backend = get_backend()
+        self.cids.append(backend.connect_mouse_move(ax, self._onmousemove))
+        self.cids.append(backend.connect_pick(ax, self.onpick))
+        self.cids.append(backend.connect_mouse_release(ax, self.button_release))
+        self.cids.append(backend.connect_mouse_press(ax, self._onjumpclick))
 
     def _onjumpclick(self, event):
         """This method must be provided by subclasses"""
@@ -718,8 +723,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
     def connect(self, ax):
         super(ResizableDraggableWidgetBase, self).connect(ax)
-        canvas = ax.figure.canvas
-        self.cids.append(canvas.mpl_connect("key_press_event", self.on_key_press))
+        self.cids.append(get_backend().connect_key_press(ax, self.on_key_press))
 
     def onpick(self, event):
         if hasattr(super(ResizableDraggableWidgetBase, self), "onpick"):
@@ -901,10 +905,11 @@ class ResizersMixin:
         works.
         """
         if ax is not None:
+            backend = get_backend()
             if value:
                 for r in self._resizer_handles:
-                    ax.add_artist(r)
-                    r.set_animated(self.blit)
+                    backend.add_artist(ax, r)
+                    backend.set_patch_animated(r, self.blit)
             else:
                 for r in self._resizer_handles:
                     # check that the matplotlib patch is present before removing it
@@ -921,32 +926,46 @@ class ResizersMixin:
         """Gets the size of the resizer handles in axes coordinates. If
         'resize_pixel_size' is None, a size of one pixel will be used.
         """
-        invtrans = self.ax.transData.inverted()
         if self.resize_pixel_size is None:
-            rsize = [ax.scale for ax in self.axes]
-        else:
-            rsize = abs(
-                invtrans.transform(self.resize_pixel_size) - invtrans.transform((0, 0))
-            )
-        return rsize
+            return [ax.scale for ax in self.axes]
+        backend = get_backend()
+        invtrans = backend.get_data_transform_inverse(self.ax)
+        return abs(
+            backend.transform_point(invtrans, self.resize_pixel_size)
+            - backend.transform_point(invtrans, (0, 0))
+        )
 
     def _get_resizer_offset(self):
         """Utility for getting the distance from the boundary box to the
         center of the resize handles.
         """
-        invtrans = self.ax.transData.inverted()
+        backend = get_backend()
+        invtrans = backend.get_data_transform_inverse(self.ax)
         border = self.border_thickness
         # Transform the border thickness into data values
-        dl = abs(invtrans.transform((border, border)) - invtrans.transform((0, 0))) / 2
+        dl = (
+            abs(
+                backend.transform_point(invtrans, (border, border))
+                - backend.transform_point(invtrans, (0, 0))
+            )
+            / 2
+        )
         rsize = self._get_resizer_size()
         return rsize / 2 + dl
 
     def _get_resizer_pos(self):
         """Get the positions of the resizer handles."""
-        invtrans = self.ax.transData.inverted()
+        backend = get_backend()
+        invtrans = backend.get_data_transform_inverse(self.ax)
         border = self.border_thickness
         # Transform the border thickness into data values
-        dl = abs(invtrans.transform((border, border)) - invtrans.transform((0, 0))) / 2
+        dl = (
+            abs(
+                backend.transform_point(invtrans, (border, border))
+                - backend.transform_point(invtrans, (0, 0))
+            )
+            / 2
+        )
         rsize = self._get_resizer_size()
         xs, ys = self._size
 
@@ -975,7 +994,7 @@ class ResizersMixin:
         rsize = self._get_resizer_size()
         pos = self._get_resizer_pos()
         for i in range(len(pos)):
-            r = plt.Rectangle(
+            r = get_backend().create_rect_patch(
                 pos[i],
                 rsize[0],
                 rsize[1],
@@ -1013,7 +1032,7 @@ class ResizersMixin:
         elif self.picked:
             if self.resizers and not self._resizers_on:
                 self._set_resizers(True, self.ax)
-                self.ax.figure.canvas.draw_idle()
+                get_backend().draw_idle(self.ax.figure)
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
             self.pick_offset = (x - self._pos[0], y - self._pos[1])
