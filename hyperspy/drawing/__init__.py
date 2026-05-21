@@ -18,6 +18,12 @@
 
 import importlib
 
+# Register the default matplotlib backend
+from hyperspy.drawing.backends import register_backend as _register_backend
+from hyperspy.drawing.backends.mpl import MplBackend as _MplBackend
+
+_register_backend(_MplBackend())
+
 __all__ = [
     "mpl_he",
     "mpl_hie",
