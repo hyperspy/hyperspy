@@ -27,7 +27,7 @@ _register_backend(_MplBackend())
 
 
 def _on_backend_pref_change(change=None):
-    name = _pref.Plot.backend
+    name = change.new if change is not None else _pref.Plot.backend
     if name == "anyplotlib":
         try:
             from hyperspy.drawing.backends.anyplotlib import AnyplotlibBackend
@@ -51,7 +51,7 @@ try:
         from hyperspy.drawing.backends._magic import _register_anyplotlib_magic
 
         _register_anyplotlib_magic(_ip)
-except Exception:
+except ImportError:
     pass
 
 __all__ = [
