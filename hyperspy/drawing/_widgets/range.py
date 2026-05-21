@@ -123,10 +123,14 @@ class RangeWidget(ResizableDraggableWidgetBase):
 
     def _add_patch_to(self, ax):
         self.ax = ax
+        if not hasattr(ax, "get_xlim"):
+            return  # non-matplotlib backend; SpanSelector requires matplotlib axes
+        from hyperspy.drawing.backends import get_backend
+
         self._SpanSelector_kwargs.update(
             props={"alpha": self.alpha, "color": self.color},
             handle_props={"alpha": min(1.0, self.alpha * 2), "color": self.color},
-            useblit=ax.figure.canvas.supports_blit,
+            useblit=get_backend().supports_blit(getattr(ax, "figure", None)),
         )
         self.span = SpanSelector(ax, **self._SpanSelector_kwargs)
         self.span.connect_event("motion_notify_event", self._span_changed)

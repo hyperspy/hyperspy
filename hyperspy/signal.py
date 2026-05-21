@@ -3041,8 +3041,22 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 navigator = "slider"
 
         from hyperspy.defaults_parser import preferences
+        from hyperspy.drawing.backends import get_backend
+
+        _backend = get_backend()
 
         if (
+            "fig" not in kwargs.keys()
+            and axes_manager.navigation_dimension > 0
+            and axes_manager.signal_dimension in [1, 2]
+            and navigator not in (None, "slider")
+            and hasattr(_backend, "create_combined_figure_panels")
+        ):
+            # anyplotlib combined layout: signal + navigator share one Figure widget
+            nav_proxy, signal_proxy = _backend.create_combined_figure_panels()
+            kwargs["fig"] = signal_proxy
+            kwargs.setdefault("navigator_kwds", {})["fig"] = nav_proxy
+        elif (
             "fig" not in kwargs.keys()
             and preferences.Plot.use_subfigure
             and axes_manager.navigation_dimension > 0
@@ -3234,6 +3248,14 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 )
 
         self._plot.plot(**kwargs)
+
+        # Anyplotlib combined figure: ensure it's displayed even when the
+        # navigator was skipped (slider / None), which would leave the panel
+        # countdown stranded at 1.
+        _apl_fig = kwargs.get("fig")
+        if _apl_fig is not None and hasattr(_backend, "ensure_displayed"):
+            _backend.ensure_displayed(_apl_fig)
+
         self.events.data_changed.connect(self.update_plot, [])
 
         # Disconnect event when closing signal

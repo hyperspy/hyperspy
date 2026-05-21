@@ -73,7 +73,9 @@ class MPL_HyperSignal1D_Explorer(HyperSignal1D_Explorer, MPL_HyperExplorer):
 
     def _connect_key_handler(self, figure, fn):
         if figure.figure is not None:
-            figure.figure.canvas.mpl_connect("key_press_event", fn)
+            canvas = getattr(figure.figure, "canvas", None)
+            if canvas is not None:
+                canvas.mpl_connect("key_press_event", fn)
 
     def _add_right_line(self, **kwargs):
         rl = signal1d.Signal1DLine()

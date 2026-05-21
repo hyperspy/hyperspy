@@ -744,7 +744,9 @@ class Markers:
                 + "`s._plot.navigator_plot.add_marker(m)`"
             )
         self._initialize_collection()
-        self._collection.set_animated(self.ax.figure.canvas.supports_blit)
+        self._collection.set_animated(
+            get_backend().supports_blit(getattr(self.ax, "figure", None))
+        )
         get_backend().add_collection(self.ax, self._collection)
         if render_figure:
             self._render_figure()

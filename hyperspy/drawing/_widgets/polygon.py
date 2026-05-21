@@ -87,7 +87,9 @@ class PolygonWidget(WidgetBase):
                     self._widget = None
                 self.ax = None
             if render_figure:
-                existing_ax.figure.canvas.draw_idle()
+                from hyperspy.drawing.backends import get_backend
+
+                get_backend().draw_idle(getattr(existing_ax, "figure", None))
         self._is_on = value
 
     def set_mpl_ax(self, ax):
@@ -110,7 +112,13 @@ class PolygonWidget(WidgetBase):
         handle_props = dict(color=self._color)
         line_props = dict(color=self._color)
 
-        useblit = hasattr(self.ax, "hspy_fig") and self.ax.figure.canvas.supports_blit
+        if not hasattr(ax, "get_xlim"):
+            return  # non-matplotlib backend; PolygonSelector requires matplotlib axes
+        from hyperspy.drawing.backends import get_backend
+
+        useblit = hasattr(self.ax, "hspy_fig") and get_backend().supports_blit(
+            getattr(self.ax, "figure", None)
+        )
 
         self._widget = PolygonSelector(
             ax,
@@ -121,7 +129,7 @@ class PolygonWidget(WidgetBase):
         )
         self._widget.connect_event("motion_notify_event", self._onmove)
 
-        self.ax.figure.canvas.draw_idle()
+        get_backend().draw_idle(getattr(self.ax, "figure", None))
 
     def set_vertices(self, vertices):
         """
@@ -139,7 +147,9 @@ class PolygonWidget(WidgetBase):
                 self._widget.verts = vertices
                 self._finished_building = True
                 self._cached_vertices = vertices.copy()
-            self.ax.figure.canvas.draw_idle()
+            from hyperspy.drawing.backends import get_backend
+
+            get_backend().draw_idle(getattr(self.ax, "figure", None))
 
     def get_vertices(self):
         """

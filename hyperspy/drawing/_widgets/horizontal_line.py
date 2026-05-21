@@ -28,10 +28,31 @@ class HorizontalLineWidget(Widget1DBase):
         if self.is_on and self.patch:
             self.patch[0].set_ydata([self._pos[0]])
             self.draw_patch()
+        native_crosshair = getattr(self, "_native_crosshair", None)
+        if native_crosshair is not None:
+            native_crosshair.set(cy=float(self._pos[0]))
 
     def _add_patch_to(self, ax):
         """Create and add the matplotlib patches to 'ax'"""
-        self.blit = hasattr(ax, "hspy_fig") and ax.figure.canvas.supports_blit
+        from hyperspy.drawing.backends import get_backend
+
+        self.blit = hasattr(ax, "hspy_fig") and get_backend().supports_blit(
+            getattr(ax, "figure", None)
+        )
+        if not hasattr(ax, "axhline"):
+            plot = getattr(ax, "_plot", None)
+            if self.is_pointer and plot is not None and hasattr(plot, "add_widget"):
+                native_w = plot.add_widget(
+                    "crosshair", color=self.color, cx=0.0, cy=float(self._pos[0])
+                )
+                self._native_crosshair = native_w
+                _self = self
+
+                def _on_drag(event):
+                    _self.position = (native_w.cy,)
+
+                native_w.add_event_handler(_on_drag, "pointer_move")
+            return
         self._set_patch()
         for p in self.patch:
             p.set_animated(self.blit)
