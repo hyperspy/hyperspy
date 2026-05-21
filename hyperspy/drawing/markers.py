@@ -23,6 +23,7 @@ import numpy as np
 from matplotlib.patches import Patch
 from matplotlib.transforms import IdentityTransform
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.events import Event, Events
 from hyperspy.misc import _markers, dask_utils, utils
 
@@ -714,7 +715,7 @@ class Markers:
     def _update(self):
         if self._signal:
             kwds = self.get_current_kwargs(only_variable_length=True)
-            self._collection.set(**kwds)
+            get_backend().collection_update(self._collection, **kwds)
 
     def _initialize_collection(self):
         self._collection = self._collection_class(
@@ -744,7 +745,7 @@ class Markers:
             )
         self._initialize_collection()
         self._collection.set_animated(self.ax.figure.canvas.supports_blit)
-        self.ax.add_collection(self._collection)
+        get_backend().add_collection(self.ax, self._collection)
         if render_figure:
             self._render_figure()
 
@@ -767,7 +768,7 @@ class Markers:
         if self._closing:  # pragma: no cover
             return
         self._closing = True
-        self._collection.remove()
+        get_backend().collection_remove(self.ax, self._collection)
         self._collection = None
         # Collection removal leaves the blit background stale —
         # invalidate it so the next _render_figure does a full repaint
