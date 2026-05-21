@@ -120,6 +120,14 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
+    backend = t.Enum(
+        ["matplotlib", "anyplotlib"],
+        label="Plotting backend",
+        desc=(
+            "Active plotting backend.  'matplotlib' is the default. "
+            "'anyplotlib' requires the anyplotlib package and a Jupyter environment."
+        ),
+    )
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy
