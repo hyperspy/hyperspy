@@ -341,15 +341,16 @@ class ImagePlot(BlittedFigure):
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
+            backend = get_backend()
             if self._text is not None:
-                self._text.remove()
-            self._text = self.ax.text(
+                backend.remove_text(self.ax, self._text)
+            self._text = backend.add_text(
+                self.ax,
                 *self._text_position,
                 s=str(self.axes_manager.indices),
-                transform=self.ax.transAxes,
+                transform="axes",
                 fontsize=12,
                 color="red",
-                animated=get_backend().supports_blit(self.figure),
             )
         for marker in self.ax_markers:
             marker.plot()
@@ -358,7 +359,7 @@ class ImagePlot(BlittedFigure):
                 setattr(self, attribute, kwargs.pop(attribute))
         self.update(data_changed=True, auto_contrast=True, **kwargs)
         if self.scalebar is True:
-            if self.pixel_units is not None:
+            if self.pixel_units is not None and hasattr(self.ax, "get_xlim"):
                 self.ax.scalebar = widgets.ScaleBar(
                     ax=self.ax,
                     units=self.pixel_units,
@@ -551,7 +552,7 @@ class ImagePlot(BlittedFigure):
         redraw_colorbar = redraw_colorbar and self.colorbar
 
         if self.plot_indices is True:
-            self._text.set_text(self.axes_manager.indices)
+            backend.update_text(self._text, str(self.axes_manager.indices))
         if self.no_nans:
             data = np.nan_to_num(data)
 

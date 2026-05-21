@@ -19,6 +19,7 @@
 
 import numpy as np
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.misc.math_tools import closest_nice_number
 
 
@@ -132,7 +133,7 @@ class ScaleBar(object):
         )
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
-        self.ax.figure.canvas.draw_idle()
+        get_backend().draw_idle(getattr(self.ax, "figure", None))
 
     def _set_position(self, x, y):
         self.position = x, y
@@ -142,7 +143,7 @@ class ScaleBar(object):
     def set_color(self, c):
         self.line.set_color(c)
         self.text.set_color(c)
-        self.ax.figure.canvas.draw_idle()
+        get_backend().draw_idle(getattr(self.ax, "figure", None))
 
     def set_length(self, length):
         color = self.line.get_color()
@@ -155,4 +156,4 @@ class ScaleBar(object):
     def set_tex_bold(self):
         self.tex_bold = True
         self.text.set_text(self.get_units_string())
-        self.ax.figure.canvas.draw_idle()
+        get_backend().draw_idle(getattr(self.ax, "figure", None))

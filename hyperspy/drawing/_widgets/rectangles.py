@@ -59,6 +59,36 @@ class SquareWidget(Widget2DBase):
         ]
         super(SquareWidget, self)._set_patch()
 
+    def _add_patch_to(self, ax):
+        if not hasattr(ax, "add_patch"):
+            # Non-matplotlib backend: use a native crosshair widget.
+            self.blit = False
+            plot = getattr(ax, "_plot", None)
+            if self.is_pointer and plot is not None and hasattr(plot, "add_widget"):
+                native_w = plot.add_widget(
+                    "crosshair",
+                    color=self.color,
+                    cx=float(self._pos[0]),
+                    cy=float(self._pos[1]),
+                )
+                self._native_crosshair = native_w
+                _self = self
+
+                def _on_drag(event):
+                    _self.position = (native_w.cx, native_w.cy)
+
+                native_w.add_event_handler(_on_drag, "pointer_move")
+            return
+        super()._add_patch_to(ax)
+
+    def _update_patch_position(self):
+        if self.is_on and self.patch:
+            self.patch[0].set_xy(self._get_patch_xy())
+            self.draw_patch()
+        native_crosshair = getattr(self, "_native_crosshair", None)
+        if native_crosshair is not None:
+            native_crosshair.set(cx=float(self._pos[0]), cy=float(self._pos[1]))
+
     def _onjumpclick(self, event):
         if event.key == "shift" and event.inaxes and self.is_pointer:
             self.position = (event.xdata, event.ydata)
@@ -344,6 +374,9 @@ class RectangleWidget(SquareWidget, ResizersMixin):
             self.patch[0].set_xy(self._get_patch_xy())
             self._update_resizers()
             self.draw_patch()
+        native_crosshair = getattr(self, "_native_crosshair", None)
+        if native_crosshair is not None:
+            native_crosshair.set(cx=float(self._pos[0]), cy=float(self._pos[1]))
 
     def _update_patch_geometry(self):
         # Override to include resizer positioning

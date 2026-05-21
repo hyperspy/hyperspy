@@ -125,9 +125,9 @@ class MPL_HyperExplorer(HyperExplorer):
 
     def _connect_key_nav(self, figure):
         if figure.figure is not None and self.axes_manager.navigation_axes:
-            figure.figure.canvas.mpl_connect(
-                "key_press_event", self.axes_manager.key_navigator
-            )
+            canvas = getattr(figure.figure, "canvas", None)
+            if canvas is not None:
+                canvas.mpl_connect("key_press_event", self.axes_manager.key_navigator)
 
     def _display(self, plot_style=None, **kwargs):
         if not _is_widget_backend():
