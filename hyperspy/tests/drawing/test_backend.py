@@ -3,6 +3,18 @@ from hyperspy.drawing.backends._protocol import PlottingBackend
 from hyperspy.drawing.backends.mpl import MplBackend
 
 
+def test_anyplotlib_backend_satisfies_protocol():
+    try:
+        from hyperspy.drawing.backends.anyplotlib import AnyplotlibBackend
+    except ImportError:
+        import pytest
+
+        pytest.skip("anyplotlib not installed")
+    from hyperspy.drawing.backends._protocol import PlottingBackend
+
+    assert isinstance(AnyplotlibBackend(), PlottingBackend)
+
+
 def test_default_backend_satisfies_protocol():
     import hyperspy.drawing  # noqa: F401 triggers default backend registration
 
