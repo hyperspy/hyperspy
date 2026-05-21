@@ -1,4 +1,3 @@
-# hyperspy/drawing/backends/_protocol.py
 from __future__ import annotations
 
 from typing import Any, Callable, Protocol, runtime_checkable

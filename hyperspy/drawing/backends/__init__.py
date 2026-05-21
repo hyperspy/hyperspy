@@ -1,4 +1,3 @@
-# hyperspy/drawing/backends/__init__.py
 from hyperspy.drawing.backends._protocol import PlottingBackend
 
 _active_backend: PlottingBackend | None = None
@@ -15,6 +14,7 @@ def get_backend() -> PlottingBackend:
     if _active_backend is None:
         raise RuntimeError(
             "No plotting backend registered. "
-            "Import hyperspy.drawing to load the default matplotlib backend."
+            "Call register_backend() or import hyperspy.drawing "
+            "after the default backend is configured."
         )
     return _active_backend
