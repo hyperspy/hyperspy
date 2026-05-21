@@ -73,6 +73,7 @@ class HyperExplorer:
 
     def _display(self, plot_style=None, **kwargs):
         """Set up pointer, call plot_navigator then plot_signal."""
+        navigator_kwds = kwargs.pop("navigator_kwds", {})
         if self.pointer is None:
             pointer_cls = self.assign_pointer()
             if pointer_cls is not None:
@@ -81,7 +82,7 @@ class HyperExplorer:
                 self.pointer.color = "red"
                 self.pointer.connect_navigate()
                 self.events.closed.connect(self.pointer.disconnect, [])
-            self.plot_navigator(**kwargs.pop("navigator_kwds", {}))
+            self.plot_navigator(**navigator_kwds)
         self.plot_signal(**kwargs)
 
     def plot_signal(self, **kwargs):
