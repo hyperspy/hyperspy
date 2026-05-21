@@ -20,6 +20,7 @@ import warnings
 from threading import Lock
 
 import matplotlib
+import matplotlib.pyplot as plt
 from traits.api import Undefined
 
 from hyperspy.defaults_parser import preferences
@@ -140,7 +141,7 @@ class MPL_HyperExplorer(HyperExplorer):
         def _do_plot():
             super(MPL_HyperExplorer, self)._display(plot_style=plot_style, **kwargs)
 
-        with matplotlib.pyplot.ioff():
+        with plt.ioff():
             _do_plot()
 
         if "fig" not in kwargs:
