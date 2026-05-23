@@ -140,6 +140,25 @@ is correctly configured.  Do **not** start editing files until these pass:
 - ``pre-commit run --all-files`` — should pass cleanly.  Fix any reported
   issues before proceeding.
 
+- **Disable ``Co-authored-by:`` injection.**  Many AI coding tools add a
+  ``Co-authored-by:`` trailer to commits by default (Claude Code, Cursor,
+  GitHub Copilot, etc.).  HyperSpy **blocks** these with a pre-commit
+  hook — your commits will fail.  Before editing any files, check your
+  tool's settings and disable any feature that automatically injects AI
+  attribution.  HyperSpy uses ``Assisted-by: <tool>:<model>`` instead;
+  add it manually to each commit.
+
+  For common tools:
+  * **Claude Code**: set ``"includeCoAuthoredBy": false`` in settings
+  * **Cursor**: disable commit-message AI attribution in Cursor Settings
+  * **GitHub Copilot**: disable ``github.copilot.chat.commitMessageGeneration``
+  * **OpenCode / oh-my-openagent**: check skill and plugin configs
+    that inject AI co-author trailers
+
+  If unsure, run the pre-commit hook against a test commit message::
+
+      echo "test" | pre-commit run check-ai-co-author --hook-stage commit-msg
+
 Add setup steps to the first todo item of every session — do not skip it.
 
 ## Agent Completion Checklist

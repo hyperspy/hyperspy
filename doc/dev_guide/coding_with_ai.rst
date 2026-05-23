@@ -39,12 +39,15 @@ The contributor is always responsible for the code.  If a tool
 cannot follow HyperSpy's ``AGENTS.md`` conventions, the contributor
 carries the full burden of learning and applying them manually.
 
+If you cannot explain why a change was made, what it does, and how
+it works, do not submit it.
+
 Disclosing AI assistance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When AI tools assist in producing a commit, HyperSpy requires the
 ``Assisted-by:`` git trailer.  This follows the convention adopted by
-the Linux Kernel, LLVM, OpenTelemetry, Fedora, and other major projects.
+the Linux Kernel.
 
 **Format**::
 
@@ -55,6 +58,12 @@ the Linux Kernel, LLVM, OpenTelemetry, Fedora, and other major projects.
     Assisted-by: Claude:claude-sonnet-4-6
     Assisted-by: GitHub Copilot:gpt-4o
     Assisted-by: Cursor:claude-3.7-sonnet
+
+The ``<tool-name>`` is the code-generating tool you are directly
+interacting with — your editor's AI assistant (Claude Code, Cursor,
+GitHub Copilot, OpenCode, etc.).  If you use an orchestration layer
+or wrapper on top of that tool, attribute to the underlying tool,
+not the wrapper.
 
 **Why not Co-authored-by?**
   The ``Co-authored-by:`` trailer signals human co-authorship and is
@@ -202,6 +211,22 @@ When reviewing AI-assisted changes, focus on the substance:
   - Mechanical transformations (rename, move, extract) that are
     covered by existing tests.
   - Repeated patterns already validated in a spot-check.
+
+**Actions maintainers may take on AI-assisted contributions**
+
+  Maintainers have discretion to handle AI-assisted contributions
+  differently from human-only ones.  They may:
+
+  - Ask the contributor to explain the prompts or process used to
+    generate the code, to verify genuine understanding.
+  - Suggest alternative prompts rather than inline code changes,
+    when the issue is with the generation approach rather than the
+    result.
+
+  These are not penalties — they exist to keep review sustainable
+  when code production cost drops to near zero.  A contributor who
+  provides a clear change map, test strategy, and inline comments
+  (as described above) is unlikely to trigger these actions.
 
 **Recognizing review-efficient contributions**
 
