@@ -174,11 +174,13 @@ Instead:
 Agent completion checklist
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The root ``AGENTS.md`` contains a **completion checklist** in its
-``MANUAL`` section.  Every AI-authored contribution should satisfy
-all items on that checklist before being submitted for review.  The
-checklist covers code quality, testing, changelog entries, commit
-discipline, inline comment requirements, and HyperSpy-specific
+The root ``AGENTS.md`` contains an **agent setup** section and a
+**completion checklist** in its ``MANUAL`` section.  Before starting
+work, agents must verify that ``pre-commit`` hooks are installed and
+passing.  Every AI-authored contribution should satisfy all checklist
+items before being submitted for review.  The checklist covers code
+quality, testing, changelog entries, commit discipline, AI attribution
+conventions, inline comment requirements, and HyperSpy-specific
 conventions.
 
 When reviewing AI-authored pull requests, verify that the checklist

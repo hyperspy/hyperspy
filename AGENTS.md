@@ -123,6 +123,20 @@ Use ALL-DIFFERENT array dimensions in new tests so axis transformations are clea
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
 
+## AI Agent Setup
+
+Before implementing any changes, verify that the development environment
+is correctly configured.  Do **not** start editing files until these pass:
+
+- ``pre-commit install`` — activates lint, format, and AI co-author checks
+  on every commit.
+- ``pre-commit run --all-files`` — should pass cleanly.  Fix any reported
+  issues before proceeding.
+
+If ``pre-commit`` is not installed: ``pip install pre-commit``.
+
+Add setup steps to the first todo item of every session — do not skip it.
+
 ## Agent Completion Checklist
 
 Before claiming any task is complete, verify ALL of the following:
