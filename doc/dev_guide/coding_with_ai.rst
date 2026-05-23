@@ -132,8 +132,9 @@ For every PR, include:
   because each axis type had grown into a self-contained concern."
 
 **Test strategy note**
-  What is tested, what is deliberately not tested, and why.
-  For mechanical refactors: "all existing tests pass unchanged."
+  How the change was tested. For mechanical refactors: "all existing
+  tests pass unchanged." For new functionality: what edge cases the
+  tests cover.
 
 **Inline comments at non-obvious design choices**
   The root ``AGENTS.md`` checklist requires this.  A reviewer
