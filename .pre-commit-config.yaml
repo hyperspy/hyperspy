@@ -13,6 +13,14 @@ repos:
     hooks:
       # Check if switcher.json is valid
       - id: check-json
+  - repo: local
+    hooks:
+      - id: check-ai-co-author
+        name: Block Co-authored-by AI trailers
+        entry: scripts/check-ai-co-author.py
+        language: script
+        stages: [commit-msg]
+        always_run: true
 ci:
     # Don't run automatically on PRs, instead add the comment
     # "pre-commit.ci autofix" on a pull request to manually trigger auto-fixing 

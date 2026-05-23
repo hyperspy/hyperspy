@@ -39,6 +39,34 @@ The contributor is always responsible for the code.  If a tool
 cannot follow HyperSpy's ``AGENTS.md`` conventions, the contributor
 carries the full burden of learning and applying them manually.
 
+Disclosing AI assistance
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When AI tools assist in producing a commit, HyperSpy requires the
+``Assisted-by:`` git trailer.  This follows the convention adopted by
+the Linux Kernel, LLVM, OpenTelemetry, Fedora, and other major projects.
+
+**Format**::
+
+    Assisted-by: <tool-name>:<model-version>
+
+**Examples**::
+
+    Assisted-by: Claude:claude-sonnet-4-6
+    Assisted-by: GitHub Copilot:gpt-4o
+    Assisted-by: Cursor:claude-3.7-sonnet
+
+**Why not Co-authored-by?**
+  The ``Co-authored-by:`` trailer signals human co-authorship and is
+  recognised by GitHub's contribution tracking.  Several AI tools add
+  it to commits by default (Claude Code, VS Code with Copilot,
+  Cursor).  HyperSpy **rejects** commits that use ``Co-authored-by:``
+  for AI tools — a pre-commit hook blocks them, and reviewers may ask
+  you to amend.
+
+  If your AI tool adds ``Co-authored-by:`` automatically, strip it
+  before committing.  Use ``Assisted-by:`` instead.
+
 The cost asymmetry
 ^^^^^^^^^^^^^^^^^^
 
