@@ -128,8 +128,12 @@ Use ALL-DIFFERENT array dimensions in new tests so axis transformations are clea
 Before implementing any changes, verify that the development environment
 is correctly configured.  Do **not** start editing files until these pass:
 
+- ``python -c "import hyperspy"`` — confirms the package is installed in
+  editable mode.  If this fails: ``pip install -e ".[dev]"``.
+
 - ``pre-commit install`` — activates lint, format, and AI co-author checks
   on every commit.
+
 - ``pre-commit run --all-files`` — should pass cleanly.  Fix any reported
   issues before proceeding.
 
