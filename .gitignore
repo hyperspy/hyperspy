@@ -54,3 +54,24 @@ jsconfig.json
 # virtual environments
 venv/
 
+# AI coding tools — runtime state and personal files
+.omc/
+.sisyphus/*
+!.sisyphus/rules/
+
+# Claude Code — personal overrides and local state
+# (team-shared rules, commands, skills in .claude/ stay committed)
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/sessions/
+.claude/conversations/
+.claude/checkpoints/
+.claude/skills/.cache/
+.claude/**/*.log
+
+# Aider — personal history and cache
+.aider.chat.history.md
+.aider.tags.cache.v*
+# Uncomment below if .aider.conf.yml is local-only:
+# .aider.conf.yml
+
