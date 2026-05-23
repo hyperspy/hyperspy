@@ -119,7 +119,7 @@ Use ALL-DIFFERENT array dimensions in new tests so axis transformations are clea
 - `matplotlib` — plotting
 - `dask` — lazy/out-of-core computation
 - `pint` — unit-aware axis calibration
-- `rsciio` — file I/O (separate package, accessed via `hyperspy/io_plugins/`)
+- `rsciio` — file I/O (separate package)
 - `scikit-learn` — optional, for additional decomposition algorithms
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
