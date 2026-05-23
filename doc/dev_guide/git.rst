@@ -131,10 +131,15 @@ In a text editor, you can then edit the commit history. If you have commits ``a.
 
 Afterwards, you get a chance to edit the commit messages.
 
-Finally, to push the changes, use a ``+`` in front of the branch name, to override commits you have already pushed to github previously:
+Finally, to push the changes to your fork on GitHub, use a ``+`` in front of the branch name, to override commits you have already pushed previously:
 
 .. code:: bash
 
-  git push origin +lumberjack-branch
+  git push <your-fork-remote> +lumberjack-branch
+
+Replace ``<your-fork-remote>`` with the remote name pointing to your fork
+(commonly ``origin`` if you cloned from your fork, or your GitHub username
+if you added the main repository as ``upstream``).  Never force-push to the
+main HyperSpy repository.
 
 See, for example, `How (and why!) to keep your Git commit history clean <https://about.gitlab.com/blog/2018/06/07/keeping-git-commit-history-clean/>`_ for a more detailed blog post on this subject.

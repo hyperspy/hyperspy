@@ -189,7 +189,7 @@ Before claiming any task is complete, verify ALL of the following:
 ### Commits
 - [ ] Commit following best practices (atomic units, repo-consistent messages, no secrets)
 - [ ] MUST NOT use ``Co-authored-by:`` trailer for AI tools — use ``Assisted-by: <tool>:<model>`` instead
-- [ ] Never push unless explicitly asked
+- [ ] Never push unless explicitly asked — when asked, push to your fork, never to the main repository
 
 ### Repository Hygiene
 - [ ] Never modify AGENTS.md generated sections — only add notes below `<!-- MANUAL -->` lines
