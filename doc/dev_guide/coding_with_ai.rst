@@ -59,11 +59,11 @@ intent from raw code.
 For every PR, include:
 
 **Change map** (for structural changes)
-  A concise overview of what changed, what moved where, and why.
-  This is not a changelog — it is a reviewer-facing map.  For example:
-  "``axes.py`` split into ``data_axis.py``, ``uniform_axis.py``,
-  ``navigation_axes.py`` because each axis type had grown into a
-  self-contained concern."
+  Include in the PR description. A concise overview of what changed,
+  what moved where, and why. This is not a changelog — it is a
+  reviewer-facing map. For example: "``axes.py`` split into
+  ``data_axis.py``, ``uniform_axis.py``, ``navigation_axes.py``
+  because each axis type had grown into a self-contained concern."
 
 **Test strategy note**
   What is tested, what is deliberately not tested, and why.

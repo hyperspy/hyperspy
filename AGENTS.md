@@ -145,6 +145,7 @@ Before claiming any task is complete, verify ALL of the following:
 - [ ] New public API has updated docstring templates in `hyperspy/docstrings/`
 - [ ] Never edit `.rst` files in `doc/_build/` — those are generated
 - [ ] Non-obvious design choices are annotated with inline comments explaining intent
+- [ ] For structural changes (file moves, renames, splits, new modules), provide a change map for the PR description: what changed, what moved where, and why
 
 ### Commits
 - [ ] Commit following best practices (atomic units, repo-consistent messages, no secrets)
