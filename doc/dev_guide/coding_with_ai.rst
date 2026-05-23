@@ -10,6 +10,35 @@ as long as contributors review, understand, and take full responsibility
 for the code they submit. All contributions — regardless of how they
 were authored — must pass the same quality bar.
 
+What counts as AI-assisted development
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+HyperSpy maintains ``AGENTS.md`` files so that AI tools can learn
+and follow project conventions.  Copying code from a generic chatbot
+that has no access to these files produces code that violates
+HyperSpy conventions and places disproportionate burden on reviewers.
+
+**Use project-aware tools**
+  Coding agents and editor assistants that can browse the codebase,
+  read ``AGENTS.md``, respect lint rules, run tests, and apply the
+  completion checklist.  Examples: OpenCode, Claude Code, Cursor
+  with project rules configured.
+
+**Why generic chatbots don't work**
+  A web-based chatbot (ChatGPT, Claude.ai, etc.) cannot see the
+  repository.  It has no knowledge of HyperSpy's axis convention,
+  signal methods, test patterns, or lint rules.  The resulting code
+  will almost always violate project conventions, and the reviewer
+  must catch every violation manually — defeating the purpose of
+  the lightweight review practices described in this guide.
+
+  Reviewers may reject contributions that consistently fail to
+  follow project conventions, regardless of how they were produced.
+
+The contributor is always responsible for the code.  If a tool
+cannot follow HyperSpy's ``AGENTS.md`` conventions, the contributor
+carries the full burden of learning and applying them manually.
+
 The cost asymmetry
 ^^^^^^^^^^^^^^^^^^
 
