@@ -122,3 +122,37 @@ Use ALL-DIFFERENT array dimensions in new tests so axis transformations are clea
 - `scikit-learn` — optional, for additional decomposition algorithms
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
+
+## Agent Completion Checklist
+
+Before claiming any task is complete, verify ALL of the following:
+
+### Code Quality
+- [ ] `ruff check` passes on all changed files — zero new errors
+- [ ] `ruff format` applied — no formatting inconsistencies
+
+### Testing
+- [ ] Affected tests pass: `pytest hyperspy/tests/<affected>/`
+- [ ] New code has corresponding tests that mirror the source structure
+- [ ] Tests use ALL-DIFFERENT array dimensions (e.g., `(12, 25, 48)`) so axis reversals are verifiable
+- [ ] Floating-point comparisons use `pytest.approx()`, not raw `==`
+
+### Changelog
+- [ ] Every user-facing change has an `upcoming_changes/<issue>.<type>.rst` entry
+- [ ] The `<type>` matches one of: `new`, `bugfix`, `doc`, `deprecation`, `enhancements`, `api`, `maintenance`
+
+### Documentation
+- [ ] New public API has updated docstring templates in `hyperspy/docstrings/`
+- [ ] Never edit `.rst` files in `doc/_build/` — those are generated
+
+### Commits
+- [ ] Commit following best practices (atomic units, repo-consistent messages, no secrets)
+- [ ] Never push unless explicitly asked
+
+### Repository Hygiene
+- [ ] Never modify AGENTS.md generated sections — only add notes below `<!-- MANUAL -->` lines
+- [ ] Never suppress type/lint errors with blanket ignores (`# type: ignore`, `# noqa` without justification)
+
+### HyperSpy-Specific
+- [ ] All axis operations respect the NumPy-vs-display order convention (see "Critical Concept" above)
+- [ ] Prefer HyperSpy-native methods over raw NumPy on `.data`
