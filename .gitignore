@@ -59,15 +59,10 @@ venv/
 .sisyphus/*
 !.sisyphus/rules/
 
-# Claude Code — personal overrides and local state
-# (team-shared rules, commands, skills in .claude/ stay committed)
+# Claude Code — all files (conventions live in AGENTS.md)
+.claude/
+CLAUDE.md
 CLAUDE.local.md
-.claude/settings.local.json
-.claude/sessions/
-.claude/conversations/
-.claude/checkpoints/
-.claude/skills/.cache/
-.claude/**/*.log
 
 # Aider — personal history and cache
 .aider.chat.history.md
