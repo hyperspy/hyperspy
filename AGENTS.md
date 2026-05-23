@@ -129,15 +129,16 @@ Before implementing any changes, verify that the development environment
 is correctly configured.  Do **not** start editing files until these pass:
 
 - ``python -c "import hyperspy"`` — confirms the package is installed in
-  editable mode.  If this fails: ``pip install -e ".[dev]"``.
+  editable mode.  If this fails: **stop**.  The current environment may not
+  be set up.  Ask the user whether to proceed with
+  ``pip install -e ".[dev]"`` — do not install into an unknown environment.
 
 - ``pre-commit install`` — activates lint, format, and AI co-author checks
-  on every commit.
+  on every commit.  If ``pre-commit`` is not installed, ask the user
+  whether to install it (``pip install pre-commit``).
 
 - ``pre-commit run --all-files`` — should pass cleanly.  Fix any reported
   issues before proceeding.
-
-If ``pre-commit`` is not installed: ``pip install pre-commit``.
 
 Add setup steps to the first todo item of every session — do not skip it.
 
