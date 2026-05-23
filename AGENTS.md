@@ -1,4 +1,4 @@
-<!-- Generated: 2026-05-19 | Updated: 2026-05-19 -->
+<!-- Generated: 2026-05-19 | Updated: 2026-05-23 -->
 
 # HyperSpy
 
@@ -28,6 +28,7 @@ HyperSpy is a Python library for multi-dimensional data analysis, specialising i
 | `doc/` | Sphinx documentation source (see `doc/AGENTS.md`) |
 | `examples/` | Gallery example scripts (see `examples/AGENTS.md`) |
 | `upcoming_changes/` | Towncrier news fragments for the next release (see `upcoming_changes/AGENTS.md`) |
+| `scripts/` | Development tooling for pre-commit hooks and CI checks (see `scripts/AGENTS.md`) |
 
 ## For AI Agents
 

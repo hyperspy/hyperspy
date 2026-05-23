@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-05-19 | Updated: 2026-05-19 -->
+<!-- Generated: 2026-05-19 | Updated: 2026-05-23 -->
 
 # hyperspy (main package)
 
