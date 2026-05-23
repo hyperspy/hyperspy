@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 
 .. _dev_guide:
 
@@ -13,6 +13,38 @@ scientists who may have a lot to offer in terms of expert knowledge but may
 have little experience when it comes to working on a reasonably large
 open-source project like HyperSpy. This guide is aimed at you -- helping to
 reduce the barrier to make a contribution.
+
+Who this guide is for
+---------------------
+
+Not everyone who wants something in HyperSpy needs to read what follows.
+Opening an `issue <https://github.com/hyperspy/hyperspy/issues>`_ or
+starting a `discussion <https://github.com/hyperspy/hyperspy/discussions>`_
+is already a valuable contribution — it shapes the roadmap, and someone else
+may implement it.  This guide is for contributors who want to build the
+change themselves: to learn, to get it done faster, to make sure it's done
+their way, or simply because they enjoy building things.
+
+AI assistance makes the implement-it-yourself path easier than ever.
+The challenge is that it makes code production nearly free, while review
+remains expensive.  The rest of this guide — and especially the
+:ref:`Coding with AI assistants <coding_with_ai-label>` page — exists to
+make that path **sustainable at community scale** without diluting code
+quality or burning out reviewers.
+
+The HyperSpy community has a long tradition of helping new contributors
+learn through code review and discussion.  That culture extends to
+AI-assisted contributors — we'll help you understand your code, not just
+judge it.  The "Investing in new contributors" section of the AI guide
+explains how.
+
+.. tip::
+
+   **Using AI assistance?** Start with :ref:`Coding with AI assistants
+   <coding_with_ai-label>` — it includes a learning path that connects
+   AI governance with the manual fundamentals you need to supervise your
+   tool effectively.  If you're contributing manually, the sections
+   below cover everything from the ground up.
 
 Getting started
 ---------------

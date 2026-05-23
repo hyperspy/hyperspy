@@ -10,6 +10,70 @@ as long as contributors review, understand, and take full responsibility
 for the code they submit. All contributions — regardless of how they
 were authored — must pass the same quality bar.
 
+Your AI-assisted learning path
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This page covers AI governance: disclosure, project selection, and the
+skill-building progression.  Before editing any files, your AI tool must
+verify the development environment is ready.
+
+**Open AGENTS.md in your AI tool**
+
+  Direct your AI tool to the root
+  `AGENTS.md <https://github.com/hyperspy/hyperspy/blob/main/AGENTS.md>`_
+  with the instruction: *"Read this file, then run the checks in
+  the AI Agent Setup section."*  Your tool will verify the editable
+  install, activate pre-commit hooks, and confirm lint passes — or
+  tell you what's missing and how to fix it.
+
+**Read the rest of this page for AI governance**
+
+  The sections below cover the ``Assisted-by:`` convention, how to
+  choose a good first project, the skill-building progression, and
+  what reviewers will expect from your contributions.
+
+**Learn to verify AI output**
+
+  AI tools make mistakes.  You are responsible for every line you
+  submit, and to catch errors you need to understand the conventions
+  the tool is following.  This is not busywork — it is what makes
+  you effective as an AI supervisor and, eventually, as a reviewer
+  of other AI-assisted PRs.
+
+  - :ref:`Testing <testing-label>` — your AI will generate tests.
+    Learn what makes a test trustworthy: the axis convention, the
+    ``pytest.approx()`` pattern for floating-point comparisons, and
+    why array dimensions should all differ in test fixtures.
+  - The axis convention — documented in the root
+    `AGENTS.md <https://github.com/hyperspy/hyperspy/blob/main/AGENTS.md>`_
+    and the :ref:`User Guide <user_guide>`.  HyperSpy reverses
+    dimensions relative to NumPy; understanding this is essential to
+    verify any code that touches signal data or axes.
+  - :ref:`Coding style <coding_style-label>` — the conventions your
+    AI tool is expected to follow.  Reading this section before your
+    first PR gives you a baseline to judge whether the tool is
+    actually following them.
+  - :ref:`Writing documentation <writing_documentation-label>` —
+    when your PR adds public API or modifies behavior visible to users.
+
+**Deepen as your PRs grow**
+
+  Domain-specific sections of the developer guide exist for good
+  reason.  When your PR touches plotting, lazy signals, extensions,
+  or performance-critical paths, the corresponding guide pages will
+  help you ask your AI tool the right questions and spot the right
+  problems:
+
+  - :ref:`Plotting <plotting-label>`
+  - :doc:`/dev_guide/lazy_computations`
+  - :ref:`Writing extensions <writing_extensions-label>`
+  - :doc:`/dev_guide/speeding_up_code`
+  - :ref:`Lazy imports <lazy_import-label>`
+
+  The full developer guide is there to be read — the more you
+  understand, the more effectively you can direct your AI tool and
+  review contributions from others.
+
 What counts as AI-assisted development
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
