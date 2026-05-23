@@ -89,6 +89,14 @@ contributors (and their AI tools) do the heavy lifting of explanation,
 structuring, and verification, so reviewers only need to validate
 design and test quality — not discover intent from raw code.
 
+Every practice in this guide — small PRs, ``Assisted-by:`` disclosure,
+change maps, reviewer discretion, and the skill-building path below —
+is designed for a single purpose: **long-term sustainability**.  AI
+makes code production nearly free; without these practices, reviewer
+burnout is inevitable as AI-authored contributions multiply.  With
+them, the community can absorb far more contributions while keeping
+review quality high.
+
 Choosing a project
 ^^^^^^^^^^^^^^^^^^
 
@@ -113,6 +121,74 @@ The right project size depends on your familiarity with HyperSpy.
 
 Large changes should include a migration plan from day one:
 deprecation path, backward compatibility, and documentation updates.
+
+Building skills for the long term
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The sustainability of AI-assisted development depends on contributors
+who can direct, verify, and defend AI output — not just produce it.
+Each contributor who reaches that level becomes a potential reviewer
+for other AI-assisted PRs, multiplying the community's capacity.
+
+**Start small — the whole protocol depends on it**
+
+  A new contributor who submits a 2,000-line AI-generated PR breaks
+  the feedback loop.  The reviewer must choose: invest hours teaching
+  (unsustainable) or reject with minimal feedback (the contributor
+  learns nothing).  Neither outcome builds the community.
+
+  A 50-line PR, in contrast, is small enough for the reviewer to
+  explain what the AI got wrong and why.  The contributor internalizes
+  the convention, the next PR is better, and after a few cycles they
+  begin reviewing others' work.  Starting small is not a restriction —
+  it is the mechanism that makes the whole system compound.
+
+**Skill-building progression**
+
+  This is not a prohibition on using AI.  It is a recommended path
+  to reach the point where AI amplifies your work without replacing
+  your understanding:
+
+  +-------------------+------------------------------------+---------------------------------------+
+  | Stage             | What to build                      | AI's role                             |
+  +===================+====================================+=======================================+
+  | **Onboarding**    | One manual PR following every      | Use AI to explain code you don't      |
+  |                   | convention from the checklist.     | understand and to catch mistakes in   |
+  |                   | Learn the axis convention, the     | its own output — not to author your   |
+  |                   | test patterns, and the review      | first submission.                     |
+  |                   | workflow.                          |                                       |
+  +-------------------+------------------------------------+---------------------------------------+
+  | **Building trust**| Small features where you own the   | Generate tests, documentation, and    |
+  |                   | design decisions.  Staged delivery | boilerplate.  You write or tightly    |
+  |                   | in reviewable PRs.                 | direct the core logic.                |
+  +-------------------+------------------------------------+---------------------------------------+
+  | **Trusted**       | Architecture, large features,      | Full AI-assisted workflow.  You       |
+  |                   | cross-cutting changes.             | self-regulate quality and review      |
+  |                   |                                    | other AI-assisted PRs.                |
+  +-------------------+------------------------------------+---------------------------------------+
+
+  The goal is not to avoid AI — it is to reach the point where you
+  can direct it, verify its output, and defend every line you submit.
+  Teaching one contributor to use AI well creates a reviewer, not
+  just a contributor.
+
+**Before leaning on AI for core logic**
+
+  These are not prerequisites for permission.  They are the
+  foundations that make you effective — both as an AI-assisted
+  contributor and as a reviewer when AI-assisted PRs multiply:
+
+  - You have at least one merged PR where you followed the
+    ``AGENTS.md`` checklist manually.
+  - You can explain HyperSpy's navigation/signal axis convention
+    and predict array shapes from signal type.
+  - You know how to run the relevant test suite and interpret a
+    failure.
+  - You have read the completion checklist in the root
+    ``AGENTS.md`` and used it on a manual PR.
+
+  You cannot help another contributor debug AI-generated axis
+  handling if you have not wrestled with it yourself.
 
 What makes a review light
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -213,6 +289,25 @@ When reviewing AI-assisted changes, focus on the substance:
     covered by existing tests.
   - Repeated patterns already validated in a spot-check.
 
+**Investing in new contributors**
+
+  When a new contributor submits AI-assisted code they cannot fully
+  explain, fixing it yourself is faster.  But teaching them why it is
+  wrong — pointing to the specific convention, demonstrating the
+  correct approach — is an investment in sustainability.  That
+  contributor's next PR will be better, and eventually they will teach
+  the next newcomer.  Multiply this across a growing contributor base
+  and the community can absorb far more AI-assisted work without
+  drowning in review.
+
+  Concretely:
+  - Ask "can you walk me through why this works?" instead of
+    rejecting outright.
+  - Point to the convention the code violates rather than rewriting
+    it silently.
+  - If the PR is too large to teach from, ask the contributor to
+    split it into smaller pieces — return to "start small" above.
+
 **Actions maintainers may take on AI-assisted contributions**
 
   Maintainers have discretion to handle AI-assisted contributions
@@ -259,3 +354,12 @@ When reviewing AI-assisted changes, focus on the substance:
 If the contributor has provided a good change map, test strategy
 note, and inline comments, the review cost is proportional to design
 complexity, not change volume.
+
+This is evolving
+^^^^^^^^^^^^^^^^
+
+AI coding tools and best practices are changing fast — we are all
+learning continuously.  HyperSpy's policies will evolve with them.
+If you have ideas for improving these guidelines, whether from your
+own experience, another project's approach, or new research, please
+share them through GitHub discussions, issues, or a pull request.
