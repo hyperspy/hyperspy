@@ -76,28 +76,6 @@ For every PR, include:
 Large AI-assisted changes should be broken into reviewable,
 well-documented pieces.  No code dumps.
 
-Special case: parity and mirroring
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Some changes implement existing behavior for a new context
-(e.g., making an eager-only method work with lazy signals).
-These are ideal for AI assistance because:
-
-- The **behavioral specification already exists** — the original
-  implementation and its tests define correctness.
-- **Tests verify parity directly** — the same test suite
-  exercises both paths (e.g., parameterized over eager/lazy).
-- **Review is proportional to the delta** — the reviewer
-  validates the lazy-specific patterns (dask graph construction,
-  ``.compute()`` placement, avoiding eager side-effects)
-  and spot-checks representative methods.
-
-The contributor must provide:
-
-- Which methods were mirrored.
-- Any deliberate deviations from the original, with rationale.
-- Confirmation that tests exercise both eager and lazy paths.
-
 AGENTS.md files
 ^^^^^^^^^^^^^^^
 
@@ -157,15 +135,41 @@ When reviewing AI-assisted changes, focus on the substance:
 **What to check:**
   - Design rationale — does the approach make sense?
   - Test adequacy — do the tests actually verify the claimed behavior?
-  - Spot-checks at representative decision points — one file per
-    architectural layer is usually enough.
-  - Build and lint — mechanical checks should be automated.
+  - Spot-checks at representative decision points rather than
+    exhaustive line-by-line reading.
 
 **What can be skipped:**
   - Line-by-line correctness when tests provide strong coverage.
   - Mechanical transformations (rename, move, extract) that are
     covered by existing tests.
   - Repeated patterns already validated in a spot-check.
+
+**Recognizing review-efficient contributions**
+
+  Some contributions touch many files but require surprisingly light
+  review because correctness follows from existing structure or
+  behavioral symmetry. These are ideal for AI assistance:
+
+  **Parity implementations**
+    Implementing existing behavior for a new context (e.g., making an
+    eager-only method work with lazy signals, porting a 1D routine to
+    2D). The original implementation and its tests already define
+    correctness; review focuses on the delta — data-flow patterns,
+    axis handling, deferred computation placement — rather than
+    re-validating the algorithm. The contributor should state which
+    methods were mirrored and any deliberate deviations.
+
+  **Mechanical refactors**
+    Renaming, module extraction, signature updates. When existing
+    tests pass unchanged, the reviewer validates the transformation
+    strategy and spot-checks representative files.
+
+  **Pattern expansions**
+    Adding many similar methods following an established pattern
+    (e.g., new model components, I/O format plugins, statistical
+    methods). Once the pattern is validated in one instance, the
+    remaining additions are a consistency check — the reviewer
+    spot-checks boundary conditions rather than each method.
 
 If the contributor has provided a good change map, test strategy
 note, and inline comments, the review cost is proportional to design
