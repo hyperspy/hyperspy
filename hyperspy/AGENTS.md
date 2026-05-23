@@ -43,7 +43,6 @@ The core Python package. Contains the `BaseSignal` class hierarchy, `AxesManager
 | `docstrings/` | Shared docstring templates injected via `_docstring.py` pattern |
 | `drawing/` | Matplotlib-based plotting engine (see `drawing/AGENTS.md`) |
 | `external/` | Vendored third-party code (mpfit, astropy units, etc.) |
-| `io_plugins/` | File format I/O plugins (see `io_plugins/AGENTS.md`) |
 | `learn/` | Matrix decomposition and BSS algorithms (see `learn/AGENTS.md`) |
 | `misc/` | Internal utility modules (see `misc/AGENTS.md`) |
 | `models/` | Model subclasses for Signal1D and Signal2D (see `models/AGENTS.md`) |
