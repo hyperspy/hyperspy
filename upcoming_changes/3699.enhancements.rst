@@ -1,0 +1,4 @@
+Add GUI toolkit "anywidget" to known toolkits so that :mod:`hyperspy_gui_anywidget`
+can register anywidget widgets for ROI, model, preferences, and signal tools.
+New preference ``GUIs.enable_anywidget_gui`` (default ``True``) controls whether
+the anywidget toolkit is offered in ``gui()`` calls.

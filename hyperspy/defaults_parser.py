@@ -111,6 +111,11 @@ class GUIs(t.HasTraits):
         desc="Display traitsui user interface elements. "
         "Requires installing hyperspy_gui_traitsui.",
     )
+    enable_anywidget_gui = t.CBool(
+        True,
+        desc="Display anywidget user interface elements. "
+        "Requires installing hyperspy_gui_anywidget.",
+    )
 
 
 class PlotConfig(t.HasTraits):
