@@ -436,6 +436,101 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
 Lastly, if no navigator is needed, "navigator=None" can be used.
 
+.. _plot.named_navigators:
+
+Named navigators (``navigators``)
+==================================
+
+.. versionadded:: 2.5.0
+
+Every signal carries a dict-like :attr:`~.api.signals.BaseSignal.navigators`
+proxy that stores **named navigator signals**. Unlike the singular
+:attr:`~.api.signals.BaseSignal.navigator`, named navigators:
+
+* survive :ref:`inav slicing <signal.indexing>` — each navigator is
+  automatically sliced to match the parent signal;
+* are preserved by :meth:`~.api.signals.BaseSignal.map` (both ``inplace=True``
+  and ``inplace=False``);
+* can be selected by name when calling :meth:`~.api.signals.BaseSignal.plot`.
+
+**Assigning a named navigator**
+
+The navigator must have the same total number of dimensions as the signal's
+navigation space, and the same sizes (in any order):
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import hyperspy.api as hs
+    >>> s = hs.signals.Signal2D(np.random.rand(10, 15, 64, 64))
+    >>> vbf = hs.signals.Signal2D(np.random.rand(10, 15))  # nav shape matches
+    >>> s.navigators["Virtual Bright Field"] = vbf
+
+**Plotting with a named navigator**
+
+Pass the key string to ``plot()``:
+
+.. code-block:: python
+
+    >>> s.plot(navigator="Virtual Bright Field")  # doctest: +SKIP
+
+An invalid key raises a :exc:`ValueError` listing valid keys. When
+``navigator="auto"`` and no singular navigator is set, the first entry in
+``navigators`` is used automatically.
+
+**Promoting a navigator to the default**
+
+:meth:`~hyperspy.signal.NavigatorsProxy.set_default` copies a named navigator
+to the singular :attr:`~.api.signals.BaseSignal.navigator` slot, making it the
+priority navigator for all subsequent :meth:`~.api.signals.BaseSignal.plot`
+calls:
+
+.. code-block:: python
+
+    >>> s.navigators.set_default("Virtual Bright Field")
+    >>> s.plot()  # uses the Virtual Bright Field navigator  # doctest: +SKIP
+
+**Computing and storing a sum navigator**
+
+:meth:`~.api.signals.BaseSignal.compute_navigator` sums over all signal axes
+once, stores the result as ``navigators["Signal Sum Image"]``, and sets it as
+the default navigator:
+
+.. code-block:: python
+
+    >>> s.compute_navigator()
+    >>> "Signal Sum Image" in s.navigators
+    True
+
+For lazy signals, the existing chunk-based computation is used.
+
+**Slicing propagation**
+
+Named navigators are sliced automatically when ``inav`` is used:
+
+.. code-block:: python
+
+    >>> s.navigators["VBF"] = vbf
+    >>> sliced = s.inav[0:5, 0:8]
+    >>> sliced.navigators["VBF"].data.shape
+    (8, 5)
+
+For complex multi-dimensional datasets (e.g. a 5D signal with mixed nav/signal
+navigator), axes are matched by calibration properties (size, units, scale,
+offset), so the correct slices propagate whether those axes live in the
+navigator's navigation or signal space.
+
+.. note::
+    Named navigators are cleared when a signal is transposed
+    (:attr:`~.api.signals.BaseSignal.T`), because the navigation space changes.
+    Use :meth:`~hyperspy.signal.NavigatorsProxy.set_default` on the transposed
+    signal to attach a new navigator.
+
+.. seealso::
+
+    :ref:`Sphinx Gallery example <sphx_glr_auto_examples_plotting_named_navigators.py>`
+    for a complete runnable demonstration.
+
 .. _visualization_3D_EDS-label:
 
 Using Mayavi to visualize 3D data
