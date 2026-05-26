@@ -3210,6 +3210,25 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 result._navigators_dict = sliced
         return result
 
+    def compute_navigator(self):
+        """Compute a sum navigator and save it as ``navigators["Signal Sum Image"]``.
+
+        Sums over all signal axes to produce a static navigator spanning the
+        full navigation space. Saves the result to ``navigators["Signal Sum Image"]``
+        and sets it as the default ``navigator``.
+
+        For lazy signals, use the overridden version in
+        :class:`~hyperspy._signals.lazy.LazySignal` which computes efficiently
+        over a single chunk.
+        """
+        nav = self.sum(self.axes_manager.signal_axes)
+        nav = nav.T
+        nav.metadata.General.title = "Signal Sum Image"
+        if not hasattr(self, "_navigators_dict"):
+            self._navigators_dict = {}
+        self._navigators_dict["Signal Sum Image"] = nav
+        self.navigator = nav
+
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True, **kwargs):
         """%s
         %s
