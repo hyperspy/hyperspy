@@ -85,6 +85,11 @@ and ``hyperspy_gui_traitsui``. To install HyperSpy without the GUI packages, use
 
     $ conda install hyperspy-base -c conda-forge
 
+For use in `marimo <https://marimo.io>`_ notebooks, no additional GUI packages
+are required — interactive plotting works out of the box with ``matplotlib``.
+For GUI widgets in marimo, install the ``hyperspy_gui_anywidget`` package
+separately.
+
 .. note::
 
     Depending on how Anaconda has been installed, it is possible that the
@@ -184,6 +189,14 @@ dependencies required by specific functionalities:
 * ``gui-jupyter`` to use the `Jupyter widgets <https://ipywidgets.readthedocs.io/en/stable/>`_
   GUI elements,
 * ``gui-traitsui`` to use the GUI elements based on `traitsui <https://docs.enthought.com/traitsui/>`_,
+
+.. note::
+
+    For `marimo <https://marimo.io>`_ notebooks, no GUI extras are needed for
+    interactive plotting — HyperSpy uses ``marimo.mpl.interactive()``
+    automatically.  For GUI widgets (ROI selectors, axes manager, etc.) in
+    marimo, install ``hyperspy_gui_anywidget`` separately.
+
 * ``speed`` install numba and numexpr to speed up some functionalities,
 * ``tests`` to install required libraries to run HyperSpy's unit tests,
 * ``coverage`` to coverage statistics when running the tests,
