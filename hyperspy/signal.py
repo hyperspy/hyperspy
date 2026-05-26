@@ -2374,6 +2374,95 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
+class NavigatorsProxy:
+    """Dict-like proxy for a signal's named navigators.
+
+    Wraps ``signal._navigators_dict`` (a plain Python dict on the signal
+    instance). Validates shape and type on ``__setitem__``.
+    """
+
+    def __init__(self, signal):
+        self._signal = signal
+
+    @property
+    def _dict(self):
+        if not hasattr(self._signal, "_navigators_dict"):
+            self._signal._navigators_dict = {}
+        return self._signal._navigators_dict
+
+    def __setitem__(self, key, value):
+        if not isinstance(value, BaseSignal):
+            raise TypeError(
+                f"Navigator must be a BaseSignal, got {type(value).__name__}"
+            )
+        parent_nav_shape = self._signal.axes_manager.navigation_shape
+        parent_nav_ndim = len(parent_nav_shape)
+        nav_total_ndim = (
+            value.axes_manager.navigation_dimension
+            + value.axes_manager.signal_dimension
+        )
+        if nav_total_ndim != parent_nav_ndim:
+            raise ValueError(
+                f"Navigator must have {parent_nav_ndim} total dimensions "
+                f"(matching the signal's {parent_nav_ndim} navigation "
+                f"dimensions), got {nav_total_ndim}"
+            )
+        nav_total_shape = tuple(
+            sorted(
+                list(value.axes_manager.navigation_shape)
+                + list(value.axes_manager.signal_shape)
+            )
+        )
+        if nav_total_shape != tuple(sorted(parent_nav_shape)):
+            raise ValueError(
+                f"Navigator shape "
+                f"{value.axes_manager.navigation_shape + value.axes_manager.signal_shape}"
+                f" is not compatible with the signal's navigation shape "
+                f"{parent_nav_shape}"
+            )
+        self._dict[key] = value
+
+    def __getitem__(self, key):
+        return self._dict[key]
+
+    def __delitem__(self, key):
+        del self._dict[key]
+
+    def __contains__(self, key):
+        return key in self._dict
+
+    def __iter__(self):
+        return iter(self._dict)
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __repr__(self):
+        return repr(self._dict)
+
+    def keys(self):
+        return self._dict.keys()
+
+    def values(self):
+        return self._dict.values()
+
+    def items(self):
+        return self._dict.items()
+
+    def set_default(self, key):
+        """Promote a named navigator to the signal's default (singular) navigator.
+
+        Sets ``signal.navigator = signal.navigators[key]``, making it the
+        first-priority navigator for subsequent ``plot()`` calls.
+        """
+        if key not in self._dict:
+            raise KeyError(
+                f"'{key}' not found in navigators. "
+                f"Available keys: {list(self._dict.keys())}"
+            )
+        self._signal.navigator = self._dict[key]
+
+
 class BaseSignal(FancySlicing, MVA, MVATools):
     """
 
@@ -3012,6 +3101,20 @@ class BaseSignal(FancySlicing, MVA, MVATools):
     @navigator.setter
     def navigator(self, navigator):
         self.metadata.set_item("_HyperSpy.navigator", navigator)
+
+    @property
+    def navigators(self):
+        """Named navigator signals as a :class:`~hyperspy.signal.NavigatorsProxy`.
+
+        Assign navigator signals by key; they are validated against the
+        signal's navigation shape and automatically sliced when ``inav`` is used.
+
+        Examples
+        --------
+        >>> s.navigators["Virtual Bright Field"] = vdf_signal
+        >>> s.navigators.set_default("Virtual Bright Field")
+        """
+        return NavigatorsProxy(self)
 
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True, **kwargs):
         """%s
