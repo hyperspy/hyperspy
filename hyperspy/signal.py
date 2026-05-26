@@ -7355,6 +7355,9 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             # previous signal.
             del res.metadata.Markers
 
+        if hasattr(res, "_navigators_dict"):
+            del res._navigators_dict
+
         return res
 
     transpose.__doc__ %= OPTIMIZE_ARG

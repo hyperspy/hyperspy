@@ -1221,8 +1221,14 @@ class LazySignal(signals.BaseSignal):
                 navigator = "auto"
             if navigator == "auto":
                 if self.navigator is None:
-                    self.compute_navigator()
-                navigator = self.navigator
+                    _nav_dict = getattr(self, "_navigators_dict", {})
+                    if _nav_dict:
+                        navigator = next(iter(_nav_dict.values()))
+                    else:
+                        self.compute_navigator()
+                        navigator = self.navigator
+                else:
+                    navigator = self.navigator
         super().plot(navigator=navigator, **kwargs)
 
     def compute_navigator(self, index=None, chunks_number=None, show_progressbar=None):
@@ -1304,6 +1310,9 @@ class LazySignal(signals.BaseSignal):
         navigator.original_metadata.set_item("sum_from", str(isig_slice))
 
         self.navigator = navigator.T
+        if not hasattr(self, "_navigators_dict"):
+            self._navigators_dict = {}
+        self._navigators_dict["Signal Sum Image"] = self.navigator
 
     compute_navigator.__doc__ %= SHOW_PROGRESSBAR_ARG
 

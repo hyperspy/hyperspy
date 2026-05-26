@@ -323,14 +323,10 @@ class TestLazyNavigators:
     def test_lazy_plot_auto_uses_dict_without_recomputing(self):
         """If navigators dict is populated, lazy plot should not call compute_navigator."""
         s = hs.signals.Signal2D(np.ones((5, 7, 16, 16))).as_lazy()
-        nav = hs.signals.Signal2D(np.ones((7, 5)))  # matches nav shape
-        # set axis properties to pass validation
-        nav.axes_manager.signal_axes[0].scale = 1.0
-        nav.axes_manager.signal_axes[1].scale = 1.0
-        # bypass validation and set directly
-        nav_dict = {}
-        nav_dict["precomputed"] = nav
-        s.metadata.set_item("_HyperSpy.navigators", nav_dict)
+        # parent nav_shape display = (7, 5); Signal2D(5,7) has signal_shape=(7,5)
+        nav = hs.signals.Signal2D(np.ones((5, 7)))
+        # set directly in _navigators_dict to bypass proxy validation
+        s._navigators_dict = {"precomputed": nav}
 
         called = []
         original_compute = s.compute_navigator
