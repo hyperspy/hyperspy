@@ -2374,6 +2374,78 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
+def _axis_matches(axis_a, axis_b):
+    """Return True if two axes have identical calibration properties."""
+    if axis_a.size != axis_b.size:
+        return False
+    units_a = axis_a.units if axis_a.units is not None else ""
+    units_b = axis_b.units if axis_b.units is not None else ""
+    if units_a != units_b:
+        return False
+    try:
+        scale_match = np.isclose(
+            float(axis_a.scale), float(axis_b.scale), rtol=1e-5, atol=0
+        )
+        offset_match = np.isclose(
+            float(axis_a.offset), float(axis_b.offset), rtol=1e-5, atol=1e-10
+        )
+        return bool(scale_match and offset_match)
+    except (TypeError, ValueError):
+        return axis_a.scale == axis_b.scale and axis_a.offset == axis_b.offset
+
+
+def _slice_navigator_for_inav(navigator, parent_nav_axes, parent_array_slices):
+    """Slice a navigator signal to match a parent's ``inav`` operation.
+
+    Matches each navigator axis to the corresponding parent navigation axis
+    by calibration properties (size, units, scale, offset), then applies the
+    parent's array-level slices via ``inav`` and/or ``isig`` on the navigator.
+
+    Parameters
+    ----------
+    navigator : BaseSignal
+        The navigator signal to slice.
+    parent_nav_axes : tuple of BaseDataAxis
+        The parent's ``navigation_axes`` in display order (innermost first).
+    parent_array_slices : tuple
+        Per-array-index slices from ``_get_array_slices``; index with
+        ``parent_axis.index_in_array``.
+
+    Returns
+    -------
+    BaseSignal
+        Sliced copy of the navigator.
+    """
+    used_parent = set()
+    axis_slice_map = {}
+
+    for nav_ax in navigator.axes_manager._axes:
+        for parent_ax in parent_nav_axes:
+            pid = id(parent_ax)
+            if pid not in used_parent and _axis_matches(nav_ax, parent_ax):
+                axis_slice_map[id(nav_ax)] = parent_array_slices[
+                    parent_ax.index_in_array
+                ]
+                used_parent.add(pid)
+                break
+
+    inav_tuple = tuple(
+        axis_slice_map.get(id(ax), slice(None))
+        for ax in navigator.axes_manager.navigation_axes
+    )
+    isig_tuple = tuple(
+        axis_slice_map.get(id(ax), slice(None))
+        for ax in navigator.axes_manager.signal_axes
+    )
+
+    result = navigator
+    if any(s != slice(None) for s in inav_tuple):
+        result = result.inav[inav_tuple]
+    if any(s != slice(None) for s in isig_tuple):
+        result = result.isig[isig_tuple]
+    return result
+
+
 class NavigatorsProxy:
     """Dict-like proxy for a signal's named navigators.
 
@@ -3115,6 +3187,28 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         >>> s.navigators.set_default("Virtual Bright Field")
         """
         return NavigatorsProxy(self)
+
+    def _slicer(self, slices, isNavigation=None, out=None):
+        result = super()._slicer(slices, isNavigation, out)
+        if isNavigation is True and out is None:
+            nav_dict = getattr(self, "_navigators_dict", None)
+            if nav_dict:
+                array_slices = self._get_array_slices(slices, isNavigation)
+                parent_nav_axes = self.axes_manager.navigation_axes
+                sliced = {}
+                for key, nav in nav_dict.items():
+                    try:
+                        sliced[key] = _slice_navigator_for_inav(
+                            nav, parent_nav_axes, array_slices
+                        )
+                    except Exception as e:
+                        warnings.warn(
+                            f"Could not slice navigator '{key}': {e}. "
+                            "Dropping it from result.",
+                            stacklevel=2,
+                        )
+                result._navigators_dict = sliced
+        return result
 
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True, **kwargs):
         """%s
