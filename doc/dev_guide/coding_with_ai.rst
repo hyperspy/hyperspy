@@ -20,10 +20,10 @@ Please read this section carefully before using AI tools to contribute.
   own experience, another project's approach, or new research, please
   share them through GitHub discussions, issues, or a pull request.
 
-The cost asymmetry
-^^^^^^^^^^^^^^^^^^
+The effort asymmetry
+^^^^^^^^^^^^^^^^^^^^
 
-AI makes code production nearly free, but **review is still expensive**.
+AI ease code production, but the human review process is still necessary.
 A contributor can generate thousands of lines in minutes, while a
 maintainer still needs hours to review them properly. The review
 process also requires far more expertise than code generation.
@@ -340,7 +340,8 @@ Instead:
   structure: use your AI agent's ``AGENTS.md`` regeneration tooling
   to regenerate the affected files (e.g., ``\deepinit``).  The regeneration preserves all
   content below the ``MANUAL`` boundary. If you are not sure how to do this,
-  ask in GitHub discussions or open an issue.
+  ask in GitHub discussions or open an issue. For example, in opencode,
+  you can use `/init-deep`.
 
 - **Persistent notes** (conventions, gotchas, per-directory
   requirements not captured by auto-generation): add them below the
