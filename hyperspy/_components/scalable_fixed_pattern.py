@@ -179,8 +179,7 @@ class ScalableFixedPattern(Component):
             i1, i2 = axis.value_range_to_indices(x1, x2)
             signal_axis = axis.axis[i1:i2]
             component = np.asarray(
-                self._function(signal_axis, 1.0, 1.0, 0.0),
-                dtype=float
+                self._function(signal_axis, 1.0, 1.0, 0.0), dtype=float
             )
             valid = np.isfinite(component) & (component != 0)
 
@@ -213,7 +212,7 @@ class ScalableFixedPattern(Component):
                 self.yscale.map["is_set"][:] = True
             elif yscale is True:
                 data = np.moveaxis(signal.data, axis.index_in_array, -1)[..., i1:i2]
-                self.yscale.map["values"][:] = _estimate_yscale(data) 
+                self.yscale.map["values"][:] = _estimate_yscale(data)
                 self.yscale.map["is_set"][:] = True
             else:
                 self.yscale.map["values"][:] = yscale
@@ -221,4 +220,3 @@ class ScalableFixedPattern(Component):
 
         self.fetch_stored_values()
         return True
-
