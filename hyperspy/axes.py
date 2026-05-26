@@ -20,6 +20,7 @@ import copy
 import inspect
 import logging
 import math
+import numbers
 import warnings
 from collections.abc import Iterable
 from contextlib import contextmanager
@@ -31,6 +32,7 @@ from traits.trait_errors import TraitError
 import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc import array_tools, utils
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
@@ -202,7 +204,14 @@ class UnitConversion:
             units = "" if self.units == t.Undefined else self.units
             if isinstance(value, str):
                 value = hs._ureg.parse_expression(value)
-            if isinstance(value, float):
+            if isinstance(value, numbers.Real):
+                warnings.warn(
+                    "Setting a quantity using a number is deprecated "
+                    "and will be removed in HyperSpy 3.0. "
+                    "The current units will be used.",
+                    VisibleDeprecationWarning,
+                    stacklevel=2,
+                )
                 value = value * hs._ureg(units)
 
             # to be consistent, we also need to convert the other one
@@ -1411,6 +1420,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     @property
     def scale_as_quantity(self):
+        """
+        Get the scale as a :class:`pint.Quantity` object. It can be set
+        using a :class:`pint.Quantity` or a string, e.g. "0.1 nm".
+        If string, it will parse using
+        :meth:`pint.facets.plain.GenericPlainRegistry.parse_expression`.
+        """
         return self._get_quantity("scale")
 
     @scale_as_quantity.setter
@@ -1419,6 +1434,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     @property
     def offset_as_quantity(self):
+        """
+        Get the offset as a :class:`pint.Quantity` object. It can be set
+        using a :class:`pint.Quantity` or a string, e.g. "0.1 nm".
+        If string, it will parse using
+        :meth:`pint.facets.plain.GenericPlainRegistry.parse_expression`.
+        """
         return self._get_quantity("offset")
 
     @offset_as_quantity.setter

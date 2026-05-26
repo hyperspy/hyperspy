@@ -9,7 +9,6 @@ classifiers = [
     "Framework :: Matplotlib",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -77,12 +76,11 @@ keywords = [
     "spectroscopy",
     "spectrum image",
 ]
+license = "GPL-3.0-or-later"
+license-files = ["COPYING.txt"]
 name = "hyperspy"
 readme = "README.md"
 requires-python = ">=3.10"
-
-[project.license]
-file = "COPYING.txt"
 
 [project.optional-dependencies]
 all = [

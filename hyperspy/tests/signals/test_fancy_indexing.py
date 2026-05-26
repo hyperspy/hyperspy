@@ -17,8 +17,10 @@
 
 
 import numpy as np
+import pint
 import pytest
 from numpy.testing import assert_array_equal
+from packaging.version import Version
 
 from hyperspy import roi, signals
 from hyperspy.decorators import lazifyTestClass
@@ -131,12 +133,19 @@ class Test1D:
         s = self.signal.isig[:"4 µm"]
         assert_array_equal(s.data, self.data[:8])
 
-    def test_units_error(self):
+    @pytest.mark.skipif(
+        Version(pint.__version__) < Version("0.25.3"),
+        reason="requires pint>=0.25.3",
+    )
+    def test_units_dimensionality_error(self):
+        # This test is only relevant for pint 0.25.3 and later,
+        # which raises a DimensionalityError instead of ValueError
+        # when the units are incompatible.
+        # https://github.com/hgrecco/pint/pull/2260
         self.signal.axes_manager[0].scale = 0.5
         self.signal.axes_manager[0].units = "µm"
-        with pytest.raises(ValueError):
+        with pytest.raises(pint.errors.DimensionalityError):
             self.signal.isig[:"4000.0"]
-            pytest.fail("should contains an units")
 
     def test_relative_slicing(self):
         s = self.signal

@@ -32,6 +32,7 @@ import hyperspy.api as hs
 from hyperspy import __version__ as hs_version
 from hyperspy.axes import DataAxis
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.io import _get_format_list_for_docstring
 
 PATH = Path(__file__).resolve()
 FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")
@@ -671,8 +672,6 @@ def test_save_extension_parameter_overrides_tmp_parameters_extension(tmp_path):
 # Test coverage for _get_format_list_for_docstring function
 def test_get_format_list_for_docstring_bullet_style():
     """Test _get_format_list_for_docstring with bullet style."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     # Test read mode with bullet style
     result = _get_format_list_for_docstring(write_mode=False, style="bullet")
     assert result.startswith("\n")
@@ -691,8 +690,6 @@ def test_get_format_list_for_docstring_bullet_style():
 
 def test_get_format_list_for_docstring_inline_style():
     """Test _get_format_list_for_docstring with inline style."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     # Test read mode with inline style
     result = _get_format_list_for_docstring(write_mode=False, style="inline")
     assert "``'" in result
@@ -707,8 +704,6 @@ def test_get_format_list_for_docstring_inline_style():
 
 def test_get_format_list_for_docstring_extensions_style():
     """Test _get_format_list_for_docstring with extensions style."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     # Test read mode with extensions style
     result = _get_format_list_for_docstring(write_mode=False, style="extensions")
     assert ", " in result
@@ -722,10 +717,16 @@ def test_get_format_list_for_docstring_extensions_style():
 
 def test_get_format_list_for_docstring_invalid_style():
     """Test _get_format_list_for_docstring with invalid style raises ValueError."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     with pytest.raises(ValueError, match="Unknown style"):
         _get_format_list_for_docstring(style="invalid_style")
+
+
+def test_lazy_docstring_load():
+    """Test that the load function docstring includes format list."""
+    assert (
+        _get_format_list_for_docstring(write_mode=False, style="bullet")
+        in hs.load.__doc__
+    )
 
 
 def test_load_reader_parameter_deprecation_warning(tmp_path):
@@ -1126,8 +1127,6 @@ def test_parse_path():
 
 def test_get_format_list_for_docstring():
     """Test the _get_format_list_for_docstring function."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     # Test bullet style
     bullet_list = _get_format_list_for_docstring(write_mode=False, style="bullet")
     assert isinstance(bullet_list, str)
@@ -1220,3 +1219,21 @@ def test_save_filename_none_without_tmp_parameters():
     # Should raise ValueError
     with pytest.raises(ValueError, match="File name not defined"):
         s.save(filename=None, file_format="HSPY")
+
+
+def test_lazy_docstring_save():
+    """Test that the save function docstring includes format list."""
+    s = hs.signals.Signal1D([1, 2, 3])
+
+    assert (
+        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=8)
+        in s.save.__doc__
+    )
+    assert (
+        _get_format_list_for_docstring(write_mode=True, style="inline", indentation=8)
+        in s.save.__doc__
+    )
+    assert (
+        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=12)
+        in s.save.__doc__
+    )
