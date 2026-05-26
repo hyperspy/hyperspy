@@ -3352,37 +3352,58 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             ):
                 navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:
-                if self.axes_manager.signal_dimension == 0:
-                    navigator = self.deepcopy()
+                _nav_dict = getattr(self, "_navigators_dict", {})
+                if _nav_dict:
+                    navigator = next(iter(_nav_dict.values()))
                 else:
-                    navigator = interactive(
-                        f=sum_wrapper,
-                        event=self.events.data_changed,
-                        recompute_out_event=self.axes_manager.events.any_axis_changed,
-                        s=self,
-                        axis=self.axes_manager.signal_axes,
-                    )
-                    # Sets are not ordered, to retrieve the function to disconnect
-                    # take the difference with the previous copy
-                    function_to_disconnect = list(
-                        self.events.data_changed.connected - connected_event_copy
-                    )[0]
-                if navigator.axes_manager.navigation_dimension == 1:
-                    navigator = interactive(
-                        f=navigator.as_signal1D,
-                        event=navigator.events.data_changed,
-                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
-                        spectral_axis=0,
-                    )
-                else:
-                    navigator = interactive(
-                        f=navigator.as_signal2D,
-                        event=navigator.events.data_changed,
-                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
-                        image_axes=(0, 1),
-                    )
+                    if self.axes_manager.signal_dimension == 0:
+                        navigator = self.deepcopy()
+                    else:
+                        navigator = interactive(
+                            f=sum_wrapper,
+                            event=self.events.data_changed,
+                            recompute_out_event=self.axes_manager.events.any_axis_changed,
+                            s=self,
+                            axis=self.axes_manager.signal_axes,
+                        )
+                        # Sets are not ordered, to retrieve the function to disconnect
+                        # take the difference with the previous copy
+                        function_to_disconnect = list(
+                            self.events.data_changed.connected - connected_event_copy
+                        )[0]
+                    if navigator.axes_manager.navigation_dimension == 1:
+                        navigator = interactive(
+                            f=navigator.as_signal1D,
+                            event=navigator.events.data_changed,
+                            recompute_out_event=navigator.axes_manager.events.any_axis_changed,
+                            spectral_axis=0,
+                        )
+                    else:
+                        navigator = interactive(
+                            f=navigator.as_signal2D,
+                            event=navigator.events.data_changed,
+                            recompute_out_event=navigator.axes_manager.events.any_axis_changed,
+                            image_axes=(0, 1),
+                        )
             else:
                 navigator = None
+        # Resolve a string navigator key from the navigators dict
+        if isinstance(navigator, str) and navigator not in (
+            "auto",
+            "slider",
+            "data",
+            "spectrum",
+        ):
+            _nav_dict = getattr(self, "_navigators_dict", {})
+            if navigator in _nav_dict:
+                navigator = _nav_dict[navigator]
+            else:
+                raise ValueError(
+                    f"'{navigator}' is not a valid navigator. "
+                    f"Valid named navigators: {list(_nav_dict.keys())}. "
+                    f"Built-in modes: 'auto', 'slider', 'data', 'spectrum'."
+                )
+
         # Navigator properties
         if axes_manager.navigation_axes:
             # check first if we have a signal to avoid comparison of signal with
