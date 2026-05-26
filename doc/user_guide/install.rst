@@ -87,8 +87,6 @@ and ``hyperspy_gui_traitsui``. To install HyperSpy without the GUI packages, use
 
 For use in `marimo <https://marimo.io>`_ notebooks, no additional GUI packages
 are required — interactive plotting works out of the box with ``matplotlib``.
-For GUI widgets in marimo, install the ``hyperspy_gui_anywidget`` package
-separately.
 
 .. note::
 
@@ -194,8 +192,7 @@ dependencies required by specific functionalities:
 
     For `marimo <https://marimo.io>`_ notebooks, no GUI extras are needed for
     interactive plotting — HyperSpy uses ``marimo.mpl.interactive()``
-    automatically.  For GUI widgets (ROI selectors, axes manager, etc.) in
-    marimo, install ``hyperspy_gui_anywidget`` separately.
+    automatically.
 
 * ``speed`` install numba and numexpr to speed up some functionalities,
 * ``tests`` to install required libraries to run HyperSpy's unit tests,

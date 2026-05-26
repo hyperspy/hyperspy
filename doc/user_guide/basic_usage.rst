@@ -88,8 +88,7 @@ figures with pan, zoom, and coordinate display — no ``%matplotlib`` magic,
     >>> s.plot()
 
 The ``plot_style`` preference ("horizontal" or "vertical" layout) is
-supported via marimo's ``mo.hstack`` and ``mo.vstack``.  Marimo widgets are
-also supported when the ``hyperspy_gui_anywidget`` package is installed.
+supported via marimo's ``mo.hstack`` and ``mo.vstack``.
 
 .. note::
 

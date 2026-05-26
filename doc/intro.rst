@@ -62,8 +62,7 @@ that sets its character:
   elements are provided where there
   is a clear productivity advantage in doing so. See the
   `hyperspy-gui-ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_,
-  `hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_,
-  and `hyperspy-gui-anywidget <https://github.com/hyperspy/hyperspy_gui_anywidget>`_
+  `hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
   packages for details. Not enough? If you
   need a full, standalone GUI, `HyperSpyUI <https://hyperspy.org/hyperspyUI/>`_
   is for you.
