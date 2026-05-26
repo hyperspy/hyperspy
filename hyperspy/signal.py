@@ -6187,6 +6187,8 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                     temp_marker_dict[key],
                 )
             dc.metadata.Markers = markers_dict
+        if hasattr(self, "_navigators_dict"):
+            dc._navigators_dict = copy.deepcopy(self._navigators_dict)
         return dc
 
     def deepcopy(self):
