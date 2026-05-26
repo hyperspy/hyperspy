@@ -65,9 +65,11 @@ matplotlib.pyplot, as follows:
 
 The rest of the documentation will assume you have done this. It also assumes
 that you have installed at least one of HyperSpy's GUI packages:
-`jupyter widgets GUI <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
-and the
-`traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
+`jupyter widgets GUI <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_,
+the
+`traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_,
+or the
+`anywidget GUI <https://github.com/hyperspy/hyperspy_gui_anywidget>`_.
 
 Possible warnings when importing HyperSpy?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -80,7 +82,9 @@ There may be several causes for a warning, for example:
 
 - not all the GUIs packages are installed. If none is installed, we reccomend you to install
   at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
-  data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
+  data analysis in the Jupyter Notebook. If you are using a platform that does not support
+  ipywidgets, such as `Marimo <https://marimo.io/>`_, install ``hyperspy_gui_anywidget``
+  instead. Otherwise, you can simply disable the warning in
   :ref:`preferences <configuring-hyperspy-label>` as explained below.
 - the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
   backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
@@ -414,6 +418,9 @@ hyperspy gui packages are installed and enabled:
 .. versionadded:: 1.3
     Possibility to enable/disable GUIs in the preferences.
 
+.. versionadded:: 2.5
+    ``enable_anywidget_gui`` preference.
+
 It is also possible to set the preferences programmatically. For example,
 to disable the traitsui GUI elements and save the changes to disk:
 
@@ -422,6 +429,13 @@ to disable the traitsui GUI elements and save the changes to disk:
     >>> hs.preferences.GUIs.enable_traitsui_gui = False
     >>> hs.preferences.save()
     >>> # if not saved, this setting will be used until the next jupyter kernel shutdown
+
+To disable the anywidget GUI similarly:
+
+.. code-block:: python
+
+    >>> hs.preferences.GUIs.enable_anywidget_gui = False
+    >>> hs.preferences.save()
 
 .. versionchanged:: 1.3
 
