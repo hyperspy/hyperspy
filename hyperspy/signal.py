@@ -3176,7 +3176,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
     @property
     def navigators(self):
-        """Named navigator signals as a :class:`~hyperspy.signal.NavigatorsProxy`.
+        """Named navigator signals as a ``NavigatorsProxy`` dict-like object.
 
         Assign navigator signals by key; they are validated against the
         signal's navigation shape and automatically sliced when ``inav`` is used.

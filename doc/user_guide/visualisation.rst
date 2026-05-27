@@ -445,7 +445,7 @@ Named navigators (``navigators``)
 
 Every signal carries a dict-like :attr:`~.api.signals.BaseSignal.navigators`
 proxy that stores **named navigator signals**. Unlike the singular
-:attr:`~.api.signals.BaseSignal.navigator`, named navigators:
+``navigator`` attribute, named navigators:
 
 * survive :ref:`inav slicing <signal.indexing>` — each navigator is
   automatically sliced to match the parent signal;
@@ -480,10 +480,9 @@ An invalid key raises a :exc:`ValueError` listing valid keys. When
 
 **Promoting a navigator to the default**
 
-:meth:`~hyperspy.signal.NavigatorsProxy.set_default` copies a named navigator
-to the singular :attr:`~.api.signals.BaseSignal.navigator` slot, making it the
-priority navigator for all subsequent :meth:`~.api.signals.BaseSignal.plot`
-calls:
+``navigators.set_default()`` copies a named navigator to the singular
+``navigator`` slot, making it the priority navigator for all subsequent
+:meth:`~.api.signals.BaseSignal.plot` calls:
 
 .. code-block:: python
 
@@ -523,8 +522,8 @@ navigator's navigation or signal space.
 .. note::
     Named navigators are cleared when a signal is transposed
     (:attr:`~.api.signals.BaseSignal.T`), because the navigation space changes.
-    Use :meth:`~hyperspy.signal.NavigatorsProxy.set_default` on the transposed
-    signal to attach a new navigator.
+    Use ``navigators.set_default()`` on the transposed signal to attach a new
+    navigator.
 
 .. seealso::
 
