@@ -40,3 +40,9 @@ Interactive operations can be performed in a chain.
     >>> s.events.data_changed.trigger(obj=s)
     >>> ssum_mean.data
     array([300.,  330.,  360.,  390.])
+
+.. minigallery::
+    :add-heading: Examples of interactive operations
+
+    ../examples/interactive/interactive_operations_simple.py
+    ../examples/interactive/simple_chained_operations.py

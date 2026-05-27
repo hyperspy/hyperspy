@@ -50,7 +50,7 @@ class Polynomial(Expression):
 
     """
 
-    def __init__(self, order=2, module=None, **kwargs):
+    def __init__(self, order=2, module=None, name=None, **kwargs):
         if order == 0:
             raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = [
@@ -59,7 +59,8 @@ class Polynomial(Expression):
         expr = "+".join(
             ["a{}*x**{}".format(c, o) for c, o in zip(coeff_list, range(order, -1, -1))]
         )
-        name = "{} order Polynomial".format(ordinal(order))
+        if name is None:
+            name = "{} order Polynomial".format(ordinal(order))
         super().__init__(
             expression=expr, name=name, module=module, autodoc=False, **kwargs
         )

@@ -49,10 +49,10 @@ class Bleasdale(Expression):
 
     """
 
-    def __init__(self, a=1.0, b=1.0, c=1.0, module=None, **kwargs):
+    def __init__(self, a=1.0, b=1.0, c=1.0, module=None, name="Bleasdale", **kwargs):
         super().__init__(
             expression="where((a + b * x) > 0, pow(a + b * x, -1 / c), 0)",
-            name="Bleasdale",
+            name=name,
             a=a,
             b=b,
             c=c,

@@ -44,6 +44,12 @@ If loading was successful, the variable ``s`` contains a HyperSpy signal or any
 type of signal defined in one of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`, 
 see :ref:`load_specify_signal_type-label` for more details.
 
+.. minigallery::
+    :add-heading: Examples of file loading and saving operations
+
+    ../examples/io/basic_file_loading.py
+    ../examples/io/file_format_signal_type.py
+
 .. note::
 
    When the file contains several datasets, the :func:`~.api.load` function
@@ -171,6 +177,11 @@ using the :meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 .. code-block:: python
 
     >>> s.original_metadata.export('parameters') # doctest: +SKIP
+
+.. minigallery::
+    :add-heading: Examples of metadata handling
+
+    ../examples/metadata/accessing_modifying_metadata.py
 
 .. _load_to_memory-label:
 

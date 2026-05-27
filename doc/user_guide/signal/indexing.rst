@@ -237,3 +237,8 @@ dimensions respectively:
     >>> s.inav[0,0] = s.inav[1,1]
     >>> s.inav[0,0].data
     array([16, 17, 18, 19])
+
+.. minigallery::
+    :add-heading: Examples of advanced indexing techniques
+
+    ../examples/indexing/string_based_indexing_with_units.py

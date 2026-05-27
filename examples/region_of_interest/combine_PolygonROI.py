@@ -5,19 +5,19 @@ Combine PolygonROI
 Combine several :class:`~.api.roi.PolygonROI`.
 
 """
-#%%
+# %%
 import hyperspy.api as hs
 
-#%%
+# %%
 # Create a signal:
 s = hs.data.atomic_resolution_image()
 
-#%%
+# %%
 # Create the ROIs, here :class:`~.api.roi.PolygonROI`:
 roi = hs.roi.PolygonROI([(2, 4.5), (4.5, 4.5), (4.5, 2), (3.5, 3.5)])
 roi2 = hs.roi.PolygonROI([(0.5, 0.5), (1.2, 0.2), (1.5, 1), (0.2, 1.4)])
 
-#%%
+# %%
 # We plot the signal add the ROIs to the figure using :meth:`~hyperspy.roi.BaseInteractiveROI.add_widget`.
 
 s.plot()

@@ -25,6 +25,11 @@ advanced image alignment functionality.
     # Estimate and align in a single step
     >>> s.align2D() # doctest: +SKIP
 
+.. minigallery::
+    :add-heading: Examples of 2D image alignment and registration
+
+    ../examples/signal_manipulation/signal2d_alignment.py
+
 .. warning::
 
     ``s.align2D()`` will modify the data **in-place**. If you don't want
@@ -98,6 +103,11 @@ It is possible to crop interactively using :ref:`roi-label`. For example:
     >>> imc = roi.interactive(im)
     >>> imc.plot()
 
+.. minigallery::
+    :add-heading: Examples of Signal2D cropping and ROI operations
+
+    ../examples/signal_manipulation/signal2d_cropping.py
+
 
 .. _interactive_signal2d_cropping_image:
 
@@ -127,6 +137,11 @@ The same function can also be used non-interactively.
     >>> s = hs.signals.Signal2D(np.random.random((200, 200)))
     >>> s.calibrate(x0=1, y0=1, x1=5, y1=5, new_length=3.4, units="nm", interactive=False)
 
+.. minigallery::
+    :add-heading: Examples of Signal2D calibration
+
+    ../examples/signal_manipulation/signal2d_calibration.py
+
 
 Add a linear ramp
 -----------------
@@ -139,6 +154,11 @@ linear ramp is at the origin and the slopes are given in units of the axis
 with the according scale taken into account. Both are available via the
 :class:`~.axes.AxesManager` of the signal.
 
+.. minigallery::
+    :add-heading: Examples of adding linear ramps to 2D signals
+
+    ../examples/signal_manipulation/signal2d_add_ramp.py
+
 .. _peak_finding-label:
 
 Peak finding
@@ -149,6 +169,14 @@ Peak finding
 The :meth:`~.api.signals.Signal2D.find_peaks` method provides access
 to a number of algorithms for peak finding in two dimensional signals. The
 methods available are:
+
+.. Note:: 
+    Examples show different peak finding methods for 2D signals.
+
+.. minigallery::
+    :add-heading: Examples of 2D peak finding with different methods
+    
+    ../examples/processing/signal2d_advanced_peak_finding.py
 
 Maximum based peak finder
 ^^^^^^^^^^^^^^^^^^^^^^^^^

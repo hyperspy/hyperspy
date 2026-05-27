@@ -113,11 +113,13 @@ class Gaussian(Expression):
     GaussianHF
     """
 
-    def __init__(self, A=1.0, sigma=1.0, centre=0.0, module=None, **kwargs):
+    def __init__(
+        self, A=1.0, sigma=1.0, centre=0.0, module=None, name="Gaussian", **kwargs
+    ):
         super().__init__(
             expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
                         / (2 * sigma**2))",
-            name="Gaussian",
+            name=name,
             A=A,
             sigma=sigma,
             centre=centre,

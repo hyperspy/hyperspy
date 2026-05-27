@@ -49,6 +49,11 @@ in the Signal2D subclass.
     >>> im
     <Signal2D, title: , dimensions: (10, 30|20, 10)>
 
+.. minigallery::
+    :add-heading: Understanding signal dimensions
+
+    ../examples/axes/understanding_signal_dimensions.py
+
 
 .. _Setting_axis_properties:
 
@@ -121,6 +126,12 @@ The :meth:`~.misc.utils.TupleSA.get` returns a dictionary of the attributes.  Fo
     >>> s.axes_manager.navigation_axes.get("name", "offset", "units")
     {"name" : ("X", "Y"), "offset" : (10, 10), "units" : ("nm", "nm")}
 
+.. minigallery::
+    :add-heading: Examples of setting and managing axis properties
+
+    ../examples/axes/setting_axis_properties.py
+    ../examples/axes/batch_axis_property_setting.py
+
 
 Once the name of an axis has been defined it is possible to request it by its
 name e.g.:
@@ -189,6 +200,11 @@ navigation dimensions:
 .. code-block:: python
 
     >>> s.axes_manager.indices = (5, 4)
+
+.. minigallery::
+    :add-heading: Examples of programmatic axis navigation
+
+    ../examples/axes/programmatic_axis_navigation.py
 
 .. _Axes_properties:
 
@@ -530,6 +546,10 @@ method of the :class:`~.axes.UniformDataAxis`:
     >>> axis.scale_as_quantity
     <Quantity(100.0, 'micrometer')>
 
+.. minigallery::
+    :add-heading: Examples of working with physical units
+
+    ../examples/axes/working_with_physical_units.py
 
 .. _Axes_storage_ordering:
 
@@ -588,6 +608,12 @@ at least when printing. As an example:
 In the background, HyperSpy also takes care of storing the data in memory in
 a "machine-friendly" way, so that iterating over the navigation axes is always
 fast.
+
+.. minigallery::
+    :add-heading: Examples of axis ordering and manipulation
+
+    ../examples/axes/axis_ordering_and_conventions.py
+    ../examples/axes/axis_manipulation_and_ordering.py
 
 .. _iterating_axesmanager:
 

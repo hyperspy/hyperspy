@@ -1,4 +1,3 @@
-
 .. _visualization-label:
 
 
@@ -33,6 +32,11 @@ including energy) two figures will appear, one containing a plot of the
 spectrum at the current coordinates and the other an image of the data summed
 over its spectral dimension if 2D or an image with the spectral dimension in
 the x-axis if 1D:
+
+.. minigallery::
+    :add-heading: Examples of multidimensional data visualization
+
+    ../examples/data_visualization/multidimensional_visualization.py
 
 .. _2d_SI:
 
@@ -86,6 +90,11 @@ other purposes.
 If you want to jump to some point in the dataset.  In that case you can hold the ``Shift`` key
 and click the point you are interested in.  That will automatically take you to that point in the
 data.  This also helps with lazy data as you don't have to load every chunk in between.
+
+.. minigallery::
+    :add-heading: Interactive navigation examples
+
+    ../examples/navigation_hotkeys_controls.py
 
 .. figure::  images/second_pointer.png
    :align:   center
@@ -1012,7 +1021,8 @@ and "overlap" styles:
     <Axes: xlabel='<undefined> (<undefined>)'>
     >>> hs.plot.plot_spectra(s2, style='cascade',
     ...                      color='red', ax=axarr[1], fig=fig)
-    <Axes: xlabel='<undefined> (<undefined>)'>
+    <Axes: xlabel='<undefined> (<undefined)'>
+
 
 .. figure::  images/plot_spectra_ax_argument.png
   :align:   center

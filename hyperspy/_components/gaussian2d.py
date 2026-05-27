@@ -77,6 +77,7 @@ class Gaussian2D(Expression):
         sigma_y=1.0,
         centre_x=0.0,
         centre_y=0,
+        name="Gaussian2D",
         module=None,
         **kwargs,
     ):
@@ -84,7 +85,7 @@ class Gaussian2D(Expression):
             expression="A * (1 / (sigma_x * sigma_y * 2 * pi)) * \
                        exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \
                        + (y - centre_y) ** 2 / (2 * sigma_y ** 2)))",
-            name="Gaussian2D",
+            name=name,
             A=A,
             sigma_x=sigma_x,
             sigma_y=sigma_y,

@@ -51,10 +51,10 @@ class Exponential(Expression):
         :class:`~.api.model.components1D.Expression` component.
     """
 
-    def __init__(self, A=1.0, tau=1.0, module=None, **kwargs):
+    def __init__(self, A=1.0, tau=1.0, module=None, name="Exponential", **kwargs):
         super().__init__(
             expression="A * exp(-x / tau)",
-            name="Exponential",
+            name=name,
             A=A,
             tau=tau,
             module=module,
