@@ -52,6 +52,7 @@ extensions = [
 
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
+    "https://docs.conda.io",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
     "https://doi.org/10.1364/OL.33.000156",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
