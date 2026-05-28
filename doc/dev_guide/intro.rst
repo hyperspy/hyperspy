@@ -26,8 +26,9 @@ themselves: to learn, to get it done faster, to make sure it's done their way,
 or simply because they enjoy building things.
 
 The good news is that AI assistance makes the implement-it-yourself path easier
-than ever.  The challenge is that it makes code production nearly free, while
-the review process remains expensive.  The rest of this guide, and especially the
+than ever.  The challenge is that it makes it faster to produce code, while
+the human review process, that involves reading the code, remains constrained by human bandwidth.
+The rest of this guide, and especially the
 :ref:`Coding with AI assistants <coding_with_ai-label>` page, exists to make
 that path sustainable at community scale without diluting code quality or
 burning out reviewers.  The HyperSpy community has a long tradition of helping new contributors
