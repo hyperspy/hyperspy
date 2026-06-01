@@ -88,18 +88,43 @@ def _marimo_interactive_display(explorer, *, plot_style=None):
 
     # Collect interactive figure elements — navigator before signal
     # to match the ipympl display convention.
+    plots = []
     elements = []
     if explorer.navigator_plot is not None:
         nav_fig = explorer.navigator_plot.get_mpl_figure()
         if nav_fig is not None:
             elements.append(mo.mpl.interactive(nav_fig))
+            plots.append(explorer.navigator_plot)
     if explorer.signal_plot is not None:
         sig_fig = explorer.signal_plot.get_mpl_figure()
         if sig_fig is not None:
             elements.append(mo.mpl.interactive(sig_fig))
+            plots.append(explorer.signal_plot)
 
     if not elements:
         return
+
+    # mo.mpl.interactive() swapped each figure's canvas to WebAgg
+    # (supports_blit=False).  Matplotlib figures share a single callback
+    # registry across all canvases, so the _on_blit_draw handler that was
+    # registered during the original Agg-canvas setup is still connected to
+    # draw_event.  When WebAgg later calls draw(), _on_blit_draw fires and
+    # redraws animated artists (e.g. AxesImage) on top of any non-animated
+    # patches added after plot() returns — such as ROI widgets — erasing them.
+    # Fix: disconnect the stale blit handler and de-animate all artists so
+    # the WebAgg canvas renders them all correctly through its normal draw().
+    for plot in plots:
+        if hasattr(plot, "_draw_event_cid") and plot._draw_event_cid is not None:
+            try:
+                plot.figure.canvas.mpl_disconnect(plot._draw_event_cid)
+            except Exception:
+                pass
+            plot._draw_event_cid = None
+        if hasattr(plot, "figure") and plot.figure is not None:
+            for ax in plot.figure.axes:
+                for artist in ax.get_children():
+                    if artist.get_animated():
+                        artist.set_animated(False)
 
     if len(elements) == 1:
         result = elements[0]

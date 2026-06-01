@@ -262,3 +262,57 @@ class TestMarimoPlotIntegration:
         """Without mocking, _is_marimo_backend should return False."""
         # marimo is installed but we're not inside a marimo notebook
         assert _is_marimo_backend() is False
+
+
+# ── blit-cleanup fix ──────────────────────────────────────────────────
+
+
+class TestMarimoBrokenBlitFix:
+    """Regression tests for the blit-callback / ROI-visibility bug.
+
+    Matplotlib shares a single callback registry across all canvases
+    attached to the same figure.  When _marimo_interactive_display swaps
+    the canvas to WebAgg (supports_blit=False), the _on_blit_draw handler
+    registered during the original Agg setup remains active.  On the next
+    draw() call _on_blit_draw fires, re-draws animated artists (AxesImage
+    etc.) on top of any non-animated patches added after plot() returns —
+    erasing ROI widgets.  The fix disconnects the handler and de-animates
+    all artists so WebAgg renders them correctly.
+    """
+
+    def _setup_signal_and_display(self):
+        """Return (signal, explorer) after calling _marimo_interactive_display."""
+        matplotlib.use("Agg")
+        from hyperspy.drawing.mpl_he import _marimo_interactive_display
+
+        with (
+            patch("hyperspy.drawing.mpl_he._is_marimo_backend", return_value=True),
+            patch("hyperspy.drawing.mpl_he._is_widget_backend", return_value=False),
+            patch("hyperspy.drawing.mpl_he._marimo_interactive_display"),
+        ):
+            s = hs.signals.Signal2D(
+                np.arange(512 * 512).reshape(512, 512).astype(float)
+            )
+            s.plot()
+
+        # Call the real _marimo_interactive_display with mo.mpl.interactive
+        # and mo.output.append mocked so no actual marimo context is needed.
+        with (
+            patch("marimo.mpl.interactive", return_value=MagicMock()),
+            patch("marimo.output.append"),
+        ):
+            _marimo_interactive_display(s._plot)
+
+        return s
+
+    def test_blit_draw_event_disconnected_after_display(self):
+        """_on_blit_draw must be disconnected after _marimo_interactive_display."""
+        s = self._setup_signal_and_display()
+        assert s._plot.signal_plot._draw_event_cid is None
+
+    def test_animated_artists_cleared_after_display(self):
+        """All animated artists must be de-animated after _marimo_interactive_display."""
+        s = self._setup_signal_and_display()
+        fig = s._plot.signal_plot.figure
+        animated = [a for ax in fig.axes for a in ax.get_children() if a.get_animated()]
+        assert animated == [], f"Still animated: {animated}"
