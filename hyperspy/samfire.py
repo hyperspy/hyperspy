@@ -553,24 +553,32 @@ class Samfire:
         w.set_mpl_ax(mark._plot.signal_plot.ax)
         w.connect_navigate()
 
+        _syncing = [False]
+
         def connect_other_navigation1(axes_manager):
-            with mark.axes_manager.events.indices_changed.suppress_callback(
-                connect_other_navigation2
-            ):
+            if _syncing[0]:
+                return
+            _syncing[0] = True
+            try:
                 for ax1, ax2 in zip(
                     mark.axes_manager.navigation_axes, axes_manager.navigation_axes[2:]
                 ):
                     ax1.value = ax2.value
+            finally:
+                _syncing[0] = False
 
         def connect_other_navigation2(axes_manager):
-            with self.model.axes_manager.events.indices_changed.suppress_callback(
-                connect_other_navigation1
-            ):
+            if _syncing[0]:
+                return
+            _syncing[0] = True
+            try:
                 for ax1, ax2 in zip(
                     self.model.axes_manager.navigation_axes[2:],
                     axes_manager.navigation_axes,
                 ):
                     ax1.value = ax2.value
+            finally:
+                _syncing[0] = False
 
         mark.axes_manager.events.indices_changed.connect(
             connect_other_navigation2, {"obj": "axes_manager"}

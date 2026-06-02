@@ -98,6 +98,7 @@ class Parameter(t.HasTraits):
     # depending on whether it was set manually or calculated with sympy
     __twin_inverse_function = None
     _twin_inverse_sympy = None
+    _updating_twin = False  # re-entrance guard for twin value sync
 
     def __init__(self):
         self._twins = set()
@@ -345,7 +346,6 @@ class Parameter(t.HasTraits):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
             self.events.value_changed.trigger(value=self.__value, obj=self)
-        self.trait_property_changed("value", old_value, self.__value)
 
     # Fix the parameter when coupled
     def _get_free(self):
@@ -361,22 +361,18 @@ class Parameter(t.HasTraits):
                 f"Parameter {self.name} can't be set free "
                 "is twinned with {self.twin}."
             )
-        old_value = self._free
         self._free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-        self.trait_property_changed("free", old_value, self._free)
 
     def _on_twin_update(self, value, twin=None):
-        if (
-            twin is not None
-            and hasattr(twin, "events")
-            and hasattr(twin.events, "value_changed")
-        ):
-            with twin.events.value_changed.suppress_callback(self._on_twin_update):
-                self.events.value_changed.trigger(value=value, obj=self)
-        else:
+        if self._updating_twin:
+            return
+        self._updating_twin = True
+        try:
             self.events.value_changed.trigger(value=value, obj=self)
+        finally:
+            self._updating_twin = False
 
     def _set_twin(self, arg):
         if arg is None:
@@ -418,14 +414,12 @@ class Parameter(t.HasTraits):
             return self._bounds[0][0]
 
     def _set_bmin(self, arg):
-        old_value = self.bmin
         if self._number_of_elements == 1:
             self._bounds = (arg, self.bmax)
         else:
             self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-        self.trait_property_changed("bmin", old_value, arg)
 
     def _get_bmax(self):
         """The higher value of the bounds."""
@@ -435,14 +429,12 @@ class Parameter(t.HasTraits):
             return self._bounds[0][1]
 
     def _set_bmax(self, arg):
-        old_value = self.bmax
         if self._number_of_elements == 1:
             self._bounds = (self.bmin, arg)
         else:
             self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-        self.trait_property_changed("bmax", old_value, arg)
 
     @property
     def _number_of_elements(self):
@@ -896,7 +888,6 @@ class Component(t.HasTraits):
             )
         else:
             self._name = value
-        self.trait_property_changed("name", old_value, self._name)
 
     @property
     def _axes_manager(self):
@@ -927,12 +918,10 @@ class Component(t.HasTraits):
     def _set_active(self, arg):
         if self._active == arg:
             return
-        old_value = self._active
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
         self.events.active_changed.trigger(active=self._active, obj=self)
-        self.trait_property_changed("active", old_value, self._active)
 
     def init_parameters(self, parameter_name_list, linear_parameter_list=None):
         """

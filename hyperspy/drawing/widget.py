@@ -460,6 +460,8 @@ class DraggableWidgetBase(WidgetBase):
         pass
 
     def _on_navigate(self, axes_manager):
+        if getattr(self, "_updating_indices_from_drag", False):
+            return
         if axes_manager is self.axes_manager:
             p = self._pos.tolist()
             for i, a in enumerate(self.axes):
@@ -569,6 +571,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         )
         self.no_events_while_dragging = False
         self._drag_store = None
+        self._updating_indices_from_drag = False
 
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
@@ -727,10 +730,12 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         resized = self.size != old_size
         if moved:
             if self._navigating:
-                e = self.axes_manager.events.indices_changed
-                with e.suppress_callback(self._on_navigate):
+                self._updating_indices_from_drag = True
+                try:
                     for i in range(len(self.axes)):
                         self.axes[i].index = self.indices[i]
+                finally:
+                    self._updating_indices_from_drag = False
         if moved or resized:
             # Update patch first
             if moved and resized:
