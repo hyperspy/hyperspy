@@ -547,3 +547,41 @@ class TestSamfireWorker:
         )
 
         del worker
+
+
+class TestSyncingGuardPreventsRecursion:
+    def test_cross_fire_closures_do_not_loop(self):
+        from hyperspy.events import Event
+
+        _syncing = [False]
+        calls = [0, 0]
+
+        ev_a = Event()
+        ev_b = Event()
+
+        def closure_a(**kwargs):
+            if _syncing[0]:
+                return
+            _syncing[0] = True
+            try:
+                calls[0] += 1
+                ev_b.trigger()
+            finally:
+                _syncing[0] = False
+
+        def closure_b(**kwargs):
+            if _syncing[0]:
+                return
+            _syncing[0] = True
+            try:
+                calls[1] += 1
+            finally:
+                _syncing[0] = False
+
+        ev_a.connect(closure_a, [])
+        ev_b.connect(closure_b, [])
+
+        ev_a.trigger()
+
+        assert calls[0] == 1
+        assert calls[1] == 0
