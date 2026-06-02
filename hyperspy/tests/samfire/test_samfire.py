@@ -550,8 +550,9 @@ class TestSamfireWorker:
 
 
 class TestSyncingGuardPreventsRecursion:
-    def test_cross_fire_closures_do_not_loop(self):
+    def test_reentrance_guard_prevents_loops(self):
         from hyperspy.events import Event
+        from hyperspy.samfire import _reentrance_guard
 
         _syncing = [False]
         calls = [0, 0]
@@ -559,24 +560,14 @@ class TestSyncingGuardPreventsRecursion:
         ev_a = Event()
         ev_b = Event()
 
+        @_reentrance_guard(_syncing)
         def closure_a(**kwargs):
-            if _syncing[0]:
-                return
-            _syncing[0] = True
-            try:
-                calls[0] += 1
-                ev_b.trigger()
-            finally:
-                _syncing[0] = False
+            calls[0] += 1
+            ev_b.trigger()
 
+        @_reentrance_guard(_syncing)
         def closure_b(**kwargs):
-            if _syncing[0]:
-                return
-            _syncing[0] = True
-            try:
-                calls[1] += 1
-            finally:
-                _syncing[0] = False
+            calls[1] += 1
 
         ev_a.connect(closure_a, [])
         ev_b.connect(closure_b, [])
@@ -585,3 +576,19 @@ class TestSyncingGuardPreventsRecursion:
 
         assert calls[0] == 1
         assert calls[1] == 0
+
+    def test_guard_allows_successive_calls(self):
+        from hyperspy.samfire import _reentrance_guard
+
+        _syncing = [False]
+        calls = []
+
+        @_reentrance_guard(_syncing)
+        def fn(n):
+            calls.append(n)
+
+        fn(1)
+        fn(2)
+        fn(3)
+
+        assert calls == [1, 2, 3]

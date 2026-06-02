@@ -116,7 +116,7 @@ and install the tools for you, but you should understand the basics of the proce
 
 Your AI tool must verify that the development environment is ready.
 Direct your AI tool to the root
-`AGENTS.md <https://github.com/hyperspy/hyperspy/blob/main/AGENTS.md>`_
+`AGENTS.md <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/AGENTS.md>`_
 with the instruction: *"Read this file, then run the checks in
 the AI Agent Setup section."*  Your tool will verify the editable
 install, activate pre-commit hooks, and confirm lint passes — or

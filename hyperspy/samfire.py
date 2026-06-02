@@ -33,6 +33,32 @@ from hyperspy.samfire_utils.strategy import GlobalStrategy, LocalStrategy
 _logger = logging.getLogger(__name__)
 
 
+def _reentrance_guard(flag):
+    """Decorator that prevents re-entrance using a shared mutable flag.
+
+    When the decorated function is called, if ``flag[0]`` is True
+    (re-entering), the call is silently skipped. Otherwise the flag
+    is set for the duration of the call.
+
+    The flag must be a mutable container (e.g., a list) so both
+    closures can share it without ``nonlocal``.
+    """
+
+    def decorator(fn):
+        def wrapper(*args, **kwargs):
+            if flag[0]:
+                return
+            flag[0] = True
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                flag[0] = False
+
+        return wrapper
+
+    return decorator
+
+
 class StrategyList(list):
     def __init__(self, samf):
         super(StrategyList, self).__init__()
@@ -555,33 +581,23 @@ class Samfire:
 
         # Mutable flag shared by both closures to prevent cross-fire loops.
         # A plain bool would create a local on assignment — the list
-        # avoids needing `nonlocal`.
+        # avoids needing ``nonlocal``.
         _syncing = [False]
 
+        @_reentrance_guard(_syncing)
         def connect_other_navigation1(axes_manager):
-            if _syncing[0]:
-                return
-            _syncing[0] = True
-            try:
-                for ax1, ax2 in zip(
-                    mark.axes_manager.navigation_axes, axes_manager.navigation_axes[2:]
-                ):
-                    ax1.value = ax2.value
-            finally:
-                _syncing[0] = False
+            for ax1, ax2 in zip(
+                mark.axes_manager.navigation_axes, axes_manager.navigation_axes[2:]
+            ):
+                ax1.value = ax2.value
 
+        @_reentrance_guard(_syncing)
         def connect_other_navigation2(axes_manager):
-            if _syncing[0]:
-                return
-            _syncing[0] = True
-            try:
-                for ax1, ax2 in zip(
-                    self.model.axes_manager.navigation_axes[2:],
-                    axes_manager.navigation_axes,
-                ):
-                    ax1.value = ax2.value
-            finally:
-                _syncing[0] = False
+            for ax1, ax2 in zip(
+                self.model.axes_manager.navigation_axes[2:],
+                axes_manager.navigation_axes,
+            ):
+                ax1.value = ax2.value
 
         mark.axes_manager.events.indices_changed.connect(
             connect_other_navigation2, {"obj": "axes_manager"}
