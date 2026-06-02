@@ -592,3 +592,49 @@ class TestSyncingGuardPreventsRecursion:
         fn(3)
 
         assert calls == [1, 2, 3]
+
+    def test_axis_sync_closures_cross_sync_without_loops(self):
+        """Cross‑connected axis‑sync closures with _reentrance_guard.
+
+        Mirrors the pattern in Samfire._request_user_input(): two closures
+        that sync navigation axes between signals, cross‑connected to each
+        other's indices_changed events, with a shared _syncing flag
+        preventing infinite recursion.
+        """
+        from hyperspy.samfire import _reentrance_guard
+        from hyperspy.signals import Signal1D
+
+        # Use ALL-DIFFERENT dimensions so axis reversals are visible.
+        data = np.random.random((12, 18, 50))
+        s1 = Signal1D(data)
+        s2 = Signal1D(data)
+
+        _syncing = [False]
+
+        @_reentrance_guard(_syncing)
+        def sync_s2_from_s1(axes_manager):
+            for ax1, ax2 in zip(
+                s2.axes_manager.navigation_axes, axes_manager.navigation_axes
+            ):
+                ax1.value = ax2.value
+
+        @_reentrance_guard(_syncing)
+        def sync_s1_from_s2(axes_manager):
+            for ax1, ax2 in zip(
+                s1.axes_manager.navigation_axes, axes_manager.navigation_axes
+            ):
+                ax1.value = ax2.value
+
+        s1.axes_manager.events.indices_changed.connect(
+            sync_s2_from_s1, {"obj": "axes_manager"}
+        )
+        s2.axes_manager.events.indices_changed.connect(
+            sync_s1_from_s2, {"obj": "axes_manager"}
+        )
+
+        s1.axes_manager.indices = (5, 10)
+        assert s2.axes_manager.indices == (5, 10)
+
+        s2.axes_manager.indices = (3, 7)
+        assert s1.axes_manager.indices == (3, 7)
+        assert s2.axes_manager.indices == (3, 7)
