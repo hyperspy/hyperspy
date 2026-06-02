@@ -441,7 +441,9 @@ class TestParameterTwin:
         self.p2.twin = self.p1
         self.p1.value = 2
         assert dummy.value == 2
+        # The next line calls add_one -> value = 3
         self.p2.twin = None
+        # Next one shouldn't call add_one -> value = 3
         self.p1.value = 4
         assert dummy.value == 3
         self.p2.value = 10

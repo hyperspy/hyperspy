@@ -553,6 +553,9 @@ class Samfire:
         w.set_mpl_ax(mark._plot.signal_plot.ax)
         w.connect_navigate()
 
+        # Mutable flag shared by both closures to prevent cross-fire loops.
+        # A plain bool would create a local on assignment — the list
+        # avoids needing `nonlocal`.
         _syncing = [False]
 
         def connect_other_navigation1(axes_manager):
