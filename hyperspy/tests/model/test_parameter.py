@@ -413,6 +413,28 @@ class TestParameterTwin:
         assert self.p1.value == 30.0
         assert self.p2.value == 30.0
 
+    def test_twin_guard_returns_early_when_updating(self):
+        """The _updating_twin re-entrance guard prevents _on_twin_update
+        from firing events when called from inside its own update cycle.
+        This is the critical early-return branch that prevents
+        feedback loops in bidirectional twin sync."""
+        p2 = self.p2
+
+        event_fired = False
+
+        def check(*a, **kw):
+            nonlocal event_fired
+            event_fired = True
+
+        p2.events.value_changed.connect(check, [])
+        p2._updating_twin = True
+        p2._on_twin_update(value=5.0)
+        assert not event_fired, "Guard should prevent event when _updating_twin is True"
+
+        p2._updating_twin = False
+        p2._on_twin_update(value=10.0)
+        assert event_fired, "Guard should allow event after _updating_twin reset"
+
     def test_inherit_connections(self):
         dummy = Dummy()
         self.p2.events.value_changed.connect(dummy.add_one, [])
