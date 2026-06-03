@@ -1621,5 +1621,43 @@ def _parse_percentile_value(value, value_name):
         value = float(value.split("th")[0])
         if not 0 <= value <= 100:
             raise ValueError(f"{value_name} must be in the range[0, 100].")
-
     return value
+
+
+def grouped_editable_traits(obj, ungrouped_label="General"):
+    """Group editable traits by their ``group`` metadata.
+
+    Traits with ``group`` metadata are collected under their group
+    label; traits without are placed under *ungrouped_label*.  Groups
+    appear in the order their traits are first encountered, preserving
+    the object's declared trait order within each group.
+
+    Parameters
+    ----------
+    obj : traits.api.HasTraits
+        A HasTraits object whose ``editable_traits()`` traits carry
+        ``group`` metadata.
+    ungrouped_label : str, default "General"
+        Label used for traits that do not have a ``group`` metadata key.
+
+    Returns
+    -------
+    dict[str, list[str]]
+        ``{group_label: [trait_name, ...]}`` — each list preserves the
+        original trait ordering.
+
+    Examples
+    --------
+    >>> from hyperspy.defaults_parser import preferences
+    >>> grouped = grouped_editable_traits(preferences.Plot)
+    >>> "Navigation" in grouped
+    True
+    >>> grouped["Navigation"][:2]
+    ['dims_024_increase', 'dims_024_decrease']
+    """
+    groups = {}
+    for trait_name in obj.editable_traits():
+        ct = obj.trait(trait_name)
+        group = ct.group if ct and ct.group else ungrouped_label
+        groups.setdefault(group, []).append(trait_name)
+    return groups
