@@ -22,6 +22,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
+from hyperspy.defaults_parser import preferences
 from hyperspy.drawing.utils import picker_kwargs
 from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
@@ -451,7 +452,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         v2 = v1 - dx  # Center to start pos
         theta = angle_between(v2, v1)  # Rotation between start and mouse
 
-        if event.key is not None and "shift" in event.key:
+        if event.key is not None and preferences.Plot.key_rotation_snap in event.key:
             base = 30 * np.pi / 180
             theta = base * round(float(theta) / base)
 

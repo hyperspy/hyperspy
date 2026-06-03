@@ -12,3 +12,6 @@ Improve keyboard shortcut support for macOS:
   it without affecting matplotlib behaviour.
 - Add documentation for macOS shortcut defaults and how to configure
   shortcuts when connecting to a remote HyperSpy instance from macOS.
+- Add keyboard shortcuts for 1D model plots: ``a`` toggles adjust
+  position, ``w`` toggles component visibility, ``t`` toggles the
+  residual line. All three are configurable via preferences.

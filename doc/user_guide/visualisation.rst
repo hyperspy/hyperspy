@@ -301,12 +301,17 @@ All keys above are configurable via preferences (see
     ``key_toggle_log``                 ``l``         Toggle log/linear norm or y-scale
     ``key_widget_increase``            ``+``         Increase cursor size
     ``key_widget_decrease``            ``-``         Decrease cursor size
+    ``key_jump_to_click``             ``shift``     Modifier key for jump-to-click on span/cursor widgets
+    ``key_rotation_snap``             ``shift``     Modifier key for 30° rotation snap on 2D line
     ``key_rectangle_x_increase``       ``x``         Increase rectangle widget x-size
     ``key_rectangle_x_decrease``       ``c``         Decrease rectangle widget x-size
     ``key_rectangle_y_increase``       ``y``         Increase rectangle widget y-size
     ``key_rectangle_y_decrease``       ``u``         Decrease rectangle widget y-size
     ``key_step_increase``              ``pageup``    Increase navigation step multiplier
     ``key_step_decrease``              ``pagedown``  Decrease navigation step multiplier
+    ``key_toggle_adjust_position``     ``a``         Toggle component position adjustment in 1D model plots
+    ``key_toggle_plot_components``     ``w``         Toggle component line visibility in 1D model plots
+    ``key_toggle_residual``            ``t``         Toggle residual (Signal - Model) line in 1D model plots
     ================================   ===========   ======================================================
 
 .. [#] ``alt`` on Linux/Windows, ``ctrl+alt`` on macOS.
