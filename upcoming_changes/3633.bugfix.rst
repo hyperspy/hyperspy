@@ -1,6 +1,7 @@
 Fix multiple blit-animation crashes when animated artists are removed while
 a pending ``draw_event`` handler is still active (matplotlib >= 3.10 clears
-``axes``/``figure`` references on ``Artist.remove``). Invalidated blit caches in:
+``axes``/``figure`` references on ``Artist.remove``). Invalidated blit caches
+and forced full redraws in:
 
 - ``Model1D.disable_adjust_position()``
 - ``Model1D.disable_plot_components()``
@@ -8,6 +9,11 @@ a pending ``draw_event`` handler is still active (matplotlib >= 3.10 clears
 - ``HyperspySignalExplorer.remove_right_pointer()``
 - ``Signal1DFigure.close_right_axis()``
 - ``ResizersMixin._set_resizers(False)``
+- ``WidgetBase.set_on(False)``
+- ``MarkerBase.close()``
+- ``BlittedFigure.remove_markers()``
+- ``CircleWidget._update_patch_size()``
+- ``Line2DWidget._remove_size_patch()``
 
 Additionally fixed list-mutation-during-iteration bugs in
 ``BlittedFigure.remove_markers()`` and ``BlittedFigure._on_close()``, added a
