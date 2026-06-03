@@ -790,6 +790,34 @@ class TestAdjustPosition:
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
 
+    def test_on_widget_moved_guard_prevents_reentrance(self):
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        widget = list(self.m._position_widgets.values())[0][0]
+
+        original = self.m._reverse_lookup_position_widget
+        call_count = 0
+
+        def spy(w):
+            nonlocal call_count
+            call_count += 1
+            return original(w)
+
+        self.m._reverse_lookup_position_widget = spy
+        self.m._updating_widget = True
+        self.m._on_widget_moved(widget)
+        assert call_count == 0
+
+        self.m._updating_widget = False
+        self.m._on_widget_moved(widget)
+        assert call_count == 1
+
+        self.m._reverse_lookup_position_widget = original
+        self.m._updating_widget = True
+        self.m._on_widget_moved(widget)
+        self.m._updating_widget = False
+        assert not self.m._updating_widget
+
 
 class TestModel1DSetSignalRange:
     def setup_method(self, method):

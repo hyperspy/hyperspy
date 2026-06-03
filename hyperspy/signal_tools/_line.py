@@ -71,6 +71,10 @@ class LineInSignal2D(t.HasTraits):
         self._color = color
         self._linewidth = linewidth
         self._snap_position = snap
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating the coordinates while they are being updated by the
+        # traits handler
+        self._updating_from_line = False
         self.on = True
 
         # close the tool when the plot is closed
@@ -113,33 +117,39 @@ class LineInSignal2D(t.HasTraits):
     # "position" traits change handler
     def _x0_changed(self, old, new):
         if old != new and self._line is not None:
-            with self._line.events.changed.suppress_callback(
-                self._update_position_from_line
-            ):
+            self._updating_from_line = True
+            try:
                 self._line.position = ((new, self.y0), (self.x1, self.y1))
+            finally:
+                self._updating_from_line = False
 
     def _y0_changed(self, old, new):
         if old != new and self._line is not None:
-            with self._line.events.changed.suppress_callback(
-                self._update_position_from_line
-            ):
+            self._updating_from_line = True
+            try:
                 self._line.position = ((self.x0, new), (self.x1, self.y1))
+            finally:
+                self._updating_from_line = False
 
     def _x1_changed(self, old, new):
         if old != new and self._line is not None:
-            with self._line.events.changed.suppress_callback(
-                self._update_position_from_line
-            ):
+            self._updating_from_line = True
+            try:
                 self._line.position = ((self.x0, self.y0), (new, self.y1))
+            finally:
+                self._updating_from_line = False
 
     def _y1_changed(self, old, new):
         if old != new and self._line is not None:
-            with self._line.events.changed.suppress_callback(
-                self._update_position_from_line
-            ):
+            self._updating_from_line = True
+            try:
                 self._line.position = ((self.x0, self.y0), (self.x1, new))
+            finally:
+                self._updating_from_line = False
 
     def _update_position_from_line(self, *args, **kwargs):
+        if self._updating_from_line:
+            return
         (self.x0, self.y0), (self.x1, self.y1) = self._line.position
 
     def close(self):
@@ -177,6 +187,9 @@ class LineInSignal1D(t.HasTraits):
     def __init__(self, signal, color="blue", linewidth=2, snap=False):
         super().__init__()
         self._line = None
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating the position while the position is being updated by thet traits handler
+        self._updating_from_line = False
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
 
@@ -224,12 +237,15 @@ class LineInSignal1D(t.HasTraits):
     # "position" traits change handler
     def _position_changed(self, old, new):
         if old != new and self._line is not None:
-            with self._line.events.changed.suppress_callback(
-                self._update_position_from_line
-            ):
+            self._updating_from_line = True
+            try:
                 self._line.position = (new,)
+            finally:
+                self._updating_from_line = False
 
     def _update_position_from_line(self):
+        if self._updating_from_line:
+            return
         self.position = self._line.position[0]
 
     def close(self):
