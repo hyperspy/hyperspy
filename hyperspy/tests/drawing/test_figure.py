@@ -286,6 +286,24 @@ def test_close_right_axis_resets_blit_background():
     assert s._plot.signal_plot._background is None
 
 
+def test_on_close_iterates_marker_copy():
+    """Verify _on_close uses list() copy to avoid mutation during iteration."""
+    f = BlittedFigure()
+    f.figure = mock.MagicMock()
+    f.ax = mock.MagicMock()
+    f.events = Events()
+    f.events.closed = Event("", arguments=["obj"])
+
+    marker1 = mock.MagicMock()
+    marker2 = mock.MagicMock()
+    f.ax_markers = [marker1, marker2]
+
+    f.close()
+
+    marker1.close.assert_called_once_with(render_figure=False)
+    marker2.close.assert_called_once_with(render_figure=False)
+
+
 def test_histogram_tile_plot_close_calls_super():
     """Verify HistogramTilePlot.close() delegates to BlittedFigure.close()."""
     htp = HistogramTilePlot()

@@ -825,6 +825,33 @@ class TestAdjustPosition:
             self.m.remove(g)
         assert sig_plot._background is None
 
+    def test_disable_plot_components_no_crash_when_figure_none(self):
+        """``disable_plot_components`` does not crash when figure is None
+        (guard path for detached axes)."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        self.m._plot.signal_plot.figure = None
+        self.m.disable_plot_components()
+
+    def test_remove_no_crash_when_figure_none(self):
+        """``remove`` does not crash when figure is None
+        (guard path for detached axes)."""
+        g = hs.model.components1D.Gaussian()
+        self.m.append(g)
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot.figure = None
+        with mock.patch.object(sig_plot, "update"):
+            self.m.remove(g)
+
+    def test_disable_adjust_position_no_crash_when_figure_none(self):
+        """``disable_adjust_position`` does not crash when figure is None
+        (innermost guard path for detached axes)."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        self.m._plot.signal_plot.figure = None
+        self.m.disable_adjust_position()
+
 
 class TestModel1DSetSignalRange:
     def setup_method(self, method):
