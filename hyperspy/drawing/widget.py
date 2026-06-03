@@ -129,6 +129,11 @@ class WidgetBase(object):
                 for p in self.patch:
                     p.remove()
                 self.disconnect()
+                # Patch removal leaves the blit background stale —
+                # invalidate it so the next render_figure does a full
+                # repaint instead of restoring old pixels.
+                if hasattr(self.ax, "hspy_fig"):
+                    self.ax.hspy_fig._background = None
         if hasattr(super(WidgetBase, self), "set_on"):
             super(WidgetBase, self).set_on(value)
         if did_something:
@@ -898,10 +903,11 @@ class ResizersMixin:
                     # check that the matplotlib patch is present before removing it
                     if r in ax.get_children():
                         r.remove()
-                # Invalidate the blit background to prevent a crash from
-                # stale animated artists after removing resizer handles.
+                # Invalidate the blit background then force a full redraw
+                # so the canvas repaints without the removed resizer handles.
                 if hasattr(ax, "hspy_fig"):
                     ax.hspy_fig._background = None
+                    self.draw_patch()
             self._resizers_on = value
 
     def _get_resizer_size(self):

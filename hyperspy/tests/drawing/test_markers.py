@@ -1005,6 +1005,17 @@ def test_marker_collection_close_render():
     markers.close(render_figure=True)
 
 
+def test_marker_close_resets_blit_background():
+    """Verify MarkerBase.close() invalidates blit cache when render_figure=True."""
+    signal = hs.signals.Signal2D(np.ones((2, 10, 10)))
+    markers = Points(offsets=[[1, 1], [4, 4]], sizes=(10,), color=("black",))
+    signal.plot()
+    signal.add_marker(markers, render_figure=True)
+    signal._plot.signal_plot._background = "stale"
+    markers.close(render_figure=True)
+    assert signal._plot.signal_plot._background is not None
+
+
 class TestMarkers2:
     @pytest.fixture
     def offsets(self):

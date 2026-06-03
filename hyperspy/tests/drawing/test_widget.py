@@ -210,7 +210,7 @@ class TestPolygonWidgetCleanup:
 
 
 def test_set_resizers_false_resets_blit_background():
-    """Verify _set_resizers(False) invalidates blit background cache."""
+    """Verify _set_resizers(False) invalidates blit cache and repaints."""
     s = signals.Signal2D(np.random.random((10, 20, 80)))
     s.plot()
     r = roi.RectangularROI(0, 0, 2, 2)
@@ -219,4 +219,19 @@ def test_set_resizers_false_resets_blit_background():
     widget._set_resizers(True, widget.ax)
     s._plot.signal_plot._background = "stale"
     widget._set_resizers(False, widget.ax)
-    assert s._plot.signal_plot._background is None
+    # After the fix, draw_patch() captures a fresh background.
+    assert s._plot.signal_plot._background is not None
+
+
+def test_set_on_false_resets_blit_background():
+    """Verify WidgetBase.set_on(False) invalidates blit cache after patch removal."""
+    s = signals.Signal2D(np.random.random((10, 20, 80)))
+    s.plot()
+    r = roi.RectangularROI(0, 0, 2, 2)
+    r.interactive(s)
+    widget = list(r.widgets)[0]
+    widget.set_on(True)
+    assert len(widget.patch) > 0
+    s._plot.signal_plot._background = "stale"
+    widget.set_on(False)
+    assert s._plot.signal_plot._background is not None

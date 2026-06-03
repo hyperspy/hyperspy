@@ -178,8 +178,11 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
-        # Invalidate the blit background to prevent a crash from
-        # stale animated artists after removal.
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update, preventing
+        # a crash from stale animated artists and ensuring the canvas
+        # repaints without the removed elements.
         sig_plot = self.signal_plot
         if sig_plot.figure is not None:
             sig_plot._background = None
+            sig_plot.render_figure()

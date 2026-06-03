@@ -129,6 +129,10 @@ class BlittedFigure:
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         if render_figure:
+            # Markers closed above removed their collections from the axes
+            # but did not touch the blit cache — invalidate it before
+            # rendering so the canvas repaints without the old pixels.
+            self._background = None
             self.render_figure()
 
     def _on_close(self):

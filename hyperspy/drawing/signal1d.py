@@ -115,9 +115,10 @@ class Signal1DFigure(BlittedFigure):
                 lines.close()
             self.right_ax.remove()
             self.right_ax = None
-            # Invalidate the blit background to prevent a crash from
-            # stale animated artists after removing the right axis.
+            # Invalidate the blit background then force a full redraw
+            # so the canvas repaints without the removed axis.
             self._background = None
+            self.render_figure()
         if adjust_layout:
             plt.tight_layout()
 
