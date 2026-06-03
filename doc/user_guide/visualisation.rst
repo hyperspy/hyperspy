@@ -122,7 +122,10 @@ Modifier keys do not work with the numpad.
 
 .. _shortcuts_remote_instance:
 
-.. attention::
+.. note::
+
+   .. versionadded:: 2.5
+      ``use_macos_shortcuts()`` and ``use_standard_shortcuts()``
 
    **Connecting to a remote instance.** When the machine running HyperSpy
    (the server) and the machine with the keyboard/mouse (the client) differ,
@@ -317,6 +320,10 @@ Model-plot keyboard shortcuts (``a``, ``s``, ``d``) are described in
 
 .. _plot_shortcut_preferences:
 
+.. versionadded:: 2.5
+   Configurable keyboard shortcuts for pointer, contrast, log toggle,
+   widget resize, jump-to-click, rotation snap, and model-plot actions.
+
 .. table:: Configurable shortcut keys in the ``Plot`` preferences
 
     ================================   ============   ============================================================================
@@ -356,6 +363,8 @@ inconsistent key-event prefixes for the Command key.
 All modifier keys accept ``ctrl``, ``alt``, ``shift``, ``super``, and any
 ``+``-separated combination of these (``super`` is unavailable on macOS).
 
+.. versionadded:: 2.5
+
 The ``platform_shortcuts`` trait (``"auto"``, ``"macos"``, or ``"standard"``)
 applies a complete preset for the modifier keys and step keys at once.  Setting
 it to ``"macos"`` or ``"standard"`` is equivalent to calling
@@ -365,7 +374,9 @@ it to ``"macos"`` or ``"standard"`` is equivalent to calling
 
 .. tip::
 
-    To see all current key bindings in a readable table at any time, call
+   .. versionadded:: 2.5
+
+   To see all current key bindings in a readable table at any time, call
     ``hs.show_keybindings()``.  This prints
     the active shortcuts grouped by category, using the same naming convention as
     the table above.
