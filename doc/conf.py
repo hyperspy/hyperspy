@@ -62,8 +62,6 @@ linkcheck_ignore = [
     "https://scholar.google.co.uk",  # 403 Client Error: Forbidden for url
     "https://software.opensuse.org",  # 400 Client Error: Bad Request for url
     "https://zenodo.org",  # 403 Client Error: Forbidden for url
-    "http://www.casaxps.com",  # 415 Client Error: Unsupported Media Type
-    "https://libraries.io/pypi/hyperspy/usage",  # 404 Not Found
 ]
 
 linkcheck_exclude_documents = []
