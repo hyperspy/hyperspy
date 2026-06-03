@@ -798,7 +798,8 @@ class TestAdjustPosition:
         sig_plot = self.m._plot.signal_plot
         sig_plot._background = "stale_bitmap"
         self.m.disable_adjust_position()
-        assert sig_plot._background is None
+        # _background was reset and render_figure() captured a fresh bitmap
+        assert sig_plot._background is not None
 
     def test_disable_plot_components_resets_blit_background(self):
         """``disable_plot_components`` resets blit cache to prevent
@@ -808,7 +809,8 @@ class TestAdjustPosition:
         sig_plot = self.m._plot.signal_plot
         sig_plot._background = "stale_bitmap"
         self.m.disable_plot_components()
-        assert sig_plot._background is None
+        # _background was reset and render_figure() captured a fresh bitmap
+        assert sig_plot._background is not None
 
     def test_remove_resets_blit_background(self):
         """``remove`` resets blit cache to prevent
@@ -823,7 +825,7 @@ class TestAdjustPosition:
         # happens without a real rendering attempt.
         with mock.patch.object(sig_plot, "update"):
             self.m.remove(g)
-        assert sig_plot._background is None
+        assert sig_plot._background is not None
 
     def test_disable_plot_components_no_crash_when_figure_none(self):
         """``disable_plot_components`` does not crash when figure is None

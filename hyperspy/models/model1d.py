@@ -315,6 +315,7 @@ class Model1D(BaseModel):
             sig_plot = self._plot.signal_plot
             if sig_plot.figure is not None:
                 sig_plot._background = None
+                sig_plot.render_figure()
 
     remove.__doc__ = BaseModel.remove.__doc__
 
@@ -923,6 +924,7 @@ class Model1D(BaseModel):
         sig_plot = self._plot.signal_plot
         if sig_plot.figure is not None:
             sig_plot._background = None
+            sig_plot.render_figure()
 
     disable_plot_components.__doc__ = BaseModel.disable_plot_components.__doc__
 
@@ -1045,6 +1047,7 @@ class Model1D(BaseModel):
             sig_plot = self._plot.signal_plot
             if sig_plot.figure is not None:
                 sig_plot._background = None
+                sig_plot.render_figure()
 
     def fit_component(
         self,
