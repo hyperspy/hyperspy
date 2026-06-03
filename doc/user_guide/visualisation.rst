@@ -58,7 +58,8 @@ To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
 also possible to move the pointer by using the numpad arrows **when numlock is
 on and the spectrum or navigator figure is selected**. When using the numpad
-arrows the PageUp and PageDown keys change the size of the step.
+arrows the PageUp and PageDown keys (``fn+up`` / ``fn+down`` on a MacBook)
+change the size of the step.
 
 The current coordinates can be either set by navigating the
 :meth:`~.api.signals.BaseSignal.plot`, or specified by pixel indices
@@ -73,15 +74,103 @@ In matplotlib, left and right arrow keys are by default set to navigate the
 ``Ctrl`` + arrows can be used instead. Navigating without using the modifier keys
 will be deprecated in version 2.0.
 
-To navigate navigation dimensions larger than 2, modifier keys can be used.
-The defaults are ``Shift`` + ``left``/``right`` and ``Shift`` + ``up``/``down``,
-(``Alt`` + ``left``/``right`` and ``Alt`` + ``up``/``down``)
-for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
+.. _shortcuts_platform_note:
 
-Hotkeys and modifier keys for navigating the plot can be set in the
-:ref:`HyperSpy plot preferences <configuring-hyperspy-label>`.
-Note that some combinations will not work for all platforms, as some systems reserve them for
-other purposes.
+.. note::
+
+   **Platform-specific defaults.** HyperSpy detects your operating system and
+   sets sensible default modifier keys:
+
+   +---------------------+----------------------+---------------------------+
+   | Dimension group     | Linux / Windows      | macOS                     |
+   +=====================+======================+===========================+
+   | Dimensions 0–1      | ``Ctrl`` + arrows    | ``Cmd`` + arrows          |
+   |                     |                      | (same as ``Ctrl``,        |
+   |                     |                      | matplotlib remaps it to   |
+   |                     |                      | the Command key)          |
+   +---------------------+----------------------+---------------------------+
+   | Dimensions 2–3      | ``Shift`` + arrows   | ``Shift`` + arrows        |
+   +---------------------+----------------------+---------------------------+
+   | Dimensions 4–5      | ``Alt`` + arrows     | ``Cmd+Option`` + arrows   |
+   |                     |                      | (``Ctrl+Alt`` in config)  |
+   +---------------------+----------------------+---------------------------+
+   | Step multiplier     | ``PageUp`` /         | ``fn+up`` / ``fn+down``   |
+   |                     | ``PageDown``         | (generates PageUp/Down    |
+   |                     |                      | on the backend)           |
+   +---------------------+----------------------+---------------------------+
+
+   On macOS, ``Ctrl`` in matplotlib key events maps to the **Command** (⌘)
+   key, and ``Alt`` maps to **Option** (⌥).  Plain ``Alt`` (Option) is avoided
+   for dimensions 4–5 because it can produce special characters on macOS;
+   ``Ctrl+Alt`` (``Cmd+Option``) is used instead.
+
+   Every keyboard shortcut listed in this section is configurable via
+   :ref:`HyperSpy plot preferences <configuring-hyperspy-label>`.  For example:
+
+   .. code-block:: python
+
+       # Use a different modifier for dimensions 4-5
+       hs.preferences.Plot.modifier_dims_45 = "shift"
+       # Remap the contrast tool from ``h`` to ``ctrl+h``
+       hs.preferences.Plot.key_adjust_contrast = "ctrl+h"
+       hs.preferences.save()
+
+   See the :ref:`plot preferences table <plot_shortcut_preferences>` for all
+   available keys.
+
+To navigate navigation dimensions larger than 2, modifier keys can be used.
+The defaults depend on your platform — see the table above.
+Modifier keys do not work with the numpad.
+
+.. _shortcuts_remote_instance:
+
+.. attention::
+
+   **Connecting to a remote instance.** When the machine running HyperSpy
+   (the server) and the machine with the keyboard/mouse (the client) differ,
+   the platform defaults may be wrong.  HyperSpy provides convenience methods
+   to switch all modifier shortcuts at once:
+
+   - Call :meth:`~.defaults_parser.PlotConfig.use_macos_shortcuts` to apply
+     macOS-appropriate modifiers.
+   - Call :meth:`~.defaults_parser.PlotConfig.use_standard_shortcuts` to
+     apply standard Linux/Windows modifiers.
+
+   The two most common scenarios are described below.
+
+   **Linux/Windows server → macOS client** (e.g. Jupyter with a remote
+   kernel, SSH X11 forwarding, or VNC).  The server sees ``sys.platform`` as
+   ``"linux"`` and applies standard defaults, but your keyboard is macOS.
+   Additionally, the ``Ctrl`` → Command remapping that happens with a local
+   matplotlib macOS backend does **not** apply:
+
+   - **Browser-based (Jupyter/ipympl)**: The Command key is sent by the
+     browser as ``Meta``, which matplotlib on the server receives as
+     ``super`` — not ``ctrl``.  The default ``Ctrl+arrows`` shortcuts will
+     not respond to Command key presses.
+   - **SSH X11 forwarding**: Depends on your X server configuration (XQuartz
+     typically maps Command to ``Super``).
+
+   .. code-block:: python
+
+       # Option A — full macOS presets (recommended):
+       hs.preferences.Plot.use_macos_shortcuts()
+
+       # Option B — manual override if Command arrives as ``super``:
+       hs.preferences.Plot.modifier_dims_01 = "super"     # ⌘+arrows for dims 0-1
+       hs.preferences.Plot.modifier_dims_45 = "super+alt"  # ⌘⌥+arrows for dims 4-5
+       hs.preferences.save()
+
+   **macOS server → Linux/Windows client** (e.g. remote desktop into a Mac
+   from a Linux or Windows machine).  The server applies the macOS defaults
+   (``Ctrl+Alt`` for dims 4–5, designed to avoid Option-key interference),
+   but your keyboard is a standard PC keyboard where ``Ctrl+Alt`` is awkward
+   and ``Alt`` alone works fine.
+
+   .. code-block:: python
+
+       hs.preferences.Plot.use_standard_shortcuts()
+       hs.preferences.save()
 
 If you want to jump to some point in the dataset.  In that case you can hold the ``Shift`` key
 and click the point you are interested in.  That will automatically take you to that point in the
@@ -102,19 +191,25 @@ The following keyboard shortcuts are available when the 1D signal figure is in f
 
 .. table:: Keyboard shortcuts available on the signal figure of 1D signal data
 
-    =======================   =============================
-    key                       function
-    =======================   =============================
-    e                         Switch second pointer on/off
-    Ctrl + Arrows             Change coordinates for dimensions 0 and 1 (typically x and y)
-    Shift + Arrows            Change coordinates for dimensions 2 and 3
-    Alt + Arrows              Change coordinates for dimensions 4 and 5
-    PageUp                    Increase step size
-    PageDown                  Decrease step size
-    ``+``                     Increase pointer size when the navigator is an image
-    ``-``                     Decrease pointer size when the navigator is an image
-    ``l``                     switch the scale of the y-axis between logarithmic and linear
-    =======================   =============================
+    =============================   =============================================
+    key                             function
+    =============================   =============================================
+    e                               Switch second pointer on/off
+    Ctrl + Arrows (Cmd on macOS)    Change coordinates for dimensions 0 and 1
+    Shift + Arrows                  Change coordinates for dimensions 2 and 3
+    Alt + Arrows                    Change coordinates for dimensions 4 and 5
+    (Cmd+Option on macOS)           (only for 5+ dimensional datasets)
+    PageUp / fn+up                  Increase step size
+    PageDown / fn+down              Decrease step size
+    ``+``                           Increase pointer size (navigator image)
+    ``-``                           Decrease pointer size (navigator image)
+    x / c                           Increase / decrease rectangle widget x-size
+    y / u                           Increase / decrease rectangle widget y-size
+    ``l``                           Toggle y-axis between log and linear scale
+    =============================   =============================================
+
+All keys above are configurable via preferences (see
+:ref:`plot preferences <configuring-hyperspy-label>`, ``Plot`` section).
 
 To close all the figures run the following command:
 
@@ -164,23 +259,60 @@ a spectrum or an image obtained by summing over the image dimensions:
 .. versionadded:: 1.4
    ``l`` keyboard shortcut
 
-The following keyboard shortcuts are availalbe when the 2D signal figure is in focus:
+The following keyboard shortcuts are available when the 2D signal figure is in focus:
 
 .. table:: Keyboard shortcuts available on the signal figure of 2D signal data
 
-    =======================   =============================
-    key                       function
-    =======================   =============================
-    Ctrl + Arrows             Change coordinates for dimensions 0 and 1 (typically x and y)
-    Shift + Arrows            Change coordinates for dimensions 2 and 3
-    Alt + Arrows              Change coordinates for dimensions 4 and 5
-    PageUp                    Increase step size
-    PageDown                  Decrease step size
-    ``+``                     Increase pointer size when the navigator is an image
-    ``-``                     Decrease pointer size when the navigator is an image
-    ``h``                     Launch the contrast adjustment tool
-    ``l``                     switch the norm of the intensity between logarithmic and linear
-    =======================   =============================
+    =============================   =============================================
+    key                             function
+    =============================   =============================================
+    Ctrl + Arrows (Cmd on macOS)    Change coordinates for dimensions 0 and 1
+    Shift + Arrows                  Change coordinates for dimensions 2 and 3
+    Alt + Arrows                    Change coordinates for dimensions 4 and 5
+    (Cmd+Option on macOS)           (only for 5+ dimensional datasets)
+    PageUp / fn+up                  Increase step size
+    PageDown / fn+down              Decrease step size
+    ``+``                           Increase pointer size (navigator image)
+    ``-``                           Decrease pointer size (navigator image)
+    ``h``                           Launch the contrast adjustment tool
+    ``l``                           Toggle intensity norm between log and linear
+    =============================   =============================================
+
+All keys above are configurable via preferences (see
+:ref:`plot preferences <configuring-hyperspy-label>`, ``Plot`` section).
+
+
+.. _plot_shortcut_preferences:
+
+.. table:: Configurable shortcut keys in the ``Plot`` preferences
+
+    ================================   ===========   ======================================================
+    Preference key                     Default       Description
+    ================================   ===========   ======================================================
+    ``dims_024_increase``              ``right``     Arrow key for moving right (dims 0, 2, 4)
+    ``dims_024_decrease``              ``left``      Arrow key for moving left (dims 0, 2, 4)
+    ``dims_135_increase``              ``down``      Arrow key for moving down (dims 1, 3, 5)
+    ``dims_135_decrease``              ``up``        Arrow key for moving up (dims 1, 3, 5)
+    ``modifier_dims_01``               ``ctrl``      Modifier for dimensions 0–1
+    ``modifier_dims_23``               ``shift``     Modifier for dimensions 2–3
+    ``modifier_dims_45``               varies [#]_   Modifier for dimensions 4–5
+    ``key_toggle_pointer``             ``e``         Toggle second pointer
+    ``key_adjust_contrast``            ``h``         Launch contrast adjustment tool
+    ``key_toggle_log``                 ``l``         Toggle log/linear norm or y-scale
+    ``key_widget_increase``            ``+``         Increase cursor size
+    ``key_widget_decrease``            ``-``         Decrease cursor size
+    ``key_rectangle_x_increase``       ``x``         Increase rectangle widget x-size
+    ``key_rectangle_x_decrease``       ``c``         Decrease rectangle widget x-size
+    ``key_rectangle_y_increase``       ``y``         Increase rectangle widget y-size
+    ``key_rectangle_y_decrease``       ``u``         Decrease rectangle widget y-size
+    ``key_step_increase``              ``pageup``    Increase navigation step multiplier
+    ``key_step_decrease``              ``pagedown``  Decrease navigation step multiplier
+    ================================   ===========   ======================================================
+
+.. [#] ``alt`` on Linux/Windows, ``ctrl+alt`` on macOS.
+
+All modifier keys accept ``ctrl``, ``alt``, ``shift``, ``super`` (Command /
+Windows key), and any ``+``-separated combination of these.
 
 
 .. _plot.customize_images:

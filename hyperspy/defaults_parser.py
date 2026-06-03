@@ -20,6 +20,8 @@
 import configparser
 import logging
 import os
+import sys
+import warnings
 from pathlib import Path
 
 import traits.api as t
@@ -113,6 +115,32 @@ class GUIs(t.HasTraits):
     )
 
 
+_IS_MACOS = sys.platform == "darwin"
+
+# All valid modifier key combinations.  ``super`` is the Command key on macOS and
+# the Windows/Logo key on other platforms.
+_MODIFIER_OPTIONS = [
+    "ctrl",
+    "alt",
+    "shift",
+    "super",
+    "ctrl+alt",
+    "ctrl+shift",
+    "alt+shift",
+    "ctrl+alt+shift",
+    "super+alt",
+    "super+shift",
+    "ctrl+super",
+]
+
+
+def _modifier_list(*defaults):
+    """Return modifier options with the best platform default first."""
+    # Use the second item ("macOS default") on Darwin; the first otherwise.
+    default = defaults[1] if _IS_MACOS and len(defaults) > 1 else defaults[0]
+    return [default] + [m for m in _MODIFIER_OPTIONS if m != default]
+
+
 class PlotConfig(t.HasTraits):
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
@@ -136,6 +164,7 @@ class PlotConfig(t.HasTraits):
         label="Color map signal",
         desc="Set the default color map for the signal plot.",
     )
+    # --- navigation arrow keys ---
     dims_024_increase = t.Str("right", label="Navigate right")
     dims_024_decrease = t.Str(
         "left",
@@ -149,42 +178,158 @@ class PlotConfig(t.HasTraits):
         "up",
         label="Navigate up",
     )
+    # --- modifier keys for dimension groups (platform-aware defaults) ---
+    # Each tuple: (linux/windows default, macOS default)
+    # On macOS: ``ctrl`` → Command key, ``alt`` → Option key.
+    # Plain ``alt`` (Option) is avoided on macOS because it can produce
+    # special characters; ``ctrl+alt`` is used instead for dims 4-5.
     modifier_dims_01 = t.Enum(
-        [
-            "ctrl",
-            "alt",
-            "shift",
-            "ctrl+alt",
-            "ctrl+shift",
-            "alt+shift",
-            "ctrl+alt+shift",
-        ],
+        _modifier_list("ctrl", "ctrl"),
         label="Modifier key for 1st and 2nd dimensions",
-    )  # 0 elem is default
+    )
     modifier_dims_23 = t.Enum(
-        [
-            "shift",
-            "alt",
-            "ctrl",
-            "ctrl+alt",
-            "ctrl+shift",
-            "alt+shift",
-            "ctrl+alt+shift",
-        ],
+        _modifier_list("shift", "shift"),
         label="Modifier key for 3rd and 4th dimensions",
-    )  # 0 elem is default
+    )
     modifier_dims_45 = t.Enum(
-        [
-            "alt",
-            "ctrl",
-            "shift",
-            "ctrl+alt",
-            "ctrl+shift",
-            "alt+shift",
-            "ctrl+alt+shift",
-        ],
+        _modifier_list("alt", "ctrl+alt"),
         label="Modifier key for 5th and 6th dimensions",
-    )  # 0 elem is default
+    )
+    # --- platform shortcut presets ---
+    # Convenience methods apply these sets atomically so users don't have
+    # to set each modifier individually — especially useful when the machine
+    # running HyperSpy (server) differs from the keyboard (client).
+    _MACOS_SHORTCUT_DEFAULTS = {
+        "modifier_dims_01": "ctrl",
+        "modifier_dims_23": "shift",
+        "modifier_dims_45": "ctrl+alt",
+    }
+    _STANDARD_SHORTCUT_DEFAULTS = {
+        "modifier_dims_01": "ctrl",
+        "modifier_dims_23": "shift",
+        "modifier_dims_45": "alt",
+    }
+
+    def _apply_shortcut_preset(self, preset):
+        """Set *all* platform-dependent modifier traits at once."""
+        self.trait_set(True, **preset)
+
+    def use_macos_shortcuts(self):
+        """Apply macOS-friendly keyboard modifier defaults.
+
+        Useful when the HyperSpy instance runs on a non-macOS server (e.g.
+        remote Linux) but the keyboard is macOS.  Call once after import::
+
+            hs.preferences.Plot.use_macos_shortcuts()
+        """
+        self._apply_shortcut_preset(self._MACOS_SHORTCUT_DEFAULTS)
+
+    def use_standard_shortcuts(self):
+        """Apply standard (Linux/Windows) keyboard modifier defaults.
+
+        Useful when the HyperSpy instance runs on macOS but the keyboard is
+        Linux/Windows (e.g. remote desktop, X11 forwarding).  Call once
+        after import::
+
+            hs.preferences.Plot.use_standard_shortcuts()
+        """
+        self._apply_shortcut_preset(self._STANDARD_SHORTCUT_DEFAULTS)
+
+    # --- configurable platform preset ---
+    platform_shortcuts = t.Enum(
+        ["auto", "macos", "standard"],
+        default="auto",
+        label="Platform shortcut preset",
+        desc="Override platform-specific keyboard modifiers. "
+        "'auto' uses the detected platform, 'macos' and 'standard' "
+        "apply the corresponding preset regardless of platform. "
+        "Useful when the machine running HyperSpy differs from the "
+        "client machine.",
+    )
+
+    @t.observe("platform_shortcuts")
+    def _platform_shortcuts_changed(self, event):
+        new = event.new
+        if new == "auto":
+            return
+        if new == "macos":
+            self.use_macos_shortcuts()
+            if not _IS_MACOS:
+                warnings.warn(
+                    "Plot.platform_shortcuts is set to 'macos' but "
+                    "sys.platform is %r (not macOS). This is expected if "
+                    "connecting from a macOS client to a remote server." % sys.platform,
+                )
+        elif new == "standard":
+            self.use_standard_shortcuts()
+            if _IS_MACOS:
+                warnings.warn(
+                    "Plot.platform_shortcuts is set to 'standard' but "
+                    "sys.platform is %r (macOS). This is expected if "
+                    "connecting from a non-macOS client to a remote macOS "
+                    "server." % sys.platform,
+                )
+
+    # --- hardcoded drawing shortcuts (now configurable) ---
+    key_toggle_pointer = t.Str(
+        "e",
+        label="Toggle second pointer key",
+        desc="Key to toggle the second pointer on/off in 1D signal plots.",
+    )
+    key_adjust_contrast = t.Str(
+        "h",
+        label="Adjust contrast tool key",
+        desc="Key to launch the contrast adjustment tool in 2D image plots.",
+    )
+    key_toggle_log = t.Str(
+        "l",
+        label="Toggle log/linear key",
+        desc="Key to toggle between logarithmic and linear norm or y-scale.",
+    )
+    key_widget_increase = t.Str(
+        "+",
+        label="Widget increase size key",
+        desc="Key to increase the size of navigator cursors.",
+    )
+    key_widget_decrease = t.Str(
+        "-",
+        label="Widget decrease size key",
+        desc="Key to decrease the size of navigator cursors.",
+    )
+    key_rectangle_x_increase = t.Str(
+        "x",
+        label="Rectangle x-size increase key",
+        desc="Key to increase the x-size of a rectangle widget.",
+    )
+    key_rectangle_x_decrease = t.Str(
+        "c",
+        label="Rectangle x-size decrease key",
+        desc="Key to decrease the x-size of a rectangle widget.",
+    )
+    key_rectangle_y_increase = t.Str(
+        "y",
+        label="Rectangle y-size increase key",
+        desc="Key to increase the y-size of a rectangle widget.",
+    )
+    key_rectangle_y_decrease = t.Str(
+        "u",
+        label="Rectangle y-size decrease key",
+        desc="Key to decrease the y-size of a rectangle widget.",
+    )
+    key_step_increase = t.Str(
+        "pageup",
+        label="Step increase key",
+        desc="Key to increase the navigation step multiplier. "
+        "On MacBooks, ``pageup`` is generated by ``fn+up``; "
+        "set to ``fn+up`` if the backend supports it.",
+    )
+    key_step_decrease = t.Str(
+        "pagedown",
+        label="Step decrease key",
+        desc="Key to decrease the navigation step multiplier. "
+        "On MacBooks, ``pagedown`` is generated by ``fn+down``; "
+        "set to ``fn+down`` if the backend supports it.",
+    )
     pick_tolerance = t.CFloat(
         7.5, label="Pick tolerance", desc="The pick tolerance of ROIs in screen pixels."
     )

@@ -701,9 +701,9 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         pass
 
     def on_key_press(self, event):
-        if event.key == "+":
+        if event.key == preferences.Plot.key_widget_increase:
             self.increase_size()
-        if event.key == "-":
+        if event.key == preferences.Plot.key_widget_decrease:
             self.decrease_size()
 
     def connect(self, ax):

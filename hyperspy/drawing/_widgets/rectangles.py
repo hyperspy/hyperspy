@@ -21,6 +21,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
+from hyperspy.defaults_parser import preferences
 from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
 
 _logger = logging.getLogger(__name__)
@@ -317,13 +318,13 @@ class RectangleWidget(SquareWidget, ResizersMixin):
 
     def on_key_press(self, event):
         if self.selected:
-            if event.key == "x":
+            if event.key == preferences.Plot.key_rectangle_x_increase:
                 self._increase_xsize()
-            elif event.key == "c":
+            elif event.key == preferences.Plot.key_rectangle_x_decrease:
                 self._decrease_xsize()
-            elif event.key == "y":
+            elif event.key == preferences.Plot.key_rectangle_y_increase:
                 self._increase_ysize()
-            elif event.key == "u":
+            elif event.key == preferences.Plot.key_rectangle_y_decrease:
                 self._decrease_ysize()
             else:
                 super(RectangleWidget, self).on_key_press(event)

@@ -28,6 +28,7 @@ from matplotlib.figure import SubFigure
 from rsciio.utils import rgb
 from traits.api import Undefined
 
+from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
 from hyperspy.drawing import utils, widgets
 from hyperspy.drawing.figure import BlittedFigure
@@ -632,9 +633,9 @@ class ImagePlot(BlittedFigure):
                 self.axes_manager.events.indices_changed.disconnect(self.update)
 
     def on_key_press(self, event):
-        if event.key == "h":
+        if event.key == preferences.Plot.key_adjust_contrast:
             self.gui_adjust_contrast()
-        if event.key == "l":
+        if event.key == preferences.Plot.key_toggle_log:
             self.toggle_norm()
 
     def toggle_norm(self):

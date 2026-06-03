@@ -2332,9 +2332,9 @@ class AxesManager(t.HasTraits):
             **dict.fromkeys([dim5_increase], (5, +1)),
         }
 
-        if event.key == "pageup":
+        if event.key == preferences.Plot.key_step_increase:
             self._step += 1
-        elif event.key == "pagedown":
+        elif event.key == preferences.Plot.key_step_decrease:
             if self._step > 1:
                 self._step -= 1
         else:
