@@ -124,8 +124,8 @@ class BlittedFigure:
         """Remove all markers"""
         # Iterate a snapshot copy: marker.close() triggers events.closed,
         # which calls self.ax_markers.remove(obj) via the lambda registered
-        # in add_marker (line 120).  Mutating the list during iteration
-        # causes every other marker to be skipped.
+        # in add_marker().  Mutating the list during iteration causes
+        # every other marker to be skipped.
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         if render_figure:
