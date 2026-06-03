@@ -224,6 +224,8 @@ The following keyboard shortcuts are available when the 1D signal figure is in f
 Model plot shortcuts
 --------------------
 
+.. versionadded:: 2.5
+
 The following keys are available when a 1D model figure is in focus
 (:ref:`model plot <model.visualization>`), regardless of whether the
 underlying signal is 1D or 2D:
