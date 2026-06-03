@@ -486,7 +486,8 @@ class TestAxesHotkeys:
         assert preferences.Plot.modifier_dims_45 == saved
 
     def test_platform_shortcuts_warns_on_mismatch(self):
-        preferences.Plot.platform_shortcuts = "auto"  # reset
+        # Reset to a known state before starting
+        preferences.Plot.platform_shortcuts = "auto"
         if sys.platform == "darwin":
             # macOS → 'macos' matches (no warn), 'standard' warns
             preferences.Plot.platform_shortcuts = "macos"  # silent
@@ -497,6 +498,17 @@ class TestAxesHotkeys:
             with pytest.warns(UserWarning, match="not macOS"):
                 preferences.Plot.platform_shortcuts = "macos"
             preferences.Plot.platform_shortcuts = "standard"  # silent
+
+    def test_platform_shortcuts_warns_non_macos(self):
+        with mock.patch("hyperspy.defaults_parser._IS_MACOS", False):
+            with pytest.warns(UserWarning, match="not macOS"):
+                preferences.Plot.platform_shortcuts = "macos"
+
+    def test_platform_shortcuts_standard_no_warn_non_macos(self):
+        with mock.patch("hyperspy.defaults_parser._IS_MACOS", False):
+            preferences.Plot.platform_shortcuts = "auto"
+            preferences.Plot.platform_shortcuts = "standard"
+        assert preferences.Plot.modifier_dims_45 == "alt"
 
 
 class fake_key_event:
