@@ -326,3 +326,42 @@ class TestKeyHandlerPreferences:
             model._toggle_residual.assert_called_once()
         finally:
             preferences.Plot.key_toggle_residual = original
+
+    def test_toggle_residual_creates_line_when_none(self):
+        """_toggle_residual() creates a Signal1DLine when no residual line exists."""
+        from hyperspy.models.model1d import Model1D
+
+        model = mock.MagicMock()
+        model._residual_for_plot = mock.MagicMock()
+        model._plot = mock.MagicMock(is_active=True)
+        model._plot.signal_plot = mock.MagicMock()
+        model._residual_line = None
+
+        _make_handler(Model1D, "_toggle_residual", model)
+
+        with mock.patch(
+            "hyperspy.models.model1d.hyperspy.drawing.signal1d.Signal1DLine"
+        ) as MockLine:
+            model._toggle_residual()
+            MockLine.assert_called_once()
+            MockLine.return_value.set_line_properties.assert_called_once_with(
+                color="green", type="line"
+            )
+            model._plot.signal_plot.add_line.assert_called_once_with(
+                MockLine.return_value
+            )
+            MockLine.return_value.plot.assert_called_once()
+
+    def test_toggle_residual_removes_line_when_exists(self):
+        """_toggle_residual() closes and deletes the residual line when it exists."""
+        from hyperspy.models.model1d import Model1D
+
+        model = mock.MagicMock()
+        residual_mock = mock.MagicMock()
+        model._residual_line = residual_mock
+        model._plot = mock.MagicMock(is_active=True)
+
+        _make_handler(Model1D, "_toggle_residual", model)
+
+        model._toggle_residual()
+        residual_mock.close.assert_called_once()
