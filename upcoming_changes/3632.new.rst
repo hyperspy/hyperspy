@@ -1,0 +1,17 @@
+Add keyboard shortcut discoverability and new bindings:
+
+- Add ``hs.show_keybindings()`` to display all keyboard shortcuts with
+  their current key bindings, grouped by category (Navigation, Plot
+  Interaction, Widget Resize, Model Plot).  On macOS the output uses
+  platform-native symbols (⌘, ⌥, ⌃, ⇧, fn+↑, fn+↓).
+- Add ``platform_shortcuts`` preference trait (``"auto"`` / ``"macos"`` /
+  ``"standard"``) to ``PlotConfig`` for one-shot platform switching.
+  ``"auto"`` (default) detects the platform and applies the appropriate
+  preset automatically.
+- Add ``use_macos_shortcuts()`` and ``use_standard_shortcuts()``
+  convenience methods to ``PlotConfig``, useful for remote scenarios
+  (e.g., Linux server accessed from a macOS keyboard).
+- Add keyboard shortcuts for 1D model plots: ``a`` toggles component
+  adjust-position lines, ``s`` toggles component line visibility,
+  ``d`` toggles the residual (Signal − Model) line.  All three are
+  configurable via preferences.
