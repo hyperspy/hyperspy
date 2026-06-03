@@ -117,10 +117,15 @@ class BlittedFigure:
     def add_marker(self, marker):
         marker.ax = self.ax
         self.ax_markers.append(marker)
+        # marker.close() → events.closed → this lambda → mutates ax_markers
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 
     def remove_markers(self, render_figure=False):
         """Remove all markers"""
+        # Iterate a snapshot copy: marker.close() triggers events.closed,
+        # which calls self.ax_markers.remove(obj) via the lambda registered
+        # in add_marker (line 120).  Mutating the list during iteration
+        # causes every other marker to be skipped.
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         if render_figure:
@@ -130,6 +135,7 @@ class BlittedFigure:
         _logger.debug("Closing `BlittedFigure`.")
         self.ax = None
         self._background = None
+        # Same snapshot-copy rationale as remove_markers (see above).
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         self.events.closed.trigger(obj=self)
