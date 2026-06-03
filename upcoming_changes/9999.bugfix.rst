@@ -1,0 +1,5 @@
+Fix ``Model1D.disable_adjust_position()`` blit-crash when a pending
+``draw_event`` fires after widget removal and encounters a ``Text``
+label artist whose ``axes`` and ``figure`` references were cleared by
+``Artist.remove`` (matplotlib >= 3.10), resulting in
+``AttributeError: 'NoneType' object has no attribute 'dpi'``.
