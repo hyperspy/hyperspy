@@ -84,25 +84,23 @@ will be deprecated in version 2.0.
    +---------------------+----------------------+---------------------------+
    | Dimension group     | Linux / Windows      | macOS                     |
    +=====================+======================+===========================+
-   | Dimensions 0–1      | ``Ctrl`` + arrows    | ``Cmd`` + arrows          |
-   |                     |                      | (same as ``Ctrl``,        |
-   |                     |                      | matplotlib remaps it to   |
-   |                     |                      | the Command key)          |
+   | Dimensions 0–1      | ``Ctrl`` + arrows    | ``Option`` + arrows       |
+   |                     |                      | (``alt`` modifier)        |
    +---------------------+----------------------+---------------------------+
    | Dimensions 2–3      | ``Shift`` + arrows   | ``Shift`` + arrows        |
    +---------------------+----------------------+---------------------------+
-   | Dimensions 4–5      | ``Alt`` + arrows     | ``Cmd+Option`` + arrows   |
-   |                     |                      | (``Ctrl+Alt`` in config)  |
+   | Dimensions 4–5      | ``Alt`` + arrows     | ``Option+Shift`` + arrows |
+   |                     |                      | (``alt+shift`` modifier)  |
    +---------------------+----------------------+---------------------------+
    | Step multiplier     | ``PageUp`` /         | ``fn+up`` / ``fn+down``   |
    |                     | ``PageDown``         | (generates PageUp/Down    |
    |                     |                      | on the backend)           |
    +---------------------+----------------------+---------------------------+
 
-   On macOS, ``Ctrl`` in matplotlib key events maps to the **Command** (⌘)
-   key, and ``Alt`` maps to **Option** (⌥).  Plain ``Alt`` (Option) is avoided
-   for dimensions 4–5 because it can produce special characters on macOS;
-   ``Ctrl+Alt`` (``Cmd+Option``) is used instead.
+   On macOS, ``alt`` maps to the **Option** (⌥) key and ``shift`` maps to
+   **Shift** (⇧).  ``Command`` (⌘) and ``Control`` (⌃) are deliberately
+   avoided because macOS captures ``Command+arrows`` and ``Ctrl+arrows`` for
+   Mission Control and Spaces navigation before any application sees them.
 
    Every keyboard shortcut listed in this section is configurable via
    :ref:`HyperSpy plot preferences <configuring-hyperspy-label>`.  For example:
@@ -131,9 +129,9 @@ Modifier keys do not work with the numpad.
    the platform defaults may be wrong.  HyperSpy provides convenience methods
    to switch all modifier shortcuts at once:
 
-   - Call :meth:`~.defaults_parser.PlotConfig.use_macos_shortcuts` to apply
+   - Call ``use_macos_shortcuts()`` to apply
      macOS-appropriate modifiers.
-   - Call :meth:`~.defaults_parser.PlotConfig.use_standard_shortcuts` to
+   - Call ``use_standard_shortcuts()`` to
      apply standard Linux/Windows modifiers.
 
    The two most common scenarios are described below.
@@ -156,24 +154,31 @@ Modifier keys do not work with the numpad.
        # Option A — full macOS presets (recommended):
        hs.preferences.Plot.use_macos_shortcuts()
 
-       # Option B — manual override if Command arrives as ``super``:
-       hs.preferences.Plot.modifier_dims_01 = "super"     # ⌘+arrows for dims 0-1
-       hs.preferences.Plot.modifier_dims_45 = "super+alt"  # ⌘⌥+arrows for dims 4-5
-       hs.preferences.save()
+        # Option B — manual override if you prefer Command (⌘).  Note:
+        # macOS captures ⌘+arrows for Mission Control; disable that
+        # in System Settings → Keyboard → Keyboard Shortcuts → Mission
+        # Control for this to work.  You must also set this on the
+        # Linux server's hyperspy config, not on the macOS client.
+        hs.preferences.Plot.modifier_dims_01 = "super"     # ⌘+arrows for dims 0-1
+        hs.preferences.Plot.modifier_dims_45 = "super+alt"  # ⌘⌥+arrows for dims 4-5
+        hs.preferences.save()
 
    **macOS server → Linux/Windows client** (e.g. remote desktop into a Mac
    from a Linux or Windows machine).  The server applies the macOS defaults
-   (``Ctrl+Alt`` for dims 4–5, designed to avoid Option-key interference),
-   but your keyboard is a standard PC keyboard where ``Ctrl+Alt`` is awkward
-   and ``Alt`` alone works fine.
+   (``alt`` for dims 0–1, ``alt+shift`` for dims 4–5), designed to avoid
+   Command-key Mission Control interference and backend inconsistencies.
+   On a standard PC keyboard these combos may be awkward;
+   ``use_standard_shortcuts()`` restores the familiar ``Ctrl``/``Alt``
+   bindings.
 
    .. code-block:: python
 
        hs.preferences.Plot.use_standard_shortcuts()
        hs.preferences.save()
 
-If you want to jump to some point in the dataset.  In that case you can hold the ``Shift`` key
-and click the point you are interested in.  That will automatically take you to that point in the
+If you want to jump directly to a region of interest, hold the ``Shift`` key (configurable
+via :ref:`plot preferences <configuring-hyperspy-label>`, ``key_jump_to_click``) and click
+the point you are interested in.  That will automatically take you to that point in the
 data.  This also helps with lazy data as you don't have to load every chunk in between.
 
 .. figure::  images/second_pointer.png
@@ -195,10 +200,11 @@ The following keyboard shortcuts are available when the 1D signal figure is in f
     key                             function
     =============================   =============================================
     e                               Switch second pointer on/off
-    Ctrl + Arrows (Cmd on macOS)    Change coordinates for dimensions 0 and 1
+    Ctrl + Arrows (Option ⌥         Change coordinates for dimensions 0 and 1
+    on macOS)
     Shift + Arrows                  Change coordinates for dimensions 2 and 3
-    Alt + Arrows                    Change coordinates for dimensions 4 and 5
-    (Cmd+Option on macOS)           (only for 5+ dimensional datasets)
+    Alt + Arrows (Option+Shift      Change coordinates for dimensions 4 and 5
+    ⌥⇧ on macOS)                    (only for 5+ dimensional datasets)
     PageUp / fn+up                  Increase step size
     PageDown / fn+down              Decrease step size
     ``+``                           Increase pointer size (navigator image)
@@ -206,6 +212,27 @@ The following keyboard shortcuts are available when the 1D signal figure is in f
     x / c                           Increase / decrease rectangle widget x-size
     y / u                           Increase / decrease rectangle widget y-size
     ``l``                           Toggle y-axis between log and linear scale
+    Shift + click                   Jump to clicked coordinates
+                                    (configurable via ``key_jump_to_click``)
+    =============================   =============================================
+
+.. _shortcuts_model_plots:
+
+Model plot shortcuts
+--------------------
+
+The following keys are available when a 1D model figure is in focus
+(:ref:`model plot <model.visualization>`), regardless of whether the
+underlying signal is 1D or 2D:
+
+.. table:: Keyboard shortcuts available on model plots
+
+    =============================   =============================================
+    key                             function
+    =============================   =============================================
+    ``a``                           Toggle component position adjustment
+    ``s``                           Toggle component line visibility
+    ``d``                           Toggle residual (Signal − Model) line
     =============================   =============================================
 
 All keys above are configurable via preferences (see
@@ -266,58 +293,82 @@ The following keyboard shortcuts are available when the 2D signal figure is in f
     =============================   =============================================
     key                             function
     =============================   =============================================
-    Ctrl + Arrows (Cmd on macOS)    Change coordinates for dimensions 0 and 1
+    Ctrl + Arrows (Option ⌥         Change coordinates for dimensions 0 and 1
+    on macOS)
     Shift + Arrows                  Change coordinates for dimensions 2 and 3
-    Alt + Arrows                    Change coordinates for dimensions 4 and 5
-    (Cmd+Option on macOS)           (only for 5+ dimensional datasets)
+    Alt + Arrows (Option+Shift      Change coordinates for dimensions 4 and 5
+    ⌥⇧ on macOS)                    (only for 5+ dimensional datasets)
     PageUp / fn+up                  Increase step size
     PageDown / fn+down              Decrease step size
     ``+``                           Increase pointer size (navigator image)
     ``-``                           Decrease pointer size (navigator image)
     ``h``                           Launch the contrast adjustment tool
     ``l``                           Toggle intensity norm between log and linear
+    Shift + click                   Jump to clicked coordinates
+                                    (configurable via ``key_jump_to_click``)
     =============================   =============================================
 
 All keys above are configurable via preferences (see
 :ref:`plot preferences <configuring-hyperspy-label>`, ``Plot`` section).
+
+Model-plot keyboard shortcuts (``a``, ``s``, ``d``) are described in
+:ref:`the 1D signal shortcuts section <shortcuts_model_plots>` above.
 
 
 .. _plot_shortcut_preferences:
 
 .. table:: Configurable shortcut keys in the ``Plot`` preferences
 
-    ================================   ===========   ======================================================
-    Preference key                     Default       Description
-    ================================   ===========   ======================================================
-    ``dims_024_increase``              ``right``     Arrow key for moving right (dims 0, 2, 4)
-    ``dims_024_decrease``              ``left``      Arrow key for moving left (dims 0, 2, 4)
-    ``dims_135_increase``              ``down``      Arrow key for moving down (dims 1, 3, 5)
-    ``dims_135_decrease``              ``up``        Arrow key for moving up (dims 1, 3, 5)
-    ``modifier_dims_01``               ``ctrl``      Modifier for dimensions 0–1
-    ``modifier_dims_23``               ``shift``     Modifier for dimensions 2–3
-    ``modifier_dims_45``               varies [#]_   Modifier for dimensions 4–5
-    ``key_toggle_pointer``             ``e``         Toggle second pointer
-    ``key_adjust_contrast``            ``h``         Launch contrast adjustment tool
-    ``key_toggle_log``                 ``l``         Toggle log/linear norm or y-scale
-    ``key_widget_increase``            ``+``         Increase cursor size
-    ``key_widget_decrease``            ``-``         Decrease cursor size
-    ``key_jump_to_click``             ``shift``     Modifier key for jump-to-click on span/cursor widgets
-    ``key_rotation_snap``             ``shift``     Modifier key for 30° rotation snap on 2D line
-    ``key_rectangle_x_increase``       ``x``         Increase rectangle widget x-size
-    ``key_rectangle_x_decrease``       ``c``         Decrease rectangle widget x-size
-    ``key_rectangle_y_increase``       ``y``         Increase rectangle widget y-size
-    ``key_rectangle_y_decrease``       ``u``         Decrease rectangle widget y-size
-    ``key_step_increase``              ``pageup``    Increase navigation step multiplier
-    ``key_step_decrease``              ``pagedown``  Decrease navigation step multiplier
-    ``key_toggle_adjust_position``     ``a``         Toggle component position adjustment in 1D model plots
-    ``key_toggle_plot_components``     ``w``         Toggle component line visibility in 1D model plots
-    ``key_toggle_residual``            ``t``         Toggle residual (Signal - Model) line in 1D model plots
-    ================================   ===========   ======================================================
+    ================================   ============   ============================================================================
+    Preference key                     Default        Description
+    ================================   ============   ============================================================================
+    ``dims_024_increase``              ``right``      Arrow key for moving right (dims 0, 2, 4)
+    ``dims_024_decrease``              ``left``       Arrow key for moving left (dims 0, 2, 4)
+    ``dims_135_increase``              ``down``       Arrow key for moving down (dims 1, 3, 5)
+    ``dims_135_decrease``              ``up``         Arrow key for moving up (dims 1, 3, 5)
+    ``modifier_dims_01``               ``ctrl`` \*    Modifier for dimensions 0–1
+    ``modifier_dims_23``               ``shift``      Modifier for dimensions 2–3
+    ``modifier_dims_45``               ``alt`` \*     Modifier for dimensions 4–5
+    ``key_toggle_pointer``             ``e``          Toggle second pointer
+    ``key_adjust_contrast``            ``h``          Launch contrast adjustment tool
+    ``key_toggle_log``                 ``l``          Toggle log/linear norm or y-scale
+    ``key_widget_increase``            ``+``          Increase cursor size
+    ``key_widget_decrease``            ``-``          Decrease cursor size
+    ``key_jump_to_click``              ``shift``      Modifier key for jump-to-click on span/cursor widgets
+    ``key_rotation_snap``              ``shift``      Modifier key for 30° rotation snap on 2D line
+    ``key_rectangle_x_increase``       ``x``          Increase rectangle widget x-size
+    ``key_rectangle_x_decrease``       ``c``          Decrease rectangle widget x-size
+    ``key_rectangle_y_increase``       ``y``          Increase rectangle widget y-size
+    ``key_rectangle_y_decrease``       ``u``          Decrease rectangle widget y-size
+    ``key_step_increase``              ``pageup``     Increase navigation step multiplier
+    ``key_step_decrease``              ``pagedown``   Decrease navigation step multiplier
+    ``key_toggle_adjust_position``     ``a``          Toggle component position adjustment in 1D model plots
+    ``key_toggle_plot_components``     ``s``          Toggle component line visibility in 1D model plots
+    ``key_toggle_residual``            ``d``          Toggle residual (Signal - Model) line in 1D model plots
+    ================================   ============   ============================================================================
 
-.. [#] ``alt`` on Linux/Windows, ``ctrl+alt`` on macOS.
+\* On macOS, ``modifier_dims_01`` defaults to ``alt`` and ``modifier_dims_45``
+defaults to ``alt+shift``.  The ``super`` (Command/Windows key) modifier is
+excluded from choices on macOS because the system captures
+``Command+arrows`` for Mission Control and matplotlib backends use
+inconsistent key-event prefixes for the Command key.
 
-All modifier keys accept ``ctrl``, ``alt``, ``shift``, ``super`` (Command /
-Windows key), and any ``+``-separated combination of these.
+All modifier keys accept ``ctrl``, ``alt``, ``shift``, ``super``, and any
+``+``-separated combination of these (``super`` is unavailable on macOS).
+
+The ``platform_shortcuts`` trait (``"auto"``, ``"macos"``, or ``"standard"``)
+applies a complete preset for the modifier keys and step keys at once.  Setting
+it to ``"macos"`` or ``"standard"`` is equivalent to calling
+``use_macos_shortcuts()`` or
+``use_standard_shortcuts()``.  The default
+``"auto"`` picks the preset based on ``sys.platform``.
+
+.. tip::
+
+    To see all current key bindings in a readable table at any time, call
+    ``hs.show_keybindings()``.  This prints
+    the active shortcuts grouped by category, using the same naming convention as
+    the table above.
 
 
 .. _plot.customize_images:

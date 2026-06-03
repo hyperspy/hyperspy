@@ -138,7 +138,13 @@ def _modifier_list(*defaults):
     """Return modifier options with the best platform default first."""
     # Use the second item ("macOS default") on Darwin; the first otherwise.
     default = defaults[1] if _IS_MACOS and len(defaults) > 1 else defaults[0]
-    return [default] + [m for m in _MODIFIER_OPTIONS if m != default]
+    options = [m for m in _MODIFIER_OPTIONS if m != default]
+    if _IS_MACOS:
+        # ``super`` (Command ⌘) is unusable on macOS for navigation:
+        # macOS captures ⌘+arrow for Mission Control and backends use
+        # inconsistent key-event prefixes ("cmd", "ctrl") — never "super".
+        options = [m for m in options if "super" not in m]
+    return [default] + options
 
 
 class PlotConfig(t.HasTraits):
@@ -183,11 +189,14 @@ class PlotConfig(t.HasTraits):
     )
     # ---- Modifier Keys ----------------------------------------------------
     # Each tuple: (linux/windows default, macOS default)
-    # On macOS: ``ctrl`` → Command key, ``alt`` → Option key.
-    # Plain ``alt`` (Option) is avoided on macOS because it can produce
-    # special characters; ``ctrl+alt`` is used instead for dims 4-5.
+    # macOS uses only ``alt`` (Option) and ``shift`` for arrow navigation
+    # because Command (⌘) and Control (⌃) + arrow are captured by the OS
+    # (Mission Control / Spaces) before any application sees them.
+    # Additionally, the macosx and Qt5 backends produce different modifier
+    # strings for Command/Control (``cmd`` vs ``ctrl``), while ``alt`` and
+    # ``shift`` are consistent across all backends.
     modifier_dims_01 = t.Enum(
-        _modifier_list("ctrl", "ctrl"),
+        _modifier_list("ctrl", "alt"),
         label="Modifier key for 1st and 2nd dimensions",
         group="Navigation",
     )
@@ -197,7 +206,7 @@ class PlotConfig(t.HasTraits):
         group="Navigation",
     )
     modifier_dims_45 = t.Enum(
-        _modifier_list("alt", "ctrl+alt"),
+        _modifier_list("alt", "alt+shift"),
         label="Modifier key for 5th and 6th dimensions",
         group="Navigation",
     )
@@ -206,9 +215,9 @@ class PlotConfig(t.HasTraits):
     # to set each modifier individually — especially useful when the machine
     # running HyperSpy (server) differs from the keyboard (client).
     _MACOS_SHORTCUT_DEFAULTS = {
-        "modifier_dims_01": "ctrl",
+        "modifier_dims_01": "alt",
         "modifier_dims_23": "shift",
-        "modifier_dims_45": "ctrl+alt",
+        "modifier_dims_45": "alt+shift",
     }
     _STANDARD_SHORTCUT_DEFAULTS = {
         "modifier_dims_01": "ctrl",
@@ -369,13 +378,13 @@ class PlotConfig(t.HasTraits):
         group="Model Plot",
     )
     key_toggle_plot_components = t.Str(
-        "w",
+        "s",
         label="Toggle plot components key",
         desc="Key to toggle component line visibility in 1D model plots.",
         group="Model Plot",
     )
     key_toggle_residual = t.Str(
-        "t",
+        "d",
         label="Toggle residual line key",
         desc="Key to toggle the residual (Signal - Model) line in 1D model plots.",
         group="Model Plot",
