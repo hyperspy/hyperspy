@@ -800,6 +800,31 @@ class TestAdjustPosition:
         self.m.disable_adjust_position()
         assert sig_plot._background is None
 
+    def test_disable_plot_components_resets_blit_background(self):
+        """``disable_plot_components`` resets blit cache to prevent
+        ``draw_event`` handlers from drawing removed text artists."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot._background = "stale_bitmap"
+        self.m.disable_plot_components()
+        assert sig_plot._background is None
+
+    def test_remove_resets_blit_background(self):
+        """``remove`` resets blit cache to prevent
+        ``draw_event`` handlers from drawing removed artists."""
+        g = hs.model.components1D.Gaussian()
+        self.m.append(g)
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot._background = "stale_bitmap"
+        # ``remove`` triggers a redraw that would try to restore_region
+        # our fake background → mock update so the blit cache check
+        # happens without a real rendering attempt.
+        with mock.patch.object(sig_plot, "update"):
+            self.m.remove(g)
+        assert sig_plot._background is None
+
 
 class TestModel1DSetSignalRange:
     def setup_method(self, method):

@@ -898,6 +898,10 @@ class ResizersMixin:
                     # check that the matplotlib patch is present before removing it
                     if r in ax.get_children():
                         r.remove()
+                # Invalidate the blit background to prevent a crash from
+                # stale animated artists after removing resizer handles.
+                if hasattr(ax, "hspy_fig"):
+                    ax.hspy_fig._background = None
             self._resizers_on = value
 
     def _get_resizer_size(self):

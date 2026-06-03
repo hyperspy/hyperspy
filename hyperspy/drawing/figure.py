@@ -89,7 +89,7 @@ class BlittedFigure:
             # Create a list of animated artists and draw them.
             artists = sorted(ax.get_children(), key=lambda x: x.zorder)
             for artist in artists:
-                if artist.get_animated():
+                if artist.get_animated() and artist.axes is not None:
                     ax.draw_artist(artist)
 
     def _update_animated(self):
@@ -121,7 +121,7 @@ class BlittedFigure:
 
     def remove_markers(self, render_figure=False):
         """Remove all markers"""
-        for marker in self.ax_markers:
+        for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         if render_figure:
             self.render_figure()
@@ -130,7 +130,7 @@ class BlittedFigure:
         _logger.debug("Closing `BlittedFigure`.")
         self.ax = None
         self._background = None
-        for marker in self.ax_markers:
+        for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:

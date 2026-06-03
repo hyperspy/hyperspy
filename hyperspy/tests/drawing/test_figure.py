@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from unittest import mock
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,6 +28,8 @@ import hyperspy.api as hs
 from hyperspy._components.polynomial import Polynomial
 from hyperspy.drawing._markers.points import Points
 from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing.tiles import HistogramTilePlot
+from hyperspy.events import Event, Events
 from hyperspy.misc.test_utils import check_closing_plot
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -204,3 +208,97 @@ def test_separate_figure_get_mpl_figure():
     assert isinstance(s._plot.signal_plot.get_mpl_figure(), matplotlib.figure.Figure)
     assert isinstance(s._plot.signal_plot.figure, matplotlib.figure.Figure)
     s._plot.signal_plot.close()
+
+
+def test_remove_markers_iterates_copy():
+    """Verify remove_markers uses list() copy to avoid mutation during iteration."""
+    f = BlittedFigure()
+    f.figure = mock.MagicMock()
+    f.ax = mock.MagicMock()
+
+    marker1 = mock.MagicMock()
+    marker2 = mock.MagicMock()
+    f.ax_markers = [marker1, marker2]
+
+    f.remove_markers()
+
+    marker1.close.assert_called_once_with(render_figure=False)
+    marker2.close.assert_called_once_with(render_figure=False)
+
+
+def test_draw_animated_skips_removed_artist():
+    """Verify _draw_animated skips artist when artist.axes is None (guard)."""
+    f = BlittedFigure()
+    mock_ax = mock.MagicMock()
+    mock_fig = mock.MagicMock()
+    mock_fig.axes = [mock_ax]
+    f.figure = mock_fig
+
+    removed_artist = mock.MagicMock()
+    removed_artist.get_animated.return_value = True
+    removed_artist.axes = None
+    removed_artist.zorder = 1
+
+    mock_ax.get_children.return_value = [removed_artist]
+
+    f._draw_animated()
+
+    mock_ax.draw_artist.assert_not_called()
+
+
+def test_draw_animated_draws_valid_artist():
+    """Verify _draw_animated calls draw_artist when artist is animated and has axes."""
+    f = BlittedFigure()
+    mock_ax = mock.MagicMock()
+    mock_fig = mock.MagicMock()
+    mock_fig.axes = [mock_ax]
+    f.figure = mock_fig
+
+    valid_artist = mock.MagicMock()
+    valid_artist.get_animated.return_value = True
+    valid_artist.axes = mock_ax  # not None — still attached
+    valid_artist.zorder = 1
+
+    mock_ax.get_children.return_value = [valid_artist]
+
+    f._draw_animated()
+
+    mock_ax.draw_artist.assert_called_once_with(valid_artist)
+
+
+def test_remove_right_pointer_resets_blit_background():
+    """Verify remove_right_pointer() invalidates blit background cache."""
+    s = Signal1D(np.random.random((10, 20, 100)))
+    s.plot()
+    s._plot.add_right_pointer()
+    s._plot.signal_plot._background = "stale"
+    s._plot.remove_right_pointer()
+    assert s._plot.signal_plot._background is None
+
+
+def test_close_right_axis_resets_blit_background():
+    """Verify close_right_axis() invalidates blit background cache."""
+    s = Signal1D(np.random.random((10, 20, 100)))
+    s.plot()
+    s._plot.signal_plot.create_right_axis()
+    s._plot.signal_plot._background = "stale"
+    s._plot.signal_plot.close_right_axis()
+    assert s._plot.signal_plot._background is None
+
+
+def test_histogram_tile_plot_close_calls_super():
+    """Verify HistogramTilePlot.close() delegates to BlittedFigure.close()."""
+    htp = HistogramTilePlot()
+    # HistogramTilePlot.__init__ bypasses super().__init__(),
+    # so initialise inherited attributes manually.
+    htp.ax_markers = []
+    htp.events = Events()
+    htp.events.closed = Event("", arguments=["obj"])
+    htp._background = None
+    htp.create_figure()
+    htp.close()
+    # _draw_event_cid is disconnected only through BlittedFigure._on_close(),
+    # confirming super().close() was called.
+    assert htp._draw_event_cid is None
+    assert htp._background is None
+    assert htp.figure is None

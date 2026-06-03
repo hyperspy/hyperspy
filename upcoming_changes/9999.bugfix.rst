@@ -1,5 +1,16 @@
-Fix ``Model1D.disable_adjust_position()`` blit-crash when a pending
-``draw_event`` fires after widget removal and encounters a ``Text``
-label artist whose ``axes`` and ``figure`` references were cleared by
-``Artist.remove`` (matplotlib >= 3.10), resulting in
-``AttributeError: 'NoneType' object has no attribute 'dpi'``.
+Fix multiple blit-animation crashes when animated artists are removed while
+a pending ``draw_event`` handler is still active (matplotlib >= 3.10 clears
+``axes``/``figure`` references on ``Artist.remove``). Invalidated blit caches in:
+
+- ``Model1D.disable_adjust_position()``
+- ``Model1D.disable_plot_components()``
+- ``Model1D.remove()``
+- ``HyperspySignalExplorer.remove_right_pointer()``
+- ``Signal1DFigure.close_right_axis()``
+- ``ResizersMixin._set_resizers(False)``
+
+Additionally fixed list-mutation-during-iteration bugs in
+``BlittedFigure.remove_markers()`` and ``BlittedFigure._on_close()``, added a
+guard against removed artists in ``BlittedFigure._draw_animated()``, and made
+``HistogramTilePlot.close()`` call ``super().close()`` to release event
+connections.

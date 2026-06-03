@@ -174,8 +174,12 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.signal_plot.figure.canvas.draw_idle()
 
     def remove_right_pointer(self):
-        for line in self.signal_plot.right_ax_lines:
-            self.signal_plot.right_ax_lines.remove(line)
+        for line in list(self.signal_plot.right_ax_lines):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
+        # Invalidate the blit background to prevent a crash from
+        # stale animated artists after removal.
+        sig_plot = self.signal_plot
+        if sig_plot.figure is not None:
+            sig_plot._background = None
