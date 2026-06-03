@@ -571,6 +571,8 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         )
         self.no_events_while_dragging = False
         self._drag_store = None
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating axes in _on_navigate()
         self._updating_indices_from_drag = False
 
     def _set_axes(self, axes):

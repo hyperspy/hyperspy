@@ -98,7 +98,9 @@ class Parameter(t.HasTraits):
     # depending on whether it was set manually or calculated with sympy
     __twin_inverse_function = None
     _twin_inverse_sympy = None
-    _updating_twin = False  # re-entrance guard for twin value sync
+    # Re-entrance guard. When True, avoids update loop by
+    # not updating the twin while it is being updated elsewhere
+    _updating_twin = False
 
     def __init__(self):
         self._twins = set()

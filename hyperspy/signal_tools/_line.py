@@ -71,6 +71,9 @@ class LineInSignal2D(t.HasTraits):
         self._color = color
         self._linewidth = linewidth
         self._snap_position = snap
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating the coordinates while they are being updated by the
+        # traits handler
         self._updating_from_line = False
         self.on = True
 
@@ -184,6 +187,8 @@ class LineInSignal1D(t.HasTraits):
     def __init__(self, signal, color="blue", linewidth=2, snap=False):
         super().__init__()
         self._line = None
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating the position while the position is being updated by thet traits handler
         self._updating_from_line = False
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)

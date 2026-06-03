@@ -231,6 +231,9 @@ class Model1D(BaseModel):
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating the parameter value while it is being updated
+        # by the widget trait hadnler.
         self._updating_widget = False
         self._adjust_position_all = None
         self._plot_components = False
