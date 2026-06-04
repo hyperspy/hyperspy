@@ -579,10 +579,22 @@ class Samfire:
             connect_other_navigation1, {"obj": "axes_manager"}
         )
 
-        self.model._plot.signal_plot.events.closed.connect(lambda: mark._plot.close, [])
+        # BUG FIX: must call close() — without parens the lambda returns the
+        # method object without invoking it, so the mark plot was never closed.
+        self.model._plot.signal_plot.events.closed.connect(
+            lambda: mark._plot.close(), []
+        )
         self.model._plot.signal_plot.events.closed.connect(
             lambda: self.model.axes_manager.events.indices_changed.disconnect(
                 connect_other_navigation1
+            ),
+            [],
+        )
+        # BUG FIX: connect_other_navigation2 was connected (line 575) but never
+        # disconnected on plot close — this leaked the handler on repeated opens.
+        self.model._plot.signal_plot.events.closed.connect(
+            lambda: mark.axes_manager.events.indices_changed.disconnect(
+                connect_other_navigation2
             ),
             [],
         )
