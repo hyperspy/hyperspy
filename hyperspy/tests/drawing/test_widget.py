@@ -189,3 +189,21 @@ def test_adding_removing_resizers_on_pick_event():
     assert not widget0._resizers_on
     assert not widget1.picked
     assert not widget1._resizers_on
+
+
+class TestPolygonWidgetCleanup:
+    def test_polygon_selector_cleaned_up_on_set_off(self):
+        from hyperspy.drawing._widgets.polygon import PolygonWidget
+
+        s = signals.Signal2D(np.random.random((13, 17)))
+        s.plot()
+        ax = s._plot.signal_plot.ax
+
+        widget = PolygonWidget(s.axes_manager)
+        widget.color = "red"
+        widget.set_mpl_ax(ax)
+
+        assert widget._widget is not None
+        widget.set_on(False)
+        assert widget._widget is None
+        s._plot.close()
