@@ -1,0 +1,7 @@
+Remove dual-notification pattern in ``Parameter`` where value changes
+fired both an :class:`~hyperspy.events.Event` and an Enthought Traits
+notification. The Traits notification path is removed; all consumers
+now use the events system exclusively. Suppression of circular updates
+previously handled by :meth:`~hyperspy.events.Event.suppress_callback`
+is replaced with re-entrance guards, reducing coupling with the internal
+event machinery.
