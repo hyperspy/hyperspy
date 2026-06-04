@@ -287,6 +287,9 @@ class TestKeyHandlerPreferences:
         finally:
             preferences.Plot.key_toggle_plot_components = original
 
+    def test_plot_components_toggle_default_is_w(self):
+        assert preferences.Plot.key_toggle_plot_components == "w"
+
     def test_plot_components_toggle_enables_when_hidden(self):
         """_on_key_press must enable when _plot_components is False."""
         from hyperspy.models.model1d import Model1D

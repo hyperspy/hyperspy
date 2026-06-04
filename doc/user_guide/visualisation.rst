@@ -236,7 +236,7 @@ underlying signal is 1D or 2D:
     key                             function
     =============================   =============================================
     ``a``                           Toggle component position adjustment
-    ``s``                           Toggle component line visibility
+    ``w``                           Toggle component line visibility
     ``d``                           Toggle residual (Signal − Model) line
     =============================   =============================================
 
@@ -316,7 +316,7 @@ The following keyboard shortcuts are available when the 2D signal figure is in f
 All keys above are configurable via preferences (see
 :ref:`plot preferences <configuring-hyperspy-label>`, ``Plot`` section).
 
-Model-plot keyboard shortcuts (``a``, ``s``, ``d``) are described in
+Model-plot keyboard shortcuts (``a``, ``w``, ``d``) are described in
 :ref:`the 1D signal shortcuts section <shortcuts_model_plots>` above.
 
 
@@ -352,7 +352,7 @@ Model-plot keyboard shortcuts (``a``, ``s``, ``d``) are described in
     ``key_step_increase``              ``pageup``     Increase navigation step multiplier
     ``key_step_decrease``              ``pagedown``   Decrease navigation step multiplier
     ``key_toggle_adjust_position``     ``a``          Toggle component position adjustment in 1D model plots
-    ``key_toggle_plot_components``     ``s``          Toggle component line visibility in 1D model plots
+    ``key_toggle_plot_components``     ``w``          Toggle component line visibility in 1D model plots
     ``key_toggle_residual``            ``d``          Toggle residual (Signal - Model) line in 1D model plots
     ================================   ============   ============================================================================
 

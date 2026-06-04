@@ -10,3 +10,7 @@ keys. This allows a preset such as ``"macos"`` to serve as a baseline
 that the user can selectively override in ``hyperspyrc``; previously
 alphabetical iteration would apply the preset last and silently
 overwrite any individual modifier settings.
+
+Change the default Model Plot key for toggling component visibility from
+``s`` to ``w`` to avoid conflicting with matplotlib's built-in bare-``s``
+Save Figure shortcut.

@@ -378,7 +378,7 @@ class PlotConfig(t.HasTraits):
         group="Model Plot",
     )
     key_toggle_plot_components = t.Str(
-        "s",
+        "w",
         label="Toggle plot components key",
         desc="Key to toggle component line visibility in 1D model plots.",
         group="Model Plot",
