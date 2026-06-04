@@ -1,10 +1,17 @@
-syntax: glob
-*~
+
+!.sisyphus/rules/
+# .aider.conf.yml
+# AI coding tools — runtime state and personal files
+# Aider — personal history and cache
+# Claude Code — all files (conventions live in AGENTS.md)
+# Uncomment below if .aider.conf.yml is local-only:
+# Visual Studio Code - https://code.visualstudio.com/
+# virtual environments
+### Code ###
+*.DS_Store
 *.bak
 *.deb
 *.mex
-*nbc
-*nbi
 *.o
 *.pyc
 *.pyd
@@ -12,62 +19,52 @@ syntax: glob
 *.so
 *.swo
 *.swp
-*.DS_Store
-*__pycache__
 *Thumbs.db
-/.cache/
-/.spyproject/
+*__pycache__
+*__pycache__*
+*egg-info*
+*nbc
+*nbi
+*sg_execution_times.rst
+*~
+.aider.chat.history.md
+.aider.tags.cache.v*
+.claude/
 .coverage
 .hook_ignore*
 .idea/*
+.omc/
+.omo/
+.opencode/
 .python-version
 .ropeproject/*
+.settings/
+.sisyphus/*
 .spyderproject
 .spyderworkspace
-~.vimrc
-desktop.ini
-dist
+.vscode/
+/.cache/
+/.spyproject/
 /MANIFEST
+CLAUDE.local.md
+CLAUDE.md
 build/*
-hyperspy.egg-info/*
 data/octave-core
 deb_dist/*
+desktop.ini
+dist
+doc/_build
 doc/auto_examples
 doc/backreferences
-doc/_build
 doc/log.txt
 examples/io/*.msa
 examples/io/rgb*.jpg
 examples/region_of_interest/*.msa
-
-### Code ###
-# Visual Studio Code - https://code.visualstudio.com/
-.settings/
-.vscode/
-tsconfig.json
+hyperspy.egg-info/*
 jsconfig.json
-*egg-info*
-*__pycache__*
-
-*sg_execution_times.rst
-
-# virtual environments
+opencode.jsonc
+scripts/hyperspy-dev-shell.sh
+syntax: glob
+tsconfig.json
 venv/
-
-# AI coding tools — runtime state and personal files
-.omc/
-.sisyphus/*
-!.sisyphus/rules/
-
-# Claude Code — all files (conventions live in AGENTS.md)
-.claude/
-CLAUDE.md
-CLAUDE.local.md
-
-# Aider — personal history and cache
-.aider.chat.history.md
-.aider.tags.cache.v*
-# Uncomment below if .aider.conf.yml is local-only:
-# .aider.conf.yml
-
-.omo/
+~.vimrc
