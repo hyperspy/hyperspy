@@ -23,6 +23,7 @@ import numpy as np
 import scipy
 
 from hyperspy import learn
+from hyperspy.decorators import deprecated
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import check_random_state
 
@@ -355,6 +356,12 @@ class ORPCA:
             L, _ = scipy.linalg.qr(Y2, mode="economic")
             return L[:, : self.rank]
 
+    @deprecated(
+        since="2.5",
+        alternative="ORPCA.partial_fit",
+        alternative_is_function=False,
+        removal="3.0",
+    )
     def fit(self, X, batch_size=None):
         """Learn RPCA components from the data.
 
@@ -368,6 +375,10 @@ class ORPCA:
             or less.
 
         """
+        self._fit_impl(X, batch_size=batch_size)
+
+    def _fit_impl(self, X, batch_size=None):
+        """Internal implementation shared by :meth:`fit` and :meth:`partial_fit`."""
         if self.n_features is None:
             X = self._setup(X)
 
@@ -429,6 +440,12 @@ class ORPCA:
             self.vnew = (self.L @ A - B + self.lambda1 * self.L) / learn
             self.L -= vold + self.vnew
 
+    @deprecated(
+        since="2.5",
+        alternative="ORPCA.transform",
+        alternative_is_function=False,
+        removal="3.0",
+    )
     def project(self, X, return_error=False):
         """Project the learnt components on the data.
 
@@ -442,6 +459,10 @@ class ORPCA:
             the weights (loadings)
 
         """
+        return self._project_impl(X, return_error=return_error)
+
+    def _project_impl(self, X, return_error=False):
+        """Internal projection shared by :meth:`project` and :meth:`transform`."""
         R = []
         if return_error:
             E = []
@@ -462,6 +483,12 @@ class ORPCA:
         else:
             return R
 
+    @deprecated(
+        since="2.5",
+        alternative="ORPCA.components_ and ORPCA.transform",
+        alternative_is_function=False,
+        removal="3.0",
+    )
     def finish(self, **kwargs):
         """Return the learnt factors and loadings."""
         if len(self.R) > 0:
@@ -472,6 +499,46 @@ class ORPCA:
             return self.L, R
         else:
             return self.L, 1
+
+    # ------------------------------------------------------------------
+    # sklearn-compatible API
+    # ------------------------------------------------------------------
+
+    def partial_fit(self, X, batch_size=None):
+        """Process one batch of data.
+
+        Parameters
+        ----------
+        X : numpy.ndarray, shape (n_samples, n_features)
+            Batch of observations.
+        batch_size : int or None
+            If not None, split *X* into sub-batches of this size.
+
+        Returns
+        -------
+        self
+        """
+        self._fit_impl(X, batch_size=batch_size)
+        return self
+
+    @property
+    def components_(self):
+        """Learnt subspace, shape ``(rank, n_features)`` — sklearn convention."""
+        return self.L.T
+
+    def transform(self, X):
+        """Project *X* onto the learnt subspace.
+
+        Parameters
+        ----------
+        X : numpy.ndarray, shape (n_samples, n_features)
+
+        Returns
+        -------
+        loadings : numpy.ndarray, shape (n_samples, rank)
+            Coordinates of each sample in the learnt subspace.
+        """
+        return self._project_impl(X).T
 
 
 def orpca(
@@ -557,13 +624,22 @@ def orpca(
         subspace_momentum=subspace_momentum,
         random_state=random_state,
     )
-    _orpca.fit(X, batch_size=batch_size)
+    _orpca.partial_fit(X, batch_size=batch_size)
 
     if project:
         L = _orpca.L
-        R = _orpca.project(X)
+        R = _orpca._project_impl(X)
     else:
-        L, R = _orpca.finish()
+        L, R = (
+            _orpca.L,
+            (
+                np.stack(_orpca.R, axis=-1)
+                if len(_orpca.R) > 0 and len(_orpca.R[0].shape) == 1
+                else np.concatenate(_orpca.R, axis=1)
+                if len(_orpca.R) > 0
+                else 1
+            ),
+        )
 
     if store_error:
         Xhat = L @ R
