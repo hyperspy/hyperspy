@@ -1,0 +1,48 @@
+ Improve lazy signal decomposition:
+
+- Rename ``svd_solver='dask'`` to ``svd_solver='randomized'`` (consistent with
+  ``sklearn`` naming conventions) and switch its backend from
+  ``dask.array.linalg.svd`` (full SVD) to ``dask.array.linalg.svd_compressed``
+  (randomised truncated SVD), which avoids materialising the full data matrix
+  in memory.  ``output_dimension`` is required for ``'randomized'``.
+- Add ``svd_solver='full'``: reproduces pre-v2.5 behaviour using
+  ``dask.array.linalg.svd``; returns lazy dask arrays without triggering any
+  computation; ``output_dimension`` is optional.
+- Add ``svd_solver='incremental'``: uses ``ISVD``
+  (a subclass of ``sklearn.decomposition.IncrementalPCA`` with centering
+  disabled), which streams the data in mini-batches and scales to datasets
+  larger than RAM.
+- Add a ``centre`` parameter (``"navigation"``, ``"signal"``, or ``None``) to
+  control mean-centring before decomposition, consistent with the non-lazy
+  interface.
+- Navigation and signal masks are now respected during lazy SVD.
+- Add ``LazySignal.normalize_poissonian_noise()`` as
+  a dedicated method on ``LazySignal``, available
+  independently of decomposition.
+- Implement ``reproject='signal'`` for all lazy decomposition algorithms:
+  after learning on signal-masked data, the full signal (including masked
+  channels) is reconstructed via the pseudo-inverse of the loadings, filling
+  NaN at previously masked signal positions.  ``reproject='both'`` fills both
+  navigation and signal masked positions for all algorithms.
+- Add ``algorithm='NMF'`` support for lazy signals via
+  ``sklearn.decomposition.MiniBatchNMF`` (requires scikit-learn >= 1.1),
+  enabling out-of-core non-negative matrix factorisation.
+- Accept any custom sklearn-like estimator object as the ``algorithm``
+  parameter.  Objects that implement ``partial_fit`` are used incrementally
+  (out-of-core); those with only ``fit`` / ``fit_transform`` fall back to
+  loading all data into memory before fitting.
+- Add ``svd_solver`` and ``auto_transpose`` parameters to
+  ``LazySignal.decomposition()`` for API parity with
+  the non-lazy interface.
+- Add a ``lazy`` keyword argument to
+  ``BaseSignal.get_decomposition_model()`` (and the
+  underlying ``_calculate_recmatrix``).  ``lazy=True`` forces a lazy dask-backed
+  signal even when factors/loadings are numpy arrays (they are wrapped with
+  ``da.from_array`` locally, without mutating ``learning_results``); ``lazy=False``
+  forces an eager signal even on a lazy input; ``lazy=None`` (default) auto-detects
+  based on whether the signal is lazy.
+- The ``reproject`` steps for ``svd_solver='full'`` now use dask matmuls
+  instead of materialising the full data matrix via chunk loops.  Only the
+  small result array (``nav × k`` loadings or ``sig × k`` factors) is
+  computed eagerly; the unrequested array remains a lazy dask array, keeping
+  the end-to-end pipeline lazy even when ``reproject`` is used.
