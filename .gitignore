@@ -70,3 +70,4 @@ CLAUDE.local.md
 # Uncomment below if .aider.conf.yml is local-only:
 # .aider.conf.yml
 
+.omo/
