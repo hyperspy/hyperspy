@@ -796,10 +796,11 @@ class TestAdjustPosition:
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         sig_plot = self.m._plot.signal_plot
-        sig_plot._background = "stale_bitmap"
-        self.m.disable_adjust_position()
-        # _background was reset and render_figure() captured a fresh bitmap
-        assert sig_plot._background is not None
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
+            self.m.disable_adjust_position()
+        assert sig_plot._background is None
+        mock_render.assert_called_once()
 
     def test_disable_plot_components_resets_blit_background(self):
         """``disable_plot_components`` resets blit cache to prevent
@@ -807,10 +808,11 @@ class TestAdjustPosition:
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         sig_plot = self.m._plot.signal_plot
-        sig_plot._background = "stale_bitmap"
-        self.m.disable_plot_components()
-        # _background was reset and render_figure() captured a fresh bitmap
-        assert sig_plot._background is not None
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
+            self.m.disable_plot_components()
+        assert sig_plot._background is None
+        mock_render.assert_called_once()
 
     def test_remove_resets_blit_background(self):
         """``remove`` resets blit cache to prevent
@@ -819,13 +821,11 @@ class TestAdjustPosition:
         self.m.append(g)
         self.m.enable_adjust_position()
         sig_plot = self.m._plot.signal_plot
-        sig_plot._background = "stale_bitmap"
-        # ``remove`` triggers a redraw that would try to restore_region
-        # our fake background → mock update so the blit cache check
-        # happens without a real rendering attempt.
-        with mock.patch.object(sig_plot, "update"):
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
             self.m.remove(g)
-        assert sig_plot._background is not None
+        assert sig_plot._background is None
+        mock_render.assert_called()
 
     def test_disable_plot_components_no_crash_when_figure_none(self):
         """``disable_plot_components`` does not crash when figure is None

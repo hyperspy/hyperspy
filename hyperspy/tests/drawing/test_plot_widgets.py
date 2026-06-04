@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from unittest import mock
+
 import matplotlib
 import numpy as np
 import pytest
@@ -167,9 +169,12 @@ class TestPlotLine2DWidget:
         self.im.plot()
         self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
         self.line2d.size = (10,)
-        self.im._plot.signal_plot._background = "stale"
-        self.line2d._remove_size_patch()
-        assert self.im._plot.signal_plot._background is not None
+        hspy_fig = self.line2d.ax.hspy_fig
+        hspy_fig._background = object()
+        with mock.patch.object(self.line2d, "draw_patch") as mock_draw:
+            self.line2d._remove_size_patch()
+        assert hspy_fig._background is None
+        mock_draw.assert_called_once()
 
 
 class TestPlotCircleWidget:
@@ -231,9 +236,12 @@ class TestPlotCircleWidget:
         # Set size with ri=0 first so we can trigger the inner-patch
         # replacement path (ri > 0, len(patch) == 1).
         circle.size = (5, 0)
-        im._plot.signal_plot._background = "stale"
-        circle.size = (5, 2.5)
-        assert im._plot.signal_plot._background is not None
+        hspy_fig = circle.ax.hspy_fig
+        hspy_fig._background = object()
+        with mock.patch.object(circle, "draw_patch") as mock_draw:
+            circle.size = (5, 2.5)
+        assert hspy_fig._background is None
+        mock_draw.assert_called()
 
 
 class TestPlotPolygonWidget:

@@ -130,7 +130,7 @@ def test_remove_markers():
 
 def test_remove_markers_renders_resets_blit_background():
     """Verify remove_markers(render_figure=True) invalidates blit cache
-    and repaints."""
+    and calls render_figure."""
     s = Signal2D(np.arange(pow(10, 3)).reshape([10] * 3))
     s.plot()
     m = Points(
@@ -141,9 +141,12 @@ def test_remove_markers_renders_resets_blit_background():
         sizes=100,
     )
     s.add_marker(m)
-    s._plot.signal_plot._background = "stale"
-    s._plot.signal_plot.remove_markers(render_figure=True)
-    assert s._plot.signal_plot._background is not None
+    sig_plot = s._plot.signal_plot
+    sig_plot._background = object()
+    with mock.patch.object(sig_plot, "render_figure") as mock_render:
+        sig_plot.remove_markers(render_figure=True)
+    assert sig_plot._background is None
+    mock_render.assert_called_once()
 
 
 @pytest.mark.skipif(
@@ -285,25 +288,29 @@ def test_draw_animated_draws_valid_artist():
 
 
 def test_remove_right_pointer_resets_blit_background():
-    """Verify remove_right_pointer() invalidates blit cache and repaints."""
+    """Verify remove_right_pointer() invalidates blit cache and calls render_figure."""
     s = Signal1D(np.random.random((10, 20, 100)))
     s.plot()
     s._plot.add_right_pointer()
-    s._plot.signal_plot._background = "stale"
-    s._plot.remove_right_pointer()
-    # After the fix, render_figure() captures a fresh background.
-    assert s._plot.signal_plot._background is not None
+    sig_plot = s._plot.signal_plot
+    sig_plot._background = object()
+    with mock.patch.object(sig_plot, "render_figure") as mock_render:
+        s._plot.remove_right_pointer()
+    assert sig_plot._background is None
+    mock_render.assert_called_once()
 
 
 def test_close_right_axis_resets_blit_background():
-    """Verify close_right_axis() invalidates blit cache and repaints."""
+    """Verify close_right_axis() invalidates blit cache and calls render_figure."""
     s = Signal1D(np.random.random((10, 20, 100)))
     s.plot()
-    s._plot.signal_plot.create_right_axis()
-    s._plot.signal_plot._background = "stale"
-    s._plot.signal_plot.close_right_axis()
-    # After the fix, render_figure() captures a fresh background.
-    assert s._plot.signal_plot._background is not None
+    sig_plot = s._plot.signal_plot
+    sig_plot.create_right_axis()
+    sig_plot._background = object()
+    with mock.patch.object(sig_plot, "render_figure") as mock_render:
+        sig_plot.close_right_axis()
+    assert sig_plot._background is None
+    mock_render.assert_called_once()
 
 
 def test_on_close_iterates_marker_copy():
