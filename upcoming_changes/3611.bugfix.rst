@@ -1,5 +1,0 @@
-Fix ``ORNMF`` hanging indefinitely on data with a negative mean.
-``np.sqrt(X.mean() / m)`` produced ``NaN`` for negative-mean data, causing the
-convergence check to never trigger. The absolute value of the mean is now used.
-An off-by-three-orders-of-magnitude upper bound on the iteration count (``1e9``
-instead of ``1e6``) was also corrected.
