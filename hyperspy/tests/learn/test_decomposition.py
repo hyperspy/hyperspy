@@ -43,7 +43,7 @@ def generate_low_rank_matrix(m=20, n=100, rank=5, random_seed=123):
 def test_error_axes():
     s = signals.BaseSignal(generate_low_rank_matrix())
 
-    with pytest.raises(AttributeError, match="not possible to decompose a dataset"):
+    with pytest.raises(ValueError, match="not possible to decompose a dataset"):
         s.decomposition()
 
 
