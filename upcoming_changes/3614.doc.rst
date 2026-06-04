@@ -1,0 +1,19 @@
+ Add a ``mva.masks_and_reproject`` section to the User Guide documenting
+navigation and signal masks, the ``reproject`` parameter, and how ``NaN``
+positions are filled after decomposition.  Improve the
+``big_data.decomposition`` section with:
+
+- A detailed description of the three ``svd_solver`` options
+  (``'randomized'``, ``'incremental'``, ``'full'``) with an array-type table
+  showing which solvers return lazy dask arrays vs. computed numpy arrays.
+- Dedicated sub-sections for NMF, custom sklearn-like estimators, and
+  Poissonian noise normalisation.
+- A ``big_data.svd.lazy_pipeline`` sub-section documenting the fully lazy
+  decompose → reconstruct → save pipeline, including use of ``reproject`` and
+  the ``lazy`` keyword argument of
+  ``BaseSignal.get_decomposition_model``.
+- Documentation of the ``lazy`` keyword argument on
+  ``BaseSignal.get_decomposition_model`` with
+  examples for forcing lazy output from non-lazy signals and eager output from
+  lazy signals.
+

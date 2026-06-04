@@ -1,0 +1,4 @@
+Fix ``_block_iterator`` reading only the first signal chunk when the on-disk chunk
+size is smaller than the full signal length (e.g. per-spectrum HDF5 chunking).
+The signal dimension is now rechunked to a single chunk before iteration, so all
+signal channels are always read correctly.

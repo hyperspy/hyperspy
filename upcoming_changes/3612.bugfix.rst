@@ -1,0 +1,3 @@
+Fix NaN-fill guards after ``reproject`` using a fragile string comparison instead
+of explicit boolean flags. For ``ORPCA`` and ``ORNMF`` on lazy signals, a failed
+signal reprojection could leave factors or loadings with the wrong shape.
