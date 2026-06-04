@@ -29,6 +29,19 @@ def _connect_events(event, to_connect):
         event.connect(to_connect, [])
 
 
+def _disconnect_events(event, to_disconnect):
+    """Disconnect a callable from one or more events.
+
+    Mirrors :func:`_connect_events` — handles both single events and
+    iterables of events.
+    """
+    try:
+        for ev in event:
+            ev.disconnect(to_disconnect)
+    except TypeError:
+        event.disconnect(to_disconnect)
+
+
 class Interactive:
     r"""
     Chainable operations on Signals that update on events. The operation
@@ -99,6 +112,9 @@ class Interactive:
             recompute_out_event = (
                 None if recompute_out_event == "auto" else recompute_out_event
             )
+        self._event = event
+        self._recompute_out_event = recompute_out_event
+        self._has_out = has_out
         if recompute_out_event:
             _connect_events(recompute_out_event, self.recompute_out)
         if event:
@@ -122,6 +138,36 @@ class Interactive:
 
     def update(self):
         self.f(*self.args, out=self.out, **self.kwargs)
+
+    def close(self):
+        """Disconnect all event handlers and release internal references.
+
+        After calling this method, the operation will no longer respond to
+        any previously connected events. The ``out`` attribute remains
+        accessible for reading the last computed result.
+
+        Examples
+        --------
+        >>> from hyperspy.interactive import Interactive
+        >>> s = hs.signals.Signal1D(np.arange(10.))
+        >>> op = Interactive(s.sum, event=None, recompute_out_event=None, axis=0)
+        >>> op.close()
+        >>> op.out.data
+        array([45.])
+        """
+        # Disconnect event handlers to prevent handler leaks — the
+        # Interactive object would otherwise remain reachable through
+        # the event system's internal callback registries and could
+        # never be garbage-collected.
+        if self._recompute_out_event:
+            _disconnect_events(self._recompute_out_event, self.recompute_out)
+        if self._event:
+            if self._has_out:
+                _disconnect_events(self._event, self.update)
+            else:
+                _disconnect_events(self._event, self.recompute_out)
+        self._event = None
+        self._recompute_out_event = None
 
 
 def interactive(f, event="auto", recompute_out_event="auto", *args, **kwargs):
