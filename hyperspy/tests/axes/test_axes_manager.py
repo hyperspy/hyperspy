@@ -510,6 +510,20 @@ class TestAxesHotkeys:
             preferences.Plot.platform_shortcuts = "standard"
         assert preferences.Plot.modifier_dims_45 == "alt"
 
+    def test_config_ordering_individual_overrides_preset(self):
+        """Individual modifier must override the preset when set afterward.
+
+        This verifies the config2template ordering fix: platform_shortcuts
+        is applied first, then individual modifier_dims_* traits override it.
+        """
+        try:
+            preferences.Plot.platform_shortcuts = "macos"
+            assert preferences.Plot.modifier_dims_01 == "alt"
+            preferences.Plot.trait_set(modifier_dims_01="ctrl")
+            assert preferences.Plot.modifier_dims_01 == "ctrl"
+        finally:
+            preferences.Plot.platform_shortcuts = "auto"
+
 
 class fake_key_event:
     "Fake event handler for plot key press"

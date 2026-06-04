@@ -415,8 +415,18 @@ def template2config(template, config):
 
 def config2template(template, config):
     for section, traited_class in template.items():
+        # Apply platform_shortcuts first so the preset sets a baseline.
+        # Individual modifier_dims_* overrides are applied afterward
+        # and take precedence.  Without this ordering, alphabetical
+        # iteration would apply the preset last, silently overwriting
+        # any modifier keys the user explicitly configured.
+        if config.has_option(section, "platform_shortcuts"):
+            value = config.get(section, "platform_shortcuts")
+            traited_class.trait_set(platform_shortcuts=value)
         config_dict = {}
         for name, value in config.items(section):
+            if name == "platform_shortcuts":
+                continue  # Already applied above
             if value == "True":
                 value = True
             elif value == "False":

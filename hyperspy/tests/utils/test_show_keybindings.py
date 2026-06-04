@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from hyperspy.defaults_parser import preferences
 from hyperspy.utils import show_keybindings
 
 
@@ -74,3 +75,45 @@ def test_no_html_in_output(capsys):
     assert "<table>" not in captured.out
     assert "<tr>" not in captured.out
     assert "<td>" not in captured.out
+
+
+def test_platform_macos_shows_symbols(capsys):
+    """platform='macos' forces macOS symbols regardless of host OS."""
+    try:
+        old = preferences.Plot.platform_shortcuts
+        preferences.Plot.platform_shortcuts = "standard"
+        show_keybindings(platform="macos")
+        captured = capsys.readouterr()
+        # Standard preset: modifiers are ctrl/shift/alt → symbols ⌃⇧⌥
+        assert "\u2303" in captured.out  # ⌃
+    finally:
+        preferences.Plot.platform_shortcuts = old
+
+
+def test_platform_standard_shows_raw(capsys):
+    """platform='standard' forces raw ASCII regardless of host OS."""
+    try:
+        old = preferences.Plot.platform_shortcuts
+        preferences.Plot.platform_shortcuts = "macos"
+        show_keybindings(platform="standard")
+        captured = capsys.readouterr()
+        # No macOS symbols must appear
+        assert "\u2303" not in captured.out  # ⌃
+        assert "\u2325" not in captured.out  # ⌥
+        # MacBook aliases (fn+↑) must not appear
+        assert "fn+" not in captured.out
+    finally:
+        preferences.Plot.platform_shortcuts = old
+
+
+def test_platform_none_respects_preference(capsys):
+    """platform=None uses platform_shortcuts preference for display."""
+    try:
+        old = preferences.Plot.platform_shortcuts
+        preferences.Plot.platform_shortcuts = "macos"
+        show_keybindings()
+        captured = capsys.readouterr()
+        # macOS preference → MacBook aliases (fn+↑ for pageup)
+        assert "fn+" in captured.out
+    finally:
+        preferences.Plot.platform_shortcuts = old

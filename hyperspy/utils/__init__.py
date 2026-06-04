@@ -88,7 +88,7 @@ def print_known_signal_types(style=None):
     display(table)
 
 
-def show_keybindings():
+def show_keybindings(platform=None):
     """Print all keyboard shortcuts with their current key bindings
 
     Displays a table grouped by category (Navigation, Plot Interaction,
@@ -98,6 +98,20 @@ def show_keybindings():
 
     On macOS the shortcut column shows the physical keys to press
     (e.g. ``⌘+←/→`` instead of ``super+←/→``).
+
+    Parameters
+    ----------
+    platform : {"macos", "standard", "auto"} or None, default None
+        Override the display style for the shortcut column:
+
+        - ``"macos"`` — use macOS symbols (⌃⌘⌥⇧) and MacBook key aliases.
+        - ``"standard"`` — use raw ASCII modifier names (ctrl, shift, alt).
+        - ``"auto"`` — detect from ``sys.platform``.
+        - ``None`` (default) — use the current
+          ``hs.preferences.Plot.platform_shortcuts`` preference, falling
+          back to ``sys.platform`` when set to ``"auto"``.
+          Useful when the server platform differs from the client keyboard
+          (e.g. a Linux server with a macOS client).
 
     Examples
     --------
@@ -117,9 +131,7 @@ def show_keybindings():
     |  Widget Resize   |        +        |       Increase widget size           |
     |  Widget Resize   |        -        |       Decrease widget size           |
     |  Widget Resize   |        x        |  Increase rectangle width            |
-    |  Widget Resize   |        c        |  Decrease rectangle width            |
-    |  Widget Resize   |        y        |  Increase rectangle height           |
-    |  Widget Resize   |        u        |  Decrease rectangle height           |
+    |  Widget Resize   |        y        |  Decrease rectangle width            |
     |  Widget Resize   |      shift      |  Jump-to-click on span/cursor        |
     |    Model Plot    |        a        |  Toggle adjust-position lines        |
     |    Model Plot    |        s        |  Toggle plot-components visibility   |
@@ -142,7 +154,22 @@ def show_keybindings():
     from hyperspy.defaults_parser import preferences
     from hyperspy.misc.utils import display
 
-    is_macos = sys.platform == "darwin"
+    # Display style: None uses the platform_shortcuts preference
+    # so that remote-client scenarios work correctly (e.g. Linux
+    # server + macOS client with platform_shortcuts="macos").
+    if platform is None:
+        ps = preferences.Plot.platform_shortcuts
+        is_macos = (ps == "macos") or (ps == "auto" and sys.platform == "darwin")
+    elif platform == "macos":
+        is_macos = True
+    elif platform == "standard":
+        is_macos = False
+    elif platform == "auto":
+        is_macos = sys.platform == "darwin"
+    else:
+        raise ValueError(
+            f"platform must be 'macos', 'standard', 'auto', or None, got {platform!r}"
+        )
 
     # Modifier key → macOS symbol (other platforms use the raw ASCII name).
     _MOD_SYMBOLS = {
