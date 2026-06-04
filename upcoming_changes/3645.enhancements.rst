@@ -1,0 +1,3 @@
+Add ``Interactive.close`` method to disconnect all event handlers and
+release internal references, preventing callback leaks when an interactive
+operation is no longer needed.
