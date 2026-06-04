@@ -143,3 +143,18 @@ class TestRNMF:
 
         # Check the low-rank component MSE
         compare_norms(X_out, self.X.T)
+
+
+class TestORNMFNegativeMean:
+    """Regression tests for PR #3656: ORNMF hang on negative-mean data."""
+
+    def test_setup_with_negative_mean_does_not_produce_nan(self):
+        """_setup should produce finite W even when data has negative mean."""
+        from hyperspy.learn._ornmf import ORNMF
+
+        rng = np.random.default_rng(42)
+        X = rng.random((13, 25)) - 15.0  # negative mean ~ -2.5
+        obj = ORNMF(rank=3, random_state=1)
+        obj._setup(X)
+        assert np.all(np.isfinite(obj.W))
+        assert obj.W.shape[1] == 3
