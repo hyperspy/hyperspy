@@ -1,0 +1,10 @@
+{
+  "agents": {
+    "Atlas": {
+      "rules": [
+        "sphinx-build -W -b html doc docs/_build/html before claiming docs pass.",
+        "Run scripts/check-ai-co-author.py before committing."
+      ]
+    }
+  }
+}

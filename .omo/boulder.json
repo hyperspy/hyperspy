@@ -1,0 +1,75 @@
+{
+  "active_plan": "/home/francisco/Git/hyperspy/.omo/plans/remake-pr3614.md",
+  "started_at": "2026-06-04T07:31:40.559Z",
+  "session_ids": [
+    "ses_16e747ac3ffeP2keqzFHOMJPHS",
+    "ses_16e653a4dffeeS5bfnc6DazFFp",
+    "ses_16e6511adffe9geZNxBHjHwMW0",
+    "ses_16e64e8a7ffe8dUrtXOqk5gMOD",
+    "ses_16e64d2f0ffeVtOXurDosx5psE"
+  ],
+  "plan_name": "remake-pr3614",
+  "session_origins": {
+    "ses_16e747ac3ffeP2keqzFHOMJPHS": "direct",
+    "ses_16e653a4dffeeS5bfnc6DazFFp": "appended",
+    "ses_16e6511adffe9geZNxBHjHwMW0": "appended",
+    "ses_16e64e8a7ffe8dUrtXOqk5gMOD": "appended",
+    "ses_16e64d2f0ffeVtOXurDosx5psE": "appended"
+  },
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Fix Poissonian noise normalisation silent no-op (#3607) — `hyperspy/_signals/lazy.py`: assign `coeff.map_blocks()` result back to data. Test: `test_lazy_decomposition.py -k poisson`. Changelog: `3607.bugfix.rst`.",
+      "session_id": "ses_16e64d2f0ffeVtOXurDosx5psE",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "started_at": "2026-06-04T07:55:35.855Z",
+      "status": "completed",
+      "updated_at": "2026-06-04T07:57:37.239Z",
+      "ended_at": "2026-06-04T07:57:37.239Z",
+      "elapsed_ms": 121384
+    }
+  },
+  "schema_version": 2,
+  "works": {
+    "remake-pr3614-legacy": {
+      "work_id": "remake-pr3614-legacy",
+      "active_plan": "/home/francisco/Git/hyperspy/.omo/plans/remake-pr3614.md",
+      "plan_name": "remake-pr3614",
+      "started_at": "2026-06-04T07:31:40.559Z",
+      "updated_at": "2026-06-04T07:57:37.239Z",
+      "session_ids": [
+        "ses_16e747ac3ffeP2keqzFHOMJPHS",
+        "ses_16e653a4dffeeS5bfnc6DazFFp",
+        "ses_16e6511adffe9geZNxBHjHwMW0",
+        "ses_16e64e8a7ffe8dUrtXOqk5gMOD",
+        "ses_16e64d2f0ffeVtOXurDosx5psE"
+      ],
+      "session_origins": {
+        "ses_16e747ac3ffeP2keqzFHOMJPHS": "direct",
+        "ses_16e653a4dffeeS5bfnc6DazFFp": "appended",
+        "ses_16e6511adffe9geZNxBHjHwMW0": "appended",
+        "ses_16e64e8a7ffe8dUrtXOqk5gMOD": "appended",
+        "ses_16e64d2f0ffeVtOXurDosx5psE": "appended"
+      },
+      "task_sessions": {
+        "todo:1": {
+          "task_key": "todo:1",
+          "task_label": "1",
+          "task_title": "Fix Poissonian noise normalisation silent no-op (#3607) — `hyperspy/_signals/lazy.py`: assign `coeff.map_blocks()` result back to data. Test: `test_lazy_decomposition.py -k poisson`. Changelog: `3607.bugfix.rst`.",
+          "session_id": "ses_16e64d2f0ffeVtOXurDosx5psE",
+          "agent": "Sisyphus-Junior",
+          "category": "quick",
+          "started_at": "2026-06-04T07:55:35.855Z",
+          "status": "completed",
+          "updated_at": "2026-06-04T07:57:37.239Z",
+          "ended_at": "2026-06-04T07:57:37.239Z",
+          "elapsed_ms": 121384
+        }
+      }
+    }
+  },
+  "active_work_id": "remake-pr3614-legacy",
+  "updated_at": "2026-06-04T07:57:37.239Z"
+}
