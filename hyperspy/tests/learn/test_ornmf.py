@@ -158,3 +158,22 @@ class TestORNMFNegativeMean:
         obj._setup(X)
         assert np.all(np.isfinite(obj.W))
         assert obj.W.shape[1] == 3
+
+
+class TestORNMFIteratorSetup:
+    """Cover the iterator path in _setup for full coverage of #3611 fix."""
+
+    def test_setup_with_iterator_uses_abs(self):
+        """_setup should use abs() when X is an iterator (not ndarray)."""
+        from hyperspy.learn._ornmf import ORNMF
+
+        rng = np.random.default_rng(42)
+        X = rng.random((13, 7))
+        # Make mean negative so abs() matters
+        X = X - 2.0
+        # Pass as generator to trigger iterator path
+        obj = ORNMF(rank=3, random_state=1)
+        gen = (row for row in X)
+        obj._setup(gen)
+        assert np.all(np.isfinite(obj.W))
+        assert obj.W.shape[1] == 3
