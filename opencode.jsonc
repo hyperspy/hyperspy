@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Use a wrapper shell that auto-activates the hyperspy-dev conda environment.
+  // Every bash command the agent runs will have hyperspy-dev active.
+  "shell": "/home/francisco/Git/hyperspy/scripts/hyperspy-dev-shell.sh",
+  // Ensure all hierarchical AGENTS.md files are loaded alongside the root one.
+  "instructions": [
+    "hyperspy/AGENTS.md",
+    "doc/AGENTS.md",
+    "examples/AGENTS.md",
+    "upcoming_changes/AGENTS.md",
+    "scripts/AGENTS.md"
+  ]
+}

@@ -21,6 +21,7 @@ from itertools import chain
 import numpy as np
 import scipy
 
+from hyperspy.decorators import deprecated
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import check_random_state
 
@@ -194,12 +195,12 @@ class ORNMF:
         self.h, self.e, self.v = None, None, None
         if isinstance(X, np.ndarray):
             n, m = X.shape
-            avg = np.sqrt(X.mean() / m)
+            avg = np.sqrt(abs(X.mean()) / m)
             iterating = False
         else:
             x = next(X)
             m = len(x)
-            avg = np.sqrt(x.mean() / m)
+            avg = np.sqrt(abs(x.mean()) / m)
             X = chain([x], X)
             iterating = True
 
@@ -220,6 +221,12 @@ class ORNMF:
 
         return X
 
+    @deprecated(
+        since="2.5",
+        alternative="ORNMF.partial_fit",
+        alternative_is_function=False,
+        removal="3.0",
+    )
     def fit(self, X, batch_size=None):
         """Learn NMF components from the data.
 
@@ -233,6 +240,10 @@ class ORNMF:
             or less.
 
         """
+        self._fit_impl(X, batch_size=batch_size)
+
+    def _fit_impl(self, X, batch_size=None):
+        """Internal implementation shared by :meth:`fit` and :meth:`partial_fit`."""
         if self.n_features is None:
             X = self._setup(X)
 
@@ -279,7 +290,9 @@ class ORNMF:
             n = 0
             lasttwo = np.zeros(2)
             while n <= 2 or (
-                abs((lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9
+                lasttwo[0] != 0
+                and abs((lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5
+                and n < 1e6
             ):
                 self.W -= eta * (self.W @ self.A - self.B)
                 self.W = _project(self.W)
@@ -305,6 +318,12 @@ class ORNMF:
             np.maximum(self.W, 0.0, out=self.W)
             self.W /= max(np.linalg.norm(self.W, "fro"), 1.0)
 
+    @deprecated(
+        since="2.5",
+        alternative="ORNMF.transform",
+        alternative_is_function=False,
+        removal="3.0",
+    )
     def project(self, X, return_error=False):
         """Project the learnt components on the data.
 
@@ -318,6 +337,10 @@ class ORNMF:
             the weights (loadings)
 
         """
+        return self._project_impl(X, return_error=return_error)
+
+    def _project_impl(self, X, return_error=False):
+        """Internal projection shared by :meth:`project` and :meth:`transform`."""
         H = []
         if return_error:
             E = []
@@ -338,6 +361,12 @@ class ORNMF:
         else:
             return H
 
+    @deprecated(
+        since="2.5",
+        alternative="ORNMF.components_ and ORNMF.transform",
+        alternative_is_function=False,
+        removal="3.0",
+    )
     def finish(self):
         """Return the learnt factors and loadings."""
         if len(self.H) > 0:
@@ -348,6 +377,46 @@ class ORNMF:
             return self.W, H
         else:
             return self.W, 1
+
+    # ------------------------------------------------------------------
+    # sklearn-compatible API
+    # ------------------------------------------------------------------
+
+    def partial_fit(self, X, batch_size=None):
+        """Process one batch of data.
+
+        Parameters
+        ----------
+        X : numpy.ndarray, shape (n_samples, n_features)
+            Batch of observations.
+        batch_size : int or None
+            If not None, split *X* into sub-batches of this size.
+
+        Returns
+        -------
+        self
+        """
+        self._fit_impl(X, batch_size=batch_size)
+        return self
+
+    @property
+    def components_(self):
+        """Learnt dictionary, shape ``(rank, n_features)`` — sklearn convention."""
+        return self.W.T
+
+    def transform(self, X):
+        """Project *X* onto the learnt dictionary.
+
+        Parameters
+        ----------
+        X : numpy.ndarray, shape (n_samples, n_features)
+
+        Returns
+        -------
+        loadings : numpy.ndarray, shape (n_samples, rank)
+            Non-negative coordinates of each sample in the learnt dictionary.
+        """
+        return self._project_impl(X).T
 
 
 def ornmf(
@@ -423,13 +492,20 @@ def ornmf(
         subspace_momentum=subspace_momentum,
         random_state=random_state,
     )
-    _ornmf.fit(X, batch_size=batch_size)
+    _ornmf.partial_fit(X, batch_size=batch_size)
 
     if project:
         W = _ornmf.W
-        H = _ornmf.project(X)
+        H = _ornmf._project_impl(X)
     else:
-        W, H = _ornmf.finish()
+        H = (
+            np.stack(_ornmf.H, axis=-1)
+            if len(_ornmf.H) > 0 and len(_ornmf.H[0].shape) == 1
+            else np.concatenate(_ornmf.H, axis=1)
+            if len(_ornmf.H) > 0
+            else 1
+        )
+        W = _ornmf.W
 
     if store_error:
         Xhat = W @ H
