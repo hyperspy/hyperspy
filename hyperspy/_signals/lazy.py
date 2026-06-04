@@ -1102,6 +1102,9 @@ class LazySignal(signals.BaseSignal):
                 finally:
                     if self._unfolded4decomposition is True:
                         self.fold()
+                        # BUGFIX: was ``is False`` (identity comparison, always no-op);
+                        # must be ``= False`` assignment to clear the flag so the signal
+                        # does not remain permanently unfolded.
                         self._unfolded4decomposition = False
             else:
                 self._check_navigation_mask(navigation_mask)
