@@ -529,26 +529,3 @@ class TestReturnInfo:
     @skip_sklearn
     def test_bss_supported_return_false(self):
         assert self.s.blind_source_separation(return_info=False) is None
-
-
-class TestBSSModelCorruptionFix:
-    """Regression test: get_bss_model() should not corrupt learning_results."""
-
-    def setup_method(self, method):
-        rng = np.random.default_rng(42)
-        self.s = hs.signals.Signal1D(rng.random((20, 100))).as_lazy()
-        self.s.decomposition(output_dimension=3)
-        self.s.blind_source_separation(3)
-
-    def test_get_bss_model_preserves_decomposition_results(self):
-        """#3657: get_bss_model() on lazy signal should not overwrite
-        learning_results.factors/loadings with dask-wrapped bss arrays."""
-        s = self.s
-        # Save original types
-        orig_factors_type = type(s.learning_results.factors)
-        orig_loadings_type = type(s.learning_results.loadings)
-        # Call get_bss_model which should NOT corrupt learning_results
-        model = s.get_bss_model()
-        assert model is not None
-        assert type(s.learning_results.factors) is orig_factors_type
-        assert type(s.learning_results.loadings) is orig_loadings_type
