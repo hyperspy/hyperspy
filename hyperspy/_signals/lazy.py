@@ -840,6 +840,8 @@ class LazySignal(signals.BaseSignal):
         signalsize = self.axes_manager.signal_size
         sig_reshape = (signalsize,) if signalsize else ()
         data = data.reshape((self.axes_manager.navigation_shape[::-1] + sig_reshape))
+        if signalsize:
+            data = data.rechunk({-1: -1})
 
         if signal_mask is None:
             signal_mask = (
@@ -1057,7 +1059,7 @@ class LazySignal(signals.BaseSignal):
                 coeff = (
                     raG[(...,) + (None,) * rbH.ndim] * rbH[(None,) * raG.ndim + (...,)]
                 )
-                coeff.map_blocks(np.nan_to_num)
+                coeff = coeff.map_blocks(np.nan_to_num)
                 coeff = da.where(coeff == 0, 1, coeff)
                 data = data / coeff
                 self.data = data
@@ -1092,7 +1094,7 @@ class LazySignal(signals.BaseSignal):
                 finally:
                     if self._unfolded4decomposition is True:
                         self.fold()
-                        self._unfolded4decomposition is False
+                        self._unfolded4decomposition = False
             else:
                 self._check_navigation_mask(navigation_mask)
                 self._check_signal_mask(signal_mask)
