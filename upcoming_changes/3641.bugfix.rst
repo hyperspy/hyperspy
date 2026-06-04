@@ -1,1 +1,1 @@
-Fix duplicate ``key_press_event`` handler accumulation on repeated ``connect()`` calls in :class:`~.drawing.image.ImagePlot`, and use blit-aware rendering in :meth:`~.drawing.image.ImagePlot.toggle_norm` instead of bypassing the blit pipeline with ``canvas.draw_idle()``.
+Fix duplicate ``key_press_event`` handler accumulation on repeated ``connect()`` calls in ``ImagePlot``, and use blit-aware rendering in ``toggle_norm`` instead of bypassing the blit pipeline with ``canvas.draw_idle()``.
