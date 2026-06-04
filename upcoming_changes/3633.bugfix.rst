@@ -20,3 +20,9 @@ Additionally fixed list-mutation-during-iteration bugs in
 guard against removed artists in ``BlittedFigure._draw_animated()``, and made
 ``HistogramTilePlot.close()`` call ``super().close()`` to release event
 connections.
+
+Also fixed leaked ``mpl_connect`` handler IDs in
+:class:`~.drawing.mpl_hse.MPL_HyperSignal1D_Explorer` and
+:class:`~.drawing.mpl_hie.MPL_HyperImage_Explorer` by storing connection IDs
+and explicitly disconnecting them in ``close()``, preventing callback
+invocations on stale objects after figure destruction.
