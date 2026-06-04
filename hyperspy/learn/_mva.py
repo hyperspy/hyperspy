@@ -1288,6 +1288,10 @@ class MVA:
         if self._lazy:
             import dask.array as da
 
+            # Save originals because _calculate_recmatrix reads from
+            # lr.factors/lr.loadings.  We temporarily swap in dask-wrapped
+            # bss arrays so the computation stays lazy, then restore the
+            # original decomposition results to avoid permanent corruption.
             saved_factors = lr.factors
             saved_loadings = lr.loadings
             try:
