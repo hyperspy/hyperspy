@@ -43,7 +43,7 @@ def generate_low_rank_matrix(m=20, n=100, rank=5, random_seed=123):
 def test_error_axes():
     s = signals.BaseSignal(generate_low_rank_matrix())
 
-    with pytest.raises(AttributeError, match="not possible to decompose a dataset"):
+    with pytest.raises(ValueError, match="not possible to decompose a dataset"):
         s.decomposition()
 
 
@@ -176,7 +176,7 @@ class TestGetModel:
     @pytest.mark.parametrize("centre", [None, "signal"])
     def test_get_decomposition_model(self, centre):
         s = self.s
-        s.decomposition(algorithm="SVD", centre=centre)
+        s.decomposition(algorithm="SVD", centre=centre, output_dimension=3)
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
         assert rms < 5e-7
@@ -184,7 +184,7 @@ class TestGetModel:
     @skip_sklearn
     def test_get_bss_model(self):
         s = self.s
-        s.decomposition(algorithm="SVD")
+        s.decomposition(algorithm="SVD", output_dimension=3)
         s.blind_source_separation(3)
         sc = self.s.get_bss_model()
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
@@ -650,7 +650,7 @@ def test_centering_error():
     ):
         s.decomposition(normalize_poissonian_noise=True, centre="navigation")
 
-    with pytest.raises(ValueError, match="'centre' must be one of"):
+    with pytest.raises(ValueError, match="`centre` must be None"):
         s.decomposition(centre="random")
 
 
