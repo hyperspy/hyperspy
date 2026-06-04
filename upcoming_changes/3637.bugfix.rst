@@ -1,4 +1,4 @@
 Fix ``AttributeError`` when ``BaseModel`` code references ``_residual_line`` on
-:class:`~.models.model2d.Model2D` instances, which never initialized this
-attribute (only :class:`~.models.model1d.Model1D` did).
+``Model2D`` instances, which never initialized this attribute (only
+``Model1D`` did).
 
