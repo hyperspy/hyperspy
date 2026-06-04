@@ -534,21 +534,37 @@ class TestReturnInfo:
 class TestBSSModelCorruptionFix:
     """Regression test: get_bss_model() should not corrupt learning_results."""
 
-    def setup_method(self, method):
+    def test_lazy_with_numpy_bss_arrays_preserves_decomposition(self):
+        """#3657: get_bss_model() on lazy signal with numpy bss arrays should
+        wrap them as dask, compute, then restore original factors/loadings."""
         rng = np.random.default_rng(42)
-        self.s = hs.signals.Signal1D(rng.random((20, 100))).as_lazy()
-        self.s.decomposition(output_dimension=3)
-        self.s.blind_source_separation(3)
-
-    def test_get_bss_model_preserves_decomposition_results(self):
-        """#3657: get_bss_model() on lazy signal should not overwrite
-        learning_results.factors/loadings with dask-wrapped bss arrays."""
-        s = self.s
-        # Save original types
-        orig_factors_type = type(s.learning_results.factors)
-        orig_loadings_type = type(s.learning_results.loadings)
-        # Call get_bss_model which should NOT corrupt learning_results
+        s = hs.signals.Signal1D(rng.random((20, 100))).as_lazy()
+        s.decomposition(output_dimension=3)
+        # Compute to numpy so bss operates on numpy arrays
+        s.learning_results.factors = s.learning_results.factors.compute()
+        s.learning_results.loadings = s.learning_results.loadings.compute()
+        s.blind_source_separation(3)
+        # bss_factors/bss_loadings should now be numpy (from numpy decomposition)
+        assert isinstance(s.learning_results.bss_factors, np.ndarray)
+        assert isinstance(s.learning_results.bss_loadings, np.ndarray)
+        saved_factors = s.learning_results.factors
+        saved_loadings = s.learning_results.loadings
         model = s.get_bss_model()
         assert model is not None
-        assert type(s.learning_results.factors) is orig_factors_type
-        assert type(s.learning_results.loadings) is orig_loadings_type
+        # learning_results must be unchanged
+        assert s.learning_results.factors is saved_factors
+        assert s.learning_results.loadings is saved_loadings
+
+    def test_non_lazy_preserves_decomposition(self):
+        """#3657: get_bss_model() on non-lazy signal should be a no-op
+        for learning_results (takes the else return path)."""
+        rng = np.random.default_rng(42)
+        s = hs.signals.Signal1D(rng.random((20, 100)))
+        s.decomposition()
+        s.blind_source_separation(3)
+        saved_factors = s.learning_results.factors.copy()
+        saved_loadings = s.learning_results.loadings.copy()
+        model = s.get_bss_model()
+        assert model is not None
+        assert np.array_equal(s.learning_results.factors, saved_factors)
+        assert np.array_equal(s.learning_results.loadings, saved_loadings)
