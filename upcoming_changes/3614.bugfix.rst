@@ -1,6 +1,0 @@
- Fix ``svd_solver='full'`` crashing with ``NotImplementedError`` when the
-signal dimension of the lazy data array is chunked (e.g. when loaded from an
-HDF5 file with a 3-D chunk layout).  ``da.linalg.svd`` (TSQR algorithm)
-requires the input to be chunked in one dimension only; HyperSpy now
-transparently rechunks the signal axis to a single chunk before calling SVD,
-so users never need to manage chunking manually.

@@ -1,5 +1,0 @@
-Fix navigation mask applied with wrong element order during lazy SVD decomposition
-for signals with a multi-dimensional navigation space (2-D maps, etc.).
-The N-D mask was not ravelled to 1-D before being passed to ``_block_iterator``,
-causing the mask to be inconsistent with the C-order ravelling performed by
-``unfold()``, and therefore masking the wrong navigation pixels.
