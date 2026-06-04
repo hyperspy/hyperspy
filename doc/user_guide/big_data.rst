@@ -131,35 +131,317 @@ operations are only performed lazily, use the
 Machine learning
 ----------------
 
-.. warning:: The machine learning features are in beta state.
-
-   Although most of them work as described, their operation may not always
-   be optimal, well-documented and/or consistent with their in-memory counterparts.
-
 :ref:`mva.decomposition` algorithms for machine learning often perform
 large matrix manipulations, requiring significantly more memory than the data size.
-To perform decomposition operation lazily, HyperSpy provides access to several "online"
-algorithms  as well as `dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
-Online algorithms perform the decomposition by operating serially on chunks of
-data, enabling the lazy decomposition of large datasets. In line with the
-standard HyperSpy signals, lazy :meth:`~.api.signals.LazySignal.decomposition`
-offers the following online algorithms:
+To decompose datasets that are larger than available RAM, HyperSpy's lazy
+decomposition algorithms minimise memory use in one of two ways: by building a
+**deferred task graph** (computation is expressed as a dask graph and only
+executed when ``.compute()`` is called) or by **streaming** the data one
+mini-batch at a time so that only a small portion resides in memory at once.
+Which strategy is used depends on the algorithm and, for ``algorithm='SVD'``,
+on the ``svd_solver`` parameter (see :ref:`big_data.svd`).
+
+:meth:`~.api.signals.LazySignal.decomposition` offers the following algorithms:
 
 .. _lazy_decomposition-table:
 
 .. table:: Available lazy decomposition algorithms in HyperSpy
 
-   +--------------------------+---------------------------------------------------+
-   | Algorithm                | Method                                            |
-   +==========================+===================================================+
-   | "SVD" (default)          | :func:`dask.array.linalg.svd`                     |
-   +--------------------------+---------------------------------------------------+
-   | "PCA"                    | :class:`sklearn.decomposition.IncrementalPCA`     |
-   +--------------------------+---------------------------------------------------+
-   | "ORPCA"                  | :func:`~.learn.orpca`                             |
-   +--------------------------+---------------------------------------------------+
-   | "ORNMF"                  | :func:`~.learn.ornmf`                             |
-   +--------------------------+---------------------------------------------------+
+   +--------------------------+-----------------------------------------------------------+
+   | ``"SVD"`` (default)      | See ``svd_solver`` below; three solvers available         |
+   +--------------------------+-----------------------------------------------------------+
+   | ``"PCA"``                | :class:`sklearn.decomposition.IncrementalPCA`             |
+   +--------------------------+-----------------------------------------------------------+
+   | ``"NMF"``                | :class:`sklearn.decomposition.MiniBatchNMF`               |
+   +--------------------------+-----------------------------------------------------------+
+   | ``"ORPCA"``              | :func:`~.learn.orpca`                                     |
+   +--------------------------+-----------------------------------------------------------+
+   | ``"ORNMF"``              | :func:`~.learn.ornmf`                                     |
+   +--------------------------+-----------------------------------------------------------+
+   | custom object            | Any object with ``partial_fit`` or ``fit`` + ``transform``|
+   +--------------------------+-----------------------------------------------------------+
+
+.. _big_data.svd:
+
+SVD (``algorithm='SVD'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The default ``algorithm='SVD'`` supports three solvers, selected via
+``svd_solver``:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - ``svd_solver``
+     - Description
+   * - ``'randomized'`` (**default**)
+     - :func:`dask.array.linalg.svd_compressed` — **randomised truncated SVD**.
+       Builds a dask task graph and materialises only the top-*k* singular
+       vectors.  Fast and memory-efficient at the cost of a small approximation
+       error in the singular vectors.  Works with arrays chunked in one or both
+       dimensions.
+
+       ``output_dimension`` is **required**.
+       Supports ``centre``, navigation/signal masks, and ``reproject``.
+   * - ``'incremental'``
+     - :class:`~hyperspy.learn.incremental_svd.ISVD` — **incremental
+       (out-of-core) SVD**: streams data one mini-batch at a time so only a
+       small number of chunks reside in memory simultaneously.  Result is
+       deterministic.  **Lowest peak memory of the three SVD solvers** — a good
+       choice when RAM is the primary constraint and you still need an
+       SVD-based decomposition — at the cost of typically longer wall-clock
+       time than ``'randomized'``.
+
+       ``output_dimension`` is **required**.
+       Supports ``centre``, navigation/signal masks, and all ``reproject`` modes.
+   * - ``'full'``
+     - :func:`dask.array.linalg.svd` — **exact full SVD** (TSQR algorithm).
+       Returns *lazy* dask arrays; no computation is triggered until
+       ``.compute()`` is called (or until ``reproject`` is used, which
+       materialises the arrays internally).  Uses the same ``dask.array.linalg.svd`` backend as HyperSpy prior to v2.5.  Requires substantially more memory than
+       ``'randomized'`` and is considerably slower.
+
+       ``output_dimension`` is **optional** (all components are returned if
+       omitted, but materialising them requires significantly more memory).
+       Supports ``centre``, navigation/signal masks, and ``reproject``.
+
+.. note::
+
+   **Choosing an algorithm.**
+   For ``"PCA"``, ``"NMF"``, ``"ORPCA"``, and ``"ORNMF"``, the main criterion is
+   usually the statistical model or constraint you need (for example,
+   centering, non-negativity, or robustness), not just speed or memory use.
+   The comparison below therefore focuses on the three ``svd_solver`` backends
+   of ``algorithm="SVD"``.  Among those, ``svd_solver='incremental'`` usually
+   has the lowest peak memory, ``svd_solver='full'`` the highest, and
+   ``svd_solver='randomized'`` generally offers the best speed/memory trade-off
+   for most datasets.  Choose ``'full'`` when you need the exact
+   factorisation, and ``'incremental'`` when minimizing RAM is the main
+   priority.
+
+.. versionchanged:: 2.5
+   The ``svd_solver`` parameter was introduced, offering three backends:
+   ``'randomized'`` (default, fast randomised truncated SVD),
+   ``'incremental'`` (lowest peak memory among SVD solvers, out-of-core streaming), and
+   ``'full'`` (exact SVD, lazy dask output; uses the same ``dask.array.linalg.svd`` backend as pre-v2.5).
+
+.. code-block:: python
+
+   # Randomised SVD (default) — output_dimension required
+   >>> s.decomposition(algorithm="SVD", output_dimension=10) # doctest: +SKIP
+   >>> s.decomposition(algorithm="SVD", svd_solver="randomized",
+   ...                 output_dimension=10) # doctest: +SKIP
+
+   # Incremental SVD — output_dimension required; supports masks and centring
+   >>> s.decomposition(algorithm="SVD", svd_solver="incremental",
+   ...                 output_dimension=10) # doctest: +SKIP
+
+   # Full SVD — output_dimension optional; returns lazy dask arrays
+   >>> s.decomposition(algorithm="SVD", svd_solver="full") # doctest: +SKIP
+   >>> s.decomposition(algorithm="SVD", svd_solver="full",
+   ...                 output_dimension=10) # doctest: +SKIP
+
+   # With navigation masking and mean-centring (all three solvers support centre)
+   >>> import numpy as np
+   >>> nav_mask = np.zeros(s.axes_manager.navigation_shape[::-1], dtype=bool)
+   >>> nav_mask[0] = True  # exclude all pixels in the first navigation row
+   >>> s.decomposition(
+   ...     algorithm="SVD",
+   ...     svd_solver="incremental",
+   ...     output_dimension=10,
+   ...     centre="navigation",
+   ...     navigation_mask=nav_mask,
+   ...     reproject="navigation",
+   ... ) # doctest: +SKIP
+
+.. _big_data.svd.array_types:
+
+Array types stored in ``learning_results``
+""""""""""""""""""""""""""""""""""""""""""
+
+After :meth:`~.api.signals.LazySignal.decomposition` completes,
+``learning_results.factors`` and ``learning_results.loadings`` are either
+**numpy** or **dask** arrays depending on the solver:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 27 28
+
+   * - Algorithm / solver
+     - ``factors``
+     - ``loadings``
+   * - ``'SVD'``, ``svd_solver='randomized'`` (default)
+     - numpy (computed)
+     - numpy (computed)
+   * - ``'SVD'``, ``svd_solver='incremental'``
+     - numpy (computed)
+     - numpy (computed)
+   * - ``'SVD'``, ``svd_solver='full'``, no ``reproject``
+     - **dask** (lazy)
+     - **dask** (lazy)
+   * - ``'SVD'``, ``svd_solver='full'``, ``reproject='navigation'``
+     - **dask** (lazy)
+     - numpy (computed)
+   * - ``'SVD'``, ``svd_solver='full'``, ``reproject='signal'``
+     - numpy (computed)
+     - **dask** (lazy)
+   * - ``'SVD'``, ``svd_solver='full'``, ``reproject='both'``
+     - numpy (computed)
+     - numpy (computed)
+   * - ``'PCA'``, ``'NMF'``, ``'ORPCA'``, ``'ORNMF'``, custom
+     - numpy (computed)
+     - numpy (computed)
+
+.. _big_data.svd.lazy_pipeline:
+
+Fully lazy pipeline (``svd_solver='full'``)
+"""""""""""""""""""""""""""""""""""""""""""
+
+``svd_solver='full'`` keeps the entire pipeline lazy from decomposition
+through to model reconstruction and saving — including when ``reproject`` is
+used.  :meth:`~.api.signals.LazySignal.decomposition` leaves factors and
+loadings as dask arrays, and the reproject steps (when requested) are
+performed with dask matmuls that stream over chunks without materialising the
+full dataset.  Only the array that is *produced* by a reproject step is
+computed eagerly (it is typically small: ``nav × k`` for loadings or
+``sig × k`` for factors).  The unrequested array stays lazy.
+
+Calling :meth:`~.api.signals.BaseSignal.get_decomposition_model` then returns
+a :class:`~hyperspy.api.signals.LazySignal` whose ``.data`` is a dask array.
+No full-dataset materialisation occurs until ``.compute()`` or ``.save()`` is
+called:
+
+.. code-block:: python
+
+   # Step 1 — decompose; factors and loadings remain lazy dask arrays
+   >>> s.decomposition(algorithm="SVD", svd_solver="full",
+   ...                 output_dimension=3) # doctest: +SKIP
+
+   # Step 2 — build the model; model.data is still a lazy dask array
+   >>> model = s.get_decomposition_model() # doctest: +SKIP
+   >>> isinstance(model.data, da.Array)  # True # doctest: +SKIP
+
+   # Step 3 — save triggers computation chunk by chunk while writing to disk
+   >>> model.save("model.hspy") # doctest: +SKIP
+
+   # Alternatively, select a subset of components (still lazy)
+   >>> model3 = s.get_decomposition_model(components=3) # doctest: +SKIP
+   >>> model3.save("model3.hspy") # doctest: +SKIP
+
+   # With reproject: reprojection itself is lazy too.
+   # Factors stay lazy (only loadings are computed by nav-reproject).
+   >>> s.decomposition(algorithm="SVD", svd_solver="full",
+   ...                 output_dimension=3,
+   ...                 reproject="navigation") # doctest: +SKIP
+   >>> model = s.get_decomposition_model()  # still lazy # doctest: +SKIP
+   >>> model.save("model_reprojected.hspy") # doctest: +SKIP
+
+By contrast, ``svd_solver='randomized'`` and ``svd_solver='incremental'``
+always compute numpy arrays during decomposition, so
+``get_decomposition_model()`` returns an eager signal by default.
+
+.. _big_data.svd.lazy_kwarg:
+
+Controlling laziness with the ``lazy`` keyword
+""""""""""""""""""""""""""""""""""""""""""""""
+
+The general behaviour of the ``lazy`` keyword on
+:meth:`~.api.signals.BaseSignal.get_decomposition_model` is described in
+:ref:`mva.model_output_laziness`.
+
+For lazy signals, the key additional point is that ``svd_solver='full'``
+already stores factors and loadings as dask arrays, so ``lazy=None`` preserves
+laziness automatically.  Use ``lazy=True`` to force a lazy reconstruction after
+an eager decomposition (for example with ``svd_solver='randomized'``), or
+``lazy=False`` to materialise the model immediately:
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm="SVD", svd_solver="randomized",
+   ...                 output_dimension=3) # doctest: +SKIP
+   >>> model = s.get_decomposition_model(lazy=True)  # force lazy # doctest: +SKIP
+   >>> model.save("model.hspy")  # streams chunk-by-chunk # doctest: +SKIP
+
+   >>> s.decomposition(algorithm="SVD", svd_solver="full") # doctest: +SKIP
+   >>> model = s.get_decomposition_model(lazy=False)  # trigger computation now # doctest: +SKIP
+
+.. note::
+
+   ``centre`` and ``normalize_poissonian_noise=True`` cannot be used together.
+   Attempting to do so will raise a ``ValueError``.
+
+The ``"PCA"`` algorithm wraps :class:`sklearn.decomposition.IncrementalPCA`
+and always centres the data internally (the ``centre`` keyword argument is
+ignored for this algorithm — centering is handled by the estimator itself).
+Like the ``"SVD"`` backends, it supports masks and all ``reproject`` modes.
+
+.. _big_data.nmf:
+
+Out-of-core NMF
+^^^^^^^^^^^^^^^
+
+.. versionadded:: 2.5
+
+The ``"NMF"`` algorithm uses :class:`sklearn.decomposition.MiniBatchNMF`
+(requires scikit-learn ≥ 1.1) to perform non-negative matrix factorisation
+out-of-core.  ``output_dimension`` is required.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm="NMF", output_dimension=3) # doctest: +SKIP
+
+.. _big_data.custom_algorithm:
+
+Custom sklearn-like estimators
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 2.5
+
+Any custom sklearn-like estimator can be passed as the ``algorithm`` argument.
+If the object implements ``partial_fit`` it is called incrementally on each
+chunk (true out-of-core); otherwise ``fit`` or ``fit_transform`` is called
+on the full dataset loaded into memory.
+
+.. code-block:: python
+
+   >>> from sklearn.decomposition import MiniBatchDictionaryLearning
+   >>> s.decomposition(
+   ...     algorithm=MiniBatchDictionaryLearning(n_components=5),
+   ...     output_dimension=5,
+   ... ) # doctest: +SKIP
+
+.. _big_data.normalize_poissonian_noise:
+
+Poissonian noise normalisation for lazy signals
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 2.5
+
+Lazy signals expose
+:meth:`~hyperspy.api.signals.LazySignal.normalize_poissonian_noise` as a
+standalone method, independently of decomposition.  It rescales the data
+lazily using the same square-root variance-stabilising transform used
+internally by :meth:`~.api.signals.BaseSignal.decomposition`.  This is
+useful when you want to apply the normalisation yourself before running a
+custom decomposition pipeline.
+
+.. code-block:: python
+
+   >>> s.normalize_poissonian_noise() # doctest: +SKIP
+
+.. note::
+
+   Poissonian noise normalisation cannot be combined with the ``centre``
+   parameter.  Attempting to use both will raise a ``ValueError``.
+
+.. note::
+
+   Lazy signals with per-spectrum (sub-signal) chunking — where the on-disk
+   chunk size along the signal axis is smaller than the full signal — are fully
+   supported.  HyperSpy rechunks the signal axis internally before processing,
+   so all signal channels are read correctly regardless of the original chunk
+   layout.
 
 .. seealso::
 
