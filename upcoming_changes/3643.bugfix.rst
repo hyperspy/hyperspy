@@ -1,0 +1,1 @@
+Fix inverted disconnect logic in :meth:`~.roi.BaseInteractiveROI._remove_widget`: the :attr:`~.axes.AxesManager.any_axis_changed` handler was disconnected from the wrong signal (non-matching ones) and never disconnected from the matching signal, due to a misplaced ``break`` in the iteration.
