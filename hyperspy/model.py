@@ -1020,6 +1020,10 @@ class BaseModel(list):
                     self._model_line.update(
                         render_figure=render_figure, update_ylimits=update_ylimits
                     )
+                if self._residual_line is not None:
+                    self._residual_line.update(
+                        render_figure=render_figure, update_ylimits=update_ylimits
+                    )
                 if self._plot_components:
                     for component in self.active_components:
                         self._update_component_line(component)
@@ -1043,6 +1047,13 @@ class BaseModel(list):
                 es.add(c.events, f)
                 if c._position:
                     es.add(c._position.events)
+                for p in c.parameters:
+                    es.add(p.events, f)
+
+        if self._residual_line:
+            f = self._residual_line._auto_update_line
+            for c in self:
+                es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
 
