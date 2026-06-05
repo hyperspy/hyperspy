@@ -170,7 +170,6 @@ class TestBaseDataAxis:
 
         # Mock the events
         axis.events.value_changed.trigger = mock.Mock()
-        axis.events.axis_changed.trigger = mock.Mock()
 
         # Test the case where new_value == new and we should trigger event
         axis.index = 5
@@ -179,9 +178,9 @@ class TestBaseDataAxis:
         # This should trigger the event path
         axis._value_changed("value", 0, 5)
 
-        # Verify events were triggered
+        # Verify value_changed was triggered (axis_changed is NOT triggered
+        # on value change — it's a navigation event, not a definition change)
         axis.events.value_changed.trigger.assert_called()
-        axis.events.axis_changed.trigger.assert_called()
 
     def test_base_data_axis_error_conditions(self):
         """Test various error conditions in BaseDataAxis."""

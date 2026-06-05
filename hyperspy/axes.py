@@ -372,8 +372,6 @@ class BaseDataAxis(t.HasTraits):
 
     def _index_changed(self, name, old, new):
         self.events.index_changed.trigger(obj=self, index=self.index)
-        if not self._suppress_axis_changed_trigger:
-            self.events.axis_changed.trigger(obj=self)
         if not self._suppress_update_value:
             new_value = self.axis[self.index]
             if new_value != self.value:
@@ -386,8 +384,6 @@ class BaseDataAxis(t.HasTraits):
             self.index = new_index
             if new == self.axis[self.index]:
                 self.events.value_changed.trigger(obj=self, value=new)
-                if not self._suppress_axis_changed_trigger:
-                    self.events.axis_changed.trigger(obj=self)
         else:
             new_value = self.index2value(new_index)
             if new_value == old:
@@ -399,8 +395,6 @@ class BaseDataAxis(t.HasTraits):
 
             elif new_value == new and not self._suppress_value_changed_trigger:
                 self.events.value_changed.trigger(obj=self, value=new)
-                if not self._suppress_axis_changed_trigger:
-                    self.events.axis_changed.trigger(obj=self)
 
     @property
     def index_in_array(self):
