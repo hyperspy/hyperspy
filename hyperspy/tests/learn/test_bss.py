@@ -541,9 +541,13 @@ class TestBSSModelCorruptionFix:
         rng = np.random.default_rng(42)
         s = hs.signals.Signal1D(rng.random((20, 100))).as_lazy()
         s.decomposition(output_dimension=3)
-        # Compute to numpy so bss operates on numpy arrays
-        s.learning_results.factors = s.learning_results.factors.compute()
-        s.learning_results.loadings = s.learning_results.loadings.compute()
+        # svd_solver='randomized' (default) returns numpy arrays for lazy
+        # signals; svd_solver='full' returns dask arrays.  If the result is
+        # already numpy, skip the .compute() call.
+        if hasattr(s.learning_results.factors, "compute"):
+            s.learning_results.factors = s.learning_results.factors.compute()
+        if hasattr(s.learning_results.loadings, "compute"):
+            s.learning_results.loadings = s.learning_results.loadings.compute()
         s.blind_source_separation(3)
         # bss_factors/bss_loadings should now be numpy (from numpy decomposition)
         assert isinstance(s.learning_results.bss_factors, np.ndarray)

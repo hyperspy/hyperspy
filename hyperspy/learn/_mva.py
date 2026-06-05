@@ -1554,8 +1554,9 @@ class MVA:
                 lr.factors = saved_factors
                 lr.loadings = saved_loadings
             return rec
-        rec = self._calculate_recmatrix(components=components, mva_type="bss")
-        return rec
+        return self._calculate_recmatrix(
+            components=components, mva_type="bss", lazy=lazy, chunks=chunks
+        )
 
     def get_explained_variance_ratio(self):
         """Return explained variance ratio of the PCA components as a Signal1D.
