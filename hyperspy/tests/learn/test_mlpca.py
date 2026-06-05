@@ -73,7 +73,7 @@ def test_signal():
     s.decomposition(algorithm="MLPCA", output_dimension=r)
 
     # Check singular values
-    v = s.get_explained_variance_ratio().data
+    v = s.get_scree_plot_data().data
     np.testing.assert_allclose(v[:r].sum(), 1.0)
 
     # Check the low-rank component MSE

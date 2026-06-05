@@ -25,6 +25,7 @@ import numpy as np
 from rsciio.utils import path
 
 from hyperspy import learn, signals
+from hyperspy.decorators import deprecated
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.external.progressbar import progressbar
@@ -239,7 +240,7 @@ class MVA:
         See Also
         --------
         plot_decomposition_factors, plot_decomposition_loadings,
-        plot_decomposition_results, plot_explained_variance_ratio
+        plot_decomposition_results, plot_scree_plot
 
         """
         if utils.is_cupy_array(self.data):  # pragma: no cover
@@ -1295,11 +1296,11 @@ class MVA:
         rec = self._calculate_recmatrix(components=components, mva_type="bss")
         return rec
 
-    def get_explained_variance_ratio(self):
+    def get_scree_plot_data(self):
         """Return the scree plot data as a Signal1D.
 
         Returns the explained variance ratio (when the decomposition was
-        performed with mean-centring, i.e. true PCA) or the proportion of
+        performed with mean-centring, a.k.a. PCA) or the proportion of
         total variation (ratio of squared singular values, for uncentred SVD
         and other algorithms) as a function of component index.
 
@@ -1313,7 +1314,7 @@ class MVA:
 
         See Also
         --------
-        decomposition, plot_explained_variance_ratio,
+        decomposition, plot_scree_plot,
         get_decomposition_loadings, get_decomposition_factors
 
         """
@@ -1335,7 +1336,12 @@ class MVA:
         s.axes_manager[-1].units = ""
         return s
 
-    def plot_explained_variance_ratio(
+    @deprecated(since=2.5, alternative="get_scree_plot_data", removal=3.0)
+    def get_explained_variance_ratio(self, *args, **kwargs):
+        """Deprecated: use :meth:`get_scree_plot_data` instead."""
+        return self.get_scree_plot_data(*args, **kwargs)
+
+    def plot_scree_plot(
         self,
         n=30,
         log=True,
@@ -1427,7 +1433,7 @@ class MVA:
 
         >>> s = hs.load("some_spectrum_image") # doctest: +SKIP
         >>> s.decomposition() # doctest: +SKIP
-        >>> s.plot_explained_variance_ratio(
+        >>> s.plot_scree_plot(
         ...    n=40,
         ...    threshold=0.005,
         ...    signal_fmt={'marker': 'v', 's': 150, 'c': 'pink'},
@@ -1436,14 +1442,14 @@ class MVA:
 
         See Also
         --------
-        decomposition, get_explained_variance_ratio, get_decomposition_loadings,
+        decomposition, get_scree_plot_data, get_decomposition_loadings,
         get_decomposition_factors
 
         """
         import matplotlib.pyplot as plt
         from matplotlib.ticker import FuncFormatter, MaxNLocator
 
-        s = self.get_explained_variance_ratio()
+        s = self.get_scree_plot_data()
         if utils.is_cupy_array(s.data):  # pragma: no cover
             s.to_host()
 
@@ -1593,7 +1599,12 @@ class MVA:
 
         return ax
 
-    def plot_cumulative_explained_variance_ratio(self, n=50):
+    @deprecated(since=2.5, alternative="plot_scree_plot", removal=3.0)
+    def plot_explained_variance_ratio(self, *args, **kwargs):
+        """Deprecated: use :meth:`plot_scree_plot` instead."""
+        return self.plot_scree_plot(*args, **kwargs)
+
+    def plot_cumulative_scree_plot(self, n=50):
         """Plot the cumulative scree plot up to n components.
 
         For centred decompositions (e.g. PCA), the y-axis shows the
@@ -1612,7 +1623,7 @@ class MVA:
 
         See Also
         --------
-        plot_explained_variance_ratio
+        plot_scree_plot
 
         """
         import matplotlib.pyplot as plt
@@ -1635,6 +1646,11 @@ class MVA:
         ax.set_ylabel(ylabel)
 
         return ax
+
+    @deprecated(since=2.5, alternative="plot_cumulative_scree_plot", removal=3.0)
+    def plot_cumulative_explained_variance_ratio(self, *args, **kwargs):
+        """Deprecated: use :meth:`plot_cumulative_scree_plot` instead."""
+        return self.plot_cumulative_scree_plot(*args, **kwargs)
 
     def normalize_poissonian_noise(self, navigation_mask=None, signal_mask=None):
         """Normalize the signal under the assumption of Poisson noise.
@@ -2670,7 +2686,7 @@ class MVA:
 
         See Also
         --------
-        get_explained_variance_ratio, plot_explained_variance_ratio
+        get_scree_plot_data, plot_scree_plot
 
         """
         if explained_variance_ratio is None:

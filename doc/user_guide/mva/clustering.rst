@@ -264,7 +264,7 @@ redundancies:
       algorithm=SVD
       output_dimension=None
       centre=None
-    >>> s.plot_explained_variance_ratio()
+    >>> s.plot_scree_plot()
     <Axes: title={'center': '\nPCA Scree Plot'}, xlabel='Principal component index', ylabel='Proportion of variance'>
 
 .. image:: ../images/clustering_scree_plot.png
