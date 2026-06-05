@@ -195,6 +195,8 @@ class ORNMF:
         self.h, self.e, self.v = None, None, None
         if isinstance(X, np.ndarray):
             n, m = X.shape
+            # Use abs() because negative-mean data would produce NaN from
+            # sqrt, causing the convergence check to never trigger.
             avg = np.sqrt(abs(X.mean()) / m)
             iterating = False
         else:
@@ -289,10 +291,13 @@ class ORNMF:
             # exactly as in the Zhao & Tan paper
             n = 0
             lasttwo = np.zeros(2)
+            # Guard against division by zero — on the first iteration
+            # lasttwo[0] is 0.
+            maxiter = 1e6  # safety bound matching _solveproj
             while n <= 2 or (
                 lasttwo[0] != 0
                 and abs((lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5
-                and n < 1e6
+                and n < maxiter
             ):
                 self.W -= eta * (self.W @ self.A - self.B)
                 self.W = _project(self.W)

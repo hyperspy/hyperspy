@@ -457,3 +457,48 @@ class ModelStatistics:
             )
             html += "<br>"
         return html
+
+
+class SummaryStatistics:
+    """
+    Display class for the five-number summary statistics of a signal.
+
+    Parameters
+    ----------
+    mean, std, min, q1, median, q3, max : float
+        The statistics to display.
+    formatter : str, optional
+        Printf-style format string for numeric values. Default is ``"%.3g"``.
+    """
+
+    def __init__(self, mean, std, min, q1, median, q3, max, formatter="%.3g"):
+        self.stats = [
+            ("mean", mean),
+            ("std", std),
+            ("min", min),
+            ("Q1", q1),
+            ("median", median),
+            ("Q3", q3),
+            ("max", max),
+        ]
+        self.formatter = formatter
+
+    def _build_table(self):
+        table = PrettyTable()
+        table.field_names = ["Statistic", "Value"]
+        table.align["Statistic"] = "r"
+        table.align["Value"] = "r"
+        for name, val in self.stats:
+            table.add_row([name, self.formatter % val])
+        return table
+
+    def __repr__(self):
+        return "Summary statistics\n" + str(self._build_table())
+
+    def _repr_html_(self):
+        return "<h4>Summary statistics</h4>" + self._build_table().get_html_string(
+            attributes={
+                "style": "width:100%; border-collapse:collapse; text-align:center;",
+                "border": "1",
+            }
+        )

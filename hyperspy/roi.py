@@ -608,11 +608,12 @@ class BaseInteractiveROI(BaseROI):
         widget.close(render_figure=render_figure)
         for signal, w in self.signal_map.items():
             if w[0] == widget:
+                # Disconnect before break: only the matching signal's handler
+                # needs cleanup, and break would skip it if placed after.
+                if self.update in signal.axes_manager.events.any_axis_changed.connected:
+                    signal.axes_manager.events.any_axis_changed.disconnect(self.update)
                 self.signal_map.pop(signal)
                 break
-            # disconnect events which has been added when
-            if self.update in signal.axes_manager.events.any_axis_changed.connected:
-                signal.axes_manager.events.any_axis_changed.disconnect(self.update)
 
     def remove_widget(self, signal=None, render_figure=True):
         """

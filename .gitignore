@@ -57,6 +57,7 @@ venv/
 # AI coding tools — runtime state and personal files
 .omo/
 .omc/
+.omo/
 .sisyphus/*
 !.sisyphus/rules/
 

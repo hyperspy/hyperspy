@@ -529,3 +529,44 @@ class TestReturnInfo:
     @skip_sklearn
     def test_bss_supported_return_false(self):
         assert self.s.blind_source_separation(return_info=False) is None
+
+
+class TestBSSModelCorruptionFix:
+    """Regression test: get_bss_model() should not corrupt learning_results."""
+
+    @skip_sklearn
+    def test_lazy_with_numpy_bss_arrays_preserves_decomposition(self):
+        """#3657: get_bss_model() on lazy signal with numpy bss arrays should
+        wrap them as dask, compute, then restore original factors/loadings."""
+        rng = np.random.default_rng(42)
+        s = hs.signals.Signal1D(rng.random((20, 100))).as_lazy()
+        s.decomposition(output_dimension=3)
+        # Compute to numpy so bss operates on numpy arrays
+        s.learning_results.factors = s.learning_results.factors.compute()
+        s.learning_results.loadings = s.learning_results.loadings.compute()
+        s.blind_source_separation(3)
+        # bss_factors/bss_loadings should now be numpy (from numpy decomposition)
+        assert isinstance(s.learning_results.bss_factors, np.ndarray)
+        assert isinstance(s.learning_results.bss_loadings, np.ndarray)
+        saved_factors = s.learning_results.factors
+        saved_loadings = s.learning_results.loadings
+        model = s.get_bss_model()
+        assert model is not None
+        # learning_results must be unchanged
+        assert s.learning_results.factors is saved_factors
+        assert s.learning_results.loadings is saved_loadings
+
+    @skip_sklearn
+    def test_non_lazy_preserves_decomposition(self):
+        """#3657: get_bss_model() on non-lazy signal should be a no-op
+        for learning_results (takes the else return path)."""
+        rng = np.random.default_rng(42)
+        s = hs.signals.Signal1D(rng.random((20, 100)))
+        s.decomposition()
+        s.blind_source_separation(3)
+        saved_factors = s.learning_results.factors.copy()
+        saved_loadings = s.learning_results.loadings.copy()
+        model = s.get_bss_model()
+        assert model is not None
+        assert np.array_equal(s.learning_results.factors, saved_factors)
+        assert np.array_equal(s.learning_results.loadings, saved_loadings)

@@ -840,11 +840,12 @@ class LazySignal(signals.BaseSignal):
         signalsize = self.axes_manager.signal_size
         sig_reshape = (signalsize,) if signalsize else ()
         data = data.reshape((self.axes_manager.navigation_shape[::-1] + sig_reshape))
-        # Ensure the signal dimension is a single chunk so that the index
-        # ``(0,)`` appended in the loop below retrieves the full signal vector
-        # rather than only the first chunk.  This matters when the on-disk
-        # chunk size is smaller than the signal size (e.g. after unfold()).
         if signalsize:
+            # Ensure the signal dimension is a single chunk so that the
+            # index appended in the loop below retrieves the full signal
+            # vector rather than only the first chunk.  This matters when
+            # the on-disk chunk size is smaller than the signal size
+            # (e.g. after unfold()).
             data = data.rechunk({-1: -1})
 
         if signal_mask is None:
@@ -1598,8 +1599,10 @@ class LazySignal(signals.BaseSignal):
                 finally:
                     if self._unfolded4decomposition is True:
                         self.fold()
+                        # BUGFIX: was ``is False`` (identity comparison, always no-op);
+                        # must be ``= False`` assignment to clear the flag so the signal
+                        # does not remain permanently unfolded.
                         self._unfolded4decomposition = False
-
             else:
                 this_data = []
                 try:
