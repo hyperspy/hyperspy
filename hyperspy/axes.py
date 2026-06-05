@@ -2389,11 +2389,35 @@ class AxesManager(t.HasTraits):
         string += ")"
         return string
 
-    def _build_nav_table(self):
+    @staticmethod
+    def _build_axis_table(field_names, custom_format_keys, extra_widths=None):
         from prettytable import PrettyTable
 
+        def _num_fmt(f, v):
+            return v if isinstance(v, str) else "%.5g" % v
+
+        _base_widths = {
+            "Name": 20,
+            "size": 8,
+            "offset": 11,
+            "scale": 11,
+            "units": 11,
+        }
+        widths = {**_base_widths, **(extra_widths or {})}
+
         table = PrettyTable()
-        table.field_names = ["Name", "size", "index", "offset", "scale", "units"]
+        table.field_names = field_names
+        table.custom_format = {k: _num_fmt for k in custom_format_keys}
+        table.min_width = widths
+        table.max_width = widths
+        return table
+
+    def _build_nav_table(self):
+        table = self._build_axis_table(
+            ["Name", "size", "index", "offset", "scale", "units"],
+            ["size", "index", "offset", "scale"],
+            extra_widths={"index": 6},
+        )
         for ax in self.navigation_axes:
             if ax.is_uniform:
                 offset, scale = ax.offset, ax.scale
@@ -2403,10 +2427,10 @@ class AxesManager(t.HasTraits):
         return table
 
     def _build_signal_table(self):
-        from prettytable import PrettyTable
-
-        table = PrettyTable()
-        table.field_names = ["Name", "size", "offset", "scale", "units"]
+        table = self._build_axis_table(
+            ["Name", "size", "offset", "scale", "units"],
+            ["size", "offset", "scale"],
+        )
         for ax in self.signal_axes:
             if ax.is_uniform:
                 offset, scale = ax.offset, ax.scale
