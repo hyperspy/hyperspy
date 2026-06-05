@@ -38,5 +38,5 @@ def test_parallel_pool_ipyparallel_not_installed():
         assert not pool.is_ipyparallel
 
         # Explicitly requesting ipyparallel when not installed should raise
-        with pytest.raises(ValueError, match="ipyparralel must be installed"):
+        with pytest.raises(ValueError, match="ipyparallel must be installed"):
             ParallelPool(ipyparallel=True)
