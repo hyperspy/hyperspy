@@ -93,8 +93,9 @@ class GeneralConfig(t.HasTraits):
 
     nb_progressbar = t.CBool(True, desc="Attempt to use ipywidgets progressbar")
 
-    def _logger_on_changed(self, old, new):
-        if new is True:
+    @t.observe("logger_on")
+    def _logger_on_changed(self, event=None):
+        if event.new is True:
             turn_logging_on()
         else:
             turn_logging_off()

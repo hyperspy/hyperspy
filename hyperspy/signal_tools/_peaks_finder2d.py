@@ -69,7 +69,7 @@ class PeaksFinder2D(t.HasTraits):
     dog_threshold = t.Range(0, 0.4, value=0.2)
     dog_overlap = t.Range(0, 1.0, value=0.5)
     # For "Cross correlation" method
-    xc_template = None
+    xc_template = t.Any()
     xc_distance = t.Range(0, 100.0, value=5.0)
     xc_threshold = t.Range(0, 10.0, value=0.5)
 
@@ -79,6 +79,7 @@ class PeaksFinder2D(t.HasTraits):
     show_navigation_sliders = t.Bool(False)
 
     def __init__(self, signal, method, peaks=None, **kwargs):
+        super().__init__()
         self._attribute_argument_mapping_local_max = {
             "local_max_distance": "min_distance",
             "local_max_threshold": "threshold_abs",
@@ -137,9 +138,7 @@ class PeaksFinder2D(t.HasTraits):
             raise SignalDimensionError(signal.axes.signal_dimension, 2)
 
         self._set_parameters_observer()
-        self.on_trait_change(
-            self.set_random_navigation_position, "random_navigation_position"
-        )
+        self.observe(self.set_random_navigation_position, "random_navigation_position")
 
         self.signal = signal
         self.peaks = peaks
@@ -187,19 +186,20 @@ class PeaksFinder2D(t.HasTraits):
         self._find_peaks_current_index(method=method)
         self._plot_markers()
 
-    def _method_changed(self, old, new):
-        if new == "Template matching" and self.xc_template is None:
+    @t.observe("method")
+    def _method_changed(self, event=None):
+        if event.new == "Template matching" and self.xc_template is None:
             raise RuntimeError('The "template" argument is required.')
-        self._update_peak_finding(method=new)
+        self._update_peak_finding(method=event.new)
 
-    def _parameter_changed(self, old, new):
+    def _parameter_changed(self, event=None):
         self._update_peak_finding()
 
     def _set_parameters_observer(self):
         self._observed_parameters = []
         for parameters_mapping in self._attribute_argument_mapping_dict.values():
             for parameter in list(parameters_mapping.keys()):
-                self.on_trait_change(self._parameter_changed, parameter)
+                self.observe(self._parameter_changed, parameter)
                 self._observed_parameters.append(parameter)
 
     def _get_parameters(self, method):
@@ -256,15 +256,15 @@ class PeaksFinder2D(t.HasTraits):
         if self._update_peak_finding in am.events.indices_changed.connected:
             am.events.indices_changed.disconnect(self._update_peak_finding)
         # disconnect trait observers
-        self.on_trait_change(
+        self.observe(
             self.set_random_navigation_position,
             "random_navigation_position",
             remove=True,
         )
         for parameter in self._observed_parameters:
-            self.on_trait_change(self._parameter_changed, parameter, remove=True)
+            self.observe(self._parameter_changed, parameter, remove=True)
 
-    def set_random_navigation_position(self):
+    def set_random_navigation_position(self, event=None):
         index = self._rng.integers(0, self.signal.axes_manager._max_index)
         self.signal.axes_manager.indices = np.unravel_index(
             index, tuple(self.signal.axes_manager._navigation_shape_in_array)

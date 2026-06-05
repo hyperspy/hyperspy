@@ -75,7 +75,7 @@ class ComponentFit(signal_tools.SpanSelectorInSignal1D):
                 self.model.plot()
             self.span_selector_switch(on=True)
 
-    def _fit_fired(self):
+    def _fit_fired(self, event=None):
         if self.signal_range != "interactive" and self.signal_range is not None:
             self.model.set_signal_range(*self.signal_range)
         elif self.signal_range == "interactive":

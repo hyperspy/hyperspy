@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
+from types import SimpleNamespace
 
 import matplotlib
 import numpy as np
@@ -80,6 +81,8 @@ class SpikesRemoval:
         self._temp_mask = np.zeros(self.signal._get_current_data().shape, dtype="bool")
         self.index = 0
         self.threshold = threshold
+        if hasattr(self, "observe"):
+            self.observe(self._index_changed, "index")
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
 
@@ -127,13 +130,13 @@ class SpikesRemoval:
                     self.index += 1
                 else:
                     self.index -= 1
-                self._index_changed(self.index, self.index)
+                self._index_changed(SimpleNamespace(old=self.index, new=self.index))
                 spike = self.detect_spike()
 
         return spike
 
-    def _index_changed(self, old, new):
-        self.signal.axes_manager.indices = self.coordinates[new]
+    def _index_changed(self, event=None):
+        self.signal.axes_manager.indices = self.coordinates[event.new]
         self.argmax = None
         self._temp_mask[:] = False
 
@@ -251,16 +254,19 @@ class SpikesRemovalInteractive(SpikesRemoval, signal_tools.SpanSelectorInSignal1
         self.update_signal_mask()
         self.max_num_bins = max_num_bins
 
-    def _threshold_changed(self, old, new):
+    @t.observe("threshold", post_init=True)
+    def _threshold_changed(self, event=None):
         self.index = 0
         self.update_plot()
 
-    def _click_to_show_instructions_fired(self):
+    @t.observe("click_to_show_instructions")
+    def _click_to_show_instructions_fired(self, event=None):
         from pyface.message_dialog import information
 
         _ = (information(None, SPIKES_REMOVAL_INSTRUCTIONS, title="Instructions"),)
 
-    def _show_derivative_histogram_fired(self):
+    @t.observe("show_derivative_histogram")
+    def _show_derivative_histogram_fired(self, event=None):
         self.signal._spikes_diagnosis(
             signal_mask=self.signal_mask,
             navigation_mask=self.navigation_mask,
@@ -348,12 +354,14 @@ class SpikesRemovalInteractive(SpikesRemoval, signal_tools.SpanSelectorInSignal1
             self.interpolated_line.close()
             self.interpolated_line = None
 
-    def _spline_order_changed(self, old, new):
-        if new != old:
-            self.spline_order = new
+    @t.observe("spline_order")
+    def _spline_order_changed(self, event=None):
+        if event.new != event.old:
+            self.spline_order = event.new
             self.span_selector_changed()
 
-    def _add_noise_changed(self, old, new):
+    @t.observe("add_noise")
+    def _add_noise_changed(self, event=None):
         self.span_selector_changed()
 
     def create_interpolation_line(self):

@@ -50,6 +50,7 @@ class Smoothing(t.HasTraits):
             return matplotlib.colors.to_rgb(self.line_color_ipy)
 
     def __init__(self, signal):
+        super().__init__()
         self.ax = None
         self.data_line = None
         self.smooth_line = None
@@ -97,7 +98,7 @@ class Smoothing(t.HasTraits):
         if hasattr(self, "line_color"):
             self.line_color = str(self.line_color_ipy)
         else:
-            self._line_color_changed(None, None)
+            self._line_color_changed()
 
     def turn_diff_line_off(self):
         if self.smooth_diff_line is None:
@@ -105,17 +106,19 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line.close()
         self.smooth_diff_line = None
 
-    def _differential_order_changed(self, old, new):
-        if new == 0:
+    @t.observe("differential_order")
+    def _differential_order_changed(self, event=None):
+        if event.new == 0:
             self.turn_diff_line_off()
             return
-        if old == 0:
-            self.turn_diff_line_on(new)
+        if event.old == 0:
+            self.turn_diff_line_on(event.new)
             self.smooth_diff_line.plot()
         else:
             self.smooth_diff_line.update(force_replot=False)
 
-    def _line_color_changed(self, old, new):
+    @t.observe("line_color")
+    def _line_color_changed(self, event=None):
         self.smooth_line.line_properties = {"color": self.line_color_rgb}
         if self.smooth_diff_line is not None:
             self.smooth_diff_line.line_properties = {"color": self.line_color_rgb}
@@ -155,7 +158,8 @@ class SmoothingSavitzkyGolay(Smoothing):
     increase_window_length = t.Button(orientation="horizontal", label="+")
     decrease_window_length = t.Button(orientation="horizontal", label="-")
 
-    def _increase_window_length_fired(self):
+    @t.observe("increase_window_length")
+    def _increase_window_length_fired(self, event=None):
         if self.window_length % 2:
             nwl = self.window_length + 2
         else:
@@ -163,7 +167,8 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl < self.signal.axes_manager[2j].size:
             self.window_length = nwl
 
-    def _decrease_window_length_fired(self):
+    @t.observe("decrease_window_length")
+    def _decrease_window_length_fired(self, event=None):
         if self.window_length % 2:
             nwl = self.window_length - 2
         else:
@@ -175,27 +180,30 @@ class SmoothingSavitzkyGolay(Smoothing):
                 "The window length must be greater than the polynomial order"
             )
 
-    def _polynomial_order_changed(self, old, new):
-        if self.window_length <= new:
-            self.window_length = new + 2 if new % 2 else new + 1
+    @t.observe("polynomial_order")
+    def _polynomial_order_changed(self, event=None):
+        if self.window_length <= event.new:
+            self.window_length = event.new + 2 if event.new % 2 else event.new + 1
             _logger.warning(
                 "Polynomial order must be < window length. Window length set to %i.",
                 self.window_length,
             )
         self.update_lines()
 
-    def _window_length_changed(self, old, new):
+    @t.observe("window_length")
+    def _window_length_changed(self, event=None):
         self.update_lines()
 
-    def _differential_order_changed(self, old, new):
-        if new > self.polynomial_order:
+    @t.observe("differential_order")
+    def _differential_order_changed(self, event=None):
+        if event.new > self.polynomial_order:
             self.polynomial_order += 1
             _logger.warning(
                 "Differential order must be <= polynomial order. "
                 "Polynomial order set to %i.",
                 self.polynomial_order,
             )
-        super()._differential_order_changed(old, new)
+        super()._differential_order_changed(event)
 
     def diff_model2plot(self, axes_manager=None):
         self.single_spectrum.data = self.signal._get_current_data().copy()
@@ -236,13 +244,15 @@ class SmoothingLowess(Smoothing):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _smoothing_parameter_changed(self, old, new):
-        if new == 0:
-            self.smoothing_parameter = old
+    @t.observe("smoothing_parameter")
+    def _smoothing_parameter_changed(self, event=None):
+        if event.new == 0:
+            self.smoothing_parameter = event.old
         else:
             self.update_lines()
 
-    def _number_of_iterations_changed(self, old, new):
+    @t.observe("number_of_iterations")
+    def _number_of_iterations_changed(self, event=None):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
@@ -267,7 +277,8 @@ class SmoothingLowess(Smoothing):
 class SmoothingTV(Smoothing):
     smoothing_parameter = t.Float(200)
 
-    def _smoothing_parameter_changed(self, old, new):
+    @t.observe("smoothing_parameter")
+    def _smoothing_parameter_changed(self, event=None):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
@@ -289,13 +300,16 @@ class ButterworthFilter(Smoothing):
     type = t.Enum("low", "high")
     order = t.Int(2)
 
-    def _cutoff_frequency_ratio_changed(self, old, new):
+    @t.observe("cutoff_frequency_ratio")
+    def _cutoff_frequency_ratio_changed(self, event=None):
         self.update_lines()
 
-    def _type_changed(self, old, new):
+    @t.observe("type")
+    def _type_changed(self, event=None):
         self.update_lines()
 
-    def _order_changed(self, old, new):
+    @t.observe("order")
+    def _order_changed(self, event=None):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):

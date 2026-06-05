@@ -95,10 +95,14 @@ class LineInSignal2D(t.HasTraits):
         )
 
     # "on" traits change handler
-    def _on_changed(self, old, new):
+    @t.observe("on")
+    def _on_changed(self, event=None):
         if not self.signal._plot.is_active:
             self.on = False
             return
+
+        new = event.new
+        old = event.old
 
         if new is True and old is False:
             self._line = Line2DWidget(self.signal.axes_manager, color=self._color)
@@ -115,7 +119,9 @@ class LineInSignal2D(t.HasTraits):
             self._line = None
 
     # "position" traits change handler
-    def _x0_changed(self, old, new):
+    @t.observe("x0")
+    def _x0_changed(self, event=None):
+        old, new = event.old, event.new
         if old != new and self._line is not None:
             self._updating_from_line = True
             try:
@@ -123,7 +129,9 @@ class LineInSignal2D(t.HasTraits):
             finally:
                 self._updating_from_line = False
 
-    def _y0_changed(self, old, new):
+    @t.observe("y0")
+    def _y0_changed(self, event=None):
+        old, new = event.old, event.new
         if old != new and self._line is not None:
             self._updating_from_line = True
             try:
@@ -131,7 +139,9 @@ class LineInSignal2D(t.HasTraits):
             finally:
                 self._updating_from_line = False
 
-    def _x1_changed(self, old, new):
+    @t.observe("x1")
+    def _x1_changed(self, event=None):
+        old, new = event.old, event.new
         if old != new and self._line is not None:
             self._updating_from_line = True
             try:
@@ -139,7 +149,9 @@ class LineInSignal2D(t.HasTraits):
             finally:
                 self._updating_from_line = False
 
-    def _y1_changed(self, old, new):
+    @t.observe("y1")
+    def _y1_changed(self, event=None):
+        old, new = event.old, event.new
         if old != new and self._line is not None:
             self._updating_from_line = True
             try:
@@ -212,10 +224,14 @@ class LineInSignal1D(t.HasTraits):
         return (self._axis.high_value - self._axis.low_value) / 2
 
     # "on" traits change handler
-    def _on_changed(self, old, new):
+    @t.observe("on")
+    def _on_changed(self, event=None):
         if not self.signal._plot.is_active:
             self.on = False
             return
+
+        new = event.new
+        old = event.old
 
         if new is True and old is False:
             self._line = VerticalLineWidget(self.signal.axes_manager, color=self._color)
@@ -235,7 +251,9 @@ class LineInSignal1D(t.HasTraits):
             self._line = None
 
     # "position" traits change handler
-    def _position_changed(self, old, new):
+    @t.observe("position")
+    def _position_changed(self, event=None):
+        old, new = event.old, event.new
         if old != new and self._line is not None:
             self._updating_from_line = True
             try:
