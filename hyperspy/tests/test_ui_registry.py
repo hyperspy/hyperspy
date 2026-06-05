@@ -82,7 +82,7 @@ class TestGetGuiToolkitSelection:
 
     def test_anywidget_disabled_raises_correct_error(self, monkeypatch, _mock_signal):
         monkeypatch.setattr("hyperspy.ui_registry.TOOLKIT_REGISTRY", {"anywidget"})
-        hs.preferences.GUIs.enable_anywidget_gui = False
+        monkeypatch.setattr(hs.preferences.GUIs, "enable_anywidget_gui", False)
 
         with pytest.raises(ValueError, match="No toolkit available"):
             get_gui(
@@ -90,8 +90,6 @@ class TestGetGuiToolkitSelection:
                 toolkey="hyperspy.SimpleMessage",
                 toolkit=None,
             )
-
-        hs.preferences.GUIs.enable_anywidget_gui = True
 
     def test_anywidget_not_registered_select_by_name_raises(
         self, monkeypatch, _mock_signal
@@ -109,7 +107,10 @@ class TestGetGuiToolkitSelection:
         self, monkeypatch, _mock_signal
     ):
         monkeypatch.setattr("hyperspy.ui_registry.TOOLKIT_REGISTRY", {"anywidget"})
-        assert hs.preferences.GUIs.enable_anywidget_gui is True
+        monkeypatch.setattr(
+            "hyperspy.ui_registry.UI_REGISTRY",
+            {"hyperspy.SimpleMessage": {"traitsui": {"module": "x", "function": "y"}}},
+        )
 
         with pytest.raises(NotImplementedError, match="not available"):
             get_gui(

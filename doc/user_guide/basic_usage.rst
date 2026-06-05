@@ -80,19 +80,19 @@ which in specific cases can lead to warnings when importing HyperSpy. Most of th
 there is nothing to worry about — the warnings simply inform you of several choices you have.
 There may be several causes for a warning, for example:
 
-- not all the GUIs packages are installed. If none is installed, we reccomend you to install
-  at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
+- not all the GUIs packages are installed. If none is installed, we recommend you to install
+  at least the ``hyperspy_gui_ipywidgets`` package if you are planning to perform interactive
   data analysis in the Jupyter Notebook. If you are using a platform that does not support
   ipywidgets, such as `Marimo <https://marimo.io/>`_, install ``hyperspy_gui_anywidget``
   instead. Otherwise, you can simply disable the warning in
   :ref:`preferences <configuring-hyperspy-label>` as explained below.
-- the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
+- the ``hyperspy_gui_traitsui`` package is installed and you are using an incompatible matplotlib
   backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
 
   - If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
   - Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
     and if you don't want to see the (harmless) warning, make sure that you have the
-    ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
+    ``hyperspy_gui_ipywidgets`` installed and disable the traitsui
     GUI in the :ref:`preferences <configuring-hyperspy-label>`.
 
 .. versionchanged:: v1.3
