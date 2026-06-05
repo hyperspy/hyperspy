@@ -22,6 +22,7 @@ import traits.api as t
 from hyperspy.drawing._markers.circles import Circles
 from hyperspy.drawing.markers import convert_positions
 from hyperspy.exceptions import SignalDimensionError
+from hyperspy.misc.math_tools import check_random_state
 from hyperspy.ui_registry import add_gui_method
 
 
@@ -80,6 +81,7 @@ class PeaksFinder2D(t.HasTraits):
 
     def __init__(self, signal, method, peaks=None, **kwargs):
         super().__init__()
+        self._rng = check_random_state(None)
         self._attribute_argument_mapping_local_max = {
             "local_max_distance": "min_distance",
             "local_max_threshold": "threshold_abs",
@@ -265,7 +267,7 @@ class PeaksFinder2D(t.HasTraits):
             self.observe(self._parameter_changed, parameter, remove=True)
 
     def set_random_navigation_position(self, event=None):
-        index = self._rng.integers(0, self.signal.axes_manager._max_index)
+        index = self._rng.integers(0, self.signal.axes_manager.navigation_size)
         self.signal.axes_manager.indices = np.unravel_index(
             index, tuple(self.signal.axes_manager._navigation_shape_in_array)
         )[::-1]

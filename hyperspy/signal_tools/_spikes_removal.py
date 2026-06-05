@@ -130,7 +130,11 @@ class SpikesRemoval:
                     self.index += 1
                 else:
                     self.index -= 1
-                self._index_changed(SimpleNamespace(old=self.index, new=self.index))
+                # Guard against double-fire: SpikesRemovalInteractive has a
+                # trait observer on "index" that already calls _index_changed
+                # when self.index changes (registered in __init__).
+                if not hasattr(self, "observe"):
+                    self._index_changed(SimpleNamespace(old=None, new=self.index))
                 spike = self.detect_spike()
 
         return spike
