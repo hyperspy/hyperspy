@@ -235,8 +235,14 @@ of the component quickly:
     :meth:`~.api.model.components1D.PowerLaw.estimate_parameters` can take two disconnected intervals to estimate the parameters.
 
 .. versionchanged:: 2.5
-    The ``intervals`` parameter replaces the deprecated ``x1``, ``x2``, ``x3``, ``x4`` parameters.
+    The ``intervals`` parameter replaces the deprecated ``x1``, ``x2``, ``x3``, ``x4`` parameters
+    in :meth:`~.api.model.components1D.PowerLaw.estimate_parameters`.
     The ``intervals`` parameter accepts a list of tuples or :class:`~.api.roi.SpanROI` objects.
+
+    The ``intervals`` parameter has also been added to
+    :meth:`~.api.model.components1D.Polynomial.estimate_parameters` and
+    :meth:`~.api.model.components1D.Offset.estimate_parameters`,
+    enabling estimation from multiple disconnected spectral ranges.
 
 For example, the following estimates the parameters of a power law function using data from two disconnected intervals:
 
@@ -258,5 +264,12 @@ For example, the following estimates the parameters of a power law function usin
     roi2 = hs.roi.SpanROI(17, 19)
 
     pl.estimate_parameters(s, intervals=[roi1, roi2], only_current=True)
+
+Similarly, a polynomial can be fitted to data from multiple intervals:
+
+.. code-block:: python
+
+    poly = hs.model.components1D.Polynomial(order=2)
+    poly.estimate_parameters(s, intervals=[roi1, roi2], only_current=True)
 
 
