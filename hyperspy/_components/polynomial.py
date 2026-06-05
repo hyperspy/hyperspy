@@ -69,19 +69,31 @@ class Polynomial(Expression):
     def get_polynomial_order(self):
         return len(self.parameters) - 1
 
-    def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the parameters by the two area method
+    def estimate_parameters(
+        self,
+        signal,
+        x1=None,
+        x2=None,
+        intervals=None,
+        only_current=False,
+    ):
+        """Estimate the parameters by polynomial fitting.
 
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
-        x1 : float
+        x1 : float, optional
             Defines the left limit of the spectral range to use for the
-            estimation.
-        x2 : float
+            estimation. Deprecated, use ``intervals`` instead.
+        x2 : float, optional
             Defines the right limit of the spectral range to use for the
-            estimation.
-
+            estimation. Deprecated, use ``intervals`` instead.
+        intervals : list of tuples or :class:`~.api.roi.SpanROI`, optional
+            List of intervals for estimation. Each interval can be a tuple
+            ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
+            Data from all intervals is concatenated for the fit.
+            If ``None``, the ``x1``, ``x2`` arguments are used for backward
+            compatibility.
         only_current : bool
             If False estimates the parameters for the full dataset.
 
@@ -92,23 +104,60 @@ class Polynomial(Expression):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        i1, i2 = axis.value_range_to_indices(x1, x2)
+
+        if intervals is not None:
+            if not isinstance(intervals, (list, tuple)):
+                raise ValueError(
+                    "`intervals` must be a list of tuples or SpanROI objects."
+                )
+            if isinstance(intervals, tuple) and len(intervals) == 2:
+                intervals = [intervals]
+            interval_tuples = []
+            for interval in intervals:
+                if hasattr(interval, "left") and hasattr(interval, "right"):
+                    interval_tuples.append((interval.left, interval.right))
+                elif isinstance(interval, (tuple, list)) and len(interval) == 2:
+                    interval_tuples.append(tuple(interval))
+                else:
+                    raise ValueError(
+                        f"Invalid interval format: {interval}. "
+                        "Expected tuple (left, right) or SpanROI object."
+                    )
+            indices = [axis.value_range_to_indices(a, b) for a, b in interval_tuples]
+        elif x1 is not None:
+            if x2 is None:
+                raise ValueError("x2 must be provided when using x1.")
+            i1, i2 = axis.value_range_to_indices(x1, x2)
+            indices = [(i1, i2)]
+        else:
+            indices = [(axis.low_index, axis.high_index + 1)]
 
         if axis.is_binned:
-            # using the mean of the gradient for non-uniform axes is a best
-            # guess to the scaling of binned signals for the estimation
             scaling_factor = (
                 axis.scale
                 if axis.is_uniform
                 else np.mean(np.gradient(axis.axis), axis=-1)
             )
 
+        def _get_concatenated_data(sig, indices_list):
+            x_parts = []
+            y_parts = []
+            for idx_start, idx_end in indices_list:
+                x_parts.append(axis.axis[idx_start:idx_end])
+                if sig._lazy:
+                    y_parts.append(sig.isig[idx_start:idx_end].data)
+                else:
+                    y_parts.append(
+                        sig._get_current_data()[idx_start:idx_end]
+                        if only_current
+                        else sig.data[..., idx_start:idx_end]
+                    )
+            return np.concatenate(x_parts), np.concatenate(y_parts, axis=-1)
+
         if only_current is True:
-            estimation = np.polyfit(
-                axis.axis[i1:i2],
-                signal._get_current_data()[i1:i2],
-                self.get_polynomial_order(),
-            )
+            s = signal
+            x_data, y_data = _get_concatenated_data(s, indices)
+            estimation = np.polyfit(x_data, y_data, self.get_polynomial_order())
             if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim / scaling_factor
@@ -123,15 +172,18 @@ class Polynomial(Expression):
             nav_shape = signal.axes_manager._navigation_shape_in_array
             with signal.unfolded():
                 data = signal.data
-                # For polyfit the spectrum goes in the first axis
                 if axis.index_in_array > 0:
-                    data = data.T  # Unfolded, so simply transpose
-                fit = np.polyfit(
-                    axis.axis[i1:i2], data[i1:i2, ...], self.get_polynomial_order()
-                )
+                    data = data.T
+                x_parts = []
+                y_parts = []
+                for idx_start, idx_end in indices:
+                    x_parts.append(axis.axis[idx_start:idx_end])
+                    y_parts.append(data[idx_start:idx_end, ...])
+                x_data = np.concatenate(x_parts)
+                y_data = np.concatenate(y_parts, axis=0)
+                fit = np.polyfit(x_data, y_data, self.get_polynomial_order())
                 if axis.index_in_array > 0:
-                    fit = fit.T  # Transpose back if needed
-                # Shape needed to fit parameter.map:
+                    fit = fit.T
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1,)
                 fit = fit.reshape(cmap_shape)
 
