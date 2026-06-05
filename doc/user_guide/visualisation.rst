@@ -152,10 +152,10 @@ Modifier keys do not work with the numpad.
    - **SSH X11 forwarding**: Depends on your X server configuration (XQuartz
      typically maps Command to ``Super``).
 
-   .. code-block:: python
+    .. code-block:: python
 
-       # Option A — full macOS presets (recommended):
-       hs.preferences.Plot.use_macos_shortcuts()
+        # Option A — full macOS presets (recommended):
+        hs.preferences.Plot.use_macos_shortcuts()
 
         # Option B — manual override if you prefer Command (⌘).  Note:
         # macOS captures ⌘+arrows for Mission Control; disable that
@@ -203,11 +203,10 @@ The following keyboard shortcuts are available when the 1D signal figure is in f
     key                             function
     =============================   =============================================
     e                               Switch second pointer on/off
-    Ctrl + Arrows (Option ⌥         Change coordinates for dimensions 0 and 1
-    on macOS)
+    Ctrl + Arrows \*                 Change coordinates for dimensions 0 and 1
     Shift + Arrows                  Change coordinates for dimensions 2 and 3
-    Alt + Arrows (Option+Shift      Change coordinates for dimensions 4 and 5
-    ⌥⇧ on macOS)                    (only for 5+ dimensional datasets)
+    Alt + Arrows \*                  Change coordinates for dimensions 4 and 5
+                                    (only for 5+ dimensional datasets)
     PageUp / fn+up                  Increase step size
     PageDown / fn+down              Decrease step size
     ``+``                           Increase pointer size (navigator image)
@@ -218,6 +217,8 @@ The following keyboard shortcuts are available when the 1D signal figure is in f
     Shift + click                   Jump to clicked coordinates
                                     (configurable via ``key_jump_to_click``)
     =============================   =============================================
+
+\* On macOS: Option (⌥) + arrows for dims 0–1, Option+Shift (⌥⇧) + arrows for dims 4–5.
 
 .. _shortcuts_model_plots:
 
@@ -298,11 +299,10 @@ The following keyboard shortcuts are available when the 2D signal figure is in f
     =============================   =============================================
     key                             function
     =============================   =============================================
-    Ctrl + Arrows (Option ⌥         Change coordinates for dimensions 0 and 1
-    on macOS)
+    Ctrl + Arrows \*                 Change coordinates for dimensions 0 and 1
     Shift + Arrows                  Change coordinates for dimensions 2 and 3
-    Alt + Arrows (Option+Shift      Change coordinates for dimensions 4 and 5
-    ⌥⇧ on macOS)                    (only for 5+ dimensional datasets)
+    Alt + Arrows \*                  Change coordinates for dimensions 4 and 5
+                                    (only for 5+ dimensional datasets)
     PageUp / fn+up                  Increase step size
     PageDown / fn+down              Decrease step size
     ``+``                           Increase pointer size (navigator image)
@@ -312,6 +312,8 @@ The following keyboard shortcuts are available when the 2D signal figure is in f
     Shift + click                   Jump to clicked coordinates
                                     (configurable via ``key_jump_to_click``)
     =============================   =============================================
+
+\* On macOS: Option (⌥) + arrows for dims 0–1, Option+Shift (⌥⇧) + arrows for dims 4–5.
 
 All keys above are configurable via preferences (see
 :ref:`plot preferences <configuring-hyperspy-label>`, ``Plot`` section).
