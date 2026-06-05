@@ -8,7 +8,7 @@
 - Add ``svd_solver='full'``: reproduces pre-v2.5 behaviour using
   ``dask.array.linalg.svd``; returns lazy dask arrays without triggering any
   computation; ``output_dimension`` is optional.
-- Add ``svd_solver='incremental'``: uses :class:`~hyperspy.learn.incremental_svd.ISVD`
+- Add ``svd_solver='incremental'``: uses ``ISVD``
   (a subclass of ``sklearn.decomposition.IncrementalPCA`` with centering
   disabled), which streams the data in mini-batches and scales to datasets
   larger than RAM.
@@ -16,8 +16,8 @@
   control mean-centring before decomposition, consistent with the non-lazy
   interface.
 - Navigation and signal masks are now respected during lazy SVD.
-- Add :meth:`~hyperspy.api.signals.LazySignal.normalize_poissonian_noise` as
-  a dedicated method on :class:`~hyperspy.api.signals.LazySignal`, available
+- Add ``LazySignal.normalize_poissonian_noise()`` as
+  a dedicated method on ``LazySignal``, available
   independently of decomposition.
 - Implement ``reproject='signal'`` for all lazy decomposition algorithms:
   after learning on signal-masked data, the full signal (including masked
@@ -32,10 +32,10 @@
   (out-of-core); those with only ``fit`` / ``fit_transform`` fall back to
   loading all data into memory before fitting.
 - Add ``svd_solver`` and ``auto_transpose`` parameters to
-  :meth:`~hyperspy.api.signals.LazySignal.decomposition` for API parity with
+  ``LazySignal.decomposition()`` for API parity with
   the non-lazy interface.
 - Add a ``lazy`` keyword argument to
-  :meth:`~hyperspy.api.signals.BaseSignal.get_decomposition_model` (and the
+  ``BaseSignal.get_decomposition_model()`` (and the
   underlying ``_calculate_recmatrix``).  ``lazy=True`` forces a lazy dask-backed
   signal even when factors/loadings are numpy arrays (they are wrapped with
   ``da.from_array`` locally, without mutating ``learning_results``); ``lazy=False``

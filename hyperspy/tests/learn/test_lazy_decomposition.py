@@ -265,7 +265,8 @@ class TestLazyDecomposition:
         need to restrict users to 1D chunking.
         """
         # Force 2D chunking on the unfolded (nav x sig) array.
-        data = da.from_array(self.X.reshape(10, 10, 128), chunks=(5, 5, 64))
+        X = np.random.RandomState(42).random((120, 128))  # 10*12=120 nav
+        data = da.from_array(X.reshape(10, 12, 128), chunks=(5, 6, 64))
         s = Signal1D(data).as_lazy()
         s.decomposition(algorithm="SVD", svd_solver="randomized", output_dimension=3)
         assert s.learning_results.factors is not None

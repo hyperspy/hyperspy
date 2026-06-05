@@ -11,9 +11,9 @@ positions are filled after decomposition.  Improve the
 - A ``big_data.svd.lazy_pipeline`` sub-section documenting the fully lazy
   decompose → reconstruct → save pipeline, including use of ``reproject`` and
   the ``lazy`` keyword argument of
-  :meth:`~hyperspy.api.signals.BaseSignal.get_decomposition_model`.
+  ``BaseSignal.get_decomposition_model()``.
 - Documentation of the ``lazy`` keyword argument on
-  :meth:`~hyperspy.api.signals.BaseSignal.get_decomposition_model` with
+  ``BaseSignal.get_decomposition_model()`` with
   examples for forcing lazy output from non-lazy signals and eager output from
   lazy signals.
 
