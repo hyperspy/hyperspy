@@ -37,8 +37,7 @@ SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 def _check_sklearn():
     if not SKLEARN_INSTALLED:
         raise ImportError(
-            "The 'SVD' algorithm for lazy signals requires scikit-learn. "
-            "Install it with:  pip install scikit-learn"
+            "ISVD requires scikit-learn. Install it with:  pip install scikit-learn"
         )
 
 
@@ -55,7 +54,8 @@ if SKLEARN_INSTALLED:
         loadings.
 
         The centering is disabled by overriding the ``mean_`` property to
-        always return an array of zeros.  This neutralises both the
+        always return zeros (either a scalar ``0.0`` or an array of zeros,
+        whichever sklearn set last).  This neutralises both the
         mean-correction term computed during ``partial_fit`` and the
         mean-shift applied during ``transform``, without touching any
         other part of the sklearn implementation.
