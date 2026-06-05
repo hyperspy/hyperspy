@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from unittest import mock
+
 import numpy as np
 
 from hyperspy import roi, signals
@@ -207,3 +209,36 @@ class TestPolygonWidgetCleanup:
         widget.set_on(False)
         assert widget._widget is None
         s._plot.close()
+
+
+def test_set_resizers_false_resets_blit_background():
+    """Verify _set_resizers(False) invalidates blit cache and repaints."""
+    s = signals.Signal2D(np.random.random((10, 20, 80)))
+    s.plot()
+    r = roi.RectangularROI(0, 0, 2, 2)
+    r.interactive(s)
+    widget = list(r.widgets)[0]
+    widget._set_resizers(True, widget.ax)
+    hspy_fig = widget.ax.hspy_fig
+    hspy_fig._background = object()
+    with mock.patch.object(widget, "draw_patch") as mock_draw:
+        widget._set_resizers(False, widget.ax)
+    assert hspy_fig._background is None
+    mock_draw.assert_called_once()
+
+
+def test_set_on_false_resets_blit_background():
+    """Verify WidgetBase.set_on(False) invalidates blit cache after patch removal."""
+    s = signals.Signal2D(np.random.random((10, 20, 80)))
+    s.plot()
+    r = roi.RectangularROI(0, 0, 2, 2)
+    r.interactive(s)
+    widget = list(r.widgets)[0]
+    widget.set_on(True)
+    assert len(widget.patch) > 0
+    hspy_fig = widget.ax.hspy_fig
+    hspy_fig._background = object()
+    with mock.patch.object(widget, "draw_patch") as mock_draw:
+        widget.set_on(False)
+    assert hspy_fig._background is None
+    mock_draw.assert_called()
