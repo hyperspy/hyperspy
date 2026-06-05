@@ -23,6 +23,7 @@ import matplotlib
 import numpy as np
 import scipy
 import traits.api as t
+from traits.observation.api import trait as trait_expr
 
 from hyperspy import drawing, signal_tools
 from hyperspy.misc.math_tools import check_random_state
@@ -82,7 +83,13 @@ class SpikesRemoval:
         self.index = 0
         self.threshold = threshold
         if hasattr(self, "observe"):
-            self.observe(self._index_changed, "index")
+            # NOTE: Using the expression API (trait_expr("index")) rather
+            # than a plain string ("index") is required for this handler
+            # because _index_changed accesses event attributes (.new, .old).
+            # With the string pattern, traits 7.x passes only the raw new
+            # value (an int) as a positional arg—NOT a ChangeEvent object.
+            # The expression API ensures a proper ChangeEvent is delivered.
+            self.observe(self._index_changed, trait_expr("index"))
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
 
