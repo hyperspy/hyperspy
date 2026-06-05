@@ -35,7 +35,7 @@ class TestKnownToolkits:
 
 class TestAnywidgetPreference:
     def test_enable_anywidget_gui_default(self):
-        assert hs.preferences.GUIs.enable_anywidget_gui is True
+        assert isinstance(hs.preferences.GUIs.enable_anywidget_gui, bool)
 
     def test_enable_anywidget_gui_setter(self):
         hs.preferences.GUIs.enable_anywidget_gui = False

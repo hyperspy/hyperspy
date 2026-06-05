@@ -80,7 +80,7 @@ which in specific cases can lead to warnings when importing HyperSpy. Most of th
 there is nothing to worry about — the warnings simply inform you of several choices you have.
 There may be several causes for a warning, for example:
 
-- not all the GUIs packages are installed. If none is installed, we recommend you to install
+- not all the GUI packages are installed. If none is installed, we recommend installing
   at least the ``hyperspy_gui_ipywidgets`` package if you are planning to perform interactive
   data analysis in the Jupyter Notebook. If you are using a platform that does not support
   ipywidgets, such as `Marimo <https://marimo.io/>`_, install ``hyperspy_gui_anywidget``
