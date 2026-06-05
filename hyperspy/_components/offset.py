@@ -17,13 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import warnings
-
 import numpy as np
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class Offset(Component):
@@ -125,12 +122,6 @@ class Offset(Component):
         elif x1 is not None:
             if x2 is None:
                 raise ValueError("x2 must be provided when using x1.")
-            warnings.warn(
-                "The `x1` and `x2` arguments are deprecated and will be removed "
-                "in HyperSpy 3.0. Use the `intervals` argument instead.",
-                VisibleDeprecationWarning,
-                stacklevel=2,
-            )
             i1, i2 = axis.value_range_to_indices(x1, x2)
             indices = [(i1, i2)]
         else:
