@@ -8,8 +8,7 @@ Tools for working with distributions
 import logging
 
 import numpy as np
-from scipy.optimize import fmin
-from scipy.special import gammaln
+import scipy
 
 from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 
@@ -81,7 +80,7 @@ def knuth_bin_width(data, return_bins=False, quiet=True, max_num_bins=250):
         )
         bins0 = np.histogram_bin_edges(data, bins=max_num_bins)
 
-    M = fmin(knuthF, len(bins0), disp=not quiet)[0]
+    M = scipy.optimize.fmin(knuthF, len(bins0), disp=not quiet)[0]
     bins = knuthF.bins(M)
     dx = bins[1] - bins[0]
 
@@ -124,13 +123,8 @@ class _KnuthF:
         self.data.sort()
         self.n = self.data.size
 
-        # import here rather than globally: scipy is an optional dependency.
-        # Note that scipy is imported in the function which calls this,
-        # so there shouldn't be any issue importing here.
-        from scipy import special
-
         # create a reference to gammaln to use in self.eval()
-        self.gammaln = special.gammaln
+        self.gammaln = scipy.special.gammaln
 
     def bins(self, M):
         """Return the bin edges given a width dx"""
@@ -154,6 +148,8 @@ class _KnuthF:
             smaller values indicate a better fit.
 
         """
+        from scipy.special import gammaln
+
         if not np.isscalar(M):
             M = M[0]
         M = int(M)

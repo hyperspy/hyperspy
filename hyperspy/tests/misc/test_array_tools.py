@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,13 +23,12 @@ import pytest
 
 from hyperspy.misc.array_tools import (
     get_array_memory_size_in_GiB,
-    get_chunk_slice,
-    get_signal_chunk_slice,
     get_value_at_index,
     numba_histogram,
     round_half_away_from_zero,
     round_half_towards_zero,
 )
+from hyperspy.misc.dask_utils import get_chunk_slice, get_signal_chunk_slice
 
 dt = [("x", np.uint8), ("y", np.uint16), ("text", (bytes, 6))]
 

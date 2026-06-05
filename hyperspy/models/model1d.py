@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,22 +19,21 @@
 import copy
 
 import numpy as np
+import scipy
 import traits.api as t
-from scipy.special import huber
 
-import hyperspy.drawing.signal1d
+import hyperspy.drawing
+from hyperspy import signal_tools
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
 from hyperspy.events import EventSuppressor
 from hyperspy.exceptions import SignalDimensionError
-from hyperspy.misc.utils import dummy_context_manager
+from hyperspy.misc import utils
 from hyperspy.model import BaseModel, ModelComponents
-from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
-class ComponentFit(SpanSelectorInSignal1D):
+class ComponentFit(signal_tools.SpanSelectorInSignal1D):
     only_current = t.Bool(True)
     iterpath = t.Enum(
         "flyback",
@@ -278,7 +277,7 @@ class Model1D(BaseModel):
         thing : :class:`~.component.Component`
             The component to add to the model.
         """
-        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        cm = self.suspend_update if self._plot_active else utils.dummy_context_manager
         with cm(update_on_resume=False):
             super().append(thing)
         if self._plot_components:
@@ -306,6 +305,17 @@ class Model1D(BaseModel):
                 line.close()
         super().remove(things)
         self._disconnect_parameters2update_plot(things)
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending draw_event re-enters
+        # _draw_animated and encounters a removed artist
+        # whose axes / figure references were cleared by
+        # Artist.remove (matplotlib >= 3.10).
+        if self._plot is not None and self._plot.is_active:
+            sig_plot = self._plot.signal_plot
+            if sig_plot.figure is not None:
+                sig_plot._background = None
+                sig_plot.render_figure()
 
     remove.__doc__ = BaseModel.remove.__doc__
 
@@ -595,10 +605,10 @@ class Model1D(BaseModel):
 
         return to_return
 
-    def _function4odr(self, param, x):
+    def _function4odr(self, x, param):
         return self._model_function(param)
 
-    def _jacobian4odr(self, param, x):
+    def _jacobian4odr(self, x, param):
         return self._jacobian(param, x)
 
     def _poisson_likelihood_function(self, param, y, weights=None):
@@ -710,7 +720,7 @@ class Model1D(BaseModel):
             weights = 1.0
         if huber_delta is None:
             huber_delta = 1.0
-        return huber(huber_delta, weights * self._errfunc(param, y)).sum()
+        return scipy.special.huber(huber_delta, weights * self._errfunc(param, y)).sum()
 
     def _gradient_huber(self, param, y, weights=None, huber_delta=None):
         if huber_delta is None:
@@ -905,6 +915,16 @@ class Model1D(BaseModel):
             return
         for component in self:
             self._disable_plot_component(component)
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending draw_event re-enters
+        # _draw_animated and encounters a removed Text artist
+        # whose axes / figure references were cleared by
+        # Artist.remove (matplotlib >= 3.10).
+        sig_plot = self._plot.signal_plot
+        if sig_plot.figure is not None:
+            sig_plot._background = None
+            sig_plot.render_figure()
 
     disable_plot_components.__doc__ = BaseModel.disable_plot_components.__doc__
 
@@ -957,9 +977,9 @@ class Model1D(BaseModel):
             return
         axis = self.axes_manager.signal_axes[0]
         # Create the vertical line and labels
-        widgets = [VerticalLineWidget(self.axes_manager)]
+        widgets = [hyperspy.drawing.widgets.VerticalLineWidget(self.axes_manager)]
         if show_label:
-            label = LabelWidget(self.axes_manager)
+            label = hyperspy.drawing.widgets.LabelWidget(self.axes_manager)
             label.string = component._get_short_description().replace(" component", "")
             widgets.append(label)
 
@@ -1016,6 +1036,18 @@ class Model1D(BaseModel):
             # iteration should be ok
             for pw in reversed(pws):  # pws is reference, so work in reverse
                 pw.close()
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending ``draw_event`` re-enters
+        # ``_draw_animated`` and encounters a removed ``Text`` artist
+        # whose ``axes`` / ``figure`` references were cleared by
+        # ``Artist.remove`` (matplotlib >= 3.10), causing
+        # ``text._get_layout`` to raise ``AttributeError``.
+        if self._plot is not None and self._plot.is_active:
+            sig_plot = self._plot.signal_plot
+            if sig_plot.figure is not None:
+                sig_plot._background = None
+                sig_plot.render_figure()
 
     def fit_component(
         self,

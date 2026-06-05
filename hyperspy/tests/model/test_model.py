@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -790,6 +790,70 @@ class TestAdjustPosition:
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
 
+    def test_disable_resets_blit_background(self):
+        """disable_adjust_position resets blit cache to prevent
+        ``draw_event`` handlers from drawing removed text artists."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
+            self.m.disable_adjust_position()
+        assert sig_plot._background is None
+        mock_render.assert_called_once()
+
+    def test_disable_plot_components_resets_blit_background(self):
+        """``disable_plot_components`` resets blit cache to prevent
+        ``draw_event`` handlers from drawing removed text artists."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
+            self.m.disable_plot_components()
+        assert sig_plot._background is None
+        mock_render.assert_called_once()
+
+    def test_remove_resets_blit_background(self):
+        """``remove`` resets blit cache to prevent
+        ``draw_event`` handlers from drawing removed artists."""
+        g = hs.model.components1D.Gaussian()
+        self.m.append(g)
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
+            self.m.remove(g)
+        assert sig_plot._background is None
+        mock_render.assert_called()
+
+    def test_disable_plot_components_no_crash_when_figure_none(self):
+        """``disable_plot_components`` does not crash when figure is None
+        (guard path for detached axes)."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        self.m._plot.signal_plot.figure = None
+        self.m.disable_plot_components()
+
+    def test_remove_no_crash_when_figure_none(self):
+        """``remove`` does not crash when figure is None
+        (guard path for detached axes)."""
+        g = hs.model.components1D.Gaussian()
+        self.m.append(g)
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot.figure = None
+        with mock.patch.object(sig_plot, "update"):
+            self.m.remove(g)
+
+    def test_disable_adjust_position_no_crash_when_figure_none(self):
+        """``disable_adjust_position`` does not crash when figure is None
+        (innermost guard path for detached axes)."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        self.m._plot.signal_plot.figure = None
+        self.m.disable_adjust_position()
+
 
 class TestModel1DSetSignalRange:
     def setup_method(self, method):
@@ -836,3 +900,66 @@ class TestModel1DSetSignalRange:
         mask = np.ones(30)
         with pytest.raises(ValueError):
             m.set_signal_range_from_mask(mask)
+
+
+class TestPrintModelStatistics:
+    def setup_method(self, method):
+        x = np.linspace(0, 20, 200)
+        y = (
+            3 * np.exp(-((x - 5) ** 2) / (2 * 0.5**2))
+            + 2 * np.exp(-((x - 10) ** 2) / (2 * 1.0**2))
+            + 4 * np.exp(-((x - 15) ** 2) / (2 * 0.8**2))
+        )
+        s = hs.signals.Signal1D(y)
+        m = s.create_model()
+        gauss1 = hs.model.components1D.Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
+        gauss3 = hs.model.components1D.Gaussian()
+        lorenz1 = hs.model.components1D.Lorentzian()
+        lorenz2 = hs.model.components1D.Lorentzian()
+        m.extend([gauss1, gauss2, gauss3, lorenz1, lorenz2])
+        m.multifit()
+        self.s = s
+        self.m = m
+
+    def test_print_model_statistics_no_thresholds(self):
+        self.m.print_model_statistics()
+
+    def test_print_model_statistics_with_thresholds(self):
+        thresholds = {"A": {"min": 0.1, "max": 10}, "centre": {"max": 50}}
+        self.m.print_model_statistics(thresholds=thresholds)
+
+    def test_print_model_statistics_percentile_thresholds(self):
+        thresholds = {"A": {"min": "1th", "max": "1th"}, "centre": {"max": "2th"}}
+        self.m.print_model_statistics(thresholds=thresholds)
+
+    def test_print_model_statistics_component_list(self):
+        self.m.print_model_statistics(component_list=list(self.m))
+
+    def test_print_model_statistics_output(self):
+        from hyperspy.misc.model_tools import ModelStatistics
+
+        out = str(ModelStatistics(self.m).__repr__())
+
+        # Check that the Gaussian and Lorentzian components appear
+        assert "Gaussian" in out
+        assert "Gaussian_1" in out
+        assert "Lorentzian" in out
+        assert "Lorentzian_0" in out
+
+        # Check that parameters such as A, centre, sigma/gamma appear
+        assert "A" in out
+        assert "centre" in out
+        assert any(param in out for param in ["sigma", "gamma"])
+
+        # Check that the statistics columns appear
+        assert "mean" in out.lower()
+        assert "std" in out.lower()
+        assert "min" in out.lower()
+        assert "max" in out.lower()
+
+    def test_html_print(self):
+        from hyperspy.misc.model_tools import ModelStatistics
+
+        """Ensure that html print is giving sensible output"""
+        assert "<td>centre</td>" in ModelStatistics(self.m)._repr_html_()

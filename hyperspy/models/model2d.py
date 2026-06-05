@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -91,6 +91,10 @@ class Model2D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        # _residual_line is referenced by BaseModel.update_plot() and
+        # _connect_parameters2update_plot(); Model1D initializes it in its
+        # own __init__, so Model2D must do the same to avoid AttributeError.
+        self._residual_line = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis, self.axes_manager.signal_axes[1].axis
         )
@@ -322,10 +326,10 @@ class Model2D(BaseModel):
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError
 
-    def _function4odr(self, param, x):
+    def _function4odr(self, x, param):
         raise NotImplementedError
 
-    def _jacobian4odr(self, param, x):
+    def _jacobian4odr(self, x, param):
         raise NotImplementedError
 
     def _poisson_likelihood_function(self, param, y, weights=None):

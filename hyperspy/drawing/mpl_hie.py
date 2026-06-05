@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,6 +22,11 @@ from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
+    def __init__(self):
+        super().__init__()
+        # Store mpl_connect cids so we can disconnect them in close()
+        self._mpl_cids = []
+
     def plot_signal(self, **kwargs):
         """
         Parameters
@@ -58,10 +63,21 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
         if imf.figure is not None:
             if self.axes_manager.navigation_axes:
-                self.signal_plot.figure.canvas.mpl_connect(
+                canvas = self.signal_plot.figure.canvas
+                cid = canvas.mpl_connect(
                     "key_press_event", self.axes_manager.key_navigator
                 )
+                self._mpl_cids.append((canvas, cid))
             if self.navigator_plot is not None:
-                self.navigator_plot.figure.canvas.mpl_connect(
+                canvas = self.navigator_plot.figure.canvas
+                cid = canvas.mpl_connect(
                     "key_press_event", self.axes_manager.key_navigator
                 )
+                self._mpl_cids.append((canvas, cid))
+
+    def close(self):
+        # Disconnect matplotlib canvas-level event handlers before parent cleanup
+        for canvas, cid in self._mpl_cids:
+            canvas.mpl_disconnect(cid)
+        self._mpl_cids.clear()
+        super().close()

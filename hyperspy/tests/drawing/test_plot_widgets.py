@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+from unittest import mock
 
 import matplotlib
 import numpy as np
@@ -161,6 +163,19 @@ class TestPlotLine2DWidget:
 
         return self.im._plot.signal_plot.figure
 
+    def test_remove_size_patch_resets_blit_background(self):
+        """_remove_size_patch invalidates blit cache and repaints after
+        removing width indicator patches."""
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.size = (10,)
+        hspy_fig = self.line2d.ax.hspy_fig
+        hspy_fig._background = object()
+        with mock.patch.object(self.line2d, "draw_patch") as mock_draw:
+            self.line2d._remove_size_patch()
+        assert hspy_fig._background is None
+        mock_draw.assert_called_once()
+
 
 class TestPlotCircleWidget:
     def setup_method(self, method):
@@ -210,6 +225,23 @@ class TestPlotCircleWidget:
         circle.size = size
         assert circle.position == position
         assert circle.size == size
+
+    def test_update_patch_size_resets_blit_background(self):
+        """_update_patch_size invalidates blit cache when replacing the
+        inner patch."""
+        im = self.im
+        circle = self.circle
+        im.plot()
+        circle.set_mpl_ax(im._plot.signal_plot.ax)
+        # Set size with ri=0 first so we can trigger the inner-patch
+        # replacement path (ri > 0, len(patch) == 1).
+        circle.size = (5, 0)
+        hspy_fig = circle.ax.hspy_fig
+        hspy_fig._background = object()
+        with mock.patch.object(circle, "draw_patch") as mock_draw:
+            circle.size = (5, 2.5)
+        assert hspy_fig._background is None
+        mock_draw.assert_called()
 
 
 class TestPlotPolygonWidget:

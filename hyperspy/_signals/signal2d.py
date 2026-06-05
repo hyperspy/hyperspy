@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,21 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 import warnings
 from copy import deepcopy
 from functools import partial
 
-import dask.array as da
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
-from scipy import ndimage
-from skimage.registration._phase_cross_correlation import _upsampled_dft
+import scipy
 
+from hyperspy import signal_tools, signals
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy._signals.lazy import LazySignal
-from hyperspy._signals.signal1d import Signal1D
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -39,26 +36,14 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING,
 )
 from hyperspy.docstrings.signal import (
-    LAZYSIGNAL_DOC,
     NUM_WORKERS_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.external.progressbar import progressbar
+from hyperspy.misc import utils
+from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
 from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetrize
-from hyperspy.signal import BaseSignal
-from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
-from hyperspy.utils.peakfinders2D import (
-    _get_peak_position_and_intensity,
-    find_local_max,
-    find_peaks_dog,
-    find_peaks_log,
-    find_peaks_max,
-    find_peaks_minmax,
-    find_peaks_stat,
-    find_peaks_xc,
-    find_peaks_zaefferer,
-)
 
 _logger = logging.getLogger(__name__)
 
@@ -73,7 +58,7 @@ def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
         else:
             # Disable interpolation
             order = 0
-        return ndimage.shift(im, shift, cval=fill_value, order=order)
+        return scipy.ndimage.shift(im, shift, cval=fill_value, order=order)
 
 
 def triu_indices_minus_diag(n):
@@ -99,8 +84,8 @@ def hanning2d(M, N):
 
 
 def sobel_filter(im):
-    sx = ndimage.sobel(im, axis=0, mode="constant")
-    sy = ndimage.sobel(im, axis=1, mode="constant")
+    sx = scipy.ndimage.sobel(im, axis=0, mode="constant")
+    sy = scipy.ndimage.sobel(im, axis=1, mode="constant")
     sob = np.hypot(sx, sy)
     return sob
 
@@ -218,8 +203,13 @@ def estimate_image_shift(
        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
     """
+    import matplotlib.pyplot as plt
 
-    ref, image = da.compute(ref, image)
+    if utils.is_dask_array(ref) or utils.is_dask_array(image):
+        import dask.array as da
+
+        ref, image = da.compute(ref, image)
+
     # Make a copy of the images to avoid modifying them
     ref = ref.copy().astype(dtype)
     image = image.copy().astype(dtype)
@@ -243,7 +233,7 @@ def estimate_image_shift(
             # which was the previous implementation.
             # The size is fixed at 3 to be consistent
             # with the previous implementation.
-            im[:] = ndimage.median_filter(im, size=3)
+            im[:] = scipy.ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
 
@@ -273,6 +263,8 @@ def estimate_image_shift(
     # The following code is more or less copied from
     # skimage.feature.register_feature, to gain access to the maximum value:
     if sub_pixel_factor != 1:
+        from skimage.registration._phase_cross_correlation import _upsampled_dft
+
         # Initial shift estimate in upsampled grid
         shifts = np.round(shifts * sub_pixel_factor) / sub_pixel_factor
         upsampled_region_size = np.ceil(sub_pixel_factor * 1.5)
@@ -336,7 +328,7 @@ def estimate_image_shift(
         return -shifts
 
 
-class Signal2D(BaseSignal, CommonSignal2D):
+class Signal2D(signals.BaseSignal, CommonSignal2D):
     """General 2D signal class."""
 
     _signal_dimension = 2
@@ -535,6 +527,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         nrows = None
         images_number = self.axes_manager._max_index + 1
         if plot == "reuse":
+            import matplotlib.pyplot as plt
+
             # Reuse figure for plots
             plot = plt.figure()
         if reference == "stat":
@@ -730,7 +724,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             )
             return None
         if isinstance(shifts, np.ndarray):
-            signal_shifts = Signal1D(-shifts)
+            signal_shifts = signals.Signal1D(-shifts)
         else:
             signal_shifts = shifts
         if expand:
@@ -867,7 +861,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """
         self._check_signal_dimension_equals_two()
         if interactive:
-            calibration = Signal2DCalibration(self)
+            calibration = signal_tools.Signal2DCalibration(self)
             calibration.gui(display=display, toolkit=toolkit)
         else:
             if None in (x0, y0, x1, y1, new_length):
@@ -955,12 +949,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
-        if self._lazy:
-            ramp = offset * da.ones(
-                self.data.shape, dtype=self.data.dtype, chunks=self.data.chunks
-            )
-        else:
-            ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
+        ramp = offset * np.ones_like(self.data)
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp
@@ -1053,6 +1042,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             pixel coordinates of peaks found in each image sorted
             first along `y` and then along `x`.
         """
+        from hyperspy.utils.peakfinders2D import (
+            _get_peak_position_and_intensity,
+            find_local_max,
+            find_peaks_dog,
+            find_peaks_log,
+            find_peaks_max,
+            find_peaks_minmax,
+            find_peaks_stat,
+            find_peaks_xc,
+            find_peaks_zaefferer,
+        )
+
         method_dict = {
             "local_max": find_local_max,
             "max": find_peaks_max,
@@ -1090,10 +1091,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
             axes_dict = self.axes_manager._get_axes_dicts(
                 self.axes_manager.navigation_axes
             )
-            peaks = BaseSignal(
+            peaks = signals.BaseSignal(
                 np.empty(self.axes_manager.navigation_shape), axes=axes_dict
             )
-            pf2D = PeaksFinder2D(self, method=method, peaks=peaks, **kwargs)
+            pf2D = signal_tools.PeaksFinder2D(
+                self, method=method, peaks=peaks, **kwargs
+            )
             pf2D.gui(display=display, toolkit=toolkit)
         elif current_index:
             peaks = method_func(self._get_current_data(), **kwargs)
@@ -1118,7 +1121,24 @@ class Signal2D(BaseSignal, CommonSignal2D):
     )
 
 
-class LazySignal2D(LazySignal, Signal2D):
-    """Lazy general 2D signal class."""
+# ruff: noqa: F822
 
-    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")
+__all__ = [
+    "Signal2D",
+    "LazySignal2D",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if "Lazy" in name:
+        lazy_signal_import_deprecation_warning(name, __name__)
+
+        return getattr(importlib.import_module("hyperspy.signals"), name)
+    if name in __all__:
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from hyperspy.learn.rpca import orpca, rpca_godec
+from hyperspy.learn._rpca import orpca, rpca_godec
 from hyperspy.signals import Signal1D
 
 

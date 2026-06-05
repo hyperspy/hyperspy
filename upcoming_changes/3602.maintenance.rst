@@ -1,0 +1,1 @@
+Add support for setting dimensionless quantity (requires pint 0.25.3+) and deprecate passing float as quantity to avoid ambiguity regarding the expected units, whether it is a dimensionless quantity or the current units are used. Update tests for pint 0.25.3+ compatibility.

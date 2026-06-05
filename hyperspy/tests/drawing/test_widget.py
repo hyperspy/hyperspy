@@ -1,4 +1,4 @@
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -14,6 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+from unittest import mock
 
 import numpy as np
 
@@ -72,6 +74,36 @@ def test_remove_widget_line():
     im._plot.pointer.close(render_figure=True)
     assert len(ax.lines) == 1
     assert len(im._plot.pointer.patch) == 1
+
+
+def test_add_widget_line():
+    s = signals.Signal1D(np.arange(10 * 25).reshape(10, 25))
+    s.plot()
+
+    # check the default position of the line on the signal axis
+    line = widgets.VerticalLineWidget(s.axes_manager, color="blue")
+    axis = s.axes_manager.signal_axes[0]
+    line.axes = (axis,)
+    line.set_mpl_ax(s._plot.signal_plot.ax)
+    assert line.position == (0,)
+    line.position = (15,)
+    assert line.position == (15,)
+    line.position = (100,)
+    # high value is used
+    assert line.position == (24,)
+
+    # check the default position of the line on the navigation axis
+    s.plot(navigator="spectrum")
+    line = widgets.VerticalLineWidget(s.axes_manager, color="blue")
+    axis = s.axes_manager.navigation_axes[0]
+    line.axes = (axis,)
+    line.set_mpl_ax(s._plot.navigator_plot.ax)
+    assert line.position == (0,)
+    line.position = (5,)
+    assert line.position == (5,)
+    line.position = (15,)
+    # high value is used
+    assert line.position == (9,)
 
 
 def test_calculate_size():
@@ -159,3 +191,54 @@ def test_adding_removing_resizers_on_pick_event():
     assert not widget0._resizers_on
     assert not widget1.picked
     assert not widget1._resizers_on
+
+
+class TestPolygonWidgetCleanup:
+    def test_polygon_selector_cleaned_up_on_set_off(self):
+        from hyperspy.drawing._widgets.polygon import PolygonWidget
+
+        s = signals.Signal2D(np.random.random((13, 17)))
+        s.plot()
+        ax = s._plot.signal_plot.ax
+
+        widget = PolygonWidget(s.axes_manager)
+        widget.color = "red"
+        widget.set_mpl_ax(ax)
+
+        assert widget._widget is not None
+        widget.set_on(False)
+        assert widget._widget is None
+        s._plot.close()
+
+
+def test_set_resizers_false_resets_blit_background():
+    """Verify _set_resizers(False) invalidates blit cache and repaints."""
+    s = signals.Signal2D(np.random.random((10, 20, 80)))
+    s.plot()
+    r = roi.RectangularROI(0, 0, 2, 2)
+    r.interactive(s)
+    widget = list(r.widgets)[0]
+    widget._set_resizers(True, widget.ax)
+    hspy_fig = widget.ax.hspy_fig
+    hspy_fig._background = object()
+    with mock.patch.object(widget, "draw_patch") as mock_draw:
+        widget._set_resizers(False, widget.ax)
+    assert hspy_fig._background is None
+    mock_draw.assert_called_once()
+
+
+def test_set_on_false_resets_blit_background():
+    """Verify WidgetBase.set_on(False) invalidates blit cache after patch removal."""
+    s = signals.Signal2D(np.random.random((10, 20, 80)))
+    s.plot()
+    r = roi.RectangularROI(0, 0, 2, 2)
+    r.interactive(s)
+    widget = list(r.widgets)[0]
+    widget.set_on(True)
+    assert len(widget.patch) > 0
+    hspy_fig = widget.ax.hspy_fig
+    hspy_fig._background = object()
+    with mock.patch.object(widget, "draw_patch") as mock_draw:
+        widget.set_on(False)
+    assert hspy_fig._background is None
+    mock_draw.assert_called()

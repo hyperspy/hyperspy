@@ -1,4 +1,4 @@
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy._signals.signal1d import Signal1D
+import hyperspy.api as hs
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 
@@ -26,7 +26,7 @@ from hyperspy.decorators import lazifyTestClass
 @lazifyTestClass
 class TestChiSquared:
     def setup_method(self, method):
-        s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
+        s = hs.signals.Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
         self.model = m
         self.A = 38.022476979172588

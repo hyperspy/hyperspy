@@ -52,12 +52,16 @@ extensions = [
 
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
+    "https://docs.conda.io",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
+    "https://doi.org/10.1364/OL.33.000156",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
+    "https://doi.org/10.1364/AO.41.007437",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
     "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
     "https://scholar.google.co.uk",  # 403 Client Error: Forbidden for url
     "https://software.opensuse.org",  # 400 Client Error: Bad Request for url
+    "https://zenodo.org",  # 403 Client Error: Forbidden for url
 ]
 
 linkcheck_exclude_documents = []
@@ -173,14 +177,8 @@ favicons = [
 
 # The old version banner used `release` to compare to the "prefered" version
 # using https://www.npmjs.com/package/compare-versions
-# To play well with our documentation structure (the preferred version point
-# to the latest minor or patch release without having to update on patch release),
-# we add a ".x".
 # See https://github.com/pydata/pydata-sphinx-theme/issues/1552 for more context
-# On a minor release, the version switcher json is updated.
-# In the version switcher json, version needs to be defined with a `x`, e.g. 2.1.x
-# in as it is done here to make sure that they match!
-version_match = "dev" if "dev" in release else ".".join(release.split(".")[:2] + ["x"])
+version_match = "dev" if "dev" in release else release
 
 print("version", release)
 print("version_match:", version_match)
@@ -216,7 +214,7 @@ html_theme_options = {
     "header_links_before_dropdown": 7,
     "show_version_warning_banner": True,
     "switcher": {
-        # Update when merged and released
+        # Updated when running `prepare_release.py` script before a new release
         "json_url": "https://hyperspy.org/hyperspy-doc/dev/_static/switcher.json",
         "version_match": version_match,
     },
@@ -358,8 +356,8 @@ nitpicky = True
 nitpick_ignore_regex = (
     # No need to be added to the API: documented in subclass
     ("py:class", "hyperspy.misc.slicing.FancySlicing"),
-    ("py:class", "hyperspy.learn.mva.MVA"),
     ("py:class", "hyperspy.signal.MVATools"),
+    ("py:class", "hyperspy.learn._mva.MVA"),
     ("py:class", "hyperspy.samfire_utils.strategy.SamfireStrategy"),
     ("py:class", ".*goodness_test"),
     ("py:class", "hyperspy.roi.BasePointROI"),
@@ -369,7 +367,7 @@ nitpick_ignore_regex = (
     # Need to be made a property
     ("py:attr", "api.signals.BaseSignal.learning_results"),
     ("py:attr", "api.signals.BaseSignal.axes_manager"),
-    ("py:attr", "hyperspy._signals.lazy.LazySignal.navigator"),
+    ("py:attr", "hyperspy.api.signals.LazySignal.navigator"),
     # Skip for now
     ("py:attr", "axes.BaseDataAxis.is_binned.*"),
     ("py:attr", "api.model.components1D.ScalableFixedPattern.*"),

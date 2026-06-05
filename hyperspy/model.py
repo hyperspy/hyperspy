@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -26,56 +26,37 @@ from contextlib import contextmanager
 from functools import partial
 
 import cloudpickle
-import dask
-import dask.array as da
 import numpy as np
-import scipy.odr as odr
-from dask.diagnostics import ProgressBar
+import scipy
 from packaging.version import Version
-from scipy.linalg import svd
-from scipy.optimize import (
-    OptimizeResult,
-    differential_evolution,
-    least_squares,
-    leastsq,
-    minimize,
-)
-from scipy.signal import fftconvolve
 
+from hyperspy import signals
 from hyperspy.component import Component
-from hyperspy.components1d import Expression
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.events import Event, Events, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
-from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
 from hyperspy.io import assign_signal_subclass
-from hyperspy.misc.array_tools import get_chunk_slice
+from hyperspy.misc import dask_utils, utils
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
     parse_flag_string,
     reconstruct_object,
 )
-from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.model_tools import (
     CurrentModelValues,
+    ModelStatistics,
     _calculate_covariance,
     _calculate_parameter_uncertainty_from_fisher_information,
 )
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.misc.utils import (
-    display,
-    dummy_context_manager,
-    shorten_name,
-    slugify,
-    stash_active_state,
-)
-from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
+
+SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 _logger = logging.getLogger(__name__)
 
@@ -255,7 +236,7 @@ def _get_model_data_function_nd(
                 )
             # add all components, take the convolution for components that need
             # to be convolved, do it here only once instead of each component individually
-            data_ = sum_ + fftconvolve(
+            data_ = sum_ + scipy.signal.fftconvolve(
                 sum_convolved,
                 model._signal_to_convolve.inav[nav_slices].data,
                 mode="valid",
@@ -359,7 +340,9 @@ def _model_as_signal_lazy_data(
     data : dask array
         The calculated model data
     """
-    _, data_chunks = get_chunk_slice(
+    import dask.array as da
+
+    _, data_chunks = dask_utils.get_chunk_slice(
         shape=model.signal.data.shape,
         chunks=chunks,
         signal_dimension=model.axes_manager.signal_dimension,
@@ -397,12 +380,12 @@ class ModelComponents(object):
             for i, c in enumerate(self._model):
                 ans += "\n"
                 name_string = c.name
-                variable_name = slugify(name_string, valid_variable_name=True)
+                variable_name = utils.slugify(name_string, valid_variable_name=True)
                 component_type = c.__class__.__name__
 
-                variable_name = shorten_name(variable_name, 19)
-                name_string = shorten_name(name_string, 19)
-                component_type = shorten_name(component_type, 19)
+                variable_name = utils.shorten_name(variable_name, 19)
+                name_string = utils.shorten_name(name_string, 19)
+                component_type = utils.shorten_name(component_type, 19)
 
                 ans += signature % (i, variable_name, name_string, component_type)
         return ans
@@ -482,6 +465,8 @@ class BaseModel(list):
         Plot the value of all parameters at all positions.
     print_current_values
         Print the value of the parameters at the current position.
+    print_model_statistics
+        Prints summary statistics for all parameters of each component.
     as_dictionary
         Exports the model to a dictionary that can be saved in a file.
 
@@ -745,7 +730,11 @@ class BaseModel(list):
         thing._create_arrays()
         list.append(self, thing)
         thing.model = self
-        setattr(self._components, slugify(name_string, valid_variable_name=True), thing)
+        setattr(
+            self._components,
+            utils.slugify(name_string, valid_variable_name=True),
+            thing,
+        )
         if self._plot_active:
             self._connect_parameters2update_plot(components=[thing])
             self.signal._plot.signal_plot.update()
@@ -871,6 +860,8 @@ class BaseModel(list):
         if components_with_function_nd:
             # Get data array for all components with function_nd
             if lazy_output:
+                import dask
+
                 # Issue with passing the model object to _get_model_data_chunk
                 if Version(dask.__version__) < Version("2024.12.0"):
                     raise RuntimeError("Lazy support needs dask >= 2024.12.0")
@@ -882,6 +873,8 @@ class BaseModel(list):
                     self, components_with_function_nd, out_of_range_to_nan
                 )
         else:
+            import dask.array as da
+
             xp = da if lazy_output else np
             # Make the placeholder array
             data_ = xp.full_like(self.signal.data, np.nan, dtype=float)
@@ -938,7 +931,7 @@ class BaseModel(list):
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
 
-        if out_of_range_to_nan and isinstance(data_, da.Array):
+        if out_of_range_to_nan and utils.is_dask_array(data_):
             # requires array assignment which is not compatible with
             # dask array since dask 2024.12.0
             raise ValueError(
@@ -949,7 +942,7 @@ class BaseModel(list):
         if show_progressbar is None:  # pragma: no cover
             show_progressbar = preferences.General.show_progressbar
 
-        with stash_active_state(self if component_list else []):
+        with utils.stash_active_state(self if component_list else []):
             if component_list:
                 component_list = [self._get_component(x) for x in component_list]
                 for component_ in self:
@@ -1027,6 +1020,10 @@ class BaseModel(list):
                     self._model_line.update(
                         render_figure=render_figure, update_ylimits=update_ylimits
                     )
+                if self._residual_line is not None:
+                    self._residual_line.update(
+                        render_figure=render_figure, update_ylimits=update_ylimits
+                    )
                 if self._plot_components:
                     for component in self.active_components:
                         self._update_component_line(component)
@@ -1050,6 +1047,13 @@ class BaseModel(list):
                 es.add(c.events, f)
                 if c._position:
                     es.add(c._position.events)
+                for p in c.parameters:
+                    es.add(p.events, f)
+
+        if self._residual_line:
+            f = self._residual_line._auto_update_line
+            for c in self:
+                es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
 
@@ -1157,7 +1161,7 @@ class BaseModel(list):
                     else:
                         self.free_parameters_boundaries.extend((param._bounds))
 
-    def _bounds_as_tuple(self, transpose):
+    def _bounds_as_tuple(self, transpose, as_array=False):
         """
         Converts parameter bounds to tuples for scipy optimizer. For scipy
         ``least_squares``, ``transpose=True`` needs to be used, as the order of the
@@ -1171,9 +1175,13 @@ class BaseModel(list):
             for a, b in self.free_parameters_boundaries
         )
         if transpose:
-            return tuple(zip(*bounds))
-        else:
-            return bounds
+            bounds = tuple(zip(*bounds))
+
+        if as_array:
+            # odrpack needs numpy arrays
+            bounds = tuple(np.array(bounds_) for bounds_ in bounds)
+
+        return bounds
 
     def _set_mpfit_parameters_info(self, bounded=True):
         """Generate the boundary list for mpfit.
@@ -1273,7 +1281,7 @@ class BaseModel(list):
         store_current_values
 
         """
-        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        cm = self.suspend_update if self._plot_active else utils.dummy_context_manager
         with cm(update_on_resume=update_on_resume):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
@@ -1427,6 +1435,8 @@ class BaseModel(list):
         fitting is hence currently only useful for fitting a dataset in the
         vectorized manner.
         """
+        from hyperspy import components1d
+
         if optimizer == "ridge_regression":
             warnings.warn(
                 "`'ridge_regression'` has been renamed to `'ridge'`. "
@@ -1505,7 +1515,7 @@ class BaseModel(list):
             ]
 
             if len(free_parameters) > 1:
-                if not isinstance(component, Expression):
+                if not isinstance(component, components1d.Expression):
                     raise AttributeError(
                         f"Component {component} has more than one free "
                         "parameter,  which is only supported for "
@@ -1571,16 +1581,12 @@ class BaseModel(list):
             )
 
         if optimizer == "lstsq":
-            if self.signal._lazy:
-                xp = da
-                kw = {}
-            else:
-                xp = np
-                kw = kwargs
-                kw.setdefault("rcond", None)
+            kwargs = {"rcond": None} if not self.signal._lazy else {}
 
             result, residual, *_ = np.linalg.lstsq(
-                xp.asanyarray(comp_values.T), target_signal.T, **kw
+                np.asanyarray(comp_values.T, like=self.signal.data),
+                target_signal.T,
+                **kwargs,
             )
             if len(residual) == 0:
                 # can be empty array, see np.linalg.lstsq docstring
@@ -1592,7 +1598,12 @@ class BaseModel(list):
             if optimizer == "nnls":
                 kwargs["positive"] = True
             kwargs.setdefault("fit_intercept", False)
-            reg = import_sklearn.sklearn.linear_model.LinearRegression(**kwargs)
+            if not SKLEARN_INSTALLED:
+                raise ImportError(f"'{optimizer}' optimizer requires scikit-learn.")
+
+            from sklearn.linear_model import LinearRegression
+
+            reg = LinearRegression(**kwargs)
             results = reg.fit(X=comp_values.T, y=target_signal.T)
             coefficient_array = results.coef_
             residual = None
@@ -1603,7 +1614,12 @@ class BaseModel(list):
             # https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html
             kwargs.setdefault("alpha", 0.01)
             kwargs.setdefault("fit_intercept", False)
-            reg = import_sklearn.sklearn.linear_model.Ridge(**kwargs)
+            if not SKLEARN_INSTALLED:
+                raise ImportError(f"'{optimizer}' optimizer requires scikit-learn.")
+
+            from sklearn.linear_model import Ridge
+
+            reg = Ridge(**kwargs)
             results = reg.fit(X=comp_values.T, y=target_signal.T)
             coefficient_array = results.coef_
             residual = None
@@ -1614,14 +1630,6 @@ class BaseModel(list):
             )
 
         fit_output = {"x": coefficient_array}
-
-        # TODO: reorganise to do lazy computation (coeff and error together)
-        if self.signal._lazy:
-            cm = (
-                ProgressBar if kwargs.get("show_progressbar") else dummy_context_manager
-            )
-            with cm():
-                fit_output["x"] = fit_output["x"].compute()
 
         # Calculate errors
         # We only do this if going pixel-by-pixel or if `calculate_errors=True`
@@ -1639,6 +1647,19 @@ class BaseModel(list):
             fit_output["covar"] = covariance
             fit_output["perror"] = abs(fit_output["x"]) * std_error
 
+        if self.signal._lazy:
+            arrays = [fit_output["x"]]
+            if calculate_errors:
+                arrays.append(fit_output["perror"])
+
+            outputs = dask_utils._compute(
+                arrays, show_progressbar=kwargs.get("show_progressbar")
+            )
+
+            fit_output["x"] = outputs[0]
+            if calculate_errors:
+                fit_output["perror"] = outputs[1]
+
         if not only_current:
             # The nav shape will have been flattened. We reshape it here.
             fit_output["x"] = fit_output["x"].reshape(nav_shape + (n_parameters,))
@@ -1650,10 +1671,6 @@ class BaseModel(list):
                 fit_output["perror"] = fit_output["perror"].reshape(
                     nav_shape + (n_parameters,)
                 )
-
-        if self.signal._lazy and calculate_errors:
-            with cm():
-                fit_output["perror"] = fit_output["perror"].compute()
 
         fit_output["success"] = True
 
@@ -1683,7 +1700,7 @@ class BaseModel(list):
         """
         variance = self.signal.get_noise_variance()
         if variance is not None:
-            if isinstance(variance, BaseSignal):
+            if isinstance(variance, signals.BaseSignal):
                 if only_current:
                     variance = variance.data.__getitem__(
                         self.axes_manager._getitem_tuple
@@ -1815,18 +1832,21 @@ class BaseModel(list):
         cm = (
             self.suspend_update
             if (update_plot != self._plot_active) and not update_plot
-            else dummy_context_manager
+            else utils.dummy_context_manager
         )
 
         # Supported losses and optimizers
         _supported_global = {
-            "Differential Evolution": differential_evolution,
+            "Differential Evolution": scipy.optimize.differential_evolution,
         }
 
         if optimizer in ["Dual Annealing", "SHGO"]:
-            from scipy.optimize import dual_annealing, shgo
-
-            _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})
+            _supported_global.update(
+                {
+                    "Dual Annealing": scipy.optimize.dual_annealing,
+                    "SHGO": scipy.optimize.shgo,
+                }
+            )
 
         _supported_fd_schemes = ["2-point", "3-point", "cs"]
         _supported_losses = ["ls", "ML-poisson", "huber"]
@@ -1834,6 +1854,7 @@ class BaseModel(list):
             "lm",
             "trf",
             "dogbox",
+            "odr",
             "Powell",
             "TNC",
             "L-BFGS-B",
@@ -1851,6 +1872,7 @@ class BaseModel(list):
             in [
                 "trf",  # Use least_squares
                 "dogbox",  # Use least_squares
+                "odr",  # Use odrpack
             ]
             else False
         )
@@ -1972,6 +1994,8 @@ class BaseModel(list):
 
             if optimizer == "lm":
                 if bounded:
+                    from hyperspy.external.mpfit.mpfit import mpfit
+
                     # Bounded Levenberg-Marquardt algorithm is supported
                     # using the `mpfit` function (bundled with HyperSpy)
                     self._set_mpfit_parameters_info(bounded=bounded)
@@ -2002,10 +2026,19 @@ class BaseModel(list):
                     self.p0 = self.fit_output.x
                     ysize = len(self.fit_output.x) + self.fit_output.dof
                     cost = self.fit_output.fnorm
-                    pcov = self.fit_output.perror**2
+                    if self.fit_output.perror is None:  # pragma: no cover
+                        # in case of RuntimeWarning in mpfit
+                        nav_msg = ""
+                        if self.signal.axes_manager.navigation_size > 0:
+                            nav_msg = f" for navigation position: {self.signal.axes_manager.indices}"
+                        _logger.warning(
+                            f"Covariance of the parameters could not be estimated{nav_msg}."
+                        )
+                    else:
+                        pcov = self.fit_output.perror**2
 
-                    # Calculate estimated parameter standard deviation
-                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+                        # Calculate estimated parameter standard deviation
+                        self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
                 else:
                     # Unbounded Levenberg-Marquardt algorithm is supported
@@ -2013,7 +2046,7 @@ class BaseModel(list):
                     # Dfun=None means the gradient is always estimated here.
                     grad = self._jacobian if grad == "analytical" else None
 
-                    res = leastsq(
+                    res = scipy.optimize.leastsq(
                         self._errfunc,
                         self.p0[:],
                         Dfun=grad,
@@ -2023,7 +2056,7 @@ class BaseModel(list):
                         **kwargs,
                     )
 
-                    self.fit_output = OptimizeResult(
+                    self.fit_output = scipy.optimize.OptimizeResult(
                         x=res[0],
                         covar=res[1],
                         fun=res[2]["fvec"],
@@ -2051,7 +2084,7 @@ class BaseModel(list):
 
                 grad = _wrap_jac if grad == "analytical" else grad
 
-                self.fit_output = least_squares(
+                self.fit_output = scipy.optimize.least_squares(
                     self._errfunc,
                     self.p0[:],
                     args=args,
@@ -2068,7 +2101,7 @@ class BaseModel(list):
 
                 # Do Moore-Penrose inverse, discarding zero singular values
                 # to get pcov (as per scipy.optimize.curve_fit())
-                _, s, VT = svd(jac, full_matrices=False)
+                _, s, VT = scipy.linalg.svd(jac, full_matrices=False)
                 threshold = np.finfo(float).eps * max(jac.shape) * s[0]
                 s = s[s > threshold]
                 VT = VT[: s.size]
@@ -2078,22 +2111,36 @@ class BaseModel(list):
                 self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
 
             elif optimizer == "odr":
+                self._set_boundaries(bounded=bounded)
+                try:
+                    import odrpack
+                except ModuleNotFoundError:  # pragma: no cover
+                    raise ImportError(
+                        "The 'odrpack' package is required for optimizer='odr'."
+                    )
+
                 if not hasattr(self, "axis"):
                     raise NotImplementedError(
                         "`optimizer='odr'` is not implemented for Model2D"
                     )
 
-                odr_jacobian = self._jacobian4odr if grad == "analytical" else None
-
-                modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
-                mydata = odr.RealData(
-                    self.axis.axis[np.where(self._channel_switches)],
-                    self.signal._get_current_data()[np.where(self._channel_switches)],
-                    sx=None,
-                    sy=(1.0 / weights if weights is not None else None),
+                kwargs.setdefault("task", "OLS")
+                bounds = self._bounds_as_tuple(
+                    transpose=_transpose_bounds, as_array=True
                 )
-                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:], **kwargs)
-                res = myodr.run()
+                res = odrpack.odr_fit(
+                    self._function4odr,
+                    xdata=self.axis.axis[np.where(self._channel_switches)],
+                    ydata=self.signal._get_current_data()[
+                        np.where(self._channel_switches)
+                    ],
+                    beta0=np.array(self.p0[:]),
+                    weight_x=None,
+                    weight_y=(1.0 / weights if weights is not None else None),
+                    jac_beta=self._jacobian4odr if grad == "analytical" else None,
+                    bounds=bounds if bounded else None,
+                    **kwargs,
+                )
 
                 dd = {
                     "x": res.beta,
@@ -2102,11 +2149,11 @@ class BaseModel(list):
                 }
                 if hasattr(res, "info"):
                     dd["status"] = res.info
-                    dd["message"] = ", ".join(res.stopreason)
+                    dd["message"] = res.stopreason
                     # Note that a value of 5 means maximum iterations reached
                     dd["success"] = (res.info >= 0) and (res.info < 4)
 
-                self.fit_output = OptimizeResult(**dd)
+                self.fit_output = scipy.optimize.OptimizeResult(**dd)
                 self.p0 = self.fit_output.x
                 self.p_std = self.fit_output.perror
 
@@ -2120,7 +2167,7 @@ class BaseModel(list):
                 fit_output = self._linear_fit(
                     optimizer=optimizer, weights=weights, **kwargs
                 )
-                self.fit_output = OptimizeResult(**fit_output)
+                self.fit_output = scipy.optimize.OptimizeResult(**fit_output)
 
                 if only_current:
                     # fit_output will have only one entry
@@ -2169,7 +2216,7 @@ class BaseModel(list):
                     )
 
                 else:
-                    self.fit_output = minimize(
+                    self.fit_output = scipy.optimize.minimize(
                         f_min,
                         self.p0,
                         jac=f_der,
@@ -2516,7 +2563,7 @@ class BaseModel(list):
                     "iterating over the navigation dimensions, which is "
                     "significantly slower."
                 )
-            elif isinstance(self.signal.get_noise_variance(), BaseSignal):
+            elif isinstance(self.signal.get_noise_variance(), signals.BaseSignal):
                 warnings.warn(
                     "The noise of the signal is not homoscedastic, i.e. the "
                     "variance of the signal is not constant, which is not "
@@ -2573,11 +2620,11 @@ class BaseModel(list):
         ):
             with self.axes_manager.switch_iterpath(iterpath):
                 if interactive_plot:
-                    outer = dummy_context_manager
+                    outer = utils.dummy_context_manager
                     inner = self.suspend_update
                 else:
                     outer = self.suspend_update
-                    inner = dummy_context_manager
+                    inner = utils.dummy_context_manager
 
                 with outer(update_on_resume=True):
                     with progressbar(
@@ -2796,7 +2843,7 @@ class BaseModel(list):
         component_list : None or list of :class:`~hyperspy.component.Component`
             If None, print all components.
         """
-        display(
+        utils.display(
             CurrentModelValues(
                 model=self,
                 only_free=only_free,
@@ -3127,6 +3174,62 @@ class BaseModel(list):
         from hyperspy.samfire import Samfire
 
         return Samfire(self, workers=workers, setup=setup, **kwargs)
+
+    def print_model_statistics(self, thresholds=None, component_list=None):
+        """
+        Computes and prints summary statistics (mean, standard deviation, min, max)
+        for all parameters of each component in a given model.
+
+        Parameters
+        ----------
+        thresholds : dict, optional
+            A dictionary specifying thresholds for parameters.
+            Keys should be parameter names (param.name).
+            Values should be dictionaries with optional 'min' and/or 'max' entries
+            given as float or integer. If str, formatted as 'xth', use this value
+            to calculate the threshold percentage. For example, for a min of '1th',
+            the lowest 1% of values will be ignored and for max of '1th', the
+            highest 1% of values will be ignored. See :func:`numpy.percentile`
+            for more details.
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
+            If None, will return statistics for all components in the model.
+            If list of components, will calculate statistics for the components
+            in the list. The components can be specified by name, index or
+            themselves.
+
+        Raises
+        ------
+        ValueError
+            If the value of `min` `max` is out of the valid range for percentile
+            calculation (in case of string values).
+
+        Examples
+        --------
+        >>> x = np.linspace(0, 20, 200)
+        >>> y = (
+        ... 3 * np.exp(-(x - 5)**2 / (2 * 0.5**2)) +
+        ... 2 * np.exp(-(x - 10)**2 / (2 * 1.0**2)) +
+        ... 4 * np.exp(-(x - 15)**2 / (2 * 0.8**2)))
+        >>> s = hs.signals.Signal1D(y)
+        >>> m = s.create_model()
+        >>> gauss1 = hs.model.components1D.Gaussian()
+        >>> gauss2 = hs.model.components1D.Gaussian()
+        >>> gauss3 = hs.model.components1D.Gaussian()
+        >>> Lorenz1 = hs.model.components1D.Lorentzian()
+        >>> lorenz2 = hs.model.components1D.Lorentzian()
+        >>> m.extend([gauss1, gauss2, gauss3, Lorenz1, lorenz2])
+        >>> m.multifit()
+        >>> thresholds = {
+        ... "A": {"min": 0.1, "max": 10}, "sigma": {"min": 0.01}, "centre": {"max": 5}
+        ... }
+        >>> m.print_model_statistics(thresholds)
+        """
+
+        utils.display(
+            ModelStatistics(
+                model=self, thresholds=thresholds, component_list=component_list
+            )
+        )
 
 
 class ModelSpecialSlicers(object):

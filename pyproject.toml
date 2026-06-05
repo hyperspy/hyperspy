@@ -9,35 +9,33 @@ classifiers = [
     "Framework :: Matplotlib",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
     "cloudpickle",
-    "dask[array]>=2022.9.2",
+    "dask[array]>=2023.2.1",
     "importlib-metadata>=3.6",
     "jinja2", # improves representation of lazy signals by dask
     "matplotlib>=3.6",
     "natsort",
-    "numpy>=1.20.0",
+    "numpy>=1.22.0",
     "packaging",
     "pint>=0.10",
     "prettytable>=2.3",
     "pyyaml",
-    "rosettasciio[hdf5]>=0.9.0",
-    "scikit-image>=0.18",
-    "scipy>=1.6.0",
+    "rosettasciio[hdf5,image]>=0.12.0",
+    "scipy>=1.8.0",
     "sympy>=1.10",
     "tqdm>=4.59.0",
-    "traits>=4.5.0",
+    "traits>=6.4.0",
 ]
 description = "Multidimensional data analysis toolbox"
 dynamic = ["version"]
@@ -78,12 +76,11 @@ keywords = [
     "spectroscopy",
     "spectrum image",
 ]
+license = "GPL-3.0-or-later"
+license-files = ["COPYING.txt"]
 name = "hyperspy"
 readme = "README.md"
-requires-python = ">=3.9"
-
-[project.license]
-file = "COPYING.txt"
+requires-python = ">=3.10"
 
 [project.optional-dependencies]
 all = [
@@ -91,8 +88,10 @@ all = [
     "hyperspy[baseline]",
     "hyperspy[gui-jupyter]",
     "hyperspy[gui-traitsui]",
+    "hyperspy[image]",
     "hyperspy[ipython]",
     "hyperspy[learning]",
+    "hyperspy[odr]",
     "hyperspy[speed]",
 ]
 baseline = [
@@ -105,7 +104,7 @@ dask-image = [
     "dask-image",
 ]
 dev = [
-    "black",
+    "ruff",
     "hyperspy[all]",
     "hyperspy[coverage]",
     "hyperspy[doc]",
@@ -114,12 +113,10 @@ dev = [
 doc = [
     "holospy", # example gallery
     "IPython", # Needed in testing code in basic_usage.rst
-    # https://github.com/ipython/ipython/issues/14237
-    # https://github.com/conda-forge/ipython-feedstock/pull/210
-    "pickleshare", # ipython optional dependencies
     "numpydoc",
     "pybaselines", # for docstring test
     "pydata_sphinx_theme",
+    "scikit-image",
     "setuptools_scm",
     "sphinx-copybutton",
     "sphinx-design",
@@ -137,16 +134,22 @@ gui-jupyter = [
 gui-traitsui = [
     "hyperspy_gui_traitsui>=2.0",
 ]
+image = [
+    "scikit-image>=0.19.0",
+]
 ipython = [
     "IPython>7.0,!=8.0",
     "ipyparallel",
 ]
 learning = [
-    "scikit-learn>=1.0.1",
+    "scikit-learn>=1.6.0",
+]
+odr = [
+    "odrpack>=0.3.1",
 ]
 speed = [
-    "numba>=0.53",
-    "numexpr>=2.8",
+    "numba>=0.56.0",
+    "numexpr>=2.8.0",
 ]
 tests = [
     "pooch",
@@ -236,7 +239,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-fallback_version = "2.3.1.dev0"
+fallback_version = "2.4.1.dev0"
 
 [tool.towncrier]
 directory = "upcoming_changes/"

@@ -39,17 +39,17 @@ whether the optimizers find a local or global optima.
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"dogbox"``                    |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"odr"``                       |  No      | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    | ``"odr"`` [2]_                  |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"lstsq"``                     |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
+    | ``"lstsq"``                     |  No      | No        | Yes [3]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ols"``                       |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
+    | ``"ols"``                       |  No      | No        | Yes [3]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"nnls"``                      |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
+    | ``"nnls"``                      |  No      | No        | Yes [3]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | ``"ridge"``                     |  No      | No        | Yes [2]_ | Only ``"ls"`` | global | Yes    |
+    | ``"ridge"``                     |  No      | No        | Yes [3]_ | Only ``"ls"`` | global | Yes    |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
-    | :func:`scipy.optimize.minimize` | Yes [3]_ | Yes [3]_  | Yes      | All           | local  | No     |
+    | :func:`scipy.optimize.minimize` | Yes [4]_ | Yes [4]_  | Yes      | All           | local  | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
     | ``"Differential Evolution"``    |  Yes     | No        | Yes      | All           | global | No     |
     +---------------------------------+----------+-----------+----------+---------------+--------+--------+
@@ -64,11 +64,13 @@ whether the optimizers find a local or global optima.
        algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_. In
        earlier versions of HyperSpy (< 1.6) this was known as ``"leastsq"``.
 
-.. [2] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
+.. [2] Requires the ``odrpack`` library to be installed.
+
+.. [3] Requires the :meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
        in most cases. See the documentation below on :ref:`linear least square fitting <linear_fitting-label>`
        for more info.
 
-.. [3] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
+.. [4] **All** of the fitting algorithms available in :func:`scipy.optimize.minimize` are currently
        supported in HyperSpy; however, only some of them support bounds and/or gradients. For more information,
        please see the `SciPy documentation <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
@@ -761,3 +763,38 @@ The :class:`~.model.BaseModel` :meth:`~.model.BaseModel.plot_results`,
 :class:`~.component.Parameter` :meth:`~.component.Parameter.plot` methods
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
+
+.. _compute-model-statistics:
+
+Compute model statistics
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+HyperSpy provides a method to compute and print summary statistics of all
+parameters of each component in a model. This is especially useful for
+inspecting parameter values after fitting a map of spectra using multifit,
+as it allows evaluating mean, standard deviation, minimum, and maximum across
+all navigation points.
+
+.. code-block:: python
+
+
+    >>> x = np.linspace(0, 20, 200)
+    >>> y = (
+    ...     3 * np.exp(-((x - 5) ** 2) / (2 * 0.5**2))
+    ...     + 2 * np.exp(-((x - 10) ** 2) / (2 * 1.0**2))
+    ...     + 4 * np.exp(-((x - 15) ** 2) / (2 * 0.8**2))
+    ... )
+    >>> s = hs.signals.Signal1D(y)
+    >>> m = s.create_model()
+    >>> gauss1 = hs.model.components1D.Gaussian()
+    >>> gauss2 = hs.model.components1D.Gaussian()
+    >>> gauss3 = hs.model.components1D.Gaussian()
+    >>> lorenz1 = hs.model.components1D.Lorentzian()
+    >>> lorenz2 = hs.model.components1D.Lorentzian()
+    >>> m.extend([gauss1, gauss2, gauss3, lorenz1, lorenz2])
+    >>> m.multifit()
+    >>> m.print_model_statistics()
+
+The output includes the mean, standard deviation, minimum, and maximum for each
+parameter of each component. Thresholds can optionally be applied to filter the
+values considered in the statistics.

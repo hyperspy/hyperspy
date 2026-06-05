@@ -1,1 +1,0 @@
-The IO documentation has been improved to clearly reference RosettaSciIO as the provider of file format support, with dynamic format listings and links to the RosettaSciIO documentation.

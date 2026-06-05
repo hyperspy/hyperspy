@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm, Normalize, PowerNorm, SymLogNorm
 from matplotlib.figure import SubFigure
-from rsciio.utils import rgb_tools
+from rsciio.utils import rgb
 from traits.api import Undefined
 
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
@@ -117,6 +117,10 @@ class ImagePlot(BlittedFigure):
         self._auto_scalebar = False
         self._user_axes_ticks = None
         self._auto_axes_ticks = True
+        # Store mpl_connect cid so we can disconnect before reconnecting;
+        # unlike Event.connect which deduplicates via connected list,
+        # canvas.mpl_connect always creates a new handler each call.
+        self._key_press_cid = None
         self._is_rgb = False
 
     @property
@@ -433,9 +437,9 @@ class ImagePlot(BlittedFigure):
             _logger.debug("Updating image slowly because `data_changed=True`")
             self._update_data()
         data = self._current_data
-        if rgb_tools.is_rgbx(data):
+        if rgb.is_rgbx(data):
             self.colorbar = False
-            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+            data = rgb.rgbx2regular_array(data, plot_friendly=True)
             data = self._current_data = data
             self._is_rgb = True
 
@@ -619,7 +623,11 @@ class ImagePlot(BlittedFigure):
     def connect(self):
         # in case the figure is not displayed
         if self.figure is not None:
-            self.figure.canvas.mpl_connect("key_press_event", self.on_key_press)
+            if self._key_press_cid is not None:
+                self.figure.canvas.mpl_disconnect(self._key_press_cid)
+            self._key_press_cid = self.figure.canvas.mpl_connect(
+                "key_press_event", self.on_key_press
+            )
         if self.axes_manager:
             if self.update not in self.axes_manager.events.indices_changed.connected:
                 self.axes_manager.events.indices_changed.connect(self.update, [])
@@ -643,7 +651,9 @@ class ImagePlot(BlittedFigure):
         if self.colorbar:
             self._colorbar.remove()
             self._add_colorbar()
-            self.figure.canvas.draw_idle()
+            # Use render_figure instead of canvas.draw_idle() to go through the
+            # blit render pipeline when supported (see BlittedFigure.render_figure).
+            self.figure.render_figure()
 
     def set_quantity_label(self):
         if "power_spectrum" in self.data_function_kwargs.keys():

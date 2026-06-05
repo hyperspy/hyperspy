@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -32,7 +32,7 @@ import hyperspy.api as hs
 from hyperspy import __version__ as hs_version
 from hyperspy.axes import DataAxis
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.signals import Signal1D
+from hyperspy.io import _get_format_list_for_docstring
 
 PATH = Path(__file__).resolve()
 FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")
@@ -40,8 +40,8 @@ FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")
 
 class TestIOOverwriting:
     def setup_method(self, method):
-        self.s = Signal1D(np.arange(10))
-        self.new_s = Signal1D(np.ones(5))
+        self.s = hs.signals.Signal1D(np.arange(10))
+        self.new_s = hs.signals.Signal1D(np.ones(5))
         # make sure we start from a clean state
         self._clean_file()
         self.s.save(FULLFILENAME)
@@ -101,7 +101,7 @@ class TestIOOverwriting:
 class TestNonUniformAxisCheck:
     def setup_method(self, method):
         axis = DataAxis(axis=1 / (np.arange(10) + 1), navigate=False)
-        self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(),))
+        self.s = hs.signals.Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(),))
         # make sure we start from a clean state
 
     def test_io_nonuniform(self):
@@ -143,7 +143,7 @@ class TestNonUniformAxisCheck:
 
 
 def test_glob_wildcards():
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     with tempfile.TemporaryDirectory() as dirpath:
         fnames = [os.path.join(dirpath, f"temp[1x{x}].hspy") for x in range(2)]
@@ -202,7 +202,7 @@ def test_file_not_found_error():
 
 def test_file_reader_error(tmp_path):
     # Only None, str or objects with attr "file_reader" are supported
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     f = tmp_path / "temp.hspy"
     s.save(f)
@@ -216,7 +216,7 @@ def test_file_reader_error(tmp_path):
 
 def test_file_reader_warning(caplog, tmp_path):
     # Test fallback to Pillow imaging library
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     f = tmp_path / "temp.hspy"
     s.save(f)
@@ -239,7 +239,7 @@ def test_file_reader_options(tmp_path):
     # Remove when fixed in rosettasciio
     # it should be possible to read emd file without having to install sparse
     pytest.importorskip("sparse")
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     s.save(Path(tmp_path, "temp.hspy"))
     s.save(Path(tmp_path, "temp.emd"))
@@ -288,7 +288,7 @@ def test_file_reader_options(tmp_path):
 
 
 def test_save_default_format(tmp_path):
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     s.save(tmp_path / "temp")
 
@@ -297,7 +297,7 @@ def test_save_default_format(tmp_path):
 
 
 def test_load_original_metadata(tmp_path):
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
     s.original_metadata.a = 0
 
     s.save(tmp_path / "temp")
@@ -368,7 +368,7 @@ def test_load_save_filereader_metadata(tmp_path):
 
 def test_save_extension_parameter_deprecation_warning(tmp_path):
     """Test that using the 'extension' parameter raises a deprecation warning."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     with pytest.warns(FutureWarning, match="The 'extension' parameter is deprecated"):
         s.save(tmp_path / "test", extension="hspy", overwrite=True)
@@ -379,7 +379,7 @@ def test_save_extension_parameter_deprecation_warning(tmp_path):
 
 def test_save_extension_and_file_format_conflict_error(tmp_path):
     """Test that providing both 'extension' and 'file_format' raises a ValueError."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     with pytest.raises(
         ValueError, match="Cannot specify both 'extension' and 'file_format'"
@@ -389,7 +389,7 @@ def test_save_extension_and_file_format_conflict_error(tmp_path):
 
 def test_save_extension_parameter_backward_compatibility(tmp_path):
     """Test that extension parameter still works for backward compatibility."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Test with different extensions
     test_cases = [
@@ -406,7 +406,7 @@ def test_save_extension_parameter_backward_compatibility(tmp_path):
 
 def test_save_extension_parameter_with_directory_path(tmp_path):
     """Test extension parameter works with directory paths (backward compatibility)."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters
     source_file = tmp_path / "source.hspy"
@@ -425,7 +425,7 @@ def test_save_extension_parameter_with_directory_path(tmp_path):
 
 def test_save_file_format_parameter_no_warning(tmp_path):
     """Test that using 'file_format' parameter does not raise any warning."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # This should not raise any warnings
     with warnings.catch_warnings():
@@ -437,7 +437,7 @@ def test_save_file_format_parameter_no_warning(tmp_path):
 
 def test_save_file_format_parameter_with_directory_path(tmp_path):
     """Test file_format parameter works correctly with directory paths."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters
     source_file = tmp_path / "source.hspy"
@@ -453,12 +453,15 @@ def test_save_file_format_parameter_with_directory_path(tmp_path):
     assert (output_dir / "source.msa").exists()
 
 
-def test_save_extension_precedence_with_file_format_fallback(tmp_path):
+@pytest.mark.parametrize("file_format", ["hspy", "zspy"])
+def test_save_extension_precedence_with_file_format_fallback(tmp_path, file_format):
     """Test the precedence order when extension is deprecated."""
-    s = Signal1D(np.arange(10))
+    if file_format == "zspy":
+        pytest.importorskip("zspy")
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters
-    source_file = tmp_path / "source.hspy"
+    source_file = tmp_path / f"source.{file_format}"
     s.save(source_file)
     s_loaded = hs.load(source_file)
 
@@ -466,21 +469,22 @@ def test_save_extension_precedence_with_file_format_fallback(tmp_path):
     output_dir.mkdir()
 
     # When only file_format is provided (no extension), it should use file_format
-    s_loaded.save(output_dir, file_format="msa", overwrite=True)
-    assert (output_dir / "source.msa").exists()
+    s_loaded.save(output_dir, file_format=file_format, overwrite=True)
+    assert (output_dir / f"source.{file_format}").exists()
 
-    # Clean up
-    (output_dir / "source.msa").unlink()
-
+    s_loaded.data *= 2
     # When neither extension nor file_format is provided, should fall back to current tmp_parameters
-    # Note: tmp_parameters are updated after each save, so this will use .msa format
+    # Note: tmp_parameters are updated after each save, so this will use file_format
     s_loaded.save(output_dir, overwrite=True)
-    assert (output_dir / "source.msa").exists()
+    assert (output_dir / f"source.{file_format}").exists()
+    # Check that the file has been overwritten
+    s_loaded2 = hs.load(output_dir / f"source.{file_format}")
+    np.testing.assert_allclose(s_loaded2.data, s_loaded.data)
 
 
 def test_save_extension_parameter_maps_to_file_format(tmp_path):
     """Test that the deprecated extension parameter correctly determines the output file extension."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters
     source_file = tmp_path / "source.hspy"
@@ -501,7 +505,7 @@ def test_save_extension_parameter_maps_to_file_format(tmp_path):
 
 def test_save_extension_parameter_strips_leading_dot(tmp_path):
     """Test that extension parameter correctly handles extensions with leading dots."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Test with leading dot
     with pytest.warns(FutureWarning):
@@ -518,7 +522,7 @@ def test_save_extension_parameter_strips_leading_dot(tmp_path):
 
 def test_save_file_format_unknown_format_error(tmp_path, caplog):
     """Test that unknown file_format raises a ValueError."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters
     source_file = tmp_path / "source.hspy"
@@ -544,7 +548,7 @@ def test_save_file_format_unknown_format_error(tmp_path, caplog):
 
 def test_save_extension_parameter_current_directory_path(tmp_path):
     """Test extension parameter when filename parent is current directory."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Change to the tmp directory to test current directory behavior
     import os
@@ -565,7 +569,7 @@ def test_save_extension_parameter_current_directory_path(tmp_path):
 
 def test_save_base_filename_already_has_extension(tmp_path):
     """Test filename construction when base filename already has the target extension."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file with a specific name that already includes the target extension
     source_file = tmp_path / "data.msa"  # Note: saving as .msa but with .msa name
@@ -590,7 +594,7 @@ def test_save_base_filename_already_has_extension(tmp_path):
 
 def test_save_stacklevel_in_deprecation_warning():
     """Test that the deprecation warning points to the correct stack level."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Capture the warning and check that stacklevel is set correctly
     with warnings.catch_warnings(record=True) as w:
@@ -609,7 +613,7 @@ def test_save_stacklevel_in_deprecation_warning():
 
 def test_save_extension_parameter_none_handling(tmp_path):
     """Test the extension=None handling logic in filename construction."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters
     source_file = tmp_path / "source.hspy"
@@ -630,7 +634,7 @@ def test_save_extension_parameter_none_handling(tmp_path):
 
 def test_save_file_format_with_directory_ending_slash(tmp_path):
     """Test that directory path detection works with explicit trailing slash."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters
     source_file = tmp_path / "source.hspy"
@@ -649,7 +653,7 @@ def test_save_file_format_with_directory_ending_slash(tmp_path):
 
 def test_save_extension_parameter_overrides_tmp_parameters_extension(tmp_path):
     """Test that explicit extension parameter overrides tmp_parameters.extension."""
-    s = Signal1D(np.arange(10))
+    s = hs.signals.Signal1D(np.arange(10))
 
     # Create a source file to get tmp_parameters with .hspy extension
     source_file = tmp_path / "source.hspy"
@@ -668,8 +672,6 @@ def test_save_extension_parameter_overrides_tmp_parameters_extension(tmp_path):
 # Test coverage for _get_format_list_for_docstring function
 def test_get_format_list_for_docstring_bullet_style():
     """Test _get_format_list_for_docstring with bullet style."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     # Test read mode with bullet style
     result = _get_format_list_for_docstring(write_mode=False, style="bullet")
     assert result.startswith("\n")
@@ -688,8 +690,6 @@ def test_get_format_list_for_docstring_bullet_style():
 
 def test_get_format_list_for_docstring_inline_style():
     """Test _get_format_list_for_docstring with inline style."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     # Test read mode with inline style
     result = _get_format_list_for_docstring(write_mode=False, style="inline")
     assert "``'" in result
@@ -704,8 +704,6 @@ def test_get_format_list_for_docstring_inline_style():
 
 def test_get_format_list_for_docstring_extensions_style():
     """Test _get_format_list_for_docstring with extensions style."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     # Test read mode with extensions style
     result = _get_format_list_for_docstring(write_mode=False, style="extensions")
     assert ", " in result
@@ -719,10 +717,16 @@ def test_get_format_list_for_docstring_extensions_style():
 
 def test_get_format_list_for_docstring_invalid_style():
     """Test _get_format_list_for_docstring with invalid style raises ValueError."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     with pytest.raises(ValueError, match="Unknown style"):
         _get_format_list_for_docstring(style="invalid_style")
+
+
+def test_lazy_docstring_load():
+    """Test that the load function docstring includes format list."""
+    assert (
+        _get_format_list_for_docstring(write_mode=False, style="bullet")
+        in hs.load.__doc__
+    )
 
 
 def test_load_reader_parameter_deprecation_warning(tmp_path):
@@ -818,7 +822,7 @@ def test_format_name_to_reader_invalid_format():
 
 def test_save_write_file_format(tmp_path):
     """Test that save writes the correct file format based on file_format parameter."""
-    s = Signal1D(np.arange(10 * 10).reshape(10, 10))
+    s = hs.signals.Signal1D(np.arange(10 * 10).reshape(10, 10))
     fname_extension = tmp_path / "test_file_format_extension"
     fname_name = tmp_path / "test_file_format_name"
 
@@ -1123,8 +1127,6 @@ def test_parse_path():
 
 def test_get_format_list_for_docstring():
     """Test the _get_format_list_for_docstring function."""
-    from hyperspy.io import _get_format_list_for_docstring
-
     # Test bullet style
     bullet_list = _get_format_list_for_docstring(write_mode=False, style="bullet")
     assert isinstance(bullet_list, str)
@@ -1217,3 +1219,21 @@ def test_save_filename_none_without_tmp_parameters():
     # Should raise ValueError
     with pytest.raises(ValueError, match="File name not defined"):
         s.save(filename=None, file_format="HSPY")
+
+
+def test_lazy_docstring_save():
+    """Test that the save function docstring includes format list."""
+    s = hs.signals.Signal1D([1, 2, 3])
+
+    assert (
+        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=8)
+        in s.save.__doc__
+    )
+    assert (
+        _get_format_list_for_docstring(write_mode=True, style="inline", indentation=8)
+        in s.save.__doc__
+    )
+    assert (
+        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=12)
+        in s.save.__doc__
+    )

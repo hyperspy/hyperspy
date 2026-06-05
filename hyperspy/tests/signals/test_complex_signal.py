@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -115,6 +115,7 @@ class TestComplexProperties:
 
 @pytest.mark.parametrize("lazy", (True, False))
 def test_get_unwrapped_phase_1D(lazy):
+    pytest.importorskip("skimage")
     phase = 6 * (1 - abs(np.indices((9,)) - 4) / 4)
     s = hs.signals.ComplexSignal1D(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
@@ -126,6 +127,7 @@ def test_get_unwrapped_phase_1D(lazy):
 
 @pytest.mark.parametrize("lazy", (True, False))
 def test_get_unwrapped_phase_2D(lazy):
+    pytest.importorskip("skimage")
     phase = 5 * (1 - abs(np.indices((9, 9)) - 4).sum(axis=0) / 8)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
@@ -137,6 +139,7 @@ def test_get_unwrapped_phase_2D(lazy):
 
 @pytest.mark.parametrize("lazy", (True, False))
 def test_get_unwrapped_phase_3D(lazy):
+    pytest.importorskip("skimage")
     phase = 4 * (1 - abs(np.indices((9, 9, 9)) - 4).sum(axis=0) / 12)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:

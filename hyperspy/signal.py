@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+import importlib
 import inspect
 import logging
 import numbers
@@ -29,20 +30,14 @@ from functools import partial
 from itertools import product
 from pathlib import Path
 
-import dask
-import dask.array as da
 import numpy as np
+import scipy
 import traits.api as t
-from matplotlib import pyplot as plt
-from pint import UndefinedUnitError
-from rsciio.utils import rgb_tools
-from rsciio.utils.tools import ensure_directory
-from scipy import integrate
-from scipy import signal as sp_signal
-from scipy.interpolate import make_interp_spline
+from rsciio.utils import path, rgb
 from tlz import concat
 
-from hyperspy.api import _ureg
+import hyperspy
+from hyperspy import drawing, signals
 from hyperspy.axes import AxesManager, create_axis
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
@@ -67,10 +62,6 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.docstrings.utils import REBIN_ARGS
-from hyperspy.drawing import mpl_he, mpl_hie, mpl_hse
-from hyperspy.drawing import signal as sigdraw
-from hyperspy.drawing.markers import markers_dict_to_markers
-from hyperspy.drawing.utils import animate_legend
 from hyperspy.events import Event, Events
 from hyperspy.exceptions import (
     DataDimensionError,
@@ -80,38 +71,23 @@ from hyperspy.exceptions import (
 )
 from hyperspy.external.scipy.ndfilters import _get_footprint
 from hyperspy.interactive import interactive
-from hyperspy.io import _get_format_list_for_docstring, assign_signal_subclass
+from hyperspy.io import (
+    _get_format_list_for_docstring,
+    _is_zarr_store,
+    _LazyDocstring,
+    assign_signal_subclass,
+)
 from hyperspy.io import save as io_save
-from hyperspy.learn.mva import MVA, LearningResults
-from hyperspy.misc.array_tools import rebin as array_rebin
+from hyperspy.learn._mva import MVA
+from hyperspy.misc import array_tools, dask_utils, signal_tools, utils
+from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
 from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
-from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
-from hyperspy.misc.utils import (
-    DictionaryTreeBrowser,
-    _compute,
-    _get_block_pattern,
-    add_scalar_axis,
-    guess_output_signal_size,
-    is_cupy_array,
-    isiterable,
-    iterable_not_string,
-    process_function_blockwise,
-    rollelem,
-    slugify,
-    to_numpy,
-    underline,
-)
 
 _logger = logging.getLogger(__name__)
 
-try:
-    import cupy as cp
-
-    CUPY_INSTALLED = True  # pragma: no cover
-except ImportError:
-    CUPY_INSTALLED = False
+CUPY_INSTALLED = importlib.util.find_spec("cupy") is not None
 
 
 def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers, axes):
@@ -202,7 +178,7 @@ class ModelManager(object):
 
     def __init__(self, signal, dictionary=None):
         self._signal = signal
-        self._models = DictionaryTreeBrowser()
+        self._models = utils.DictionaryTreeBrowser()
         self._add_dictionary(dictionary)
 
     def _add_dictionary(self, dictionary=None):
@@ -210,7 +186,7 @@ class ModelManager(object):
             for k, v in dictionary.items():
                 if k.startswith("_") or k in ["restore", "remove"]:
                     raise KeyError("Can't add dictionary with key '%s'" % k)
-                k = slugify(k, True)
+                k = utils.slugify(k, True)
                 self._models.set_item(k, v)
                 setattr(self, k, self.ModelStub(self, k))
 
@@ -287,7 +263,7 @@ class ModelManager(object):
             raise KeyError('Name cannot start with "_" symbol')
         if "." in name:
             raise KeyError('Name cannot contain dots (".")')
-        name = slugify(name, True)
+        name = utils.slugify(name, True)
         if existing:
             if name not in self._models:
                 raise KeyError("Model named '%s' is not currently stored" % name)
@@ -388,7 +364,7 @@ class MVATools(object):
         img_data=None,
         plot_shifts=True,
         plot_char=4,
-        cmap=plt.cm.gray,
+        cmap="gray",
         quiver_color="white",
         vector_scale=1,
         per_row=3,
@@ -415,7 +391,7 @@ class MVATools(object):
         cmap : a matplotlib colormap
             The colormap used for factor images or any peak characteristic
             scatter map overlay. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
 
         Other Parameters
         ----------------
@@ -448,6 +424,8 @@ class MVATools(object):
         matplotlib figure or list of figure if same_window=False
 
         """
+        import matplotlib.pyplot as plt
+
         if same_window is None:
             same_window = True
         if comp_ids is None:
@@ -479,7 +457,7 @@ class MVATools(object):
                         f = plt.figure()
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
-                ax = sigdraw._plot_1D_component(
+                ax = drawing.signal._plot_1D_component(
                     factors=factors,
                     idx=comp_ids[i],
                     axes_manager=self.axes_manager,
@@ -499,7 +477,7 @@ class MVATools(object):
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
 
-                sigdraw._plot_2D_component(
+                drawing.signal._plot_2D_component(
                     factors=factors,
                     idx=comp_ids[i],
                     axes_manager=self.axes_manager,
@@ -534,11 +512,13 @@ class MVATools(object):
         comp_label=None,
         with_factors=False,
         factors=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
     ):
+        import matplotlib.pyplot as plt
+
         if same_window is None:
             same_window = True
         if comp_ids is None:
@@ -578,7 +558,7 @@ class MVATools(object):
                         f = plt.figure()
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
-            sigdraw._plot_loading(
+            drawing.signal._plot_loading(
                 loadings,
                 idx=comp_ids[i],
                 axes_manager=self.axes_manager,
@@ -617,7 +597,7 @@ class MVATools(object):
         else:
             if self.axes_manager.navigation_dimension == 1:
                 plt.legend(ncol=loadings.shape[0] // 2, loc="best")
-                animate_legend(f)
+                drawing.utils.animate_legend(f)
             if with_factors:
                 return f, self._plot_factors_or_pchars(
                     factors,
@@ -641,7 +621,7 @@ class MVATools(object):
         factor_prefix=None,
         factor_format=None,
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         plot_shifts=True,
         plot_char=4,
         img_data=None,
@@ -652,8 +632,7 @@ class MVATools(object):
         no_nans=True,
         per_row=3,
     ):
-        from hyperspy._signals.signal1d import Signal1D
-        from hyperspy._signals.signal2d import Signal2D
+        import matplotlib.pyplot as plt
 
         if multiple_files is None:
             multiple_files = True
@@ -694,7 +673,7 @@ class MVATools(object):
                 )
                 if folder is not None:
                     filename = Path(folder, filename)
-                ensure_directory(filename)
+                path.ensure_directory(filename)
                 _args = {"dpi": 600, "format": save_figures_format}
                 fac_plots[idx].savefig(filename, **_args)
             plt.ion()
@@ -718,7 +697,7 @@ class MVATools(object):
                         "index_in_array": 0,
                     }
                 )
-                s = Signal2D(
+                s = signals.Signal2D(
                     factor_data,
                     axes=axes_dicts,
                     metadata={
@@ -741,7 +720,7 @@ class MVATools(object):
                     },
                 ]
                 axes[0]["index_in_array"] = 1
-                s = Signal1D(
+                s = signals.Signal1D(
                     factors.T,
                     axes=axes,
                     metadata={
@@ -760,7 +739,7 @@ class MVATools(object):
                 axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
                 axis_dict["index_in_array"] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal1D(
+                    s = signals.Signal1D(
                         factors[:, index],
                         axes=[
                             axis_dict,
@@ -794,7 +773,7 @@ class MVATools(object):
                 )
 
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    im = Signal2D(
+                    im = signals.Signal2D(
                         factor_data[..., index],
                         axes=axes_dicts,
                         metadata={
@@ -819,15 +798,14 @@ class MVATools(object):
         loading_format="hspy",
         save_figures_format="png",
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         save_figures=False,
         same_window=False,
         calibrate=True,
         no_nans=True,
         per_row=3,
     ):
-        from hyperspy._signals.signal1d import Signal1D
-        from hyperspy._signals.signal2d import Signal2D
+        import matplotlib.pyplot as plt
 
         if multiple_files is None:
             multiple_files = True
@@ -864,7 +842,7 @@ class MVATools(object):
                 )
                 if folder is not None:
                     filename = Path(folder, filename)
-                ensure_directory(filename)
+                path.ensure_directory(filename)
                 _args = {"dpi": 600, "format": save_figures_format}
                 sc_plots[idx].savefig(filename, **_args)
             plt.ion()
@@ -888,7 +866,7 @@ class MVATools(object):
                         "index_in_array": 0,
                     }
                 )
-                s = Signal2D(
+                s = signals.Signal2D(
                     loading_data,
                     axes=axes_dicts,
                     metadata={
@@ -912,7 +890,7 @@ class MVATools(object):
                     },
                     cal_axis,
                 ]
-                s = Signal2D(
+                s = signals.Signal2D(
                     loadings,
                     axes=axes,
                     metadata={
@@ -931,7 +909,7 @@ class MVATools(object):
                 axis_dict = self.axes_manager.navigation_axes[0].get_axis_dictionary()
                 axis_dict["index_in_array"] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal1D(
+                    s = signals.Signal1D(
                         loadings[index],
                         axes=[
                             axis_dict,
@@ -951,7 +929,7 @@ class MVATools(object):
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]["index_in_array"] = 1
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Signal2D(
+                    s = signals.Signal2D(
                         loading_data[index, ...],
                         axes=axes_dicts,
                         metadata={
@@ -972,7 +950,7 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         title=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         per_row=3,
         **kwargs,
     ):
@@ -1003,7 +981,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1059,7 +1037,7 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         title=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         per_row=3,
         **kwargs,
     ):
@@ -1134,7 +1112,7 @@ class MVATools(object):
         same_window=True,
         title=None,
         with_factors=False,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
@@ -1170,7 +1148,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the loadings images, or for peak
             characteristics. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
         per_row : int
@@ -1247,7 +1225,7 @@ class MVATools(object):
         same_window=True,
         title=None,
         with_factors=False,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
@@ -1280,7 +1258,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the loading image, or for peak
             characteristics,. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         no_nans : bool
             If ``True``, removes ``NaN``'s from the loading plots.
         per_row : int
@@ -1354,7 +1332,7 @@ class MVATools(object):
         loading_prefix="loading",
         loading_format="hspy",
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         same_window=False,
         multiple_files=True,
         no_nans=True,
@@ -1423,7 +1401,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for images, such as factors, loadings, or for peak
             characteristics. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         per_row : :class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1479,7 +1457,7 @@ class MVATools(object):
         membership_prefix="cluster_label",
         membership_format="hspy",
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         same_window=False,
         multiple_files=True,
         no_nans=True,
@@ -1612,7 +1590,7 @@ class MVATools(object):
         loading_prefix="bss_loading",
         loading_format="hspy",
         comp_label=None,
-        cmap=plt.cm.gray,
+        cmap="gray",
         same_window=False,
         no_nans=True,
         per_row=3,
@@ -1679,7 +1657,7 @@ class MVATools(object):
         cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for images, such as factors, loadings, or
             for peak characteristics. Default is the matplotlib gray colormap
-            (``plt.cm.gray``).
+            (``"gray"``).
         per_row : :class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -2109,7 +2087,7 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         with_centers=False,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
@@ -2204,7 +2182,7 @@ class MVATools(object):
         calibrate=True,
         same_window=True,
         with_centers=False,
-        cmap=plt.cm.gray,
+        cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
@@ -2396,11 +2374,7 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
-class BaseSignal(
-    FancySlicing,
-    MVA,
-    MVATools,
-):
+class BaseSignal(FancySlicing, MVA, MVATools):
     """
 
     Attributes
@@ -2472,9 +2446,9 @@ class BaseSignal(
         # Its purpose is to avoid creating new attributes, which breaks events
         # and to reduce overhead when changing 'signal_type'.
         if kwds.get("full_initialisation", True):
+            super().__init__()
             self._create_metadata()
             self.models = ModelManager(self)
-            self.learning_results = LearningResults()
             kwds["data"] = data
             self._plot = None
             self.inav = SpecialSlicersSignal(self, True)
@@ -2505,7 +2479,7 @@ class BaseSignal(
             self.axes_manager._set_signal_dimension(self._signal_dimension)
 
     def _create_metadata(self):
-        self._metadata = DictionaryTreeBrowser()
+        self._metadata = utils.DictionaryTreeBrowser()
         mp = self.metadata
         mp.add_node("_HyperSpy")
         mp.add_node("General")
@@ -2516,8 +2490,8 @@ class BaseSignal(
         folding.signal_unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
-        self._original_metadata = DictionaryTreeBrowser()
-        self.tmp_parameters = DictionaryTreeBrowser()
+        self._original_metadata = utils.DictionaryTreeBrowser()
+        self.tmp_parameters = utils.DictionaryTreeBrowser()
 
     def __repr__(self):
         if self.metadata._HyperSpy.Folding.unfolded:
@@ -2562,11 +2536,11 @@ class BaseSignal(
                     return ns
             else:
                 # Different navigation and/or signal shapes
-                if not are_signals_aligned(self, other):
+                if not signal_tools.are_signals_aligned(self, other):
                     raise ValueError(exception_message)
                 else:
                     # They are broadcastable but have different number of axes
-                    ns, no = broadcast_signals(self, other)
+                    ns, no = signal_tools.broadcast_signals(self, other)
                     sdata = ns.data
                     odata = no.data
                     if op_name in INPLACE_OPERATORS:
@@ -2644,7 +2618,7 @@ class BaseSignal(
             if not copy_learning_results:
                 old_learning_results = self.learning_results
                 del self.learning_results
-            self.models._models = DictionaryTreeBrowser()
+            self.models._models = utils.DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = data
             return ns
@@ -2668,7 +2642,7 @@ class BaseSignal(
     ):
         """
         Create a copy of the given Signal as a
-        :class:`~hyperspy._signals.lazy.LazySignal`.
+        :class:`~hyperspy.api.signals.LazySignal`.
 
         Parameters
         ----------
@@ -2691,9 +2665,10 @@ class BaseSignal(
 
         Returns
         -------
-        res : :class:`~hyperspy._signals.lazy.LazySignal`
+        res : :class:`~hyperspy.api.signals.LazySignal`
             The same signal, converted to be lazy
         """
+
         res = self._deepcopy_with_new_data(
             self.data,
             copy_variance=copy_variance,
@@ -2703,8 +2678,8 @@ class BaseSignal(
         res._lazy = True
         if chunks is None:
             # Set default values
-            chunks = False if isinstance(res.data, da.Array) else "auto"
-        elif isinstance(chunks, str) and isinstance(res.data, da.Array):
+            chunks = False if utils.is_dask_array(res.data) else "auto"
+        elif isinstance(chunks, str) and utils.is_dask_array(res.data):
             chunks = False
             _logger.warning(
                 "Ignoring `chunks` argument because data is already a dask array."
@@ -3024,7 +2999,7 @@ class BaseSignal(
         else:
             value = self.data.__getitem__(indices)
         if as_numpy:
-            value = to_numpy(value)
+            value = utils.to_numpy(value)
         value = np.atleast_1d(value)
         if fft_shift:
             value = np.fft.fftshift(value)
@@ -3044,6 +3019,8 @@ class BaseSignal(
         %s
         %s
         """
+        import matplotlib.pyplot as plt
+
         if self.axes_manager.ragged:
             raise RuntimeError("Plotting ragged signal is not supported.")
         if self._plot is not None:
@@ -3082,12 +3059,12 @@ class BaseSignal(
                 # 0d signal without navigation axis: don't make a figure
                 # and instead, we display the value
                 return
-            self._plot = mpl_he.MPL_HyperExplorer()
+            self._plot = drawing.mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = mpl_hse.MPL_HyperSignal1D_Explorer()
+            self._plot = drawing.mpl_hse.MPL_HyperSignal1D_Explorer()
         elif axes_manager.signal_dimension == 2:
-            self._plot = mpl_hie.MPL_HyperImage_Explorer()
+            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
         else:
             raise ValueError(
                 "Plotting is not supported for this view. "
@@ -3125,7 +3102,7 @@ class BaseSignal(
             # Sum over all but the first navigation axis.
             am = self.axes_manager
             navigator = sum_wrapper(self, am.signal_axes + am.navigation_axes[1:])
-            return np.nan_to_num(to_numpy(navigator.data)).squeeze()
+            return np.nan_to_num(utils.to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_image_explorer(*args, **kwargs):
             am = self.axes_manager
@@ -3138,7 +3115,7 @@ class BaseSignal(
             ind = new_nav.isig.__getitem__(
                 slices=slices
             )  # Get the value from the nav reverse because hyperspy
-            return np.nan_to_num(to_numpy(ind.data)).squeeze()
+            return np.nan_to_num(utils.to_numpy(ind.data)).squeeze()
 
         # function to disconnect when closing the navigator
         function_to_disconnect = None
@@ -3231,12 +3208,12 @@ class BaseSignal(
                     self._plot.navigator_data_function = "slider"
                 elif navigator == "data":
                     if np.issubdtype(self.data.dtype, np.complexfloating):
-                        self._plot.navigator_data_function = (
-                            lambda axes_manager=None: to_numpy(abs(self.data))
+                        self._plot.navigator_data_function = lambda axes_manager=None: (
+                            utils.to_numpy(abs(self.data))
                         )
                     else:
-                        self._plot.navigator_data_function = (
-                            lambda axes_manager=None: to_numpy(self.data)
+                        self._plot.navigator_data_function = lambda axes_manager=None: (
+                            utils.to_numpy(self.data)
                         )
                 elif navigator == "spectrum":
                     self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
@@ -3419,7 +3396,7 @@ class BaseSignal(
                 "The 'extension' parameter is deprecated in HyperSpy 2.4 and will be removed in HyperSpy 3.0. "
                 "Please use 'file_format' instead.",
                 FutureWarning,
-                stacklevel=2,
+                stacklevel=3,  # Account for _LazyDocstring wrapper
             )
 
         if filename is None:
@@ -3456,18 +3433,15 @@ class BaseSignal(
             else:
                 raise ValueError("File name not defined")
 
-        if not isinstance(filename, MutableMapping):
+        if not _is_zarr_store(filename) and not isinstance(filename, MutableMapping):
             filename = Path(filename)
 
-            # Check if filename is clearly a directory path.
-            # We only consider it a directory path if:
-            # 1. It's an existing directory, OR
-            # 2. The path explicitly ends with a directory separator ('/' or '\')
-            # This conservative approach ensures we don't accidentally treat
-            # filenames without extensions as directories.
-            is_directory_path = filename.is_dir() or str(filename).endswith(("/", "\\"))
-
-            if is_directory_path and self.tmp_parameters.has_item("filename"):
+            # zspy can also be directory, make sure this is treated as a base directory
+            if (
+                filename.is_dir()
+                and not filename.suffix == ".zspy"
+                and self.tmp_parameters.has_item("filename")
+            ):
                 # Filename is a directory path, construct full filename
 
                 # Determine extension from file_format, extension parameter, or tmp_parameters.extension
@@ -3509,11 +3483,20 @@ class BaseSignal(
 
         io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
-    # Format save method docstring with dynamic format list
-    save.__doc__ = save.__doc__ % (
-        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=8),
-        _get_format_list_for_docstring(write_mode=True, style="inline", indentation=8),
-        _get_format_list_for_docstring(write_mode=True, style="bullet", indentation=12),
+    # Lazily format save method docstring with dynamic format list
+    save = _LazyDocstring(
+        save,
+        lambda: (
+            _get_format_list_for_docstring(
+                write_mode=True, style="bullet", indentation=8
+            ),
+            _get_format_list_for_docstring(
+                write_mode=True, style="inline", indentation=8
+            ),
+            _get_format_list_for_docstring(
+                write_mode=True, style="bullet", indentation=12
+            ),
+        ),
     )
 
     def _replot(self):
@@ -3643,7 +3626,7 @@ class BaseSignal(
         """
         old_axis = self.axes_manager[axis]
         axis_idx = old_axis.index_in_array
-        interpolator = make_interp_spline(
+        interpolator = scipy.interpolate.make_interp_spline(
             old_axis.axis,
             self.data,
             axis=axis_idx,
@@ -3761,14 +3744,14 @@ class BaseSignal(
         to_index = self.axes_manager[to_axis].index_in_array
         if axis == to_index:
             return self.deepcopy()
-        new_axes_indices = rollelem(
+        new_axes_indices = utils.rollelem(
             [axis_.index_in_array for axis_ in self.axes_manager._axes],
             index=axis,
             to_index=to_index,
         )
 
         s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
-        s.axes_manager._axes = rollelem(
+        s.axes_manager._axes = utils.rollelem(
             s.axes_manager._axes, index=axis, to_index=to_index
         )
         s.axes_manager._update_attributes()
@@ -3903,7 +3886,7 @@ class BaseSignal(
             scale=scale,
         )
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = array_rebin(self.data, scale=factors, crop=crop, dtype=dtype)
+        data = array_tools.rebin(self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
             if out._lazy:
@@ -4334,7 +4317,7 @@ class BaseSignal(
         if not self.axes_manager._axes and not self.ragged:
             # Create a "Scalar" axis because the axis is the last one left and
             # HyperSpy does not # support 0 dimensions
-            add_scalar_axis(self)
+            utils.add_scalar_axis(self)
 
     def _ma_workaround(self, s, function, axes, ar_axes, out):
         # TODO: Remove if and when numpy.ma accepts tuple `axis`
@@ -4918,7 +4901,9 @@ class BaseSignal(
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        data = integrate.simpson(y=self.data, x=axis.axis, axis=axis.index_in_array)
+        data = scipy.integrate.simpson(
+            y=self.data, x=axis.axis, axis=axis.index_in_array
+        )
         if out is not None:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
@@ -4967,8 +4952,8 @@ class BaseSignal(
 
         Examples
         --------
-        >>> import skimage
-        >>> im = hs.signals.Signal2D(skimage.data.camera())
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.datasets.face())
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
 
@@ -5020,9 +5005,9 @@ class BaseSignal(
             axis.scale = 1.0 / axis.size / axis.scale
             axis.offset = 0.0
             try:
-                units = _ureg.parse_expression(str(axis.units)) ** (-1)
+                units = hyperspy.api._ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = "{:~}".format(units.units)
-            except UndefinedUnitError:
+            except Exception:
                 _logger.warning("Units are not set or cannot be recognized")
             if shift:
                 axis.offset = -axis.high_value / 2.0
@@ -5063,8 +5048,8 @@ class BaseSignal(
 
         Examples
         --------
-        >>> import skimage
-        >>> im = hs.signals.Signal2D(skimage.data.camera())
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.datasets.face())
         >>> imfft = im.fft()
         >>> imfft.ifft()
         <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>
@@ -5107,9 +5092,9 @@ class BaseSignal(
         for axis in im_ifft.axes_manager.signal_axes:
             axis.scale = 1.0 / axis.size / axis.scale
             try:
-                units = _ureg.parse_expression(str(axis.units)) ** (-1)
+                units = hyperspy.api._ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = "{:~}".format(units.units)
-            except UndefinedUnitError:
+            except Exception:
                 _logger.warning("Units are not set or cannot be recognized")
             axis.offset = 0.0
         return im_ifft
@@ -5733,6 +5718,9 @@ class BaseSignal(
         navigation_chunks="auto",
         **kwargs,
     ):
+        import dask
+        import dask.array as da
+
         if lazy_output is None:
             lazy_output = self._lazy
 
@@ -5791,7 +5779,7 @@ class BaseSignal(
         autodetermine = (
             output_signal_size is None or output_dtype is None
         )  # try to guess output dtype and sig size?
-        if autodetermine and is_cupy_array(self.data):  # pragma: no cover
+        if autodetermine and utils.is_cupy_array(self.data):  # pragma: no cover
             raise ValueError(
                 "Autodetermination of `output_signal_size` and "
                 "`output_dtype` is not supported for cupy array."
@@ -5810,25 +5798,27 @@ class BaseSignal(
             test_data = np.array(
                 old_sig.inav[(0,) * len(os_am.navigation_shape)].data.compute()
             )
-            temp_output_signal_size, temp_output_dtype = guess_output_signal_size(
-                test_data=test_data,
-                function=function,
-                ragged=ragged,
-                **testing_kwargs,
+            temp_output_signal_size, temp_output_dtype = (
+                dask_utils.guess_output_signal_size(
+                    test_data=test_data,
+                    function=function,
+                    ragged=ragged,
+                    **testing_kwargs,
+                )
             )
             if output_signal_size is None:
                 output_signal_size = temp_output_signal_size
             if output_dtype is None:
                 output_dtype = temp_output_dtype
         output_shape = self.axes_manager._navigation_shape_in_array + output_signal_size
-        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern(
-            (old_sig.data,) + args, output_shape
+        arg_pairs, adjust_chunks, new_axis, output_pattern = (
+            dask_utils._get_block_pattern((old_sig.data,) + args, output_shape)
         )
 
         axes_changed = len(new_axis) != 0 or len(adjust_chunks) != 0
 
         mapped = da.blockwise(
-            process_function_blockwise,
+            dask_utils.process_function_blockwise,
             output_pattern,
             *concat(arg_pairs),
             adjust_chunks=adjust_chunks,
@@ -5854,8 +5844,8 @@ class BaseSignal(
                 and (mapped.dtype == self.data.dtype)
             ):
                 # use `store_to` to minmize memory usage
-                _compute(
-                    array=mapped,
+                dask_utils._compute(
+                    arrays=mapped,
                     store_to=self.data,
                     show_progressbar=show_progressbar,
                     num_workers=num_workers,
@@ -5882,12 +5872,12 @@ class BaseSignal(
         if not ragged:
             sig.axes_manager._ragged = False
             if output_signal_size == () and am.navigation_dimension == 0:
-                add_scalar_axis(sig)
+                utils.add_scalar_axis(sig)
             sig.get_dimensions_from_data()
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = _compute(
+            sig.data = dask_utils._compute(
                 sig.data, show_progressbar=show_progressbar, num_workers=num_workers
             )
 
@@ -6009,7 +5999,7 @@ class BaseSignal(
         if rechunk is True:
             rechunk = "dask_auto"
         if not isinstance(dtype, np.dtype):
-            if dtype in rgb_tools.rgb_dtypes:
+            if dtype in rgb.RGB_DTYPES.keys():
                 if self.axes_manager.signal_dimension != 1:
                     raise AttributeError(
                         "Only 1D signals can be converted to RGB images."
@@ -6027,7 +6017,7 @@ class BaseSignal(
                 if replot:
                     # Close the figure to avoid error with events
                     self._plot.close()
-                self.data = rgb_tools.regular_array2rgbx(self.data)
+                self.data = rgb.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager._set_signal_dimension(2)
                 self._assign_subclass(chunks=rechunk)
@@ -6036,7 +6026,7 @@ class BaseSignal(
                 return
             else:
                 dtype = np.dtype(dtype)
-        if rgb_tools.is_rgbx(self.data) is True:
+        if rgb.is_rgbx(self.data) is True:
             ddtype = self.data.dtype.fields["B"][0]
 
             if ddtype != dtype:
@@ -6045,7 +6035,7 @@ class BaseSignal(
             if replot:
                 # Close the figure to avoid error with events
                 self._plot.close()
-            self.data = rgb_tools.rgbx2regular_array(self.data)
+            self.data = rgb.rgbx2regular_array(self.data)
             self.axes_manager._append_axis(
                 size=self.data.shape[-1],
                 scale=1,
@@ -6355,16 +6345,18 @@ class BaseSignal(
         if self.axes_manager.navigation_dimension == 0:
             s = BaseSignal(data)
         elif self.axes_manager.navigation_dimension == 1:
-            from hyperspy._signals.signal1d import Signal1D
-
-            s = Signal1D(data, axes=self.axes_manager._get_navigation_axes_dicts())
+            s = signals.Signal1D(
+                data, axes=self.axes_manager._get_navigation_axes_dicts()
+            )
         elif self.axes_manager.navigation_dimension == 2:
-            from hyperspy._signals.signal2d import Signal2D
-
-            s = Signal2D(data, axes=self.axes_manager._get_navigation_axes_dicts())
+            s = signals.Signal2D(
+                data, axes=self.axes_manager._get_navigation_axes_dicts()
+            )
         else:
-            s = BaseSignal(data, axes=self.axes_manager._get_navigation_axes_dicts()).T
-        if isinstance(data, da.Array):
+            s = signals.BaseSignal(
+                data, axes=self.axes_manager._get_navigation_axes_dicts()
+            ).T
+        if utils.is_dask_array(data):
             s = s.as_lazy()
         return s
 
@@ -6411,8 +6403,17 @@ class BaseSignal(
             s = BaseSignal(data)
             s.set_signal_type(self.metadata.Signal.signal_type)
         else:
-            s = self.__class__(data, axes=self.axes_manager._get_signal_axes_dicts())
-        if isinstance(data, da.Array):
+            # When called on a lazy signal with numpy data, we must return
+            # a non-lazy signal of the same kind (e.g. LazySignal1D -> Signal1D).
+            # We walk up the MRO to find the first non-lazy equivalent class.
+            if self._lazy and not utils.is_dask_array(data):
+                for signal_cls in self.__class__.__mro__[1:]:
+                    if not issubclass(signal_cls, signals.LazySignal):
+                        break
+            else:
+                signal_cls = self.__class__
+            s = signal_cls(data, axes=self.axes_manager._get_signal_axes_dicts())
+        if utils.is_dask_array(data):
             s = s.as_lazy()
         return s
 
@@ -6678,7 +6679,7 @@ class BaseSignal(
         _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics(
             rechunk=rechunk
         )
-        print(underline("Summary statistics"))
+        print(utils.underline("Summary statistics"))
         print("mean:\t" + formatter % _mean)
         print("std:\t" + formatter % _std)
         print()
@@ -6707,14 +6708,14 @@ class BaseSignal(
         """
         Whether or not this signal is an RGB + alpha channel `dtype`.
         """
-        return rgb_tools.is_rgba(self.data)
+        return rgb.is_rgba(self.data)
 
     @property
     def is_rgb(self):
         """
         Whether or not this signal is an RGB `dtype`.
         """
-        return rgb_tools.is_rgb(self.data)
+        return rgb.is_rgb(self.data)
 
     @property
     def is_rgbx(self):
@@ -6722,7 +6723,7 @@ class BaseSignal(
         Whether or not this signal is either an RGB or RGB + alpha channel
         `dtype`.
         """
-        return rgb_tools.is_rgbx(self.data)
+        return rgb.is_rgbx(self.data)
 
     def add_marker(
         self,
@@ -6798,7 +6799,7 @@ class BaseSignal(
             warnings.warn("`plot_marker=False` and `permanent=False` does nothing")
             return
 
-        if isiterable(marker):
+        if utils.isiterable(marker):
             marker_list = marker
         else:
             marker_list = [marker]
@@ -7034,13 +7035,13 @@ class BaseSignal(
             else:
                 navigation_axes = ax_list[:-signal_axes][::-1]
                 signal_axes = ax_list[-signal_axes:][::-1]
-        elif iterable_not_string(signal_axes):
+        elif utils.iterable_not_string(signal_axes):
             signal_axes = tuple(am[ax] for ax in signal_axes)
             if navigation_axes is None:
                 navigation_axes = tuple(ax for ax in ax_list if ax not in signal_axes)[
                     ::-1
                 ]
-            elif iterable_not_string(navigation_axes):
+            elif utils.iterable_not_string(navigation_axes):
                 # want to keep the order
                 navigation_axes = tuple(am[ax] for ax in navigation_axes)
                 intersection = set(signal_axes).intersection(navigation_axes)
@@ -7069,7 +7070,7 @@ class BaseSignal(
                 else:
                     signal_axes = ax_list[navigation_axes:][::-1]
                     navigation_axes = ax_list[:navigation_axes][::-1]
-            elif iterable_not_string(navigation_axes):
+            elif utils.iterable_not_string(navigation_axes):
                 navigation_axes = tuple(am[ax] for ax in navigation_axes)
                 signal_axes = tuple(ax for ax in ax_list if ax not in navigation_axes)[
                     ::-1
@@ -7179,7 +7180,6 @@ class BaseSignal(
         >>> wave = hs.data.wave_image()
         >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
-
         if window == "hanning" or window == "hann":
             if hann_order:
 
@@ -7196,7 +7196,7 @@ class BaseSignal(
         elif window == "tukey":
 
             def window_function(m):
-                return sp_signal.windows.tukey(m, tukey_alpha)
+                return scipy.signal.windows.tukey(m, tukey_alpha)
         else:
             raise ValueError("Wrong type parameter value.")
 
@@ -7205,7 +7205,9 @@ class BaseSignal(
         axes = np.array(self.axes_manager.signal_indices_in_array)
 
         for axis, axis_index in zip(self.axes_manager.signal_axes, axes):
-            if isinstance(self.data, da.Array):
+            if utils.is_dask_array(self.data):
+                import dask.array as da
+
                 chunks = self.data.chunks[axis_index]
                 window_da = da.from_array(window_function(axis.size), chunks=(chunks,))
                 windows_1d.append(window_da)
@@ -7335,6 +7337,8 @@ class BaseSignal(
         if not CUPY_INSTALLED:
             raise BaseException("cupy is required.")
         else:  # pragma: no cover
+            import cupy as cp
+
             self.data = cp.asarray(self.data)
 
     def to_host(self):
@@ -7353,7 +7357,7 @@ class BaseSignal(
         """
         if self._lazy:  # pragma: no cover
             raise LazyCupyConversion
-        self.data = to_numpy(self.data)
+        self.data = utils.to_numpy(self.data)
 
     def remove_spikes(self, threshold_factor=5, axes=None, inplace=True, **kwargs):
         r"""
@@ -7467,7 +7471,7 @@ class BaseSignal(
             except ImportError:
                 raise RuntimeError("`dask_image` is required to remove spikes lazily.")
         else:
-            if is_cupy_array(self.data):  # pragma: no cover
+            if utils.is_cupy_array(self.data):  # pragma: no cover
                 from cupyx.scipy.ndimage import median_filter
             else:
                 from scipy.ndimage import median_filter

@@ -1,0 +1,1 @@
+Lazify :func:`~.api.load` and :meth:`~.api.signals.BaseSignal.save` funtions to speed up import.

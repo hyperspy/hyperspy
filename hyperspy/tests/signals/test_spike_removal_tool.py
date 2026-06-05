@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,9 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
+
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.signals import Signal1D
 
@@ -32,14 +35,19 @@ def test_spikes_removal_tool():
     s.data[1, 2, 14] += 1
 
     sr = SpikesRemovalInteractive(s, random_state=1)
+    ax = s._plot.signal_plot.ax
     sr._show_derivative_histogram_fired()
     sr.threshold = 1.5
     sr.find()
     assert s.axes_manager.indices == (0, 1)
+    # check that the y limits of the plot have been updated to show the spike
+    assert ax.get_ylim()[1] > 2.5
     sr.threshold = 0.5
     assert s.axes_manager.indices == (0, 0)
     sr.find()
     assert s.axes_manager.indices == (2, 0)
+    # check that the y limits of the plot have been updated to show the spike
+    assert ax.get_ylim()[1] < 2.5
     sr.find()
     assert s.axes_manager.indices == (0, 1)
     sr.find(back=True)
@@ -116,3 +124,22 @@ def test_spikes_removal_tool_non_interactive_masking():
     np.testing.assert_almost_equal(s.data[1, 0, 1], 3, decimal=5)
     np.testing.assert_almost_equal(s.data[0, 2, 29], 2, decimal=5)
     np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
+
+
+def test_spikes_diagnosis_constant_derivative():
+    hyperspy_gui_traitsui_spec = importlib.util.find_spec("hyperspy_gui_traitsui")
+
+    s = Signal1D(np.arange(20).reshape(2, 10))
+    with pytest.warns():
+        s._spikes_diagnosis(use_gui=False)
+
+    if hyperspy_gui_traitsui_spec is not None:
+        # Check that with ipywidgets GUI enabled, a warning is raised
+        # with traitsui, a message box is shown instead
+        hs.preferences.GUIs.enable_traitsui_gui = False
+        hs.preferences.GUIs.enable_ipywidgets_gui = True
+        with pytest.warns():
+            s._spikes_diagnosis(use_gui=True)
+    else:
+        hs.preferences.GUIs.enable_traitsui_gui = True
+        s._spikes_diagnosis(use_gui=True)

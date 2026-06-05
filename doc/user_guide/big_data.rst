@@ -8,7 +8,7 @@ Working with big data
 HyperSpy makes it possible to analyse data larger than the available memory by
 providing "lazy" versions of most of its signals and functions. In most cases
 the syntax remains the same. This chapter describes how to work with data
-larger than memory using the :class:`~._signals.lazy.LazySignal` class and
+larger than memory using the :class:`~.api.signals.LazySignal` class and
 its derivatives.
 
 
@@ -67,12 +67,12 @@ almost 280GB of memory. However, with the lazy processing both of these steps
 are near-instantaneous and require very little computational resources.
 
 .. versionadded:: 1.4
-    :meth:`~._signals.lazy.LazySignal.close_file`
+    :meth:`~.api.signals.LazySignal.close_file`
 
 Currently when loading an hdf5 file lazily the file remains open at
 least while the signal exists. In order to close it explicitly, use the
-:meth:`~._signals.lazy.LazySignal.close_file` method. Alternatively,
-you could close it on calling :meth:`~._signals.lazy.LazySignal.compute`
+:meth:`~.api.signals.LazySignal.close_file` method. Alternatively,
+you could close it on calling :meth:`~.api.signals.LazySignal.compute`
 by passing the keyword argument ``close_file=True`` e.g.:
 
 .. code-block:: python
@@ -142,7 +142,7 @@ To perform decomposition operation lazily, HyperSpy provides access to several "
 algorithms  as well as `dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
 Online algorithms perform the decomposition by operating serially on chunks of
 data, enabling the lazy decomposition of large datasets. In line with the
-standard HyperSpy signals, lazy :meth:`~._signals.lazy.LazySignal.decomposition`
+standard HyperSpy signals, lazy :meth:`~.api.signals.LazySignal.decomposition`
 offers the following online algorithms:
 
 .. _lazy_decomposition-table:
@@ -156,9 +156,9 @@ offers the following online algorithms:
    +--------------------------+---------------------------------------------------+
    | "PCA"                    | :class:`sklearn.decomposition.IncrementalPCA`     |
    +--------------------------+---------------------------------------------------+
-   | "ORPCA"                  | :class:`~.learn.rpca.ORPCA`                       |
+   | "ORPCA"                  | :func:`~.learn.orpca`                             |
    +--------------------------+---------------------------------------------------+
-   | "ORNMF"                  | :class:`~.learn.ornmf.ORNMF`                      |
+   | "ORNMF"                  | :func:`~.learn.ornmf`                             |
    +--------------------------+---------------------------------------------------+
 
 .. seealso::
@@ -205,10 +205,10 @@ harddrive when changing navigation indices:
     >>> s.plot() # doctest: +SKIP
 
 This approach depends heavily on the chunking of the data and may not be
-always suitable. The :meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
+always suitable. The :meth:`~hyperspy.api.signals.LazySignal.compute_navigator`
 can be used to calculate the navigator efficient and store the navigator, so
 that it can be used when plotting and saved for the later loading of the dataset.
-The :meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator` has optional
+The :meth:`~hyperspy.api.signals.LazySignal.compute_navigator` has optional
 argument to specify the index where the sum needs to be calculated and how to
 rechunk the dataset when calculating the navigator. This allows to
 efficiently calculate the navigator without changing the actual chunking of the
@@ -247,7 +247,7 @@ interger.
     └── sum_from = [slice(0, 200, None), slice(0, 200, None)]
 
 An alternative is to calculate the navigator separately and store it in the
-signal using the :attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
+signal using the :attr:`~hyperspy.api.signals.LazySignal.navigator` setter.
 
 
 .. code-block:: python
@@ -390,7 +390,7 @@ The following example shows how to chunk one of the two navigation dimensions in
     >>> s2.data.chunksize # doctest: +SKIP
     (10, 100, 300)
 
-To get the chunk size of given axes, the :meth:`~._signals.lazy.LazySignal.get_chunk_size`
+To get the chunk size of given axes, the :meth:`~.api.signals.LazySignal.get_chunk_size`
 method can be used:
 
 .. code-block:: python
@@ -440,7 +440,7 @@ Computing lazy signals
 Upon saving lazy signals, the result of computations is stored on disk.
 
 In order to store the lazy signal in memory (i.e. make it a normal HyperSpy
-signal) it has a :meth:`~._signals.lazy.LazySignal.compute` method:
+signal) it has a :meth:`~.api.signals.LazySignal.compute` method:
 
 .. code-block:: python
 
@@ -681,7 +681,7 @@ significant problem when processing very large datasets on consumer-oriented
 hardware.
 
 HyperSpy offers a solution for this problem by including
-:class:`~._signals.lazy.LazySignal` and its derivatives. The main idea of
+:class:`~.api.signals.LazySignal` and its derivatives. The main idea of
 these classes is to perform any operation (as the name suggests)
 `lazily <https://en.wikipedia.org/wiki/Lazy_evaluation>`_ (delaying the
 execution until the result is requested (e.g. saved, plotted)) and in a

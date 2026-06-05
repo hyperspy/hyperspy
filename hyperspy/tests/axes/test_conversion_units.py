@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,11 +17,14 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
+import pint
 import pytest
 import traits.api as t
+from packaging.version import Version
 
 from hyperspy.api import _ureg
 from hyperspy.axes import AxesManager, DataAxis, UniformDataAxis, UnitConversion
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -217,14 +220,26 @@ class TestUniformDataAxis:
         assert self.axis.offset == 5e-3
         assert self.axis.units == "mm"
 
-    def test_offset_as_quantity_setter_string_no_units(self):
+    @pytest.mark.skipif(
+        Version(pint.__version__) < Version("0.25.3"),
+        reason="requires pint>=0.25.3",
+    )
+    def test_offset_as_quantity_setter_string_dimensionless(self):
+        # Check that setting dimensionless quantity works
+        # Change in `pint.UnitRegistry.parse_expression` in 0.25.3,
+        # which now correctly returns a dimensionless quantity
+        # https://github.com/hgrecco/pint/pull/2260
         self.axis.offset_as_quantity = "5e-3"
         assert self.axis.offset == 5e-3
         assert self.axis.scale == 12e-12
-        assert self.axis.units == "m"
+        assert self.axis.units == ""
 
     def test_scale_offset_as_quantity_setter_float(self):
-        self.axis.scale_as_quantity = 2.5e-9
+        with pytest.warns(
+            VisibleDeprecationWarning,
+            match="is deprecated and will be removed in HyperSpy 3.0.",
+        ):
+            self.axis.scale_as_quantity = 2.5e-9
         assert self.axis.scale == 2.5e-9
         assert self.axis.units == "m"
 

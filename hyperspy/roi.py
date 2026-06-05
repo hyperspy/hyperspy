@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -53,12 +53,12 @@ from functools import partial
 import numpy as np
 import traits.api as t
 
-import hyperspy.api as hs
+from hyperspy import signals
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.events import Event, Events
 from hyperspy.interactive import interactive
-from hyperspy.misc.utils import is_cupy_array
+from hyperspy.misc import utils
 from hyperspy.ui_registry import add_gui_method
 
 not_set_error_msg = (
@@ -137,6 +137,23 @@ class BaseROI(t.HasTraits):
 
     @property
     def parameters(self):
+        """Dictionary containing the parameters that define the current ROI.
+        The content depends on the specific ROI subclass, e.g. for a
+        ``RectangularROI`` it may include ``left``, ``right``, ``top``, and
+        ``bottom``.
+
+        Notes
+        -----
+        This property is intended for serialization and restoration of ROIs.
+        Subclasses must implement this property.
+
+        Examples
+        --------
+        >>> from hyperspy.roi import RectangularROI
+        >>> roi = RectangularROI(left=10, right=50, top=20, bottom=60)
+        >>> params = roi.parameters
+        >>> roi2 = RectangularROI(**params)
+        """
         raise NotImplementedError()
 
     def is_valid(self):
@@ -582,11 +599,12 @@ class BaseInteractiveROI(BaseROI):
         widget.close(render_figure=render_figure)
         for signal, w in self.signal_map.items():
             if w[0] == widget:
+                # Disconnect before break: only the matching signal's handler
+                # needs cleanup, and break would skip it if placed after.
+                if self.update in signal.axes_manager.events.any_axis_changed.connected:
+                    signal.axes_manager.events.any_axis_changed.disconnect(self.update)
                 self.signal_map.pop(signal)
                 break
-            # disconnect events which has been added when
-            if self.update in signal.axes_manager.events.any_axis_changed.connected:
-                signal.axes_manager.events.any_axis_changed.disconnect(self.update)
 
     def remove_widget(self, signal=None, render_figure=True):
         """
@@ -608,7 +626,7 @@ class BaseInteractiveROI(BaseROI):
         """
         if signal is None:
             signal = list(self.signal_map.keys())
-        elif isinstance(signal, hs.signals.BaseSignal):
+        elif isinstance(signal, signals.BaseSignal):
             signal = [signal]
 
         for s in signal:
@@ -688,6 +706,24 @@ class Point1DROI(BasePointROI):
 
     @property
     def parameters(self):
+        """dict : ROI parameters
+        Dictionary containing the parameters that define the current ROI.
+
+        For a ``Point1DROI``, the dictionary contains:
+
+        - ``position`` : float - The coordinate of the point along the axis.
+
+        Notes
+        -----
+        This property is intended for serialization and restoration of ROIs.
+
+        Examples
+        --------
+        >>> from hyperspy.roi import Point1DROI
+        >>> roi = Point1DROI(value=15)
+        >>> params = roi.parameters
+        >>> roi2 = Point1DROI(**params)
+        """
         return {"value": self.value}
 
     def _value_changed(self, old, new):
@@ -750,6 +786,25 @@ class Point2DROI(BasePointROI):
 
     @property
     def parameters(self):
+        """dict : ROI parameters
+        Dictionary containing the parameters that define the current ROI.
+
+        For a ``Point2DROI``, the dictionary contains:
+
+        - ``x`` : float - The x-coordinate of the point.
+        - ``y`` : float - The y-coordinate of the point.
+
+        Notes
+        -----
+        This property is intended for serialization and restoration of ROIs.
+
+        Examples
+        --------
+        >>> from hyperspy.roi import Point2DROI
+        >>> roi = Point2DROI(x=20, y=30)
+        >>> params = roi.parameters
+        >>> roi2 = Point2DROI(**params)
+        """
         return {"x": self.x, "y": self.y}
 
     def _x_changed(self, old, new):
@@ -813,6 +868,25 @@ class SpanROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
+        """dict : ROI parameters
+        Dictionary containing the parameters that define the current ROI.
+
+        For a ``SpanROI``, the dictionary contains:
+
+        - ``left`` : float - The left boundary of the span.
+        - ``right`` : float - The right boundary of the span.
+
+        Notes
+        -----
+        This property is intended for serialization and restoration of ROIs.
+
+        Examples
+        --------
+        >>> from hyperspy.roi import SpanROI
+        >>> roi = SpanROI(left=10, right=50)
+        >>> params = roi.parameters
+        >>> roi2 = SpanROI(**params)
+        """
         return {"left": self.left, "right": self.right}
 
     def is_valid(self):
@@ -902,6 +976,27 @@ class RectangularROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
+        """dict : ROI parameters
+        Dictionary containing the parameters that define the current ROI.
+
+        For a ``RectangularROI``, the dictionary contains:
+
+        - ``left`` : float - The left boundary of the rectangle.
+        - ``right`` : float - The right boundary of the rectangle.
+        - ``top`` : float - The top boundary of the rectangle.
+        - ``bottom`` : float - The bottom boundary of the rectangle.
+
+        Notes
+        -----
+        This property is intended for serialization and restoration of ROIs.
+
+        Examples
+        --------
+        >>> from hyperspy.roi import RectangularROI
+        >>> roi = RectangularROI(left=10, right=50, top=20, bottom=60)
+        >>> params = roi.parameters
+        >>> roi2 = RectangularROI(**params)
+        """
         return {
             "left": self.left,
             "top": self.top,
@@ -1060,6 +1155,27 @@ class CircleROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
+        """dict : ROI parameters
+        Dictionary containing the parameters that define the current CircleROI.
+
+        For a ``CircleROI``, the dictionary contains:
+
+        - ``cx`` : float - The x-coordinate of the circle center.
+        - ``cy`` : float - The y-coordinate of the circle center.
+        - ``r`` : float - The radius of the circle.
+        - ``r_inner`` : float - The inner radius; if > 0, an annular region is selected.
+
+        Notes
+        -----
+        This property is intended for serialization and restoration of ROIs.
+
+        Examples
+        --------
+        >>> from hyperspy.roi import CircleROI
+        >>> roi = CircleROI(cx=30, cy=40, r=10, r_inner=2)
+        >>> params = roi.parameters
+        >>> roi2 = CircleROI(**params)
+        """
         return {"cx": self.cx, "cy": self.cy, "r": self.r, "r_inner": self.r_inner}
 
     def is_valid(self):
@@ -1123,7 +1239,7 @@ class CircleROI(BaseInteractiveROI):
         vy = axes[1].axis[ir[1]] - cy
 
         # convert to cupy array when necessary
-        if is_cupy_array(signal.data):  # pragma: no cover
+        if utils.is_cupy_array(signal.data):  # pragma: no cover
             import cupy as cp
 
             vx, vy = cp.array(vx), cp.array(vy)
@@ -1208,6 +1324,28 @@ class Line2DROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
+        """dict : ROI parameters
+        Dictionary containing the parameters that define the current Line2DROI.
+
+        For a ``Line2DROI``, the dictionary contains:
+
+        - ``x1`` : float - The x-coordinate of the first endpoint of the line.
+        - ``y1`` : float - The y-coordinate of the first endpoint of the line.
+        - ``x2`` : float - The x-coordinate of the second endpoint of the line.
+        - ``y2`` : float - The y-coordinate of the second endpoint of the line.
+        - ``linewidth`` : float - The width of the line.
+
+        Notes
+        -----
+        This property is intended for serialization and restoration of ROIs.
+
+        Examples
+        --------
+        >>> from hyperspy.roi import Line2DROI
+        >>> roi = Line2DROI(x1=0, y1=0, x2=10, y2=10, linewidth=2)
+        >>> params = roi.parameters
+        >>> roi2 = Line2DROI(**params)
+        """
         return {
             "x1": self.x1,
             "y1": self.y1,
@@ -1259,16 +1397,18 @@ class Line2DROI(BaseInteractiveROI):
             The end point of the scan line.
         linewidth : int, optional
             Width of the scan, perpendicular to the line
+
         Returns
         -------
         coords : array, shape (2, N, C), float
             The coordinates of the profile along the scan line. The length of
             the profile is the ceil of the computed length of the scan line.
+
         Notes
         -----
-        This is a utility method meant to be used internally by skimage
-        functions. The destination point is included in the profile, in
-        contrast to standard numpy indexing.
+        This is a utility method meant to be used internally.
+        The destination point is included in the profile, in contrast to
+        standard numpy indexing.
 
         """
         src_row, src_col = src = np.asarray(src, dtype=float)
@@ -1489,9 +1629,8 @@ class Line2DROI(BaseInteractiveROI):
             )
             axis.axes_manager = axm
             axm._axes.insert(i0, axis)
-            from hyperspy.signals import BaseSignal
 
-            roi = BaseSignal(
+            roi = signals.BaseSignal(
                 profile,
                 axes=axm._get_axes_dicts(),
                 metadata=signal.metadata.deepcopy().as_dictionary(),
@@ -1536,6 +1675,24 @@ class PolygonROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
+        """dict : ROI parameters
+        Dictionary containing the parameters that define the current ROI.
+
+        For a ``PolygonROI``, the dictionary contains:
+
+        - ``vertices`` : list of (float, float) - A list of ``(x, y)`` coordinate pairs defining the polygon vertices.
+
+        Notes
+        -----
+        This property is intended for serialization and restoration of ROIs.
+
+        Examples
+        --------
+        >>> from hyperspy.roi import PolygonROI
+        >>> roi = PolygonROI(vertices=[(0, 0), (10, 0), (10, 10), (0, 10)])
+        >>> params = roi.parameters
+        >>> roi2 = PolygonROI(**params)
+        """
         return {"vertices": self.vertices}
 
     def __getitem__(self, *args, **kwargs):

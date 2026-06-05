@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -115,6 +115,10 @@ class Signal1DFigure(BlittedFigure):
                 lines.close()
             self.right_ax.remove()
             self.right_ax = None
+            # Invalidate the blit background then force a full redraw
+            # so the canvas repaints without the removed axis.
+            self._background = None
+            self.render_figure()
         if adjust_layout:
             plt.tight_layout()
 

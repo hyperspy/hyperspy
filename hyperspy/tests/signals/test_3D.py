@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -285,6 +285,16 @@ class Test3D:
         data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
         assert ns.data is data
+
+    def test_get_signal_signal_preserves_signal_type(self):
+        s = self.signal
+        s = s.transpose(signal_axes=2)
+        ns = s._get_signal_signal()
+        if s._lazy:
+            assert type(ns) is not type(s)
+            assert not ns._lazy
+        else:
+            assert type(ns) is type(s)
 
     def test_get_navigation_signal_dtype(self):
         s = self.signal

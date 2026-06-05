@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import functools
 import glob
 import importlib
 import logging
@@ -29,18 +30,16 @@ from pathlib import Path
 import numpy as np
 import rsciio
 from natsort import natsorted
+from packaging.version import Version
 from rsciio import IO_PLUGINS
-from rsciio.utils.tools import ensure_directory
-from rsciio.utils.tools import overwrite as overwrite_method
+from rsciio.utils import path
 
-from hyperspy.api import __version__ as hs_version
+import hyperspy
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
-from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
-from hyperspy.misc.utils import get_object_package_info, strlist2enumeration
-from hyperspy.misc.utils import stack as stack_method
+from hyperspy.misc import _markers, utils
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
@@ -48,6 +47,81 @@ _logger = logging.getLogger(__name__)
 
 # Utility string:
 f_error_fmt = "\tFile %d:\n\t\t%d signals\n\t\tPath: %s"
+
+
+def _is_zarr_store(obj):
+    ZARR_STORE_BASE_CLASS = MutableMapping
+    try:
+        import zarr
+
+        if Version(zarr.__version__) >= Version("3.0.0"):  # pragma: no cover
+            ZARR_STORE_BASE_CLASS = zarr.abc.store.Store
+    except ImportError:
+        # zarr is not installed, so we don't need to check for it
+        # keep MutableMapping as the default
+        pass
+
+    return isinstance(obj, ZARR_STORE_BASE_CLASS)
+
+
+class _LazyDocstring:
+    """Wrapper to lazily format a function/method's docstring on first access.
+
+    Works as both a callable wrapper (for functions) and a descriptor (for methods).
+
+    Parameters
+    ----------
+    func : callable
+        The function or method to wrap.
+    format_args_func : callable
+        A callable that returns the format arguments tuple.
+        This enables fully lazy evaluation (deferred until docstring access).
+    """
+
+    def __init__(self, func, format_args_func):
+        self._func = func
+        self._format_args_func = format_args_func
+        self._formatted_doc = None
+        # Exclude __doc__ from update_wrapper to preserve our lazy property
+        functools.update_wrapper(
+            self,
+            func,
+            assigned=(
+                "__module__",
+                "__name__",
+                "__qualname__",
+                "__annotations__",
+                "__wrapped__",
+            ),
+        )
+
+    def __call__(self, *args, **kwargs):
+        return self._func(*args, **kwargs)
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        # Return a bound method that preserves our lazy docstring
+        bound_method = self._func.__get__(obj, objtype)
+
+        # Create a wrapper that has our lazy __doc__
+        @functools.wraps(bound_method)
+        def wrapper(*args, **kwargs):
+            return bound_method(*args, **kwargs)
+
+        # Replace the wrapper's __doc__ with our lazy-formatted docstring
+        wrapper.__doc__ = self.__doc__
+        return wrapper
+
+    @property
+    def __doc__(self):
+        if self._formatted_doc is None:
+            self._formatted_doc = self._func.__doc__ % self._format_args_func()
+        return self._formatted_doc
+
+    @__doc__.setter
+    def __doc__(self, value):
+        self._formatted_doc = value
 
 
 def _get_format_list_for_docstring(write_mode=False, style="bullet", indentation=8):
@@ -214,12 +288,12 @@ def _infer_file_writer(string):
         if not plugins:
             raise ValueError(
                 f"The .{string} extension does not correspond to any supported format. "
-                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+                f"Supported file extensions are: {utils.strlist2enumeration(extensions)}."
             )
         else:
             raise ValueError(
                 "Writing to this format is not supported. "
-                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+                f"Supported file extensions are: {utils.strlist2enumeration(extensions)}."
             )
 
     elif len(writers) > 1:
@@ -270,9 +344,12 @@ def _escape_square_brackets(text):
 
 def _parse_path(arg):
     """Convenience function to get the path from zarr store or string."""
-    # In case of zarr store, get the path
-    if isinstance(arg, MutableMapping):
+    # For zarr.storage.ZipStore, get the path
+    if hasattr(arg, "path"):
         fname = arg.path
+    # For zarr.storage.LocalStore, get the root
+    elif hasattr(arg, "root"):  # pragma: no cover
+        fname = arg.root
     else:
         fname = arg
 
@@ -523,6 +600,7 @@ def load(
             "The 'reader' parameter is deprecated in HyperSpy 2.4 and"
             "will be removed in HyperSpy 3.0. Use 'file_format' instead.",
             VisibleDeprecationWarning,
+            stacklevel=3,  # Account for _LazyDocstring wrapper
         )
         # Use reader value as file_format for backward compatibility
         effective_file_format = reader
@@ -573,7 +651,9 @@ def load(
         filenames = list(filenames)
 
     # pathlib.Path.glob returns a map object in python 3.13
-    elif not isinstance(filenames, (list, tuple, MutableMapping, map)):
+    elif not isinstance(filenames, (list, tuple, map)) and not _is_zarr_store(
+        filenames
+    ):
         raise ValueError(
             "The filenames parameter must be a list, tuple, "
             f"string or None, not {type(filenames)}"
@@ -583,7 +663,7 @@ def load(
         # in case, the file doesn't exist
         raise ValueError(f'No filename matches the pattern "{pattern}"')
 
-    if isinstance(filenames, MutableMapping):
+    if _is_zarr_store(filenames):
         filenames = [filenames]
     else:
         # pathlib.Path not fully supported in io_plugins,
@@ -636,7 +716,7 @@ def load(
         objects = []
         for i in range(n):
             signal = signals[i]  # Sublist, with len = len(filenames)
-            signal = stack_method(
+            signal = utils.stack(
                 signal,
                 axis=stack_axis,
                 new_axis_name=new_axis_name,
@@ -660,10 +740,13 @@ def load(
     return objects
 
 
-load.__doc__ %= (
-    STACK_METADATA_ARG,
-    SHOW_PROGRESSBAR_ARG,
-    _get_format_list_for_docstring(write_mode=False, style="bullet"),
+load = _LazyDocstring(
+    load,
+    lambda: (
+        STACK_METADATA_ARG,
+        SHOW_PROGRESSBAR_ARG,
+        _get_format_list_for_docstring(write_mode=False, style="bullet"),
+    ),
 )
 
 
@@ -789,6 +872,7 @@ def load_with_reader(
                     "axis.is_binned. Setting this attribute for all "
                     "signal axes instead.",
                     VisibleDeprecationWarning,
+                    stacklevel=4,  # Account for _LazyDocstring wrapper + load_single_file
                 )
             if convert_units:
                 signal.axes_manager.convert_units()
@@ -994,7 +1078,9 @@ def dict2signal(signal_dict, lazy=False):
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
         for key in mp["Markers"]:
-            signal.metadata.Markers[key] = markers_dict_to_markers(mp["Markers"][key])
+            signal.metadata.Markers[key] = _markers.markers_dict_to_markers(
+                mp["Markers"][key]
+            )
             signal.metadata.Markers[key]._signal = signal
 
     return signal
@@ -1056,7 +1142,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         )
 
     writer = None
-    if isinstance(filename, MutableMapping):
+    if _is_zarr_store(filename):
         extension = ".zspy"
         writer = _infer_file_reader("ZSPY")
     else:
@@ -1091,7 +1177,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
 
         raise TypeError(
             "This file format does not support this data. "
-            f"Please try one of {strlist2enumeration(compatible_writers)}"
+            f"Please try one of {utils.strlist2enumeration(compatible_writers)}"
         )
 
     if not writer["non_uniform_axis"] and not signal.axes_manager.all_uniform:
@@ -1103,18 +1189,18 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         raise TypeError(
             "Writing to this format is not supported for "
             "non-uniform axes. Use one of the following "
-            f"formats: {strlist2enumeration(compatible_writers)}"
+            f"formats: {utils.strlist2enumeration(compatible_writers)}"
         )
 
     # Create the directory if it does not exist
-    if not isinstance(filename, MutableMapping):
-        ensure_directory(filename.parent)
+    if not _is_zarr_store(filename):
+        path.ensure_directory(filename.parent)
         is_file = filename.is_file() or (
             filename.is_dir() and os.path.splitext(filename)[1] == ".zspy"
         )
 
         if overwrite is None:
-            write = overwrite_method(filename)  # Ask what to do
+            write = path.overwrite(filename)  # Ask what to do
         elif overwrite is True or (overwrite is False and not is_file):
             write = True  # Write the file
         elif overwrite is False and is_file:
@@ -1128,8 +1214,8 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         # properly supported in io_plugins
         signal = _add_file_load_save_metadata("save", signal, writer)
         signal_dic = signal._to_dictionary(add_models=True)
-        signal_dic["package_info"] = get_object_package_info(signal)
-        if not isinstance(filename, MutableMapping):
+        signal_dic["package_info"] = utils.get_object_package_info(signal)
+        if not _is_zarr_store(filename):
             importlib.import_module(writer["api"]).file_writer(
                 str(filename), signal_dic, **kwds
             )
@@ -1148,8 +1234,11 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
                 signal.tmp_parameters.set_item("extension", extension)
 
 
-save.__doc__ %= _get_format_list_for_docstring(write_mode=True).replace(
-    "loading", "saving"
+save = _LazyDocstring(
+    save,
+    lambda: (
+        _get_format_list_for_docstring(write_mode=True).replace("loading", "saving"),
+    ),
 )
 
 
@@ -1159,7 +1248,7 @@ def _add_file_load_save_metadata(operation, signal, io_plugin):
         "io_plugin": io_plugin["api"]
         if isinstance(io_plugin, dict)
         else io_plugin.__loader__.name,
-        "hyperspy_version": hs_version,
+        "hyperspy_version": hyperspy.__version__,
         "timestamp": datetime.now().astimezone().isoformat(),
     }
     # get the largest integer key present under General.FileIO, returning 0

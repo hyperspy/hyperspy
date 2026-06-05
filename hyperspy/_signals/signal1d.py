@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,20 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import logging
 import math
 import warnings
 
-import dask
-import dask.array as da
 import numpy as np
 import numpy.ma as ma
-from scipy import interpolate
-from scipy.ndimage import gaussian_filter1d
-from scipy.signal import medfilt, savgol_filter
+import scipy
 
+from hyperspy import signal_tools, signals
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.plot import (
@@ -39,7 +36,6 @@ from hyperspy.docstrings.plot import (
 )
 from hyperspy.docstrings.signal import (
     IN_PLACE,
-    LAZYSIGNAL_DOC,
     NAVIGATION_MASK_ARG,
     NUM_WORKERS_ARG,
     SHOW_PROGRESSBAR_ARG,
@@ -49,22 +45,9 @@ from hyperspy.docstrings.signal1d import (
     CROP_PARAMETER_DOC,
     SPIKES_REMOVAL_TOOL_DOCSTRING,
 )
-from hyperspy.misc.lowess_smooth import lowess
+from hyperspy.misc import lowess_smooth, utils
+from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.models.model1d import Model1D
-from hyperspy.signal import BaseSignal
-from hyperspy.signal_tools import (
-    BackgroundRemoval,
-    ButterworthFilter,
-    Signal1DCalibration,
-    SimpleMessage,
-    SmoothingLowess,
-    SmoothingSavitzkyGolay,
-    SmoothingTV,
-    SpikesRemoval,
-    SpikesRemovalInteractive,
-    _get_background_estimator,
-)
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
@@ -149,7 +132,7 @@ def find_peaks_ohaver(
         amp_thresh = 0.1 * y.max()
     peakgroup = np.round(peakgroup)
     if medfilt_radius:
-        d = np.gradient(medfilt(y, medfilt_radius))
+        d = np.gradient(scipy.signal.medfilt(y, medfilt_radius))
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
@@ -241,7 +224,7 @@ def interpolate1D(number_of_interpolation_points, data):
     new_ax = np.linspace(0, 100, ch * ip - (ip - 1))
 
     data = ma.masked_invalid(data)
-    interpolator = interpolate.make_interp_spline(
+    interpolator = scipy.interpolate.make_interp_spline(
         old_ax,
         data,
         k=1,
@@ -278,13 +261,15 @@ def _shift1D(data, **kwargs):
 
     data = ma.masked_invalid(data)
     # #This is the interpolant function
-    si = interpolate.make_interp_spline(original_axis, data, k=1, check_finite=False)
+    si = scipy.interpolate.make_interp_spline(
+        original_axis, data, k=1, check_finite=False
+    )
 
     # Evaluate interpolated data at shifted positions
     return si(original_axis - shift)
 
 
-class Signal1D(BaseSignal, CommonSignal1D):
+class Signal1D(signals.BaseSignal, CommonSignal1D):
     """General 1D signal class."""
 
     _signal_dimension = 1
@@ -321,7 +306,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         # arbitrary cutoff for number of spectra necessary before histogram
         # data is compressed by finding maxima of each spectrum
-        tmp = BaseSignal(der) if n < 2000 else BaseSignal(np.ravel(der.max(-1)))
+        tmp = (
+            signals.BaseSignal(der)
+            if n < 2000
+            else signals.BaseSignal(np.ravel(der.max(-1)))
+        )
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
@@ -337,7 +326,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if s_.data.size == 1:
             message = "The derivative of the data is constant."
             if use_gui:
-                m = SimpleMessage(text=message)
+                m = signal_tools.SimpleMessage(text=message)
                 try:
                     m.gui()
                 except (NotImplementedError, ImportError):
@@ -392,7 +381,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     ):
         self._check_signal_dimension_equals_one()
         if interactive:
-            sr = SpikesRemovalInteractive(
+            sr = signal_tools.SpikesRemovalInteractive(
                 self,
                 signal_mask=signal_mask,
                 navigation_mask=navigation_mask,
@@ -400,7 +389,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
             return sr.gui(display=display, toolkit=toolkit)
         else:
-            sr = SpikesRemoval(
+            sr = signal_tools.SpikesRemoval(
                 self,
                 signal_mask=signal_mask,
                 navigation_mask=navigation_mask,
@@ -426,6 +415,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         model : `Model1D` instance.
 
         """
+        from hyperspy.models.model1d import Model1D
 
         model = Model1D(self, dictionary=dictionary)
         return model
@@ -496,6 +486,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             ilow = axis.low_index
         if expand:
             if self._lazy:
+                import dask.array as da
+
                 ind = axis.index_in_array
                 pre_shape = list(self.data.shape)
                 post_shape = list(self.data.shape)
@@ -537,7 +529,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
         if isinstance(shift_array, np.ndarray):
-            shift_array = BaseSignal(shift_array.squeeze()).T
+            shift_array = signals.BaseSignal(shift_array.squeeze()).T
 
         self.map(
             _shift1D,
@@ -613,7 +605,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             i3 = int(np.clip(i2 + delta, 0, axis.size))
 
         def interpolating_function(dat):
-            dat_int = interpolate.interp1d(
+            dat_int = scipy.interpolate.interp1d(
                 list(range(i0, i1)) + list(range(i2, i3)),
                 dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs,
@@ -703,9 +695,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
         self._check_navigation_mask(mask)
         # we compute for now
-        if isinstance(start, da.Array):
+        if utils.is_dask_array(start):
             start = start.compute()
-        if isinstance(end, da.Array):
+        if utils.is_dask_array(end):
             end = end.compute()
         i1, i2 = axis._get_index(start), axis._get_index(end)
         if reference_indices is None:
@@ -886,7 +878,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If called with a non-uniform axes.
         """
         self._check_signal_dimension_equals_one()
-        calibration = Signal1DCalibration(self)
+        calibration = signal_tools.Signal1DCalibration(self)
         return calibration.gui(display=display, toolkit=toolkit)
 
     calibrate.__doc__ %= (DISPLAY_DT, TOOLKIT_DT)
@@ -939,7 +931,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if polynomial_order is not None and window_length is not None:
             axis = self.axes_manager.signal_axes[0]
             self.map(
-                savgol_filter,
+                scipy.signal.savgol_filter,
                 window_length=window_length,
                 polyorder=polynomial_order,
                 deriv=differential_order,
@@ -949,7 +941,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
         else:
             # Interactive mode
-            smoother = SmoothingSavitzkyGolay(self)
+            smoother = signal_tools.SmoothingSavitzkyGolay(self)
             smoother.differential_order = differential_order
             if polynomial_order is not None:
                 smoother.polynomial_order = polynomial_order
@@ -994,7 +986,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         self._check_signal_dimension_equals_one()
         if smoothing_parameter is None or number_of_iterations is None:
-            smoother = SmoothingLowess(self)
+            smoother = signal_tools.SmoothingLowess(self)
             if smoothing_parameter is not None:
                 smoother.smoothing_parameter = smoothing_parameter
             if number_of_iterations is not None:
@@ -1002,7 +994,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return smoother.gui(display=display, toolkit=toolkit)
         else:
             self.map(
-                lowess,
+                lowess_smooth.lowess,
                 x=self.axes_manager[-1].axis,
                 f=smoothing_parameter,
                 n_iter=number_of_iterations,
@@ -1054,7 +1046,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 "Consider using `smooth_lowess` instead."
             )
         if smoothing_parameter is None:
-            smoother = SmoothingTV(self)
+            smoother = signal_tools.SmoothingTV(self)
             return smoother.gui(display=display, toolkit=toolkit)
         else:
             self.map(
@@ -1096,7 +1088,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 "Consider using `smooth_lowess` instead."
             )
         self._check_signal_dimension_equals_one()
-        smoother = ButterworthFilter(self)
+        smoother = signal_tools.ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
             smoother.cutoff_frequency_ratio = cutoff_frequency_ratio
             smoother.type = type
@@ -1139,6 +1131,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         if zero_fill:
             if self._lazy:
+                import dask.array as da
+
                 low_idx = result.axes_manager[-1].value2index(signal_range[0])
                 z = da.zeros(low_idx, chunks=(low_idx,))
                 cropped_da = result.data[low_idx:]
@@ -1260,7 +1254,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         model = Model1D(self)
         if signal_range == "interactive":
-            br = BackgroundRemoval(
+            br = signal_tools.BackgroundRemoval(
                 self,
                 background_type=background_type,
                 polynomial_order=polynomial_order,
@@ -1277,7 +1271,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 # for testing purposes
                 return gui_dict
         else:
-            background_estimator = _get_background_estimator(
+            background_estimator = signal_tools._get_background_estimator(
                 background_type, polynomial_order
             )[0]
             result = self._remove_background_cli(
@@ -1349,6 +1343,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         >>> s = hs.data.two_gaussians()
         >>> s.remove_baselines(method="aspls", lam=1e7)
         """
+        import dask
+
         from hyperspy._signals._signal1d_tool import _remove_baseline
 
         if method is None:  # pragma: no cover
@@ -1452,7 +1448,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             raise ValueError("FWHM must be greater than zero")
         axis = self.axes_manager.signal_axes[0]
         FWHM *= 1 / axis.scale
-        self.map(gaussian_filter1d, sigma=FWHM / 2.35482, ragged=False)
+        self.map(scipy.ndimage.gaussian_filter1d, sigma=FWHM / 2.35482, ragged=False)
 
     def hanning_taper(self, side="both", channels=None, offset=0):
         """Apply a hanning taper to the data in place.
@@ -1475,6 +1471,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
         """
+        import dask.array as da
+
         if not np.issubdtype(self.data.dtype, np.floating):
             raise TypeError(
                 "The data dtype should be `float`. It can be "
@@ -1673,7 +1671,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 )
                 spectrum = spectrum[slices]
                 x = x[slices]
-            spline = interpolate.UnivariateSpline(
+            spline = scipy.interpolate.UnivariateSpline(
                 x, spectrum - factor * spectrum.max(), s=0
             )
             roots = spline.roots()
@@ -1762,7 +1760,24 @@ class Signal1D(BaseSignal, CommonSignal1D):
     )
 
 
-class LazySignal1D(LazySignal, Signal1D):
-    """Lazy general 1D signal class."""
+# ruff: noqa: F822
 
-    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal1D")
+__all__ = [
+    "Signal1D",
+    "LazySignal1D",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if "Lazy" in name:
+        lazy_signal_import_deprecation_warning(name, __name__)
+        return getattr(importlib.import_module("hyperspy.signals"), name)
+
+    if name in __all__:
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

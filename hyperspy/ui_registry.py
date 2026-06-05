@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,10 +31,10 @@ widgets externally (usually for testing or customisation purposes).
 
 import importlib
 
-from hyperspy.extensions import ALL_EXTENSIONS, _external_extensions
+from hyperspy.extensions import ALL_EXTENSIONS, _extensions
 
 UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["GUI"]["toolkeys"]}
-_EXTENSION_NAMES = [e.name for e in _external_extensions]
+_EXTENSION_NAMES = [e.name for e in _extensions]
 
 TOOLKIT_REGISTRY = set()
 KNOWN_TOOLKITS = set(("ipywidgets", "traitsui"))

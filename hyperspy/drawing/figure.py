@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -89,7 +89,7 @@ class BlittedFigure:
             # Create a list of animated artists and draw them.
             artists = sorted(ax.get_children(), key=lambda x: x.zorder)
             for artist in artists:
-                if artist.get_animated():
+                if artist.get_animated() and artist.axes is not None:
                     ax.draw_artist(artist)
 
     def _update_animated(self):
@@ -117,20 +117,30 @@ class BlittedFigure:
     def add_marker(self, marker):
         marker.ax = self.ax
         self.ax_markers.append(marker)
+        # marker.close() → events.closed → this lambda → mutates ax_markers
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 
     def remove_markers(self, render_figure=False):
         """Remove all markers"""
-        for marker in self.ax_markers:
+        # Iterate a snapshot copy: marker.close() triggers events.closed,
+        # which calls self.ax_markers.remove(obj) via the lambda registered
+        # in add_marker().  Mutating the list during iteration causes
+        # every other marker to be skipped.
+        for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         if render_figure:
+            # Markers closed above removed their collections from the axes
+            # but did not touch the blit cache — invalidate it before
+            # rendering so the canvas repaints without the old pixels.
+            self._background = None
             self.render_figure()
 
     def _on_close(self):
         _logger.debug("Closing `BlittedFigure`.")
         self.ax = None
         self._background = None
-        for marker in self.ax_markers:
+        # Same snapshot-copy rationale as remove_markers (see above).
+        for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:

@@ -1,0 +1,42 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2026 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import importlib
+
+# ruff: noqa: F822
+
+__all__ = [
+    "process_function_blockwise",
+    "_get_block_pattern",
+    "guess_output_signal_size",
+    "_compute",
+    "_get_navigation_dimension_chunk_slice",
+    "get_signal_chunk_slice",
+    "get_chunk_slice",
+]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:
+        return getattr(importlib.import_module("hyperspy.misc._dask_utils"), name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2025 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -37,15 +37,31 @@ ComplexSignal1D
 ComplexSignal2D
     For generic complex data with signal_dimension equal 2, i.e. image
     data of n-dimensions. The signal is unbinned by default.
+LazySignal
+    For generic data with arbitrary signal_dimension. All other signal
+    classes inherit from this one. It should only be used with none of
+    the others is appropriated.
+LazySignal1D
+    For generic data with signal_dimension equal 1, i.e. spectral data of
+    n-dimensions. The signal is unbinned by default.
+LazySignal2D
+    For generic data with signal_dimension equal 2, i.e. image data of
+    n-dimensions. The signal is unbinned by default.
+LazyComplexSignal
+    For generic complex data with arbitrary signal_dimension.
+LazyComplexSignal1D
+    For generic complex data with signal_dimension equal 1, i.e. spectral
+    data of n-dimensions. The signal is unbinned by default.
+ComplexSignal2D
+    For generic complex data with signal_dimension equal 2, i.e. image
+    data of n-dimensions. The signal is unbinned by default.
 """
 
 import importlib
 
 from hyperspy.extensions import EXTENSIONS as EXTENSIONS_
 
-__all__ = [
-    signal_ for signal_, specs_ in EXTENSIONS_["signals"].items() if not specs_["lazy"]
-]
+__all__ = [signal_ for signal_, _ in EXTENSIONS_["signals"].items()]
 
 
 def __dir__():
