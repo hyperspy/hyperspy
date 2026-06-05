@@ -209,6 +209,7 @@ class TestFindPeaks2D:
         self.sparse_nav2d_shifted = DATASETS[4]
         self.ref, self.xref, self.yref = _generate_reference()
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("method", PEAK_METHODS)
     @pytest.mark.parametrize("dataset_name", DATASETS_NAME)
     @pytest.mark.parametrize("get_intensity", [True, False])

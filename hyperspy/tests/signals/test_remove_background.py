@@ -332,6 +332,7 @@ def test_remove_background_metadata_axes_manager_copy(
     assert s_r.data.shape == s.data.shape
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("fast", [True, False])
 @pytest.mark.parametrize("nav_dim", [0, 1])
 def test_BackgroundRemoval_tool(nav_dim, fast):
