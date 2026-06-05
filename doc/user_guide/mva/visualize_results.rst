@@ -90,9 +90,10 @@ These options (together with many others), can be customized to
 develop a figure of your liking. See the documentation of
 :meth:`~.api.signals.BaseSignal.plot_scree_plot` for more details.
 
-Sometimes it can be useful to get the explained variance ratio as a spectrum.
-For example, to plot several scree plots obtained with
-different data pre-treatments in the same figure, you can combine
+Sometimes it can be useful to get the scree plot data (explained variance ratio
+or proportion of total variation) as a spectrum. For example, to plot several
+scree plots obtained with different data pre-treatments in the same figure,
+you can combine
 :func:`~.api.plot.plot_spectra` with
 :meth:`~.api.signals.BaseSignal.get_scree_plot_data`.
 

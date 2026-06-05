@@ -265,7 +265,7 @@ redundancies:
       output_dimension=None
       centre=None
     >>> s.plot_scree_plot()
-    <Axes: title={'center': '\nPCA Scree Plot'}, xlabel='Principal component index', ylabel='Proportion of variance'>
+    <Axes: title={'center': '\nSVD Scree Plot'}, xlabel='Component index', ylabel='Proportion of total variation'>
 
 .. image:: ../images/clustering_scree_plot.png
 
