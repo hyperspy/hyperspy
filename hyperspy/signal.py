@@ -6403,7 +6403,16 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             s = BaseSignal(data)
             s.set_signal_type(self.metadata.Signal.signal_type)
         else:
-            s = self.__class__(data, axes=self.axes_manager._get_signal_axes_dicts())
+            # When called on a lazy signal with numpy data, we must return
+            # a non-lazy signal of the same kind (e.g. LazySignal1D -> Signal1D).
+            # We walk up the MRO to find the first non-lazy equivalent class.
+            if self._lazy and not utils.is_dask_array(data):
+                for signal_cls in self.__class__.__mro__[1:]:
+                    if not issubclass(signal_cls, signals.LazySignal):
+                        break
+            else:
+                signal_cls = self.__class__
+            s = signal_cls(data, axes=self.axes_manager._get_signal_axes_dicts())
         if utils.is_dask_array(data):
             s = s.as_lazy()
         return s
