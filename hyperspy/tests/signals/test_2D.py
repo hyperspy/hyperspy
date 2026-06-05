@@ -359,6 +359,13 @@ class Test2D:
         if self.signal._lazy:
             self.signal.print_summary_statistics(rechunk=False)
 
+    def test_summary_statistics_repr(self):
+        from hyperspy.misc.model_tools import SummaryStatistics
+
+        s = SummaryStatistics(1.0, 0.5, 0.0, 0.25, 0.5, 0.75, 1.0)
+        assert "Summary statistics" in repr(s)
+        assert "<table" in s._repr_html_()
+
     def test_numpy_unfunc_one_arg_titled(self):
         self.signal.metadata.General.title = "yes"
         result = np.exp(self.signal)

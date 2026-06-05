@@ -67,12 +67,19 @@ the signal class. The individual axes can be accessed by indexing the
     <Signal1D, title: , dimensions: (20, 10|100)>
     >>> s.axes_manager
     <Axes manager, axes: (20, 10|100)>
-                Name |   size |  index |  offset |   scale |  units
-    ================ | ====== | ====== | ======= | ======= | ======
-         <undefined> |     20 |      0 |       0 |       1 | <undefined>
-         <undefined> |     10 |      0 |       0 |       1 | <undefined>
-    ---------------- | ------ | ------ | ------- | ------- | ------
-         <undefined> |    100 |      0 |       0 |       1 | <undefined>
+    Navigation axes:
+    +-------------+------+-------+--------+-------+-------------+
+    |     Name    | size | index | offset | scale |    units    |
+    +-------------+------+-------+--------+-------+-------------+
+    | <undefined> |  20  |   0   |  0.0   |  1.0  | <undefined> |
+    | <undefined> |  10  |   0   |  0.0   |  1.0  | <undefined> |
+    +-------------+------+-------+--------+-------+-------------+
+    Signal axes:
+    +-------------+------+--------+-------+-------------+
+    |     Name    | size | offset | scale |    units    |
+    +-------------+------+--------+-------+-------------+
+    | <undefined> | 100  |  0.0   |  1.0  | <undefined> |
+    +-------------+------+--------+-------+-------------+
     >>> s.axes_manager[0]
     <Unnamed 0th axis, size: 20, index: 0>
 
