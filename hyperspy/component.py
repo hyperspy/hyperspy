@@ -348,6 +348,8 @@ class Parameter(t.HasTraits):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
             self.events.value_changed.trigger(value=self.__value, obj=self)
+            # To update the widget connected to the value property
+            self.trait_property_changed("value", old_value, self.__value)
 
     # Fix the parameter when coupled
     def _get_free(self):
@@ -358,14 +360,17 @@ class Parameter(t.HasTraits):
             return False
 
     def _set_free(self, arg):
+        old_value = self._free
         if arg and self.twin:
             raise ValueError(
-                f"Parameter {self.name} can't be set free "
-                "is twinned with {self.twin}."
+                f"Parameter {self.name} can't be set free, "
+                f"because it is twinned with {self.twin}."
             )
         self._free = arg
         if self.component is not None:
             self.component._update_free_parameters()
+        # To update the widget connected to the free property
+        self.trait_property_changed("free", old_value, self._free)
 
     def _on_twin_update(self, value, twin=None):
         if self._updating_twin:
@@ -416,12 +421,15 @@ class Parameter(t.HasTraits):
             return self._bounds[0][0]
 
     def _set_bmin(self, arg):
+        old_value = self.bmin
         if self._number_of_elements == 1:
             self._bounds = (arg, self.bmax)
         else:
             self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
+        # To update the widget connected to the bmin property
+        self.trait_property_changed("bmin", old_value, arg)
 
     def _get_bmax(self):
         """The higher value of the bounds."""
@@ -431,12 +439,15 @@ class Parameter(t.HasTraits):
             return self._bounds[0][1]
 
     def _set_bmax(self, arg):
+        old_value = self.bmax
         if self._number_of_elements == 1:
             self._bounds = (self.bmin, arg)
         else:
             self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
+        # To update the widget connected to the bmax property
+        self.trait_property_changed("bmax", old_value, arg)
 
     @property
     def _number_of_elements(self):
@@ -890,6 +901,8 @@ class Component(t.HasTraits):
             )
         else:
             self._name = value
+        # To update the widget connected to the name property
+        self.trait_property_changed("name", old_value, self._name)
 
     @property
     def _axes_manager(self):
@@ -920,10 +933,13 @@ class Component(t.HasTraits):
     def _set_active(self, arg):
         if self._active == arg:
             return
+        old_value = self._active
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
         self.events.active_changed.trigger(active=self._active, obj=self)
+        # To update the widget connected to the active property
+        self.trait_property_changed("active", old_value, self._active)
 
     def init_parameters(self, parameter_name_list, linear_parameter_list=None):
         """

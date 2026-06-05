@@ -40,6 +40,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.right_pointer = None
         self._right_pointer_on = False
         self._auto_update_plot = True
+        self._mpl_cids = []
 
     @property
     def auto_update_plot(self):
@@ -123,18 +124,45 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.plot(**kwargs)
         if sf.figure is not None:
             if self.axes_manager.navigation_axes:
-                self.signal_plot.figure.canvas.mpl_connect(
-                    "key_press_event", self.axes_manager.key_navigator
+                # Track canvas connection IDs so they can be explicitly
+                # disconnected in close(); matplotlib does not auto-clean
+                # handlers registered via mpl_connect.
+                self._mpl_cids.append(
+                    (
+                        self.signal_plot.figure.canvas,
+                        self.signal_plot.figure.canvas.mpl_connect(
+                            "key_press_event",
+                            self.axes_manager.key_navigator,
+                        ),
+                    )
                 )
             if self.navigator_plot is not None:
-                self.signal_plot.figure.canvas.mpl_connect(
-                    "key_press_event", self.key2switch_right_pointer
+                self._mpl_cids.append(
+                    (
+                        self.signal_plot.figure.canvas,
+                        self.signal_plot.figure.canvas.mpl_connect(
+                            "key_press_event",
+                            self.key2switch_right_pointer,
+                        ),
+                    )
                 )
-                self.navigator_plot.figure.canvas.mpl_connect(
-                    "key_press_event", self.key2switch_right_pointer
+                self._mpl_cids.append(
+                    (
+                        self.navigator_plot.figure.canvas,
+                        self.navigator_plot.figure.canvas.mpl_connect(
+                            "key_press_event",
+                            self.key2switch_right_pointer,
+                        ),
+                    )
                 )
-                self.navigator_plot.figure.canvas.mpl_connect(
-                    "key_press_event", self.axes_manager.key_navigator
+                self._mpl_cids.append(
+                    (
+                        self.navigator_plot.figure.canvas,
+                        self.navigator_plot.figure.canvas.mpl_connect(
+                            "key_press_event",
+                            self.axes_manager.key_navigator,
+                        ),
+                    )
                 )
 
     def key2switch_right_pointer(self, event):
@@ -175,8 +203,25 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.signal_plot.figure.canvas.draw_idle()
 
     def remove_right_pointer(self):
-        for line in self.signal_plot.right_ax_lines:
-            self.signal_plot.right_ax_lines.remove(line)
+        for line in list(self.signal_plot.right_ax_lines):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update, preventing
+        # a crash from stale animated artists and ensuring the canvas
+        # repaints without the removed elements.
+        sig_plot = self.signal_plot
+        if sig_plot.figure is not None:
+            sig_plot._background = None
+            sig_plot.render_figure()
+
+    def close(self):
+        # Explicitly disconnect all canvas-level mpl_connect handlers before
+        # the parent's close() destroys the figures; matplotlib never
+        # auto-disconnects these, so they leak and can fire callbacks on
+        # stale objects.
+        for canvas, cid in self._mpl_cids:
+            canvas.mpl_disconnect(cid)
+        self._mpl_cids.clear()
+        super().close()

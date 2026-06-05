@@ -300,3 +300,9 @@ class TestModel2DSetSignalRange:
     def test_initial_mask(self):
         m = self.m
         assert m._channel_switches.shape == (10, 20)
+
+
+def test_residual_line_initialized():
+    s = hs.signals.Signal2D(np.ones((5, 7, 13, 15)))
+    m = s.create_model()
+    assert m._residual_line is None

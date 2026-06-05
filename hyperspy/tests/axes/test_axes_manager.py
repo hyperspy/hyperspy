@@ -80,11 +80,21 @@ class TestAxesManager:
 
     def test_reprs(self):
         repr(self.am)
-        self.am._repr_html_
+        self.am._repr_html_()
         self.am[0].convert_to_non_uniform_axis()
         self.am[-1].convert_to_non_uniform_axis()
         repr(self.am)
-        self.am._repr_html_
+        self.am._repr_html_()
+
+    def test_reprs_signal_only(self):
+        """Test repr when there are no navigation axes (signal-only)."""
+        am = AxesManager([{"name": "x", "size": 5, "navigate": False}])
+        text = repr(am)
+        assert "Navigation axes" not in text
+        assert "Signal axes" in text
+        html = am._repr_html_()
+        assert "Navigation axes" not in html
+        assert "Signal axes" in html
 
     def test_update_from(self):
         am = self.am
@@ -711,7 +721,7 @@ def test_iterpath_function_serpentine():
             assert indices == (2, 1, 0)
 
 
-def TestAxesManagerRagged():
+class TestAxesManagerRagged:
     def setup_method(self, method):
         axes_list = [
             {
@@ -735,10 +745,8 @@ def TestAxesManagerRagged():
         assert not self.am.ragged
 
     def test_reprs(self):
-        expected_string = "<Axes manager, axes: (2|ragged)>\n"
-        "            Name |   size |  index |  offset |   scale |  units \n"
-        "================ | ====== | ====== | ======= | ======= | ====== \n"
-        "               a |      2 |      0 |       0 |     1.3 |     aa \n"
-        "---------------- | ------ | ------ | ------- | ------- | ------ \n"
-        "     Ragged axis |               Variable length"
-        assert self.am.__repr__() == expected_string
+        text = self.am.__repr__()
+        assert "<Axes manager, axes: (2|ragged)>" in text
+        assert "Ragged axis | Variable length" in text
+        html = self.am._repr_html_()
+        assert "Ragged axis | Variable length" in html
