@@ -17,10 +17,13 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+import warnings
+
 import numpy as np
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class Offset(Component):
@@ -64,19 +67,31 @@ class Offset(Component):
     def grad_offset(x):
         return np.ones_like(x)
 
-    def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the parameters by the two area method
+    def estimate_parameters(
+        self,
+        signal,
+        x1=None,
+        x2=None,
+        intervals=None,
+        only_current=False,
+    ):
+        """Estimate the parameters by averaging the signal in the given range(s).
 
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
-        x1 : float
+        x1 : float, optional
             Defines the left limit of the spectral range to use for the
-            estimation.
-        x2 : float
+            estimation. Deprecated, use ``intervals`` instead.
+        x2 : float, optional
             Defines the right limit of the spectral range to use for the
-            estimation.
-
+            estimation. Deprecated, use ``intervals`` instead.
+        intervals : list of tuples or :class:`~.api.roi.SpanROI`, optional
+            List of intervals for estimation. Each interval can be a tuple
+            ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
+            Data from all intervals is concatenated before averaging.
+            If ``None``, the ``x1``, ``x2`` arguments are used for backward
+            compatibility.
         only_current : bool
             If False estimates the parameters for the full dataset.
 
@@ -87,7 +102,45 @@ class Offset(Component):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        i1, i2 = axis.value_range_to_indices(x1, x2)
+
+        # Backward compat: positional callers pass only_current as 4th arg
+        if isinstance(intervals, bool):
+            only_current = intervals
+            intervals = None
+
+        if intervals is not None:
+            if not isinstance(intervals, (list, tuple)):
+                raise ValueError(
+                    "`intervals` must be a list of tuples or SpanROI objects."
+                )
+            if isinstance(intervals, tuple) and len(intervals) == 2:
+                intervals = [intervals]
+            interval_tuples = []
+            for interval in intervals:
+                if hasattr(interval, "left") and hasattr(interval, "right"):
+                    interval_tuples.append((interval.left, interval.right))
+                elif isinstance(interval, (tuple, list)) and len(interval) == 2:
+                    interval_tuples.append(tuple(interval))
+                else:
+                    raise ValueError(
+                        f"Invalid interval format: {interval}. "
+                        "Expected tuple (left, right) or SpanROI object."
+                    )
+            indices = [axis.value_range_to_indices(a, b) for a, b in interval_tuples]
+        elif x1 is not None:
+            if x2 is None:
+                raise ValueError("x2 must be provided when using x1.")
+            warnings.warn(
+                "The `x1` and `x2` arguments are deprecated and will be removed "
+                "in HyperSpy 3.0. Use the `intervals` argument instead.",
+                VisibleDeprecationWarning,
+                stacklevel=2,
+            )
+            i1, i2 = axis.value_range_to_indices(x1, x2)
+            indices = [(i1, i2)]
+        else:
+            indices = [(axis.low_index, axis.high_index + 1)]
+
         if axis.is_binned:
             # using the mean of the gradient for non-uniform axes is a best
             # guess to the scaling of binned signals for the estimation
@@ -97,20 +150,26 @@ class Offset(Component):
                 else np.mean(np.gradient(axis.axis), axis=-1)
             )
 
+        def _get_concatenated_data(sig, indices_list):
+            parts = []
+            for idx_start, idx_end in indices_list:
+                if only_current:
+                    parts.append(sig._get_current_data()[idx_start:idx_end])
+                else:
+                    parts.append(sig.data[..., idx_start:idx_end])
+            return np.concatenate(parts, axis=-1)
+
         if only_current is True:
-            self.offset.value = signal._get_current_data()[i1:i2].mean()
+            y_data = _get_concatenated_data(signal, indices)
+            self.offset.value = y_data.mean()
             if axis.is_binned:
                 self.offset.value /= scaling_factor
             return True
         else:
             if self.offset.map is None:
                 self._create_arrays()
-            dc = signal.data
-            gi = [
-                slice(None),
-            ] * len(dc.shape)
-            gi[axis.index_in_array] = slice(i1, i2)
-            self.offset.map["values"][:] = dc[tuple(gi)].mean(axis.index_in_array)
+            y_data = _get_concatenated_data(signal, indices)
+            self.offset.map["values"][:] = y_data.mean(axis=-1)
             if axis.is_binned:
                 self.offset.map["values"] /= scaling_factor
             self.offset.map["is_set"][:] = True
