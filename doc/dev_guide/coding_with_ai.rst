@@ -435,4 +435,3 @@ behavioral symmetry. These are ideal for AI assistance:
 If the contributor has provided a good change map, test strategy
 note, and inline comments, the review cost is proportional to design
 complexity, not change volume.
-

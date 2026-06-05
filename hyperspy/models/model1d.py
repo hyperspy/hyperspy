@@ -308,6 +308,17 @@ class Model1D(BaseModel):
                 line.close()
         super().remove(things)
         self._disconnect_parameters2update_plot(things)
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending draw_event re-enters
+        # _draw_animated and encounters a removed artist
+        # whose axes / figure references were cleared by
+        # Artist.remove (matplotlib >= 3.10).
+        if self._plot is not None and self._plot.is_active:
+            sig_plot = self._plot.signal_plot
+            if sig_plot.figure is not None:
+                sig_plot._background = None
+                sig_plot.render_figure()
 
     remove.__doc__ = BaseModel.remove.__doc__
 
@@ -907,6 +918,16 @@ class Model1D(BaseModel):
             return
         for component in self:
             self._disable_plot_component(component)
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending draw_event re-enters
+        # _draw_animated and encounters a removed Text artist
+        # whose axes / figure references were cleared by
+        # Artist.remove (matplotlib >= 3.10).
+        sig_plot = self._plot.signal_plot
+        if sig_plot.figure is not None:
+            sig_plot._background = None
+            sig_plot.render_figure()
 
     disable_plot_components.__doc__ = BaseModel.disable_plot_components.__doc__
 
@@ -1020,6 +1041,18 @@ class Model1D(BaseModel):
             # iteration should be ok
             for pw in reversed(pws):  # pws is reference, so work in reverse
                 pw.close()
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending ``draw_event`` re-enters
+        # ``_draw_animated`` and encounters a removed ``Text`` artist
+        # whose ``axes`` / ``figure`` references were cleared by
+        # ``Artist.remove`` (matplotlib >= 3.10), causing
+        # ``text._get_layout`` to raise ``AttributeError``.
+        if self._plot is not None and self._plot.is_active:
+            sig_plot = self._plot.signal_plot
+            if sig_plot.figure is not None:
+                sig_plot._background = None
+                sig_plot.render_figure()
 
     def fit_component(
         self,

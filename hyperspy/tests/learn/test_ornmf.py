@@ -217,3 +217,37 @@ class TestORNMFSklearnAPI:
         ):
             W, H = obj.finish()
         assert W.shape == (self.m, self.rank)
+
+
+class TestORNMFNegativeMean:
+    """Regression tests for PR #3656: ORNMF hang on negative-mean data."""
+
+    def test_setup_with_negative_mean_does_not_produce_nan(self):
+        """_setup should produce finite W even when data has negative mean."""
+        from hyperspy.learn._ornmf import ORNMF
+
+        rng = np.random.default_rng(42)
+        X = rng.random((13, 25)) - 15.0  # negative mean ~ -2.5
+        obj = ORNMF(rank=3, random_state=1)
+        obj._setup(X)
+        assert np.all(np.isfinite(obj.W))
+        assert obj.W.shape[1] == 3
+
+
+class TestORNMFIteratorSetup:
+    """Cover the iterator path in _setup for full coverage of #3611 fix."""
+
+    def test_setup_with_iterator_uses_abs(self):
+        """_setup should use abs() when X is an iterator (not ndarray)."""
+        from hyperspy.learn._ornmf import ORNMF
+
+        rng = np.random.default_rng(42)
+        X = rng.random((13, 7))
+        # Make mean negative so abs() matters
+        X = X - 2.0
+        # Pass as generator to trigger iterator path
+        obj = ORNMF(rank=3, random_state=1)
+        gen = (row for row in X)
+        obj._setup(gen)
+        assert np.all(np.isfinite(obj.W))
+        assert obj.W.shape[1] == 3

@@ -1,0 +1,5 @@
+Standardise tabular data display on PrettyTable throughout HyperSpy:
+:class:`~.axes.AxesManager` now uses PrettyTable for both terminal and
+HTML (notebook) output instead of manual string/HTML formatting;
+:meth:`~.api.signals.BaseSignal.print_summary_statistics` now renders
+as a proper HTML table in Jupyter notebooks (previously text-only).
