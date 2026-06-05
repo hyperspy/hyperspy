@@ -55,6 +55,7 @@ jsconfig.json
 venv/
 
 # AI coding tools — runtime state and personal files
+.omo/
 .omc/
 .sisyphus/*
 !.sisyphus/rules/
