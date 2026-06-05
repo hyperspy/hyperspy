@@ -341,6 +341,30 @@ class TestFindPeaks2D:
 
         assert peaks.data.shape == (3, 2)
 
+    def test_disconnect_removes_trait_observers(self):
+        sig = self.sparse_nav2d_shifted
+        sig.axes_manager.indices = (0, 0)
+        axes_dict = sig.axes_manager._get_axes_dicts(sig.axes_manager.navigation_axes)
+        peaks = BaseSignal(np.empty(sig.axes_manager.navigation_shape), axes=axes_dict)
+        pf2D = PeaksFinder2D(sig, method="local_max", peaks=peaks)
+
+        assert hasattr(pf2D, "_observed_parameters")
+        assert len(pf2D._observed_parameters) > 0
+
+        pf2D.disconnect()
+
+        call_count = [0]
+        original_update = pf2D._update_peak_finding
+
+        def counting_update(*args, **kwargs):
+            call_count[0] += 1
+            return original_update(*args, **kwargs)
+
+        pf2D._update_peak_finding = counting_update
+
+        pf2D.local_max_threshold = 5
+        assert call_count[0] == 0
+
 
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
 @pytest.mark.parametrize(

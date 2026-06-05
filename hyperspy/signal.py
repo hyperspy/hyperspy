@@ -6667,18 +6667,17 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         get_histogram
 
         """
+        from hyperspy.misc.model_tools import SummaryStatistics
+        from hyperspy.misc.utils import display
+
         _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics(
             rechunk=rechunk
         )
-        print(utils.underline("Summary statistics"))
-        print("mean:\t" + formatter % _mean)
-        print("std:\t" + formatter % _std)
-        print()
-        print("min:\t" + formatter % _min)
-        print("Q1:\t" + formatter % _q1)
-        print("median:\t" + formatter % _q2)
-        print("Q3:\t" + formatter % _q3)
-        print("max:\t" + formatter % _max)
+        display(
+            SummaryStatistics(
+                _mean, _std, _min, _q1, _q2, _q3, _max, formatter=formatter
+            )
+        )
 
     print_summary_statistics.__doc__ %= RECHUNK_ARG
 

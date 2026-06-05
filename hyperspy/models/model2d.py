@@ -91,6 +91,10 @@ class Model2D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        # _residual_line is referenced by BaseModel.update_plot() and
+        # _connect_parameters2update_plot(); Model1D initializes it in its
+        # own __init__, so Model2D must do the same to avoid AttributeError.
+        self._residual_line = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis, self.axes_manager.signal_axes[1].axis
         )
