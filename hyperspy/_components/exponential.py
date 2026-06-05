@@ -17,12 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-import warnings
 
 import numpy as np
 
 from hyperspy._components.expression import Expression
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -66,33 +64,20 @@ class Exponential(Expression):
 
         self.isbackground = False
 
-    def estimate_parameters(
-        self,
-        signal,
-        x1=None,
-        x2=None,
-        intervals=None,
-        only_current=False,
-    ):
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters for the exponential component by splitting
-        the signal window into two regions and using their geometric means.
+        the signal window into two regions and using their geometric means
 
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
-        x1 : float, optional
+        x1 : float
             Defines the left limit of the spectral range to use for the
-            estimation. Deprecated, use ``intervals`` instead.
-        x2 : float, optional
+            estimation.
+        x2 : float
             Defines the right limit of the spectral range to use for the
-            estimation. Deprecated, use ``intervals`` instead.
-        intervals : list of tuples or :class:`~.api.roi.SpanROI`, optional
-            List of intervals for estimation. Each interval can be a tuple
-            ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
-            When multiple intervals are provided, they are merged into a
-            single contiguous range for the estimation.
-            If ``None``, the ``x1``, ``x2`` arguments are used for backward
-            compatibility.
+            estimation.
+
         only_current : bool
             If False estimates the parameters for the full dataset.
 
@@ -103,47 +88,7 @@ class Exponential(Expression):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-
-        # Backward compat: positional callers pass only_current as 4th arg
-        if isinstance(intervals, bool):
-            only_current = intervals
-            intervals = None
-
-        if intervals is not None:
-            if not isinstance(intervals, (list, tuple)):
-                raise ValueError(
-                    "`intervals` must be a list of tuples or SpanROI objects."
-                )
-            if isinstance(intervals, tuple) and len(intervals) == 2:
-                intervals = [intervals]
-            if len(intervals) != 1:
-                raise ValueError(
-                    "Exponential estimation requires exactly one interval, "
-                    f"got {len(intervals)}."
-                )
-            interval = intervals[0]
-            if hasattr(interval, "left") and hasattr(interval, "right"):
-                i1, i2 = axis.value_range_to_indices(interval.left, interval.right)
-            elif isinstance(interval, (tuple, list)) and len(interval) == 2:
-                i1, i2 = axis.value_range_to_indices(interval[0], interval[1])
-            else:
-                raise ValueError(
-                    f"Invalid interval format: {interval}. "
-                    "Expected tuple (left, right) or SpanROI object."
-                )
-        elif x1 is not None:
-            if x2 is None:
-                raise ValueError("x2 must be provided when using x1.")
-            warnings.warn(
-                "The `x1` and `x2` arguments are deprecated and will be removed "
-                "in HyperSpy 3.0. Use the `intervals` argument instead.",
-                VisibleDeprecationWarning,
-                stacklevel=2,
-            )
-            i1, i2 = axis.value_range_to_indices(x1, x2)
-        else:
-            i1 = axis.low_index
-            i2 = axis.high_index + 1
+        i1, i2 = axis.value_range_to_indices(x1, x2)
         if i1 + 1 == i2:
             if i2 < axis.high_index:
                 i2 += 1
