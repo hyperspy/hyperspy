@@ -129,7 +129,7 @@ class PowerLaw(Expression):
         x4 : float, optional
             The right endpoint of the second signal interval. Deprecated, use
             ``intervals`` instead.
-        intervals : list of tuples or :class:`~.api.roi.SpanROI`, optional
+        intervals : list of tuple or :class:`~.api.roi.SpanROI`, optional
             List of intervals for estimation. Each interval can be a tuple
             ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
             The two-area method requires exactly 2 intervals. If a single

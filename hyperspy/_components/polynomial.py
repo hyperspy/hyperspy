@@ -88,7 +88,7 @@ class Polynomial(Expression):
         x2 : float, optional
             Defines the right limit of the spectral range to use for the
             estimation. Deprecated, use ``intervals`` instead.
-        intervals : list of tuples or :class:`~.api.roi.SpanROI`, optional
+        intervals : list of tuple or :class:`~.api.roi.SpanROI`, optional
             List of intervals for estimation. Each interval can be a tuple
             ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
             Data from all intervals is concatenated for the fit.
