@@ -58,6 +58,7 @@ Plot tests use `@pytest.mark.mpl_image_compare` from `pytest-mpl`. They generate
 **Flag:**
 - Plot tests without `@pytest.mark.mpl_image_compare`
 - Missing `mpl_cleanup` fixture for matplotlib figure cleanup
+- Reference https://hyperspy.org/hyperspy-doc/current/dev_guide/testing.html#plot-testing when plotting tests are failing or needed. Include detailed instructions on creating new references via pytest.
 
 ## Slow Test Marking
 Performance-intensive tests must use `@pytest.mark.slow` — they are skipped in fast CI runs.
@@ -73,8 +74,3 @@ When testing model components, reviewers expect BOTH: (1) two components of the 
 Code producing `lazy_output=True` must genuinely defer computation. Reviewers check this (PR #3476: `lazy_output=True` was computing immediately). `.compute()` inside a lazy branch is a code smell.
 
 **Flag:** Lazy output tests that don't verify deferred computation. `lazy_output` that calls `.compute()` internally.
-
-## Test Data File Size
-Test data files must be minimal size — large files are rejected (PR #3501). External contributors should be directed to create small test data following the test data guidelines.
-
-**Flag:** Test data files > 50KB. PRs adding test fixtures without following test-data contribution guide.
