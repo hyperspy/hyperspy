@@ -134,7 +134,7 @@ def show_keybindings(platform=None):
     |  Widget Resize   |        y        |  Decrease rectangle width            |
     |  Widget Resize   |      shift      |  Jump-to-click on span/cursor        |
     |    Model Plot    |        a        |  Toggle adjust-position lines        |
-    |    Model Plot    |        s        |  Toggle plot-components visibility   |
+    |    Model Plot    |        w        |  Toggle plot-components visibility   |
     |    Model Plot    |        d        |    Toggle residual display           |
     +------------------+-----------------+---------------------------------------+
 

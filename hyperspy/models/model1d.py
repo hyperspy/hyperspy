@@ -241,6 +241,7 @@ class Model1D(BaseModel):
         self._suspend_update = False
         self._model_line = None
         self._residual_line = None
+        self._key_press_cid = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(self._on_navigating, [])
         self._channel_switches = np.array([True] * len(self.axis.axis))
@@ -819,7 +820,7 @@ class Model1D(BaseModel):
         plot_residual : bool
             If True, add a residual line (Signal - Model) to the signal figure.
         **kwargs : dict
-            All extra keyword arguements are passed to
+            All extra keyword arguments are passed to
             :meth:`~.api.signals.Signal1D.plot`
         """
 
@@ -837,6 +838,9 @@ class Model1D(BaseModel):
         _plot.signal_plot.add_line(l2)
         l2.plot()
         _plot.signal_plot.events.closed.connect(self._close_plot, [])
+        # Disconnect previous key_press handler if plot() is called again
+        if self._key_press_cid is not None:
+            _plot.signal_plot.figure.canvas.mpl_disconnect(self._key_press_cid)
         self._key_press_cid = _plot.signal_plot.figure.canvas.mpl_connect(
             "key_press_event", self._on_key_press
         )
@@ -905,9 +909,9 @@ class Model1D(BaseModel):
 
     def _close_plot(self):
         self.disable_adjust_position()
-        if hasattr(self, "_key_press_cid"):
+        if self._key_press_cid is not None:
             self._plot.signal_plot.figure.canvas.mpl_disconnect(self._key_press_cid)
-            del self._key_press_cid
+            self._key_press_cid = None
         super()._close_plot()
 
     def _on_key_press(self, event):
