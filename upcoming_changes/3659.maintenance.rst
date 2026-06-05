@@ -1,0 +1,1 @@
+Fix ``test_parallel_pool_ipyparallel_not_installed`` test that was hitting a 15-second timeout instead of testing the intended code path.

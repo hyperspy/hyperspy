@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import importlib
+from unittest.mock import patch
 
 import pytest
 
@@ -29,12 +29,14 @@ def test_parallel_pool_multiprocessing():
 
 
 def test_parallel_pool_ipyparallel_not_installed():
-    pool = ParallelPool()
-    ipyparallel_spec = importlib.util.find_spec("ipyparallel")
-    if ipyparallel_spec is None:
-        # ipyparallel is installed, use multiprocessing instead
+    """Test that multiprocessing fallback works when ipyparallel is not installed."""
+    with patch("hyperspy.utils.parallel_pool._ipyparallel_installed", False):
+        # When ipyparallel is not installed and ipyparallel=None (default),
+        # should fall back to multiprocessing
+        pool = ParallelPool()
         assert pool.is_multiprocessing
         assert not pool.is_ipyparallel
 
-        with pytest.raises(ValueError):
+        # Explicitly requesting ipyparallel when not installed should raise
+        with pytest.raises(ValueError, match="ipyparallel must be installed"):
             ParallelPool(ipyparallel=True)
