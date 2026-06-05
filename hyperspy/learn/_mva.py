@@ -134,16 +134,19 @@ def _nan_expand_rows(arr, mask, total_rows):
     n_comp = arr.shape[1]
 
     if _da is not None and isinstance(arr, _da.Array):
-        nan_row = _da.full((1, n_comp), np.nan, dtype=float, chunks=(1, arr.chunks[1]))
-        rows = []
-        arr_row = 0
-        for i in range(total_rows):
-            if mask[i]:
-                rows.append(nan_row)
-            else:
-                rows.append(arr[arr_row : arr_row + 1, :])
-                arr_row += 1
-        return _da.concatenate(rows, axis=0)
+        # Vectorized reindex via da.take() — avoids building one dask
+        # task per row, which creates an enormous task graph and can
+        # crash for large total_rows (e.g. millions of navigation pixels).
+        row_idx = np.full(total_rows, -1, dtype=np.intp)
+        row_idx[unmasked_idx] = np.arange(len(unmasked_idx), dtype=np.intp)
+        # Pad arr with a NaN row so masked positions (index -1) map to NaN.
+        nan_row_np = np.full((1, n_comp), np.nan, dtype=float)
+        arr_padded = _da.concatenate(
+            [_da.from_array(nan_row_np, chunks=(1, n_comp)), arr], axis=0
+        )
+        # Shift indices: -1 → 0 (NaN row), 0 → 1, …
+        take_idx = _da.from_array(row_idx + 1, chunks=(arr.chunks[0][0],))
+        return _da.take(arr_padded, take_idx, axis=0)
     else:
         out = np.full((total_rows, n_comp), np.nan, dtype=float)
         out[unmasked_idx, :] = arr

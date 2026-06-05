@@ -2158,7 +2158,7 @@ class TestLazySVDSolverAndAutoTranspose:
 
 
 class TestSVDAlgorithm:
-    """Tests for algorithm='SVD' with svd_solver='dask' (svd_compressed)."""
+    """Tests for algorithm='SVD' with svd_solver='randomized' (svd_compressed)."""
 
     def setup_method(self, method):
         rng = np.random.default_rng(42)

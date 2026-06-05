@@ -384,8 +384,10 @@ Out-of-core NMF
 .. versionadded:: 2.5
 
 The ``"NMF"`` algorithm uses :class:`sklearn.decomposition.MiniBatchNMF`
-(requires scikit-learn ≥ 1.1) to perform non-negative matrix factorisation
-out-of-core.  ``output_dimension`` is required.
+to perform non-negative matrix factorisation out-of-core.  This requires
+scikit-learn ≥ 1.1; on older versions the algorithm falls back to
+in-memory :class:`sklearn.decomposition.NMF`.  ``output_dimension`` is
+required.
 
 .. code-block:: python
 

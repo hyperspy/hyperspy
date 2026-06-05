@@ -384,8 +384,8 @@ static subspace.
    - ``transform(X)`` — replaces the deprecated ``project(X)``
    - ``components_`` — replaces the deprecated ``finish()``
 
-   The old methods still work but emit a ``DeprecationWarning`` and will be
-   removed in a future release.
+   The old methods still work but emit a ``VisibleDeprecationWarning`` and
+   will be removed in a future release.
 
 .. _mva.nmf:
 
@@ -413,7 +413,9 @@ for ``output_dimension``.
 .. note::
 
    For lazy signals, ``algorithm="NMF"`` is implemented via
-   :class:`sklearn.decomposition.MiniBatchNMF` (requires scikit-learn ≥ 1.1),
+   :class:`sklearn.decomposition.MiniBatchNMF` (requires scikit-learn ≥ 1.1
+   for the out-of-core path; older versions fall back to in-memory
+   :class:`sklearn.decomposition.NMF`),
    which processes the data in chunks without loading the full dataset into
    memory.  ``output_dimension`` is required in this case.  See
    :ref:`big_data.decomposition` for the full list of available lazy algorithms.
@@ -467,8 +469,8 @@ alternative is available, although it is typically much slower.
    - ``transform(X)`` — replaces the deprecated ``project(X)``
    - ``components_`` — replaces the deprecated ``finish()``
 
-   The old methods still work but emit a ``DeprecationWarning`` and will be
-   removed in a future release.
+   The old methods still work but emit a ``VisibleDeprecationWarning`` and
+   will be removed in a future release.
 
 .. _mva.masks_and_reproject:
 

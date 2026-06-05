@@ -25,8 +25,10 @@
   NaN at previously masked signal positions.  ``reproject='both'`` fills both
   navigation and signal masked positions for all algorithms.
 - Add ``algorithm='NMF'`` support for lazy signals via
-  ``sklearn.decomposition.MiniBatchNMF`` (requires scikit-learn >= 1.1),
-  enabling out-of-core non-negative matrix factorisation.
+  ``sklearn.decomposition.MiniBatchNMF`` (requires scikit-learn >= 1.1
+  for out-of-core; older versions fall back to in-memory
+  ``sklearn.decomposition.NMF``), enabling out-of-core non-negative
+  matrix factorisation.
 - Accept any custom sklearn-like estimator object as the ``algorithm``
   parameter.  Objects that implement ``partial_fit`` are used incrementally
   (out-of-core); those with only ``fit`` / ``fit_transform`` fall back to
