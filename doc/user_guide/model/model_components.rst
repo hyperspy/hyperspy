@@ -234,12 +234,15 @@ of the component quickly:
 .. versionadded:: 2.2
     :meth:`~.api.model.components1D.PowerLaw.estimate_parameters` can take two disconnected intervals to estimate the parameters.
 
+.. versionchanged:: 2.5
+    The ``intervals`` parameter replaces the deprecated ``x1``, ``x2``, ``x3``, ``x4`` parameters.
+    The ``intervals`` parameter accepts a list of tuples or :class:`~.api.roi.SpanROI` objects.
 
 For example, the following estimates the parameters of a power law function using data from two disconnected intervals:
 
 .. code-block:: python
 
-    import hyperspy as  hs
+    import hyperspy as hs
     import numpy as np
 
     pl = hs.model.components1D.PowerLaw()
@@ -251,13 +254,9 @@ For example, the following estimates the parameters of a power law function usin
     s.axes_manager[-1].offset = 10
     s.isig[15.:16.].data[:] = 0
     s.add_poissonian_noise()
-    roi1 = hs.roi.SpanROI(11,14)
+    roi1 = hs.roi.SpanROI(11, 14)
     roi2 = hs.roi.SpanROI(17, 19)
 
-    pl.estimate_parameters(s,
-                        roi1.left, roi1.right,
-                        roi2.left, roi2.right,
-
-                        only_current=True)
+    pl.estimate_parameters(s, intervals=[roi1, roi2], only_current=True)
 
 
