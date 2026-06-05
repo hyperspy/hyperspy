@@ -111,14 +111,12 @@ class Polynomial(Expression):
             intervals = None
 
         if intervals is not None:
-            if hasattr(intervals, "left") and hasattr(intervals, "right"):
-                intervals = [intervals]
-            if isinstance(intervals, tuple) and len(intervals) == 2:
-                intervals = [intervals]
             if not isinstance(intervals, (list, tuple)):
                 raise ValueError(
                     "`intervals` must be a list of tuples or SpanROI objects."
                 )
+            if isinstance(intervals, tuple) and len(intervals) == 2:
+                intervals = [intervals]
             interval_tuples = []
             for interval in intervals:
                 if hasattr(interval, "left") and hasattr(interval, "right"):
