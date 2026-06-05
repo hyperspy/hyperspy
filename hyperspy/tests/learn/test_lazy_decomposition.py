@@ -3052,6 +3052,35 @@ class TestFullSVDBaseSignalMask:
         assert s.learning_results.factors is not None
 
 
+class TestFullSVDNavMask2DOrder:
+    """2-D numpy nav mask + svd_solver='full' stores mask in correct array order.
+
+    Regression test for Oracle review finding: _to_flat_bool ran on untransposed
+    navigation_mask in the SVD full path, giving wrong ravel order for 2-D nav.
+    """
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(42)
+        # ALL-DIFFERENT: ny=5, nx=6, sig=20
+        self.s = Signal1D(rng.random((5, 6, 20))).as_lazy()
+        # Mask row 0 and column 1 in display order (nx=6, ny=5)
+        self.nav_mask = np.zeros((6, 5), dtype=bool)
+        self.nav_mask[0, 1] = True
+
+    def test_full_svd_nav_mask_stored_in_array_order(self):
+        """navigation_mask stored in learning_results should be reshaped from
+        array-order ravel, matching _navigation_shape_in_array (ny, nx)."""
+        s = self.s
+        s.decomposition(
+            output_dimension=3,
+            svd_solver="full",
+            navigation_mask=self.nav_mask,
+        )
+        stored = s.learning_results.navigation_mask
+        # Should be (ny=5, nx=6) — array order, not display order (6, 5)
+        assert stored.shape == (5, 6)
+
+
 class TestIncrementalNavMaskTranspose:
     """ISVD + 2-D nav mask gets .T'd to array-axis order (L1493-1495)."""
 

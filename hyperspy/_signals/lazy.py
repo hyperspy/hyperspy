@@ -1514,6 +1514,10 @@ class LazySignal(signals.BaseSignal):
                         else:
                             nav_mask_1d = np.asarray(_nm).ravel().astype(bool)
                         _navigation_mask_for_reproject = nav_mask_1d
+                        # Update navigation_mask to array order so downstream
+                        # _to_flat_bool / _to_flat_bool_early calls get the
+                        # correct ravel order for 2-D navigation spaces.
+                        navigation_mask = _nm
 
                     # Resolve signal mask to a 1-D boolean numpy array.
                     sig_mask_1d = None
@@ -1526,6 +1530,7 @@ class LazySignal(signals.BaseSignal):
                             sig_mask_1d = _sm.ravel().compute().astype(bool)
                         else:
                             sig_mask_1d = np.asarray(_sm).ravel().astype(bool)
+                        signal_mask = _sm
 
                     # Build the data matrix, applying masks if present.
                     # After unfold() self.data is 2-D: (nav, sig).
