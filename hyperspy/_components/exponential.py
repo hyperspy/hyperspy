@@ -116,21 +116,21 @@ class Exponential(Expression):
                 )
             if isinstance(intervals, tuple) and len(intervals) == 2:
                 intervals = [intervals]
-            interval_tuples = []
-            for interval in intervals:
-                if hasattr(interval, "left") and hasattr(interval, "right"):
-                    interval_tuples.append((interval.left, interval.right))
-                elif isinstance(interval, (tuple, list)) and len(interval) == 2:
-                    interval_tuples.append(tuple(interval))
-                else:
-                    raise ValueError(
-                        f"Invalid interval format: {interval}. "
-                        "Expected tuple (left, right) or SpanROI object."
-                    )
-            # Merge intervals into a single contiguous range
-            all_lefts = [t[0] for t in interval_tuples]
-            all_rights = [t[1] for t in interval_tuples]
-            i1, i2 = axis.value_range_to_indices(min(all_lefts), max(all_rights))
+            if len(intervals) != 1:
+                raise ValueError(
+                    "Exponential estimation requires exactly one interval, "
+                    f"got {len(intervals)}."
+                )
+            interval = intervals[0]
+            if hasattr(interval, "left") and hasattr(interval, "right"):
+                i1, i2 = axis.value_range_to_indices(interval.left, interval.right)
+            elif isinstance(interval, (tuple, list)) and len(interval) == 2:
+                i1, i2 = axis.value_range_to_indices(interval[0], interval[1])
+            else:
+                raise ValueError(
+                    f"Invalid interval format: {interval}. "
+                    "Expected tuple (left, right) or SpanROI object."
+                )
         elif x1 is not None:
             if x2 is None:
                 raise ValueError("x2 must be provided when using x1.")

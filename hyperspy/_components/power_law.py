@@ -151,6 +151,11 @@ class PowerLaw(Expression):
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
 
+        # Backward compat: positional callers pass only_current as 6th arg
+        if isinstance(intervals, bool):
+            only_current = intervals
+            intervals = None
+
         if intervals is not None:
             if not isinstance(intervals, (list, tuple)):
                 raise ValueError(
