@@ -534,6 +534,7 @@ class TestReturnInfo:
 class TestBSSModelCorruptionFix:
     """Regression test: get_bss_model() should not corrupt learning_results."""
 
+    @skip_sklearn
     def test_lazy_with_numpy_bss_arrays_preserves_decomposition(self):
         """#3657: get_bss_model() on lazy signal with numpy bss arrays should
         wrap them as dask, compute, then restore original factors/loadings."""
@@ -555,6 +556,7 @@ class TestBSSModelCorruptionFix:
         assert s.learning_results.factors is saved_factors
         assert s.learning_results.loadings is saved_loadings
 
+    @skip_sklearn
     def test_non_lazy_preserves_decomposition(self):
         """#3657: get_bss_model() on non-lazy signal should be a no-op
         for learning_results (takes the else return path)."""
