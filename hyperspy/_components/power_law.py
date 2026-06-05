@@ -104,8 +104,6 @@ class PowerLaw(Expression):
         signal,
         x1=None,
         x2=None,
-        x3=None,
-        x4=None,
         only_current=False,
         out=False,
         intervals=None,
@@ -118,29 +116,23 @@ class PowerLaw(Expression):
         ----------
         signal : :class:`~.api.signals.Signal1D`
         x1 : float, optional
-            The left endpoint of the first signal interval. Deprecated, use
+            The left endpoint of the signal interval. Deprecated, use
             ``intervals`` instead.
         x2 : float, optional
-            The right endpoint of the first signal interval. Deprecated, use
+            The right endpoint of the signal interval. Deprecated, use
             ``intervals`` instead.
-        x3 : float, optional
-            The left endpoint of the second signal interval. Deprecated, use
-            ``intervals`` instead.
-        x4 : float, optional
-            The right endpoint of the second signal interval. Deprecated, use
-            ``intervals`` instead.
-        intervals : list of tuple or :class:`~.api.roi.SpanROI`, optional
-            List of intervals for estimation. Each interval can be a tuple
-            ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
-            The two-area method requires exactly 2 intervals. If a single
-            interval is provided, it will be split in two for the estimation.
-            If ``None``, the ``x1``, ``x2``, ``x3``, ``x4`` arguments are
-            used for backward compatibility.
         only_current : bool
             If False, estimates the parameters for the full dataset.
         out : bool
             If True, returns the result arrays directly without storing in the
             parameter maps/values. The returned order is (A, r).
+        intervals : list of tuple or :class:`~.api.roi.SpanROI`, optional
+            List of intervals for estimation. Each interval can be a tuple
+            ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
+            The two-area method requires exactly 2 intervals. If a single
+            interval is provided, it will be split in two for the estimation.
+            If ``None``, the ``x1``, ``x2`` arguments are used for backward
+            compatibility.
 
         Returns
         -------
@@ -151,6 +143,7 @@ class PowerLaw(Expression):
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
 
+        two_intervals = False
         if intervals is not None:
             if not isinstance(intervals, (list, tuple)):
                 raise ValueError(
@@ -180,9 +173,10 @@ class PowerLaw(Expression):
                 )
             x1, x2 = interval_tuples[0]
             x3, x4 = interval_tuples[1]
+            two_intervals = True
         elif x1 is not None:
             warnings.warn(
-                "The x1, x2, x3, x4 parameters are deprecated. "
+                "The x1, x2 parameters are deprecated. "
                 "Use `intervals` parameter instead.",
                 VisibleDeprecationWarning,
                 stacklevel=2,
@@ -194,7 +188,7 @@ class PowerLaw(Expression):
 
         if x1 is not None and x2 <= x1:
             raise ValueError("x2 must be greater than x1")
-        if x3 is None:
+        if not two_intervals:
             i1, i4 = axis.value_range_to_indices(x1, x2)
             # Ensure that i1 and i4 are odd to split the interval in two
             if not (i4 + i1) % 2 == 0:
