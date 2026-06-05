@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -94,7 +94,7 @@ class Voigt(Expression):
         # We use `gamma_` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
-            expression="area * real(V); \
+            expression="area * re(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
                 z = (x - centre + 1j * gamma_) / (sigma * sqrt(2.0))",
             name="Voigt",
@@ -104,6 +104,7 @@ class Voigt(Expression):
             sigma=sigma,
             position="centre",
             module=module,
+            compute_gradients=False,
             autodoc=False,
             rename_pars={"gamma_": "gamma"},
             **kwargs,
@@ -181,6 +182,7 @@ class Voigt(Expression):
             self.sigma.map["is_set"][:] = True
             self.centre.map["values"][:] = centre
             self.centre.map["is_set"][:] = True
+            self.gamma.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 

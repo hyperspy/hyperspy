@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -69,5 +71,68 @@ class TestModelPlot:
         self.m.plot(navigator=None)
         assert self.m.signal._plot.navigator_plot is None
 
-    def test_plot_residual(self):
+    @pytest.mark.parametrize("plot_residual", (False, True))
+    def test_plot_events_connection(self, plot_residual):
+        # Check that the events connection and
+        # the plotting line are reset when closing
+        expected_connection = 1
+        if plot_residual:
+            expected_connection += 1
+        c = self.m[0]
+
+        assert self.m._model_line is None
+        assert self.m._residual_line is None
+        assert len(c.events.active_changed.connected) == 0
+        for p in c.parameters:
+            assert len(p.events.value_changed.connected) == 0
+
+        self.m.plot(plot_residual=plot_residual)
+        assert self.m._model_line is not None
+        assert (self.m._residual_line is not None) is plot_residual
+        assert len(c.events.active_changed.connected) == expected_connection
+        for p in c.parameters:
+            assert len(p.events.value_changed.connected) == expected_connection
+
+        self.m._plot.close()
+        assert len(c.events.active_changed.connected) == 0
+        for p in c.parameters:
+            assert len(p.events.value_changed.connected) == 0
+        assert self.m._model_line is None
+        assert self.m._residual_line is None
+
+    def test_update_plot_updates_residual(self):
         self.m.plot(plot_residual=True)
+        residual_line = self.m._residual_line
+        assert residual_line is not None
+        with patch.object(residual_line, "update", wraps=residual_line.update) as mock:
+            self.m.update_plot()
+            mock.assert_called_once()
+        self.m._plot.close()
+
+    def test_update_plot_no_residual(self):
+        self.m.plot(plot_residual=False)
+        assert self.m._residual_line is None
+        self.m.update_plot()
+        self.m._plot.close()
+
+    def test_suspend_update_updates_residual_on_resume(self):
+        self.m.plot(plot_residual=True)
+        residual_line = self.m._residual_line
+        assert residual_line is not None
+        with patch.object(residual_line, "update", wraps=residual_line.update) as mock:
+            with self.m.suspend_update():
+                self.m[0].a.value = 2.0
+            mock.assert_called_once()
+        self.m._plot.close()
+
+    def test_suspend_update_suppresses_residual_events(self):
+        self.m.plot(plot_residual=True)
+        residual_line = self.m._residual_line
+        assert residual_line is not None
+        with patch.object(residual_line, "update", wraps=residual_line.update) as mock:
+            with self.m.suspend_update():
+                self.m[0].a.value = 3.0
+                self.m[0].a.value = 4.0
+                mock.assert_not_called()
+            mock.assert_called_once()
+        self.m._plot.close()

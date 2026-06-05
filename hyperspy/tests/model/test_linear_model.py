@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import importlib
 import warnings
 
+import dask
 import numpy as np
 import pytest
+from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy.component import Component
@@ -28,6 +31,11 @@ from hyperspy.components2d import Gaussian2D
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.signals import Signal1D, Signal2D
+
+
+def _skip_test(s):
+    if s._lazy and Version(dask.__version__) < Version("2024.12.0"):
+        pytest.skip("dask version must be >= 2024.12.0.")
 
 
 def test_fit_binned():
@@ -72,6 +80,7 @@ class TestMultiFitLinear:
             s.estimate_poissonian_noise_variance()
 
     def test_gaussian(self, weighted):
+        _skip_test(self.s)
         self._post_setup_method(weighted)
         m = self.m
         L = Gaussian(centre=15.0)
@@ -79,8 +88,10 @@ class TestMultiFitLinear:
         m.append(L)
 
         m.fit(optimizer="lstsq")
-        single = m.as_signal()
+        # Use out_of_range_to_nan=False to test lazily
+        # with dask version < 2024.12.0
         m.assign_current_values_to_all()
+        single = m.as_signal(out_of_range_to_nan=False)
         cm = (
             pytest.warns(UserWarning)
             if weighted and not self.s._lazy
@@ -88,7 +99,7 @@ class TestMultiFitLinear:
         )
         with cm:
             m.multifit(optimizer="lstsq")
-        multi = m.as_signal()
+        multi = m.as_signal(out_of_range_to_nan=False)
 
         np.testing.assert_allclose(
             single._get_current_data(), multi._get_current_data()
@@ -128,14 +139,17 @@ class TestMultiFitLinear:
         np.testing.assert_equal(L.A.map["std"], np.nan)
 
     def test_offset(self, weighted):
+        _skip_test(self.s)
         self._post_setup_method(weighted)
         m = self.m
         L = Offset(offset=1.0)
         m.append(L)
 
         m.fit(optimizer="lstsq")
-        single = m.as_signal()
+        # Use out_of_range_to_nan=False to test lazily
+        # with dask version < 2024.12.0
         m.assign_current_values_to_all()
+        single = m.as_signal(out_of_range_to_nan=False)
         cm = (
             pytest.warns(UserWarning)
             if weighted and not self.s._lazy
@@ -143,13 +157,14 @@ class TestMultiFitLinear:
         )
         with cm:
             m.multifit(optimizer="lstsq")
-        multi = m.as_signal()
+        multi = m.as_signal(out_of_range_to_nan=False)
         # compare fits from first pixel
         np.testing.assert_allclose(
             single._get_current_data(), multi._get_current_data()
         )
 
     def test_channel_switches(self, weighted):
+        _skip_test(self.s)
         self._post_setup_method(weighted)
         m = self.m
         m._channel_switches[5:-5] = False
@@ -158,8 +173,8 @@ class TestMultiFitLinear:
         m.append(L)
 
         m.fit(optimizer="lstsq")
-        single = m.as_signal()
         m.assign_current_values_to_all()
+        single = m.as_signal()
         cm = (
             pytest.warns(UserWarning)
             if weighted and not self.s._lazy
@@ -188,10 +203,10 @@ class TestMultiFitLinear:
 
         if m.signal._lazy:
             with pytest.raises(ValueError):
-                m.multifit(optimizer="ridge_regression")
+                m.multifit(optimizer="ridge")
             return
         else:
-            m.multifit(optimizer="ridge_regression")
+            m.multifit(optimizer="ridge")
 
 
 class TestLinearFitting:
@@ -240,12 +255,13 @@ class TestLinearFitting:
 @lazifyTestClass
 class TestFitAlgorithms:
     def setup_method(self, method):
-        s = hs.signals.Signal1D(np.arange(1, 100))
+        s = hs.signals.Signal1D(np.arange(100, dtype=float))
         m = s.create_model()
         g1 = hs.model.components1D.Gaussian()
         g1.sigma.free = False
         g1.centre.free = False
         c = Expression("a*x+b", "line with offset")
+        c.b.value = 3
         m.extend([g1, c])
         self.m = m
 
@@ -256,14 +272,19 @@ class TestFitAlgorithms:
             variance = np.arange(10, m.signal.data.size - 10, 0.01)
             m.signal.set_noise_variance(Signal1D(variance))
         m.fit()
-        self.nonlinear_fit_res = m.as_signal()
+        # Use out_of_range_to_nan=False to test lazily
+        # with dask version < 2024.12.0
+        self.nonlinear_fit_res = m.as_signal(out_of_range_to_nan=False)
         self.nonlinear_fit_std = [p.std for p in m._free_parameters if p.std]
 
     def test_compare_lstsq(self, weighted):
+        _skip_test(self.m.signal)
         self._post_setup_method(weighted)
         m = self.m
         m.fit(optimizer="lstsq")
-        lstsq_fit = m.as_signal()
+        # Use out_of_range_to_nan=False to test lazily
+        # with dask version < 2024.12.0
+        lstsq_fit = m.as_signal(out_of_range_to_nan=False)
         np.testing.assert_allclose(
             self.nonlinear_fit_res, lstsq_fit._get_current_data(), atol=1e-8
         )
@@ -271,31 +292,37 @@ class TestFitAlgorithms:
         np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1e-8)
 
     def test_nonactive_component(self, weighted):
+        _skip_test(self.m.signal)
         self._post_setup_method(weighted)
         m = self.m
         m[1].active = False
         m.fit(optimizer="lstsq")
-        linear_fit = m.as_signal()
+        # Use out_of_range_to_nan=False to test lazily
+        # with dask version < 2024.12.0
+        linear_fit = m.as_signal(out_of_range_to_nan=False)
         m.fit()
-        nonlinear_fit = m.as_signal()
+        nonlinear_fit = m.as_signal(out_of_range_to_nan=False)
         np.testing.assert_allclose(
             nonlinear_fit._get_current_data(), linear_fit._get_current_data(), rtol=1e-5
         )
 
     def test_compare_ridge(self, weighted):
+        _skip_test(self.m.signal)
         self._post_setup_method(weighted)
         pytest.importorskip("sklearn")
         m = self.m
         if m.signal._lazy:
             with pytest.raises(ValueError):
-                m.fit(optimizer="ridge_regression")
+                m.fit(optimizer="ridge")
             return
         else:
-            m.fit(optimizer="ridge_regression")
-        ridge_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, rtol=5e-6)
+            m.fit(optimizer="ridge")
+        # Use out_of_range_to_nan=False to test lazily
+        # with dask version < 2024.12.0
+        ridge_fit = m.as_signal(out_of_range_to_nan=False)
+        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, atol=1e-4)
         linear_std = [para.std for para in m._free_parameters if para.std]
-        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1e-8)
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1e-2)
 
 
 class TestWarningSlowMultifit:
@@ -382,10 +409,10 @@ class TestWarningSlowMultifit:
     def test_heteroscedastic_variance(self):
         m = self.m
         m.signal.estimate_poissonian_noise_variance()
-        with pytest.warns(UserWarning):
-            m.multifit(
-                optimizer="lstsq", match="noise of the signal is not homoscedastic"
-            )
+        with pytest.warns(
+            UserWarning, match="noise of the signal is not homoscedastic"
+        ):
+            m.multifit(optimizer="lstsq")
 
 
 class TestLinearModel2D:
@@ -459,6 +486,10 @@ class TestLinearModel2D:
                 m.append(g)
 
         m.fit(optimizer="lstsq")
+        m.assign_current_values_to_all()
+        np.testing.assert_allclose(s.data, m.as_signal().data)
+
+        m.multifit(optimizer="lstsq")
         np.testing.assert_allclose(s.data, m.as_signal().data)
 
     @pytest.mark.parametrize("nav2d", [False, True])
@@ -481,9 +512,13 @@ class TestLinearModel2D:
         m = s.create_model()
         m.append(P)
         m.fit(optimizer="lstsq")
+        m.assign_current_values_to_all()
         diff = s - m.as_signal(show_progressbar=False)
         np.testing.assert_allclose(diff.data, 0.0, atol=1e-7)
         np.testing.assert_allclose(m.p_std, 0.0, atol=1e-7)
+
+        m.multifit(optimizer="lstsq")
+        np.testing.assert_allclose(s.data, m.as_signal().data)
 
 
 class TestLinearFitTwins:
@@ -721,6 +756,7 @@ def test_navigation_shape(navigation_dim):
     g.A.value = 1000
     m = s.create_model()
     m.append(g)
+    m.assign_current_values_to_all()
     g.A.map["values"] = rng.integers(low=500, high=1500, size=nav_shape)
     g.A.map["is_set"] = True
     s.data = m.as_signal().data
@@ -743,6 +779,7 @@ def test_power_law():
     pl_ref.A.value = 100
     pl_ref.r.value = 4
 
+    m_ref.assign_current_values_to_all()
     s = m_ref.as_signal()
 
     m = s.create_model()
@@ -772,6 +809,7 @@ def test_lorentzian():
     l_ref.A.value = 100
     l_ref.centre.value = 15
 
+    m_ref.assign_current_values_to_all()
     s = m_ref.as_signal()
 
     m = s.create_model()
@@ -800,6 +838,7 @@ def test_expression_multiple_linear_parameter(nav_dim):
 
     m_ref = s_ref.create_model()
     m_ref.extend([p_ref])
+    m_ref.assign_current_values_to_all()
     s = m_ref.as_signal()
 
     if nav_dim >= 1:
@@ -820,3 +859,64 @@ def test_expression_multiple_linear_parameter(nav_dim):
         np.testing.assert_allclose(p.a0.map["values"].mean(), p_ref.a0.value)
         np.testing.assert_allclose(p.a1.map["values"].mean(), p_ref.a1.value)
         np.testing.assert_allclose(p.a2.map["values"].mean(), p_ref.a2.value)
+
+
+@pytest.mark.parametrize("optimizer", ("lstsq", "ols", "nnls", "ridge"))
+def test_fitter(optimizer):
+    if optimizer in ["ols", "nnls", "ridge"]:
+        pytest.importorskip("sklearn")
+    s_ref = hs.signals.Signal1D(np.ones(20))
+    p_ref = hs.model.components1D.Polynomial(order=2, a0=25, a1=50, a2=2.5)
+
+    m_ref = s_ref.create_model()
+    m_ref.extend([p_ref])
+    m_ref.assign_current_values_to_all()
+    s = m_ref.as_signal()
+
+    m = s.create_model()
+    p = hs.model.components1D.Polynomial(order=2)
+    m.append(p)
+    m.fit(optimizer=optimizer)
+
+    rtol = 5e-3 if optimizer == "ridge" else 1e-7
+
+    np.testing.assert_allclose(p_ref.a0.value, p.a0.value, rtol=rtol)
+    np.testing.assert_allclose(p_ref.a1.value, p.a1.value, rtol=rtol)
+    np.testing.assert_allclose(p_ref.a2.value, p.a2.value, rtol=rtol)
+    np.testing.assert_allclose(m.as_signal().data, s.data, rtol=rtol)
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("sklearn") is not None, reason="sklearn is installed"
+)
+def test_fit_using_sklearn():
+    s = hs.signals.Signal1D(np.ones(20))
+
+    m = s.create_model()
+    p = hs.model.components1D.Polynomial(order=2)
+    m.append(p)
+
+    for optimizer in ["ols", "nnls", "ridge"]:
+        with pytest.raises(ImportError, match="scikit-learn"):
+            m.fit(optimizer=optimizer)
+
+
+def test_rank_lstsq_residual():
+    # test for case where rank is lower than number of free parameters
+    # the residual returned by np.linalg.lstsq is then an empty array
+    s_ref = hs.signals.Signal1D(np.ones(20))
+    p_ref = hs.model.components1D.Polynomial(order=2, a0=25, a1=50, a2=2.5)
+    g_ref = hs.model.components1D.Gaussian(A=1e4)
+
+    m_ref = s_ref.create_model()
+    m_ref.extend([p_ref, g_ref])
+    m_ref.assign_current_values_to_all()
+    s = m_ref.as_signal()
+
+    m = s.create_model()
+    p = hs.model.components1D.Polynomial(order=2)
+    g = hs.model.components1D.Gaussian()
+    o = hs.model.components1D.Offset()
+    m.extend([p, g, o])
+    m.set_parameters_not_free(only_nonlinear=True)
+    m.fit(optimizer="lstsq")

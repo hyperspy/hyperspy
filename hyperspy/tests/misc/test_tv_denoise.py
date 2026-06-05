@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,7 +18,6 @@
 
 import numpy as np
 import pytest
-import skimage
 
 from hyperspy.misc.tv_denoise import tv_denoise
 
@@ -29,6 +28,7 @@ def test_tv_denoise_error():
 
 
 def test_2d_tv_denoise():
+    skimage = pytest.importorskip("skimage")
     rng = np.random.RandomState(123)
     data = skimage.data.camera().astype(float)
     data_noisy = data + data.std() * rng.randn(*data.shape)

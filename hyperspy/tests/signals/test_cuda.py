@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -154,7 +154,7 @@ def test_to_device(lazy):
     s = hs.signals.Signal1D(data)
     if lazy:
         s = s.as_lazy()
-        assert isinstance(s, hs.hyperspy._signals.signal1d.LazySignal1D)
+        assert isinstance(s, hs.signals.LazySignal1D)
         with pytest.raises(BaseException):
             s.to_device()
     else:
@@ -184,3 +184,15 @@ def test_decomposition():
     s.plot_decomposition_factors(3)
 
     s.blind_source_separation(2, algorithm="orthomax")
+
+
+def test_remove_spikes():
+    s = hs.data.two_gaussians()
+    s.to_device()
+
+    index0 = (10, 5, 800)
+    expected_value = 271
+    s.data[index0] = 1e4  # initial value is 310
+
+    s.remove_spikes()
+    assert s.data[index0] == expected_value

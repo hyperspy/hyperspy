@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,16 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import numpy as np
 import pytest
 
-from hyperspy.signals import (
-    Signal1D,
-    Signal2D,
-)
+import hyperspy.api as hs
 
 
 def test_signal():
-    s = Signal1D([10, 10])
+    s = hs.signals.Signal1D([10, 10])
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.fft()
@@ -34,13 +32,11 @@ def test_signal():
     with pytest.raises(NotImplementedError):
         s.diff(0)
     with pytest.raises(NotImplementedError):
-        s.rebin(scale=[1])
-    with pytest.raises(NotImplementedError):
         s.split(number_of_parts=2, axis=0)
 
 
 def test_signal1d():
-    s = Signal1D(([0, 1]))
+    s = hs.signals.Signal1D(([0, 1]))
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.calibrate()
@@ -59,15 +55,26 @@ def test_signal1d():
 
 
 def test_signal2d():
-    s = Signal2D([[10, 10], [10, 10]])
+    s = hs.signals.Signal2D([[10, 10], [10, 10]])
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.align2D()
 
 
 def test_lazy():
-    s = Signal1D([10, 10]).as_lazy()
+    s = hs.signals.Signal1D([10, 10]).as_lazy()
     s.axes_manager[0].convert_to_non_uniform_axis()
     print(s)
     with pytest.raises(NotImplementedError):
         s.diff(0)
+
+
+def test_rebin():
+    s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
+    s.axes_manager[-1].convert_to_non_uniform_axis()
+    s.rebin(scale=(2, 1))
+    s.rebin(new_shape=(5, 10))
+    with pytest.raises(NotImplementedError):
+        s.rebin(scale=(1, 2))
+    with pytest.raises(NotImplementedError):
+        s.rebin(new_shape=(1, 5))

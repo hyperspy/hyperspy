@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,22 +16,29 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy._signals.complex_signal import LazyComplexSignal
-from hyperspy._signals.complex_signal1d import LazyComplexSignal1D
-from hyperspy._signals.complex_signal2d import LazyComplexSignal2D
-from hyperspy._signals.lazy import LazySignal
-from hyperspy._signals.signal1d import LazySignal1D
-from hyperspy._signals.signal2d import LazySignal2D
+import importlib
+import warnings
+
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.extensions import EXTENSIONS as EXTENSIONS_
 
 __all__ = [
-    "LazyComplexSignal",
-    "LazyComplexSignal1D",
-    "LazyComplexSignal2D",
-    "LazySignal",
-    "LazySignal1D",
-    "LazySignal2D",
+    signal_ for signal_, specs_ in EXTENSIONS_["signals"].items() if specs_["lazy"]
 ]
 
 
 def __dir__():
     return sorted(__all__)
+
+
+def __getattr__(name):
+    warnings.warn(
+        "The private module `_lazy_signals` is deprecated and will be removed "
+        "in the HyperSpy 3.0 release. Please use the public module "
+        "`hyperspy.signals` instead.",
+        VisibleDeprecationWarning,
+    )
+    if name in __all__:
+        spec = EXTENSIONS_["signals"][name]
+        return getattr(importlib.import_module(spec["module"]), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

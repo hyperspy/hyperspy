@@ -1,7 +1,25 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2026 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
 import numpy as np
 import pytest
 
-from hyperspy.learn.ornmf import ornmf
+from hyperspy.learn._ornmf import ornmf
 from hyperspy.signals import Signal1D
 
 
@@ -125,3 +143,37 @@ class TestRNMF:
 
         # Check the low-rank component MSE
         compare_norms(X_out, self.X.T)
+
+
+class TestORNMFNegativeMean:
+    """Regression tests for PR #3656: ORNMF hang on negative-mean data."""
+
+    def test_setup_with_negative_mean_does_not_produce_nan(self):
+        """_setup should produce finite W even when data has negative mean."""
+        from hyperspy.learn._ornmf import ORNMF
+
+        rng = np.random.default_rng(42)
+        X = rng.random((13, 25)) - 15.0  # negative mean ~ -2.5
+        obj = ORNMF(rank=3, random_state=1)
+        obj._setup(X)
+        assert np.all(np.isfinite(obj.W))
+        assert obj.W.shape[1] == 3
+
+
+class TestORNMFIteratorSetup:
+    """Cover the iterator path in _setup for full coverage of #3611 fix."""
+
+    def test_setup_with_iterator_uses_abs(self):
+        """_setup should use abs() when X is an iterator (not ndarray)."""
+        from hyperspy.learn._ornmf import ORNMF
+
+        rng = np.random.default_rng(42)
+        X = rng.random((13, 7))
+        # Make mean negative so abs() matters
+        X = X - 2.0
+        # Pass as generator to trigger iterator path
+        obj = ORNMF(rank=3, random_state=1)
+        gen = (row for row in X)
+        obj._setup(gen)
+        assert np.all(np.isfinite(obj.W))
+        assert obj.W.shape[1] == 3

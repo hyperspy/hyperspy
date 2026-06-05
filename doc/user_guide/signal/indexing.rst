@@ -15,7 +15,7 @@ Those new to Python may find indexing a somewhat esoteric concept but once
 mastered it is one of the most powerful features of Python based code and
 greatly simplifies many common tasks. HyperSpy's Signal indexing is similar
 to numpy array indexing and those new to Python are encouraged to read the
-associated `numpy documentation on the subject <https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html>`_.
+corresponding `numpy documentation <https://numpy.org/doc/stable/user/basics.indexing.html>`_.
 
 
 Key features of indexing in HyperSpy are as follows (note that some of these

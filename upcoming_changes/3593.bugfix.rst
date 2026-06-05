@@ -1,0 +1,1 @@
+:meth:`~.api.signals.Signal1D.spikes_removal_tool`: fix updating y-limits when moving to the next detected spike.

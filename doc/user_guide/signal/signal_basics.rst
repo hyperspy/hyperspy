@@ -183,8 +183,8 @@ appropriate, functionalities are restricted to certain
 .. versionchanged:: 2.0
     The subclasses ``EELS``, ``EDS_SEM``, ``EDS_TEM`` and
     ``DielectricFunction`` have been moved to the extension package
-    ``EleXSpy`` and the subclass ``hologram`` has been
-    moved to the extension package ``HoloSpy``.
+    ``exspy`` and the subclass ``hologram`` has been
+    moved to the extension package ``holospy``.
 
 .. _hyperspy_extensions-label:
 
@@ -206,7 +206,8 @@ The metadata attribute ``signal_type`` describes the nature of the signal. It ca
 be any string, normally the acronym associated with a particular signal. To print
 all :class:`~.api.signals.BaseSignal` subclasses available in your system call
 the function :func:`~.api.print_known_signal_types` as in the following
-example:
+example (assuming the extensions :external+exspy:ref:`eXSpy <user_guide>` and
+:external+holospy:ref:`holoSpy <user_guide>` are installed):
 
 .. code-block:: python
 
@@ -229,12 +230,12 @@ otherwise a warning will be raised to explain that
 no registered signal class can be assigned to the given ``signal_type``.
 
 Since the :func:`~.api.load` can return domain specific signal objects (e.g.
-``EDSSEMSpectrum`` from ``EleXSpy``) provided by extensions, the corresponding
+``EDSSEMSpectrum`` from ``eXSpy``) provided by extensions, the corresponding
 functionalities (so-called `method` of `object` in object-oriented programming,
 e.g. ``EDSSEMSpectrum.get_lines_intensity()``) implemented in signal classes of
 the extension can be accessed directly. To use additional functionalities
 implemented in extensions, but not as method of the signal class, the extensions
-need to be imported explicitly (e.g. ``import elexspy``). Check the user guides
+need to be imported explicitly (e.g. ``import exspy``). Check the user guides
 of the respective `HyperSpy extensions
 <https://github.com/hyperspy/hyperspy-extensions-list>`_ for details on the
 provided methods and functions.
@@ -253,7 +254,8 @@ in place, which may result in a :class:`~.api.signals.BaseSignal` subclass
 transformation.
 
 The following example shows how to change the signal dimensionality and how
-to transform between different subclasses:
+to transform between different subclasses (converting to ``EELS`` requires the
+extension :external+exspy:ref:`eXSpy <user_guide>` to be installed):
 
    .. code-block:: python
 

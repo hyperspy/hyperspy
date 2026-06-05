@@ -5,13 +5,21 @@ Loading and saving data
 
 .. versionchanged:: 2.0
 
-    The IO plugins formerly developed within HyperSpy have been moved to
-    the separate package :external+rsciio:doc:`RosettaSciIO <index>`
-    in order to facilitate a wider use also by other packages. Plugins supporting
-    additional formats or corrections/enhancements to existing plugins should now
-    be contributed to the `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_
-    and file format specific issues should be reported to the `RosettaSciIO issue
-    tracker <https://github.com/hyperspy/rosettasciio/issues>`_.
+    File format support in HyperSpy is provided by the separate package 
+    :external+rsciio:doc:`RosettaSciIO <index>`. The IO plugins formerly 
+    developed within HyperSpy have been moved to RosettaSciIO in order to 
+    facilitate a wider use also by other packages. 
+    
+    **For file format information and documentation**, please refer to:
+    
+    * :external+rsciio:ref:`Supported File Formats <supported-formats>` - Complete list of supported formats
+    * :external+rsciio:doc:`RosettaSciIO Documentation <index>` - Full documentation for file I/O functionality
+    * `RosettaSciIO GitHub Repository <https://github.com/hyperspy/rosettasciio>`_ - Source code and development
+    
+    **Reporting Issues**: File format specific issues should be reported to the 
+    `RosettaSciIO issue tracker <https://github.com/hyperspy/rosettasciio/issues>`_. 
+    Plugins supporting additional formats or corrections/enhancements to existing 
+    plugins should be contributed to the RosettaSciIO repository.
 
 .. _loading_files:
 
@@ -21,7 +29,10 @@ Loading
 Basic usage
 -----------
 
-HyperSpy can read and write to multiple formats (see :external+rsciio:ref:`supported-formats`).
+HyperSpy can read and write to multiple formats through the 
+:external+rsciio:doc:`RosettaSciIO <index>` library (see :external+rsciio:ref:`supported-formats`). 
+RosettaSciIO provides the file format support that powers HyperSpy's loading and saving capabilities.
+
 To load data use the :func:`~.load` command. For example, to load the
 image ``spam.jpg``, you can type:
 
@@ -73,17 +84,20 @@ allows to select a single file through your OS file manager, e.g.:
 It is also possible to load multiple files at once or even stack multiple
 files. For more details read :ref:`load-multiple-label`.
 
-Specifying reader
------------------
+Specifying file format
+----------------------
 
-HyperSpy will attempt to infer the appropriate file reader to use based on
-the file extension (for example. ``.hspy``, ``.emd`` and so on). You can
-override this using the ``reader`` keyword:
+HyperSpy (via RosettaSciIO) will attempt to infer the appropriate file reader to use based on
+the file extension (for example ``.hspy``, ``.emd`` and so on). You can
+override this using the ``file_format`` keyword:
 
 .. code-block:: python
 
     # Load a .hspy file with an unknown extension
-    >>> s = hs.load("filename.some_extension", reader="hspy") # doctest: +SKIP
+    >>> s = hs.load("filename.some_extension", file_format="hspy") # doctest: +SKIP
+
+For a complete list of supported file formats and their capabilities, see the
+:external+rsciio:ref:`supported-formats` documentation in RosettaSciIO.
 
 .. _load_specify_signal_type-label:
 
@@ -100,7 +114,8 @@ available on your local installation use:
     >>> hs.print_known_signal_types() # doctest: +SKIP
 
 When loading data, the signal type can be specified by providing the ``signal_type``
-keyword, which has to correspond to one of the available subclasses of signal:
+keyword, which has to correspond to one of the available subclasses of signal
+(The ``EELS`` signal type is provided by the extension :external+exspy:ref:`eXSpy <user_guide>`):
 
 .. code-block:: python
 
@@ -310,3 +325,118 @@ If you want to save to the :external+rsciio:ref:`ripple format <ripple-format>` 
 
 Some formats take extra arguments. See the corresponding pages at
 :external+rsciio:ref:`supported-formats` for more information.
+
+.. _batch_resaving:
+
+Batch Processing and Re-saving
+------------------------------
+
+HyperSpy provides convenient functionality for batch processing and re-saving 
+files using the ``tmp_parameters`` that are automatically populated when 
+loading files. This is particularly useful when you need to:
+
+* Process multiple files and save them in a different location
+* Convert files from one format to another
+* Apply the same processing to many files while preserving their original names
+
+The ``tmp_parameters`` contain the original filename, folder, and extension 
+information from loaded files, enabling you to save processed data without 
+manually specifying filenames.
+
+Basic Re-saving to Different Locations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When you load a file with HyperSpy, the ``tmp_parameters`` are automatically 
+populated:
+
+.. code-block:: python
+
+    >>> s = hs.load("original_data.hspy")  # doctest: +SKIP
+    >>> print(s.tmp_parameters.filename)   # 'original_data'  # doctest: +SKIP
+    >>> print(s.tmp_parameters.extension)  # '.hspy'  # doctest: +SKIP
+    >>> print(s.tmp_parameters.folder)     # '/path/to/original/'  # doctest: +SKIP
+
+You can then save the signal to a different directory by providing only the 
+directory path:
+
+.. code-block:: python
+
+    >>> s.save("/new/output/folder/")  # Saves to /new/output/folder/original_data.hspy  # doctest: +SKIP
+
+Format Conversion
+^^^^^^^^^^^^^^^^^
+
+To convert files to different formats, specify the ``file_format`` or 
+``extension`` parameter:
+
+.. code-block:: python
+
+    >>> s = hs.load("data.hspy")                       # Load HyperSpy format  # doctest: +SKIP
+    >>> s.save("output/", file_format="msa")          # Convert to MSA format  # doctest: +SKIP
+    >>> s.save("output/", file_format="rpl")          # Convert to Ripple format  # doctest: +SKIP
+
+Batch Processing Example
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here's a complete example of batch processing multiple files:
+
+.. code-block:: python
+
+    import hyperspy.api as hs
+    from pathlib import Path
+
+    # Define input and output directories
+    input_folder = Path("raw_data/")
+    output_folder = Path("processed_data/")
+    output_folder.mkdir(exist_ok=True)  # Create output directory if it doesn't exist
+
+    # Process all .hspy files in the input directory
+    for file_path in input_folder.glob("*.hspy"):
+        # Load the signal
+        s = hs.load(file_path)
+        
+        # Apply your processing steps
+        s = s.remove_background()
+        
+        # Save in new location - filename is preserved automatically
+        s.save(output_folder)  # Uses original filename from tmp_parameters
+
+    # Convert all files to a different format
+    for file_path in input_folder.glob("*.hspy"):
+        s = hs.load(file_path)
+        # Save as MSA format in output directory
+        s.save(output_folder, file_format="msa")
+
+Batch Processing with Different Output Names
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you need more control over output filenames while still leveraging the 
+batch functionality:
+
+.. code-block:: python
+
+    import hyperspy.api as hs
+    from pathlib import Path
+
+    input_folder = Path("input_data/")
+    output_folder = Path("processed_data/")
+
+    for file_path in input_folder.glob("*.hspy"):
+        s = hs.load(file_path)
+        
+        # Process the signal
+        s = s.remove_background()
+        
+        # Option 1: Use automatic filename with prefix/suffix
+        base_name = s.tmp_parameters.filename
+        custom_filename = f"processed_{base_name}.hspy"
+        s.save(output_folder / custom_filename)
+        
+        # Option 2: Completely custom filename
+        s.save(output_folder / f"{base_name}_cleaned.msa")
+
+.. note::
+
+    The ``tmp_parameters`` are only available for signals that were loaded from 
+    files. If you create a signal programmatically, you'll need to provide the 
+    full filename when saving.

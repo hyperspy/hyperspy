@@ -28,12 +28,14 @@ jobs:
       id-token: write
     steps:
     - name: Download dist
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
+      with:
+        name: dist
+        path: dist
 
     - name: Display downloaded files
       run: |
         ls -shR
-      working-directory: dist
 
     - uses: pypa/gh-action-pypi-publish@release/v1
       if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository_owner == 'hyperspy' }}
@@ -49,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Create Release
         if: ${{ startsWith(github.ref, 'refs/tags/') && github.repository_owner == 'hyperspy' }}
-        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b

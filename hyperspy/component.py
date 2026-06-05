@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,20 +20,17 @@ import logging
 from pathlib import Path
 
 import numpy as np
-import sympy
 import traits.api as t
-from dask.array import Array as dArray
-from rsciio.utils.tools import append2pathname, incremental_filename
-from sympy.utilities.lambdify import lambdify
+from rsciio.utils import path
 from traits.trait_numeric import Array
 
 from hyperspy.events import Event, Events
+from hyperspy.misc import utils
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
 )
 from hyperspy.misc.model_tools import CurrentComponentValues
-from hyperspy.misc.utils import display, get_object_package_info, slugify
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -101,6 +98,9 @@ class Parameter(t.HasTraits):
     # depending on whether it was set manually or calculated with sympy
     __twin_inverse_function = None
     _twin_inverse_sympy = None
+    # Re-entrance guard. When True, avoids update loop by
+    # not updating the twin while it is being updated elsewhere
+    _updating_twin = False
 
     def __init__(self):
         self._twins = set()
@@ -205,6 +205,9 @@ class Parameter(t.HasTraits):
 
     @twin_function_expr.setter
     def twin_function_expr(self, value):
+        import sympy
+        from sympy.utilities.lambdify import lambdify
+
         if not value:
             self._twin_function = None
             self.__twin_inverse_function = None
@@ -253,6 +256,9 @@ class Parameter(t.HasTraits):
 
     @twin_inverse_function_expr.setter
     def twin_inverse_function_expr(self, value):
+        import sympy
+        from sympy.utilities.lambdify import lambdify
+
         if not value:
             self.__twin_inverse_function = None
             self._twin_inverse_function_expr = ""
@@ -262,7 +268,7 @@ class Parameter(t.HasTraits):
             raise ValueError("The expression must contain only one variable.")
         elif len(expr.free_symbols) == 0:
             raise ValueError(
-                "The expression must contain one variable, " "it contains none."
+                "The expression must contain one variable, it contains none."
             )
         x = tuple(expr.free_symbols)[0]
         self.__twin_inverse_function = lambdify(x, expr.evalf())
@@ -342,7 +348,6 @@ class Parameter(t.HasTraits):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
             self.events.value_changed.trigger(value=self.__value, obj=self)
-        self.trait_property_changed("value", old_value, self.__value)
 
     # Fix the parameter when coupled
     def _get_free(self):
@@ -358,22 +363,18 @@ class Parameter(t.HasTraits):
                 f"Parameter {self.name} can't be set free "
                 "is twinned with {self.twin}."
             )
-        old_value = self._free
         self._free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-        self.trait_property_changed("free", old_value, self._free)
 
     def _on_twin_update(self, value, twin=None):
-        if (
-            twin is not None
-            and hasattr(twin, "events")
-            and hasattr(twin.events, "value_changed")
-        ):
-            with twin.events.value_changed.suppress_callback(self._on_twin_update):
-                self.events.value_changed.trigger(value=value, obj=self)
-        else:
+        if self._updating_twin:
+            return
+        self._updating_twin = True
+        try:
             self.events.value_changed.trigger(value=value, obj=self)
+        finally:
+            self._updating_twin = False
 
     def _set_twin(self, arg):
         if arg is None:
@@ -415,14 +416,12 @@ class Parameter(t.HasTraits):
             return self._bounds[0][0]
 
     def _set_bmin(self, arg):
-        old_value = self.bmin
         if self._number_of_elements == 1:
             self._bounds = (arg, self.bmax)
         else:
             self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-        self.trait_property_changed("bmin", old_value, arg)
 
     def _get_bmax(self):
         """The higher value of the bounds."""
@@ -432,14 +431,12 @@ class Parameter(t.HasTraits):
             return self._bounds[0][1]
 
     def _set_bmax(self, arg):
-        old_value = self.bmax
         if self._number_of_elements == 1:
             self._bounds = (self.bmin, arg)
         else:
             self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-        self.trait_property_changed("bmax", old_value, arg)
 
     @property
     def _number_of_elements(self):
@@ -451,9 +448,7 @@ class Parameter(t.HasTraits):
         if self.__number_of_elements == arg:
             return
         if arg < 1:
-            raise ValueError(
-                "Please provide an integer number equal " "or greater to 1"
-            )
+            raise ValueError("Please provide an integer number equal or greater to 1")
         self._bounds = ((self.bmin, self.bmax),) * arg
         self.__number_of_elements = arg
 
@@ -535,9 +530,9 @@ class Parameter(t.HasTraits):
         if self.map["is_set"][indices]:
             value = self.map["values"][indices]
             std = self.map["std"][indices]
-            if isinstance(value, dArray):
+            if utils.is_dask_array(value):
                 value = value.compute()
-            if isinstance(std, dArray):
+            if utils.is_dask_array(std):
                 std = std.compute()
             self.value = value
             self.std = std
@@ -674,7 +669,7 @@ class Parameter(t.HasTraits):
         save_std : bool
             If True, also the standard deviation will be saved
         format: str
-            The extension of any file format supported by HyperSpy, default
+            The extension of any file format supported by RosettaSciIO, default
             ``hspy``.
 
         """
@@ -682,12 +677,12 @@ class Parameter(t.HasTraits):
             format = "hspy"
         if name is None:
             name = self.component.name + "_" + self.name
-        filename = incremental_filename(slugify(name) + "." + format)
+        filename = path.incremental_filename(utils.slugify(name) + "." + format)
         if folder is not None:
             filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
         if save_std is True:
-            self.as_signal(field="std").save(append2pathname(filename, "_std"))
+            self.as_signal(field="std").save(path.append2pathname(filename, "_std"))
 
     def as_dictionary(self, fullcopy=True):
         """Returns parameter as a dictionary, saving all attributes from
@@ -882,18 +877,19 @@ class Component(t.HasTraits):
             for component in self.model:
                 if value == component.name:
                     raise ValueError(
-                        "Another component already has " "the name " + str(value)
+                        "Another component already has the name " + str(value)
                     )
             self._name = value
             setattr(
-                self.model._components, slugify(value, valid_variable_name=True), self
+                self.model._components,
+                utils.slugify(value, valid_variable_name=True),
+                self,
             )
             self.model._components.__delattr__(
-                slugify(old_value, valid_variable_name=True)
+                utils.slugify(old_value, valid_variable_name=True)
             )
         else:
             self._name = value
-        self.trait_property_changed("name", old_value, self._name)
 
     @property
     def _axes_manager(self):
@@ -924,12 +920,10 @@ class Component(t.HasTraits):
     def _set_active(self, arg):
         if self._active == arg:
             return
-        old_value = self._active
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
         self.events.active_changed.trigger(active=self._active, obj=self)
-        self.trait_property_changed("active", old_value, self._active)
 
     def init_parameters(self, parameter_name_list, linear_parameter_list=None):
         """
@@ -1291,7 +1285,7 @@ class Component(t.HasTraits):
 
         """
         dic = {"parameters": [p.as_dictionary(fullcopy) for p in self.parameters]}
-        dic.update(get_object_package_info(self))
+        dic.update(utils.get_object_package_info(self))
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         from hyperspy.model import _COMPONENTS
 
@@ -1369,7 +1363,7 @@ class Component(t.HasTraits):
         only_free : bool
             If True, only free parameters will be printed.
         """
-        display(CurrentComponentValues(self, only_free=only_free))
+        utils.display(CurrentComponentValues(self, only_free=only_free))
 
     @property
     def _constant_term(self):

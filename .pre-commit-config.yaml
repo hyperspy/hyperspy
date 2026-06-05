@@ -1,15 +1,32 @@
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.4.2
+    rev: v0.15.4
     hooks:
       # Run the linter.
       - id: ruff
         args: [ --fix ]
       # Run the formatter.
       - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Check if switcher.json is valid
+      - id: check-json
+  - repo: local
+    hooks:
+      - id: check-ai-co-author
+        name: Block Co-authored-by AI trailers
+        entry: scripts/check-ai-co-author.py
+        language: script
+        stages: [commit-msg]
+        always_run: true
 ci:
     # Don't run automatically on PRs, instead add the comment
     # "pre-commit.ci autofix" on a pull request to manually trigger auto-fixing 
     autofix_prs: false
     autoupdate_branch: 'RELEASE_next_patch'
+    autoupdate_schedule: monthly

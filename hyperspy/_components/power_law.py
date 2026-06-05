@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -97,23 +97,43 @@ class PowerLaw(Expression):
         self.isbackground = True
         self.convolved = False
 
-    def estimate_parameters(self, signal, x1, x2, x3=None, x4=None, only_current=False, out=False):
+    def estimate_parameters(
+        self,
+        signal,
+        x1=None,
+        x2=None,
+        x3=None,
+        x4=None,
+        intervals=None,
+        only_current=False,
+        out=False,
+    ):
         """Estimate the parameters for the power law component
 
-        The two area method is used to estimate the parameters. If `x3` and `x4` are
-        given, two discontinuous areas are used for the estimation.
+        The two area method is used to estimate the parameters.
 
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
-        x1 : float
-            The left endpoint of the first signal interval.
-        x2 : float
-            The right endpoint of the first signal interval.
+        x1 : float, optional
+            The left endpoint of the first signal interval. Deprecated, use
+            ``intervals`` instead.
+        x2 : float, optional
+            The right endpoint of the first signal interval. Deprecated, use
+            ``intervals`` instead.
         x3 : float, optional
-            The left endpoint of the second signal interval. Default is None.
+            The left endpoint of the second signal interval. Deprecated, use
+            ``intervals`` instead.
         x4 : float, optional
-            The right endpoint of the second signal interval. Default is None.
+            The right endpoint of the second signal interval. Deprecated, use
+            ``intervals`` instead.
+        intervals : list of tuples or :class:`~.api.roi.SpanROI`, optional
+            List of intervals for estimation. Each interval can be a tuple
+            ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
+            The two-area method requires exactly 2 intervals. If a single
+            interval is provided, it will be split in two for the estimation.
+            If ``None``, the ``x1``, ``x2``, ``x3``, ``x4`` arguments are
+            used for backward compatibility.
         only_current : bool
             If False, estimates the parameters for the full dataset.
         out : bool
@@ -128,10 +148,53 @@ class PowerLaw(Expression):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        # Sanity check
-        if x1 is not None and  x2 <= x1:
+
+        if intervals is not None:
+            if not isinstance(intervals, (list, tuple)):
+                raise ValueError(
+                    "`intervals` must be a list of tuples or SpanROI objects."
+                )
+            if isinstance(intervals, tuple) and len(intervals) == 2:
+                intervals = [intervals]
+            interval_tuples = []
+            for interval in intervals:
+                if hasattr(interval, "left") and hasattr(interval, "right"):
+                    interval_tuples.append((interval.left, interval.right))
+                elif isinstance(interval, (tuple, list)) and len(interval) == 2:
+                    interval_tuples.append(tuple(interval))
+                else:
+                    raise ValueError(
+                        f"Invalid interval format: {interval}. "
+                        "Expected tuple (left, right) or SpanROI object."
+                    )
+            if len(interval_tuples) == 1:
+                left, right = interval_tuples[0]
+                mid = (left + right) / 2
+                interval_tuples = [(left, mid), (mid, right)]
+            elif len(interval_tuples) != 2:
+                raise ValueError(
+                    "Power law estimation requires exactly 2 intervals "
+                    f"for the two-area method, got {len(interval_tuples)}."
+                )
+            x1, x2 = interval_tuples[0]
+            x3, x4 = interval_tuples[1]
+        elif x1 is not None:
+            import warnings
+
+            warnings.warn(
+                "The x1, x2, x3, x4 parameters are deprecated. "
+                "Use `intervals` parameter instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            if x2 is None:
+                raise ValueError("x2 must be provided when using x1.")
+        else:
+            raise ValueError("Either `intervals` or `x1` and `x2` must be provided.")
+
+        if x1 is not None and x2 <= x1:
             raise ValueError("x2 must be greater than x1")
-        if x3 is None: # Continuos area estimation
+        if x3 is None:
             i1, i4 = axis.value_range_to_indices(x1, x2)
             # Ensure that i1 and i4 are odd to split the interval in two
             if not (i4 + i1) % 2 == 0:
@@ -142,13 +205,15 @@ class PowerLaw(Expression):
             i2 = i3
         else:
             if x3 < x2:
-                raise ValueError("x4 must be greater than x3")
+                raise ValueError("x3 must be greater than x2")
             if x4 <= x3:
                 raise ValueError("x4 must be greater than x3")
             i1, i2 = axis.value_range_to_indices(x1, x2)
             i3, i4 = axis.value_range_to_indices(x3, x4)
             if i1 == i2 or i3 == i4:
-                raise ValueError("The estimation intervals must contain at least 2 points")
+                raise ValueError(
+                    "The estimation intervals must contain at least 2 points"
+                )
         x1, x2, x3, x4 = axis.index2value([i1, i2, i3, i4])
         if only_current is True:
             s = signal.get_current_signal()
@@ -171,7 +236,11 @@ class PowerLaw(Expression):
             I2 = I2_s.data
         with np.errstate(divide="raise"):
             try:
-                r = 2 * (np.log(I1/I2*(x4-x3)/(x2-x1))) / (np.log(x4*x3/x2/x1))
+                r = (
+                    2
+                    * (np.log(I1 / I2 * (x4 - x3) / (x2 - x1)))
+                    / (np.log(x4 * x3 / x2 / x1))
+                )
                 k = 1 - r
                 A2 = k * I2 / (x4**k - x3**k)
                 A1 = k * I1 / (x2**k - x1**k)
@@ -201,8 +270,11 @@ class PowerLaw(Expression):
             self.A.map["is_set"][:] = True
             self.r.map["values"][:] = r
             self.r.map["is_set"][:] = True
+            self.origin.map["is_set"] = True
+            self.left_cutoff.map["is_set"] = True
             self.fetch_stored_values()
             return True
+
     def grad_A(self, x):
         return self.function(x) / self.A.value
 

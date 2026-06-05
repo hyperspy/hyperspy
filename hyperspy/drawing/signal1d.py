@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -56,6 +56,7 @@ class Signal1DFigure(BlittedFigure):
         # Color cycles
         self._color_cycles = {
             "line": utils.ColorCycle(),
+            "dash": utils.ColorCycle(),
             "step": utils.ColorCycle(),
             "scatter": utils.ColorCycle(),
         }
@@ -114,6 +115,10 @@ class Signal1DFigure(BlittedFigure):
                 lines.close()
             self.right_ax.remove()
             self.right_ax = None
+            # Invalidate the blit background then force a full redraw
+            # so the canvas repaints without the removed axis.
+            self._background = None
+            self.render_figure()
         if adjust_layout:
             plt.tight_layout()
 
@@ -345,9 +350,12 @@ class Signal1DLine(object):
             lp["marker"] = "o"
             lp["linestyle"] = "None"
             lp["markersize"] = 1
-
         elif value == "line":
             lp["linestyle"] = "-"
+            lp["marker"] = "None"
+            lp["drawstyle"] = "default"
+        elif value == "dash":
+            lp["linestyle"] = "--"
             lp["marker"] = "None"
             lp["drawstyle"] = "default"
         elif value == "step":
@@ -411,7 +419,7 @@ class Signal1DLine(object):
             )
         elif norm not in ["auto", "linear"]:
             raise ValueError(
-                "`norm` paramater should be 'auto', 'linear' or " "'log' for Signal1D."
+                "`norm` paramater should be 'auto', 'linear' or 'log' for Signal1D."
             )
         else:
             plot = self.ax.plot

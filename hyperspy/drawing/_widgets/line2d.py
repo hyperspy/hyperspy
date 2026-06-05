@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -38,11 +38,11 @@ def angle_between(v1, v2):
 
     Examples
     --------
-    >>> angle_between((1, 0), (0, 1))
+    >>> print(angle_between((1, 0), (0, 1)))
     1.5707963267948966
-    >>> angle_between((1, 0), (1, 0))
+    >>> print(angle_between((1, 0), (1, 0)))
     0.0
-    >>> angle_between((1, 0), (-1, 0))
+    >>> print(angle_between((1, 0), (-1, 0)))
     3.141592653589793
     """
     v1_u = unit_vector(v1)
@@ -290,7 +290,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             return
         if self.axes[0].scale != self.axes[1].scale:
             raise ValueError(
-                "linewidth is not supported for axis with " "different scale."
+                "linewidth is not supported for axis with different scale."
             )
         wc = self._get_width_indicator_coords()
         kwargs = picker_kwargs(self.radius_move)
@@ -308,6 +308,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             self._patch.remove(patch)
             patch.remove()
         self._width_indicator_patches = []
+        # Patches were removed from the axes but the blit background
+        # still shows their pixels — invalidate and force a full redraw.
+        if hasattr(self.ax, "hspy_fig"):
+            self.ax.hspy_fig._background = None
+            self.draw_patch()
 
     def _get_vertex(self, event):
         """Check bitfield on self.func, and return vertex index."""

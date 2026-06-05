@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -332,6 +332,108 @@ class TestParameterTwin:
         with pytest.raises(AttributeError):
             # twin_inversion_function undefined
             p2.value = 3
+
+    def test_twin_no_double_event(self):
+        """Verify that setting a twinned parameter fires value_changed
+        exactly once — the re-entrance guard prevents the twin from
+        re-triggering the source parameter's event."""
+        self.p2.twin = self.p1
+
+        p1_event_count = 0
+        p2_event_count = 0
+
+        def count_p1(*args, **kwargs):
+            nonlocal p1_event_count
+            p1_event_count += 1
+
+        def count_p2(*args, **kwargs):
+            nonlocal p2_event_count
+            p2_event_count += 1
+
+        self.p1.events.value_changed.connect(count_p1, [])
+        self.p2.events.value_changed.connect(count_p2, [])
+        self.p1.value = 3.5
+
+        assert p1_event_count == 1, (
+            f"p1.value_changed should fire once per change, got {p1_event_count}"
+        )
+        assert p2_event_count == 1, (
+            "p2.value_changed should fire once when twin propagates, "
+            f"got {p2_event_count}"
+        )
+        assert self.p1.value == 3.5
+        assert self.p2.value == 3.5
+
+    def test_twin_guard_resets(self):
+        """Verify that the re-entrance guard resets properly between
+        successive value changes — the twin must sync each time,
+        not get stuck in a suppressed state."""
+        self.p2.twin = self.p1
+
+        p2_event_count = 0
+
+        def count_p2(*args, **kwargs):
+            nonlocal p2_event_count
+            p2_event_count += 1
+
+        self.p2.events.value_changed.connect(count_p2, [])
+        self.p1.value = 1.0
+        assert p2_event_count == 1
+
+        self.p1.value = 2.0
+        assert p2_event_count == 2, (
+            f"p2 should receive a second event after guard resets, got {p2_event_count}"
+        )
+
+        self.p1.value = 3.0
+        assert p2_event_count == 3, (
+            f"p2 should receive a third event, got {p2_event_count}"
+        )
+        assert self.p1.value == 3.0
+        assert self.p2.value == 3.0
+
+    def test_twin_both_directions_no_loop(self):
+        """Verify that a twin pair syncs bidirectionally without
+        infinite recursion. The re-entrance guard prevents each side
+        from triggering back once it's already being updated."""
+        self.p2.twin = self.p1
+        self.p1.value = 10.0
+        assert self.p1.value == 10.0
+        assert self.p2.value == 10.0
+
+        # Setting the dest param — syncs BACK to source (twin is bidirectional)
+        self.p2.value = 20.0
+        assert self.p2.value == 20.0
+        assert self.p1.value == 20.0, (
+            "p1 SHOULD be updated when setting p2 manually (twin is bidirectional)"
+        )
+
+        # Now set p1 again — p2 should update via twin
+        self.p1.value = 30.0
+        assert self.p1.value == 30.0
+        assert self.p2.value == 30.0
+
+    def test_twin_guard_returns_early_when_updating(self):
+        """The _updating_twin re-entrance guard prevents _on_twin_update
+        from firing events when called from inside its own update cycle.
+        This is the critical early-return branch that prevents
+        feedback loops in bidirectional twin sync."""
+        p2 = self.p2
+
+        event_fired = False
+
+        def check(*a, **kw):
+            nonlocal event_fired
+            event_fired = True
+
+        p2.events.value_changed.connect(check, [])
+        p2._updating_twin = True
+        p2._on_twin_update(value=5.0)
+        assert not event_fired, "Guard should prevent event when _updating_twin is True"
+
+        p2._updating_twin = False
+        p2._on_twin_update(value=10.0)
+        assert event_fired, "Guard should allow event after _updating_twin reset"
 
     def test_inherit_connections(self):
         dummy = Dummy()

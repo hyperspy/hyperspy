@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,6 +19,7 @@
 import logging
 import textwrap
 
+import matplotlib
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing import utils
@@ -27,7 +28,7 @@ from hyperspy.events import Event, Events
 _logger = logging.getLogger(__name__)
 
 
-class BlittedFigure(object):
+class BlittedFigure:
     def __init__(self):
         self._draw_event_cid = None
         self._background = None
@@ -43,22 +44,30 @@ class BlittedFigure(object):
             """,
             arguments=["obj"],
         )
+        # The matplotlib Figure or SubFigure
+        # To access the matplotlib figure, use `get_mpl_figure`
+        self.figure = None
+        # The matplotlib Axis
+        self.ax = None
         self.title = ""
         self.ax_markers = list()
 
     def create_figure(self, **kwargs):
-        """Create matplotlib figure
+        """
+        Create matplotlib figure.
 
         Parameters
         ----------
-        **kwargs
-            All keyword arguments are passed to ``plt.figure``.
+        **kwargs : dict
+            Keyword arguments are passed to
+            :func:`hyperspy.drawing.utils.create_figure`.
 
         """
+        kwargs.setdefault("_on_figure_window_close", self.close)
         self.figure = utils.create_figure(
-            window_title="Figure " + self.title if self.title else None, **kwargs
+            window_title="Figure " + self.title if self.title else None,
+            **kwargs,
         )
-        utils.on_figure_window_close(self.figure, self._on_close)
         if self.figure.canvas.supports_blit:
             self._draw_event_cid = self.figure.canvas.mpl_connect(
                 "draw_event", self._on_blit_draw
@@ -80,7 +89,7 @@ class BlittedFigure(object):
             # Create a list of animated artists and draw them.
             artists = sorted(ax.get_children(), key=lambda x: x.zorder)
             for artist in artists:
-                if artist.get_animated():
+                if artist.get_animated() and artist.axes is not None:
                     ax.draw_artist(artist)
 
     def _update_animated(self):
@@ -92,24 +101,46 @@ class BlittedFigure(object):
         self._draw_animated()
         canvas.blit(self.figure.bbox)
 
+    def get_mpl_figure(self):
+        """Retuns the matplotlib figure"""
+        if self.figure is None:
+            return None
+        else:
+            # See https://github.com/matplotlib/matplotlib/pull/28177
+            figure = self.figure
+            # matplotlib SubFigure can be nested and we don't support it
+            if isinstance(figure, matplotlib.figure.SubFigure):
+                return figure.figure
+            else:
+                return figure
+
     def add_marker(self, marker):
         marker.ax = self.ax
         self.ax_markers.append(marker)
+        # marker.close() → events.closed → this lambda → mutates ax_markers
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 
     def remove_markers(self, render_figure=False):
         """Remove all markers"""
-        for marker in self.ax_markers:
+        # Iterate a snapshot copy: marker.close() triggers events.closed,
+        # which calls self.ax_markers.remove(obj) via the lambda registered
+        # in add_marker().  Mutating the list during iteration causes
+        # every other marker to be skipped.
+        for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         if render_figure:
+            # Markers closed above removed their collections from the axes
+            # but did not touch the blit cache — invalidate it before
+            # rendering so the canvas repaints without the old pixels.
+            self._background = None
             self.render_figure()
 
     def _on_close(self):
         _logger.debug("Closing `BlittedFigure`.")
-        if self.figure is None:
-            _logger.debug("`BlittedFigure` already closed.")
-            return  # Already closed
-        for marker in self.ax_markers:
+        self.ax = None
+        self._background = None
+        # Same snapshot-copy rationale as remove_markers (see above).
+        for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
@@ -117,15 +148,13 @@ class BlittedFigure(object):
         if self._draw_event_cid:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
             self._draw_event_cid = None
-        plt.close(self.figure)
         self.figure = None
-        self.ax = None
-        self._background = None
         _logger.debug("`BlittedFigure` closed.")
 
     def close(self):
         _logger.debug("`close` `BlittedFigure` called.")
         self._on_close()  # Needs to trigger serially for a well defined state
+        plt.close(self.get_mpl_figure())
 
     @property
     def title(self):

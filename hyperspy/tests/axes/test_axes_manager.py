@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,6 +21,7 @@ from unittest import mock
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.axes import (
     AxesManager,
     BaseDataAxis,
@@ -29,7 +30,7 @@ from hyperspy.axes import (
     _serpentine_iter,
 )
 from hyperspy.defaults_parser import preferences
-from hyperspy.signals import BaseSignal, Signal1D, Signal2D
+from hyperspy.misc.utils import TupleSA
 
 
 def generator():
@@ -78,11 +79,21 @@ class TestAxesManager:
 
     def test_reprs(self):
         repr(self.am)
-        self.am._repr_html_
+        self.am._repr_html_()
         self.am[0].convert_to_non_uniform_axis()
         self.am[-1].convert_to_non_uniform_axis()
         repr(self.am)
-        self.am._repr_html_
+        self.am._repr_html_()
+
+    def test_reprs_signal_only(self):
+        """Test repr when there are no navigation axes (signal-only)."""
+        am = AxesManager([{"name": "x", "size": 5, "navigate": False}])
+        text = repr(am)
+        assert "Navigation axes" not in text
+        assert "Signal axes" in text
+        html = am._repr_html_()
+        assert "Navigation axes" not in html
+        assert "Signal axes" in html
 
     def test_update_from(self):
         am = self.am
@@ -116,6 +127,31 @@ class TestAxesManager:
         assert am[-2].offset == am[-1].offset
         assert am[-2].scale == am[-1].scale
 
+    def test_set_attributes(self):
+        am = self.am
+        am.signal_axes.set(name=("kx", "ky"), offset=(1, 2), scale=3, units="nm^{-1}")
+        assert am.signal_axes[0].name == "kx"
+        assert am.signal_axes[1].name == "ky"
+        assert am.signal_axes[0].offset == 1
+        assert am.signal_axes[1].offset == 2
+        assert am.signal_axes[0].scale == 3
+        assert am.signal_axes[1].scale == 3
+        assert am.signal_axes[0].units == "nm^{-1}"
+        assert am.signal_axes[1].units == "nm^{-1}"
+        am.navigation_axes.set(name=("x", "y"), offset=10, scale=(10, 20), units="nm")
+        assert am.navigation_axes[0].name == "x"
+        assert am.navigation_axes[1].name == "y"
+        assert am.navigation_axes[0].offset == 10
+        assert am.navigation_axes[1].offset == 10
+        assert am.navigation_axes[0].scale == 10
+        assert am.navigation_axes[1].scale == 20
+        assert am.navigation_axes[0].units == "nm"
+        assert am.navigation_axes[1].units == "nm"
+        with pytest.raises(AttributeError):
+            am.signal_axes.set(
+                names=("kx", "kx"), offset=(1, 2), scale=3, units="nm^{-1}"
+            )
+
     def test_all_uniform(self):
         assert self.am.all_uniform is True
         self.am[-1].convert_to_non_uniform_axis()
@@ -130,19 +166,26 @@ class TestAxesManager:
         with pytest.raises(ValueError):
             axis = BaseDataAxis()
             am[axis]
+        assert isinstance(am.navigation_axes, TupleSA)
+        assert isinstance(am.signal_axes, TupleSA)
+
+        assert am["nav"] == am.navigation_axes
+        assert isinstance(am["nav"], TupleSA)
+        assert am["sig"] == am.signal_axes
+        assert isinstance(am["nav"], TupleSA)
 
 
 class TestAxesManagerScaleOffset:
     def test_low_high_value(self):
         data = np.arange(11)
-        s = BaseSignal(data)
+        s = hs.signals.BaseSignal(data)
         axes = s.axes_manager[0]
         assert axes.low_value == data[0]
         assert axes.high_value == data[-1]
 
     def test_change_scale(self):
         data = np.arange(132)
-        s = BaseSignal(data)
+        s = hs.signals.BaseSignal(data)
         axes = s.axes_manager[0]
         scale_value_list = [0.07, 76, 1]
         for scale_value in scale_value_list:
@@ -152,7 +195,7 @@ class TestAxesManagerScaleOffset:
 
     def test_change_offset(self):
         data = np.arange(81)
-        s = BaseSignal(data)
+        s = hs.signals.BaseSignal(data)
         axes = s.axes_manager[0]
         offset_value_list = [12, -216, 1, 0]
         for offset_value in offset_value_list:
@@ -162,7 +205,7 @@ class TestAxesManagerScaleOffset:
 
     def test_change_offset_scale(self):
         data = np.arange(11)
-        s = BaseSignal(data)
+        s = hs.signals.BaseSignal(data)
         axes = s.axes_manager[0]
         scale, offset = 0.123, -314
         axes.offset = offset
@@ -173,7 +216,7 @@ class TestAxesManagerScaleOffset:
 
 class TestAxesManagerExtent:
     def test_1d_basesignal(self):
-        s = BaseSignal(np.arange(10))
+        s = hs.signals.BaseSignal(np.arange(10))
         assert len(s.axes_manager.signal_extent) == 2
         signal_axis = s.axes_manager.signal_axes[0]
         signal_extent = (signal_axis.low_value, signal_axis.high_value)
@@ -182,7 +225,7 @@ class TestAxesManagerExtent:
         assert () == s.axes_manager.navigation_extent
 
     def test_1d_signal1d(self):
-        s = Signal1D(np.arange(10))
+        s = hs.signals.Signal1D(np.arange(10))
         assert len(s.axes_manager.signal_extent) == 2
         signal_axis = s.axes_manager.signal_axes[0]
         signal_extent = (signal_axis.low_value, signal_axis.high_value)
@@ -191,7 +234,7 @@ class TestAxesManagerExtent:
         assert () == s.axes_manager.navigation_extent
 
     def test_2d_signal1d(self):
-        s = Signal1D(np.arange(100).reshape(10, 10))
+        s = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
         assert len(s.axes_manager.signal_extent) == 2
         signal_axis = s.axes_manager.signal_axes[0]
         signal_extent = (signal_axis.low_value, signal_axis.high_value)
@@ -202,7 +245,7 @@ class TestAxesManagerExtent:
         assert nav_extent == s.axes_manager.navigation_extent
 
     def test_3d_signal1d(self):
-        s = Signal1D(np.arange(1000).reshape(10, 10, 10))
+        s = hs.signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
         assert len(s.axes_manager.signal_extent) == 2
         signal_axis = s.axes_manager.signal_axes[0]
         signal_extent = (signal_axis.low_value, signal_axis.high_value)
@@ -219,7 +262,7 @@ class TestAxesManagerExtent:
         assert nav_extent == s.axes_manager.navigation_extent
 
     def test_2d_signal2d(self):
-        s = Signal2D(np.arange(100).reshape(10, 10))
+        s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
         assert len(s.axes_manager.signal_extent) == 4
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
@@ -234,7 +277,7 @@ class TestAxesManagerExtent:
         assert () == s.axes_manager.navigation_extent
 
     def test_3d_signal2d(self):
-        s = Signal2D(np.arange(1000).reshape(10, 10, 10))
+        s = hs.signals.Signal2D(np.arange(1000).reshape(10, 10, 10))
         assert len(s.axes_manager.signal_extent) == 4
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
@@ -251,7 +294,7 @@ class TestAxesManagerExtent:
         assert nav_extent == s.axes_manager.navigation_extent
 
     def test_changing_scale_offset(self):
-        s = Signal2D(np.arange(100).reshape(10, 10))
+        s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
         signal_extent = (
@@ -282,7 +325,7 @@ class TestAxesManagerExtent:
 
 
 def test_setting_indices_coordinates():
-    s = Signal1D(np.arange(1000).reshape(10, 10, 10))
+    s = hs.signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
 
     m = mock.Mock()
     s.axes_manager.events.indices_changed.connect(m, [])
@@ -330,7 +373,7 @@ def test_setting_indices_coordinates():
 
 class TestAxesHotkeys:
     def setup_method(self, method):
-        s = Signal1D(np.zeros(7 * (5,)))
+        s = hs.signals.Signal1D(np.zeros(7 * (5,)))
         self.am = s.axes_manager
 
     def test_hotkeys_in_six_dimensions(self):
@@ -388,7 +431,7 @@ class TestAxesHotkeys:
 
 class TestIterPathScanPattern:
     def setup_method(self, method):
-        s = Signal1D(np.zeros((3, 3, 3, 2)))
+        s = hs.signals.Signal1D(np.zeros((3, 3, 3, 2)))
         self.am = s.axes_manager
 
     def test_iterpath_property(self):
@@ -510,7 +553,7 @@ class TestIterPathScanPattern:
 
 class TestIterPathScanPatternSignal2D:
     def setup_method(self, method):
-        s = Signal2D(np.zeros((3, 3, 3, 2, 1)))
+        s = hs.signals.Signal2D(np.zeros((3, 3, 3, 2, 1)))
         self.am = s.axes_manager
         self.s = s
 
@@ -565,7 +608,7 @@ def test_iterpath_function_serpentine():
             assert indices == (2, 1, 0)
 
 
-def TestAxesManagerRagged():
+class TestAxesManagerRagged:
     def setup_method(self, method):
         axes_list = [
             {
@@ -589,10 +632,8 @@ def TestAxesManagerRagged():
         assert not self.am.ragged
 
     def test_reprs(self):
-        expected_string = "<Axes manager, axes: (2|ragged)>\n"
-        "            Name |   size |  index |  offset |   scale |  units \n"
-        "================ | ====== | ====== | ======= | ======= | ====== \n"
-        "               a |      2 |      0 |       0 |     1.3 |     aa \n"
-        "---------------- | ------ | ------ | ------- | ------- | ------ \n"
-        "     Ragged axis |               Variable length"
-        assert self.am.__repr__() == expected_string
+        text = self.am.__repr__()
+        assert "<Axes manager, axes: (2|ragged)>" in text
+        assert "Ragged axis | Variable length" in text
+        html = self.am._repr_html_()
+        assert "Ragged axis | Variable length" in html

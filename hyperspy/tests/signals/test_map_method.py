@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
 from unittest import mock
 
+import dask
 import dask.array as da
 import numpy as np
 import pytest
@@ -26,7 +28,8 @@ from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 import hyperspy.api as hs
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.utils import _get_block_pattern
+from hyperspy.misc.dask_utils import _get_block_pattern
+from hyperspy.misc.utils import dummy_context_manager
 
 
 def identify_function(x):
@@ -1118,9 +1121,9 @@ class TestLazyInputMapAll:
             lazy_output=False,
         )
         assert not s_rot._lazy
-        assert not hasattr(s_rot.data, "compute")
+        assert not isinstance(s_rot.data, da.Array)
         assert s._lazy
-        assert hasattr(s.data, "compute")
+        assert isinstance(s.data, da.Array)
         assert s_rot.data[0, 0] == 0.0
         assert s_rot.data[0, -1] == 0.0
         assert s_rot.data[-1, 0] == 0.0
@@ -1141,7 +1144,7 @@ class TestLazyInputMapAll:
             lazy_output=False,
         )
         assert not s._lazy
-        assert not hasattr(s.data, "compute")
+        assert not isinstance(s.data, da.Array)
         assert s.data[0, 0] == 0.0
         assert s.data[0, -1] == 0.0
         assert s.data[-1, 0] == 0.0
@@ -1282,3 +1285,171 @@ class TestMapAll:
         assert sig.axes_manager.signal_shape == (64, 64)
         assert sig.axes_manager.navigation_shape == (10,)
         assert sig.data.shape == (10, 64, 64)
+
+
+def test_map_processes_scheduler():
+    data = np.arange(4 * 128 * 128).reshape((4, 128, 128))
+    s = hs.signals.Signal2D(data)
+
+    angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
+
+    with dask.config.set(scheduler="processes"):
+        s.map(rotate, angle=angles.T, reshape=False)
+
+
+def test_silence_warning_non_uniform(caplog):
+    s = hs.signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
+    s.axes_manager[-1].convert_to_non_uniform_axis()
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=True, inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["non-uniform"], inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, inplace=False)
+    assert "At least one axis of the signal is non-uniform." in caplog.text
+
+
+def test_silence_warning_scales(caplog):
+    s = hs.signals.Signal2D(np.arange(5 * 10 * 15).reshape(5, 10, 15))
+    s.axes_manager.signal_axes[0].scale = 0.5
+    s.axes_manager.signal_axes[1].scale = 1.0
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=True, inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings="scales", inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["scales"], inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=False, inplace=False)
+    assert "The function you applied does not take into account" in caplog.text
+    assert "scales" in caplog.text
+
+
+@pytest.mark.parametrize("silence_warnings", (False, "scales"))
+def test_silence_warning_units_warn(caplog, silence_warnings):
+    s = hs.signals.Signal2D(np.arange(5 * 10 * 15).reshape(5, 10, 15))
+    s.axes_manager.signal_axes[0].units = "m"
+    s.axes_manager.signal_axes[1].units = "nm"
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=silence_warnings, inplace=False)
+    assert "The function you applied does not take into account" in caplog.text
+    assert "units" in caplog.text
+
+
+def test_silence_warning_units(caplog):
+    s = hs.signals.Signal2D(np.arange(5 * 10 * 15).reshape(5, 10, 15))
+    s.axes_manager.signal_axes[0].units = "m"
+    s.axes_manager.signal_axes[1].units = "nm"
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=True, inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings="units", inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["units"], inplace=False)
+    assert caplog.text == ""
+
+    with pytest.raises(ValueError):
+        s.map(np.sum, silence_warnings=["units", "wrong_string"], inplace=False)
+
+    with pytest.raises(TypeError):
+        s.map(np.sum, silence_warnings=[True], inplace=False)
+
+
+def test_silence_warning_scales_units(caplog):
+    s = hs.signals.Signal2D(np.arange(5 * 10 * 15).reshape(5, 10, 15))
+    s.axes_manager.signal_axes[0].units = "m"
+    s.axes_manager.signal_axes[0].scale = 10
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=["scales", "units"], inplace=False)
+    assert caplog.text == ""
+
+    with caplog.at_level(logging.WARNING):
+        s.map(np.sum, silence_warnings=False, inplace=False)
+    assert "scales" in caplog.text
+    assert "units" in caplog.text
+
+
+def test_map_chunking_parallel():
+    data = np.ones((350, 400, 100))
+    s = hs.signals.Signal1D(data)
+
+    def func(x):
+        return x
+
+    with dask.config.set(num_workers=10):
+        s2 = s.inav[:25, :25].map(func, lazy_output=True, inplace=False)
+        s2.data.chunks == (
+            (3, 3, 3, 3, 3, 3, 3, 3, 1),
+            (3, 3, 3, 3, 3, 3, 3, 3, 1),
+            (100,),
+        )
+
+        # not large enough to use optimised chunking for parallelisation
+        s3 = s.inav[:10, :2].map(func, lazy_output=True, inplace=False)
+        assert s3.data.chunks == ((2,), (10,), (100,))
+
+    # data size large enough to use "auto" chunking
+    with dask.config.set(num_workers=1):
+        s4 = s.map(func, lazy_output=True, inplace=False)
+        s4.data.chunks == ((350,), (200, 200), (100,))
+
+    s5 = s.inav[:20, :20].map(
+        func, lazy_output=True, inplace=False, navigation_chunks=(5, 5)
+    )
+    assert s5.data.chunks == ((5,) * 4, (5,) * 4, (100,))
+
+
+@pytest.mark.parametrize("navigation_chunks", (None, "auto"))
+def test_map_chunking_parallel_warning_input(caplog, navigation_chunks):
+    data = np.ones((350, 400, 100))
+    s = hs.signals.Signal1D(data)
+
+    def func(x):
+        return x
+
+    cm = caplog.at_level if navigation_chunks is None else dummy_context_manager
+
+    with dask.config.set(num_workers=1):
+        with cm(logging.WARNING):
+            s2 = s.map(
+                func,
+                lazy_output=True,
+                inplace=False,
+                navigation_chunks=navigation_chunks,
+            )
+        if navigation_chunks is None:
+            assert "`navigaion_chunk=None` is deprecated" in caplog.text
+        s2.data.chunks == ((350,), (200, 200), (100,))
+
+
+def test_map_navigation_chunks_error_input():
+    data = np.ones((350, 400, 100))
+    s = hs.signals.Signal1D(data)
+
+    def func(x):
+        return x
+
+    with pytest.raises(ValueError):
+        s.map(func, lazy_output=True, navigation_chunks=-1)
+
+    with pytest.raises(ValueError):
+        s.map(func, lazy_output=True, navigation_chunks="dask_auto")

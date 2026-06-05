@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,10 +31,10 @@ widgets externally (usually for testing or customisation purposes).
 
 import importlib
 
-from hyperspy.extensions import ALL_EXTENSIONS, _external_extensions
+from hyperspy.extensions import ALL_EXTENSIONS, _extensions
 
 UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["GUI"]["toolkeys"]}
-_EXTENSION_NAMES = [e.name for e in _external_extensions]
+_EXTENSION_NAMES = [e.name for e in _extensions]
 
 TOOLKIT_REGISTRY = set()
 KNOWN_TOOLKITS = set(("ipywidgets", "traitsui"))
@@ -127,8 +127,8 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     available_toolkits = set()
     used_toolkits = set()
     for toolkit, specs in UI_REGISTRY[toolkey].items():
-        f = getattr(importlib.import_module(specs["module"]), specs["function"])
         if toolkit in toolkits:
+            f = getattr(importlib.import_module(specs["module"]), specs["function"])
             used_toolkits.add(toolkit)
             try:
                 thisw = f(obj=self, display=display, **kwargs)
@@ -171,7 +171,7 @@ DISPLAY_DT = """display : bool
 TOOLKIT_DT = """toolkit : str, iterable of str or None
             If None (default), all available widgets are displayed or returned.
             If string, only the widgets of the selected toolkit are displayed
-            if available. If an interable of toolkit strings, the widgets of
+            if available. If an iterable of toolkit strings, the widgets of
             all listed toolkits are displayed or returned."""
 GUI_DT = """Display or return interactive GUI element if available.
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -54,6 +54,7 @@ matplotlib.rcParams["interactive"] = False
 hs.preferences.Plot.cmap_navigator = "viridis"
 hs.preferences.Plot.cmap_signal = "viridis"
 hs.preferences.Plot.pick_tolerance = 5.0
+hs.preferences.Plot.use_subfigure = False
 # Don't show progressbar since it contains the runtime which
 # will make the doctest fail
 hs.preferences.General.show_progressbar = False

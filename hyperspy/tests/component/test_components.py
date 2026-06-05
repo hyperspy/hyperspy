@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -102,13 +102,11 @@ class TestPowerLaw:
         g.estimate_parameters(s2, None, None, only_current=only_current)
         assert g._axes_manager[-1].is_binned == binned
         np.testing.assert_allclose(
-            g.A.map["values"][1],
-            0 if only_current else self.A_value,
-            rtol=0.05)
+            g.A.map["values"][1], 0 if only_current else self.A_value, rtol=0.05
+        )
         np.testing.assert_allclose(
-            g.r.map["values"][1],
-            0 if only_current else self.r_value,
-            rtol=0.05)
+            g.r.map["values"][1], 0 if only_current else self.r_value, rtol=0.05
+        )
 
     def test_missing_data(self):
         g = hs.model.components1D.PowerLaw()

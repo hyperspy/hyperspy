@@ -1,4 +1,4 @@
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -46,6 +46,7 @@ def _generate_parameters():
 @lazifyTestClass
 class TestSubPixelAlign:
     def setup_method(self, method):
+        pytest.importorskip("skimage")
         ref_image = ascent()
         center = np.array((256, 256))
         shifts = np.array(
@@ -77,6 +78,7 @@ class TestSubPixelAlign:
         self.shifts = shifts
 
     def test_align_subpix(self):
+        pytest.importorskip("skimage")
         # Align signal
         s = self.signal
         shifts = self.shifts
@@ -397,6 +399,7 @@ def test_signal_2d_calibration():
     assert s.axes_manager[1].scale == 5
     assert s.axes_manager[0].units == "nm"
     assert s.axes_manager[1].units == "nm"
+    assert s2dc._line is None
 
 
 def test_signal_2d_calibration_no_new_length(caplog):
@@ -406,6 +409,8 @@ def test_signal_2d_calibration_no_new_length(caplog):
     s2dc.y0, s2dc.y1 = 20, 20
     s2dc.apply()
     assert "Input a new length before pressing apply." in caplog.text
+    # tool is not closed
+    assert s2dc._line is not None
 
 
 def test_signal_2d_calibration_value_nan(caplog):
@@ -415,3 +420,5 @@ def test_signal_2d_calibration_value_nan(caplog):
     s2dc.new_length = 50
     s2dc.apply()
     assert "Line position is not valid" in caplog.text
+    # tool is not closed
+    assert s2dc._line is not None

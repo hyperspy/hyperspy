@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,7 +22,7 @@ import warnings
 from functools import wraps
 from typing import Callable, Optional, Union
 
-import numpy as np
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -104,12 +104,12 @@ def simple_decorator(decorator):
 
 @simple_decorator
 def interactive_range_selector(cm):
-    from hyperspy.signal_tools import Signal1DRangeSelector
+    from hyperspy import signal_tools
     from hyperspy.ui_registry import get_gui
 
     def wrapper(self, *args, **kwargs):
         if not args and not kwargs:
-            range_selector = Signal1DRangeSelector(self)
+            range_selector = signal_tools.Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
             get_gui(range_selector, toolkey="hyperspy.interactive_range_selector")
         else:
@@ -174,12 +174,14 @@ class deprecated:
         @wraps(func)
         def wrapped(*args, **kwargs):
             warnings.simplefilter(
-                action="always", category=np.VisibleDeprecationWarning, append=True
+                action="always",
+                category=VisibleDeprecationWarning,
+                append=True,
             )
             func_code = func.__code__
             warnings.warn_explicit(
                 message=msg,
-                category=np.VisibleDeprecationWarning,
+                category=VisibleDeprecationWarning,
                 filename=func_code.co_filename,
                 lineno=func_code.co_firstlineno + 1,
             )
@@ -229,12 +231,12 @@ class deprecated_argument:
                     )  # replace with alternative kwarg
                 msg += f"See the documentation of `{func.__name__}()` for more details."
                 warnings.simplefilter(
-                    action="always", category=np.VisibleDeprecationWarning
+                    action="always", category=VisibleDeprecationWarning
                 )
                 func_code = func.__code__
                 warnings.warn_explicit(
                     message=msg,
-                    category=np.VisibleDeprecationWarning,
+                    category=VisibleDeprecationWarning,
                     filename=func_code.co_filename,
                     lineno=func_code.co_firstlineno + 1,
                 )
@@ -252,7 +254,7 @@ def jit_ifnumba(*args, **kwargs):
         return numba.jit(*args, **kwargs)
     except ImportError:
         _logger.warning(
-            "Numba is not installed, falling back to " "non-accelerated implementation."
+            "Numba is not installed, falling back to non-accelerated implementation."
         )
 
         def wrap1(func):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -30,7 +30,7 @@ from hyperspy.events import Event, Events
 class WidgetBase(object):
     """Base class for interactive widgets/patches. A widget creates and
     maintains one or more matplotlib patches, and manages the interaction code
-    so that the user can maniuplate it on the fly.
+    so that the user can manipulate it on the fly.
 
     This base class implements functionality which is common to all such
     widgets, mainly the code that manages the patch, axes management, and
@@ -129,6 +129,11 @@ class WidgetBase(object):
                 for p in self.patch:
                     p.remove()
                 self.disconnect()
+                # Patch removal leaves the blit background stale —
+                # invalidate it so the next render_figure does a full
+                # repaint instead of restoring old pixels.
+                if hasattr(self.ax, "hspy_fig"):
+                    self.ax.hspy_fig._background = None
         if hasattr(super(WidgetBase, self), "set_on"):
             super(WidgetBase, self).set_on(value)
         if did_something:
@@ -460,6 +465,8 @@ class DraggableWidgetBase(WidgetBase):
         pass
 
     def _on_navigate(self, axes_manager):
+        if getattr(self, "_updating_indices_from_drag", False):
+            return
         if axes_manager is self.axes_manager:
             p = self._pos.tolist()
             for i, a in enumerate(self.axes):
@@ -569,6 +576,9 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         )
         self.no_events_while_dragging = False
         self._drag_store = None
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating axes in _on_navigate()
+        self._updating_indices_from_drag = False
 
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
@@ -614,6 +624,10 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         return value
 
     def _set_snap_size(self, value):
+        if value and any(not axis.is_uniform for axis in self.axes):
+            raise ValueError(
+                "The snap to axes values feature is not supported for non-uniform axes."
+            )
         self._snap_size = value
         if value:
             snap_value = self._do_snap_size(self._size)
@@ -723,10 +737,12 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         resized = self.size != old_size
         if moved:
             if self._navigating:
-                e = self.axes_manager.events.indices_changed
-                with e.suppress_callback(self._on_navigate):
+                self._updating_indices_from_drag = True
+                try:
                     for i in range(len(self.axes)):
                         self.axes[i].index = self.indices[i]
+                finally:
+                    self._updating_indices_from_drag = False
         if moved or resized:
             # Update patch first
             if moved and resized:
@@ -894,6 +910,11 @@ class ResizersMixin:
                     # check that the matplotlib patch is present before removing it
                     if r in ax.get_children():
                         r.remove()
+                # Invalidate the blit background then force a full redraw
+                # so the canvas repaints without the removed resizer handles.
+                if hasattr(ax, "hspy_fig"):
+                    ax.hspy_fig._background = None
+                    self.draw_patch()
             self._resizers_on = value
 
     def _get_resizer_size(self):
@@ -966,7 +987,7 @@ class ResizersMixin:
             self._resizer_handles.append(r)
 
     def set_on(self, value):
-        """Turns on/off resizers whet widget is turned on/off."""
+        """Turns on/off resizers when widget is turned on/off."""
         if self.resizers and value != self._resizers_on:
             self._set_resizers(value, self.ax)
         if hasattr(super(ResizersMixin, self), "set_on"):

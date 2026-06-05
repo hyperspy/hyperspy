@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -99,6 +99,7 @@ class TestModel2D:
             self.m.fit(optimizer="L-BFGS-B", grad="analytical")
 
     def test_fit_no_odr_error(self):
+        pytest.importorskip("odrpack", reason="odrpack not installed")
         with pytest.raises(NotImplementedError, match="is not implemented for Model2D"):
             self.m.fit(optimizer="odr")
 
@@ -299,3 +300,9 @@ class TestModel2DSetSignalRange:
     def test_initial_mask(self):
         m = self.m
         assert m._channel_switches.shape == (10, 20)
+
+
+def test_residual_line_initialized():
+    s = hs.signals.Signal2D(np.ones((5, 7, 13, 15)))
+    m = s.create_model()
+    assert m._residual_line is None

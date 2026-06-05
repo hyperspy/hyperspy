@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -76,7 +76,7 @@ class Doniach(Expression):
     This is an asymmetric lineshape, originially design for xps but generally
     useful for fitting peaks with low side tails
     See Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970)
-    or http://www.casaxps.com/help_manual/line_shapes.htm for a more detailed
+    or https://web.archive.org/web/20260220110441/http://www.casaxps.com/help_manual/line_shapes.htm for a more detailed
     description
 
     """
@@ -87,12 +87,12 @@ class Doniach(Expression):
         A=1.0,
         sigma=1.0,
         alpha=0.5,
-        module=["numpy", "scipy"],
+        module="numpy",
         **kwargs,
     ):
         super().__init__(
             expression="A*cos(0.5*pi*alpha+\
-            ((1.0 - alpha) * arctan( (x-centre+offset)/sigma) ) )\
+            ((1.0 - alpha) * atan( (x-centre+offset)/sigma) ) )\
             /(sigma**2 + (x-centre+offset)**2)**(0.5 * (1.0 - alpha));\
             offset = 2.354820*sigma / (2 * tan(pi / (2 - alpha)))",
             name="Doniach",
@@ -127,7 +127,6 @@ class Doniach(Expression):
         x2 : float
             Defines the right limit of the spectral range to use for the
             estimation.
-
         only_current : bool
             If False estimates the parameters for the full dataset.
 
@@ -175,5 +174,6 @@ class Doniach(Expression):
             self.sigma.map["is_set"][:] = True
             self.centre.map["values"][:] = centre
             self.centre.map["is_set"][:] = True
+            self.alpha.map["is_set"][:] = True
             self.fetch_stored_values()
             return True

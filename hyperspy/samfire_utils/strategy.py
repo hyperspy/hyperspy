@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,6 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
+
+from hyperspy import signals
 
 
 def make_sure_ind(inds, req_len=None):
@@ -406,10 +408,11 @@ class LocalStrategy(SamfireStrategy):
         elif marker.ndim < 2:
             marker = np.atleast_2d(marker)
 
-        from hyperspy.signals import Signal2D
-
-        if not isinstance(fig, Signal2D) or fig._plot.signal_plot.figure is None:
-            fig = Signal2D(marker)
+        if (
+            not isinstance(fig, signals.Signal2D)
+            or fig._plot.signal_plot.figure is None
+        ):
+            fig = signals.Signal2D(marker)
             fig.plot()
             self.close_plot = fig._plot.signal_plot.close
         else:

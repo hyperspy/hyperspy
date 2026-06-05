@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -119,6 +119,25 @@ class TestInterpolateAxis1D:
         )
         with pytest.raises(ValueError):
             self.s0.interpolate_on_axis(x_uniform, 0)
+
+
+def test_interpolate_convert_to_uniform():
+    s = signals.Signal1D(np.arange(100))
+    axis = s.axes_manager[-1]
+    axis.convert_to_non_uniform_axis()
+    assert not s.axes_manager[-1].is_uniform
+    s2 = s.interpolate_on_axis("uniform", -1, inplace=False)
+    assert s2.axes_manager[-1].is_uniform
+    np.testing.assert_allclose(s.data, s2.data)
+    np.testing.assert_allclose(axis.axis, s2.axes_manager[-1].axis)
+
+    s.interpolate_on_axis("uniform", -1, inplace=True)
+    # Check that the object is still the same
+    assert axis is s.axes_manager[-1]
+
+    with pytest.raises(ValueError):
+        # already changed to uniform axis
+        s.interpolate_on_axis("uniform", -1, inplace=True)
 
 
 def test_interpolate_on_axis_2D():

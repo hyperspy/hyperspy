@@ -92,9 +92,9 @@ links to the appropriate documentation for more information on each one.
    +--------------------------+----------------------------------------------------------------+
    | Algorithm                | Method                                                         |
    +==========================+================================================================+
-   | "SVD" (default)          | :func:`~.learn.svd_pca.svd_pca`                                |
+   | "SVD" (default)          | :func:`~.learn.svd_pca`                                        |
    +--------------------------+----------------------------------------------------------------+
-   | "MLPCA"                  | :func:`~.learn.mlpca.mlpca`                                    |
+   | "MLPCA"                  | :func:`~.learn.mlpca`                                          |
    +--------------------------+----------------------------------------------------------------+
    | "sklearn_pca"            | :class:`sklearn.decomposition.PCA`                             |
    +--------------------------+----------------------------------------------------------------+
@@ -104,11 +104,11 @@ links to the appropriate documentation for more information on each one.
    +--------------------------+----------------------------------------------------------------+
    | "mini_batch_sparse_pca"  | :class:`sklearn.decomposition.MiniBatchSparsePCA`              |
    +--------------------------+----------------------------------------------------------------+
-   | "RPCA"                   | :func:`~.learn.rpca.rpca_godec`                                |
+   | "RPCA"                   | :func:`~.learn.rpca_godec`                                     |
    +--------------------------+----------------------------------------------------------------+
-   | "ORPCA"                  | :class:`~.learn.rpca.ORPCA`                                    |
+   | "ORPCA"                  | :func:`~.learn.orpca`                                          |
    +--------------------------+----------------------------------------------------------------+
-   | "ORNMF"                  | :class:`~.learn.ornmf.ORNMF`                                   |
+   | "ORNMF"                  | :func:`~.learn.ornmf`                                          |
    +--------------------------+----------------------------------------------------------------+
    | custom object            | An object implementing  ``fit()`` and  ``transform()`` methods |
    +--------------------------+----------------------------------------------------------------+
@@ -122,7 +122,7 @@ The default algorithm in HyperSpy is ``"SVD"``, which uses an approach called
 "singular value decomposition" to decompose the data in the form
 :math:`X = U \Sigma V^T`. The factors are given by :math:`U \Sigma`, and the
 loadings are given by :math:`V^T`. For more information, please read the method
-documentation for :func:`~.learn.svd_pca.svd_pca`.
+documentation for :func:`~.hyperspy.learn.svd_pca`.
 
 .. code-block:: python
 
@@ -244,7 +244,7 @@ robust statistical treatment of non-Gaussian "heteroskedastic noise".
 
    >>> s.decomposition(algorithm="MLPCA") # doctest: +SKIP
 
-For more information, please read the method documentation for :func:`~.learn.mlpca.mlpca`.
+For more information, please read the method documentation for :func:`~.learn.mlpca`.
 
 .. note::
 

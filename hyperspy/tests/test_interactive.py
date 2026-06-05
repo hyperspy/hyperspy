@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -25,6 +25,7 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.events import Event
+from hyperspy.interactive import Interactive
 
 
 class TestInteractive:
@@ -148,3 +149,54 @@ class TestInteractive:
 
         hs.interactive(function_return_None, e)
         e.trigger()
+
+    def test_close_disconnects_explicit_event(self):
+        s = self.s
+        e = Event()
+        op = Interactive(s.sum, event=e, recompute_out_event=None, axis=0)
+        initial_data = op.out.data.copy()
+        s.data += 3.2
+        op.close()
+        e.trigger()
+        # After close, event should have no effect — data unchanged
+        np.testing.assert_array_equal(op.out.data, initial_data)
+
+    def test_close_disconnects_recompute_out_event(self):
+        s = self.s
+        e1 = Event()
+        e2 = Event()
+        op = Interactive(s.sum, event=e1, recompute_out_event=e2, axis=0)
+        initial_data = op.out.data.copy()
+        s.crop(1, 1)
+        op.close()
+        # Triggering should NOT update after close
+        e1.trigger()
+        np.testing.assert_array_equal(op.out.data, initial_data)
+
+    def test_close_keeps_out_accessible(self):
+        s = self.s
+        e = Event()
+        op = Interactive(s.sum, event=e, recompute_out_event=None, axis=0)
+        op.close()
+        # out should still be readable
+        assert op.out is not None
+        np.testing.assert_array_equal(op.out.data, np.sum(s.data, axis=1))
+
+    def test_close_idempotent(self):
+        s = self.s
+        e = Event()
+        op = Interactive(s.sum, event=e, recompute_out_event=None, axis=0)
+        op.close()
+        # Second close should not raise
+        op.close()
+        assert op.out is not None
+
+    def test_close_auto_event(self):
+        s = self.s
+        op = Interactive(s.sum, axis=0)
+        initial_data = op.out.data.copy()
+        s.data += 3.2
+        op.close()
+        s.events.data_changed.trigger(s)
+        # After close, data_changed should have no effect
+        np.testing.assert_array_equal(op.out.data, initial_data)

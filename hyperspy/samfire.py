@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,15 +22,41 @@ from multiprocessing import cpu_count
 import cloudpickle
 import numpy as np
 
+from hyperspy import signals
 from hyperspy.external.progressbar import progressbar
+from hyperspy.misc import utils
 from hyperspy.misc.math_tools import check_random_state
-from hyperspy.misc.utils import DictionaryTreeBrowser, slugify
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 from hyperspy.samfire_utils.strategy import GlobalStrategy, LocalStrategy
-from hyperspy.signal import BaseSignal
 
 _logger = logging.getLogger(__name__)
+
+
+def _reentrance_guard(flag):
+    """Decorator that prevents re-entrance using a shared mutable flag.
+
+    When the decorated function is called, if ``flag[0]`` is True
+    (re-entering), the call is silently skipped. Otherwise the flag
+    is set for the duration of the call.
+
+    The flag must be a mutable container (e.g., a list) so both
+    closures can share it without ``nonlocal``.
+    """
+
+    def decorator(fn):
+        def wrapper(*args, **kwargs):
+            if flag[0]:
+                return
+            flag[0] = True
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                flag[0] = False
+
+        return wrapper
+
+    return decorator
 
 
 class StrategyList(list):
@@ -132,7 +158,7 @@ class Samfire:
         if workers is None:
             workers = max(1, cpu_count() - 1)
         self.model = model
-        self._metadata = DictionaryTreeBrowser()
+        self._metadata = utils.DictionaryTreeBrowser()
 
         self._scale = 1.0
         # -1 -> done pixel, use
@@ -327,7 +353,7 @@ class Samfire:
         """
         if filename is None:
             title = self.model.signal.metadata.General.title
-            filename = slugify("backup_" + title)
+            filename = utils.slugify("backup_" + title)
         # maybe add saving marker + strategies as well?
         if self.count % self.save_every == 0 or not on_count:
             self.model.save(filename, name="samfire_backup", overwrite=True)
@@ -450,7 +476,7 @@ class Samfire:
                     "Signal.Noise_properties.variance"
                 ):
                     var = self.model.signal.metadata.Signal.Noise_properties.variance
-                    if isinstance(var, BaseSignal):
+                    if isinstance(var, signals.BaseSignal):
                         dat = var.data[ind + (...,)]
                         value_dict["variance.data"] = (
                             dat.compute() if var._lazy else dat
@@ -527,9 +553,8 @@ class Samfire:
 
     def _request_user_input(self):
         from hyperspy.drawing.widgets import SquareWidget
-        from hyperspy.signals import Image
 
-        mark = Image(
+        mark = signals.Signal1D(
             self.metadata.marker,
             axes=self.model.axes_manager._get_navigation_axes_dicts(),
         )
@@ -554,24 +579,25 @@ class Samfire:
         w.set_mpl_ax(mark._plot.signal_plot.ax)
         w.connect_navigate()
 
-        def connect_other_navigation1(axes_manager):
-            with mark.axes_manager.events.indices_changed.suppress_callback(
-                connect_other_navigation2
-            ):
-                for ax1, ax2 in zip(
-                    mark.axes_manager.navigation_axes, axes_manager.navigation_axes[2:]
-                ):
-                    ax1.value = ax2.value
+        # Mutable flag shared by both closures to prevent cross-fire loops.
+        # A plain bool would create a local on assignment — the list
+        # avoids needing ``nonlocal``.
+        _syncing = [False]
 
-        def connect_other_navigation2(axes_manager):
-            with self.model.axes_manager.events.indices_changed.suppress_callback(
-                connect_other_navigation1
+        @_reentrance_guard(_syncing)
+        def connect_other_navigation1(axes_manager):
+            for ax1, ax2 in zip(
+                mark.axes_manager.navigation_axes, axes_manager.navigation_axes[2:]
             ):
-                for ax1, ax2 in zip(
-                    self.model.axes_manager.navigation_axes[2:],
-                    axes_manager.navigation_axes,
-                ):
-                    ax1.value = ax2.value
+                ax1.value = ax2.value
+
+        @_reentrance_guard(_syncing)
+        def connect_other_navigation2(axes_manager):
+            for ax1, ax2 in zip(
+                self.model.axes_manager.navigation_axes[2:],
+                axes_manager.navigation_axes,
+            ):
+                ax1.value = ax2.value
 
         mark.axes_manager.events.indices_changed.connect(
             connect_other_navigation2, {"obj": "axes_manager"}
@@ -580,10 +606,22 @@ class Samfire:
             connect_other_navigation1, {"obj": "axes_manager"}
         )
 
-        self.model._plot.signal_plot.events.closed.connect(lambda: mark._plot.close, [])
+        # BUG FIX: must call close() — without parens the lambda returns the
+        # method object without invoking it, so the mark plot was never closed.
+        self.model._plot.signal_plot.events.closed.connect(
+            lambda: mark._plot.close(), []
+        )
         self.model._plot.signal_plot.events.closed.connect(
             lambda: self.model.axes_manager.events.indices_changed.disconnect(
                 connect_other_navigation1
+            ),
+            [],
+        )
+        # BUG FIX: connect_other_navigation2 was connected (line 575) but never
+        # disconnected on plot close — this leaked the handler on repeated opens.
+        self.model._plot.signal_plot.events.closed.connect(
+            lambda: mark.axes_manager.events.indices_changed.disconnect(
+                connect_other_navigation2
             ),
             [],
         )

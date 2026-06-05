@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -177,6 +177,9 @@ class Expression(Component):
         **kwargs,
     ):
         if module is None:
+            module = "numexpr"
+
+        if module == "numexpr":
             numexpr_spec = importlib.util.find_spec("numexpr")
             if numexpr_spec is None:
                 module = "numpy"
@@ -184,8 +187,6 @@ class Expression(Component):
                     "Numexpr is not installed, falling back to numpy, "
                     "which is slower to calculate model."
                 )
-            else:
-                module = "numexpr"
 
         if linear_parameter_list is None:
             linear_parameter_list = []
@@ -262,7 +263,7 @@ class Expression(Component):
         except ValueError:
             pass
         else:
-            raise ValueError("Expression must contain a symbol, i.e. x, a, " "etc.")
+            raise ValueError("Expression must contain a symbol, i.e. x, a, etc.")
         expr = _parse_substitutions(self._str_expression)
         self._parsed_expr = expr
 
@@ -291,20 +292,21 @@ class Expression(Component):
                 "cos(rotation_angle)".format(*position)
             )
             expr = expr.subs({"x": rotx, "y": roty}, simultaneous=False)
-        rvars = sympy.symbols([s.name for s in expr.free_symbols], real=True)
-        real_expr = expr.subs(
-            {orig: real_ for (orig, real_) in zip(expr.free_symbols, rvars)}
-        )
+        original_vars = [symbol for symbol in expr.free_symbols]
+        real_vars = sympy.symbols([symbol.name for symbol in original_vars], real=True)
         # just replace with the assumption that all our variables are real
-        expr = real_expr
-
+        # as this helps with differentiation
+        expr = expr.subs(
+            {orig: real_ for (orig, real_) in zip(original_vars, real_vars)}
+        )
         eval_expr = expr.evalf()
         # Extract parameters
         variables = ("x", "y") if self._is2D else ("x",)
         parameters = [
             symbol for symbol in expr.free_symbols if symbol.name not in variables
         ]
-        parameters.sort(key=lambda x: x.name)  # to have a reliable order
+        # to have a reliable order
+        parameters.sort(key=lambda parameter: parameter.name)
         # Create compiled function
         variables = [x, y] if self._is2D else [x]
         self._f = sympy.utilities.lambdify(
@@ -350,8 +352,33 @@ class Expression(Component):
                     "The gradients can not be computed with sympy.", UserWarning
                 )
 
-    def function_nd(self, *args):
-        """%s"""
+    def function_nd(self, *args, parameters_values=None):
+        """
+        Calculate the component over given axes and with given parameter values.
+
+        Parameters
+        ----------
+        *args : numpy.ndarray
+            The axes onto which the component is calculated.
+            For 1D component, only a single array of dimension 1 is necessary.
+            For 2D component, two arrays of dimension 1 are necessary.
+        %s
+
+        Returns
+        -------
+        numpy.ndarray
+            The component values.
+        """
+        if parameters_values is None:
+            parameters_values = []
+            try:
+                parameters_values = [p.map["values"] for p in self.parameters]
+            except TypeError:
+                # When p.map is None
+                raise RuntimeError(
+                    "The parameter map must be set before using `function_nd`."
+                )
+
         if self._is2D:
             x, y = args[0], args[1]
             # navigation dimension is 0, f_nd same as f
@@ -361,10 +388,7 @@ class Expression(Component):
                 return self._f(
                     x[np.newaxis, ...],
                     y[np.newaxis, ...],
-                    *[
-                        p.map["values"][..., np.newaxis, np.newaxis]
-                        for p in self.parameters
-                    ],
+                    *[p[..., np.newaxis, np.newaxis] for p in parameters_values],
                 )
         else:
             x = args[0]
@@ -373,7 +397,7 @@ class Expression(Component):
             else:
                 return self._f(
                     x[np.newaxis, ...],
-                    *[p.map["values"][..., np.newaxis] for p in self.parameters],
+                    *[p[..., np.newaxis] for p in parameters_values],
                 )
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
@@ -459,15 +483,16 @@ class Expression(Component):
     def _compute_expression_part(self, part):
         """Compute the expression for a given value or map["values"]."""
         model = self.model
-        function = part["function"]
-        parameters = [para.value for para in part["parameters"]]
         try:
             model_convolved = model.convolved
+            convolution_supported = True
         except NotImplementedError:
-            model_convolved = False
-        if model_convolved and self.convolved:
+            convolution_supported = False
+        function = part["function"]
+        parameters = [para.value for para in part["parameters"]]
+        if convolution_supported and model_convolved and self.convolved:
             data = model._convolve_component_values(
-                function(model.convolution_axis, *parameters)
+                function(model._convolution_axis, *parameters)
             )
         else:
             axes = [ax.axis for ax in model.axes_manager.signal_axes]

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from unittest import mock
+
 import matplotlib
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.drawing import widgets
 from hyperspy.misc.test_utils import mock_event
 from hyperspy.signals import Signal1D, Signal2D
@@ -160,6 +163,19 @@ class TestPlotLine2DWidget:
 
         return self.im._plot.signal_plot.figure
 
+    def test_remove_size_patch_resets_blit_background(self):
+        """_remove_size_patch invalidates blit cache and repaints after
+        removing width indicator patches."""
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.size = (10,)
+        hspy_fig = self.line2d.ax.hspy_fig
+        hspy_fig._background = object()
+        with mock.patch.object(self.line2d, "draw_patch") as mock_draw:
+            self.line2d._remove_size_patch()
+        assert hspy_fig._background is None
+        mock_draw.assert_called_once()
+
 
 class TestPlotCircleWidget:
     def setup_method(self, method):
@@ -209,6 +225,147 @@ class TestPlotCircleWidget:
         circle.size = size
         assert circle.position == position
         assert circle.size == size
+
+    def test_update_patch_size_resets_blit_background(self):
+        """_update_patch_size invalidates blit cache when replacing the
+        inner patch."""
+        im = self.im
+        circle = self.circle
+        im.plot()
+        circle.set_mpl_ax(im._plot.signal_plot.ax)
+        # Set size with ri=0 first so we can trigger the inner-patch
+        # replacement path (ri > 0, len(patch) == 1).
+        circle.size = (5, 0)
+        hspy_fig = circle.ax.hspy_fig
+        hspy_fig._background = object()
+        with mock.patch.object(circle, "draw_patch") as mock_draw:
+            circle.size = (5, 2.5)
+        assert hspy_fig._background is None
+        mock_draw.assert_called()
+
+
+class TestPlotPolygonWidget:
+    def setup_method(self, method):
+        # Create test image 100x100 pixels:
+        N = 100
+        im = Signal2D(np.arange(N**2).reshape([N] * 2))
+        im.axes_manager[0].scale = 1.2
+        im.axes_manager[1].scale = 1.2
+        polygon = widgets.PolygonWidget(im.axes_manager)
+        self.im = im
+        self.polygon = polygon
+
+    def test_polygon_setup(self):
+        # Test default matplotlib axes
+        im_4d = Signal2D(np.arange(4**4).reshape([4] * 4))
+        im_4d.plot()
+        polygon = widgets.PolygonWidget(im_4d.axes_manager)
+        polygon.set_mpl_ax(im_4d._plot.navigator_plot.ax)
+        assert polygon.axes == im_4d.axes_manager.navigation_axes[0:2]
+        assert polygon.ax is im_4d._plot.navigator_plot.ax
+
+        im_3d = im_4d.inav[0]
+        im_3d.plot()
+        polygon = widgets.PolygonWidget(im_3d.axes_manager)
+        polygon.set_mpl_ax(im_3d._plot.signal_plot.ax)
+        assert polygon.axes == im_3d.axes_manager.signal_axes[0:2]
+        assert polygon.ax is im_3d._plot.signal_plot.ax
+
+        im_2d = im_3d.inav[0]
+        im_2d.plot()
+        polygon = widgets.PolygonWidget(im_2d.axes_manager)
+        polygon.set_mpl_ax(im_2d._plot.signal_plot.ax)
+        assert polygon.axes == im_2d.axes_manager.signal_axes[0:2]
+        assert polygon.ax is im_2d._plot.signal_plot.ax
+
+        # Needs at least two axes to work
+        im_1d = im_2d.isig[0]
+        im_2d.plot()
+        with pytest.raises(ValueError):
+            widgets.PolygonWidget(im_1d.axes_manager)
+
+        im_2d_navsig = im_3d.isig[0]
+        polygon = widgets.PolygonWidget(im_2d_navsig.axes_manager)
+        assert (
+            polygon.axes
+            == im_2d_navsig.axes_manager.signal_axes
+            + im_2d_navsig.axes_manager.navigation_axes
+        )
+
+    def test_set_vertices(self):
+        polygon = self.polygon
+        im = self.im
+
+        im.plot()
+        polygon.set_mpl_ax(im._plot.signal_plot.ax)
+
+        # Defaults
+        assert polygon.get_vertices() == []
+        assert polygon.get_centre() == tuple()
+        assert not polygon._finished_building
+        assert not polygon.finished_building()
+
+        verts = [(31, 41), (15, 92), (65, 35)]
+        polygon.set_vertices(verts)
+        np.testing.assert_allclose(polygon.get_vertices(), verts)
+        assert polygon._finished_building
+        assert polygon.finished_building()
+        assert polygon.get_centre() == (40.0, 63.5)
+
+        verts = np.arange(100).reshape((50, 2))
+        verts[::2, 1] = 0
+        polygon.set_vertices(verts)
+        np.testing.assert_allclose(polygon.get_vertices(), list(verts))
+        assert polygon._finished_building
+        assert polygon.finished_building()
+        assert polygon.get_centre() == (49.0, 49.5)
+
+        verts = [(31, 41), (15, 92), (65, 35)]
+        polygon._complete_building(verts)
+        np.testing.assert_allclose(polygon._cached_vertices, verts)
+        assert polygon._finished_building
+
+    def test_unattached(self):
+        polygon = widgets.PolygonWidget(None)
+        assert polygon.get_vertices() == []
+        assert polygon.get_centre() == tuple()
+
+    def test_mock_event(self):
+        polygon = self.polygon
+        im = self.im
+        im.plot()
+        polygon.set_mpl_ax(im._plot.signal_plot.ax)
+
+        figure = im._plot.signal_plot.ax.figure
+        event = mock_event(figure, figure.canvas)
+        # Place event within axes
+        event.x, event.y = im._plot.signal_plot.ax.bbox.extents[:2] + 1
+        polygon._onmove(event)
+
+        event.button = "x"
+        polygon._onmove(event)
+
+    def test_set_on(self):
+        polygon = self.polygon
+        im = self.im
+
+        assert polygon.ax is None
+        assert polygon._is_on
+
+        im.plot()
+        polygon.set_mpl_ax(im._plot.signal_plot.ax)
+
+        # check that adding to a matplotlib axis
+        # that is already set to the widget works fine
+        assert polygon.ax is im._plot.signal_plot.ax
+        polygon.set_mpl_ax(im._plot.signal_plot.ax)
+        assert polygon.ax is im._plot.signal_plot.ax
+
+        assert polygon._is_on
+
+        polygon.set_on(False, render_figure=True)
+        assert polygon.ax is None
+        assert not polygon._is_on
 
 
 class TestPlotRangeWidget:
@@ -530,3 +687,20 @@ class TestSquareWidget:
         assert count_calls.counter == 0
         assert im.axes_manager.navigation_axes[0].index == 0
         # drag down and check that it doesn't change
+
+
+def test_widgets_non_uniform_axis():
+    s = hs.data.luminescence_signal(uniform=False).isig[10:20]
+    roi = hs.roi.SpanROI()
+    s.plot()
+    roi.add_widget(s)
+    np.testing.assert_allclose(roi.left, 1.61375935)
+    np.testing.assert_allclose(roi.right, 1.61887959)
+
+    roi2 = hs.roi.SpanROI()
+    with pytest.raises(ValueError):
+        roi2.add_widget(s, snap=True)
+
+    w = list(roi.widgets)[0]
+    with pytest.raises(ValueError):
+        w.snap_size = True

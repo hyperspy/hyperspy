@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2024 The HyperSpy developers
+# Copyright 2007-2026 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,30 +20,21 @@ import copy
 import inspect
 import logging
 import math
+import numbers
 import warnings
 from collections.abc import Iterable
 from contextlib import contextmanager
 
-import dask.array as da
 import numpy as np
-import pint
 import traits.api as t
-from sympy.utilities.lambdify import lambdify
 from traits.trait_errors import TraitError
 
-from hyperspy._components.expression import _parse_substitutions
-from hyperspy.api import _ureg
+import hyperspy.api as hs
 from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
-from hyperspy.misc.array_tools import (
-    numba_closest_index_ceil,
-    numba_closest_index_floor,
-    numba_closest_index_round,
-    round_half_away_from_zero,
-    round_half_towards_zero,
-)
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc import array_tools, utils
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.ui_registry import add_gui_method, get_gui
 
 _logger = logging.getLogger(__name__)
@@ -116,8 +107,8 @@ class UnitConversion:
         if units == t.Undefined:
             return True
         try:
-            _ureg(units)
-        except pint.errors.UndefinedUnitError:
+            hs._ureg(units)
+        except Exception:
             warnings.warn(f"Unit {units} not supported for conversion. Nothing done.")
             return True
         return False
@@ -133,7 +124,7 @@ class UnitConversion:
         """
         if self._ignore_conversion(self.units):
             return
-        scale = self.scale * _ureg(self.units)
+        scale = self.scale * hs._ureg(self.units)
         scale_size = factor * scale * self.size
         converted_units = "{:~}".format(scale_size.to_compact().units)
         return self._convert_units(converted_units, inplace=inplace)
@@ -147,7 +138,7 @@ class UnitConversion:
                 f"because the axis '{self}' doesn't have "
                 "units."
             )
-        value = _ureg.parse_expression(value)
+        value = hs._ureg.parse_expression(value)
         if not hasattr(value, "units"):
             raise ValueError(f"`{value}` should contain an units.")
 
@@ -158,11 +149,11 @@ class UnitConversion:
             self.units
         ):
             return
-        scale_pint = self.scale * _ureg(self.units)
-        offset_pint = self.offset * _ureg(self.units)
-        scale = float(scale_pint.to(_ureg(converted_units)).magnitude)
-        offset = float(offset_pint.to(_ureg(converted_units)).magnitude)
-        units = "{:~}".format(scale_pint.to(_ureg(converted_units)).units)
+        scale_pint = self.scale * hs._ureg(self.units)
+        offset_pint = self.offset * hs._ureg(self.units)
+        scale = float(scale_pint.to(hs._ureg(converted_units)).magnitude)
+        offset = float(offset_pint.to(hs._ureg(converted_units)).magnitude)
+        units = "{:~}".format(scale_pint.to(hs._ureg(converted_units)).units)
         if inplace:
             self.scale = scale
             self.offset = offset
@@ -202,20 +193,26 @@ class UnitConversion:
             units = self.units
             if units == t.Undefined:
                 units = ""
-            return getattr(self, attribute) * _ureg(units)
+            return getattr(self, attribute) * hs._ureg(units)
         else:
             raise ValueError(
-                "`attribute` argument can only take the `scale` "
-                "or the `offset` value."
+                "`attribute` argument can only take the `scale` or the `offset` value."
             )
 
     def _set_quantity(self, value, attribute="scale"):
         if attribute == "scale" or attribute == "offset":
             units = "" if self.units == t.Undefined else self.units
             if isinstance(value, str):
-                value = _ureg.parse_expression(value)
-            if isinstance(value, float):
-                value = value * _ureg(units)
+                value = hs._ureg.parse_expression(value)
+            if isinstance(value, numbers.Real):
+                warnings.warn(
+                    "Setting a quantity using a number is deprecated "
+                    "and will be removed in HyperSpy 3.0. "
+                    "The current units will be used.",
+                    VisibleDeprecationWarning,
+                    stacklevel=2,
+                )
+                value = value * hs._ureg(units)
 
             # to be consistent, we also need to convert the other one
             # (scale or offset) when both units differ.
@@ -228,8 +225,7 @@ class UnitConversion:
             setattr(self, attribute, float(value.magnitude))
         else:
             raise ValueError(
-                "`attribute` argument can only take the `scale` "
-                "or the `offset` value."
+                "`attribute` argument can only take the `scale` or the `offset` value."
             )
 
     @property
@@ -490,7 +486,7 @@ class BaseDataAxis(t.HasTraits):
         name = (
             self.name
             if self.name is not t.Undefined
-            else ("Unnamed " + ordinal(self.index_in_axes_manager))
+            else ("Unnamed " + utils.ordinal(self.index_in_axes_manager))
             if self.axes_manager is not None
             else "Unnamed"
         )
@@ -560,9 +556,7 @@ class BaseDataAxis(t.HasTraits):
             if self.is_uniform:
                 value = self._get_value_from_value_with_units(value)
             else:
-                raise ValueError(
-                    "Unit conversion is only supported for " "uniform axis."
-                )
+                raise ValueError("Unit conversion is only supported for uniform axis.")
         else:
             raise ValueError(f"`{value}` is not a suitable string for slicing.")
 
@@ -573,7 +567,7 @@ class BaseDataAxis(t.HasTraits):
         return the same value."""
         if isinstance(value, str):
             value = self._parse_value_from_string(value)
-        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
+        elif isinstance(value, (list, tuple, np.ndarray)) or utils.is_dask_array(value):
             value = np.asarray(value)
             if value.dtype.type is np.str_:
                 value = np.array([self._parse_value_from_string(v) for v in value])
@@ -616,17 +610,23 @@ class BaseDataAxis(t.HasTraits):
             if rounding is round:
                 # Use argmin(abs) which will return the closest value
                 # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_round(self.axis, value).astype(
+                    int
+                )
             elif rounding is math.ceil:
                 # Ceiling means finding index of the closest xi with xi - v >= 0
                 # we look for argmin of strictly non-negative part of self.axis-v.
                 # The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_ceil(self.axis, value).astype(
+                    int
+                )
             elif rounding is math.floor:
                 # flooring means finding index of the closest xi with xi - v <= 0
                 # we look for armgax of strictly non-positive part of self.axis-v.
                 # The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_floor(self.axis, value).astype(int)
+                index = array_tools.numba_closest_index_floor(self.axis, value).astype(
+                    int
+                )
             else:
                 raise ValueError(
                     "Non-supported rounding function. Use "
@@ -647,7 +647,7 @@ class BaseDataAxis(t.HasTraits):
             )
 
     def index2value(self, index):
-        if isinstance(index, da.Array):
+        if utils.is_dask_array(index):
             index = index.compute()
         if isinstance(index, np.ndarray):
             return self.axis[index.ravel()].reshape(index.shape)
@@ -729,18 +729,93 @@ class BaseDataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
-    def convert_to_uniform_axis(self):
-        """Convert to an uniform axis."""
-        scale = (self.high_value - self.low_value) / self.size
+    def convert_to_uniform_axis(self, keep_bounds=True, log_scale_error=True):
+        """
+        Convert to an uniform axis.
+
+        Parameters
+        ----------
+        keep_bounds : bool
+            If ``True``, the first and last value of the axis will not be changed.
+            The new scale is calculated by substracting the last value by the first
+            value and dividing by the number of intervals.
+            If ``False``, the scale and offset are calculated using
+            :meth:`numpy.polynomial.polynomial.Polynomial.fit`, which minimises
+            the scale difference over the whole axis range but the bounds of
+            the axis can change (in some cases quite significantly, in particular when the
+            interval width is changing continuously). Default is ``True``.
+        log_scale_error : bool
+            If ``True``, the maximum scale error will be logged as INFO.
+            Default is ``True``.
+
+        Examples
+        --------
+        Using ``keep_bounds=True`` (default):
+
+        >>> s = hs.data.luminescence_signal(uniform=False)
+        >>> print(s.axes_manager)
+        <Axes manager, axes: (|1024)>
+                    Name |   size |  index |  offset |   scale |  units
+        ================ | ====== | ====== | ======= | ======= | ======
+        ---------------- | ------ | ------ | ------- | ------- | ------
+                  Energy |   1024 |      0 | non-uniform axis |     eV
+        >>> s.axes_manager[-1].convert_to_uniform_axis(keep_bounds=True)
+        >>> print(s.axes_manager)
+        <Axes manager, axes: (|1024)>
+                    Name |   size |  index |  offset |   scale |  units
+        ================ | ====== | ====== | ======= | ======= | ======
+        ---------------- | ------ | ------ | ------- | ------- | ------
+                  Energy |   1024 |      0 |     1.6 |  0.0039 |     eV
+
+        Using ``keep_bounds=False``:
+
+        >>> s = hs.data.luminescence_signal(uniform=False)
+        >>> print(s.axes_manager)
+        <Axes manager, axes: (|1024)>
+                    Name |   size |  index |  offset |   scale |  units
+        ================ | ====== | ====== | ======= | ======= | ======
+        ---------------- | ------ | ------ | ------- | ------- | ------
+                  Energy |   1024 |      0 | non-uniform axis |     eV
+        >>> s.axes_manager[-1].convert_to_uniform_axis(keep_bounds=False)
+        >>> print(s.axes_manager)
+        <Axes manager, axes: (|1024)>
+                    Name |   size |  index |  offset |   scale |  units
+        ================ | ====== | ====== | ======= | ======= | ======
+        ---------------- | ------ | ------ | ------- | ------- | ------
+                  Energy |   1024 |      0 |     1.1 |  0.0033 |     eV
+
+
+        See Also
+        --------
+        hyperspy.api.signals.BaseSignal.interpolate_on_axis
+
+        Notes
+        -----
+        The function only converts the axis type and doesn't interpolate
+        the data itself - see :meth:`~.api.signals.BaseSignal.interpolate_on_axis`
+        to interpolate data on a uniform axis.
+
+        """
+        indices = np.arange(self.size)
+        if keep_bounds:
+            scale = (self.axis[-1] - self.axis[0]) / (self.size - 1)
+            offset = self.axis[0]
+        else:
+            # polyfit minimize the error over the whole axis
+            offset, scale = np.polynomial.Polynomial.fit(
+                indices, self.axis, deg=1
+            ).convert()
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
-        del d["axis"]
-        if len(self.axis) > 1:
-            scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
-            _logger.warning("The maximum scale error is {}.".format(scale_err))
+        if "axis" in d:
+            del d["axis"]
+        if len(self.axis) > 1 and log_scale_error:
+            scale_err = np.max(self.axis - (scale * indices + offset))
+            _logger.info("The maximum scale error is {}.".format(scale_err))
         d["_type"] = "UniformDataAxis"
+        d["size"] = self.size
         self.__class__ = UniformDataAxis
-        self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
+        self.__init__(**d, scale=scale, offset=offset)
         self.axes_manager = axes_manager
 
     @property
@@ -968,6 +1043,10 @@ class FunctionalDataAxis(BaseDataAxis):
             is_binned=is_binned,
             **parameters,
         )
+        import sympy
+
+        from hyperspy._components.expression import _parse_substitutions
+
         # These trait needs to added dynamically to be removed when necessary
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
@@ -994,7 +1073,7 @@ class FunctionalDataAxis(BaseDataAxis):
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}"
             )
-        self._function = lambdify(
+        self._function = sympy.utilities.lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False
         )
         for parameter in parameters.keys():
@@ -1252,8 +1331,8 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             # approach on the index, because the index is always positive
             index = np.where(
                 value >= 0 if np.sign(self.scale) > 0 else value < 0,
-                round_half_towards_zero(index, decimals=0),
-                round_half_away_from_zero(index, decimals=0),
+                array_tools.round_half_towards_zero(index, decimals=0),
+                array_tools.round_half_away_from_zero(index, decimals=0),
             )
         else:
             if rounding is math.ceil:
@@ -1341,6 +1420,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     @property
     def scale_as_quantity(self):
+        """
+        Get the scale as a :class:`pint.Quantity` object. It can be set
+        using a :class:`pint.Quantity` or a string, e.g. "0.1 nm".
+        If string, it will parse using
+        :meth:`pint.facets.plain.GenericPlainRegistry.parse_expression`.
+        """
         return self._get_quantity("scale")
 
     @scale_as_quantity.setter
@@ -1349,6 +1434,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     @property
     def offset_as_quantity(self):
+        """
+        Get the offset as a :class:`pint.Quantity` object. It can be set
+        using a :class:`pint.Quantity` or a string, e.g. "0.1 nm".
+        If string, it will parse using
+        :meth:`pint.facets.plain.GenericPlainRegistry.parse_expression`.
+        """
         return self._get_quantity("offset")
 
     @offset_as_quantity.setter
@@ -1416,8 +1507,7 @@ def _flyback_iter(shape):
 
     class ndindex_reversed(np.ndindex):
         def __next__(self):
-            next(self._it)
-            return self._it.multi_index[::-1]
+            return super().__next__()[::-1]
 
     return ndindex_reversed(shape)
 
@@ -1501,8 +1591,6 @@ class AxesManager(t.HasTraits):
     """
 
     _axes = t.List(BaseDataAxis)
-    signal_axes = t.Tuple()
-    navigation_axes = t.Tuple()
     _step = t.Int(1)
 
     def __init__(self, axes_list):
@@ -1592,10 +1680,16 @@ class AxesManager(t.HasTraits):
     def __getitem__(self, y):
         """x.__getitem__(y) <==> x[y]"""
         if isinstance(y, str) or not np.iterable(y):
-            return self[(y,)][0]
-        axes = [self._axes_getter(ax) for ax in y]
+            if y == "nav":
+                axes = self.navigation_axes
+            elif y == "sig":
+                axes = self.signal_axes
+            else:
+                return self[(y,)][0]
+        else:
+            axes = [self._axes_getter(ax) for ax in y]
         _, indices = np.unique([_id for _id in map(id, axes)], return_index=True)
-        ans = tuple(axes[i] for i in sorted(indices))
+        ans = utils.TupleSA(axes[i] for i in sorted(indices))
         return ans
 
     def _axes_getter(self, y):
@@ -1618,7 +1712,7 @@ class AxesManager(t.HasTraits):
             and not y.imag.is_integer()
         ):
             raise TypeError(
-                "axesmanager indices must be integers, " "complex integers or strings"
+                "axesmanager indices must be integers, complex integers or strings"
             )
         if y.imag == 0:  # Natural order
             return self._get_axes_in_natural_order()[y]
@@ -1632,7 +1726,7 @@ class AxesManager(t.HasTraits):
             return self.signal_axes[int(y.real)]
         else:
             raise IndexError(
-                "axesmanager imaginary part of complex indices " "must be 0, 1, 2 or 3"
+                "axesmanager imaginary part of complex indices must be 0, 1, 2 or 3"
             )
 
     def __getslice__(self, i=None, j=None):
@@ -2051,7 +2145,7 @@ class AxesManager(t.HasTraits):
         unit = axes[0].units  # after conversion, in case units[0] was None.
         for axis in axes[1:]:
             # Convert only the units have the same dimensionality
-            if _ureg(axis.units).dimensionality == _ureg(unit).dimensionality:
+            if hs._ureg(axis.units).dimensionality == hs._ureg(unit).dimensionality:
                 axis.convert_to_units(unit, factor=factor)
 
     def update_axes_attributes_from(self, axes, attributes=None):
@@ -2120,13 +2214,21 @@ class AxesManager(t.HasTraits):
 
     @property
     def signal_axes(self):
-        """The signal axes as a tuple."""
-        return self._signal_axes
+        """The signal axes as a TupleSA.
+
+        A TupleSA object is a tuple with a `set` method
+        to easily set the attributes of its items.
+        """
+        return utils.TupleSA(self._signal_axes)
 
     @property
     def navigation_axes(self):
-        """The navigation axes as a tuple."""
-        return self._navigation_axes
+        """The navigation axes as a TupleSA.
+
+        A TupleSA object is a tuple with a `set` method
+        to easily set the attributes of its items.
+        """
+        return utils.TupleSA(self._navigation_axes)
 
     @property
     def signal_shape(self):
@@ -2167,7 +2269,7 @@ class AxesManager(t.HasTraits):
             return
         elif self.ragged and value > 0:
             raise ValueError(
-                "Signal containing ragged array " "must have zero signal dimension."
+                "Signal containing ragged array must have zero signal dimension."
             )
         elif value > len(self._axes):
             raise ValueError(
@@ -2287,109 +2389,58 @@ class AxesManager(t.HasTraits):
         string += ")"
         return string
 
-    def __repr__(self):
-        text = "<Axes manager, axes: %s>\n" % self._get_dimension_str()
-        ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
-        ax_signature_non_uniform = "% 16s | %6g | %6s | non-uniform axis | %6s "
-        signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
-        text += signature % ("Name", "size", "index", "offset", "scale", "units")
-        text += "\n"
-        text += signature % ("=" * 16, "=" * 6, "=" * 6, "=" * 7, "=" * 7, "=" * 6)
+    def _build_nav_table(self):
+        from prettytable import PrettyTable
 
-        def axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform):
-            if ax.is_uniform:
-                return ax_signature_uniform % (
-                    str(ax.name)[:16],
-                    ax.size,
-                    str(ax.index),
-                    ax.offset,
-                    ax.scale,
-                    ax.units,
-                )
-            else:
-                return ax_signature_non_uniform % (
-                    str(ax.name)[:16],
-                    ax.size,
-                    str(ax.index),
-                    ax.units,
-                )
-
+        table = PrettyTable()
+        table.field_names = ["Name", "size", "index", "offset", "scale", "units"]
         for ax in self.navigation_axes:
-            text += "\n"
-            text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
-        text += "\n"
-        text += signature % ("-" * 16, "-" * 6, "-" * 6, "-" * 7, "-" * 7, "-" * 6)
-        for ax in self.signal_axes:
-            text += "\n"
-            text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
-        if self.ragged:
-            text += "\n"
-            text += "     Ragged axis |               Variable length"
+            if ax.is_uniform:
+                offset, scale = ax.offset, ax.scale
+            else:
+                offset, scale = "non-uniform", "non-uniform"
+            table.add_row([ax.name, ax.size, ax.index, offset, scale, ax.units])
+        return table
 
+    def _build_signal_table(self):
+        from prettytable import PrettyTable
+
+        table = PrettyTable()
+        table.field_names = ["Name", "size", "offset", "scale", "units"]
+        for ax in self.signal_axes:
+            if ax.is_uniform:
+                offset, scale = ax.offset, ax.scale
+            else:
+                offset, scale = "non-uniform", "non-uniform"
+            table.add_row([ax.name, ax.size, offset, scale, ax.units])
+        return table
+
+    def __repr__(self):
+        text = "<Axes manager, axes: %s>" % self._get_dimension_str()
+        if self.navigation_axes:
+            text += "\nNavigation axes:\n" + str(self._build_nav_table())
+        if self.signal_axes:
+            text += "\nSignal axes:\n" + str(self._build_signal_table())
+        if self.ragged:
+            text += "\nRagged axis | Variable length"
         return text
 
     def _repr_html_(self):
+        html_attrs = {
+            "style": "width:100%; border-collapse:collapse; text-align:center;",
+            "border": "1",
+        }
         text = (
-            "<style>\n"
-            "table, th, td {\n\t"
-            "border: 1px solid black;\n\t"
-            "border-collapse: collapse;\n}"
-            "\nth, td {\n\t"
-            "padding: 5px;\n}"
-            "\n</style>"
+            "<p><b>&lt; Axes manager, axes: %s &gt;</b></p>" % self._get_dimension_str()
         )
-        text += (
-            "\n<p><b>< Axes manager, axes: %s ></b></p>\n" % self._get_dimension_str()
-        )
-
-        def format_row(*args, tag="td", bold=False):
-            if bold:
-                signature = "\n<tr class='bolder_row'> "
-            else:
-                signature = "\n<tr> "
-            signature += " ".join(("{}" for _ in args)) + " </tr>"
-            return signature.format(
-                *map(lambda x: "\n<" + tag + ">{}</".format(x) + tag + ">", args)
-            )
-
-        def axis_repr(ax):
-            index = ax.index if ax.navigate else ""
-            if ax.is_uniform:
-                return format_row(
-                    ax.name, ax.size, index, ax.offset, ax.scale, ax.units
-                )
-            else:
-                return format_row(
-                    ax.name,
-                    ax.size,
-                    index,
-                    "non-uniform axis",
-                    "non-uniform axis",
-                    ax.units,
-                )
-
         if self.navigation_axes:
-            text += "<table style='width:100%'>\n"
-            text += format_row(
-                "Navigation axis name",
-                "size",
-                "index",
-                "offset",
-                "scale",
-                "units",
-                tag="th",
-            )
-            for ax in self.navigation_axes:
-                text += axis_repr(ax)
-            text += "</table>\n"
+            text += "<p><b>Navigation axes</b></p>"
+            text += self._build_nav_table().get_html_string(attributes=html_attrs)
         if self.signal_axes:
-            text += "<table style='width:100%'>\n"
-            text += format_row(
-                "Signal axis name", "size", "", "offset", "scale", "units", tag="th"
-            )
-            for ax in self.signal_axes:
-                text += axis_repr(ax)
-            text += "</table>\n"
+            text += "<p><b>Signal axes</b></p>"
+            text += self._build_signal_table().get_html_string(attributes=html_attrs)
+        if self.ragged:
+            text += "<p>Ragged axis | Variable length</p>"
         return text
 
     @property
@@ -2461,7 +2512,7 @@ class AxesManager(t.HasTraits):
             the attribute of all the axes are set to the given value.
 
         """
-        if not isiterable(values):
+        if not utils.isiterable(values):
             values = [
                 values,
             ] * len(self._axes)

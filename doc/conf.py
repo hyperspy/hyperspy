@@ -11,9 +11,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import platform
 import sys
 from datetime import datetime
-from importlib.metadata import version as get_version
 
 import hyperspy
 
@@ -35,12 +35,12 @@ extensions = [
     "IPython.sphinxext.ipython_directive",  # Needed in basic_usage.rst
     "numpydoc",
     "sphinxcontrib.towncrier",
+    "sphinxcontrib.mermaid",
     "sphinx_design",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.githubpages",
-    "sphinx.ext.graphviz",
     "sphinx.ext.mathjax",
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
@@ -52,10 +52,16 @@ extensions = [
 
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
+    r"https://docs\.conda\.io/.*",  # 429 rate limit from CI IPs
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
+    "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
+    "https://doi.org/10.1364/OL.33.000156",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
+    "https://doi.org/10.1364/AO.41.007437",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
     "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
+    "https://scholar.google.co.uk",  # 403 Client Error: Forbidden for url
     "https://software.opensuse.org",  # 400 Client Error: Bad Request for url
+    "https://zenodo.org",  # 403 Client Error: Forbidden for url
 ]
 
 linkcheck_exclude_documents = []
@@ -92,7 +98,7 @@ copyright = f"2011-{datetime.today().year}, The HyperSpy development team"
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = get_version("hyperspy")
+release = hyperspy.__version__
 # The short X.Y version.
 version = ".".join(release.split(".")[:2])
 
@@ -168,9 +174,13 @@ favicons = [
 # For version switcher:
 # For development, we match to the dev version in `switcher.json`
 # for release version, we match to the minor increment
-_version = hyperspy.__version__
-version_match = "dev" if "dev" in _version else ".".join(_version.split(".")[:2])
 
+# The old version banner used `release` to compare to the "prefered" version
+# using https://www.npmjs.com/package/compare-versions
+# See https://github.com/pydata/pydata-sphinx-theme/issues/1552 for more context
+version_match = "dev" if "dev" in release else release
+
+print("version", release)
 print("version_match:", version_match)
 
 html_theme_options = {
@@ -202,13 +212,14 @@ html_theme_options = {
         },
     ],
     "header_links_before_dropdown": 7,
+    "show_version_warning_banner": True,
     "switcher": {
-        # Update when merged and released
+        # Updated when running `prepare_release.py` script before a new release
         "json_url": "https://hyperspy.org/hyperspy-doc/dev/_static/switcher.json",
         "version_match": version_match,
     },
     "navbar_start": ["navbar-logo", "version-switcher"],
-    "announcement": "HyperSpy API has changed in version 2.0, see the <a href='https://hyperspy.org/hyperspy-doc/current/changes.html#changes-2-0'>release notes!</a>",
+    # "announcement": "",
 }
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -321,8 +332,8 @@ towncrier_draft_working_directory = ".."
 intersphinx_mapping = {
     "cupy": ("https://docs.cupy.dev/en/stable", None),
     "dask": ("https://docs.dask.org/en/latest", None),
+    "dask_image": ("https://image.dask.org/en/latest", None),
     "exspy": ("https://exspy.readthedocs.io/en/latest", None),
-    "h5py": ("https://docs.h5py.org/en/stable", None),
     "holospy": ("https://holospy.readthedocs.io/en/latest", None),
     "IPython": ("https://ipython.readthedocs.io/en/stable", None),
     "ipyparallel": ("https://ipyparallel.readthedocs.io/en/latest", None),
@@ -330,13 +341,13 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "pint": ("https://pint.readthedocs.io/en/stable", None),
+    "pybaselines": ("https://pybaselines.readthedocs.io/en/stable", None),
     "python": ("https://docs.python.org/3", None),
     "rsciio": ("https://hyperspy.org/rosettasciio/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy", None),
     "skimage": ("https://scikit-image.org/docs/stable", None),
     "sklearn": ("https://scikit-learn.org/stable", None),
     "traits": ("https://docs.enthought.com/traits/", None),
-    "zarr": ("https://zarr.readthedocs.io/en/stable", None),
 }
 
 # Check links to API when building documentation
@@ -345,8 +356,8 @@ nitpicky = True
 nitpick_ignore_regex = (
     # No need to be added to the API: documented in subclass
     ("py:class", "hyperspy.misc.slicing.FancySlicing"),
-    ("py:class", "hyperspy.learn.mva.MVA"),
     ("py:class", "hyperspy.signal.MVATools"),
+    ("py:class", "hyperspy.learn._mva.MVA"),
     ("py:class", "hyperspy.samfire_utils.strategy.SamfireStrategy"),
     ("py:class", ".*goodness_test"),
     ("py:class", "hyperspy.roi.BasePointROI"),
@@ -356,7 +367,7 @@ nitpick_ignore_regex = (
     # Need to be made a property
     ("py:attr", "api.signals.BaseSignal.learning_results"),
     ("py:attr", "api.signals.BaseSignal.axes_manager"),
-    ("py:attr", "hyperspy._signals.lazy.LazySignal.navigator"),
+    ("py:attr", "hyperspy.api.signals.LazySignal.navigator"),
     # Skip for now
     ("py:attr", "axes.BaseDataAxis.is_binned.*"),
     ("py:attr", "api.model.components1D.ScalableFixedPattern.*"),
@@ -395,6 +406,7 @@ numpydoc_xref_ignore = {
     "widget",
     "strategy",
     "module",
+    "prettytable",
 }
 
 # if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
@@ -414,27 +426,33 @@ numpydoc_class_members_toctree = False
 sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    # directory where function/class granular galleries are stored
+    "backreferences_dir": "backreferences",
+    # Modules for which function/class level galleries are created. In
+    # this case hyperspy in a tuple of strings.
+    "doc_module": ("hyperspy",),
     "filename_pattern": ".py",  # pattern to define which will be executed
     "ignore_pattern": "_sgskip.py",  # pattern to define which will not be executed
-    "compress_images": (
-        "images",
-        "thumbnails",
-    ),  # use optipng to reduce image file size
     "notebook_images": "https://hyperspy.org/hyperspy-doc/current/",  # folder for loading images in gallery
     "reference_url": {"hyperspy": None},
 }
 
-graphviz_output_format = "svg"
+if platform.system() != "Windows":
+    # optipng is not straightforward to install on Windows
+    # don't use compression on Windows to avoid warning when building the documentation
+    sphinx_gallery_conf["compress_images"] = (
+        "images",
+        "thumbnails",
+    )  # use optipng to reduce image file size
+
 
 # -- Sphinx-copybutton -----------
-
 
 copybutton_prompt_text = r">>> |\.\.\. "
 copybutton_prompt_is_regexp = True
 
+tls_verify = True
+
 
 def setup(app):
     app.add_css_file("custom-styles.css")
-
-
-tls_verify = False

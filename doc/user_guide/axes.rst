@@ -67,12 +67,19 @@ the signal class. The individual axes can be accessed by indexing the
     <Signal1D, title: , dimensions: (20, 10|100)>
     >>> s.axes_manager
     <Axes manager, axes: (20, 10|100)>
-                Name |   size |  index |  offset |   scale |  units
-    ================ | ====== | ====== | ======= | ======= | ======
-         <undefined> |     20 |      0 |       0 |       1 | <undefined>
-         <undefined> |     10 |      0 |       0 |       1 | <undefined>
-    ---------------- | ------ | ------ | ------- | ------- | ------
-         <undefined> |    100 |      0 |       0 |       1 | <undefined>
+    Navigation axes:
+    +-------------+------+-------+--------+-------+-------------+
+    |     Name    | size | index | offset | scale |    units    |
+    +-------------+------+-------+--------+-------+-------------+
+    | <undefined> |  20  |   0   |  0.0   |  1.0  | <undefined> |
+    | <undefined> |  10  |   0   |  0.0   |  1.0  | <undefined> |
+    +-------------+------+-------+--------+-------+-------------+
+    Signal axes:
+    +-------------+------+--------+-------+-------------+
+    |     Name    | size | offset | scale |    units    |
+    +-------------+------+--------+-------+-------------+
+    | <undefined> | 100  |  0.0   |  1.0  | <undefined> |
+    +-------------+------+--------+-------+-------------+
     >>> s.axes_manager[0]
     <Unnamed 0th axis, size: 20, index: 0>
 
@@ -107,6 +114,20 @@ attributes, e.g.:
     >>> s.axes_manager[0]
     <X axis, size: 20, index: 0>
 
+.. versionadded:: 2.2
+    :meth:`~.misc.utils.TupleSA.set` and :meth:`~.misc.utils.TupleSA.get` methods for :attr:`~.axes.AxesManager.navigation_axes`
+    and :attr:`~.axes.AxesManager.signal_axes`.
+
+It is also possible to set multiple attributes of multiple axes at once, using the :meth:`~.misc.utils.TupleSA.set`
+of the :attr:`~.axes.AxesManager.navigation_axes` and :attr:`~.axes.AxesManager.signal_axes` attributes.
+The :meth:`~.misc.utils.TupleSA.get` returns a dictionary of the attributes.  For example:
+
+.. code-block:: python
+
+    >>> s.axes_manager.navigation_axes.set(name=("X", "Y"), offset=10, units="nm")
+    >>> s.axes_manager.navigation_axes.get("name", "offset", "units")
+    {"name" : ("X", "Y"), "offset" : (10, 10), "units" : ("nm", "nm")}
+
 
 Once the name of an axis has been defined it is possible to request it by its
 name e.g.:
@@ -118,6 +139,7 @@ name e.g.:
     >>> s.axes_manager["X"].scale = 0.2
     >>> s.axes_manager["X"].units = "nm"
     >>> s.axes_manager["X"].offset = 100
+
 
 
 It is also possible to set the axes properties using a GUI by calling the
@@ -276,10 +298,12 @@ Corresponding output of :class:`~.axes.AxesManager`:
 
     >>> s.axes_manager
     <Axes manager, axes: (|500)>
-                Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-         <undefined> |    500 |      0 |   3e+02 |       1 | <undefined> 
+    Signal axes:
+    +-------------+------+--------+-------+-------------+
+    |     Name    | size | offset | scale |    units    |
+    +-------------+------+--------+-------+-------------+
+    | <undefined> | 500  | 300.0  |  1.0  | <undefined> |
+    +-------------+------+--------+-------+-------------+
 
 
 .. _functional-data-axis:
@@ -317,10 +341,12 @@ Corresponding output of :class:`~.axes.AxesManager`:
 
     >>> s.axes_manager
     <Axes manager, axes: (|500)>
-                Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-         <undefined> |    500 |      0 | non-uniform axis | <undefined> 
+    Signal axes:
+    +-------------+------+-------------+-------------+-------------+
+    |     Name    | size |    offset   |    scale    |    units    |
+    +-------------+------+-------------+-------------+-------------+
+    | <undefined> | 500  | non-uniform | non-uniform | <undefined> |
+    +-------------+------+-------------+-------------+-------------+
 
 
 Initializing ``x`` with ``offset`` and ``scale``:
@@ -383,10 +409,12 @@ Corresponding output of :class:`~.axes.AxesManager`:
 
     >>> s.axes_manager
     <Axes manager, axes: (|12)>
-                Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-         <undefined> |     12 |      0 | non-uniform axis | <undefined> 
+    Signal axes:
+    +-------------+------+-------------+-------------+-------------+
+    |     Name    | size |    offset   |    scale    |    units    |
+    +-------------+------+-------------+-------------+-------------+
+    | <undefined> |  12  | non-uniform | non-uniform | <undefined> |
+    +-------------+------+-------------+-------------+-------------+
 
 
 .. _defining-axes:
