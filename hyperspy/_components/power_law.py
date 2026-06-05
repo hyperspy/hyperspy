@@ -17,10 +17,12 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
+import warnings
 
 import numpy as np
 
 from hyperspy._components.expression import Expression
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -179,12 +181,10 @@ class PowerLaw(Expression):
             x1, x2 = interval_tuples[0]
             x3, x4 = interval_tuples[1]
         elif x1 is not None:
-            import warnings
-
             warnings.warn(
                 "The x1, x2, x3, x4 parameters are deprecated. "
                 "Use `intervals` parameter instead.",
-                FutureWarning,
+                VisibleDeprecationWarning,
                 stacklevel=2,
             )
             if x2 is None:
