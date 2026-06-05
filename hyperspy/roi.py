@@ -352,6 +352,7 @@ class BaseInteractiveROI(BaseROI):
         super(BaseInteractiveROI, self).__init__()
         self.widgets = set()
         self._applying_widget_change = False
+        self._updating_widgets = False
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -380,9 +381,12 @@ class BaseInteractiveROI(BaseROI):
             exclude = set()
         if not isinstance(exclude, set):
             exclude = set(exclude)
-        for w in self.widgets - exclude:
-            with w.events.changed.suppress_callback(self._on_widget_change):
+        self._updating_widgets = True
+        try:
+            for w in self.widgets - exclude:
                 self._apply_roi2widget(w)
+        finally:
+            self._updating_widgets = False
 
     def _get_widget_type(self, axes, signal):
         """Get the type of a widget that can represent the ROI on the given
@@ -493,6 +497,8 @@ class BaseInteractiveROI(BaseROI):
         from the widget, and triggers events (excluding connections to the
         source widget).
         """
+        if self._updating_widgets:
+            return
         with self.events.suppress():
             self._bounds_check = False
             self._applying_widget_change = True
@@ -567,7 +573,8 @@ class BaseInteractiveROI(BaseROI):
 
         # Set DataAxes
         widget.axes = axes
-        with widget.events.changed.suppress_callback(self._on_widget_change):
+        self._updating_widgets = True
+        try:
             self._apply_roi2widget(widget)
 
             if snap is None:
@@ -582,6 +589,8 @@ class BaseInteractiveROI(BaseROI):
                 widget.snap_all = snap
             else:
                 widget.snap_position = snap
+        finally:
+            self._updating_widgets = False
 
         # Connect widget changes to on_widget_change
         widget.events.changed.connect(self._on_widget_change, {"obj": "widget"})
@@ -599,11 +608,12 @@ class BaseInteractiveROI(BaseROI):
         widget.close(render_figure=render_figure)
         for signal, w in self.signal_map.items():
             if w[0] == widget:
+                # Disconnect before break: only the matching signal's handler
+                # needs cleanup, and break would skip it if placed after.
+                if self.update in signal.axes_manager.events.any_axis_changed.connected:
+                    signal.axes_manager.events.any_axis_changed.disconnect(self.update)
                 self.signal_map.pop(signal)
                 break
-            # disconnect events which has been added when
-            if self.update in signal.axes_manager.events.any_axis_changed.connected:
-                signal.axes_manager.events.any_axis_changed.disconnect(self.update)
 
     def remove_widget(self, signal=None, render_figure=True):
         """

@@ -1414,3 +1414,48 @@ def test_roi_non_uniform_axes(axis_class):
     roi.x = 4
     assert roi.x == 4
     assert s_roi.data.sum() == 959600
+
+
+class TestGuardsPreventRecursion:
+    def setup_method(self):
+        self.s = Signal1D(np.arange(100).reshape(10, 10))
+        self.s.axes_manager[0].name = "x"
+        self.s.axes_manager[1].name = "y"
+
+    def teardown_method(self):
+        self.s._plot.close()
+
+    def test_update_widgets_guard_prevents_recursion(self):
+        self.s.plot()
+        roi = SpanROI(left=3.0, right=7.0)
+        widget = roi.add_widget(self.s, axes=(self.s.axes_manager[1],))
+
+        roi._updating_widgets = True
+        change_count = 0
+
+        def count(*a, **kw):
+            nonlocal change_count
+            change_count += 1
+
+        roi.events.changed.connect(count)
+
+        try:
+            roi._apply_roi2widget(widget)
+        finally:
+            roi._updating_widgets = False
+        assert change_count == 0
+
+        roi.left = 4.0
+        assert change_count >= 1
+
+    def test_add_widget_guard_prevents_recursion(self):
+        self.s.plot()
+        roi = SpanROI(left=5, right=10)
+
+        widget = roi.add_widget(self.s, axes=(self.s.axes_manager[1],))
+        assert widget is not None
+        assert roi._updating_widgets is False
+
+        old_left = widget.position[0]
+        roi.left = 6.0
+        assert widget.position[0] != old_left

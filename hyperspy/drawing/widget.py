@@ -129,6 +129,11 @@ class WidgetBase(object):
                 for p in self.patch:
                     p.remove()
                 self.disconnect()
+                # Patch removal leaves the blit background stale —
+                # invalidate it so the next render_figure does a full
+                # repaint instead of restoring old pixels.
+                if hasattr(self.ax, "hspy_fig"):
+                    self.ax.hspy_fig._background = None
         if hasattr(super(WidgetBase, self), "set_on"):
             super(WidgetBase, self).set_on(value)
         if did_something:
@@ -460,6 +465,8 @@ class DraggableWidgetBase(WidgetBase):
         pass
 
     def _on_navigate(self, axes_manager):
+        if getattr(self, "_updating_indices_from_drag", False):
+            return
         if axes_manager is self.axes_manager:
             p = self._pos.tolist()
             for i, a in enumerate(self.axes):
@@ -569,6 +576,9 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         )
         self.no_events_while_dragging = False
         self._drag_store = None
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating axes in _on_navigate()
+        self._updating_indices_from_drag = False
 
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
@@ -727,10 +737,12 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         resized = self.size != old_size
         if moved:
             if self._navigating:
-                e = self.axes_manager.events.indices_changed
-                with e.suppress_callback(self._on_navigate):
+                self._updating_indices_from_drag = True
+                try:
                     for i in range(len(self.axes)):
                         self.axes[i].index = self.indices[i]
+                finally:
+                    self._updating_indices_from_drag = False
         if moved or resized:
             # Update patch first
             if moved and resized:
@@ -898,6 +910,11 @@ class ResizersMixin:
                     # check that the matplotlib patch is present before removing it
                     if r in ax.get_children():
                         r.remove()
+                # Invalidate the blit background then force a full redraw
+                # so the canvas repaints without the removed resizer handles.
+                if hasattr(ax, "hspy_fig"):
+                    ax.hspy_fig._background = None
+                    self.draw_patch()
             self._resizers_on = value
 
     def _get_resizer_size(self):

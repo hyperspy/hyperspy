@@ -196,9 +196,11 @@ class PeaksFinder2D(t.HasTraits):
         self._update_peak_finding()
 
     def _set_parameters_observer(self):
+        self._observed_parameters = []
         for parameters_mapping in self._attribute_argument_mapping_dict.values():
             for parameter in list(parameters_mapping.keys()):
                 self.on_trait_change(self._parameter_changed, parameter)
+                self._observed_parameters.append(parameter)
 
     def _get_parameters(self, method):
         # Get the attribute to argument mapping for the given method
@@ -253,6 +255,14 @@ class PeaksFinder2D(t.HasTraits):
         am = self.signal.axes_manager
         if self._update_peak_finding in am.events.indices_changed.connected:
             am.events.indices_changed.disconnect(self._update_peak_finding)
+        # disconnect trait observers
+        self.on_trait_change(
+            self.set_random_navigation_position,
+            "random_navigation_position",
+            remove=True,
+        )
+        for parameter in self._observed_parameters:
+            self.on_trait_change(self._parameter_changed, parameter, remove=True)
 
     def set_random_navigation_position(self):
         index = self._rng.integers(0, self.signal.axes_manager._max_index)

@@ -25,7 +25,6 @@ import traits.api as t
 import hyperspy.drawing
 from hyperspy import signal_tools
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.events import EventSuppressor
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.misc import utils
 from hyperspy.model import BaseModel, ModelComponents
@@ -232,6 +231,10 @@ class Model1D(BaseModel):
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}
+        # Re-entrance guard. When True, avoids update loop by
+        # not updating the parameter value while it is being updated
+        # by the widget trait hadnler.
+        self._updating_widget = False
         self._adjust_position_all = None
         self._plot_components = False
         self._suspend_update = False
@@ -305,6 +308,17 @@ class Model1D(BaseModel):
                 line.close()
         super().remove(things)
         self._disconnect_parameters2update_plot(things)
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending draw_event re-enters
+        # _draw_animated and encounters a removed artist
+        # whose axes / figure references were cleared by
+        # Artist.remove (matplotlib >= 3.10).
+        if self._plot is not None and self._plot.is_active:
+            sig_plot = self._plot.signal_plot
+            if sig_plot.figure is not None:
+                sig_plot._background = None
+                sig_plot.render_figure()
 
     remove.__doc__ = BaseModel.remove.__doc__
 
@@ -904,6 +918,16 @@ class Model1D(BaseModel):
             return
         for component in self:
             self._disable_plot_component(component)
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending draw_event re-enters
+        # _draw_animated and encounters a removed Text artist
+        # whose axes / figure references were cleared by
+        # Artist.remove (matplotlib >= 3.10).
+        sig_plot = self._plot.signal_plot
+        if sig_plot.figure is not None:
+            sig_plot._background = None
+            sig_plot.render_figure()
 
     disable_plot_components.__doc__ = BaseModel.disable_plot_components.__doc__
 
@@ -985,12 +1009,14 @@ class Model1D(BaseModel):
         raise KeyError()
 
     def _on_widget_moved(self, widget):
-        parameter = self._reverse_lookup_position_widget(widget)
-        es = EventSuppressor()
-        for w in self._position_widgets[parameter]:
-            es.add((w.events.moved, w._set_position))
-        with es.suppress():
+        if self._updating_widget:
+            return
+        self._updating_widget = True
+        try:
+            parameter = self._reverse_lookup_position_widget(widget)
             parameter.value = widget.position[0]
+        finally:
+            self._updating_widget = False
 
     def _on_position_widget_close(self, widget):
         widget.events.closed.disconnect(self._on_position_widget_close)
@@ -1015,6 +1041,18 @@ class Model1D(BaseModel):
             # iteration should be ok
             for pw in reversed(pws):  # pws is reference, so work in reverse
                 pw.close()
+        # Invalidate the blit background so that the next redraw is a
+        # full canvas.draw_idle() instead of a blit-only update.  This
+        # prevents a crash when a pending ``draw_event`` re-enters
+        # ``_draw_animated`` and encounters a removed ``Text`` artist
+        # whose ``axes`` / ``figure`` references were cleared by
+        # ``Artist.remove`` (matplotlib >= 3.10), causing
+        # ``text._get_layout`` to raise ``AttributeError``.
+        if self._plot is not None and self._plot.is_active:
+            sig_plot = self._plot.signal_plot
+            if sig_plot.figure is not None:
+                sig_plot._background = None
+                sig_plot.render_figure()
 
     def fit_component(
         self,

@@ -271,7 +271,7 @@ class MVA:
             )
 
         if self.axes_manager.navigation_size < 2:
-            raise AttributeError(
+            raise ValueError(
                 "It is not possible to decompose a dataset with navigation_size < 2"
             )
 
@@ -1289,10 +1289,22 @@ class MVA:
         if self._lazy:
             import dask.array as da
 
-            if isinstance(lr.bss_factors, np.ndarray):
-                lr.factors = da.from_array(lr.bss_factors, chunks=chunks)
-            if isinstance(lr.bss_loadings, np.ndarray):
-                lr.loadings = da.from_array(lr.bss_loadings, chunks=chunks)
+            # Save originals because _calculate_recmatrix reads from
+            # lr.factors/lr.loadings.  We temporarily swap in dask-wrapped
+            # bss arrays so the computation stays lazy, then restore the
+            # original decomposition results to avoid permanent corruption.
+            saved_factors = lr.factors
+            saved_loadings = lr.loadings
+            try:
+                if isinstance(lr.bss_factors, np.ndarray):
+                    lr.factors = da.from_array(lr.bss_factors, chunks=chunks)
+                if isinstance(lr.bss_loadings, np.ndarray):
+                    lr.loadings = da.from_array(lr.bss_loadings, chunks=chunks)
+                rec = self._calculate_recmatrix(components=components, mva_type="bss")
+            finally:
+                lr.factors = saved_factors
+                lr.loadings = saved_loadings
+            return rec
         rec = self._calculate_recmatrix(components=components, mva_type="bss")
         return rec
 
