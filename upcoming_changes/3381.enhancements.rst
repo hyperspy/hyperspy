@@ -1,5 +1,4 @@
 Add ``intervals`` parameter to :meth:`~.api.model.components1D.PowerLaw.estimate_parameters`,
 :meth:`~.api.model.components1D.Polynomial.estimate_parameters`, and
 :meth:`~.api.model.components1D.Offset.estimate_parameters` for estimating parameters
-from multiple disconnected spectral ranges. The old ``x1``, ``x2`` parameters
-in PowerLaw are now deprecated. See :ref:`components_parameter_estimation-label` for details.
+from multiple disconnected spectral ranges. See :ref:`components_parameter_estimation-label` for details.

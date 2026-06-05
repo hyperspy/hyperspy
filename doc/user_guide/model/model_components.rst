@@ -237,7 +237,6 @@ of the component quickly:
     :meth:`~.api.model.components1D.Polynomial.estimate_parameters`, and
     :meth:`~.api.model.components1D.Offset.estimate_parameters`,
     enabling estimation from multiple disconnected spectral ranges.
-    In PowerLaw, the ``intervals`` parameter replaces the deprecated ``x1``, ``x2`` parameters.
     The ``intervals`` parameter accepts a list of tuples or :class:`~.api.roi.SpanROI` objects.
 
 For example, the following estimates the parameters of a power law function using data from two disconnected intervals:

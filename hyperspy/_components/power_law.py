@@ -17,12 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-import warnings
 
 import numpy as np
 
 from hyperspy._components.expression import Expression
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -116,11 +114,9 @@ class PowerLaw(Expression):
         ----------
         signal : :class:`~.api.signals.Signal1D`
         x1 : float, optional
-            The left endpoint of the signal interval. Deprecated, use
-            ``intervals`` instead.
+            The left endpoint of the signal interval.
         x2 : float, optional
-            The right endpoint of the signal interval. Deprecated, use
-            ``intervals`` instead.
+            The right endpoint of the signal interval.
         only_current : bool
             If False, estimates the parameters for the full dataset.
         out : bool
@@ -175,12 +171,6 @@ class PowerLaw(Expression):
             x3, x4 = interval_tuples[1]
             two_intervals = True
         elif x1 is not None:
-            warnings.warn(
-                "The x1, x2 parameters are deprecated. "
-                "Use `intervals` parameter instead.",
-                VisibleDeprecationWarning,
-                stacklevel=2,
-            )
             if x2 is None:
                 raise ValueError("x2 must be provided when using x1.")
         else:
