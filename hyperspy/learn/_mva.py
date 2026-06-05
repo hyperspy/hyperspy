@@ -1239,13 +1239,9 @@ class MVA:
         if components is None:
             signal_name = f"model from {mva_type} with {factors.shape[1]} components"
         elif hasattr(components, "__iter__"):
-            tfactors = np.zeros((factors.shape[0], len(components)))
-            tloadings = np.zeros((len(components), loadings.shape[1]))
-            for i in range(len(components)):
-                tfactors[:, i] = factors[:, components[i]]
-                tloadings[i, :] = loadings[components[i], :]
-            factors = tfactors
-            loadings = tloadings
+            components = list(components)
+            factors = factors[:, components]
+            loadings = loadings[components, :]
             signal_name = f"model from {mva_type} with components {components}"
         else:
             factors = factors[:, :components]
