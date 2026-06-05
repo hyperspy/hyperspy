@@ -44,6 +44,7 @@ def test_pybaselines_not_installed():
         s.remove_baseline(method="aspls", lam=1e7)
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(not PYBASELINES_INSTALLED, reason="pybaselines is not installed")
 @pytest.mark.parametrize("single", (True, False))
 def test_remove_baseline(single):
@@ -86,6 +87,7 @@ def test_remove_baseline_apply_close():
     assert s.isig[:10].data.mean() < 5
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(not PYBASELINES_INSTALLED, reason="pybaselines is not installed")
 def test_baseline_removal_tool_enable():
     s = hs.data.two_gaussians().inav[:4, :2]
