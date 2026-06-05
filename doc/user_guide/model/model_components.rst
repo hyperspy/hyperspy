@@ -214,7 +214,7 @@ parameters respectively.
 Parameter estimation
 ^^^^^^^^^^^^^^^^^^^^
 
-The following components implement a `estimate_parameters` method to estimate the parameters
+The following components implement an ``estimate_parameters`` method to estimate the parameters
 of the component quickly:
 
 
@@ -243,7 +243,7 @@ For example, the following estimates the parameters of a power law function usin
 
 .. code-block:: python
 
-    import hyperspy as hs
+    import hyperspy.api as hs
     import numpy as np
 
     pl = hs.model.components1D.PowerLaw()

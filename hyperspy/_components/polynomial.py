@@ -110,8 +110,21 @@ class Polynomial(Expression):
                 raise ValueError(
                     "`intervals` must be a list of tuples or SpanROI objects."
                 )
-            if isinstance(intervals, tuple) and len(intervals) == 2:
-                intervals = [intervals]
+            if isinstance(intervals, tuple):
+                if len(intervals) == 0:
+                    intervals = []
+                else:
+                    first = intervals[0]
+                    if (
+                        isinstance(first, (tuple, list))
+                        and len(first) == 2
+                        and not isinstance(first[0], (tuple, list))
+                    ):
+                        pass
+                    elif hasattr(first, "left") and hasattr(first, "right"):
+                        pass
+                    else:
+                        intervals = [intervals]
             interval_tuples = []
             for interval in intervals:
                 if hasattr(interval, "left") and hasattr(interval, "right"):
@@ -145,7 +158,10 @@ class Polynomial(Expression):
             for idx_start, idx_end in indices_list:
                 x_parts.append(axis.axis[idx_start:idx_end])
                 if sig._lazy:
-                    y_parts.append(sig.isig[idx_start:idx_end].data)
+                    if only_current:
+                        y_parts.append(sig._get_current_data()[idx_start:idx_end])
+                    else:
+                        y_parts.append(sig.isig[idx_start:idx_end].data)
                 else:
                     y_parts.append(
                         sig._get_current_data()[idx_start:idx_end]

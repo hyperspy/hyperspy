@@ -145,8 +145,24 @@ class PowerLaw(Expression):
                 raise ValueError(
                     "`intervals` must be a list of tuples or SpanROI objects."
                 )
-            if isinstance(intervals, tuple) and len(intervals) == 2:
-                intervals = [intervals]
+            if isinstance(intervals, tuple):
+                if len(intervals) == 0:
+                    intervals = []
+                else:
+                    first = intervals[0]
+                    if (
+                        isinstance(first, (tuple, list))
+                        and len(first) == 2
+                        and not isinstance(first[0], (tuple, list))
+                    ):
+                        # tuple of intervals — use as-is
+                        pass
+                    elif hasattr(first, "left") and hasattr(first, "right"):
+                        # tuple of SpanROIs — use as-is
+                        pass
+                    else:
+                        # bare (left, right) pair — wrap in list
+                        intervals = [intervals]
             interval_tuples = []
             for interval in intervals:
                 if hasattr(interval, "left") and hasattr(interval, "right"):

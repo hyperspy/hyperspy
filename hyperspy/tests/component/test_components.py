@@ -25,6 +25,7 @@ import pytest
 import hyperspy.api as hs
 from hyperspy import components1d
 from hyperspy.component import Component
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.models.model1d import Model1D
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
@@ -64,6 +65,11 @@ def test_creation_components1d(component_name):
     component = getattr(components1d, component_name)(**kwargs)
     component.function(np.arange(1, 100))
 
+    if component_name != "ScalableFixedPattern":
+        for param in component.parameters:
+            if hasattr(param, "grad") and param.grad is not None:
+                param.grad(np.arange(1, 100))
+
     # Do a export/import cycle to check all the components can be re-created.
     m = s.create_model()
     m.append(component)
@@ -73,6 +79,7 @@ def test_creation_components1d(component_name):
     m2._load_dictionary(model_dict)
 
 
+@lazifyTestClass
 class TestPowerLaw:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
@@ -81,8 +88,11 @@ class TestPowerLaw:
         m = s.create_model()
         m.append(hs.model.components1D.PowerLaw())
         self.A_value, self.r_value = 1000, 4
-        m[0].A.value = self.A_value
-        m[0].r.value = self.r_value
+        m[0].A.map["values"][:] = self.A_value
+        m[0].r.map["values"][:] = self.r_value
+        for param in m[0].parameters:
+            param.map["is_set"][:] = True
+        m[0].fetch_stored_values()
         self.m = m
         self.s = s
 
@@ -91,15 +101,23 @@ class TestPowerLaw:
         self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
         assert s.axes_manager[-1].is_binned == binned
+        axis = s.axes_manager.signal_axes[0]
         g = hs.model.components1D.PowerLaw()
-        g.estimate_parameters(s, None, None, only_current=only_current)
+        g.estimate_parameters(
+            s, intervals=[(axis.low_value, axis.high_value)], only_current=only_current
+        )
         assert g._axes_manager[-1].is_binned == binned
         np.testing.assert_allclose(g.A.value, self.A_value, rtol=0.05)
         np.testing.assert_allclose(g.r.value, self.r_value, rtol=0.05)
 
         # Test that it all works when calling it with a different signal
         s2 = hs.stack((s, s))
-        g.estimate_parameters(s2, None, None, only_current=only_current)
+        axis2 = s2.axes_manager.signal_axes[0]
+        g.estimate_parameters(
+            s2,
+            intervals=[(axis2.low_value, axis2.high_value)],
+            only_current=only_current,
+        )
         assert g._axes_manager[-1].is_binned == binned
         np.testing.assert_allclose(
             g.A.map["values"][1], 0 if only_current else self.A_value, rtol=0.05
@@ -112,7 +130,8 @@ class TestPowerLaw:
         g = hs.model.components1D.PowerLaw()
         s = self.m.as_signal()
         s2 = hs.signals.Signal1D(s.data)
-        g.estimate_parameters(s2, None, None)
+        axis = s2.axes_manager.signal_axes[0]
+        g.estimate_parameters(s2, intervals=[(axis.low_value, axis.high_value)])
 
     def test_function_grad_cutoff(self):
         pl = self.m[0]
@@ -131,13 +150,16 @@ class TestPowerLaw:
             hs.model.components1D.PowerLaw(compute_gradients=True)
 
 
+@lazifyTestClass
 class TestOffset:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(10))
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components1D.Offset())
-        m[0].offset.value = 10
+        m[0].offset.map["values"][:] = 10
+        m[0].offset.map["is_set"][:] = True
+        m[0].fetch_stored_values()
         self.m = m
 
     @pytest.mark.parametrize(("uniform"), (True, False))
@@ -176,7 +198,42 @@ class TestOffset:
         o.offset.free = False
         assert o._constant_term == o.offset.value
 
+    @pytest.mark.parametrize(("only_current",), ((True,), (False,)))
+    def test_estimate_parameters_intervals(self, only_current):
+        s = hs.signals.Signal1D(np.ones(100))
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = -5
+        s.data[10:20] = 10.0
+        s.data[70:80] = 10.0
 
+        o = hs.model.components1D.Offset()
+        o.estimate_parameters(
+            s,
+            intervals=(
+                (s.axes_manager[0].axis[10], s.axes_manager[0].axis[20]),
+                (s.axes_manager[0].axis[70], s.axes_manager[0].axis[80]),
+            ),
+            only_current=only_current,
+        )
+        np.testing.assert_allclose(
+            o.offset.value, 10.0 if only_current else 10.0, rtol=0.01
+        )
+
+    def test_estimate_parameters_intervals_roi(self):
+        s = hs.signals.Signal1D(np.ones(100))
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = -5
+        s.data[10:20] = 10.0
+        s.data[70:80] = 10.0
+
+        roi1 = hs.roi.SpanROI(s.axes_manager[0].axis[10], s.axes_manager[0].axis[20])
+        roi2 = hs.roi.SpanROI(s.axes_manager[0].axis[70], s.axes_manager[0].axis[80])
+        o = hs.model.components1D.Offset()
+        o.estimate_parameters(s, intervals=[roi1, roi2], only_current=True)
+        np.testing.assert_allclose(o.offset.value, 10.0, rtol=0.01)
+
+
+@lazifyTestClass
 class TestPolynomial:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
@@ -199,9 +256,13 @@ class TestPolynomial:
         # if same component is pased, axes_managers get mixed up, tests
         # sometimes randomly fail
         for _m in [self.m, self.m_2d, self.m_3d]:
-            _m[0].a2.value = coeff_values[0]
-            _m[0].a1.value = coeff_values[1]
-            _m[0].a0.value = coeff_values[2]
+            _m[0].a2.map["values"][:] = coeff_values[0]
+            _m[0].a1.map["values"][:] = coeff_values[1]
+            _m[0].a0.map["values"][:] = coeff_values[2]
+            _m[0].a2.map["is_set"][:] = True
+            _m[0].a1.map["is_set"][:] = True
+            _m[0].a0.map["is_set"][:] = True
+            _m[0].fetch_stored_values()
 
     def test_gradient(self):
         poly = self.m[0]
@@ -264,6 +325,48 @@ class TestPolynomial:
         np.testing.assert_allclose(p.a1.map["values"], 2)
         np.testing.assert_allclose(p.a0.map["values"], 3)
 
+    def test_estimate_parameters_intervals(self):
+        signal = self.m.signal
+        axis = signal.axes_manager[0].axis
+        data = np.zeros(1024)
+        data[100:200] = self.m[0].function(axis[100:200])
+        data[500:600] = self.m[0].function(axis[500:600])
+        s = hs.signals.Signal1D(data)
+        s.axes_manager[0].offset = signal.axes_manager[0].offset
+        s.axes_manager[0].scale = signal.axes_manager[0].scale
+
+        p = hs.model.components1D.Polynomial(order=2)
+        p.estimate_parameters(
+            s,
+            intervals=[(axis[100], axis[200]), (axis[500], axis[600])],
+            only_current=True,
+        )
+        np.testing.assert_allclose(p.a2.value, 0.5, rtol=0.01)
+        np.testing.assert_allclose(p.a1.value, 2, rtol=0.01)
+        np.testing.assert_allclose(p.a0.value, 3, rtol=0.01)
+
+    @pytest.mark.parametrize(("only_current",), ((True,), (False,)))
+    def test_estimate_parameters_intervals_tuple_form(self, only_current):
+        signal = self.m.signal
+        axis = signal.axes_manager[0].axis
+        data = np.zeros(1024)
+        data[100:200] = self.m[0].function(axis[100:200])
+        data[500:600] = self.m[0].function(axis[500:600])
+        s = hs.signals.Signal1D(data)
+        s.axes_manager[0].offset = signal.axes_manager[0].offset
+        s.axes_manager[0].scale = signal.axes_manager[0].scale
+
+        p = hs.model.components1D.Polynomial(order=2)
+        p.estimate_parameters(
+            s,
+            intervals=((axis[100], axis[200]), (axis[500], axis[600])),
+            only_current=only_current,
+        )
+        if only_current:
+            np.testing.assert_allclose(p.a2.value, 0.5, rtol=0.01)
+            np.testing.assert_allclose(p.a1.value, 2, rtol=0.01)
+            np.testing.assert_allclose(p.a0.value, 3, rtol=0.01)
+
     def test_function_nd(self):
         s = self.m.as_signal()
         s = hs.stack([s] * 2)
@@ -280,9 +383,13 @@ class TestGaussian:
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
-        m[0].sigma.value = 0.5
-        m[0].centre.value = 1
-        m[0].A.value = 2
+        m[0].sigma.map["values"][:] = 0.5
+        m[0].centre.map["values"][:] = 1
+        m[0].A.map["values"][:] = 2
+        m[0].sigma.map["is_set"][:] = True
+        m[0].centre.map["is_set"][:] = True
+        m[0].A.map["is_set"][:] = True
+        m[0].fetch_stored_values()
         self.m = m
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
@@ -428,7 +535,7 @@ class TestScalableFixedPattern:
 
 class TestHeavisideStep:
     def setup_method(self, method):
-        self.c = hs.model.components1D.HeavisideStep()
+        self.c = hs.model.components1D.HeavisideStep(compute_gradients=True)
 
     def test_integer_values(self):
         c = self.c
