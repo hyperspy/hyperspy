@@ -190,7 +190,7 @@ class PowerLaw(Expression):
             if x2 is None:
                 raise ValueError("x2 must be provided when using x1.")
         else:
-            raise ValueError("Either `intervals` or `x1` and `x2` must be provided.")
+            x1, x2 = axis.low_value, axis.high_value
 
         if x1 is not None and x2 <= x1:
             raise ValueError("x2 must be greater than x1")
