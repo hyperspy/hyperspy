@@ -83,12 +83,12 @@ class SpikesRemoval:
         self.index = 0
         self.threshold = threshold
         if hasattr(self, "observe"):
-            # NOTE: Using the expression API (trait_expr("index")) rather
-            # than a plain string ("index") is required for this handler
-            # because _index_changed accesses event attributes (.new, .old).
-            # With the string pattern, traits 7.x passes only the raw new
-            # value (an int) as a positional arg—NOT a ChangeEvent object.
-            # The expression API ensures a proper ChangeEvent is delivered.
+            # self.observe() (regardless of string or expression API)
+            # fires handlers twice in traits 7.x: once with the raw
+            # value (an int) and once with a TraitChangeEvent.
+            # @t.observe would deliver only the ChangeEvent, but cannot
+            # be used here because SpikesRemoval is a plain class.
+            # _index_changed handles both call signatures.
             self.observe(self._index_changed, trait_expr("index"))
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
@@ -147,7 +147,11 @@ class SpikesRemoval:
         return spike
 
     def _index_changed(self, event=None):
-        self.signal.axes_manager.indices = self.coordinates[event.new]
+        # self.observe() fires twice per change: once with the raw
+        # value (an int) and once with a TraitChangeEvent.
+        # Accept both call signatures.
+        new_val = event.new if hasattr(event, "new") else event
+        self.signal.axes_manager.indices = self.coordinates[new_val]
         self.argmax = None
         self._temp_mask[:] = False
 
