@@ -1343,6 +1343,297 @@ class LazySignal(signals.BaseSignal):
             factors = (np.linalg.pinv(L) @ D).T
         return factors
 
+    def _project_loadings(self, obj, desc, navigation_mask, signal_mask, get, nblocks):
+        """Project data chunks through *obj.transform* and concatenate.
+
+        Iterates over navigation blocks via :meth:`_block_iterator`, calls
+        ``obj.transform()`` on each chunk, and returns the concatenated
+        loadings array.  Used by ISVD, PCA, NMF, ORPCA, ORNMF, and custom
+        estimators after fitting.
+
+        Parameters
+        ----------
+        obj : estimator
+            Fitted estimator with a ``transform`` method.
+        desc : str
+            Progress-bar label.
+        navigation_mask : various or None
+            Navigation mask for :meth:`_block_iterator`.
+        signal_mask : various or None
+            Signal mask for :meth:`_block_iterator`.
+        get : dask scheduler
+        nblocks : int
+            Number of navigation blocks.
+
+        Returns
+        -------
+        ndarray
+            Concatenated loadings, shape ``(n_nav, n_components)``.
+        """
+        H = []
+        for chunk in progressbar(
+            self._block_iterator(
+                flat_signal=True,
+                get=get,
+                signal_mask=signal_mask,
+                navigation_mask=navigation_mask,
+            ),
+            total=nblocks,
+            leave=True,
+            desc=desc,
+        ):
+            H.append(obj.transform(chunk))
+        return np.concatenate(H, axis=0)
+
+    def _decomposition_reproject_navigation(
+        self,
+        reproject,
+        algorithm,
+        svd_solver,
+        loadings,
+        factors,
+        mean,
+        centre,
+        _D_unfolded,
+        sig_mask_1d,
+        obj,
+        signal_mask,
+        get,
+        nblocks,
+        _navigation_mask_for_reproject,
+    ):
+        """Reproject loadings over the full (unmasked) navigation space.
+
+        Recomputes *loadings* by projecting the full navigation data through
+        the learned factors.  Supports three paths: dask matmul for
+        ``svd_solver='full'``, dask matmul for ``svd_solver='randomized'``,
+        and a ``obj.transform`` chunk-loop for other algorithms.  Also
+        handles the ``reproject=None`` default (project for non-SVD).
+
+        Parameters
+        ----------
+        reproject : str or None
+            ``"navigation"``, ``"both"``, or ``None``.
+        algorithm : str
+            Decomposition algorithm name.
+        svd_solver : str
+            SVD backend.
+        loadings : ndarray or dask Array
+            Current loadings (may be overwritten with full-nav loadings).
+        factors : ndarray or dask Array
+            Learned factors (signal × components).
+        mean : ndarray or None
+            Per-channel mean from centring.
+        centre : str or None
+            Centring strategy.
+        _D_unfolded : dask Array or None
+            Unfolded (nav, sig) data matrix, captured before fold().
+        sig_mask_1d : ndarray or None
+            Flat boolean signal mask (True = excluded).
+        obj : estimator or None
+            Fitted estimator with a ``transform`` method.
+        signal_mask : various or None
+            Signal mask for ``_project_loadings``.
+        get : dask scheduler
+        nblocks : int
+            Number of navigation blocks.
+        _navigation_mask_for_reproject : various or None
+            Navigation mask for the default projection pass.
+
+        Returns
+        -------
+        loadings : ndarray or dask Array
+            Loadings covering the full navigation space.
+        _nav_reprojected : bool
+            ``True`` if navigation reprojection was performed.
+        """
+        _nav_reprojected = False
+        if reproject in ("navigation", "both"):
+            if algorithm == "SVD" and svd_solver == "full":
+                import dask.array as da
+
+                D_nav = _D_unfolded  # (nav, sig)
+                if sig_mask_1d is not None:
+                    D_nav = D_nav[:, ~sig_mask_1d]
+                if mean is not None and centre == "navigation":
+                    D_nav = D_nav - mean
+                _factors_da = (
+                    factors if isinstance(factors, da.Array) else da.from_array(factors)
+                )
+                _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
+                loadings = ((D_nav @ _factors_da) / _s_sq).compute()
+            elif algorithm == "SVD" and svd_solver == "randomized":
+                import dask.array as da
+
+                D_nav = _D_unfolded  # (nav, sig)
+                if sig_mask_1d is not None:
+                    D_nav = D_nav[:, ~sig_mask_1d]
+                if mean is not None and centre == "navigation":
+                    D_nav = D_nav - mean
+                _factors_da = (
+                    factors if isinstance(factors, da.Array) else da.from_array(factors)
+                )
+                _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
+                loadings = ((D_nav @ _factors_da) / _s_sq).compute()
+            else:
+                try:
+                    loadings = self._project_loadings(
+                        obj, "Reproject", None, signal_mask, get, nblocks
+                    )
+                except KeyboardInterrupt:  # pragma: no cover
+                    pass
+            _nav_reprojected = True
+        elif reproject is None:
+            if algorithm != "SVD":
+                try:
+                    loadings = self._project_loadings(
+                        obj,
+                        "Project",
+                        _navigation_mask_for_reproject,
+                        signal_mask,
+                        get,
+                        nblocks,
+                    )
+                except KeyboardInterrupt:  # pragma: no cover
+                    pass
+        return loadings, _nav_reprojected
+
+    def _store_decomposition_results(
+        self,
+        explained_variance,
+        explained_variance_ratio,
+        factors,
+        loadings,
+        mean,
+        centre,
+        navigation_mask,
+        signal_mask,
+        algorithm,
+        svd_solver,
+        obj,
+        output_dimension,
+        normalize_poissonian_noise,
+        _flat_nav_mask,
+        _flat_sig_mask,
+        _nav_reprojected,
+        _signal_reprojected,
+        print_info,
+        to_print,
+        return_info,
+    ):
+        """Store decomposition results in ``learning_results`` and finalise.
+
+        Computes explained variance ratio and elbow, normalises masks,
+        stores all attributes in ``self.learning_results``, applies
+        Poisson-noise rescaling, NaN-fills excluded positions, prints
+        decomposition info, and returns the ``return_info`` object.
+
+        Parameters
+        ----------
+        explained_variance : ndarray or None
+        explained_variance_ratio : ndarray or None
+        factors : ndarray or dask Array
+        loadings : ndarray or dask Array
+        mean : ndarray or None
+        centre : str or None
+        navigation_mask : various or None
+        signal_mask : various or None
+        algorithm : str or object
+        svd_solver : str
+        obj : estimator or None
+        output_dimension : int or None
+        normalize_poissonian_noise : bool
+        _flat_nav_mask : ndarray or None
+        _flat_sig_mask : ndarray or None
+        _nav_reprojected : bool
+        _signal_reprojected : bool
+        print_info : bool
+        to_print : list of str
+        return_info : bool
+
+        Returns
+        -------
+        object or None
+            The fitted estimator if ``return_info`` is ``True`` and the
+            algorithm supports it, else ``None``.
+        """
+        from hyperspy.learn._mva import _nan_expand_rows
+
+        target = self.learning_results
+
+        # explained variance ratio and elbow estimate
+        if explained_variance is not None and explained_variance_ratio is None:
+            (
+                explained_variance_ratio,
+                number_significant_components,
+            ) = self._compute_explained_variance_ratio(explained_variance)
+        elif explained_variance_ratio is not None:
+            number_significant_components = int(
+                self.estimate_elbow_position(explained_variance_ratio) + 1
+            )
+        else:
+            number_significant_components = None
+
+        # normalise masks to flat bool arrays
+        nav_size = self.axes_manager.navigation_size
+        sig_size = self.axes_manager.signal_size
+        flat_nav_mask = _to_flat_bool(navigation_mask, nav_size)
+        flat_sig_mask = _to_flat_bool(signal_mask, sig_size)
+
+        # store core results
+        target.decomposition_algorithm = algorithm
+        _stored_output_dim = (
+            output_dimension
+            if output_dimension is not None
+            else (factors.shape[1] if factors is not None else None)
+        )
+        target.output_dimension = _stored_output_dim
+        target.poissonian_noise_normalized = normalize_poissonian_noise
+        target.explained_variance = explained_variance
+        target.explained_variance_ratio = explained_variance_ratio
+        target.number_significant_components = number_significant_components
+        target.centre = centre
+        target.mean = mean
+        target.unmixing_matrix = None
+        target.bss_algorithm = None
+        if algorithm != "SVD":
+            target._object = obj
+
+        # rescale if Poisson noise was normalised
+        if normalize_poissonian_noise:
+            root_bH_flat = self._root_bH.ravel().compute()
+            if _flat_sig_mask is not None and not _signal_reprojected:
+                root_bH_flat = root_bH_flat[~_flat_sig_mask]
+            factors = factors * root_bH_flat[:, np.newaxis]
+            root_aG_flat = self._root_aG.ravel().compute()
+            if _flat_nav_mask is not None and not _nav_reprojected:
+                root_aG_flat = root_aG_flat[~_flat_nav_mask]
+            loadings = loadings * root_aG_flat[:, np.newaxis]
+
+        # store masks and NaN-fill excluded positions
+        if flat_sig_mask is not None:
+            target.signal_mask = flat_sig_mask.reshape(
+                self.axes_manager._signal_shape_in_array
+            )
+            if not _signal_reprojected:
+                factors = _nan_expand_rows(factors, flat_sig_mask, sig_size)
+
+        if flat_nav_mask is not None:
+            target.navigation_mask = flat_nav_mask.reshape(
+                self.axes_manager._navigation_shape_in_array
+            )
+            if not _nav_reprojected:
+                loadings = _nan_expand_rows(loadings, flat_nav_mask, nav_size)
+
+        target.factors = factors
+        target.loadings = loadings
+
+        if print_info:
+            print("\n".join([str(pr) for pr in to_print]))
+
+        if return_info:
+            return obj if algorithm != "SVD" or svd_solver == "incremental" else None
+
     def decomposition(
         self,
         normalize_poissonian_noise=False,
@@ -1652,6 +1943,7 @@ class LazySignal(signals.BaseSignal):
         _D_unfolded = None
         nav_mask_1d = None
         sig_mask_1d = None
+        obj = None  # set below for non-SVD algorithms and svd_solver='incremental'
 
         _al_data = self._data_aligned_with_axes
         nav_chunks = _al_data.chunks[: self.axes_manager.navigation_dimension]
@@ -1874,20 +2166,9 @@ class LazySignal(signals.BaseSignal):
                 factors = obj.components_.T
                 if centre is None:
                     mean = None
-                H = []
-                for chunk in progressbar(
-                    self._block_iterator(
-                        flat_signal=True,
-                        get=get,
-                        signal_mask=signal_mask,
-                        navigation_mask=navigation_mask,
-                    ),
-                    total=nblocks,
-                    leave=True,
-                    desc="Project",
-                ):
-                    H.append(obj.transform(chunk))
-                loadings = np.concatenate(H, axis=0)
+                loadings = self._project_loadings(
+                    obj, "Project", navigation_mask, signal_mask, get, nblocks
+                )
 
             elif algorithm == "PCA":
                 explained_variance = obj.explained_variance_
@@ -1911,20 +2192,9 @@ class LazySignal(signals.BaseSignal):
                 # (batch-only objects set loadings above during fit_transform;
                 # incremental objects need a project pass now).
                 if loadings is None:
-                    H = []
-                    for chunk in progressbar(
-                        self._block_iterator(
-                            flat_signal=True,
-                            get=get,
-                            signal_mask=signal_mask,
-                            navigation_mask=navigation_mask,
-                        ),
-                        total=nblocks,
-                        leave=True,
-                        desc="Project",
-                    ):
-                        H.append(obj.transform(chunk))
-                    loadings = np.concatenate(H, axis=0)
+                    loadings = self._project_loadings(
+                        obj, "Project", navigation_mask, signal_mask, get, nblocks
+                    )
 
             # Pre-compute flat boolean masks needed by the reproject blocks
             # below.  (The same masks are recomputed later outside the try
@@ -1936,112 +2206,38 @@ class LazySignal(signals.BaseSignal):
             _flat_sig_mask = _to_flat_bool(signal_mask, self.axes_manager.signal_size)
 
             # REPROJECT NAVIGATION (recompute loadings over full nav)
-            _nav_reprojected = False
-            if reproject in ("navigation", "both"):
-                if algorithm == "SVD" and svd_solver == "full":
-                    # factors is a dask array (n_sig × k); _D_unfolded is the
-                    # unfolded dask array (nav × sig) captured before fold().
-                    # Apply signal mask in the column dimension only (all nav
-                    # rows included) and compute the matmul lazily — dask
-                    # streams over nav chunks without materialising the full matrix.
-                    import dask.array as da
-
-                    D_nav = _D_unfolded  # (nav, sig)
-                    if sig_mask_1d is not None:
-                        D_nav = D_nav[:, ~sig_mask_1d]
-                    if mean is not None and centre == "navigation":
-                        D_nav = D_nav - mean
-                    # factors may still be a dask array here
-                    _factors_da = (
-                        factors
-                        if isinstance(factors, da.Array)
-                        else da.from_array(factors)
-                    )
-                    _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
-                    loadings = ((D_nav @ _factors_da) / _s_sq).compute()
-                elif algorithm == "SVD" and svd_solver == "randomized":
-                    # Use a dask matmul so the full data matrix is never
-                    # materialised in RAM.  _D_unfolded is the unfolded dask
-                    # array (nav, sig) captured before fold().  Apply the
-                    # signal mask column-wise only (all nav rows included),
-                    # then project: loadings = D_nav @ factors.
-                    import dask.array as da
-
-                    D_nav = _D_unfolded  # (nav, sig)
-                    if sig_mask_1d is not None:
-                        D_nav = D_nav[:, ~sig_mask_1d]
-                    if mean is not None and centre == "navigation":
-                        D_nav = D_nav - mean
-                    _factors_da = (
-                        factors
-                        if isinstance(factors, da.Array)
-                        else da.from_array(factors)
-                    )
-                    _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
-                    loadings = ((D_nav @ _factors_da) / _s_sq).compute()
-                else:
-                    # All other algorithms expose obj.transform(X).
-                    H = []
-                    try:
-                        for chunk in progressbar(
-                            self._block_iterator(
-                                flat_signal=True,
-                                get=get,
-                                signal_mask=signal_mask,
-                                navigation_mask=None,
-                            ),
-                            total=nblocks,
-                            desc="Reproject",
-                        ):
-                            H.append(obj.transform(chunk))
-                    except KeyboardInterrupt:  # pragma: no cover
-                        pass
-                    loadings = np.concatenate(H, axis=0)
-                _nav_reprojected = True
-
-            elif reproject is None:
-                # Default behaviour: for non-SVD algorithms always
-                # project to get loadings (preserves the pre-existing default
-                # of reproject=True).  For SVD, loadings were already computed
-                # in the learn pass so nothing extra is needed.
-                if algorithm != "SVD":
-                    H = []
-                    try:
-                        for chunk in progressbar(
-                            self._block_iterator(
-                                flat_signal=True,
-                                get=get,
-                                signal_mask=signal_mask,
-                                navigation_mask=_navigation_mask_for_reproject,
-                            ),
-                            total=nblocks,
-                            desc="Project",
-                        ):
-                            H.append(obj.transform(chunk))
-                    except KeyboardInterrupt:  # pragma: no cover
-                        pass
-                    loadings = np.concatenate(H, axis=0)
+            loadings, _nav_reprojected = self._decomposition_reproject_navigation(
+                reproject,
+                algorithm,
+                svd_solver,
+                loadings,
+                factors,
+                mean,
+                centre,
+                _D_unfolded,
+                sig_mask_1d,
+                obj,
+                signal_mask,
+                get,
+                nblocks,
+                _navigation_mask_for_reproject,
+            )
 
             # For reproject='signal', non-SVD algorithms need loadings computed
             # first (over masked nav + masked signal), which mirrors
             # reproject=None.  SVD already computed loadings in the learn pass.
             if reproject == "signal" and algorithm != "SVD" and loadings is None:
-                H = []
                 try:
-                    for chunk in progressbar(
-                        self._block_iterator(
-                            flat_signal=True,
-                            get=get,
-                            signal_mask=signal_mask,
-                            navigation_mask=_navigation_mask_for_reproject,
-                        ),
-                        total=nblocks,
-                        desc="Project",
-                    ):
-                        H.append(obj.transform(chunk))
+                    loadings = self._project_loadings(
+                        obj,
+                        "Project",
+                        _navigation_mask_for_reproject,
+                        signal_mask,
+                        get,
+                        nblocks,
+                    )
                 except KeyboardInterrupt:  # pragma: no cover
                     pass
-                loadings = np.concatenate(H, axis=0)
 
             # REPROJECT SIGNAL (recompute factors over full signal)
             # All algorithms support signal reprojection via the pseudo-
@@ -2089,93 +2285,30 @@ class LazySignal(signals.BaseSignal):
         finally:
             self.data = original_data
 
-        target = self.learning_results
-
-        # ── explained variance ratio and elbow estimate ──────────────────
-        if explained_variance is not None and explained_variance_ratio is None:
-            (
-                explained_variance_ratio,
-                number_significant_components,
-            ) = self._compute_explained_variance_ratio(explained_variance)
-        elif explained_variance_ratio is not None:
-            number_significant_components = int(
-                self.estimate_elbow_position(explained_variance_ratio) + 1
-            )
-        else:
-            number_significant_components = None
-
-        # ── normalise masks to flat bool arrays ──────────────────────────
-        # We need 1-D boolean numpy arrays (True = kept) to NaN-fill excluded
-        # positions; mirrors what the non-lazy path does in _mva.py.
-        nav_size = self.axes_manager.navigation_size
-        sig_size = self.axes_manager.signal_size
-        flat_nav_mask = _to_flat_bool(navigation_mask, nav_size)
-        flat_sig_mask = _to_flat_bool(signal_mask, sig_size)
-
-        # ── store core results ───────────────────────────────────────────
-        target.decomposition_algorithm = algorithm
-        # For custom objects output_dimension may not have been specified;
-        # fall back to the number of components actually computed.
-        _stored_output_dim = (
-            output_dimension
-            if output_dimension is not None
-            else (factors.shape[1] if factors is not None else None)
+        _return_value = self._store_decomposition_results(
+            explained_variance=explained_variance,
+            explained_variance_ratio=explained_variance_ratio,
+            factors=factors,
+            loadings=loadings,
+            mean=mean,
+            centre=centre,
+            navigation_mask=navigation_mask,
+            signal_mask=signal_mask,
+            algorithm=algorithm,
+            svd_solver=svd_solver,
+            obj=obj,
+            output_dimension=output_dimension,
+            normalize_poissonian_noise=normalize_poissonian_noise,
+            _flat_nav_mask=_flat_nav_mask,
+            _flat_sig_mask=_flat_sig_mask,
+            _nav_reprojected=_nav_reprojected,
+            _signal_reprojected=_signal_reprojected,
+            print_info=print_info,
+            to_print=to_print,
+            return_info=return_info,
         )
-        target.output_dimension = _stored_output_dim
-        target.poissonian_noise_normalized = normalize_poissonian_noise
-        target.explained_variance = explained_variance
-        target.explained_variance_ratio = explained_variance_ratio
-        target.number_significant_components = number_significant_components
-        target.centre = centre
-        target.mean = mean
-        target.unmixing_matrix = None
-        target.bss_algorithm = None
-        if algorithm != "SVD":
-            target._object = obj
-
-        # ── rescale if Poisson noise was normalised ──────────────────────
-        if normalize_poissonian_noise:
-            root_bH_flat = self._root_bH.ravel().compute()
-            if _flat_sig_mask is not None and not _signal_reprojected:
-                # factors only covers unmasked signal channels
-                root_bH_flat = root_bH_flat[~_flat_sig_mask]
-            factors = factors * root_bH_flat[:, np.newaxis]
-            root_aG_flat = self._root_aG.ravel().compute()
-            if _flat_nav_mask is not None and not _nav_reprojected:
-                # loadings only covers unmasked nav positions
-                root_aG_flat = root_aG_flat[~_flat_nav_mask]
-            loadings = loadings * root_aG_flat[:, np.newaxis]
-
-        # ── store masks and NaN-fill excluded positions ──────────────────
-        from hyperspy.learn._mva import _nan_expand_rows
-
-        if flat_sig_mask is not None:
-            target.signal_mask = flat_sig_mask.reshape(
-                self.axes_manager._signal_shape_in_array
-            )
-            # Only NaN-fill if signal was not reprojected (reprojection already
-            # covers all signal channels).
-            if not _signal_reprojected:
-                factors = _nan_expand_rows(factors, flat_sig_mask, sig_size)
-
-        if flat_nav_mask is not None:
-            target.navigation_mask = flat_nav_mask.reshape(
-                self.axes_manager._navigation_shape_in_array
-            )
-            # Only NaN-fill if navigation was not reprojected (reprojection
-            # already covers all navigation positions).
-            if not _nav_reprojected:
-                loadings = _nan_expand_rows(loadings, flat_nav_mask, nav_size)
-
-        target.factors = factors
-        target.loadings = loadings
-
-        # Print details about the decomposition we just performed
-        if print_info:
-            print("\n".join([str(pr) for pr in to_print]))
-
         if return_info:
-            return obj if algorithm != "SVD" or svd_solver == "incremental" else None
+            return _return_value
 
     def plot(self, navigator="auto", **kwargs):
         if self.axes_manager.ragged:
