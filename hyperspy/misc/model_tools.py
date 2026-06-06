@@ -459,6 +459,64 @@ class ModelStatistics:
         return html
 
 
+def _intervals_to_tuples(intervals):
+    """Normalize and validate the ``intervals`` parameter for
+    :meth:`~.api.model.components.Component.estimate_parameters`.
+
+    Parameters
+    ----------
+    intervals
+        One of:
+        - A bare ``(left, right)`` tuple (auto-wrapped to a single-interval
+          list).
+        - A tuple or list of ``(left, right)`` tuples.
+        - A tuple or list of :class:`~.api.roi.SpanROI` objects.
+
+    Returns
+    -------
+    list of tuple
+        ``[(left_0, right_0), (left_1, right_1), ...]``
+
+    Raises
+    ------
+    ValueError
+        If ``intervals`` is not a list or tuple, or if any element has an
+        invalid format.
+    """
+    if not isinstance(intervals, (list, tuple)):
+        raise ValueError("`intervals` must be a list of tuples or SpanROI objects.")
+    if isinstance(intervals, tuple):
+        if len(intervals) == 0:
+            intervals = []
+        else:
+            first = intervals[0]
+            if (
+                isinstance(first, (tuple, list))
+                and len(first) == 2
+                and not isinstance(first[0], (tuple, list))
+            ):
+                # tuple of intervals — use as-is
+                pass
+            elif hasattr(first, "left") and hasattr(first, "right"):
+                # tuple of SpanROIs — use as-is
+                pass
+            else:
+                # bare (left, right) pair — wrap in list
+                intervals = [intervals]
+    interval_tuples = []
+    for interval in intervals:
+        if hasattr(interval, "left") and hasattr(interval, "right"):
+            interval_tuples.append((interval.left, interval.right))
+        elif isinstance(interval, (tuple, list)) and len(interval) == 2:
+            interval_tuples.append(tuple(interval))
+        else:
+            raise ValueError(
+                f"Invalid interval format: {interval}. "
+                "Expected tuple (left, right) or SpanROI object."
+            )
+    return interval_tuples
+
+
 class SummaryStatistics:
     """
     Display class for the five-number summary statistics of a signal.

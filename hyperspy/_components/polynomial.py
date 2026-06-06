@@ -106,36 +106,9 @@ class Polynomial(Expression):
         axis = signal.axes_manager.signal_axes[0]
 
         if intervals is not None:
-            if not isinstance(intervals, (list, tuple)):
-                raise ValueError(
-                    "`intervals` must be a list of tuples or SpanROI objects."
-                )
-            if isinstance(intervals, tuple):
-                if len(intervals) == 0:
-                    intervals = []
-                else:
-                    first = intervals[0]
-                    if (
-                        isinstance(first, (tuple, list))
-                        and len(first) == 2
-                        and not isinstance(first[0], (tuple, list))
-                    ):
-                        pass
-                    elif hasattr(first, "left") and hasattr(first, "right"):
-                        pass
-                    else:
-                        intervals = [intervals]
-            interval_tuples = []
-            for interval in intervals:
-                if hasattr(interval, "left") and hasattr(interval, "right"):
-                    interval_tuples.append((interval.left, interval.right))
-                elif isinstance(interval, (tuple, list)) and len(interval) == 2:
-                    interval_tuples.append(tuple(interval))
-                else:
-                    raise ValueError(
-                        f"Invalid interval format: {interval}. "
-                        "Expected tuple (left, right) or SpanROI object."
-                    )
+            from hyperspy.misc.model_tools import _intervals_to_tuples
+
+            interval_tuples = _intervals_to_tuples(intervals)
             indices = [axis.value_range_to_indices(a, b) for a, b in interval_tuples]
         elif x1 is not None:
             if x2 is None:
@@ -158,16 +131,9 @@ class Polynomial(Expression):
             for idx_start, idx_end in indices_list:
                 x_parts.append(axis.axis[idx_start:idx_end])
                 if sig._lazy:
-                    if only_current:
-                        y_parts.append(sig._get_current_data()[idx_start:idx_end])
-                    else:
-                        y_parts.append(sig.isig[idx_start:idx_end].data)
+                    y_parts.append(sig._get_current_data()[idx_start:idx_end])
                 else:
-                    y_parts.append(
-                        sig._get_current_data()[idx_start:idx_end]
-                        if only_current
-                        else sig.data[..., idx_start:idx_end]
-                    )
+                    y_parts.append(sig._get_current_data()[idx_start:idx_end])
             return np.concatenate(x_parts), np.concatenate(y_parts, axis=-1)
 
         if only_current is True:

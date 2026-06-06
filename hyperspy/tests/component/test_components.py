@@ -24,6 +24,7 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy import components1d
+from hyperspy._components.polynomial import convert_to_polynomial
 from hyperspy.component import Component
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.models.model1d import Model1D
@@ -232,6 +233,76 @@ class TestOffset:
         o.estimate_parameters(s, intervals=[roi1, roi2], only_current=True)
         np.testing.assert_allclose(o.offset.value, 10.0, rtol=0.01)
 
+    def test_estimate_parameters_intervals_not_list(self):
+        s = hs.signals.Signal1D(np.ones(10))
+        o = hs.model.components1D.Offset()
+        with pytest.raises(
+            ValueError,
+            match="`intervals` must be a list of tuples or SpanROI objects.",
+        ):
+            o.estimate_parameters(s, intervals="not_a_list")
+
+    def test_estimate_parameters_intervals_empty_tuple(self):
+        s = hs.signals.Signal1D(np.ones(10) * 7.0)
+        o = hs.model.components1D.Offset()
+        with pytest.raises(ValueError, match="need at least one array to concatenate"):
+            o.estimate_parameters(s, intervals=())
+
+    def test_estimate_parameters_intervals_bare_tuple_wrapping(self):
+        s = hs.signals.Signal1D(np.ones(100))
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = -5
+        s.data[60:80] = 10.0
+        o = hs.model.components1D.Offset()
+        o.estimate_parameters(s, intervals=(1.0, 3.0))
+        np.testing.assert_allclose(o.offset.value, 10.0, rtol=0.01)
+
+    def test_estimate_parameters_intervals_tuple_of_spanrois(self):
+        s = hs.signals.Signal1D(np.ones(100))
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = -5
+        s.data[10:20] = 10.0
+        s.data[70:80] = 10.0
+
+        roi1 = hs.roi.SpanROI(s.axes_manager[0].axis[10], s.axes_manager[0].axis[20])
+        roi2 = hs.roi.SpanROI(s.axes_manager[0].axis[70], s.axes_manager[0].axis[80])
+        o = hs.model.components1D.Offset()
+        o.estimate_parameters(s, intervals=(roi1, roi2))
+        np.testing.assert_allclose(o.offset.value, 10.0, rtol=0.01)
+
+    def test_estimate_parameters_intervals_invalid_format(self):
+        s = hs.signals.Signal1D(np.ones(10))
+        o = hs.model.components1D.Offset()
+        with pytest.raises(ValueError, match="Invalid interval format"):
+            o.estimate_parameters(s, intervals=[(1, 2, 3)])
+
+    def test_estimate_parameters_x1_without_x2(self):
+        s = hs.signals.Signal1D(np.ones(10))
+        o = hs.model.components1D.Offset()
+        with pytest.raises(ValueError, match="x2 must be provided"):
+            o.estimate_parameters(s, x1=1.0, x2=None)
+
+    def test_estimate_parameters_x1_x2_path(self):
+        s = hs.signals.Signal1D(np.ones(100))
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = -5
+        s.data[60:80] = 10.0
+        o = hs.model.components1D.Offset()
+        o.estimate_parameters(s, x1=1.0, x2=3.0)
+        np.testing.assert_allclose(o.offset.value, 10.0, rtol=0.01)
+
+    def test_estimate_parameters_map_none(self):
+        s = hs.signals.Signal1D(np.ones(100) * 5.0)
+        s = hs.stack([s, s])
+        o = hs.model.components1D.Offset()
+        # First call sets up the axes_manager without triggering
+        # the superclass _estimate_parameters to call _create_arrays
+        o.estimate_parameters(s, only_current=True)
+        o.offset.map = None
+        o.estimate_parameters(s, only_current=False)
+        assert o.offset.map is not None
+        np.testing.assert_allclose(o.offset.map["values"], 5.0)
+
 
 @lazifyTestClass
 class TestPolynomial:
@@ -374,6 +445,115 @@ class TestPolynomial:
         p.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
         np.testing.assert_allclose(p.function_nd(axis.axis), s.data)
+
+    def test_estimate_parameters_intervals_not_list(self):
+        signal = self.m.signal
+        p = hs.model.components1D.Polynomial(order=2)
+        with pytest.raises(ValueError, match="must be a list of tuples"):
+            p.estimate_parameters(signal, intervals="not_a_list")
+
+    def test_estimate_parameters_intervals_empty_tuple(self):
+        signal = self.m.signal
+        axis = signal.axes_manager[0].axis
+        # Create a signal with polynomial data over the full axis
+        data = self.m[0].function(axis)
+        s = hs.signals.Signal1D(data)
+        s.axes_manager[0].offset = signal.axes_manager[0].offset
+        s.axes_manager[0].scale = signal.axes_manager[0].scale
+
+        p = hs.model.components1D.Polynomial(order=2)
+        # Empty tuple → intervals becomes [] → indices becomes [],
+        # which results in empty data for np.concatenate
+        with pytest.raises(ValueError):
+            p.estimate_parameters(s, intervals=(), only_current=True)
+
+    def test_estimate_parameters_intervals_bare_tuple_wrapping(self):
+        signal = self.m.signal
+        axis = signal.axes_manager[0].axis
+        data = np.zeros(1024)
+        data[100:500] = self.m[0].function(axis[100:500])
+        s = hs.signals.Signal1D(data)
+        s.axes_manager[0].offset = signal.axes_manager[0].offset
+        s.axes_manager[0].scale = signal.axes_manager[0].scale
+
+        p = hs.model.components1D.Polynomial(order=2)
+        # Single interval as bare tuple → triggers line 127 wrapping
+        p.estimate_parameters(s, intervals=(axis[100], axis[500]), only_current=True)
+        np.testing.assert_allclose(p.a2.value, 0.5, rtol=0.01)
+        np.testing.assert_allclose(p.a1.value, 2, rtol=0.01)
+        np.testing.assert_allclose(p.a0.value, 3, rtol=0.01)
+
+    def test_estimate_parameters_intervals_tuple_of_spanrois(self):
+        signal = self.m.signal
+        axis = signal.axes_manager[0].axis
+        data = np.zeros(1024)
+        data[100:500] = self.m[0].function(axis[100:500])
+        s = hs.signals.Signal1D(data)
+        s.axes_manager[0].offset = signal.axes_manager[0].offset
+        s.axes_manager[0].scale = signal.axes_manager[0].scale
+
+        roi = hs.roi.SpanROI(axis[100], axis[500])
+        p = hs.model.components1D.Polynomial(order=2)
+        # Tuple of SpanROIs triggers lines 124-125
+        p.estimate_parameters(s, intervals=(roi,), only_current=True)
+        np.testing.assert_allclose(p.a2.value, 0.5, rtol=0.01)
+        np.testing.assert_allclose(p.a1.value, 2, rtol=0.01)
+        np.testing.assert_allclose(p.a0.value, 3, rtol=0.01)
+
+    def test_estimate_parameters_intervals_spanroi_in_list(self):
+        signal = self.m.signal
+        axis = signal.axes_manager[0].axis
+        data = np.zeros(1024)
+        data[100:500] = self.m[0].function(axis[100:500])
+        s = hs.signals.Signal1D(data)
+        s.axes_manager[0].offset = signal.axes_manager[0].offset
+        s.axes_manager[0].scale = signal.axes_manager[0].scale
+
+        roi = hs.roi.SpanROI(axis[100], axis[500])
+        p = hs.model.components1D.Polynomial(order=2)
+        # SpanROI in a list triggers line 131 SpanROI branch
+        p.estimate_parameters(s, intervals=[roi], only_current=True)
+        np.testing.assert_allclose(p.a2.value, 0.5, rtol=0.01)
+        np.testing.assert_allclose(p.a1.value, 2, rtol=0.01)
+        np.testing.assert_allclose(p.a0.value, 3, rtol=0.01)
+
+    def test_estimate_parameters_intervals_invalid_format(self):
+        signal = self.m.signal
+        p = hs.model.components1D.Polynomial(order=2)
+        with pytest.raises(ValueError, match="Invalid interval format"):
+            p.estimate_parameters(signal, intervals=[(1, 2, 3)])
+
+    def test_estimate_parameters_x1_without_x2(self):
+        signal = self.m.signal
+        p = hs.model.components1D.Polynomial(order=2)
+        with pytest.raises(ValueError, match="x2 must be provided"):
+            p.estimate_parameters(signal, x1=1.0, x2=None, intervals=None)
+
+    def test_estimate_parameters_lazy(self):
+        s = self.m_2d.as_signal()
+        s_lazy = s.as_lazy()
+        p = hs.model.components1D.Polynomial(order=2)
+        axis = s_lazy.axes_manager.signal_axes[0]
+        p.estimate_parameters(
+            s_lazy,
+            intervals=[(axis.axis[0], axis.axis[-1])],
+            only_current=True,
+        )
+        np.testing.assert_allclose(p.a2.value, 0.5, rtol=0.01)
+        np.testing.assert_allclose(p.a1.value, 2, rtol=0.01)
+        np.testing.assert_allclose(p.a0.value, 3, rtol=0.01)
+
+    def test_estimate_parameters_map_none(self):
+        s = self.m_2d.as_signal()
+        p = hs.model.components1D.Polynomial(order=2)
+        p.estimate_parameters(s, None, None, only_current=True)
+        p.a0.map = None
+        p.estimate_parameters(s, None, None, only_current=False)
+        assert p.a0.map is not None
+        assert p.a0.map["is_set"].all()
+        np.testing.assert_allclose(p.a2.map["values"], 0.5)
+        np.testing.assert_allclose(p.a1.map["values"], 2)
+        np.testing.assert_allclose(p.a0.map["values"], 3)
 
 
 class TestGaussian:
@@ -564,3 +744,31 @@ class TestHeavisideStep:
 
 #        np.testing.assert_array_almost_equal(c.n.grad(np.array([3, -0.1, 0])),
 #                                             np.array([1, 1, 1]))
+
+
+def test_convert_to_polynomial():
+    """Test conversion from old polynomial dictionary format to new format."""
+    old_dict = {
+        "order": 2,
+        "parameters": [
+            {
+                "value": [0.5, 2.0, 3.0],
+                "_bounds": [(0.0, 1.0), (1.0, 3.0), (2.0, 5.0)],
+                "_id_name": "coefficients",
+                "name": "coefficients",
+            }
+        ],
+        "name": "Polynomial",
+    }
+    new_dict = convert_to_polynomial(old_dict)
+
+    assert new_dict["order"] == 2
+    assert new_dict["name"] == "Polynomial"
+    param_names = [p["_id_name"] for p in new_dict["parameters"]]
+    assert param_names == ["a2", "a1", "a0"]
+    assert new_dict["parameters"][0]["value"] == 0.5
+    assert new_dict["parameters"][1]["value"] == 2.0
+    assert new_dict["parameters"][2]["value"] == 3.0
+    assert new_dict["parameters"][0]["_bounds"] == (0.0, 1.0)
+    assert new_dict["parameters"][1]["_bounds"] == (1.0, 3.0)
+    assert new_dict["parameters"][2]["_bounds"] == (2.0, 5.0)

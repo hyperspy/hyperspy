@@ -101,39 +101,9 @@ class Offset(Component):
         axis = signal.axes_manager.signal_axes[0]
 
         if intervals is not None:
-            if not isinstance(intervals, (list, tuple)):
-                raise ValueError(
-                    "`intervals` must be a list of tuples or SpanROI objects."
-                )
-            if isinstance(intervals, tuple):
-                if len(intervals) == 0:
-                    intervals = []
-                else:
-                    first = intervals[0]
-                    if (
-                        isinstance(first, (tuple, list))
-                        and len(first) == 2
-                        and not isinstance(first[0], (tuple, list))
-                    ):
-                        # tuple of intervals — use as-is
-                        pass
-                    elif hasattr(first, "left") and hasattr(first, "right"):
-                        # tuple of SpanROIs — use as-is
-                        pass
-                    else:
-                        # bare (left, right) pair — wrap in list
-                        intervals = [intervals]
-            interval_tuples = []
-            for interval in intervals:
-                if hasattr(interval, "left") and hasattr(interval, "right"):
-                    interval_tuples.append((interval.left, interval.right))
-                elif isinstance(interval, (tuple, list)) and len(interval) == 2:
-                    interval_tuples.append(tuple(interval))
-                else:
-                    raise ValueError(
-                        f"Invalid interval format: {interval}. "
-                        "Expected tuple (left, right) or SpanROI object."
-                    )
+            from hyperspy.misc.model_tools import _intervals_to_tuples
+
+            interval_tuples = _intervals_to_tuples(intervals)
             indices = [axis.value_range_to_indices(a, b) for a, b in interval_tuples]
         elif x1 is not None:
             if x2 is None:
