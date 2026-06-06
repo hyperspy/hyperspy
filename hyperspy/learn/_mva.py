@@ -1551,7 +1551,9 @@ class MVA:
                     f"on the {reverse_component_criterion}"
                 )
 
-    def _calculate_recmatrix(self, components=None, mva_type="decomposition"):
+    def _calculate_recmatrix(
+        self, components=None, mva_type="decomposition", factors=None, loadings=None
+    ):
         """Rebuilds data from selected components.
 
         Parameters
@@ -1562,6 +1564,12 @@ class MVA:
             * If list of ints, rebuilds signal instance from only components in given list
         mva_type : str {'decomposition', 'bss'}
             Decomposition type (not case sensitive)
+        factors : ndarray or dask Array, optional
+            Factor matrix to use.  If not provided, read from
+            ``learning_results`` based on *mva_type*.
+        loadings : ndarray or dask Array, optional
+            Loading matrix to use (will be transposed internally).  If not
+            provided, read from ``learning_results`` based on *mva_type*.
 
         Returns
         -------
@@ -1569,15 +1577,17 @@ class MVA:
             Data built from the given components.
 
         """
-
         target = self.learning_results
 
-        if mva_type.lower() == "decomposition":
-            factors = target.factors
-            loadings = target.loadings.T
-        elif mva_type.lower() == "bss":
-            factors = target.bss_factors
-            loadings = target.bss_loadings.T
+        if factors is None or loadings is None:
+            if mva_type.lower() == "decomposition":
+                factors = factors if factors is not None else target.factors
+                loadings = loadings if loadings is not None else target.loadings.T
+            elif mva_type.lower() == "bss":
+                factors = factors if factors is not None else target.bss_factors
+                loadings = loadings if loadings is not None else target.bss_loadings.T
+        else:
+            loadings = loadings.T
 
         if components is None:
             a = factors @ loadings
@@ -1645,27 +1655,21 @@ class MVA:
 
         """
         lr = self.learning_results
+        bss_factors = lr.bss_factors
+        bss_loadings = lr.bss_loadings
         if self._lazy:
             import dask.array as da
 
-            # Save originals because _calculate_recmatrix reads from
-            # lr.factors/lr.loadings.  We temporarily swap in dask-wrapped
-            # bss arrays so the computation stays lazy, then restore the
-            # original decomposition results to avoid permanent corruption.
-            saved_factors = lr.factors
-            saved_loadings = lr.loadings
-            try:
-                if isinstance(lr.bss_factors, np.ndarray):
-                    lr.factors = da.from_array(lr.bss_factors, chunks=chunks)
-                if isinstance(lr.bss_loadings, np.ndarray):
-                    lr.loadings = da.from_array(lr.bss_loadings, chunks=chunks)
-                rec = self._calculate_recmatrix(components=components, mva_type="bss")
-            finally:
-                lr.factors = saved_factors
-                lr.loadings = saved_loadings
-            return rec
-        rec = self._calculate_recmatrix(components=components, mva_type="bss")
-        return rec
+            if isinstance(bss_factors, np.ndarray):
+                bss_factors = da.from_array(bss_factors, chunks=chunks)
+            if isinstance(bss_loadings, np.ndarray):
+                bss_loadings = da.from_array(bss_loadings, chunks=chunks)
+        return self._calculate_recmatrix(
+            components=components,
+            mva_type="bss",
+            factors=bss_factors,
+            loadings=bss_loadings,
+        )
 
     def get_explained_variance_ratio(self):
         """Return explained variance ratio of the PCA components as a Signal1D.
