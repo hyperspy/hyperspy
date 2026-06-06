@@ -535,7 +535,8 @@ class TestBSSModelCorruptionFix:
     """Regression test: get_bss_model() should not corrupt learning_results."""
 
     @skip_sklearn
-    def test_lazy_with_numpy_bss_arrays_preserves_decomposition(self):
+    @pytest.mark.parametrize("lazy_output", [True, False])
+    def test_lazy_with_numpy_bss_arrays_preserves_decomposition(self, lazy_output):
         """#3657: get_bss_model() on lazy signal with numpy bss arrays should
         wrap them as dask, compute, then restore original factors/loadings."""
         rng = np.random.default_rng(42)
@@ -550,16 +551,21 @@ class TestBSSModelCorruptionFix:
         assert isinstance(s.learning_results.bss_loadings, np.ndarray)
         saved_factors = s.learning_results.factors
         saved_loadings = s.learning_results.loadings
-        model = s.get_bss_model()
+        model = s.get_bss_model(lazy_output=lazy_output)
         assert model is not None
-        assert isinstance(model, hs.signals.LazySignal1D)
-        assert isinstance(model.data, da.Array)
+        if lazy_output:
+            assert isinstance(model, hs.signals.LazySignal1D)
+            assert isinstance(model.data, da.Array)
+        else:
+            assert isinstance(model, hs.signals.Signal1D)
+            assert isinstance(model.data, np.ndarray)
         # learning_results must be unchanged
         assert s.learning_results.factors is saved_factors
         assert s.learning_results.loadings is saved_loadings
 
     @skip_sklearn
-    def test_non_lazy_preserves_decomposition(self):
+    @pytest.mark.parametrize("lazy_output", [True, False])
+    def test_non_lazy_preserves_decomposition(self, lazy_output):
         """#3657: get_bss_model() on non-lazy signal should be a no-op
         for learning_results (takes the else return path)."""
         rng = np.random.default_rng(42)
@@ -568,7 +574,13 @@ class TestBSSModelCorruptionFix:
         s.blind_source_separation(3)
         saved_factors = s.learning_results.factors.copy()
         saved_loadings = s.learning_results.loadings.copy()
-        model = s.get_bss_model()
+        model = s.get_bss_model(lazy_output=lazy_output)
         assert model is not None
-        assert np.array_equal(s.learning_results.factors, saved_factors)
-        assert np.array_equal(s.learning_results.loadings, saved_loadings)
+        if lazy_output:
+            assert isinstance(model, hs.signals.LazySignal1D)
+            assert isinstance(model.data, da.Array)
+        else:
+            assert isinstance(model, hs.signals.Signal1D)
+            assert isinstance(model.data, np.ndarray)
+        np.testing.assert_array_equal(s.learning_results.factors, saved_factors)
+        np.testing.assert_array_equal(s.learning_results.loadings, saved_loadings)

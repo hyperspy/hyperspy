@@ -1251,19 +1251,19 @@ class MVA:
         if lazy_output is None:
             lazy_output = self._lazy
 
-        if lazy_output:
-            import dask.array as da
+        if isinstance(chunks, (tuple, list)) and len(chunks) == 2:
+            factors_chunks, loadings_chunks = chunks
+        elif chunks == "auto" or isinstance(chunks, int):
+            factors_chunks = loadings_chunks = chunks
+        else:
+            raise ValueError(
+                "If provided, `chunks` must be a tuple of two elements, "
+                "a scalar integer or 'auto'."
+            )
 
-            if isinstance(chunks, (tuple, list)) and len(chunks) == 2:
-                factors_chunks, loadings_chunks = chunks
-            elif chunks == "auto" or isinstance(chunks, int):
-                # Scalar or "auto": use the same setting on both outer axes.
-                factors_chunks = loadings_chunks = chunks
-            else:
-                raise ValueError(
-                    "If provided, `chunks` must be a tuple of two elements, "
-                    "a scalar integer or 'auto'."
-                )
+        # wrap numpy arrays as dask so intermediate computation stays lazy
+        if lazy_output or self._lazy:
+            import dask.array as da
 
             # For matrix multiplication (N, K) @ (K, M), keep K in one chunk.
             if isinstance(factors, da.Array):
@@ -1352,32 +1352,6 @@ class MVA:
             A model built from the given components.
 
         """
-        lr = self.learning_results
-        if self._lazy:
-            import dask.array as da
-
-            # Save originals because _calculate_recmatrix reads from
-            # lr.bss_factors/lr.bss_loadings.  We temporarily swap in dask-wrapped
-            # bss arrays so the computation stays lazy, then restore the
-            # original decomposition results to avoid permanent corruption.
-            saved_factors = lr.bss_factors
-            saved_loadings = lr.bss_loadings
-            try:
-                if isinstance(lr.bss_factors, np.ndarray):
-                    lr.bss_factors = da.from_array(lr.bss_factors, chunks=chunks)
-                if isinstance(lr.bss_loadings, np.ndarray):
-                    lr.bss_loadings = da.from_array(lr.bss_loadings, chunks=chunks)
-                rec = self._calculate_recmatrix(
-                    components=components,
-                    mva_type="bss",
-                    chunks=chunks,
-                    lazy_output=lazy_output,
-                )
-            finally:
-                lr.bss_factors = saved_factors
-                lr.bss_loadings = saved_loadings
-            return rec
-
         rec = self._calculate_recmatrix(
             components=components,
             mva_type="bss",
