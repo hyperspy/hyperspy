@@ -1337,9 +1337,7 @@ class MVA:
                     f"on the {reverse_component_criterion}"
                 )
 
-    def _calculate_recmatrix(
-        self, components=None, mva_type="decomposition", lazy=None, chunks="auto"
-    ):
+    def _calculate_recmatrix(self, components=None, mva_type="decomposition"):
         """Rebuilds data from selected components.
 
         Parameters
@@ -1350,30 +1348,13 @@ class MVA:
             * If list of ints, rebuilds signal instance from only components in given list
         mva_type : str {'decomposition', 'bss'}
             Decomposition type (not case sensitive)
-        lazy : bool or None, default None
-            If ``True``, wrap factors and loadings as dask arrays before
-            computing the reconstruction so that the result is a lazy signal
-            whose data is never fully materialised in RAM.  If ``False``,
-            compute eagerly and return a regular (non-lazy) signal.  If
-            ``None`` (default), behave as ``True`` when the signal is lazy
-            and ``False`` otherwise.
-        chunks : int, tuple, dict, or "auto", default "auto"
-            Chunk shape passed to :func:`dask.array.from_array` when wrapping
-            numpy factors or loadings as dask arrays (only relevant when
-            ``lazy=True`` or when the signal is lazy).  The default ``"auto"``
-            lets dask choose a suitable chunk size.
 
         Returns
         -------
         Signal instance
-            Data built from the given components.  Lazy if ``lazy=True`` or
-            if the signal is lazy and ``lazy`` is ``None``.
+            Data built from the given components.
 
         """
-        import dask.array as da
-
-        if lazy is None:
-            lazy = self._lazy
 
         target = self.learning_results
 
@@ -1384,29 +1365,15 @@ class MVA:
             factors = target.bss_factors
             loadings = target.bss_loadings.T
 
-        if lazy:
-            # Wrap numpy arrays as dask; dask arrays pass through unchanged.
-            if isinstance(factors, np.ndarray):
-                factors = da.from_array(factors, chunks=chunks)
-            if isinstance(loadings, np.ndarray):
-                loadings = da.from_array(loadings, chunks=chunks)
-
         if components is None:
             a = factors @ loadings
             signal_name = f"model from {mva_type} with {factors.shape[1]} components"
         elif hasattr(components, "__iter__"):
-            idx = list(components)
-            if isinstance(factors, da.Array):
-                tfactors = da.concatenate([factors[:, i : i + 1] for i in idx], axis=1)
-                tloadings = da.concatenate(
-                    [loadings[i : i + 1, :] for i in idx], axis=0
-                )
-            else:
-                tfactors = np.zeros((factors.shape[0], len(idx)))
-                tloadings = np.zeros((len(idx), loadings.shape[1]))
-                for k, i in enumerate(idx):
-                    tfactors[:, k] = factors[:, i]
-                    tloadings[k, :] = loadings[i, :]
+            tfactors = np.zeros((factors.shape[0], len(components)))
+            tloadings = np.zeros((len(components), loadings.shape[1]))
+            for i in range(len(components)):
+                tfactors[:, i] = factors[:, components[i]]
+                tloadings[i, :] = loadings[components[i], :]
             a = tfactors @ tloadings
             signal_name = f"model from {mva_type} with components {components}"
         else:
@@ -1419,22 +1386,16 @@ class MVA:
             sc.data = a.T.reshape(self.data.shape)
             sc.metadata.General.title += " " + signal_name
             if target.mean is not None:
-                sc.data = sc.data + target.mean
+                sc.data += target.mean
         finally:
             if self._unfolded4decomposition:
                 self.fold()
                 sc.fold()
                 self._unfolded4decomposition = False
 
-        # Ensure the returned signal type matches the requested laziness.
-        if lazy and not sc._lazy:
-            sc = sc.as_lazy()
-        elif not lazy and sc._lazy:
-            sc.compute()
-
         return sc
 
-    def get_decomposition_model(self, components=None, lazy=None, chunks="auto"):
+    def get_decomposition_model(self, components=None):
         """Generate model with the selected number of principal components.
 
         Parameters
@@ -1443,98 +1404,30 @@ class MVA:
             * If None, rebuilds signal instance from all components
             * If int, rebuilds signal instance from components in range 0-given int
             * If list of ints, rebuilds signal instance from only components in given list
-        lazy : bool or None, default None
-            Whether to return a lazy signal backed by a dask array.
-
-            * ``None`` (default): lazy if the signal itself is lazy, eager
-              otherwise.  For lazy signals that used ``svd_solver='full'``
-              without ``reproject``, the factors and loadings are already dask
-              arrays and laziness is preserved automatically.  For all other
-              solvers (and for non-lazy signals) the reconstruction is computed
-              eagerly.
-            * ``True``: always return a :class:`~hyperspy.api.signals.LazySignal`.
-              Factors and loadings are wrapped in ``dask.array.from_array``
-              if they are numpy arrays, so the matrix multiplication is
-              expressed as a dask graph and never fully materialised in RAM.
-              Useful when the reconstructed model is too large to fit in
-              memory — call ``.save()`` afterwards to stream it to disk
-              chunk by chunk.
-            * ``False``: always return an eager (non-lazy) signal, computing
-              the result immediately.  Use this on a lazy signal when you want
-              an in-memory result.
-        chunks : int, tuple, dict, or "auto", default "auto"
-            Chunk shape passed to :func:`dask.array.from_array` when numpy
-            factors or loadings are wrapped as dask arrays (only applies when
-            ``lazy=True`` or when the signal is lazy).  The default ``"auto"``
-            lets dask choose a suitable chunk size.
 
         Returns
         -------
         :class:`~hyperspy.api.signals.BaseSignal` or subclass
-            A model built from the given components.  The type is a lazy
-            signal subclass when ``lazy=True`` (or ``lazy=None`` on a lazy
-            signal), and an eager signal subclass otherwise.
-
-        Examples
-        --------
-        Fully lazy pipeline — decompose, reconstruct, and save without ever
-        holding the full reconstructed dataset in RAM:
-
-        .. code-block:: python
-
-            s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
-            model = s.get_decomposition_model()        # lazy by default on LazySignal
-            model.save("model.hspy")                   # streams chunk by chunk
-
-        Force a lazy reconstruction from a non-lazy signal or from a lazy
-        signal that used ``svd_solver='randomized'``:
-
-        .. code-block:: python
-
-            s.decomposition(output_dimension=10)
-            model = s.get_decomposition_model(lazy=True)
-            model.save("model.hspy")
+            A model built from the given components.
 
         """
-        return self._calculate_recmatrix(
-            components=components, mva_type="decomposition", lazy=lazy, chunks=chunks
-        )
+        rec = self._calculate_recmatrix(components=components, mva_type="decomposition")
+        return rec
 
-    def get_bss_model(self, components=None, lazy=None, chunks="auto"):
+    def get_bss_model(self, components=None, chunks="auto"):
         """Generate model with the selected number of independent components.
 
         Parameters
         ----------
         components : None, int or list of int, default None
-            * If None, rebuilds signal instance from all components
-            * If int, rebuilds signal instance from components in range 0-given int
-            * If list of ints, rebuilds signal instance from only components in given list
-        lazy : bool or None, default None
-            Whether to return a lazy signal backed by a dask array.
-
-            * ``None`` (default): lazy if the signal itself is lazy, eager
-              otherwise.
-            * ``True``: always return a :class:`~hyperspy.api.signals.LazySignal`.
-              BSS factors and loadings are wrapped in ``dask.array.from_array``
-              if they are numpy arrays, so the matrix multiplication is
-              expressed as a dask graph and never fully materialised in RAM.
-              Useful when the reconstructed model is too large to fit in
-              memory — call ``.save()`` afterwards to stream it to disk
-              chunk by chunk.
-            * ``False``: always return an eager (non-lazy) signal, computing
-              the result immediately.
-        chunks : int, tuple, dict, or "auto", default "auto"
-            Chunk shape passed to :func:`dask.array.from_array` when numpy
-            BSS factors or loadings are wrapped as dask arrays (only applies
-            when ``lazy=True`` or when the signal is lazy).  The default
-            ``"auto"`` lets dask choose a suitable chunk size.
+            If None, rebuilds signal instance from all components
+            If int, rebuilds signal instance from components in range 0-given int
+            If list of ints, rebuilds signal instance from only components in given list
 
         Returns
         -------
         :class:`~hyperspy.api.signals.BaseSignal` or subclass
-            A model built from the given components.  The type is a lazy
-            signal subclass when ``lazy=True`` (or ``lazy=None`` on a lazy
-            signal), and an eager signal subclass otherwise.
+            A model built from the given components.
 
         """
         lr = self.learning_results
@@ -1557,9 +1450,8 @@ class MVA:
                 lr.factors = saved_factors
                 lr.loadings = saved_loadings
             return rec
-        return self._calculate_recmatrix(
-            components=components, mva_type="bss", lazy=lazy, chunks=chunks
-        )
+        rec = self._calculate_recmatrix(components=components, mva_type="bss")
+        return rec
 
     def get_explained_variance_ratio(self):
         """Return explained variance ratio of the PCA components as a Signal1D.
