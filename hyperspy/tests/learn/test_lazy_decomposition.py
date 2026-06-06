@@ -753,15 +753,28 @@ class TestLazyDecompositionParityFixes:
 
     @skip_sklearn
     def test_return_info_svd_returns_none(self):
-        """return_info=True with SVD returns None (no persistent estimator object)."""
+        """return_info=True with SVD returns None for full/randomized
+        (no persistent estimator object); returns ISVD for incremental."""
+        # randomized — no estimator
         result = self.s.decomposition(
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=2,
+            return_info=True,
+            print_info=False,
+        )
+        assert result is None
+        # incremental — returns ISVD object
+        from hyperspy.learn.incremental_svd import ISVD
+
+        result_isvd = self.s.decomposition(
             algorithm="SVD",
             svd_solver="incremental",
             output_dimension=2,
             return_info=True,
             print_info=False,
         )
-        assert result is None
+        assert isinstance(result_isvd, ISVD)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
