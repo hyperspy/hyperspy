@@ -105,38 +105,6 @@ def to_array(thing, chunks=None):
             raise ValueError
 
 
-def _to_flat_bool(mask, size):
-    """Return a flat boolean numpy array, ``True`` where *mask* is ``True``.
-
-    Normalises mask inputs of various types (BaseSignal, dask array, numpy
-    array, or ``None``) into a 1-D boolean numpy array of length *size*
-    suitable for boolean indexing and ``_nan_expand_rows``.
-
-    Parameters
-    ----------
-    mask : BaseSignal, dask.array.Array, numpy.ndarray, or None
-        The mask to normalise.  If ``None``, returns ``None``.
-    size : int
-        Expected length after ravel — passed for signature consistency but
-        not used; the caller must ensure the mask dimensions are correct.
-
-    Returns
-    -------
-    numpy.ndarray or None
-        Flat boolean array where ``True`` = excluded position, or ``None``
-        if *mask* was ``None``.
-    """
-    if mask is None:
-        return None
-    import dask.array as da
-
-    if isinstance(mask, da.Array):
-        mask = mask.compute()
-    if hasattr(mask, "data"):
-        mask = mask.data  # BaseSignal
-    return np.asarray(mask, dtype=bool).ravel()
-
-
 class LazySignal(signals.BaseSignal):
     """Lazy general signal class."""
 
@@ -1303,6 +1271,7 @@ class LazySignal(signals.BaseSignal):
             factors = (da.from_array(pinv_L) @ D_sig).T.compute()
         else:
             from hyperspy.external.progressbar import progressbar
+            from hyperspy.learn._mva import _reproject_signal_factors
 
             # Collect all navigation-unmasked rows with the full signal
             # (no signal mask), then solve: factors = pinv(L) @ D_full
@@ -1340,7 +1309,7 @@ class LazySignal(signals.BaseSignal):
                     L = loadings
             else:
                 L = loadings  # already unmasked-nav only
-            factors = (np.linalg.pinv(L) @ D).T
+            factors = _reproject_signal_factors(D, L)
         return factors
 
     def _project_loadings(self, obj, desc, navigation_mask, signal_mask, get, nblocks):
@@ -1452,18 +1421,7 @@ class LazySignal(signals.BaseSignal):
             if algorithm == "SVD" and svd_solver == "full":
                 import dask.array as da
 
-                D_nav = _D_unfolded  # (nav, sig)
-                if sig_mask_1d is not None:
-                    D_nav = D_nav[:, ~sig_mask_1d]
-                if mean is not None and centre == "navigation":
-                    D_nav = D_nav - mean
-                _factors_da = (
-                    factors if isinstance(factors, da.Array) else da.from_array(factors)
-                )
-                _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
-                loadings = ((D_nav @ _factors_da) / _s_sq).compute()
-            elif algorithm == "SVD" and svd_solver == "randomized":
-                import dask.array as da
+                from hyperspy.learn._mva import _reproject_navigation_loadings
 
                 D_nav = _D_unfolded  # (nav, sig)
                 if sig_mask_1d is not None:
@@ -1473,8 +1431,21 @@ class LazySignal(signals.BaseSignal):
                 _factors_da = (
                     factors if isinstance(factors, da.Array) else da.from_array(factors)
                 )
-                _s_sq = da.einsum("ij,ij->j", _factors_da, _factors_da)
-                loadings = ((D_nav @ _factors_da) / _s_sq).compute()
+                loadings = _reproject_navigation_loadings(D_nav, _factors_da).compute()
+            elif algorithm == "SVD" and svd_solver == "randomized":
+                import dask.array as da
+
+                from hyperspy.learn._mva import _reproject_navigation_loadings
+
+                D_nav = _D_unfolded  # (nav, sig)
+                if sig_mask_1d is not None:
+                    D_nav = D_nav[:, ~sig_mask_1d]
+                if mean is not None and centre == "navigation":
+                    D_nav = D_nav - mean
+                _factors_da = (
+                    factors if isinstance(factors, da.Array) else da.from_array(factors)
+                )
+                loadings = _reproject_navigation_loadings(D_nav, _factors_da).compute()
             else:
                 try:
                     loadings = self._project_loadings(
@@ -1557,7 +1528,7 @@ class LazySignal(signals.BaseSignal):
             The fitted estimator if ``return_info`` is ``True`` and the
             algorithm supports it, else ``None``.
         """
-        from hyperspy.learn._mva import _nan_expand_rows
+        from hyperspy.learn._mva import _nan_expand_rows, _to_flat_bool
 
         target = self.learning_results
 
@@ -1577,8 +1548,8 @@ class LazySignal(signals.BaseSignal):
         # normalise masks to flat bool arrays
         nav_size = self.axes_manager.navigation_size
         sig_size = self.axes_manager.signal_size
-        flat_nav_mask = _to_flat_bool(navigation_mask, nav_size)
-        flat_sig_mask = _to_flat_bool(signal_mask, sig_size)
+        flat_nav_mask = _to_flat_bool(navigation_mask)
+        flat_sig_mask = _to_flat_bool(signal_mask)
 
         # store core results
         target.decomposition_algorithm = algorithm
@@ -1867,6 +1838,8 @@ class LazySignal(signals.BaseSignal):
             Online robust NMF.
 
         """
+        from hyperspy.learn._mva import _to_flat_bool
+
         if get is None:
             get = _get()
         # Check algorithms requiring output_dimension.
@@ -2200,10 +2173,8 @@ class LazySignal(signals.BaseSignal):
             # below.  (The same masks are recomputed later outside the try
             # block for storing in learning_results; that duplication is
             # intentional to keep the two concerns separate.)
-            _flat_nav_mask = _to_flat_bool(
-                navigation_mask, self.axes_manager.navigation_size
-            )
-            _flat_sig_mask = _to_flat_bool(signal_mask, self.axes_manager.signal_size)
+            _flat_nav_mask = _to_flat_bool(navigation_mask)
+            _flat_sig_mask = _to_flat_bool(signal_mask)
 
             # REPROJECT NAVIGATION (recompute loadings over full nav)
             loadings, _nav_reprojected = self._decomposition_reproject_navigation(
@@ -2262,9 +2233,6 @@ class LazySignal(signals.BaseSignal):
                     nblocks,
                 )
                 _signal_reprojected = True
-
-            if explained_variance is not None and explained_variance_ratio is None:
-                explained_variance_ratio = explained_variance / explained_variance.sum()
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension

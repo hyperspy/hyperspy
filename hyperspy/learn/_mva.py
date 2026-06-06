@@ -160,6 +160,82 @@ def _normalize_components(target, other, function=np.sum):
     other *= coeff
 
 
+def _to_flat_bool(mask):
+    """Return a flat boolean numpy array, ``True`` where *mask* is ``True``.
+
+    Normalises mask inputs of various types (BaseSignal, dask array, numpy
+    array, or ``None``) into a 1-D boolean numpy array suitable for
+    boolean indexing and :func:`_nan_expand_rows`.
+
+    Parameters
+    ----------
+    mask : BaseSignal, dask.array.Array, numpy.ndarray, or None
+        The mask to normalise.  If ``None``, returns ``None``.
+
+    Returns
+    -------
+    numpy.ndarray or None
+        Flat boolean array where ``True`` = excluded position, or ``None``
+        if *mask* was ``None``.
+    """
+    if mask is None:
+        return None
+    try:
+        import dask.array as da
+    except ImportError:
+        da = None
+
+    if da is not None and isinstance(mask, da.Array):
+        mask = mask.compute()
+    if hasattr(mask, "data"):
+        mask = mask.data  # BaseSignal
+    return np.asarray(mask, dtype=bool).ravel()
+
+
+def _reproject_navigation_loadings(D, factors):
+    """Compute full-navigation loadings via least-squares projection.
+
+    Solves ``loadings = D @ factors / ||factors||^2``, which is the
+    least-squares solution to ``factors @ loadings ≈ D``.
+
+    Parameters
+    ----------
+    D : ndarray or dask Array, shape (nav, sig)
+        Data matrix.
+    factors : ndarray or dask Array, shape (sig, k)
+        Factor matrix.
+
+    Returns
+    -------
+    ndarray or dask Array, shape (nav, k)
+        Loadings matrix.
+    """
+    s_sq = np.einsum("ij,ij->j", factors, factors)
+    return (D @ factors) / s_sq
+
+
+def _reproject_signal_factors(D, loadings):
+    """Compute full-signal factors via pseudo-inverse.
+
+    Solves ``factors = (pinv(loadings) @ D).T`` so the result has shape
+    ``(sig, k)`` matching HyperSpy's factor convention (rows = signal
+    channels, columns = components).
+
+    Parameters
+    ----------
+    D : ndarray, shape (nav, sig)
+        Data matrix.
+    loadings : ndarray, shape (nav, k)
+        Loading matrix.
+
+    Returns
+    -------
+    ndarray, shape (sig, k)
+        Factor matrix.
+    """
+    return (np.linalg.pinv(loadings) @ D).T
+
+
 class MVA:
     """Multivariate analysis capabilities for the Signal1D class."""
 
@@ -490,14 +566,16 @@ class MVA:
             _logger.info("Performing decomposition analysis")
 
             if isinstance(navigation_mask, BaseSignal):
-                navigation_mask = navigation_mask.data.ravel()
-            elif hasattr(navigation_mask, "ravel"):
-                navigation_mask = navigation_mask.T.ravel()
-
-            if isinstance(signal_mask, BaseSignal):
-                signal_mask = signal_mask.data
-            if hasattr(signal_mask, "ravel"):
-                signal_mask = signal_mask.ravel()
+                navigation_mask = _to_flat_bool(navigation_mask)
+            elif hasattr(navigation_mask, "T") and not isinstance(
+                navigation_mask, BaseSignal
+            ):
+                # Transpose to array order (HyperSpy display convention
+                # reverses axes for multi-dimensional navigation spaces).
+                navigation_mask = _to_flat_bool(navigation_mask.T)
+            else:
+                navigation_mask = _to_flat_bool(navigation_mask)
+            signal_mask = _to_flat_bool(signal_mask)
 
             # Normalize the poissonian noise
             # TODO this function can change the masks and
@@ -728,21 +806,18 @@ class MVA:
 
             if reproject in ("navigation", "both"):
                 if not is_sklearn_like:
-                    # Compute the squared norm of each factor to correctly
-                    # scale the reprojected loadings.  The formula is
-                    # loadings = (data - mean) @ factors / ||factors||^2,
-                    # which solves the least-squares problem instead of a
-                    # plain projection.
-                    s_sq = np.einsum("ij,ij->j", factors, factors)
-                    loadings_ = ((dc[:, _sm] - mean) @ factors) / s_sq
+                    loadings_ = _reproject_navigation_loadings(
+                        dc[:, _sm] - mean, factors
+                    )
                 else:
                     loadings_ = estim.transform(dc[:, _sm])
                 target.loadings = loadings_
 
             if reproject in ("signal", "both"):
                 if not is_sklearn_like:
-                    factors = (np.linalg.pinv(loadings) @ (dc[_nm, :] - mean)).T
-                    target.factors = factors
+                    target.factors = _reproject_signal_factors(
+                        dc[_nm, :] - mean, loadings
+                    )
                 else:
                     warnings.warn(
                         "Reprojecting the signal is not yet "
@@ -754,10 +829,13 @@ class MVA:
                     else:
                         reproject = None
 
-            # Rescale the results if the noise was normalized
+            # Rescale the results if the noise was normalized.
+            # _root_bH / _root_aG are already computed over the unmasked
+            # subset, so they match target.factors / target.loadings in
+            # size — no additional masking is needed.
             if normalize_poissonian_noise:
-                target.factors[:] *= self._root_bH.T
-                target.loadings[:] *= self._root_aG
+                target.factors *= self._root_bH.ravel()[:, np.newaxis]
+                target.loadings *= self._root_aG.ravel()[:, np.newaxis]
 
             # Set the pixels that were not processed to nan
             if not isinstance(signal_mask, slice):
