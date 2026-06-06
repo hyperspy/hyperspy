@@ -236,6 +236,139 @@ def _reproject_signal_factors(D, loadings):
     return (np.linalg.pinv(loadings) @ D).T
 
 
+def _keenan_kotula_scale(data, navigation_mask, signal_mask, ndim, sdim):
+    """Apply Keenan-Kotula Poisson-noise scaling.
+
+    Implements the variance-stabilising transform described in [Keenan2004]_:
+
+        D_scaled[i,j] = D[i,j] / (sqrt(aG[i]) * sqrt(bH[j]))
+
+    where ``aG[i]`` is the total counts for navigation position *i* (summed
+    over unmasked signal channels) and ``bH[j]`` is the total counts for
+    signal channel *j* (summed over unmasked navigation positions).
+
+    Works for both numpy and dask arrays.  Masked positions contribute
+    zero to the sums and their data values pass through unscaled.
+
+    Parameters
+    ----------
+    data : ndarray or dask Array, shape (nav..., sig...)
+        Data in NumPy axis order (navigation axes first, signal axes last).
+        For 2-D data (*ndim* = 1, *sdim* = 1) the shape is ``(nav, sig)``.
+    navigation_mask : ndarray or None, shape (nav...,)
+        Boolean mask where ``True`` = exclude this navigation position.
+        ``None`` means no navigation masking.
+    signal_mask : ndarray or None, shape (sig...,)
+        Boolean mask where ``True`` = exclude this signal channel.
+        ``None`` means no signal masking.
+    ndim : int
+        Number of navigation dimensions (length of nav axes prefix).
+    sdim : int
+        Number of signal dimensions (length of sig axes suffix).
+
+    Returns
+    -------
+    scaled_data : ndarray or dask Array
+        Data after variance-stabilising scaling, same shape as *data*.
+    sqrt_aG : ndarray or dask Array, shape (nav...,)
+        Square root of total counts per navigation position.
+    sqrt_bH : ndarray or dask Array, shape (sig...,)
+        Square root of total counts per signal channel.
+
+    Raises
+    ------
+    ValueError
+        If negative values are found in the unmasked region or if all
+        data are masked.
+
+    References
+    ----------
+    .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson
+       noise in the multivariate analysis of ToF-SIMS spectrum images",
+       Surf. Interface Anal 36(3) (2004): 203-212.
+    """
+    import numpy as _np
+
+    # Pick the array backend based on the data type.  We must use the
+    # native backend from the start because numpy ufuncs dispatch to
+    # dask via __array_ufunc__, so _np.logical_not(dask_array) returns
+    # a dask array.
+    _is_dask = hasattr(data, "chunks")
+    if _is_dask:
+        import dask.array as _da
+
+        _lib = _da
+        _nav_chunks = data.chunks[:ndim]
+        _sig_chunks = data.chunks[ndim:]
+    else:
+        _lib = _np
+
+    # "Keep" masks (True = use this position).
+    if navigation_mask is None:
+        nm = (
+            _lib.ones(data.shape[:ndim], dtype=bool, chunks=_nav_chunks)
+            if _is_dask
+            else _lib.ones(data.shape[:ndim], dtype=bool)
+        )
+    else:
+        nm = _lib.logical_not(navigation_mask)
+    if signal_mask is None:
+        sm = (
+            _lib.ones(data.shape[ndim:], dtype=bool, chunks=_sig_chunks)
+            if _is_dask
+            else _lib.ones(data.shape[ndim:], dtype=bool)
+        )
+    else:
+        sm = _lib.logical_not(signal_mask)
+
+    # Broadcast to full data shape: nm → (nav..., 1...), sm → (1..., sig...)
+    nm_bc = nm[(...,) + (None,) * sdim]
+    sm_bc = sm[(None,) * ndim + (...,)]
+    combined = nm_bc & sm_bc
+
+    # Zero out masked entries so they do not contribute to aG / bH.
+    masked_data = _lib.where(combined, data, 0.0)
+
+    # Guard against negative values in the unmasked region.
+    min_val = masked_data.min()
+    if hasattr(min_val, "compute"):
+        min_val = min_val.compute()
+    if min_val < 0.0:
+        raise ValueError(
+            "Negative values found in data!\n"
+            "Are you sure that the data follow a Poisson distribution?"
+        )
+
+    nav_axes = tuple(range(ndim, ndim + sdim))
+    sig_axes = tuple(range(ndim))
+
+    aG = masked_data.sum(axis=nav_axes)
+    bH = masked_data.sum(axis=sig_axes)
+
+    # Materialise sums for dask; keep a small dask wrapper for downstream
+    # sqrt / broadcast so the graph stays lazy.
+    if _is_dask:
+        aG, bH = (aG.compute(), bH.compute())
+        aG = _da.from_array(aG)
+        bH = _da.from_array(bH)
+
+    if float(aG.sum()) == 0.0:
+        raise ValueError("All the data are masked, change the mask.")
+
+    # Avoid division-by-zero for masked positions (they contribute 0 to
+    # the sum so sqrt(0) would be zero — replace with 1 instead).
+    aG = _lib.where(aG == 0, 1, aG)
+    bH = _lib.where(bH == 0, 1, bH)
+
+    sqrt_aG = _lib.sqrt(aG)
+    sqrt_bH = _lib.sqrt(bH)
+
+    coeff = sqrt_aG[(...,) + (None,) * sdim] * sqrt_bH[(None,) * ndim + (...,)]
+    scaled_data = _lib.where(combined, data / coeff, data)
+
+    return scaled_data, sqrt_aG, sqrt_bH
+
+
 class MVA:
     """Multivariate analysis capabilities for the Signal1D class."""
 
@@ -830,12 +963,19 @@ class MVA:
                         reproject = None
 
             # Rescale the results if the noise was normalized.
-            # _root_bH / _root_aG are already computed over the unmasked
-            # subset, so they match target.factors / target.loadings in
-            # size — no additional masking is needed.
+            # _root_bH / _root_aG cover the full signal/navigation size
+            # (masked positions contributed zero to the sums, so their
+            # sqrt is zero).  When factors/loadings only cover the
+            # unmasked subset, subset _root_bH / _root_aG to match.
             if normalize_poissonian_noise:
-                target.factors *= self._root_bH.ravel()[:, np.newaxis]
-                target.loadings *= self._root_aG.ravel()[:, np.newaxis]
+                _bh = self._root_bH.ravel()
+                if not isinstance(signal_mask, slice):
+                    _bh = _bh[~signal_mask]
+                target.factors *= _bh[:, np.newaxis]
+                _ag = self._root_aG.ravel()
+                if not isinstance(navigation_mask, slice):
+                    _ag = _ag[~navigation_mask]
+                target.loadings *= _ag[:, np.newaxis]
 
             # Set the pixels that were not processed to nan
             if not isinstance(signal_mask, slice):
@@ -1855,62 +1995,26 @@ class MVA:
         """
         _logger.info("preprocessing the data to normalize Poissonian noise")
         with self.unfolded():
-            # The rest of the code assumes that the first data axis
-            # is the navigation axis. We transpose the data if that
-            # is not the case.
+            # Ensure navigation axis is first in the 2-D layout.
             if self.axes_manager[0].index_in_array == 0:
                 dc = self.data
+                _transposed = False
             else:
                 dc = self.data.T
+                _transposed = True
 
-            if navigation_mask is None:
-                navigation_mask = slice(None)
-            else:
-                navigation_mask = ~navigation_mask.ravel()
-            if signal_mask is None:
-                signal_mask = slice(None)
-            else:
-                signal_mask = ~signal_mask.ravel()
+            # The shared function expects flat masks (True = excluded).
+            # _to_flat_bool handles None, BaseSignal, dask and numpy masks.
+            nav_mask = _to_flat_bool(navigation_mask)
+            sig_mask = _to_flat_bool(signal_mask)
 
-            if dc[:, signal_mask][navigation_mask, :].size == 0:
-                raise ValueError("All the data are masked, change the mask.")
+            dc, self._root_aG, self._root_bH = _keenan_kotula_scale(
+                dc, nav_mask, sig_mask, ndim=1, sdim=1
+            )
 
-            # Check non-negative
-            if dc[:, signal_mask][navigation_mask, :].min() < 0.0:
-                raise ValueError(
-                    "Negative values found in data!\n"
-                    "Are you sure that the data follow a Poisson distribution?"
-                )
-
-            # Rescale the data to normalize the Poisson noise
-            aG = dc[:, signal_mask][navigation_mask, :].sum(1).squeeze()
-            bH = dc[:, signal_mask][navigation_mask, :].sum(0).squeeze()
-
-            self._root_aG = np.sqrt(aG)[:, np.newaxis]
-            self._root_bH = np.sqrt(bH)[np.newaxis, :]
-
-            # We ignore numpy's warning when the result of an
-            # operation produces nans - instead we set 0/0 = 0
-            with np.errstate(divide="ignore", invalid="ignore"):
-                # Boolean indexing always makes a copy of data. Therefore, we cannot modify the
-                # data using `data[nav_mask, :][:, sig_mask] /= [...]` that would make
-                # the code compact but doesn't work. Instead, we treat each case differently.
-                if type(signal_mask) is slice and type(navigation_mask) is not slice:
-                    dc[navigation_mask, :] /= self._root_aG * self._root_bH
-                    dc[navigation_mask, :] = np.nan_to_num(dc[navigation_mask, :])
-                elif type(signal_mask) is not slice and type(navigation_mask) is slice:
-                    dc[:, signal_mask] /= self._root_aG * self._root_bH
-                    dc[:, signal_mask] = np.nan_to_num(dc[:, signal_mask])
-                elif (
-                    type(signal_mask) is not slice
-                    and type(navigation_mask) is not slice
-                ):
-                    mask = navigation_mask[:, np.newaxis] & signal_mask[np.newaxis, :]
-                    dc[mask] /= (self._root_aG * self._root_bH).flat
-                    dc[mask] = np.nan_to_num(dc[mask])
-                else:
-                    dc /= self._root_aG * self._root_bH
-                    dc = np.nan_to_num(dc)
+            if _transposed:
+                dc = dc.T
+            self.data = dc
 
     def undo_treatments(self):
         """Undo Poisson noise normalization and other pre-treatments.
