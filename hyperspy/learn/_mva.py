@@ -522,22 +522,24 @@ class MVA:
             else:
                 dc = self.data.T
 
-            # Transform the None masks in slices to get the right behaviour
+            # Convert None masks to slices; masks keep their user-provided
+            # convention (True = excluded) throughout — we invert explicitly
+            # at indexing sites for clarity.
             if navigation_mask is None:
                 navigation_mask = slice(None)
-            else:
-                navigation_mask = ~navigation_mask
             if signal_mask is None:
                 signal_mask = slice(None)
-            else:
-                signal_mask = ~signal_mask
 
-            # WARNING: signal_mask and navigation_mask values are now their
-            # negaties i.e. True -> False and viceversa. However, the
-            # stored value (at the end of the method) coincides with the
-            # input masks
+            # "Keep" versions for fancy-indexing (True = include this row/col).
+            # When the mask is a slice it passes through unchanged.
+            _nm = (
+                navigation_mask
+                if isinstance(navigation_mask, slice)
+                else ~navigation_mask
+            )
+            _sm = signal_mask if isinstance(signal_mask, slice) else ~signal_mask
 
-            data_ = dc[:, signal_mask][navigation_mask, :]
+            data_ = dc[:, _sm][_nm, :]
             if data_.size == 0:
                 raise ValueError("All the data are masked, change the mask.")
 
@@ -732,16 +734,14 @@ class MVA:
                     # which solves the least-squares problem instead of a
                     # plain projection.
                     s_sq = np.einsum("ij,ij->j", factors, factors)
-                    loadings_ = ((dc[:, signal_mask] - mean) @ factors) / s_sq
+                    loadings_ = ((dc[:, _sm] - mean) @ factors) / s_sq
                 else:
-                    loadings_ = estim.transform(dc[:, signal_mask])
+                    loadings_ = estim.transform(dc[:, _sm])
                 target.loadings = loadings_
 
             if reproject in ("signal", "both"):
                 if not is_sklearn_like:
-                    factors = (
-                        np.linalg.pinv(loadings) @ (dc[navigation_mask, :] - mean)
-                    ).T
+                    factors = (np.linalg.pinv(loadings) @ (dc[_nm, :] - mean)).T
                     target.factors = factors
                 else:
                     warnings.warn(
@@ -761,26 +761,22 @@ class MVA:
 
             # Set the pixels that were not processed to nan
             if not isinstance(signal_mask, slice):
-                # Store the (inverted, as inputed) signal mask
-                target.signal_mask = ~signal_mask.reshape(
+                target.signal_mask = signal_mask.reshape(
                     self.axes_manager._signal_shape_in_array
                 )
                 if reproject not in ("both", "signal"):
-                    factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
-                    factors[signal_mask, :] = target.factors
-                    factors[~signal_mask, :] = np.nan
-                    target.factors = factors
+                    target.factors = _nan_expand_rows(
+                        target.factors, signal_mask, dc.shape[-1]
+                    )
 
             if not isinstance(navigation_mask, slice):
-                # Store the (inverted, as inputed) navigation mask
-                target.navigation_mask = ~navigation_mask.reshape(
+                target.navigation_mask = navigation_mask.reshape(
                     self.axes_manager._navigation_shape_in_array
                 )
                 if reproject not in ("both", "navigation"):
-                    loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
-                    loadings[navigation_mask, :] = target.loadings
-                    loadings[~navigation_mask, :] = np.nan
-                    target.loadings = loadings
+                    target.loadings = _nan_expand_rows(
+                        target.loadings, navigation_mask, dc.shape[0]
+                    )
 
         finally:
             if self._unfolded4decomposition:
