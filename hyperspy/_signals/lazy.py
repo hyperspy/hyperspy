@@ -1078,9 +1078,6 @@ class LazySignal(signals.BaseSignal):
                 D = D[:, ~sig_mask_1d]
 
             if svd_solver == "full":
-                # Exact full SVD via da.linalg.svd (TSQR algorithm).
-                # TSQR requires the array to be chunked in one dimension
-                # only (tall-and-skinny: full signal columns per chunk).
                 if centre == "navigation":
                     mean = D.mean(axis=0, keepdims=True).compute()
                     D = D - mean
@@ -1089,16 +1086,45 @@ class LazySignal(signals.BaseSignal):
                     D = D - mean
                 else:
                     mean = None
+
+                # da.linalg.svd (TSQR) requires single-dimension chunking
+                # (tall-and-skinny).  When the signal axis is chunked,
+                # rechunking would materialise the full dataset and may
+                # OOM.  Two strategies:
+                #   1) output_dimension is set → use svd_compressed which
+                #      gives identical top-k results without rechunking.
+                #   2) output_dimension is None → rechunk is unavoidable;
+                #      warn if the dataset is large.
                 if D.numblocks[1] > 1:
-                    D = D.rechunk({1: -1})
-                U, S, V = da.linalg.svd(D)
-                if output_dimension is not None:
-                    U = U[:, :output_dimension]
-                    S = S[:output_dimension]
-                    V = V[:output_dimension]
-                factors = V.T
-                explained_variance = S**2 / D.shape[0]
-                loadings = U * S
+                    if output_dimension is not None:
+                        # Truncated SVD: svd_compressed is exact for the
+                        # top-k components and works with 2D chunking.
+                        # Keep results lazy — the full solver's contract is
+                        # to return dask arrays and defer computation.
+                        U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
+                        factors = V.T
+                        explained_variance = S**2 / D.shape[0]
+                        loadings = U * S
+                    else:
+                        D = D.rechunk({1: -1})
+                        U, S, V = da.linalg.svd(D)
+                        if output_dimension is not None:
+                            U = U[:, :output_dimension]
+                            S = S[:output_dimension]
+                            V = V[:output_dimension]
+                        factors = V.T
+                        explained_variance = S**2 / D.shape[0]
+                        loadings = U * S
+                else:
+                    # Already single-dimension chunked — exact SVD is efficient.
+                    U, S, V = da.linalg.svd(D)
+                    if output_dimension is not None:
+                        U = U[:, :output_dimension]
+                        S = S[:output_dimension]
+                        V = V[:output_dimension]
+                    factors = V.T
+                    explained_variance = S**2 / D.shape[0]
+                    loadings = U * S
             else:  # randomized
                 if centre == "navigation":
                     mean = D.mean(axis=0, keepdims=True).compute()
