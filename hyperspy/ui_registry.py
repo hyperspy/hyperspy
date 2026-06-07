@@ -37,7 +37,7 @@ UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["GUI"]["toolkeys"]}
 _EXTENSION_NAMES = [e.name for e in _extensions]
 
 TOOLKIT_REGISTRY = set()
-KNOWN_TOOLKITS = set(("ipywidgets", "traitsui"))
+KNOWN_TOOLKITS = set(("ipywidgets", "traitsui", "anywidget"))
 
 
 if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
@@ -69,8 +69,8 @@ def _toolkits_to_string(toolkits):
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     if not TOOLKIT_REGISTRY:
         raise ImportError(
-            "No toolkit registered. Install hyperspy_gui_ipywidgets or "
-            "hyperspy_gui_traitsui GUI elements."
+            "No toolkit registered. Install hyperspy_gui_ipywidgets, "
+            "hyperspy_gui_traitsui, or hyperspy_gui_anywidget GUI elements."
         )
     from hyperspy.defaults_parser import preferences
 
@@ -96,6 +96,11 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
                 toolkits.add("traitsui")
             else:
                 available_disabled_toolkits.add("traitsui")
+        if "anywidget" in TOOLKIT_REGISTRY:
+            if preferences.GUIs.enable_anywidget_gui:
+                toolkits.add("anywidget")
+            else:
+                available_disabled_toolkits.add("anywidget")
         if not toolkits and available_disabled_toolkits:
             is_or_are = "is" if len(available_disabled_toolkits) == 1 else "are"
             them_or_it = "it" if len(available_disabled_toolkits) == 1 else "them"
