@@ -694,3 +694,88 @@ def test_decomposition_mask_all_data(normalise_poissonian_noise):
         s = signals.Signal1D(generate_low_rank_matrix())
         navigation_mask = s.sum(-1) >= 0
         s.decomposition(normalise_poissonian_noise, navigation_mask=navigation_mask)
+
+
+@lazifyTestClass
+class TestDataPreservation:
+    """Verify the original signal data is unchanged after decomposition."""
+
+    def setup_method(self, method):
+        rng = np.random.RandomState(42)
+        self.data = rng.random((12, 25, 48))
+        self.s = signals.Signal1D(self.data.copy())
+
+    def _save_and_run(self, **decomp_kwargs):
+        """Run decomposition and return a copy of the original data for comparison."""
+        saved = self.data.copy()
+        self.s.decomposition(output_dimension=3, **decomp_kwargs)
+        return saved
+
+    def test_unmasked_default(self):
+        saved = self._save_and_run()
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_unmasked_copy_false(self):
+        saved = self._save_and_run(copy=False)
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_poisson_no_copy(self):
+        saved = self._save_and_run(normalize_poissonian_noise=True, copy=False)
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_poisson_copy_true(self):
+        saved = self._save_and_run(normalize_poissonian_noise=True, copy=True)
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_with_nav_mask(self):
+        # navigation_shape is (25, 12) in display order (axes reversed)
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        saved = self._save_and_run(navigation_mask=nav_mask)
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_with_sig_mask(self):
+        sig_mask = np.zeros(48, dtype=bool)
+        sig_mask[:5] = True
+        saved = self._save_and_run(signal_mask=sig_mask)
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_with_both_masks(self):
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        sig_mask = np.zeros(48, dtype=bool)
+        sig_mask[:5] = True
+        saved = self._save_and_run(navigation_mask=nav_mask, signal_mask=sig_mask)
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_poisson_with_both_masks(self):
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        sig_mask = np.zeros(48, dtype=bool)
+        sig_mask[:5] = True
+        saved = self._save_and_run(
+            normalize_poissonian_noise=True,
+            navigation_mask=nav_mask,
+            signal_mask=sig_mask,
+        )
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_poisson_masked_copy_false(self):
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        saved = self._save_and_run(
+            normalize_poissonian_noise=True, navigation_mask=nav_mask, copy=False
+        )
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_reproject_navigation_with_mask(self):
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        saved = self._save_and_run(navigation_mask=nav_mask, reproject="navigation")
+        np.testing.assert_array_equal(self.data, saved)
+
+    def test_reproject_both_with_mask(self):
+        sig_mask = np.zeros(48, dtype=bool)
+        sig_mask[:5] = True
+        saved = self._save_and_run(signal_mask=sig_mask, reproject="both")
+        np.testing.assert_array_equal(self.data, saved)
