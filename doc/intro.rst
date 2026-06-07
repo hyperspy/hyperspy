@@ -55,13 +55,13 @@ that sets its character:
   for details.
 
 * The main way of interacting with the program is through scripting.
-  This is because `Jupyter <https://jupyter.org/>`_ exists, making your
+  This is because `Jupyter <https://jupyter.org/>`_ and
+  `marimo <https://marimo.io>`_ make your
   interactive data analysis productive, scalable, reproducible and,
   most importantly, fun. That said, widgets to interact with HyperSpy
   elements are provided where there
   is a clear productivity advantage in doing so. See the
-  `hyperspy-gui-ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
-  and
+  `hyperspy-gui-ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_,
   `hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
   packages for details. Not enough? If you
   need a full, standalone GUI, `HyperSpyUI <https://hyperspy.org/hyperspyUI/>`_

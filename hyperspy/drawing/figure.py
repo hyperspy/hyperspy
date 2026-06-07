@@ -74,6 +74,15 @@ class BlittedFigure:
             )
 
     def _on_blit_draw(self, *args):
+        # Guard against canvas replacement (e.g. marimo swapping in a WebAgg
+        # canvas after the original blit-capable canvas was set up).  The
+        # figure's callback registry is shared across canvases, so this handler
+        # remains connected even after the canvas is replaced.  If the new
+        # canvas does not support blit, skip the blit work entirely; otherwise
+        # _draw_animated() would re-draw animated artists (e.g. AxesImage) on
+        # top of any non-animated patches added after plot() returned.
+        if not self.figure.canvas.supports_blit:
+            return
         fig = self.figure
         # As draw doesn't draw animated elements, in its current state the
         # canvas only contains the background. The following line simply stores

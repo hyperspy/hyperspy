@@ -38,6 +38,104 @@ def _is_widget_backend():
     return backend.lower() in ["ipympl", "widget", "module://ipympl.backend_nbagg"]
 
 
+def _is_marimo_backend():
+    """Check if running in a marimo notebook.
+
+    In marimo, :func:`marimo.mpl.interactive` provides interactive matplotlib
+    figures with pan, zoom, and coordinate display.  This replaces the
+    ipympl-based approach used in Jupyter.
+
+    Returns
+    -------
+    bool
+        ``True`` when running inside a marimo kernel with a valid runtime
+        context, ``False`` otherwise.
+    """
+    try:
+        import marimo  # noqa: F401
+        from marimo._runtime.context import ContextNotInitializedError, get_context
+
+        try:
+            ctx = get_context()
+            return ctx is not None
+        except ContextNotInitializedError:
+            return False
+    except ImportError:
+        return False
+
+
+def _marimo_interactive_display(explorer, *, plot_style=None):
+    """Display HyperSpy figures using marimo's interactive matplotlib viewer.
+
+    Parameters
+    ----------
+    explorer : MPL_HyperExplorer
+        The explorer instance containing ``signal_plot`` and
+        ``navigator_plot`` with their matplotlib figures.
+    plot_style : str, optional
+        ``"horizontal"`` or ``"vertical"`` layout.  Falls back to
+        :attr:`hyperpsy.defaults_parser.Plot.widget_plot_style` when
+        ``None``.
+    """
+    import marimo as mo
+
+    if plot_style not in ["vertical", "horizontal", None]:
+        raise ValueError("plot_style must be one of ['vertical', 'horizontal', None]")
+    if plot_style is None:
+        from hyperspy.defaults_parser import preferences
+
+        plot_style = preferences.Plot.widget_plot_style
+
+    # Collect interactive figure elements — navigator before signal
+    # to match the ipympl display convention.
+    plots = []
+    elements = []
+    if explorer.navigator_plot is not None:
+        nav_fig = explorer.navigator_plot.get_mpl_figure()
+        if nav_fig is not None:
+            elements.append(mo.mpl.interactive(nav_fig))
+            plots.append(explorer.navigator_plot)
+    if explorer.signal_plot is not None:
+        sig_fig = explorer.signal_plot.get_mpl_figure()
+        if sig_fig is not None:
+            elements.append(mo.mpl.interactive(sig_fig))
+            plots.append(explorer.signal_plot)
+
+    if not elements:
+        return
+
+    # mo.mpl.interactive() swapped each figure's canvas to WebAgg
+    # (supports_blit=False).  Matplotlib figures share a single callback
+    # registry across all canvases, so the _on_blit_draw handler that was
+    # registered during the original Agg-canvas setup is still connected to
+    # draw_event.  When WebAgg later calls draw(), _on_blit_draw fires and
+    # redraws animated artists (e.g. AxesImage) on top of any non-animated
+    # patches added after plot() returns — such as ROI widgets — erasing them.
+    # Fix: disconnect the stale blit handler and de-animate all artists so
+    # the WebAgg canvas renders them all correctly through its normal draw().
+    for plot in plots:
+        if hasattr(plot, "_draw_event_cid") and plot._draw_event_cid is not None:
+            try:
+                plot.figure.canvas.mpl_disconnect(plot._draw_event_cid)
+            except Exception:
+                pass
+            plot._draw_event_cid = None
+        if hasattr(plot, "figure") and plot.figure is not None:
+            for ax in plot.figure.axes:
+                for artist in ax.get_children():
+                    if artist.get_animated():
+                        artist.set_animated(False)
+
+    if len(elements) == 1:
+        result = elements[0]
+    elif plot_style == "horizontal":
+        result = mo.hstack(elements)
+    else:  # vertical
+        result = mo.vstack(elements)
+
+    mo.output.append(result)
+
+
 class MPL_HyperExplorer:
     """ """
 
@@ -212,10 +310,15 @@ class MPL_HyperExplorer:
         for key in ["power_spectrum", "fft_shift"]:
             if key in kwargs:
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
-        if not _is_widget_backend() and "plot_style" in kwargs:
+
+        _is_marimo = _is_marimo_backend() and "fig" not in kwargs
+        _is_widget = _is_widget_backend() and "fig" not in kwargs
+        _is_interactive = _is_marimo or _is_widget
+
+        if not _is_interactive and "plot_style" in kwargs:
             warnings.warn(
-                "The `plot_style` keyword is only used when the `ipympl` or `widget`"
-                "plotting backends are used."
+                "The `plot_style` keyword is only used when the `ipympl`, "
+                "`widget` or marimo plotting backends are used."
             )
         plot_style = kwargs.pop("plot_style", None)
 
@@ -232,7 +335,9 @@ class MPL_HyperExplorer:
                 if pointer is not None:
                     self.events.closed.connect(self.pointer.disconnect, [])
             self.plot_signal(**kwargs)
-            if _is_widget_backend() and "fig" not in kwargs:
+            if _is_marimo:
+                _marimo_interactive_display(self, plot_style=plot_style)
+            elif _is_widget:
                 if plot_style not in ["vertical", "horizontal", None]:
                     raise ValueError(
                         "plot_style must be one of ['vertical', 'horizontal', None]"
@@ -271,7 +376,7 @@ class MPL_HyperExplorer:
                             )
                         )
 
-        if _is_widget_backend() and "fig" not in kwargs:
+        if _is_interactive:
             with matplotlib.pyplot.ioff():
                 plot_sig_and_nav(plot_style)
         else:

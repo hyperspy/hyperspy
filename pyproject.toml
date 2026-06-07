@@ -152,6 +152,7 @@ speed = [
     "numexpr>=2.8.0",
 ]
 tests = [
+    "marimo",
     "pooch",
     "pytest-instafail",
     "pytest-mpl",

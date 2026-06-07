@@ -69,6 +69,34 @@ that you have installed at least one of HyperSpy's GUI packages:
 and the
 `traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
+
+Starting HyperSpy in marimo notebooks
+-------------------------------------
+
+HyperSpy also works in `marimo <https://marimo.io>`_, a reactive Python
+notebook.  In marimo, ``signal.plot()`` automatically provides interactive
+figures with pan, zoom, and coordinate display — no ``%matplotlib`` magic,
+``ipympl``, or other backend configuration is needed:
+
+.. code-block:: python
+
+    >>> import marimo as mo
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+
+    >>> s = hs.signals.Signal1D(np.random.random((12, 25, 48)))
+    >>> s.plot()
+
+The ``plot_style`` preference ("horizontal" or "vertical" layout) is
+supported via marimo's ``mo.hstack`` and ``mo.vstack``.
+
+.. note::
+
+    When running in marimo, HyperSpy uses ``marimo.mpl.interactive()``
+    internally to render matplotlib figures.  This replaces the ipympl-based
+    approach used in Jupyter and requires no additional dependencies beyond
+    ``matplotlib`` and ``marimo``.
+
 Possible warnings when importing HyperSpy?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -78,9 +106,10 @@ which in specific cases can lead to warnings when importing HyperSpy. Most of th
 there is nothing to worry about — the warnings simply inform you of several choices you have.
 There may be several causes for a warning, for example:
 
-- not all the GUIs packages are installed. If none is installed, we reccomend you to install
-  at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
-  data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
+- not all the GUIs packages are installed. If none is installed, we recommend you to install
+  at least the ``hyperspy-gui-ipywidgets`` package if you are planning to perform interactive
+  data analysis in the Jupyter Notebook. In marimo notebooks, no additional GUI packages are
+  required for interactive plotting. Otherwise, you can simply disable the warning in
   :ref:`preferences <configuring-hyperspy-label>` as explained below.
 - the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
   backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
@@ -95,6 +124,12 @@ There may be several causes for a warning, for example:
     HyperSpy works with all matplotlib backends, including the ``notebook``
     (also called ``nbAgg``) backend that enables interactive plotting embedded
     in the jupyter notebook.
+
+.. versionadded:: 2.5
+    Automatic interactive plotting support in `marimo <https://marimo.io>`_
+    notebooks via ``marimo.mpl.interactive()``.  When running in marimo,
+    ``signal.plot()`` provides pan, zoom, and coordinate display without
+    any ``%matplotlib`` magic or backend configuration.
 
 
 .. NOTE::
