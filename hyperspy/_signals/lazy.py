@@ -29,6 +29,9 @@ from rsciio.utils import file
 
 from hyperspy import signals
 from hyperspy.docstrings.signal import (
+    DECOMP_MASK_DOC,
+    DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
+    DECOMP_PRINT_INFO_DOC,
     LAZYSIGNAL_DOC,
     MANY_AXIS_PARAMETER,
     RECHUNK_ARG,
@@ -1579,9 +1582,7 @@ class LazySignal(signals.BaseSignal):
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool, default False
-            If True, scale the signal to normalize Poissonian noise using
-            the approach described in [KeenanKotula2004]_.
+        %s
         algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF'} or object, default 'SVD'
             The decomposition algorithm to use. In addition to the named
             algorithms, any object that implements ``partial_fit`` (and
@@ -1617,12 +1618,8 @@ class LazySignal(signals.BaseSignal):
             More chunks require more memory, but should run faster. Will be
             increased to contain at least ``output_dimension`` signals.
             Not used for ``'SVD'`` with ``svd_solver='randomized'``.
-        navigation_mask : :class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array
-            The navigation locations marked as True are not used in the
-            decomposition.
-        signal_mask : :class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array
-            The signal locations marked as True are not used in the
-            decomposition.
+        %s
+        %s
         reproject : {None, "navigation", "signal", "both"}, default None
             If not None, the decomposition results will be projected onto the
             full (unmasked) data after learning:
@@ -1645,10 +1642,7 @@ class LazySignal(signals.BaseSignal):
             fitted estimator object.  For ``svd_solver`` values that do not
             use an sklearn-like estimator (``"full"``, ``"randomized"``),
             ``None`` is returned.
-        print_info : bool, default True
-            If True, print information about the decomposition being performed.
-            In the case of sklearn.decomposition objects, this includes the
-            values of all arguments of the chosen sklearn algorithm.
+        %s
         svd_solver : {'randomized', 'incremental', 'full'}, default 'randomized'
             Selects the SVD backend when ``algorithm='SVD'``.  Ignored for
             all other algorithms.
@@ -2224,6 +2218,23 @@ class LazySignal(signals.BaseSignal):
         )
         if return_info:
             return _return_value
+
+    decomposition.__doc__ %= (
+        DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
+        DECOMP_MASK_DOC
+        % (
+            "navigation_mask",
+            ":class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array",
+            "navigation",
+        ),
+        DECOMP_MASK_DOC
+        % (
+            "signal_mask",
+            ":class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array",
+            "signal",
+        ),
+        DECOMP_PRINT_INFO_DOC,
+    )
 
     def plot(self, navigator="auto", **kwargs):
         if self.axes_manager.ragged:

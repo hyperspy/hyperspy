@@ -26,7 +26,12 @@ from rsciio.utils import path
 
 from hyperspy import learn, signals
 from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.signal import (
+    DECOMP_MASK_DOC,
+    DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
+    DECOMP_PRINT_INFO_DOC,
+    SHOW_PROGRESSBAR_ARG,
+)
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import utils
@@ -509,9 +514,7 @@ class MVA:
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool, default False
-            If True, scale the signal to normalize Poissonian noise using
-            the approach described in [*]_.
+        %s
         algorithm : str {``"SVD"``, ``"MLPCA"``, ``"sklearn_pca"``, ``"NMF"``, ``"sparse_pca"``,
         ``"mini_batch_sparse_pca"``, ``"RPCA"``, ``"ORPCA"``, ``"ORNMF"``} or object, default ``"SVD"``
             The decomposition algorithm to use. If algorithm is an object,
@@ -530,12 +533,8 @@ class MVA:
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only used by the "SVD" algorithm.
-        navigation_mask : numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`
-            The navigation locations marked as True are not used in the
-            decomposition.
-        signal_mask : numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`
-            The signal locations marked as True are not used in the
-            decomposition.
+        %s
+        %s
         var_array : numpy.ndarray
             Array of variance for the maximum likelihood PCA algorithm.
             Only used by the "MLPCA" algorithm.
@@ -555,14 +554,11 @@ class MVA:
             stored. If True, return any extra information if available.
             In the case of sklearn.decomposition objects, this includes the
             sklearn Estimator object.
-        print_info : bool, default True
-            If True, print information about the decomposition being performed.
-            In the case of sklearn.decomposition objects, this includes the
-            values of all arguments of the chosen sklearn algorithm.
+        %s
         svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
             * If ``"auto"``: the solver is selected by a default policy based on ``data.shape`` and
               ``output_dimension``: if the input data is larger than 500x500 and the
-              number of components to extract is lower than 80% of the smallest
+              number of components to extract is lower than 80%% of the smallest
               dimension of the data, then the more efficient ``"randomized"``
               method is enabled. Otherwise the exact full SVD is computed and
               optionally truncated afterwards.
@@ -1063,6 +1059,23 @@ class MVA:
             print("\n".join([str(pr) for pr in to_print]))
 
         return to_return
+
+    decomposition.__doc__ %= (
+        DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
+        DECOMP_MASK_DOC
+        % (
+            "navigation_mask",
+            "numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`",
+            "navigation",
+        ),
+        DECOMP_MASK_DOC
+        % (
+            "signal_mask",
+            "numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`",
+            "signal",
+        ),
+        DECOMP_PRINT_INFO_DOC,
+    )
 
     def blind_source_separation(
         self,
