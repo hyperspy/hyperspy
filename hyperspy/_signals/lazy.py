@@ -1715,7 +1715,7 @@ class LazySignal(signals.BaseSignal):
 
         References
         ----------
-        .. [KeenanKotula2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
 

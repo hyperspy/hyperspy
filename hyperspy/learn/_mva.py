@@ -596,7 +596,7 @@ class MVA:
 
         References
         ----------
-        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
+        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
 
@@ -2045,8 +2045,8 @@ class MVA:
     def normalize_poissonian_noise(self, navigation_mask=None, signal_mask=None):
         """Normalize the signal under the assumption of Poisson noise.
 
-        Scales the signal using to "normalize" the Poisson data for
-        subsequent decomposition analysis [*]_.
+        Scales the signal to normalize the Poisson data for
+        subsequent decomposition analysis (Keenan and Kotula, 2004).
 
         Parameters
         ----------
@@ -2054,12 +2054,6 @@ class MVA:
             Optional mask applied in the navigation axis.
         signal_mask : {None, boolean numpy array}, default None
             Optional mask applied in the signal axis.
-
-        References
-        ----------
-        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
-            in the multivariate analysis of ToF-SIMS spectrum images", Surf.
-            Interface Anal 36(3) (2004): 203-212.
 
         """
         _logger.info("preprocessing the data to normalize Poissonian noise")
