@@ -1381,6 +1381,9 @@ class LazySignal(signals.BaseSignal):
                 _factors_da = (
                     factors if isinstance(factors, da.Array) else da.from_array(factors)
                 )
+                # Dask matmul — streams over nav chunks without
+                # materialising the full matrix.  .compute() only
+                # materialises the small (nav × k) loadings array.
                 loadings = _reproject_navigation_loadings(D_nav, _factors_da).compute()
             elif algorithm == "SVD" and svd_solver == "randomized":
                 import dask.array as da
@@ -1395,8 +1398,12 @@ class LazySignal(signals.BaseSignal):
                 _factors_da = (
                     factors if isinstance(factors, da.Array) else da.from_array(factors)
                 )
+                # Same least-squares formula as full SVD; only the factor
+                # matrix was computed by a different solver.
                 loadings = _reproject_navigation_loadings(D_nav, _factors_da).compute()
             else:
+                # Non-SVD algorithms (PCA, NMF, ORPCA, ORNMF, custom):
+                # use the estimator's transform() on each chunk.
                 try:
                     loadings = self._project_loadings(
                         obj, "Reproject", None, signal_mask, get, nblocks
@@ -1405,6 +1412,10 @@ class LazySignal(signals.BaseSignal):
                     pass
             _nav_reprojected = True
         elif reproject is None:
+            # Default behaviour: for non-SVD algorithms, project to get
+            # loadings (preserves the pre-existing default of
+            # reproject=True).  SVD already computed loadings during the
+            # learn pass, so nothing extra is needed.
             if algorithm != "SVD":
                 try:
                     loadings = self._project_loadings(
