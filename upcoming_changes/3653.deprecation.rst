@@ -1,0 +1,6 @@
+Deprecate the ``copy`` parameter in :meth:`~.learn.mva.MVA.decomposition`
+and the :meth:`~.learn.mva.MVA.undo_treatments` method.  Pre-treatment
+data modifications (Poisson noise normalization, centering) are now
+reversed mathematically after decomposition, so explicit copying and
+undo are no longer needed.  The ``copy`` parameter now defaults to
+``False``; passing ``copy=True`` emits a ``VisibleDeprecationWarning``.

@@ -25,6 +25,7 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 sklearn = importlib.util.find_spec("sklearn")
 skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
@@ -123,7 +124,7 @@ class TestNdAxes:
             s1.learning_results.factors, s2.learning_results.loadings
         )
         # Check that views of the data don't change. See #871
-        np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
+        np.testing.assert_allclose(s1.inav[0, 0, 0].data, s1n000.data, rtol=1e-14)
 
     @pytest.mark.parametrize("poisson", [True, False])
     def test_consistency_masked(self, poisson):
@@ -624,10 +625,10 @@ def test_negative_values_error():
 
 def test_undo_treatments_error():
     s = signals.Signal1D(generate_low_rank_matrix())
-    s.decomposition(output_dimension=2, copy=False)
-
-    with pytest.raises(AttributeError, match="Unable to undo data pre-treatments!"):
-        s.undo_treatments()
+    s.decomposition(output_dimension=2)
+    with pytest.warns(VisibleDeprecationWarning):
+        with pytest.raises(AttributeError, match="Unable to undo data pre-treatments!"):
+            s.undo_treatments()
 
 
 def test_normalize_components_errors():
@@ -713,14 +714,20 @@ class TestDataPreservation:
     def test_unmasked_default(self):
         self._save_and_assert()
 
-    def test_unmasked_copy_false(self):
-        self._save_and_assert(copy=False)
+    def test_unmasked_copy_true_deprecated(self):
+        if self.s._lazy:
+            pytest.skip("copy parameter not supported on lazy signals")
+        with pytest.warns(VisibleDeprecationWarning):
+            self._save_and_assert(copy=True)
 
-    def test_poisson_no_copy(self):
-        self._save_and_assert(normalize_poissonian_noise=True, copy=False)
+    def test_poisson_default(self):
+        self._save_and_assert(normalize_poissonian_noise=True)
 
-    def test_poisson_copy_true(self):
-        self._save_and_assert(normalize_poissonian_noise=True, copy=True)
+    def test_poisson_copy_true_deprecated(self):
+        if self.s._lazy:
+            pytest.skip("copy parameter not supported on lazy signals")
+        with pytest.warns(VisibleDeprecationWarning):
+            self._save_and_assert(normalize_poissonian_noise=True, copy=True)
 
     def test_with_nav_mask(self):
         # navigation_shape is (25, 12) in display order (axes reversed)
@@ -751,12 +758,10 @@ class TestDataPreservation:
             signal_mask=sig_mask,
         )
 
-    def test_poisson_masked_copy_false(self):
+    def test_poisson_masked(self):
         nav_mask = np.zeros((25, 12), dtype=bool)
         nav_mask[0, :] = True
-        self._save_and_assert(
-            normalize_poissonian_noise=True, navigation_mask=nav_mask, copy=False
-        )
+        self._save_and_assert(normalize_poissonian_noise=True, navigation_mask=nav_mask)
 
     def test_reproject_navigation_with_mask(self):
         nav_mask = np.zeros((25, 12), dtype=bool)

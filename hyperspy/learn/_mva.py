@@ -27,6 +27,7 @@ from rsciio.utils import path
 from hyperspy import learn, signals
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import utils
 
@@ -497,7 +498,7 @@ class MVA:
         return_info=False,
         print_info=True,
         svd_solver="auto",
-        copy=True,
+        copy=False,
         **kwargs,
     ):
         """Apply a decomposition to a dataset with a choice of algorithms.
@@ -575,12 +576,16 @@ class MVA:
               limited number of components
 
             For cupy arrays, only "full" is supported.
-        copy : bool, default True
-            * If ``True``, stores a copy of the data before any pre-treatments
-              such as normalization in ``s._data_before_treatments``. The original
-              data can then be restored by calling ``s.undo_treatments()``.
-            * If ``False``, no copy is made. This can be beneficial for memory
-              usage, but care must be taken since data will be overwritten.
+        copy : bool, default False
+            .. deprecated:: 2.5
+               This parameter is deprecated and will be removed in a future
+               release.  Pre-treatment data modifications (Poisson noise
+               normalization, centering) are now reversed mathematically
+               after decomposition, so explicit copying is no longer needed.
+
+            If ``True``, stores a copy of the data before any pre-treatments
+            in ``s._data_before_treatments``.  Passing ``True`` emits a
+            ``VisibleDeprecationWarning``.
         **kwargs : dict
             Any keyword arguments are passed to the decomposition algorithm.
 
@@ -687,6 +692,15 @@ class MVA:
         # Backup the original data before applying pre-treatments.
         # Only needed when Poisson noise normalization will modify data
         # (the reversal for copy=False is handled mathematically).
+        if copy:
+            warnings.warn(
+                "The `copy` parameter is deprecated and will be removed in "
+                "a future release.  Data modifications (Poisson noise "
+                "normalization, centering) are now reversed mathematically "
+                "after decomposition, so explicit copying is no longer needed.",
+                VisibleDeprecationWarning,
+                stacklevel=2,
+            )
         if copy and normalize_poissonian_noise:
             self._data_before_treatments = self.data.copy()
 
@@ -729,8 +743,10 @@ class MVA:
             # is not the case.
             if self.axes_manager[0].index_in_array == 0:
                 dc = self.data
+                self._data_was_transposed = False
             else:
                 dc = self.data.T
+                self._data_was_transposed = True
 
             # Convert None masks to slices; masks keep their user-provided
             # convention (True = excluded) throughout — we invert explicitly
@@ -1000,8 +1016,10 @@ class MVA:
             # (line 253 of _svd_pca.py).  Restore it here so the
             # signal's data is not permanently modified.
             if target.mean is not None:
-                if isinstance(navigation_mask, slice) and isinstance(
-                    signal_mask, slice
+                # Masks may still be None if an error was raised before
+                # the None→slice conversion.  Treat None like a slice.
+                if (isinstance(navigation_mask, slice) or navigation_mask is None) and (
+                    isinstance(signal_mask, slice) or signal_mask is None
                 ):
                     self.data += target.mean
 
@@ -1009,14 +1027,14 @@ class MVA:
             # was modified in-place with no backup copy).  We reverse
             # mathematically using the stored sqrt(aG) / sqrt(bH)
             # before folding so the data stays 2-D.
-            if normalize_poissonian_noise and not copy:
+            if normalize_poissonian_noise and not copy and hasattr(self, "_root_aG"):
                 nav_size = self.axes_manager.navigation_size
                 sig_size = self.axes_manager.signal_size
-                if isinstance(navigation_mask, slice):
+                if isinstance(navigation_mask, slice) or navigation_mask is None:
                     nm = np.ones(nav_size, dtype=bool)
                 else:
                     nm = ~navigation_mask
-                if isinstance(signal_mask, slice):
+                if isinstance(signal_mask, slice) or signal_mask is None:
                     sm = np.ones(sig_size, dtype=bool)
                 else:
                     sm = ~signal_mask
@@ -1025,6 +1043,9 @@ class MVA:
                     self._root_aG.ravel()[:, np.newaxis]
                     * self._root_bH.ravel()[np.newaxis, :]
                 )
+                if getattr(self, "_data_was_transposed", False):
+                    combined = combined.T
+                    coeff = coeff.T
                 self.data[combined] *= coeff[combined]
 
             if self._unfolded4decomposition:
@@ -2054,8 +2075,19 @@ class MVA:
     def undo_treatments(self):
         """Undo Poisson noise normalization and other pre-treatments.
 
-        Only valid if calling ``s.decomposition(..., copy=True)``.
+        .. deprecated:: 2.5
+           This method is deprecated and will be removed in a future
+           release.  Pre-treatment data modifications are now reversed
+           mathematically after decomposition, so explicit undo is no
+           longer needed.
         """
+        warnings.warn(
+            "undo_treatments() is deprecated and will be removed in a "
+            "future release.  Data modifications are now reversed "
+            "mathematically after decomposition.",
+            VisibleDeprecationWarning,
+            stacklevel=2,
+        )
         if hasattr(self, "_data_before_treatments"):
             _logger.info("Undoing data pre-treatments")
             self.data[:] = self._data_before_treatments
