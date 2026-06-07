@@ -996,6 +996,15 @@ class MVA:
                     )
 
         finally:
+            # Reverse centering: svd_pca subtracted the mean in-place
+            # (line 253 of _svd_pca.py).  Restore it here so the
+            # signal's data is not permanently modified.
+            if target.mean is not None:
+                if isinstance(navigation_mask, slice) and isinstance(
+                    signal_mask, slice
+                ):
+                    self.data += target.mean
+
             # Reverse Keenan-Kotula scaling when copy=False (the data
             # was modified in-place with no backup copy).  We reverse
             # mathematically using the stored sqrt(aG) / sqrt(bH)
