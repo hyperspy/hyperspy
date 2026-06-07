@@ -362,6 +362,12 @@ nitpick_ignore_regex = (
     ("py:class", "hyperspy.samfire_utils.strategy.SamfireStrategy"),
     ("py:class", ".*goodness_test"),
     ("py:class", "hyperspy.roi.BasePointROI"),
+    # Internal classes not in the public API reference
+    ("py:class", "hyperspy.learn.incremental_svd.ISVD"),
+    ("py:obj", "hyperspy.learn.incremental_svd.ISVD"),
+    # MVA mixin methods — class is already ignored above
+    ("py:meth", "learn.mva.MVA.decomposition"),
+    ("py:meth", "learn.mva.MVA.undo_treatments"),
     # Add exception to API
     ("py:obj", "SignalDimensionError"),
     ("py:obj", "DataDimensionError"),
