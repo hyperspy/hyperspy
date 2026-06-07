@@ -711,8 +711,6 @@ class MVA:
             signal_mask = _to_flat_bool(signal_mask)
 
             # Normalize the poissonian noise
-            # TODO this function can change the masks and
-            # this can cause problems when reprojecting
             if normalize_poissonian_noise:
                 if centre is not None:
                     raise ValueError(
