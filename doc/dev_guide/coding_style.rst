@@ -26,19 +26,19 @@ Pre-CI validation
 Before pushing your changes, run these checks locally to catch errors that
 would otherwise only surface in CI — saving you a round-trip:
 
-- **Changelog fragments**: run ``python scripts/validate-changelog.py`` to verify
-  filenames match the ``<number>.<type>.rst`` pattern and that ``towncrier --draft``
-  succeeds.  Common mistakes include using the wrong fragment type
-  (``enhancement`` instead of ``enhancements``, ``fix`` instead of ``bugfix``)
-  or broken RST cross-references.
+- **Pre-CI checks**: run ``python scripts/check-docs.py`` to validate
+  changelog fragments and build the documentation with warnings-as-errors
+  — the same checks the CI doc build runs.  For a fast check of changelog
+  fragments only, use ``python scripts/check-docs.py --quick``.
 
-- **Documentation cross-references**: run ``cd doc && make html`` to verify that
-  any new ``:meth:``, ``:class:``, ``:func:``, or ``:doc:`` links resolve
-  correctly.  Broken references are caught by the Sphinx build and will
-  fail CI.
+  Common mistakes caught by this script include using the wrong fragment
+  type (``enhancement`` instead of ``enhancements``, ``fix`` instead of
+  ``bugfix``), broken RST cross-references in fragment text, and broken
+  ``:meth:``, ``:class:``, ``:func:``, or ``:doc:`` links.
 
-See :ref:`the changelog README <upcoming_changes-readme>` for more details on
-writing changelog fragments.
+See `the changelog README
+<https://github.com/hyperspy/hyperspy/blob/RELEASE_next_patch/upcoming_changes/README.rst>`_
+for more details on writing changelog fragments.
 
 Deprecations
 ============

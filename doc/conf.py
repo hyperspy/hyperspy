@@ -11,6 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import os
 import platform
 import sys
 from datetime import datetime
@@ -444,6 +445,10 @@ if platform.system() != "Windows":
         "images",
         "thumbnails",
     )  # use optipng to reduce image file size
+
+# ``check-docs.py`` sets this to skip slow gallery execution during validation.
+if os.environ.get("HYPERSHYP_FAST_CHECK"):
+    sphinx_gallery_conf["plot_gallery"] = False
 
 
 # -- Sphinx-copybutton -----------

@@ -39,9 +39,16 @@ To validate fragment filenames and run the draft check in one step, use:
 
    .. code-block:: bash
 
-       $ python scripts/validate-changelog.py
+       $ python scripts/check-docs.py --quick
 
 This catches filename errors and ``towncrier`` parse failures before pushing,
 without waiting for CI.
+
+To also validate that fragments build correctly as part of the full
+documentation (Sphinx cross-references, etc.), run without ``--quick``:
+
+   .. code-block:: bash
+
+       $ python scripts/check-docs.py
 
 See https://github.com/twisted/towncrier for more details.

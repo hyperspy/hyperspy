@@ -105,8 +105,16 @@ skip this requirement.
 
 ### Local Validation Before Pushing
 Run the validation script before committing changelog changes:
-```bash
-python scripts/validate-changelog.py
-```
+
+.. code-block:: bash
+
+    python scripts/check-docs.py --quick
+
 This catches filename errors and ``towncrier`` parse failures immediately,
 without waiting for CI.
+
+Before pushing, run the full check to also validate Sphinx cross-references:
+
+.. code-block:: bash
+
+    python scripts/check-docs.py

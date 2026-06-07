@@ -141,10 +141,10 @@ Sometimes AI agents forget to follow the checklist. Familiarize yourself with it
 so you can catch any missed items before submission.
 
 The checklist now includes **pre-CI validation** steps: running
-``python scripts/validate-changelog.py`` to verify changelog fragment
-format before pushing, and building the documentation locally
-(``cd doc && make html``) to catch broken cross-references that would
-otherwise only surface in CI. These checks shift the feedback loop
+``python scripts/check-docs.py`` to verify changelog fragment format
+and run the CI-equivalent documentation build with warnings-as-errors
+before pushing — catching both fragment issues and broken
+cross-references in a single command. These checks shift the feedback loop
 from minutes (waiting for CI) to seconds (running locally).
 
 
