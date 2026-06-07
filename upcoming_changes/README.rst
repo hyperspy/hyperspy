@@ -1,3 +1,5 @@
+.. _upcoming_changes-readme:
+
 This directory contains "news fragments" which are short files that contain a small **ReST**-formatted
 text that will be added to the next ``CHANGELOG``.
 

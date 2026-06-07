@@ -20,6 +20,26 @@ These can be run locally by using `pre-commit <https://pre-commit.com>`__.
 Alternatively, the comment ``pre-commit.ci autofix`` can be added to a PR to fix the formatting
 using `pre-commit.ci <https://pre-commit.ci>`_.
 
+Pre-CI validation
+=================
+
+Before pushing your changes, run these checks locally to catch errors that
+would otherwise only surface in CI — saving you a round-trip:
+
+- **Changelog fragments**: run ``python scripts/validate-changelog.py`` to verify
+  filenames match the ``<number>.<type>.rst`` pattern and that ``towncrier --draft``
+  succeeds.  Common mistakes include using the wrong fragment type
+  (``enhancement`` instead of ``enhancements``, ``fix`` instead of ``bugfix``)
+  or broken RST cross-references.
+
+- **Documentation cross-references**: run ``cd doc && make html`` to verify that
+  any new ``:meth:``, ``:class:``, ``:func:``, or ``:doc:`` links resolve
+  correctly.  Broken references are caught by the Sphinx build and will
+  fail CI.
+
+See :ref:`the changelog README <upcoming_changes-readme>` for more details on
+writing changelog fragments.
+
 Deprecations
 ============
 HyperSpy follows `semantic versioning <https://semver.org>`_ where changes follow such that:

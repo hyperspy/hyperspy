@@ -1,6 +1,7 @@
 Add ``scripts/validate-changelog.py`` to validate changelog fragment filenames
 and ``towncrier --draft`` locally before pushing. Expand
 ``upcoming_changes/README.rst`` with validation instructions,
+``doc/dev_guide/coding_style.rst`` with a Pre-CI Validation section,
 ``doc/dev_guide/coding_with_ai.rst`` with pre-CI validation guidance,
 ``AGENTS.md`` with a Pre-CI Validation checklist section, and
 ``upcoming_changes/AGENTS.md`` with common mistake examples.
