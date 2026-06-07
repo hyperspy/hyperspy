@@ -1665,36 +1665,36 @@ class LazySignal(signals.BaseSignal):
             all other algorithms.
 
             * ``'randomized'`` (default): randomised truncated SVD via
-              ``dask.array.linalg.svd_compressed``.  Builds a dask task
-              graph, then materialises only the top-*k* singular vectors.
-              Fast in practice (typically the fastest of the three options)
-              with moderate memory use.  ``output_dimension`` is required.
-              Supports ``centre``, navigation/signal masks, and
-              ``reproject``.  Works with arrays chunked in one or both
+              ``dask.array.linalg.svd_compressed``.  Builds a single dask
+              task graph and materialises only the top-*k* singular vectors.
+              **Fastest of the three solvers** by a substantial margin
+              (the computation is CPU-bound and benefits from being executed
+              sequentially within a single graph).  ``output_dimension``
+              is required.  Supports ``centre``, navigation/signal masks,
+              and ``reproject``.  Works with arrays chunked in one or both
               dimensions.
 
-              *Advantages*: fastest; graph-based scheduling lets dask
-              optimise I/O and computation together; supports masking and
-              centring.
+              *Advantages*: fastest solver; graph-based scheduling avoids
+              per-chunk overhead; supports masking and centring.
 
               *Disadvantages*: randomised algorithm — results differ
               slightly between runs and from exact SVD; ``output_dimension``
               must be set.
 
             * ``'incremental'``: exact incremental SVD via
-              :class:`~hyperspy.learn.incremental_svd.ISVD` (a subclass of
+              ``ISVD`` (a subclass of
               ``sklearn.decomposition.IncrementalPCA`` with centering
-              disabled).  Streams the data in mini-batches; peak memory is
-              proportional to the chunk size rather than the full dataset.
-              ``output_dimension`` is required.
+              disabled).  Streams the data one mini-batch at a time, with
+              steady-state memory proportional to the chunk size rather
+              than the full dataset.  ``output_dimension`` is required.
 
-              *Advantages*: lowest peak memory — scales to datasets larger
-              than RAM; deterministic result; supports ``centre``,
+              *Advantages*: lowest steady-state memory — scales to datasets
+              larger than RAM; deterministic result; supports ``centre``,
               masks, and all ``reproject`` modes.
 
-              *Disadvantages*: slowest of the three; requires scikit-learn;
-              incremental algorithm accumulates floating-point errors over
-              many batches.
+              *Disadvantages*: significantly slower than ``'randomized'``
+              (each chunk is processed serially rather than through a single
+              task graph); requires scikit-learn.
 
             * ``'full'``: exact full SVD via ``dask.array.linalg.svd``
               (TSQR algorithm).  Returns *lazy* dask arrays — no
@@ -1702,20 +1702,23 @@ class LazySignal(signals.BaseSignal):
               on the results (or until ``reproject`` is used, in which case
               the arrays are materialised internally).  ``output_dimension``
               is optional; if given, only the top-*k* columns of U/rows of V
-              are retained before computing.  Reproduces the behaviour of
-              HyperSpy prior to v2.5.  Supports navigation and signal masks,
-              ``reproject``, and ``centre``.
+              are retained before computing.  Supports navigation and signal
+              masks, ``reproject``, and ``centre``.
 
-              *Advantages*: exact SVD; deferred computation when ``reproject``
-              is not used — the caller decides when and how much to
-              materialise; ``output_dimension`` optional; masks, reproject,
-              and centre supported.
+              *Advantages*: exact SVD; deferred computation when
+              ``reproject`` is not used — the caller decides when and how
+              much to materialise; ``output_dimension`` optional; masks,
+              reproject, and centre supported.
 
-              *Disadvantages*: materialising the full result without
-              ``output_dimension`` requires significantly more memory than the
-              other solvers (the full U matrix is ``nav_size × nav_size``
-              before truncation); when ``output_dimension`` is set only the
-              top-k columns are retained.  Slow for large datasets.
+              *Disadvantages*: requires the input array to be chunked in
+              one dimension only (tall-and-skinny or short-and-fat);
+              rechunking to this layout may materialise the full dataset,
+              limiting this solver to datasets that fit comfortably in
+              RAM.  Materialising the full result without
+              ``output_dimension`` requires significantly more memory than
+              the other solvers (the full U matrix is ``nav_size ×
+              nav_size`` before truncation); when ``output_dimension`` is
+              set only the top-k columns are retained.
         **kwargs
             passed to the partial_fit/fit functions.
 
