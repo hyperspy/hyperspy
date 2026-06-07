@@ -55,7 +55,7 @@ Traits conventions
 
 HyperSpy uses `Enthought traits <https://docs.enthought.com/traits/>`_ (not Jupyter ``traitlets``) for
 observable attributes on interactive tools, components, and axes. All trait handlers must use the modern
-``@observe`` pattern introduced in traits 6.1.
+``@observe`` pattern. The minimum supported version is traits 7.0.
 
 Handler pattern
 ---------------

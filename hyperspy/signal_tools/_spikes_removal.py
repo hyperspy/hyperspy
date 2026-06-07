@@ -137,9 +137,12 @@ class SpikesRemoval:
                     self.index += 1
                 else:
                     self.index -= 1
-                # Guard against double-fire: SpikesRemovalInteractive has a
-                # trait observer on "index" that already calls _index_changed
-                # when self.index changes (registered in __init__).
+                # SpikesRemoval is a plain class (not HasTraits) — changing
+                # self.index does NOT fire any observer, so we must call
+                # _index_changed explicitly. The hasattr guard prevents
+                # double-firing on SpikesRemovalInteractive (which IS a
+                # HasTraits subclass and already has self.observe() registered
+                # on "index" in SpikesRemoval.__init__).
                 if not hasattr(self, "observe"):
                     self._index_changed(SimpleNamespace(old=None, new=self.index))
                 spike = self.detect_spike()

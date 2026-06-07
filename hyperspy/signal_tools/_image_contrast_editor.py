@@ -420,6 +420,9 @@ class ImageContrastEditor(t.HasTraits):
             self.line.line.set_visible(False)
             self.hspy_fig.render_figure()
 
+    # Called imperatively from the traitsui handler's show_help() method.
+    # The "_fired" naming is a convention, not the deprecated traits
+    # auto-discovery pattern. No @t.observe decorator needed here.
     def _show_help_fired(self, event=None):
         from pyface.message_dialog import information
 
