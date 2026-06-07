@@ -19,8 +19,10 @@
 import inspect
 import itertools
 
+import dask
 import numpy as np
 import pytest
+from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy import components1d
@@ -83,6 +85,10 @@ def test_creation_components1d(component_name):
 @lazifyTestClass
 class TestPowerLaw:
     def setup_method(self, method):
+        if method.__name__.startswith("test_lazy") and Version(
+            dask.__version__
+        ) < Version("2024.12.0"):
+            pytest.skip("dask version must be >= 2024.12.0")
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
@@ -154,6 +160,10 @@ class TestPowerLaw:
 @lazifyTestClass
 class TestOffset:
     def setup_method(self, method):
+        if method.__name__.startswith("test_lazy") and Version(
+            dask.__version__
+        ) < Version("2024.12.0"):
+            pytest.skip("dask version must be >= 2024.12.0")
         s = hs.signals.Signal1D(np.zeros(10))
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
@@ -307,6 +317,10 @@ class TestOffset:
 @lazifyTestClass
 class TestPolynomial:
     def setup_method(self, method):
+        if method.__name__.startswith("test_lazy") and Version(
+            dask.__version__
+        ) < Version("2024.12.0"):
+            pytest.skip("dask version must be >= 2024.12.0")
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
