@@ -1,0 +1,5 @@
+Fix ``centre='signal'`` and ``centre='navigation'`` permanently subtracting
+the mean from the signal's data in eager decomposition.  The mean is now
+restored after decomposition, resolving a bug where running two
+decompositions on the same signal with different ``centre`` values produced
+garbage.
