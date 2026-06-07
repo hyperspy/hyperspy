@@ -1016,6 +1016,7 @@ class LazySignal(signals.BaseSignal):
             ``signal_mask``, ``_navigation_mask_for_reproject``,
             ``_D_unfolded``.
         """
+        import dask
         import dask.array as da
 
         # Initialise all variables that are set inside the try block so
@@ -1108,11 +1109,16 @@ class LazySignal(signals.BaseSignal):
                 else:
                     mean = None
 
-                U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
-
-                U = U.compute()
-                S = S.compute()
-                V = V.compute()
+                # Use the synchronous scheduler for svd_compressed to
+                # avoid materialising the full dataset in memory.  The
+                # default threaded scheduler fires all rows of D @ Omega
+                # simultaneously, producing a peak-memory spike equal to
+                # the full data size.  Synchronous processes one row at a
+                # time and is actually faster here because there is no
+                # I/O to overlap — every chunk is a CPU-bound matmul.
+                with dask.config.set(scheduler="synchronous"):
+                    U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
+                    U, S, V = dask.compute(U, S, V)
 
                 factors = V.T  # (n_unmasked_sig, output_dimension)
                 explained_variance = S**2 / D.shape[0]
