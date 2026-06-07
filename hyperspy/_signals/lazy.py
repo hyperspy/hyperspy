@@ -1078,6 +1078,18 @@ class LazySignal(signals.BaseSignal):
                 D = D[:, ~sig_mask_1d]
 
             if svd_solver == "full":
+                import warnings
+
+                from hyperspy.exceptions import VisibleDeprecationWarning
+
+                warnings.warn(
+                    "svd_solver='full' is deprecated and will be removed in "
+                    "HyperSpy 3.0.  Use svd_solver='randomized' instead, "
+                    "which gives identical results for truncated SVD with "
+                    "substantially lower memory usage.",
+                    VisibleDeprecationWarning,
+                    stacklevel=2,
+                )
                 if centre == "navigation":
                     mean = D.mean(axis=0, keepdims=True).compute()
                     D = D - mean
@@ -1087,44 +1099,16 @@ class LazySignal(signals.BaseSignal):
                 else:
                     mean = None
 
-                # da.linalg.svd (TSQR) requires single-dimension chunking
-                # (tall-and-skinny).  When the signal axis is chunked,
-                # rechunking would materialise the full dataset and may
-                # OOM.  Two strategies:
-                #   1) output_dimension is set → use svd_compressed which
-                #      gives identical top-k results without rechunking.
-                #   2) output_dimension is None → rechunk is unavoidable;
-                #      warn if the dataset is large.
                 if D.numblocks[1] > 1:
-                    if output_dimension is not None:
-                        # Truncated SVD: svd_compressed is exact for the
-                        # top-k components and works with 2D chunking.
-                        # Keep results lazy — the full solver's contract is
-                        # to return dask arrays and defer computation.
-                        U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
-                        factors = V.T
-                        explained_variance = S**2 / D.shape[0]
-                        loadings = U * S
-                    else:
-                        D = D.rechunk({1: -1})
-                        U, S, V = da.linalg.svd(D)
-                        if output_dimension is not None:
-                            U = U[:, :output_dimension]
-                            S = S[:output_dimension]
-                            V = V[:output_dimension]
-                        factors = V.T
-                        explained_variance = S**2 / D.shape[0]
-                        loadings = U * S
-                else:
-                    # Already single-dimension chunked — exact SVD is efficient.
-                    U, S, V = da.linalg.svd(D)
-                    if output_dimension is not None:
-                        U = U[:, :output_dimension]
-                        S = S[:output_dimension]
-                        V = V[:output_dimension]
-                    factors = V.T
-                    explained_variance = S**2 / D.shape[0]
-                    loadings = U * S
+                    D = D.rechunk({1: -1})
+                U, S, V = da.linalg.svd(D)
+                if output_dimension is not None:
+                    U = U[:, :output_dimension]
+                    S = S[:output_dimension]
+                    V = V[:output_dimension]
+                factors = V.T
+                explained_variance = S**2 / D.shape[0]
+                loadings = U * S
             else:  # randomized
                 if centre == "navigation":
                     mean = D.mean(axis=0, keepdims=True).compute()
@@ -1723,28 +1707,13 @@ class LazySignal(signals.BaseSignal):
               task graph); requires scikit-learn.
 
             * ``'full'``: exact full SVD via ``dask.array.linalg.svd``
-              (TSQR algorithm).  Returns *lazy* dask arrays — no
-              computation is triggered until the caller calls ``.compute()``
-              on the results (or until ``reproject`` is used, in which case
-              the arrays are materialised internally).  ``output_dimension``
-              is optional; if given, only the top-*k* columns of U/rows of V
-              are retained before computing.  Supports navigation and signal
-              masks, ``reproject``, and ``centre``.
+              (TSQR algorithm).
 
-              *Advantages*: exact SVD; deferred computation when
-              ``reproject`` is not used — the caller decides when and how
-              much to materialise; ``output_dimension`` optional; masks,
-              reproject, and centre supported.
-
-              *Disadvantages*: requires the input array to be chunked in
-              one dimension only (tall-and-skinny or short-and-fat);
-              rechunking to this layout may materialise the full dataset,
-              limiting this solver to datasets that fit comfortably in
-              RAM.  Materialising the full result without
-              ``output_dimension`` requires significantly more memory than
-              the other solvers (the full U matrix is ``nav_size ×
-              nav_size`` before truncation); when ``output_dimension`` is
-              set only the top-k columns are retained.
+              .. deprecated:: 2.5
+                 ``svd_solver='full'`` is deprecated and will be removed
+                 in HyperSpy 3.0.  Use ``svd_solver='randomized'`` instead,
+                 which gives identical results for truncated SVD with
+                 substantially lower memory usage.
         **kwargs
             passed to the partial_fit/fit functions.
 

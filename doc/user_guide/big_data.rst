@@ -166,8 +166,8 @@ on the ``svd_solver`` parameter (see :ref:`big_data.svd`).
 SVD (``algorithm='SVD'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The default ``algorithm='SVD'`` supports three solvers, selected via
-``svd_solver``:
+The default ``algorithm='SVD'`` supports two actively maintained solvers,
+selected via ``svd_solver``:
 
 .. list-table::
    :header-rows: 1
@@ -178,11 +178,11 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
    * - ``'randomized'`` (**default**)
      - :func:`dask.array.linalg.svd_compressed` — **randomised truncated SVD**.
        Builds a single dask task graph and materialises only the
-       top-*k* singular vectors.  **Fastest of the three SVD solvers**
-       by a substantial margin — the computation is CPU-bound and benefits
-       from being executed sequentially within a single graph rather than
-       processing chunks one at a time.  Works with arrays chunked in one
-       or both dimensions.
+       top-*k* singular vectors.  **Fastest solver** by a substantial
+       margin — the computation is CPU-bound and benefits from being
+       executed sequentially within a single graph rather than processing
+       chunks one at a time.  Works with arrays chunked in one or both
+       dimensions.  Suitable for the vast majority of datasets.
 
        ``output_dimension`` is **required**.
        Supports ``centre``, navigation/signal masks, and ``reproject``.
@@ -190,51 +190,43 @@ The default ``algorithm='SVD'`` supports three solvers, selected via
      - ``ISVD`` — **incremental (out-of-core) SVD**: streams data one
        mini-batch at a time so only a small number of chunks reside in
        memory simultaneously.  Result is deterministic.  **Lowest
-       steady-state memory of the three SVD solvers** — a good choice
-       when RAM is the primary constraint and you still need an
-       SVD-based decomposition — at the cost of significantly longer
-       wall-clock time than ``'randomized'`` (each chunk is processed
-       serially).
+       steady-state memory** of all solvers — the only option when even
+       the dask task-graph overhead of ``'randomized'`` exceeds available
+       RAM — at the cost of substantially longer run time (each chunk is
+       processed serially).
 
        ``output_dimension`` is **required**.
        Supports ``centre``, navigation/signal masks, and all ``reproject``
        modes.
-   * - ``'full'``
-     - :func:`dask.array.linalg.svd` — **exact full SVD** (TSQR algorithm).
-       Returns *lazy* dask arrays; no computation is triggered until
-       ``.compute()`` is called.  Uses the same
-       ``dask.array.linalg.svd`` backend as HyperSpy prior to v2.5.
 
-       ``output_dimension`` is **optional** (all components are returned if
-       omitted, but materialising them requires significantly more memory).
-       Supports ``centre``, navigation/signal masks, and ``reproject``.
-
-       Requires the data array to be chunked in one dimension only
-       (tall-and-skinny or short-and-fat); rechunking a fully 2D-chunked
-       array to this layout may materialise the entire dataset, limiting
-       this solver to datasets that fit comfortably in RAM.
+.. deprecated:: 2.5
+   ``svd_solver='full'`` is deprecated.  Use ``'randomized'`` instead,
+   which gives identical results for truncated SVD with substantially lower
+   memory usage.
 
 .. note::
 
-   **Choosing an algorithm.**
-   For ``"PCA"``, ``"NMF"``, ``"ORPCA"``, and ``"ORNMF"``, the main criterion is
-   usually the statistical model or constraint you need (for example,
-   centering, non-negativity, or robustness), not just speed or memory use.
-   The comparison below therefore focuses on the three ``svd_solver`` backends
-   of ``algorithm="SVD"``.  Among those, ``svd_solver='randomized'`` is the
-   fastest and works well for the vast majority of datasets; ``'incremental'``
-   has the lowest steady-state memory (streams one chunk at a time) at the
-   cost of significantly longer run time; and ``'full'`` returns a fully lazy
-   pipeline but requires single-dimension chunking, limiting it to datasets
-   that fit comfortably in RAM.  Choose ``'full'`` when you need the exact
-   factorisation with deferred computation, and ``'incremental'`` when
-   minimising RAM is the main priority and performance is secondary.
+   **Choosing a solver.**
+   ``svd_solver='randomized'`` is the right choice for nearly all datasets.
+   It is the fastest, works with any chunking layout, and its approximation
+   error is negligible for the top-*k* components (which is all that
+   truncated SVD preserves anyway).
+
+   ``svd_solver='incremental'`` exists for a specific niche: **severely
+   memory-constrained environments** where even the dask task-graph overhead
+   of ``'randomized'`` exceeds available RAM.  It streams data one chunk at
+   a time with near-zero steady-state memory, but runs substantially slower
+   because each chunk is processed serially.  It is also deterministic
+   (unlike the randomised solver), which can be valuable for
+   reproducibility-sensitive workflows.  Unless you are hitting RAM limits
+   with ``'randomized'``, there is no reason to use ``'incremental'``.
 
 .. versionchanged:: 2.5
-   The ``svd_solver`` parameter was introduced, offering three backends:
-   ``'randomized'`` (default, fastest — randomised truncated SVD),
-   ``'incremental'`` (lowest steady-state memory, out-of-core streaming), and
-   ``'full'`` (exact SVD, lazy dask output; requires single-dimension chunking).
+   The ``svd_solver`` parameter was introduced, offering two backends:
+   ``'randomized'`` (default, fastest — randomised truncated SVD) and
+   ``'incremental'`` (lowest steady-state memory, out-of-core streaming).
+   ``svd_solver='full'`` is available but deprecated; use ``'randomized'``
+   instead.
 
 .. code-block:: python
 

@@ -22,6 +22,7 @@ import dask.array as da
 import numpy as np
 import pytest
 
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signals import Signal1D
 
 sklearn = importlib.util.find_spec("sklearn")
@@ -2492,11 +2493,9 @@ class TestLazyGetDecompositionModel:
         )
 
     def test_full_svd_with_signal_chunked_data(self):
-        """svd_solver='full' works even when the signal dimension is chunked.
+        """svd_solver='full' is deprecated but still functional.
 
-        da.linalg.svd (TSQR) requires chunking in one dimension only.  HyperSpy
-        should transparently rechunk the signal axis to a single chunk before
-        calling svd, so users never need to think about this.
+        Emits a VisibleDeprecationWarning pointing to 'randomized'.
         """
         import dask.array as da
 
@@ -2506,15 +2505,18 @@ class TestLazyGetDecompositionModel:
             chunks=(4, 3, 15),  # signal dim chunked
         )
         s = Signal1D(data).as_lazy()
-        # Should not raise NotImplementedError
-        s.decomposition(
-            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
-        )
+        with pytest.warns(
+            VisibleDeprecationWarning, match="svd_solver='full' is deprecated"
+        ):
+            s.decomposition(
+                algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
+            )
         lr = s.learning_results
         assert isinstance(lr.factors, da.Array)
         assert isinstance(lr.loadings, da.Array)
         model = s.get_decomposition_model()
         assert model._lazy
+        assert model.data.shape == s.data.shape
         assert model.data.shape == s.data.shape
 
 
