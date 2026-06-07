@@ -708,16 +708,7 @@ class TestDataPreservation:
         """Run decomposition and assert the signal's data is preserved."""
         saved = self.s.data.copy()
         self.s.decomposition(output_dimension=3, **decomp_kwargs)
-        # copy=False with Poisson noise permanently modifies eager data
-        # (the lazy path always saves/restores the dask reference).
-        poisson_no_copy = decomp_kwargs.get(
-            "normalize_poissonian_noise"
-        ) and not decomp_kwargs.get("copy", True)
-        if poisson_no_copy and not self.s._lazy:
-            with pytest.raises(AssertionError):
-                np.testing.assert_array_equal(self.s.data, saved)
-        else:
-            np.testing.assert_array_equal(self.s.data, saved)
+        np.testing.assert_allclose(self.s.data, saved, rtol=1e-14)
 
     def test_unmasked_default(self):
         self._save_and_assert()

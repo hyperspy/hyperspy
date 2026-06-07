@@ -995,6 +995,28 @@ class MVA:
                     )
 
         finally:
+            # Reverse Keenan-Kotula scaling when copy=False (the data
+            # was modified in-place with no backup copy).  We reverse
+            # mathematically using the stored sqrt(aG) / sqrt(bH)
+            # before folding so the data stays 2-D.
+            if normalize_poissonian_noise and not copy:
+                nav_size = self.axes_manager.navigation_size
+                sig_size = self.axes_manager.signal_size
+                if isinstance(navigation_mask, slice):
+                    nm = np.ones(nav_size, dtype=bool)
+                else:
+                    nm = ~navigation_mask
+                if isinstance(signal_mask, slice):
+                    sm = np.ones(sig_size, dtype=bool)
+                else:
+                    sm = ~signal_mask
+                combined = nm[:, np.newaxis] & sm[np.newaxis, :]
+                coeff = (
+                    self._root_aG.ravel()[:, np.newaxis]
+                    * self._root_bH.ravel()[np.newaxis, :]
+                )
+                self.data[combined] *= coeff[combined]
+
             if self._unfolded4decomposition:
                 self.fold()
                 self._unfolded4decomposition = False
