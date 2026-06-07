@@ -199,26 +199,25 @@ The following keyboard shortcuts are available when the 1D signal figure is in f
 
 .. table:: Keyboard shortcuts available on the signal figure of 1D signal data
 
-    =============================   =============================================
-    key                             function
-    =============================   =============================================
-    e                               Switch second pointer on/off
-    Ctrl + Arrows \*                 Change coordinates for dimensions 0 and 1
-    Shift + Arrows                  Change coordinates for dimensions 2 and 3
-    Alt + Arrows \*                  Change coordinates for dimensions 4 and 5
-                                    (only for 5+ dimensional datasets)
-    PageUp / fn+up                  Increase step size
-    PageDown / fn+down              Decrease step size
-    ``+``                           Increase pointer size (navigator image)
-    ``-``                           Decrease pointer size (navigator image)
-    x / c                           Increase / decrease rectangle widget x-size
-    y / u                           Increase / decrease rectangle widget y-size
-    ``l``                           Toggle y-axis between log and linear scale
-    Shift + click                   Jump to clicked coordinates
-                                    (configurable via ``key_jump_to_click``)
-    =============================   =============================================
+    ============================   ==============================================
+    key                            function
+    ============================   ==============================================
+    ``e``                          Switch second pointer on/off
+    ``Ctrl`` + Arrows [1]_         Change coordinates for dimensions 0 and 1
+    ``Shift`` + Arrows             Change coordinates for dimensions 2 and 3
+    ``Alt`` + Arrows [1]_          Change coordinates for dimensions 4 and 5
+                                   (5+ dimensional datasets only)
+    ``PageUp`` / ``fn+up``         Increase step size
+    ``PageDown`` / ``fn+down``     Decrease step size
+    ``+``                          Increase pointer size (navigator image)
+    ``-``                          Decrease pointer size (navigator image)
+    ``x`` / ``c``                  Increase / decrease rectangle widget x-size
+    ``y`` / ``u``                  Increase / decrease rectangle widget y-size
+    ``l``                          Toggle y-axis between log and linear scale
+    ``Shift`` + click              Jump to clicked coordinates (configurable)
+    ============================   ==============================================
 
-\* On macOS: Option (⌥) + arrows for dims 0–1, Option+Shift (⌥⇧) + arrows for dims 4–5.
+.. [1] On macOS: Option (⌥) + Arrows for dims 0–1, Option+Shift (⌥⇧) + Arrows for dims 4–5.
 
 .. _shortcuts_model_plots:
 
@@ -296,24 +295,23 @@ The following keyboard shortcuts are available when the 2D signal figure is in f
 
 .. table:: Keyboard shortcuts available on the signal figure of 2D signal data
 
-    =============================   =============================================
-    key                             function
-    =============================   =============================================
-    Ctrl + Arrows \*                 Change coordinates for dimensions 0 and 1
-    Shift + Arrows                  Change coordinates for dimensions 2 and 3
-    Alt + Arrows \*                  Change coordinates for dimensions 4 and 5
-                                    (only for 5+ dimensional datasets)
-    PageUp / fn+up                  Increase step size
-    PageDown / fn+down              Decrease step size
-    ``+``                           Increase pointer size (navigator image)
-    ``-``                           Decrease pointer size (navigator image)
-    ``h``                           Launch the contrast adjustment tool
-    ``l``                           Toggle intensity norm between log and linear
-    Shift + click                   Jump to clicked coordinates
-                                    (configurable via ``key_jump_to_click``)
-    =============================   =============================================
+    ============================   ==============================================
+    key                            function
+    ============================   ==============================================
+    ``Ctrl`` + Arrows [2]_         Change coordinates for dimensions 0 and 1
+    ``Shift`` + Arrows             Change coordinates for dimensions 2 and 3
+    ``Alt`` + Arrows [2]_          Change coordinates for dimensions 4 and 5
+                                   (5+ dimensional datasets only)
+    ``PageUp`` / ``fn+up``         Increase step size
+    ``PageDown`` / ``fn+down``     Decrease step size
+    ``+``                          Increase pointer size (navigator image)
+    ``-``                          Decrease pointer size (navigator image)
+    ``h``                          Launch the contrast adjustment tool
+    ``l``                          Toggle intensity norm between log and linear
+    ``Shift`` + click              Jump to clicked coordinates (configurable)
+    ============================   ==============================================
 
-\* On macOS: Option (⌥) + arrows for dims 0–1, Option+Shift (⌥⇧) + arrows for dims 4–5.
+.. [2] On macOS: Option (⌥) + Arrows for dims 0–1, Option+Shift (⌥⇧) + Arrows for dims 4–5.
 
 All keys above are configurable via preferences (see
 :ref:`plot preferences <configuring-hyperspy-label>`, ``Plot`` section).

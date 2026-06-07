@@ -7,12 +7,11 @@ Improve keyboard shortcut support across all platforms:
   (both modifiers are consistent across all macOS backends).  ``super``
   (Command ⌘) is excluded from macOS modifier choices because the OS
   captures ⌘+arrow for Mission Control before any backend sees it.
-- All previously hardcoded drawing shortcuts (``e``, ``h``, ``l``,
-  ``+``, ``-``, ``x``, ``c``, ``y``, ``u``, ``PageUp``, ``PageDown``)
-  are now configurable via plot preferences.
+- All previously hardcoded drawing shortcuts are now configurable via plot
+  preferences (e.g. e, h, l, +, -, x, c, y, u, PageUp, PageDown).
 - Add ``key_jump_to_click`` and ``key_rotation_snap`` preferences for
-  widget interaction: ``shift``+click jumps the cursor/span to the
-  pointer position, ``shift``+drag snaps rotation to 30° increments.
+  widget interaction: ``shift`` + click jumps the cursor/span to the
+  pointer position, ``shift`` + drag snaps rotation to 30° increments.
 - Log-scale toggle (``l`` key) is now configurable independently of the
   matplotlib default (which HyperSpy already suppresses); users can
   remap it without affecting matplotlib behaviour.
