@@ -1,0 +1,5 @@
+Add ``scripts/validate-changelog.py`` to validate changelog fragment filenames
+and ``towncrier --draft`` locally before pushing, catching errors that would
+otherwise only surface in CI. Expand ``AGENTS.md`` and
+``upcoming_changes/AGENTS.md`` with pre-CI validation steps and common
+mistake examples.
