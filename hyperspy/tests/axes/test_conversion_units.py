@@ -495,3 +495,33 @@ class TestAxesManager:
     def test_initialize_UnitConversion_bug(self):
         uc = UnitConversion(units="m", scale=1.0, offset=0)
         assert uc.offset == 0
+
+
+class TestUnitConversionEdgeCases:
+    """Test error conditions in UnitConversion class."""
+
+    def test_get_value_from_value_with_units_undefined_units(self):
+        """Test error when units are undefined."""
+        uc = UnitConversion(units=t.Undefined)
+
+        with pytest.raises(ValueError, match="Units conversion can't be perfomed"):
+            uc._get_value_from_value_with_units("5nm")
+
+
+class TestUniformAxisQuantityProperties:
+    """Test quantity property edge cases."""
+
+    def test_quantity_property_errors(self):
+        """Test errors in quantity property methods."""
+        axis = UniformDataAxis(size=10, scale=1, offset=0, units="nm")
+
+        # Test invalid attribute
+        with pytest.raises(
+            ValueError, match="can only take the `scale` or the `offset` value"
+        ):
+            axis._get_quantity("invalid")
+
+        with pytest.raises(
+            ValueError, match="can only take the `scale` or the `offset` value"
+        ):
+            axis._set_quantity(5, "invalid")

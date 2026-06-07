@@ -89,6 +89,64 @@ keyword arguments as follows:
     on_index_changed4_called
     Index: 4
 
+Axis change events
+------------------
+
+The ``axis_changed`` event is a unified event that triggers whenever any axis 
+property changes. This includes changes to name, units, scale, offset, axis array, 
+navigation state, binning state, and any other axis properties. This event is 
+available for all axis types:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.random.random((10,100)))
+    >>> axis = s.axes_manager.signal_axes[0]
+    >>> def on_axis_changed(obj):
+    ...    print(f"Axis '{obj.name}' has changed!")
+    ...    print(f"Current scale: {getattr(obj, 'scale', 'N/A')}")
+    ...    print(f"Current units: {obj.units}")
+
+    >>> axis.events.axis_changed.connect(on_axis_changed)
+    >>> axis.name = "Energy"
+    Axis 'Energy' has changed!
+    Current scale: 1.0
+    Current units: <undefined>
+    >>> axis.units = "eV"
+    Axis 'Energy' has changed!
+    Current scale: 1.0
+    Current units: eV
+
+For :class:`~.axes.UniformDataAxis`, changes to scale and offset also trigger 
+the event:
+
+.. code-block:: python
+
+    >>> uniform_axis = hs.axes.UniformDataAxis(size=100, scale=0.1, offset=0)
+    >>> uniform_axis.events.axis_changed.connect(on_axis_changed)
+    >>> uniform_axis.scale = 0.2
+    Axis '<undefined>' has changed!
+    Current scale: 0.2
+    Current units: <undefined>
+    >>> uniform_axis.offset = 10.0
+    Axis '<undefined>' has changed!
+    Current scale: 0.2
+    Current units: <undefined>
+
+For :class:`~.axes.FunctionalDataAxis`, changes to expression parameters also 
+trigger the event:
+
+.. code-block:: python
+
+    >>> func_axis = hs.axes.FunctionalDataAxis(size=10, expression="x ** power", power=2)
+    >>> func_axis.events.axis_changed.connect(on_axis_changed)
+    >>> func_axis.power = 3  # This will trigger the axis_changed event
+    Axis '<undefined>' has changed!
+    Current scale: N/A
+    Current units: <undefined>
+
+The ``axis_changed`` event provides a unified way to monitor all types of axis 
+changes without needing to connect to multiple specific events.
+
 Suppressing events
 ------------------
 
