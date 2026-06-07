@@ -130,10 +130,7 @@ class Polynomial(Expression):
             y_parts = []
             for idx_start, idx_end in indices_list:
                 x_parts.append(axis.axis[idx_start:idx_end])
-                if sig._lazy:
-                    y_parts.append(sig._get_current_data()[idx_start:idx_end])
-                else:
-                    y_parts.append(sig._get_current_data()[idx_start:idx_end])
+                y_parts.append(sig._get_current_data()[idx_start:idx_end])
             return np.concatenate(x_parts), np.concatenate(y_parts, axis=-1)
 
         if only_current is True:
@@ -163,6 +160,8 @@ class Polynomial(Expression):
                     y_parts.append(data[idx_start:idx_end, ...])
                 x_data = np.concatenate(x_parts)
                 y_data = np.concatenate(y_parts, axis=0)
+                if signal._lazy:
+                    y_data = y_data.compute()
                 fit = np.polyfit(x_data, y_data, self.get_polynomial_order())
                 if axis.index_in_array > 0:
                     fit = fit.T

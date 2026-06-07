@@ -1,7 +1,7 @@
 channels:
 - conda-forge
 dependencies:
-- dask-core >=2023.2.1
+- dask-core >=2024.12.0
 - dill
 - importlib-metadata
 - h5py
