@@ -198,3 +198,9 @@ Before claiming any task is complete, verify ALL of the following:
 ### HyperSpy-Specific
 - [ ] All axis operations respect the NumPy-vs-display order convention (see "Critical Concept" above)
 - [ ] Prefer HyperSpy-native methods over raw NumPy on `.data`
+
+### Pre-CI Validation (run BEFORE pushing)
+- [ ] `python scripts/validate-changelog.py` passes — validates fragment filenames and `towncrier --draft`
+- [ ] Doc cross-references verified: any new `:meth:`, `:class:`, `:func:`, or `:doc:` links use correct module paths and resolve against the current codebase (run `cd doc && make html` to catch broken refs before CI)
+
+<!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
