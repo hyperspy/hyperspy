@@ -525,11 +525,10 @@ class MVA:
             Number of components to keep/calculate.
             Default is None, i.e. ``min(data.shape)``.
         centre : None or str {``"navigation"``, ``"signal"``}, default None
-            * If None, the data is not centered prior to decomposition.
-            * If "navigation", the data is centered along the navigation axis.
-              Only used by the "SVD" algorithm.
-            * If "signal", the data is centered along the signal axis.
-              Only used by the "SVD" algorithm.
+            If None, the data is not centered prior to decomposition.
+            If ``"navigation"``, the data is centered along the navigation
+            axis.  If ``"signal"``, centered along the signal axis.
+            Only used by the ``"SVD"`` algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only used by the "SVD" algorithm.
@@ -573,11 +572,10 @@ class MVA:
 
             For cupy arrays, only "full" is supported.
         copy : bool, default False
-            .. deprecated:: 2.5
-               This parameter is deprecated and will be removed in a future
-               release.  Pre-treatment data modifications (Poisson noise
-               normalization, centering) are now reversed mathematically
-               after decomposition, so explicit copying is no longer needed.
+            (**Deprecated** — will be removed in a future release.
+            Pre-treatment data modifications such as Poisson noise
+            normalization and centering are now reversed mathematically
+            after decomposition, so explicit copying is no longer needed.)
 
             If ``True``, stores a copy of the data before any pre-treatments
             in ``s._data_before_treatments``.  Passing ``True`` emits a

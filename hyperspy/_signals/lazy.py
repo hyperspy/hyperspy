@@ -1706,14 +1706,12 @@ class LazySignal(signals.BaseSignal):
               (each chunk is processed serially rather than through a single
               task graph); requires scikit-learn.
 
-            * ``'full'``: exact full SVD via ``dask.array.linalg.svd``
-              (TSQR algorithm).
-
-              .. deprecated:: 2.5
-                 ``svd_solver='full'`` is deprecated and will be removed
-                 in HyperSpy 3.0.  Use ``svd_solver='randomized'`` instead,
-                 which gives identical results for truncated SVD with
-                 substantially lower memory usage.
+            * ``'full'`` (**deprecated**): exact full SVD via
+              ``dask.array.linalg.svd`` (TSQR algorithm).
+              ``svd_solver='full'`` is deprecated and will be removed
+              in HyperSpy 3.0.  Use ``svd_solver='randomized'`` instead,
+              which gives identical results for truncated SVD with
+              substantially lower memory usage.
         **kwargs
             passed to the partial_fit/fit functions.
 
