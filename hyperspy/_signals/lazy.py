@@ -2086,8 +2086,19 @@ class LazySignal(signals.BaseSignal):
 
             # GET ALREADY CALCULATED RESULTS
             if algorithm == "SVD" and svd_solver == "incremental":
-                explained_variance = obj.explained_variance_
-                explained_variance_ratio = obj.explained_variance_ratio_
+                # ISVD inherits explained_variance_ / explained_variance_ratio_
+                # from sklearn's IncrementalPCA, which computes them assuming
+                # centred PCA (S²/(N-1) for variance, S²/Σ(col_var·N) for
+                # ratio).  For plain SVD without centring, the correct formulas
+                # are S²/N (matching every other decomposition path in
+                # HyperSpy) and the ratio is computed downstream by
+                # _store_decomposition_results via _compute_explained_variance_ratio.
+                S = obj.singular_values_
+                n_total = obj.n_samples_seen_
+                explained_variance = S**2 / n_total
+                explained_variance_ratio = (
+                    None  # computed by _store_decomposition_results
+                )
                 factors = obj.components_.T
                 if centre is None:
                     mean = None

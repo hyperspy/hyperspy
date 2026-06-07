@@ -772,3 +772,107 @@ class TestDataPreservation:
         sig_mask = np.zeros(48, dtype=bool)
         sig_mask[:5] = True
         self._save_and_assert(signal_mask=sig_mask, reproject="both")
+
+
+class TestPoissonNormalizationQuality:
+    """Verify that normalize_poissonian_noise=True improves decomposition quality
+    on data with Poisson noise, for eager (non-lazy) SVD only."""
+
+    def test_poisson_normalization_improves_reconstruction(self):
+        """normalize_poissonian_noise=True yields lower reconstruction error
+        than plain SVD on Poisson-noisy low-rank data.
+
+        The test creates an exact rank-5 dataset, adds Poisson noise, then
+        decomposes with and without Keenan-Kotula variance-stabilizing
+        normalization.  The normalized path should recover the underlying
+        low-rank signal more accurately.
+        """
+        rng = np.random.default_rng(42)
+        nav, sig, rank = 120, 64, 5
+
+        # Rank-5 noiseless signal (positive, like EELS/EDX counts)
+        U = np.abs(rng.standard_normal((nav, rank)))
+        V = np.abs(rng.standard_normal((sig, rank)))
+        X_clean = U @ V.T
+        X_clean = X_clean * 100 / X_clean.mean()
+
+        X_noisy = np.random.poisson(X_clean).astype(float)
+
+        # All-different 3D dimensions: 8×15 = 120 nav, 64 sig
+        shape_3d = (8, 15, 64)
+
+        s_norm = signals.Signal1D(X_noisy.copy().reshape(shape_3d))
+        s_norm.decomposition(
+            algorithm="SVD",
+            output_dimension=rank,
+            normalize_poissonian_noise=True,
+            print_info=False,
+        )
+        recon_norm = s_norm.get_decomposition_model(components=rank).data
+        err_norm = np.linalg.norm(recon_norm.ravel() - X_clean.ravel())
+
+        s_plain = signals.Signal1D(X_noisy.copy().reshape(shape_3d))
+        s_plain.decomposition(
+            algorithm="SVD",
+            output_dimension=rank,
+            normalize_poissonian_noise=False,
+            print_info=False,
+        )
+        recon_plain = s_plain.get_decomposition_model(components=rank).data
+        err_plain = np.linalg.norm(recon_plain.ravel() - X_clean.ravel())
+
+        assert err_norm < err_plain, (
+            f"Poisson normalization error {err_norm:.4f} >= "
+            f"plain SVD error {err_plain:.4f} — "
+            f"normalize_poissonian_noise=True should improve reconstruction"
+        )
+
+
+class TestLazyPoissonNormalizationQuality:
+    """Lazy variant: normalize_poissonian_noise=True improves reconstruction
+    of Poisson-noisy low-rank data with lazy (dask-backed) signals.
+
+    Uses ``svd_solver='full'`` (exact TSQR) to avoid the stochasticity of
+    the randomized solver, which can mask the normalization benefit.
+    """
+
+    def test_poisson_normalization_improves_reconstruction(self):
+        rng = np.random.default_rng(42)
+        nav, sig, rank = 120, 64, 5
+
+        U = np.abs(rng.standard_normal((nav, rank)))
+        V = np.abs(rng.standard_normal((sig, rank)))
+        X_clean = U @ V.T
+        X_clean = X_clean * 100 / X_clean.mean()
+
+        X_noisy = np.random.poisson(X_clean).astype(float)
+
+        shape_3d = (8, 15, 64)
+
+        s_norm = signals.Signal1D(X_noisy.copy().reshape(shape_3d)).as_lazy()
+        s_norm.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=rank,
+            normalize_poissonian_noise=True,
+            print_info=False,
+        )
+        recon_norm = s_norm.get_decomposition_model(components=rank).data.compute()
+        err_norm = np.linalg.norm(recon_norm.ravel() - X_clean.ravel())
+
+        s_plain = signals.Signal1D(X_noisy.copy().reshape(shape_3d)).as_lazy()
+        s_plain.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=rank,
+            normalize_poissonian_noise=False,
+            print_info=False,
+        )
+        recon_plain = s_plain.get_decomposition_model(components=rank).data.compute()
+        err_plain = np.linalg.norm(recon_plain.ravel() - X_clean.ravel())
+
+        assert err_norm < err_plain, (
+            f"Poisson normalization error {err_norm:.4f} >= "
+            f"plain SVD error {err_plain:.4f} — "
+            f"normalize_poissonian_noise=True should improve reconstruction"
+        )

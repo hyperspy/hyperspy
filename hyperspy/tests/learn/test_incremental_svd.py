@@ -18,9 +18,10 @@
 
 """Regression tests for hyperspy.learn.incremental_svd.ISVD.
 
-The ISVD class disables sklearn IncrementalPCA centering by overriding the
-mean_ property.  These tests verify that the centering override keeps working
-correctly if sklearn's internal implementation changes.  A failure here is a
+The ISVD class implements plain incremental SVD (no centering) by
+overriding C{partial_fit} of C{sklearn.decomposition.IncrementalPCA}.
+These tests verify that the centering override keeps working correctly
+if sklearn's internal implementation changes.  A failure here is a
 signal to audit the ISVD implementation against the new sklearn version.
 """
 
@@ -33,13 +34,13 @@ from hyperspy.learn.incremental_svd import ISVD
 
 
 class TestISVDNoCentering:
-    """Verify that ISVD does not subtract the column mean from the data."""
+    """Verify that ISVD computes plain SVD without subtracting the column mean."""
 
     def setup_method(self):
         rng = np.random.default_rng(0)
-        # Data with a large constant offset so that centering would
-        # produce clearly different results.
-        self.X = rng.standard_normal((200, 40)) + 50.0
+        U = rng.standard_normal((200, 5))
+        V = rng.standard_normal((40, 5))
+        self.X = U @ V.T  # exact rank-5 data
         self.n_components = 5
 
     def _fit_isvd(self, X, n_components, n_chunks=4):
@@ -48,8 +49,10 @@ class TestISVDNoCentering:
             isvd.partial_fit(chunk)
         return isvd
 
+    # ---------- mean_ property tests ----------
+
     def test_mean_property_is_zeros_after_fit(self):
-        """After fitting on shifted data, mean_ must read back as all zeros.
+        """After fitting, mean_ must read back as all zeros.
 
         If sklearn changes how IncrementalPCA stores or uses mean_ internally
         this test will catch it before silent numerical breakage occurs.
@@ -81,6 +84,8 @@ class TestISVDNoCentering:
         isvd.mean_ = 0.0
         assert isvd.mean_ == 0.0
 
+    # ---------- centering tests ----------
+
     def test_transform_does_not_center(self):
         """ISVD.transform(X) must NOT subtract the column mean.
 
@@ -90,15 +95,17 @@ class TestISVDNoCentering:
         """
         from sklearn.decomposition import IncrementalPCA
 
-        isvd = self._fit_isvd(self.X, self.n_components)
-        isvd_loadings = isvd.transform(self.X)
+        X_offset = self.X + 50.0
+
+        isvd = self._fit_isvd(X_offset, self.n_components)
+        isvd_loadings = isvd.transform(X_offset)
 
         # IncrementalPCA centers the data, so its loadings are approximately
         # zero-mean along each component.
         ipca = IncrementalPCA(n_components=self.n_components)
-        for chunk in np.array_split(self.X, 4):
+        for chunk in np.array_split(X_offset, 4):
             ipca.partial_fit(chunk)
-        ipca_loadings = ipca.transform(self.X)
+        ipca_loadings = ipca.transform(X_offset)
 
         # IncrementalPCA loadings are near-zero mean (centered output).
         np.testing.assert_allclose(
@@ -115,27 +122,26 @@ class TestISVDNoCentering:
             "large mean offset — centering appears to be active, which is wrong."
         )
 
-    def test_reconstruction_consistent_with_numpy_svd(self):
-        """The subspace spanned by ISVD components matches numpy SVD.
+    # ---------- reconstruction quality test ----------
 
-        ISVD is an incremental approximation so factors/loadings may differ
-        in sign and order, but the low-rank reconstruction X ≈ L @ F.T should
-        agree with the numpy reference up to a generous tolerance.
+    def test_reconstruction_consistent_with_numpy_svd(self):
+        """The subspace spanned by ISVD matches numpy SVD near-exactly.
+
+        For exact low-rank data, the incremental (batched) SVD algorithm
+        preserves the subspace, so the rank-k reconstruction should match
+        numpy's full SVD reconstruction to near machine precision.
         """
         isvd = self._fit_isvd(self.X, self.n_components)
-        isvd_factors = isvd.components_.T  # (n_features, k)
-        isvd_loadings = isvd.transform(self.X)  # (n_samples, k)
-        isvd_recon = isvd_loadings @ isvd_factors.T
+        isvd_recon = isvd.transform(self.X) @ isvd.components_
 
         # Numpy SVD reference (no centering).
         _, S, Vt = np.linalg.svd(self.X, full_matrices=False)
         Vt_k = Vt[: self.n_components]
-        # Project X onto the top-k right singular vectors and back.
         numpy_recon = (self.X @ Vt_k.T) @ Vt_k
 
-        # The two reconstructions should be close; ISVD accumulates small
-        # floating-point errors so we allow a loose tolerance.
-        np.testing.assert_allclose(isvd_recon, numpy_recon, atol=2.0, rtol=0.05)
+        np.testing.assert_allclose(isvd_recon, numpy_recon, atol=1e-10)
+
+    # ---------- explained variance tests ----------
 
     def test_explained_variance_ratio_sums_to_at_most_one(self):
         """explained_variance_ratio_ values must be in (0, 1] and sum ≤ 1."""
