@@ -57,6 +57,7 @@ processing the `pypi data <https://packaging.python.org/guides/analyzing-pypi-pa
 are available online:
 
 * `pepy.tech <https://pepy.tech/project/hyperspy>`_
+* `libraries.io <https://libraries.io/pypi/hyperspy>`_
 * `pypistats.org <https://pypistats.org/packages/hyperspy>`_
 
 HTML Representations

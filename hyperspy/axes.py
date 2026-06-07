@@ -2439,109 +2439,58 @@ class AxesManager(t.HasTraits):
         string += ")"
         return string
 
-    def __repr__(self):
-        text = "<Axes manager, axes: %s>\n" % self._get_dimension_str()
-        ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
-        ax_signature_non_uniform = "% 16s | %6g | %6s | non-uniform axis | %6s "
-        signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
-        text += signature % ("Name", "size", "index", "offset", "scale", "units")
-        text += "\n"
-        text += signature % ("=" * 16, "=" * 6, "=" * 6, "=" * 7, "=" * 7, "=" * 6)
+    def _build_nav_table(self):
+        from prettytable import PrettyTable
 
-        def axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform):
-            if ax.is_uniform:
-                return ax_signature_uniform % (
-                    str(ax.name)[:16],
-                    ax.size,
-                    str(ax.index),
-                    ax.offset,
-                    ax.scale,
-                    ax.units,
-                )
-            else:
-                return ax_signature_non_uniform % (
-                    str(ax.name)[:16],
-                    ax.size,
-                    str(ax.index),
-                    ax.units,
-                )
-
+        table = PrettyTable()
+        table.field_names = ["Name", "size", "index", "offset", "scale", "units"]
         for ax in self.navigation_axes:
-            text += "\n"
-            text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
-        text += "\n"
-        text += signature % ("-" * 16, "-" * 6, "-" * 6, "-" * 7, "-" * 7, "-" * 6)
-        for ax in self.signal_axes:
-            text += "\n"
-            text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
-        if self.ragged:
-            text += "\n"
-            text += "     Ragged axis |               Variable length"
+            if ax.is_uniform:
+                offset, scale = ax.offset, ax.scale
+            else:
+                offset, scale = "non-uniform", "non-uniform"
+            table.add_row([ax.name, ax.size, ax.index, offset, scale, ax.units])
+        return table
 
+    def _build_signal_table(self):
+        from prettytable import PrettyTable
+
+        table = PrettyTable()
+        table.field_names = ["Name", "size", "offset", "scale", "units"]
+        for ax in self.signal_axes:
+            if ax.is_uniform:
+                offset, scale = ax.offset, ax.scale
+            else:
+                offset, scale = "non-uniform", "non-uniform"
+            table.add_row([ax.name, ax.size, offset, scale, ax.units])
+        return table
+
+    def __repr__(self):
+        text = "<Axes manager, axes: %s>" % self._get_dimension_str()
+        if self.navigation_axes:
+            text += "\nNavigation axes:\n" + str(self._build_nav_table())
+        if self.signal_axes:
+            text += "\nSignal axes:\n" + str(self._build_signal_table())
+        if self.ragged:
+            text += "\nRagged axis | Variable length"
         return text
 
     def _repr_html_(self):
+        html_attrs = {
+            "style": "width:100%; border-collapse:collapse; text-align:center;",
+            "border": "1",
+        }
         text = (
-            "<style>\n"
-            "table, th, td {\n\t"
-            "border: 1px solid black;\n\t"
-            "border-collapse: collapse;\n}"
-            "\nth, td {\n\t"
-            "padding: 5px;\n}"
-            "\n</style>"
+            "<p><b>&lt; Axes manager, axes: %s &gt;</b></p>" % self._get_dimension_str()
         )
-        text += (
-            "\n<p><b>< Axes manager, axes: %s ></b></p>\n" % self._get_dimension_str()
-        )
-
-        def format_row(*args, tag="td", bold=False):
-            if bold:
-                signature = "\n<tr class='bolder_row'> "
-            else:
-                signature = "\n<tr> "
-            signature += " ".join(("{}" for _ in args)) + " </tr>"
-            return signature.format(
-                *map(lambda x: "\n<" + tag + ">{}</".format(x) + tag + ">", args)
-            )
-
-        def axis_repr(ax):
-            index = ax.index if ax.navigate else ""
-            if ax.is_uniform:
-                return format_row(
-                    ax.name, ax.size, index, ax.offset, ax.scale, ax.units
-                )
-            else:
-                return format_row(
-                    ax.name,
-                    ax.size,
-                    index,
-                    "non-uniform axis",
-                    "non-uniform axis",
-                    ax.units,
-                )
-
         if self.navigation_axes:
-            text += "<table style='width:100%'>\n"
-            text += format_row(
-                "Navigation axis name",
-                "size",
-                "index",
-                "offset",
-                "scale",
-                "units",
-                tag="th",
-            )
-            for ax in self.navigation_axes:
-                text += axis_repr(ax)
-            text += "</table>\n"
+            text += "<p><b>Navigation axes</b></p>"
+            text += self._build_nav_table().get_html_string(attributes=html_attrs)
         if self.signal_axes:
-            text += "<table style='width:100%'>\n"
-            text += format_row(
-                "Signal axis name", "size", "", "offset", "scale", "units", tag="th"
-            )
-            for ax in self.signal_axes:
-                text += axis_repr(ax)
-            text += "</table>\n"
+            text += "<p><b>Signal axes</b></p>"
+            text += self._build_signal_table().get_html_string(attributes=html_attrs)
+        if self.ragged:
+            text += "<p>Ragged axis | Variable length</p>"
         return text
 
     @property

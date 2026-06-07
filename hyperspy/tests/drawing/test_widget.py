@@ -193,6 +193,28 @@ def test_adding_removing_resizers_on_pick_event():
     assert not widget1._resizers_on
 
 
+class TestGuardsPreventRecursion:
+    def test_drag_guard_prevents_redundant_navigate(self):
+        s = signals.Signal1D(np.arange(100).reshape(10, 10))
+        s.axes_manager[0].name = "x"
+        s.axes_manager[1].name = "y"
+        s.plot()
+
+        r = roi.SpanROI(left=3.0, right=7.0)
+        w = r.add_widget(s, axes=(s.axes_manager[1],))
+
+        # Verify the guard prevents _on_navigate from updating position
+        w._updating_indices_from_drag = True
+        old_pos = w.position[0]
+
+        w._on_navigate(s.axes_manager)
+        assert w.position[0] == old_pos
+
+        # Verify the guard resets between calls
+        w._updating_indices_from_drag = False
+        assert w._updating_indices_from_drag is False
+
+
 class TestPolygonWidgetCleanup:
     def test_polygon_selector_cleaned_up_on_set_off(self):
         from hyperspy.drawing._widgets.polygon import PolygonWidget
