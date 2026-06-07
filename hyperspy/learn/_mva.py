@@ -684,9 +684,10 @@ class MVA:
         self._check_navigation_mask(navigation_mask)
         self._check_signal_mask(signal_mask)
 
-        # Backup the original data (on by default to
-        # mimic previous behaviour)
-        if copy:
+        # Backup the original data before applying pre-treatments.
+        # Only needed when Poisson noise normalization will modify data
+        # (the reversal for copy=False is handled mathematically).
+        if copy and normalize_poissonian_noise:
             self._data_before_treatments = self.data.copy()
 
         # set the output target (peak results or not?)
@@ -1022,8 +1023,9 @@ class MVA:
                 self._unfolded4decomposition = False
             self.learning_results.__dict__.update(target.__dict__)
 
-            # Undo any pre-treatments by restoring the copied data
-            if copy:
+            # Undo Poisson pre-treatment by restoring the copied data.
+            # (copy=False + Poisson is handled by mathematical reversal above.)
+            if copy and normalize_poissonian_noise:
                 self.undo_treatments()
 
         # Print details about the decomposition we just performed
