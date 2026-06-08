@@ -34,21 +34,6 @@ class Smoothing(t.HasTraits):
     line_color = t.Str("blue")
     differential_order = t.Int(0)
 
-    @property
-    def line_color_rgb(self):
-        if hasattr(self, "line_color"):
-            try:
-                # PyQt and WX
-                return np.array(self.line_color.Get()) / 255.0
-            except AttributeError:
-                try:
-                    # PySide
-                    return np.array(self.line_color.getRgb()) / 255.0
-                except BaseException:
-                    return matplotlib.colors.to_rgb(self.line_color)
-        else:
-            return matplotlib.colors.to_rgb(self.line_color)
-
     def __init__(self, signal):
         super().__init__()
         self.ax = None
@@ -58,6 +43,10 @@ class Smoothing(t.HasTraits):
         self.single_spectrum = self.signal.get_current_signal().deepcopy()
         self.axis = self.signal.axes_manager.signal_axes[0].axis
         self.plot()
+
+    @property
+    def line_color_rgb(self):
+        return matplotlib.colors.to_rgb(self.line_color)
 
     def plot(self):
         if self.signal._plot is None or not self.signal._plot.is_active:
