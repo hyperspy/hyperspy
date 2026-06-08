@@ -120,14 +120,27 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
-    backend = t.Enum(
-        ["matplotlib", "anyplotlib"],
+    backend = t.Str(
+        "matplotlib",
         label="Plotting backend",
         desc=(
-            "Active plotting backend.  'matplotlib' is the default. "
-            "'anyplotlib' requires the anyplotlib package and a Jupyter environment."
+            "Active plotting backend ('matplotlib' by default). "
+            "Other backends must be registered via the 'hyperspy.backends' "
+            "entry-point group in their package's pyproject.toml."
         ),
     )
+
+    @t.observe("backend")
+    def _validate_backend(self, change):
+        from hyperspy.drawing.backends._registry import available_backends
+
+        known = available_backends()
+        if change["new"] not in known:
+            raise t.TraitError(
+                f"{change['new']!r} is not a registered plotting backend. "
+                f"Available: {known}."
+            )
+
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy

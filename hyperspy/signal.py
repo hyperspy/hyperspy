@@ -3019,8 +3019,6 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         %s
         %s
         """
-        import matplotlib.pyplot as plt
-
         if self.axes_manager.ragged:
             raise RuntimeError("Plotting ragged signal is not supported.")
         if self._plot is not None:
@@ -3040,7 +3038,6 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             else:
                 navigator = "slider"
 
-        from hyperspy.defaults_parser import preferences
         from hyperspy.drawing.backends import get_backend
 
         _backend = get_backend()
@@ -3050,44 +3047,21 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             and axes_manager.navigation_dimension > 0
             and axes_manager.signal_dimension in [1, 2]
             and navigator not in (None, "slider")
-            and hasattr(_backend, "create_combined_figure_panels")
         ):
-            # anyplotlib combined layout: signal + navigator share one Figure widget
-            nav_proxy, signal_proxy = _backend.create_combined_figure_panels()
-            kwargs["fig"] = signal_proxy
-            kwargs.setdefault("navigator_kwds", {})["fig"] = nav_proxy
-        elif (
-            "fig" not in kwargs.keys()
-            and preferences.Plot.use_subfigure
-            and axes_manager.navigation_dimension > 0
-            and axes_manager.signal_dimension in [1, 2]
-        ):
-            # Create default subfigure
-            fig = plt.figure(figsize=(15, 7), layout="constrained")
-            subfigs = fig.subfigures(1, 2)
-            kwargs["fig"] = subfigs[1]
-            kwargs["navigator_kwds"] = dict(fig=subfigs[0])
+            panels = _backend.create_combined_figure_panels()
+            if panels is not None:
+                nav_fig, signal_fig = panels
+                kwargs["fig"] = signal_fig
+                kwargs.setdefault("navigator_kwds", {})["fig"] = nav_fig
 
         if axes_manager.signal_dimension == 0:
             if axes_manager.navigation_dimension == 0:
                 # 0d signal without navigation axis: don't make a figure
                 # and instead, we display the value
                 return
-            from hyperspy.drawing.backends.mpl.mpl_he import MPL_HyperExplorer
-
-            self._plot = MPL_HyperExplorer()
-        elif axes_manager.signal_dimension == 1:
-            # Hyperspectrum
-            from hyperspy.drawing.backends.mpl.mpl_hse import (
-                MPL_HyperSignal1D_Explorer,
-            )
-
-            self._plot = MPL_HyperSignal1D_Explorer()
-        elif axes_manager.signal_dimension == 2:
-            from hyperspy.drawing.backends.mpl.mpl_hie import MPL_HyperImage_Explorer
-
-            self._plot = MPL_HyperImage_Explorer()
-        else:
+        try:
+            self._plot = _backend.get_explorer(axes_manager.signal_dimension)()
+        except ValueError:
             raise ValueError(
                 "Plotting is not supported for this view. "
                 "Try e.g. 's.transpose(signal_axes=1).plot()' for "
@@ -3249,11 +3223,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         self._plot.plot(**kwargs)
 
-        # Anyplotlib combined figure: ensure it's displayed even when the
-        # navigator was skipped (slider / None), which would leave the panel
-        # countdown stranded at 1.
+        # Ensure the figure is displayed; for backends with deferred display
+        # (e.g. anyplotlib panel countdown) this forces the final render.
         _apl_fig = kwargs.get("fig")
-        if _apl_fig is not None and hasattr(_backend, "ensure_displayed"):
+        if _apl_fig is not None:
             _backend.ensure_displayed(_apl_fig)
 
         self.events.data_changed.connect(self.update_plot, [])

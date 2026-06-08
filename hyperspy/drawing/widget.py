@@ -198,36 +198,19 @@ class WidgetBase(object):
             self.select()
 
     def select(self):
-        """
-        Cause this widget to be the selected widget in its MPL axes. This
-        assumes that the widget has its patch added to the MPL axes.
+        """Cause this widget to be the selected widget in its axes.
+
+        Delegates the backend-specific pick simulation to the active backend.
         """
         if not self.patch or not self.is_on or not self.ax:
             return
-        try:
-            from matplotlib.backend_bases import MouseEvent, PickEvent
-
-            figure = self.ax.figure
-            # Simulate a pick event
-            x, y = self.patch[0].get_transform().transform_point((0, 0))
-            mouseevent = MouseEvent("pick_event", figure.canvas, x, y)
-            if mouseevent.button:
-                try:
-                    # Introduced in matplotlib 3.6 and `pick_event` deprecated
-                    event = PickEvent("pick_event", figure, mouseevent, self.patch[0])
-                    figure.canvas.callbacks.process("pick_event", event)
-                except Exception:  # Deprecated in matplotlib 3.6
-                    figure.canvas.pick_event(mouseevent, self.patch[0])
-        except (ImportError, AttributeError):
-            pass
+        get_backend().simulate_pick(self.ax, self.patch[0])
         self.picked = False
 
     def connect(self, ax):
-        """Connect to the matplotlib Axes' events."""
-        if hasattr(getattr(ax, "figure", None), "canvas"):
-            from hyperspy.drawing.utils import on_figure_window_close
-
-            on_figure_window_close(ax.figure, self.close)
+        """Connect to the axes' events."""
+        if ax.figure is not None:
+            get_backend().connect_close_event(ax.figure, self.close)
         if self._navigating:
             self.connect_navigate()
 
