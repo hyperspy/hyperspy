@@ -31,7 +31,7 @@ _logger = logging.getLogger(__name__)
 
 
 class Smoothing(t.HasTraits):
-    line_color_ipy = t.Str("blue")
+    line_color = t.Str("blue")
     differential_order = t.Int(0)
 
     @property
@@ -45,9 +45,9 @@ class Smoothing(t.HasTraits):
                     # PySide
                     return np.array(self.line_color.getRgb()) / 255.0
                 except BaseException:
-                    return matplotlib.colors.to_rgb(self.line_color_ipy)
+                    return matplotlib.colors.to_rgb(self.line_color)
         else:
-            return matplotlib.colors.to_rgb(self.line_color_ipy)
+            return matplotlib.colors.to_rgb(self.line_color)
 
     def __init__(self, signal):
         super().__init__()
@@ -93,12 +93,6 @@ class Smoothing(t.HasTraits):
             color=self.line_color_rgb, type="line"
         )
         self.signal._plot.signal_plot.add_line(self.smooth_diff_line, ax="right")
-
-    def _line_color_ipy_changed(self):
-        if hasattr(self, "line_color"):
-            self.line_color = str(self.line_color_ipy)
-        else:
-            self._line_color_changed()
 
     def turn_diff_line_off(self):
         if self.smooth_diff_line is None:
