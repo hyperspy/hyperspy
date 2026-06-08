@@ -130,17 +130,6 @@ class PlotConfig(t.HasTraits):
         ),
     )
 
-    @t.observe("backend")
-    def _validate_backend(self, change):
-        from hyperspy.drawing.backends._registry import available_backends
-
-        known = available_backends()
-        if change["new"] not in known:
-            raise t.TraitError(
-                f"{change['new']!r} is not a registered plotting backend. "
-                f"Available: {known}."
-            )
-
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy
