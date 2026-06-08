@@ -204,11 +204,9 @@ def on_figure_window_close(figure, function):
     function : callable
 
     """
+    from hyperspy.drawing.backends import get_backend
 
-    def function_wrapper(evt):
-        function()
-
-    figure.canvas.mpl_connect("close_event", function_wrapper)
+    get_backend().connect_close_event(figure, function)
 
 
 def plot_RGB_map(im_list, normalization="single", dont_plot=False):
