@@ -118,7 +118,8 @@ class PlotConfig(t.HasTraits):
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy
     widget_plot_style = t.Enum(
-        ["horizontal", "vertical"], label="Widget plot style: (with ipympl or marimo)"
+        ["horizontal", "vertical"],
+        label="Widget plot style: (with ipympl, widget or marimo)",
     )
     use_subfigure = t.CBool(
         False,

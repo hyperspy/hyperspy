@@ -1515,7 +1515,10 @@ class MVA:
             s = s.isig[:n]
 
         if fig is None:
+            _created_fig = True
             fig = plt.figure(**kwargs)
+        else:
+            _created_fig = False
 
         if ax is None:
             ax = fig.add_subplot(111)
@@ -1567,6 +1570,11 @@ class MVA:
         ax.autoscale()
         ax.set_title(s.metadata.General.title, y=1.01)
 
+        if _created_fig:
+            from hyperspy.drawing.mpl_he import _marimo_display_figure
+
+            _marimo_display_figure(fig)
+
         return ax
 
     def plot_cumulative_explained_variance_ratio(self, n=50):
@@ -1598,6 +1606,10 @@ class MVA:
         ax.scatter(range(n), cumu[:n])
         ax.set_xlabel("Principal component")
         ax.set_ylabel("Cumulative explained variance ratio")
+
+        from hyperspy.drawing.mpl_he import _marimo_display_figure
+
+        _marimo_display_figure(fig)
 
         return ax
 
@@ -1850,6 +1862,10 @@ class MVA:
                     ax.axvline(nc, linewidth=2, color="green", linestyle="dashed")
             else:
                 ax.axvline(nclusters, linewidth=2, color="green", linestyle="dashed")
+
+        from hyperspy.drawing.mpl_he import _marimo_display_figure
+
+        _marimo_display_figure(fig)
 
         return ax
 

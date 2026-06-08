@@ -23,9 +23,13 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.drawing.mpl_he import _is_marimo_backend, _marimo_interactive_display
+from hyperspy.drawing.mpl_he import (
+    _is_marimo_backend,
+    _marimo_display_figure,
+    _marimo_interactive_display,
+)
 
-marimo = pytest.importorskip("marimo")
+pytest.importorskip("marimo")
 
 from marimo._runtime.context import ContextNotInitializedError  # noqa: E402
 
@@ -281,7 +285,7 @@ class TestMarimoBrokenBlitFix:
     """
 
     def _setup_signal_and_display(self):
-        """Return (signal, explorer) after calling _marimo_interactive_display."""
+        """Return signal after calling _marimo_interactive_display."""
         matplotlib.use("Agg")
         from hyperspy.drawing.mpl_he import _marimo_interactive_display
 
@@ -316,3 +320,240 @@ class TestMarimoBrokenBlitFix:
         fig = s._plot.signal_plot.figure
         animated = [a for ax in fig.axes for a in ax.get_children() if a.get_animated()]
         assert animated == [], f"Still animated: {animated}"
+
+
+# ── _marimo_display_figure ───────────────────────────────────────────
+
+
+class TestMarimoDisplayFigure:
+    def test_calls_interactive_and_append_when_in_marimo(self):
+        fig = MagicMock(name="Figure")
+        with (
+            patch("hyperspy.drawing.mpl_he._is_marimo_backend", return_value=True),
+            patch("marimo.mpl.interactive") as mock_interactive,
+            patch("marimo.output.append") as mock_append,
+        ):
+            mock_interactive.return_value = "mocked-html"
+            _marimo_display_figure(fig)
+
+        mock_interactive.assert_called_once_with(fig)
+        mock_append.assert_called_once_with("mocked-html")
+
+    def test_does_nothing_when_not_in_marimo(self):
+        fig = MagicMock(name="Figure")
+        with (
+            patch("hyperspy.drawing.mpl_he._is_marimo_backend", return_value=False),
+            patch("marimo.mpl.interactive") as mock_interactive,
+            patch("marimo.output.append") as mock_append,
+        ):
+            _marimo_display_figure(fig)
+
+        mock_interactive.assert_not_called()
+        mock_append.assert_not_called()
+
+
+# ── Standalone plot functions ─────────────────────────────────────────
+
+
+class TestMarimoStandalonePlots:
+    @pytest.mark.parametrize("plot_func", ["plot_images", "plot_spectra"])
+    def test_marimo_display_called_when_fig_created(self, plot_func):
+        """When fig is not provided, _marimo_display_figure should be called."""
+        matplotlib.use("Agg")
+        import hyperspy.api as hs
+
+        signal = hs.signals.Signal1D(np.arange(100))
+        if plot_func == "plot_images":
+            signal2d = hs.signals.Signal2D(np.random.random((7, 9, 11, 13)))
+            args = ([signal2d],)
+        else:
+            args = ([signal],)
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+        ):
+            getattr(hs.plot, plot_func)(*args)
+
+        mock_display.assert_called_once()
+
+    def test_plot_images_no_display_when_fig_provided(self):
+        """When fig is passed in, _marimo_display_figure should NOT be called."""
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt  # noqa: I001
+
+        signal2d = hs.signals.Signal2D(np.random.random((7, 9, 11, 13)))
+        fig = plt.figure()
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+        ):
+            hs.plot.plot_images([signal2d], fig=fig)
+            plt.close(fig)
+
+        mock_display.assert_not_called()
+
+    def test_plot_spectra_no_display_when_fig_provided(self):
+        """When fig is passed in, _marimo_display_figure should NOT be called."""
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt  # noqa: I001
+
+        signal = hs.signals.Signal1D(np.arange(100))
+        fig = plt.figure()
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+        ):
+            hs.plot.plot_spectra([signal], fig=fig)
+            plt.close(fig)
+
+        mock_display.assert_not_called()
+
+
+# ── Signal method plots ───────────────────────────────────────────────
+
+
+class TestMarimoSignalFactorPlots:
+    def test_factors_same_window_marimo_display(self):
+        """_plot_factors_or_pchars same_window=True should display single figure."""
+        matplotlib.use("Agg")
+        factors = np.random.random((100, 4))
+        s = hs.signals.Signal1D(np.random.random((5, 100)))
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+            patch("hyperspy.drawing.mpl_he._is_marimo_backend", return_value=True),
+        ):
+            s._plot_factors_or_pchars(factors, same_window=True, per_row=2)
+
+        # single figure displayed (same_window=True returns f, not fig_list)
+        mock_display.assert_called_once()
+
+    def test_factors_separate_windows_marimo_display(self):
+        """_plot_factors_or_pchars same_window=False should display each figure."""
+        matplotlib.use("Agg")
+        factors = np.random.random((100, 3))
+        s = hs.signals.Signal1D(np.random.random((5, 100)))
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+            patch("hyperspy.drawing.mpl_he._is_marimo_backend", return_value=True),
+        ):
+            s._plot_factors_or_pchars(factors, same_window=False)
+
+        # 3 figures in separate windows
+        assert mock_display.call_count == 3
+
+    def test_loadings_same_window_marimo_display(self):
+        """_plot_loadings same_window=True should display single figure."""
+        matplotlib.use("Agg")
+        # Loadings shape: (n_components, navigation_size) — must match
+        # navigation dimension (5) of the signal.
+        loadings = np.random.random((5, 5))
+        s = hs.signals.Signal1D(np.random.random((5, 100)))
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+            patch("hyperspy.drawing.mpl_he._is_marimo_backend", return_value=True),
+        ):
+            s._plot_loadings(loadings, comp_ids=range(5), same_window=True, per_row=2)
+
+        mock_display.assert_called_once()
+
+    def test_no_marimo_display_when_not_in_marimo(self):
+        """_plot_factors_or_pchars should not call display when not in marimo."""
+        matplotlib.use("Agg")
+        factors = np.random.random((100, 2))
+        s = hs.signals.Signal1D(np.random.random((5, 100)))
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+            patch("hyperspy.drawing.mpl_he._is_marimo_backend", return_value=False),
+        ):
+            s._plot_factors_or_pchars(factors, same_window=True)
+
+        mock_display.assert_not_called()
+
+
+# ── MVA plots ─────────────────────────────────────────────────────────
+
+
+class TestMarimoMVAPlots:
+    def test_cumulative_explained_variance_marimo_display(self):
+        """plot_cumulative_explained_variance_ratio should display in marimo."""
+        matplotlib.use("Agg")
+        s = hs.signals.Signal1D(np.random.random((5, 100)))
+        s.decomposition(algorithm="SVD")
+        assert s.learning_results.explained_variance is not None
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+        ):
+            s.plot_cumulative_explained_variance_ratio()
+
+        mock_display.assert_called_once()
+
+    def test_cluster_analysis_marimo_display(self):
+        """plot_cluster_metric should display in marimo."""
+        matplotlib.use("Agg")
+        s = hs.signals.Signal1D(np.random.random((5, 100)))
+        s.learning_results.cluster_metric_data = np.random.random(10)
+        s.learning_results.cluster_metric_index = list(range(2, 12))
+        s.learning_results.cluster_metric = "silhouette"
+        s.learning_results.number_of_clusters = None
+        s.learning_results.estimated_number_of_clusters = None
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+        ):
+            s.plot_cluster_metric()
+
+        mock_display.assert_called_once()
+
+    def test_explained_variance_no_display_when_fig_provided(self):
+        """plot_explained_variance_ratio should NOT display when fig passed in."""
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt  # noqa: I001
+
+        s = hs.signals.Signal1D(np.random.random((5, 100)))
+        s.decomposition(algorithm="SVD")
+        assert s.learning_results.explained_variance is not None
+
+        fig = plt.figure()
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+        ):
+            s.plot_explained_variance_ratio(fig=fig)
+            plt.close(fig)
+
+        mock_display.assert_not_called()
+
+
+# ── Image shift estimation ────────────────────────────────────────────
+
+
+class TestMarimoImageShift:
+    def test_estimate_image_shift_marimo_display(self):
+        """estimate_shift2D should use marimo display when plot=True."""
+        matplotlib.use("Agg")
+        s = hs.signals.Signal2D(np.random.random((2, 2, 7, 11)))
+        # 2*2 = 4 navigation positions, each creates a figure
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+        ):
+            s.estimate_shift2D(plot=True)
+
+        # One figure per navigation position (2*2 = 4)
+        assert mock_display.call_count == 4
+
+    def test_estimate_image_shift_no_display_when_plot_false(self):
+        """estimate_shift2D should NOT display when plot=False."""
+        matplotlib.use("Agg")
+        s = hs.signals.Signal2D(np.random.random((2, 2, 7, 11)))
+
+        with (
+            patch("hyperspy.drawing.mpl_he._marimo_display_figure") as mock_display,
+        ):
+            s.estimate_shift2D(plot=False)
+
+        mock_display.assert_not_called()

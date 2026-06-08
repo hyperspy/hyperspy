@@ -58,7 +58,7 @@ def _is_marimo_backend():
         try:
             ctx = get_context()
             return ctx is not None
-        except ContextNotInitializedError:
+        except (ContextNotInitializedError, Exception):
             return False
     except ImportError:
         return False
@@ -74,7 +74,7 @@ def _marimo_interactive_display(explorer, *, plot_style=None):
         ``navigator_plot`` with their matplotlib figures.
     plot_style : str, optional
         ``"horizontal"`` or ``"vertical"`` layout.  Falls back to
-        :attr:`hyperpsy.defaults_parser.Plot.widget_plot_style` when
+        :attr:`hyperspy.defaults_parser.Plot.widget_plot_style` when
         ``None``.
     """
     import marimo as mo
@@ -134,6 +134,26 @@ def _marimo_interactive_display(explorer, *, plot_style=None):
         result = mo.vstack(elements)
 
     mo.output.append(result)
+
+
+def _marimo_display_figure(fig):
+    """Display a standalone matplotlib figure in marimo if applicable.
+
+    Unlike :func:`_marimo_interactive_display`, this is for figures created
+    independently of ``MPL_HyperExplorer`` (e.g. ``plot_spectra``,
+    ``plot_images``, MVA plots, etc.).  When running in a marimo notebook,
+    wraps the figure with :func:`marimo.mpl.interactive` and appends to the
+    output stream.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        The figure to display interactively.
+    """
+    if _is_marimo_backend():
+        import marimo as mo
+
+        mo.output.append(mo.mpl.interactive(fig))
 
 
 class MPL_HyperExplorer:
@@ -318,7 +338,7 @@ class MPL_HyperExplorer:
         if not _is_interactive and "plot_style" in kwargs:
             warnings.warn(
                 "The `plot_style` keyword is only used when the `ipympl`, "
-                "`widget` or marimo plotting backends are used."
+                "`widget` or `marimo` plotting backends are used."
             )
         plot_style = kwargs.pop("plot_style", None)
 

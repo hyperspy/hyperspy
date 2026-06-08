@@ -498,6 +498,14 @@ class MVATools(object):
             plt.tight_layout()
         except BaseException:
             pass
+        from hyperspy.drawing.mpl_he import _is_marimo_backend, _marimo_display_figure
+
+        if _is_marimo_backend():
+            if not same_window:
+                for fig in fig_list:
+                    _marimo_display_figure(fig)
+            else:
+                _marimo_display_figure(f)
         if not same_window:
             return fig_list
         else:
@@ -582,6 +590,14 @@ class MVATools(object):
             plt.tight_layout()
         except BaseException:
             pass
+        from hyperspy.drawing.mpl_he import _is_marimo_backend, _marimo_display_figure
+
+        if _is_marimo_backend():
+            if not same_window:
+                for fig in fig_list:
+                    _marimo_display_figure(fig)
+            else:
+                _marimo_display_figure(f)
         if not same_window:
             if with_factors:
                 return fig_list, self._plot_factors_or_pchars(

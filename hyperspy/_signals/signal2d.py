@@ -292,6 +292,7 @@ def estimate_image_shift(
 
     # Plot on demand
     if plot is True or isinstance(plot, plt.Figure):
+        _created_fig = plot is True
         if isinstance(plot, plt.Figure):
             fig = plot
             axarr = plot.axes
@@ -311,7 +312,12 @@ def estimate_image_shift(
             d = (np.array(phase_correlation.shape) - 1) // 2
             extent = [-d[1], d[1], -d[0], d[0]]
             axarr[2].imshow(np.fft.fftshift(phase_correlation), extent=extent)
-            plt.show()
+            if _created_fig:
+                from hyperspy.drawing.mpl_he import _marimo_display_figure
+
+                _marimo_display_figure(fig)
+            else:
+                plt.show()
         else:
             axarr[0].images[0].set_data(ref)
             axarr[1].images[0].set_data(image)

@@ -935,6 +935,7 @@ def plot_images(
             fig = ax.get_figure()
     # Create figure if none has been provided through fig or ax
     # Set overall figure size and define figure (if not pre-existing)
+    _created_fig = fig is None
     if fig is None:
         w, h = plt.rcParams["figure.figsize"]
         dpi = plt.rcParams["figure.dpi"]
@@ -1355,6 +1356,11 @@ def plot_images(
         disconnect = partial(image.events.data_changed.disconnect, f)
         on_figure_window_close(ax_.get_figure(), disconnect)
 
+    if _created_fig:
+        from hyperspy.drawing.mpl_he import _marimo_display_figure
+
+        _marimo_display_figure(axes_list[0].get_figure())
+
     return axes_list
 
 
@@ -1628,6 +1634,7 @@ def plot_spectra(
 
     # Get fig and ax
     # Try to get fig from ax
+    _created_fig = False
     if ax is not None:
         if style == "heatmap":
             raise ValueError("The `ax` parameter is not supported for 'heatmap' style.")
@@ -1649,6 +1656,7 @@ def plot_spectra(
                 fig = ax.get_figure()
     # fallback to fig, create when necessary
     else:
+        _created_fig = fig is None
         if fig is None:
             if style == "mosaic":
                 default_fsize = plt.rcParams["figure.figsize"]
@@ -1753,6 +1761,11 @@ def plot_spectra(
             # disconnect event when closing figure
             disconnect = partial(s.events.data_changed.disconnect, f)
             on_figure_window_close(fig, disconnect)
+
+    if _created_fig:
+        from hyperspy.drawing.mpl_he import _marimo_display_figure
+
+        _marimo_display_figure(fig)
 
     return ax
 
