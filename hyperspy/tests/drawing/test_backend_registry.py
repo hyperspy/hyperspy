@@ -84,13 +84,11 @@ def test_plot_config_accepts_known_backend():
 
 
 def test_plot_config_rejects_unknown_backend():
-    from hyperspy.defaults_parser import preferences
+    """An unknown backend name fails at load time (not at assignment time)."""
+    from hyperspy.drawing.backends._registry import load_backend
 
-    # The validator in PlotConfig raises TraitError; the drawing/__init__ observer
-    # raises ValueError.  Either is acceptable — the key property is that setting
-    # an unknown backend name raises an exception at assignment time.
-    with pytest.raises((t.TraitError, ValueError)):
-        preferences.Plot.backend = "__not_a_real_backend__"
+    with pytest.raises(ValueError, match="Unknown plotting backend"):
+        load_backend("__not_a_real_backend__")
 
 
 def test_plot_config_backend_is_str_not_enum():

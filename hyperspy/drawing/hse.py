@@ -119,6 +119,13 @@ class HyperSignal1D_Explorer(HyperExplorer):
             self.signal_plot.right_axes_manager = copy.deepcopy(self.axes_manager)
         if self.right_pointer is None:
             pointer_cls = self.assign_pointer()
+            if pointer_cls is None:
+                # No pointer widget (e.g. slider navigator): proceed to the
+                # line only, without a right-axis pointer.
+                self._add_right_line(**kwargs)
+                self.right_pointer_on = True
+                self._redraw_signal_figure()
+                return
             self.right_pointer = pointer_cls(self.signal_plot.right_axes_manager)
             # The following is necessary because e.g. a line pointer does not
             # have size

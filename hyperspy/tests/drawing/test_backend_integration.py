@@ -99,8 +99,9 @@ def test_right_pointer_warns_on_unsupported_backend():
     """BackendCapabilityError from _add_right_line → UserWarning, not crash."""
     from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
-    s = hs.signals.Signal1D(np.random.random((4, 8)))
-    s.plot(navigator="slider")
+    # Use 3D data so navigation is 2D → SquareWidget pointer (non-None)
+    s = hs.signals.Signal1D(np.random.random((3, 4, 8)))
+    s.plot()
     explorer = s._plot
 
     with patch.object(
