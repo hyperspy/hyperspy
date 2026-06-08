@@ -1362,7 +1362,7 @@ class MVA:
         return rec
 
     get_bss_model.__doc__ = get_bss_model.__doc__ % (CHUNKS_ARGS, LAZY_OUTPUT_ARG)
-        
+
     def get_scree_plot_data(self):
         """Return the scree plot data as a Signal1D.
 
