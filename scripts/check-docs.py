@@ -97,7 +97,7 @@ def check_fragment_filenames() -> list[str]:
 
 def check_towncrier() -> tuple[bool, str]:
     """Run ``towncrier build --draft``."""
-    ok, output = _run(["towncrier", "build", "--draft"])
+    ok, output = _run(["towncrier", "build", "--draft"], cwd=REPO_ROOT)
     if not ok and not output:
         output = (
             "towncrier did not produce output. "
@@ -109,12 +109,12 @@ def check_towncrier() -> tuple[bool, str]:
 def check_sphinx(*, full: bool = False) -> tuple[bool, str]:
     """Run the CI-equivalent Sphinx doc build.
 
-    By default sets ``HYPERSHYP_FAST_CHECK=1`` so ``conf.py`` skips gallery
+    By default sets ``HYPERSPY_FAST_CHECK=1`` so ``conf.py`` skips gallery
     execution.  Pass ``full=True`` to run the complete build.
     """
     env = {**os.environ, "SPHINXOPTS": "-W --keep-going"}
     if not full:
-        env["HYPERSHYP_FAST_CHECK"] = "1"
+        env["HYPERSPY_FAST_CHECK"] = "1"
     return _run(["make", "html"], cwd=DOC_DIR, env=env)
 
 

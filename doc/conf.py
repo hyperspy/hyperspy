@@ -447,7 +447,7 @@ if platform.system() != "Windows":
     )  # use optipng to reduce image file size
 
 # ``check-docs.py`` sets this to skip slow gallery execution during validation.
-if os.environ.get("HYPERSHYP_FAST_CHECK"):
+if os.environ.get("HYPERSPY_FAST_CHECK"):
     sphinx_gallery_conf["plot_gallery"] = False
 
 
