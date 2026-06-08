@@ -25,6 +25,7 @@ from traits.api import Undefined
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.drawing import image, signal1d, widgets
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.he import HyperExplorer
 
 _lock = Lock()
@@ -38,6 +39,10 @@ def _is_widget_backend():
 
 class MPL_HyperExplorer(HyperExplorer):
     """ """
+
+    def __init__(self):
+        super().__init__()
+        self._key_nav_cids = []  # list of (fig, cid) pairs for cleanup
 
     def assign_pointer(self):
         if self.navigator_data_function is None:
@@ -125,9 +130,18 @@ class MPL_HyperExplorer(HyperExplorer):
 
     def _connect_key_nav(self, figure):
         if figure.figure is not None and self.axes_manager.navigation_axes:
-            canvas = getattr(figure.figure, "canvas", None)
-            if canvas is not None:
-                canvas.mpl_connect("key_press_event", self.axes_manager.key_navigator)
+            cid = get_backend().connect_key_press(
+                figure.figure, self.axes_manager.key_navigator
+            )
+            if cid is not None:
+                self._key_nav_cids.append((figure.figure, cid))
+
+    def close(self):
+        backend = get_backend()
+        for fig, cid in self._key_nav_cids:
+            backend.disconnect_event(fig, cid)
+        self._key_nav_cids.clear()
+        super().close()
 
     def _display(self, plot_style=None, **kwargs):
         if not _is_widget_backend():

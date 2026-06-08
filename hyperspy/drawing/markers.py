@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import warnings
 from copy import deepcopy
 
 import matplotlib.collections as mpl_collections
@@ -24,6 +25,7 @@ from matplotlib.patches import Patch
 from matplotlib.transforms import IdentityTransform
 
 from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.events import Event, Events
 from hyperspy.misc import _markers, dask_utils, utils
 
@@ -747,7 +749,16 @@ class Markers:
         self._collection.set_animated(
             get_backend().supports_blit(getattr(self.ax, "figure", None))
         )
-        get_backend().add_collection(self.ax, self._collection)
+        try:
+            get_backend().add_collection(self.ax, self._collection)
+        except BackendCapabilityError:
+            warnings.warn(
+                "The active backend does not support markers. "
+                "Markers will not be displayed.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return
         if render_figure:
             self._render_figure()
 

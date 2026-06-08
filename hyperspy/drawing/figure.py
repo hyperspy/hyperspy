@@ -96,16 +96,13 @@ class BlittedFigure:
         """
         if self.figure is None:
             return None
-        try:
-            import matplotlib.figure
-
-            figure = self.figure
-            # matplotlib SubFigure can be nested and we don't support it
-            if isinstance(figure, matplotlib.figure.SubFigure):
-                return figure.figure
-            return figure
-        except ImportError:
-            return self.figure
+        figure = self.figure
+        # SubFigure has a .figure attribute pointing to the parent Figure;
+        # a top-level Figure does not, so this duck-type check is safe.
+        parent = getattr(figure, "figure", None)
+        if parent is not None and parent is not figure:
+            return parent
+        return figure
 
     def add_marker(self, marker):
         marker.ax = self.ax

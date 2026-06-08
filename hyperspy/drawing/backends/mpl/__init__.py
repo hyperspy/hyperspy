@@ -321,3 +321,69 @@ class MplBackend:
             handle.remove()
         except Exception:
             pass
+
+    # ── Combined layout / lifecycle hooks ─────────────────────────────────
+
+    def create_combined_figure_panels(self, figsize=None):
+        from hyperspy.defaults_parser import preferences
+
+        if not preferences.Plot.use_subfigure:
+            return None
+        import matplotlib.pyplot as plt
+
+        figsize = figsize or (15, 7)
+        fig = plt.figure(figsize=figsize, layout="constrained")
+        subfigs = fig.subfigures(1, 2)
+        return subfigs[0], subfigs[1]
+
+    def ensure_displayed(self, fig):
+        pass
+
+    def connect_close_event(self, fig, fn):
+        if fig is None:
+            return None
+        canvas = getattr(fig, "canvas", None)
+        if canvas is None:
+            return None
+
+        def _wrapper(evt):
+            fn()
+
+        return canvas.mpl_connect("close_event", _wrapper)
+
+    def simulate_pick(self, ax, patch):
+        try:
+            from matplotlib.backend_bases import MouseEvent, PickEvent
+
+            figure = ax.figure
+            x, y = patch.get_transform().transform_point((0, 0))
+            mouseevent = MouseEvent("pick_event", figure.canvas, x, y)
+            if mouseevent.button:
+                try:
+                    event = PickEvent("pick_event", figure, mouseevent, patch)
+                    figure.canvas.callbacks.process("pick_event", event)
+                except Exception:
+                    figure.canvas.pick_event(mouseevent, patch)
+        except (ImportError, AttributeError):
+            pass
+
+    def get_explorer(self, signal_dim):
+        if signal_dim == 0:
+            from hyperspy.drawing.backends.mpl.mpl_he import MPL_HyperExplorer
+
+            return MPL_HyperExplorer
+        elif signal_dim == 1:
+            from hyperspy.drawing.backends.mpl.mpl_hse import (
+                MPL_HyperSignal1D_Explorer,
+            )
+
+            return MPL_HyperSignal1D_Explorer
+        elif signal_dim == 2:
+            from hyperspy.drawing.backends.mpl.mpl_hie import MPL_HyperImage_Explorer
+
+            return MPL_HyperImage_Explorer
+        raise ValueError(
+            f"Plotting is not supported for signal_dim={signal_dim}. "
+            "Try s.transpose(signal_axes=1).plot() for 1D or "
+            "s.transpose(signal_axes=(1,2)).plot() for 2D."
+        )

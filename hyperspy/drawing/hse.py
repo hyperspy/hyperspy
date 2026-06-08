@@ -19,9 +19,12 @@
 """Backend-agnostic HyperSignal1D_Explorer base."""
 
 import copy
+import warnings
+from abc import abstractmethod
 
 from traits.api import Undefined
 
+from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.drawing.he import HyperExplorer
 
 
@@ -85,6 +88,7 @@ class HyperSignal1D_Explorer(HyperExplorer):
             self._connect_key_nav_switch(self.navigator_plot)
             self._connect_key_nav(self.navigator_plot)
 
+    @abstractmethod
     def _make_signal_figure(self, **kwargs):
         raise NotImplementedError
 
@@ -95,10 +99,22 @@ class HyperSignal1D_Explorer(HyperExplorer):
     def _connect_key_nav_switch(self, figure):
         self._connect_key_handler(figure, self.key2switch_right_pointer)
 
+    @abstractmethod
     def _connect_key_handler(self, figure, fn):
         raise NotImplementedError
 
     def add_right_pointer(self, **kwargs):
+        try:
+            self._do_add_right_pointer(**kwargs)
+        except BackendCapabilityError as e:
+            warnings.warn(
+                f"Right pointer not available with the current backend: {e}",
+                UserWarning,
+                stacklevel=2,
+            )
+            self._right_pointer_on = False
+
+    def _do_add_right_pointer(self, **kwargs):
         if self.signal_plot.right_axes_manager is None:
             self.signal_plot.right_axes_manager = copy.deepcopy(self.axes_manager)
         if self.right_pointer is None:
@@ -120,15 +136,16 @@ class HyperSignal1D_Explorer(HyperExplorer):
         self.right_pointer_on = True
         self._redraw_signal_figure()
 
+    @abstractmethod
     def _add_right_line(self, **kwargs):
         raise NotImplementedError
 
+    @abstractmethod
     def _redraw_signal_figure(self):
         raise NotImplementedError
 
     def remove_right_pointer(self):
-        for line in self.signal_plot.right_ax_lines:
-            self.signal_plot.right_ax_lines.remove(line)
+        for line in list(self.signal_plot.right_ax_lines):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None

@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Callable, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from hyperspy.drawing.he import HyperExplorer
+
+
+class BackendCapabilityError(NotImplementedError):
+    """Raised when the active backend does not support a requested feature.
+
+    Callers may catch this to degrade gracefully or emit a UserWarning.
+    """
 
 
 @runtime_checkable
@@ -146,6 +156,41 @@ class PlottingBackend(Protocol):
         """Return an inverse-data transform (for pixel→data conversions)."""
 
     def transform_point(self, transform: Any, point) -> Any: ...
+
+    # ── Combined multi-panel layout ───────────────────────────────────────
+
+    def create_combined_figure_panels(self, figsize=None) -> tuple[Any, Any] | None:
+        """Return (nav_fig, signal_fig) for a combined single-widget layout.
+
+        Return ``None`` to use two separate figures (the default).
+        Backends that want to show navigator + signal in one window implement
+        this (e.g. anyplotlib, ipympl subfigure).
+        """
+        return None
+
+    def ensure_displayed(self, fig: Any) -> None:
+        """Called by signal.py after plot() completes.
+
+        Backends that defer display (e.g. anyplotlib panel countdown) use this
+        to force the final render.  Default is a no-op.
+        """
+
+    def connect_close_event(self, fig: Any, fn: Callable) -> Any:
+        """Connect *fn* to the figure close/destroy event; return a cid."""
+        return None
+
+    def simulate_pick(self, ax: Any, patch: Any) -> None:
+        """Simulate a pick event on *patch* in *ax* to make it the active widget.
+
+        Called by ``WidgetBase.select()``.  No-op for backends that do not use
+        MPL-style canvas pick events.
+        """
+
+    def get_explorer(self, signal_dim: int) -> type[HyperExplorer]:
+        """Return the HyperExplorer subclass for *signal_dim* (0, 1, or 2)."""
+        from hyperspy.drawing.he import HyperExplorer
+
+        return HyperExplorer
 
     # ── Marker collections ────────────────────────────────────────────────
 

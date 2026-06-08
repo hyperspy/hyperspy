@@ -19,6 +19,7 @@
 """Backend-agnostic HyperExplorer base."""
 
 import logging
+from abc import ABC, abstractmethod
 from functools import partial
 
 from hyperspy.events import Event, Events
@@ -26,7 +27,7 @@ from hyperspy.events import Event, Events
 _logger = logging.getLogger(__name__)
 
 
-class HyperExplorer:
+class HyperExplorer(ABC):
     """Orchestrates signal + navigator plotting for any backend.
 
     Subclasses must implement:
@@ -141,15 +142,19 @@ class HyperExplorer:
                         partial(ax.events.index_changed.disconnect, fig.update), []
                     )
 
+    @abstractmethod
     def _create_1d_nav_figure(self, title, **kwargs):
         raise NotImplementedError
 
+    @abstractmethod
     def _create_2d_nav_figure(self, title, **kwargs):
         raise NotImplementedError
 
+    @abstractmethod
     def _connect_pointer(self, pointer, figure):
         raise NotImplementedError
 
+    @abstractmethod
     def _connect_key_nav(self, figure):
         raise NotImplementedError
 
@@ -165,6 +170,7 @@ class HyperExplorer:
         if self.navigator_plot:
             self.navigator_plot.close()
 
+    @abstractmethod
     def assign_pointer(self):
         raise NotImplementedError
 

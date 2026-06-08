@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
 _NOT_YET = "anyplotlib does not yet support '{}'. See docs/hyperspy_parity.md."
 
 
@@ -231,10 +233,10 @@ class AnyplotlibBackend:
             ax._plot.set_aspect(ratio)
 
     def add_right_axis(self, ax, color="black"):
-        raise NotImplementedError(_NOT_YET.format("add_right_axis (twinx)"))
+        raise BackendCapabilityError(_NOT_YET.format("add_right_axis (twinx)"))
 
     def remove_right_axis(self, ax, right_ax):
-        raise NotImplementedError(_NOT_YET.format("remove_right_axis"))
+        raise BackendCapabilityError(_NOT_YET.format("remove_right_axis"))
 
     # ── 1-D line plotting ─────────────────────────────────────────────────
 
@@ -432,7 +434,7 @@ class AnyplotlibBackend:
         handle.x = float(x)
 
     def add_rect_widget(self, ax, x, y, w, h, color="red"):
-        raise NotImplementedError(
+        raise BackendCapabilityError(
             _NOT_YET.format("add_rect_widget (RectangleWidget on 1D plot)")
         )
 
@@ -455,32 +457,64 @@ class AnyplotlibBackend:
         handle.color = color
 
     def set_patch_alpha(self, handle, alpha):
-        raise NotImplementedError(_NOT_YET.format("set_patch_alpha"))
+        raise BackendCapabilityError(_NOT_YET.format("set_patch_alpha"))
 
     def add_artist(self, ax, artist):
         pass
 
     def create_rect_patch(self, pos, w, h, **kwargs):
-        raise NotImplementedError(
+        raise BackendCapabilityError(
             _NOT_YET.format("create_rect_patch (resizer handles)")
         )
 
     def get_data_transform_inverse(self, ax):
-        raise NotImplementedError(_NOT_YET.format("get_data_transform_inverse"))
+        raise BackendCapabilityError(_NOT_YET.format("get_data_transform_inverse"))
 
     def transform_point(self, transform, point):
-        raise NotImplementedError(_NOT_YET.format("transform_point"))
+        raise BackendCapabilityError(_NOT_YET.format("transform_point"))
 
     # ── Marker collections ────────────────────────────────────────────────
 
     def add_collection(self, ax, collection):
-        raise NotImplementedError(_NOT_YET.format("add_collection (markers)"))
+        raise BackendCapabilityError(_NOT_YET.format("add_collection (markers)"))
 
     def collection_update(self, handle, **kwargs):
-        raise NotImplementedError(_NOT_YET.format("collection_update (markers)"))
+        raise BackendCapabilityError(_NOT_YET.format("collection_update (markers)"))
 
     def collection_remove(self, ax, handle):
-        raise NotImplementedError(_NOT_YET.format("collection_remove (markers)"))
+        raise BackendCapabilityError(_NOT_YET.format("collection_remove (markers)"))
+
+    # ── Combined layout / lifecycle hooks ─────────────────────────────────
+
+    def simulate_pick(self, ax, patch):
+        pass  # anyplotlib handles selection natively; no MPL pick simulation needed
+
+    def connect_close_event(self, fig, fn):
+        # anyplotlib close handling is done via on_close= kwarg at figure
+        # creation time; there is no post-hoc connect mechanism yet.
+        return None
+
+    def get_explorer(self, signal_dim):
+        # Phase 2 will add Apl_Hyper*Explorer subclasses; for now return the
+        # generic base classes which work with any backend that implements the
+        # required primitives.
+        if signal_dim == 0:
+            from hyperspy.drawing.he import HyperExplorer
+
+            return HyperExplorer
+        elif signal_dim == 1:
+            from hyperspy.drawing.backends.anyplotlib._explorers import (
+                Apl_HyperSignal1D_Explorer,
+            )
+
+            return Apl_HyperSignal1D_Explorer
+        elif signal_dim == 2:
+            from hyperspy.drawing.backends.anyplotlib._explorers import (
+                Apl_HyperImage_Explorer,
+            )
+
+            return Apl_HyperImage_Explorer
+        raise ValueError(f"Plotting is not supported for signal_dim={signal_dim}.")
 
 
 class _AplColorbar:

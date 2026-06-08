@@ -19,6 +19,7 @@
 import numpy as np
 
 from hyperspy.drawing import signal1d
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.backends.mpl.mpl_he import MPL_HyperExplorer
 from hyperspy.drawing.hse import HyperSignal1D_Explorer
 
@@ -73,9 +74,9 @@ class MPL_HyperSignal1D_Explorer(HyperSignal1D_Explorer, MPL_HyperExplorer):
 
     def _connect_key_handler(self, figure, fn):
         if figure.figure is not None:
-            canvas = getattr(figure.figure, "canvas", None)
-            if canvas is not None:
-                canvas.mpl_connect("key_press_event", fn)
+            cid = get_backend().connect_key_press(figure.figure, fn)
+            if cid is not None:
+                self._key_nav_cids.append((figure.figure, cid))
 
     def _add_right_line(self, **kwargs):
         rl = signal1d.Signal1DLine()
@@ -93,4 +94,4 @@ class MPL_HyperSignal1D_Explorer(HyperSignal1D_Explorer, MPL_HyperExplorer):
     def _redraw_signal_figure(self):
         # because we added the right axis, we need to redraw the canvas to
         # update the background
-        self.signal_plot.figure.canvas.draw_idle()
+        get_backend().draw_idle(self.signal_plot.figure)

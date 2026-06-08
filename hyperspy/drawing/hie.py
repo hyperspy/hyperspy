@@ -18,6 +18,8 @@
 
 """Backend-agnostic HyperImage_Explorer base."""
 
+from abc import abstractmethod
+
 from hyperspy.drawing.he import HyperExplorer
 
 
@@ -33,5 +35,6 @@ class HyperImage_Explorer(HyperExplorer):
         if self.navigator_plot is not None:
             self._connect_key_nav(self.navigator_plot)
 
+    @abstractmethod
     def _make_image_figure(self, **kwargs):
         raise NotImplementedError

@@ -21,24 +21,14 @@ import importlib
 # Register the default matplotlib backend
 from hyperspy.defaults_parser import preferences as _pref
 from hyperspy.drawing.backends import register_backend as _register_backend
-from hyperspy.drawing.backends.mpl import MplBackend as _MplBackend
+from hyperspy.drawing.backends._registry import load_backend as _load_backend
 
-_register_backend(_MplBackend())
+_register_backend(_load_backend("matplotlib"))
 
 
 def _on_backend_pref_change(change=None):
     name = change.new if change is not None else _pref.Plot.backend
-    if name == "anyplotlib":
-        try:
-            from hyperspy.drawing.backends.anyplotlib import AnyplotlibBackend
-
-            _register_backend(AnyplotlibBackend())
-        except ImportError:
-            raise ImportError(
-                "anyplotlib is not installed. Install it with:  pip install anyplotlib"
-            )
-    else:
-        _register_backend(_MplBackend())
+    _register_backend(_load_backend(name))
 
 
 _pref.Plot.observe(_on_backend_pref_change, "backend")
