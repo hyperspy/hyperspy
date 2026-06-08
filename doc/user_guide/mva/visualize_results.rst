@@ -22,11 +22,11 @@ sometimes called a scree plot. For most datasets, the values in a scree plot
 will decay rapidly, eventually becoming a slowly descending line.
 
 To obtain a scree plot for your dataset, run the
-:meth:`~.api.signals.BaseSignal.plot_explained_variance_ratio` method:
+:meth:`~.api.signals.BaseSignal.plot_scree_plot` method:
 
 .. code-block:: python
 
-   >>> s.plot_explained_variance_ratio(n=20) # doctest: +SKIP
+   >>> s.plot_scree_plot(n=20) # doctest: +SKIP
 
 .. figure::  ../images/screeplot.png
    :align:   center
@@ -53,7 +53,7 @@ Python uses zero-based indexing. To switch to a "number-based" (rather than
 
 .. code-block:: python
 
-   >>> s.plot_explained_variance_ratio(n=20, threshold=4, xaxis_type='number') # doctest: +SKIP
+   >>> s.plot_scree_plot(n=20, threshold=4, xaxis_type='number') # doctest: +SKIP
 
 .. figure::  ../images/screeplot2.png
    :align:   center
@@ -88,13 +88,14 @@ about the elbow-finding technique can be found in
 
 These options (together with many others), can be customized to
 develop a figure of your liking. See the documentation of
-:meth:`~.api.signals.BaseSignal.plot_explained_variance_ratio` for more details.
+:meth:`~.api.signals.BaseSignal.plot_scree_plot` for more details.
 
-Sometimes it can be useful to get the explained variance ratio as a spectrum.
-For example, to plot several scree plots obtained with
-different data pre-treatments in the same figure, you can combine
+Sometimes it can be useful to get the scree plot data (explained variance ratio
+or proportion of total variation) as a spectrum. For example, to plot several
+scree plots obtained with different data pre-treatments in the same figure,
+you can combine
 :func:`~.api.plot.plot_spectra` with
-:meth:`~.api.signals.BaseSignal.get_explained_variance_ratio`.
+:meth:`~.api.signals.BaseSignal.get_scree_plot_data`.
 
 .. _mva.plot_decomposition:
 

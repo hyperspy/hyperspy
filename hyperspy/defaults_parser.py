@@ -95,8 +95,9 @@ class GeneralConfig(t.HasTraits):
 
     nb_progressbar = t.CBool(True, desc="Attempt to use ipywidgets progressbar")
 
-    def _logger_on_changed(self, old, new):
-        if new is True:
+    @t.observe("logger_on")
+    def _logger_on_changed(self, event=None):
+        if event.new is True:
             turn_logging_on()
         else:
             turn_logging_off()
@@ -112,6 +113,11 @@ class GUIs(t.HasTraits):
         True,
         desc="Display traitsui user interface elements. "
         "Requires installing hyperspy_gui_traitsui.",
+    )
+    enable_anywidget_gui = t.CBool(
+        True,
+        desc="Display anywidget user interface elements. "
+        "Requires installing hyperspy_gui_anywidget.",
     )
 
 

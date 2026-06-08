@@ -76,7 +76,12 @@ class ComponentFit(signal_tools.SpanSelectorInSignal1D):
                 self.model.plot()
             self.span_selector_switch(on=True)
 
-    def _fit_fired(self):
+    # Called imperatively (not via trait observation):
+    # - ComponentFit.apply() calls it directly
+    # - ComponentFitHandler.fit() (in hyperspy_gui_traitsui) calls it on button click
+    # The "_fired" naming is a convention, not the deprecated traits
+    # auto-discovery pattern. No @t.observe decorator needed here.
+    def _fit_fired(self, event=None):
         if self.signal_range != "interactive" and self.signal_range is not None:
             self.model.set_signal_range(*self.signal_range)
         elif self.signal_range == "interactive":

@@ -70,6 +70,14 @@ def print_known_signal_types(style=None):
 
     table = PrettyTable()
     table.field_names = ["signal_type", "aliases", "class name", "package"]
+    _widths = {
+        "signal_type": 20,
+        "aliases": 20,
+        "class name": 20,
+        "package": 20,
+    }
+    table.min_width = _widths
+    table.max_width = _widths
     if style is not None:
         table.set_style(style)
     for sclass, sdict in ALL_EXTENSIONS["signals"].items():
