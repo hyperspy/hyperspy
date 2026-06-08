@@ -447,10 +447,13 @@ sphinx_gallery_conf = {
 if platform.system() != "Windows":
     # optipng is not straightforward to install on Windows
     # don't use compression on Windows to avoid warning when building the documentation
-    sphinx_gallery_conf["compress_images"] = (
-        "images",
-        "thumbnails",
-    )  # use optipng to reduce image file size
+    from shutil import which
+
+    if which("optipng") is not None:
+        sphinx_gallery_conf["compress_images"] = (
+            "images",
+            "thumbnails",
+        )  # use optipng to reduce image file size
 
 
 # -- Sphinx-copybutton -----------

@@ -20,7 +20,7 @@
 
 # Used by exSpy
 
-FIT_PARAMETERS_ARG = """optimizer : str or None, default None
+FIT_PARAMETERS_ARG = r"""optimizer : str or None, default None
             The optimization algorithm used to perform the fitting.
 
             * Non-linear optimizers:
@@ -112,7 +112,7 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             If ``grad='fd'``, selects the finite difference scheme to use.
             See :func:`scipy.optimize.minimize` for details. Ignored if
             ``optimizer`` is one of ``"lm"``, ``"trf"`` or ``"dogbox"``.
-        **kwargs : dict
+        \*\*kwargs : dict
             Any extra keyword argument will be passed to the chosen
             optimizer. For more information, read the docstring of the
             optimizer of your choice in :mod:`scipy.optimize`.
