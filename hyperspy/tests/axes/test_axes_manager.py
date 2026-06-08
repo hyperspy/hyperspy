@@ -457,7 +457,7 @@ class TestAxesHotkeys:
 
     def test_use_macos_shortcuts(self):
         preferences.Plot.use_macos_shortcuts()
-        assert preferences.Plot.modifier_dims_01 == "alt"
+        assert preferences.Plot.modifier_dims_01 == "ctrl+alt"
         assert preferences.Plot.modifier_dims_23 == "shift"
         assert preferences.Plot.modifier_dims_45 == "alt+shift"
 
@@ -478,7 +478,7 @@ class TestAxesHotkeys:
 
     def test_platform_shortcuts_macos(self):
         preferences.Plot.platform_shortcuts = "macos"
-        assert preferences.Plot.modifier_dims_01 == "alt"
+        assert preferences.Plot.modifier_dims_01 == "ctrl+alt"
         assert preferences.Plot.modifier_dims_23 == "shift"
         assert preferences.Plot.modifier_dims_45 == "alt+shift"
 
@@ -528,7 +528,7 @@ class TestAxesHotkeys:
         """
         try:
             preferences.Plot.platform_shortcuts = "macos"
-            assert preferences.Plot.modifier_dims_01 == "alt"
+            assert preferences.Plot.modifier_dims_01 == "ctrl+alt"
             preferences.Plot.trait_set(modifier_dims_01="ctrl")
             assert preferences.Plot.modifier_dims_01 == "ctrl"
         finally:

@@ -189,14 +189,15 @@ class PlotConfig(t.HasTraits):
     )
     # ---- Modifier Keys ----------------------------------------------------
     # Each tuple: (linux/windows default, macOS default)
-    # macOS uses only ``alt`` (Option) and ``shift`` for arrow navigation
-    # because Command (⌘) and Control (⌃) + arrow are captured by the OS
-    # (Mission Control / Spaces) before any application sees them.
-    # Additionally, the macosx and Qt5 backends produce different modifier
-    # strings for Command/Control (``cmd`` vs ``ctrl``), while ``alt`` and
-    # ``shift`` are consistent across all backends.
+    # macOS uses ``ctrl+alt`` (Control ⌃ + Option ⌥) for dims 0–1 arrow
+    # navigation: plain ``alt`` conflicts with macOS text-navigation
+    # (⌥+arrows = word‑by‑word), plain ``ctrl`` is captured by Mission
+    # Control.  ``ctrl+alt`` is the only chord that avoids both problems.
+    # Command (⌘) is excluded from macOS modifier choices because the OS
+    # captures ⌘+arrow for Mission Control and backends produce
+    # inconsistent key‑event prefixes for it (``cmd`` vs ``ctrl``).
     modifier_dims_01 = t.Enum(
-        _modifier_list("ctrl", "alt"),
+        _modifier_list("ctrl", "ctrl+alt"),
         label="Modifier key for 1st and 2nd dimensions",
         group="Navigation",
     )
@@ -215,7 +216,7 @@ class PlotConfig(t.HasTraits):
     # to set each modifier individually — especially useful when the machine
     # running HyperSpy (server) differs from the keyboard (client).
     _MACOS_SHORTCUT_DEFAULTS = {
-        "modifier_dims_01": "alt",
+        "modifier_dims_01": "ctrl+alt",
         "modifier_dims_23": "shift",
         "modifier_dims_45": "alt+shift",
     }

@@ -168,7 +168,7 @@ Modifier keys do not work with the numpad.
 
    **macOS server → Linux/Windows client** (e.g. remote desktop into a Mac
    from a Linux or Windows machine).  The server applies the macOS defaults
-   (``alt`` for dims 0–1, ``alt+shift`` for dims 4–5), designed to avoid
+   (``ctrl+alt`` for dims 0–1, ``alt+shift`` for dims 4–5), designed to avoid
    Command-key Mission Control interference and backend inconsistencies.
    On a standard PC keyboard these combos may be awkward;
    ``use_standard_shortcuts()`` restores the familiar ``Ctrl``/``Alt``
@@ -217,7 +217,7 @@ The following keyboard shortcuts are available when the 1D signal figure is in f
     ``Shift`` + click              Jump to clicked coordinates (configurable)
     ============================   ==============================================
 
-.. [1] On macOS: Option (⌥) + Arrows for dims 0–1, Option+Shift (⌥⇧) + Arrows for dims 4–5.
+.. [1] On macOS: Control+Option (⌃⌥) + Arrows for dims 0–1, Option+Shift (⌥⇧) + Arrows for dims 4–5.
 
 .. _shortcuts_model_plots:
 
@@ -311,7 +311,7 @@ The following keyboard shortcuts are available when the 2D signal figure is in f
     ``Shift`` + click              Jump to clicked coordinates (configurable)
     ============================   ==============================================
 
-.. [2] On macOS: Option (⌥) + Arrows for dims 0–1, Option+Shift (⌥⇧) + Arrows for dims 4–5.
+.. [2] On macOS: Control+Option (⌃⌥) + Arrows for dims 0–1, Option+Shift (⌥⇧) + Arrows for dims 4–5.
 
 All keys above are configurable via preferences (see
 :ref:`plot preferences <configuring-hyperspy-label>`, ``Plot`` section).
