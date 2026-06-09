@@ -3052,7 +3052,9 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             if panels is not None:
                 nav_fig, signal_fig = panels
                 kwargs["fig"] = signal_fig
-                kwargs.setdefault("navigator_kwds", {})["fig"] = nav_fig
+                nav_kwds = dict(kwargs.get("navigator_kwds") or {})
+                nav_kwds["fig"] = nav_fig
+                kwargs["navigator_kwds"] = nav_kwds
 
         if axes_manager.signal_dimension == 0:
             if axes_manager.navigation_dimension == 0:
