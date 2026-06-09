@@ -71,6 +71,9 @@ class MplBackend:
     def set_ylim(self, ax, ymin, ymax):
         ax.set_ylim(ymin, ymax)
 
+    def get_xlim(self, ax):
+        return ax.get_xlim()
+
     def get_ylim(self, ax):
         return ax.get_ylim()
 
@@ -99,8 +102,53 @@ class MplBackend:
 
     # ── 1-D line plotting ─────────────────────────────────────────────────
 
+    @staticmethod
+    def _to_mpl_norm(norm):
+        """Convert a HyperNorm to the equivalent matplotlib Normalize."""
+        from hyperspy.drawing.norm import (
+            HyperNorm,
+            LinearNorm,
+            LogNorm,
+            PowerNorm,
+            SymLogNorm,
+        )
+
+        if norm is None or not isinstance(norm, HyperNorm):
+            return norm
+        from matplotlib.colors import (
+            LogNorm as MplLogNorm,
+        )
+        from matplotlib.colors import (
+            Normalize as MplNormalize,
+        )
+        from matplotlib.colors import (
+            PowerNorm as MplPowerNorm,
+        )
+        from matplotlib.colors import (
+            SymLogNorm as MplSymLogNorm,
+        )
+
+        if isinstance(norm, LinearNorm):
+            return MplNormalize(vmin=norm.vmin, vmax=norm.vmax, clip=norm.clip)
+        elif isinstance(norm, LogNorm):
+            return MplLogNorm(vmin=norm.vmin, vmax=norm.vmax, clip=norm.clip)
+        elif isinstance(norm, PowerNorm):
+            return MplPowerNorm(
+                gamma=norm.gamma, vmin=norm.vmin, vmax=norm.vmax, clip=norm.clip
+            )
+        elif isinstance(norm, SymLogNorm):
+            return MplSymLogNorm(
+                linthresh=norm.linthresh,
+                linscale=norm.linscale,
+                vmin=norm.vmin,
+                vmax=norm.vmax,
+                clip=norm.clip,
+                base=norm.base,
+            )
+        return None
+
     def plot_line(self, ax, x, y, **props):
-        animated = ax.figure.canvas.supports_blit
+        animated = props.pop("animated", ax.figure.canvas.supports_blit)
         norm = props.pop("norm", "linear")
         plot_fn = ax.semilogy if norm == "log" else ax.plot
         (line,) = plot_fn(x, y, animated=animated, **props)
@@ -130,7 +178,7 @@ class MplBackend:
     # ── Text annotations ─────────────────────────────────────────────────
 
     def add_text(self, ax, x, y, s, transform="axes", **kwargs):
-        animated = ax.figure.canvas.supports_blit
+        animated = kwargs.pop("animated", ax.figure.canvas.supports_blit)
         t = self.get_ax_transform(ax, transform)
         return ax.text(x, y, s=s, transform=t, animated=animated, **kwargs)
 
@@ -155,11 +203,12 @@ class MplBackend:
         **kwargs,
     ):
         animated = ax.figure.canvas.supports_blit
+        mpl_norm = self._to_mpl_norm(norm)
         args = {"animated": animated, "cmap": cmap}
-        if norm is None:
+        if mpl_norm is None:
             args.update({"vmin": vmin, "vmax": vmax})
         else:
-            args["norm"] = norm
+            args["norm"] = mpl_norm
         if extent is not None:
             args["extent"] = extent
         args.update(kwargs)
@@ -184,7 +233,7 @@ class MplBackend:
         handle.set_clim(vmin, vmax)
 
     def image_set_norm(self, handle, norm):
-        handle.set_norm(norm)
+        handle.set_norm(self._to_mpl_norm(norm))
 
     def get_image_handle(self, ax):
         if ax.images:
@@ -535,6 +584,35 @@ class MplBackend:
 
     def get_figure_from_ax(self, ax):
         return ax.figure
+
+    # ── Figure manager factories ──────────────────────────────────────────
+
+    def create_signal1d_figure(self, title="", on_close=None, fig=None, **kwargs):
+        from hyperspy.drawing.signal1d import Signal1DFigure
+
+        return Signal1DFigure(
+            title=title, _on_figure_window_close=on_close, fig=fig, **kwargs
+        )
+
+    def create_image_figure(self, title="", **kwargs):
+        from hyperspy.drawing.image import ImagePlot
+
+        return ImagePlot(title=title)
+
+    # ── Scale bar ─────────────────────────────────────────────────────────
+
+    def create_scalebar(self, ax, units, **kwargs):
+        from hyperspy.drawing._widgets.scalebar import ScaleBar
+
+        return ScaleBar(ax=ax, units=units, **kwargs)
+
+    def remove_scalebar(self, ax, handle):
+        handle.remove()
+
+    # ── Image helpers ─────────────────────────────────────────────────────
+
+    def get_image_cmap_name(self, handle):
+        return handle.get_cmap().name
 
     def get_explorer(self, signal_dim):
         if signal_dim == 0:

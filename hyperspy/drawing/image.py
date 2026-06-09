@@ -22,15 +22,15 @@ import logging
 import math
 
 import numpy as np
-from matplotlib.colors import LogNorm, Normalize, PowerNorm, SymLogNorm
 from rsciio.utils import rgb
 from traits.api import Undefined
 
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
-from hyperspy.drawing import utils, widgets
+from hyperspy.drawing import utils
 from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.backends._protocol import BackendCapabilityError
-from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing.figure import AbstractImageFigure
+from hyperspy.drawing.norm import HyperNorm, LogNorm, PowerNorm, SymLogNorm
 from hyperspy.misc import math_tools
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.signal_tools import ImageContrastEditor
@@ -39,7 +39,7 @@ from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 _logger = logging.getLogger(__name__)
 
 
-class ImagePlot(BlittedFigure):
+class ImagePlot(AbstractImageFigure):
     """Class to plot an image with the necessary machinery to update
     the image when the coordinates of an AxesManager change.
 
@@ -323,9 +323,8 @@ class ImagePlot(BlittedFigure):
         backend.set_xlabel(self.ax, self._xlabel)
         backend.set_ylabel(self.ax, self._ylabel)
         if self.axes_ticks is False:
-            if hasattr(self.ax, "set_xticks"):
-                self.ax.set_xticks([])
-                self.ax.set_yticks([])
+            backend.set_xticklabels(self.ax, [])
+            backend.set_yticklabels(self.ax, [])
         self.ax.hspy_fig = self
         if self.axes_off:
             backend.set_axis_off(self.ax)
@@ -362,26 +361,21 @@ class ImagePlot(BlittedFigure):
         if self.scalebar is True:
             if self.pixel_units is not None:
                 try:
-                    self.ax.scalebar = widgets.ScaleBar(
+                    self._scalebar_handle = get_backend().create_scalebar(
                         ax=self.ax,
                         units=self.pixel_units,
                         animated=get_backend().supports_blit(self.figure),
                         color=self.scalebar_color,
                     )
-                except (AttributeError, BackendCapabilityError):
-                    pass
+                    self.ax.scalebar = self._scalebar_handle
+                except BackendCapabilityError:
+                    self._scalebar_handle = None
 
         if self.colorbar:
             self._add_colorbar()
 
-        if hasattr(self.figure, "tight_layout"):
-            try:
-                if not (self.axes_ticks == "off" and not self.colorbar):
-                    self.figure.tight_layout()
-            except BaseException:
-                # tight_layout is a bit brittle, we do this just in case it
-                # complains
-                pass
+        if not (self.axes_ticks == "off" and not self.colorbar):
+            get_backend().tight_layout(self.figure)
 
         self.connect()
         self.render_figure()
@@ -453,12 +447,17 @@ class ImagePlot(BlittedFigure):
         if not self._is_rgb and self.centre_colormap == "auto":
             if "cmap" in kwargs:
                 cmap = kwargs["cmap"]
-            elif handle is not None and hasattr(handle, "get_cmap"):
-                cmap = handle.get_cmap().name
-            else:
-                import matplotlib
+            elif handle is not None:
+                try:
+                    cmap = backend.get_image_cmap_name(handle)
+                except BackendCapabilityError:
+                    from hyperspy.defaults_parser import preferences
 
-                cmap = matplotlib.cm.get_cmap().name
+                    cmap = preferences.Plot.cmap_signal
+            else:
+                from hyperspy.defaults_parser import preferences
+
+                cmap = preferences.Plot.cmap_signal
             if cmap in utils.MPL_DIVERGING_COLORMAPS:
                 self.centre_colormap = True
             else:
@@ -507,8 +506,6 @@ class ImagePlot(BlittedFigure):
                 and vmin != vmax
             ):
                 redraw_colorbar = True
-                if hasattr(handle, "autoscale"):
-                    handle.autoscale()
             if self.centre_colormap:
                 vmin, vmax = utils.centre_colormap_values(vmin, vmax)
 
@@ -539,16 +536,16 @@ class ImagePlot(BlittedFigure):
                     "base": 10,
                 }
                 norm = SymLogNorm(**sym_log_kwargs)
-            elif inspect.isclass(norm) and issubclass(norm, Normalize):
+            elif inspect.isclass(norm) and issubclass(norm, HyperNorm):
                 norm = norm(vmin=vmin, vmax=vmax)
+            elif isinstance(norm, HyperNorm):
+                pass  # already a concrete HyperNorm instance; pass through
             elif norm not in ["auto", "linear"]:
                 raise ValueError(
                     "`norm` parameter should be 'auto', 'linear', "
-                    "'log', 'symlog' or a matplotlib Normalize  "
-                    "instance or subclass."
+                    "'log', 'symlog', a HyperNorm subclass, or a HyperNorm instance."
                 )
             else:
-                # set back to matplotlib default
                 norm = None
 
             self._vmin, self._vmax = vmin, vmax
@@ -580,9 +577,6 @@ class ImagePlot(BlittedFigure):
                 backend.image_set_clim(handle, vmin, vmax)
             if redraw_colorbar:
                 backend.colorbar_redraw(self._colorbar, self.figure)
-            else:
-                if hasattr(handle, "changed"):
-                    handle.changed()
             self.render_figure()
         else:  # no signal have been drawn yet
             new_args = {}
@@ -661,7 +655,7 @@ class ImagePlot(BlittedFigure):
             self._add_colorbar()
             # Use render_figure instead of canvas.draw_idle() to go through the
             # blit render pipeline when supported (see BlittedFigure.render_figure).
-            self.figure.render_figure()
+            self.render_figure()
 
     def set_quantity_label(self):
         if "power_spectrum" in self.data_function_kwargs.keys():

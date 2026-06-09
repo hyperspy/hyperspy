@@ -18,6 +18,7 @@
 
 import logging
 import textwrap
+from abc import ABC, abstractmethod
 
 from hyperspy.drawing.backends import get_backend
 from hyperspy.events import Event, Events
@@ -162,3 +163,43 @@ class BlittedFigure:
             self._update_animated()
         else:
             backend.draw_idle(self.figure)
+
+
+class AbstractSignal1DFigure(BlittedFigure, ABC):
+    """Abstract interface every 1-D signal figure manager must satisfy.
+
+    Backends return a concrete subclass from
+    :meth:`~hyperspy.drawing.backends._protocol.PlottingBackend.create_signal1d_figure`.
+    The MPL implementation is
+    :class:`~hyperspy.drawing.signal1d.Signal1DFigure`.
+    """
+
+    @abstractmethod
+    def add_line(self, line, ax="left", connect_navigation=False):
+        """Attach a line object to the figure."""
+
+    @abstractmethod
+    def plot(self, **kwargs):
+        """Render all lines; call once configuration is complete."""
+
+    @abstractmethod
+    def update(self):
+        """Redraw all lines at the current navigation index."""
+
+
+class AbstractImageFigure(BlittedFigure, ABC):
+    """Abstract interface every 2-D image figure manager must satisfy.
+
+    Backends return a concrete subclass from
+    :meth:`~hyperspy.drawing.backends._protocol.PlottingBackend.create_image_figure`.
+    The MPL implementation is
+    :class:`~hyperspy.drawing.image.ImagePlot`.
+    """
+
+    @abstractmethod
+    def plot(self, **kwargs):
+        """Render the image; call once configuration is complete."""
+
+    @abstractmethod
+    def update(self, data_changed=True, **kwargs):
+        """Redraw the image at the current navigation index."""

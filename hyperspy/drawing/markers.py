@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import warnings
 from copy import deepcopy
 
 import numpy as np
@@ -777,18 +776,14 @@ class Markers:
         if not self._using_native_markers:
             self._initialize_collection()
             self._collection.set_animated(
-                backend.supports_blit(getattr(self.ax, "figure", None))
+                backend.supports_blit(backend.get_figure_from_ax(self.ax))
             )
             try:
                 backend.add_collection(self.ax, self._collection)
             except BackendCapabilityError:
-                warnings.warn(
-                    "The active backend does not support markers. "
-                    "Markers will not be displayed.",
-                    UserWarning,
-                    stacklevel=2,
+                raise BackendCapabilityError(
+                    "The active backend does not support markers."
                 )
-                return
 
         if render_figure:
             self._render_figure()
@@ -885,9 +880,8 @@ class Markers:
         if self.ax is None:
             raise RuntimeError("The markers needs to be plotted.")
         self.set_ScalarMappable_array(self._ScalarMappable_array)
-        cbar = get_backend().add_colorbar(
-            getattr(self.ax, "figure", None), self._collection, self.ax
-        )
+        b = get_backend()
+        cbar = b.add_colorbar(b.get_figure_from_ax(self.ax), self._collection, self.ax)
         return cbar
 
 
