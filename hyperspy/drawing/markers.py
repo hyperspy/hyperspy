@@ -775,8 +775,9 @@ class Markers:
 
         if not self._using_native_markers:
             self._initialize_collection()
-            self._collection.set_animated(
-                backend.supports_blit(backend.get_figure_from_ax(self.ax))
+            backend.artist_set_animated(
+                self._collection,
+                backend.supports_blit(backend.get_figure_from_ax(self.ax)),
             )
             try:
                 backend.add_collection(self.ax, self._collection)

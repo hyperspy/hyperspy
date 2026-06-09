@@ -155,11 +155,14 @@ class Signal1DFigure(AbstractSignal1DFigure):
         # Or remove it from the color cycle if part of the cycle
         # in this round
         else:
-            import matplotlib.colors as mpl_colors
+            try:
+                import matplotlib.colors as mpl_colors
 
-            rgba_color = mpl_colors.to_rgba(line.color)
-            if rgba_color in self._color_cycles[line.type].color_cycle:
-                self._color_cycles[line.type].color_cycle.remove(rgba_color)
+                rgba_color = mpl_colors.to_rgba(line.color)
+                if rgba_color in self._color_cycles[line.type].color_cycle:
+                    self._color_cycles[line.type].color_cycle.remove(rgba_color)
+            except ImportError:
+                pass
 
     def plot(self, data_function_kwargs={}, **kwargs):
         backend = get_backend()

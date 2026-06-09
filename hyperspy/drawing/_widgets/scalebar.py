@@ -148,24 +148,25 @@ class ScaleBar(object):
     def _set_position(self, x, y):
         self.position = x, y
         self.calculate_text_position()
-        self.plot_scale(line_width=self.line.get_linewidth())
+        self.plot_scale(line_width=get_backend().line_get_linewidth(self.line))
 
     def set_color(self, c):
         backend = get_backend()
         backend.set_line_props(self.line, color=c)
-        self.text.set_color(c)
+        backend.text_set_color(self.text, c)
         backend.draw_idle(backend.get_figure_from_ax(self.ax))
 
     def set_length(self, length):
-        color = self.line.get_color()
+        backend = get_backend()
+        color = backend.line_get_color(self.line)
         self.length = length
         self.calculate_scale_size()
         self.calculate_text_position()
-        self.plot_scale(line_width=self.line.get_linewidth())
+        self.plot_scale(line_width=backend.line_get_linewidth(self.line))
         self.set_color(color)
 
     def set_tex_bold(self):
         self.tex_bold = True
-        self.text.set_text(self.get_units_string())
+        get_backend().update_text(self.text, self.get_units_string())
         backend = get_backend()
         backend.draw_idle(backend.get_figure_from_ax(self.ax))

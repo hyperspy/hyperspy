@@ -175,6 +175,9 @@ class MplBackend:
     def line_get_color(self, handle):
         return handle.get_color()
 
+    def line_get_linewidth(self, handle):
+        return handle.get_linewidth()
+
     # ── Text annotations ─────────────────────────────────────────────────
 
     def add_text(self, ax, x, y, s, transform="axes", **kwargs):
@@ -183,11 +186,29 @@ class MplBackend:
         return ax.text(x, y, s=s, transform=t, animated=animated, **kwargs)
 
     def update_text(self, handle, s):
-        handle.set_text(s)
+        if handle is not None:
+            handle.set_text(s)
 
     def remove_text(self, ax, handle):
-        if handle in ax.texts:
+        if handle is not None and handle in ax.texts:
             handle.remove()
+
+    def text_set_color(self, handle, color):
+        if handle is not None:
+            import matplotlib.pyplot as plt
+
+            plt.setp(handle, color=color)
+
+    def text_get_color(self, handle):
+        if handle is not None:
+            return handle.get_color()
+        return "black"
+
+    # ── Generic artist ────────────────────────────────────────────────────
+
+    def artist_set_animated(self, handle, animated):
+        if handle is not None:
+            handle.set_animated(animated)
 
     # ── 2-D image plotting ────────────────────────────────────────────────
 

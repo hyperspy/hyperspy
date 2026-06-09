@@ -149,9 +149,12 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 self._size = np.array((value,))
                 self._set_size_patch()
                 # the size patches have been removed, we need to draw them
+                from hyperspy.drawing.backends import get_backend
+
+                backend = get_backend()
                 for p in self._width_indicator_patches:
                     self.ax.add_artist(p)
-                    p.set_animated(self.blit)
+                    backend.artist_set_animated(p, self.blit)
             else:
                 self._size = np.array((value,))
             self._size_changed()

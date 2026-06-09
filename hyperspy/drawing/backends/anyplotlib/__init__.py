@@ -216,7 +216,12 @@ class AnyplotlibBackend:
 
     def get_xlim(self, ax):
         if ax._plot is not None:
-            return ax._plot.get_xlim()
+            plot = ax._plot
+            # anyplotlib Plot2D exposes get_xbound but not get_xlim
+            for attr in ("get_xlim", "get_xbound"):
+                fn = getattr(plot, attr, None)
+                if fn is not None:
+                    return fn()
         return (0.0, 1.0)
 
     def get_ylim(self, ax):
@@ -291,7 +296,10 @@ class AnyplotlibBackend:
         return handle.x
 
     def line_get_color(self, handle):
-        return handle.color
+        return getattr(handle, "color", "#4fc3f7")
+
+    def line_get_linewidth(self, handle):
+        return float(getattr(handle, "linewidth", 1.5))
 
     # ── Text annotations ─────────────────────────────────────────────────
 
@@ -299,10 +307,21 @@ class AnyplotlibBackend:
         return None  # text annotations not yet supported; callers check for None
 
     def update_text(self, handle, s):
-        pass  # no-op when handle is None (add_text returned None)
+        pass  # no-op when handle is None
 
     def remove_text(self, ax, handle):
         pass  # no-op when handle is None
+
+    def text_set_color(self, handle, color):
+        pass  # no-op; text not yet supported
+
+    def text_get_color(self, handle):
+        return "white"  # default scalebar colour
+
+    # ── Generic artist ────────────────────────────────────────────────────
+
+    def artist_set_animated(self, handle, animated):
+        pass  # anyplotlib repaints natively; no per-artist animated flag
 
     # ── 2-D image plotting ────────────────────────────────────────────────
 
@@ -330,6 +349,8 @@ class AnyplotlibBackend:
             vmax=vmax,
         )
         self._apply_pending_labels(ax, plot)
+        # Store explicitly so overlay plot_line calls don't shadow the image.
+        ax._hspy_image_plot = plot
         return plot
 
     def plot_mesh(self, ax, x, y, data, **kwargs):
@@ -354,10 +375,21 @@ class AnyplotlibBackend:
         handle.set_clim(vmin, vmax)
 
     def image_set_norm(self, handle, norm):
-        pass  # anyplotlib uses vmin/vmax; advanced norms are not yet supported
+        from hyperspy.drawing.norm import HyperNorm
+
+        if norm is None or not isinstance(norm, HyperNorm):
+            return
+        vmin = getattr(norm, "vmin", None)
+        vmax = getattr(norm, "vmax", None)
+        if vmin is not None or vmax is not None:
+            handle.set_clim(vmin, vmax)
 
     def get_image_handle(self, ax):
-        return ax._plot if ax._plot is not None else None
+        # Prefer the explicit image handle over ax._plot, which may be
+        # overwritten by overlay line plots (e.g. scalebar).
+        return getattr(ax, "_hspy_image_plot", None) or (
+            ax._plot if ax._plot is not None else None
+        )
 
     # ── Colorbar ─────────────────────────────────────────────────────────
 
@@ -429,14 +461,22 @@ class AnyplotlibBackend:
 
     # ── Navigation pointer widgets ────────────────────────────────────────
 
+    def _primary_plot(self, ax):
+        """Return the primary (image or line) plot for widget creation.
+
+        Falls back from the explicit image handle to the current ax._plot so
+        that scalebar overlay lines (which overwrite ax._plot) do not shadow
+        the real primary plot.
+        """
+        return getattr(ax, "_hspy_image_plot", None) or getattr(ax, "_plot", None)
+
     def create_line_pointer(self, ax, axis, pos, color="red"):
-        plot = getattr(ax, "_plot", None)
+        plot = self._primary_plot(ax)
         if plot is None:
             raise RuntimeError("ax has no plot; call plot_line or plot_image first")
         if axis == "x":
             return plot.add_vline_widget(x=float(pos), color=color)
-        plot = getattr(ax, "_plot", None)
-        if plot is None or not hasattr(plot, "add_widget"):
+        if not hasattr(plot, "add_widget"):
             raise BackendCapabilityError(_NOT_YET.format("create_line_pointer(y)"))
         return plot.add_widget("crosshair", cx=0.0, cy=float(pos), color=color)
 
@@ -468,7 +508,7 @@ class AnyplotlibBackend:
         handle.add_event_handler(self._wrap(_cb), "pointer_move")
 
     def create_rect_pointer(self, ax, x, y, w, h, color="red"):
-        plot = getattr(ax, "_plot", None)
+        plot = self._primary_plot(ax)
         if plot is None or not hasattr(plot, "add_widget"):
             raise BackendCapabilityError(_NOT_YET.format("create_rect_pointer"))
         # x, y are the lower-left corner; convert to center for the crosshair
@@ -562,7 +602,10 @@ class AnyplotlibBackend:
     # ── New protocol methods (not yet implemented by anyplotlib) ──────────
 
     def plot_step(self, ax, x, y, **props):
-        raise BackendCapabilityError(_NOT_YET.format("plot_step"))
+        # anyplotlib has no dedicated step plot API; fall back to plot_line.
+        # 'drawstyle' / 'steps-mid' props are silently dropped.
+        props.pop("drawstyle", None)
+        return self.plot_line(ax, x, y, **props)
 
     def create_line2d_patch(self, x, y, **kwargs):
         raise BackendCapabilityError(_NOT_YET.format("create_line2d_patch"))
@@ -630,13 +673,17 @@ class AnyplotlibBackend:
         return ImagePlot(title=title)
 
     def create_scalebar(self, ax, units, **kwargs):
-        raise BackendCapabilityError(_NOT_YET.format("create_scalebar"))
+        # ScaleBar now routes all artist ops through the backend, so it works
+        # on anyplotlib (line is drawn; text label is silently absent).
+        from hyperspy.drawing._widgets.scalebar import ScaleBar
+
+        return ScaleBar(ax=ax, units=units, **kwargs)
 
     def remove_scalebar(self, ax, handle):
         pass
 
     def get_image_cmap_name(self, handle):
-        raise BackendCapabilityError(_NOT_YET.format("get_image_cmap_name"))
+        return getattr(handle, "cmap", None) or "gray"
 
 
 class _AplColorbar:
