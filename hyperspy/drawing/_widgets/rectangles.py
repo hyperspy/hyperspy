@@ -45,9 +45,9 @@ class SquareWidget(Widget2DBase):
         self.blit = backend.supports_blit_from_ax(ax)
         xy = self._get_patch_xy()
         xs, ys = self.size
-        handle = backend.add_rect_widget(ax, xy[0], xy[1], xs, ys, color=self.color)
+        handle = backend.create_rect_pointer(ax, xy[0], xy[1], xs, ys, color=self.color)
         self._patch = [handle]
-        backend.set_patch_animated(handle, self.blit)
+        backend.set_pointer_style(handle, animated=self.blit)
         _self = self
         backend.connect_widget_drag(
             handle, lambda x, y: setattr(_self, "position", (x, y))
@@ -59,7 +59,7 @@ class SquareWidget(Widget2DBase):
 
             xy = self._get_patch_xy()
             xs, ys = self.size
-            get_backend().update_rect(self.patch[0], xy[0], xy[1], xs, ys)
+            get_backend().update_rect_pointer(self.patch[0], xy[0], xy[1], xs, ys)
             self.draw_patch()
 
     def _onjumpclick(self, event):
@@ -348,7 +348,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
 
             xy = self._get_patch_xy()
             xs, ys = self.size
-            get_backend().update_rect(self.patch[0], xy[0], xy[1], xs, ys)
+            get_backend().update_rect_pointer(self.patch[0], xy[0], xy[1], xs, ys)
             self._update_resizers()
             self.draw_patch()
 
@@ -358,7 +358,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
             from hyperspy.drawing.backends import get_backend
 
             x, y, xs, ys = self._get_patch_bounds()
-            get_backend().update_rect(self.patch[0], x, y, xs, ys)
+            get_backend().update_rect_pointer(self.patch[0], x, y, xs, ys)
             self._update_resizers()
             self.draw_patch()
 

@@ -269,24 +269,24 @@ class TestColorbar:
         assert h._state["show_colorbar"] is False
 
 
-class TestVlineWidget:
-    def test_add_vline_widget(self, backend, fig_ax):
+class TestLinePointer:
+    def test_create_line_pointer_x(self, backend, fig_ax):
         _, ax = fig_ax
         backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
-        w = backend.add_vline_widget(ax, x=5.0, color="red")
+        w = backend.create_line_pointer(ax, "x", 5.0, color="red")
         assert w is not None
 
-    def test_update_vline(self, backend, fig_ax):
+    def test_update_line_pointer_x(self, backend, fig_ax):
         _, ax = fig_ax
         backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
-        w = backend.add_vline_widget(ax, x=5.0)
-        backend.update_vline(w, 10.0)
+        w = backend.create_line_pointer(ax, "x", 5.0)
+        backend.update_line_pointer(w, 10.0)
         assert w.x == pytest.approx(10.0)
 
-    def test_add_vline_before_plot_raises(self, backend, fig_ax):
+    def test_create_line_pointer_before_plot_raises(self, backend, fig_ax):
         _, ax = fig_ax
         with pytest.raises(RuntimeError, match="no plot"):
-            backend.add_vline_widget(ax, x=0.0)
+            backend.create_line_pointer(ax, "x", 0.0)
 
 
 class TestEvents:
