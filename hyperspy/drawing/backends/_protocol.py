@@ -86,7 +86,12 @@ class PlottingBackend(Protocol):
     def add_text(
         self, ax: Any, x: float, y: float, s: str, transform: str = "axes", **kwargs
     ) -> Any:
-        """Add a text label.  transform='axes' means (0,0)=bottom-left."""
+        """Add a text label.
+
+        *transform* is a string key passed to ``get_ax_transform``:
+        ``'axes'`` (default), ``'data'``, ``'xaxis'``, ``'yaxis'``,
+        ``'display'``, or ``'relative'``.
+        """
 
     def update_text(self, handle: Any, s: str) -> None: ...
     def remove_text(self, ax: Any, handle: Any) -> None: ...
@@ -187,7 +192,15 @@ class PlottingBackend(Protocol):
         """
 
     def get_explorer(self, signal_dim: int) -> type[HyperExplorer]:
-        """Return the HyperExplorer subclass for *signal_dim* (0, 1, or 2)."""
+        """Return the HyperExplorer subclass for *signal_dim* (0, 1, or 2).
+
+        **Every backend must override this method.**  The default returns the
+        abstract ``HyperExplorer`` base class, which does not implement figure
+        creation and will produce blank or broken plots.  Backend authors should
+        either subclass ``HyperSignal1D_Explorer`` / ``HyperImage_Explorer``
+        (see ``anyplotlib/_explorers.py`` for a reference) or re-use the
+        existing MPL explorer classes if the backend is matplotlib-compatible.
+        """
         from hyperspy.drawing.he import HyperExplorer
 
         return HyperExplorer

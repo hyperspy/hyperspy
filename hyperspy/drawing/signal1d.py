@@ -428,7 +428,7 @@ class Signal1DLine(object):
                 color=backend.line_get_color(self.line),
             )
         self._y_min, self._y_max = backend.get_ylim(self.ax)
-        self.ax.hspy_fig.render_figure()
+        backend.render_figure_from_ax(self.ax)
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
@@ -535,7 +535,7 @@ class Signal1DLine(object):
             backend.update_text(self.text, str(self.axes_manager.indices))
 
         if render_figure:
-            self.ax.hspy_fig.render_figure()
+            backend.render_figure_from_ax(self.ax)
 
     def close(self):
         _logger.debug("Closing `Signal1DLine`.")

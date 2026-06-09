@@ -310,9 +310,10 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self._width_indicator_patches = []
         # Patches were removed from the axes but the blit background
         # still shows their pixels — invalidate and force a full redraw.
-        if hasattr(self.ax, "hspy_fig"):
-            self.ax.hspy_fig._background = None
-            self.draw_patch()
+        from hyperspy.drawing.backends import get_backend
+
+        get_backend().invalidate_blit_background(self.ax)
+        self.draw_patch()
 
     def _get_vertex(self, event):
         """Check bitfield on self.func, and return vertex index."""
@@ -328,7 +329,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         if not self.patch:
             return self.FUNC_NONE
 
-        trans = self.ax.transData
+        from hyperspy.drawing.backends import get_backend
+
+        trans = get_backend().get_ax_transform(self.ax, "data")
         p = np.array(trans.transform(self._pos))
 
         # Calculate the distances to the vertecies, and find nearest one
@@ -444,7 +447,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
         # Rotation should happen in screen position, as anything else will
         # mix units
-        trans = self.ax.transData
+        from hyperspy.drawing.backends import get_backend
+
+        trans = get_backend().get_ax_transform(self.ax, "data")
         scr_zero = np.array(trans.transform((0, 0)))
         dx = np.array(trans.transform(dx)) - scr_zero
 
