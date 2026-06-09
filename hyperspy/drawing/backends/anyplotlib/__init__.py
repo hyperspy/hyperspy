@@ -433,16 +433,49 @@ class AnyplotlibBackend:
     def update_vline(self, handle, x):
         handle.x = float(x)
 
+    def add_hline_widget(self, ax, y, color="red"):
+        plot = getattr(ax, "_plot", None)
+        if plot is None or not hasattr(plot, "add_widget"):
+            raise BackendCapabilityError(_NOT_YET.format("add_hline_widget"))
+        return plot.add_widget("crosshair", cx=0.0, cy=float(y), color=color)
+
+    def update_hline(self, handle, y):
+        handle.cy = float(y)
+
+    def connect_widget_drag(self, handle, on_drag):
+        try:
+            from anyplotlib.widgets._widgets1d import VLineWidget
+            from anyplotlib.widgets._widgets2d import CrosshairWidget
+        except ImportError:
+            return
+
+        if isinstance(handle, VLineWidget):
+
+            def _cb(event):
+                on_drag(handle.x)
+
+        elif isinstance(handle, CrosshairWidget):
+
+            def _cb(event):
+                on_drag(handle.cx, handle.cy)
+
+        else:
+            return
+        handle.add_event_handler(self._wrap(_cb), "pointer_move")
+
     def add_rect_widget(self, ax, x, y, w, h, color="red"):
-        raise BackendCapabilityError(
-            _NOT_YET.format("add_rect_widget (RectangleWidget on 1D plot)")
-        )
+        plot = getattr(ax, "_plot", None)
+        if plot is None or not hasattr(plot, "add_widget"):
+            raise BackendCapabilityError(_NOT_YET.format("add_rect_widget"))
+        # x, y are the lower-left corner; convert to center for the crosshair
+        cx = float(x) + float(w) / 2.0
+        cy = float(y) + float(h) / 2.0
+        return plot.add_widget("crosshair", cx=cx, cy=cy, color=color)
 
     def update_rect(self, handle, x, y, w, h):
-        handle.x = float(x)
-        handle.y = float(y)
-        handle.w = float(w)
-        handle.h = float(h)
+        # x, y are lower-left; convert to center so cx/cy equal the nav axis value
+        handle.cx = float(x) + float(w) / 2.0
+        handle.cy = float(y) + float(h) / 2.0
 
     def remove_widget_patch(self, ax, handle):
         try:
@@ -485,6 +518,26 @@ class AnyplotlibBackend:
         raise BackendCapabilityError(_NOT_YET.format("collection_remove (markers)"))
 
     # ── Combined layout / lifecycle hooks ─────────────────────────────────
+
+    def render_figure_from_ax(self, ax):
+        self.draw_idle(getattr(ax, "figure", None))
+
+    def invalidate_blit_background(self, ax):
+        pass  # anyplotlib repaints natively; no blit-background cache to invalidate
+
+    def supports_blit_from_ax(self, ax):
+        return False
+
+    def create_span_selector(self, ax, **kwargs):
+        raise BackendCapabilityError(_NOT_YET.format("create_span_selector"))
+
+    def create_polygon_selector(self, ax, **kwargs):
+        raise BackendCapabilityError(_NOT_YET.format("create_polygon_selector"))
+
+    def get_ax_transform(self, ax, kind):
+        raise BackendCapabilityError(_NOT_YET.format(f"get_ax_transform({kind!r})"))
+
+    # connect_widget_drag implemented above; declared here for protocol completeness
 
     def simulate_pick(self, ax, patch):
         pass  # anyplotlib handles selection natively; no MPL pick simulation needed

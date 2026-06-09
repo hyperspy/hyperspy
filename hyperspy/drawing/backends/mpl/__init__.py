@@ -240,7 +240,7 @@ class MplBackend:
     def draw_animated_artists(self, fig):
         for ax in fig.axes:
             for artist in sorted(ax.get_children(), key=lambda a: a.zorder):
-                if artist.get_animated():
+                if artist.get_animated() and artist.axes is not None:
                     ax.draw_artist(artist)
 
     # ── Navigation pointer widgets ────────────────────────────────────────
@@ -259,16 +259,13 @@ class MplBackend:
     def add_rect_widget(self, ax, x, y, w, h, color="red"):
         import matplotlib.patches as mpatches
 
-        from hyperspy.defaults_parser import preferences
-        from hyperspy.drawing.utils import picker_kwargs
-
         rect = mpatches.Rectangle(
             (x, y),
             w,
             h,
             fill=False,
             color=color,
-            **picker_kwargs(preferences.Plot.pick_tolerance),
+            picker=True,
         )
         ax.add_patch(rect)
         return rect
@@ -366,6 +363,64 @@ class MplBackend:
                     figure.canvas.pick_event(mouseevent, patch)
         except (ImportError, AttributeError):
             pass
+
+    def render_figure_from_ax(self, ax):
+        hspy_fig = getattr(ax, "hspy_fig", None)
+        if hspy_fig is not None:
+            hspy_fig.render_figure()
+        elif getattr(ax, "figure", None) is not None:
+            ax.figure.canvas.draw_idle()
+
+    def invalidate_blit_background(self, ax):
+        hspy_fig = getattr(ax, "hspy_fig", None)
+        if hspy_fig is not None:
+            hspy_fig._background = None
+
+    def supports_blit_from_ax(self, ax):
+        return getattr(ax, "hspy_fig", None) is not None and self.supports_blit(
+            getattr(ax, "figure", None)
+        )
+
+    def create_span_selector(self, ax, **kwargs):
+        from matplotlib.widgets import SpanSelector
+
+        return SpanSelector(ax, **kwargs)
+
+    def create_polygon_selector(self, ax, **kwargs):
+        from matplotlib.widgets import PolygonSelector
+
+        return PolygonSelector(ax, **kwargs)
+
+    def add_hline_widget(self, ax, y, color="red"):
+        from hyperspy.defaults_parser import preferences
+        from hyperspy.drawing.utils import picker_kwargs
+
+        return ax.axhline(
+            y, color=color, **picker_kwargs(preferences.Plot.pick_tolerance)
+        )
+
+    def update_hline(self, handle, y):
+        handle.set_ydata([y])
+
+    def connect_widget_drag(self, handle, on_drag):
+        pass  # MPL widgets fire drag via _onmousemove in the widget base class
+
+    def get_ax_transform(self, ax, kind):
+        transforms = {
+            "data": ax.transData,
+            "axes": ax.transAxes,
+            "display": None,  # resolved by caller with IdentityTransform
+            "yaxis": ax.get_yaxis_transform(),
+            "xaxis": ax.get_xaxis_transform(),
+            "relative": ax.transData,
+        }
+        if kind not in transforms:
+            raise ValueError(f"Unknown transform kind: {kind!r}")
+        if kind == "display":
+            from matplotlib.transforms import IdentityTransform
+
+            return IdentityTransform()
+        return transforms[kind]
 
     def get_explorer(self, signal_dim):
         if signal_dim == 0:

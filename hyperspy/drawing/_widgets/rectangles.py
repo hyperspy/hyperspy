@@ -18,7 +18,6 @@
 
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
@@ -39,55 +38,29 @@ class SquareWidget(Widget2DBase):
     def __init__(self, axes_manager, **kwargs):
         super(SquareWidget, self).__init__(axes_manager, **kwargs)
 
-    def _set_patch(self):
-        """Sets the patch to a matplotlib Rectangle with the correct geometry.
-        The geometry is defined by _get_patch_xy, and get_size_in_axes.
-        """
+    def _add_patch_to(self, ax):
+        from hyperspy.drawing.backends import get_backend
+
+        backend = get_backend()
+        self.blit = backend.supports_blit_from_ax(ax)
         xy = self._get_patch_xy()
         xs, ys = self.size
-        self._patch = [
-            plt.Rectangle(
-                xy,
-                xs,
-                ys,
-                fill=False,
-                lw=self.border_thickness,
-                ec=self.color,
-                alpha=self.alpha,
-                picker=True,
-            )
-        ]
-        super(SquareWidget, self)._set_patch()
-
-    def _add_patch_to(self, ax):
-        if not hasattr(ax, "add_patch"):
-            # Non-matplotlib backend: use a native crosshair widget.
-            self.blit = False
-            plot = getattr(ax, "_plot", None)
-            if self.is_pointer and plot is not None and hasattr(plot, "add_widget"):
-                native_w = plot.add_widget(
-                    "crosshair",
-                    color=self.color,
-                    cx=float(self._pos[0]),
-                    cy=float(self._pos[1]),
-                )
-                self._native_crosshair = native_w
-                _self = self
-
-                def _on_drag(event):
-                    _self.position = (native_w.cx, native_w.cy)
-
-                native_w.add_event_handler(_on_drag, "pointer_move")
-            return
-        super()._add_patch_to(ax)
+        handle = backend.add_rect_widget(ax, xy[0], xy[1], xs, ys, color=self.color)
+        self._patch = [handle]
+        backend.set_patch_animated(handle, self.blit)
+        _self = self
+        backend.connect_widget_drag(
+            handle, lambda x, y: setattr(_self, "position", (x, y))
+        )
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
-            self.patch[0].set_xy(self._get_patch_xy())
+            from hyperspy.drawing.backends import get_backend
+
+            xy = self._get_patch_xy()
+            xs, ys = self.size
+            get_backend().update_rect(self.patch[0], xy[0], xy[1], xs, ys)
             self.draw_patch()
-        native_crosshair = getattr(self, "_native_crosshair", None)
-        if native_crosshair is not None:
-            native_crosshair.set(cx=float(self._pos[0]), cy=float(self._pos[1]))
 
     def _onjumpclick(self, event):
         if event.key == "shift" and event.inaxes and self.is_pointer:
@@ -371,17 +344,21 @@ class RectangleWidget(SquareWidget, ResizersMixin):
     def _update_patch_position(self):
         # Override to include resizer positioning
         if self.is_on and self.patch:
-            self.patch[0].set_xy(self._get_patch_xy())
+            from hyperspy.drawing.backends import get_backend
+
+            xy = self._get_patch_xy()
+            xs, ys = self.size
+            get_backend().update_rect(self.patch[0], xy[0], xy[1], xs, ys)
             self._update_resizers()
             self.draw_patch()
-        native_crosshair = getattr(self, "_native_crosshair", None)
-        if native_crosshair is not None:
-            native_crosshair.set(cx=float(self._pos[0]), cy=float(self._pos[1]))
 
     def _update_patch_geometry(self):
         # Override to include resizer positioning
         if self.is_on and self.patch:
-            self.patch[0].set_bounds(*self._get_patch_bounds())
+            from hyperspy.drawing.backends import get_backend
+
+            x, y, xs, ys = self._get_patch_bounds()
+            get_backend().update_rect(self.patch[0], x, y, xs, ys)
             self._update_resizers()
             self.draw_patch()
 

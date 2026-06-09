@@ -156,3 +156,5 @@ class HyperSignal1D_Explorer(HyperExplorer):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
+        self.signal_plot._background = None
+        self.signal_plot.render_figure()

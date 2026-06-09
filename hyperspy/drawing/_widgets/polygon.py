@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from matplotlib.widgets import PolygonSelector
-
 from hyperspy.drawing.widget import WidgetBase
 
 
@@ -112,24 +110,19 @@ class PolygonWidget(WidgetBase):
         handle_props = dict(color=self._color)
         line_props = dict(color=self._color)
 
-        if not hasattr(ax, "get_xlim"):
-            return  # non-matplotlib backend; PolygonSelector requires matplotlib axes
         from hyperspy.drawing.backends import get_backend
 
-        useblit = hasattr(self.ax, "hspy_fig") and get_backend().supports_blit(
-            getattr(self.ax, "figure", None)
-        )
-
-        self._widget = PolygonSelector(
+        backend = get_backend()
+        self._widget = backend.create_polygon_selector(
             ax,
             onselect=self._complete_building,
-            useblit=useblit,
+            useblit=backend.supports_blit_from_ax(ax),
             handle_props=handle_props,
             props=line_props,
         )
         self._widget.connect_event("motion_notify_event", self._onmove)
 
-        get_backend().draw_idle(getattr(self.ax, "figure", None))
+        backend.draw_idle(getattr(self.ax, "figure", None))
 
     def set_vertices(self, vertices):
         """
