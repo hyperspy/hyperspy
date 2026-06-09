@@ -542,6 +542,32 @@ class AnyplotlibBackend:
     def simulate_pick(self, ax, patch):
         pass  # anyplotlib handles selection natively; no MPL pick simulation needed
 
+    # ── New protocol methods (not yet implemented by anyplotlib) ──────────
+
+    def plot_step(self, ax, x, y, **props):
+        raise BackendCapabilityError(_NOT_YET.format("plot_step"))
+
+    def create_line2d_patch(self, x, y, **kwargs):
+        raise BackendCapabilityError(_NOT_YET.format("create_line2d_patch"))
+
+    def create_circle_patch(self, xy, radius, **kwargs):
+        raise BackendCapabilityError(_NOT_YET.format("create_circle_patch"))
+
+    def set_autoscale(self, ax, enable):
+        pass  # anyplotlib manages zoom internally
+
+    def set_xticklabels(self, ax, labels):
+        pass  # cosmetic; anyplotlib tick control not yet exposed
+
+    def set_yticklabels(self, ax, labels):
+        pass  # cosmetic; anyplotlib tick control not yet exposed
+
+    def tight_layout(self, fig):
+        pass  # anyplotlib uses constrained layout automatically
+
+    def get_figure_from_ax(self, ax):
+        raise BackendCapabilityError(_NOT_YET.format("get_figure_from_ax"))
+
     def connect_close_event(self, fig, fn):
         # anyplotlib close handling is done via on_close= kwarg at figure
         # creation time; there is no post-hoc connect mechanism yet.

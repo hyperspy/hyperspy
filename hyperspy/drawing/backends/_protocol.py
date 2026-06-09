@@ -263,3 +263,43 @@ class PlottingBackend(Protocol):
         raise BackendCapabilityError(
             f"Transform '{kind}' not supported by this backend"
         )
+
+    # ── Step plot ─────────────────────────────────────────────────────────
+
+    def plot_step(self, ax: Any, x, y, **props) -> Any:
+        """Draw a step plot; return an opaque handle."""
+        raise BackendCapabilityError("plot_step not supported by this backend")
+
+    # ── Patch creation (widget primitives) ───────────────────────────────
+
+    def create_line2d_patch(self, x, y, **kwargs) -> Any:
+        """Create a free-form line artist for use as a widget patch."""
+        raise BackendCapabilityError(
+            "create_line2d_patch not supported by this backend"
+        )
+
+    def create_circle_patch(self, xy, radius, **kwargs) -> Any:
+        """Create a circle artist for use as a widget patch."""
+        raise BackendCapabilityError(
+            "create_circle_patch not supported by this backend"
+        )
+
+    # ── Axes control ─────────────────────────────────────────────────────
+
+    def set_autoscale(self, ax: Any, enable: bool) -> None:
+        """Enable or disable axes autoscale (no-op by default)."""
+
+    def set_xticklabels(self, ax: Any, labels) -> None:
+        """Set the x-axis tick labels (no-op by default)."""
+
+    def set_yticklabels(self, ax: Any, labels) -> None:
+        """Set the y-axis tick labels (no-op by default)."""
+
+    # ── Layout helpers ────────────────────────────────────────────────────
+
+    def tight_layout(self, fig: Any) -> None:
+        """Apply tight_layout to fig (best-effort hint; no-op by default)."""
+
+    def get_figure_from_ax(self, ax: Any) -> Any:
+        """Return the parent figure of ax."""
+        raise BackendCapabilityError("get_figure_from_ax not supported by this backend")

@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from matplotlib.collections import LineCollection
-
 from hyperspy.drawing.markers import Markers
 
 
@@ -51,6 +49,8 @@ class Lines(Markers):
                 "Instead, use the `transform` argument to specify the transform "
                 "of the lines."
             )
+
+        from matplotlib.collections import LineCollection
 
         super().__init__(
             collection=LineCollection, segments=segments, transform=transform, **kwargs

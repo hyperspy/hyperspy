@@ -17,7 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
@@ -101,14 +100,17 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         return self.position
 
     def _set_patch(self):
-        """Sets the patch to a matplotlib Circle with the correct geometry.
+        """Sets the patch to a circle with the correct geometry.
         The geometry is defined by _get_patch_xy, and size.
         """
+        from hyperspy.drawing.backends import get_backend
+
         super(CircleWidget, self)._set_patch()
+        backend = get_backend()
         xy = self._get_patch_xy()
         ro, ri = self.size
         self._patch = [
-            plt.Circle(
+            backend.create_circle_patch(
                 xy,
                 radius=ro,
                 fill=False,
@@ -120,7 +122,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         ]
         if ri > 0:
             self._patch.append(
-                plt.Circle(
+                backend.create_circle_patch(
                     xy,
                     radius=ri,
                     fill=False,

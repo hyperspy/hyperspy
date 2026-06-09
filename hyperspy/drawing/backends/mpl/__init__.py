@@ -422,6 +422,46 @@ class MplBackend:
             return IdentityTransform()
         return transforms[kind]
 
+    # ── Step plot ─────────────────────────────────────────────────────────
+
+    def plot_step(self, ax, x, y, **props):
+        lines = ax.step(x, y, **props)
+        return lines[0]
+
+    # ── Patch creation ────────────────────────────────────────────────────
+
+    def create_line2d_patch(self, x, y, **kwargs):
+        import matplotlib.pyplot as plt
+
+        return plt.Line2D(x, y, **kwargs)
+
+    def create_circle_patch(self, xy, radius, **kwargs):
+        import matplotlib.pyplot as plt
+
+        return plt.Circle(xy, radius=radius, **kwargs)
+
+    # ── Axes control ─────────────────────────────────────────────────────
+
+    def set_autoscale(self, ax, enable):
+        ax.autoscale(enable)
+
+    def set_xticklabels(self, ax, labels):
+        ax.set_xticklabels(labels)
+
+    def set_yticklabels(self, ax, labels):
+        ax.set_yticklabels(labels)
+
+    # ── Layout helpers ────────────────────────────────────────────────────
+
+    def tight_layout(self, fig):
+        try:
+            fig.tight_layout()
+        except Exception:
+            pass
+
+    def get_figure_from_ax(self, ax):
+        return ax.figure
+
     def get_explorer(self, signal_dim):
         if signal_dim == 0:
             from hyperspy.drawing.backends.mpl.mpl_he import MPL_HyperExplorer

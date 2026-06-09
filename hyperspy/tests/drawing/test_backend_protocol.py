@@ -104,6 +104,18 @@ REQUIRED_METHODS = [
     "connect_widget_drag",
     # Coordinate transforms
     "get_ax_transform",
+    # Step plot
+    "plot_step",
+    # Patch creation (widget primitives)
+    "create_line2d_patch",
+    "create_circle_patch",
+    # Axes control
+    "set_autoscale",
+    "set_xticklabels",
+    "set_yticklabels",
+    # Layout helpers
+    "tight_layout",
+    "get_figure_from_ax",
 ]
 
 

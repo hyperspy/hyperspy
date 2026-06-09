@@ -20,10 +20,7 @@ import inspect
 import logging
 from functools import partial
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from hyperspy.drawing import utils
 from hyperspy.drawing.backends import get_backend
@@ -110,7 +107,7 @@ class Signal1DFigure(BlittedFigure):
             self._background = None
             self.render_figure()
         if adjust_layout:
-            plt.tight_layout()
+            get_backend().tight_layout(self.figure)
 
     def add_line(self, line, ax="left", connect_navigation=False):
         """
@@ -158,7 +155,9 @@ class Signal1DFigure(BlittedFigure):
         # Or remove it from the color cycle if part of the cycle
         # in this round
         else:
-            rgba_color = mpl.colors.colorConverter.to_rgba(line.color)
+            import matplotlib.colors as mpl_colors
+
+            rgba_color = mpl_colors.to_rgba(line.color)
             if rgba_color in self._color_cycles[line.type].color_cycle:
                 self._color_cycles[line.type].color_cycle.remove(rgba_color)
 
@@ -396,8 +395,14 @@ class Signal1DLine(object):
             backend.remove_line(self.ax, self.line)
 
         norm = self.norm
-        if isinstance(norm, mpl.colors.Normalize) or (
-            inspect.isclass(norm) and issubclass(norm, mpl.colors.Normalize)
+        try:
+            import matplotlib.colors as mpl_colors
+
+            _mpl_norm_cls = mpl_colors.Normalize
+        except ImportError:
+            _mpl_norm_cls = type(None)
+        if isinstance(norm, _mpl_norm_cls) or (
+            inspect.isclass(norm) and issubclass(norm, _mpl_norm_cls)
         ):
             raise ValueError(
                 "Matplotlib Normalize instance or subclass can "
@@ -557,15 +562,18 @@ class Signal1DLine(object):
 
 
 def _plot_component(factors, idx, ax=None, cal_axis=None, comp_label="PC"):
+    backend = get_backend()
     if ax is None:
+        import matplotlib.pyplot as plt
+
         ax = plt.gca()
     if cal_axis is not None:
         x = cal_axis.axis
-        plt.xlabel(cal_axis.units)
+        backend.set_xlabel(ax, cal_axis.units)
     else:
         x = np.arange(factors.shape[0])
-        plt.xlabel("Channel index")
-    ax.plot(x, factors[:, idx], label="%s %i" % (comp_label, idx))
+        backend.set_xlabel(ax, "Channel index")
+    backend.plot_line(ax, x, factors[:, idx], label="%s %i" % (comp_label, idx))
     return ax
 
 
@@ -577,9 +585,12 @@ def _plot_loading(
     comp_label="PC",
     no_nans=True,
     calibrate=True,
-    cmap=plt.cm.gray,
+    cmap="gray",
 ):
+    backend = get_backend()
     if ax is None:
+        import matplotlib.pyplot as plt
+
         ax = plt.gca()
     if no_nans:
         loadings = np.nan_to_num(loadings)
@@ -594,20 +605,15 @@ def _plot_loading(
                 axes_manager._axes[1].high_value,
                 axes_manager._axes[1].low_value,
             )
-        im = ax.imshow(
-            loadings[idx].reshape(shape),
-            cmap=cmap,
-            extent=extent,
-            interpolation="nearest",
+        im = backend.plot_image(
+            ax, loadings[idx].reshape(shape), cmap=cmap, extent=extent
         )
-        div = make_axes_locatable(ax)
-        cax = div.append_axes("right", size="5%", pad=0.05)
-        plt.colorbar(im, cax=cax)
+        backend.add_colorbar(backend.get_figure_from_ax(ax), im, ax)
     elif axes_manager.navigation_dimension == 1:
         if calibrate:
             x = axes_manager._axes[0].axis
         else:
             x = np.arange(axes_manager._axes[0].size)
-        ax.step(x, loadings[idx])
+        backend.plot_step(ax, x, loadings[idx])
     else:
         raise ValueError("View not supported")
