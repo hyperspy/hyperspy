@@ -70,8 +70,12 @@ class Arrows(Markers):
             else:
                 args = (X, Y, U, V, C)
 
+            from hyperspy.drawing.backends import get_backend
+
             self._collection = self._collection_class(
-                *args, offset_transform=self.ax.transData, **self._init_kwargs
+                *args,
+                offset_transform=get_backend().get_ax_transform(self.ax, "data"),
+                **self._init_kwargs,
             )
 
     def update(self):

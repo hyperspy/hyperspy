@@ -187,8 +187,9 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                     # pixels from the old patch.
                     self._patch[0].remove()
                     self._patch = []
-                    if hasattr(self.ax, "hspy_fig"):
-                        self.ax.hspy_fig._background = None
+                    from hyperspy.drawing.backends import get_backend
+
+                    get_backend().invalidate_blit_background(self.ax)
                     self._add_patch_to(self.ax)
                 self.patch[1].radius = ri
             self._update_resizers()

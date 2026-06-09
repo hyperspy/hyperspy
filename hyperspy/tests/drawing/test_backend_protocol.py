@@ -91,6 +91,19 @@ REQUIRED_METHODS = [
     "connect_close_event",
     "get_explorer",
     "simulate_pick",
+    # Blit helpers and capability checks
+    "render_figure_from_ax",
+    "invalidate_blit_background",
+    "supports_blit_from_ax",
+    # Interactive selectors
+    "create_span_selector",
+    "create_polygon_selector",
+    # Horizontal line widget
+    "add_hline_widget",
+    "update_hline",
+    "connect_widget_drag",
+    # Coordinate transforms
+    "get_ax_transform",
 ]
 
 

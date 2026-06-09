@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import matplotlib.transforms as transforms
 import numpy as np
 
 from hyperspy.drawing.widget import Widget1DBase
@@ -87,16 +86,17 @@ class LabelWidget(Widget1DBase):
             self.draw_patch()
 
     def _set_patch(self):
-        ax = self.ax
-        trans = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+        from hyperspy.drawing.backends import get_backend
+
         self._patch = [
-            ax.text(
+            get_backend().add_text(
+                self.ax,
                 self._pos[0],
                 self._pos[1],
                 self.string,
+                transform="xaxis",
                 color=self.color,
                 alpha=self.alpha,
-                transform=trans,
                 horizontalalignment="left",
                 bbox=self.bbox,
                 picker=True,

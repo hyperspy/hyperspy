@@ -131,7 +131,7 @@ class MplBackend:
 
     def add_text(self, ax, x, y, s, transform="axes", **kwargs):
         animated = ax.figure.canvas.supports_blit
-        t = ax.transAxes if transform == "axes" else ax.transData
+        t = self.get_ax_transform(ax, transform)
         return ax.text(x, y, s=s, transform=t, animated=animated, **kwargs)
 
     def update_text(self, handle, s):

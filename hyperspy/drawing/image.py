@@ -29,6 +29,7 @@ from traits.api import Undefined
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
 from hyperspy.drawing import utils, widgets
 from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc import math_tools
 from hyperspy.misc.test_utils import ignore_warning
@@ -359,13 +360,16 @@ class ImagePlot(BlittedFigure):
                 setattr(self, attribute, kwargs.pop(attribute))
         self.update(data_changed=True, auto_contrast=True, **kwargs)
         if self.scalebar is True:
-            if self.pixel_units is not None and hasattr(self.ax, "get_xlim"):
-                self.ax.scalebar = widgets.ScaleBar(
-                    ax=self.ax,
-                    units=self.pixel_units,
-                    animated=get_backend().supports_blit(self.figure),
-                    color=self.scalebar_color,
-                )
+            if self.pixel_units is not None:
+                try:
+                    self.ax.scalebar = widgets.ScaleBar(
+                        ax=self.ax,
+                        units=self.pixel_units,
+                        animated=get_backend().supports_blit(self.figure),
+                        color=self.scalebar_color,
+                    )
+                except (AttributeError, BackendCapabilityError):
+                    pass
 
         if self.colorbar:
             self._add_colorbar()
