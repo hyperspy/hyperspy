@@ -20,7 +20,6 @@ import inspect
 import logging
 
 import numpy as np
-from matplotlib.widgets import SpanSelector
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.drawing.widget import ResizableDraggableWidgetBase
@@ -42,11 +41,17 @@ class RangeWidget(ResizableDraggableWidgetBase):
     """
 
     def __init__(self, axes_manager, ax=None, color="r", alpha=0.25, **kwargs):
-        # Parse all kwargs for the matplotlib SpanSelector
+        # Parse kwargs for the span selector — inspect lazily to avoid
+        # importing matplotlib at widget-class import time.
         self._SpanSelector_kwargs = {}
-        for key in inspect.signature(SpanSelector).parameters.keys():
-            if key in kwargs:
-                self._SpanSelector_kwargs[key] = kwargs.pop(key)
+        try:
+            from matplotlib.widgets import SpanSelector as _SS
+
+            for key in inspect.signature(_SS).parameters.keys():
+                if key in kwargs:
+                    self._SpanSelector_kwargs[key] = kwargs.pop(key)
+        except ImportError:
+            pass
 
         self._SpanSelector_kwargs.update(
             dict(
@@ -123,16 +128,15 @@ class RangeWidget(ResizableDraggableWidgetBase):
 
     def _add_patch_to(self, ax):
         self.ax = ax
-        if not hasattr(ax, "get_xlim"):
-            return  # non-matplotlib backend; SpanSelector requires matplotlib axes
         from hyperspy.drawing.backends import get_backend
 
+        backend = get_backend()
         self._SpanSelector_kwargs.update(
             props={"alpha": self.alpha, "color": self.color},
             handle_props={"alpha": min(1.0, self.alpha * 2), "color": self.color},
-            useblit=get_backend().supports_blit(getattr(ax, "figure", None)),
+            useblit=backend.supports_blit_from_ax(ax),
         )
-        self.span = SpanSelector(ax, **self._SpanSelector_kwargs)
+        self.span = backend.create_span_selector(ax, **self._SpanSelector_kwargs)
         self.span.connect_event("motion_notify_event", self._span_changed)
         self._set_span_extents(*self._get_range())
         self._patch = list(self.span.artists)

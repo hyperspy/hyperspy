@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.defaults_parser import preferences
-from hyperspy.drawing.utils import picker_kwargs
 from hyperspy.drawing.widget import Widget1DBase
 
 
@@ -26,43 +24,23 @@ class HorizontalLineWidget(Widget1DBase):
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
-            self.patch[0].set_ydata([self._pos[0]])
+            from hyperspy.drawing.backends import get_backend
+
+            get_backend().update_hline(self.patch[0], float(self._pos[0]))
             self.draw_patch()
-        native_crosshair = getattr(self, "_native_crosshair", None)
-        if native_crosshair is not None:
-            native_crosshair.set(cy=float(self._pos[0]))
 
     def _add_patch_to(self, ax):
-        """Create and add the matplotlib patches to 'ax'"""
         from hyperspy.drawing.backends import get_backend
 
-        self.blit = hasattr(ax, "hspy_fig") and get_backend().supports_blit(
-            getattr(ax, "figure", None)
+        backend = get_backend()
+        self.blit = backend.supports_blit_from_ax(ax)
+        handle = backend.add_hline_widget(ax, float(self._pos[0]), color=self.color)
+        self._patch = [handle]
+        backend.set_patch_animated(handle, self.blit)
+        _self = self
+        backend.connect_widget_drag(
+            handle, lambda x, y: setattr(_self, "position", (y,))
         )
-        if not hasattr(ax, "axhline"):
-            plot = getattr(ax, "_plot", None)
-            if self.is_pointer and plot is not None and hasattr(plot, "add_widget"):
-                native_w = plot.add_widget(
-                    "crosshair", color=self.color, cx=0.0, cy=float(self._pos[0])
-                )
-                self._native_crosshair = native_w
-                _self = self
-
-                def _on_drag(event):
-                    _self.position = (native_w.cy,)
-
-                native_w.add_event_handler(_on_drag, "pointer_move")
-            return
-        self._set_patch()
-        for p in self.patch:
-            p.set_animated(self.blit)
-
-    def _set_patch(self):
-        ax = self.ax
-        kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
-        self._patch = [
-            ax.axhline(self._pos[0], color=self.color, alpha=self.alpha, **kwargs)
-        ]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

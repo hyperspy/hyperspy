@@ -197,3 +197,56 @@ class PlottingBackend(Protocol):
     def add_collection(self, ax: Any, collection) -> Any: ...
     def collection_update(self, handle: Any, **kwargs) -> None: ...
     def collection_remove(self, ax: Any, handle: Any) -> None: ...
+
+    # ── Blit helpers (ax-level) ───────────────────────────────────────────
+
+    def render_figure_from_ax(self, ax: Any) -> None:
+        """Trigger a repaint via the axes.  Uses blit when available."""
+        self.draw_idle(getattr(ax, "figure", None))
+
+    def invalidate_blit_background(self, ax: Any) -> None:
+        """Invalidate the blit background so the next render does a full repaint."""
+
+    def supports_blit_from_ax(self, ax: Any) -> bool:
+        """True when ax is attached to a blitting-capable HyperSpy figure."""
+        return False
+
+    # ── Interactive selectors ─────────────────────────────────────────────
+
+    def create_span_selector(self, ax: Any, **kwargs) -> Any:
+        """Create and return an interactive span selector on ax."""
+        raise BackendCapabilityError("SpanSelector requires a matplotlib-based backend")
+
+    def create_polygon_selector(self, ax: Any, **kwargs) -> Any:
+        """Create and return an interactive polygon selector on ax."""
+        raise BackendCapabilityError(
+            "PolygonSelector requires a matplotlib-based backend"
+        )
+
+    # ── Horizontal line widget ────────────────────────────────────────────
+
+    def add_hline_widget(self, ax: Any, y: float, color: str = "red") -> Any:
+        """Add a draggable horizontal line widget at data coordinate y."""
+        raise BackendCapabilityError("add_hline_widget not supported by this backend")
+
+    def update_hline(self, handle: Any, y: float) -> None: ...
+
+    def connect_widget_drag(self, handle: Any, on_drag: Callable) -> None:
+        """Register *on_drag* to fire when the native widget is dragged.
+
+        *on_drag* is called with the new position as positional args
+        ``(x,)`` for 1-D widgets or ``(x, y)`` for 2-D widgets.
+        Backends that route drag through standard mouse-move events (e.g.
+        matplotlib) leave this as a no-op; backends with native draggable
+        widgets (e.g. anyplotlib) register the callback on the widget.
+        """
+
+    # ── Coordinate transforms ─────────────────────────────────────────────
+
+    def get_ax_transform(self, ax: Any, kind: str) -> Any:
+        """Return a transform object for the given kind ('data', 'axes',
+        'xaxis', 'yaxis', 'display', 'relative').  Backends that do not
+        support marker transforms raise BackendCapabilityError."""
+        raise BackendCapabilityError(
+            f"Transform '{kind}' not supported by this backend"
+        )

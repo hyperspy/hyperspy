@@ -22,7 +22,6 @@ from copy import deepcopy
 import matplotlib.collections as mpl_collections
 import numpy as np
 from matplotlib.patches import Patch
-from matplotlib.transforms import IdentityTransform
 
 from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.backends._protocol import BackendCapabilityError
@@ -285,15 +284,7 @@ class Markers:
 
     def _get_transform(self, attr="_transform"):
         if self.ax is not None:  # return the transform
-            transforms = {
-                "data": self.ax.transData,
-                "axes": self.ax.transAxes,
-                "display": IdentityTransform(),
-                "yaxis": self.ax.get_yaxis_transform(),
-                "xaxis": self.ax.get_xaxis_transform(),
-                "relative": self.ax.transData,
-            }
-            return transforms[getattr(self, attr)]
+            return get_backend().get_ax_transform(self.ax, getattr(self, attr))
         else:  # return the string value
             return getattr(self, attr)
 
@@ -763,7 +754,7 @@ class Markers:
             self._render_figure()
 
     def _render_figure(self):
-        self.ax.hspy_fig.render_figure()
+        get_backend().render_figure_from_ax(self.ax)
 
     def close(self, render_figure=True):
         """
@@ -786,8 +777,8 @@ class Markers:
         # Collection removal leaves the blit background stale —
         # invalidate it so the next _render_figure does a full repaint
         # instead of restoring the removed markers' pixels.
-        if render_figure and hasattr(self.ax, "hspy_fig"):
-            self.ax.hspy_fig._background = None
+        if render_figure:
+            get_backend().invalidate_blit_background(self.ax)
         self.events.closed.trigger(obj=self)
         self._signal = None
         for f in self.events.closed.connected:
@@ -851,8 +842,9 @@ class Markers:
         if self.ax is None:
             raise RuntimeError("The markers needs to be plotted.")
         self.set_ScalarMappable_array(self._ScalarMappable_array)
-        cbar = self.ax.figure.colorbar(self._collection)
-
+        cbar = get_backend().add_colorbar(
+            getattr(self.ax, "figure", None), self._collection, self.ax
+        )
         return cbar
 
 

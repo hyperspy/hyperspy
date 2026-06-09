@@ -130,8 +130,7 @@ class WidgetBase(object):
                 # Patch removal leaves the blit background stale —
                 # invalidate it so the next render_figure does a full
                 # repaint instead of restoring old pixels.
-                if hasattr(self.ax, "hspy_fig"):
-                    self.ax.hspy_fig._background = None
+                get_backend().invalidate_blit_background(self.ax)
         if hasattr(super(WidgetBase, self), "set_on"):
             super(WidgetBase, self).set_on(value)
         if did_something:
@@ -172,7 +171,7 @@ class WidgetBase(object):
     def _add_patch_to(self, ax):
         """Create and add the matplotlib patches to 'ax'"""
         backend = get_backend()
-        self.blit = hasattr(ax, "hspy_fig") and backend.supports_blit(ax.figure)
+        self.blit = backend.supports_blit_from_ax(ax)
         self._set_patch()
         for p in self.patch:
             backend.add_artist(ax, p)
@@ -254,10 +253,8 @@ class WidgetBase(object):
     def draw_patch(self, *args):
         """Update the patch drawing."""
         try:
-            if hasattr(self.ax, "hspy_fig"):
-                self.ax.hspy_fig.render_figure()
-            elif self.ax is not None and self.ax.figure is not None:
-                get_backend().draw_idle(self.ax.figure)
+            if self.ax is not None:
+                get_backend().render_figure_from_ax(self.ax)
         except AttributeError:
             pass  # When figure is None, typically when closing
 
@@ -900,9 +897,8 @@ class ResizersMixin:
                         r.remove()
                 # Invalidate the blit background then force a full redraw
                 # so the canvas repaints without the removed resizer handles.
-                if hasattr(ax, "hspy_fig"):
-                    ax.hspy_fig._background = None
-                    self.draw_patch()
+                get_backend().invalidate_blit_background(ax)
+                self.draw_patch()
             self._resizers_on = value
 
     def _get_resizer_size(self):
