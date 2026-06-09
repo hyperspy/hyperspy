@@ -34,9 +34,9 @@ class HyperImage_Explorer(HyperExplorer):
 
     def _make_image_figure(self, **kwargs):
         from hyperspy.defaults_parser import preferences
-        from hyperspy.drawing import image
+        from hyperspy.drawing.backends import get_backend
 
-        imf = image.ImagePlot()
+        imf = get_backend().create_image_figure()
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"

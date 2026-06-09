@@ -194,7 +194,8 @@ class WidgetBase(object):
         if self.is_on is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            get_backend().draw_idle(ax.figure)
+            b = get_backend()
+            b.draw_idle(b.get_figure_from_ax(ax))
             self.select()
 
     set_ax = set_mpl_ax
@@ -211,8 +212,9 @@ class WidgetBase(object):
 
     def connect(self, ax):
         """Connect to the axes' events."""
-        if ax.figure is not None:
-            get_backend().connect_close_event(ax.figure, self.close)
+        _fig = get_backend().get_figure_from_ax(ax)
+        if _fig is not None:
+            get_backend().connect_close_event(_fig, self.close)
         if self._navigating:
             self.connect_navigate()
 
@@ -1015,7 +1017,8 @@ class ResizersMixin:
         elif self.picked:
             if self.resizers and not self._resizers_on:
                 self._set_resizers(True, self.ax)
-                get_backend().draw_idle(self.ax.figure)
+                b = get_backend()
+                b.draw_idle(b.get_figure_from_ax(self.ax))
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
             self.pick_offset = (x - self._pos[0], y - self._pos[1])

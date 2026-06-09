@@ -92,9 +92,9 @@ class HyperSignal1D_Explorer(HyperExplorer):
         from hyperspy.drawing import signal1d
 
         fig = kwargs.pop("fig", None)
-        sf = signal1d.Signal1DFigure(
+        sf = get_backend().create_signal1d_figure(
             title=self.signal_title + " Signal",
-            _on_figure_window_close=self.close,
+            on_close=self.close,
             fig=fig,
         )
         sf.axis = self.axis

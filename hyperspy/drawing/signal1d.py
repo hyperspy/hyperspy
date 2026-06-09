@@ -24,14 +24,14 @@ import numpy as np
 
 from hyperspy.drawing import utils
 from hyperspy.drawing.backends import get_backend
-from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing.figure import AbstractSignal1DFigure
 from hyperspy.events import Event, Events
 from hyperspy.misc.test_utils import ignore_warning
 
 _logger = logging.getLogger(__name__)
 
 
-class Signal1DFigure(BlittedFigure):
+class Signal1DFigure(AbstractSignal1DFigure):
     """ """
 
     def __init__(self, title="", **kwargs):
@@ -319,8 +319,9 @@ class Signal1DLine(object):
             else:
                 self._line_properties[key] = item
         if self.line is not None:
-            get_backend().set_line_props(self.line, **self.line_properties)
-            get_backend().draw_idle(self.ax.figure)
+            backend = get_backend()
+            backend.set_line_props(self.line, **self.line_properties)
+            backend.draw_idle(backend.get_figure_from_ax(self.ax))
 
     def set_line_properties(self, **kwargs):
         self.line_properties = kwargs
@@ -381,8 +382,9 @@ class Signal1DLine(object):
             self.set_line_properties(markeredgecolor=None)
 
         if self.line is not None:
-            get_backend().set_line_props(self.line, **self.line_properties)
-            get_backend().draw_idle(self.ax.figure)
+            backend = get_backend()
+            backend.set_line_props(self.line, **self.line_properties)
+            backend.draw_idle(backend.get_figure_from_ax(self.ax))
 
     def plot(self, data=1, **kwargs):
         for key, value in kwargs.items():
@@ -555,7 +557,7 @@ class Signal1DLine(object):
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         try:
-            backend.draw_idle(self.ax.figure)
+            backend.draw_idle(backend.get_figure_from_ax(self.ax))
         except BaseException:
             pass
         _logger.debug("`Signal1DLine` closed.")

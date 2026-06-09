@@ -113,8 +113,8 @@ def test_right_pointer_warns_on_unsupported_backend():
     s._plot.close()
 
 
-def test_markers_warn_on_unsupported_backend():
-    """BackendCapabilityError from both create_markers and add_collection → UserWarning."""
+def test_markers_raise_on_unsupported_backend():
+    """BackendCapabilityError from both create_markers and add_collection → raises."""
     from hyperspy.drawing.backends import get_backend
     from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
@@ -138,7 +138,7 @@ def test_markers_warn_on_unsupported_backend():
             side_effect=BackendCapabilityError("no collections"),
         ),
     ):
-        with pytest.warns(UserWarning, match="does not support markers"):
+        with pytest.raises(BackendCapabilityError, match="does not support markers"):
             # Force re-plot of the marker by calling plot directly
             marker.plot()
 

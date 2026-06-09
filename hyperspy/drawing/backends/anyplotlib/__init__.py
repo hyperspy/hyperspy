@@ -214,6 +214,11 @@ class AnyplotlibBackend:
         if ax._plot is not None:
             ax._plot.set_ylim(ymin, ymax)
 
+    def get_xlim(self, ax):
+        if ax._plot is not None:
+            return ax._plot.get_xlim()
+        return (0.0, 1.0)
+
     def get_ylim(self, ax):
         if ax._plot is not None:
             return ax._plot.get_ylim()
@@ -578,6 +583,11 @@ class AnyplotlibBackend:
         pass  # anyplotlib uses constrained layout automatically
 
     def get_figure_from_ax(self, ax):
+        # For MPL-fallback axes (used until native anyplotlib figures exist),
+        # delegate to the standard attribute.
+        fig = getattr(ax, "figure", None)
+        if fig is not None:
+            return fig
         raise BackendCapabilityError(_NOT_YET.format("get_figure_from_ax"))
 
     def connect_close_event(self, fig, fn):
@@ -606,6 +616,27 @@ class AnyplotlibBackend:
 
             return Apl_HyperImage_Explorer
         raise ValueError(f"Plotting is not supported for signal_dim={signal_dim}.")
+
+    def create_signal1d_figure(self, title="", on_close=None, **kwargs):
+        # Fall back to the MPL-based figure until anyplotlib has its own.
+        from hyperspy.drawing.signal1d import Signal1DFigure
+
+        return Signal1DFigure(title=title, _on_figure_window_close=on_close, **kwargs)
+
+    def create_image_figure(self, title="", **kwargs):
+        # Fall back to the MPL-based figure until anyplotlib has its own.
+        from hyperspy.drawing.image import ImagePlot
+
+        return ImagePlot(title=title)
+
+    def create_scalebar(self, ax, units, **kwargs):
+        raise BackendCapabilityError(_NOT_YET.format("create_scalebar"))
+
+    def remove_scalebar(self, ax, handle):
+        pass
+
+    def get_image_cmap_name(self, handle):
+        raise BackendCapabilityError(_NOT_YET.format("get_image_cmap_name"))
 
 
 class _AplColorbar:

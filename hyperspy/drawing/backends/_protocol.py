@@ -370,6 +370,7 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
     def set_title(self, ax: Any, title: str) -> None: ...
     def set_xlim(self, ax: Any, xmin: float, xmax: float) -> None: ...
     def set_ylim(self, ax: Any, ymin: float, ymax: float) -> None: ...
+    def get_xlim(self, ax: Any) -> tuple[float, float]: ...
     def get_ylim(self, ax: Any) -> tuple[float, float]: ...
     def get_xbound(self, ax: Any) -> tuple[float, float]: ...
     def set_axis_off(self, ax: Any) -> None: ...
@@ -482,3 +483,70 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
         from hyperspy.drawing.he import HyperExplorer
 
         return HyperExplorer
+
+    # ── Figure manager factories ──────────────────────────────────────────
+
+    def create_signal1d_figure(self, title: str = "", on_close=None, **kwargs) -> Any:
+        """Create and return an :class:`~hyperspy.drawing.figure.AbstractSignal1DFigure`.
+
+        Parameters
+        ----------
+        title : str
+            Window / figure title.
+        on_close : callable or None
+            Zero-argument callback fired when the figure window is closed.
+        **kwargs
+            Forwarded to the underlying figure constructor.
+        """
+        raise BackendCapabilityError(
+            "create_signal1d_figure not implemented by this backend"
+        )
+
+    def create_image_figure(self, title: str = "", **kwargs) -> Any:
+        """Create and return an :class:`~hyperspy.drawing.figure.AbstractImageFigure`.
+
+        Parameters
+        ----------
+        title : str
+            Window / figure title.
+        **kwargs
+            Forwarded to the underlying figure constructor.
+        """
+        raise BackendCapabilityError(
+            "create_image_figure not implemented by this backend"
+        )
+
+    # ── Scale bar ─────────────────────────────────────────────────────────
+
+    def create_scalebar(self, ax: Any, units: str, **kwargs) -> Any:
+        """Overlay a calibrated scale bar on *ax*; return an opaque handle.
+
+        Parameters
+        ----------
+        ax : backend axes object
+        units : str
+            Physical units label (e.g. ``'nm'``, ``'μm'``).
+        pixel_size : float or None
+            Physical size of one pixel.  ``None`` uses calibrated axis values.
+        color : str
+            Bar and label colour.  Default ``'white'``.
+        animated : bool
+            Whether to use animated (blit) rendering.
+
+        Returns
+        -------
+        handle : any
+            Passed to :meth:`remove_scalebar`.
+        """
+        raise BackendCapabilityError("create_scalebar not supported by this backend")
+
+    def remove_scalebar(self, ax: Any, handle: Any) -> None:
+        """Remove a previously created scale bar from *ax*."""
+
+    # ── Image helpers ─────────────────────────────────────────────────────
+
+    def get_image_cmap_name(self, handle: Any) -> str:
+        """Return the colormap name string for an image handle."""
+        raise BackendCapabilityError(
+            "get_image_cmap_name not supported by this backend"
+        )

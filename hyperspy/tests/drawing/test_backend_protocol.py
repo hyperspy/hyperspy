@@ -38,6 +38,7 @@ REQUIRED_METHODS = [
     "set_title",
     "set_xlim",
     "set_ylim",
+    "get_xlim",
     "get_ylim",
     "get_xbound",
     "set_axis_off",
@@ -107,6 +108,11 @@ REQUIRED_METHODS = [
     "get_explorer",
     "tight_layout",
     "get_figure_from_ax",
+    "create_signal1d_figure",
+    "create_image_figure",
+    "create_scalebar",
+    "remove_scalebar",
+    "get_image_cmap_name",
 ]
 
 
