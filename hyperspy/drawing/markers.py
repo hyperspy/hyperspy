@@ -58,7 +58,7 @@ class Markers:
 
     def __init__(
         self,
-        collection,
+        collection=None,
         offset_transform="data",
         transform="display",
         shift=None,
@@ -162,32 +162,38 @@ class Markers:
         >>> s.add_marker(m)
 
         """
-        import matplotlib.collections as mpl_collections
+        if collection is None and self._marker_type is None:
+            raise ValueError(
+                "collection must be provided when _marker_type is not set on the class."
+            )
 
-        if isinstance(collection, str):
-            try:
-                collection = getattr(mpl_collections, collection)
-            except AttributeError:
+        if collection is not None:
+            import matplotlib.collections as mpl_collections
+
+            if isinstance(collection, str):
+                try:
+                    collection = getattr(mpl_collections, collection)
+                except AttributeError:
+                    raise ValueError(
+                        f"'{collection}' is not the name of a matplotlib collection class."
+                    )
+
+            if not issubclass(collection, mpl_collections.Collection):
                 raise ValueError(
-                    f"'{collection}' is not the name of a matplotlib collection class."
+                    f"{collection} is not a subclass of `matplotlib.collection.Collection`."
                 )
 
-        if not issubclass(collection, mpl_collections.Collection):
-            raise ValueError(
-                f"{collection} is not a subclass of `matplotlib.collection.Collection`."
-            )
-
-        if ".".join(collection.__module__.split(".")[:2]) not in [
-            "matplotlib.collections",
-            "hyperspy.external",
-        ]:
-            # To be able to load a custom markers, we need to be able to instantiate
-            # the class and the safe way to do that is to import from
-            # `matplotlib.collections` or `hyperspy.external` (patched matplotlib collection)
-            raise ValueError(
-                "To support loading file saved with custom markers, the collection must be "
-                "implemented in matplotlib or hyperspy"
-            )
+            if ".".join(collection.__module__.split(".")[:2]) not in [
+                "matplotlib.collections",
+                "hyperspy.external",
+            ]:
+                # To be able to load a custom markers, we need to be able to instantiate
+                # the class and the safe way to do that is to import from
+                # `matplotlib.collections` or `hyperspy.external` (patched matplotlib collection)
+                raise ValueError(
+                    "To support loading file saved with custom markers, the collection must be "
+                    "implemented in matplotlib or hyperspy"
+                )
 
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
@@ -719,7 +725,7 @@ class Markers:
             self._update()
 
     def _update(self):
-        if self._signal:
+        if self._signal and self._collection is not None:
             kwds = self.get_current_kwargs(only_variable_length=True)
             if self._using_native_markers:
                 get_backend().update_markers(self._collection, **kwds)

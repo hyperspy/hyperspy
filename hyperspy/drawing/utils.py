@@ -2010,7 +2010,6 @@ def _add_colored_frame(ax, color, animated=True):
     from hyperspy.drawing.backends import get_backend
 
     backend = get_backend()
-    transform = backend.get_ax_transform(ax, "axes")
     is_animated = animated and backend.supports_blit_from_ax(ax)
     colored_frame = patches.Rectangle(
         (0, 0),
@@ -2019,7 +2018,7 @@ def _add_colored_frame(ax, color, animated=True):
         linewidth=10,
         edgecolor=color,
         facecolor="none",
-        transform=transform,
+        transform=ax.transAxes,
         animated=is_animated,
     )
     backend.add_artist(ax, colored_frame)
