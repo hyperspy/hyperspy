@@ -324,18 +324,18 @@ class StubBackend(BlitMixin, PointerMixin):
     def get_explorer(self, signal_dim: int):
         """Return the HyperExplorer subclass for *signal_dim* (0, 1, or 2).
 
-        Re-use the built-in MPL explorers if your backend is matplotlib-
-        compatible::
+        Re-use the built-in base explorers if your backend is compatible::
 
-            from hyperspy.drawing.he import (
-                HyperSignal1D_Explorer, HyperImage_Explorer,
-            )
-            MAP = {0: HyperImage_Explorer, 1: HyperSignal1D_Explorer,
+            from hyperspy.drawing.he import HyperExplorer
+            from hyperspy.drawing.hse import HyperSignal1D_Explorer
+            from hyperspy.drawing.hie import HyperImage_Explorer
+
+            MAP = {0: HyperExplorer, 1: HyperSignal1D_Explorer,
                    2: HyperImage_Explorer}
-            return MAP.get(signal_dim, HyperImage_Explorer)
+            return MAP.get(signal_dim, HyperExplorer)
 
-        Or subclass them and override ``_plot`` / ``_update_data`` to use your
-        own drawing primitives.
+        Or subclass them and override ``_make_signal_figure`` /
+        ``_make_image_figure`` to use your own drawing primitives.
         """
         raise NotImplementedError
 
@@ -413,8 +413,12 @@ class StubBackend(BlitMixin, PointerMixin):
     #   def create_span_selector(self, ax, **kwargs): ...
     #   def create_polygon_selector(self, ax, **kwargs): ...
     #
-    #   # For marker transform support:
-    #   def get_ax_transform(self, ax, kind: str): ...
+    #   # For coordinate conversion between DATA/AXES/DISPLAY spaces:
+    #   def convert_coords(self, ax, points, from_space, to_space): ...
+    #   # create_markers / update_markers / remove_markers for native marker path:
+    #   def create_markers(self, ax, marker_type, **kwargs): ...
+    #   def update_markers(self, handle, **kwargs): ...
+    #   def remove_markers(self, ax, handle): ...
 
     # =========================================================================
     # Combined layout                                                 [OPTIONAL]

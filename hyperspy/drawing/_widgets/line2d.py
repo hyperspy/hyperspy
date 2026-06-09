@@ -335,9 +335,10 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             return self.FUNC_NONE
 
         from hyperspy.drawing.backends import get_backend
+        from hyperspy.drawing.backends._protocol import CoordSpace
 
-        trans = get_backend().get_ax_transform(self.ax, "data")
-        p = np.array(trans.transform(self._pos))
+        b = get_backend()
+        p = b.convert_coords(self.ax, self._pos, CoordSpace.DATA, CoordSpace.DISPLAY)
 
         # Calculate the distances to the vertecies, and find nearest one
         r2 = np.sum(np.power(p - np.array((cx, cy)), 2), axis=1)
@@ -376,8 +377,12 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         radius = self.radius_move
         wc = self._get_width_indicator_coords()
         for i in range(2):
-            A = np.array(trans.transform(wc[i][0]))
-            B = np.array(trans.transform(wc[i][1]))
+            A = b.convert_coords(
+                self.ax, [wc[i][0]], CoordSpace.DATA, CoordSpace.DISPLAY
+            )[0]
+            B = b.convert_coords(
+                self.ax, [wc[i][1]], CoordSpace.DATA, CoordSpace.DISPLAY
+            )[0]
             t = np.dot(c - A, B - A)
             bas = np.linalg.norm(B - A) ** 2
             if 0 < t < bas:
@@ -453,13 +458,24 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         # Rotation should happen in screen position, as anything else will
         # mix units
         from hyperspy.drawing.backends import get_backend
+        from hyperspy.drawing.backends._protocol import CoordSpace
 
-        trans = get_backend().get_ax_transform(self.ax, "data")
-        scr_zero = np.array(trans.transform((0, 0)))
-        dx = np.array(trans.transform(dx)) - scr_zero
+        b = get_backend()
+        scr_zero = b.convert_coords(
+            self.ax, [(0, 0)], CoordSpace.DATA, CoordSpace.DISPLAY
+        )[0]
+        dx = (
+            b.convert_coords(self.ax, [dx], CoordSpace.DATA, CoordSpace.DISPLAY)[0]
+            - scr_zero
+        )
 
         # Get center point = center of original line
-        c = trans.transform(np.mean(self._drag_store[0], axis=0))
+        c = b.convert_coords(
+            self.ax,
+            [np.mean(self._drag_store[0], axis=0)],
+            CoordSpace.DATA,
+            CoordSpace.DISPLAY,
+        )[0]
 
         # Figure out theta
         v1 = (event.x, event.y) - c  # Center to mouse
@@ -471,7 +487,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             theta = base * round(float(theta) / base)
 
         # vector from points to center
-        w1 = c - trans.transform(self._drag_store[0])
+        w1 = c - b.convert_coords(
+            self.ax, self._drag_store[0], CoordSpace.DATA, CoordSpace.DISPLAY
+        )
         # rotate into w2 for next point
         w2 = np.array(
             (
@@ -479,7 +497,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 w1[:, 1] * np.cos(theta) + w1[:, 0] * np.sin(theta),
             )
         )
-        self.position = trans.inverted().transform(c + np.rot90(w2))
+        self.position = b.convert_coords(
+            self.ax, c + np.rot90(w2), CoordSpace.DISPLAY, CoordSpace.DATA
+        )
 
     def _width_resize(self, event):
         if None in (event.xdata, event.ydata) or self.size[0] == 0:
