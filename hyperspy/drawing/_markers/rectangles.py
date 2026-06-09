@@ -31,6 +31,7 @@ class Rectangles(Markers):
     """A Collection of Rectangles Markers"""
 
     _position_key = "offsets"
+    _marker_type = "rectangles"
 
     def __init__(
         self,

@@ -19,22 +19,21 @@
 """Backend-agnostic HyperExplorer base."""
 
 import logging
-from abc import ABC, abstractmethod
 from functools import partial
+
+from traits.api import Undefined
 
 from hyperspy.events import Event, Events
 
 _logger = logging.getLogger(__name__)
 
 
-class HyperExplorer(ABC):
+class HyperExplorer:
     """Orchestrates signal + navigator plotting for any backend.
 
-    Subclasses must implement:
-      - plot_signal(**kwargs)
-      - assign_pointer()
-      - _connect_pointer(pointer, figure) -> None
-      - _connect_key_nav(figure) -> None
+    All common explorer logic lives here.  Backend-specific subclasses
+    override only what differs (e.g. ``_display`` for ipympl layout,
+    ``_add_right_line`` for MPL-specific twin-y axes).
     """
 
     def __init__(self):
@@ -51,6 +50,7 @@ class HyperExplorer(ABC):
         self.axis = None
         self.pointer = None
         self._pointer_nav_dim = None
+        self._key_nav_cids = []  # list of (fig, cid) pairs for cleanup
 
         self.events = Events()
         self.events.closed = Event(
@@ -142,21 +142,98 @@ class HyperExplorer(ABC):
                         partial(ax.events.index_changed.disconnect, fig.update), []
                     )
 
-    @abstractmethod
-    def _create_1d_nav_figure(self, title, **kwargs):
-        raise NotImplementedError
+    # ── Pointer assignment ────────────────────────────────────────────────
 
-    @abstractmethod
-    def _create_2d_nav_figure(self, title, **kwargs):
-        raise NotImplementedError
+    def assign_pointer(self):
+        from hyperspy.drawing import widgets
 
-    @abstractmethod
+        if self.navigator_data_function is None:
+            nav_dim = 0
+        elif self.navigator_data_function == "slider":
+            nav_dim = 0
+        else:
+            nav_dim = len(self.navigator_data_function().shape)
+
+        if nav_dim == 2:
+            if self.axes_manager.navigation_dimension > 1:
+                Pointer = widgets.SquareWidget
+            else:
+                Pointer = widgets.HorizontalLineWidget
+        elif nav_dim == 1:
+            Pointer = widgets.VerticalLineWidget
+        else:
+            Pointer = None
+        self._pointer_nav_dim = nav_dim
+        return Pointer
+
     def _connect_pointer(self, pointer, figure):
-        raise NotImplementedError
+        pointer.set_ax(figure.ax)
 
-    @abstractmethod
+    # ── Navigator figure creation ─────────────────────────────────────────
+
+    def _create_1d_nav_figure(self, title, **kwargs):
+        from hyperspy.drawing import signal1d
+
+        fig = kwargs.pop("fig", None)
+        sf = signal1d.Signal1DFigure(
+            title=title,
+            _on_figure_window_close=self.close,
+            fig=fig,
+        )
+        axis = self.axes_manager.navigation_axes[0]
+        sf.xlabel = "%s" % str(axis)
+        if axis.units is not Undefined:
+            sf.xlabel += " (%s)" % axis.units
+        sf.ylabel = r"$\Sigma\mathrm{data\,over\,all\,other\,axes}$"
+        sf.axis = axis
+        sf.axes_manager = self.axes_manager
+
+        sl = signal1d.Signal1DLine()
+        sl.data_function = self.navigator_data_function
+        for key in list(kwargs.keys()):
+            if hasattr(sl, key):
+                setattr(sl, key, kwargs.pop(key))
+        sl.set_line_properties(color="blue", type="step" if axis.is_uniform else "line")
+        sf.add_line(sl)
+        sf.plot()
+        return sf
+
+    def _create_2d_nav_figure(self, title, **kwargs):
+        from hyperspy.defaults_parser import preferences
+        from hyperspy.drawing import image
+
+        imf = image.ImagePlot(title=title)
+        imf.data_function = self.navigator_data_function
+
+        for key, value in list(kwargs.items()):
+            if hasattr(imf, key):
+                setattr(imf, key, kwargs.pop(key))
+
+        if self.axes_manager.navigation_dimension == 1:
+            imf.yaxis = self.axes_manager.navigation_axes[0]
+            imf.xaxis = self.axes_manager.signal_axes[0]
+        elif self.axes_manager.navigation_dimension >= 2:
+            imf.yaxis = self.axes_manager.navigation_axes[1]
+            imf.xaxis = self.axes_manager.navigation_axes[0]
+
+        if "cmap" not in kwargs or kwargs.get("cmap") is None:
+            kwargs["cmap"] = preferences.Plot.cmap_navigator
+        imf.plot(_on_figure_window_close=self.close, **kwargs)
+        return imf
+
+    # ── Key navigation ────────────────────────────────────────────────────
+
     def _connect_key_nav(self, figure):
-        raise NotImplementedError
+        from hyperspy.drawing.backends import get_backend
+
+        if figure.figure is not None and self.axes_manager.navigation_axes:
+            cid = get_backend().connect_key_press(
+                figure.figure, self.axes_manager.key_navigator
+            )
+            if cid is not None:
+                self._key_nav_cids.append((figure.figure, cid))
+
+    # ── Utility ───────────────────────────────────────────────────────────
 
     def _get_navigation_sliders(self):
         try:
@@ -169,10 +246,6 @@ class HyperExplorer(ABC):
     def close_navigator_plot(self):
         if self.navigator_plot:
             self.navigator_plot.close()
-
-    @abstractmethod
-    def assign_pointer(self):
-        raise NotImplementedError
 
     @property
     def is_active(self):
@@ -194,11 +267,19 @@ class HyperExplorer(ABC):
         This function is called programmatically or on matplotlib close
         callback.
         When closing, it does the following:
-        1. trigger a closed event
-        2. disconnect the closed event
-        3. run the close method of the signal_plot and navigator_plot
-        4. reset the attribute
+        1. disconnect key navigation event handlers
+        2. trigger a closed event
+        3. disconnect the closed event
+        4. run the close method of the signal_plot and navigator_plot
+        5. reset the attribute
         """
+        from hyperspy.drawing.backends import get_backend
+
+        backend = get_backend()
+        for fig, cid in self._key_nav_cids:
+            backend.disconnect_event(fig, cid)
+        self._key_nav_cids.clear()
+
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)

@@ -6,6 +6,33 @@ if TYPE_CHECKING:
     from hyperspy.drawing.he import HyperExplorer
 
 
+class CoordSpace:
+    """Named coordinate spaces for backend-neutral coordinate conversion."""
+
+    DATA = "data"
+    AXES = "axes"
+    DISPLAY = "display"
+    XAXIS = "xaxis"
+    YAXIS = "yaxis"
+    RELATIVE = "relative"
+
+
+class MarkerType:
+    """Named marker types for backend-neutral marker creation."""
+
+    POINTS = "points"
+    CIRCLES = "circles"
+    SQUARES = "squares"
+    LINES = "lines"
+    HLINES = "hlines"
+    VLINES = "vlines"
+    TEXTS = "texts"
+    RECTANGLES = "rectangles"
+    ELLIPSES = "ellipses"
+    ARROWS = "arrows"
+    POLYGONS = "polygons"
+
+
 class BackendCapabilityError(NotImplementedError):
     """Raised when the active backend does not support a requested feature.
 
@@ -218,6 +245,66 @@ class PointerMixin(Protocol):
         raise BackendCapabilityError(
             "create_circle_patch not supported by this backend"
         )
+
+    # ── Coordinate conversion ─────────────────────────────────────────────
+
+    def convert_coords(
+        self,
+        ax: Any,
+        points,
+        from_space: str,
+        to_space: str,
+    ):
+        """Convert *points* from *from_space* to *to_space*.
+
+        Parameters
+        ----------
+        ax : backend axes object
+        points : array-like, shape (N, 2) or (2,)
+            Points to convert.
+        from_space, to_space : CoordSpace string
+            One of ``CoordSpace.DATA``, ``CoordSpace.AXES``,
+            ``CoordSpace.DISPLAY``, ``CoordSpace.XAXIS``,
+            ``CoordSpace.YAXIS``, ``CoordSpace.RELATIVE``.
+
+        Returns
+        -------
+        numpy.ndarray, shape (N, 2)
+        """
+        raise BackendCapabilityError("convert_coords not supported by this backend")
+
+    # ── Native marker collections ─────────────────────────────────────────
+
+    def create_markers(self, ax: Any, marker_type: str, **kwargs) -> Any:
+        """Create a marker collection on *ax* and return an opaque handle.
+
+        Parameters
+        ----------
+        ax : backend axes object
+        marker_type : MarkerType string
+            One of the ``MarkerType.*`` constants.
+        offset_space : str, optional
+            CoordSpace string for position coordinates (default ``'data'``).
+        transform_space : str, optional
+            CoordSpace string for marker shape/size coordinates (default
+            ``'display'``).
+        **kwargs
+            Marker-type-specific data (offsets, sizes, colors, …) exactly as
+            produced by ``Markers.get_current_kwargs()``.
+
+        Returns
+        -------
+        handle : any
+            Passed to ``update_markers`` / ``remove_markers``.
+        """
+        raise BackendCapabilityError("create_markers not supported by this backend")
+
+    def update_markers(self, handle: Any, **kwargs) -> None:
+        """Update a marker collection returned by ``create_markers``."""
+        raise BackendCapabilityError("update_markers not supported by this backend")
+
+    def remove_markers(self, ax: Any, handle: Any) -> None:
+        """Remove a marker collection from *ax*."""
 
     # ── Step plot ─────────────────────────────────────────────────────────
 

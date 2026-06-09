@@ -20,17 +20,17 @@
 
 import copy
 import warnings
-from abc import abstractmethod
 
+import numpy as np
 from traits.api import Undefined
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.drawing.he import HyperExplorer
 
 
 class HyperSignal1D_Explorer(HyperExplorer):
-    """Base for 1-D signal explorers.  Backend subclasses implement
-    _make_signal_figure() and _connect_key_handler()."""
+    """Base for 1-D signal explorers."""
 
     def __init__(self):
         super().__init__()
@@ -88,9 +88,47 @@ class HyperSignal1D_Explorer(HyperExplorer):
             self._connect_key_nav_switch(self.navigator_plot)
             self._connect_key_nav(self.navigator_plot)
 
-    @abstractmethod
     def _make_signal_figure(self, **kwargs):
-        raise NotImplementedError
+        from hyperspy.drawing import signal1d
+
+        fig = kwargs.pop("fig", None)
+        sf = signal1d.Signal1DFigure(
+            title=self.signal_title + " Signal",
+            _on_figure_window_close=self.close,
+            fig=fig,
+        )
+        sf.axis = self.axis
+        if sf.ax is None:
+            sf.create_axis()
+        sf.axes_manager = self.axes_manager
+        sf.xlabel = self.xlabel
+        sf.ylabel = self.ylabel
+
+        sl = signal1d.Signal1DLine()
+        is_complex = np.iscomplexobj(self.signal_data_function())
+        sl.data_function = self.signal_data_function
+        kwargs["data_function_kwargs"] = self.signal_data_function_kwargs
+        sl.plot_indices = True
+        sl.set_line_properties(
+            color=self.pointer.color if self.pointer is not None else "red",
+            type="step",
+        )
+        sf.add_line(sl)
+        if is_complex:
+            sl2 = signal1d.Signal1DLine()
+            sl2.data_function = self.signal_data_function
+            sl2.plot_coordinates = True
+            sl2._plot_imag = True
+            sl2.set_line_properties(color="blue", type="step")
+            sf.add_line(sl2)
+        sf.plot(**kwargs)
+        return sf
+
+    def _connect_key_handler(self, figure, fn):
+        if figure.figure is not None:
+            cid = get_backend().connect_key_press(figure.figure, fn)
+            if cid is not None:
+                self._key_nav_cids.append((figure.figure, cid))
 
     def key2switch_right_pointer(self, event):
         if event.key == "e":
@@ -98,10 +136,6 @@ class HyperSignal1D_Explorer(HyperExplorer):
 
     def _connect_key_nav_switch(self, figure):
         self._connect_key_handler(figure, self.key2switch_right_pointer)
-
-    @abstractmethod
-    def _connect_key_handler(self, figure, fn):
-        raise NotImplementedError
 
     def add_right_pointer(self, **kwargs):
         try:
@@ -143,13 +177,15 @@ class HyperSignal1D_Explorer(HyperExplorer):
         self.right_pointer_on = True
         self._redraw_signal_figure()
 
-    @abstractmethod
     def _add_right_line(self, **kwargs):
-        raise NotImplementedError
+        raise BackendCapabilityError(
+            "The active backend does not support twin-y axes. "
+            "The right-pointer feature is unavailable."
+        )
 
-    @abstractmethod
     def _redraw_signal_figure(self):
-        raise NotImplementedError
+        if self.signal_plot is not None and self.signal_plot.figure is not None:
+            get_backend().draw_idle(self.signal_plot.figure)
 
     def remove_right_pointer(self):
         for line in list(self.signal_plot.right_ax_lines):

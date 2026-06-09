@@ -31,6 +31,7 @@ class Ellipses(Markers):
     """A set of Ellipse Markers"""
 
     _position_key = "offsets"
+    _marker_type = "ellipses"
 
     def __init__(
         self,

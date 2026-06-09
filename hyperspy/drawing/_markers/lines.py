@@ -23,6 +23,7 @@ class Lines(Markers):
     """A set of Line Segments Markers."""
 
     _position_key = "segments"
+    _marker_type = "lines"
 
     def __init__(self, segments, transform="data", **kwargs):
         """Initialize the set of Segments Markers.

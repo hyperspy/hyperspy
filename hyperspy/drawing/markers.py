@@ -53,6 +53,8 @@ class Markers:
     # For VerticalLines and HorizontalLines, the key to set is different from
     # `_position_key`
     _position_key_to_set = None
+    # Set to a MarkerType constant in subclasses to enable backend-native path
+    _marker_type = None
 
     def __init__(
         self,
@@ -235,6 +237,7 @@ class Markers:
         self.name = name
         # Properties
         self._collection = None
+        self._using_native_markers = False
         # used in _initialize_collection
         self._collection_class = collection
         self._signal = None
@@ -718,7 +721,10 @@ class Markers:
     def _update(self):
         if self._signal:
             kwds = self.get_current_kwargs(only_variable_length=True)
-            get_backend().collection_update(self._collection, **kwds)
+            if self._using_native_markers:
+                get_backend().update_markers(self._collection, **kwds)
+            else:
+                get_backend().collection_update(self._collection, **kwds)
 
     def _initialize_collection(self):
         self._collection = self._collection_class(
@@ -746,20 +752,38 @@ class Markers:
                 + "figure using `s._plot.signal_plot.add_marker(m)` or "
                 + "`s._plot.navigator_plot.add_marker(m)`"
             )
-        self._initialize_collection()
-        self._collection.set_animated(
-            get_backend().supports_blit(getattr(self.ax, "figure", None))
-        )
-        try:
-            get_backend().add_collection(self.ax, self._collection)
-        except BackendCapabilityError:
-            warnings.warn(
-                "The active backend does not support markers. "
-                "Markers will not be displayed.",
-                UserWarning,
-                stacklevel=2,
+        backend = get_backend()
+        self._using_native_markers = False
+
+        if self._marker_type is not None:
+            try:
+                self._collection = backend.create_markers(
+                    self.ax,
+                    self._marker_type,
+                    offset_space=self._offset_transform,
+                    transform_space=self._transform,
+                    **self.get_current_kwargs(),
+                )
+                self._using_native_markers = True
+            except BackendCapabilityError:
+                pass
+
+        if not self._using_native_markers:
+            self._initialize_collection()
+            self._collection.set_animated(
+                backend.supports_blit(getattr(self.ax, "figure", None))
             )
-            return
+            try:
+                backend.add_collection(self.ax, self._collection)
+            except BackendCapabilityError:
+                warnings.warn(
+                    "The active backend does not support markers. "
+                    "Markers will not be displayed.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                return
+
         if render_figure:
             self._render_figure()
 
@@ -782,7 +806,10 @@ class Markers:
         if self._closing:  # pragma: no cover
             return
         self._closing = True
-        get_backend().collection_remove(self.ax, self._collection)
+        if self._using_native_markers:
+            get_backend().remove_markers(self.ax, self._collection)
+        else:
+            get_backend().collection_remove(self.ax, self._collection)
         self._collection = None
         # Collection removal leaves the blit background stale —
         # invalidate it so the next _render_figure does a full repaint

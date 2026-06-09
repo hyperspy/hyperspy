@@ -538,6 +538,22 @@ class AnyplotlibBackend:
     def simulate_pick(self, ax, patch):
         pass  # anyplotlib handles selection natively; no MPL pick simulation needed
 
+    # ── Coordinate conversion ─────────────────────────────────────────────
+
+    def convert_coords(self, ax, points, from_space, to_space):
+        raise BackendCapabilityError(_NOT_YET.format("convert_coords"))
+
+    # ── Native marker collections ─────────────────────────────────────────
+
+    def create_markers(self, ax, marker_type, **kwargs):
+        raise BackendCapabilityError(_NOT_YET.format("create_markers"))
+
+    def update_markers(self, handle, **kwargs):
+        raise BackendCapabilityError(_NOT_YET.format("update_markers"))
+
+    def remove_markers(self, ax, handle):
+        pass
+
     # ── New protocol methods (not yet implemented by anyplotlib) ──────────
 
     def plot_step(self, ax, x, y, **props):

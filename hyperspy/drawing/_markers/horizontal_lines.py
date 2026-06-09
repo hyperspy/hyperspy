@@ -28,6 +28,7 @@ class HorizontalLines(Markers):
 
     _position_key = "offsets"
     _position_key_to_set = "segments"
+    _marker_type = "hlines"
 
     def __init__(self, offsets, **kwargs):
         """

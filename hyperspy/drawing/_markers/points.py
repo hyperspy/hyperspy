@@ -26,6 +26,7 @@ class Points(Markers):
     A set of Points Markers."""
 
     _position_key = "offsets"
+    _marker_type = "points"
 
     def __init__(
         self, offsets, sizes=10, offset_transform="data", units="points", **kwargs
