@@ -17,15 +17,14 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING, UNITS_DOCSTRING
+from hyperspy.drawing.marker_collection import CirclesCollection
 from hyperspy.drawing.markers import Markers
-from hyperspy.external.matplotlib.collections import CircleCollection
 
 
 class Circles(Markers):
     """A set of Circle Markers."""
 
     _position_key = "offsets"
-    _marker_type = "circles"
 
     def __init__(
         self,
@@ -63,7 +62,7 @@ class Circles(Markers):
             )
 
         super().__init__(
-            collection=CircleCollection,
+            collection=CirclesCollection,
             offsets=offsets,
             sizes=sizes,
             facecolors=facecolors,

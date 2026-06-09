@@ -167,32 +167,53 @@ class Markers:
             )
 
         if collection is not None:
-            import matplotlib.collections as mpl_collections
+            from hyperspy.drawing.marker_collection import HyperMarkerCollection
 
             if isinstance(collection, str):
+                # Try the HyperMarkerCollection registry first (marker_type strings
+                # like "points", "circles"), then fall back to MPL collection names.
                 try:
-                    collection = getattr(mpl_collections, collection)
-                except AttributeError:
+                    collection = HyperMarkerCollection.from_marker_type(collection)
+                except ValueError:
+                    import matplotlib.collections as mpl_collections
+
+                    try:
+                        collection = getattr(mpl_collections, collection)
+                    except AttributeError:
+                        raise ValueError(
+                            f"'{collection}' is not a known marker type or the name "
+                            "of a matplotlib collection class."
+                        )
+
+            if HyperMarkerCollection.is_hyper_collection(collection):
+                # Backend-agnostic path: derive position keys and marker type
+                # from the descriptor so subclasses don't duplicate this info.
+                self._position_key = collection._position_key
+                self._position_key_to_set = collection._position_key_to_set
+                if self._marker_type is None:
+                    self._marker_type = collection._marker_type
+            else:
+                # Legacy MPL-only path: validate it is a Collection subclass
+                # from a module that can be safely reconstructed on load.
+                import matplotlib.collections as mpl_collections
+
+                if not issubclass(collection, mpl_collections.Collection):
                     raise ValueError(
-                        f"'{collection}' is not the name of a matplotlib collection class."
+                        f"{collection} is not a subclass of "
+                        "`matplotlib.collection.Collection`."
                     )
 
-            if not issubclass(collection, mpl_collections.Collection):
-                raise ValueError(
-                    f"{collection} is not a subclass of `matplotlib.collection.Collection`."
-                )
-
-            if ".".join(collection.__module__.split(".")[:2]) not in [
-                "matplotlib.collections",
-                "hyperspy.external",
-            ]:
-                # To be able to load a custom markers, we need to be able to instantiate
-                # the class and the safe way to do that is to import from
-                # `matplotlib.collections` or `hyperspy.external` (patched matplotlib collection)
-                raise ValueError(
-                    "To support loading file saved with custom markers, the collection must be "
-                    "implemented in matplotlib or hyperspy"
-                )
+                if ".".join(collection.__module__.split(".")[:2]) not in [
+                    "matplotlib.collections",
+                    "hyperspy.external",
+                ]:
+                    # To be able to load a custom markers, we need to be able to
+                    # instantiate the class and the safe way to do that is to import
+                    # from `matplotlib.collections` or `hyperspy.external`.
+                    raise ValueError(
+                        "To support loading file saved with custom markers, the "
+                        "collection must be implemented in matplotlib or hyperspy"
+                    )
 
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
@@ -634,7 +655,14 @@ class Markers:
             "ScalarMappable_array": self._ScalarMappable_array,
         }
         if class_name == "Markers":
-            marker_dict["collection"] = self._collection_class.__name__
+            from hyperspy.drawing.marker_collection import HyperMarkerCollection
+
+            if HyperMarkerCollection.is_hyper_collection(self._collection_class):
+                # Store the stable marker_type string so the file can be
+                # loaded without a matplotlib import on the reading side.
+                marker_dict["collection"] = self._collection_class._marker_type
+            else:
+                marker_dict["collection"] = self._collection_class.__name__
 
         return marker_dict
 
@@ -731,8 +759,22 @@ class Markers:
             else:
                 get_backend().collection_update(self._collection, **kwds)
 
+    def _get_mpl_class(self):
+        """Resolve the actual MPL Collection class from ``_collection_class``.
+
+        When ``_collection_class`` is a :class:`HyperMarkerCollection` subclass,
+        returns its MPL fallback via ``mpl_collection()``.  Otherwise returns
+        ``_collection_class`` unchanged (legacy path).
+        """
+        from hyperspy.drawing.marker_collection import HyperMarkerCollection
+
+        if HyperMarkerCollection.is_hyper_collection(self._collection_class):
+            return self._collection_class.mpl_collection()
+        return self._collection_class
+
     def _initialize_collection(self):
-        self._collection = self._collection_class(
+        mpl_cls = self._get_mpl_class()
+        self._collection = mpl_cls(
             **self.get_current_kwargs(),
             offset_transform=self.offset_transform,
         )

@@ -23,15 +23,14 @@ from hyperspy.docstrings.markers import (
     UNITS_DOCSTRING,
     WIDTHS_DOCSTRING,
 )
+from hyperspy.drawing.marker_collection import RectanglesCollection
 from hyperspy.drawing.markers import Markers
-from hyperspy.external.matplotlib.collections import RectangleCollection
 
 
 class Rectangles(Markers):
     """A Collection of Rectangles Markers"""
 
     _position_key = "offsets"
-    _marker_type = "rectangles"
 
     def __init__(
         self,
@@ -65,7 +64,7 @@ class Rectangles(Markers):
             )
 
         super().__init__(
-            collection=RectangleCollection,
+            collection=RectanglesCollection,
             offsets=offsets,
             widths=widths,
             heights=heights,

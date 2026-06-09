@@ -17,8 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
+from hyperspy.drawing.marker_collection import ArrowsCollection
 from hyperspy.drawing.markers import Markers
-from hyperspy.external.matplotlib.quiver import Quiver
 
 
 class Arrows(Markers):
@@ -45,7 +45,7 @@ class Arrows(Markers):
         """
 
         super().__init__(
-            collection=Quiver,
+            collection=ArrowsCollection,
             # iterating arguments
             offsets=offsets,
             U=U,
@@ -70,7 +70,8 @@ class Arrows(Markers):
             else:
                 args = (X, Y, U, V, C)
 
-            self._collection = self._collection_class(
+            mpl_cls = self._get_mpl_class()
+            self._collection = mpl_cls(
                 *args,
                 offset_transform=self.offset_transform,
                 **self._init_kwargs,

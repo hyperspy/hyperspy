@@ -22,8 +22,8 @@ from hyperspy.docstrings.markers import (
     UNITS_DOCSTRING,
     WIDTHS_DOCSTRING,
 )
+from hyperspy.drawing.marker_collection import SquaresCollection
 from hyperspy.drawing.markers import Markers
-from hyperspy.external.matplotlib.collections import SquareCollection
 
 
 class Squares(Markers):
@@ -32,7 +32,6 @@ class Squares(Markers):
     """
 
     _position_key = "offsets"
-    _marker_type = "squares"
 
     def __init__(
         self, offsets, widths, angles=0, offset_transform="data", units="x", **kwargs
@@ -59,7 +58,7 @@ class Squares(Markers):
             )
 
         super().__init__(
-            collection=SquareCollection,
+            collection=SquaresCollection,
             offsets=offsets,
             widths=widths,
             angles=angles,
