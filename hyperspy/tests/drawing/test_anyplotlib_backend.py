@@ -360,7 +360,11 @@ class TestSignal2DPlot:
         from anyplotlib.plot2d import Plot2D
 
         ax = s._plot.signal_plot.ax
-        assert isinstance(ax._plot, Plot2D)
+        # Use backend.get_image_handle: ax._plot may be overwritten by overlay
+        # artists (e.g. scalebar), so we rely on the explicit image reference.
+        from hyperspy.drawing.backends import get_backend
+
+        assert isinstance(get_backend().get_image_handle(ax), Plot2D)
         s._plot.close()
 
     def test_plot_multidim_navigate(self):
