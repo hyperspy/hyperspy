@@ -20,6 +20,7 @@ import copy
 
 import numpy as np
 
+from hyperspy.drawing.marker_collection import VLinesCollection
 from hyperspy.drawing.markers import Markers
 
 
@@ -28,7 +29,6 @@ class VerticalLines(Markers):
 
     _position_key = "offsets"
     _position_key_to_set = "segments"
-    _marker_type = "vlines"
 
     def __init__(self, offsets, **kwargs):
         """
@@ -71,9 +71,7 @@ class VerticalLines(Markers):
                 "supported with the VerticalLines markers."
             )
 
-        from matplotlib.collections import LineCollection
-
-        super().__init__(collection=LineCollection, offsets=offsets, **kwargs)
+        super().__init__(collection=VLinesCollection, offsets=offsets, **kwargs)
 
     def get_current_kwargs(self, only_variable_length=False):
         kwargs = super().get_current_kwargs(only_variable_length=only_variable_length)

@@ -24,7 +24,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.collections import (
-    LineCollection,
     PolyCollection,
     StarPolygonCollection,
 )
@@ -35,14 +34,18 @@ from matplotlib.transforms import (
 
 import hyperspy.api as hs
 from hyperspy.axes import UniformDataAxis
-from hyperspy.external.matplotlib.collections import (
-    CircleCollection,
-    EllipseCollection,
-    RectangleCollection,
-    SquareCollection,
-    TextCollection,
+from hyperspy.drawing.marker_collection import (
+    ArrowsCollection,
+    CirclesCollection,
+    EllipsesCollection,
+    HLinesCollection,
+    LinesCollection,
+    PointsCollection,
+    RectanglesCollection,
+    SquaresCollection,
+    TextsCollection,
+    VLinesCollection,
 )
-from hyperspy.external.matplotlib.quiver import Quiver
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
@@ -498,24 +501,24 @@ class TestInitMarkers:
     @pytest.mark.parametrize(
         "subclass",
         (
-            (Arrows, Quiver, {"offsets": [[1, 1]], "U": [1], "V": [1]}),
-            (Circles, CircleCollection, {"offsets": [[1, 1]], "sizes": [1]}),
+            (Arrows, ArrowsCollection, {"offsets": [[1, 1]], "U": [1], "V": [1]}),
+            (Circles, CirclesCollection, {"offsets": [[1, 1]], "sizes": [1]}),
             (
                 Ellipses,
-                EllipseCollection,
+                EllipsesCollection,
                 {"offsets": [1, 2], "widths": [1], "heights": [1]},
             ),
-            (HorizontalLines, LineCollection, {"offsets": [1, 2]}),
-            (Points, CircleCollection, {"offsets": [[1, 1]], "sizes": [1]}),
-            (VerticalLines, LineCollection, {"offsets": [1, 2]}),
+            (HorizontalLines, HLinesCollection, {"offsets": [1, 2]}),
+            (Points, PointsCollection, {"offsets": [[1, 1]], "sizes": [1]}),
+            (VerticalLines, VLinesCollection, {"offsets": [1, 2]}),
             (
                 Rectangles,
-                RectangleCollection,
+                RectanglesCollection,
                 {"offsets": [[1, 1]], "widths": [1], "heights": [1]},
             ),
-            (Squares, SquareCollection, {"offsets": [[1, 1]], "widths": [1]}),
-            (Texts, TextCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
-            (Lines, LineCollection, {"segments": [[0, 0], [1, 1]]}),
+            (Squares, SquaresCollection, {"offsets": [[1, 1]], "widths": [1]}),
+            (Texts, TextsCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
+            (Lines, LinesCollection, {"segments": [[0, 0], [1, 1]]}),
             (
                 Markers,
                 StarPolygonCollection,

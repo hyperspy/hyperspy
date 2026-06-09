@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from hyperspy.drawing.marker_collection import LinesCollection
 from hyperspy.drawing.markers import Markers
 
 
@@ -23,7 +24,6 @@ class Lines(Markers):
     """A set of Line Segments Markers."""
 
     _position_key = "segments"
-    _marker_type = "lines"
 
     def __init__(self, segments, transform="data", **kwargs):
         """Initialize the set of Segments Markers.
@@ -51,8 +51,6 @@ class Lines(Markers):
                 "of the lines."
             )
 
-        from matplotlib.collections import LineCollection
-
         super().__init__(
-            collection=LineCollection, segments=segments, transform=transform, **kwargs
+            collection=LinesCollection, segments=segments, transform=transform, **kwargs
         )
