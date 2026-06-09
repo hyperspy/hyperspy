@@ -19,7 +19,6 @@
 
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from hyperspy.drawing.utils import picker_kwargs
@@ -262,12 +261,15 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """Creates the line, and also creates the width indicators if
         appropriate.
         """
-        self.ax.autoscale(False)  # Prevent plotting from rescaling
+        from hyperspy.drawing.backends import get_backend
+
+        backend = get_backend()
+        backend.set_autoscale(self.ax, False)
         xy = np.array(self._pos)
         max_r = max(self.radius_move, self.radius_resize, self.radius_rotate)
         kwargs = picker_kwargs(max_r)
         self._patch = [
-            plt.Line2D(
+            backend.create_line2d_patch(
                 xy[:, 0],
                 xy[:, 1],
                 linestyle="-",
@@ -292,10 +294,13 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             raise ValueError(
                 "linewidth is not supported for axis with different scale."
             )
+        from hyperspy.drawing.backends import get_backend
+
+        backend = get_backend()
         wc = self._get_width_indicator_coords()
         kwargs = picker_kwargs(self.radius_move)
         for i in range(2):
-            wi = plt.Line2D(
+            wi = backend.create_line2d_patch(
                 *wc[i].T, linestyle=":", lw=self.linewidth, c=self.color, **kwargs
             )
             self._patch.append(wi)

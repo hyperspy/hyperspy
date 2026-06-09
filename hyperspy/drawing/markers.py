@@ -19,14 +19,22 @@
 import warnings
 from copy import deepcopy
 
-import matplotlib.collections as mpl_collections
 import numpy as np
-from matplotlib.patches import Patch
 
 from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.events import Event, Events
 from hyperspy.misc import _markers, dask_utils, utils
+
+
+def _is_patch(obj):
+    """Return True if obj is a matplotlib Patch (lazy import)."""
+    try:
+        from matplotlib.patches import Patch
+
+        return isinstance(obj, Patch)
+    except ImportError:
+        return False
 
 
 def convert_positions(peaks, signal_axes):
@@ -152,6 +160,8 @@ class Markers:
         >>> s.add_marker(m)
 
         """
+        import matplotlib.collections as mpl_collections
+
         if isinstance(collection, str):
             try:
                 collection = getattr(mpl_collections, collection)
@@ -206,7 +216,7 @@ class Markers:
             elif (
                 isinstance(value, list)
                 and len(value) > 0
-                and not isinstance(value[0], Patch)
+                and not _is_patch(value[0])
                 and not key == "verts"
             ):
                 self.kwargs[key] = np.array(value)

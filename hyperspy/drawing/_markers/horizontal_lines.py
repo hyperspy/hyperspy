@@ -19,7 +19,6 @@
 import copy
 
 import numpy as np
-from matplotlib.collections import LineCollection
 
 from hyperspy.drawing.markers import Markers
 
@@ -73,6 +72,8 @@ class HorizontalLines(Markers):
                 "Setting 'offset_transform' or 'transform' argument is not "
                 "supported with the HorizontalLines markers."
             )
+
+        from matplotlib.collections import LineCollection
 
         super().__init__(collection=LineCollection, offsets=offsets, **kwargs)
 

@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import copy
 import itertools
 import logging
 import math
@@ -24,14 +23,8 @@ import textwrap
 import warnings
 from functools import partial
 
-import matplotlib as mpl
-import matplotlib.colors as mcolors
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
 import numpy as np
 import traits.api as t
-from matplotlib.backend_bases import key_press_handler
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from packaging.version import Version
 from rsciio.utils import rgb
 
@@ -157,6 +150,9 @@ def create_figure(
     fig : plt.figure
 
     """
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+
     if fig is None:
         fig = plt.figure(**kwargs)
     else:
@@ -189,6 +185,8 @@ def create_figure(
 
 
 def key_press_handler_custom(event, canvas):
+    from matplotlib.backend_bases import key_press_handler
+
     if event.key not in ["k", "l", "L"]:
         key_press_handler(event, canvas, canvas.manager.toolbar)
 
@@ -239,12 +237,13 @@ def plot_RGB_map(im_list, normalization="single", dont_plot=False):
         rgb /= rgb.max()
     rgb = rgb.clip(0, rgb.max())
     if not dont_plot:
+        import matplotlib.pyplot as plt
+
         figure = plt.figure()
         ax = figure.add_subplot(111)
         ax.frameon = False
         ax.set_axis_off()
         ax.imshow(rgb, interpolation="nearest")
-        #        cursors.set_mpl_ax(ax)
         figure.canvas.draw_idle()
     else:
         return rgb
@@ -272,16 +271,20 @@ def subplot_parameters(fig):
 
 
 class ColorCycle:
-    _color_cycle = [
-        mcolors.to_rgba(color) for color in ("b", "g", "r", "c", "m", "y", "k")
-    ]
+    _color_names = ("b", "g", "r", "c", "m", "y", "k")
+
+    @staticmethod
+    def _make_cycle():
+        import matplotlib.colors as mcolors
+
+        return [mcolors.to_rgba(c) for c in ColorCycle._color_names]
 
     def __init__(self):
-        self.color_cycle = copy.copy(self._color_cycle)
+        self.color_cycle = self._make_cycle()
 
     def __call__(self):
         if not self.color_cycle:
-            self.color_cycle = copy.copy(self._color_cycle)
+            self.color_cycle = self._make_cycle()
         return self.color_cycle.pop(0)
 
 
@@ -709,6 +712,11 @@ def plot_images(
     or try adjusting `label`, `labelwrap`, or `per_row`.
 
     """
+
+    import matplotlib as mpl
+    import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
 
     def __check_single_colorbar(cbar):
         if cbar == "single":
@@ -1383,18 +1391,21 @@ def _get_extent(xaxis, yaxis):
 
 
 def set_axes_decor(ax, axes_decor):
+    from hyperspy.drawing.backends import get_backend
+
+    backend = get_backend()
     if axes_decor == "off":
-        ax.axis("off")
+        backend.set_axis_off(ax)
     elif axes_decor == "ticks":
-        ax.set_xlabel("")
-        ax.set_ylabel("")
+        backend.set_xlabel(ax, "")
+        backend.set_ylabel(ax, "")
     elif axes_decor == "all":
         pass
     elif axes_decor is None:
-        ax.set_xlabel("")
-        ax.set_ylabel("")
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
+        backend.set_xlabel(ax, "")
+        backend.set_ylabel(ax, "")
+        backend.set_xticklabels(ax, [])
+        backend.set_yticklabels(ax, [])
 
 
 def make_cmap(colors, name="my_colormap", position=None, bit=False, register=True):
@@ -1427,6 +1438,9 @@ def make_cmap(colors, name="my_colormap", position=None, bit=False, register=Tru
         with matplotlib in order to enable use by just the name string.
         Default True.
     """
+    import matplotlib as mpl
+    import matplotlib.colors as mcolors
+
     bit_rgb = np.linspace(0, 1, 256)
 
     if position is None:
@@ -1562,6 +1576,9 @@ def plot_spectra(
         An array is returned when `style` is 'mosaic'.
 
     """
+
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
 
     def _reverse_legend(ax_, legend_loc_):
         """
@@ -1774,6 +1791,8 @@ def animate_legend(fig=None, ax=None, plot_type="spectra"):
     Code inspired from legend_picking.py in the matplotlib gallery.
 
     """
+    import matplotlib.pyplot as plt
+
     if fig is None:
         fig = plt.gcf()
     if ax is None:
@@ -1893,6 +1912,8 @@ plot_histograms.__doc__ %= (HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS)
 
 
 def picker_kwargs(value, kwargs=None):
+    import matplotlib as mpl
+
     if kwargs is None:
         kwargs = {}
     # picker is deprecated in favor of pickradius
@@ -1970,6 +1991,9 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
 
 
 def _make_cmaps(colors):
+    import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
+
     cmap_name = []
     for n_color, color in enumerate(colors):
         color = mcolors.to_hex(color)
@@ -1981,6 +2005,13 @@ def _make_cmaps(colors):
 
 
 def _add_colored_frame(ax, color, animated=True):
+    import matplotlib.patches as patches
+
+    from hyperspy.drawing.backends import get_backend
+
+    backend = get_backend()
+    transform = backend.get_ax_transform(ax, "axes")
+    is_animated = animated and backend.supports_blit_from_ax(ax)
     colored_frame = patches.Rectangle(
         (0, 0),
         1,
@@ -1988,10 +2019,10 @@ def _add_colored_frame(ax, color, animated=True):
         linewidth=10,
         edgecolor=color,
         facecolor="none",
-        transform=ax.transAxes,
-        animated=animated and ax.get_figure().canvas.supports_blit,
+        transform=transform,
+        animated=is_animated,
     )
-    ax.add_patch(colored_frame)
+    backend.add_artist(ax, colored_frame)
 
 
 def _roi_sum(signal, roi, axes, out=None):
@@ -2107,6 +2138,8 @@ def plot_roi_map(
     region at each point in the scan. Therefore, regions of the
     scan where a particular spot is intense will appear bright.
     """
+    import matplotlib as mpl
+
     if signal._plot is None or not signal._plot.is_active:
         signal.plot()
 
