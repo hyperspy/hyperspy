@@ -19,10 +19,8 @@
 import logging
 from unittest import mock
 
-import dask
 import numpy as np
 import pytest
-from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -685,11 +683,7 @@ class TestAsSignal:
     def test_component_out_of_range_to_nan_old_dask_lazy(self):
         m = self.m
         m.signal = m.signal.as_lazy()
-        if Version(dask.__version__) < Version("2024.12.0"):
-            with pytest.raises(RuntimeError):
-                _ = m.as_signal()
-        else:
-            m.as_signal(out_of_range_to_nan=False)
+        m.as_signal(out_of_range_to_nan=False)
 
     def test_component_no_function_nd(self, caplog):
         from hyperspy.component import Component
@@ -715,11 +709,10 @@ class TestAsSignal:
             # out_of_range_to_nan not supported with lazy output
             _ = m.as_signal(lazy_output=True)
 
-        if Version(dask.__version__) >= Version("2024.12.0"):
-            with caplog.at_level(logging.WARNING):
-                # should warn about slow implementation
-                _ = m.as_signal(out_of_range_to_nan=False, lazy_output=True)
-            assert "don't implement the `function_nd`" in caplog.text
+        with caplog.at_level(logging.WARNING):
+            # should warn about slow implementation
+            _ = m.as_signal(out_of_range_to_nan=False, lazy_output=True)
+        assert "don't implement the `function_nd`" in caplog.text
 
     def test_value_unset(self):
         s = self.m.signal

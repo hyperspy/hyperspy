@@ -21,18 +21,18 @@ classifiers = [
 ]
 dependencies = [
     "cloudpickle",
-    "dask[array]>=2023.2.1",
+    "dask[array]>=2024.12.0",
     "importlib-metadata>=3.6",
     "jinja2", # improves representation of lazy signals by dask
     "matplotlib>=3.6",
     "natsort",
-    "numpy>=1.22.0",
+    "numpy>=1.25.0", # needed for ContratEditorTool
     "packaging",
     "pint>=0.10",
     "prettytable>=2.3",
     "pyyaml",
     "rosettasciio[hdf5,image]>=0.12.0",
-    "scipy>=1.8.0",
+    "scipy>=1.10.0", # for compatibility with numpy version
     "sympy>=1.10",
     "tqdm>=4.59.0",
     "traits>=7.0.0",
@@ -148,7 +148,7 @@ odr = [
     "odrpack>=0.3.1",
 ]
 speed = [
-    "numba>=0.56.0",
+    "numba>=0.58.0", # for compatibility with numpy version
     "numexpr>=2.8.0",
 ]
 tests = [

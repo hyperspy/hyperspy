@@ -19,10 +19,8 @@
 import importlib
 import warnings
 
-import dask
 import numpy as np
 import pytest
-from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy.component import Component
@@ -34,8 +32,7 @@ from hyperspy.signals import Signal1D, Signal2D
 
 
 def _skip_test(s):
-    if s._lazy and Version(dask.__version__) < Version("2024.12.0"):
-        pytest.skip("dask version must be >= 2024.12.0.")
+    pass  # dask >= 2024.12.0 is now a required dependency
 
 
 def test_fit_binned():
