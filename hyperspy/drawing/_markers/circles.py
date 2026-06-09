@@ -25,6 +25,7 @@ class Circles(Markers):
     """A set of Circle Markers."""
 
     _position_key = "offsets"
+    _marker_type = "circles"
 
     def __init__(
         self,

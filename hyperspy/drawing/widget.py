@@ -180,9 +180,10 @@ class WidgetBase(object):
             super(WidgetBase, self)._add_patch_to(ax)
 
     def set_mpl_ax(self, ax):
-        """Set the matplotlib Axes that the widget will draw to. If the widget
-        on state is True, it will also add the patch to the Axes, and connect
-        to its default events.
+        """Set the axes that the widget will draw to.
+
+        If the widget on state is True, also adds the patch to the axes and
+        connects to its default events.
         """
         if ax is self.ax:
             return  # Do nothing
@@ -195,6 +196,8 @@ class WidgetBase(object):
             self.connect(ax)
             get_backend().draw_idle(ax.figure)
             self.select()
+
+    set_ax = set_mpl_ax
 
     def select(self):
         """Cause this widget to be the selected widget in its axes.
@@ -907,44 +910,45 @@ class ResizersMixin:
         """
         if self.resize_pixel_size is None:
             return [ax.scale for ax in self.axes]
-        backend = get_backend()
-        invtrans = backend.get_data_transform_inverse(self.ax)
-        return abs(
-            backend.transform_point(invtrans, self.resize_pixel_size)
-            - backend.transform_point(invtrans, (0, 0))
+        from hyperspy.drawing.backends._protocol import CoordSpace
+
+        pts = get_backend().convert_coords(
+            self.ax,
+            [self.resize_pixel_size, (0, 0)],
+            CoordSpace.DISPLAY,
+            CoordSpace.DATA,
         )
+        return abs(pts[0] - pts[1])
 
     def _get_resizer_offset(self):
         """Utility for getting the distance from the boundary box to the
         center of the resize handles.
         """
-        backend = get_backend()
-        invtrans = backend.get_data_transform_inverse(self.ax)
+        from hyperspy.drawing.backends._protocol import CoordSpace
+
         border = self.border_thickness
-        # Transform the border thickness into data values
-        dl = (
-            abs(
-                backend.transform_point(invtrans, (border, border))
-                - backend.transform_point(invtrans, (0, 0))
-            )
-            / 2
+        pts = get_backend().convert_coords(
+            self.ax,
+            [(border, border), (0, 0)],
+            CoordSpace.DISPLAY,
+            CoordSpace.DATA,
         )
+        dl = abs(pts[0] - pts[1]) / 2
         rsize = self._get_resizer_size()
         return rsize / 2 + dl
 
     def _get_resizer_pos(self):
         """Get the positions of the resizer handles."""
-        backend = get_backend()
-        invtrans = backend.get_data_transform_inverse(self.ax)
+        from hyperspy.drawing.backends._protocol import CoordSpace
+
         border = self.border_thickness
-        # Transform the border thickness into data values
-        dl = (
-            abs(
-                backend.transform_point(invtrans, (border, border))
-                - backend.transform_point(invtrans, (0, 0))
-            )
-            / 2
+        pts = get_backend().convert_coords(
+            self.ax,
+            [(border, border), (0, 0)],
+            CoordSpace.DISPLAY,
+            CoordSpace.DATA,
         )
+        dl = abs(pts[0] - pts[1]) / 2
         rsize = self._get_resizer_size()
         xs, ys = self._size
 

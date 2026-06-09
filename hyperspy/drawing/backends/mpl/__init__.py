@@ -415,6 +415,87 @@ class MplBackend:
             return IdentityTransform()
         return transforms[kind]
 
+    def _space_transform(self, ax, space):
+        """Return the MPL transform corresponding to a CoordSpace string."""
+        from matplotlib.transforms import IdentityTransform
+
+        mapping = {
+            "data": ax.transData,
+            "relative": ax.transData,
+            "axes": ax.transAxes,
+            "xaxis": ax.get_xaxis_transform(),
+            "yaxis": ax.get_yaxis_transform(),
+            "display": IdentityTransform(),
+        }
+        if space not in mapping:
+            raise ValueError(f"Unknown coordinate space: {space!r}")
+        return mapping[space]
+
+    def convert_coords(self, ax, points, from_space, to_space):
+        import numpy as np
+
+        from_trans = self._space_transform(ax, from_space)
+        to_trans = self._space_transform(ax, to_space)
+        composite = from_trans + to_trans.inverted()
+        return composite.transform(np.atleast_2d(points))
+
+    # ── Native marker collections ─────────────────────────────────────────
+
+    _MARKER_COLLECTION_MAP = None
+
+    def _marker_collection_map(self):
+        if self._MARKER_COLLECTION_MAP is None:
+            from matplotlib.collections import LineCollection
+
+            from hyperspy.external.matplotlib.collections import (
+                CircleCollection,
+                EllipseCollection,
+                RectangleCollection,
+                SquareCollection,
+                TextCollection,
+            )
+
+            MplBackend._MARKER_COLLECTION_MAP = {
+                "points": CircleCollection,
+                "circles": CircleCollection,
+                "squares": SquareCollection,
+                "lines": LineCollection,
+                "hlines": LineCollection,
+                "vlines": LineCollection,
+                "texts": TextCollection,
+                "rectangles": RectangleCollection,
+                "ellipses": EllipseCollection,
+            }
+        return self._MARKER_COLLECTION_MAP
+
+    def create_markers(self, ax, marker_type, **kwargs):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        offset_space = kwargs.pop("offset_space", "data")
+        transform_space = kwargs.pop("transform_space", "display")
+
+        cmap = self._marker_collection_map()
+        collection_cls = cmap.get(marker_type)
+        if collection_cls is None:
+            raise BackendCapabilityError(
+                f"Marker type {marker_type!r} not supported by the MPL backend"
+            )
+        offset_transform = self._space_transform(ax, offset_space)
+        transform = self._space_transform(ax, transform_space)
+        collection = collection_cls(offset_transform=offset_transform, **kwargs)
+        collection.set_transform(transform)
+        ax.add_collection(collection)
+        return collection
+
+    def update_markers(self, handle, **kwargs):
+        handle.set(**kwargs)
+
+    def remove_markers(self, ax, handle):
+        try:
+            handle.remove()
+        except Exception:
+            pass
+
     # ── Step plot ─────────────────────────────────────────────────────────
 
     def plot_step(self, ax, x, y, **props):

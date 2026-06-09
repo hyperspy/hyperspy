@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
-
 from hyperspy.drawing import signal1d
 from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.backends.mpl.mpl_he import MPL_HyperExplorer
@@ -29,54 +27,6 @@ class MPL_HyperSignal1D_Explorer(HyperSignal1D_Explorer, MPL_HyperExplorer):
     to explore the SI.
 
     """
-
-    def _make_signal_figure(self, **kwargs):
-        fig = kwargs.pop("fig", None)
-        sf = signal1d.Signal1DFigure(
-            title=self.signal_title + " Signal",
-            # Passed to figure creation
-            _on_figure_window_close=self.close,
-            fig=fig,
-        )
-        sf.axis = self.axis
-        if sf.ax is None:
-            sf.create_axis()
-        sf.axes_manager = self.axes_manager
-        sf.xlabel = self.xlabel
-        sf.ylabel = self.ylabel
-
-        # Create a line to the left axis with the default indices
-        sl = signal1d.Signal1DLine()
-        is_complex = np.iscomplexobj(self.signal_data_function())
-        sl.data_function = self.signal_data_function
-        kwargs["data_function_kwargs"] = self.signal_data_function_kwargs
-        sl.plot_indices = True
-        if self.pointer is not None:
-            color = self.pointer.color
-        else:
-            color = "red"
-        sl.set_line_properties(color=color, type="step")
-        # Add the line to the figure:
-        sf.add_line(sl)
-        # If the data is complex create a line in the left axis with the
-        # default coordinates
-        if is_complex:
-            sl = signal1d.Signal1DLine()
-            sl.data_function = self.signal_data_function
-            sl.plot_coordinates = True
-            sl._plot_imag = True
-            sl.set_line_properties(color="blue", type="step")
-            # Add extra line to the figure
-            sf.add_line(sl)
-
-        sf.plot(**kwargs)
-        return sf
-
-    def _connect_key_handler(self, figure, fn):
-        if figure.figure is not None:
-            cid = get_backend().connect_key_press(figure.figure, fn)
-            if cid is not None:
-                self._key_nav_cids.append((figure.figure, cid))
 
     def _add_right_line(self, **kwargs):
         rl = signal1d.Signal1DLine()

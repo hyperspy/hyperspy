@@ -27,6 +27,7 @@ class Texts(Markers):
     """
 
     _position_key = "offsets"
+    _marker_type = "texts"
 
     def __init__(self, offsets, offset_transform="data", transform="display", **kwargs):
         """
