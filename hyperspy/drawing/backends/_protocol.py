@@ -13,13 +13,248 @@ class BackendCapabilityError(NotImplementedError):
     """
 
 
-@runtime_checkable
-class PlottingBackend(Protocol):
-    """Minimal interface every hyperspy plotting backend must implement.
+class BlitMixin(Protocol):
+    """Default no-op implementations of all blit-related methods.
 
-    All methods receive backend-native objects (figure, axes, handles)
-    returned by earlier backend calls.  The generic drawing layer never
-    imports matplotlib or anyplotlib directly; it only calls these methods.
+    Backends that do not support blitting inherit this mixin to satisfy the
+    protocol without implementing anything.  Backends that *do* support
+    blitting (e.g. ``MplBackend``) override the relevant methods.
+    """
+
+    def supports_blit(self, fig: Any) -> bool:
+        """True when the backend can blit (skip full redraw)."""
+        return False
+
+    def copy_background(self, fig: Any) -> Any:
+        """Capture the current non-animated background for blitting."""
+        return None
+
+    def restore_background(self, fig: Any, background: Any) -> None:
+        """Restore a previously captured background."""
+
+    def blit(self, fig: Any) -> None:
+        """Flush the blit buffer to the screen."""
+
+    def connect_draw_event(self, fig: Any, fn: Callable) -> Any:
+        """Connect fn to the figure's post-draw event; return a cid."""
+        return None
+
+    def draw_animated_artists(self, fig: Any) -> None:
+        """Redraw all animated artists in fig."""
+
+    def render_figure_from_ax(self, ax: Any) -> None:
+        """Trigger a repaint via the axes.  Uses blit when available."""
+        self.draw_idle(getattr(ax, "figure", None))  # type: ignore[attr-defined]
+
+    def invalidate_blit_background(self, ax: Any) -> None:
+        """Invalidate the blit background so the next render does a full repaint."""
+
+    def supports_blit_from_ax(self, ax: Any) -> bool:
+        """True when ax is attached to a blitting-capable HyperSpy figure."""
+        return False
+
+
+class PointerMixin(Protocol):
+    """Default implementations of navigation pointer widget methods.
+
+    Backends inherit this mixin to get ``BackendCapabilityError`` defaults for
+    all pointer primitives.  Backends that support interactive widgets override
+    the relevant methods.
+
+    Pointer methods are deliberately higher-level than raw patch manipulation:
+    each ``create_*`` call returns an opaque handle that is passed back to the
+    corresponding ``update_*`` and ``remove_pointer`` calls.
+
+    Consolidated API (replaces the old per-axis / per-property methods):
+
+    * ``create_line_pointer(ax, axis, pos, color)``
+      Single method for both vertical (``axis='x'``) and horizontal
+      (``axis='y'``) draggable line widgets.
+
+    * ``update_line_pointer(handle, pos)``
+      Move the line to *pos* (x-value for 'x', y-value for 'y').
+
+    * ``create_rect_pointer(ax, x, y, w, h, color)``
+      Create a draggable rectangle widget.
+
+    * ``update_rect_pointer(handle, x, y, w, h)``
+      Resize / reposition the rectangle.
+
+    * ``remove_pointer(ax, handle)``
+      Remove any pointer handle from the axes.
+
+    * ``set_pointer_style(handle, *, color, alpha, animated)``
+      Set any combination of visual style properties in one call.
+    """
+
+    # ── Pointer creation / update ─────────────────────────────────────────
+
+    def create_line_pointer(
+        self, ax: Any, axis: str, pos: float, color: str = "red"
+    ) -> Any:
+        """Create a draggable line widget.
+
+        Parameters
+        ----------
+        ax : backend axes object
+        axis : ``'x'`` for a vertical line, ``'y'`` for a horizontal line
+        pos : initial position in data coordinates
+        color : line color
+
+        Returns
+        -------
+        opaque handle passed to ``update_line_pointer`` / ``remove_pointer``
+        """
+        raise BackendCapabilityError(
+            "create_line_pointer not supported by this backend"
+        )
+
+    def update_line_pointer(self, handle: Any, pos: float) -> None:
+        """Move the line pointer to *pos* in data coordinates."""
+        raise BackendCapabilityError(
+            "update_line_pointer not supported by this backend"
+        )
+
+    def create_rect_pointer(
+        self, ax: Any, x: float, y: float, w: float, h: float, color: str = "red"
+    ) -> Any:
+        """Create a draggable rectangle widget at lower-left (x, y) with size w×h."""
+        raise BackendCapabilityError(
+            "create_rect_pointer not supported by this backend"
+        )
+
+    def update_rect_pointer(
+        self, handle: Any, x: float, y: float, w: float, h: float
+    ) -> None:
+        """Reposition/resize the rectangle pointer."""
+        raise BackendCapabilityError(
+            "update_rect_pointer not supported by this backend"
+        )
+
+    def remove_pointer(self, ax: Any, handle: Any) -> None:
+        """Remove any pointer handle from the axes."""
+
+    def set_pointer_style(
+        self,
+        handle: Any,
+        *,
+        color: str | None = None,
+        alpha: float | None = None,
+        animated: bool | None = None,
+    ) -> None:
+        """Set visual style properties on a pointer handle.
+
+        Any ``None`` argument is left unchanged.  Replaces the old
+        ``set_patch_color`` / ``set_patch_alpha`` / ``set_patch_animated``
+        trio.
+        """
+
+    # ── Artist helpers ────────────────────────────────────────────────────
+
+    def add_artist(self, ax: Any, artist: Any) -> None:
+        """Add a pre-created artist to ax (used for MPL-native patches)."""
+
+    def create_rect_patch(self, pos, w: float, h: float, **kwargs) -> Any:
+        """Create a rectangle patch (for resizer handles)."""
+        raise BackendCapabilityError("create_rect_patch not supported by this backend")
+
+    def get_data_transform_inverse(self, ax: Any) -> Any:
+        """Return an inverse-data transform (for pixel→data conversions)."""
+        raise BackendCapabilityError(
+            "get_data_transform_inverse not supported by this backend"
+        )
+
+    def transform_point(self, transform: Any, point) -> Any:
+        """Apply transform to point."""
+        raise BackendCapabilityError("transform_point not supported by this backend")
+
+    # ── Widget callbacks ──────────────────────────────────────────────────
+
+    def simulate_pick(self, ax: Any, patch: Any) -> None:
+        """Simulate a pick event on *patch* to make it the active widget."""
+
+    def connect_widget_drag(self, handle: Any, on_drag: Callable) -> None:
+        """Register *on_drag* to fire when the native widget is dragged.
+
+        *on_drag* is called with the new position: ``(x,)`` for 1-D widgets,
+        ``(x, y)`` for 2-D.  MPL-based backends leave this as a no-op and
+        route drag through ``_onmousemove``.
+        """
+
+    # ── Interactive selectors ─────────────────────────────────────────────
+
+    def create_span_selector(self, ax: Any, **kwargs) -> Any:
+        """Create and return an interactive span selector on ax."""
+        raise BackendCapabilityError("SpanSelector requires a matplotlib-based backend")
+
+    def create_polygon_selector(self, ax: Any, **kwargs) -> Any:
+        """Create and return an interactive polygon selector on ax."""
+        raise BackendCapabilityError(
+            "PolygonSelector requires a matplotlib-based backend"
+        )
+
+    # ── Coordinate transforms ─────────────────────────────────────────────
+
+    def get_ax_transform(self, ax: Any, kind: str) -> Any:
+        """Return a transform for the given kind.
+
+        *kind* is one of ``'data'``, ``'axes'``, ``'xaxis'``, ``'yaxis'``,
+        ``'display'``, ``'relative'``.
+        """
+        raise BackendCapabilityError(
+            f"Transform '{kind}' not supported by this backend"
+        )
+
+    # ── Free-form patch creation ──────────────────────────────────────────
+
+    def create_line2d_patch(self, x, y, **kwargs) -> Any:
+        """Create a free-form line artist for use as a widget patch."""
+        raise BackendCapabilityError(
+            "create_line2d_patch not supported by this backend"
+        )
+
+    def create_circle_patch(self, xy, radius, **kwargs) -> Any:
+        """Create a circle artist for use as a widget patch."""
+        raise BackendCapabilityError(
+            "create_circle_patch not supported by this backend"
+        )
+
+    # ── Step plot ─────────────────────────────────────────────────────────
+
+    def plot_step(self, ax: Any, x, y, **props) -> Any:
+        """Draw a step plot; return an opaque handle."""
+        raise BackendCapabilityError("plot_step not supported by this backend")
+
+    # ── Axes control ─────────────────────────────────────────────────────
+
+    def set_autoscale(self, ax: Any, enable: bool) -> None:
+        """Enable or disable axes autoscale."""
+
+    def set_xticklabels(self, ax: Any, labels) -> None:
+        """Set the x-axis tick labels."""
+
+    def set_yticklabels(self, ax: Any, labels) -> None:
+        """Set the y-axis tick labels."""
+
+
+@runtime_checkable
+class PlottingBackend(BlitMixin, PointerMixin, Protocol):
+    """Interface every HyperSpy plotting backend must satisfy.
+
+    **Structure**
+
+    * :class:`BlitMixin` — blit helpers with safe no-op defaults.  Inherit it
+      to skip blit support entirely; override to enable it.
+    * :class:`PointerMixin` — navigation widget primitives with
+      ``BackendCapabilityError`` defaults.  Override the methods your backend
+      supports.
+    * ``PlottingBackend`` — core drawing primitives that **every** backend must
+      implement (figure lifecycle, axes, lines, images, colorbars, events,
+      markers, layout).
+
+    All methods receive backend-native objects returned by earlier backend
+    calls.  The generic drawing layer never imports matplotlib or anyplotlib
+    directly; it calls only these methods.
     """
 
     # ── Figure lifecycle ──────────────────────────────────────────────────
@@ -34,21 +269,6 @@ class PlottingBackend(Protocol):
 
     def draw_idle(self, fig: Any) -> None:
         """Schedule a non-blocking redraw."""
-
-    def supports_blit(self, fig: Any) -> bool:
-        """True when the backend can blit (skip full redraw)."""
-
-    def copy_background(self, fig: Any) -> Any:
-        """Capture the current non-animated background for blitting."""
-
-    def restore_background(self, fig: Any, background: Any) -> None:
-        """Restore a previously captured background."""
-
-    def blit(self, fig: Any) -> None:
-        """Flush the blit buffer to the screen."""
-
-    def connect_draw_event(self, fig: Any, fn: Callable) -> Any:
-        """Connect fn to the figure's post-draw event; return a cid."""
 
     def disconnect_event(self, fig_or_ax: Any, cid: Any) -> None:
         """Remove a previously connected event handler."""
@@ -88,9 +308,8 @@ class PlottingBackend(Protocol):
     ) -> Any:
         """Add a text label.
 
-        *transform* is a string key passed to ``get_ax_transform``:
-        ``'axes'`` (default), ``'data'``, ``'xaxis'``, ``'yaxis'``,
-        ``'display'``, or ``'relative'``.
+        *transform* is a string key: ``'axes'`` (default), ``'data'``,
+        ``'xaxis'``, ``'yaxis'``, ``'display'``, or ``'relative'``.
         """
 
     def update_text(self, handle: Any, s: str) -> None: ...
@@ -133,167 +352,11 @@ class PlottingBackend(Protocol):
     def connect_mouse_release(self, fig_or_ax: Any, fn: Callable) -> Any: ...
     def connect_pick(self, fig_or_ax: Any, fn: Callable) -> Any: ...
 
-    # ── Draw animated artists (blit support) ─────────────────────────────
-
-    def draw_animated_artists(self, fig: Any) -> None:
-        """Redraw all animated artists in fig (no-op for backends with
-        per-object blitting like anyplotlib)."""
-
-    # ── Navigation pointer widgets ────────────────────────────────────────
-
-    def add_vline_widget(self, ax: Any, x: float, color: str = "red") -> Any: ...
-    def update_vline(self, handle: Any, x: float) -> None: ...
-    def add_rect_widget(
-        self, ax: Any, x: float, y: float, w: float, h: float, color: str = "red"
-    ) -> Any: ...
-    def update_rect(
-        self, handle: Any, x: float, y: float, w: float, h: float
-    ) -> None: ...
-    def remove_widget_patch(self, ax: Any, handle: Any) -> None: ...
-    def set_patch_animated(self, handle: Any, value: bool) -> None: ...
-    def set_patch_color(self, handle: Any, color: str) -> None: ...
-    def set_patch_alpha(self, handle: Any, alpha: float) -> None: ...
-    def add_artist(self, ax: Any, artist: Any) -> None: ...
-    def create_rect_patch(self, pos, w: float, h: float, **kwargs) -> Any:
-        """Create a rectangle patch (for resizer handles)."""
-
-    def get_data_transform_inverse(self, ax: Any) -> Any:
-        """Return an inverse-data transform (for pixel→data conversions)."""
-
-    def transform_point(self, transform: Any, point) -> Any: ...
-
-    # ── Combined multi-panel layout ───────────────────────────────────────
-
-    def create_combined_figure_panels(self, figsize=None) -> tuple[Any, Any] | None:
-        """Return (nav_fig, signal_fig) for a combined single-widget layout.
-
-        Return ``None`` to use two separate figures (the default).
-        Backends that want to show navigator + signal in one window implement
-        this (e.g. anyplotlib, ipympl subfigure).
-        """
-        return None
-
-    def ensure_displayed(self, fig: Any) -> None:
-        """Called by signal.py after plot() completes.
-
-        Backends that defer display (e.g. anyplotlib panel countdown) use this
-        to force the final render.  Default is a no-op.
-        """
-
-    def connect_close_event(self, fig: Any, fn: Callable) -> Any:
-        """Connect *fn* to the figure close/destroy event; return a cid."""
-        return None
-
-    def simulate_pick(self, ax: Any, patch: Any) -> None:
-        """Simulate a pick event on *patch* in *ax* to make it the active widget.
-
-        Called by ``WidgetBase.select()``.  No-op for backends that do not use
-        MPL-style canvas pick events.
-        """
-
-    def get_explorer(self, signal_dim: int) -> type[HyperExplorer]:
-        """Return the HyperExplorer subclass for *signal_dim* (0, 1, or 2).
-
-        **Every backend must override this method.**  The default returns the
-        abstract ``HyperExplorer`` base class, which does not implement figure
-        creation and will produce blank or broken plots.  Backend authors should
-        either subclass ``HyperSignal1D_Explorer`` / ``HyperImage_Explorer``
-        (see ``anyplotlib/_explorers.py`` for a reference) or re-use the
-        existing MPL explorer classes if the backend is matplotlib-compatible.
-        """
-        from hyperspy.drawing.he import HyperExplorer
-
-        return HyperExplorer
-
     # ── Marker collections ────────────────────────────────────────────────
 
     def add_collection(self, ax: Any, collection) -> Any: ...
     def collection_update(self, handle: Any, **kwargs) -> None: ...
     def collection_remove(self, ax: Any, handle: Any) -> None: ...
-
-    # ── Blit helpers (ax-level) ───────────────────────────────────────────
-
-    def render_figure_from_ax(self, ax: Any) -> None:
-        """Trigger a repaint via the axes.  Uses blit when available."""
-        self.draw_idle(getattr(ax, "figure", None))
-
-    def invalidate_blit_background(self, ax: Any) -> None:
-        """Invalidate the blit background so the next render does a full repaint."""
-
-    def supports_blit_from_ax(self, ax: Any) -> bool:
-        """True when ax is attached to a blitting-capable HyperSpy figure."""
-        return False
-
-    # ── Interactive selectors ─────────────────────────────────────────────
-
-    def create_span_selector(self, ax: Any, **kwargs) -> Any:
-        """Create and return an interactive span selector on ax."""
-        raise BackendCapabilityError("SpanSelector requires a matplotlib-based backend")
-
-    def create_polygon_selector(self, ax: Any, **kwargs) -> Any:
-        """Create and return an interactive polygon selector on ax."""
-        raise BackendCapabilityError(
-            "PolygonSelector requires a matplotlib-based backend"
-        )
-
-    # ── Horizontal line widget ────────────────────────────────────────────
-
-    def add_hline_widget(self, ax: Any, y: float, color: str = "red") -> Any:
-        """Add a draggable horizontal line widget at data coordinate y."""
-        raise BackendCapabilityError("add_hline_widget not supported by this backend")
-
-    def update_hline(self, handle: Any, y: float) -> None: ...
-
-    def connect_widget_drag(self, handle: Any, on_drag: Callable) -> None:
-        """Register *on_drag* to fire when the native widget is dragged.
-
-        *on_drag* is called with the new position as positional args
-        ``(x,)`` for 1-D widgets or ``(x, y)`` for 2-D widgets.
-        Backends that route drag through standard mouse-move events (e.g.
-        matplotlib) leave this as a no-op; backends with native draggable
-        widgets (e.g. anyplotlib) register the callback on the widget.
-        """
-
-    # ── Coordinate transforms ─────────────────────────────────────────────
-
-    def get_ax_transform(self, ax: Any, kind: str) -> Any:
-        """Return a transform object for the given kind ('data', 'axes',
-        'xaxis', 'yaxis', 'display', 'relative').  Backends that do not
-        support marker transforms raise BackendCapabilityError."""
-        raise BackendCapabilityError(
-            f"Transform '{kind}' not supported by this backend"
-        )
-
-    # ── Step plot ─────────────────────────────────────────────────────────
-
-    def plot_step(self, ax: Any, x, y, **props) -> Any:
-        """Draw a step plot; return an opaque handle."""
-        raise BackendCapabilityError("plot_step not supported by this backend")
-
-    # ── Patch creation (widget primitives) ───────────────────────────────
-
-    def create_line2d_patch(self, x, y, **kwargs) -> Any:
-        """Create a free-form line artist for use as a widget patch."""
-        raise BackendCapabilityError(
-            "create_line2d_patch not supported by this backend"
-        )
-
-    def create_circle_patch(self, xy, radius, **kwargs) -> Any:
-        """Create a circle artist for use as a widget patch."""
-        raise BackendCapabilityError(
-            "create_circle_patch not supported by this backend"
-        )
-
-    # ── Axes control ─────────────────────────────────────────────────────
-
-    def set_autoscale(self, ax: Any, enable: bool) -> None:
-        """Enable or disable axes autoscale (no-op by default)."""
-
-    def set_xticklabels(self, ax: Any, labels) -> None:
-        """Set the x-axis tick labels (no-op by default)."""
-
-    def set_yticklabels(self, ax: Any, labels) -> None:
-        """Set the y-axis tick labels (no-op by default)."""
 
     # ── Layout helpers ────────────────────────────────────────────────────
 
@@ -303,3 +366,32 @@ class PlottingBackend(Protocol):
     def get_figure_from_ax(self, ax: Any) -> Any:
         """Return the parent figure of ax."""
         raise BackendCapabilityError("get_figure_from_ax not supported by this backend")
+
+    # ── Combined multi-panel layout ───────────────────────────────────────
+
+    def create_combined_figure_panels(self, figsize=None) -> tuple[Any, Any] | None:
+        """Return (nav_fig, signal_fig) for a combined single-widget layout.
+
+        Return ``None`` to use two separate figures (the default).
+        """
+        return None
+
+    def ensure_displayed(self, fig: Any) -> None:
+        """Called after plot() completes.
+
+        Backends that defer display use this to force the final render.
+        Default is a no-op.
+        """
+
+    def connect_close_event(self, fig: Any, fn: Callable) -> Any:
+        """Connect *fn* to the figure close/destroy event; return a cid."""
+        return None
+
+    def get_explorer(self, signal_dim: int) -> type[HyperExplorer]:
+        """Return the HyperExplorer subclass for *signal_dim* (0, 1, or 2).
+
+        **Every backend must override this method.**
+        """
+        from hyperspy.drawing.he import HyperExplorer
+
+        return HyperExplorer

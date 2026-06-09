@@ -26,7 +26,7 @@ class VerticalLineWidget(Widget1DBase):
         if self.is_on and self.patch:
             from hyperspy.drawing.backends import get_backend
 
-            get_backend().update_vline(self.patch[0], float(self._pos[0]))
+            get_backend().update_line_pointer(self.patch[0], float(self._pos[0]))
             self.draw_patch()
 
     def _add_patch_to(self, ax):
@@ -34,9 +34,11 @@ class VerticalLineWidget(Widget1DBase):
 
         backend = get_backend()
         self.blit = backend.supports_blit_from_ax(ax)
-        handle = backend.add_vline_widget(ax, float(self._pos[0]), color=self.color)
+        handle = backend.create_line_pointer(
+            ax, "x", float(self._pos[0]), color=self.color
+        )
         self._patch = [handle]
-        backend.set_patch_animated(handle, self.blit)
+        backend.set_pointer_style(handle, animated=self.blit)
         _self = self
         backend.connect_widget_drag(handle, lambda x: setattr(_self, "position", (x,)))
 

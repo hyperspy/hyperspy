@@ -424,23 +424,22 @@ class AnyplotlibBackend:
 
     # ── Navigation pointer widgets ────────────────────────────────────────
 
-    def add_vline_widget(self, ax, x, color="red"):
-        plot = ax._plot
+    def create_line_pointer(self, ax, axis, pos, color="red"):
+        plot = getattr(ax, "_plot", None)
         if plot is None:
             raise RuntimeError("ax has no plot; call plot_line or plot_image first")
-        return plot.add_vline_widget(x=float(x), color=color)
-
-    def update_vline(self, handle, x):
-        handle.x = float(x)
-
-    def add_hline_widget(self, ax, y, color="red"):
+        if axis == "x":
+            return plot.add_vline_widget(x=float(pos), color=color)
         plot = getattr(ax, "_plot", None)
         if plot is None or not hasattr(plot, "add_widget"):
-            raise BackendCapabilityError(_NOT_YET.format("add_hline_widget"))
-        return plot.add_widget("crosshair", cx=0.0, cy=float(y), color=color)
+            raise BackendCapabilityError(_NOT_YET.format("create_line_pointer(y)"))
+        return plot.add_widget("crosshair", cx=0.0, cy=float(pos), color=color)
 
-    def update_hline(self, handle, y):
-        handle.cy = float(y)
+    def update_line_pointer(self, handle, pos):
+        if hasattr(handle, "x"):
+            handle.x = float(pos)
+        else:
+            handle.cy = float(pos)
 
     def connect_widget_drag(self, handle, on_drag):
         try:
@@ -463,34 +462,31 @@ class AnyplotlibBackend:
             return
         handle.add_event_handler(self._wrap(_cb), "pointer_move")
 
-    def add_rect_widget(self, ax, x, y, w, h, color="red"):
+    def create_rect_pointer(self, ax, x, y, w, h, color="red"):
         plot = getattr(ax, "_plot", None)
         if plot is None or not hasattr(plot, "add_widget"):
-            raise BackendCapabilityError(_NOT_YET.format("add_rect_widget"))
+            raise BackendCapabilityError(_NOT_YET.format("create_rect_pointer"))
         # x, y are the lower-left corner; convert to center for the crosshair
         cx = float(x) + float(w) / 2.0
         cy = float(y) + float(h) / 2.0
         return plot.add_widget("crosshair", cx=cx, cy=cy, color=color)
 
-    def update_rect(self, handle, x, y, w, h):
+    def update_rect_pointer(self, handle, x, y, w, h):
         # x, y are lower-left; convert to center so cx/cy equal the nav axis value
         handle.cx = float(x) + float(w) / 2.0
         handle.cy = float(y) + float(h) / 2.0
 
-    def remove_widget_patch(self, ax, handle):
+    def remove_pointer(self, ax, handle):
         try:
             handle.remove()
         except Exception:
             pass
 
-    def set_patch_animated(self, handle, value):
-        pass
-
-    def set_patch_color(self, handle, color):
-        handle.color = color
-
-    def set_patch_alpha(self, handle, alpha):
-        raise BackendCapabilityError(_NOT_YET.format("set_patch_alpha"))
+    def set_pointer_style(self, handle, *, color=None, alpha=None, animated=None):
+        if color is not None:
+            handle.color = color
+        if alpha is not None:
+            raise BackendCapabilityError(_NOT_YET.format("set_pointer_style(alpha)"))
 
     def add_artist(self, ax, artist):
         pass

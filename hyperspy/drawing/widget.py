@@ -149,7 +149,7 @@ class WidgetBase(object):
         self._color = color
         backend = get_backend()
         for p in self.patch:
-            backend.set_patch_color(p, color)
+            backend.set_pointer_style(p, color=color)
 
     @property
     def alpha(self):
@@ -160,7 +160,7 @@ class WidgetBase(object):
         self._alpha = alpha
         backend = get_backend()
         for p in self.patch:
-            backend.set_patch_alpha(p, alpha)
+            backend.set_pointer_style(p, alpha=alpha)
 
     def _set_patch(self):
         """Create the matplotlib patch(es), and store it in self.patch"""
@@ -175,7 +175,7 @@ class WidgetBase(object):
         self._set_patch()
         for p in self.patch:
             backend.add_artist(ax, p)
-            backend.set_patch_animated(p, self.blit)
+            backend.set_pointer_style(p, animated=self.blit)
         if hasattr(super(WidgetBase, self), "_add_patch_to"):
             super(WidgetBase, self)._add_patch_to(ax)
 
@@ -889,7 +889,7 @@ class ResizersMixin:
             if value:
                 for r in self._resizer_handles:
                     backend.add_artist(ax, r)
-                    backend.set_patch_animated(r, self.blit)
+                    backend.set_pointer_style(r, animated=self.blit)
             else:
                 for r in self._resizer_handles:
                     # check that the matplotlib patch is present before removing it

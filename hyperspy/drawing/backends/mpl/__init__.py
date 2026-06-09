@@ -245,18 +245,23 @@ class MplBackend:
 
     # ── Navigation pointer widgets ────────────────────────────────────────
 
-    def add_vline_widget(self, ax, x, color="red"):
+    def create_line_pointer(self, ax, axis, pos, color="red"):
         from hyperspy.defaults_parser import preferences
         from hyperspy.drawing.utils import picker_kwargs
 
-        return ax.axvline(
-            x, color=color, **picker_kwargs(preferences.Plot.pick_tolerance)
-        )
+        kw = picker_kwargs(preferences.Plot.pick_tolerance)
+        if axis == "x":
+            return ax.axvline(pos, color=color, **kw)
+        else:
+            return ax.axhline(pos, color=color, **kw)
 
-    def update_vline(self, handle, x):
-        handle.set_xdata([x])
+    def update_line_pointer(self, handle, pos):
+        if hasattr(handle, "set_xdata"):
+            handle.set_xdata([pos])
+        else:
+            handle.set_ydata([pos])
 
-    def add_rect_widget(self, ax, x, y, w, h, color="red"):
+    def create_rect_pointer(self, ax, x, y, w, h, color="red"):
         import matplotlib.patches as mpatches
 
         rect = mpatches.Rectangle(
@@ -270,25 +275,24 @@ class MplBackend:
         ax.add_patch(rect)
         return rect
 
-    def update_rect(self, handle, x, y, w, h):
+    def update_rect_pointer(self, handle, x, y, w, h):
         handle.set_xy((x, y))
         handle.set_width(w)
         handle.set_height(h)
 
-    def remove_widget_patch(self, ax, handle):
+    def remove_pointer(self, ax, handle):
         try:
             handle.remove()
         except Exception:
             pass
 
-    def set_patch_animated(self, handle, value):
-        handle.set_animated(value)
-
-    def set_patch_color(self, handle, color):
-        handle.set_color(color)
-
-    def set_patch_alpha(self, handle, alpha):
-        handle.set_alpha(alpha)
+    def set_pointer_style(self, handle, *, color=None, alpha=None, animated=None):
+        if color is not None:
+            handle.set_color(color)
+        if alpha is not None:
+            handle.set_alpha(alpha)
+        if animated is not None:
+            handle.set_animated(animated)
 
     def add_artist(self, ax, artist):
         ax.add_artist(artist)
@@ -390,17 +394,6 @@ class MplBackend:
         from matplotlib.widgets import PolygonSelector
 
         return PolygonSelector(ax, **kwargs)
-
-    def add_hline_widget(self, ax, y, color="red"):
-        from hyperspy.defaults_parser import preferences
-        from hyperspy.drawing.utils import picker_kwargs
-
-        return ax.axhline(
-            y, color=color, **picker_kwargs(preferences.Plot.pick_tolerance)
-        )
-
-    def update_hline(self, handle, y):
-        handle.set_ydata([y])
 
     def connect_widget_drag(self, handle, on_drag):
         pass  # MPL widgets fire drag via _onmousemove in the widget base class
