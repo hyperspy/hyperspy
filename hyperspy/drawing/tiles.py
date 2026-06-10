@@ -19,16 +19,40 @@
 
 from __future__ import division
 
+import importlib.util
+import logging
+
 import numpy as np
 
+from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.drawing.figure import BlittedFigure
+
+_logger = logging.getLogger(__name__)
 
 
 class HistogramTilePlot(BlittedFigure):
+    """SAMFire histogram debug plot.
+
+    This class uses matplotlib bar/patch primitives directly and therefore
+    only works with the matplotlib backend.  Calling :meth:`plot` or
+    :meth:`update` while a different backend is active raises
+    :class:`~hyperspy.drawing.backends._protocol.BackendCapabilityError`.
+    """
+
     def __init__(self):
-        self.figure = None
-        self.title = ""
-        self.ax = None
+        super().__init__()  # initialises events, ax_markers, _background, etc.
+
+    def _require_mpl(self):
+        backend = get_backend()
+        if importlib.util.find_spec("matplotlib") is None:
+            raise BackendCapabilityError("HistogramTilePlot requires matplotlib.")
+        backend_name = type(backend).__name__
+        if "Mpl" not in backend_name and "matplotlib" not in backend_name.lower():
+            raise BackendCapabilityError(
+                f"HistogramTilePlot uses matplotlib bar/patch primitives and "
+                f"cannot run under the '{backend_name}' backend."
+            )
 
     def create_axis(self, ncols=1, nrows=1, number=1, title=""):
         ax = self.figure.add_subplot(ncols, nrows, number)
@@ -37,18 +61,15 @@ class HistogramTilePlot(BlittedFigure):
         return ax
 
     def plot(self, db, **kwargs):
+        self._require_mpl()
         if self.figure is None:
             self.create_figure()
-        ncomps = len(db)
-
-        if not ncomps:
-            return
-        else:
+        if len(db):
             self.update(db, **kwargs)
 
     def update(self, db, **kwargs):
+        self._require_mpl()
         ncomps = len(db)
-        # get / set axes
         i = -1
         for c_n, v in db.items():
             i += 1
@@ -62,22 +83,15 @@ class HistogramTilePlot(BlittedFigure):
                     title = c_n + " " + p_n
                     ax = self.create_axis(ncomps, ncols, istart + j, title)
                     self.ax = ax
-                    # remove previous
                     while ax.patches:
                         ax.patches[0].remove()
-                    # set new; only draw non-zero height bars
                     ax.bar(
                         bin_edges[:-1][mask],
                         hist[mask],
                         np.diff(bin_edges)[mask],
-                        # animated=True,
                         **kwargs,
                     )
                     width = bin_edges[-1] - bin_edges[0]
                     ax.set_xlim(bin_edges[0] - width * 0.1, bin_edges[-1] + width * 0.1)
                     ax.set_ylim(0, np.max(hist) * 1.1)
-                    # ax.set_title(c_n + ' ' + p_n)
-        self.figure.canvas.draw_idle()
-
-    def close(self):
-        super().close()
+        self.render_figure()  # routes through backend (draw_idle or blit)

@@ -334,16 +334,8 @@ def test_on_close_iterates_marker_copy():
 def test_histogram_tile_plot_close_calls_super():
     """Verify HistogramTilePlot.close() delegates to BlittedFigure.close()."""
     htp = HistogramTilePlot()
-    # HistogramTilePlot.__init__ bypasses super().__init__(),
-    # so initialise inherited attributes manually.
-    htp.ax_markers = []
-    htp.events = Events()
-    htp.events.closed = Event("", arguments=["obj"])
-    htp._background = None
     htp.create_figure()
     htp.close()
-    # _draw_event_cid is disconnected only through BlittedFigure._on_close(),
-    # confirming super().close() was called.
     assert htp._draw_event_cid is None
     assert htp._background is None
     assert htp.figure is None
