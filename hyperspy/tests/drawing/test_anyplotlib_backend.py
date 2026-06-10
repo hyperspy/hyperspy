@@ -649,3 +649,251 @@ class TestCombinedFigureIntegration:
         # No navigator → single-panel figure, not a proxy
         assert not isinstance(sig_fig, _AplFigureProxy)
         s._plot.close()
+
+
+# ---------------------------------------------------------------------------
+# Native marker support
+# ---------------------------------------------------------------------------
+
+
+class TestNativeMarkers:
+    """Test AnyplotlibBackend.create_markers / update_markers / remove_markers."""
+
+    @pytest.fixture()
+    def plot2d_ax(self, backend):
+        import numpy as np
+
+        fig = backend.create_figure()
+        ax = backend.create_axes(fig)
+        backend.plot_image(ax, np.zeros((10, 10)))
+        return ax
+
+    @pytest.fixture()
+    def plot1d_ax(self, backend):
+        import numpy as np
+
+        fig = backend.create_figure()
+        ax = backend.create_axes(fig)
+        backend.plot_line(ax, np.arange(50), np.ones(50))
+        return ax
+
+    # ── create / update / remove round-trip ──────────────────────────────
+
+    def test_create_circles_returns_marker_group(self, backend, plot2d_ax):
+        from anyplotlib.markers import MarkerGroup
+
+        handle = backend.create_markers(
+            plot2d_ax,
+            "circles",
+            offset_space="data",
+            transform_space="display",
+            offsets=[[2, 3], [5, 7]],
+            sizes=[0.5, 1.0],
+        )
+        assert isinstance(handle, MarkerGroup)
+        assert handle._type == "circles"
+        assert "radius" in handle._data
+
+    def test_create_lines_returns_marker_group(self, backend, plot2d_ax):
+        from anyplotlib.markers import MarkerGroup
+
+        segs = np.array([[[1, 1], [3, 3]], [[5, 5], [8, 8]]])
+        handle = backend.create_markers(
+            plot2d_ax,
+            "lines",
+            offset_space="data",
+            transform_space="display",
+            segments=segs,
+        )
+        assert isinstance(handle, MarkerGroup)
+        assert handle._type == "lines"
+
+    def test_create_texts_returns_marker_group(self, backend, plot2d_ax):
+        from anyplotlib.markers import MarkerGroup
+
+        handle = backend.create_markers(
+            plot2d_ax,
+            "texts",
+            offset_space="data",
+            transform_space="display",
+            offsets=[[2, 3], [5, 7]],
+            texts=["A", "B"],
+        )
+        assert isinstance(handle, MarkerGroup)
+        assert handle._type == "texts"
+
+    def test_update_markers_changes_data(self, backend, plot2d_ax):
+        handle = backend.create_markers(
+            plot2d_ax,
+            "circles",
+            offset_space="data",
+            transform_space="display",
+            offsets=[[2, 3]],
+            sizes=[0.5],
+        )
+        backend.update_markers(handle, offsets=[[9, 9]], sizes=[2.0])
+        # [2.0] is a 1-element cycling sequence → _unwrap_cycling converts to scalar
+        assert handle._data["radius"] == 2.0
+        assert handle._data["offsets"] == [[9, 9]]
+
+    def test_remove_markers_cleans_up(self, backend, plot2d_ax):
+        handle = backend.create_markers(
+            plot2d_ax,
+            "circles",
+            offset_space="data",
+            transform_space="display",
+            offsets=[[2, 3]],
+            sizes=[1.0],
+        )
+        plot = backend._primary_plot(plot2d_ax)
+        assert "circles" in plot.markers
+        backend.remove_markers(plot2d_ax, handle)
+        # After remove the group should be gone from the registry.
+        assert "circles_1" not in plot.markers["circles"]
+
+    # ── kwarg translation ─────────────────────────────────────────────────
+
+    def test_translate_circles_sizes_to_radius(self, backend):
+        out = backend._translate_marker_kwargs("circles", "data", {"sizes": [5, 10]})
+        assert "radius" in out
+        assert "sizes" not in out
+
+    def test_translate_vlines_segments_to_offsets(self, backend):
+        segs = np.array([[[3.0, 0.0], [3.0, 1.0]], [[7.0, 0.0], [7.0, 1.0]]])
+        out = backend._translate_marker_kwargs("vlines", "data", {"segments": segs})
+        assert "offsets" in out
+        assert out["offsets"] == [[3.0], [7.0]]
+        assert "segments" not in out
+
+    def test_translate_hlines_segments_to_offsets(self, backend):
+        segs = np.array([[[0.0, 0.4], [1.0, 0.4]], [[0.0, 0.8], [1.0, 0.8]]])
+        out = backend._translate_marker_kwargs("hlines", "data", {"segments": segs})
+        assert out["offsets"] == [[0.4], [0.8]]
+
+    def test_translate_polygons_verts_to_vertices_list(self, backend):
+        verts = [[[0, 0], [1, 0], [0.5, 1]], [[2, 2], [3, 2], [2.5, 3]]]
+        out = backend._translate_marker_kwargs("polygons", "data", {"verts": verts})
+        assert "vertices_list" in out
+        assert "verts" not in out
+
+    def test_translate_colors_plural_to_edgecolors(self, backend):
+        out = backend._translate_marker_kwargs(
+            "circles", "data", {"colors": ["red", "blue"], "offsets": [[1, 1]]}
+        )
+        assert "edgecolors" in out
+        assert "colors" not in out
+
+    def test_translate_strips_units(self, backend):
+        out = backend._translate_marker_kwargs(
+            "circles", "data", {"offsets": [[1, 1]], "units": "x"}
+        )
+        assert "units" not in out
+
+    # ── 1-D marker types on Plot1D ────────────────────────────────────────
+
+    def test_create_vlines_on_plot1d(self, backend, plot1d_ax):
+        from anyplotlib.markers import MarkerGroup
+
+        segs = np.array([[[10.0, 0.0], [10.0, 1.0]], [[30.0, 0.0], [30.0, 1.0]]])
+        handle = backend.create_markers(
+            plot1d_ax,
+            "vlines",
+            offset_space="xaxis",
+            transform_space="display",
+            segments=segs,
+        )
+        assert isinstance(handle, MarkerGroup)
+        assert handle._type == "vlines"
+        assert handle._data["offsets"] == [[10.0], [30.0]]
+
+    def test_create_hlines_on_plot1d(self, backend, plot1d_ax):
+        from anyplotlib.markers import MarkerGroup
+
+        segs = np.array([[[0.0, 0.5], [1.0, 0.5]]])
+        handle = backend.create_markers(
+            plot1d_ax,
+            "hlines",
+            offset_space="yaxis",
+            transform_space="display",
+            segments=segs,
+        )
+        assert isinstance(handle, MarkerGroup)
+        assert handle._type == "hlines"
+
+    def test_create_points_on_plot1d(self, backend, plot1d_ax):
+        from anyplotlib.markers import MarkerGroup
+
+        handle = backend.create_markers(
+            plot1d_ax,
+            "points",
+            offset_space="data",
+            transform_space="display",
+            offsets=[[10], [30]],
+            sizes=[5],
+        )
+        assert isinstance(handle, MarkerGroup)
+        assert handle._type == "points"
+
+    # ── unsupported type raises BackendCapabilityError ────────────────────
+
+    def test_unsupported_type_raises(self, backend, plot1d_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        with pytest.raises(BackendCapabilityError):
+            backend.create_markers(
+                plot1d_ax,
+                "arrows",  # arrows not supported on Plot1D
+                offset_space="data",
+                transform_space="display",
+                offsets=[[1, 1]],
+                U=[1],
+                V=[1],
+            )
+
+    # ── Signal integration ────────────────────────────────────────────────
+
+    def test_signal1d_vlines_no_crash(self):
+        s = hs.signals.Signal1D(np.ones((4, 50)))
+        m = hs.plot.markers.VerticalLines(offsets=np.array([10.0, 20.0, 30.0]))
+        s.plot()
+        s.add_marker(m)
+        s._plot.close()
+
+    def test_signal1d_hlines_no_crash(self):
+        s = hs.signals.Signal1D(np.ones((4, 50)))
+        m = hs.plot.markers.HorizontalLines(offsets=np.array([0.2, 0.5, 0.8]))
+        s.plot()
+        s.add_marker(m)
+        s._plot.close()
+
+    def test_signal2d_circles_no_crash(self):
+        s = hs.signals.Signal2D(np.ones((3, 16, 16)))
+        offsets = np.array([[4.0, 4.0], [8.0, 8.0], [12.0, 12.0]])
+        m = hs.plot.markers.Circles(offsets=offsets, sizes=np.array([1.0, 1.5, 2.0]))
+        s.plot()
+        s.add_marker(m)
+        s._plot.close()
+
+    def test_signal2d_rectangles_no_crash(self):
+        s = hs.signals.Signal2D(np.ones((3, 16, 16)))
+        offsets = np.array([[4.0, 4.0], [8.0, 8.0]])
+        m = hs.plot.markers.Rectangles(
+            offsets=offsets,
+            widths=np.array([2.0, 3.0]),
+            heights=np.array([1.0, 2.0]),
+        )
+        s.plot()
+        s.add_marker(m)
+        s._plot.close()
+
+    def test_signal1d_iterating_vlines_navigates(self):
+        rng = np.random.default_rng(0)
+        offsets = np.empty(4, dtype=object)
+        for i in range(4):
+            offsets[i] = rng.uniform(0, 50, size=3)
+        m = hs.plot.markers.VerticalLines(offsets=offsets)
+        s = hs.signals.Signal1D(np.ones((4, 50)))
+        s.plot()
+        s.add_marker(m)
+        s.axes_manager[0].index = 2
+        s._plot.close()

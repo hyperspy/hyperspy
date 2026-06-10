@@ -9,6 +9,22 @@ from hyperspy.drawing.backends._protocol import BackendCapabilityError
 _NOT_YET = "anyplotlib does not yet support '{}'. See docs/hyperspy_parity.md."
 
 
+def _unwrap_cycling(value):
+    """Return *value* unchanged, or unwrap a 1-element cycling sequence to a scalar.
+
+    HyperSpy stores singleton style values as ``(v,)`` tuples so that MPL
+    collections cycle through them.  anyplotlib expects either a bare scalar
+    or an array whose length matches the number of markers; a 1-element list
+    fails ``_broadcast`` when n > 1, so we flatten it here.
+    """
+    if hasattr(value, "__len__") and not isinstance(value, str) and len(value) == 1:
+        v = value[0]
+        return float(v) if not isinstance(v, str) else v
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    return value
+
+
 class _AplFigureProxy:
     """Proxy for a single axes panel within a shared anyplotlib Figure.
 
@@ -590,14 +606,151 @@ class AnyplotlibBackend:
 
     # ── Native marker collections ─────────────────────────────────────────
 
+    # Transforms supported by anyplotlib markers.
+    _MARKER_SPACE_MAP = {
+        "data": "data",
+        "axes": "axes",
+        "display": "display",
+        "xaxis": "data",  # MPL xaxis = x data, y axes → treat positions as data
+        "yaxis": "data",  # MPL yaxis = y data, x axes → treat positions as data
+        "relative": "data",
+    }
+
     def create_markers(self, ax, marker_type, **kwargs):
-        raise BackendCapabilityError(_NOT_YET.format("create_markers"))
+        """Add a native anyplotlib marker group to *ax*.
+
+        Parameters
+        ----------
+        marker_type : str
+            One of the ``MarkerType.*`` string constants.
+        **kwargs : dict
+            HyperSpy/MPL-style marker kwargs plus ``offset_space`` and
+            ``transform_space`` (popped before translation).
+
+        Returns
+        -------
+        anyplotlib.markers.MarkerGroup
+            The live handle; pass to ``update_markers`` / ``remove_markers``.
+        """
+        plot = self._primary_plot(ax)
+        if plot is None:
+            raise RuntimeError("ax has no plot; call plot_line or plot_image first")
+
+        offset_space = kwargs.pop("offset_space", "data")
+        kwargs.pop("transform_space", None)  # handled via offset_space
+
+        translated = self._translate_marker_kwargs(marker_type, offset_space, kwargs)
+
+        try:
+            return plot.markers.add(marker_type, **translated)
+        except ValueError as exc:
+            raise BackendCapabilityError(
+                f"anyplotlib does not support marker type '{marker_type}' "
+                f"on this plot type: {exc}"
+            ) from exc
 
     def update_markers(self, handle, **kwargs):
-        raise BackendCapabilityError(_NOT_YET.format("update_markers"))
+        """Update a ``MarkerGroup`` returned by ``create_markers``."""
+        if not kwargs:
+            return
+        marker_type = handle._type
+        # Derive the stored coordinate space so vlines/hlines un-segment correctly.
+        offset_space = handle._data.get("transform", "data")
+        translated = self._translate_marker_kwargs(marker_type, offset_space, kwargs)
+        if translated:
+            handle.set(**translated)
 
     def remove_markers(self, ax, handle):
-        pass
+        try:
+            handle.remove()
+        except Exception:
+            pass
+
+    @staticmethod
+    def _translate_marker_kwargs(marker_type, offset_space, kwargs):
+        """Translate HyperSpy/MPL-style marker kwargs to anyplotlib wire kwargs.
+
+        Handles:
+        - Coordinate space strings → anyplotlib ``transform``
+        - ``circles.sizes`` → ``radius``
+        - ``vlines/hlines`` full segments → 1-D offset lists
+        - ``polygons.verts`` → ``vertices_list``
+        - ``colors`` (MPL plural) → ``edgecolors``
+        - ``linewidth`` (singular) → ``linewidths``
+        - Strips MPL-only kwargs (``units``, ``patches``, ``drawstyle``, …)
+        """
+        out = {}
+
+        _SPACE_MAP = {
+            "data": "data",
+            "axes": "axes",
+            "display": "display",
+            "xaxis": "data",
+            "yaxis": "data",
+            "relative": "data",
+        }
+        out["transform"] = _SPACE_MAP.get(offset_space, "data")
+
+        # Work on a shallow copy so we can pop without mutating the caller's dict.
+        work = dict(kwargs)
+
+        # ── colour / linewidth renaming ─────────────────────────────────────
+        if "colors" in work:
+            val = work.pop("colors")
+            # Flatten a one-element cycling list to a scalar colour string.
+            if isinstance(val, (list, tuple)) and len(val) == 1:
+                val = val[0]
+            work["edgecolors"] = val
+
+        if "linewidth" in work and "linewidths" not in work:
+            work["linewidths"] = work.pop("linewidth")
+
+        # ── type-specific positional key translations ───────────────────────
+        if marker_type == "circles":
+            # HyperSpy passes MPL-style ``sizes`` (display-unit area);
+            # anyplotlib circles uses ``radius`` (data-unit radius).
+            if "sizes" in work:
+                out["radius"] = _unwrap_cycling(work.pop("sizes"))
+
+        elif marker_type == "points":
+            # HyperSpy wraps scalar sizes as a 1-element tuple for cycling.
+            # anyplotlib expects either a scalar or a per-marker array.
+            if "sizes" in work:
+                work["sizes"] = _unwrap_cycling(work["sizes"])
+
+        elif marker_type in ("vlines", "hlines"):
+            # VerticalLines/HorizontalLines expand positions into full
+            # [[x,0],[x,1]] / [[0,y],[1,y]] segments for the MPL path.
+            # anyplotlib vlines/hlines want [[x], ...] / [[y], ...].
+            if "segments" in work:
+                segs = np.asarray(work.pop("segments"), dtype=float)
+                if marker_type == "vlines":
+                    out["offsets"] = [[float(v)] for v in segs[:, 0, 0]]
+                else:
+                    out["offsets"] = [[float(v)] for v in segs[:, 0, 1]]
+            # Positions are always in data space for span-line types.
+            out["transform"] = "data"
+
+        elif marker_type == "polygons":
+            # MPL PolyCollection uses ``verts``; anyplotlib uses ``vertices_list``.
+            if "verts" in work:
+                verts = work.pop("verts")
+                out["vertices_list"] = [
+                    np.asarray(v, dtype=float).tolist() for v in verts
+                ]
+
+        # ── copy remaining compatible kwargs ────────────────────────────────
+        _STRIP = {"offset_transform", "units", "patches", "drawstyle"}
+        for k, v in work.items():
+            if k in _STRIP:
+                continue
+            # Eagerly convert numpy arrays so downstream JSON serialisation works.
+            if hasattr(v, "tolist"):
+                out[k] = v.tolist()
+            else:
+                out[k] = v
+
+        return out
 
     # ── New protocol methods (not yet implemented by anyplotlib) ──────────
 
