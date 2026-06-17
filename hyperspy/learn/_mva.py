@@ -351,15 +351,21 @@ def _keenan_kotula_scale(data, navigation_mask, signal_mask, ndim, sdim):
     aG = masked_data.sum(axis=nav_axes)
     bH = masked_data.sum(axis=sig_axes)
 
-    # Materialise sums for dask; keep a small dask wrapper for downstream
-    # sqrt / broadcast so the graph stays lazy.
+    # Materialise sums for dask; check the zero-sum guard on the computed
+    # NumPy values before re-wrapping, because float(dask_array) is not
+    # guaranteed to work across dask versions.
     if _is_dask:
         aG, bH = (aG.compute(), bH.compute())
-        aG = _da.from_array(aG)
-        bH = _da.from_array(bH)
 
+    # The zero-sum guard must run on NumPy values, so re-wrapping aG/bH
+    # as dask arrays is deliberately delayed until after this check.
     if float(aG.sum()) == 0.0:
         raise ValueError("All the data are masked, change the mask.")
+
+    # Re-wrap as dask so downstream sqrt / broadcast stays lazy.
+    if _is_dask:
+        aG = _da.from_array(aG)
+        bH = _da.from_array(bH)
 
     # Avoid division-by-zero for masked positions (they contribute 0 to
     # the sum so sqrt(0) would be zero — replace with 1 instead).
@@ -403,14 +409,14 @@ class MVA:
         Raises
         ------
         TypeError
-            If the data is not a float or complex array.
+            If the data is not a floating-point array.
         ValueError
             If any of the other inputs are invalid.
         """
         if self.data.dtype.char not in np.typecodes["AllFloat"]:
             raise TypeError(
                 "To perform a decomposition the data must be of the "
-                f"float or complex type, but the current type is '{self.data.dtype}'. "
+                f"float type, but the current type is '{self.data.dtype}'. "
                 "To fix this issue, you can change the type using the "
                 "change_dtype method (e.g. s.change_dtype('float64')) "
                 "and then repeat the decomposition.\n"
