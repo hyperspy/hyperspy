@@ -210,6 +210,64 @@ class TestGetModel:
             rms = rms.compute()
         assert rms < 5e-7
 
+    def test_get_decomposition_model_lazy_output_chunks(self):
+        """lazy_output=True should produce signal with HyperSpy's
+        chunking convention: signal axes as single chunks (-1)."""
+        s = self.s.deepcopy()
+        s.decomposition(algorithm="SVD")
+        sc = s.get_decomposition_model(3, lazy_output=True, chunks=-1)
+        assert isinstance(sc.data, da.Array)
+        sig_axes = sc.axes_manager.signal_dimension
+        # Signal axes must be single chunks: (-1,) * sig_dim
+        assert sc.data.chunks[-sig_axes:] == ((sc.axes_manager.signal_size,),)
+
+    def test_lazy_output_einsum_avoids_dask_reshape_crash(self):
+        """Regression test for the old matmul+fold path that could
+        crash with MemoryError when dask chunked the flattened
+        navigation dimension.
+
+        The old path (``a.T.reshape(self.data.shape)`` inside
+        ``sc.fold()``) materialised a single chunk of up to
+        nav_chunk × sig_size elements.  Even computing a small
+        output slice would trigger the MemoryError because the
+        whole intermediate chunk had to be materialised first.
+
+        The new einsum path computes each output block directly
+        from the corresponding multi-dimensional input blocks,
+        avoiding this problem entirely.
+        """
+        rng = np.random.default_rng(42)
+        # Signal size: 700×700 nav, 20000 energy channels.
+        # The loadings array (~157 MiB with 5 components) triggers
+        # dask chunking of the flattened nav dimension, which the
+        # old matmul+fold path cannot handle.
+        ny, nx, sig_len = 700, 700, 20000
+        n_comp = 5
+        nav_size = ny * nx
+
+        # Use a lazy-zeros signal: the full 78 GB reconstruction
+        # never needs to be materialised.
+        lazy_data = da.zeros((ny, nx, sig_len), chunks=(-1, -1, -1))
+        s = signals.Signal1D(lazy_data).as_lazy()
+
+        # Inject factors/loadings as if decomposition had run.
+        s.learning_results.factors = rng.random((sig_len, n_comp))
+        s.learning_results.loadings = rng.random((nav_size, n_comp))
+
+        # Exercise the einsum path with HyperSpy's chunking convention.
+        # Passing chunks=-1 forces sig_chunks=-1 (signal axes whole).
+        sc = s.get_decomposition_model(components=3, lazy_output=True, chunks=-1)
+        assert isinstance(sc.data, da.Array)
+
+        # With the old code, even computing [0:3, 0:3, :] would
+        # crash.  The einsum path should handle it fine.
+        sl = sc.data[0:3, 0:3, :].compute()
+        assert sl.shape == (3, 3, sig_len)
+        assert np.all(np.isfinite(sl))
+
+        # Check HyperSpy's chunking convention: signal axes whole.
+        assert sc.data.chunks[-1] == (sig_len,)
+
 
 @lazifyTestClass
 class TestGetScreePlotData:
