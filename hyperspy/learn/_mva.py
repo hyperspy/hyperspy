@@ -37,12 +37,14 @@ SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 _logger = logging.getLogger(__name__)
 
 
-CHUNKS_ARGS = """chunks : str, int, tuple of length 2, default "auto"
-            If lazy_output is True, determines the chunk size of the output dask array.
-            The chunking of the loadings and factors will be set to -1 for the first and
-            the last dimension respectively to optimise for the matrix multiplication
-            If tuple of length 2, the first element sets the chunk size for the factors
-            and the second element sets the chunk size for the loadings."""
+CHUNKS_ARGS = """chunks : str, int, or tuple, default "auto"
+            Controls chunking of the reconstructed signal's signal dimension.
+            Navigation axes are always chunked with ``"auto"``.
+            If ``"auto"`` or ``"dask_auto"``, dask determines the chunk size.
+            If an int, the signal dimension is split into chunks of that size.
+            If a tuple, only the first element is used to set the signal
+            dimension chunking (the second element, formerly used for
+            navigation chunking, is silently ignored)."""
 
 
 decomposition_algorithms = {
@@ -1225,75 +1227,125 @@ class MVA:
         Signal instance
             Data built from the given components.
 
-        """
+        Notes
+        -----
+        For lazy output this method uses ``da.einsum`` instead of a
+        two-dimensional matmul followed by ``fold()``.  The fold path
+        requires a dask ``reshape`` from a flattened navigation dimension
+        back to the original multi-dimensional shape, which fails with
+        ``NotImplementedError`` (or materialises huge intermediate chunks)
+        when the chunk boundaries of the flattened dimension do not evenly
+        divide the navigation axis lengths.  ``da.einsum`` computes
+        directly into the target multi-dimensional shape and avoids the
+        reshape entirely.
 
+        """
         target = self.learning_results
 
+        # Load factors and loadings in their natural (numpy) shapes.
+        # factors:   (sig_size, n_comp)   — signal channels × components
+        # loadings:  (nav_size, n_comp)   — nav positions  × components
+        # We do NOT transpose loadings here; the transposition is handled
+        # differently in the lazy (einsum) and non-lazy (matmul) paths.
         if mva_type.lower() == "decomposition":
             factors = target.factors
-            loadings = target.loadings.T
+            loadings = target.loadings
         elif mva_type.lower() == "bss":
             factors = target.bss_factors
-            loadings = target.bss_loadings.T
+            loadings = target.bss_loadings
 
         if components is None:
             signal_name = f"model from {mva_type} with {factors.shape[1]} components"
         elif hasattr(components, "__iter__"):
             components = list(components)
             factors = factors[:, components]
-            loadings = loadings[components, :]
+            loadings = loadings[:, components]
             signal_name = f"model from {mva_type} with components {components}"
         else:
             factors = factors[:, :components]
-            loadings = loadings[:components, :]
+            loadings = loadings[:, :components]
             signal_name = f"model from {mva_type} with {components} components"
 
         if lazy_output is None:
             lazy_output = self._lazy
 
-        if isinstance(chunks, (tuple, list)) and len(chunks) == 2:
-            factors_chunks, loadings_chunks = chunks
-        elif chunks == "auto" or isinstance(chunks, int):
-            factors_chunks = loadings_chunks = chunks
+        # Parse the ``chunks`` parameter.  Only the signal-dimension chunking
+        # is configurable; navigation chunking is always ``"auto"`` because
+        # the einsum path wraps loadings into the multi-dimensional nav shape
+        # before da.from_array() and lets dask decide the nav block sizes.
+        if isinstance(chunks, (tuple, list)) and len(chunks) >= 1:
+            factors_chunks = chunks[0]
         else:
-            raise ValueError(
-                "If provided, `chunks` must be a tuple of two elements, "
-                "a scalar integer or 'auto'."
-            )
+            factors_chunks = chunks
 
-        # wrap numpy arrays as dask so intermediate computation stays lazy
+        nav_shape = self.axes_manager.navigation_shape[::-1]  # numpy order
+        n_comp = loadings.shape[1]
+
         if lazy_output or self._lazy:
             import dask.array as da
 
-            # For matrix multiplication (N, K) @ (K, M), keep K in one chunk.
-            if isinstance(factors, da.Array):
-                factors = factors.rechunk((factors_chunks, -1))
-            else:
-                factors = da.from_array(factors, chunks=(factors_chunks, -1))
-
+            # Reshape loadings *as numpy* from (nav_size, n_comp) into
+            # (ny, nx, ..., n_comp).  This is always safe because
+            # nav_size == product(nav_shape), and we avoid dask's reshape
+            # which is the source of the original bug.
             if isinstance(loadings, da.Array):
-                loadings = loadings.rechunk((-1, loadings_chunks))
+                loadings_np = loadings.compute()
             else:
-                loadings = da.from_array(loadings, chunks=(-1, loadings_chunks))
+                loadings_np = loadings
+            loadings_3d = loadings_np.reshape(nav_shape + (n_comp,))
 
-        a = np.matmul(factors, loadings)
+            # Wrap as dask arrays.  If factors/loadings are already dask
+            # (from a lazy decomposition), rechunk them; otherwise wrap
+            # the numpy arrays.  The contracted dimension (n_comp) is
+            # kept as a single chunk (-1) in both arrays so that dask's
+            # blockwise matmul does not need to aggregate across sub-chunks
+            # of the contraction axis.
+            if isinstance(factors, da.Array):
+                factors_da = factors.rechunk((factors_chunks, -1))
+            else:
+                factors_da = da.from_array(factors, chunks=(factors_chunks, -1))
+            loadings_da = da.from_array(
+                loadings_3d,
+                chunks=("auto",) * len(nav_shape) + (-1,),
+            )
 
-        self._unfolded4decomposition = self.unfold()
-        try:
-            sc = self.deepcopy()
-            sc.data = a.T.reshape(self.data.shape)
-            sc.metadata.General.title += " " + signal_name
-            if target.mean is not None:
-                sc.data += target.mean
-        finally:
-            if self._unfolded4decomposition:
-                self.fold()
-                sc.fold()
-                self._unfolded4decomposition = False
+            # einsum avoids a two-dimensional matmul + dask reshape because
+            # it computes each output block directly from the corresponding
+            # multi-dimensional input blocks.  The output already has the
+            # final multi-dimensional shape — no fold() needed.
+            #
+            # einsum('sc,…c->…s', …) is mathematically equivalent to
+            #   matmul(factors, loadings.T).T.reshape(nav_shape + sig_shape)
+            a = da.einsum("sc,...c->...s", factors_da, loadings_da)
+        else:
+            # Non-lazy path: standard matrix multiply with explicit
+            # transposition of loadings and numpy reshape (always safe).
+            loadings_T = loadings.T  # (n_comp, nav_size)
+            a = factors @ loadings_T  # (sig_size, nav_size)
+            a = a.T.reshape(
+                nav_shape + (factors.shape[0],)
+            )  # → (ny, nx, ..., sig_size)
 
-        if lazy_output and not sc._lazy:
-            sc = sc.as_lazy()
-        elif not lazy_output and sc._lazy:
+        sc = self.deepcopy()
+        sc.data = a
+        sc.metadata.General.title += " " + signal_name
+        if target.mean is not None:
+            # target.mean has shape (nav_size, 1) from the decomposition.
+            # Reshape to match the multi-dimensional nav axes so that
+            # broadcasting works regardless of whether sc.data is unfolded
+            # (non-lazy path) or already multi-dimensional (lazy path).
+            sc.data += target.mean.reshape(nav_shape + (-1,))
+
+        if lazy_output:
+            if not sc._lazy:
+                sc = sc.as_lazy()
+            # Enforce HyperSpy's chunking convention: nav axes chunked with
+            # "auto", signal axes kept as single chunks (-1).  The einsum
+            # may split the signal axis during blockwise alignment; this
+            # rechunk restores the convention followed by all other lazy
+            # operations in HyperSpy (see LazySignal.rechunk defaults).
+            sc.rechunk(nav_chunks="auto", sig_chunks=-1, inplace=True)
+        elif sc._lazy:
             sc.compute()
 
         return sc
