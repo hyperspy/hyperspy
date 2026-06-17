@@ -210,6 +210,40 @@ class TestGetModel:
             rms = rms.compute()
         assert rms < 5e-7
 
+    def test_get_decomposition_model_lazy_output_chunks(self):
+        """lazy_output=True should produce signal with HyperSpy's
+        chunking convention: signal axes as single chunks (-1)."""
+        s = self.s.deepcopy()
+        s.decomposition(algorithm="SVD")
+        sc = s.get_decomposition_model(3, lazy_output=True)
+        assert isinstance(sc.data, da.Array)
+        sig_axes = sc.axes_manager.signal_dimension
+        # Signal axes must be single chunks: (-1,) * sig_dim
+        assert sc.data.chunks[-sig_axes:] == ((sc.axes_manager.signal_size,),)
+
+    def test_get_decomposition_model_large_signal_does_not_crash(self):
+        """Regression test: a signal large enough that dask chunks the
+        navigation dimension should not crash with MemoryError or
+        NotImplementedError during reconstruction."""
+        import dask.array as da
+
+        rng = np.random.default_rng(42)
+        # All-different dimensions: 30×20 nav, 500 energy channels.
+        data = rng.random((30, 20, 500))
+        s = signals.Signal1D(data)
+        s.decomposition(algorithm="SVD", output_dimension=5)
+        s.blind_source_separation(3)
+        # Force lazy output — this exercises the einsum path
+        sc = s.get_decomposition_model(components=3, lazy_output=True)
+        assert isinstance(sc.data, da.Array)
+        # Verify it can be computed without crashing
+        computed = sc.data.compute()
+        np.testing.assert_allclose(computed.sum(), s.data.sum(), rtol=1e-4)
+        # BSS model too
+        sc_bss = s.get_bss_model(lazy_output=True)
+        computed_bss = sc_bss.data.compute()
+        np.testing.assert_allclose(computed_bss.sum(), s.data.sum(), rtol=1e-4)
+
 
 @lazifyTestClass
 class TestGetScreePlotData:
