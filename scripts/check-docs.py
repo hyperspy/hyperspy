@@ -7,11 +7,14 @@ Checks
    ``<number>.<type>.rst`` pattern.
 2. **Towncrier draft** — runs ``towncrier build --draft`` to catch parse
    errors.
-3. **Sphinx build** — runs ``cd doc && make SPHINXOPTS="-W --keep-going" html``.
+3. **Sphinx build** — runs ``sphinx-build -b html -d _build/doctrees
+   -W --keep-going . _build/html`` in the ``doc/`` directory.
    Gallery examples are skipped by default for speed; use ``--full`` to
    restore them.
-4. **Linkcheck** (optional) — runs ``cd doc && make linkcheck``.
-5. **Doctest** (optional) — runs ``cd doc && make doctest``.
+4. **Linkcheck** (optional) — runs ``sphinx-build -b linkcheck`` in the
+   ``doc/`` directory.
+5. **Doctest** (optional) — runs ``sphinx-build -b doctest`` in the
+   ``doc/`` directory.
 
 Usage
 -----
@@ -106,26 +109,54 @@ def check_towncrier() -> tuple[bool, str]:
     return ok, output
 
 
+def _sphinx_cmd(builder: str) -> list[str]:
+    """Return a cross-platform sphinx-build command for ``builder``."""
+    return [
+        sys.executable,
+        "-m",
+        "sphinx",
+        "-b",
+        builder,
+        "-d",
+        "_build/doctrees",
+        ".",
+        f"_build/{builder}",
+    ]
+
+
 def check_sphinx(*, full: bool = False) -> tuple[bool, str]:
     """Run the CI-equivalent Sphinx doc build.
 
     By default sets ``HYPERSPY_FAST_CHECK=1`` so ``conf.py`` skips gallery
     execution.  Pass ``full=True`` to run the complete build.
     """
-    env = {**os.environ, "SPHINXOPTS": "-W --keep-going"}
+    env = {**os.environ}
     if not full:
         env["HYPERSPY_FAST_CHECK"] = "1"
-    return _run(["make", "html"], cwd=DOC_DIR, env=env)
+    cmd = [
+        sys.executable,
+        "-m",
+        "sphinx",
+        "-b",
+        "html",
+        "-d",
+        "_build/doctrees",
+        "-W",
+        "--keep-going",
+        ".",
+        "_build/html",
+    ]
+    return _run(cmd, cwd=DOC_DIR, env=env)
 
 
 def check_linkcheck() -> tuple[bool, str]:
-    """Run ``make linkcheck`` in the doc directory."""
-    return _run(["make", "linkcheck"], cwd=DOC_DIR)
+    """Run ``sphinx-build -b linkcheck`` in the doc directory."""
+    return _run(_sphinx_cmd("linkcheck"), cwd=DOC_DIR)
 
 
 def check_doctest() -> tuple[bool, str]:
-    """Run ``make doctest`` in the doc directory."""
-    return _run(["make", "doctest"], cwd=DOC_DIR)
+    """Run ``sphinx-build -b doctest`` in the doc directory."""
+    return _run(_sphinx_cmd("doctest"), cwd=DOC_DIR)
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +261,10 @@ def main() -> int:
                 "\ncheck-docs: Building documentation "
                 "(skipping gallery examples for speed — use --full for CI parity)..."
             )
-        print("  Command: cd doc && make SPHINXOPTS='-W --keep-going' html")
+        print(
+            "  Command: cd doc && python -m sphinx -b html -d _build/doctrees "
+            "-W --keep-going . _build/html"
+        )
         ok, output = check_sphinx(full=args.full)
         if ok:
             print("  Sphinx build: OK")
