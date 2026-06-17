@@ -1042,12 +1042,14 @@ class LazySignal(signals.BaseSignal):
                     _nm = navigation_mask.T
                 else:
                     _nm = navigation_mask
+                # Keep the shaped mask for _block_iterator/_project_loadings,
+                # which expect a navigation-shaped mask; use the flattened
+                # version only where a 1-D boolean array is required.
                 _navigation_mask_for_reproject = _nm
                 if isinstance(_nm, da.Array):
                     nav_mask_1d = _nm.ravel().compute().astype(bool)
                 else:
                     nav_mask_1d = np.asarray(_nm).ravel().astype(bool)
-                _navigation_mask_for_reproject = nav_mask_1d
                 # Update navigation_mask to array order so downstream
                 # _to_flat_bool calls get the correct ravel order for 2-D
                 # navigation spaces.
@@ -2011,15 +2013,16 @@ class LazySignal(signals.BaseSignal):
             elif algorithm != "SVD" or svd_solver != "incremental":
                 mean = None
 
-            # For ISVD, normalise navigation_mask to array-axis order so that
-            # _block_iterator (which expects array-axis-order masks) can accept
-            # it.  numpy/dask masks arrive in HyperSpy navigation_shape order
-            # (axes reversed relative to the underlying array), so they must be
-            # transposed.  BaseSignal masks have .data already in array order.
-            if (
-                algorithm == "SVD"
-                and svd_solver == "incremental"
-                and navigation_mask is not None
+            # For algorithms that iterate over navigation blocks via
+            # _block_iterator, normalise navigation_mask to array-axis order.
+            # _block_iterator expects masks in the underlying array axis order,
+            # but numpy/dask masks arrive in HyperSpy navigation_shape order
+            # (axes reversed relative to the array), so they must be transposed.
+            # BaseSignal masks have .data already in array order.
+            # Full/randomized SVD handles its own transposition inside
+            # _decomposition_svd_matrix.
+            if navigation_mask is not None and not (
+                algorithm == "SVD" and svd_solver != "incremental"
             ):
                 if isinstance(navigation_mask, signals.BaseSignal):
                     navigation_mask = navigation_mask.data
