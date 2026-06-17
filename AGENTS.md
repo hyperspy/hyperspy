@@ -198,3 +198,8 @@ Before claiming any task is complete, verify ALL of the following:
 ### HyperSpy-Specific
 - [ ] All axis operations respect the NumPy-vs-display order convention (see "Critical Concept" above)
 - [ ] Prefer HyperSpy-native methods over raw NumPy on `.data`
+
+### Pre-CI Validation (run BEFORE pushing)
+- [ ] `python scripts/check-docs.py` passes — validates fragment filenames, `towncrier --draft`, and Sphinx build with warnings-as-errors (equivalent to CI doc build)
+
+<!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
