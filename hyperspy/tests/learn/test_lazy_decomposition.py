@@ -1941,7 +1941,7 @@ class TestLazyDecompositionInputValidation:
     def test_non_float_dtype_raises(self):
         """m1: integer data must raise TypeError (mirrors _mva.py:262)."""
         s = Signal1D(np.ones((8, 12), dtype=np.int32)).as_lazy()
-        with pytest.raises(TypeError, match="float type"):
+        with pytest.raises(TypeError, match="floating-point"):
             s.decomposition(output_dimension=3, print_info=False)
 
     def test_navigation_size_lt2_raises(self):

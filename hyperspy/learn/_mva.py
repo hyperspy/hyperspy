@@ -146,7 +146,7 @@ def _nan_expand_rows(arr, mask, total_rows):
         row_idx = np.full(total_rows, -1, dtype=np.intp)
         row_idx[unmasked_idx] = np.arange(len(unmasked_idx), dtype=np.intp)
         # Pad arr with a NaN row so masked positions (index -1) map to NaN.
-        nan_row_np = np.full((1, n_comp), np.nan, dtype=float)
+        nan_row_np = np.full((1, n_comp), np.nan, dtype=arr.dtype)
         arr_padded = _da.concatenate(
             [_da.from_array(nan_row_np, chunks=(1, n_comp)), arr], axis=0
         )
@@ -154,7 +154,7 @@ def _nan_expand_rows(arr, mask, total_rows):
         take_idx = _da.from_array(row_idx + 1, chunks=(arr.chunks[0][0],))
         return _da.take(arr_padded, take_idx, axis=0)
     else:
-        out = np.full((total_rows, n_comp), np.nan, dtype=float)
+        out = np.full((total_rows, n_comp), np.nan, dtype=arr.dtype)
         out[unmasked_idx, :] = arr
         return out
 
@@ -357,6 +357,7 @@ def _keenan_kotula_scale(data, navigation_mask, signal_mask, ndim, sdim):
     if _is_dask:
         aG, bH = (aG.compute(), bH.compute())
 
+    # aG, bH are now guaranteed numpy arrays — float() below is safe.
     # The zero-sum guard must run on NumPy values, so re-wrapping aG/bH
     # as dask arrays is deliberately delayed until after this check.
     if float(aG.sum()) == 0.0:
@@ -416,7 +417,7 @@ class MVA:
         if self.data.dtype.char not in np.typecodes["AllFloat"]:
             raise TypeError(
                 "To perform a decomposition the data must be of the "
-                f"float type, but the current type is '{self.data.dtype}'. "
+                f"floating-point (including complex) type, but the current type is '{self.data.dtype}'. "
                 "To fix this issue, you can change the type using the "
                 "change_dtype method (e.g. s.change_dtype('float64')) "
                 "and then repeat the decomposition.\n"

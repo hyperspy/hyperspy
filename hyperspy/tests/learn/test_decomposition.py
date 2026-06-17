@@ -796,7 +796,7 @@ class TestPoissonNormalizationQuality:
         X_clean = U @ V.T
         X_clean = X_clean * 100 / X_clean.mean()
 
-        X_noisy = np.random.poisson(X_clean).astype(float)
+        X_noisy = rng.poisson(X_clean).astype(float)
 
         # All-different 3D dimensions: 8×15 = 120 nav, 64 sig
         shape_3d = (8, 15, 64)
@@ -845,7 +845,7 @@ class TestLazyPoissonNormalizationQuality:
         X_clean = U @ V.T
         X_clean = X_clean * 100 / X_clean.mean()
 
-        X_noisy = np.random.poisson(X_clean).astype(float)
+        X_noisy = rng.poisson(X_clean).astype(float)
 
         shape_3d = (8, 15, 64)
 
@@ -875,4 +875,100 @@ class TestLazyPoissonNormalizationQuality:
             f"Poisson normalization error {err_norm:.4f} >= "
             f"plain SVD error {err_plain:.4f} — "
             f"normalize_poissonian_noise=True should improve reconstruction"
+        )
+
+
+class TestComplexDtypePreservationWithMask:
+    """Regression: ``_nan_expand_rows`` must preserve complex dtype when
+    expanding masked positions.  The function previously hard-coded
+    ``dtype=float`` on the NaN placeholders, which silently dropped the
+    imaginary part (accompanied by a ``ComplexWarning``)."""
+
+    def test_nav_mask_preserves_loadings_dtype(self):
+        """Navigation mask → loadings are expanded; dtype must stay complex128."""
+        rng = np.random.default_rng(42)
+        # ALL-DIFFERENT dims: (7, 11, 13) → navigation (7, 11), signal 13
+        data = (rng.random((7, 11, 13)) + 1j * rng.random((7, 11, 13))).astype(
+            np.complex128
+        )
+        s = signals.ComplexSignal1D(data)
+        nav_shape = s.axes_manager.navigation_shape  # display order: (11, 7)
+        nav_mask = np.zeros(nav_shape, dtype=bool)
+        nav_mask[0, 0] = True
+        nav_mask[5, 3] = True
+        s.decomposition(
+            algorithm="SVD",
+            output_dimension=5,
+            navigation_mask=nav_mask,
+            print_info=False,
+        )
+        assert s.learning_results.loadings.dtype == np.complex128, (
+            f"Expected loadings.dtype == complex128 (nav mask), "
+            f"got {s.learning_results.loadings.dtype}"
+        )
+
+    def test_signal_mask_preserves_factors_dtype(self):
+        """Signal mask → factors are expanded; dtype must stay complex128."""
+        rng = np.random.default_rng(42)
+        data = (rng.random((7, 11, 13)) + 1j * rng.random((7, 11, 13))).astype(
+            np.complex128
+        )
+        s = signals.ComplexSignal1D(data)
+        sig_mask = np.zeros(13, dtype=bool)
+        sig_mask[0] = True
+        sig_mask[5] = True
+        s.decomposition(
+            algorithm="SVD",
+            output_dimension=5,
+            signal_mask=sig_mask,
+            print_info=False,
+        )
+        assert s.learning_results.factors.dtype == np.complex128, (
+            f"Expected factors.dtype == complex128 (signal mask), "
+            f"got {s.learning_results.factors.dtype}"
+        )
+
+    def test_lazy_nav_mask_preserves_loadings_dtype(self):
+        """Lazy + navigation mask → loadings dtype must stay complex128."""
+        rng = np.random.default_rng(42)
+        data = (rng.random((7, 11, 13)) + 1j * rng.random((7, 11, 13))).astype(
+            np.complex128
+        )
+        s = signals.ComplexSignal1D(data).as_lazy()
+        nav_shape = s.axes_manager.navigation_shape
+        nav_mask = np.zeros(nav_shape, dtype=bool)
+        nav_mask[0, 0] = True
+        nav_mask[5, 3] = True
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=5,
+            navigation_mask=nav_mask,
+            print_info=False,
+        )
+        assert s.learning_results.loadings.dtype == np.complex128, (
+            f"Expected loadings.dtype == complex128 (lazy+nav mask), "
+            f"got {s.learning_results.loadings.dtype}"
+        )
+
+    def test_lazy_signal_mask_preserves_factors_dtype(self):
+        """Lazy + signal mask → factors dtype must stay complex128."""
+        rng = np.random.default_rng(42)
+        data = (rng.random((7, 11, 13)) + 1j * rng.random((7, 11, 13))).astype(
+            np.complex128
+        )
+        s = signals.ComplexSignal1D(data).as_lazy()
+        sig_mask = np.zeros(13, dtype=bool)
+        sig_mask[0] = True
+        sig_mask[5] = True
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=5,
+            signal_mask=sig_mask,
+            print_info=False,
+        )
+        assert s.learning_results.factors.dtype == np.complex128, (
+            f"Expected factors.dtype == complex128 (lazy+signal mask), "
+            f"got {s.learning_results.factors.dtype}"
         )
