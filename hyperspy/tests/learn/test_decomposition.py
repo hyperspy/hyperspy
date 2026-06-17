@@ -215,7 +215,7 @@ class TestGetModel:
         chunking convention: signal axes as single chunks (-1)."""
         s = self.s.deepcopy()
         s.decomposition(algorithm="SVD")
-        sc = s.get_decomposition_model(3, lazy_output=True)
+        sc = s.get_decomposition_model(3, lazy_output=True, chunks=-1)
         assert isinstance(sc.data, da.Array)
         sig_axes = sc.axes_manager.signal_dimension
         # Signal axes must be single chunks: (-1,) * sig_dim
@@ -254,8 +254,9 @@ class TestGetModel:
         s.learning_results.factors = rng.random((sig_len, n_comp))
         s.learning_results.loadings = rng.random((nav_size, n_comp))
 
-        # Exercise the einsum path.
-        sc = s.get_decomposition_model(components=3, lazy_output=True)
+        # Exercise the einsum path with HyperSpy's chunking convention.
+        # Passing chunks=-1 forces sig_chunks=-1 (signal axes whole).
+        sc = s.get_decomposition_model(components=3, lazy_output=True, chunks=-1)
         assert isinstance(sc.data, da.Array)
 
         # With the old code, even computing [0:3, 0:3, :] would
