@@ -222,7 +222,6 @@ def show_keybindings(platform=None):
     table.field_names = ["Category", "Shortcut", "Action"]
     table.align = "l"
     table.align["Shortcut"] = "c"
-    table.sortby = "Category"
 
     # ---- Navigation ----
     category = "Navigation"

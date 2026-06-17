@@ -936,9 +936,9 @@ class Model1D(BaseModel):
 
     def _toggle_residual(self):
         """Toggle the residual (Signal - Model) line on the model plot."""
-        if hasattr(self, "_residual_line") and self._residual_line is not None:
+        if self._residual_line is not None:
             self._residual_line.close()
-            del self._residual_line
+            self._residual_line = None
         elif self._plot is not None and self._plot.is_active:
             l3 = hyperspy.drawing.signal1d.Signal1DLine()
             l3.data_function = self._residual_for_plot

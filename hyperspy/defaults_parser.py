@@ -368,14 +368,14 @@ class PlotConfig(t.HasTraits):
         label="Jump-to-click modifier key",
         desc="Modifier key held during a click to jump the pointer "
         "to the cursor position in 1D signal and 2D image plots.",
-        group="Plot Interaction",
+        group="Widget Resize",
     )
     key_rotation_snap = t.Str(
         "shift",
         label="Rotation snap modifier key",
         desc="Modifier key held during rotation to snap line/wire "
         "rotation to 30-degree increments.",
-        group="Plot Interaction",
+        group="Widget Resize",
     )
     # ---- Model Plot Shortcuts ---------------------------------------------
     key_toggle_adjust_position = t.Str(

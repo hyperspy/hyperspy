@@ -1630,7 +1630,7 @@ def grouped_editable_traits(obj, ungrouped_label="General"):
     Traits with ``group`` metadata are collected under their group
     label; traits without are placed under *ungrouped_label*.  Groups
     appear in the order their traits are first encountered, preserving
-    the object's declared trait order within each group.
+    the order reported by ``editable_traits()`` within each group.
 
     Parameters
     ----------
@@ -1653,7 +1653,7 @@ def grouped_editable_traits(obj, ungrouped_label="General"):
     >>> "Navigation" in grouped
     True
     >>> grouped["Navigation"][:2]
-    ['dims_024_increase', 'dims_024_decrease']
+    ['dims_024_decrease', 'dims_024_increase']
     """
     groups = {}
     for trait_name in obj.editable_traits():

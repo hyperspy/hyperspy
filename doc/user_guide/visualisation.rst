@@ -368,7 +368,7 @@ All modifier keys accept ``ctrl``, ``alt``, ``shift``, ``super``, and any
 .. versionadded:: 2.5
 
 The ``platform_shortcuts`` trait (``"auto"``, ``"macos"``, or ``"standard"``)
-applies a complete preset for the modifier keys and step keys at once.  Setting
+applies a complete preset for the navigation modifier keys at once.  Setting
 it to ``"macos"`` or ``"standard"`` is equivalent to calling
 ``use_macos_shortcuts()`` or
 ``use_standard_shortcuts()``.  The default
