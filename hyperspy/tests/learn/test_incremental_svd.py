@@ -19,7 +19,7 @@
 """Regression tests for hyperspy.learn.incremental_svd.ISVD.
 
 The ISVD class implements plain incremental SVD (no centering) by
-overriding C{partial_fit} of C{sklearn.decomposition.IncrementalPCA}.
+overriding ``partial_fit`` of ``sklearn.decomposition.IncrementalPCA``.
 These tests verify that the centering override keeps working correctly
 if sklearn's internal implementation changes.  A failure here is a
 signal to audit the ISVD implementation against the new sklearn version.

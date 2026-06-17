@@ -23,6 +23,7 @@ import numpy as np
 import pytest
 
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.learn._mva import _keenan_kotula_scale
 from hyperspy.signals import Signal1D
 
 sklearn = importlib.util.find_spec("sklearn")
@@ -33,6 +34,47 @@ skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed
 pytestmark = pytest.mark.filterwarnings(
     "ignore:The default svd_solver for algorithm='SVD':DeprecationWarning"
 )
+
+
+class TestKeenanKotulaScaleDask:
+    """Regression tests for _keenan_kotula_scale with dask inputs."""
+
+    def test_dask_input_matches_numpy(self):
+        """_keenan_kotula_scale returns the same result for dask and numpy inputs."""
+        rng = np.random.default_rng(0)
+        data = rng.integers(1, 100, size=(10, 20)).astype(float)
+        navigation_mask = np.zeros(10, dtype=bool)
+        navigation_mask[:2] = True
+        signal_mask = np.zeros(20, dtype=bool)
+        signal_mask[:3] = True
+
+        scaled_np, sqrt_aG_np, sqrt_bH_np = _keenan_kotula_scale(
+            data, navigation_mask, signal_mask, ndim=1, sdim=1
+        )
+        scaled_da, sqrt_aG_da, sqrt_bH_da = _keenan_kotula_scale(
+            da.from_array(data), navigation_mask, signal_mask, ndim=1, sdim=1
+        )
+
+        np.testing.assert_allclose(scaled_da.compute(), scaled_np, rtol=1e-10)
+        np.testing.assert_allclose(sqrt_aG_da.compute(), sqrt_aG_np, rtol=1e-10)
+        np.testing.assert_allclose(sqrt_bH_da.compute(), sqrt_bH_np, rtol=1e-10)
+
+    def test_dask_zero_sum_guard_computes_first(self):
+        """The zero-sum guard must call float() on computed NumPy values, not
+        on the dask array itself (which is not guaranteed to support float())."""
+        rng = np.random.default_rng(0)
+        data = rng.integers(1, 100, size=(10, 20)).astype(float)
+
+        from unittest.mock import patch
+
+        def raising_float(x):
+            if hasattr(x, "chunks"):
+                raise TypeError("float() on dask array")
+            return float(x)
+
+        with patch("hyperspy.learn._mva.float", side_effect=raising_float):
+            # Should not raise: sums are computed before the zero-sum check.
+            _keenan_kotula_scale(da.from_array(data), None, None, ndim=1, sdim=1)
 
 
 class TestLazyDecomposition:
@@ -1726,6 +1768,24 @@ class TestLazyDecompositionMaskTypes:
         if reproject in ("signal", "both"):
             assert not np.any(np.isnan(t.factors))
 
+    @skip_sklearn
+    def test_2d_nav_mask_pca_default_reproject(self):
+        """Non-SVD algorithm with a 2-D navigation mask and default
+        ``reproject=None`` must pass a navigation-shaped mask to
+        ``_block_iterator`` (regression: the shaped mask was overwritten with
+        a flattened 1-D array)."""
+        nav_shape = (6, 8)
+        sig_size = 40
+        s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
+        nav_mask = _build_nav_masks(s, nav_shape)["numpy"]
+        s.decomposition(
+            algorithm="PCA",
+            output_dimension=3,
+            navigation_mask=nav_mask,
+            print_info=False,
+        )
+        assert s.learning_results.loadings.shape[0] == nav_size
+
 
 class TestLazyCentreMaskParity:
     """Regression tests for centre= bugs in lazy SVD decomposition.
@@ -1881,7 +1941,7 @@ class TestLazyDecompositionInputValidation:
     def test_non_float_dtype_raises(self):
         """m1: integer data must raise TypeError (mirrors _mva.py:262)."""
         s = Signal1D(np.ones((8, 12), dtype=np.int32)).as_lazy()
-        with pytest.raises(TypeError, match="float or complex"):
+        with pytest.raises(TypeError, match="float type"):
             s.decomposition(output_dimension=3, print_info=False)
 
     def test_navigation_size_lt2_raises(self):
