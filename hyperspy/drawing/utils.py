@@ -79,13 +79,12 @@ def _get_scale_args(scale):
 
 def _parse_kwargs(scale, kwargs):
     """ Extract from `kwargs` the keyword arguments that have to be passed
-    to the matplotlib.scale `scale` constructor.
+    to the matplotlib.scale constructor.
     
     Parameters
     ----------
     scale : str
         The name of the matplotlib.scale.
-    
     kwargs : dict
         Kwargs dictionary to be parsed.
         
@@ -1626,8 +1625,10 @@ def plot_spectra(
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 
-        - ``"overlap"``, ``"cascade"`` or ``"mosiac"``: arguments passed to :func:`matplotlib.pyplot.figure`
+        - ``"overlap"``, ``"cascade"`` or ``"mosaic"``: arguments passed to :func:`matplotlib.axes.Axes.plot`
         - ``"heatmap"``: arguments  passed to :meth:`~.api.signals.Signal2D.plot`.
+        
+        It accepts also parameters for the supported `yscales`.
 
     Examples
     --------
@@ -1737,6 +1738,8 @@ def plot_spectra(
                     "figsize", (default_fsize[0], default_fsize[1] * len(spectra))
                 )
             fig = plt.figure(**_parse_kwargs(yscale, kwargs)[0])
+            if "figsize" in kwargs:
+                kwargs.pop("figsize")
         elif style == "heatmap":
             raise ValueError(
                 "The `fig` parameter is not supported for 'heatmap' style."
@@ -1814,7 +1817,6 @@ def plot_spectra(
     elif style == "heatmap":
         if not isinstance(spectra, signals.BaseSignal):
             import hyperspy.utils
-
             spectra = [_transpose_if_required(spectrum, 1) for spectrum in spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
