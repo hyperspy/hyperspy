@@ -286,6 +286,16 @@ class Test3D:
         ns = s._get_signal_signal(data=data)
         assert ns.data is data
 
+    def test_get_signal_signal_preserves_signal_type(self):
+        s = self.signal
+        s = s.transpose(signal_axes=2)
+        ns = s._get_signal_signal()
+        if s._lazy:
+            assert type(ns) is not type(s)
+            assert not ns._lazy
+        else:
+            assert type(ns) is type(s)
+
     def test_get_navigation_signal_dtype(self):
         s = self.signal
         assert s._get_navigation_signal().data.dtype.name == s.data.dtype.name

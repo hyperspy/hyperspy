@@ -1,0 +1,1 @@
+Fix ``BaseSignal._get_signal_signal`` to return a non-lazy signal when called with ``data=None`` on a lazy signal, consistent with the behavior of ``BaseSignal._get_navigation_signal``. Previously, ``BaseSignal._get_signal_signal`` would return a lazy signal class with numpy data, which is inconsistent and could cause errors when downstream code expected a dask array.

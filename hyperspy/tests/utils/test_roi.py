@@ -488,6 +488,7 @@ class TestROIs:
         with pytest.raises(NotImplementedError):
             roi(s)
 
+    @pytest.mark.slow
     def test_polygon_spec(self):
         s = self.s_s
 
@@ -1308,6 +1309,7 @@ class TestInteractive:
             r.interactive(signal=self.s)
             assert tuple(r) == vals
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("snap", [True, False, "default"])
     def test_interactive_snap(self, snap):
         kwargs = {}
