@@ -1,0 +1,1 @@
+Fix interactive ``SpikesRemoval`` processing each navigation position twice per step, and fix ``PeaksFinder2D`` crashing when clicking the random position button as well as never reaching the last navigation position.

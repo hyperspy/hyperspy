@@ -489,7 +489,7 @@ class TestUniformDataAxis:
         assert self.axis.navigate == ac.navigate
         assert self.axis.is_binned == ac.is_binned
 
-    def test_deepcopy_on_trait_change(self):
+    def test_deepcopy_observe_handlers(self):
         ac = copy.deepcopy(self.axis)
         ac.offset = 100
         assert ac.axis[0] == ac.offset

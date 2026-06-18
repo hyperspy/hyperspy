@@ -28,7 +28,6 @@ from functools import partial
 import cloudpickle
 import numpy as np
 import scipy
-from packaging.version import Version
 
 from hyperspy import signals
 from hyperspy.component import Component
@@ -860,11 +859,7 @@ class BaseModel(list):
         if components_with_function_nd:
             # Get data array for all components with function_nd
             if lazy_output:
-                import dask
-
                 # Issue with passing the model object to _get_model_data_chunk
-                if Version(dask.__version__) < Version("2024.12.0"):
-                    raise RuntimeError("Lazy support needs dask >= 2024.12.0")
                 data_ = _model_as_signal_lazy_data(
                     self, components_with_function_nd, chunks, block_size_limit
                 )
@@ -1020,6 +1015,10 @@ class BaseModel(list):
                     self._model_line.update(
                         render_figure=render_figure, update_ylimits=update_ylimits
                     )
+                if self._residual_line is not None:
+                    self._residual_line.update(
+                        render_figure=render_figure, update_ylimits=update_ylimits
+                    )
                 if self._plot_components:
                     for component in self.active_components:
                         self._update_component_line(component)
@@ -1043,6 +1042,13 @@ class BaseModel(list):
                 es.add(c.events, f)
                 if c._position:
                     es.add(c._position.events)
+                for p in c.parameters:
+                    es.add(p.events, f)
+
+        if self._residual_line:
+            f = self._residual_line._auto_update_line
+            for c in self:
+                es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
 

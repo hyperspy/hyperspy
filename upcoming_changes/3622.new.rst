@@ -1,0 +1,6 @@
+Establish standards for AI-assisted contributions: adopt the ``Assisted-by: <tool>:<model>``
+convention for disclosure in commit messages, add a new developer guide
+section (:doc:`/dev_guide/coding_with_ai`) with reviewer guidance and
+best practices, update the pull request template with new checkboxes
+for AI disclosure and manual testing verification, and add ``AGENTS.md``
+files documenting codebase conventions for AI tools.

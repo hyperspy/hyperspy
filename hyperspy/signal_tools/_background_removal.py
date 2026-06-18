@@ -156,15 +156,18 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                     only_current=True,
                 )
 
-    def _polynomial_order_changed(self, old, new):
+    @t.observe("polynomial_order")
+    def _polynomial_order_changed(self, event=None):
         self.set_background_estimator()
         self.span_selector_changed()
 
-    def _background_type_changed(self, old, new):
+    @t.observe("background_type")
+    def _background_type_changed(self, event=None):
         self.set_background_estimator()
         self.span_selector_changed()
 
-    def _fast_changed(self, old, new):
+    @t.observe("fast")
+    def _fast_changed(self, event=None):
         if not self._is_valid_range:
             return
         self._fit()

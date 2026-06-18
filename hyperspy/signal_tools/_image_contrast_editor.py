@@ -142,48 +142,58 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.set_yticks([])
         self.ax.figure.subplots_adjust(0, 0, 1, 1)
 
-    def _gamma_changed(self, old, new):
+    @t.observe("gamma")
+    def _gamma_changed(self, event=None):
         if self._vmin == self._vmax:
             return
-        self.image.gamma = new
+        self.image.gamma = event.new
         self._reset(auto=False, indices_changed=False, update_histogram=False)
         self.update_line()
 
-    def _vmin_percentile_changed(self, old, new):
+    @t.observe("vmin_percentile")
+    def _vmin_percentile_changed(self, event=None):
+        new = event.new
         if isinstance(new, str):
             new = float(new.split("th")[0])
         self.image.vmin = f"{new}th"
         self._reset(auto=True, indices_changed=False)
         self._clear_span_selector()
 
-    def _vmax_percentile_changed(self, old, new):
+    @t.observe("vmax_percentile")
+    def _vmax_percentile_changed(self, event=None):
+        new = event.new
         if isinstance(new, str):
             new = float(new.split("th")[0])
         self.image.vmax = f"{new}th"
         self._reset(auto=True, indices_changed=False)
         self._clear_span_selector()
 
-    def _auto_changed(self, old, new):
+    @t.observe("auto")
+    def _auto_changed(self, event=None):
         # Do something only if auto is ticked
-        if new:
+        if event.new:
             self._reset(indices_changed=False, update_histogram=False)
             self._clear_span_selector()
 
-    def _bins_changed(self, old, new):
-        if old != new:
+    @t.observe("bins")
+    def _bins_changed(self, event=None):
+        if event.old != event.new:
             self.update_histogram(clear_selector=False)
 
-    def _norm_changed(self, old, new):
-        self.image.norm = new.lower()
+    @t.observe("norm")
+    def _norm_changed(self, event=None):
+        self.image.norm = event.new.lower()
         self._reset(auto=False, indices_changed=False, update_histogram=False)
         self.update_line()
 
-    def _linthresh_changed(self, old, new):
-        self.image.linthresh = new
+    @t.observe("linthresh")
+    def _linthresh_changed(self, event=None):
+        self.image.linthresh = event.new
         self._reset(auto=False, indices_changed=False, update_histogram=False)
 
-    def _linscale_changed(self, old, new):
-        self.image.linscale = new
+    @t.observe("linscale")
+    def _linscale_changed(self, event=None):
+        self.image.linscale = event.new
         self._reset(auto=False, indices_changed=False, update_histogram=False)
 
     def update_span_selector_traits(self, *args, **kwargs):
@@ -410,7 +420,10 @@ class ImageContrastEditor(t.HasTraits):
             self.line.line.set_visible(False)
             self.hspy_fig.render_figure()
 
-    def _show_help_fired(self):
+    # Called imperatively from the traitsui handler's show_help() method.
+    # The "_fired" naming is a convention, not the deprecated traits
+    # auto-discovery pattern. No @t.observe decorator needed here.
+    def _show_help_fired(self, event=None):
         from pyface.message_dialog import information
 
         _help = _IMAGE_CONTRAST_EDITOR_HELP.replace("PERCENTILE", _PERCENTILE_TRAITSUI)

@@ -179,7 +179,7 @@ def test_decomposition():
         s.decomposition(algorithm="SVD", svd_solver="randomized")
 
     s.decomposition()
-    s.plot_explained_variance_ratio()
+    s.plot_scree_plot()
     s.plot_decomposition_loadings(3)
     s.plot_decomposition_factors(3)
 

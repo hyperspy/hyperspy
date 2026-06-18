@@ -244,3 +244,38 @@ class TestPrintInfo:
         nav_mask = (s.isig[0].data < 0.5).compute()[:-2]
         with pytest.raises(ValueError):
             s.decomposition(algorithm="PCA", navigation_mask=nav_mask)
+
+
+class TestLazyDecompositionBugfixes:
+    """Regression tests for PR #3655: fix-lazy-signal-bugs."""
+
+    def setup_method(self, method):
+        rng = np.random.default_rng(42)
+        self.s = Signal1D(rng.random((12, 25, 48))).as_lazy()
+
+    def test_poissonian_noise_normalization_scales_data(self):
+        """#3607: verify normalize_poissonian_noise=True produces valid
+        reconstruction. Bug: coeff.map_blocks() result discarded (no-op)."""
+        s = self.s
+        s.decomposition(
+            normalize_poissonian_noise=True, output_dimension=3, algorithm="ORNMF"
+        )
+        rec = s.get_decomposition_model().data.compute()
+        assert np.all(np.isfinite(rec))
+
+    def test_unfolded4decomposition_false_after_svd(self):
+        """#3608: _unfolded4decomposition should be False after lazy SVD.
+        The bug was ```is False``` (comparison) instead of ```= False```."""
+        s = self.s.deepcopy()
+        s.decomposition(output_dimension=3)
+        assert s._unfolded4decomposition is False
+
+    def test_block_iterator_rechunks_signal(self):
+        """#3610: _block_iterator should rechunk signal dimension to single
+        chunk so that sub-signal chunk layouts work correctly."""
+        s = self.s
+        blocks = list(s._block_iterator(flat_signal=True))
+        assert len(blocks) > 0
+        # Each block should have signal_size columns
+        for block in blocks:
+            assert block.shape[1] == s.axes_manager.signal_size

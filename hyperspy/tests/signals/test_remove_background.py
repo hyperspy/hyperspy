@@ -18,10 +18,8 @@
 
 import gc
 
-import dask
 import numpy as np
 import pytest
-from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy import components1d
@@ -31,8 +29,7 @@ from hyperspy.signal_tools._background_removal import _get_background_estimator
 
 
 def _skip_test(s):
-    if s._lazy and Version(dask.__version__) < Version("2024.12.0"):
-        pytest.skip("dask version must be >= 2024.12.0.")
+    pass  # dask >= 2024.12.0 is now a required dependency
 
 
 def teardown_module(module):

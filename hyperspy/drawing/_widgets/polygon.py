@@ -77,6 +77,14 @@ class PolygonWidget(WidgetBase):
                 self.connect(self.ax)
             elif value is False:
                 self.disconnect()
+                # PolygonSelector holds references to canvas artists and
+                # event handlers that matplotlib does not auto-clean up.
+                # Explicitly disconnect before dropping the reference so
+                # callbacks don't fire on stale objects after the widget
+                # is deactivated.
+                if self._widget is not None:
+                    self._widget.disconnect_events()
+                    self._widget = None
                 self.ax = None
             if render_figure:
                 existing_ax.figure.canvas.draw_idle()

@@ -111,9 +111,9 @@ PLOT2D_DOCSTRING = """colorbar : bool, optional
             characters. If ``'x'`` or ``'y'`` are in the string, the corresponding
             axis limits are set to cover the full range of the data at a given
             position. If ``'v'`` (for values) is in the string, the contrast of the
-            image will be set automatically according to ``vmin` and ``vmax`` when
+            image will be set automatically according to ``vmin`` and ``vmax`` when
             the data or navigation indices change. Default is ``'v'``.
-        norm : str {``"auto"` | ``"linear"`` | ``"power"`` | ``"log"`` | ``"symlog"``} or :class:`matplotlib.colors.Normalize`
+        norm : str {``"auto"`` | ``"linear"`` | ``"power"`` | ``"log"`` | ``"symlog"``} or :class:`matplotlib.colors.Normalize`
             Set the norm of the image to display. If ``"auto"``, a linear scale is
             used except if when ``power_spectrum=True`` in case of complex data
             type. ``"symlog"`` can be used to display negative value on a negative

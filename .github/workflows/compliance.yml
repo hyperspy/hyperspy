@@ -1,0 +1,51 @@
+name: Compliance
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - "dependabot/**"
+      - "pre-commit-ci-update-config"
+
+jobs:
+  ai-trailers:
+    name: AI trailer compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for prohibited Co-authored-by AI trailers
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 scripts/ci-check-ai-trailers.py \
+              "${{ github.event.pull_request.base.sha }}" \
+              "${{ github.event.pull_request.head.sha }}"
+          else
+            echo "Push event — checking against previous commit."
+            python3 scripts/ci-check-ai-trailers.py \
+              "${{ github.event.before }}" \
+              "${{ github.event.after }}" \
+              || echo "::warning::Push may contain newer commits than checked."
+          fi
+
+  changelog:
+    name: Changelog entry
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changelog entry on source changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 scripts/ci-check-changelog.py \
+              "${{ github.event.pull_request.base.sha }}" \
+              "${{ github.event.pull_request.head.sha }}"
+          else
+            echo "Push event — skipping changelog check (PR-only)."
+          fi
