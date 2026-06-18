@@ -327,9 +327,6 @@ class BaseDataAxis(t.HasTraits):
         self.name = name
         self.units = units
         self.low_index = 0
-        self.on_trait_change(self._update_slice, "navigate")
-        self.on_trait_change(self.update_index_bounds, "size")
-        self.on_trait_change(self._update_bounds, "axis")
 
         self.index = 0
         self.navigate = navigate
@@ -339,37 +336,39 @@ class BaseDataAxis(t.HasTraits):
 
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
-        self._update_slice(self.navigate)
+        self._do_update_slice(self.navigate)
 
     @property
     def is_uniform(self):
         return self._is_uniform
 
-    def _index_changed(self, name, old, new):
+    @t.observe("index")
+    def _index_changed(self, event=None):
         self.events.index_changed.trigger(obj=self, index=self.index)
         if not self._suppress_update_value:
             new_value = self.axis[self.index]
             if new_value != self.value:
                 self.value = new_value
 
-    def _value_changed(self, name, old, new):
+    @t.observe("value")
+    def _value_changed(self, event=None):
         old_index = self.index
-        new_index = self.value2index(new)
+        new_index = self.value2index(event.new)
         if old_index != new_index:
             self.index = new_index
-            if new == self.axis[self.index]:
-                self.events.value_changed.trigger(obj=self, value=new)
+            if event.new == self.axis[self.index]:
+                self.events.value_changed.trigger(obj=self, value=event.new)
         else:
             new_value = self.index2value(new_index)
-            if new_value == old:
+            if new_value == event.old:
                 self._suppress_value_changed_trigger = True
                 try:
                     self.value = new_value
                 finally:
                     self._suppress_value_changed_trigger = False
 
-            elif new_value == new and not self._suppress_value_changed_trigger:
-                self.events.value_changed.trigger(obj=self, value=new)
+            elif new_value == event.new and not self._suppress_value_changed_trigger:
+                self.events.value_changed.trigger(obj=self, value=event.new)
 
     @property
     def index_in_array(self):
@@ -505,14 +504,20 @@ class BaseDataAxis(t.HasTraits):
     def __str__(self):
         return self._get_name() + " axis"
 
-    def update_index_bounds(self):
+    @t.observe("size")
+    def update_index_bounds(self, event):
         self.high_index = self.size - 1
 
-    def _update_bounds(self):
+    @t.observe("axis")
+    def _update_bounds(self, event):
         if len(self.axis) != 0:
             self.low_value, self.high_value = (self.axis.min(), self.axis.max())
 
-    def _update_slice(self, value):
+    @t.observe("navigate")
+    def _update_slice(self, event):
+        self._do_update_slice(event.new)
+
+    def _do_update_slice(self, value):
         if value is False:
             self.slice = slice(None)
         else:
@@ -1080,9 +1085,9 @@ class FunctionalDataAxis(BaseDataAxis):
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
         self.update_axis()
-        self.on_trait_change(self.update_axis, self.parameters_list)
+        self.observe(self.update_axis, self.parameters_list)
 
-    def update_axis(self):
+    def update_axis(self, event=None):
         kwargs = {}
         for kwarg in self.parameters_list:
             kwargs[kwarg] = getattr(self, kwarg)
@@ -1256,7 +1261,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.size = size
         self.update_axis()
         self._is_uniform = True
-        self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
+        self.observe(self.update_axis, ["scale", "offset", "size"])
 
     def _slice_me(self, _slice):
         """Returns a slice to slice the corresponding data axis and
@@ -1357,7 +1362,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             else:
                 raise ValueError("The value is out of the axis limits")
 
-    def update_axis(self):
+    def update_axis(self, event=None):
         self.axis = self.offset + self.scale * np.arange(self.size)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
@@ -1639,16 +1644,22 @@ class AxesManager(t.HasTraits):
         return self._ragged
 
     def _update_trait_handlers(self, remove=False):
+        from traits.observation.api import trait as trait_expr
+
         things = {
-            self._on_index_changed: "_axes.index",
-            self._on_slice_changed: "_axes.slice",
-            self._on_size_changed: "_axes.size",
-            self._on_scale_changed: "_axes.scale",
-            self._on_offset_changed: "_axes.offset",
+            self._on_index_changed: trait_expr("_axes").list_items().trait("index"),
+            self._on_slice_changed: trait_expr("_axes").list_items().trait("slice"),
+            self._on_size_changed: trait_expr("_axes").list_items().trait("size"),
+            self._on_scale_changed: trait_expr("_axes")
+            .list_items()
+            .trait("scale", optional=True),
+            self._on_offset_changed: trait_expr("_axes")
+            .list_items()
+            .trait("offset", optional=True),
         }
 
         for k, v in things.items():
-            self.on_trait_change(k, name=v, remove=remove)
+            self.observe(k, v, remove=remove)
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -2023,21 +2034,21 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
-    def _on_index_changed(self):
+    def _on_index_changed(self, event=None):
         self._update_attributes()
         self.events.indices_changed.trigger(obj=self)
 
-    def _on_slice_changed(self):
+    def _on_slice_changed(self, event=None):
         self._update_attributes()
 
-    def _on_size_changed(self):
+    def _on_size_changed(self, event=None):
         self._update_attributes()
         self.events.any_axis_changed.trigger(obj=self)
 
-    def _on_scale_changed(self):
+    def _on_scale_changed(self, event=None):
         self.events.any_axis_changed.trigger(obj=self)
 
-    def _on_offset_changed(self):
+    def _on_offset_changed(self, event=None):
         self.events.any_axis_changed.trigger(obj=self)
 
     def convert_units(self, axes=None, units=None, same_units=True, factor=0.25):
@@ -2389,11 +2400,35 @@ class AxesManager(t.HasTraits):
         string += ")"
         return string
 
-    def _build_nav_table(self):
+    @staticmethod
+    def _build_axis_table(field_names, custom_format_keys, extra_widths=None):
         from prettytable import PrettyTable
 
+        def _num_fmt(f, v):
+            return v if isinstance(v, str) else "%.5g" % v
+
+        _base_widths = {
+            "Name": 20,
+            "size": 8,
+            "offset": 11,
+            "scale": 11,
+            "units": 11,
+        }
+        widths = {**_base_widths, **(extra_widths or {})}
+
         table = PrettyTable()
-        table.field_names = ["Name", "size", "index", "offset", "scale", "units"]
+        table.field_names = field_names
+        table.custom_format = {k: _num_fmt for k in custom_format_keys}
+        table.min_width = widths
+        table.max_width = widths
+        return table
+
+    def _build_nav_table(self):
+        table = self._build_axis_table(
+            ["Name", "size", "index", "offset", "scale", "units"],
+            ["size", "index", "offset", "scale"],
+            extra_widths={"index": 6},
+        )
         for ax in self.navigation_axes:
             if ax.is_uniform:
                 offset, scale = ax.offset, ax.scale
@@ -2403,10 +2438,10 @@ class AxesManager(t.HasTraits):
         return table
 
     def _build_signal_table(self):
-        from prettytable import PrettyTable
-
-        table = PrettyTable()
-        table.field_names = ["Name", "size", "offset", "scale", "units"]
+        table = self._build_axis_table(
+            ["Name", "size", "offset", "scale", "units"],
+            ["size", "offset", "scale"],
+        )
         for ax in self.signal_axes:
             if ax.is_uniform:
                 offset, scale = ax.offset, ax.scale
@@ -2563,29 +2598,13 @@ class AxesManager(t.HasTraits):
         self._axes = list(new_axes)
 
     def gui_navigation_sliders(self, title="", display=True, toolkit=None):
-        # With traits 6.1 and traitsui 7.0, we have this deprecation warning,
-        # which is fine to filter
-        # https://github.com/enthought/traitsui/issues/883
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                category=DeprecationWarning,
-                message="'TraitPrefixList'",
-                module="traitsui",
-            )
-            warnings.filterwarnings(
-                "ignore",
-                category=DeprecationWarning,
-                message="'TraitMap'",
-                module="traits",
-            )
-            return get_gui(
-                self=self.navigation_axes,
-                toolkey="hyperspy.navigation_sliders",
-                display=display,
-                toolkit=toolkit,
-                title=title,
-            )
+        return get_gui(
+            self=self.navigation_axes,
+            toolkey="hyperspy.navigation_sliders",
+            display=display,
+            toolkit=toolkit,
+            title=title,
+        )
 
     gui_navigation_sliders.__doc__ = """
         Navigation sliders to control the index of the navigation axes.

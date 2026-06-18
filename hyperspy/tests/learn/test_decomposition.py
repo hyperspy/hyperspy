@@ -193,7 +193,7 @@ class TestGetModel:
 
 
 @lazifyTestClass
-class TestGetExplainedVarinaceRatio:
+class TestGetScreePlotData:
     def setup_method(self, method):
         s = signals.BaseSignal(np.empty(1))
         self.s = s
@@ -201,12 +201,12 @@ class TestGetExplainedVarinaceRatio:
     def test_data(self):
         self.s.learning_results.explained_variance_ratio = np.asarray([2, 4])
         np.testing.assert_array_equal(
-            self.s.get_explained_variance_ratio().data, np.asarray([2, 4])
+            self.s.get_scree_plot_data().data, np.asarray([2, 4])
         )
 
     def test_no_evr(self):
         with pytest.raises(AttributeError):
-            self.s.get_explained_variance_ratio()
+            self.s.get_scree_plot_data()
 
 
 class TestEstimateElbowPosition:
@@ -523,9 +523,7 @@ class TestComplexSignalDecomposition:
 
         s = signals.ComplexSignal1D(A @ B.T)
         s.decomposition()
-        np.testing.assert_almost_equal(
-            s.get_explained_variance_ratio().data[r:].sum(), 0
-        )
+        np.testing.assert_almost_equal(s.get_scree_plot_data().data[r:].sum(), 0)
 
 
 @pytest.mark.parametrize("reproject", [None, "navigation", "signal", "both"])

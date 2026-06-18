@@ -96,6 +96,9 @@ class CurrentComponentValues:
     def _build_table(self):
         """Build and return a PrettyTable with parameter data."""
 
+        def _num_fmt(f, v):
+            return "" if v is None else "%.5g" % v
+
         table = PrettyTable()
         table.field_names = [
             "Parameter",
@@ -113,21 +116,43 @@ class CurrentComponentValues:
         table.align["Min"] = "r"
         table.align["Max"] = "r"
         table.align["Linear"] = "r"
+        table.custom_format = {
+            "Value": _num_fmt,
+            "Std": _num_fmt,
+            "Min": _num_fmt,
+            "Max": _num_fmt,
+        }
+        _widths = {
+            "Parameter": 14,
+            "Free": 7,
+            "Value": 10,
+            "Std": 10,
+            "Min": 10,
+            "Max": 10,
+            "Linear": 6,
+        }
+        table.min_width = _widths
+        table.max_width = _widths
 
         # Add rows
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
                 free = para.free if para.twin is None else "Twinned"
                 ln = para._linear
+                value = (
+                    _format_string(para.value)
+                    if isinstance(para.value, Iterable)
+                    else para.value
+                )
                 table.add_row(
                     [
-                        _format_string(para.name, max_length=14),
-                        _format_string(str(free), max_length=7),
-                        _format_string(para.value, max_length=10),
-                        _format_string(para.std, max_length=10),
-                        _format_string(para.bmin, max_length=10),
-                        _format_string(para.bmax, max_length=10),
-                        _format_string(str(ln), max_length=6),
+                        para.name,
+                        str(free),
+                        value,
+                        para.std,
+                        para.bmin,
+                        para.bmax,
+                        str(ln),
                     ]
                 )
         return table
@@ -416,6 +441,10 @@ class ModelStatistics:
     # --- Table Output ---
     def _build_table(self, params):
         """Build and return a PrettyTable for a component type's statistics."""
+
+        def _num_fmt(f, v):
+            return "%.3e" % v
+
         table = PrettyTable()
         table.field_names = ["Parameter", "Mean", "Std", "Min", "Max"]
         table.align["Parameter"] = "l"
@@ -423,15 +452,30 @@ class ModelStatistics:
         table.align["Std"] = "r"
         table.align["Min"] = "r"
         table.align["Max"] = "r"
+        table.custom_format = {
+            "Mean": _num_fmt,
+            "Std": _num_fmt,
+            "Min": _num_fmt,
+            "Max": _num_fmt,
+        }
+        _widths = {
+            "Parameter": 14,
+            "Mean": 12,
+            "Std": 12,
+            "Min": 12,
+            "Max": 12,
+        }
+        table.min_width = _widths
+        table.max_width = _widths
 
         for pname, stats in params.items():
             table.add_row(
                 [
-                    _format_string(pname, max_length=14),
-                    _format_string(stats["mean"], format_string=".3e", max_length=12),
-                    _format_string(stats["std"], format_string=".3e", max_length=12),
-                    _format_string(stats["min"], format_string=".3e", max_length=12),
-                    _format_string(stats["max"], format_string=".3e", max_length=12),
+                    pname,
+                    stats["mean"],
+                    stats["std"],
+                    stats["min"],
+                    stats["max"],
                 ]
             )
         return table
@@ -457,6 +501,64 @@ class ModelStatistics:
             )
             html += "<br>"
         return html
+
+
+def _intervals_to_tuples(intervals):
+    """Normalize and validate the ``intervals`` parameter for
+    :meth:`~.api.model.components.Component.estimate_parameters`.
+
+    Parameters
+    ----------
+    intervals
+        One of:
+        - A bare ``(left, right)`` tuple (auto-wrapped to a single-interval
+          list).
+        - A tuple or list of ``(left, right)`` tuples.
+        - A tuple or list of :class:`~.api.roi.SpanROI` objects.
+
+    Returns
+    -------
+    list of tuple
+        ``[(left_0, right_0), (left_1, right_1), ...]``
+
+    Raises
+    ------
+    ValueError
+        If ``intervals`` is not a list or tuple, or if any element has an
+        invalid format.
+    """
+    if not isinstance(intervals, (list, tuple)):
+        raise ValueError("`intervals` must be a list of tuples or SpanROI objects.")
+    if isinstance(intervals, tuple):
+        if len(intervals) == 0:
+            intervals = []
+        else:
+            first = intervals[0]
+            if (
+                isinstance(first, (tuple, list))
+                and len(first) == 2
+                and not isinstance(first[0], (tuple, list))
+            ):
+                # tuple of intervals — use as-is
+                pass
+            elif hasattr(first, "left") and hasattr(first, "right"):
+                # tuple of SpanROIs — use as-is
+                pass
+            else:
+                # bare (left, right) pair — wrap in list
+                intervals = [intervals]
+    interval_tuples = []
+    for interval in intervals:
+        if hasattr(interval, "left") and hasattr(interval, "right"):
+            interval_tuples.append((interval.left, interval.right))
+        elif isinstance(interval, (tuple, list)) and len(interval) == 2:
+            interval_tuples.append(tuple(interval))
+        else:
+            raise ValueError(
+                f"Invalid interval format: {interval}. "
+                "Expected tuple (left, right) or SpanROI object."
+            )
+    return interval_tuples
 
 
 class SummaryStatistics:
@@ -488,8 +590,14 @@ class SummaryStatistics:
         table.field_names = ["Statistic", "Value"]
         table.align["Statistic"] = "r"
         table.align["Value"] = "r"
+        _fmt = self.formatter
+        table.custom_format = {
+            "Value": lambda f, v: "" if v is None else _fmt % v,
+        }
+        table.min_width = {"Statistic": 12, "Value": 10}
+        table.max_width = {"Statistic": 12, "Value": 10}
         for name, val in self.stats:
-            table.add_row([name, self.formatter % val])
+            table.add_row([name, val])
         return table
 
     def __repr__(self):

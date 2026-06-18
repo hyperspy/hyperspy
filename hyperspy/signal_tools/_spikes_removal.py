@@ -17,11 +17,13 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
+from types import SimpleNamespace
 
 import matplotlib
 import numpy as np
 import scipy
 import traits.api as t
+from traits.observation.api import trait as trait_expr
 
 from hyperspy import drawing, signal_tools
 from hyperspy.misc.math_tools import check_random_state
@@ -80,6 +82,14 @@ class SpikesRemoval:
         self._temp_mask = np.zeros(self.signal._get_current_data().shape, dtype="bool")
         self.index = 0
         self.threshold = threshold
+        if hasattr(self, "observe"):
+            # self.observe() (regardless of string or expression API)
+            # fires handlers twice in traits 7.x: once with the raw
+            # value (an int) and once with a TraitChangeEvent.
+            # @t.observe would deliver only the ChangeEvent, but cannot
+            # be used here because SpikesRemoval is a plain class.
+            # _index_changed handles both call signatures.
+            self.observe(self._index_changed, trait_expr("index"))
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
 
@@ -127,13 +137,24 @@ class SpikesRemoval:
                     self.index += 1
                 else:
                     self.index -= 1
-                self._index_changed(self.index, self.index)
+                # SpikesRemoval is a plain class (not HasTraits) — changing
+                # self.index does NOT fire any observer, so we must call
+                # _index_changed explicitly. The hasattr guard prevents
+                # double-firing on SpikesRemovalInteractive (which IS a
+                # HasTraits subclass and already has self.observe() registered
+                # on "index" in SpikesRemoval.__init__).
+                if not hasattr(self, "observe"):
+                    self._index_changed(SimpleNamespace(old=None, new=self.index))
                 spike = self.detect_spike()
 
         return spike
 
-    def _index_changed(self, old, new):
-        self.signal.axes_manager.indices = self.coordinates[new]
+    def _index_changed(self, event=None):
+        # self.observe() fires twice per change: once with the raw
+        # value (an int) and once with a TraitChangeEvent.
+        # Accept both call signatures.
+        new_val = event.new if hasattr(event, "new") else event
+        self.signal.axes_manager.indices = self.coordinates[new_val]
         self.argmax = None
         self._temp_mask[:] = False
 
@@ -251,16 +272,19 @@ class SpikesRemovalInteractive(SpikesRemoval, signal_tools.SpanSelectorInSignal1
         self.update_signal_mask()
         self.max_num_bins = max_num_bins
 
-    def _threshold_changed(self, old, new):
+    @t.observe("threshold", post_init=True)
+    def _threshold_changed(self, event=None):
         self.index = 0
         self.update_plot()
 
-    def _click_to_show_instructions_fired(self):
+    @t.observe("click_to_show_instructions")
+    def _click_to_show_instructions_fired(self, event=None):
         from pyface.message_dialog import information
 
         _ = (information(None, SPIKES_REMOVAL_INSTRUCTIONS, title="Instructions"),)
 
-    def _show_derivative_histogram_fired(self):
+    @t.observe("show_derivative_histogram")
+    def _show_derivative_histogram_fired(self, event=None):
         self.signal._spikes_diagnosis(
             signal_mask=self.signal_mask,
             navigation_mask=self.navigation_mask,
@@ -348,12 +372,14 @@ class SpikesRemovalInteractive(SpikesRemoval, signal_tools.SpanSelectorInSignal1
             self.interpolated_line.close()
             self.interpolated_line = None
 
-    def _spline_order_changed(self, old, new):
-        if new != old:
-            self.spline_order = new
+    @t.observe("spline_order")
+    def _spline_order_changed(self, event=None):
+        if event.new != event.old:
+            self.spline_order = event.new
             self.span_selector_changed()
 
-    def _add_noise_changed(self, old, new):
+    @t.observe("add_noise")
+    def _add_noise_changed(self, event=None):
         self.span_selector_changed()
 
     def create_interpolation_line(self):

@@ -58,6 +58,7 @@ linkcheck_ignore = [
     "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
     "https://doi.org/10.1364/OL.33.000156",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
     "https://doi.org/10.1364/AO.41.007437",  # certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'
+    "https://doi.org/10.1038/nature12469",  # read timeout (nature.com)
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
     "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
     "https://scholar.google.co.uk",  # 403 Client Error: Forbidden for url
