@@ -18,7 +18,6 @@
 
 import importlib
 import logging
-import types
 import warnings
 
 import numpy as np
@@ -28,6 +27,7 @@ from hyperspy import learn, signals
 from hyperspy.decorators import deprecated
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import LAZY_OUTPUT_ARG, SHOW_PROGRESSBAR_ARG
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import utils
 
@@ -569,8 +569,8 @@ class MVA:
                 )
 
             # Store the results in learning_results
-            target.factors = factors
-            target.loadings = loadings
+            target.components = factors
+            target.scores = loadings
             target.explained_variance = explained_variance
             target.explained_variance_ratio = explained_variance_ratio
             target.number_significant_components = number_significant_components
@@ -602,14 +602,14 @@ class MVA:
                     loadings_ = (dc[:, signal_mask] - mean) @ factors
                 else:
                     loadings_ = estim.transform(dc[:, signal_mask])
-                target.loadings = loadings_
+                target.scores = loadings_
 
             if reproject in ("signal", "both"):
                 if not is_sklearn_like:
                     factors = (
                         np.linalg.pinv(loadings) @ (dc[navigation_mask, :] - mean)
                     ).T
-                    target.factors = factors
+                    target.components = factors
                 else:
                     warnings.warn(
                         "Reprojecting the signal is not yet "
@@ -623,8 +623,8 @@ class MVA:
 
             # Rescale the results if the noise was normalized
             if normalize_poissonian_noise:
-                target.factors[:] *= self._root_bH.T
-                target.loadings[:] *= self._root_aG
+                target.components[:] *= self._root_bH.T
+                target.scores[:] *= self._root_aG
 
             # Set the pixels that were not processed to nan
             if not isinstance(signal_mask, slice):
@@ -633,10 +633,10 @@ class MVA:
                     self.axes_manager._signal_shape_in_array
                 )
                 if reproject not in ("both", "signal"):
-                    factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
-                    factors[signal_mask, :] = target.factors
+                    factors = np.zeros((dc.shape[-1], target.components.shape[1]))
+                    factors[signal_mask, :] = target.components
                     factors[~signal_mask, :] = np.nan
-                    target.factors = factors
+                    target.components = factors
 
             if not isinstance(navigation_mask, slice):
                 # Store the (inverted, as inputed) navigation mask
@@ -644,10 +644,10 @@ class MVA:
                     self.axes_manager._navigation_shape_in_array
                 )
                 if reproject not in ("both", "navigation"):
-                    loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
-                    loadings[navigation_mask, :] = target.loadings
+                    loadings = np.zeros((dc.shape[0], target.scores.shape[1]))
+                    loadings[navigation_mask, :] = target.scores
                     loadings[~navigation_mask, :] = np.nan
-                    target.loadings = loadings
+                    target.scores = loadings
 
         finally:
             if self._unfolded4decomposition:
@@ -758,7 +758,7 @@ class MVA:
         lr = self.learning_results
 
         if factors is None:
-            if not hasattr(lr, "factors") or lr.factors is None:
+            if not hasattr(lr, "components") or lr.components is None:
                 raise AttributeError(
                     "A decomposition must be performed before blind "
                     "source separation, or factors must be provided."
@@ -1015,7 +1015,7 @@ class MVA:
             w[:] = w[sorting_indices, :]
 
         lr.unmixing_matrix = w
-        lr.on_loadings = on_loadings
+        lr.on_scores = on_loadings
         self._unmix_components()
         self._auto_reverse_bss_component(reverse_component_criterion)
         lr.bss_algorithm = algorithm
@@ -1041,11 +1041,11 @@ class MVA:
 
         """
         if target == "factors":
-            target = self.learning_results.factors
-            other = self.learning_results.loadings
+            target = self.learning_results.components
+            other = self.learning_results.scores
         elif target == "loadings":
-            target = self.learning_results.loadings
-            other = self.learning_results.factors
+            target = self.learning_results.scores
+            other = self.learning_results.components
         else:
             raise ValueError('target must be "factors" or "loadings"')
 
@@ -1068,11 +1068,11 @@ class MVA:
 
         """
         if target == "factors":
-            target = self.learning_results.bss_factors
-            other = self.learning_results.bss_loadings
+            target = self.learning_results.bss_components
+            other = self.learning_results.bss_scores
         elif target == "loadings":
-            target = self.learning_results.bss_loadings
-            other = self.learning_results.bss_factors
+            target = self.learning_results.bss_scores
+            other = self.learning_results.bss_components
         else:
             raise ValueError('target must be "factors" or "loadings"')
 
@@ -1105,7 +1105,7 @@ class MVA:
         >>> s.reverse_decomposition_component((0, 2)) # doctest: +SKIP
 
         """
-        if hasattr(self.learning_results.factors, "compute"):
+        if hasattr(self.learning_results.components, "compute"):
             _logger.warning(
                 f"Component(s) {component_number} not reversed, "
                 "feature not implemented for lazy computations"
@@ -1115,8 +1115,8 @@ class MVA:
 
             for i in [component_number]:
                 _logger.info(f"Component {i} reversed")
-                target.factors[:, i] *= -1
-                target.loadings[:, i] *= -1
+                target.components[:, i] *= -1
+                target.scores[:, i] *= -1
 
     def reverse_bss_component(self, component_number):
         """Reverse the independent component.
@@ -1141,7 +1141,7 @@ class MVA:
         >>> s.reverse_bss_component((0, 2)) # doctest: +SKIP
 
         """
-        if hasattr(self.learning_results.bss_factors, "compute"):
+        if hasattr(self.learning_results.bss_components, "compute"):
             _logger.warning(
                 f"Component(s) {component_number} not reversed, "
                 "feature not implemented for lazy computations"
@@ -1151,8 +1151,8 @@ class MVA:
 
             for i in [component_number]:
                 _logger.info(f"Component {i} reversed")
-                target.bss_factors[:, i] *= -1
-                target.bss_loadings[:, i] *= -1
+                target.bss_components[:, i] *= -1
+                target.bss_scores[:, i] *= -1
                 target.unmixing_matrix[i, :] *= -1
 
     def _unmix_components(self, compute=False):
@@ -1173,23 +1173,23 @@ class MVA:
             else:
                 raise
 
-        if lr.on_loadings:
-            lr.bss_loadings = lr.loadings[:, :n] @ w.T
-            lr.bss_factors = lr.factors[:, :n] @ w_inv
+        if lr.on_scores:
+            lr.bss_scores = lr.scores[:, :n] @ w.T
+            lr.bss_components = lr.components[:, :n] @ w_inv
         else:
-            lr.bss_factors = lr.factors[:, :n] @ w.T
-            lr.bss_loadings = lr.loadings[:, :n] @ w_inv
+            lr.bss_components = lr.components[:, :n] @ w.T
+            lr.bss_scores = lr.scores[:, :n] @ w_inv
         if compute:
-            lr.bss_factors = lr.bss_factors.compute()
-            lr.bss_loadings = lr.bss_loadings.compute()
+            lr.bss_components = lr.bss_components.compute()
+            lr.bss_scores = lr.bss_scores.compute()
 
     def _auto_reverse_bss_component(self, reverse_component_criterion):
-        n_components = self.learning_results.bss_factors.shape[1]
+        n_components = self.learning_results.bss_components.shape[1]
         for i in range(n_components):
             if reverse_component_criterion == "factors":
-                values = self.learning_results.bss_factors
+                values = self.learning_results.bss_components
             elif reverse_component_criterion == "loadings":
-                values = self.learning_results.bss_loadings
+                values = self.learning_results.bss_scores
             else:
                 raise ValueError(
                     "`reverse_component_criterion` can take only "
@@ -1246,11 +1246,11 @@ class MVA:
         #     the matmul call (loadings.T), giving (n_comp, nav_size),
         #     which is the standard [factors @ loadings.T] pattern.
         if mva_type.lower() == "decomposition":
-            factors = target.factors
-            loadings = target.loadings
+            factors = target.components
+            loadings = target.scores
         elif mva_type.lower() == "bss":
-            factors = target.bss_factors
-            loadings = target.bss_loadings
+            factors = target.bss_components
+            loadings = target.bss_scores
 
         if components is None:
             signal_name = f"model from {mva_type} with {factors.shape[1]} components"
@@ -2862,8 +2862,8 @@ class LearningResults(object):
     """Stores the parameters and results from a decomposition."""
 
     # Decomposition
-    factors = None
-    loadings = None
+    components = None
+    scores = None
     explained_variance = None
     explained_variance_ratio = None
     number_significant_components = None
@@ -2886,14 +2886,100 @@ class LearningResults(object):
     # Unmixing
     bss_algorithm = None
     unmixing_matrix = None
-    bss_factors = None
-    bss_loadings = None
+    bss_components = None
+    bss_scores = None
     # Shape
     unfolded = None
     original_shape = None
     # Masks
     navigation_mask = None
     signal_mask = None
+    # BSS orientation flag
+    on_scores = False
+
+    # ------------------------------------------------------------------
+    # Deprecated property aliases — access the canonical storage above.
+    # These emit VisibleDeprecationWarning so user code sees the
+    # deprecation; internal code uses ``self.components`` etc. directly.
+    # ------------------------------------------------------------------
+
+    @property
+    def factors(self):
+        """Deprecated: use :attr:`components` instead.
+
+        .. versionadded:: 2.5.0
+        """
+        self._warn_deprecated("factors", "components")
+        return self.components
+
+    @factors.setter
+    def factors(self, value):
+        self._warn_deprecated("factors", "components")
+        self.components = value
+
+    @property
+    def loadings(self):
+        """Deprecated: use :attr:`scores` instead.
+
+        .. versionadded:: 2.5.0
+        """
+        self._warn_deprecated("loadings", "scores")
+        return self.scores
+
+    @loadings.setter
+    def loadings(self, value):
+        self._warn_deprecated("loadings", "scores")
+        self.scores = value
+
+    @property
+    def bss_factors(self):
+        """Deprecated: use :attr:`bss_components` instead.
+
+        .. versionadded:: 2.5.0
+        """
+        self._warn_deprecated("bss_factors", "bss_components")
+        return self.bss_components
+
+    @bss_factors.setter
+    def bss_factors(self, value):
+        self._warn_deprecated("bss_factors", "bss_components")
+        self.bss_components = value
+
+    @property
+    def bss_loadings(self):
+        """Deprecated: use :attr:`bss_scores` instead.
+
+        .. versionadded:: 2.5.0
+        """
+        self._warn_deprecated("bss_loadings", "bss_scores")
+        return self.bss_scores
+
+    @bss_loadings.setter
+    def bss_loadings(self, value):
+        self._warn_deprecated("bss_loadings", "bss_scores")
+        self.bss_scores = value
+
+    @property
+    def on_loadings(self):
+        """Deprecated: use :attr:`on_scores` instead.
+
+        .. versionadded:: 2.5.0
+        """
+        self._warn_deprecated("on_loadings", "on_scores")
+        return self.on_scores
+
+    @on_loadings.setter
+    def on_loadings(self, value):
+        self._warn_deprecated("on_loadings", "on_scores")
+        self.on_scores = value
+
+    @staticmethod
+    def _warn_deprecated(old_name, new_name):
+        warnings.warn(
+            f"`{old_name}` is deprecated and will be removed in HyperSpy "
+            f"v3.0. Use `{new_name}` instead.",
+            VisibleDeprecationWarning,
+        )
 
     def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis.
@@ -2907,14 +2993,43 @@ class LearningResults(object):
             If None (default), prompt user if file exists.
 
         """
+        # Use an explicit allowlist of canonical attribute names to avoid
+        # triggering property-deprecation warnings during serialisation.
+        _saveable = (
+            "components",
+            "scores",
+            "explained_variance",
+            "explained_variance_ratio",
+            "number_significant_components",
+            "decomposition_algorithm",
+            "poissonian_noise_normalized",
+            "output_dimension",
+            "mean",
+            "centre",
+            "cluster_membership",
+            "cluster_labels",
+            "cluster_centers",
+            "cluster_centers_estimated",
+            "cluster_algorithm",
+            "number_of_clusters",
+            "estimated_number_of_clusters",
+            "cluster_metric_data",
+            "cluster_metric_index",
+            "cluster_metric",
+            "bss_algorithm",
+            "unmixing_matrix",
+            "bss_components",
+            "bss_scores",
+            "unfolded",
+            "original_shape",
+            "navigation_mask",
+            "signal_mask",
+            "on_scores",
+        )
         kwargs = {}
-        for attribute in [
-            v
-            for v in dir(self)
-            if not isinstance(getattr(self, v), types.MethodType)
-            and not v.startswith("_")
-        ]:
-            kwargs[attribute] = self.__getattribute__(attribute)
+        for name in _saveable:
+            if name in self.__dict__:
+                kwargs[name] = self.__dict__[name]
         # Check overwrite
         if overwrite is None:
             overwrite = path.overwrite(filename)
@@ -2940,45 +3055,64 @@ class LearningResults(object):
             # Unwrap values stored as 0D numpy arrays to raw datatypes
             if isinstance(value, np.ndarray) and value.ndim == 0:
                 value = value.item()
-            setattr(self, key, value)
+            # Use __dict__ to avoid triggering property-deprecation warnings
+            self.__dict__[key] = value
 
         _logger.info(f"Loaded results from {filename}")
 
-        # For compatibility with old version
-        if hasattr(self, "algorithm"):
-            self.decomposition_algorithm = self.algorithm
-            del self.algorithm
-        if hasattr(self, "V"):
-            self.explained_variance = self.V
-            del self.V
-        if hasattr(self, "w"):
-            self.unmixing_matrix = self.w
-            del self.w
-        if hasattr(self, "variance2one"):
-            del self.variance2one
-        if hasattr(self, "centered"):
-            del self.centered
-        if hasattr(self, "pca_algorithm"):
-            self.decomposition_algorithm = self.pca_algorithm
-            del self.pca_algorithm
-        if hasattr(self, "ica_algorithm"):
-            self.bss_algorithm = self.ica_algorithm
-            del self.ica_algorithm
-        if hasattr(self, "v"):
-            self.loadings = self.v
-            del self.v
-        if hasattr(self, "scores"):
-            self.loadings = self.scores
-            del self.scores
-        if hasattr(self, "pc"):
-            self.loadings = self.pc
-            del self.pc
-        if hasattr(self, "ica_scores"):
-            self.bss_loadings = self.ica_scores
-            del self.ica_scores
-        if hasattr(self, "ica_factors"):
-            self.bss_factors = self.ica_factors
-            del self.ica_factors
+        # For compatibility with old version — use __dict__ throughout to
+        # bypass property setters and avoid spurious deprecation warnings.
+        _d = self.__dict__
+        if "algorithm" in _d:
+            self.decomposition_algorithm = _d["algorithm"]
+            del _d["algorithm"]
+        if "V" in _d:
+            self.explained_variance = _d["V"]
+            del _d["V"]
+        if "w" in _d:
+            self.unmixing_matrix = _d["w"]
+            del _d["w"]
+        if "variance2one" in _d:
+            del _d["variance2one"]
+        if "centered" in _d:
+            del _d["centered"]
+        if "pca_algorithm" in _d:
+            self.decomposition_algorithm = _d["pca_algorithm"]
+            del _d["pca_algorithm"]
+        if "ica_algorithm" in _d:
+            self.bss_algorithm = _d["ica_algorithm"]
+            del _d["ica_algorithm"]
+        if "v" in _d:
+            _d["scores"] = _d["v"]
+            del _d["v"]
+        # NOTE: the pre-2.5 migration ``scores → loadings`` has been
+        # removed because ``scores`` is now the canonical name.
+        # Keeping it would silently corrupt new-format data.
+        if "pc" in _d:
+            _d["scores"] = _d["pc"]
+            del _d["pc"]
+        if "ica_scores" in _d:
+            _d["bss_scores"] = _d["ica_scores"]
+            del _d["ica_scores"]
+        if "ica_factors" in _d:
+            _d["bss_components"] = _d["ica_factors"]
+            del _d["ica_factors"]
+        # Migrate pre-2.5 attribute names to the new canonical names.
+        if "factors" in _d:
+            _d["components"] = _d["factors"]
+            del _d["factors"]
+        if "loadings" in _d:
+            _d["scores"] = _d["loadings"]
+            del _d["loadings"]
+        if "bss_factors" in _d:
+            _d["bss_components"] = _d["bss_factors"]
+            del _d["bss_factors"]
+        if "bss_loadings" in _d:
+            _d["bss_scores"] = _d["bss_loadings"]
+            del _d["bss_loadings"]
+        if "on_loadings" in _d:
+            _d["on_scores"] = _d["on_loadings"]
+            del _d["on_loadings"]
 
         # Log summary
         self.summary()
@@ -3033,20 +3167,20 @@ class LearningResults(object):
 
         """
         _logger.info(f"Trimming results to {n} dimensions")
-        self.loadings = self.loadings[:, :n]
+        self.scores = self.scores[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]
-        self.factors = self.factors[:, :n]
+        self.components = self.components[:, :n]
         if compute:
-            self.loadings = self.loadings.compute()
-            self.factors = self.factors.compute()
+            self.scores = self.scores.compute()
+            self.components = self.components.compute()
             if self.explained_variance is not None:
                 self.explained_variance = self.explained_variance.compute()
 
     def _transpose_results(self):
-        (self.factors, self.loadings, self.bss_factors, self.bss_loadings) = (
-            self.loadings,
-            self.factors,
-            self.bss_loadings,
-            self.bss_factors,
+        (self.components, self.scores, self.bss_components, self.bss_scores) = (
+            self.scores,
+            self.components,
+            self.bss_scores,
+            self.bss_components,
         )

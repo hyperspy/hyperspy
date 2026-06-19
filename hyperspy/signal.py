@@ -998,16 +998,16 @@ class MVATools(object):
                 "You can use "
                 "`plot_decomposition_results` instead."
             )
-        if self.learning_results.factors is None:
+        if self.learning_results.components is None:
             raise RuntimeError(
                 "No learning results found. A 'decomposition' "
                 "needs to be performed first."
             )
         if same_window is None:
             same_window = True
-        if self.learning_results.factors is None:
+        if self.learning_results.components is None:
             raise RuntimeError("Run a decomposition first.")
-        factors = self.learning_results.factors
+        factors = self.learning_results.components
         if comp_ids is None:
             if self.learning_results.output_dimension:
                 comp_ids = self.learning_results.output_dimension
@@ -1083,7 +1083,7 @@ class MVATools(object):
                 "You can use "
                 "`plot_decomposition_results` instead."
             )
-        if self.learning_results.bss_factors is None:
+        if self.learning_results.bss_components is None:
             raise RuntimeError(
                 "No learning results found. A "
                 "'blind_source_separation' needs to be "
@@ -1092,7 +1092,7 @@ class MVATools(object):
 
         if same_window is None:
             same_window = True
-        factors = self.learning_results.bss_factors
+        factors = self.learning_results.bss_components
         if title is None:
             title = self._get_plot_title("BSS factors of", same_window=same_window)
 
@@ -1176,18 +1176,18 @@ class MVATools(object):
                 "You can use "
                 "`plot_decomposition_results` instead."
             )
-        if self.learning_results.loadings is None:
+        if self.learning_results.scores is None:
             raise RuntimeError(
                 "No learning results found. A 'decomposition' "
                 "needs to be performed first."
             )
         if same_window is None:
             same_window = True
-        if self.learning_results.loadings is None:
+        if self.learning_results.scores is None:
             raise RuntimeError("Run a decomposition first.")
-        loadings = self.learning_results.loadings.T
+        loadings = self.learning_results.scores.T
         if with_factors:
-            factors = self.learning_results.factors
+            factors = self.learning_results.components
         else:
             factors = None
 
@@ -1285,7 +1285,7 @@ class MVATools(object):
                 "You can use "
                 "`plot_bss_results` instead."
             )
-        if self.learning_results.bss_loadings is None:
+        if self.learning_results.bss_scores is None:
             raise RuntimeError(
                 "No learning results found. A "
                 "'blind_source_separation' needs to be "
@@ -1295,9 +1295,9 @@ class MVATools(object):
             same_window = True
         if title is None:
             title = self._get_plot_title("BSS loadings of", same_window=same_window)
-        loadings = self.learning_results.bss_loadings.T
+        loadings = self.learning_results.bss_scores.T
         if with_factors:
-            factors = self.learning_results.bss_factors
+            factors = self.learning_results.bss_components
         else:
             factors = None
         return self._plot_loadings(
@@ -1413,8 +1413,8 @@ class MVATools(object):
         get_decomposition_factors, get_decomposition_loadings
         """
 
-        factors = self.learning_results.factors
-        loadings = self.learning_results.loadings.T
+        factors = self.learning_results.components
+        loadings = self.learning_results.scores.T
         self._export_factors(
             factors,
             folder=folder,
@@ -1669,8 +1669,8 @@ class MVATools(object):
         get_bss_factors, get_bss_loadings
         """
 
-        factors = self.learning_results.bss_factors
-        loadings = self.learning_results.bss_loadings.T
+        factors = self.learning_results.bss_components
+        loadings = self.learning_results.bss_scores.T
         self._export_factors(
             factors,
             folder=folder,
@@ -1750,9 +1750,9 @@ class MVATools(object):
         get_decomposition_factors, export_decomposition_results
 
         """
-        if self.learning_results.loadings is None:
+        if self.learning_results.scores is None:
             raise RuntimeError("Run a decomposition first.")
-        signal = self._get_loadings(self.learning_results.loadings)
+        signal = self._get_loadings(self.learning_results.scores)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = (
             "Decomposition loadings of " + self.metadata.General.title
@@ -1771,9 +1771,9 @@ class MVATools(object):
         get_decomposition_loadings, export_decomposition_results
 
         """
-        if self.learning_results.factors is None:
+        if self.learning_results.components is None:
             raise RuntimeError("Run a decomposition first.")
-        signal = self._get_factors(self.learning_results.factors)
+        signal = self._get_factors(self.learning_results.components)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = (
             "Decomposition factors of " + self.metadata.General.title
@@ -1792,7 +1792,7 @@ class MVATools(object):
         get_bss_factors, export_bss_results
 
         """
-        signal = self._get_loadings(self.learning_results.bss_loadings)
+        signal = self._get_loadings(self.learning_results.bss_scores)
         signal.axes_manager[0].name = "BSS component index"
         signal.metadata.General.title = "BSS loadings of " + self.metadata.General.title
         return signal
@@ -1809,7 +1809,7 @@ class MVATools(object):
         get_bss_loadings, export_bss_results
 
         """
-        signal = self._get_factors(self.learning_results.bss_factors)
+        signal = self._get_factors(self.learning_results.bss_components)
         signal.axes_manager[0].name = "BSS component index"
         signal.metadata.General.title = "BSS factors of " + self.metadata.General.title
         return signal
