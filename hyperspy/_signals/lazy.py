@@ -29,6 +29,9 @@ from rsciio.utils import file
 
 from hyperspy import signals
 from hyperspy.docstrings.signal import (
+    DECOMP_MASK_DOC,
+    DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
+    DECOMP_PRINT_INFO_DOC,
     LAZYSIGNAL_DOC,
     MANY_AXIS_PARAMETER,
     RECHUNK_ARG,
@@ -899,20 +902,710 @@ class LazySignal(signals.BaseSignal):
                     chunk.shape[:-1] + self.axes_manager.signal_shape[::-1]
                 )
 
+    def normalize_poissonian_noise(self, navigation_mask=None, signal_mask=None):
+        """Normalize the signal under the assumption of Poisson noise.
+
+        Scales the signal to normalise Poisson noise for subsequent
+        decomposition analysis as described in [Keenan2004]_.  The scaling
+        is performed lazily so the full dataset is never loaded into memory.
+
+        The Keenan-Kotula scaling computes::
+
+            D_scaled[i, j] = D[i, j] / (sqrt(aG[i]) * sqrt(bH[j]))
+
+        where ``aG[i]`` is the total counts for navigation position ``i``
+        (summed over unmasked signal channels) and ``bH[j]`` is the total
+        counts for signal channel ``j`` (summed over unmasked navigation
+        positions).
+
+        The square-root arrays ``sqrt(aG)`` and ``sqrt(bH)`` are stored as
+        ``self._root_aG`` and ``self._root_bH`` so that
+        :py:meth:`decomposition` can rescale the components and scores back to
+        the original data space after decomposition.
+
+        Parameters
+        ----------
+        navigation_mask : {None, boolean numpy array or BaseSignal}, default None
+            Navigation positions marked as ``True`` are excluded from the
+            computation of the scaling coefficients and are not scaled.
+        signal_mask : {None, boolean numpy array or BaseSignal}, default None
+            Signal channels marked as ``True`` are excluded from the
+            computation of the scaling coefficients and are not scaled.
+
+        Raises
+        ------
+        ValueError
+            If all data points are masked or if negative values are found
+            in the (unmasked) data.
+
+        References
+        ----------
+        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+            in the multivariate analysis of ToF-SIMS spectrum images", Surf.
+            Interface Anal 36(3) (2004): 203-212.
+
+        See Also
+        --------
+        :meth:`~hyperspy.api.signals.BaseSignal.normalize_poissonian_noise` :
+            Non-lazy equivalent.
+        """
+        import dask.array as da
+
+        _logger.info("Scaling the data to normalize Poissonian noise")
+
+        # Convert masks from HyperSpy navigation_shape / signal_shape order to
+        # underlying array axis order.  BaseSignal masks expose .data already
+        # in array order; numpy/dask masks are provided in navigation_shape
+        # order (HyperSpy convention) and must be transposed.
+        if isinstance(navigation_mask, signals.BaseSignal):
+            navigation_mask = navigation_mask.data
+        elif navigation_mask is not None and hasattr(navigation_mask, "T"):
+            navigation_mask = navigation_mask.T
+
+        if isinstance(signal_mask, signals.BaseSignal):
+            signal_mask = signal_mask.data
+
+        data = self._data_aligned_with_axes
+        ndim = self.axes_manager.navigation_dimension
+        sdim = self.axes_manager.signal_dimension
+
+        # Ensure masks are dask arrays with matching chunks so the shared
+        # function can infer the backend correctly.
+        nav_chunks = data.chunks[:ndim]
+        sig_chunks = data.chunks[ndim:]
+
+        if navigation_mask is not None and not isinstance(navigation_mask, da.Array):
+            navigation_mask = da.from_array(navigation_mask, chunks=nav_chunks)
+        if signal_mask is not None and not isinstance(signal_mask, da.Array):
+            signal_mask = da.from_array(signal_mask, chunks=sig_chunks)
+
+        from hyperspy.learn._mva import _keenan_kotula_scale
+
+        self.data, self._root_aG, self._root_bH = _keenan_kotula_scale(
+            data, navigation_mask, signal_mask, ndim, sdim
+        )
+
+    def _decomposition_svd_matrix(
+        self, svd_solver, centre, output_dimension, navigation_mask, signal_mask
+    ):
+        """Run SVD (full or randomized) on the unfolded 2-D data matrix.
+
+        Unfolds the signal, resolves navigation and signal masks to 1-D
+        boolean arrays, applies centring if requested, computes the SVD
+        via either ``da.linalg.svd`` (full) or ``da.linalg.svd_compressed``
+        (randomized), and folds the signal back.
+
+        Parameters
+        ----------
+        svd_solver : str
+            ``"full"`` or ``"randomized"``.
+        centre : str or None
+            Centring strategy (``"navigation"``, ``"signal"``, or ``None``).
+        output_dimension : int or None
+            Number of components; required for ``"randomized"``.
+        navigation_mask : various or None
+            Navigation mask; may be mutated to array order.
+        signal_mask : various or None
+            Signal mask; may be mutated to array order.
+
+        Returns
+        -------
+        dict
+            Keys: ``scores``, ``components``, ``explained_variance``, ``mean``,
+            ``nav_mask_1d``, ``sig_mask_1d``, ``navigation_mask``,
+            ``signal_mask``, ``_navigation_mask_for_reproject``,
+            ``_D_unfolded``.
+        """
+        import dask
+        import dask.array as da
+
+        # Initialise all variables that are set inside the try block so
+        # the finally / return blocks never see an UnboundLocalError.
+        scores = None
+        components = None
+        explained_variance = None
+        mean = None
+        nav_mask_1d = None
+        sig_mask_1d = None
+        _navigation_mask_for_reproject = navigation_mask
+        _D_unfolded = None
+
+        try:
+            self._unfolded4decomposition = self.unfold()
+
+            # Resolve navigation mask to a 1-D boolean numpy array.
+            nav_mask_1d = None
+            if navigation_mask is not None:
+                if isinstance(navigation_mask, signals.BaseSignal):
+                    _nm = navigation_mask.data
+                elif hasattr(navigation_mask, "T"):
+                    _nm = navigation_mask.T
+                else:
+                    _nm = navigation_mask
+                # Keep the shaped mask for _block_iterator/_project_scores,
+                # which expect a navigation-shaped mask; use the flattened
+                # version only where a 1-D boolean array is required.
+                _navigation_mask_for_reproject = _nm
+                if isinstance(_nm, da.Array):
+                    nav_mask_1d = _nm.ravel().compute().astype(bool)
+                else:
+                    nav_mask_1d = np.asarray(_nm).ravel().astype(bool)
+                # Update navigation_mask to array order so downstream
+                # _to_flat_bool calls get the correct ravel order for 2-D
+                # navigation spaces.
+                navigation_mask = _nm
+
+            # Resolve signal mask to a 1-D boolean numpy array.
+            sig_mask_1d = None
+            if signal_mask is not None:
+                if isinstance(signal_mask, signals.BaseSignal):
+                    _sm = signal_mask.data
+                else:
+                    _sm = signal_mask
+                if isinstance(_sm, da.Array):
+                    sig_mask_1d = _sm.ravel().compute().astype(bool)
+                else:
+                    sig_mask_1d = np.asarray(_sm).ravel().astype(bool)
+                signal_mask = _sm
+
+            # Build the data matrix, applying masks if present.
+            # After unfold() self.data is 2-D: (nav, sig).
+            D = self.data  # dask array (nav, sig)
+            # Keep an unmasked reference for reproject use (after fold
+            # self.data is N-D again, so we capture it here).
+            _D_unfolded = self.data
+            if nav_mask_1d is not None:
+                D = D[~nav_mask_1d, :]
+            if sig_mask_1d is not None:
+                D = D[:, ~sig_mask_1d]
+
+            if svd_solver == "full":
+                import warnings
+
+                from hyperspy.exceptions import VisibleDeprecationWarning
+
+                warnings.warn(
+                    "svd_solver='full' is deprecated and will be removed in "
+                    "HyperSpy 3.0.  Use svd_solver='randomized' instead, "
+                    "which gives identical results for truncated SVD with "
+                    "substantially lower memory usage.",
+                    VisibleDeprecationWarning,
+                    stacklevel=2,
+                )
+                if centre == "navigation":
+                    mean = D.mean(axis=0, keepdims=True).compute()
+                    D = D - mean
+                elif centre == "signal":
+                    mean = D.mean(axis=1, keepdims=True).compute()
+                    D = D - mean
+                else:
+                    mean = None
+
+                if D.numblocks[1] > 1:
+                    D = D.rechunk({1: -1})
+                U, S, V = da.linalg.svd(D)
+                if output_dimension is not None:
+                    U = U[:, :output_dimension]
+                    S = S[:output_dimension]
+                    V = V[:output_dimension]
+                components = V.T
+                explained_variance = S**2 / D.shape[0]
+                scores = U * S
+            else:  # randomized
+                if centre == "navigation":
+                    mean = D.mean(axis=0, keepdims=True).compute()
+                    D = D - mean
+                elif centre == "signal":
+                    mean = D.mean(axis=1, keepdims=True).compute()
+                    D = D - mean
+                else:
+                    mean = None
+
+                # Use the synchronous scheduler for svd_compressed to
+                # avoid materialising the full dataset in memory.  The
+                # default threaded scheduler fires all rows of D @ Omega
+                # simultaneously, producing a peak-memory spike equal to
+                # the full data size.  Synchronous processes one row at a
+                # time and is actually faster here because there is no
+                # I/O to overlap — every chunk is a CPU-bound matmul.
+                with dask.config.set(scheduler="synchronous"):
+                    U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
+                    U, S, V = dask.compute(U, S, V)
+
+                components = V.T  # (n_unmasked_sig, output_dimension)
+                explained_variance = S**2 / D.shape[0]
+                scores = U * S
+        finally:
+            if self._unfolded4decomposition is True:
+                self.fold()
+                # BUGFIX: was ``is False`` (identity comparison, always
+                # no-op); must be ``= False`` assignment to clear the flag
+                # so the signal does not remain permanently unfolded.
+                self._unfolded4decomposition = False
+
+        return {
+            "scores": scores,
+            "components": components,
+            "explained_variance": explained_variance,
+            "mean": mean,
+            "nav_mask_1d": nav_mask_1d,
+            "sig_mask_1d": sig_mask_1d,
+            "navigation_mask": navigation_mask,
+            "signal_mask": signal_mask,
+            "_navigation_mask_for_reproject": _navigation_mask_for_reproject,
+            "_D_unfolded": _D_unfolded,
+        }
+
+    def _decomposition_reproject_signal(
+        self,
+        algorithm,
+        svd_solver,
+        reproject,
+        scores,
+        components,
+        mean,
+        centre,
+        _D_unfolded,
+        nav_mask_1d,
+        _navigation_mask_for_reproject,
+        _flat_sig_mask,
+        _flat_nav_mask,
+        get,
+        nblocks,
+    ):
+        """Reproject components over the full (unmasked) signal space.
+
+        Recomputes *components* by projecting the full signal data through
+        the pseudo-inverse of the (unmasked-navigation) scores.
+        Supports both dask-based (``svd_solver='full'``) and eager
+        (chunk-loop) paths.
+
+        Parameters
+        ----------
+        algorithm : str
+            Decomposition algorithm name.
+        svd_solver : str
+            SVD backend (``"full"``, ``"randomized"``, ``"incremental"``).
+        reproject : str
+            Must be ``"signal"`` or ``"both"``.
+        scores : ndarray or dask Array
+            Current scores (unmasked navigation rows).
+        components : ndarray or dask Array
+            Current components (may be overwritten).
+        mean : ndarray or None
+            Per-channel or per-pixel mean from centring.
+        centre : str or None
+            Centring strategy.
+        _D_unfolded : dask Array
+            Unfolded (nav, sig) data matrix, captured before fold().
+        nav_mask_1d : ndarray or None
+            Flat boolean navigation mask (True = excluded).
+        _navigation_mask_for_reproject : various or None
+            Navigation mask in a form suitable for _block_iterator.
+        _flat_sig_mask : ndarray or None
+            Flat boolean signal mask (True = excluded).
+        _flat_nav_mask : ndarray or None
+            Flat boolean navigation mask for result indexing.
+        get : dask scheduler
+        nblocks : int
+            Number of navigation blocks.
+
+        Returns
+        -------
+        components : ndarray
+            Re-projected components covering the full signal space.
+        """
+        if algorithm == "SVD" and svd_solver == "full":
+            import dask.array as da
+
+            D_sig = _D_unfolded  # (nav, sig)
+            if nav_mask_1d is not None:
+                D_sig = D_sig[~nav_mask_1d, :]
+            if mean is not None and centre == "navigation":
+                D_sig = D_sig - mean
+            if reproject == "both":
+                # scores covers all nav after nav-reproject; restrict
+                # to unmasked rows before computing pinv.
+                if _flat_nav_mask is not None:
+                    L = scores[~_flat_nav_mask, :]
+                else:
+                    L = scores
+            else:
+                L = scores  # already unmasked-nav only
+            # pinv(L) is (k, n_unmasked_nav) — small; compute eagerly.
+            pinv_L = np.linalg.pinv(L.compute() if isinstance(L, da.Array) else L)
+            # (k, n_unmasked_nav) @ (n_unmasked_nav, sig) = (k, sig)
+            # Dask streams over nav chunks; result is small.
+            components = (da.from_array(pinv_L) @ D_sig).T.compute()
+        else:
+            from hyperspy.external.progressbar import progressbar
+            from hyperspy.learn._mva import _reproject_signal_components
+
+            # Collect all navigation-unmasked rows with the full signal
+            # (no signal mask), then solve: components = pinv(L) @ D_full
+            D_chunks = []
+            for chunk in progressbar(
+                self._block_iterator(
+                    flat_signal=True,
+                    get=get,
+                    signal_mask=None,
+                    navigation_mask=_navigation_mask_for_reproject,
+                ),
+                total=nblocks,
+                leave=True,
+                desc="Reproject signal",
+            ):
+                D_chunks.append(chunk)
+            D = np.concatenate(D_chunks, axis=0)  # (n_unmasked_nav, sig_size)
+            if mean is not None:
+                # mean may be 2-D (keepdims=True from centre='navigation');
+                # ravel to 1-D so length and boolean-index assignment work.
+                mean_1d = np.asarray(mean).ravel()
+                # mean_1d was computed over unmasked signal channels only;
+                # expand to full signal size (zeros at masked positions)
+                # so it can be broadcast against D which covers all channels.
+                if _flat_sig_mask is not None and len(mean_1d) < D.shape[1]:
+                    mean_full = np.zeros(D.shape[1], dtype=mean_1d.dtype)
+                    mean_full[~_flat_sig_mask] = mean_1d
+                    D = D - mean_full
+                else:
+                    D = D - mean_1d
+            if reproject == "both":
+                if _flat_nav_mask is not None:
+                    L = scores[~_flat_nav_mask, :]
+                else:
+                    L = scores
+            else:
+                L = scores  # already unmasked-nav only
+            components = _reproject_signal_components(D, L)
+        return components
+
+    def _project_scores(self, obj, desc, navigation_mask, signal_mask, get, nblocks):
+        """Project data chunks through *obj.transform* and concatenate.
+
+        Iterates over navigation blocks via :meth:`_block_iterator`, calls
+        ``obj.transform()`` on each chunk, and returns the concatenated
+        scores array.  Used by ISVD, PCA, NMF, ORPCA, ORNMF, and custom
+        estimators after fitting.
+
+        Parameters
+        ----------
+        obj : estimator
+            Fitted estimator with a ``transform`` method.
+        desc : str
+            Progress-bar label.
+        navigation_mask : various or None
+            Navigation mask for :meth:`_block_iterator`.
+        signal_mask : various or None
+            Signal mask for :meth:`_block_iterator`.
+        get : dask scheduler
+        nblocks : int
+            Number of navigation blocks.
+
+        Returns
+        -------
+        ndarray
+            Concatenated scores, shape ``(n_nav, n_components)``.
+        """
+        H = []
+        for chunk in progressbar(
+            self._block_iterator(
+                flat_signal=True,
+                get=get,
+                signal_mask=signal_mask,
+                navigation_mask=navigation_mask,
+            ),
+            total=nblocks,
+            leave=True,
+            desc=desc,
+        ):
+            H.append(obj.transform(chunk))
+        return np.concatenate(H, axis=0)
+
+    def _decomposition_reproject_navigation(
+        self,
+        reproject,
+        algorithm,
+        svd_solver,
+        scores,
+        components,
+        mean,
+        centre,
+        _D_unfolded,
+        sig_mask_1d,
+        obj,
+        signal_mask,
+        get,
+        nblocks,
+        _navigation_mask_for_reproject,
+    ):
+        """Reproject scores over the full (unmasked) navigation space.
+
+        Recomputes *scores* by projecting the full navigation data through
+        the learned components.  Supports three paths: dask matmul for
+        ``svd_solver='full'``, dask matmul for ``svd_solver='randomized'``,
+        and a ``obj.transform`` chunk-loop for other algorithms.  Also
+        handles the ``reproject=None`` default (project for non-SVD).
+
+        Parameters
+        ----------
+        reproject : str or None
+            ``"navigation"``, ``"both"``, or ``None``.
+        algorithm : str
+            Decomposition algorithm name.
+        svd_solver : str
+            SVD backend.
+        scores : ndarray or dask Array
+            Current scores (may be overwritten with full-nav scores).
+        components : ndarray or dask Array
+            Learned components (signal × components).
+        mean : ndarray or None
+            Per-channel mean from centring.
+        centre : str or None
+            Centring strategy.
+        _D_unfolded : dask Array or None
+            Unfolded (nav, sig) data matrix, captured before fold().
+        sig_mask_1d : ndarray or None
+            Flat boolean signal mask (True = excluded).
+        obj : estimator or None
+            Fitted estimator with a ``transform`` method.
+        signal_mask : various or None
+            Signal mask for ``_project_scores``.
+        get : dask scheduler
+        nblocks : int
+            Number of navigation blocks.
+        _navigation_mask_for_reproject : various or None
+            Navigation mask for the default projection pass.
+
+        Returns
+        -------
+        scores : ndarray or dask Array
+            Scores covering the full navigation space.
+        _nav_reprojected : bool
+            ``True`` if navigation reprojection was performed.
+        """
+        _nav_reprojected = False
+        if reproject in ("navigation", "both"):
+            if algorithm == "SVD" and svd_solver == "full":
+                import dask.array as da
+
+                from hyperspy.learn._mva import _reproject_navigation_scores
+
+                D_nav = _D_unfolded  # (nav, sig)
+                if sig_mask_1d is not None:
+                    D_nav = D_nav[:, ~sig_mask_1d]
+                if mean is not None and centre == "navigation":
+                    D_nav = D_nav - mean
+                _components_da = (
+                    components
+                    if isinstance(components, da.Array)
+                    else da.from_array(components)
+                )
+                # Dask matmul — streams over nav chunks without
+                # materialising the full matrix.  .compute() only
+                # materialises the small (nav × k) scores array.
+                scores = _reproject_navigation_scores(D_nav, _components_da).compute()
+            elif algorithm == "SVD" and svd_solver == "randomized":
+                import dask.array as da
+
+                from hyperspy.learn._mva import _reproject_navigation_scores
+
+                D_nav = _D_unfolded  # (nav, sig)
+                if sig_mask_1d is not None:
+                    D_nav = D_nav[:, ~sig_mask_1d]
+                if mean is not None and centre == "navigation":
+                    D_nav = D_nav - mean
+                _components_da = (
+                    components
+                    if isinstance(components, da.Array)
+                    else da.from_array(components)
+                )
+                # Same least-squares formula as full SVD; only the factor
+                # matrix was computed by a different solver.
+                scores = _reproject_navigation_scores(D_nav, _components_da).compute()
+            else:
+                # Non-SVD algorithms (PCA, NMF, ORPCA, ORNMF, custom):
+                # use the estimator's transform() on each chunk.
+                try:
+                    scores = self._project_scores(
+                        obj, "Reproject", None, signal_mask, get, nblocks
+                    )
+                except KeyboardInterrupt:  # pragma: no cover
+                    pass
+            _nav_reprojected = True
+        elif reproject is None:
+            # Default behaviour: for non-SVD algorithms, project to get
+            # scores (preserves the pre-existing default of
+            # reproject=True).  SVD already computed scores during the
+            # learn pass, so nothing extra is needed.
+            if algorithm != "SVD":
+                try:
+                    scores = self._project_scores(
+                        obj,
+                        "Project",
+                        _navigation_mask_for_reproject,
+                        signal_mask,
+                        get,
+                        nblocks,
+                    )
+                except KeyboardInterrupt:  # pragma: no cover
+                    pass
+        return scores, _nav_reprojected
+
+    def _store_decomposition_results(
+        self,
+        explained_variance,
+        explained_variance_ratio,
+        components,
+        scores,
+        mean,
+        centre,
+        navigation_mask,
+        signal_mask,
+        algorithm,
+        svd_solver,
+        obj,
+        output_dimension,
+        normalize_poissonian_noise,
+        _flat_nav_mask,
+        _flat_sig_mask,
+        _nav_reprojected,
+        _signal_reprojected,
+        print_info,
+        to_print,
+        return_info,
+    ):
+        """Store decomposition results in ``learning_results`` and finalise.
+
+        Computes explained variance ratio and elbow, normalises masks,
+        stores all attributes in ``self.learning_results``, applies
+        Poisson-noise rescaling, NaN-fills excluded positions, prints
+        decomposition info, and returns the ``return_info`` object.
+
+        Parameters
+        ----------
+        explained_variance : ndarray or None
+        explained_variance_ratio : ndarray or None
+        components : ndarray or dask Array
+        scores : ndarray or dask Array
+        mean : ndarray or None
+        centre : str or None
+        navigation_mask : various or None
+        signal_mask : various or None
+        algorithm : str or object
+        svd_solver : str
+        obj : estimator or None
+        output_dimension : int or None
+        normalize_poissonian_noise : bool
+        _flat_nav_mask : ndarray or None
+        _flat_sig_mask : ndarray or None
+        _nav_reprojected : bool
+        _signal_reprojected : bool
+        print_info : bool
+        to_print : list of str
+        return_info : bool
+
+        Returns
+        -------
+        object or None
+            The fitted estimator if ``return_info`` is ``True`` and the
+            algorithm supports it, else ``None``.
+        """
+        from hyperspy.learn._mva import _nan_expand_rows, _to_flat_bool
+
+        target = self.learning_results
+
+        # explained variance ratio and elbow estimate
+        if explained_variance is not None and explained_variance_ratio is None:
+            (
+                explained_variance_ratio,
+                number_significant_components,
+            ) = self._compute_explained_variance_ratio(explained_variance)
+        elif explained_variance_ratio is not None:
+            number_significant_components = int(
+                self.estimate_elbow_position(explained_variance_ratio) + 1
+            )
+        else:
+            number_significant_components = None
+
+        # normalise masks to flat bool arrays
+        nav_size = self.axes_manager.navigation_size
+        sig_size = self.axes_manager.signal_size
+        flat_nav_mask = _to_flat_bool(navigation_mask)
+        flat_sig_mask = _to_flat_bool(signal_mask)
+
+        # store core results
+        target.decomposition_algorithm = algorithm
+        _stored_output_dim = (
+            output_dimension
+            if output_dimension is not None
+            else (components.shape[1] if components is not None else None)
+        )
+        target.output_dimension = _stored_output_dim
+        target.poissonian_noise_normalized = normalize_poissonian_noise
+        target.explained_variance = explained_variance
+        target.explained_variance_ratio = explained_variance_ratio
+        target.number_significant_components = number_significant_components
+        target.centre = centre
+        target.mean = mean
+        target.unmixing_matrix = None
+        target.bss_algorithm = None
+        if algorithm != "SVD":
+            target._object = obj
+
+        # rescale if Poisson noise was normalised
+        if normalize_poissonian_noise:
+            root_bH_flat = self._root_bH.ravel().compute()
+            if _flat_sig_mask is not None and not _signal_reprojected:
+                root_bH_flat = root_bH_flat[~_flat_sig_mask]
+            components = components * root_bH_flat[:, np.newaxis]
+            root_aG_flat = self._root_aG.ravel().compute()
+            if _flat_nav_mask is not None and not _nav_reprojected:
+                root_aG_flat = root_aG_flat[~_flat_nav_mask]
+            scores = scores * root_aG_flat[:, np.newaxis]
+
+        # store masks and NaN-fill excluded positions
+        if flat_sig_mask is not None:
+            target.signal_mask = flat_sig_mask.reshape(
+                self.axes_manager._signal_shape_in_array
+            )
+            if not _signal_reprojected:
+                components = _nan_expand_rows(components, flat_sig_mask, sig_size)
+
+        if flat_nav_mask is not None:
+            target.navigation_mask = flat_nav_mask.reshape(
+                self.axes_manager._navigation_shape_in_array
+            )
+            if not _nav_reprojected:
+                scores = _nan_expand_rows(scores, flat_nav_mask, nav_size)
+
+        target.components = components
+        target.scores = scores
+
+        if print_info:
+            print("\n".join([str(pr) for pr in to_print]))
+
+        if return_info:
+            return obj if algorithm != "SVD" or svd_solver == "incremental" else None
+
     def decomposition(
         self,
         normalize_poissonian_noise=False,
         algorithm="SVD",
         output_dimension=None,
+        centre=None,
+        auto_transpose=True,
         signal_mask=None,
         navigation_mask=None,
         get=None,
         num_chunks=None,
-        reproject=True,
+        reproject=None,
+        return_info=False,
         print_info=True,
+        svd_solver="randomized",
         **kwargs,
     ):
-        """Perform Incremental (Batch) decomposition on the data.
+        """Apply decomposition to a lazy dataset.
 
         The results are stored in the
         :attr:`~.api.signals.BaseSignal.learning_results`
@@ -922,67 +1615,280 @@ class LazySignal(signals.BaseSignal):
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool, default False
-            If True, scale the signal to normalize Poissonian noise using
-            the approach described in [KeenanKotula2004]_.
-        algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF'}, default 'SVD'
-            The decomposition algorithm to use.
+        %s
+        algorithm : {'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF'} or object, default 'SVD'
+            The decomposition algorithm to use. In addition to the named
+            algorithms, any object that implements ``partial_fit`` (and
+            ``transform`` or ``fit_transform``) can be passed directly and
+            will be used as an out-of-core estimator; objects that only
+            implement ``fit`` / ``fit_transform`` (without ``partial_fit``)
+            are also accepted but all data will be collected into memory
+            before calling ``fit_transform``.  After fitting, the estimator
+            must expose a ``components_`` attribute (rows = components) to
+            supply the components.
+
+            For ``'SVD'``, the specific backend is chosen via ``svd_solver``
+            (see below).
         output_dimension : int or None, default None
-            Number of components to keep/calculate. If None, keep all
-            (only valid for 'SVD' algorithm)
+            Number of components to keep/calculate. Required for all
+            algorithms and for ``svd_solver='randomized'`` and
+            ``svd_solver='incremental'``.  Optional for
+            ``svd_solver='full'``, in which case all components up to
+            ``min(nav_size, sig_size)`` are returned as a lazy dask array
+            without triggering any computation.
+        centre : {None, 'navigation', 'signal'}, default None
+            Subtract the mean along the 'navigation' or 'signal' axis
+            before decomposition. Only used for the ``'SVD'`` and ``'PCA'``
+            algorithms; incompatible with ``normalize_poissonian_noise=True``.
+        auto_transpose : bool, default True
+            Deprecated and has no effect. Kept for API compatibility.
         get : dask scheduler or None
             The dask scheduler to use for computations. If ``None``,
-            ``dask.threaded.get` will be used if possible, otherwise
+            ``dask.threaded.get`` will be used if possible, otherwise
             ``dask.get`` will be used, for example in pyodide interpreter.
         num_chunks : int or None, default None
             the number of dask chunks to pass to the decomposition model.
             More chunks require more memory, but should run faster. Will be
             increased to contain at least ``output_dimension`` signals.
-        navigation_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
-            The navigation locations marked as True are not used in the
-            decomposition. Not implemented for the 'SVD' algorithm.
-        signal_mask : :class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
-            The signal locations marked as True are not used in the
-            decomposition. Not implemented for the 'SVD' algorithm.
-        reproject : bool, default True
-            Reproject data on the learnt components after learning.
-        print_info : bool, default True
-            If True, print information about the decomposition being performed.
-            In the case of sklearn.decomposition objects, this includes the
-            values of all arguments of the chosen sklearn algorithm.
+            Not used for ``'SVD'`` with ``svd_solver='randomized'``.
+        %s
+        %s
+        reproject : {None, "navigation", "signal", "both"}, default None
+            If not None, the decomposition results will be projected onto the
+            full (unmasked) data after learning:
+
+            * ``None``: use the default for the chosen algorithm.
+              For ``"PCA"``, ``"NMF"``, ``"ORPCA"`` and ``"ORNMF"`` this is equivalent
+              to ``"navigation"``; for ``"SVD"`` scores are computed during
+              the learn pass (reprojection is a no-op).
+            * ``"navigation"``: reproject onto navigation space to get full
+              scores (useful when a navigation mask was applied).
+            * ``"signal"``: reproject onto signal space to get full components
+              (useful when a signal mask was applied).
+            * ``"both"``: perform both reprojections.
+        return_info : bool, default False
+            The result of the decomposition is stored internally. However,
+            some algorithms generate extra information that is not stored. If
+            True, return any extra information if available. For sklearn-based
+            algorithms (``"PCA"``, ``"NMF"``, ``"ORPCA"``, ``"ORNMF"``, a custom
+            estimator object, or ``svd_solver="incremental"``), this is the
+            fitted estimator object.  For ``svd_solver`` values that do not
+            use an sklearn-like estimator (``"full"``, ``"randomized"``),
+            ``None`` is returned.
+        %s
+        svd_solver : {'randomized', 'incremental', 'full'}, default 'randomized'
+            Selects the SVD backend when ``algorithm='SVD'``.  Ignored for
+            all other algorithms.
+
+            * ``'randomized'`` (default): randomised truncated SVD via
+              ``dask.array.linalg.svd_compressed``.  Builds a single dask
+              task graph and materialises only the top-*k* singular vectors.
+              **Fastest of the three solvers** by a substantial margin
+              (the computation is CPU-bound and benefits from being executed
+              sequentially within a single graph).  ``output_dimension``
+              is required.  Supports ``centre``, navigation/signal masks,
+              and ``reproject``.  Works with arrays chunked in one or both
+              dimensions.
+
+              *Advantages*: fastest solver; graph-based scheduling avoids
+              per-chunk overhead; supports masking and centring.
+
+              *Disadvantages*: randomised algorithm — results differ
+              slightly between runs and from exact SVD; ``output_dimension``
+              must be set.
+
+            * ``'incremental'``: exact incremental SVD via
+              ``ISVD`` (a subclass of
+              ``sklearn.decomposition.IncrementalPCA`` with centering
+              disabled).  Streams the data one mini-batch at a time, with
+              steady-state memory proportional to the chunk size rather
+              than the full dataset.  ``output_dimension`` is required.
+
+              *Advantages*: lowest steady-state memory — scales to datasets
+              larger than RAM; deterministic result; supports ``centre``,
+              masks, and all ``reproject`` modes.
+
+              *Disadvantages*: significantly slower than ``'randomized'``
+              (each chunk is processed serially rather than through a single
+              task graph); requires scikit-learn.
+
+            * ``'full'`` (**deprecated**): exact full SVD via
+              ``dask.array.linalg.svd`` (TSQR algorithm).
+              ``svd_solver='full'`` is deprecated and will be removed
+              in HyperSpy 3.0.  Use ``svd_solver='randomized'`` instead,
+              which gives identical results for truncated SVD with
+              substantially lower memory usage.
         **kwargs
             passed to the partial_fit/fit functions.
 
         References
         ----------
-        .. [KeenanKotula2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
 
+        Notes
+        -----
+        **Array types stored in** ``learning_results``
+
+        After decomposition, ``learning_results.components`` and
+        ``learning_results.scores`` hold either **numpy** or **dask** arrays
+        depending on the algorithm and solver:
+
+        .. list-table::
+           :header-rows: 1
+           :widths: 30 35 35
+
+           * - Algorithm / solver
+             - ``components``
+             - ``scores``
+           * - ``'SVD'``, ``svd_solver='randomized'``
+             - numpy (computed)
+             - numpy (computed)
+           * - ``'SVD'``, ``svd_solver='incremental'``
+             - numpy (computed)
+             - numpy (computed)
+           * - ``'SVD'``, ``svd_solver='full'`` (no ``reproject``)
+             - **dask** (lazy)
+             - **dask** (lazy)
+           * - ``'SVD'``, ``svd_solver='full'``, ``reproject='navigation'``
+             - **dask** (lazy)
+             - numpy (computed)
+           * - ``'SVD'``, ``svd_solver='full'``, ``reproject='signal'``
+             - numpy (computed)
+             - **dask** (lazy)
+           * - ``'SVD'``, ``svd_solver='full'``, ``reproject='both'``
+             - numpy (computed)
+             - numpy (computed)
+
+        **Fully lazy pipeline with** ``svd_solver='full'``
+
+        ``svd_solver='full'`` keeps the entire pipeline lazy — including when
+        ``reproject`` is used.  Reproject steps are performed with dask
+        matmuls that stream over chunks; only the *produced* array (small:
+        ``nav × k`` or ``sig × k``) is computed eagerly.  The unrequested
+        array remains lazy::
+
+             s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
+             # learning_results.components and .scores are dask arrays
+
+             model = s.get_decomposition_model()
+             # model is a LazySignal; model.data is a dask array
+
+             model.save("model.hspy")
+             # triggers computation chunk by chunk while writing to disk
+
+             # With reproject: components stay lazy (only scores are computed)
+             s.decomposition(algorithm="SVD", svd_solver="full",
+                             output_dimension=3, reproject="navigation")
+             model = s.get_decomposition_model()  # still lazy
+             model.save("model_reprojected.hspy")
+
         See Also
         --------
-        dask.array.linalg.svd, sklearn.decomposition.IncrementalPCA,
-        hyperspy.learn.orpca, hyperspy.learn.ornmf
+        hyperspy.learn.incremental_svd.ISVD :
+            Incremental SVD backend.
+        sklearn.decomposition.IncrementalPCA :
+            Used by the ``'PCA'`` algorithm.
+        sklearn.decomposition.MiniBatchNMF :
+            Used by the ``'NMF'`` algorithm.
+        hyperspy.learn.orpca :
+            Online robust PCA.
+        hyperspy.learn.ornmf :
+            Online robust NMF.
 
         """
-        import dask.array as da
+        from hyperspy.learn._mva import _to_flat_bool
 
         if get is None:
             get = _get()
-        # Check algorithms requiring output_dimension
-        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
+        # Check algorithms requiring output_dimension.
+        algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF", "NMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
             raise ValueError(
                 "`output_dimension` must be specified for '{}'".format(algorithm)
             )
+        # Detect custom sklearn-like estimator objects
+        _is_custom_sklearn_like = not isinstance(algorithm, str) and (
+            hasattr(algorithm, "fit_transform")
+            or (hasattr(algorithm, "fit") and hasattr(algorithm, "transform"))
+        )
+        if (
+            not _is_custom_sklearn_like
+            and isinstance(algorithm, str)
+            and algorithm not in ("SVD", "PCA", "ORPCA", "ORNMF", "NMF")
+        ):
+            _lazy_unsupported = {
+                "MLPCA",
+                "RPCA",
+                "sklearn_pca",
+                "sparse_pca",
+                "mini_batch_sparse_pca",
+            }
+            if algorithm in _lazy_unsupported:
+                raise NotImplementedError(
+                    f"algorithm={algorithm!r} is not supported for lazy signals. "
+                    "Supported algorithms are: 'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF', "
+                    "or a custom object with fit_transform() or fit()+transform()."
+                )
+            raise ValueError(
+                f"'algorithm' {algorithm!r} not recognised. "
+                "Expected one of: 'SVD', 'PCA', 'ORPCA', 'ORNMF', 'NMF', "
+                "or a custom object with fit_transform() or fit()+transform()."
+            )
+
+        if kwargs.get("var_array") is not None or kwargs.get("var_func") is not None:
+            raise NotImplementedError(
+                "`var_array` and `var_func` are only used by the 'MLPCA' algorithm, "
+                "which is not supported for lazy signals."
+            )
+
+        if algorithm == "SVD" and svd_solver not in (
+            "randomized",
+            "incremental",
+            "full",
+        ):
+            raise ValueError(
+                f"svd_solver={svd_solver!r} not recognised. "
+                "Expected one of: 'randomized', 'incremental', 'full'."
+            )
+
+        # ── input validation (mirrors non-lazy MVA.decomposition) ────────────
+        # Only pass svd_solver for the SVD path so solver-specific
+        # output_dimension constraints do not leak into PCA or custom
+        # sklearn-like estimators.
+        self._validate_decomposition_inputs(
+            output_dimension,
+            centre,
+            reproject,
+            svd_solver=svd_solver if algorithm == "SVD" else None,
+        )
+
+        self._check_navigation_mask(navigation_mask)
+        self._check_signal_mask(signal_mask)
+        # ─────────────────────────────────────────────────────────────────────
 
         explained_variance = None
         explained_variance_ratio = None
+        mean = None
+        scores = None
+        components = None
+        _D_unfolded = None
+        nav_mask_1d = None
+        sig_mask_1d = None
+        obj = None  # set below for non-SVD algorithms and svd_solver='incremental'
 
         _al_data = self._data_aligned_with_axes
         nav_chunks = _al_data.chunks[: self.axes_manager.navigation_dimension]
-        sig_chunks = _al_data.chunks[self.axes_manager.navigation_dimension :]
 
+        if num_chunks is not None and (
+            not isinstance(num_chunks, (int, np.integer))
+            or isinstance(num_chunks, bool)
+            or num_chunks <= 0
+        ):
+            raise ValueError(
+                f"`num_chunks` must be a positive integer, got {num_chunks!r}."
+            )
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([utils.multiply(ar) for ar in product(*nav_chunks)])
         nblocks = utils.multiply([len(c) for c in nav_chunks])
@@ -998,6 +1904,7 @@ class LazySignal(signals.BaseSignal):
             f"  normalize_poissonian_noise={normalize_poissonian_noise}",
             f"  algorithm={algorithm}",
             f"  output_dimension={output_dimension}",
+            f"  centre={centre}",
         ]
 
         # LEARN
@@ -1009,7 +1916,24 @@ class LazySignal(signals.BaseSignal):
 
             obj = sklearn.decomposition.IncrementalPCA(n_components=output_dimension)
             method = partial(obj.partial_fit, **kwargs)
-            reproject = True
+            to_print.extend(["scikit-learn estimator:", obj])
+
+        elif algorithm == "NMF":
+            if not SKLEARN_INSTALLED:
+                raise ImportError("algorithm='NMF' requires scikit-learn")
+
+            import sklearn.decomposition as _skd
+
+            # MiniBatchNMF (sklearn >= 1.1) supports incremental partial_fit.
+            # Fall back to NMF (loads all data) if MiniBatchNMF is not available.
+            if hasattr(_skd, "MiniBatchNMF"):
+                obj = _skd.MiniBatchNMF(n_components=output_dimension, **kwargs)
+                method = partial(obj.partial_fit)
+            else:  # pragma: no cover
+                obj = _skd.NMF(n_components=output_dimension, **kwargs)
+                # Will be called once with all data collected; method is not
+                # used in batch mode for this fallback — handled below.
+                method = None
             to_print.extend(["scikit-learn estimator:", obj])
 
         elif algorithm == "ORPCA":
@@ -1017,98 +1941,120 @@ class LazySignal(signals.BaseSignal):
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORPCA(output_dimension, **kwargs)
-            method = partial(obj.fit, batch_size=batch_size)
+            method = partial(obj.partial_fit, batch_size=batch_size)
 
         elif algorithm == "ORNMF":
             from hyperspy.learn._ornmf import ORNMF
 
             batch_size = kwargs.pop("batch_size", None)
             obj = ORNMF(output_dimension, **kwargs)
-            method = partial(obj.fit, batch_size=batch_size)
+            method = partial(obj.partial_fit, batch_size=batch_size)
 
-        elif algorithm != "SVD":
-            raise ValueError("'algorithm' not recognised")
+        elif _is_custom_sklearn_like:
+            obj = algorithm
+            if hasattr(obj, "partial_fit"):
+                method = partial(obj.partial_fit)
+            else:
+                # No incremental fitting; fall back to collecting all data
+                # and calling fit_transform / fit+transform once.
+                method = None
+            to_print.extend(["Custom sklearn-like estimator:", obj])
+
+        elif algorithm == "SVD" and svd_solver == "incremental":
+            from hyperspy.learn.incremental_svd import ISVD
+
+            obj = ISVD(n_components=output_dimension)
+            method = partial(obj.partial_fit)
 
         original_data = self.data
         try:
             _logger.info("Performing decomposition analysis")
 
             if normalize_poissonian_noise:
-                _logger.info("Scaling the data to normalize Poissonian noise")
-
-                data = self._data_aligned_with_axes
-                ndim = self.axes_manager.navigation_dimension
-                sdim = self.axes_manager.signal_dimension
-                nm = da.logical_not(
-                    da.zeros(
-                        self.axes_manager.navigation_shape[::-1], chunks=nav_chunks
+                if centre is not None:
+                    raise ValueError(
+                        "normalize_poissonian_noise=True is only compatible "
+                        f"with centre=None, not centre={centre!r}."
                     )
-                    if navigation_mask is None
-                    else to_array(navigation_mask, chunks=nav_chunks)
+                self.normalize_poissonian_noise(
+                    navigation_mask=navigation_mask,
+                    signal_mask=signal_mask,
                 )
-                sm = da.logical_not(
-                    da.zeros(self.axes_manager.signal_shape[::-1], chunks=sig_chunks)
-                    if signal_mask is None
-                    else to_array(signal_mask, chunks=sig_chunks)
-                )
-                bH, aG = da.compute(
-                    data.sum(axis=tuple(range(ndim))),
-                    data.sum(axis=tuple(range(ndim, ndim + sdim))),
-                )
-                bH = da.where(sm, bH, 1)
-                aG = da.where(nm, aG, 1)
-
-                raG = da.sqrt(aG)
-                rbH = da.sqrt(bH)
-
-                coeff = (
-                    raG[(...,) + (None,) * rbH.ndim] * rbH[(None,) * raG.ndim + (...,)]
-                )
-                # Capture the return value — map_blocks returns a new dask
-                # array; the original line discarded the result, making the
-                # normalisation a silent no-op.
-                coeff = coeff.map_blocks(np.nan_to_num)
-                coeff = da.where(coeff == 0, 1, coeff)
-                data = data / coeff
-                self.data = data
 
             # LEARN
-            if algorithm == "SVD":
-                reproject = False
-                from dask.array.linalg import svd
+            # For non-SVD algorithms _navigation_mask_for_reproject stays equal
+            # to navigation_mask (no unfolding/ravelling occurs).  For SVD it
+            # is updated below after the BaseSignal unwrap but before ravel.
+            _navigation_mask_for_reproject = navigation_mask
+            if (
+                algorithm == "SVD"
+                and svd_solver == "incremental"
+                and centre is not None
+            ):
+                import dask.array as _da
 
-                try:
-                    self._unfolded4decomposition = self.unfold()
-                    # TODO: implement masking
-                    if navigation_mask is not None or signal_mask is not None:
-                        raise NotImplementedError(
-                            "Masking is not yet implemented for lazy SVD"
-                        )
-
-                    U, S, V = svd(self.data)
-
-                    if output_dimension is None:
-                        min_shape = min(min(U.shape), min(V.shape))
+                _nav_size = self.axes_manager.navigation_size
+                _sig_size = self.axes_manager.signal_size
+                _D_flat = self._data_aligned_with_axes.reshape((_nav_size, _sig_size))
+                if centre == "navigation":
+                    if navigation_mask is not None:
+                        _nm = navigation_mask
+                        if isinstance(_nm, signals.BaseSignal):
+                            _nm = _nm.data
+                        if isinstance(_nm, _da.Array):
+                            _nm = _nm.compute()
+                        _nm_1d = np.asarray(_nm, dtype=bool).ravel()
+                        mean = _D_flat[~_nm_1d, :].mean(axis=0, keepdims=True).compute()
                     else:
-                        min_shape = output_dimension
+                        mean = _D_flat.mean(axis=0, keepdims=True).compute()
+                else:
+                    mean = (
+                        _D_flat.mean(axis=1, keepdims=True)
+                        .compute()
+                        .reshape(self._data_aligned_with_axes.shape[:-1] + (1,))
+                    )
+                self.data = self.data - mean
+            elif algorithm != "SVD" or svd_solver != "incremental":
+                mean = None
 
-                    U = U[:, :min_shape]
-                    S = S[:min_shape]
-                    V = V[:min_shape]
+            # For algorithms that iterate over navigation blocks via
+            # _block_iterator, normalise navigation_mask to array-axis order.
+            # _block_iterator expects masks in the underlying array axis order,
+            # but numpy/dask masks arrive in HyperSpy navigation_shape order
+            # (axes reversed relative to the array), so they must be transposed.
+            # BaseSignal masks have .data already in array order.
+            # Full/randomized SVD handles its own transposition inside
+            # _decomposition_svd_matrix.
+            if navigation_mask is not None and not (
+                algorithm == "SVD" and svd_solver != "incremental"
+            ):
+                if isinstance(navigation_mask, signals.BaseSignal):
+                    navigation_mask = navigation_mask.data
+                elif hasattr(navigation_mask, "T"):
+                    navigation_mask = navigation_mask.T
+                _navigation_mask_for_reproject = navigation_mask
 
-                    components = V.T
-                    explained_variance = S**2 / self.data.shape[0]
-                    scores = U * S
-                finally:
-                    if self._unfolded4decomposition is True:
-                        self.fold()
-                        # BUGFIX: was ``is False`` (identity comparison, always no-op);
-                        # must be ``= False`` assignment to clear the flag so the signal
-                        # does not remain permanently unfolded.
-                        self._unfolded4decomposition = False
+            if algorithm == "SVD" and svd_solver != "incremental":
+                _svd_result = self._decomposition_svd_matrix(
+                    svd_solver,
+                    centre,
+                    output_dimension,
+                    navigation_mask,
+                    signal_mask,
+                )
+                scores = _svd_result["scores"]
+                components = _svd_result["components"]
+                explained_variance = _svd_result["explained_variance"]
+                mean = _svd_result["mean"]
+                nav_mask_1d = _svd_result["nav_mask_1d"]
+                sig_mask_1d = _svd_result["sig_mask_1d"]
+                navigation_mask = _svd_result["navigation_mask"]
+                signal_mask = _svd_result["signal_mask"]
+                _navigation_mask_for_reproject = _svd_result[
+                    "_navigation_mask_for_reproject"
+                ]
+                _D_unfolded = _svd_result["_D_unfolded"]
             else:
-                self._check_navigation_mask(navigation_mask)
-                self._check_signal_mask(signal_mask)
                 this_data = []
                 try:
                     for chunk in progressbar(
@@ -1123,77 +2069,155 @@ class LazySignal(signals.BaseSignal):
                         desc="Learn",
                     ):
                         this_data.append(chunk)
-                        if len(this_data) == num_chunks:
+                        if method is not None and len(this_data) == num_chunks:
                             thedata = np.concatenate(this_data, axis=0)
                             method(thedata)
                             this_data = []
                     if len(this_data):
-                        thedata = np.concatenate(this_data, axis=0)
-                        method(thedata)
+                        if method is not None:
+                            thedata = np.concatenate(this_data, axis=0)
+                            method(thedata)
+                        # else: method is None (NMF fallback or custom w/o
+                        # partial_fit); all data is now in this_data for
+                        # fit_transform below.
                 except KeyboardInterrupt:  # pragma: no cover
                     pass
 
+                # NMF fallback (sklearn < 1.1) and custom objects without
+                # partial_fit: collect all chunks and call fit_transform once.
+                if method is None:
+                    all_data = np.concatenate(this_data, axis=0)
+                    if hasattr(obj, "fit_transform"):
+                        scores = obj.fit_transform(all_data)
+                    else:
+                        obj.fit(all_data)
+                        scores = obj.transform(all_data)
+
             # GET ALREADY CALCULATED RESULTS
-            if algorithm == "PCA":
+            if algorithm == "SVD" and svd_solver == "incremental":
+                # ISVD inherits explained_variance_ / explained_variance_ratio_
+                # from sklearn's IncrementalPCA, which computes them assuming
+                # centred PCA (S²/(N-1) for variance, S²/Σ(col_var·N) for
+                # ratio).  For plain SVD without centring, the correct formulas
+                # are S²/N (matching every other decomposition path in
+                # HyperSpy) and the ratio is computed downstream by
+                # _store_decomposition_results via _compute_explained_variance_ratio.
+                S = obj.singular_values_
+                n_total = obj.n_samples_seen_
+                explained_variance = S**2 / n_total
+                explained_variance_ratio = (
+                    None  # computed by _store_decomposition_results
+                )
+                components = obj.components_.T
+                if centre is None:
+                    mean = None
+                scores = self._project_scores(
+                    obj, "Project", navigation_mask, signal_mask, get, nblocks
+                )
+
+            elif algorithm == "PCA":
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
                 components = obj.components_.T
+                mean = obj.mean_
 
-            elif algorithm == "ORPCA":
-                components, scores = obj.finish()
-                scores = scores.T
+            elif algorithm in ("NMF", "ORPCA", "ORNMF") or _is_custom_sklearn_like:
+                if not hasattr(obj, "components_"):
+                    raise AttributeError(
+                        f"Fitted estimator {obj!r} has no attribute 'components_'"
+                    )
+                components = obj.components_.T
+                if hasattr(obj, "explained_variance_"):
+                    explained_variance = obj.explained_variance_
+                if hasattr(obj, "mean_"):
+                    mean = obj.mean_
+                else:
+                    mean = None
+                # Compute scores via transform if not already set
+                # (batch-only objects set scores above during fit_transform;
+                # incremental objects need a project pass now).
+                if scores is None:
+                    scores = self._project_scores(
+                        obj, "Project", navigation_mask, signal_mask, get, nblocks
+                    )
 
-            elif algorithm == "ORNMF":
-                components, scores = obj.finish()
-                scores = scores.T
+            # Pre-compute flat boolean masks needed by the reproject blocks
+            # below.  (The same masks are recomputed later outside the try
+            # block for storing in learning_results; that duplication is
+            # intentional to keep the two concerns separate.)
+            _flat_nav_mask = _to_flat_bool(navigation_mask)
+            _flat_sig_mask = _to_flat_bool(signal_mask)
 
-            # REPROJECT
-            if reproject:
-                if algorithm == "PCA":
-                    method = obj.transform
+            # REPROJECT NAVIGATION (recompute scores over full nav)
+            scores, _nav_reprojected = self._decomposition_reproject_navigation(
+                reproject,
+                algorithm,
+                svd_solver,
+                scores,
+                components,
+                mean,
+                centre,
+                _D_unfolded,
+                sig_mask_1d,
+                obj,
+                signal_mask,
+                get,
+                nblocks,
+                _navigation_mask_for_reproject,
+            )
 
-                    def post(a):
-                        return np.concatenate(a, axis=0)
-
-                elif algorithm == "ORPCA":
-                    method = obj.project
-
-                    def post(a):
-                        return np.concatenate(a, axis=1).T
-
-                elif algorithm == "ORNMF":
-                    method = obj.project
-
-                    def post(a):
-                        return np.concatenate(a, axis=1).T
-
-                _map = map(
-                    lambda thing: method(thing),
-                    self._block_iterator(
-                        flat_signal=True,
-                        get=get,
-                        signal_mask=signal_mask,
-                        navigation_mask=navigation_mask,
-                    ),
-                )
-                H = []
+            # For reproject='signal', non-SVD algorithms need scores computed
+            # first (over masked nav + masked signal), which mirrors
+            # reproject=None.  SVD already computed scores in the learn pass.
+            if reproject == "signal" and algorithm != "SVD" and scores is None:
                 try:
-                    for thing in progressbar(_map, total=nblocks, desc="Project"):
-                        H.append(thing)
+                    scores = self._project_scores(
+                        obj,
+                        "Project",
+                        _navigation_mask_for_reproject,
+                        signal_mask,
+                        get,
+                        nblocks,
+                    )
                 except KeyboardInterrupt:  # pragma: no cover
                     pass
-                scores = post(H)
 
-            if explained_variance is not None and explained_variance_ratio is None:
-                explained_variance_ratio = explained_variance / explained_variance.sum()
+            # REPROJECT SIGNAL (recompute components over full signal)
+            # All algorithms support signal reprojection via the pseudo-
+            # inverse: components = pinv(scores) @ D_full_signal.
+            # This mirrors the non-lazy SVD path in _mva.py.
+            _signal_reprojected = False
+            if reproject in ("signal", "both"):
+                components = self._decomposition_reproject_signal(
+                    algorithm,
+                    svd_solver,
+                    reproject,
+                    scores,
+                    components,
+                    mean,
+                    centre,
+                    _D_unfolded,
+                    nav_mask_1d,
+                    _navigation_mask_for_reproject,
+                    _flat_sig_mask,
+                    _flat_nav_mask,
+                    get,
+                    nblocks,
+                )
+                _signal_reprojected = True
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            if algorithm != "SVD":  # Only needed for online algorithms
+            _n_comp = (
+                output_dimension
+                if output_dimension is not None
+                else (components.shape[1] if components is not None else None)
+            )
+            if algorithm != "SVD" and scores is not None and _n_comp is not None:
                 try:
                     scores = _reshuffle_mixed_blocks(
-                        scores, ndim, (output_dimension,), nav_chunks
-                    ).reshape((-1, output_dimension))
+                        scores, ndim, (_n_comp,), nav_chunks
+                    ).reshape((-1, _n_comp))
                 except ValueError:
                     # In case the projection step was not finished, it's left
                     # as scrambled
@@ -1201,24 +2225,47 @@ class LazySignal(signals.BaseSignal):
         finally:
             self.data = original_data
 
-        target = self.learning_results
-        target.decomposition_algorithm = algorithm
-        target.output_dimension = output_dimension
-        if algorithm != "SVD":
-            target._object = obj
-        target.components = components
-        target.scores = scores
-        target.explained_variance = explained_variance
-        target.explained_variance_ratio = explained_variance_ratio
+        _return_value = self._store_decomposition_results(
+            explained_variance=explained_variance,
+            explained_variance_ratio=explained_variance_ratio,
+            components=components,
+            scores=scores,
+            mean=mean,
+            centre=centre,
+            navigation_mask=navigation_mask,
+            signal_mask=signal_mask,
+            algorithm=algorithm,
+            svd_solver=svd_solver,
+            obj=obj,
+            output_dimension=output_dimension,
+            normalize_poissonian_noise=normalize_poissonian_noise,
+            _flat_nav_mask=_flat_nav_mask,
+            _flat_sig_mask=_flat_sig_mask,
+            _nav_reprojected=_nav_reprojected,
+            _signal_reprojected=_signal_reprojected,
+            print_info=print_info,
+            to_print=to_print,
+            return_info=return_info,
+        )
+        if return_info:
+            return _return_value
 
-        # Rescale the results if the noise was normalized
-        if normalize_poissonian_noise is True:
-            target.components = target.components * rbH.ravel()[:, np.newaxis]
-            target.scores = target.scores * raG.ravel()[:, np.newaxis]
-
-        # Print details about the decomposition we just performed
-        if print_info:
-            print("\n".join([str(pr) for pr in to_print]))
+    decomposition.__doc__ %= (
+        DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
+        DECOMP_MASK_DOC
+        % (
+            "navigation_mask",
+            ":class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array",
+            "navigation",
+        ),
+        DECOMP_MASK_DOC
+        % (
+            "signal_mask",
+            ":class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array",
+            "signal",
+        ),
+        DECOMP_PRINT_INFO_DOC,
+    )
 
     def plot(self, navigator="auto", **kwargs):
         if self.axes_manager.ragged:

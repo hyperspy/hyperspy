@@ -26,6 +26,7 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 sklearn = importlib.util.find_spec("sklearn")
 skip_sklearn = pytest.mark.skipif(sklearn is None, reason="sklearn not installed")
@@ -124,7 +125,7 @@ class TestNdAxes:
             s1.learning_results.components, s2.learning_results.scores
         )
         # Check that views of the data don't change. See #871
-        np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
+        np.testing.assert_allclose(s1.inav[0, 0, 0].data, s1n000.data, rtol=1e-14)
 
     @pytest.mark.parametrize("poisson", [True, False])
     def test_consistency_masked(self, poisson):
@@ -177,7 +178,7 @@ class TestGetModel:
     @pytest.mark.parametrize("centre", [None, "signal"])
     def test_get_decomposition_model_centre(self, centre):
         s = self.s
-        s.decomposition(algorithm="SVD", centre=centre)
+        s.decomposition(algorithm="SVD", centre=centre, output_dimension=3)
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data) ** 2).sum())
         if isinstance(rms, da.Array):
@@ -187,7 +188,7 @@ class TestGetModel:
     @pytest.mark.parametrize("lazy_output", [True, False, None])
     def test_get_decomposition_model(self, lazy_output):
         s = self.s
-        s.decomposition(algorithm="SVD")
+        s.decomposition(algorithm="SVD", output_dimension=3)
         sc = self.s.get_decomposition_model(3, lazy_output=lazy_output)
         if lazy_output or (lazy_output is None and self.s._lazy):
             assert isinstance(sc.data, da.Array)
@@ -198,7 +199,7 @@ class TestGetModel:
     @pytest.mark.parametrize("lazy_output", [True, False, None])
     def test_get_bss_model(self, lazy_output):
         s = self.s
-        s.decomposition(algorithm="SVD")
+        s.decomposition(algorithm="SVD", output_dimension=3)
         s.blind_source_separation(3)
         sc = self.s.get_bss_model(lazy_output=lazy_output)
         if lazy_output or (lazy_output is None and self.s._lazy):
@@ -214,7 +215,7 @@ class TestGetModel:
         """lazy_output=True should produce signal with HyperSpy's
         chunking convention: signal axes as single chunks (-1)."""
         s = self.s.deepcopy()
-        s.decomposition(algorithm="SVD")
+        s.decomposition(algorithm="SVD", output_dimension=3)
         sc = s.get_decomposition_model(3, lazy_output=True, chunks=-1)
         assert isinstance(sc.data, da.Array)
         sig_axes = sc.axes_manager.signal_dimension
@@ -705,10 +706,10 @@ def test_negative_values_error():
 
 def test_undo_treatments_error():
     s = signals.Signal1D(generate_low_rank_matrix())
-    s.decomposition(output_dimension=2, copy=False)
-
-    with pytest.raises(AttributeError, match="Unable to undo data pre-treatments!"):
-        s.undo_treatments()
+    s.decomposition(output_dimension=2)
+    with pytest.warns(VisibleDeprecationWarning):
+        with pytest.raises(AttributeError, match="Unable to undo data pre-treatments!"):
+            s.undo_treatments()
 
 
 def test_normalize_components_errors():
@@ -731,7 +732,7 @@ def test_centering_error():
     ):
         s.decomposition(normalize_poissonian_noise=True, centre="navigation")
 
-    with pytest.raises(ValueError, match="'centre' must be one of"):
+    with pytest.raises(ValueError, match="`centre` must be None"):
         s.decomposition(centre="random")
 
 
@@ -775,3 +776,280 @@ def test_decomposition_mask_all_data(normalise_poissonian_noise):
         s = signals.Signal1D(generate_low_rank_matrix())
         navigation_mask = s.sum(-1) >= 0
         s.decomposition(normalise_poissonian_noise, navigation_mask=navigation_mask)
+
+
+@lazifyTestClass
+class TestDataPreservation:
+    """Verify the original signal data is unchanged after decomposition."""
+
+    def setup_method(self, method):
+        rng = np.random.RandomState(42)
+        self.s = signals.Signal1D(rng.random((12, 25, 48)))
+
+    def _save_and_assert(self, **decomp_kwargs):
+        """Run decomposition and assert the signal's data is preserved."""
+        saved = self.s.data.copy()
+        self.s.decomposition(output_dimension=3, **decomp_kwargs)
+        np.testing.assert_allclose(self.s.data, saved, rtol=1e-14)
+
+    def test_unmasked_default(self):
+        self._save_and_assert()
+
+    def test_unmasked_copy_true_deprecated(self):
+        if self.s._lazy:
+            pytest.skip("copy parameter not supported on lazy signals")
+        with pytest.warns(VisibleDeprecationWarning):
+            self._save_and_assert(copy=True)
+
+    def test_poisson_default(self):
+        self._save_and_assert(normalize_poissonian_noise=True)
+
+    def test_poisson_copy_true_deprecated(self):
+        if self.s._lazy:
+            pytest.skip("copy parameter not supported on lazy signals")
+        with pytest.warns(VisibleDeprecationWarning):
+            self._save_and_assert(normalize_poissonian_noise=True, copy=True)
+
+    def test_with_nav_mask(self):
+        # navigation_shape is (25, 12) in display order (axes reversed)
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        self._save_and_assert(navigation_mask=nav_mask)
+
+    def test_with_sig_mask(self):
+        sig_mask = np.zeros(48, dtype=bool)
+        sig_mask[:5] = True
+        self._save_and_assert(signal_mask=sig_mask)
+
+    def test_with_both_masks(self):
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        sig_mask = np.zeros(48, dtype=bool)
+        sig_mask[:5] = True
+        self._save_and_assert(navigation_mask=nav_mask, signal_mask=sig_mask)
+
+    def test_poisson_with_both_masks(self):
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        sig_mask = np.zeros(48, dtype=bool)
+        sig_mask[:5] = True
+        self._save_and_assert(
+            normalize_poissonian_noise=True,
+            navigation_mask=nav_mask,
+            signal_mask=sig_mask,
+        )
+
+    def test_poisson_masked(self):
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        self._save_and_assert(normalize_poissonian_noise=True, navigation_mask=nav_mask)
+
+    def test_reproject_navigation_with_mask(self):
+        nav_mask = np.zeros((25, 12), dtype=bool)
+        nav_mask[0, :] = True
+        self._save_and_assert(navigation_mask=nav_mask, reproject="navigation")
+
+    def test_reproject_both_with_mask(self):
+        sig_mask = np.zeros(48, dtype=bool)
+        sig_mask[:5] = True
+        self._save_and_assert(signal_mask=sig_mask, reproject="both")
+
+
+class TestPoissonNormalizationQuality:
+    """Verify that normalize_poissonian_noise=True improves decomposition quality
+    on data with Poisson noise, for eager (non-lazy) SVD only."""
+
+    def test_poisson_normalization_improves_reconstruction(self):
+        """normalize_poissonian_noise=True yields lower reconstruction error
+        than plain SVD on Poisson-noisy low-rank data.
+
+        The test creates an exact rank-5 dataset, adds Poisson noise, then
+        decomposes with and without Keenan-Kotula variance-stabilizing
+        normalization.  The normalized path should recover the underlying
+        low-rank signal more accurately.
+        """
+        rng = np.random.default_rng(42)
+        nav, sig, rank = 120, 64, 5
+
+        # Rank-5 noiseless signal (positive, like EELS/EDX counts)
+        U = np.abs(rng.standard_normal((nav, rank)))
+        V = np.abs(rng.standard_normal((sig, rank)))
+        X_clean = U @ V.T
+        X_clean = X_clean * 100 / X_clean.mean()
+
+        X_noisy = rng.poisson(X_clean).astype(float)
+
+        # All-different 3D dimensions: 8×15 = 120 nav, 64 sig
+        shape_3d = (8, 15, 64)
+
+        s_norm = signals.Signal1D(X_noisy.copy().reshape(shape_3d))
+        s_norm.decomposition(
+            algorithm="SVD",
+            output_dimension=rank,
+            normalize_poissonian_noise=True,
+            print_info=False,
+        )
+        recon_norm = s_norm.get_decomposition_model(components=rank).data
+        err_norm = np.linalg.norm(recon_norm.ravel() - X_clean.ravel())
+
+        s_plain = signals.Signal1D(X_noisy.copy().reshape(shape_3d))
+        s_plain.decomposition(
+            algorithm="SVD",
+            output_dimension=rank,
+            normalize_poissonian_noise=False,
+            print_info=False,
+        )
+        recon_plain = s_plain.get_decomposition_model(components=rank).data
+        err_plain = np.linalg.norm(recon_plain.ravel() - X_clean.ravel())
+
+        assert err_norm < err_plain, (
+            f"Poisson normalization error {err_norm:.4f} >= "
+            f"plain SVD error {err_plain:.4f} — "
+            f"normalize_poissonian_noise=True should improve reconstruction"
+        )
+
+
+class TestLazyPoissonNormalizationQuality:
+    """Lazy variant: normalize_poissonian_noise=True improves reconstruction
+    of Poisson-noisy low-rank data with lazy (dask-backed) signals.
+
+    Uses ``svd_solver='full'`` (exact TSQR) to avoid the stochasticity of
+    the randomized solver, which can mask the normalization benefit.
+    """
+
+    def test_poisson_normalization_improves_reconstruction(self):
+        rng = np.random.default_rng(42)
+        nav, sig, rank = 120, 64, 5
+
+        U = np.abs(rng.standard_normal((nav, rank)))
+        V = np.abs(rng.standard_normal((sig, rank)))
+        X_clean = U @ V.T
+        X_clean = X_clean * 100 / X_clean.mean()
+
+        X_noisy = rng.poisson(X_clean).astype(float)
+
+        shape_3d = (8, 15, 64)
+
+        s_norm = signals.Signal1D(X_noisy.copy().reshape(shape_3d)).as_lazy()
+        s_norm.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=rank,
+            normalize_poissonian_noise=True,
+            print_info=False,
+        )
+        recon_norm = s_norm.get_decomposition_model(components=rank).data.compute()
+        err_norm = np.linalg.norm(recon_norm.ravel() - X_clean.ravel())
+
+        s_plain = signals.Signal1D(X_noisy.copy().reshape(shape_3d)).as_lazy()
+        s_plain.decomposition(
+            algorithm="SVD",
+            svd_solver="full",
+            output_dimension=rank,
+            normalize_poissonian_noise=False,
+            print_info=False,
+        )
+        recon_plain = s_plain.get_decomposition_model(components=rank).data.compute()
+        err_plain = np.linalg.norm(recon_plain.ravel() - X_clean.ravel())
+
+        assert err_norm < err_plain, (
+            f"Poisson normalization error {err_norm:.4f} >= "
+            f"plain SVD error {err_plain:.4f} — "
+            f"normalize_poissonian_noise=True should improve reconstruction"
+        )
+
+
+class TestComplexDtypePreservationWithMask:
+    """Regression: ``_nan_expand_rows`` must preserve complex dtype when
+    expanding masked positions.  The function previously hard-coded
+    ``dtype=float`` on the NaN placeholders, which silently dropped the
+    imaginary part (accompanied by a ``ComplexWarning``)."""
+
+    def test_nav_mask_preserves_loadings_dtype(self):
+        """Navigation mask → loadings are expanded; dtype must stay complex128."""
+        rng = np.random.default_rng(42)
+        # ALL-DIFFERENT dims: (7, 11, 13) → navigation (7, 11), signal 13
+        data = (rng.random((7, 11, 13)) + 1j * rng.random((7, 11, 13))).astype(
+            np.complex128
+        )
+        s = signals.ComplexSignal1D(data)
+        nav_shape = s.axes_manager.navigation_shape  # display order: (11, 7)
+        nav_mask = np.zeros(nav_shape, dtype=bool)
+        nav_mask[0, 0] = True
+        nav_mask[5, 3] = True
+        s.decomposition(
+            algorithm="SVD",
+            output_dimension=5,
+            navigation_mask=nav_mask,
+            print_info=False,
+        )
+        assert s.learning_results.loadings.dtype == np.complex128, (
+            f"Expected loadings.dtype == complex128 (nav mask), "
+            f"got {s.learning_results.loadings.dtype}"
+        )
+
+    def test_signal_mask_preserves_factors_dtype(self):
+        """Signal mask → factors are expanded; dtype must stay complex128."""
+        rng = np.random.default_rng(42)
+        data = (rng.random((7, 11, 13)) + 1j * rng.random((7, 11, 13))).astype(
+            np.complex128
+        )
+        s = signals.ComplexSignal1D(data)
+        sig_mask = np.zeros(13, dtype=bool)
+        sig_mask[0] = True
+        sig_mask[5] = True
+        s.decomposition(
+            algorithm="SVD",
+            output_dimension=5,
+            signal_mask=sig_mask,
+            print_info=False,
+        )
+        assert s.learning_results.factors.dtype == np.complex128, (
+            f"Expected factors.dtype == complex128 (signal mask), "
+            f"got {s.learning_results.factors.dtype}"
+        )
+
+    def test_lazy_nav_mask_preserves_loadings_dtype(self):
+        """Lazy + navigation mask → loadings dtype must stay complex128."""
+        rng = np.random.default_rng(42)
+        data = (rng.random((7, 11, 13)) + 1j * rng.random((7, 11, 13))).astype(
+            np.complex128
+        )
+        s = signals.ComplexSignal1D(data).as_lazy()
+        nav_shape = s.axes_manager.navigation_shape
+        nav_mask = np.zeros(nav_shape, dtype=bool)
+        nav_mask[0, 0] = True
+        nav_mask[5, 3] = True
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=5,
+            navigation_mask=nav_mask,
+            print_info=False,
+        )
+        assert s.learning_results.loadings.dtype == np.complex128, (
+            f"Expected loadings.dtype == complex128 (lazy+nav mask), "
+            f"got {s.learning_results.loadings.dtype}"
+        )
+
+    def test_lazy_signal_mask_preserves_factors_dtype(self):
+        """Lazy + signal mask → factors dtype must stay complex128."""
+        rng = np.random.default_rng(42)
+        data = (rng.random((7, 11, 13)) + 1j * rng.random((7, 11, 13))).astype(
+            np.complex128
+        )
+        s = signals.ComplexSignal1D(data).as_lazy()
+        sig_mask = np.zeros(13, dtype=bool)
+        sig_mask[0] = True
+        sig_mask[5] = True
+        s.decomposition(
+            algorithm="SVD",
+            svd_solver="randomized",
+            output_dimension=5,
+            signal_mask=sig_mask,
+            print_info=False,
+        )
+        assert s.learning_results.factors.dtype == np.complex128, (
+            f"Expected factors.dtype == complex128 (lazy+signal mask), "
+            f"got {s.learning_results.factors.dtype}"
+        )

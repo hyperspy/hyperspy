@@ -1,0 +1,11 @@
+Fix ``centre='signal'`` and ``centre='navigation'`` permanently subtracting
+the mean from the signal's data in eager decomposition.  The mean is now
+restored after decomposition, resolving a bug where running two
+decompositions on the same signal with different ``centre`` values produced
+garbage.
+
+Fix ``ISVD`` to compute plain SVD without
+centering (the ``mean_`` property override now also correctly skips
+centering inside ``partial_fit``), and make its ``explained_variance``
+and ``explained_variance_ratio`` use HyperSpy's standard ``S² / N`` and
+``S² / Σ(S²)`` formulas instead of sklearn's PCA-specific conventions.

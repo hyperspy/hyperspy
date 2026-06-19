@@ -2,5 +2,5 @@ Deprecate the low-level ``ORPCA`` and ``ORNMF`` class methods ``fit()``,
 ``project()``, and ``finish()``.  Use the new scikit-learn-compatible API
 instead: ``partial_fit()`` replaces ``fit()``, ``transform()`` replaces
 ``project()``, and the ``components_`` property replaces ``finish()``.
-The deprecated methods still work but emit a deprecation warning and will
-be removed in a future release.
+The deprecated methods still work but emit a ``VisibleDeprecationWarning``
+and will be removed in a future release.

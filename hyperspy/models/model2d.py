@@ -22,22 +22,22 @@ import numpy as np
 
 from hyperspy.model import BaseModel, ModelComponents
 
-_SIGNAL_RANGE_VALUES = """x1, x2 : None or float
-            Start and end of the range in the first axis (horizontal)
-            in units.
-        y1, y2 : None or float
-            Start and end of the range in the second axis (vertical)
-            in units.
-        """
+_SIGNAL_RANGE_VALUES = """\
+x1, x2 : None or float
+    Start and end of the range in the first axis (horizontal)
+    in units.
+y1, y2 : None or float
+    Start and end of the range in the second axis (vertical)
+    in units."""
 
 
-_SIGNAL_RANGE_PIXELS = """i1, i2 : None or float
-            Start and end of the range in the first axis (horizontal)
-            in pixels.
-        j1, j2 : None or float
-            Start and end of the range in the second axis (vertical)
-            in pixels.
-        """
+_SIGNAL_RANGE_PIXELS = """\
+i1, i2 : None or float
+    Start and end of the range in the first axis (horizontal)
+    in pixels.
+j1, j2 : None or float
+    Start and end of the range in the second axis (vertical)
+    in pixels."""
 
 
 class Model2D(BaseModel):

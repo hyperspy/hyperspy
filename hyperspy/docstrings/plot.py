@@ -66,6 +66,7 @@ BASE_PLOT_DOCSTRING_PARAMETERS = """navigator : str, None, or :class:`~hyperspy.
             ``navigator_shape`` of the current object (for a dynamic navigator).
             If the signal ``dtype`` is RGB or RGBA this parameter has no effect and
             the value is always set to ``'slider'``.
+
         axes_manager : None or :class:`~hyperspy.axes.AxesManager`
             If None, the signal's ``axes_manager`` attribute is used.
         plot_markers : bool, default True
@@ -95,6 +96,7 @@ PLOT1D_DOCSTRING = """norm : str, default ``'auto'``
             Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``.
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
+
         autoscale : str
             The string must contain any combination of the ``'x'`` and ``'v'``
             characters. If ``'x'`` or ``'v'`` (for values) are in the string, the
@@ -106,6 +108,7 @@ PLOT1D_DOCSTRING = """norm : str, default ``'auto'``
 
 PLOT2D_DOCSTRING = """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
+
         autoscale : str, optional
             The string must contain any combination of the ``'x'``, ``'y'`` and ``'v'``
             characters. If ``'x'`` or ``'y'`` are in the string, the corresponding
@@ -148,7 +151,9 @@ PLOT2D_DOCSTRING = """colorbar : bool, optional
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
+
         axes_off : bool, default False
+
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : bool or ``"auto"``
@@ -165,13 +170,16 @@ PLOT2D_DOCSTRING = """colorbar : bool, optional
 COMPLEX_DOCSTRING = """power_spectrum : bool, default False.
             If True, plot the power spectrum instead of the actual signal, if
             False, plot the real and imaginary parts of the complex signal.
+
         representation : {``'cartesian'`` | ``'polar'``}
             Determines if the real and imaginary part of the complex data is plotted (``'cartesian'``,
             default), or if the amplitude and phase should be used (``'polar'``).
+
         same_axes : bool, default True
             If True (default) plot the real and
             imaginary parts (or amplitude and phase) in the same figure if
             the signal is one-dimensional.
+
         fft_shift : bool, default False
             If True, shift the zero-frequency component.
             See :func:`numpy.fft.fftshift` for more details.
