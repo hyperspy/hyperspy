@@ -460,6 +460,13 @@ copybutton_prompt_is_regexp = True
 
 tls_verify = True
 
+# FIXME: remove when sphinx-doc/sphinx#14089 is closed.
+# Workaround for Sphinx 9.x autodoc regressions (sphinx-doc/sphinx#13721,
+# sphinx-doc/sphinx#13316, tracked at sphinx-doc/sphinx#14089). The new
+# implementation silently skips methods defined on mixin classes several
+# levels deep in the MRO.
+autodoc_use_legacy_class_based = True
+
 
 def setup(app):
     app.add_css_file("custom-styles.css")

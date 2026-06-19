@@ -1,0 +1,3 @@
+Enable ``autodoc_use_legacy_class_based`` in the documentation configuration
+to work around `Sphinx 9.x autodoc regressions <sphinx-doc/sphinx#14089>`_
+that silently skip inherited methods from mixin classes.
