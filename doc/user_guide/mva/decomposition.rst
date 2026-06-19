@@ -3,6 +3,18 @@
 Decomposition
 =============
 
+.. versionadded:: 2.5.0
+   The terms ``factors`` and ``loadings`` have been renamed to
+   ``components`` and ``scores`` respectively across the decomposition
+   API. The old names still work but emit deprecation warnings and will
+   be removed in HyperSpy 3.0.
+
+   .. note::
+      "Decomposition components" (the signal-space profiles from
+      PCA, NMF, SVD, etc.) are distinct from "model components" (the
+      fitting functions such as :class:`~._components.gaussian.Gaussian`
+      used in model fitting).
+
 Decomposition techniques are most commonly used as a means of noise
 reduction (or `denoising`) and dimensionality reduction. To apply a
 decomposition to your dataset, run the :meth:`~.api.signals.BaseSignal.decomposition`
@@ -60,7 +72,7 @@ been replaced by the model constructed using the chosen components.
 
 If you provide the ``output_dimension`` argument, which takes an integer value,
 the decomposition algorithm attempts to find the best approximation for the
-dataset :math:`X` with only a limited set of factors :math:`A` and loadings :math:`B`,
+dataset :math:`X` with only a limited set of decomposition components :math:`A` and scores :math:`B`,
 such that :math:`X \approx A B^T`.
 
 .. code-block:: python
@@ -120,8 +132,8 @@ Singular value decomposition (SVD)
 
 The default algorithm in HyperSpy is ``"SVD"``, which uses an approach called
 "singular value decomposition" to decompose the data in the form
-:math:`X = U \Sigma V^T`. The factors are given by :math:`U \Sigma`, and the
-loadings are given by :math:`V^T`. For more information, please read the method
+:math:`X = U \Sigma V^T`. The components are given by :math:`U \Sigma`, and the
+scores are given by :math:`V^T`. For more information, please read the method
 documentation for :func:`~.hyperspy.learn.svd_pca`.
 
 .. code-block:: python
@@ -275,7 +287,7 @@ component for subsequent processing :ref:`[Candes2011] <Candes2011>`.
    You must set the ``output_dimension`` when using Robust PCA.
 
 The default RPCA algorithm is GoDec :ref:`[Zhou2011] <Zhou2011>`. In HyperSpy
-it returns the factors and loadings of :math:`L`. RPCA solvers work by using
+it returns the components and scores of :math:`L`. RPCA solvers work by using
 regularization, in a similar manner to lasso or ridge regression, to enforce
 the low-rank constraint on the data. The low-rank regularization parameter,
 ``lambda1``, defaults to ``1/sqrt(n_features)``, but it is strongly recommended

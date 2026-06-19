@@ -40,7 +40,7 @@ run the :meth:`~.api.signals.BaseSignal.blind_source_separation` method, for exa
       number_of_components=3
       algorithm=sklearn_fastica
       diff_order=1
-      reverse_component_criterion=factors
+      reverse_component_criterion=components
       whiten_method=PCA
     scikit-learn estimator:
     FastICA(tol=1e-10, whiten=False)
@@ -51,7 +51,7 @@ run the :meth:`~.api.signals.BaseSignal.blind_source_separation` method, for exa
       number_of_components=2
       algorithm=sklearn_fastica
       diff_order=1
-      reverse_component_criterion=factors
+      reverse_component_criterion=components
       whiten_method=PCA
     scikit-learn estimator:
     FastICA(tol=1e-10, whiten=False)
@@ -98,7 +98,7 @@ links to the appropriate documentation for more information on each one.
 Orthomax
 --------
 
-Orthomax rotations are a statistical technique used to clarify and highlight the relationship among factors,
+Orthomax rotations are a statistical technique used to clarify and highlight the relationship among components,
 by adjusting the coordinates of PCA results. The most common approach is known as
 `"varimax" <https://en.wikipedia.org/wiki/Varimax_rotation>`_, which intended to maximize the variance shared
 among the components while preserving orthogonality. The results of an orthomax rotation following PCA are
@@ -114,7 +114,7 @@ often "simpler" to interpret than just PCA, since each componenthas a more discr
       number_of_components=3
       algorithm=orthomax
       diff_order=1
-      reverse_component_criterion=factors
+      reverse_component_criterion=components
       whiten_method=PCA
 
 

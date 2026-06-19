@@ -1382,10 +1382,10 @@ class MVATools(object):
         Parameters
         ----------
         comp_ids : None, int or list of int
-            If None, returns all components/loadings.
-            If an int, returns components/loadings with ids from 0 to the
+            If None, returns all components/scores.
+            If an int, returns components/scores with ids from 0 to the
             given value.
-            If a list of ints, returns components/loadings with ids provided in
+            If a list of ints, returns components/scores with ids provided in
             the given list.
         folder : str or None
             The path to the folder where the file will be saved.
@@ -1394,28 +1394,28 @@ class MVATools(object):
             The prefix that any exported filenames for components begin with.
             Default is ``"factor"``.
         factor_format : str
-            The extension of the format that you wish to save the factors to.
+            The extension of the format that you wish to save the components to.
             Default is ``'hspy'``. See `loading_format` for more details.
         score_prefix : str
             The prefix that any exported filenames for scores begin with.
             Default is ``"loading"``.
         loading_format : str
-            The extension of the format that you wish to save to. default
+            The extension of the format that you wish to save the scores to. default
             is ``'hspy'``. The format determines the kind of output:
 
             * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
               plots are created using the plotting flags as below, and saved
-              at 600 dpi. One plot is saved per loading.
+              at 600 dpi. One plot is saved per score.
             * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
-              are saved in single files.  All loadings are contained in the
+              are saved in single files.  All scores are contained in the
               one file.
-            * For spectral formats (``'msa'``), each loading is saved to a
+            * For spectral formats (``'msa'``), each score is saved to a
               separate file.
 
         multiple_files : bool
-            If ``True``, one file will be created for each factor and loading.
+            If ``True``, one file will be created for each component and score.
             Otherwise, only two files will be created, one for
-            the factors and another for the loadings. The default value can
+            the components and another for the scores. The default value can
             be chosen in the preferences.
         save_figures : bool
             If ``True`` the same figures that are obtained when using the plot
@@ -1431,12 +1431,12 @@ class MVATools(object):
             If ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
         same_window : :class:`bool`
-            If ``True``, plots each factor to the same window.
+            If ``True``, plots each component to the same window.
         comp_label : :class:`str`
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :class:`~matplotlib.colors.Colormap`
-            The colormap used for images, such as factors, loadings, or for peak
+            The colormap used for images, such as components, scores, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``"gray"``).
         per_row : :class:`int`
@@ -1644,10 +1644,10 @@ class MVATools(object):
         Parameters
         ----------
         comp_ids : None, int or list of int
-            If None, returns all components/loadings.
-            If an int, returns components/loadings with ids from 0 to the
+            If None, returns all components/scores.
+            If an int, returns components/scores with ids from 0 to the
             given value.
-            If a list of ints, returns components/loadings with ids provided in
+            If a list of ints, returns components/scores with ids provided in
             the given list.
         folder : str or None
             The path to the folder where the file will be saved.
@@ -1656,28 +1656,28 @@ class MVATools(object):
             The prefix that any exported filenames for components begin with.
             Default is ``"bss_factor"``.
         factor_format : str
-            The extension of the format that you wish to save the factors to.
+            The extension of the format that you wish to save the components to.
             Default is ``'hspy'``. See `loading_format` for more details.
         score_prefix : str
             The prefix that any exported filenames for scores begin with.
             Default is ``"bss_loading"``.
         loading_format : str
-            The extension of the format that you wish to save to. default
+            The extension of the format that you wish to save the scores to. default
             is ``'hspy'``. The format determines the kind of output:
 
             * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
               plots are created using the plotting flags as below, and saved
-              at 600 dpi. One plot is saved per loading.
+              at 600 dpi. One plot is saved per score.
             * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
-              are saved in single files.  All loadings are contained in the
+              are saved in single files.  All scores are contained in the
               one file.
-            * For spectral formats (``'msa'``), each loading is saved to a
+            * For spectral formats (``'msa'``), each score is saved to a
               separate file.
 
         multiple_files : bool
-            If ``True``, one file will be created for each factor and loading.
+            If ``True``, one file will be created for each component and score.
             Otherwise, only two files will be created, one for
-            the factors and another for the loadings. The default value can
+            the components and another for the scores. The default value can
             be chosen in the preferences.
         save_figures : bool
             If ``True``, the same figures that are obtained when using the plot
@@ -1693,12 +1693,12 @@ class MVATools(object):
             If ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
         same_window : :class:`bool`
-            If ``True``, plots each factor to the same window.
+            If ``True``, plots each component to the same window.
         comp_label : :class:`str`
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
         cmap : :class:`~matplotlib.colors.Colormap`
-            The colormap used for images, such as factors, loadings, or
+            The colormap used for images, such as components, scores, or
             for peak characteristics. Default is the matplotlib gray colormap
             (``"gray"``).
         per_row : :class:`int`
