@@ -39,6 +39,7 @@ from tlz import concat
 import hyperspy
 from hyperspy import drawing, signals
 from hyperspy.axes import AxesManager, create_axis
+from hyperspy.decorators import deprecated, deprecated_argument
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING,
     BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -944,7 +945,7 @@ class MVATools(object):
                         filename = Path(folder, filename)
                     s.save(filename)
 
-    def plot_decomposition_factors(
+    def plot_decomposition_components(
         self,
         comp_ids=None,
         calibrate=True,
@@ -954,9 +955,11 @@ class MVATools(object):
         per_row=3,
         **kwargs,
     ):
-        """Plot factors from a decomposition. In case of 1D signal axis, each
-        factors line can be toggled on and off by clicking on their
+        """Plot components from a decomposition. In case of 1D signal axis, each
+        components line can be toggled on and off by clicking on their
         corresponding line in the legend.
+
+        .. versionadded:: 2.5.0
 
         Parameters
         ----------
@@ -973,13 +976,13 @@ class MVATools(object):
             If ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
         same_window : bool
-            If ``True``, plots each factor to the same window.  They are
+            If ``True``, plots each component to the same window.  They are
             not scaled. Default is ``True``.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the dimension of factors is 1 and ``same_window`` is ``True``.
+            when the dimension of components is 1 and ``same_window`` is ``True``.
         cmap : :class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor images, or for peak
+            The colormap used for the component images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``"gray"``).
         per_row : int
@@ -988,12 +991,12 @@ class MVATools(object):
 
         See Also
         --------
-        plot_decomposition_loadings, plot_decomposition_results
+        plot_decomposition_scores, plot_decomposition_results
 
         """
         if self.axes_manager.signal_dimension > 2:
             raise NotImplementedError(
-                "This method cannot plot factors of "
+                "This method cannot plot components of "
                 "signals of dimension higher than 2."
                 "You can use "
                 "`plot_decomposition_results` instead."
@@ -1007,7 +1010,7 @@ class MVATools(object):
             same_window = True
         if self.learning_results.components is None:
             raise RuntimeError("Run a decomposition first.")
-        factors = self.learning_results.components
+        components = self.learning_results.components
         if comp_ids is None:
             if self.learning_results.output_dimension:
                 comp_ids = self.learning_results.output_dimension
@@ -1018,11 +1021,11 @@ class MVATools(object):
                 )
         if title is None:
             title = self._get_plot_title(
-                "Decomposition factors of", same_window=same_window
+                "Decomposition components of", same_window=same_window
             )
 
         return self._plot_factors_or_pchars(
-            factors,
+            components,
             comp_ids=comp_ids,
             calibrate=calibrate,
             same_window=same_window,
@@ -1031,7 +1034,12 @@ class MVATools(object):
             per_row=per_row,
         )
 
-    def plot_bss_factors(
+    @deprecated(since="2.5", alternative="plot_decomposition_components", removal="3.0")
+    def plot_decomposition_factors(self, *args, **kwargs):
+        """Deprecated: use :meth:`plot_decomposition_components` instead."""
+        return self.plot_decomposition_components(*args, **kwargs)
+
+    def plot_bss_components(
         self,
         comp_ids=None,
         calibrate=True,
@@ -1041,9 +1049,11 @@ class MVATools(object):
         per_row=3,
         **kwargs,
     ):
-        """Plot factors from blind source separation results. In case of 1D
-        signal axis, each factors line can be toggled on and off by clicking
+        """Plot components from blind source separation results. In case of 1D
+        signal axis, each components line can be toggled on and off by clicking
         on their corresponding line in the legend.
+
+        .. versionadded:: 2.5.0
 
         Parameters
         ----------
@@ -1058,13 +1068,13 @@ class MVATools(object):
             If ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
         same_window : bool
-            if ``True``, plots each factor to the same window.  They are
+            if ``True``, plots each component to the same window.  They are
             not scaled. Default is ``True``.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the dimension of factors is 1 and ``same_window`` is ``True``.
+            when the dimension of components is 1 and ``same_window`` is ``True``.
         cmap : :class:`~matplotlib.colors.Colormap`
-            The colormap used for the factor images, or for peak
+            The colormap used for the component images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
         per_row : int
@@ -1073,12 +1083,12 @@ class MVATools(object):
 
         See Also
         --------
-        plot_bss_loadings, plot_bss_results
+        plot_bss_scores, plot_bss_results
 
         """
         if self.axes_manager.signal_dimension > 2:
             raise NotImplementedError(
-                "This method cannot plot factors of "
+                "This method cannot plot components of "
                 "signals of dimension higher than 2."
                 "You can use "
                 "`plot_decomposition_results` instead."
@@ -1092,12 +1102,12 @@ class MVATools(object):
 
         if same_window is None:
             same_window = True
-        factors = self.learning_results.bss_components
+        components = self.learning_results.bss_components
         if title is None:
-            title = self._get_plot_title("BSS factors of", same_window=same_window)
+            title = self._get_plot_title("BSS components of", same_window=same_window)
 
         return self._plot_factors_or_pchars(
-            factors,
+            components,
             comp_ids=comp_ids,
             calibrate=calibrate,
             same_window=same_window,
@@ -1105,22 +1115,29 @@ class MVATools(object):
             per_row=per_row,
         )
 
-    def plot_decomposition_loadings(
+    @deprecated(since="2.5", alternative="plot_bss_components", removal="3.0")
+    def plot_bss_factors(self, *args, **kwargs):
+        """Deprecated: use :meth:`plot_bss_components` instead."""
+        return self.plot_bss_components(*args, **kwargs)
+
+    def plot_decomposition_scores(
         self,
         comp_ids=None,
         calibrate=True,
         same_window=True,
         title=None,
-        with_factors=False,
+        with_components=False,
         cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
         **kwargs,
     ):
-        """Plot loadings from a decomposition. In case of 1D navigation axis,
-        each loading line can be toggled on and off by clicking on the legended
+        """Plot scores from a decomposition. In case of 1D navigation axis,
+        each score line can be toggled on and off by clicking on the legended
         line.
+
+        .. versionadded:: 2.5.0
 
         Parameters
         ----------
@@ -1137,20 +1154,20 @@ class MVATools(object):
             if ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
         same_window : bool
-            if ``True``, plots each factor to the same window. They are
+            if ``True``, plots each component to the same window. They are
             not scaled. Default is ``True``.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the dimension of loadings is 1 and ``same_window`` is ``True``.
-        with_factors : bool
-            If ``True``, also returns figure(s) with the factors for the
+            when the dimension of scores is 1 and ``same_window`` is ``True``.
+        with_components : bool
+            If ``True``, also returns figure(s) with the components for the
             given comp_ids.
         cmap : :class:`~matplotlib.colors.Colormap`
-            The colormap used for the loadings images, or for peak
+            The colormap used for the score images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``"gray"``).
         no_nans : bool
-            If ``True``, removes ``NaN``'s from the loading plots.
+            If ``True``, removes ``NaN``'s from the score plots.
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1166,12 +1183,12 @@ class MVATools(object):
 
         See Also
         --------
-        plot_decomposition_factors, plot_decomposition_results
+        plot_decomposition_components, plot_decomposition_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
             raise NotImplementedError(
-                "This method cannot plot loadings of "
+                "This method cannot plot scores of "
                 "dimension higher than 2."
                 "You can use "
                 "`plot_decomposition_results` instead."
@@ -1185,11 +1202,11 @@ class MVATools(object):
             same_window = True
         if self.learning_results.scores is None:
             raise RuntimeError("Run a decomposition first.")
-        loadings = self.learning_results.scores.T
-        if with_factors:
-            factors = self.learning_results.components
+        scores = self.learning_results.scores.T
+        if with_components:
+            components = self.learning_results.components
         else:
-            factors = None
+            components = None
 
         if comp_ids is None:
             if self.learning_results.output_dimension:
@@ -1202,14 +1219,14 @@ class MVATools(object):
 
         if title is None:
             title = self._get_plot_title(
-                "Decomposition loadings of", same_window=same_window
+                "Decomposition scores of", same_window=same_window
             )
 
         return self._plot_loadings(
-            loadings,
+            scores,
             comp_ids=comp_ids,
-            with_factors=with_factors,
-            factors=factors,
+            with_factors=with_components,
+            factors=components,
             same_window=same_window,
             comp_label=title,
             cmap=cmap,
@@ -1218,22 +1235,29 @@ class MVATools(object):
             axes_decor=axes_decor,
         )
 
-    def plot_bss_loadings(
+    @deprecated(since="2.5", alternative="plot_decomposition_scores", removal="3.0")
+    def plot_decomposition_loadings(self, *args, **kwargs):
+        """Deprecated: use :meth:`plot_decomposition_scores` instead."""
+        return self.plot_decomposition_scores(*args, **kwargs)
+
+    def plot_bss_scores(
         self,
         comp_ids=None,
         calibrate=True,
         same_window=True,
         title=None,
-        with_factors=False,
+        with_components=False,
         cmap="gray",
         no_nans=False,
         per_row=3,
         axes_decor="all",
         **kwargs,
     ):
-        """Plot loadings from blind source separation results. In case of 1D
-        navigation axis, each loading line can be toggled on and off by
+        """Plot scores from blind source separation results. In case of 1D
+        navigation axis, each score line can be toggled on and off by
         clicking on their corresponding line in the legend.
+
+        .. versionadded:: 2.5.0
 
         Parameters
         ----------
@@ -1247,20 +1271,20 @@ class MVATools(object):
             if ``True``, calibrates plots where calibration is available
             from the axes_manager.  If ``False``, plots are in pixels/channels.
         same_window : bool
-            If ``True``, plots each factor to the same window. They are
+            If ``True``, plots each component to the same window. They are
             not scaled. Default is ``True``.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the dimension of loadings is 1 and ``same_window`` is ``True``.
-        with_factors : bool
-            If `True`, also returns figure(s) with the factors for the
+            when the dimension of scores is 1 and ``same_window`` is ``True``.
+        with_components : bool
+            If `True`, also returns figure(s) with the components for the
             given `comp_ids`.
         cmap : :class:`~matplotlib.colors.Colormap`
-            The colormap used for the loading image, or for peak
+            The colormap used for the score image, or for peak
             characteristics,. Default is the matplotlib gray colormap
             (``"gray"``).
         no_nans : bool
-            If ``True``, removes ``NaN``'s from the loading plots.
+            If ``True``, removes ``NaN``'s from the score plots.
         per_row : int
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
@@ -1275,12 +1299,12 @@ class MVATools(object):
 
         See Also
         --------
-        plot_bss_factors, plot_bss_results
+        plot_bss_components, plot_bss_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
             raise NotImplementedError(
-                "This method cannot plot loadings of "
+                "This method cannot plot scores of "
                 "dimension higher than 2."
                 "You can use "
                 "`plot_bss_results` instead."
@@ -1294,17 +1318,17 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         if title is None:
-            title = self._get_plot_title("BSS loadings of", same_window=same_window)
-        loadings = self.learning_results.bss_scores.T
-        if with_factors:
-            factors = self.learning_results.bss_components
+            title = self._get_plot_title("BSS scores of", same_window=same_window)
+        scores = self.learning_results.bss_scores.T
+        if with_components:
+            components = self.learning_results.bss_components
         else:
-            factors = None
+            components = None
         return self._plot_loadings(
-            loadings,
+            scores,
             comp_ids=comp_ids,
-            with_factors=with_factors,
-            factors=factors,
+            with_factors=with_components,
+            factors=components,
             same_window=same_window,
             comp_label=title,
             cmap=cmap,
@@ -1313,13 +1337,18 @@ class MVATools(object):
             axes_decor=axes_decor,
         )
 
-    def _get_plot_title(self, base_title="Loadings", same_window=True):
+    @deprecated(since="2.5", alternative="plot_bss_scores", removal="3.0")
+    def plot_bss_loadings(self, *args, **kwargs):
+        """Deprecated: use :meth:`plot_bss_scores` instead."""
+        return self.plot_bss_scores(*args, **kwargs)
+
+    def _get_plot_title(self, base_title="Scores", same_window=True):
         title_md = self.metadata.General.title
         title = "%s %s" % (base_title, title_md)
         if title_md == "":  # remove the 'of' if 'title' is a empty string
             title = title.replace(" of ", "")
         if not same_window:
-            title = title.replace("loadings", "loading")
+            title = title.replace("scores", "score")
         return title
 
     def export_decomposition_results(
@@ -1410,7 +1439,7 @@ class MVATools(object):
 
         See Also
         --------
-        get_decomposition_factors, get_decomposition_loadings
+        get_decomposition_components, get_decomposition_scores
         """
 
         factors = self.learning_results.components
@@ -1666,7 +1695,7 @@ class MVATools(object):
 
         See Also
         --------
-        get_bss_factors, get_bss_loadings
+        get_bss_components, get_bss_scores
         """
 
         factors = self.learning_results.bss_components
@@ -1705,12 +1734,12 @@ class MVATools(object):
             save_figures_format=save_figures_format,
         )
 
-    def _get_loadings(self, loadings):
-        if loadings is None:
+    def _get_scores(self, scores):
+        if scores is None:
             raise RuntimeError("No learning results found.")
         from hyperspy.api import signals
 
-        data = loadings.T.reshape((-1,) + self.axes_manager.navigation_shape[::-1])
+        data = scores.T.reshape((-1,) + self.axes_manager.navigation_shape[::-1])
         if data.shape[0] > 1:
             signal = signals.BaseSignal(
                 data,
@@ -1725,12 +1754,12 @@ class MVATools(object):
             signal = self._get_navigation_signal(data.squeeze())
         return signal
 
-    def _get_factors(self, factors):
-        if factors is None:
+    def _get_components(self, components):
+        if components is None:
             raise RuntimeError("No learning results found.")
         signal = self.__class__(
-            factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
-            axes=[{"size": factors.shape[-1], "navigate": True}]
+            components.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
+            axes=[{"size": components.shape[-1], "navigate": True}]
             + self.axes_manager._get_signal_axes_dicts(),
         )
         signal.set_signal_type(self.metadata.Signal.signal_type)
@@ -1738,8 +1767,10 @@ class MVATools(object):
             axis.navigate = False
         return signal
 
-    def get_decomposition_loadings(self):
-        """Return the decomposition loadings.
+    def get_decomposition_scores(self):
+        """Return the decomposition scores.
+
+        .. versionadded:: 2.5.0
 
         Returns
         -------
@@ -1747,20 +1778,27 @@ class MVATools(object):
 
         See Also
         --------
-        get_decomposition_factors, export_decomposition_results
+        get_decomposition_components, export_decomposition_results
 
         """
         if self.learning_results.scores is None:
             raise RuntimeError("Run a decomposition first.")
-        signal = self._get_loadings(self.learning_results.scores)
+        signal = self._get_scores(self.learning_results.scores)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = (
-            "Decomposition loadings of " + self.metadata.General.title
+            "Decomposition scores of " + self.metadata.General.title
         )
         return signal
 
-    def get_decomposition_factors(self):
-        """Return the decomposition factors.
+    @deprecated(since="2.5", alternative="get_decomposition_scores", removal="3.0")
+    def get_decomposition_loadings(self):
+        """Deprecated: use :meth:`get_decomposition_scores` instead."""
+        return self.get_decomposition_scores()
+
+    def get_decomposition_components(self):
+        """Return the decomposition components.
+
+        .. versionadded:: 2.5.0
 
         Returns
         -------
@@ -1768,20 +1806,51 @@ class MVATools(object):
 
         See Also
         --------
-        get_decomposition_loadings, export_decomposition_results
+        get_decomposition_scores, export_decomposition_results
 
         """
         if self.learning_results.components is None:
             raise RuntimeError("Run a decomposition first.")
-        signal = self._get_factors(self.learning_results.components)
+        signal = self._get_components(self.learning_results.components)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = (
-            "Decomposition factors of " + self.metadata.General.title
+            "Decomposition components of " + self.metadata.General.title
         )
         return signal
 
+    @deprecated(since="2.5", alternative="get_decomposition_components", removal="3.0")
+    def get_decomposition_factors(self):
+        """Deprecated: use :meth:`get_decomposition_components` instead."""
+        return self.get_decomposition_components()
+
+    def get_bss_scores(self):
+        """Return the blind source separation scores.
+
+        .. versionadded:: 2.5.0
+
+        Returns
+        -------
+        :class:`~hyperspy.signal.BaseSignal` (or subclass)
+
+        See Also
+        --------
+        get_bss_components, export_bss_results
+
+        """
+        signal = self._get_scores(self.learning_results.bss_scores)
+        signal.axes_manager[0].name = "BSS component index"
+        signal.metadata.General.title = "BSS scores of " + self.metadata.General.title
+        return signal
+
+    @deprecated(since="2.5", alternative="get_bss_scores", removal="3.0")
     def get_bss_loadings(self):
-        """Return the blind source separation loadings.
+        """Deprecated: use :meth:`get_bss_scores` instead."""
+        return self.get_bss_scores()
+
+    def get_bss_components(self):
+        """Return the blind source separation components.
+
+        .. versionadded:: 2.5.0
 
         Returns
         -------
@@ -1789,135 +1858,155 @@ class MVATools(object):
 
         See Also
         --------
-        get_bss_factors, export_bss_results
+        get_bss_scores, export_bss_results
 
         """
-        signal = self._get_loadings(self.learning_results.bss_scores)
+        signal = self._get_components(self.learning_results.bss_components)
         signal.axes_manager[0].name = "BSS component index"
-        signal.metadata.General.title = "BSS loadings of " + self.metadata.General.title
+        signal.metadata.General.title = (
+            "BSS components of " + self.metadata.General.title
+        )
         return signal
 
+    @deprecated(since="2.5", alternative="get_bss_components", removal="3.0")
     def get_bss_factors(self):
-        """Return the blind source separation factors.
+        """Deprecated: use :meth:`get_bss_components` instead."""
+        return self.get_bss_components()
 
-        Returns
-        -------
-        :class:`~hyperspy.signal.BaseSignal` (or subclass)
-
-        See Also
-        --------
-        get_bss_loadings, export_bss_results
-
-        """
-        signal = self._get_factors(self.learning_results.bss_components)
-        signal.axes_manager[0].name = "BSS component index"
-        signal.metadata.General.title = "BSS factors of " + self.metadata.General.title
-        return signal
-
+    @deprecated_argument(
+        "factors_navigator",
+        since="2.5",
+        removal="3.0",
+        alternative="components_navigator",
+    )
+    @deprecated_argument(
+        "loadings_navigator", since="2.5", removal="3.0", alternative="scores_navigator"
+    )
+    @deprecated_argument(
+        "factors_dim", since="2.5", removal="3.0", alternative="components_dim"
+    )
+    @deprecated_argument(
+        "loadings_dim", since="2.5", removal="3.0", alternative="scores_dim"
+    )
     def plot_bss_results(
         self,
-        factors_navigator="smart_auto",
-        loadings_navigator="smart_auto",
-        factors_dim=2,
-        loadings_dim=2,
+        components_navigator="smart_auto",
+        scores_navigator="smart_auto",
+        components_dim=2,
+        scores_dim=2,
     ):
-        """Plot the blind source separation factors and loadings.
+        """Plot the blind source separation components and scores.
 
-        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_factors` and
-        :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_loadings`,
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_components` and
+        :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_scores`,
         this method displays one component at a time. Therefore it provides a
         more compact visualization than then other two methods.
-        The loadings and factors are displayed in different windows and each
+        The scores and components are displayed in different windows and each
         has its own navigator/sliders to navigate them if they are
         multidimensional. The component index axis is synchronized between
         the two.
 
         Parameters
         ----------
-        factors_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+        components_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
             :class:`~hyperspy.api.signals.BaseSignal` object.
             ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
             see the :meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
             for details.
-        loadings_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
-            See the `factors_navigator` parameter
-        factors_dim : int
+        scores_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+            See the `components_navigator` parameter
+        components_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
             higher than two. Therefore, to visualize the BSS results when the
-            factors or the loadings have signal dimension greater than 2,
+            components or the scores have signal dimension greater than 2,
             the data can be viewed as spectra (or images) by setting this
             parameter to 1 (or 2). (The default is 2)
-        loadings_dim : int
-            See the ``factors_dim`` parameter
+        scores_dim : int
+            See the ``components_dim`` parameter
 
         See Also
         --------
-        plot_bss_factors, plot_bss_loadings, plot_decomposition_results
+        plot_bss_components, plot_bss_scores, plot_decomposition_results
 
         """
-        factors = self.get_bss_factors()
-        loadings = self.get_bss_loadings()
+        components = self.get_bss_components()
+        scores = self.get_bss_scores()
         _plot_x_results(
-            factors=factors,
-            loadings=loadings,
-            factors_navigator=factors_navigator,
-            loadings_navigator=loadings_navigator,
-            factors_dim=factors_dim,
-            loadings_dim=loadings_dim,
+            components=components,
+            scores=scores,
+            components_navigator=components_navigator,
+            scores_navigator=scores_navigator,
+            components_dim=components_dim,
+            scores_dim=scores_dim,
         )
 
+    @deprecated_argument(
+        "factors_navigator",
+        since="2.5",
+        removal="3.0",
+        alternative="components_navigator",
+    )
+    @deprecated_argument(
+        "loadings_navigator", since="2.5", removal="3.0", alternative="scores_navigator"
+    )
+    @deprecated_argument(
+        "factors_dim", since="2.5", removal="3.0", alternative="components_dim"
+    )
+    @deprecated_argument(
+        "loadings_dim", since="2.5", removal="3.0", alternative="scores_dim"
+    )
     def plot_decomposition_results(
         self,
-        factors_navigator="smart_auto",
-        loadings_navigator="smart_auto",
-        factors_dim=2,
-        loadings_dim=2,
+        components_navigator="smart_auto",
+        scores_navigator="smart_auto",
+        components_dim=2,
+        scores_dim=2,
     ):
-        """Plot the decomposition factors and loadings.
+        """Plot the decomposition components and scores.
 
-        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_factors`
-        and :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_loadings`,
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_components`
+        and :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_scores`,
         this method displays one component at a time. Therefore it provides a
-        more compact visualization than then other two methods. The loadings
-        and factors are displayed in different windows and each has its own
+        more compact visualization than then other two methods. The scores
+        and components are displayed in different windows and each has its own
         navigator/sliders to navigate them if they are multidimensional. The
         component index axis is synchronized between the two.
 
         Parameters
         ----------
-        factors_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+        components_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
             :class:`~hyperspy.api.signals.BaseSignal` object.
             ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
             see the :meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
             for details.
-        loadings_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
-            See the `factors_navigator` parameter
-        factors_dim, loadings_dim : int
+        scores_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+            See the `components_navigator` parameter
+        components_dim, scores_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
             higher than two. Therefore, to visualize the BSS results when the
-            factors or the loadings have signal dimension greater than 2,
+            components or the scores have signal dimension greater than 2,
             the data can be viewed as spectra (or images) by setting this
             parameter to 1 (or 2). (The default is 2)
 
         See Also
         --------
-        plot_decomposition_factors, plot_decomposition_loadings, plot_bss_results
+        plot_decomposition_components, plot_decomposition_scores, plot_bss_results
 
         """
 
-        factors = self.get_decomposition_factors()
-        loadings = self.get_decomposition_loadings()
+        components = self.get_decomposition_components()
+        scores = self.get_decomposition_scores()
         _plot_x_results(
-            factors=factors,
-            loadings=loadings,
-            factors_navigator=factors_navigator,
-            loadings_navigator=loadings_navigator,
-            factors_dim=factors_dim,
-            loadings_dim=loadings_dim,
+            components=components,
+            scores=scores,
+            components_navigator=components_navigator,
+            scores_navigator=scores_navigator,
+            components_dim=components_dim,
+            scores_dim=scores_dim,
         )
 
     def get_cluster_labels(self, merged=False):
@@ -1952,9 +2041,9 @@ class MVATools(object):
                 ]
                 * self.learning_results.cluster_labels
             ).sum(0) - 1
-            label_signal = self._get_loadings(data)
+            label_signal = self._get_scores(data)
         else:
-            label_signal = self._get_loadings(self.learning_results.cluster_labels.T)
+            label_signal = self._get_scores(self.learning_results.cluster_labels.T)
             label_signal.axes_manager._axes[0].name = "Cluster index"
         label_signal.metadata.General.title = (
             "Cluster labels of " + self.metadata.General.title
@@ -1986,7 +2075,7 @@ class MVATools(object):
 
         """
         cs = self._get_cluster_signals_factors(signal=signal)
-        signal = self._get_factors(cs.T)
+        signal = self._get_components(cs.T)
         signal.axes_manager._axes[0].name = "Cluster index"
         signal.metadata.General.title = (
             f"Cluster {signal} signals of {self.metadata.General.title}"
@@ -2010,7 +2099,7 @@ class MVATools(object):
         """
         if self.learning_results.cluster_distances is None:
             raise RuntimeError("Cluster analysis needs to be performed first.")
-        distance_signal = self._get_loadings(self.learning_results.cluster_distances.T)
+        distance_signal = self._get_scores(self.learning_results.cluster_distances.T)
         distance_signal.axes_manager._axes[0].name = "Cluster index"
         distance_signal.metadata.General.title = (
             "Cluster distances of " + self.metadata.General.title
@@ -2315,38 +2404,43 @@ class MVATools(object):
         distances = self.get_cluster_distances()
         self.get_cluster_labels(merged=True).plot()
         _plot_x_results(
-            factors=centers,
-            loadings=distances,
-            factors_navigator=centers_navigator,
-            loadings_navigator=labels_navigator,
-            factors_dim=centers_dim,
-            loadings_dim=labels_dim,
+            components=centers,
+            scores=distances,
+            components_navigator=centers_navigator,
+            scores_navigator=labels_navigator,
+            components_dim=centers_dim,
+            scores_dim=labels_dim,
         )
 
 
 def _plot_x_results(
-    factors, loadings, factors_navigator, loadings_navigator, factors_dim, loadings_dim
+    components,
+    scores,
+    components_navigator,
+    scores_navigator,
+    components_dim,
+    scores_dim,
 ):
-    factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
-    if loadings.axes_manager.signal_dimension > 2:
-        loadings.axes_manager._set_signal_dimension(loadings_dim)
-    if factors.axes_manager.signal_dimension > 2:
-        factors.axes_manager._set_signal_dimension(factors_dim)
+    components.axes_manager._axes[0] = scores.axes_manager._axes[0]
+    if scores.axes_manager.signal_dimension > 2:
+        scores.axes_manager._set_signal_dimension(scores_dim)
+    if components.axes_manager.signal_dimension > 2:
+        components.axes_manager._set_signal_dimension(components_dim)
     if (
-        loadings_navigator == "smart_auto"
-        and loadings.axes_manager.navigation_dimension < 3
+        scores_navigator == "smart_auto"
+        and scores.axes_manager.navigation_dimension < 3
     ):
-        loadings_navigator = "slider"
+        scores_navigator = "slider"
     else:
-        loadings_navigator = "auto"
-    if factors_navigator == "smart_auto" and (
-        factors.axes_manager.navigation_dimension < 3 or loadings_navigator is not None
+        scores_navigator = "auto"
+    if components_navigator == "smart_auto" and (
+        components.axes_manager.navigation_dimension < 3 or scores_navigator is not None
     ):
-        factors_navigator = None
+        components_navigator = None
     else:
-        factors_navigator = "auto"
-    loadings.plot(navigator=loadings_navigator)
-    factors.plot(navigator=factors_navigator)
+        components_navigator = "auto"
+    scores.plot(navigator=scores_navigator)
+    components.plot(navigator=components_navigator)
 
 
 class SpecialSlicersSignal(SpecialSlicers):

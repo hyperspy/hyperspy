@@ -251,7 +251,7 @@ class MVA:
 
         See Also
         --------
-        plot_decomposition_factors, plot_decomposition_loadings,
+        plot_decomposition_components, plot_decomposition_scores,
         plot_decomposition_results, plot_scree_plot
 
         """
@@ -750,7 +750,7 @@ class MVA:
 
         See Also
         --------
-        plot_bss_factors, plot_bss_loadings, plot_bss_results
+        plot_bss_components, plot_bss_scores, plot_bss_results
 
         """
         from hyperspy.signal import BaseSignal
@@ -765,9 +765,9 @@ class MVA:
                 )
             else:
                 if on_loadings:
-                    factors = self.get_decomposition_loadings()
+                    factors = self.get_decomposition_scores()
                 else:
-                    factors = self.get_decomposition_factors()
+                    factors = self.get_decomposition_components()
 
         if hasattr(factors, "compute"):
             # if the factors are lazy, we compute them, which should be fine
@@ -1444,7 +1444,7 @@ class MVA:
         See Also
         --------
         decomposition, plot_scree_plot,
-        get_decomposition_loadings, get_decomposition_factors
+        get_decomposition_scores, get_decomposition_components
 
         """
         target = self.learning_results

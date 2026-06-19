@@ -146,12 +146,12 @@ def test_factors_error():
     s.change_dtype("float64")
     s.decomposition()
 
-    factors = s.get_decomposition_factors().data
+    factors = s.get_decomposition_components().data
 
     with pytest.raises(TypeError, match="`factors` must be a BaseSignal instance"):
         s.blind_source_separation(2, factors=factors)
 
-    factors = BaseSignal(s.get_decomposition_factors().data)
+    factors = BaseSignal(s.get_decomposition_components().data)
 
     with pytest.raises(ValueError, match="`factors` must have navigation dimension"):
         s.blind_source_separation(2, factors=factors)
@@ -312,7 +312,7 @@ class TestBSS1D:
         s2.decomposition()
         s2.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=True)
         assert are_bss_components_equivalent(
-            self.s.get_bss_factors(), s2.get_bss_loadings()
+            self.s.get_bss_components(), s2.get_bss_scores()
         )
 
     @pytest.mark.filterwarnings("ignore:FastICA did not converge")
@@ -369,7 +369,7 @@ class TestBSS2D:
 
     def test_diff_axes_string_with_mask(self):
         self.s.learning_results.components[5, :] = np.nan
-        factors = self.s.get_decomposition_factors().inav[:3]
+        factors = self.s.get_decomposition_components().inav[:3]
         if self.mask_sig._lazy:
             self.mask_sig.compute()
         self.s.blind_source_separation(
@@ -410,7 +410,7 @@ class TestBSS2D:
 
     def test_diff_axes_string_without_mask(self):
         factors = (
-            self.s.get_decomposition_factors().inav[:3].derivative(axis="x", order=1)
+            self.s.get_decomposition_components().inav[:3].derivative(axis="x", order=1)
         )
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False, factors=factors
@@ -429,7 +429,7 @@ class TestBSS2D:
 
     def test_diff_axes_without_mask(self):
         factors = (
-            self.s.get_decomposition_factors().inav[:3].derivative(axis="y", order=1)
+            self.s.get_decomposition_components().inav[:3].derivative(axis="y", order=1)
         )
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False, factors=factors
@@ -452,7 +452,7 @@ class TestBSS2D:
         s2.decomposition()
         s2.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=True)
         assert are_bss_components_equivalent(
-            self.s.get_bss_factors(), s2.get_bss_loadings()
+            self.s.get_bss_components(), s2.get_bss_scores()
         )
 
     @pytest.mark.parametrize("diff_order", [0, 1])
