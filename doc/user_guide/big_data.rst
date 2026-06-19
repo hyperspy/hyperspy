@@ -343,30 +343,30 @@ By contrast, ``svd_solver='randomized'`` and ``svd_solver='incremental'``
 always compute numpy arrays during decomposition, so
 ``get_decomposition_model()`` returns an eager signal by default.
 
-.. _big_data.svd.lazy_kwarg:
+.. _big_data.svd.lazy_output_kwarg:
 
-Controlling laziness with the ``lazy`` keyword
-""""""""""""""""""""""""""""""""""""""""""""""
+Controlling laziness with the ``lazy_output`` keyword
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-The general behaviour of the ``lazy`` keyword on
+The general behaviour of the ``lazy_output`` keyword on
 :meth:`~.api.signals.BaseSignal.get_decomposition_model` is described in
 :ref:`mva.model_output_laziness`.
 
 For lazy signals, the key additional point is that ``svd_solver='full'``
-already stores factors and loadings as dask arrays, so ``lazy=None`` preserves
-laziness automatically.  Use ``lazy=True`` to force a lazy reconstruction after
+already stores factors and loadings as dask arrays, so ``lazy_output=None`` preserves
+laziness automatically.  Use ``lazy_output=True`` to force a lazy reconstruction after
 an eager decomposition (for example with ``svd_solver='randomized'``), or
-``lazy=False`` to materialise the model immediately:
+``lazy_output=False`` to materialise the model immediately:
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm="SVD", svd_solver="randomized",
    ...                 output_dimension=3) # doctest: +SKIP
-   >>> model = s.get_decomposition_model(lazy=True)  # force lazy # doctest: +SKIP
+   >>> model = s.get_decomposition_model(lazy_output=True)  # force lazy # doctest: +SKIP
    >>> model.save("model.hspy")  # streams chunk-by-chunk # doctest: +SKIP
 
    >>> s.decomposition(algorithm="SVD", svd_solver="full") # doctest: +SKIP
-   >>> model = s.get_decomposition_model(lazy=False)  # trigger computation now # doctest: +SKIP
+   >>> model = s.get_decomposition_model(lazy_output=False)  # trigger computation now # doctest: +SKIP
 
 .. note::
 

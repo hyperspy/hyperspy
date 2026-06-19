@@ -606,7 +606,7 @@ class MVA:
 
         Returns
         -------
-         tuple of numpy.ndarray or sklearn.base.BaseEstimator or None
+        tuple of numpy.ndarray or sklearn.base.BaseEstimator or None
             * If True and 'algorithm' in ['RPCA', 'ORPCA', 'ORNMF'], returns
               the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
             * If True and 'algorithm' is an sklearn Estimator, returns the
