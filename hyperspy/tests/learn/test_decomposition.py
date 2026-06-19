@@ -188,7 +188,7 @@ class TestGetModel:
     @pytest.mark.parametrize("lazy_output", [True, False, None])
     def test_get_decomposition_model(self, lazy_output):
         s = self.s
-        s.decomposition(algorithm="SVD")
+        s.decomposition(algorithm="SVD", output_dimension=3)
         sc = self.s.get_decomposition_model(3, lazy_output=lazy_output)
         if lazy_output or (lazy_output is None and self.s._lazy):
             assert isinstance(sc.data, da.Array)
@@ -215,7 +215,7 @@ class TestGetModel:
         """lazy_output=True should produce signal with HyperSpy's
         chunking convention: signal axes as single chunks (-1)."""
         s = self.s.deepcopy()
-        s.decomposition(algorithm="SVD")
+        s.decomposition(algorithm="SVD", output_dimension=3)
         sc = s.get_decomposition_model(3, lazy_output=True, chunks=-1)
         assert isinstance(sc.data, da.Array)
         sig_axes = sc.axes_manager.signal_dimension
