@@ -139,7 +139,7 @@ class ORNMF:
         Parameters
         ----------
         rank : int
-            The rank of the representation (number of components/factors)
+            The rank of the representation (number of components)
         store_error : bool, default False
             If True, stores the sparse error matrix.
         lambda1 : float
@@ -339,7 +339,7 @@ class ORNMF:
             or an iterator that yields n_samples, each with n_features elements.
         return_error : bool, default False
             If True, returns the sparse error matrix as well. Otherwise only
-            the weights (loadings)
+            the weights (scores)
 
         """
         return self._project_impl(X, return_error=return_error)
@@ -373,7 +373,7 @@ class ORNMF:
         removal="3.0",
     )
     def finish(self):
-        """Return the learnt factors and loadings."""
+        """Return the learnt components and scores."""
         if len(self.H) > 0:
             if len(self.H[0].shape) == 1:
                 H = np.stack(self.H, axis=-1)
@@ -418,7 +418,7 @@ class ORNMF:
 
         Returns
         -------
-        loadings : numpy.ndarray, shape (n_samples, rank)
+        scores : numpy.ndarray, shape (n_samples, rank)
             Non-negative coordinates of each sample in the learnt dictionary.
         """
         return self._project_impl(X).T
@@ -446,7 +446,7 @@ def ornmf(
     X : numpy.ndarray
         The [n_samples, n_features] input data.
     rank : int
-        The rank of the representation (number of components/factors)
+        The rank of the representation (number of components)
     store_error : bool, default False
         If True, stores the sparse error matrix.
     project : bool, default False
@@ -480,9 +480,9 @@ def ornmf(
         The sparse error matrix with shape (n_features x n_samples).
         Only returned if store_error is True.
     W : numpy.ndarray
-        The non-negative factors matrix with shape (n_features, rank).
+        The non-negative component matrix with shape (n_features, rank).
     H : numpy.ndarray
-        The non-negative loadings matrix with shape (rank, n_samples).
+        The non-negative scores matrix with shape (rank, n_samples).
 
     """
     X = X.T

@@ -51,7 +51,7 @@ if SKLEARN_INSTALLED:
         disables centering so the decomposition computes a plain SVD rather
         than PCA.  Data is fed in batches via ``partial_fit``; after all
         batches have been processed, call ``transform`` to obtain the
-        loadings.
+        scores.
 
         The centering is disabled by overriding the ``mean_`` property to
         always return zeros (either a scalar ``0.0`` or an array of zeros,
@@ -90,8 +90,8 @@ if SKLEARN_INSTALLED:
         >>> obj = ISVD(n_components=3)
         >>> for chunk in np.array_split(X, 4):
         ...     obj.partial_fit(chunk)
-        >>> factors = obj.components_.T          # shape (n_features, n_components)
-        >>> loadings = obj.transform(X)          # shape (n_samples, n_components)
+        >>> components = obj.components_.T       # shape (n_features, n_components)
+        >>> scores = obj.transform(X)            # shape (n_samples, n_components)
         """
 
         @property

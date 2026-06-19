@@ -356,7 +356,7 @@ class MVATools(object):
 
     def _plot_factors_or_pchars(
         self,
-        factors,
+        components,
         comp_ids=None,
         calibrate=True,
         avg_char=False,
@@ -385,12 +385,12 @@ class MVATools(object):
             If True, plots are calibrated according to the data in the
             axes manager.
         same_window : bool
-            If True, plots each factor to the same window. They are not scaled.
+            If True, plots each component to the same window. They are not scaled.
             Default True.
         comp_label : str
             Title of the plot
         cmap : a matplotlib colormap
-            The colormap used for factor images or any peak characteristic
+            The colormap used for component images or any peak characteristic
             scatter map overlay. Default is the matplotlib gray colormap
             (``"gray"``).
 
@@ -430,7 +430,7 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         if comp_ids is None:
-            comp_ids = range(factors.shape[1])
+            comp_ids = range(components.shape[1])
 
         elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
@@ -459,7 +459,7 @@ class MVATools(object):
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
                 ax = drawing.signal._plot_1D_component(
-                    factors=factors,
+                    components=components,
                     idx=comp_ids[i],
                     axes_manager=self.axes_manager,
                     ax=ax,
@@ -468,7 +468,7 @@ class MVATools(object):
                     same_window=same_window,
                 )
                 if same_window:
-                    plt.legend(ncol=factors.shape[1] // 2, loc="best")
+                    plt.legend(ncol=components.shape[1] // 2, loc="best")
             elif self.axes_manager.signal_dimension == 2:
                 if same_window:
                     ax = f.add_subplot(rows, per_row, i + 1)
@@ -479,7 +479,7 @@ class MVATools(object):
                     ax = f.add_subplot(111)
 
                 drawing.signal._plot_2D_component(
-                    factors=factors,
+                    components=components,
                     idx=comp_ids[i],
                     axes_manager=self.axes_manager,
                     calibrate=calibrate,
@@ -506,13 +506,13 @@ class MVATools(object):
 
     def _plot_loadings(
         self,
-        loadings,
+        scores,
         comp_ids,
         calibrate=True,
         same_window=True,
         comp_label=None,
         with_factors=False,
-        factors=None,
+        components=None,
         cmap="gray",
         no_nans=False,
         per_row=3,
@@ -523,7 +523,7 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         if comp_ids is None:
-            comp_ids = range(loadings.shape[0])
+            comp_ids = range(scores.shape[0])
 
         elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
@@ -560,7 +560,7 @@ class MVATools(object):
                         plt.title("%s" % comp_label)
                     ax = f.add_subplot(111)
             drawing.signal._plot_loading(
-                loadings,
+                scores,
                 idx=comp_ids[i],
                 axes_manager=self.axes_manager,
                 no_nans=no_nans,
@@ -586,7 +586,7 @@ class MVATools(object):
         if not same_window:
             if with_factors:
                 return fig_list, self._plot_factors_or_pchars(
-                    factors,
+                    components,
                     comp_ids=comp_ids,
                     calibrate=calibrate,
                     same_window=same_window,
@@ -597,11 +597,11 @@ class MVATools(object):
                 return fig_list
         else:
             if self.axes_manager.navigation_dimension == 1:
-                plt.legend(ncol=loadings.shape[0] // 2, loc="best")
+                plt.legend(ncol=scores.shape[0] // 2, loc="best")
                 drawing.utils.animate_legend(f)
             if with_factors:
                 return f, self._plot_factors_or_pchars(
-                    factors,
+                    components,
                     comp_ids=comp_ids,
                     calibrate=calibrate,
                     same_window=same_window,
@@ -613,7 +613,7 @@ class MVATools(object):
 
     def _export_factors(
         self,
-        factors,
+        components,
         folder=None,
         comp_ids=None,
         multiple_files=True,
@@ -643,18 +643,18 @@ class MVATools(object):
 
         # Select the desired factors
         if comp_ids is None:
-            comp_ids = range(factors.shape[1])
+            comp_ids = range(components.shape[1])
         elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
-        mask = np.zeros(factors.shape[1], dtype=np.bool)
+        mask = np.zeros(components.shape[1], dtype=np.bool)
         for idx in comp_ids:
             mask[idx] = 1
-        factors = factors[:, mask]
+        components = components[:, mask]
 
         if save_figures is True:
             plt.ioff()
             fac_plots = self._plot_factors_or_pchars(
-                factors,
+                components,
                 comp_ids=comp_ids,
                 same_window=same_window,
                 comp_label=comp_label,
@@ -685,7 +685,9 @@ class MVATools(object):
                 axes_dicts = []
                 axes = self.axes_manager.signal_axes[::-1]
                 shape = (axes[1].size, axes[0].size)
-                factor_data = np.rollaxis(factors.reshape((shape[0], shape[1], -1)), 2)
+                component_data = np.rollaxis(
+                    components.reshape((shape[0], shape[1], -1)), 2
+                )
                 axes_dicts.append(axes[0].get_axis_dictionary())
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts.append(
@@ -693,13 +695,13 @@ class MVATools(object):
                         "name": "factor_index",
                         "scale": 1.0,
                         "offset": 0.0,
-                        "size": int(factors.shape[1]),
+                        "size": int(components.shape[1]),
                         "units": "factor",
                         "index_in_array": 0,
                     }
                 )
                 s = signals.Signal2D(
-                    factor_data,
+                    component_data,
                     axes=axes_dicts,
                     metadata={
                         "General": {
@@ -715,14 +717,14 @@ class MVATools(object):
                         "name": "factor_index",
                         "scale": 1.0,
                         "offset": 0.0,
-                        "size": int(factors.shape[1]),
+                        "size": int(components.shape[1]),
                         "units": "factor",
                         "index_in_array": 0,
                     },
                 ]
                 axes[0]["index_in_array"] = 1
                 s = signals.Signal1D(
-                    factors.T,
+                    components.T,
                     axes=axes,
                     metadata={
                         "General": {
@@ -741,7 +743,7 @@ class MVATools(object):
                 axis_dict["index_in_array"] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
                     s = signals.Signal1D(
-                        factors[:, index],
+                        components[:, index],
                         axes=[
                             axis_dict,
                         ],
@@ -766,7 +768,7 @@ class MVATools(object):
                 axes_dicts[0]["index_in_array"] = 0
                 axes_dicts[1]["index_in_array"] = 1
 
-                factor_data = factors.reshape(
+                component_data = components.reshape(
                     self.axes_manager._signal_shape_in_array
                     + [
                         -1,
@@ -775,7 +777,7 @@ class MVATools(object):
 
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
                     im = signals.Signal2D(
-                        factor_data[..., index],
+                        component_data[..., index],
                         axes=axes_dicts,
                         metadata={
                             "General": {
@@ -791,7 +793,7 @@ class MVATools(object):
 
     def _export_loadings(
         self,
-        loadings,
+        scores,
         folder=None,
         comp_ids=None,
         multiple_files=True,
@@ -815,18 +817,18 @@ class MVATools(object):
             loading_format = "hspy"
 
         if comp_ids is None:
-            comp_ids = range(loadings.shape[0])
+            comp_ids = range(scores.shape[0])
         elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
-        mask = np.zeros(loadings.shape[0], dtype=np.bool)
+        mask = np.zeros(scores.shape[0], dtype=np.bool)
         for idx in comp_ids:
             mask[idx] = 1
-        loadings = loadings[mask]
+        scores = scores[mask]
 
         if save_figures is True:
             plt.ioff()
             sc_plots = self._plot_loadings(
-                loadings,
+                scores,
                 comp_ids=comp_ids,
                 calibrate=calibrate,
                 same_window=same_window,
@@ -852,7 +854,7 @@ class MVATools(object):
                 axes_dicts = []
                 axes = self.axes_manager.navigation_axes[::-1]
                 shape = (axes[1].size, axes[0].size)
-                loading_data = loadings.reshape((-1, shape[0], shape[1]))
+                score_data = scores.reshape((-1, shape[0], shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
                 axes_dicts[0]["index_in_array"] = 1
                 axes_dicts.append(axes[1].get_axis_dictionary())
@@ -862,13 +864,13 @@ class MVATools(object):
                         "name": "loading_index",
                         "scale": 1.0,
                         "offset": 0.0,
-                        "size": int(loadings.shape[0]),
+                        "size": int(scores.shape[0]),
                         "units": "factor",
                         "index_in_array": 0,
                     }
                 )
                 s = signals.Signal2D(
-                    loading_data,
+                    score_data,
                     axes=axes_dicts,
                     metadata={
                         "General": {
@@ -885,14 +887,14 @@ class MVATools(object):
                         "name": "loading_index",
                         "scale": 1.0,
                         "offset": 0.0,
-                        "size": int(loadings.shape[0]),
+                        "size": int(scores.shape[0]),
                         "units": "comp_id",
                         "index_in_array": 0,
                     },
                     cal_axis,
                 ]
                 s = signals.Signal2D(
-                    loadings,
+                    scores,
                     axes=axes,
                     metadata={
                         "General": {
@@ -911,7 +913,7 @@ class MVATools(object):
                 axis_dict["index_in_array"] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
                     s = signals.Signal1D(
-                        loadings[index],
+                        scores[index],
                         axes=[
                             axis_dict,
                         ],
@@ -924,14 +926,14 @@ class MVATools(object):
                 axes_dicts = []
                 axes = self.axes_manager.navigation_axes[::-1]
                 shape = (axes[0].size, axes[1].size)
-                loading_data = loadings.reshape((-1, shape[0], shape[1]))
+                score_data = scores.reshape((-1, shape[0], shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
                 axes_dicts[0]["index_in_array"] = 0
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]["index_in_array"] = 1
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
                     s = signals.Signal2D(
-                        loading_data[index, ...],
+                        score_data[index, ...],
                         axes=axes_dicts,
                         metadata={
                             "General": {
@@ -1226,7 +1228,7 @@ class MVATools(object):
             scores,
             comp_ids=comp_ids,
             with_factors=with_components,
-            factors=components,
+            components=components,
             same_window=same_window,
             comp_label=title,
             cmap=cmap,
@@ -1328,7 +1330,7 @@ class MVATools(object):
             scores,
             comp_ids=comp_ids,
             with_factors=with_components,
-            factors=components,
+            components=components,
             same_window=same_window,
             comp_label=title,
             cmap=cmap,
@@ -2268,7 +2270,7 @@ class MVATools(object):
             labels,
             comp_ids=cluster_ids,
             with_factors=with_centers,
-            factors=centers,
+            components=centers,
             same_window=same_window,
             comp_label=title,
             cmap=cmap,
@@ -2365,7 +2367,7 @@ class MVATools(object):
             distances,
             comp_ids=cluster_ids,
             with_factors=with_centers,
-            factors=centers,
+            components=centers,
             same_window=same_window,
             comp_label=title,
             cmap=cmap,

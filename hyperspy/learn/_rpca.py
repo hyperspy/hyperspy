@@ -244,7 +244,7 @@ class ORPCA:
         Parameters
         ----------
         rank : int
-            The rank of the representation (number of components/factors)
+            The rank of the representation (number of components)
         store_error : bool, default False
             If True, stores the sparse error matrix.
         lambda1 : float, default 0.1
@@ -456,7 +456,7 @@ class ORPCA:
             or an iterator that yields n_samples, each with n_features elements.
         return_error : bool, default False
             If True, returns the sparse error matrix as well. Otherwise only
-            the weights (loadings)
+            the weights (scores)
 
         """
         return self._project_impl(X, return_error=return_error)
@@ -490,7 +490,7 @@ class ORPCA:
         removal="3.0",
     )
     def finish(self, **kwargs):
-        """Return the learnt factors and loadings."""
+        """Return the learnt components and scores."""
         if len(self.R) > 0:
             if len(self.R[0].shape) == 1:
                 R = np.stack(self.R, axis=-1)
@@ -535,7 +535,7 @@ class ORPCA:
 
         Returns
         -------
-        loadings : numpy.ndarray, shape (n_samples, rank)
+        scores : numpy.ndarray, shape (n_samples, rank)
             Coordinates of each sample in the learnt subspace.
         """
         return self._project_impl(X).T
@@ -567,7 +567,7 @@ def orpca(
         The matrix of observations with shape (n_features x n_samples)
         or an iterator that yields samples, each with n_features elements.
     rank : int
-        The rank of the representation (number of components/factors)
+        The rank of the representation (number of components)
     store_error : bool, default False
         If True, stores the sparse error matrix.
     project : bool, default False
@@ -603,7 +603,7 @@ def orpca(
     Returns
     -------
     numpy.ndarray
-        * If project is True, returns the low-rank factors and loadings only
+        * If project is True, returns the low-rank components and scores only
         * Otherwise, returns the low-rank and sparse error matrices, as well
           as the results of a singular value decomposition (SVD) applied to
           the low-rank matrix.

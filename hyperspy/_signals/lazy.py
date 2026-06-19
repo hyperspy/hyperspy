@@ -945,7 +945,7 @@ class LazySignal(signals.BaseSignal):
             The signal locations marked as True are not used in the
             decomposition. Not implemented for the 'SVD' algorithm.
         reproject : bool, default True
-            Reproject data on the learnt components (factors) after learning.
+            Reproject data on the learnt components after learning.
         print_info : bool, default True
             If True, print information about the decomposition being performed.
             In the case of sklearn.decomposition objects, this includes the
@@ -1096,9 +1096,9 @@ class LazySignal(signals.BaseSignal):
                     S = S[:min_shape]
                     V = V[:min_shape]
 
-                    factors = V.T
+                    components = V.T
                     explained_variance = S**2 / self.data.shape[0]
-                    loadings = U * S
+                    scores = U * S
                 finally:
                     if self._unfolded4decomposition is True:
                         self.fold()
@@ -1137,15 +1137,15 @@ class LazySignal(signals.BaseSignal):
             if algorithm == "PCA":
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
-                factors = obj.components_.T
+                components = obj.components_.T
 
             elif algorithm == "ORPCA":
-                factors, loadings = obj.finish()
-                loadings = loadings.T
+                components, scores = obj.finish()
+                scores = scores.T
 
             elif algorithm == "ORNMF":
-                factors, loadings = obj.finish()
-                loadings = loadings.T
+                components, scores = obj.finish()
+                scores = scores.T
 
             # REPROJECT
             if reproject:
@@ -1182,7 +1182,7 @@ class LazySignal(signals.BaseSignal):
                         H.append(thing)
                 except KeyboardInterrupt:  # pragma: no cover
                     pass
-                loadings = post(H)
+                scores = post(H)
 
             if explained_variance is not None and explained_variance_ratio is None:
                 explained_variance_ratio = explained_variance / explained_variance.sum()
@@ -1191,8 +1191,8 @@ class LazySignal(signals.BaseSignal):
             ndim = self.axes_manager.navigation_dimension
             if algorithm != "SVD":  # Only needed for online algorithms
                 try:
-                    loadings = _reshuffle_mixed_blocks(
-                        loadings, ndim, (output_dimension,), nav_chunks
+                    scores = _reshuffle_mixed_blocks(
+                        scores, ndim, (output_dimension,), nav_chunks
                     ).reshape((-1, output_dimension))
                 except ValueError:
                     # In case the projection step was not finished, it's left
@@ -1206,8 +1206,8 @@ class LazySignal(signals.BaseSignal):
         target.output_dimension = output_dimension
         if algorithm != "SVD":
             target._object = obj
-        target.components = factors
-        target.scores = loadings
+        target.components = components
+        target.scores = scores
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
 

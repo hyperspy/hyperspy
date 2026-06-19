@@ -21,7 +21,7 @@ from numpy.linalg import svd
 
 
 def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
-    """Calculate orthogonal rotations for a matrix of factors or loadings from PCA.
+    """Calculate orthogonal rotations for a matrix of components or scores from PCA.
 
     When gamma=1.0, this is known as varimax rotation, which finds a
     rotation matrix W that maximizes the variance of the squared
