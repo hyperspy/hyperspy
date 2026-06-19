@@ -1,3 +1,9 @@
+Deprecate ``factors`` and ``loadings`` attributes of
+:class:`~.learn._mva.LearningResults` in favour of ``components`` and
+``scores``. Similarly, ``bss_factors`` and ``bss_loadings`` are deprecated
+in favour of ``bss_components`` and ``bss_scores``, and ``on_loadings``
+in favour of ``on_scores``. The old attribute names still work but emit a
+:class:`~.exceptions.VisibleDeprecationWarning` and will be removed in 3.0.
 Deprecate ``factors`` and ``loadings`` as accepted values for the
 ``target`` parameter of :meth:`~.signal.BaseSignal.normalize_decomposition_components`
 and :meth:`~.signal.BaseSignal.normalize_bss_components` in favour of ``"components"``
