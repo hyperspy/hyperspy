@@ -31,6 +31,7 @@ from hyperspy.docstrings.signal import (
     DECOMP_MASK_DOC,
     DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
     DECOMP_PRINT_INFO_DOC,
+    LAZY_OUTPUT_ARG,
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.exceptions import VisibleDeprecationWarning
@@ -41,6 +42,18 @@ MDP_INSTALLED = importlib.util.find_spec("mdp") is not None
 SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 _logger = logging.getLogger(__name__)
+
+
+CHUNKS_ARGS = """chunks : str, int, or tuple, default "auto"
+            Controls chunking of the reconstructed signal when
+            ``lazy_output`` is active.
+            If ``"auto"`` or ``"dask_auto"``, dask determines the chunk size.
+            If an int, the signal dimension is split into chunks of that
+            size and navigation uses ``"auto"``.
+            If a tuple of length 2, the first element controls signal
+            dimension chunking and the second controls navigation
+            chunking (passed as ``nav_chunks`` to
+            :meth:`~._signals.lazy.LazySignal.rechunk`)."""
 
 
 decomposition_algorithms = {
@@ -1623,7 +1636,11 @@ class MVA:
                 )
 
     def _calculate_recmatrix(
-        self, components=None, mva_type="decomposition", factors=None, loadings=None
+        self,
+        components=None,
+        mva_type="decomposition",
+        chunks="auto",
+        lazy_output=None,
     ):
         """Rebuilds data from selected components.
 
@@ -1635,12 +1652,8 @@ class MVA:
             * If list of ints, rebuilds signal instance from only components in given list
         mva_type : str {'decomposition', 'bss'}
             Decomposition type (not case sensitive)
-        factors : ndarray or dask Array, optional
-            Factor matrix to use.  If not provided, read from
-            ``learning_results`` based on *mva_type*.
-        loadings : ndarray or dask Array, optional
-            Loading matrix to use (will be transposed internally).  If not
-            provided, read from ``learning_results`` based on *mva_type*.
+        %s
+        %s
 
         Returns
         -------
@@ -1650,47 +1663,140 @@ class MVA:
         """
         target = self.learning_results
 
-        if factors is None or loadings is None:
-            if mva_type.lower() == "decomposition":
-                factors = factors if factors is not None else target.factors
-                loadings = loadings if loadings is not None else target.loadings.T
-            elif mva_type.lower() == "bss":
-                factors = factors if factors is not None else target.bss_factors
-                loadings = loadings if loadings is not None else target.bss_loadings.T
-        else:
-            loadings = loadings.T
+        # Load factors and loadings in the shapes used by the
+        # decomposition API (numpy order):
+        #   factors:  (sig_size, n_comp) — signal channels × components
+        #   loadings: (nav_size, n_comp) — nav positions  × components
+        #
+        # The lazy and non-lazy paths handle the transposition of
+        # loadings differently:
+        #   - lazy (einsum): loadings is reshaped as numpy into the
+        #     multi-dimensional nav shape and used directly — no
+        #     transpose needed.
+        #   - non-lazy (matmul): loadings is transposed just before
+        #     the matmul call (loadings.T), giving (n_comp, nav_size),
+        #     which is the standard [factors @ loadings.T] pattern.
+        if mva_type.lower() == "decomposition":
+            factors = target.factors
+            loadings = target.loadings
+        elif mva_type.lower() == "bss":
+            factors = target.bss_factors
+            loadings = target.bss_loadings
 
         if components is None:
-            a = factors @ loadings
             signal_name = f"model from {mva_type} with {factors.shape[1]} components"
         elif hasattr(components, "__iter__"):
-            tfactors = np.zeros((factors.shape[0], len(components)))
-            tloadings = np.zeros((len(components), loadings.shape[1]))
-            for i in range(len(components)):
-                tfactors[:, i] = factors[:, components[i]]
-                tloadings[i, :] = loadings[components[i], :]
-            a = tfactors @ tloadings
+            components = list(components)
+            factors = factors[:, components]
+            loadings = loadings[:, components]
             signal_name = f"model from {mva_type} with components {components}"
         else:
-            a = factors[:, :components] @ loadings[:components, :]
+            factors = factors[:, :components]
+            loadings = loadings[:, :components]
             signal_name = f"model from {mva_type} with {components} components"
 
-        self._unfolded4decomposition = self.unfold()
-        try:
-            sc = self.deepcopy()
-            sc.data = a.T.reshape(self.data.shape)
-            sc.metadata.General.title += " " + signal_name
-            if target.mean is not None:
-                sc.data += target.mean
-        finally:
-            if self._unfolded4decomposition:
-                self.fold()
-                sc.fold()
-                self._unfolded4decomposition = False
+        if lazy_output is None:
+            lazy_output = self._lazy
+
+        # Parse the ``chunks`` parameter into signal and navigation
+        # chunking.  The tuple form (sig, nav) mirrors the
+        # LazySignal.rechunk(nav_chunks, sig_chunks) convention.
+        if isinstance(chunks, (tuple, list)):
+            sig_chunks = chunks[0] if len(chunks) >= 1 else "auto"
+            nav_chunks = chunks[1] if len(chunks) >= 2 else "auto"
+        else:
+            sig_chunks = chunks
+            nav_chunks = "auto"
+
+        nav_shape = self.axes_manager.navigation_shape[::-1]  # numpy order
+        n_comp = loadings.shape[1]
+
+        if lazy_output or self._lazy:
+            import dask.array as da
+
+            # After a lazy decomposition learning_results.loadings may
+            # still be a dask array (shape nav_size × n_comp).
+            # Computing it to a numpy array is cheap because n_comp is
+            # typically < 100, limiting the total size to at most a few
+            # hundred MB.  We need a numpy array here so the subsequent
+            # reshape can be done safely without involving dask.
+            #
+            # The numpy reshape from (nav_size, n_comp) into
+            # (ny, nx, …, n_comp) is always valid because
+            # nav_size == product(nav_shape).  Doing this *before* wrapping
+            # as dask avoids the original problem: dask's reshape from a
+            # flattened (nav_size, sig_size) back to (ny, nx, sig_size)
+            # fails with NotImplementedError when chunk boundaries of the
+            # flattened dimension do not evenly divide the navigation axes,
+            # or with MemoryError when a single task tries to materialise
+            # a nav_chunk × sig_chunk intermediate array.
+            if isinstance(loadings, da.Array):
+                loadings_np = loadings.compute()
+            else:
+                loadings_np = loadings
+            loadings_3d = loadings_np.reshape(nav_shape + (n_comp,))
+
+            # Wrap as dask arrays.  The contracted dimension (n_comp) is
+            # kept as a single chunk (-1) in both arrays so that dask's
+            # blockwise matmul does not need to aggregate across sub-chunks
+            # of the contraction axis.
+            if isinstance(factors, da.Array):
+                factors_da = factors.rechunk((sig_chunks, -1))
+            else:
+                factors_da = da.from_array(factors, chunks=(sig_chunks, -1))
+            loadings_da = da.from_array(
+                loadings_3d,
+                chunks=(nav_chunks,) * len(nav_shape) + (-1,),
+            )
+
+            # da.einsum('sc,...c->...s', …) computes each output block
+            # directly from the corresponding multi-dimensional input
+            # blocks, avoiding the 2-D matmul (which would produce a flat
+            # (sig_size, nav_size) result) and the subsequent dask reshape
+            # to recover the multi-dimensional shape.
+            #
+            # Mathematically equivalent to:
+            #   a = factors @ loadings.T  # (sig_size, n_comp) @ (n_comp, nav_size)
+            #   a.T.reshape(nav_shape + (sig_size,))
+            a = da.einsum("sc,...c->...s", factors_da, loadings_da)
+        else:
+            # Non-lazy path: standard matrix multiply with explicit
+            # transposition of loadings and numpy reshape (always safe).
+            loadings_T = loadings.T  # (n_comp, nav_size)
+            a = factors @ loadings_T  # (sig_size, nav_size)
+            a = a.T.reshape(
+                nav_shape + (factors.shape[0],)
+            )  # → (ny, nx, ..., sig_size)
+
+        sc = self.deepcopy()
+        sc.data = a
+        sc.metadata.General.title += " " + signal_name
+        if target.mean is not None:
+            # target.mean has shape (nav_size, 1) from the decomposition.
+            # Reshape to match the multi-dimensional nav axes so that
+            # broadcasting works regardless of whether sc.data is unfolded
+            # (non-lazy path) or already multi-dimensional (lazy path).
+            sc.data += target.mean.reshape(nav_shape + (-1,))
+
+        if lazy_output:
+            if not sc._lazy:
+                sc = sc.as_lazy()
+            # Enforce HyperSpy's chunking convention by default.
+            # If the user passed explicit chunking via the ``chunks``
+            # parameter, the user's nav_chunks / sig_chunks override
+            # the defaults ("auto" / -1 respectively).
+            sc.rechunk(nav_chunks=nav_chunks, sig_chunks=sig_chunks, inplace=True)
+        elif sc._lazy:
+            sc.compute()
 
         return sc
 
-    def get_decomposition_model(self, components=None):
+    _calculate_recmatrix.__doc__ = _calculate_recmatrix.__doc__ % (
+        CHUNKS_ARGS,
+        LAZY_OUTPUT_ARG,
+    )
+
+    def get_decomposition_model(self, components=None, chunks="auto", lazy_output=None):
         """Generate model with the selected number of principal components.
 
         Parameters
@@ -1699,6 +1805,8 @@ class MVA:
             * If None, rebuilds signal instance from all components
             * If int, rebuilds signal instance from components in range 0-given int
             * If list of ints, rebuilds signal instance from only components in given list
+        %s
+        %s
 
         Returns
         -------
@@ -1706,10 +1814,20 @@ class MVA:
             A model built from the given components.
 
         """
-        rec = self._calculate_recmatrix(components=components, mva_type="decomposition")
+        rec = self._calculate_recmatrix(
+            components=components,
+            mva_type="decomposition",
+            chunks=chunks,
+            lazy_output=lazy_output,
+        )
         return rec
 
-    def get_bss_model(self, components=None, chunks="auto"):
+    get_decomposition_model.__doc__ = get_decomposition_model.__doc__ % (
+        CHUNKS_ARGS,
+        LAZY_OUTPUT_ARG,
+    )
+
+    def get_bss_model(self, components=None, chunks="auto", lazy_output=None):
         """Generate model with the selected number of independent components.
 
         Parameters
@@ -1718,6 +1836,8 @@ class MVA:
             If None, rebuilds signal instance from all components
             If int, rebuilds signal instance from components in range 0-given int
             If list of ints, rebuilds signal instance from only components in given list
+        %s
+        %s
 
         Returns
         -------
@@ -1725,22 +1845,16 @@ class MVA:
             A model built from the given components.
 
         """
-        lr = self.learning_results
-        bss_factors = lr.bss_factors
-        bss_loadings = lr.bss_loadings
-        if self._lazy:
-            import dask.array as da
-
-            if isinstance(bss_factors, np.ndarray):
-                bss_factors = da.from_array(bss_factors, chunks=chunks)
-            if isinstance(bss_loadings, np.ndarray):
-                bss_loadings = da.from_array(bss_loadings, chunks=chunks)
-        return self._calculate_recmatrix(
+        rec = self._calculate_recmatrix(
             components=components,
             mva_type="bss",
-            factors=bss_factors,
-            loadings=bss_loadings,
+            chunks=chunks,
+            lazy_output=lazy_output,
         )
+
+        return rec
+
+    get_bss_model.__doc__ = get_bss_model.__doc__ % (CHUNKS_ARGS, LAZY_OUTPUT_ARG)
 
     def get_scree_plot_data(self):
         """Return the scree plot data as a Signal1D.

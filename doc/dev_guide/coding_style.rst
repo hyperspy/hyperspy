@@ -20,6 +20,26 @@ These can be run locally by using `pre-commit <https://pre-commit.com>`__.
 Alternatively, the comment ``pre-commit.ci autofix`` can be added to a PR to fix the formatting
 using `pre-commit.ci <https://pre-commit.ci>`_.
 
+Pre-CI validation
+=================
+
+Before pushing your changes, run these checks locally to catch errors that
+would otherwise only surface in CI — saving you a round-trip:
+
+- **Pre-CI checks**: run ``python scripts/check-docs.py`` to validate
+  changelog fragments and build the documentation with warnings-as-errors
+  — the same checks the CI doc build runs.  For a fast check of changelog
+  fragments only, use ``python scripts/check-docs.py --quick``.
+
+  Common mistakes caught by this script include using the wrong fragment
+  type (``enhancement`` instead of ``enhancements``, ``fix`` instead of
+  ``bugfix``), broken RST cross-references in fragment text, and broken
+  ``:meth:``, ``:class:``, ``:func:``, or ``:doc:`` links.
+
+See `the changelog README
+<https://github.com/hyperspy/hyperspy/blob/RELEASE_next_patch/upcoming_changes/README.rst>`_
+for more details on writing changelog fragments.
+
 Deprecations
 ============
 HyperSpy follows `semantic versioning <https://semver.org>`_ where changes follow such that:
