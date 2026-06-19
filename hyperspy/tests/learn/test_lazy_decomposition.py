@@ -59,8 +59,8 @@ class TestLazyDecomposition:
             output_dimension=output_dimension,
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        factors = self.s.learning_results.factors
-        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
         if isinstance(factors, da.Array):
             factors = factors.compute()
@@ -88,8 +88,8 @@ class TestLazyDecomposition:
             algorithm="PCA",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        factors = self.s.learning_results.factors
-        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
         if isinstance(factors, da.Array):
             factors = factors.compute()
@@ -115,8 +115,8 @@ class TestLazyDecomposition:
         sig_mask = (s.inav[0, 0].data < 1.0).compute()
 
         s.decomposition(output_dimension=3, algorithm="PCA", signal_mask=sig_mask)
-        factors = s.learning_results.factors
-        loadings = s.learning_results.loadings
+        factors = s.learning_results.components
+        loadings = s.learning_results.scores
         _ = loadings @ factors.T
 
         # Check singular values
@@ -129,8 +129,8 @@ class TestLazyDecomposition:
         nav_mask = (s.isig[0].data < 1.0).compute()
 
         s.decomposition(output_dimension=3, algorithm="PCA", navigation_mask=nav_mask)
-        factors = s.learning_results.factors
-        loadings = s.learning_results.loadings
+        factors = s.learning_results.components
+        loadings = s.learning_results.scores
         _ = loadings @ factors.T
 
         # Check singular values
@@ -147,8 +147,8 @@ class TestLazyDecomposition:
             algorithm="ORPCA",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        factors = self.s.learning_results.factors
-        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
         if isinstance(factors, da.Array):
             factors = factors.compute()
@@ -172,8 +172,8 @@ class TestLazyDecomposition:
             algorithm="ORNMF",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        factors = self.s.learning_results.factors
-        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
         if isinstance(factors, da.Array):
             factors = factors.compute()

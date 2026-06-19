@@ -1283,7 +1283,7 @@ class MVA:
         if lazy_output or self._lazy:
             import dask.array as da
 
-            # After a lazy decomposition learning_results.loadings may
+            # After a lazy decomposition learning_results.scores may
             # still be a dask array (shape nav_size × n_comp).
             # Computing it to a numpy array is cheap because n_comp is
             # typically < 100, limiting the total size to at most a few
@@ -2093,7 +2093,7 @@ class MVA:
                     )
 
             if cluster_source == "decomposition":
-                if self.learning_results.factors is None:
+                if self.learning_results.components is None:
                     raise ValueError(
                         "A cluster source has been set to decomposition "
                         "but no decomposition results found. "
@@ -2101,7 +2101,7 @@ class MVA:
                     )
 
             if cluster_source == "bss":
-                if self.learning_results.bss_factors is None:
+                if self.learning_results.bss_components is None:
                     raise ValueError(
                         "A cluster source has been set to bss "
                         " but no blind source separation results found. "
@@ -2140,9 +2140,9 @@ class MVA:
             toreturn = data[:, signal_mask][navigation_mask, :]
         elif isinstance(cluster_source, str):
             if cluster_source == "bss":
-                loadings = self.learning_results.bss_loadings
+                loadings = self.learning_results.bss_scores
             else:
-                loadings = self.learning_results.loadings
+                loadings = self.learning_results.scores
             toreturn = loadings[navigation_mask, :number_of_components]
 
         return toreturn
@@ -2305,8 +2305,8 @@ class MVA:
                 "decomposition",
                 "bss",
             ):
-                loadings = self.learning_results.loadings[:, :number_of_components]
-                factors = self.learning_results.factors[:, :number_of_components]
+                loadings = self.learning_results.scores[:, :number_of_components]
+                factors = self.learning_results.components[:, :number_of_components]
                 for i in range(n_clusters):
                     sloadings = loadings[cluster_labels[i, :], :].sum(0, keepdims=True)
                     cluster_sum_signals.append((sloadings @ factors.T).squeeze())

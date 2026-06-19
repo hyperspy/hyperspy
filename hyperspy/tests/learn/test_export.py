@@ -28,10 +28,10 @@ class TestMVAExport:
         na = s.axes_manager[0]
         sa.offset = 100
         sa.scale = 0.1
-        s.learning_results.factors = np.arange(5 * 5).reshape((5, 5))
-        s.learning_results.loadings = np.arange(24 * 5).reshape((24, 5))
-        s.learning_results.bss_factors = np.arange(5 * 2).reshape((5, 2))
-        s.learning_results.bss_loadings = np.arange(24 * 2).reshape((24, 2))
+        s.learning_results.components = np.arange(5 * 5).reshape((5, 5))
+        s.learning_results.scores = np.arange(24 * 5).reshape((24, 5))
+        s.learning_results.bss_components = np.arange(5 * 2).reshape((5, 2))
+        s.learning_results.bss_scores = np.arange(24 * 2).reshape((24, 2))
         self.s = s
         self.na = na
         self.sa = sa

@@ -262,16 +262,16 @@ class TestReverseBSS:
         self.s = s
 
     def test_autoreverse_default(self):
-        self.s.learning_results.bss_factors[:, 0] *= -1
+        self.s.learning_results.bss_components[:, 0] *= -1
         self.s._auto_reverse_bss_component("loadings")
-        np.testing.assert_array_less(self.s.learning_results.bss_factors[:, 0], 0)
-        np.testing.assert_array_less(0, self.s.learning_results.bss_factors[:, 1])
+        np.testing.assert_array_less(self.s.learning_results.bss_components[:, 0], 0)
+        np.testing.assert_array_less(0, self.s.learning_results.bss_components[:, 1])
         self.s._auto_reverse_bss_component("factors")
-        np.testing.assert_array_less(0, self.s.learning_results.bss_factors)
+        np.testing.assert_array_less(0, self.s.learning_results.bss_components)
 
     def test_autoreverse_on_loading(self):
         self.s._auto_reverse_bss_component("loadings")
-        np.testing.assert_array_less(0, self.s.learning_results.bss_factors)
+        np.testing.assert_array_less(0, self.s.learning_results.bss_components)
 
     def test_reverse_wrong_parameter(self):
         with pytest.raises(ValueError):
@@ -321,10 +321,10 @@ class TestBSS1D:
     def test_mask_diff_order(self, on_loadings, diff_order):
         if on_loadings:
             mask = self.mask_nav
-            self.s.learning_results.loadings[5, :] = np.nan
+            self.s.learning_results.scores[5, :] = np.nan
         else:
             mask = self.mask_sig
-            self.s.learning_results.factors[5, :] = np.nan
+            self.s.learning_results.components[5, :] = np.nan
 
         # This preserves the old test behaviour. Without it,
         # we get "ConvergenceWarning: FastICA did not converge."
@@ -368,7 +368,7 @@ class TestBSS2D:
         self.mask_sig = mask_sig
 
     def test_diff_axes_string_with_mask(self):
-        self.s.learning_results.factors[5, :] = np.nan
+        self.s.learning_results.components[5, :] = np.nan
         factors = self.s.get_decomposition_factors().inav[:3]
         if self.mask_sig._lazy:
             self.mask_sig.compute()
@@ -457,17 +457,17 @@ class TestBSS2D:
 
     @pytest.mark.parametrize("diff_order", [0, 1])
     def test_mask_diff_order_0(self, diff_order):
-        self.s.learning_results.factors[5, :] = np.nan
+        self.s.learning_results.components[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=diff_order, mask=self.mask_sig)
 
     def test_mask_diff_order_1_diff_axes(self):
-        self.s.learning_results.factors[5, :] = np.nan
+        self.s.learning_results.components[5, :] = np.nan
         self.s.blind_source_separation(
             3, diff_order=1, mask=self.mask_sig, diff_axes=["x"]
         )
 
     def test_mask_diff_order_0_on_loadings(self):
-        self.s.learning_results.loadings[5, :] = np.nan
+        self.s.learning_results.scores[5, :] = np.nan
         self.s.blind_source_separation(
             3, diff_order=0, mask=self.mask_nav, on_loadings=True
         )
@@ -475,17 +475,17 @@ class TestBSS2D:
     def test_mask_diff_order_1_on_loadings(self):
         s = self.s.to_signal1D()
         s.decomposition()
-        if isinstance(s.learning_results.loadings, da.Array):
-            s.learning_results.loadings = s.learning_results.loadings.compute()
-        s.learning_results.loadings[5, :] = np.nan
+        if isinstance(s.learning_results.scores, da.Array):
+            s.learning_results.scores = s.learning_results.scores.compute()
+        s.learning_results.scores[5, :] = np.nan
         s.blind_source_separation(3, diff_order=1, mask=self.mask_sig, on_loadings=True)
 
     def test_mask_diff_order_1_on_loadings_diff_axes(self):
         s = self.s.to_signal1D()
         s.decomposition()
-        if isinstance(s.learning_results.loadings, da.Array):
-            s.learning_results.loadings = s.learning_results.loadings.compute()
-        s.learning_results.loadings[5, :] = np.nan
+        if isinstance(s.learning_results.scores, da.Array):
+            s.learning_results.scores = s.learning_results.scores.compute()
+        s.learning_results.scores[5, :] = np.nan
         s.blind_source_separation(
             3, diff_order=1, mask=self.mask_sig, on_loadings=True, diff_axes=["x"]
         )
@@ -543,14 +543,14 @@ class TestBSSModelCorruptionFix:
         s = hs.signals.Signal1D(rng.random((20, 100))).as_lazy()
         s.decomposition(output_dimension=3)
         # Compute to numpy so bss operates on numpy arrays
-        s.learning_results.factors = s.learning_results.factors.compute()
-        s.learning_results.loadings = s.learning_results.loadings.compute()
+        s.learning_results.components = s.learning_results.components.compute()
+        s.learning_results.scores = s.learning_results.scores.compute()
         s.blind_source_separation(3)
         # bss_factors/bss_loadings should now be numpy (from numpy decomposition)
-        assert isinstance(s.learning_results.bss_factors, np.ndarray)
-        assert isinstance(s.learning_results.bss_loadings, np.ndarray)
-        saved_factors = s.learning_results.factors
-        saved_loadings = s.learning_results.loadings
+        assert isinstance(s.learning_results.bss_components, np.ndarray)
+        assert isinstance(s.learning_results.bss_scores, np.ndarray)
+        saved_factors = s.learning_results.components
+        saved_loadings = s.learning_results.scores
         model = s.get_bss_model(lazy_output=lazy_output)
         assert model is not None
         if lazy_output:
@@ -560,8 +560,8 @@ class TestBSSModelCorruptionFix:
             assert isinstance(model, hs.signals.Signal1D)
             assert isinstance(model.data, np.ndarray)
         # learning_results must be unchanged
-        assert s.learning_results.factors is saved_factors
-        assert s.learning_results.loadings is saved_loadings
+        assert s.learning_results.components is saved_factors
+        assert s.learning_results.scores is saved_loadings
 
     @skip_sklearn
     @pytest.mark.parametrize("lazy_output", [True, False])
@@ -572,8 +572,8 @@ class TestBSSModelCorruptionFix:
         s = hs.signals.Signal1D(rng.random((20, 100)))
         s.decomposition()
         s.blind_source_separation(3)
-        saved_factors = s.learning_results.factors.copy()
-        saved_loadings = s.learning_results.loadings.copy()
+        saved_factors = s.learning_results.components.copy()
+        saved_loadings = s.learning_results.scores.copy()
         model = s.get_bss_model(lazy_output=lazy_output)
         assert model is not None
         if lazy_output:
@@ -582,5 +582,5 @@ class TestBSSModelCorruptionFix:
         else:
             assert isinstance(model, hs.signals.Signal1D)
             assert isinstance(model.data, np.ndarray)
-        np.testing.assert_array_equal(s.learning_results.factors, saved_factors)
-        np.testing.assert_array_equal(s.learning_results.loadings, saved_loadings)
+        np.testing.assert_array_equal(s.learning_results.components, saved_factors)
+        np.testing.assert_array_equal(s.learning_results.scores, saved_loadings)

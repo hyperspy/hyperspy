@@ -1206,15 +1206,15 @@ class LazySignal(signals.BaseSignal):
         target.output_dimension = output_dimension
         if algorithm != "SVD":
             target._object = obj
-        target.factors = factors
-        target.loadings = loadings
+        target.components = factors
+        target.scores = loadings
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
 
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
-            target.factors = target.factors * rbH.ravel()[:, np.newaxis]
-            target.loadings = target.loadings * raG.ravel()[:, np.newaxis]
+            target.components = target.components * rbH.ravel()[:, np.newaxis]
+            target.scores = target.scores * raG.ravel()[:, np.newaxis]
 
         # Print details about the decomposition we just performed
         if print_info:
