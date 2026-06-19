@@ -204,7 +204,7 @@ def test_normalize_components_errors():
     s.decomposition()
 
     with pytest.raises(ValueError, match="called after s.blind_source_separation"):
-        s.normalize_bss_components(target="loadings")
+        s.normalize_bss_components(target="scores")
 
     s.blind_source_separation(2)
 
@@ -228,7 +228,7 @@ def test_sklearn_convergence_warning():
             number_of_components=10,
             algorithm="sklearn_fastica",
             diff_order=1,
-            on_loadings=True,
+            on_scores=True,
             tol=1e-15,
             max_iter=3,
         )
@@ -263,14 +263,14 @@ class TestReverseBSS:
 
     def test_autoreverse_default(self):
         self.s.learning_results.bss_components[:, 0] *= -1
-        self.s._auto_reverse_bss_component("loadings")
+        self.s._auto_reverse_bss_component("scores")
         np.testing.assert_array_less(self.s.learning_results.bss_components[:, 0], 0)
         np.testing.assert_array_less(0, self.s.learning_results.bss_components[:, 1])
-        self.s._auto_reverse_bss_component("factors")
+        self.s._auto_reverse_bss_component("components")
         np.testing.assert_array_less(0, self.s.learning_results.bss_components)
 
     def test_autoreverse_on_loading(self):
-        self.s._auto_reverse_bss_component("loadings")
+        self.s._auto_reverse_bss_component("scores")
         np.testing.assert_array_less(0, self.s.learning_results.bss_components)
 
     def test_reverse_wrong_parameter(self):
@@ -306,20 +306,20 @@ class TestBSS1D:
         with pytest.raises(ValueError):
             self.s.blind_source_separation(3, mask=self.mask_nav)
 
-    def test_on_loadings(self):
-        self.s.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=False)
+    def test_on_scores(self):
+        self.s.blind_source_separation(3, diff_order=0, fun="exp", on_scores=False)
         s2 = self.s.as_signal1D(0)
         s2.decomposition()
-        s2.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=True)
+        s2.blind_source_separation(3, diff_order=0, fun="exp", on_scores=True)
         assert are_bss_components_equivalent(
             self.s.get_bss_components(), s2.get_bss_scores()
         )
 
     @pytest.mark.filterwarnings("ignore:FastICA did not converge")
-    @pytest.mark.parametrize("on_loadings", [True, False])
+    @pytest.mark.parametrize("on_scores", [True, False])
     @pytest.mark.parametrize("diff_order", [0, 1])
-    def test_mask_diff_order(self, on_loadings, diff_order):
-        if on_loadings:
+    def test_mask_diff_order(self, on_scores, diff_order):
+        if on_scores:
             mask = self.mask_nav
             self.s.learning_results.scores[5, :] = np.nan
         else:
@@ -329,10 +329,10 @@ class TestBSS1D:
         # This preserves the old test behaviour. Without it,
         # we get "ConvergenceWarning: FastICA did not converge."
         # We test for convergence warnings separately
-        n_components = 2 if diff_order == 1 and on_loadings else 3
+        n_components = 2 if diff_order == 1 and on_scores else 3
         mask_data = mask.data
         self.s.blind_source_separation(
-            n_components, diff_order=diff_order, mask=mask, on_loadings=on_loadings
+            n_components, diff_order=diff_order, mask=mask, on_scores=on_scores
         )
 
         # Verify that the mask is not changed
@@ -376,7 +376,7 @@ class TestBSS2D:
             3,
             diff_order=0,
             fun="exp",
-            on_loadings=False,
+            on_scores=False,
             factors=factors.diff(axis="x", order=1),
             mask=self.mask_sig.diff(axis="x", order=1),
         )
@@ -385,7 +385,7 @@ class TestBSS2D:
             3,
             diff_order=1,
             fun="exp",
-            on_loadings=False,
+            on_scores=False,
             diff_axes=["x"],
             mask=self.mask_sig,
         )
@@ -400,7 +400,7 @@ class TestBSS2D:
             3,
             diff_order=0,
             fun="exp",
-            on_loadings=False,
+            on_scores=False,
             factors=factors.derivative(axis="x", order=1),
             mask=self.mask_sig,
         )
@@ -413,14 +413,14 @@ class TestBSS2D:
             self.s.get_decomposition_components().inav[:3].derivative(axis="x", order=1)
         )
         self.s.blind_source_separation(
-            3, diff_order=0, fun="exp", on_loadings=False, factors=factors
+            3, diff_order=0, fun="exp", on_scores=False, factors=factors
         )
         matrix = self.s.learning_results.unmixing_matrix.copy()
         self.s.blind_source_separation(
             3,
             diff_order=1,
             fun="exp",
-            on_loadings=False,
+            on_scores=False,
             diff_axes=["x"],
         )
         np.testing.assert_allclose(
@@ -432,25 +432,25 @@ class TestBSS2D:
             self.s.get_decomposition_components().inav[:3].derivative(axis="y", order=1)
         )
         self.s.blind_source_separation(
-            3, diff_order=0, fun="exp", on_loadings=False, factors=factors
+            3, diff_order=0, fun="exp", on_scores=False, factors=factors
         )
         matrix = self.s.learning_results.unmixing_matrix.copy()
         self.s.blind_source_separation(
             3,
             diff_order=1,
             fun="exp",
-            on_loadings=False,
+            on_scores=False,
             diff_axes=[2],
         )
         np.testing.assert_allclose(
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-3
         )
 
-    def test_on_loadings(self):
-        self.s.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=False)
+    def test_on_scores(self):
+        self.s.blind_source_separation(3, diff_order=0, fun="exp", on_scores=False)
         s2 = self.s.as_signal1D(0)
         s2.decomposition()
-        s2.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=True)
+        s2.blind_source_separation(3, diff_order=0, fun="exp", on_scores=True)
         assert are_bss_components_equivalent(
             self.s.get_bss_components(), s2.get_bss_scores()
         )
@@ -466,28 +466,28 @@ class TestBSS2D:
             3, diff_order=1, mask=self.mask_sig, diff_axes=["x"]
         )
 
-    def test_mask_diff_order_0_on_loadings(self):
+    def test_mask_diff_order_0_on_scores(self):
         self.s.learning_results.scores[5, :] = np.nan
         self.s.blind_source_separation(
-            3, diff_order=0, mask=self.mask_nav, on_loadings=True
+            3, diff_order=0, mask=self.mask_nav, on_scores=True
         )
 
-    def test_mask_diff_order_1_on_loadings(self):
+    def test_mask_diff_order_1_on_scores(self):
         s = self.s.to_signal1D()
         s.decomposition()
         if isinstance(s.learning_results.scores, da.Array):
             s.learning_results.scores = s.learning_results.scores.compute()
         s.learning_results.scores[5, :] = np.nan
-        s.blind_source_separation(3, diff_order=1, mask=self.mask_sig, on_loadings=True)
+        s.blind_source_separation(3, diff_order=1, mask=self.mask_sig, on_scores=True)
 
-    def test_mask_diff_order_1_on_loadings_diff_axes(self):
+    def test_mask_diff_order_1_on_scores_diff_axes(self):
         s = self.s.to_signal1D()
         s.decomposition()
         if isinstance(s.learning_results.scores, da.Array):
             s.learning_results.scores = s.learning_results.scores.compute()
         s.learning_results.scores[5, :] = np.nan
         s.blind_source_separation(
-            3, diff_order=1, mask=self.mask_sig, on_loadings=True, diff_axes=["x"]
+            3, diff_order=1, mask=self.mask_sig, on_scores=True, diff_axes=["x"]
         )
 
 

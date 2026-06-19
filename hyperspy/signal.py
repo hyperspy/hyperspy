@@ -1351,14 +1351,20 @@ class MVATools(object):
             title = title.replace("scores", "score")
         return title
 
+    @deprecated_argument(
+        "factor_prefix", since="2.5", removal="3.0", alternative="component_prefix"
+    )
+    @deprecated_argument(
+        "loading_prefix", since="2.5", removal="3.0", alternative="score_prefix"
+    )
     def export_decomposition_results(
         self,
         comp_ids=None,
         folder=None,
         calibrate=True,
-        factor_prefix="factor",
+        component_prefix="factor",
         factor_format="hspy",
-        loading_prefix="loading",
+        score_prefix="loading",
         loading_format="hspy",
         comp_label=None,
         cmap="gray",
@@ -1382,15 +1388,15 @@ class MVATools(object):
         folder : str or None
             The path to the folder where the file will be saved.
             If ``None``, the current folder is used by default.
-        factor_prefix : str
-            The prefix that any exported filenames for factors/components
-            begin with
+        component_prefix : str
+            The prefix that any exported filenames for components begin with.
+            Default is ``"factor"``.
         factor_format : str
             The extension of the format that you wish to save the factors to.
             Default is ``'hspy'``. See `loading_format` for more details.
-        loading_prefix : str
-            The prefix that any exported filenames for factors/components
-            begin with
+        score_prefix : str
+            The prefix that any exported filenames for scores begin with.
+            Default is ``"loading"``.
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
@@ -1450,7 +1456,7 @@ class MVATools(object):
             comp_ids=comp_ids,
             calibrate=calibrate,
             multiple_files=multiple_files,
-            factor_prefix=factor_prefix,
+            factor_prefix=component_prefix,
             factor_format=factor_format,
             comp_label=comp_label,
             save_figures=save_figures,
@@ -1466,7 +1472,7 @@ class MVATools(object):
             folder=folder,
             calibrate=calibrate,
             multiple_files=multiple_files,
-            loading_prefix=loading_prefix,
+            loading_prefix=score_prefix,
             loading_format=loading_format,
             comp_label=comp_label,
             cmap=cmap,
@@ -1607,6 +1613,12 @@ class MVATools(object):
             per_row=per_row,
         )
 
+    @deprecated_argument(
+        "factor_prefix", since="2.5", removal="3.0", alternative="component_prefix"
+    )
+    @deprecated_argument(
+        "loading_prefix", since="2.5", removal="3.0", alternative="score_prefix"
+    )
     def export_bss_results(
         self,
         comp_ids=None,
@@ -1614,9 +1626,9 @@ class MVATools(object):
         calibrate=True,
         multiple_files=True,
         save_figures=False,
-        factor_prefix="bss_factor",
+        component_prefix="bss_factor",
         factor_format="hspy",
-        loading_prefix="bss_loading",
+        score_prefix="bss_loading",
         loading_format="hspy",
         comp_label=None,
         cmap="gray",
@@ -1638,15 +1650,15 @@ class MVATools(object):
         folder : str or None
             The path to the folder where the file will be saved.
             If ``None`` the current folder is used by default.
-        factor_prefix : str
-            The prefix that any exported filenames for factors/components
-            begin with
+        component_prefix : str
+            The prefix that any exported filenames for components begin with.
+            Default is ``"bss_factor"``.
         factor_format : str
             The extension of the format that you wish to save the factors to.
             Default is ``'hspy'``. See `loading_format` for more details.
-        loading_prefix : str
-            The prefix that any exported filenames for factors/components
-            begin with
+        score_prefix : str
+            The prefix that any exported filenames for scores begin with.
+            Default is ``"bss_loading"``.
         loading_format : str
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
@@ -1706,7 +1718,7 @@ class MVATools(object):
             comp_ids=comp_ids,
             calibrate=calibrate,
             multiple_files=multiple_files,
-            factor_prefix=factor_prefix,
+            factor_prefix=component_prefix,
             factor_format=factor_format,
             comp_label=comp_label,
             save_figures=save_figures,
@@ -1723,7 +1735,7 @@ class MVATools(object):
             folder=folder,
             calibrate=calibrate,
             multiple_files=multiple_files,
-            loading_prefix=loading_prefix,
+            loading_prefix=score_prefix,
             loading_format=loading_format,
             comp_label=comp_label,
             cmap=cmap,

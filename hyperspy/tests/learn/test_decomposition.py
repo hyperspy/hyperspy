@@ -416,7 +416,7 @@ class TestNormalizeComponents:
 
     def test_normalize_bss_factors(self):
         s = self.s
-        s.normalize_bss_components(target="factors", function=np.sum)
+        s.normalize_bss_components(target="components", function=np.sum)
         np.testing.assert_array_equal(
             s.learning_results.bss_components, self.factors / 2.0
         )
@@ -426,7 +426,7 @@ class TestNormalizeComponents:
 
     def test_normalize_bss_loadings(self):
         s = self.s
-        s.normalize_bss_components(target="loadings", function=np.sum)
+        s.normalize_bss_components(target="scores", function=np.sum)
         np.testing.assert_array_equal(
             s.learning_results.bss_components, self.factors * 2.0
         )
@@ -436,13 +436,13 @@ class TestNormalizeComponents:
 
     def test_normalize_decomposition_factors(self):
         s = self.s
-        s.normalize_decomposition_components(target="factors", function=np.sum)
+        s.normalize_decomposition_components(target="components", function=np.sum)
         np.testing.assert_array_equal(s.learning_results.components, self.factors / 2.0)
         np.testing.assert_array_equal(s.learning_results.scores, self.loadings * 2.0)
 
     def test_normalize_decomposition_loadings(self):
         s = self.s
-        s.normalize_decomposition_components(target="loadings", function=np.sum)
+        s.normalize_decomposition_components(target="scores", function=np.sum)
         np.testing.assert_array_equal(s.learning_results.components, self.factors * 2.0)
         np.testing.assert_array_equal(s.learning_results.scores, self.loadings / 2.0)
 
@@ -710,7 +710,7 @@ def test_normalize_components_errors():
     s = signals.Signal1D(generate_low_rank_matrix())
 
     with pytest.raises(ValueError, match="can only be called after s.decomposition"):
-        s.normalize_decomposition_components(target="loadings")
+        s.normalize_decomposition_components(target="scores")
 
     s.decomposition()
 

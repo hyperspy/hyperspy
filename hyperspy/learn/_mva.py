@@ -24,7 +24,7 @@ import numpy as np
 from rsciio.utils import path
 
 from hyperspy import learn, signals
-from hyperspy.decorators import deprecated
+from hyperspy.decorators import deprecated, deprecated_argument
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import LAZY_OUTPUT_ARG, SHOW_PROGRESSBAR_ARG
 from hyperspy.exceptions import VisibleDeprecationWarning
@@ -665,6 +665,9 @@ class MVA:
 
         return to_return
 
+    @deprecated_argument(
+        "on_loadings", since="2.5", removal="3.0", alternative="on_scores"
+    )
     def blind_source_separation(
         self,
         number_of_components=None,
@@ -674,8 +677,8 @@ class MVA:
         factors=None,
         comp_list=None,
         mask=None,
-        on_loadings=False,
-        reverse_component_criterion="factors",
+        on_scores=False,
+        reverse_component_criterion="components",
         whiten_method="PCA",
         return_info=False,
         print_info=True,
@@ -701,10 +704,10 @@ class MVA:
             Sometimes it is convenient to perform the BSS on the derivative of
             the signal. If ``diff_order`` is 0, the signal is not differentiated.
         diff_axes : None, list of int, list of str
-            * If None and `on_loadings` is False, when `diff_order` is greater than 1
+            * If None and `on_scores` is False, when `diff_order` is greater than 1
               and `signal_dimension` is greater than 1, the differences are calculated
               across all signal axes
-            * If None and `on_loadings` is True, when `diff_order` is greater than 1
+            * If None and `on_scores` is True, when `diff_order` is greater than 1
               and `navigation_dimension` is greater than 1, the differences are calculated
               across all navigation axes
             * Otherwise the axes can be specified in a list.
@@ -718,13 +721,15 @@ class MVA:
         mask : :class:`~hyperspy.signal.BaseSignal` or subclass
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
-            (navigation shape) when `on_loadings` is False (True).
-        on_loadings : bool, default False
-            If True, perform the BSS on the loadings of a previous
-            decomposition, otherwise, perform the BSS on the factors.
-        reverse_component_criterion : {"factors", "loadings"}, default "factors"
-            Use either the factors or the loadings to determine if the
-            component needs to be reversed.
+            (navigation shape) when `on_scores` is False (True).
+        on_scores : bool, default False
+            If True, perform the BSS on the scores of a previous
+            decomposition, otherwise, perform the BSS on the components.
+        reverse_component_criterion : {"components", "scores", "factors", "loadings"},
+        default "components"
+            Use either the components or the scores to determine if the
+            component needs to be reversed. The values ``"factors"``
+            and ``"loadings"`` are deprecated.
         whiten_method : {``"PCA"`` | ``"ZCA"``} or None, default "PCA"
             How to whiten the data prior to blind source separation.
             If None, no whitening is applied. See :func:`~.learn.whiten_data`
@@ -764,7 +769,7 @@ class MVA:
                     "source separation, or factors must be provided."
                 )
             else:
-                if on_loadings:
+                if on_scores:
                     factors = self.get_decomposition_scores()
                 else:
                     factors = self.get_decomposition_components()
@@ -800,7 +805,7 @@ class MVA:
         if mask is not None:
             ref_shape, space = (
                 factors.axes_manager.signal_shape,
-                "navigation" if on_loadings else "signal",
+                "navigation" if on_scores else "signal",
             )
             if isinstance(mask, BaseSignal):
                 if mask.axes_manager.signal_shape != ref_shape:
@@ -829,7 +834,7 @@ class MVA:
                 1 + axis.index_in_axes_manager
                 for axis in [self.axes_manager[axis] for axis in diff_axes]
             ]
-            if not on_loadings:
+            if not on_scores:
                 diff_axes = [
                     index - self.axes_manager.navigation_dimension
                     for index in diff_axes
@@ -944,7 +949,12 @@ class MVA:
             _, unmixing_matrix = learn.orthomax(factors, **kwargs)
             lr.bss_node = None
 
-        elif algorithm in ["FastICA", "JADE", "CuBICA", "TDSEP"]:  # pragma: no cover
+        elif algorithm in [
+            "FastICA",
+            "JADE",
+            "CuBICA",
+            "TDSEP",
+        ]:  # pragma: no cover
             if not MDP_INSTALLED:
                 raise ImportError(f"algorithm='{algorithm}' requires MDP toolbox")
 
@@ -1015,7 +1025,7 @@ class MVA:
             w[:] = w[sorting_indices, :]
 
         lr.unmixing_matrix = w
-        lr.on_scores = on_loadings
+        lr.on_scores = on_scores
         self._unmix_components()
         self._auto_reverse_bss_component(reverse_component_criterion)
         lr.bss_algorithm = algorithm
@@ -1032,8 +1042,10 @@ class MVA:
 
         Parameters
         ----------
-        target : {"factors", "loadings"}
-            Normalize components based on the scale of either the factors or loadings.
+        target : {"factors", "loadings", "components", "scores"}
+            Normalize components based on the scale of either the
+            components or scores. The values ``"factors"`` and
+            ``"loadings"`` are deprecated.
         function : numpy callable, default numpy.sum
             Each target component is divided by the output of ``function(target)``.
             The function must return a scalar when operating on numpy arrays and
@@ -1041,26 +1053,44 @@ class MVA:
 
         """
         if target == "factors":
-            target = self.learning_results.components
+            warnings.warn(
+                '`target="factors"` is deprecated, use `target="components"` instead.',
+                VisibleDeprecationWarning,
+            )
+            target_arr = self.learning_results.components
             other = self.learning_results.scores
         elif target == "loadings":
-            target = self.learning_results.scores
+            warnings.warn(
+                '`target="loadings"` is deprecated, use `target="scores"` instead.',
+                VisibleDeprecationWarning,
+            )
+            target_arr = self.learning_results.scores
+            other = self.learning_results.components
+        elif target == "components":
+            target_arr = self.learning_results.components
+            other = self.learning_results.scores
+        elif target == "scores":
+            target_arr = self.learning_results.scores
             other = self.learning_results.components
         else:
-            raise ValueError('target must be "factors" or "loadings"')
+            raise ValueError(
+                'target must be "factors", "loadings", "components" or "scores"'
+            )
 
-        if target is None:
+        if target_arr is None:
             raise ValueError("This method can only be called after s.decomposition()")
 
-        _normalize_components(target=target, other=other, function=function)
+        _normalize_components(target=target_arr, other=other, function=function)
 
     def normalize_bss_components(self, target="factors", function=np.sum):
         """Normalize BSS components.
 
         Parameters
         ----------
-        target : {"factors", "loadings"}
-            Normalize components based on the scale of either the factors or loadings.
+        target : {"factors", "loadings", "components", "scores"}
+            Normalize components based on the scale of either the
+            components or scores. The values ``"factors"`` and
+            ``"loadings"`` are deprecated.
         function : numpy callable, default numpy.sum
             Each target component is divided by the output of ``function(target)``.
             The function must return a scalar when operating on numpy arrays and
@@ -1068,20 +1098,36 @@ class MVA:
 
         """
         if target == "factors":
-            target = self.learning_results.bss_components
+            warnings.warn(
+                '`target="factors"` is deprecated, use `target="components"` instead.',
+                VisibleDeprecationWarning,
+            )
+            target_arr = self.learning_results.bss_components
             other = self.learning_results.bss_scores
         elif target == "loadings":
-            target = self.learning_results.bss_scores
+            warnings.warn(
+                '`target="loadings"` is deprecated, use `target="scores"` instead.',
+                VisibleDeprecationWarning,
+            )
+            target_arr = self.learning_results.bss_scores
+            other = self.learning_results.bss_components
+        elif target == "components":
+            target_arr = self.learning_results.bss_components
+            other = self.learning_results.bss_scores
+        elif target == "scores":
+            target_arr = self.learning_results.bss_scores
             other = self.learning_results.bss_components
         else:
-            raise ValueError('target must be "factors" or "loadings"')
+            raise ValueError(
+                'target must be "factors", "loadings", "components" or "scores"'
+            )
 
-        if target is None:
+        if target_arr is None:
             raise ValueError(
                 "This method can only be called after s.blind_source_separation()"
             )
 
-        _normalize_components(target=target, other=other, function=function)
+        _normalize_components(target=target_arr, other=other, function=function)
 
     def reverse_decomposition_component(self, component_number):
         """Reverse the decomposition component.
@@ -1187,13 +1233,28 @@ class MVA:
         n_components = self.learning_results.bss_components.shape[1]
         for i in range(n_components):
             if reverse_component_criterion == "factors":
+                warnings.warn(
+                    '`reverse_component_criterion="factors"` is deprecated, '
+                    'use `reverse_component_criterion="components"` instead.',
+                    VisibleDeprecationWarning,
+                )
                 values = self.learning_results.bss_components
             elif reverse_component_criterion == "loadings":
+                warnings.warn(
+                    '`reverse_component_criterion="loadings"` is deprecated, '
+                    'use `reverse_component_criterion="scores"` instead.',
+                    VisibleDeprecationWarning,
+                )
+                values = self.learning_results.bss_scores
+            elif reverse_component_criterion == "components":
+                values = self.learning_results.bss_components
+            elif reverse_component_criterion == "scores":
                 values = self.learning_results.bss_scores
             else:
                 raise ValueError(
                     "`reverse_component_criterion` can take only "
-                    "`factor` or `loading` as parameter."
+                    "`components`, `scores`, `factors`, or `loadings` "
+                    "as parameter."
                 )
             minimum = np.nanmin(values[:, i])
             maximum = np.nanmax(values[:, i])
