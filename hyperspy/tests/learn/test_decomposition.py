@@ -238,7 +238,7 @@ class TestGetModel:
         """
         rng = np.random.default_rng(42)
         # Signal size: 700×700 nav, 20000 energy channels.
-        # The loadings array (~157 MiB with 5 components) triggers
+        # The scores array (~157 MiB with 5 components) triggers
         # dask chunking of the flattened nav dimension, which the
         # old matmul+fold path cannot handle.
         ny, nx, sig_len = 700, 700, 20000
@@ -250,7 +250,7 @@ class TestGetModel:
         lazy_data = da.zeros((ny, nx, sig_len), chunks=(-1, -1, -1))
         s = signals.Signal1D(lazy_data).as_lazy()
 
-        # Inject factors/loadings as if decomposition had run.
+        # Inject components/scores as if decomposition had run.
         s.learning_results.components = rng.random((sig_len, n_comp))
         s.learning_results.scores = rng.random((nav_size, n_comp))
 
@@ -348,103 +348,108 @@ class TestEstimateElbowPosition:
 class TestReverseDecompositionComponent:
     def setup_method(self, method):
         s = signals.BaseSignal(np.zeros(1))
-        self.factors = np.ones([2, 3])
-        self.loadings = np.ones([2, 3])
-        s.learning_results.components = self.factors.copy()
-        s.learning_results.scores = self.loadings.copy()
+        self.components_arr = np.ones([2, 3])
+        self.scores_arr = np.ones([2, 3])
+        s.learning_results.components = self.components_arr.copy()
+        s.learning_results.scores = self.scores_arr.copy()
         self.s = s
 
-    def test_reversal_factors_one_component_reversed(self):
+    def test_reversal_components_one_component_reversed(self):
         self.s.reverse_decomposition_component(0)
         np.testing.assert_array_equal(
-            self.s.learning_results.components[:, 0], self.factors[:, 0] * -1
+            self.s.learning_results.components[:, 0], self.components_arr[:, 0] * -1
         )
 
-    def test_reversal_loadings_one_component_reversed(self):
+    def test_reversal_scores_one_component_reversed(self):
         self.s.reverse_decomposition_component(0)
         np.testing.assert_array_equal(
-            self.s.learning_results.scores[:, 0], self.loadings[:, 0] * -1
+            self.s.learning_results.scores[:, 0], self.scores_arr[:, 0] * -1
         )
 
-    def test_reversal_factors_one_component_not_reversed(self):
+    def test_reversal_components_one_component_not_reversed(self):
         self.s.reverse_decomposition_component(0)
         np.testing.assert_array_equal(
-            self.s.learning_results.components[:, 1:], self.factors[:, 1:]
+            self.s.learning_results.components[:, 1:], self.components_arr[:, 1:]
         )
 
-    def test_reversal_loadings_one_component_not_reversed(self):
+    def test_reversal_scores_one_component_not_reversed(self):
         self.s.reverse_decomposition_component(0)
         np.testing.assert_array_equal(
-            self.s.learning_results.scores[:, 1:], self.loadings[:, 1:]
+            self.s.learning_results.scores[:, 1:], self.scores_arr[:, 1:]
         )
 
-    def test_reversal_factors_multiple_components_reversed(self):
+    def test_reversal_components_multiple_components_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
         np.testing.assert_array_equal(
-            self.s.learning_results.components[:, (0, 2)], self.factors[:, (0, 2)] * -1
+            self.s.learning_results.components[:, (0, 2)],
+            self.components_arr[:, (0, 2)] * -1,
         )
 
-    def test_reversal_loadings_multiple_components_reversed(self):
+    def test_reversal_scores_multiple_components_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
         np.testing.assert_array_equal(
-            self.s.learning_results.scores[:, (0, 2)], self.loadings[:, (0, 2)] * -1
+            self.s.learning_results.scores[:, (0, 2)], self.scores_arr[:, (0, 2)] * -1
         )
 
-    def test_reversal_factors_multiple_components_not_reversed(self):
+    def test_reversal_components_multiple_components_not_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
         np.testing.assert_array_equal(
-            self.s.learning_results.components[:, 1], self.factors[:, 1]
+            self.s.learning_results.components[:, 1], self.components_arr[:, 1]
         )
 
-    def test_reversal_loadings_multiple_components_not_reversed(self):
+    def test_reversal_scores_multiple_components_not_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
         np.testing.assert_array_equal(
-            self.s.learning_results.scores[:, 1], self.loadings[:, 1]
+            self.s.learning_results.scores[:, 1], self.scores_arr[:, 1]
         )
 
 
 class TestNormalizeComponents:
     def setup_method(self, method):
         s = signals.BaseSignal(np.zeros(1))
-        self.factors = np.ones([2, 3])
-        self.loadings = np.ones([2, 3])
-        s.learning_results.components = self.factors.copy()
-        s.learning_results.scores = self.loadings.copy()
-        s.learning_results.bss_components = self.factors.copy()
-        s.learning_results.bss_scores = self.loadings.copy()
+        self.components_arr = np.ones([2, 3])
+        self.scores_arr = np.ones([2, 3])
+        s.learning_results.components = self.components_arr.copy()
+        s.learning_results.scores = self.scores_arr.copy()
+        s.learning_results.bss_components = self.components_arr.copy()
+        s.learning_results.bss_scores = self.scores_arr.copy()
         self.s = s
 
-    def test_normalize_bss_factors(self):
+    def test_normalize_bss_components(self):
         s = self.s
         s.normalize_bss_components(target="components", function=np.sum)
         np.testing.assert_array_equal(
-            s.learning_results.bss_components, self.factors / 2.0
+            s.learning_results.bss_components, self.components_arr / 2.0
         )
         np.testing.assert_array_equal(
-            s.learning_results.bss_scores, self.loadings * 2.0
+            s.learning_results.bss_scores, self.scores_arr * 2.0
         )
 
-    def test_normalize_bss_loadings(self):
+    def test_normalize_bss_scores(self):
         s = self.s
         s.normalize_bss_components(target="scores", function=np.sum)
         np.testing.assert_array_equal(
-            s.learning_results.bss_components, self.factors * 2.0
+            s.learning_results.bss_components, self.components_arr * 2.0
         )
         np.testing.assert_array_equal(
-            s.learning_results.bss_scores, self.loadings / 2.0
+            s.learning_results.bss_scores, self.scores_arr / 2.0
         )
 
-    def test_normalize_decomposition_factors(self):
+    def test_normalize_decomposition_components(self):
         s = self.s
         s.normalize_decomposition_components(target="components", function=np.sum)
-        np.testing.assert_array_equal(s.learning_results.components, self.factors / 2.0)
-        np.testing.assert_array_equal(s.learning_results.scores, self.loadings * 2.0)
+        np.testing.assert_array_equal(
+            s.learning_results.components, self.components_arr / 2.0
+        )
+        np.testing.assert_array_equal(s.learning_results.scores, self.scores_arr * 2.0)
 
-    def test_normalize_decomposition_loadings(self):
+    def test_normalize_decomposition_scores(self):
         s = self.s
         s.normalize_decomposition_components(target="scores", function=np.sum)
-        np.testing.assert_array_equal(s.learning_results.components, self.factors * 2.0)
-        np.testing.assert_array_equal(s.learning_results.scores, self.loadings / 2.0)
+        np.testing.assert_array_equal(
+            s.learning_results.components, self.components_arr * 2.0
+        )
+        np.testing.assert_array_equal(s.learning_results.scores, self.scores_arr / 2.0)
 
 
 class TestDecompositionAlgorithm:

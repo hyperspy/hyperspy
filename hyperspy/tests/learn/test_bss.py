@@ -546,11 +546,11 @@ class TestBSSModelCorruptionFix:
         s.learning_results.components = s.learning_results.components.compute()
         s.learning_results.scores = s.learning_results.scores.compute()
         s.blind_source_separation(3)
-        # bss_factors/bss_loadings should now be numpy (from numpy decomposition)
+        # bss_components/bss_scores should now be numpy (from numpy decomposition)
         assert isinstance(s.learning_results.bss_components, np.ndarray)
         assert isinstance(s.learning_results.bss_scores, np.ndarray)
-        saved_factors = s.learning_results.components
-        saved_loadings = s.learning_results.scores
+        saved_components = s.learning_results.components
+        saved_scores = s.learning_results.scores
         model = s.get_bss_model(lazy_output=lazy_output)
         assert model is not None
         if lazy_output:
@@ -560,8 +560,8 @@ class TestBSSModelCorruptionFix:
             assert isinstance(model, hs.signals.Signal1D)
             assert isinstance(model.data, np.ndarray)
         # learning_results must be unchanged
-        assert s.learning_results.components is saved_factors
-        assert s.learning_results.scores is saved_loadings
+        assert s.learning_results.components is saved_components
+        assert s.learning_results.scores is saved_scores
 
     @skip_sklearn
     @pytest.mark.parametrize("lazy_output", [True, False])
@@ -572,8 +572,8 @@ class TestBSSModelCorruptionFix:
         s = hs.signals.Signal1D(rng.random((20, 100)))
         s.decomposition()
         s.blind_source_separation(3)
-        saved_factors = s.learning_results.components.copy()
-        saved_loadings = s.learning_results.scores.copy()
+        saved_components = s.learning_results.components.copy()
+        saved_scores = s.learning_results.scores.copy()
         model = s.get_bss_model(lazy_output=lazy_output)
         assert model is not None
         if lazy_output:
@@ -582,5 +582,5 @@ class TestBSSModelCorruptionFix:
         else:
             assert isinstance(model, hs.signals.Signal1D)
             assert isinstance(model.data, np.ndarray)
-        np.testing.assert_array_equal(s.learning_results.components, saved_factors)
-        np.testing.assert_array_equal(s.learning_results.scores, saved_loadings)
+        np.testing.assert_array_equal(s.learning_results.components, saved_components)
+        np.testing.assert_array_equal(s.learning_results.scores, saved_scores)

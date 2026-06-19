@@ -91,41 +91,41 @@ class TestISVDNoCentering:
         from sklearn.decomposition import IncrementalPCA
 
         isvd = self._fit_isvd(self.X, self.n_components)
-        isvd_loadings = isvd.transform(self.X)
+        isvd_scores = isvd.transform(self.X)
 
-        # IncrementalPCA centers the data, so its loadings are approximately
+        # IncrementalPCA centers the data, so its scores are approximately
         # zero-mean along each component.
         ipca = IncrementalPCA(n_components=self.n_components)
         for chunk in np.array_split(self.X, 4):
             ipca.partial_fit(chunk)
-        ipca_loadings = ipca.transform(self.X)
+        ipca_scores = ipca.transform(self.X)
 
-        # IncrementalPCA loadings are near-zero mean (centered output).
+        # IncrementalPCA scores are near-zero mean (centered output).
         np.testing.assert_allclose(
-            ipca_loadings.mean(axis=0),
+            ipca_scores.mean(axis=0),
             0.0,
             atol=0.5,
-            err_msg="IncrementalPCA loadings should be approximately zero-mean",
+            err_msg="IncrementalPCA scores should be approximately zero-mean",
         )
 
-        # ISVD loadings are NOT near-zero mean because no centering was applied.
-        isvd_col_means = np.abs(isvd_loadings.mean(axis=0))
+        # ISVD scores are NOT near-zero mean because no centering was applied.
+        isvd_col_means = np.abs(isvd_scores.mean(axis=0))
         assert isvd_col_means.max() > 1.0, (
-            "ISVD loadings should have non-zero column means when data has a "
+            "ISVD scores should have non-zero column means when data has a "
             "large mean offset — centering appears to be active, which is wrong."
         )
 
     def test_reconstruction_consistent_with_numpy_svd(self):
         """The subspace spanned by ISVD components matches numpy SVD.
 
-        ISVD is an incremental approximation so factors/loadings may differ
+        ISVD is an incremental approximation so components/scores may differ
         in sign and order, but the low-rank reconstruction X ≈ L @ F.T should
         agree with the numpy reference up to a generous tolerance.
         """
         isvd = self._fit_isvd(self.X, self.n_components)
-        isvd_factors = isvd.components_.T  # (n_features, k)
-        isvd_loadings = isvd.transform(self.X)  # (n_samples, k)
-        isvd_recon = isvd_loadings @ isvd_factors.T
+        isvd_components = isvd.components_.T  # (n_features, k)
+        isvd_scores = isvd.transform(self.X)  # (n_samples, k)
+        isvd_recon = isvd_scores @ isvd_components.T
 
         # Numpy SVD reference (no centering).
         _, S, Vt = np.linalg.svd(self.X, full_matrices=False)

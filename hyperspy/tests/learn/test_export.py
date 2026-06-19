@@ -36,16 +36,17 @@ class TestMVAExport:
         self.na = na
         self.sa = sa
 
-    def test_get_bss_factor(self):
-        bss_factors = self.s.get_bss_components()
-        assert bss_factors.axes_manager[-1].scale == self.sa.scale
-        assert bss_factors.axes_manager[-1].offset == self.sa.offset
-        assert bss_factors.axes_manager.signal_shape == self.s.axes_manager.signal_shape
-
-    def test_get_bss_loadings(self):
-        bss_loadings = self.s.get_bss_scores()
-        assert bss_loadings.axes_manager.navigation_dimension == 1
+    def test_get_bss_components(self):
+        bss_components = self.s.get_bss_components()
+        assert bss_components.axes_manager[-1].scale == self.sa.scale
+        assert bss_components.axes_manager[-1].offset == self.sa.offset
         assert (
-            bss_loadings.axes_manager.signal_shape
-            == self.s.axes_manager.navigation_shape
+            bss_components.axes_manager.signal_shape == self.s.axes_manager.signal_shape
+        )
+
+    def test_get_bss_scores(self):
+        bss_scores = self.s.get_bss_scores()
+        assert bss_scores.axes_manager.navigation_dimension == 1
+        assert (
+            bss_scores.axes_manager.signal_shape == self.s.axes_manager.navigation_shape
         )
