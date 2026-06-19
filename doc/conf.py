@@ -53,6 +53,7 @@ extensions = [
 
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
+    "https://conda.io",  # 403 Client Error: Forbidden for url
     r"https://docs\.conda\.io/.*",  # 429 rate limit from CI IPs
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
@@ -363,6 +364,12 @@ nitpick_ignore_regex = (
     ("py:class", "hyperspy.samfire_utils.strategy.SamfireStrategy"),
     ("py:class", ".*goodness_test"),
     ("py:class", "hyperspy.roi.BasePointROI"),
+    # Internal classes not in the public API reference
+    ("py:class", "hyperspy.learn.incremental_svd.ISVD"),
+    ("py:obj", "hyperspy.learn.incremental_svd.ISVD"),
+    # MVA mixin methods — class is already ignored above
+    ("py:meth", "learn.mva.MVA.decomposition"),
+    ("py:meth", "learn.mva.MVA.undo_treatments"),
     # Add exception to API
     ("py:obj", "SignalDimensionError"),
     ("py:obj", "DataDimensionError"),
@@ -443,10 +450,13 @@ sphinx_gallery_conf = {
 if platform.system() != "Windows":
     # optipng is not straightforward to install on Windows
     # don't use compression on Windows to avoid warning when building the documentation
-    sphinx_gallery_conf["compress_images"] = (
-        "images",
-        "thumbnails",
-    )  # use optipng to reduce image file size
+    from shutil import which
+
+    if which("optipng") is not None:
+        sphinx_gallery_conf["compress_images"] = (
+            "images",
+            "thumbnails",
+        )  # use optipng to reduce image file size
 
 # ``check-docs.py`` sets this to skip slow gallery execution during validation.
 if os.environ.get("HYPERSPY_FAST_CHECK"):

@@ -53,12 +53,12 @@ if SKLEARN_INSTALLED:
         batches have been processed, call ``transform`` to obtain the
         loadings.
 
-        The centering is disabled by overriding the ``mean_`` property to
-        always return zeros (either a scalar ``0.0`` or an array of zeros,
-        whichever sklearn set last).  This neutralises both the
-        mean-correction term computed during ``partial_fit`` and the
-        mean-shift applied during ``transform``, without touching any
-        other part of the sklearn implementation.
+        The centering is disabled at two levels.  The ``mean_`` property
+        always returns zeros, which neutralises the mean-shift in
+        sklearn's ``transform``.  The ``partial_fit`` method is completely
+        overridden to implement plain incremental SVD — data is never
+        mean-subtracted during fitting, and no mean-correction term is
+        added between batches.
 
         Parameters
         ----------
@@ -76,11 +76,20 @@ if SKLEARN_INSTALLED:
             Right singular vectors (rows are components), shape
             ``(n_components, n_features)``.
         explained_variance_ : ndarray
-            Approximate explained variance per component, shape
-            ``(n_components,)``.
+            Approximate explained variance as computed by sklearn's
+            IncrementalPCA (``S² / (n_samples - 1)``).  Note that this
+            uses Bessel's correction and may be inconsistent with HyperSpy's
+            standard ``S² / N`` formula used by all other decomposition
+            paths.  The ``LazySignal.decomposition`` method overrides this
+            attribute for the ``learning_results`` output.
         explained_variance_ratio_ : ndarray
-            Fraction of total variance explained by each component, shape
-            ``(n_components,)``.
+            Fraction of the top-``n_components`` variance captured by each
+            component, computed as ``ev / ev.sum()`` — the same
+            normalisation used by HyperSpy's eager and lazy SVD paths.
+            (The ``LazySignal.decomposition`` method recomputes this
+            independently from ``obj.singular_values_``, so the
+            attribute on the ISVD object is used only for standalone
+            ISVD usage.)
 
         Examples
         --------
@@ -93,6 +102,102 @@ if SKLEARN_INSTALLED:
         >>> factors = obj.components_.T          # shape (n_features, n_components)
         >>> loadings = obj.transform(X)          # shape (n_samples, n_components)
         """
+
+        def partial_fit(self, X, y=None, check_input=False):
+            """Fit one batch without centering (plain incremental SVD).
+
+            Overrides :meth:`sklearn.decomposition.IncrementalPCA.partial_fit`
+            to skip all centering and mean-correction steps.  Data is never
+            mean-subtracted inside this method, so the decomposition is a
+            plain SVD rather than PCA.
+
+            Parameters
+            ----------
+            X : ndarray, shape (n_samples, n_features)
+                Batch of training data.
+            y : Ignored
+                Exists for API compatibility with sklearn.
+            check_input : bool
+                Ignored (HyperSpy always passes ``False``).
+
+            Returns
+            -------
+            self : ISVD
+                The fitted estimator.
+            """
+            from scipy import linalg
+            from sklearn.utils.extmath import svd_flip
+
+            n_samples, n_features = X.shape
+
+            # --- first-call initialization ---
+            if not hasattr(self, "n_samples_seen_"):
+                self.n_samples_seen_ = 0
+
+                if self.n_components is None:
+                    self.n_components_ = min(n_samples, n_features)
+                elif self.n_components > n_features:
+                    raise ValueError(
+                        f"n_components={self.n_components} must be less "
+                        f"than or equal to n_features={n_features}"
+                    )
+                elif self.n_components > n_samples:
+                    raise ValueError(
+                        f"n_components={self.n_components} must be less "
+                        f"than or equal to the batch number of samples "
+                        f"{n_samples} for the first partial_fit call."
+                    )
+                else:
+                    self.n_components_ = self.n_components
+
+            elif self.components_ is not None:
+                if self.components_.shape[0] != self.n_components_:
+                    raise ValueError(
+                        f"n_components has changed from "
+                        f"{self.components_.shape[0]} to "
+                        f"{self.n_components_} between calls to "
+                        f"partial_fit!"
+                    )
+
+            # --- build the matrix for SVD ---
+            if self.n_samples_seen_ == 0:
+                # First batch: plain SVD of raw (uncentered) data.
+                X_stacked = X
+            else:
+                # Subsequent batch: stack previous top-k subspace (scaled
+                # by singular values) with the new raw batch — the Ross
+                # et al. (2008) incremental SVD algorithm, without
+                # centering or mean-correction.
+                prev = self.singular_values_.reshape((-1, 1)) * self.components_
+                X_stacked = np.vstack([prev, X])
+
+            U, S, Vt = linalg.svd(X_stacked, full_matrices=False, check_finite=False)
+            U, Vt = svd_flip(U, Vt, u_based_decision=False)
+
+            self.n_samples_seen_ += n_samples
+            k = self.n_components_
+            self.components_ = Vt[:k]
+            self.singular_values_ = S[:k]
+
+            # --- sklearn-compatible explained_variance_ (S² / (N-1)) ---
+            n_total = self.n_samples_seen_
+            self.explained_variance_ = (S[:k] ** 2) / (n_total - 1)
+
+            # --- HyperSpy convention explained_variance_ratio_ ---
+            # ev / ev.sum()  (the lazy.py decomposition code overrides
+            # these attributes anyway, so this is mainly for standalone
+            # ISVD usage and test compatibility.)
+            top_k_ev = S[:k] ** 2
+            self.explained_variance_ratio_ = top_k_ev / top_k_ev.sum()
+
+            if k not in (n_samples, n_features):
+                self.noise_variance_ = (S[k:] ** 2).mean() / (n_total - 1)
+            else:
+                self.noise_variance_ = 0.0
+
+            self.mean_ = np.zeros(n_features)
+
+            return self
 
         @property
         def mean_(self):

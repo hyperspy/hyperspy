@@ -3715,8 +3715,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         Parameters
         ----------
         axis %s The axis to roll backwards.
+
             The positions of the other axes do not change relative to one
             another.
+
         to_axis %s The axis is rolled until it lies before this other axis.
         %s
 
@@ -3925,12 +3927,14 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         Parameters
         ----------
         axis %s
+
             If ``'auto'`` and if the object has been created with
             :func:`~hyperspy.api.stack` (and ``stack_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
             If it was not created with :func:`~hyperspy.api.stack`,
             the last navigation axis will be used.
+
         number_of_parts : str or int
             Number of parts in which the spectrum image will be split. The
             splitting is homogeneous. When the axis size is not divisible

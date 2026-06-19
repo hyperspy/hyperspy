@@ -27,7 +27,14 @@ from rsciio.utils import path
 from hyperspy import learn, signals
 from hyperspy.decorators import deprecated
 from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import LAZY_OUTPUT_ARG, SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.signal import (
+    DECOMP_MASK_DOC,
+    DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
+    DECOMP_PRINT_INFO_DOC,
+    LAZY_OUTPUT_ARG,
+    SHOW_PROGRESSBAR_ARG,
+)
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import utils
 
@@ -118,11 +125,275 @@ def _get_derivative(signal, diff_axes, diff_order):
     return signal
 
 
+def _nan_expand_rows(arr, mask, total_rows):
+    """Return *arr* expanded to *total_rows*, NaN at positions where *mask* is True.
+
+    Works for both numpy and dask arrays.  ``mask`` is a flat boolean array of
+    length ``total_rows``; rows where mask is True are NaN-filled and rows where
+    mask is False are filled from ``arr`` in order.
+
+    Parameters
+    ----------
+    arr : numpy.ndarray or dask.array.Array, shape (n_kept, n_components)
+        The unmasked rows of the factor or loading matrix.
+    mask : numpy.ndarray of bool, shape (total_rows,)
+        True where the row was *excluded* from decomposition.
+    total_rows : int
+        Total number of rows in the expanded output (masked + unmasked).
+
+    Returns
+    -------
+    numpy.ndarray or dask.array.Array, shape (total_rows, n_components)
+    """
+    try:
+        import dask.array as _da
+    except ImportError:
+        _da = None
+
+    unmasked_idx = np.where(~mask)[0]
+    n_comp = arr.shape[1]
+
+    if _da is not None and isinstance(arr, _da.Array):
+        # Vectorized reindex via da.take() — avoids building one dask
+        # task per row, which creates an enormous task graph and can
+        # crash for large total_rows (e.g. millions of navigation pixels).
+        row_idx = np.full(total_rows, -1, dtype=np.intp)
+        row_idx[unmasked_idx] = np.arange(len(unmasked_idx), dtype=np.intp)
+        # Pad arr with a NaN row so masked positions (index -1) map to NaN.
+        nan_row_np = np.full((1, n_comp), np.nan, dtype=arr.dtype)
+        arr_padded = _da.concatenate(
+            [_da.from_array(nan_row_np, chunks=(1, n_comp)), arr], axis=0
+        )
+        # Shift indices: -1 → 0 (NaN row), 0 → 1, …
+        take_idx = _da.from_array(row_idx + 1, chunks=(arr.chunks[0][0],))
+        return _da.take(arr_padded, take_idx, axis=0)
+    else:
+        out = np.full((total_rows, n_comp), np.nan, dtype=arr.dtype)
+        out[unmasked_idx, :] = arr
+        return out
+
+
 def _normalize_components(target, other, function=np.sum):
     """Normalize components according to a function."""
     coeff = function(target, axis=0)
     target /= coeff
     other *= coeff
+
+
+def _to_flat_bool(mask):
+    """Return a flat boolean numpy array, ``True`` where *mask* is ``True``.
+
+    Normalises mask inputs of various types (BaseSignal, dask array, numpy
+    array, or ``None``) into a 1-D boolean numpy array suitable for
+    boolean indexing and :func:`_nan_expand_rows`.
+
+    Parameters
+    ----------
+    mask : BaseSignal, dask.array.Array, numpy.ndarray, or None
+        The mask to normalise.  If ``None``, returns ``None``.
+
+    Returns
+    -------
+    numpy.ndarray or None
+        Flat boolean array where ``True`` = excluded position, or ``None``
+        if *mask* was ``None``.
+    """
+    if mask is None:
+        return None
+    try:
+        import dask.array as da
+    except ImportError:
+        da = None
+
+    if da is not None and isinstance(mask, da.Array):
+        mask = mask.compute()
+    if hasattr(mask, "data"):
+        mask = mask.data  # BaseSignal
+    return np.asarray(mask, dtype=bool).ravel()
+
+
+def _reproject_navigation_loadings(D, factors):
+    """Compute full-navigation loadings via least-squares projection.
+
+    Solves ``loadings = D @ factors / ||factors||^2``, which is the
+    least-squares solution to ``factors @ loadings ≈ D``.
+
+    Parameters
+    ----------
+    D : ndarray or dask Array, shape (nav, sig)
+        Data matrix.
+    factors : ndarray or dask Array, shape (sig, k)
+        Factor matrix.
+
+    Returns
+    -------
+    ndarray or dask Array, shape (nav, k)
+        Loadings matrix.
+    """
+    s_sq = np.einsum("ij,ij->j", factors, factors)
+    return (D @ factors) / s_sq
+
+
+def _reproject_signal_factors(D, loadings):
+    """Compute full-signal factors via pseudo-inverse.
+
+    Solves ``factors = (pinv(loadings) @ D).T`` so the result has shape
+    ``(sig, k)`` matching HyperSpy's factor convention (rows = signal
+    channels, columns = components).
+
+    Parameters
+    ----------
+    D : ndarray, shape (nav, sig)
+        Data matrix.
+    loadings : ndarray, shape (nav, k)
+        Loading matrix.
+
+    Returns
+    -------
+    ndarray, shape (sig, k)
+        Factor matrix.
+    """
+    return (np.linalg.pinv(loadings) @ D).T
+
+
+def _keenan_kotula_scale(data, navigation_mask, signal_mask, ndim, sdim):
+    """Apply Keenan-Kotula Poisson-noise scaling.
+
+    Implements the variance-stabilising transform described in [Keenan2004]_:
+
+        D_scaled[i,j] = D[i,j] / (sqrt(aG[i]) * sqrt(bH[j]))
+
+    where ``aG[i]`` is the total counts for navigation position *i* (summed
+    over unmasked signal channels) and ``bH[j]`` is the total counts for
+    signal channel *j* (summed over unmasked navigation positions).
+
+    Works for both numpy and dask arrays.  Masked positions contribute
+    zero to the sums and their data values pass through unscaled.
+
+    Parameters
+    ----------
+    data : ndarray or dask Array, shape (nav..., sig...)
+        Data in NumPy axis order (navigation axes first, signal axes last).
+        For 2-D data (*ndim* = 1, *sdim* = 1) the shape is ``(nav, sig)``.
+    navigation_mask : ndarray or None, shape (nav...,)
+        Boolean mask where ``True`` = exclude this navigation position.
+        ``None`` means no navigation masking.
+    signal_mask : ndarray or None, shape (sig...,)
+        Boolean mask where ``True`` = exclude this signal channel.
+        ``None`` means no signal masking.
+    ndim : int
+        Number of navigation dimensions (length of nav axes prefix).
+    sdim : int
+        Number of signal dimensions (length of sig axes suffix).
+
+    Returns
+    -------
+    scaled_data : ndarray or dask Array
+        Data after variance-stabilising scaling, same shape as *data*.
+    sqrt_aG : ndarray or dask Array, shape (nav...,)
+        Square root of total counts per navigation position.
+    sqrt_bH : ndarray or dask Array, shape (sig...,)
+        Square root of total counts per signal channel.
+
+    Raises
+    ------
+    ValueError
+        If negative values are found in the unmasked region or if all
+        data are masked.
+
+    References
+    ----------
+    .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson
+       noise in the multivariate analysis of ToF-SIMS spectrum images",
+       Surf. Interface Anal 36(3) (2004): 203-212.
+    """
+    import numpy as _np
+
+    # Pick the array backend based on the data type.  We must use the
+    # native backend from the start because numpy ufuncs dispatch to
+    # dask via __array_ufunc__, so _np.logical_not(dask_array) returns
+    # a dask array.
+    _is_dask = hasattr(data, "chunks")
+    if _is_dask:
+        import dask.array as _da
+
+        _lib = _da
+        _nav_chunks = data.chunks[:ndim]
+        _sig_chunks = data.chunks[ndim:]
+    else:
+        _lib = _np
+
+    # "Keep" masks (True = use this position).
+    if navigation_mask is None:
+        nm = (
+            _lib.ones(data.shape[:ndim], dtype=bool, chunks=_nav_chunks)
+            if _is_dask
+            else _lib.ones(data.shape[:ndim], dtype=bool)
+        )
+    else:
+        nm = _lib.logical_not(navigation_mask)
+    if signal_mask is None:
+        sm = (
+            _lib.ones(data.shape[ndim:], dtype=bool, chunks=_sig_chunks)
+            if _is_dask
+            else _lib.ones(data.shape[ndim:], dtype=bool)
+        )
+    else:
+        sm = _lib.logical_not(signal_mask)
+
+    # Broadcast to full data shape: nm → (nav..., 1...), sm → (1..., sig...)
+    nm_bc = nm[(...,) + (None,) * sdim]
+    sm_bc = sm[(None,) * ndim + (...,)]
+    combined = nm_bc & sm_bc
+
+    # Zero out masked entries so they do not contribute to aG / bH.
+    masked_data = _lib.where(combined, data, 0.0)
+
+    # Guard against negative values in the unmasked region.
+    min_val = masked_data.min()
+    if hasattr(min_val, "compute"):
+        min_val = min_val.compute()
+    if min_val < 0.0:
+        raise ValueError(
+            "Negative values found in data!\n"
+            "Are you sure that the data follow a Poisson distribution?"
+        )
+
+    nav_axes = tuple(range(ndim, ndim + sdim))
+    sig_axes = tuple(range(ndim))
+
+    aG = masked_data.sum(axis=nav_axes)
+    bH = masked_data.sum(axis=sig_axes)
+
+    # Materialise sums for dask; check the zero-sum guard on the computed
+    # NumPy values before re-wrapping, because float(dask_array) is not
+    # guaranteed to work across dask versions.
+    if _is_dask:
+        aG, bH = (aG.compute(), bH.compute())
+
+    # aG, bH are now guaranteed numpy arrays — float() below is safe.
+    # The zero-sum guard must run on NumPy values, so re-wrapping aG/bH
+    # as dask arrays is deliberately delayed until after this check.
+    if float(aG.sum()) == 0.0:
+        raise ValueError("All the data are masked, change the mask.")
+
+    # Re-wrap as dask so downstream sqrt / broadcast stays lazy.
+    if _is_dask:
+        aG = _da.from_array(aG)
+        bH = _da.from_array(bH)
+
+    # Avoid division-by-zero for masked positions (they contribute 0 to
+    # the sum so sqrt(0) would be zero — replace with 1 instead).
+    aG = _lib.where(aG == 0, 1, aG)
+    bH = _lib.where(bH == 0, 1, bH)
+
+    sqrt_aG = _lib.sqrt(aG)
+    sqrt_bH = _lib.sqrt(bH)
+
+    coeff = sqrt_aG[(...,) + (None,) * sdim] * sqrt_bH[(None,) * ndim + (...,)]
+    scaled_data = _lib.where(combined, data / coeff, data)
+
+    return scaled_data, sqrt_aG, sqrt_bH
 
 
 class MVA:
@@ -131,6 +402,112 @@ class MVA:
     def __init__(self):
         if not hasattr(self, "learning_results"):
             self.learning_results = LearningResults()
+
+    def _validate_decomposition_inputs(
+        self, output_dimension, centre, reproject, svd_solver=None
+    ):
+        """Validate inputs shared by lazy and non-lazy decomposition().
+
+        Parameters
+        ----------
+        output_dimension : int or None
+            Number of components to compute; ``None`` means all.
+        centre : str or None
+            Centering strategy (``'navigation'``, ``'signal'``, or ``None``).
+        reproject : str or None
+            Reprojection mode (``'navigation'``, ``'signal'``, ``'both'``, or ``None``).
+        svd_solver : str or None, default None
+            When provided (lazy path only), also validates that
+            ``output_dimension`` is supplied for solvers that require it
+            (``'randomized'`` and ``'incremental'``).
+
+        Raises
+        ------
+        TypeError
+            If the data is not a floating-point array.
+        ValueError
+            If any of the other inputs are invalid.
+        """
+        if self.data.dtype.char not in np.typecodes["AllFloat"]:
+            raise TypeError(
+                "To perform a decomposition the data must be of the "
+                f"floating-point (including complex) type, but the current type is '{self.data.dtype}'. "
+                "To fix this issue, you can change the type using the "
+                "change_dtype method (e.g. s.change_dtype('float64')) "
+                "and then repeat the decomposition.\n"
+                "No decomposition was performed."
+            )
+
+        if self.axes_manager.navigation_size < 2:
+            raise ValueError(
+                "It is not possible to decompose a dataset with navigation_size < 2"
+            )
+
+        if output_dimension is not None:
+            if not isinstance(output_dimension, (int, np.integer)) or isinstance(
+                output_dimension, bool
+            ):
+                raise ValueError(
+                    f"`output_dimension` must be a positive integer, "
+                    f"not {output_dimension!r}."
+                )
+            if output_dimension <= 0:
+                raise ValueError(
+                    f"`output_dimension` must be a positive integer, "
+                    f"got {output_dimension}."
+                )
+
+        # Solvers that cannot determine rank automatically require the caller
+        # to supply output_dimension.  Checked here (rather than inline in
+        # lazy.decomposition) so that all output_dimension constraints live in
+        # one place and stay consistent if new solvers are added later.
+        if svd_solver in ("randomized", "incremental") and output_dimension is None:
+            raise ValueError(
+                f"`output_dimension` must be specified when using "
+                f"algorithm='SVD' with svd_solver={svd_solver!r}."
+            )
+
+        if centre not in (None, "navigation", "signal"):
+            raise ValueError(
+                f"`centre` must be None, 'navigation' or 'signal', not {centre!r}"
+            )
+
+        if reproject not in (None, "navigation", "signal", "both"):
+            raise ValueError(
+                "`reproject` must be None, 'navigation', 'signal' or 'both', "
+                f"not {reproject!r}"
+            )
+
+    def _compute_explained_variance_ratio(self, explained_variance):
+        """Compute explained variance ratio and elbow position from raw variances.
+
+        Parameters
+        ----------
+        explained_variance : numpy.ndarray or dask.array.Array or None
+
+        Returns
+        -------
+        explained_variance_ratio : numpy.ndarray or None
+            Fraction of variance explained by each component; ``None`` if input is ``None``.
+        number_significant_components : int or None
+            Index of the scree-plot elbow plus one; ``None`` if input is ``None``.
+        """
+        if explained_variance is None:
+            return None, None
+
+        try:
+            import dask.array as da
+
+            if isinstance(explained_variance, da.Array):
+                explained_variance = explained_variance.compute()
+        except ImportError:
+            pass
+
+        explained_variance_ratio = explained_variance / explained_variance.sum()
+        number_significant_components = int(
+            self.estimate_elbow_position(explained_variance_ratio) + 1
+        )
+        return explained_variance_ratio, number_significant_components
 
     def decomposition(
         self,
@@ -147,7 +524,7 @@ class MVA:
         return_info=False,
         print_info=True,
         svd_solver="auto",
-        copy=True,
+        copy=False,
         **kwargs,
     ):
         """Apply a decomposition to a dataset with a choice of algorithms.
@@ -158,9 +535,7 @@ class MVA:
 
         Parameters
         ----------
-        normalize_poissonian_noise : bool, default False
-            If True, scale the signal to normalize Poissonian noise using
-            the approach described in [*]_.
+        %s
         algorithm : str {``"SVD"``, ``"MLPCA"``, ``"sklearn_pca"``, ``"NMF"``, ``"sparse_pca"``,
         ``"mini_batch_sparse_pca"``, ``"RPCA"``, ``"ORPCA"``, ``"ORNMF"``} or object, default ``"SVD"``
             The decomposition algorithm to use. If algorithm is an object,
@@ -171,20 +546,15 @@ class MVA:
             Number of components to keep/calculate.
             Default is None, i.e. ``min(data.shape)``.
         centre : None or str {``"navigation"``, ``"signal"``}, default None
-            * If None, the data is not centered prior to decomposition.
-            * If "navigation", the data is centered along the navigation axis.
-              Only used by the "SVD" algorithm.
-            * If "signal", the data is centered along the signal axis.
-              Only used by the "SVD" algorithm.
+            If None, the data is not centered prior to decomposition.
+            If ``"navigation"``, the data is centered along the navigation
+            axis.  If ``"signal"``, centered along the signal axis.
+            Only used by the ``"SVD"`` algorithm.
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only used by the "SVD" algorithm.
-        navigation_mask : numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`
-            The navigation locations marked as True are not used in the
-            decomposition.
-        signal_mask : numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`
-            The signal locations marked as True are not used in the
-            decomposition.
+        %s
+        %s
         var_array : numpy.ndarray
             Array of variance for the maximum likelihood PCA algorithm.
             Only used by the "MLPCA" algorithm.
@@ -204,14 +574,11 @@ class MVA:
             stored. If True, return any extra information if available.
             In the case of sklearn.decomposition objects, this includes the
             sklearn Estimator object.
-        print_info : bool, default True
-            If True, print information about the decomposition being performed.
-            In the case of sklearn.decomposition objects, this includes the
-            values of all arguments of the chosen sklearn algorithm.
+        %s
         svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
             * If ``"auto"``: the solver is selected by a default policy based on ``data.shape`` and
               ``output_dimension``: if the input data is larger than 500x500 and the
-              number of components to extract is lower than 80% of the smallest
+              number of components to extract is lower than 80%% of the smallest
               dimension of the data, then the more efficient ``"randomized"``
               method is enabled. Otherwise the exact full SVD is computed and
               optionally truncated afterwards.
@@ -225,18 +592,21 @@ class MVA:
               limited number of components
 
             For cupy arrays, only "full" is supported.
-        copy : bool, default True
-            * If ``True``, stores a copy of the data before any pre-treatments
-              such as normalization in ``s._data_before_treatments``. The original
-              data can then be restored by calling ``s.undo_treatments()``.
-            * If ``False``, no copy is made. This can be beneficial for memory
-              usage, but care must be taken since data will be overwritten.
+        copy : bool, default False
+            (**Deprecated** — will be removed in a future release.
+            Pre-treatment data modifications such as Poisson noise
+            normalization and centering are now reversed mathematically
+            after decomposition, so explicit copying is no longer needed.)
+
+            If ``True``, stores a copy of the data before any pre-treatments
+            in ``s._data_before_treatments``.  Passing ``True`` emits a
+            ``VisibleDeprecationWarning``.
         **kwargs : dict
             Any keyword arguments are passed to the decomposition algorithm.
 
         Returns
         -------
-         tuple of numpy.ndarray or sklearn.base.BaseEstimator or None
+        tuple of numpy.ndarray or sklearn.base.BaseEstimator or None
             * If True and 'algorithm' in ['RPCA', 'ORPCA', 'ORNMF'], returns
               the low-rank (X) and sparse (E) matrices from robust PCA/NMF.
             * If True and 'algorithm' is an sklearn Estimator, returns the
@@ -245,7 +615,7 @@ class MVA:
 
         References
         ----------
-        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
+        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
 
@@ -271,21 +641,7 @@ class MVA:
 
         from hyperspy.signal import BaseSignal
 
-        # Check data is suitable for decomposition
-        if self.data.dtype.char not in np.typecodes["AllFloat"]:
-            raise TypeError(
-                "To perform a decomposition the data must be of the "
-                f"float or complex type, but the current type is '{self.data.dtype}'. "
-                "To fix this issue, you can change the type using the "
-                "change_dtype method (e.g. s.change_dtype('float64')) "
-                "and then repeat the decomposition.\n"
-                "No decomposition was performed."
-            )
-
-        if self.axes_manager.navigation_size < 2:
-            raise ValueError(
-                "It is not possible to decompose a dataset with navigation_size < 2"
-            )
+        self._validate_decomposition_inputs(output_dimension, centre, reproject)
 
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [
@@ -348,9 +704,19 @@ class MVA:
         self._check_navigation_mask(navigation_mask)
         self._check_signal_mask(signal_mask)
 
-        # Backup the original data (on by default to
-        # mimic previous behaviour)
+        # Backup the original data before applying pre-treatments.
+        # Only needed when Poisson noise normalization will modify data
+        # (the reversal for copy=False is handled mathematically).
         if copy:
+            warnings.warn(
+                "The `copy` parameter is deprecated and will be removed in "
+                "a future release.  Data modifications (Poisson noise "
+                "normalization, centering) are now reversed mathematically "
+                "after decomposition, so explicit copying is no longer needed.",
+                VisibleDeprecationWarning,
+                stacklevel=2,
+            )
+        if copy and normalize_poissonian_noise:
             self._data_before_treatments = self.data.copy()
 
         # set the output target (peak results or not?)
@@ -363,18 +729,18 @@ class MVA:
             _logger.info("Performing decomposition analysis")
 
             if isinstance(navigation_mask, BaseSignal):
-                navigation_mask = navigation_mask.data.ravel()
-            elif hasattr(navigation_mask, "ravel"):
-                navigation_mask = navigation_mask.T.ravel()
-
-            if isinstance(signal_mask, BaseSignal):
-                signal_mask = signal_mask.data
-            if hasattr(signal_mask, "ravel"):
-                signal_mask = signal_mask.ravel()
+                navigation_mask = _to_flat_bool(navigation_mask)
+            elif hasattr(navigation_mask, "T") and not isinstance(
+                navigation_mask, BaseSignal
+            ):
+                # Transpose to array order (HyperSpy display convention
+                # reverses axes for multi-dimensional navigation spaces).
+                navigation_mask = _to_flat_bool(navigation_mask.T)
+            else:
+                navigation_mask = _to_flat_bool(navigation_mask)
+            signal_mask = _to_flat_bool(signal_mask)
 
             # Normalize the poissonian noise
-            # TODO this function can change the masks and
-            # this can cause problems when reprojecting
             if normalize_poissonian_noise:
                 if centre is not None:
                     raise ValueError(
@@ -392,25 +758,29 @@ class MVA:
             # is not the case.
             if self.axes_manager[0].index_in_array == 0:
                 dc = self.data
+                self._data_was_transposed = False
             else:
                 dc = self.data.T
+                self._data_was_transposed = True
 
-            # Transform the None masks in slices to get the right behaviour
+            # Convert None masks to slices; masks keep their user-provided
+            # convention (True = excluded) throughout — we invert explicitly
+            # at indexing sites for clarity.
             if navigation_mask is None:
                 navigation_mask = slice(None)
-            else:
-                navigation_mask = ~navigation_mask
             if signal_mask is None:
                 signal_mask = slice(None)
-            else:
-                signal_mask = ~signal_mask
 
-            # WARNING: signal_mask and navigation_mask values are now their
-            # negaties i.e. True -> False and viceversa. However, the
-            # stored value (at the end of the method) coincides with the
-            # input masks
+            # "Keep" versions for fancy-indexing (True = include this row/col).
+            # When the mask is a slice it passes through unchanged.
+            _nm = (
+                navigation_mask
+                if isinstance(navigation_mask, slice)
+                else ~navigation_mask
+            )
+            _sm = signal_mask if isinstance(signal_mask, slice) else ~signal_mask
 
-            data_ = dc[:, signal_mask][navigation_mask, :]
+            data_ = dc[:, _sm][_nm, :]
             if data_.size == 0:
                 raise ValueError("All the data are masked, change the mask.")
 
@@ -563,10 +933,10 @@ class MVA:
             # information can be lost if the user subsequently calls
             # crop_decomposition_dimension()
             if explained_variance is not None and explained_variance_ratio is None:
-                explained_variance_ratio = explained_variance / explained_variance.sum()
-                number_significant_components = (
-                    self.estimate_elbow_position(explained_variance_ratio) + 1
-                )
+                (
+                    explained_variance_ratio,
+                    number_significant_components,
+                ) = self._compute_explained_variance_ratio(explained_variance)
 
             # Store the results in learning_results
             target.factors = factors
@@ -599,17 +969,18 @@ class MVA:
 
             if reproject in ("navigation", "both"):
                 if not is_sklearn_like:
-                    loadings_ = (dc[:, signal_mask] - mean) @ factors
+                    loadings_ = _reproject_navigation_loadings(
+                        dc[:, _sm] - mean, factors
+                    )
                 else:
-                    loadings_ = estim.transform(dc[:, signal_mask])
+                    loadings_ = estim.transform(dc[:, _sm])
                 target.loadings = loadings_
 
             if reproject in ("signal", "both"):
                 if not is_sklearn_like:
-                    factors = (
-                        np.linalg.pinv(loadings) @ (dc[navigation_mask, :] - mean)
-                    ).T
-                    target.factors = factors
+                    target.factors = _reproject_signal_factors(
+                        dc[_nm, :] - mean, loadings
+                    )
                 else:
                     warnings.warn(
                         "Reprojecting the signal is not yet "
@@ -621,42 +992,85 @@ class MVA:
                     else:
                         reproject = None
 
-            # Rescale the results if the noise was normalized
+            # Rescale the results if the noise was normalized.
+            # _root_bH / _root_aG cover the full signal/navigation size
+            # (masked positions contributed zero to the sums, so their
+            # sqrt is zero).  When factors/loadings only cover the
+            # unmasked subset, subset _root_bH / _root_aG to match.
             if normalize_poissonian_noise:
-                target.factors[:] *= self._root_bH.T
-                target.loadings[:] *= self._root_aG
+                _bh = self._root_bH.ravel()
+                if not isinstance(signal_mask, slice):
+                    _bh = _bh[~signal_mask]
+                target.factors *= _bh[:, np.newaxis]
+                _ag = self._root_aG.ravel()
+                if not isinstance(navigation_mask, slice):
+                    _ag = _ag[~navigation_mask]
+                target.loadings *= _ag[:, np.newaxis]
 
             # Set the pixels that were not processed to nan
             if not isinstance(signal_mask, slice):
-                # Store the (inverted, as inputed) signal mask
-                target.signal_mask = ~signal_mask.reshape(
+                target.signal_mask = signal_mask.reshape(
                     self.axes_manager._signal_shape_in_array
                 )
                 if reproject not in ("both", "signal"):
-                    factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
-                    factors[signal_mask, :] = target.factors
-                    factors[~signal_mask, :] = np.nan
-                    target.factors = factors
+                    target.factors = _nan_expand_rows(
+                        target.factors, signal_mask, dc.shape[-1]
+                    )
 
             if not isinstance(navigation_mask, slice):
-                # Store the (inverted, as inputed) navigation mask
-                target.navigation_mask = ~navigation_mask.reshape(
+                target.navigation_mask = navigation_mask.reshape(
                     self.axes_manager._navigation_shape_in_array
                 )
                 if reproject not in ("both", "navigation"):
-                    loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
-                    loadings[navigation_mask, :] = target.loadings
-                    loadings[~navigation_mask, :] = np.nan
-                    target.loadings = loadings
+                    target.loadings = _nan_expand_rows(
+                        target.loadings, navigation_mask, dc.shape[0]
+                    )
 
         finally:
+            # Reverse centering: svd_pca subtracted the mean in-place
+            # (line 253 of _svd_pca.py).  Restore it here so the
+            # signal's data is not permanently modified.
+            if target.mean is not None:
+                # Masks may still be None if an error was raised before
+                # the None→slice conversion.  Treat None like a slice.
+                if (isinstance(navigation_mask, slice) or navigation_mask is None) and (
+                    isinstance(signal_mask, slice) or signal_mask is None
+                ):
+                    self.data += target.mean
+
+            # Reverse Keenan-Kotula scaling when copy=False (the data
+            # was modified in-place with no backup copy).  We reverse
+            # mathematically using the stored sqrt(aG) / sqrt(bH)
+            # before folding so the data stays 2-D.
+            if normalize_poissonian_noise and not copy and hasattr(self, "_root_aG"):
+                nav_size = self.axes_manager.navigation_size
+                sig_size = self.axes_manager.signal_size
+                if isinstance(navigation_mask, slice) or navigation_mask is None:
+                    nm = np.ones(nav_size, dtype=bool)
+                else:
+                    nm = ~navigation_mask
+                if isinstance(signal_mask, slice) or signal_mask is None:
+                    sm = np.ones(sig_size, dtype=bool)
+                else:
+                    sm = ~signal_mask
+                combined = nm[:, np.newaxis] & sm[np.newaxis, :]
+                coeff = (
+                    self._root_aG.ravel()[:, np.newaxis]
+                    * self._root_bH.ravel()[np.newaxis, :]
+                )
+                if getattr(self, "_data_was_transposed", False):
+                    combined = combined.T
+                    coeff = coeff.T
+                self.data[combined] *= coeff[combined]
+
             if self._unfolded4decomposition:
                 self.fold()
                 self._unfolded4decomposition = False
             self.learning_results.__dict__.update(target.__dict__)
 
-            # Undo any pre-treatments by restoring the copied data
-            if copy:
+            # Undo Poisson pre-treatment by restoring the copied data.
+            # (copy=False + Poisson is handled by mathematical reversal above.)
+            if copy and normalize_poissonian_noise:
                 self.undo_treatments()
 
         # Print details about the decomposition we just performed
@@ -664,6 +1078,23 @@ class MVA:
             print("\n".join([str(pr) for pr in to_print]))
 
         return to_return
+
+    decomposition.__doc__ %= (
+        DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
+        DECOMP_MASK_DOC
+        % (
+            "navigation_mask",
+            "numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`",
+            "navigation",
+        ),
+        DECOMP_MASK_DOC
+        % (
+            "signal_mask",
+            "numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`",
+            "signal",
+        ),
+        DECOMP_PRINT_INFO_DOC,
+    )
 
     def blind_source_separation(
         self,
@@ -1784,8 +2215,8 @@ class MVA:
     def normalize_poissonian_noise(self, navigation_mask=None, signal_mask=None):
         """Normalize the signal under the assumption of Poisson noise.
 
-        Scales the signal using to "normalize" the Poisson data for
-        subsequent decomposition analysis [*]_.
+        Scales the signal to normalize the Poisson data for
+        subsequent decomposition analysis (Keenan and Kotula, 2004).
 
         Parameters
         ----------
@@ -1794,77 +2225,46 @@ class MVA:
         signal_mask : {None, boolean numpy array}, default None
             Optional mask applied in the signal axis.
 
-        References
-        ----------
-        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
-            in the multivariate analysis of ToF-SIMS spectrum images", Surf.
-            Interface Anal 36(3) (2004): 203-212.
-
         """
         _logger.info("preprocessing the data to normalize Poissonian noise")
         with self.unfolded():
-            # The rest of the code assumes that the first data axis
-            # is the navigation axis. We transpose the data if that
-            # is not the case.
+            # Ensure navigation axis is first in the 2-D layout.
             if self.axes_manager[0].index_in_array == 0:
                 dc = self.data
+                _transposed = False
             else:
                 dc = self.data.T
+                _transposed = True
 
-            if navigation_mask is None:
-                navigation_mask = slice(None)
-            else:
-                navigation_mask = ~navigation_mask.ravel()
-            if signal_mask is None:
-                signal_mask = slice(None)
-            else:
-                signal_mask = ~signal_mask.ravel()
+            # The shared function expects flat masks (True = excluded).
+            # _to_flat_bool handles None, BaseSignal, dask and numpy masks.
+            nav_mask = _to_flat_bool(navigation_mask)
+            sig_mask = _to_flat_bool(signal_mask)
 
-            if dc[:, signal_mask][navigation_mask, :].size == 0:
-                raise ValueError("All the data are masked, change the mask.")
+            dc, self._root_aG, self._root_bH = _keenan_kotula_scale(
+                dc, nav_mask, sig_mask, ndim=1, sdim=1
+            )
 
-            # Check non-negative
-            if dc[:, signal_mask][navigation_mask, :].min() < 0.0:
-                raise ValueError(
-                    "Negative values found in data!\n"
-                    "Are you sure that the data follow a Poisson distribution?"
-                )
-
-            # Rescale the data to normalize the Poisson noise
-            aG = dc[:, signal_mask][navigation_mask, :].sum(1).squeeze()
-            bH = dc[:, signal_mask][navigation_mask, :].sum(0).squeeze()
-
-            self._root_aG = np.sqrt(aG)[:, np.newaxis]
-            self._root_bH = np.sqrt(bH)[np.newaxis, :]
-
-            # We ignore numpy's warning when the result of an
-            # operation produces nans - instead we set 0/0 = 0
-            with np.errstate(divide="ignore", invalid="ignore"):
-                # Boolean indexing always makes a copy of data. Therefore, we cannot modify the
-                # data using `data[nav_mask, :][:, sig_mask] /= [...]` that would make
-                # the code compact but doesn't work. Instead, we treat each case differently.
-                if type(signal_mask) is slice and type(navigation_mask) is not slice:
-                    dc[navigation_mask, :] /= self._root_aG * self._root_bH
-                    dc[navigation_mask, :] = np.nan_to_num(dc[navigation_mask, :])
-                elif type(signal_mask) is not slice and type(navigation_mask) is slice:
-                    dc[:, signal_mask] /= self._root_aG * self._root_bH
-                    dc[:, signal_mask] = np.nan_to_num(dc[:, signal_mask])
-                elif (
-                    type(signal_mask) is not slice
-                    and type(navigation_mask) is not slice
-                ):
-                    mask = navigation_mask[:, np.newaxis] & signal_mask[np.newaxis, :]
-                    dc[mask] /= (self._root_aG * self._root_bH).flat
-                    dc[mask] = np.nan_to_num(dc[mask])
-                else:
-                    dc /= self._root_aG * self._root_bH
-                    dc = np.nan_to_num(dc)
+            if _transposed:
+                dc = dc.T
+            self.data = dc
 
     def undo_treatments(self):
         """Undo Poisson noise normalization and other pre-treatments.
 
-        Only valid if calling ``s.decomposition(..., copy=True)``.
+        .. deprecated:: 2.5
+           This method is deprecated and will be removed in a future
+           release.  Pre-treatment data modifications are now reversed
+           mathematically after decomposition, so explicit undo is no
+           longer needed.
         """
+        warnings.warn(
+            "undo_treatments() is deprecated and will be removed in a "
+            "future release.  Data modifications are now reversed "
+            "mathematically after decomposition.",
+            VisibleDeprecationWarning,
+            stacklevel=2,
+        )
         if hasattr(self, "_data_before_treatments"):
             _logger.info("Undoing data pre-treatments")
             self.data[:] = self._data_before_treatments
