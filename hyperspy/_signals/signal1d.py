@@ -349,7 +349,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         ----------
         %s
         %s
-        **kwargs : dict
+        ``**kwargs`` : dict
             Keyword arguments pass to
             :meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
 
