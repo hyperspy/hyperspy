@@ -45,6 +45,6 @@
   based on whether the signal is lazy.
 - The ``reproject`` steps for ``svd_solver='full'`` now use dask matmuls
   instead of materialising the full data matrix via chunk loops.  Only the
-  small result array (``nav × k`` loadings or ``sig × k`` factors) is
+  small result array (``nav x k`` loadings or ``sig x k`` factors) is
   computed eagerly; the unrequested array remains a lazy dask array, keeping
   the end-to-end pipeline lazy even when ``reproject`` is used.
