@@ -933,7 +933,7 @@ class TestLazyPoissonNormalizationQuality:
         s_norm = signals.Signal1D(X_noisy.copy().reshape(shape_3d)).as_lazy()
         s_norm.decomposition(
             algorithm="SVD",
-            svd_solver="full",
+            svd_solver="randomized",
             output_dimension=rank,
             normalize_poissonian_noise=True,
             print_info=False,
@@ -944,7 +944,7 @@ class TestLazyPoissonNormalizationQuality:
         s_plain = signals.Signal1D(X_noisy.copy().reshape(shape_3d)).as_lazy()
         s_plain.decomposition(
             algorithm="SVD",
-            svd_solver="full",
+            svd_solver="randomized",
             output_dimension=rank,
             normalize_poissonian_noise=False,
             print_info=False,
@@ -983,9 +983,9 @@ class TestComplexDtypePreservationWithMask:
             navigation_mask=nav_mask,
             print_info=False,
         )
-        assert s.learning_results.loadings.dtype == np.complex128, (
+        assert s.learning_results.scores.dtype == np.complex128, (
             f"Expected loadings.dtype == complex128 (nav mask), "
-            f"got {s.learning_results.loadings.dtype}"
+            f"got {s.learning_results.scores.dtype}"
         )
 
     def test_signal_mask_preserves_factors_dtype(self):
@@ -1004,9 +1004,9 @@ class TestComplexDtypePreservationWithMask:
             signal_mask=sig_mask,
             print_info=False,
         )
-        assert s.learning_results.factors.dtype == np.complex128, (
+        assert s.learning_results.components.dtype == np.complex128, (
             f"Expected factors.dtype == complex128 (signal mask), "
-            f"got {s.learning_results.factors.dtype}"
+            f"got {s.learning_results.components.dtype}"
         )
 
     def test_lazy_nav_mask_preserves_loadings_dtype(self):
@@ -1027,9 +1027,9 @@ class TestComplexDtypePreservationWithMask:
             navigation_mask=nav_mask,
             print_info=False,
         )
-        assert s.learning_results.loadings.dtype == np.complex128, (
+        assert s.learning_results.scores.dtype == np.complex128, (
             f"Expected loadings.dtype == complex128 (lazy+nav mask), "
-            f"got {s.learning_results.loadings.dtype}"
+            f"got {s.learning_results.scores.dtype}"
         )
 
     def test_lazy_signal_mask_preserves_factors_dtype(self):
@@ -1049,7 +1049,7 @@ class TestComplexDtypePreservationWithMask:
             signal_mask=sig_mask,
             print_info=False,
         )
-        assert s.learning_results.factors.dtype == np.complex128, (
+        assert s.learning_results.components.dtype == np.complex128, (
             f"Expected factors.dtype == complex128 (lazy+signal mask), "
-            f"got {s.learning_results.factors.dtype}"
+            f"got {s.learning_results.components.dtype}"
         )
