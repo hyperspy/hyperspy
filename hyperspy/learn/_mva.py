@@ -3365,7 +3365,7 @@ class LearningResults(object):
     def factors(self):
         """**Deprecated.** Use ``components`` instead.
 
-        .. versionadded:: 2.5.0
+        .. deprecated:: 2.5.0
         """
         self._warn_deprecated("factors", "components")
         return self.components
@@ -3379,7 +3379,7 @@ class LearningResults(object):
     def loadings(self):
         """**Deprecated.** Use ``scores`` instead.
 
-        .. versionadded:: 2.5.0
+        .. deprecated:: 2.5.0
         """
         self._warn_deprecated("loadings", "scores")
         return self.scores
@@ -3393,7 +3393,7 @@ class LearningResults(object):
     def bss_factors(self):
         """**Deprecated.** Use ``bss_components`` instead.
 
-        .. versionadded:: 2.5.0
+        .. deprecated:: 2.5.0
         """
         self._warn_deprecated("bss_factors", "bss_components")
         return self.bss_components
@@ -3407,7 +3407,7 @@ class LearningResults(object):
     def bss_loadings(self):
         """**Deprecated.** Use ``bss_scores`` instead.
 
-        .. versionadded:: 2.5.0
+        .. deprecated:: 2.5.0
         """
         self._warn_deprecated("bss_loadings", "bss_scores")
         return self.bss_scores
@@ -3421,7 +3421,7 @@ class LearningResults(object):
     def on_loadings(self):
         """**Deprecated.** Use ``on_scores`` instead.
 
-        .. versionadded:: 2.5.0
+        .. deprecated:: 2.5.0
         """
         self._warn_deprecated("on_loadings", "on_scores")
         return self.on_scores
