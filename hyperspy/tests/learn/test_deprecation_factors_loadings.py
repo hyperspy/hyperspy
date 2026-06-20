@@ -85,6 +85,7 @@ class TestBSSLearningResultsDeprecation:
     """LearningResults BSS property-level deprecations."""
 
     def setup_method(self, method):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         rng = np.random.default_rng(123)
         S = rng.laplace(size=(3, 500))
         A = rng.random(size=(3, 3))
@@ -124,6 +125,7 @@ class TestGetMethodDeprecation:
     """get_decomposition_* and get_bss_* method deprecations."""
 
     def setup_method(self, method):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         rng = np.random.default_rng(123)
         S = rng.laplace(size=(3, 500))
         A = rng.random(size=(3, 3))
@@ -165,6 +167,7 @@ class TestPlotMethodDeprecation:
     """plot_decomposition_* and plot_bss_* method deprecations."""
 
     def setup_method(self, method):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         s = signals.Signal1D(generate_low_rank_matrix())
         s.decomposition(output_dimension=3)
         s.blind_source_separation(3)
@@ -224,6 +227,7 @@ class TestBSSKwargDeprecation:
     """blind_source_separation kwarg deprecation."""
 
     def setup_method(self, method):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         rng = np.random.default_rng(123)
         S = rng.laplace(size=(3, 500))
         A = rng.random(size=(3, 3))
@@ -241,6 +245,7 @@ class TestExportKwargDeprecation:
     """Deprecated kwargs for export functions."""
 
     def setup_method(self, method):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         rng = np.random.default_rng(123)
         S = rng.laplace(size=(3, 500))
         A = rng.random(size=(3, 3))
