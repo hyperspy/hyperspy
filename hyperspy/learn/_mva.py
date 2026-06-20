@@ -52,7 +52,7 @@ CHUNKS_ARGS = """chunks : str, int, or tuple, default "auto"
             If a tuple of length 2, the first element controls signal
             dimension chunking and the second controls navigation
             chunking (passed as ``nav_chunks`` to
-            :meth:`~hyperspy._signals.lazy.LazySignal.rechunk`)."""
+            :meth:`~.api.signals.LazySignal.rechunk`)."""
 
 
 decomposition_algorithms = {
