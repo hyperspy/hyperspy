@@ -350,7 +350,7 @@ class TestBSS2D:
         s = hs.signals.Signal2D((mixing_matrix @ ics).reshape((100, 16, 16)))
         for axis, name in zip(s.axes_manager._axes, ("z", "y", "x")):
             axis.name = name
-        s.decomposition()
+        s.decomposition(output_dimension=3)
 
         mask_sig = s._get_signal_signal(dtype="bool")
         mask_sig.unfold()
@@ -474,7 +474,7 @@ class TestBSS2D:
 
     def test_mask_diff_order_1_on_scores(self):
         s = self.s.to_signal1D()
-        s.decomposition()
+        s.decomposition(output_dimension=3)
         if isinstance(s.learning_results.scores, da.Array):
             s.learning_results.scores = s.learning_results.scores.compute()
         s.learning_results.scores[5, :] = np.nan
@@ -482,7 +482,7 @@ class TestBSS2D:
 
     def test_mask_diff_order_1_on_scores_diff_axes(self):
         s = self.s.to_signal1D()
-        s.decomposition()
+        s.decomposition(output_dimension=3)
         if isinstance(s.learning_results.scores, da.Array):
             s.learning_results.scores = s.learning_results.scores.compute()
         s.learning_results.scores[5, :] = np.nan
@@ -543,8 +543,9 @@ class TestBSSModelCorruptionFix:
         s = hs.signals.Signal1D(rng.random((20, 100))).as_lazy()
         s.decomposition(output_dimension=3)
         # Compute to numpy so bss operates on numpy arrays
-        s.learning_results.components = s.learning_results.components.compute()
-        s.learning_results.scores = s.learning_results.scores.compute()
+        if hasattr(s.learning_results.components, "compute"):
+            s.learning_results.components = s.learning_results.components.compute()
+            s.learning_results.scores = s.learning_results.scores.compute()
         s.blind_source_separation(3)
         # bss_components/bss_scores should now be numpy (from numpy decomposition)
         assert isinstance(s.learning_results.bss_components, np.ndarray)
