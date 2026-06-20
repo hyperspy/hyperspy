@@ -3363,7 +3363,7 @@ class LearningResults(object):
 
     @property
     def factors(self):
-        """Deprecated: use :attr:`components` instead.
+        """**Deprecated.** Use ``components`` instead.
 
         .. versionadded:: 2.5.0
         """
@@ -3377,7 +3377,7 @@ class LearningResults(object):
 
     @property
     def loadings(self):
-        """Deprecated: use :attr:`scores` instead.
+        """**Deprecated.** Use ``scores`` instead.
 
         .. versionadded:: 2.5.0
         """
@@ -3391,7 +3391,7 @@ class LearningResults(object):
 
     @property
     def bss_factors(self):
-        """Deprecated: use :attr:`bss_components` instead.
+        """**Deprecated.** Use ``bss_components`` instead.
 
         .. versionadded:: 2.5.0
         """
@@ -3405,7 +3405,7 @@ class LearningResults(object):
 
     @property
     def bss_loadings(self):
-        """Deprecated: use :attr:`bss_scores` instead.
+        """**Deprecated.** Use ``bss_scores`` instead.
 
         .. versionadded:: 2.5.0
         """
@@ -3419,7 +3419,7 @@ class LearningResults(object):
 
     @property
     def on_loadings(self):
-        """Deprecated: use :attr:`on_scores` instead.
+        """**Deprecated.** Use ``on_scores`` instead.
 
         .. versionadded:: 2.5.0
         """

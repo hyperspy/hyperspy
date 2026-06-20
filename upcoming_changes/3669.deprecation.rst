@@ -1,19 +1,19 @@
 Deprecate ``factors`` and ``loadings`` attributes of
-:class:`~.learn._mva.LearningResults` in favour of ``components`` and
+:class:`~.learn.LearningResults` in favour of ``components`` and
 ``scores``. Similarly, ``bss_factors`` and ``bss_loadings`` are deprecated
 in favour of ``bss_components`` and ``bss_scores``, and ``on_loadings``
 in favour of ``on_scores``. The old attribute names still work but emit a
-:class:`~.exceptions.VisibleDeprecationWarning` and will be removed in 3.0.
+``VisibleDeprecationWarning`` and will be removed in 3.0.
 Deprecate ``factors`` and ``loadings`` as accepted values for the
-``target`` parameter of :meth:`~.signal.BaseSignal.normalize_decomposition_components`
-and :meth:`~.signal.BaseSignal.normalize_bss_components` in favour of ``"components"``
+``target`` parameter of :meth:`~.api.signals.BaseSignal.normalize_decomposition_components`
+and :meth:`~.api.signals.BaseSignal.normalize_bss_components` in favour of ``"components"``
 and ``"scores"``. Similarly, deprecate ``"factors"`` and ``"loadings"`` as accepted
 values for ``reverse_component_criterion`` in
-:meth:`~.signal.BaseSignal.blind_source_separation` in favour of ``"components"`` and
+:meth:`~.api.signals.BaseSignal.blind_source_separation` in favour of ``"components"`` and
 ``"scores"``. Deprecate the ``on_loadings`` keyword argument of
-:meth:`~.signal.BaseSignal.blind_source_separation` in favour of ``on_scores``, and
+:meth:`~.api.signals.BaseSignal.blind_source_separation` in favour of ``on_scores``, and
 the ``factor_prefix``/``loading_prefix`` keyword arguments of
-:meth:`~.signal.BaseSignal.export_decomposition_results` and
-:meth:`~.signal.BaseSignal.export_bss_results` in favour of ``component_prefix``/
+:meth:`~.api.signals.BaseSignal.export_decomposition_results` and
+:meth:`~.api.signals.BaseSignal.export_bss_results` in favour of ``component_prefix``/
 ``score_prefix``. The old values and keyword argument names still work but emit a
-:class:`~.exceptions.VisibleDeprecationWarning` and will be removed in 3.0.
+``VisibleDeprecationWarning`` and will be removed in 3.0.
