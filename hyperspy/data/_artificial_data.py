@@ -37,12 +37,12 @@ except ImportError:
     prange = range
 
 
-ADD_NOISE_DOCSTRING = """\
-add_noise : bool
-    If True, add noise to the signal. Use ``random_state`` to seed
-    the noise to generate reproducible noise.
-random_state : None, int or numpy.random.Generator, default None
-    Random seed used to generate the data."""
+ADD_NOISE_DOCSTRING = """add_noise : bool
+        If True, add noise to the signal. Use ``random_state`` to seed
+        the noise to generate reproducible noise.
+    random_state : None, int or numpy.random.Generator, default None
+        Random seed used to generate the data.
+    """
 
 
 @jit_ifnumba(cache=True, parallel=True)

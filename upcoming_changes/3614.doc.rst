@@ -1,4 +1,4 @@
- Add a ``mva.masks_and_reproject`` section to the User Guide documenting
+Add a ``mva.masks_and_reproject`` section to the User Guide documenting
 navigation and signal masks, the ``reproject`` parameter, and how ``NaN``
 positions are filled after decomposition.  Improve the
 ``big_data.decomposition`` section with:
@@ -9,11 +9,10 @@ positions are filled after decomposition.  Improve the
 - Dedicated sub-sections for NMF, custom sklearn-like estimators, and
   Poissonian noise normalisation.
 - A ``big_data.svd.lazy_pipeline`` sub-section documenting the fully lazy
-  decompose → reconstruct → save pipeline, including use of ``reproject`` and
+  decompose :octicon:`arrow-right` reconstruct :octicon:`arrow-right` save pipeline, including use of ``reproject`` and
   the ``lazy_output`` keyword argument of
   ``BaseSignal.get_decomposition_model()``.
 - Documentation of the ``lazy_output`` keyword argument on
   ``BaseSignal.get_decomposition_model()`` with
   examples for forcing lazy output from non-lazy signals and eager output from
   lazy signals.
-
