@@ -309,7 +309,7 @@ class TestBSS1D:
     def test_on_scores(self):
         self.s.blind_source_separation(3, diff_order=0, fun="exp", on_scores=False)
         s2 = self.s.as_signal1D(0)
-        s2.decomposition()
+        s2.decomposition(output_dimension=3)
         s2.blind_source_separation(3, diff_order=0, fun="exp", on_scores=True)
         assert are_bss_components_equivalent(
             self.s.get_bss_components(), s2.get_bss_scores()
@@ -449,7 +449,7 @@ class TestBSS2D:
     def test_on_scores(self):
         self.s.blind_source_separation(3, diff_order=0, fun="exp", on_scores=False)
         s2 = self.s.as_signal1D(0)
-        s2.decomposition()
+        s2.decomposition(output_dimension=3)
         s2.blind_source_separation(3, diff_order=0, fun="exp", on_scores=True)
         assert are_bss_components_equivalent(
             self.s.get_bss_components(), s2.get_bss_scores()
