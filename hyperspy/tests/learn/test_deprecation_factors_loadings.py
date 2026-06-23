@@ -198,6 +198,7 @@ class TestNormalizeAndReverseDeprecation:
     """Deprecated string values for normalize/reverse target/criterion."""
 
     def setup_method(self, method):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         self.s = signals.Signal1D(generate_low_rank_matrix())
         self.s.decomposition(output_dimension=3)
         self.s.blind_source_separation(3)
@@ -283,6 +284,7 @@ class TestPlotResultsNavigatorKwargDeprecation:
     """Deprecated navigator kwargs for plot_*_results."""
 
     def setup_method(self, method):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         s = signals.Signal1D(generate_low_rank_matrix())
         s.decomposition(output_dimension=3)
         s.blind_source_separation(3)
@@ -324,6 +326,7 @@ class TestInternalSilenceRegression:
             s.decomposition(output_dimension=3)
 
     def test_blind_source_separation_does_not_raise_internally(self):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         rng = np.random.default_rng(123)
         S = rng.laplace(size=(3, 500))
         A = rng.random(size=(3, 3))
@@ -341,6 +344,7 @@ class TestInternalSilenceRegression:
             s.get_decomposition_model(3)
 
     def test_get_bss_model_does_not_raise_internally(self):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         rng = np.random.default_rng(123)
         S = rng.laplace(size=(3, 500))
         A = rng.random(size=(3, 3))
@@ -352,6 +356,7 @@ class TestInternalSilenceRegression:
             s.get_bss_model()
 
     def test_get_components_and_scores_do_not_raise_internally(self):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         s = signals.Signal1D(generate_low_rank_matrix())
         with warnings.catch_warnings():
             warnings.simplefilter("error", VisibleDeprecationWarning)
@@ -363,6 +368,7 @@ class TestInternalSilenceRegression:
             s.get_bss_scores()
 
     def test_plot_methods_do_not_raise_internally(self):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         s = signals.Signal1D(generate_low_rank_matrix())
         with warnings.catch_warnings():
             warnings.simplefilter("error", VisibleDeprecationWarning)
@@ -374,6 +380,7 @@ class TestInternalSilenceRegression:
             s.plot_bss_scores()
 
     def test_export_methods_do_not_raise_internally(self):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         rng = np.random.default_rng(123)
         S = rng.laplace(size=(3, 500))
         A = rng.random(size=(3, 3))
@@ -387,6 +394,7 @@ class TestInternalSilenceRegression:
                 s.export_bss_results(folder=tmp)
 
     def test_plot_results_do_not_raise_internally(self):
+        pytest.importorskip("sklearn", reason="sklearn required for BSS")
         s = signals.Signal1D(generate_low_rank_matrix())
         with warnings.catch_warnings():
             warnings.simplefilter("error", VisibleDeprecationWarning)
