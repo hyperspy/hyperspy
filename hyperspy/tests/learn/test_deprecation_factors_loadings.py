@@ -311,6 +311,26 @@ class TestPlotResultsNavigatorKwargDeprecation:
         with pytest.warns(VisibleDeprecationWarning, match="deprecated"):
             s.plot_bss_results(loadings_navigator="auto")
 
+    def test_plot_decomposition_results_factors_dim_warns(self):
+        s = self.s
+        with pytest.warns(VisibleDeprecationWarning, match="deprecated"):
+            s.plot_decomposition_results(factors_dim=2)
+
+    def test_plot_decomposition_results_loadings_dim_warns(self):
+        s = self.s
+        with pytest.warns(VisibleDeprecationWarning, match="deprecated"):
+            s.plot_decomposition_results(loadings_dim=2)
+
+    def test_plot_bss_results_factors_dim_warns(self):
+        s = self.s
+        with pytest.warns(VisibleDeprecationWarning, match="deprecated"):
+            s.plot_bss_results(factors_dim=2)
+
+    def test_plot_bss_results_loadings_dim_warns(self):
+        s = self.s
+        with pytest.warns(VisibleDeprecationWarning, match="deprecated"):
+            s.plot_bss_results(loadings_dim=2)
+
 
 class TestInternalSilenceRegression:
     """Internal code MUST NOT emit VisibleDeprecationWarning alerts during
