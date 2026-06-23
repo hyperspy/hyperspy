@@ -646,7 +646,7 @@ class MVATools(object):
             comp_ids = range(components.shape[1])
         elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
-        mask = np.zeros(components.shape[1], dtype=np.bool)
+        mask = np.zeros(components.shape[1], dtype=bool)
         for idx in comp_ids:
             mask[idx] = 1
         components = components[:, mask]
@@ -820,7 +820,7 @@ class MVATools(object):
             comp_ids = range(scores.shape[0])
         elif not hasattr(comp_ids, "__iter__"):
             comp_ids = range(comp_ids)
-        mask = np.zeros(scores.shape[0], dtype=np.bool)
+        mask = np.zeros(scores.shape[0], dtype=bool)
         for idx in comp_ids:
             mask[idx] = 1
         scores = scores[mask]
