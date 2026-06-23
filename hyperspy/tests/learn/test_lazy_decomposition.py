@@ -108,16 +108,16 @@ class TestLazyDecomposition:
             output_dimension=3,
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        components_arr = self.s.learning_results.components
-        scores_arr = self.s.learning_results.scores
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
-        if isinstance(components_arr, da.Array):
-            components_arr = components_arr.compute()
-        if isinstance(scores_arr, da.Array):
-            scores_arr = scores_arr.compute()
+        if isinstance(factors, da.Array):
+            factors = factors.compute()
+        if isinstance(loadings, da.Array):
+            loadings = loadings.compute()
 
         explained_variance = self.s.learning_results.explained_variance
-        X = scores_arr @ components_arr.T
+        X = loadings @ factors.T
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.X)
@@ -137,16 +137,16 @@ class TestLazyDecomposition:
             algorithm="PCA",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        components_arr = self.s.learning_results.components
-        scores_arr = self.s.learning_results.scores
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
-        if isinstance(components_arr, da.Array):
-            components_arr = components_arr.compute()
-        if isinstance(scores_arr, da.Array):
-            scores_arr = scores_arr.compute()
+        if isinstance(factors, da.Array):
+            factors = factors.compute()
+        if isinstance(loadings, da.Array):
+            loadings = loadings.compute()
 
         explained_variance = self.s.learning_results.explained_variance
-        X = scores_arr @ components_arr.T
+        X = loadings @ factors.T
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.X)
@@ -164,9 +164,9 @@ class TestLazyDecomposition:
         sig_mask = (s.inav[0, 0].data < 1.0).compute()
 
         s.decomposition(output_dimension=3, algorithm="PCA", signal_mask=sig_mask)
-        components_arr = s.learning_results.components
-        scores_arr = s.learning_results.scores
-        _ = scores_arr @ components_arr.T
+        factors = s.learning_results.components
+        loadings = s.learning_results.scores
+        _ = loadings @ factors.T
 
         # Check singular values
         explained_variance = s.learning_results.explained_variance
@@ -178,9 +178,9 @@ class TestLazyDecomposition:
         nav_mask = (s.isig[0].data < 1.0).compute()
 
         s.decomposition(output_dimension=3, algorithm="PCA", navigation_mask=nav_mask)
-        components_arr = s.learning_results.components
-        scores_arr = s.learning_results.scores
-        _ = scores_arr @ components_arr.T
+        factors = s.learning_results.components
+        loadings = s.learning_results.scores
+        _ = loadings @ factors.T
 
         # Check singular values
         explained_variance = s.learning_results.explained_variance
@@ -196,16 +196,16 @@ class TestLazyDecomposition:
             algorithm="ORPCA",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        components_arr = self.s.learning_results.components
-        scores_arr = self.s.learning_results.scores
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
-        if isinstance(components_arr, da.Array):
-            components_arr = components_arr.compute()
-        if isinstance(scores_arr, da.Array):
-            scores_arr = scores_arr.compute()
+        if isinstance(factors, da.Array):
+            factors = factors.compute()
+        if isinstance(loadings, da.Array):
+            loadings = loadings.compute()
 
         explained_variance = self.s.learning_results.explained_variance
-        X = scores_arr @ components_arr.T
+        X = loadings @ factors.T
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.X)
@@ -221,16 +221,16 @@ class TestLazyDecomposition:
             algorithm="ORNMF",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        components_arr = self.s.learning_results.components
-        scores_arr = self.s.learning_results.scores
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
-        if isinstance(components_arr, da.Array):
-            components_arr = components_arr.compute()
-        if isinstance(scores_arr, da.Array):
-            scores_arr = scores_arr.compute()
+        if isinstance(factors, da.Array):
+            factors = factors.compute()
+        if isinstance(loadings, da.Array):
+            loadings = loadings.compute()
 
         explained_variance = self.s.learning_results.explained_variance
-        X = scores_arr @ components_arr.T
+        X = loadings @ factors.T
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.X)
@@ -321,8 +321,8 @@ class TestLazyDecomposition:
         """reproject='navigation' for svd_solver='randomized' uses a lazy dask
         matmul and never materialises the full dataset in memory.
 
-        The reprojected scores_arr must cover all navigation positions (no NaN)
-        and be consistent with the components_arr learned on the masked data.
+        The reprojected loadings must cover all navigation positions (no NaN)
+        and be consistent with the factors learned on the masked data.
         """
         nav_mask = np.zeros((10, 10), dtype=bool)
         nav_mask[0, :] = True  # mask the first row
@@ -336,9 +336,9 @@ class TestLazyDecomposition:
             reproject="navigation",
         )
         lr = self.s.learning_results
-        scores_arr = lr.scores
-        assert scores_arr.shape[0] == self.s.axes_manager.navigation_size
-        assert not np.any(np.isnan(scores_arr)), (
+        loadings = lr.scores
+        assert loadings.shape[0] == self.s.axes_manager.navigation_size
+        assert not np.any(np.isnan(loadings)), (
             "reproject='navigation' should fill all rows"
         )
 
@@ -539,16 +539,16 @@ class TestNormalizePoissonianNoise:
 
     @skip_sklearn
     def test_decomposition_rescales_back(self):
-        """components_arr/loadings are rescaled back to original data space after SVD."""
+        """factors/loadings are rescaled back to original data space after SVD."""
         s = Signal1D(self.data.copy()).as_lazy()
         s.decomposition(
             output_dimension=2,
             normalize_poissonian_noise=True,
             print_info=False,
         )
-        components_arr = s.learning_results.components  # (20, 2)
-        scores_arr = s.learning_results.scores  # (10, 2)
-        reconstruction = scores_arr @ components_arr.T  # (10, 20)
+        factors = s.learning_results.components  # (20, 2)
+        loadings = s.learning_results.scores  # (10, 2)
+        reconstruction = loadings @ factors.T  # (10, 20)
         # Loose check: reconstruction is in the original data space
         assert reconstruction.min() > -1e3
         assert reconstruction.max() < 1e5
@@ -660,38 +660,38 @@ class TestLazyDecompositionParityFixes:
 
     @skip_sklearn
     def test_nan_fill_loadings_navigation_mask(self):
-        """Masked nav positions become NaN rows in scores_arr (no reproject)."""
+        """Masked nav positions become NaN rows in loadings (no reproject)."""
         n_components = 2
         self.s.decomposition(
             output_dimension=n_components,
             navigation_mask=self.nav_mask,
             print_info=False,
         )
-        scores_arr = self.s.learning_results.scores
+        loadings = self.s.learning_results.scores
         # loadings shape should be (nav_size, n_components) = (20, 2)
-        assert scores_arr.shape == (20, n_components)
+        assert loadings.shape == (20, n_components)
         flat_mask = self.nav_mask.ravel()
         # Masked positions (True) should be NaN
-        assert np.all(np.isnan(scores_arr[flat_mask, :]))
+        assert np.all(np.isnan(loadings[flat_mask, :]))
         # Unmasked positions should not be NaN
-        assert not np.any(np.isnan(scores_arr[~flat_mask, :]))
+        assert not np.any(np.isnan(loadings[~flat_mask, :]))
 
     @skip_sklearn
     def test_nan_fill_factors_signal_mask(self):
-        """Masked signal channels become NaN rows in components_arr (no reproject)."""
+        """Masked signal channels become NaN rows in factors (no reproject)."""
         n_components = 2
         self.s.decomposition(
             output_dimension=n_components,
             signal_mask=self.sig_mask,
             print_info=False,
         )
-        components_arr = self.s.learning_results.components
+        factors = self.s.learning_results.components
         # factors shape should be (sig_size, n_components) = (30, 2)
-        assert components_arr.shape == (30, n_components)
+        assert factors.shape == (30, n_components)
         # Masked channels (first 3) should be NaN
-        assert np.all(np.isnan(components_arr[: self.sig_mask.sum(), :]))
+        assert np.all(np.isnan(factors[: self.sig_mask.sum(), :]))
         # Unmasked channels should not be NaN
-        assert not np.any(np.isnan(components_arr[self.sig_mask.sum() :, :]))
+        assert not np.any(np.isnan(factors[self.sig_mask.sum() :, :]))
 
     # ------------------------------------------------------------------
     # Fix 5: reproject as string enum
@@ -708,7 +708,7 @@ class TestLazyDecompositionParityFixes:
     @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["PCA", "ORPCA", "ORNMF"])
     def test_reproject_navigation_full_loadings(self, algorithm):
-        """reproject='navigation' returns full (unmasked) scores_arr without NaN."""
+        """reproject='navigation' returns full (unmasked) loadings without NaN."""
         self.s.decomposition(
             algorithm=algorithm,
             output_dimension=2,
@@ -716,13 +716,13 @@ class TestLazyDecompositionParityFixes:
             reproject="navigation",
             print_info=False,
         )
-        scores_arr = self.s.learning_results.scores
-        assert scores_arr.shape == (20, 2)
-        assert not np.any(np.isnan(scores_arr))
+        loadings = self.s.learning_results.scores
+        assert loadings.shape == (20, 2)
+        assert not np.any(np.isnan(loadings))
 
     @skip_sklearn
     def test_reproject_both_signal_fills_factors(self):
-        """reproject='both' fills masked signal channels in components_arr (no NaN)."""
+        """reproject='both' fills masked signal channels in factors (no NaN)."""
         self.s.decomposition(
             algorithm="PCA",
             output_dimension=2,
@@ -731,13 +731,13 @@ class TestLazyDecompositionParityFixes:
             reproject="both",
             print_info=False,
         )
-        components_arr = self.s.learning_results.components
-        assert components_arr.shape[0] == 30  # full signal size
-        assert not np.any(np.isnan(components_arr))
+        factors = self.s.learning_results.components
+        assert factors.shape[0] == 30  # full signal size
+        assert not np.any(np.isnan(factors))
 
     @skip_sklearn
     def test_reproject_signal_fills_factors(self):
-        """reproject='signal' produces components_arr with no NaN at masked channels."""
+        """reproject='signal' produces factors with no NaN at masked channels."""
         self.s.decomposition(
             algorithm="PCA",
             output_dimension=2,
@@ -745,9 +745,9 @@ class TestLazyDecompositionParityFixes:
             reproject="signal",
             print_info=False,
         )
-        components_arr = self.s.learning_results.components
-        assert components_arr.shape[0] == 30  # full signal size
-        assert not np.any(np.isnan(components_arr))
+        factors = self.s.learning_results.components
+        assert factors.shape[0] == 30  # full signal size
+        assert not np.any(np.isnan(factors))
 
     # ------------------------------------------------------------------
     # Fix 6: mean stored for PCA
@@ -854,7 +854,7 @@ class TestLazyDecompositionBothMasks:
     """Both navigation and signal masks applied simultaneously on lazy signals.
 
     All three lazy algorithms (SVD, PCA, ORPCA) are tested.  Checks:
-    - Correct shape of components/scores (full data dimensions)
+    - Correct shape of factors/loadings (full data dimensions)
     - NaN placed only at the masked positions
     - Reconstruction quality on the unmasked region (SVD and PCA only)
     """
@@ -869,7 +869,7 @@ class TestLazyDecompositionBothMasks:
         "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
     )
     def test_both_masks_nan_pattern(self, algorithm, svd_solver):
-        """Nav-masked → NaN scores_arr rows; sig-masked → NaN factor rows."""
+        """Nav-masked → NaN loadings rows; sig-masked → NaN factor rows."""
         self.s.decomposition(
             algorithm=algorithm,
             output_dimension=3,
@@ -955,7 +955,7 @@ class TestLazyDecompositionReprojectionNumerical:
         [("SVD", "incremental"), ("PCA", None), ("ORPCA", None), ("ORNMF", None)],
     )
     def test_reproject_navigation_no_nan(self, algorithm, svd_solver):
-        """reproject='navigation' → full scores_arr, no NaN, correct shape."""
+        """reproject='navigation' → full loadings, no NaN, correct shape."""
         self.s.decomposition(
             algorithm=algorithm,
             output_dimension=3,
@@ -963,13 +963,13 @@ class TestLazyDecompositionReprojectionNumerical:
             reproject="navigation",
             print_info=False,
         )
-        scores_arr = self.s.learning_results.scores
-        assert scores_arr.shape == (20, 3)
-        assert not np.any(np.isnan(scores_arr))
+        loadings = self.s.learning_results.scores
+        assert loadings.shape == (20, 3)
+        assert not np.any(np.isnan(loadings))
 
     @skip_sklearn
     def test_reproject_navigation_reconstruction(self):
-        """Reprojected loadings × components_arr reconstruct the full data (rank-3).
+        """Reprojected loadings × factors reconstruct the full data (rank-3).
 
         ISVD is an approximate algorithm so reconstruction is approximate;
         use a loose tolerance.  For exact reconstruction see the non-lazy SVD
@@ -993,7 +993,7 @@ class TestLazyDecompositionReprojectionNumerical:
         "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
     )
     def test_reproject_navigation_unmasked_rows_unchanged(self, algorithm, svd_solver):
-        """reproject='navigation' does not alter the unmasked rows of scores_arr."""
+        """reproject='navigation' does not alter the unmasked rows of loadings."""
         # Baseline: no reproject, unmasked positions only
         self.s.decomposition(
             algorithm=algorithm,
@@ -1001,7 +1001,7 @@ class TestLazyDecompositionReprojectionNumerical:
             navigation_mask=self.nav_mask,
             print_info=False,
         )
-        baseline_scores_arr = self.s.learning_results.scores[~self.nav_mask, :].copy()
+        baseline_loadings = self.s.learning_results.scores[~self.nav_mask, :].copy()
 
         # With reproject: should give the same values at unmasked positions
         self.s.decomposition(
@@ -1011,8 +1011,8 @@ class TestLazyDecompositionReprojectionNumerical:
             reproject="navigation",
             print_info=False,
         )
-        reproj_scores_arr = self.s.learning_results.scores[~self.nav_mask, :]
-        np.testing.assert_allclose(baseline_scores_arr, reproj_scores_arr, atol=1e-10)
+        reproj_loadings = self.s.learning_results.scores[~self.nav_mask, :]
+        np.testing.assert_allclose(baseline_loadings, reproj_loadings, atol=1e-10)
 
     @skip_sklearn
     @pytest.mark.parametrize(
@@ -1033,9 +1033,9 @@ class TestLazyDecompositionReprojectionNumerical:
                 reproject="both",
                 print_info=False,
             )
-        scores_arr = self.s.learning_results.scores
-        assert scores_arr.shape == (20, 3)
-        assert not np.any(np.isnan(scores_arr))
+        loadings = self.s.learning_results.scores
+        assert loadings.shape == (20, 3)
+        assert not np.any(np.isnan(loadings))
 
     @skip_sklearn
     def test_reproject_navigation_with_both_masks_reconstruction(self):
@@ -1064,7 +1064,7 @@ class TestLazyDecompositionReprojectionNumerical:
         "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
     )
     def test_reproject_signal_fills_factors(self, algorithm, svd_solver):
-        """reproject='signal' → components_arr fully filled (no NaN), loadings still
+        """reproject='signal' → factors fully filled (no NaN), loadings still
         have NaN at nav-masked positions."""
         self.s.decomposition(
             algorithm=algorithm,
@@ -1108,7 +1108,7 @@ class TestLazyDecompositionReprojectionNumerical:
     )
     def test_reproject_signal_unmasked_channels_unchanged(self, algorithm, svd_solver):
         """reproject='signal' does not alter the unmasked channel rows of
-        components_arr (compared to no-reproject baseline)."""
+        factors (compared to no-reproject baseline)."""
         kw = dict(
             algorithm=algorithm,
             output_dimension=3,
@@ -1118,24 +1118,20 @@ class TestLazyDecompositionReprojectionNumerical:
         # Baseline: no reproject
         self.s.decomposition(**kw)
 
-        baseline_components_arr = self.s.learning_results.components[
-            ~self.sig_mask, :
-        ].copy()
+        baseline_factors = self.s.learning_results.components[~self.sig_mask, :].copy()
 
         # With reproject='signal'
         self.s.decomposition(**kw, reproject="signal")
 
-        reproj_components_arr = self.s.learning_results.components[~self.sig_mask, :]
-        np.testing.assert_allclose(
-            baseline_components_arr, reproj_components_arr, atol=1e-10
-        )
+        reproj_factors = self.s.learning_results.components[~self.sig_mask, :]
+        np.testing.assert_allclose(baseline_factors, reproj_factors, atol=1e-10)
 
     @skip_sklearn
     @pytest.mark.parametrize(
         "algorithm,svd_solver", [("SVD", "incremental"), ("PCA", None)]
     )
     def test_reproject_both_fills_factors_and_loadings(self, algorithm, svd_solver):
-        """reproject='both' fills both components_arr (signal channels) and loadings
+        """reproject='both' fills both factors (signal channels) and loadings
         (nav positions) — no NaN anywhere."""
         self.s.decomposition(
             algorithm=algorithm,
@@ -1147,13 +1143,13 @@ class TestLazyDecompositionReprojectionNumerical:
         )
         t = self.s.learning_results
         assert t.components.shape[0] == self.data.shape[1]
-        assert not np.any(np.isnan(t.components)), "components_arr still contain NaN"
+        assert not np.any(np.isnan(t.components)), "factors still contain NaN"
         assert t.scores.shape[0] == self.data.shape[0]
-        assert not np.any(np.isnan(t.scores)), "scores_arr still contain NaN"
+        assert not np.any(np.isnan(t.scores)), "loadings still contain NaN"
 
     @skip_sklearn
     def test_reproject_both_svd_reconstruction(self):
-        """reproject='both' SVD: full data reconstructed from loadings × components_arr."""
+        """reproject='both' SVD: full data reconstructed from loadings × factors."""
         self.s.decomposition(
             algorithm="SVD",
             svd_solver="incremental",
@@ -1170,7 +1166,7 @@ class TestLazyDecompositionReprojectionNumerical:
     @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
     def test_reproject_signal_orpca_ornmf(self, algorithm):
-        """ORPCA/ORNMF with reproject='signal' now works: components_arr cover the full
+        """ORPCA/ORNMF with reproject='signal' now works: factors cover the full
         signal (no NaN at masked signal channels)."""
         self.s.decomposition(
             algorithm=algorithm,
@@ -1185,13 +1181,13 @@ class TestLazyDecompositionReprojectionNumerical:
         assert t.scores is not None
         # After signal reprojection, factors must cover all signal channels
         assert t.components.shape[0] == self.s.axes_manager.signal_size
-        assert not np.any(np.isnan(t.components)), "components_arr must not contain NaN"
+        assert not np.any(np.isnan(t.components)), "factors must not contain NaN"
         assert t.scores is not None
 
     @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
     def test_reproject_both_orpca_ornmf(self, algorithm):
-        """ORPCA/ORNMF with reproject='both' fills both loadings and components_arr."""
+        """ORPCA/ORNMF with reproject='both' fills both loadings and factors."""
         self.s.decomposition(
             algorithm=algorithm,
             output_dimension=3,
@@ -1201,13 +1197,13 @@ class TestLazyDecompositionReprojectionNumerical:
             print_info=False,
         )
         # Nav reproject should still have run → loadings fully filled
-        scores_arr = self.s.learning_results.scores
-        assert scores_arr.shape[0] == self.data.shape[0]
-        assert not np.any(np.isnan(scores_arr)), "scores_arr still contain NaN"
+        loadings = self.s.learning_results.scores
+        assert loadings.shape[0] == self.data.shape[0]
+        assert not np.any(np.isnan(loadings)), "loadings still contain NaN"
         # Signal reproject should have run → factors fully filled
-        components_arr = self.s.learning_results.components
-        assert components_arr.shape[0] == self.s.axes_manager.signal_size
-        assert not np.any(np.isnan(components_arr)), "components_arr still contain NaN"
+        factors = self.s.learning_results.components
+        assert factors.shape[0] == self.s.axes_manager.signal_size
+        assert not np.any(np.isnan(factors)), "factors still contain NaN"
 
 
 class TestLazyVsNonLazyDecomposition:
@@ -1215,7 +1211,7 @@ class TestLazyVsNonLazyDecomposition:
 
     Both algorithms perform an exact rank-k factorisation of the same
     data, so the reconstruction errors and singular-value spectra should
-    be identical (up to floating-point tolerance).  Factors/scores_arr may
+    be identical (up to floating-point tolerance).  Factors/loadings may
     differ by an orthogonal rotation, so we compare the *subspace* via
     reconstruction rather than individual vectors.
     """
@@ -1317,9 +1313,7 @@ class TestLazyVsNonLazyDecomposition:
 
         t_lz = self.s_lz.learning_results
         t = self.s_nl.learning_results
-        rms_lz = np.sqrt(
-            np.mean((t_lz.scores @ t_lz.components_arr.T - self.data) ** 2)
-        )
+        rms_lz = np.sqrt(np.mean((t_lz.scores @ t_lz.components.T - self.data) ** 2))
         rms = np.sqrt(np.mean((t.scores @ t.components.T - self.data) ** 2))
         assert rms < 1e-10, f"non-lazy reproject RMS {rms:.2e} too large"
         assert rms_lz < 1.0, f"lazy reproject RMS {rms_lz:.2e} too large"
@@ -1353,7 +1347,7 @@ class TestSubSignalChunking:
     (e.g. HDF5 files written by acquisition software where each spatial pixel
     is its own chunk).  Before the fix in _block_iterator, the signal
     dimension was not rechunked to a single chunk, so only the first signal
-    chunk was read per navigation block, producing components_arr with the wrong
+    chunk was read per navigation block, producing factors with the wrong
     number of rows and a broadcast error when Poisson rescaling was applied.
     """
 
@@ -1407,7 +1401,7 @@ class TestSubSignalChunking:
     def test_factors_have_correct_signal_size(
         self, nav_shape, sig_size, sig_chunk, nav_chunk
     ):
-        """components_arr.shape[0] must equal sig_size regardless of chunk layout."""
+        """factors.shape[0] must equal sig_size regardless of chunk layout."""
         s, _, rank = self._make_signal(nav_shape, sig_size, sig_chunk, nav_chunk)
         s.decomposition(
             algorithm="SVD",
@@ -1485,7 +1479,7 @@ class TestSubSignalChunking:
 
         flat = data.reshape(nav_size, sig_size)
         rms_cont = np.sqrt(np.mean((t_cont.scores @ t_cont.components.T - flat) ** 2))
-        rms_sub = np.sqrt(np.mean((t_sub.scores @ t_sub.components_arr.T - flat) ** 2))
+        rms_sub = np.sqrt(np.mean((t_sub.scores @ t_sub.components.T - flat) ** 2))
         # Both chunk layouts should give the same reconstruction quality
         np.testing.assert_allclose(
             rms_sub,
@@ -1501,7 +1495,7 @@ class TestSubSignalChunking:
     @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["PCA", "ORPCA"])
     def test_factors_shape_pca_orpca(self, algorithm):
-        """PCA and ORPCA also produce components_arr with sig_size rows when signal
+        """PCA and ORPCA also produce factors with sig_size rows when signal
         has sub-signal chunking."""
         nav_shape = (8, 8)
         sig_size = 64
@@ -1624,7 +1618,7 @@ class TestLazyDecompositionMaskTypes:
     )
     @pytest.mark.parametrize("mask_type", ["numpy", "dask", "BaseSignal", "LazySignal"])
     def test_nav_mask_types(self, nav_shape, sig_size, mask_type):
-        """Every navigation mask type produces correct scores_arr shape."""
+        """Every navigation mask type produces correct loadings shape."""
         s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
         if len(nav_shape) == 1:
             nav_masks = _build_nav_masks_1d(s, nav_size)
@@ -1648,7 +1642,7 @@ class TestLazyDecompositionMaskTypes:
     )
     @pytest.mark.parametrize("mask_type", ["numpy", "dask", "BaseSignal", "LazySignal"])
     def test_sig_mask_types(self, nav_shape, sig_size, mask_type):
-        """Every signal mask type produces correct components_arr shape."""
+        """Every signal mask type produces correct factors shape."""
         s, nav_size = _make_mask_test_signal(nav_shape, sig_size)
         sig_masks = _build_sig_masks(s, sig_size)
         s.decomposition(
@@ -1877,7 +1871,7 @@ class TestLazyCentreMaskParity:
         t = s_lz.learning_results
         assert t.components.shape == (len(self.sig_mask), 3)
         assert not np.any(np.isnan(t.components)), (
-            "components_arr should have no NaN after signal reproject"
+            "factors should have no NaN after signal reproject"
         )
 
     @skip_sklearn
@@ -2192,7 +2186,7 @@ class TestLazySVDSolverAndAutoTranspose:
         self.s.decomposition(
             algorithm="PCA",
             output_dimension=3,
-            svd_solver="randomized",
+            svd_solver="full",
             print_info=False,
         )
 
@@ -2282,7 +2276,7 @@ class TestSVDAlgorithm:
         assert lr.scores.shape == (35, k)
 
     def test_factors_and_loadings_shapes(self):
-        """Factors shape is (sig_size, k); scores_arr shape is (nav_size, k)."""
+        """Factors shape is (sig_size, k); loadings shape is (nav_size, k)."""
         k = 3
         self.s.decomposition(
             algorithm="SVD",
@@ -2335,10 +2329,7 @@ class TestSVDFullSolver:
         """svd_solver='full' runs without error when output_dimension is set."""
 
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=3,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
         )
         lr = self.s.learning_results
         assert lr.components is not None
@@ -2349,10 +2340,7 @@ class TestSVDFullSolver:
         import dask.array as da
 
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=None,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=None, print_info=False
         )
         lr = self.s.learning_results
         assert isinstance(lr.components, da.Array)
@@ -2364,29 +2352,24 @@ class TestSVDFullSolver:
 
         k = 4
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=k,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=k, print_info=False
         )
         lr = self.s.learning_results
         # Results may be lazy; compute to check shape.
-        components_arr = (
+        factors = (
             lr.components.compute()
             if isinstance(lr.components, da.Array)
             else lr.components
         )
-        scores_arr = (
-            lr.scores.compute() if isinstance(lr.scores, da.Array) else lr.scores
-        )
-        assert components_arr.shape == (30, k)
-        assert scores_arr.shape == (35, k)
+        loadings = lr.scores.compute() if isinstance(lr.scores, da.Array) else lr.scores
+        assert factors.shape == (30, k)
+        assert loadings.shape == (35, k)
 
     def test_centre_navigation(self):
         """svd_solver='full' supports centre='navigation'."""
         self.s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             centre="navigation",
             output_dimension=3,
             print_info=False,
@@ -2394,24 +2377,22 @@ class TestSVDFullSolver:
         lr = self.s.learning_results
         assert lr.centre == "navigation"
         assert lr.mean is not None
-        components_arr = (
+        factors = (
             lr.components.compute()
             if isinstance(lr.components, da.Array)
             else lr.components
         )
-        scores_arr = (
-            lr.scores.compute() if isinstance(lr.scores, da.Array) else lr.scores
-        )
-        assert components_arr.shape[1] == 3
-        assert scores_arr.shape[1] == 3
-        assert not np.any(np.isnan(components_arr))
-        assert not np.any(np.isnan(scores_arr))
+        loadings = lr.scores.compute() if isinstance(lr.scores, da.Array) else lr.scores
+        assert factors.shape[1] == 3
+        assert loadings.shape[1] == 3
+        assert not np.any(np.isnan(factors))
+        assert not np.any(np.isnan(loadings))
 
     def test_reproject_navigation(self):
         """svd_solver='full' supports reproject='navigation'."""
         self.s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             reproject="navigation",
             output_dimension=3,
             print_info=False,
@@ -2432,89 +2413,81 @@ class TestLazyGetDecompositionModel:
         self.s = Signal1D(data.astype(float)).as_lazy()
 
     def test_factors_loadings_are_lazy_without_reproject(self):
-        """svd_solver='full' without reproject keeps components_arr/loadings as dask arrays."""
+        """svd_solver='full' without reproject keeps factors/loadings as dask arrays."""
         import dask.array as da
 
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=3,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
         )
         lr = self.s.learning_results
-        assert isinstance(lr.components, da.Array), (
-            "components_arr should be a dask array"
-        )
-        assert isinstance(lr.scores, da.Array), "scores_arr should be a dask array"
+        assert isinstance(lr.components, da.Array), "factors should be a dask array"
+        assert isinstance(lr.scores, da.Array), "loadings should be a dask array"
 
     def test_factors_loadings_after_reproject_navigation(self):
-        """svd_solver='full' with reproject='navigation': scores_arr computed to
-        numpy, components_arr remain lazy (signal reproject was not requested)."""
+        """svd_solver='full' with reproject='navigation': loadings computed to
+        numpy, factors remain lazy (signal reproject was not requested)."""
         import dask.array as da
 
         self.s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             reproject="navigation",
             print_info=False,
         )
         lr = self.s.learning_results
         assert isinstance(lr.scores, np.ndarray), (
-            "scores_arr should be numpy after reproject='navigation'"
+            "loadings should be numpy after reproject='navigation'"
         )
         assert isinstance(lr.components, da.Array), (
-            "components_arr should remain lazy dask array when only nav-reproject was done"
+            "factors should remain lazy dask array when only nav-reproject was done"
         )
 
     def test_factors_loadings_after_reproject_signal(self):
-        """svd_solver='full' with reproject='signal': components_arr computed to
-        numpy, scores_arr remain lazy (nav reproject was not requested)."""
+        """svd_solver='full' with reproject='signal': factors computed to
+        numpy, loadings remain lazy (nav reproject was not requested)."""
         import dask.array as da
 
         self.s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             reproject="signal",
             print_info=False,
         )
         lr = self.s.learning_results
         assert isinstance(lr.components, np.ndarray), (
-            "components_arr should be numpy after reproject='signal'"
+            "factors should be numpy after reproject='signal'"
         )
         assert isinstance(lr.scores, da.Array), (
-            "scores_arr should remain lazy dask array when only signal-reproject was done"
+            "loadings should remain lazy dask array when only signal-reproject was done"
         )
 
     def test_factors_loadings_after_reproject_both(self):
-        """svd_solver='full' with reproject='both': both components_arr and loadings
+        """svd_solver='full' with reproject='both': both factors and loadings
         are computed to numpy arrays."""
 
         self.s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             reproject="both",
             print_info=False,
         )
         lr = self.s.learning_results
         assert isinstance(lr.components, np.ndarray), (
-            "components_arr should be numpy after reproject='both'"
+            "factors should be numpy after reproject='both'"
         )
         assert isinstance(lr.scores, np.ndarray), (
-            "scores_arr should be numpy after reproject='both'"
+            "loadings should be numpy after reproject='both'"
         )
 
     def test_get_decomposition_model_returns_lazy_signal(self):
-        """get_decomposition_model() returns a LazySignal when components_arr/loadings are dask."""
+        """get_decomposition_model() returns a LazySignal when factors/loadings are dask."""
         import dask.array as da
 
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=3,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
         )
         model = self.s.get_decomposition_model()
         assert isinstance(model.data, da.Array), "model.data should be a dask array"
@@ -2523,10 +2496,7 @@ class TestLazyGetDecompositionModel:
     def test_get_decomposition_model_correct_shape(self):
         """Reconstructed model has the same shape as the original signal."""
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=3,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
         )
         model = self.s.get_decomposition_model()
         assert model.data.shape == self.s.data.shape
@@ -2535,10 +2505,7 @@ class TestLazyGetDecompositionModel:
         """get_decomposition_model() builds a task graph without triggering computation."""
 
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=3,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
         )
         model = self.s.get_decomposition_model()
         # model.data is a dask array; calling .compute() should succeed and give
@@ -2551,10 +2518,7 @@ class TestLazyGetDecompositionModel:
         import dask.array as da
 
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=5,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=5, print_info=False
         )
         model = self.s.get_decomposition_model(components=2)
         assert isinstance(model.data, da.Array)
@@ -2565,17 +2529,14 @@ class TestLazyGetDecompositionModel:
         import dask.array as da
 
         self.s.decomposition(
-            algorithm="SVD",
-            svd_solver="randomized",
-            output_dimension=5,
-            print_info=False,
+            algorithm="SVD", svd_solver="full", output_dimension=5, print_info=False
         )
         model = self.s.get_decomposition_model(components=[0, 2])
         assert isinstance(model.data, da.Array)
         assert model.data.shape == self.s.data.shape
 
     def test_get_decomposition_model_randomized_uses_numpy_factors(self):
-        """With svd_solver='randomized', components_arr/loadings are numpy (not dask)."""
+        """With svd_solver='randomized', factors/loadings are numpy (not dask)."""
 
         self.s.decomposition(
             algorithm="SVD",
@@ -2585,10 +2546,10 @@ class TestLazyGetDecompositionModel:
         )
         lr = self.s.learning_results
         assert isinstance(lr.components, np.ndarray), (
-            "components_arr should be numpy for randomized solver"
+            "factors should be numpy for randomized solver"
         )
         assert isinstance(lr.scores, np.ndarray), (
-            "scores_arr should be numpy for randomized solver"
+            "loadings should be numpy for randomized solver"
         )
 
     def test_full_svd_with_signal_chunked_data(self):
@@ -2608,10 +2569,7 @@ class TestLazyGetDecompositionModel:
             VisibleDeprecationWarning, match="svd_solver='full' is deprecated"
         ):
             s.decomposition(
-                algorithm="SVD",
-                svd_solver="randomized",
-                output_dimension=3,
-                print_info=False,
+                algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
             )
         lr = s.learning_results
         assert isinstance(lr.components, da.Array)
@@ -2749,7 +2707,7 @@ class TestCentreWithDaskMask:
         s = Signal1D(data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             centre="signal",
             print_info=False,
@@ -2940,7 +2898,7 @@ class TestReprojectFullSVDMasks:
         s = Signal1D(self.data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             signal_mask=self.sig_mask,
             reproject="navigation",
@@ -2958,7 +2916,7 @@ class TestReprojectFullSVDMasks:
         s = Signal1D(self.data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             reproject="signal",
@@ -2974,7 +2932,7 @@ class TestReprojectFullSVDMasks:
         s = Signal1D(self.data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             navigation_mask=self.nav_mask,
             reproject="both",
@@ -2991,7 +2949,7 @@ class TestReprojectFullSVDMasks:
         s = Signal1D(self.data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             centre="navigation",
             reproject="navigation",
@@ -3006,7 +2964,7 @@ class TestReprojectFullSVDMasks:
         s = Signal1D(self.data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             centre="navigation",
             reproject="signal",
@@ -3038,7 +2996,7 @@ class TestFullSVDBaseSignalMask:
 
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             navigation_mask=nav_mask_sig,
             print_info=False,
@@ -3056,7 +3014,7 @@ class TestFullSVDBaseSignalMask:
 
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             signal_mask=sig_mask_sig,
             print_info=False,
@@ -3074,7 +3032,7 @@ class TestFullSVDBaseSignalMask:
 
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             navigation_mask=nav_mask_da,
             print_info=False,
@@ -3092,7 +3050,7 @@ class TestFullSVDBaseSignalMask:
 
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             signal_mask=sig_mask_da,
             print_info=False,
@@ -3121,7 +3079,7 @@ class TestFullSVDNavMask2DOrder:
         s = self.s
         s.decomposition(
             output_dimension=3,
-            svd_solver="randomized",
+            svd_solver="full",
             navigation_mask=self.nav_mask,
         )
         stored = s.learning_results.navigation_mask
@@ -3196,13 +3154,13 @@ class TestRemainingBranches:
         assert s.learning_results.mean is not None
 
     def test_reproject_both_no_nav_mask_hits_L1898(self):
-        """reproject='both' without nav_mask hits L1898 (L = scores_arr branch)."""
+        """reproject='both' without nav_mask hits L1898 (L = loadings branch)."""
         rng = np.random.default_rng(42)
         data = rng.random((12, 30)) + 1.0
         s = Signal1D(data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             reproject="both",
             print_info=False,
@@ -3216,7 +3174,7 @@ class TestRemainingBranches:
         s = Signal1D(data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=5,
             print_info=False,
         )
@@ -3235,7 +3193,7 @@ class TestRemainingBranches:
         s = Signal1D(data.copy()).as_lazy()
         s.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=3,
             reproject="navigation",
             navigation_mask=nav_mask_sig,

@@ -933,7 +933,7 @@ class TestLazyPoissonNormalizationQuality:
         s_norm = signals.Signal1D(X_noisy.copy().reshape(shape_3d)).as_lazy()
         s_norm.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=rank,
             normalize_poissonian_noise=True,
             print_info=False,
@@ -944,7 +944,7 @@ class TestLazyPoissonNormalizationQuality:
         s_plain = signals.Signal1D(X_noisy.copy().reshape(shape_3d)).as_lazy()
         s_plain.decomposition(
             algorithm="SVD",
-            svd_solver="randomized",
+            svd_solver="full",
             output_dimension=rank,
             normalize_poissonian_noise=False,
             print_info=False,
