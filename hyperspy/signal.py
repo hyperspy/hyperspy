@@ -2959,6 +2959,19 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             self.metadata.Signal.signal_type = self._signal_type
         if "learning_results" in file_data_dict:
             self.learning_results.__dict__.update(file_data_dict["learning_results"])
+            # Migrate old key names from files saved before the
+            # factors/loadings → components/scores rename (RELEASE_next_minor).
+            _lr = self.learning_results.__dict__
+            if "factors" in _lr:
+                _lr["components"] = _lr.pop("factors")
+            if "loadings" in _lr:
+                _lr["scores"] = _lr.pop("loadings")
+            if "bss_factors" in _lr:
+                _lr["bss_components"] = _lr.pop("bss_factors")
+            if "bss_loadings" in _lr:
+                _lr["bss_scores"] = _lr.pop("bss_loadings")
+            if "on_loadings" in _lr:
+                _lr["on_scores"] = _lr.pop("on_loadings")
         if self._lazy is not oldlazy:
             self._assign_subclass()
 
@@ -3078,6 +3091,19 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             )
         if add_learning_results and hasattr(self, "learning_results"):
             dic["learning_results"] = copy.deepcopy(self.learning_results.__dict__)
+            # Dual-write deprecated names so files can be loaded by older
+            # HyperSpy versions that still read ``factors``/``loadings``.
+            _lr = dic["learning_results"]
+            if "components" in _lr and "factors" not in _lr:
+                _lr["factors"] = _lr["components"]
+            if "scores" in _lr and "loadings" not in _lr:
+                _lr["loadings"] = _lr["scores"]
+            if "bss_components" in _lr and "bss_factors" not in _lr:
+                _lr["bss_factors"] = _lr["bss_components"]
+            if "bss_scores" in _lr and "bss_loadings" not in _lr:
+                _lr["bss_loadings"] = _lr["bss_scores"]
+            if "on_scores" in _lr and "on_loadings" not in _lr:
+                _lr["on_loadings"] = _lr["on_scores"]
         if add_models:
             dic["models"] = self.models._models.as_dictionary()
         return dic

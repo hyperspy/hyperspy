@@ -27,6 +27,7 @@ import numpy as np
 import pytest
 
 from hyperspy import signals
+from hyperspy.api import load as hs_load
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -479,3 +480,97 @@ class TestSaveLoadRoundTrip:
             np.testing.assert_allclose(
                 s.learning_results.components, s.learning_results.components
             )
+
+
+class TestCrossVersionFileCompat:
+    """Verify that .hspy/.zspy files remain loadable across the
+    factors/loadings → components/scores rename."""
+
+    def setup_method(self, method):
+        # Use different dimensions so axis reversals are verifiable
+        data = generate_low_rank_matrix(m=12, n=25, rank=5, random_seed=42)
+        self.s = signals.Signal1D(data)
+        self.s.axes_manager[0].name = "x"
+        self.s.axes_manager[1].name = "E"
+        self.s.decomposition(output_dimension=3)
+        self.s.learning_results.on_scores = True
+
+    def test_load_dictionary_migrates_old_keys_to_new_names(self):
+        """_load_dictionary with old factors/loadings keys sets canonical names."""
+        s = self.s
+        # Simulate an old-format file dict
+        file_dict = {
+            "data": s.data,
+            "axes": [],
+            "metadata": {},
+            "original_metadata": {},
+            "learning_results": {
+                "factors": s.learning_results.components.copy(),
+                "loadings": s.learning_results.scores.copy(),
+                "explained_variance": s.learning_results.explained_variance,
+                "output_dimension": 3,
+                "mean": s.learning_results.mean,
+                "decomposition_algorithm": "SVD",
+                "poissonian_noise_normalized": False,
+                "centre": None,
+                "on_loadings": True,
+            },
+        }
+        # Create fresh signal and load
+        s2 = signals.Signal1D(np.zeros((12, 25)))
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", VisibleDeprecationWarning)
+            s2._load_dictionary(file_dict)
+        # Data must be accessible via canonical names
+        np.testing.assert_allclose(
+            s2.learning_results.components, s.learning_results.components
+        )
+        np.testing.assert_allclose(
+            s2.learning_results.scores, s.learning_results.scores
+        )
+        assert s2.learning_results.on_scores is True
+        # Old keys must NOT be left as raw __dict__ entries
+        lr_dict = s2.learning_results.__dict__
+        assert "factors" not in lr_dict
+        assert "loadings" not in lr_dict
+        assert "on_loadings" not in lr_dict
+
+    def test_to_dictionary_dual_writes_old_names(self):
+        """_to_dictionary includes both canonical and deprecated key names."""
+        s = self.s
+        dic = s._to_dictionary()
+        lr = dic["learning_results"]
+        # Canonical names
+        assert "components" in lr
+        assert "scores" in lr
+        assert "on_scores" in lr
+        # Deprecated names written for backward compat
+        assert "factors" in lr
+        assert "loadings" in lr
+        assert "on_loadings" in lr
+        # Both reference the same data
+        np.testing.assert_array_equal(lr["components"], lr["factors"])
+        np.testing.assert_array_equal(lr["scores"], lr["loadings"])
+        assert lr["on_scores"] == lr["on_loadings"]
+
+    def test_hspy_round_trip_preserves_learning_results(self):
+        """Save + load hspy keeps learning_results intact via canonical names."""
+        s = self.s
+        with TemporaryDirectory() as tmp:
+            fpath = Path(tmp, "roundtrip.hspy")
+            s.save(fpath)
+            s2 = hs_load(fpath)
+        # Core decomposition results
+        np.testing.assert_allclose(
+            s2.learning_results.components, s.learning_results.components
+        )
+        np.testing.assert_allclose(
+            s2.learning_results.scores, s.learning_results.scores
+        )
+        np.testing.assert_allclose(
+            s2.learning_results.explained_variance,
+            s.learning_results.explained_variance,
+        )
+        assert s2.learning_results.output_dimension == 3
+        assert s2.learning_results.decomposition_algorithm == "SVD"
+        assert s2.learning_results.on_scores is True
