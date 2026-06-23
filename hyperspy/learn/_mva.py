@@ -3543,9 +3543,6 @@ class LearningResults(object):
         if "v" in _d:
             _d["scores"] = _d["v"]
             del _d["v"]
-        # NOTE: the pre-2.5 migration ``scores → loadings`` has been
-        # removed because ``scores`` is now the canonical name.
-        # Keeping it would silently corrupt new-format data.
         if "pc" in _d:
             _d["scores"] = _d["pc"]
             del _d["pc"]
