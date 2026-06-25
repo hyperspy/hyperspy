@@ -1,0 +1,6 @@
+:class:`~.learn._mva.LearningResults` gains ``bH`` attribute and
+``write_to_signal()`` / ``_populate_from_result()`` bridge methods to
+support :mod:`hyperspy_ml` result objects (:class:`~hyperspy_ml.results.DecompositionResult`,
+:class:`~hyperspy_ml.results.BSSResult`, :class:`~hyperspy_ml.results.ClusterResult`).
+Algorithm parameters (algorithm, output_dimension, centre, etc.) are now
+propagated from the ``params`` dict of hyperspy-ml results.

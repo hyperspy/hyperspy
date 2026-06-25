@@ -1,0 +1,9 @@
+MVATools plotting methods (:meth:`~.signal.MVATools.plot_decomposition_components`,
+:meth:`~.signal.MVATools.plot_decomposition_scores`,
+:meth:`~.signal.MVATools.plot_bss_components`,
+:meth:`~.signal.MVATools.plot_bss_scores`,
+:meth:`~.signal.MVATools.plot_cluster_signals`,
+:meth:`~.signal.MVATools.plot_cluster_labels`,
+:meth:`~.signal.MVA.plot_cluster_metric`) now delegate to hyperspy-ml when
+installed, emitting a ``VisibleDeprecationWarning`` suggesting the use of
+``results.plot_*()`` methods from hyperspy-ml instead.
