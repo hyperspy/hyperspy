@@ -1,0 +1,4 @@
+Machine learning features (decomposition, blind source separation, cluster analysis)
+have been extracted to the ``hyperspy-ml`` package.
+Add ``hyperspy-ml`` as a dependency and add delegation stubs on ``BaseSignal``
+that route to ``hyperspy_ml`` when installed.

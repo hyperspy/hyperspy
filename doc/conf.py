@@ -355,8 +355,6 @@ nitpicky = True
 nitpick_ignore_regex = (
     # No need to be added to the API: documented in subclass
     ("py:class", "hyperspy.misc.slicing.FancySlicing"),
-    ("py:class", "hyperspy.signal.MVATools"),
-    ("py:class", "hyperspy.learn._mva.MVA"),
     ("py:class", "hyperspy.samfire_utils.strategy.SamfireStrategy"),
     ("py:class", ".*goodness_test"),
     ("py:class", "hyperspy.roi.BasePointROI"),
