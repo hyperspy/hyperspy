@@ -21,7 +21,6 @@ User guide
     signal1d.rst
     signal2d.rst
     visualisation.rst
-    mva/index.rst
     model/index.rst
     big_data.rst
 

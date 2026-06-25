@@ -14,6 +14,21 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 
 .. towncrier release notes start
 
+3.0.0 (unreleased)
+==================
+
+Removals
+--------
+
+- All machine learning features (decomposition, blind source separation,
+  cluster analysis) have been extracted to the ``hyperspy-ml`` package
+  (``pip install hyperspy-ml``). Methods on ``BaseSignal`` remain as delegation
+  stubs that automatically route to ``hyperspy_ml`` when installed.
+  The following have been removed from hyperspy core:
+  ``hyperspy/learn/``, ``hyperspy/tests/learn/``, ``doc/user_guide/mva/``,
+  ``doc/reference/base_classes/machine_learning.rst``, ``MVATools`` class,
+  and lazy decomposition from ``hyperspy/_signals/lazy.py``.
+
 2.4.0 (2026-01-26)
 ==================
 

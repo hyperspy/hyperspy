@@ -11,7 +11,6 @@ which are used by other classes, are documented here.
 
    axes
    events
-   machine_learning
    model/index
    signal/index
    roi
