@@ -190,6 +190,7 @@ class TestGetModel:
         s = self.s
         s.decomposition(algorithm="SVD", output_dimension=3)
         sc = self.s.get_decomposition_model(3, lazy_output=lazy_output)
+        assert sc.data.shape == s.data.shape
         if lazy_output or (lazy_output is None and self.s._lazy):
             assert isinstance(sc.data, da.Array)
         else:
@@ -268,6 +269,61 @@ class TestGetModel:
 
         # Check HyperSpy's chunking convention: signal axes whole.
         assert sc.data.chunks[-1] == (sig_len,)
+
+
+@lazifyTestClass
+class TestGetModelSignal2D:
+    def setup_method(self, method):
+        rng = np.random.default_rng(123)
+        nav_y, nav_x, sig_y, sig_x, n_comp = 4, 5, 6, 7, 3
+        loadings = rng.standard_normal((nav_y * nav_x, n_comp))
+        factors = rng.standard_normal((sig_y * sig_x, n_comp))
+        data = (loadings @ factors.T).reshape(nav_y, nav_x, sig_y, sig_x)
+        self.n_comp = n_comp
+        self.sig_shape = (sig_y, sig_x)
+        self.s = signals.Signal2D(data)
+
+    @pytest.mark.parametrize("lazy_output", [True, False, None])
+    def test_get_decomposition_model(self, lazy_output):
+        s = self.s
+        s.decomposition(algorithm="SVD", output_dimension=self.n_comp)
+        sc = s.get_decomposition_model(self.n_comp, lazy_output=lazy_output)
+
+        assert sc.data.shape == s.data.shape
+        assert sc.axes_manager.signal_dimension == 2
+        if lazy_output or (lazy_output is None and s._lazy):
+            assert isinstance(sc.data, da.Array)
+        else:
+            assert isinstance(sc.data, np.ndarray)
+
+        rms = np.sqrt(((sc.data - s.data) ** 2).sum())
+        if isinstance(rms, da.Array):
+            rms = rms.compute()
+        assert rms < 5e-7
+
+    def test_get_decomposition_model_centre(self):
+        s = self.s
+        s.decomposition(algorithm="SVD", centre="signal", output_dimension=self.n_comp)
+
+        assert s.learning_results.mean is not None
+
+        sc = s.get_decomposition_model(self.n_comp)
+        assert sc.data.shape == s.data.shape
+        assert sc.axes_manager.signal_dimension == 2
+
+        rms = np.sqrt(((sc.data - s.data) ** 2).sum())
+        if isinstance(rms, da.Array):
+            rms = rms.compute()
+        assert rms < 5e-7
+
+    def test_get_decomposition_model_lazy_output_chunks(self):
+        s = self.s
+        s.decomposition(algorithm="SVD", output_dimension=self.n_comp)
+        sc = s.get_decomposition_model(self.n_comp, lazy_output=True, chunks=-1)
+
+        assert isinstance(sc.data, da.Array)
+        assert sc.axes_manager.signal_dimension == 2
+        assert sc.data.chunks[-2:] == ((self.sig_shape[0],), (self.sig_shape[1],))
 
 
 @lazifyTestClass

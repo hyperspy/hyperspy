@@ -1709,6 +1709,7 @@ class MVA:
             nav_chunks = "auto"
 
         nav_shape = self.axes_manager.navigation_shape[::-1]  # numpy order
+        sig_shape = self.axes_manager.signal_shape[::-1]  # numpy order
         n_comp = loadings.shape[1]
 
         if lazy_output or self._lazy:
@@ -1759,14 +1760,13 @@ class MVA:
             #   a = factors @ loadings.T  # (sig_size, n_comp) @ (n_comp, nav_size)
             #   a.T.reshape(nav_shape + (sig_size,))
             a = da.einsum("sc,...c->...s", factors_da, loadings_da)
+            a = a.reshape(nav_shape + sig_shape)
         else:
             # Non-lazy path: standard matrix multiply with explicit
             # transposition of loadings and numpy reshape (always safe).
             loadings_T = loadings.T  # (n_comp, nav_size)
             a = factors @ loadings_T  # (sig_size, nav_size)
-            a = a.T.reshape(
-                nav_shape + (factors.shape[0],)
-            )  # → (ny, nx, ..., sig_size)
+            a = a.T.reshape(nav_shape + sig_shape)
 
         sc = self.deepcopy()
         sc.data = a
@@ -1776,7 +1776,7 @@ class MVA:
             # Reshape to match the multi-dimensional nav axes so that
             # broadcasting works regardless of whether sc.data is unfolded
             # (non-lazy path) or already multi-dimensional (lazy path).
-            sc.data += target.mean.reshape(nav_shape + (-1,))
+            sc.data += target.mean.reshape(nav_shape + (1,) * len(sig_shape))
 
         if lazy_output:
             if not sc._lazy:
