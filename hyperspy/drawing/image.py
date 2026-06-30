@@ -306,7 +306,10 @@ class ImagePlot(AbstractImageFigure):
 
             height = abs(self._extent[3] - self._extent[2]) * self._aspect
             width = abs(self._extent[1] - self._extent[0])
-            default_size = 6.0
+            # Matches the previous ``max(plt.rcParams["figure.figsize"])`` (the
+            # matplotlib default figsize is (6.4, 4.8)); hardcoded here to keep
+            # the size backend-agnostic without changing the rendered output.
+            default_size = 6.4
             figsize = (
                 np.array((width * wfactor, height))
                 * default_size
@@ -323,8 +326,12 @@ class ImagePlot(AbstractImageFigure):
         backend.set_xlabel(self.ax, self._xlabel)
         backend.set_ylabel(self.ax, self._ylabel)
         if self.axes_ticks is False:
-            backend.set_xticklabels(self.ax, [])
-            backend.set_yticklabels(self.ax, [])
+            # Remove the ticks entirely (matches the base ``ax.set_xticks([])``).
+            # Using ``set_xticklabels([])`` only blanks the labels but leaves the
+            # tick marks, which both renders ticks the user asked to hide and
+            # reserves margin space that shifts the image layout under tight_layout.
+            backend.set_xticks(self.ax, [])
+            backend.set_yticks(self.ax, [])
         self.ax.hspy_fig = self
         if self.axes_off:
             backend.set_axis_off(self.ax)

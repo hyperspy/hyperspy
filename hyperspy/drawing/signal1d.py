@@ -193,6 +193,10 @@ class Signal1DFigure(AbstractSignal1DFigure):
             lambda: self.axes_manager.events.indices_changed.disconnect(self.update), []
         )
 
+        # Restore the tight_layout the base code applied at the end of plot();
+        # without it the axes sit at the default position and every spectrum
+        # baseline shifts (the no-op default backend keeps non-MPL safe).
+        backend.tight_layout(self.figure)
         self.render_figure()
 
     def _on_close(self):

@@ -775,6 +775,12 @@ class AnyplotlibBackend:
     def set_yticklabels(self, ax, labels):
         pass  # cosmetic; anyplotlib tick control not yet exposed
 
+    def set_xticks(self, ax, ticks):
+        pass  # cosmetic; anyplotlib tick control not yet exposed
+
+    def set_yticks(self, ax, ticks):
+        pass  # cosmetic; anyplotlib tick control not yet exposed
+
     def tight_layout(self, fig):
         pass  # anyplotlib uses constrained layout automatically
 

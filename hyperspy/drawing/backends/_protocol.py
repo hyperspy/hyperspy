@@ -323,6 +323,12 @@ class PointerMixin(Protocol):
     def set_yticklabels(self, ax: Any, labels) -> None:
         """Set the y-axis tick labels."""
 
+    def set_xticks(self, ax: Any, ticks) -> None:
+        """Set the x-axis tick positions (``[]`` removes the ticks entirely)."""
+
+    def set_yticks(self, ax: Any, ticks) -> None:
+        """Set the y-axis tick positions (``[]`` removes the ticks entirely)."""
+
 
 @runtime_checkable
 class PlottingBackend(BlitMixin, PointerMixin, Protocol):

@@ -225,7 +225,11 @@ class MplBackend:
     ):
         animated = ax.figure.canvas.supports_blit
         mpl_norm = self._to_mpl_norm(norm)
-        args = {"animated": animated, "cmap": cmap}
+        # HyperSpy displays image data unsmoothed; without this the core image
+        # path falls back to matplotlib's "auto" interpolation and blurs
+        # signals, decomposition loadings/factors, cluster centres, etc.
+        # ``kwargs`` (user-supplied) still overrides via the update below.
+        args = {"animated": animated, "cmap": cmap, "interpolation": "nearest"}
         if mpl_norm is None:
             args.update({"vmin": vmin, "vmax": vmax})
         else:
@@ -555,6 +559,12 @@ class MplBackend:
         collection = collection_cls(offset_transform=offset_transform, **kwargs)
         collection.set_transform(transform)
         ax.add_collection(collection)
+        # BlittedFigure draws markers as animated artists; without this the
+        # collection is never rendered (it is neither baked into the blit
+        # background nor drawn in the animated pass). Mirrors the fallback path.
+        self.artist_set_animated(
+            collection, self.supports_blit(self.get_figure_from_ax(ax))
+        )
         return collection
 
     def update_markers(self, handle, **kwargs):
@@ -594,6 +604,12 @@ class MplBackend:
 
     def set_yticklabels(self, ax, labels):
         ax.set_yticklabels(labels)
+
+    def set_xticks(self, ax, ticks):
+        ax.set_xticks(ticks)
+
+    def set_yticks(self, ax, ticks):
+        ax.set_yticks(ticks)
 
     # ── Layout helpers ────────────────────────────────────────────────────
 
