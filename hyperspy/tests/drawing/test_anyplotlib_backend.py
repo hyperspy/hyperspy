@@ -834,20 +834,44 @@ class TestNativeMarkers:
         assert isinstance(handle, MarkerGroup)
         assert handle._type == "points"
 
+    def test_create_arrows_on_plot1d(self, backend, plot1d_ax):
+        from anyplotlib.markers import MarkerGroup
+
+        handle = backend.create_markers(
+            plot1d_ax,
+            "arrows",
+            offset_space="data",
+            transform_space="display",
+            offsets=[[10.0, 1.0], [30.0, 1.2]],
+            U=[2.0, -3.0],
+            V=[0.5, 0.8],
+            C=["red", "blue"],
+        )
+        assert isinstance(handle, MarkerGroup)
+        assert handle._type == "arrows"
+        assert handle._data["offsets"] == [[10.0, 1.0], [30.0, 1.2]]
+        assert handle._data["U"] == [2.0, -3.0]
+        assert handle._data["V"] == [0.5, 0.8]
+        # ``C`` (per-arrow colours) is forwarded unchanged rather than stripped,
+        # so once anyplotlib's arrows implementation consumes it, colouring works
+        # with no further HyperSpy change. Do not drop this passthrough.
+        assert handle._data["C"] == ["red", "blue"]
+
     # ── unsupported type raises BackendCapabilityError ────────────────────
 
     def test_unsupported_type_raises(self, backend, plot1d_ax):
         from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
+        # An unknown marker type makes anyplotlib raise ValueError, which the
+        # backend must surface as BackendCapabilityError. Real types such as
+        # ``arrows`` are now supported on 1-D panels and no longer raise.
         with pytest.raises(BackendCapabilityError):
             backend.create_markers(
                 plot1d_ax,
-                "arrows",  # arrows not supported on Plot1D
+                "not_a_real_marker_type",
                 offset_space="data",
                 transform_space="display",
                 offsets=[[1, 1]],
-                U=[1],
-                V=[1],
             )
 
     # ── Signal integration ────────────────────────────────────────────────
