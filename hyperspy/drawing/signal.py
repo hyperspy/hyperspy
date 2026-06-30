@@ -86,7 +86,8 @@ def _plot_2D_component(
     # Set axes decorations based on user input
     set_axes_decor(ax, axes_decor)
 
-    backend.add_colorbar(backend.get_figure_from_ax(ax), im, ax)
+    # divider=True sizes the colorbar to the image so the panel keeps its shape
+    backend.add_colorbar(backend.get_figure_from_ax(ax), im, ax, divider=True)
     return ax
 
 
@@ -138,7 +139,8 @@ def _plot_loading(
         # Set axes decorations based on user input
         set_axes_decor(ax, axes_decor)
 
-        backend.add_colorbar(backend.get_figure_from_ax(ax), im, ax)
+        # divider=True sizes the colorbar to the image so the panel keeps its shape
+        backend.add_colorbar(backend.get_figure_from_ax(ax), im, ax, divider=True)
     elif axes_manager.navigation_dimension == 1:
         if calibrate:
             x = axes[0].axis

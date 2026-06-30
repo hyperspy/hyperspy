@@ -368,7 +368,7 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
 
     # ── Axes setup ───────────────────────────────────────────────────────
 
-    def create_axes(self, fig: Any, **kwargs) -> Any:
+    def create_axes(self, fig: Any, animate_axis: bool = False, **kwargs) -> Any:
         """Create and return a primary axes inside fig."""
 
     def set_xlabel(self, ax: Any, label: str) -> None: ...
@@ -441,7 +441,15 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
 
     # ── Colorbar ─────────────────────────────────────────────────────────
 
-    def add_colorbar(self, fig: Any, im_handle: Any, ax: Any) -> Any: ...
+    def add_colorbar(
+        self,
+        fig: Any,
+        im_handle: Any,
+        ax: Any,
+        divider: bool = False,
+        size: Any = "5%",
+        pad: float = 0.05,
+    ) -> Any: ...
     def colorbar_set_label(self, cb: Any, label: str) -> None: ...
     def colorbar_remove(self, cb: Any) -> None: ...
     def colorbar_redraw(self, cb: Any, fig: Any) -> None: ...

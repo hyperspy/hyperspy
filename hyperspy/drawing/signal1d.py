@@ -60,7 +60,7 @@ class Signal1DFigure(AbstractSignal1DFigure):
         }
 
     def create_axis(self):
-        self.ax = get_backend().create_axes(self.figure)
+        self.ax = get_backend().create_axes(self.figure, animate_axis=True)
         self.ax.hspy_fig = self
 
     def create_right_axis(self, color="black", adjust_layout=True):
@@ -82,6 +82,8 @@ class Signal1DFigure(AbstractSignal1DFigure):
         if self.right_ax is None:
             self.right_ax = get_backend().add_right_axis(self.ax, color=color)
             self.right_ax.hspy_fig = self
+        if adjust_layout:
+            get_backend().tight_layout(self.figure)
 
     def close_right_axis(self, adjust_layout=True):
         """
