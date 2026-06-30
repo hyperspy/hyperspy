@@ -201,7 +201,7 @@ class AnyplotlibBackend:
 
     # ── Axes setup ───────────────────────────────────────────────────────
 
-    def create_axes(self, fig, **kwargs):
+    def create_axes(self, fig, animate_axis=False, **kwargs):
         return fig._hspy_ax
 
     def set_xlabel(self, ax, label):
@@ -409,7 +409,7 @@ class AnyplotlibBackend:
 
     # ── Colorbar ─────────────────────────────────────────────────────────
 
-    def add_colorbar(self, fig, im_handle, ax):
+    def add_colorbar(self, fig, im_handle, ax, divider=False, size="5%", pad=0.05):
         im_handle.set_colorbar_visible(True)
         return _AplColorbar(im_handle)
 

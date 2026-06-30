@@ -49,11 +49,16 @@ class MplBackend:
 
     # ── Axes setup ───────────────────────────────────────────────────────
 
-    def create_axes(self, fig, **kwargs):
+    def create_axes(self, fig, animate_axis=False, **kwargs):
         ax = fig.add_subplot(111, **kwargs)
-        animated = fig.canvas.supports_blit
-        ax.yaxis.set_animated(animated)
-        ax.xaxis.set_animated(animated)
+        if animate_axis:
+            # signal1d animates the axis so the y-scale can update during blit.
+            # Image plots leave it un-animated (matches the base behaviour) so
+            # the ticks/spine render in the static background rather than the
+            # animated pass — animating them shifts their sub-pixel rendering.
+            animated = fig.canvas.supports_blit
+            ax.yaxis.set_animated(animated)
+            ax.xaxis.set_animated(animated)
         return ax
 
     def set_xlabel(self, ax, label):
@@ -269,8 +274,18 @@ class MplBackend:
 
     # ── Colorbar ─────────────────────────────────────────────────────────
 
-    def add_colorbar(self, fig, im_handle, ax):
-        cb = fig.colorbar(im_handle, ax=ax)
+    def add_colorbar(self, fig, im_handle, ax, divider=False, size="5%", pad=0.05):
+        if divider:
+            # Size the colorbar to the image — used by the multi-panel
+            # factors/loadings/cluster grids. ``fig.colorbar(ax=ax)`` would
+            # instead steal space from the axes and make a full-height bar that
+            # squishes each panel.
+            from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+            cax = make_axes_locatable(ax).append_axes("right", size=size, pad=pad)
+            cb = fig.colorbar(im_handle, cax=cax)
+        else:
+            cb = fig.colorbar(im_handle, ax=ax)
         cb.ax.yaxis.set_animated(fig.canvas.supports_blit)
         return cb
 
