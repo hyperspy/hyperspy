@@ -160,7 +160,7 @@ class ScaleBar(object):
         backend = get_backend()
         color = backend.line_get_color(self.line)
         self.length = length
-        self.calculate_scale_size()
+        self.calculate_size()
         self.calculate_text_position()
         self.plot_scale(line_width=backend.line_get_linewidth(self.line))
         self.set_color(color)
