@@ -19,14 +19,14 @@ AI tools were used to assist in its creation.
 
    * - Contribution type
      - Proposal required?
-   * - **AI-assisted, non-trivial** (>1 file or architectural change)
-     - **Yes** — implementation PRs will not be reviewed without an accepted proposal.
-   * - **AI-assisted, trivial** (1 file, typo fix, small bug fix)
-     - No — the PR review is sufficient.
-   * - **Human-only, non-trivial** (architecture change, new feature, API break)
-     - **Recommended** — not mandatory, but strongly encouraged for large changes.
-   * - **Human-only, trivial** (bug fix, doc improvement, test addition)
-     - No — the PR review is sufficient.
+   * - **AI-assisted, non-trivial**
+      - **Yes** — implementation PRs will not be reviewed without an accepted proposal.
+   * - **AI-assisted, trivial**
+      - No — the PR review is sufficient.
+   * - **Human-only, non-trivial**
+      - **Recommended** — not mandatory, but strongly encouraged for large changes.
+   * - **Human-only, trivial**
+      - No — the PR review is sufficient.
 
 For more information on AI-assisted development, see :ref:`coding_with_ai-label`.
 

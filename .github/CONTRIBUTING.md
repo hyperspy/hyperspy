@@ -14,7 +14,7 @@ If you want to contribute to the HyperSpy source code, you can send us a [pull r
 
 ## AI-Assisted Contributions
 
-Non-trivial AI-assisted changes (>1 file or architectural change) require an accepted proposal in [hyperspy/hyperspy-proposals](https://github.com/hyperspy/hyperspy-proposals) before the implementation PR will be reviewed. Trivial AI-assisted changes (typo fixes, single-file bug fixes) do not require a proposal.
+Non-trivial AI-assisted changes require an accepted proposal in [hyperspy/hyperspy-proposals](https://github.com/hyperspy/hyperspy-proposals) before the implementation PR will be reviewed. Trivial AI-assisted changes do not require a proposal.
 
 For more details, see the [proposals section](https://hyperspy.readthedocs.io/en/latest/dev_guide/proposals.html) of the developer guide.
 
