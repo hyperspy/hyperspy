@@ -187,6 +187,7 @@ omit = [
     "hyperspy/conftest.py",
     "hyperspy/tests/*",
     "hyperspy/external/scipy/*",
+    "hyperspy/drawing/backends/_stub.py",
     "prepare_release.py",
     "setup.py",
 ]

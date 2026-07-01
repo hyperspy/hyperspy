@@ -6,6 +6,8 @@ hs.Signal1D/Signal2D.plot() (integration tests).  They are skipped when
 anyplotlib is not installed.
 """
 
+import sys
+
 import numpy as np
 import pytest
 
@@ -921,3 +923,436 @@ class TestNativeMarkers:
         s.add_marker(m)
         s.axes_manager[0].index = 2
         s._plot.close()
+
+
+# ---------------------------------------------------------------------------
+# Direct unit tests for gaps not exercised by the fixtures/integration tests
+# above (exception-swallowing branches, capability-error raises, thin no-ops).
+# ---------------------------------------------------------------------------
+
+
+class TestFigureLifecycleGaps:
+    def test_close_figure_swallows_exception(self, backend):
+        class BadFig:
+            _hspy_on_close = None
+
+            def close(self):
+                raise RuntimeError("boom")
+
+        assert backend.close_figure(BadFig()) is None
+
+    def test_create_combined_figure_panels_inches_like_figsize(self, backend):
+        # max(figsize) < 50 is treated as matplotlib-style inches.
+        nav_proxy, signal_proxy = backend.create_combined_figure_panels(
+            figsize=(6.4, 4.8)
+        )
+        assert nav_proxy._real_fig is signal_proxy._real_fig
+
+    def test_create_combined_figure_panels_pixel_like_figsize(self, backend):
+        # max(figsize) >= 50 is treated as already being pixels.
+        nav_proxy, signal_proxy = backend.create_combined_figure_panels(
+            figsize=(640, 480)
+        )
+        assert nav_proxy._real_fig is signal_proxy._real_fig
+
+    def test_ensure_displayed_none_fig_is_noop(self, backend):
+        assert backend.ensure_displayed(None) is None
+
+    def test_draw_idle_none_fig_is_noop(self, backend):
+        assert backend.draw_idle(None) is None
+
+    def test_ensure_displayed_swallows_importerror(self, backend, monkeypatch):
+        fig = backend.create_figure()
+        monkeypatch.setitem(sys.modules, "IPython.display", None)
+        assert backend.ensure_displayed(fig) is None
+
+    def test_draw_idle_swallows_importerror(self, backend, monkeypatch):
+        fig = backend.create_figure()
+        monkeypatch.setitem(sys.modules, "IPython.display", None)
+        assert backend.draw_idle(fig) is None
+
+
+class TestBlitMixinOverrides:
+    """AnyplotlibBackend overrides BlitMixin defaults with its own no-ops;
+    exercise them directly so the override lines (not the mixin's) are hit."""
+
+    def test_copy_background_none(self, backend, fig_ax):
+        fig, _ = fig_ax
+        assert backend.copy_background(fig) is None
+
+    def test_restore_background_noop(self, backend, fig_ax):
+        fig, _ = fig_ax
+        assert backend.restore_background(fig, None) is None
+
+    def test_blit_noop(self, backend, fig_ax):
+        fig, _ = fig_ax
+        assert backend.blit(fig) is None
+
+    def test_connect_draw_event_none(self, backend, fig_ax):
+        fig, _ = fig_ax
+        assert backend.connect_draw_event(fig, lambda *a: None) is None
+
+    def test_disconnect_event_none_cid_is_noop(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.disconnect_event(ax, None) is None
+
+    def test_draw_animated_artists_noop(self, backend, fig_ax):
+        fig, _ = fig_ax
+        assert backend.draw_animated_artists(fig) is None
+
+
+class TestAxesSetupGaps:
+    def test_get_xlim_before_plot_returns_defaults(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.get_xlim(ax) == (0.0, 1.0)
+
+    def test_get_xbound_before_plot_returns_defaults(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.get_xbound(ax) == (0.0, 1.0)
+
+    def test_set_aspect_on_image_plot(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((8, 8)))
+        assert backend.set_aspect(ax, "equal") is None
+
+    def test_add_right_axis_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.add_right_axis(ax)
+
+    def test_remove_right_axis_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.remove_right_axis(ax, None)
+
+
+class TestApplyPendingLabelsGaps:
+    def test_delattr_failure_is_swallowed(self, backend):
+        """When the pending-label attribute lives on the class (not the
+        instance), delattr raises AttributeError, which must be swallowed."""
+        from unittest.mock import MagicMock
+
+        class FakeAxClassAttr:
+            _hspy_pending_xlabel = "Energy"
+
+        ax = FakeAxClassAttr()
+        plot = MagicMock()
+        backend._apply_pending_labels(ax, plot)
+        plot.set_xlabel.assert_called_once_with("Energy")
+
+
+class TestLineGaps:
+    def test_line_get_linewidth_default(self, backend, fig_ax):
+        _, ax = fig_ax
+        h = backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        assert backend.line_get_linewidth(h) == 1.5
+
+
+class TestTextAndArtistNoops:
+    def test_remove_text_noop(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.remove_text(ax, None) is None
+
+    def test_text_get_color_default(self, backend):
+        assert backend.text_get_color(None) == "white"
+
+    def test_artist_set_animated_noop(self, backend):
+        assert backend.artist_set_animated(None, True) is None
+
+
+class TestImageGaps:
+    def test_plot_mesh(self, backend, fig_ax):
+        _, ax = fig_ax
+        x = np.arange(4, dtype=float)
+        y = np.arange(5, dtype=float)
+        data = np.random.rand(4, 3)
+        h = backend.plot_mesh(ax, x, y, data)
+        assert h is not None
+
+    def test_image_set_extent(self, backend, fig_ax):
+        _, ax = fig_ax
+        h = backend.plot_image(ax, np.zeros((8, 8)))
+        backend.image_set_extent(h, (0.0, 10.0, 20.0, 0.0))  # must not raise
+
+    def test_image_set_norm_applies_clim(self, backend, fig_ax):
+        from hyperspy.drawing.norm import LinearNorm
+
+        _, ax = fig_ax
+        h = backend.plot_image(ax, np.zeros((8, 8)))
+        backend.image_set_norm(h, LinearNorm(vmin=0.1, vmax=0.9))
+        assert h._state["display_min"] == pytest.approx(0.1)
+        assert h._state["display_max"] == pytest.approx(0.9)
+
+
+class TestEventConnectGaps:
+    def test_connect_key_press_before_plot_returns_none(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.connect_key_press(ax, lambda e: None) is None
+
+    def test_connect_mouse_press_before_plot_returns_none(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.connect_mouse_press(ax, lambda e: None) is None
+
+    def test_connect_mouse_release_before_plot_returns_none(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.connect_mouse_release(ax, lambda e: None) is None
+
+    def test_get_plot_fallback_returns_none(self, backend):
+        class Dummy:
+            pass
+
+        assert backend._get_plot(Dummy()) is None
+
+    def test_connect_widget_drag_swallows_importerror(self, backend, monkeypatch):
+        monkeypatch.setitem(sys.modules, "anyplotlib.widgets._widgets1d", None)
+        assert backend.connect_widget_drag(object(), lambda *a: None) is None
+
+    def test_connect_widget_drag_unrelated_handle_type(self, backend):
+        class Unrelated:
+            pass
+
+        assert backend.connect_widget_drag(Unrelated(), lambda *a: None) is None
+
+
+class TestPointerGaps:
+    def test_create_line_pointer_y_axis_raises_on_plot1d(self, backend, fig_ax):
+        """Plot1D has no add_widget, so the y-axis pointer path is unsupported."""
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
+        with pytest.raises(BackendCapabilityError):
+            backend.create_line_pointer(ax, "y", 1.0)
+
+    def test_create_rect_pointer_raises_when_plot_lacks_add_widget(
+        self, backend, fig_ax
+    ):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
+        with pytest.raises(BackendCapabilityError):
+            backend.create_rect_pointer(ax, 0.0, 0.0, 1.0, 1.0)
+
+    def test_create_rect_pointer_raises_when_no_plot(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.create_rect_pointer(ax, 0.0, 0.0, 1.0, 1.0)
+
+    def test_remove_pointer_success(self, backend):
+        class FakeHandle:
+            def __init__(self):
+                self.removed = False
+
+            def remove(self):
+                self.removed = True
+
+        h = FakeHandle()
+        backend.remove_pointer(None, h)
+        assert h.removed
+
+    def test_remove_pointer_swallows_exception(self, backend):
+        class NoRemove:
+            pass
+
+        assert backend.remove_pointer(None, NoRemove()) is None
+
+    def test_set_pointer_style_color(self, backend):
+        import types
+
+        handle = types.SimpleNamespace()
+        backend.set_pointer_style(handle, color="blue")
+        assert handle.color == "blue"
+
+    def test_set_pointer_style_alpha_raises(self, backend):
+        import types
+
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        handle = types.SimpleNamespace()
+        with pytest.raises(BackendCapabilityError):
+            backend.set_pointer_style(handle, alpha=0.5)
+
+
+class TestUnsupportedCapabilityRaises:
+    """Methods that are simple BackendCapabilityError raises / no-ops for
+    features anyplotlib does not (yet) implement."""
+
+    def test_add_artist_noop(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.add_artist(ax, None) is None
+
+    def test_create_rect_patch_raises(self, backend):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        with pytest.raises(BackendCapabilityError):
+            backend.create_rect_patch((0, 0), 1.0, 1.0)
+
+    def test_get_data_transform_inverse_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.get_data_transform_inverse(ax)
+
+    def test_transform_point_raises(self, backend):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        with pytest.raises(BackendCapabilityError):
+            backend.transform_point(None, (0.0, 0.0))
+
+    def test_add_collection_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.add_collection(ax, None)
+
+    def test_collection_update_raises(self, backend):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        with pytest.raises(BackendCapabilityError):
+            backend.collection_update(None)
+
+    def test_collection_remove_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.collection_remove(ax, None)
+
+    def test_invalidate_blit_background_noop(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.invalidate_blit_background(ax) is None
+
+    def test_create_span_selector_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.create_span_selector(ax)
+
+    def test_create_polygon_selector_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.create_polygon_selector(ax)
+
+    def test_get_ax_transform_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.get_ax_transform(ax, "data")
+
+    def test_convert_coords_raises(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.convert_coords(ax, [(0, 0)], "data", "axes")
+
+
+class TestMarkerTranslationGaps:
+    def test_create_markers_raises_runtimeerror_without_plot(self, backend, fig_ax):
+        _, ax = fig_ax
+        with pytest.raises(RuntimeError, match="no plot"):
+            backend.create_markers(ax, "points", offsets=[[1, 1]])
+
+    def test_update_markers_empty_kwargs_is_noop(self, backend):
+        assert backend.update_markers(None) is None
+
+    def test_remove_markers_swallows_exception(self, backend, fig_ax):
+        _, ax = fig_ax
+
+        class NoRemove:
+            pass
+
+        assert backend.remove_markers(ax, NoRemove()) is None
+
+    def test_translate_single_element_colors_flattened_to_scalar(self, backend):
+        out = backend._translate_marker_kwargs(
+            "circles", "data", {"colors": ["red"], "offsets": [[1, 1]], "sizes": [1.0]}
+        )
+        assert out["edgecolors"] == "red"
+
+    def test_translate_linewidth_singular_to_linewidths(self, backend):
+        out = backend._translate_marker_kwargs(
+            "points", "data", {"linewidth": 2.0, "offsets": [[1, 1]]}
+        )
+        assert out["linewidths"] == 2.0
+        assert "linewidth" not in out
+
+
+class TestMiscBackendGaps:
+    def test_get_figure_from_ax_raises_without_figure_attr(self, backend):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        class NoFig:
+            pass
+
+        with pytest.raises(BackendCapabilityError):
+            backend.get_figure_from_ax(NoFig())
+
+    def test_get_explorer_dim0_returns_hyperexplorer(self, backend):
+        from hyperspy.drawing.he import HyperExplorer
+
+        assert backend.get_explorer(0) is HyperExplorer
+
+    def test_get_explorer_unsupported_dim_raises(self, backend):
+        with pytest.raises(ValueError):
+            backend.get_explorer(99)
+
+    def test_remove_scalebar_noop(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.remove_scalebar(ax, None) is None
+
+    def test_get_image_cmap_name_with_cmap_attr(self, backend):
+        class HasCmap:
+            cmap = "viridis"
+
+        assert backend.get_image_cmap_name(HasCmap()) == "viridis"
+
+    def test_get_image_cmap_name_default_gray(self, backend):
+        class NoCmap:
+            pass
+
+        assert backend.get_image_cmap_name(NoCmap()) == "gray"
+
+    def test_plot_step_falls_back_to_plot_line(self, backend, fig_ax):
+        _, ax = fig_ax
+        h = backend.plot_step(
+            ax, np.arange(5, dtype=float), np.zeros(5), drawstyle="steps-mid"
+        )
+        assert h is not None
+
+    def test_create_line2d_patch_raises(self, backend):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        with pytest.raises(BackendCapabilityError):
+            backend.create_line2d_patch([0, 1], [0, 1])
+
+    def test_create_circle_patch_raises(self, backend):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        with pytest.raises(BackendCapabilityError):
+            backend.create_circle_patch((0, 0), 1.0)
+
+    def test_set_autoscale_noop(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.set_autoscale(ax, True) is None
+
+    def test_set_xticklabels_noop(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.set_xticklabels(ax, []) is None
+
+    def test_set_yticklabels_noop(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.set_yticklabels(ax, []) is None
