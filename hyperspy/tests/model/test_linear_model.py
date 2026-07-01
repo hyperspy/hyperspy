@@ -930,3 +930,50 @@ def test_rank_lstsq_residual():
     m.extend([p, g, o])
     m.set_parameters_not_free(only_nonlinear=True)
     m.fit(optimizer="lstsq")
+
+
+def test_calculate_covariance_singular_fit_dot_uses_pinv_fallback():
+    # A coefficient of exactly zero makes fit_dot (fit.T @ fit) structurally
+    # singular (a whole row/column of zeros), not just ill-conditioned.
+    # _calculate_covariance should fall back to pinv() instead of raising.
+    from hyperspy.misc.model_tools import _calculate_covariance
+
+    target_signal = np.array([1.0, 2.0, 3.0, 4.0])
+    coefficients = np.array([0.0, 1.0])
+    component_data = np.array(
+        [
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 2.0, 3.0, 4.0],
+        ]
+    )
+
+    covariance = _calculate_covariance(
+        target_signal, coefficients, component_data, lazy=False
+    )
+    assert covariance.shape == (2, 2)
+    assert np.all(np.isfinite(covariance))
+
+
+def test_calculate_covariance_singular_fit_dot_uses_pinv_fallback_lazy():
+    # Same as above but for the lazy code path, which routes the fallback
+    # through da.map_blocks() instead of calling it directly.
+    import dask.array as da
+
+    from hyperspy.misc.model_tools import _calculate_covariance
+
+    target_signal = da.from_array(np.array([1.0, 2.0, 3.0, 4.0]))
+    coefficients = da.from_array(np.array([0.0, 1.0]))
+    component_data = da.from_array(
+        np.array(
+            [
+                [1.0, 1.0, 1.0, 1.0],
+                [1.0, 2.0, 3.0, 4.0],
+            ]
+        )
+    )
+
+    covariance = _calculate_covariance(
+        target_signal, coefficients, component_data, lazy=True
+    ).compute()
+    assert covariance.shape == (2, 2)
+    assert np.all(np.isfinite(covariance))
