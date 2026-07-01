@@ -252,7 +252,20 @@ class TestLinearFitting:
 @lazifyTestClass
 class TestFitAlgorithms:
     def setup_method(self, method):
-        s = hs.signals.Signal1D(np.arange(100, dtype=float))
+        x = np.arange(100, dtype=float)
+        # A tiny Gaussian bump is added on top of the line so that g1's
+        # amplitude is actually constrained by the data (rather than being
+        # exactly unconstrained). Without it (i.e. fitting a Gaussian to
+        # pure line data) the best-fit amplitude is ~0, which makes the
+        # linear system used to estimate parameter standard errors exactly
+        # singular for some fitting backends (e.g. dask's QR-based lstsq
+        # can return a structural -0.0 where numpy's SVD-based lstsq
+        # returns a tiny nonzero value), making comparisons between
+        # optimizers numerically unstable. The amplitude is kept small
+        # enough that ridge regression's L2 bias (checked in
+        # test_compare_ridge) stays well within that test's tolerance.
+        data = x + 0.0002 * np.exp(-(x**2) / 2)
+        s = hs.signals.Signal1D(data)
         m = s.create_model()
         g1 = hs.model.components1D.Gaussian()
         g1.sigma.free = False
