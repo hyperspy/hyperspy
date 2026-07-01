@@ -13,6 +13,9 @@ A few sentences and/or a bulleted list to describe and motivate the change:
 - etc.
 
 ### Progress of the PR
+- [ ] Is this an AI-assisted contribution? If yes, and non-trivial, link to the accepted proposal:
+      - [ ] N/A (human-only contribution or trivial change)
+      - [ ] Proposal accepted: <link to PR in hyperspy/hyperspy-proposals>
 - [ ] Change implemented (can be split into several points),
 - [ ] if AI-assisted, ``Assisted-by: <tool>:<model>`` in every commit,
 - [ ] manually tested on realistic data or a representative workflow,
