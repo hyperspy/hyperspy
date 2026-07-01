@@ -496,8 +496,8 @@ class AnyplotlibBackend:
             raise BackendCapabilityError(_NOT_YET.format("create_line_pointer(y)"))
         return plot.add_widget("crosshair", cx=0.0, cy=float(pos), color=color)
 
-    def update_line_pointer(self, handle, pos):
-        if hasattr(handle, "x"):
+    def update_line_pointer(self, handle, axis, pos):
+        if axis == "x":
             handle.x = float(pos)
         else:
             handle.cy = float(pos)
@@ -523,11 +523,12 @@ class AnyplotlibBackend:
             return
         handle.add_event_handler(self._wrap(_cb), "pointer_move")
 
-    def create_rect_pointer(self, ax, x, y, w, h, color="red"):
+    def create_rect_pointer(self, ax, x, y, w, h, color="red", linewidth=2):
         plot = self._primary_plot(ax)
         if plot is None or not hasattr(plot, "add_widget"):
             raise BackendCapabilityError(_NOT_YET.format("create_rect_pointer"))
         # x, y are the lower-left corner; convert to center for the crosshair
+        # anyplotlib's CrosshairWidget has no linewidth option yet.
         cx = float(x) + float(w) / 2.0
         cy = float(y) + float(h) / 2.0
         return plot.add_widget("crosshair", cx=cx, cy=cy, color=color)

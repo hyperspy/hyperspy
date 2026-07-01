@@ -280,7 +280,7 @@ class TestLinePointer:
         _, ax = fig_ax
         backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
         w = backend.create_line_pointer(ax, "x", 5.0)
-        backend.update_line_pointer(w, 10.0)
+        backend.update_line_pointer(w, "x", 10.0)
         assert w.x == pytest.approx(10.0)
 
     def test_create_line_pointer_before_plot_raises(self, backend, fig_ax):

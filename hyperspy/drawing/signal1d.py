@@ -617,7 +617,11 @@ def _plot_loading(
                 axes_manager._axes[1].low_value,
             )
         im = backend.plot_image(
-            ax, loadings[idx].reshape(shape), cmap=cmap, extent=extent
+            ax,
+            loadings[idx].reshape(shape),
+            cmap=cmap,
+            extent=extent,
+            interpolation="nearest",
         )
         backend.add_colorbar(backend.get_figure_from_ax(ax), im, ax)
     elif axes_manager.navigation_dimension == 1:

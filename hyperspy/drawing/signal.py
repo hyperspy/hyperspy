@@ -81,7 +81,9 @@ def _plot_2D_component(
         )
     if comp_label:
         backend.set_title(ax, f"{idx}")
-    im = backend.plot_image(ax, factors, cmap=cmap, extent=extent)
+    im = backend.plot_image(
+        ax, factors, cmap=cmap, extent=extent, interpolation="nearest"
+    )
 
     # Set axes decorations based on user input
     set_axes_decor(ax, axes_decor)
@@ -123,7 +125,13 @@ def _plot_loading(
                 axes[1].high_value,
                 axes[1].low_value,
             )
-        im = backend.plot_image(ax, loadings.reshape(shape), cmap=cmap, extent=extent)
+        im = backend.plot_image(
+            ax,
+            loadings.reshape(shape),
+            cmap=cmap,
+            extent=extent,
+            interpolation="nearest",
+        )
         if calibrate:
             backend.set_xlabel(ax, axes[0].units)
             backend.set_ylabel(ax, axes[1].units)
