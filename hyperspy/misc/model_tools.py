@@ -285,6 +285,15 @@ def _calculate_covariance(
     # rather than merely ill-conditioned. np.linalg.inv() cannot invert
     # that, so fall back to the Moore-Penrose pseudo-inverse, which is
     # well-defined for singular matrices.
+    #
+    # Try inv() first rather than always using pinv() because the two are
+    # not interchangeable: pinv() truncates singular values below its
+    # rcond threshold, so on a merely ill-conditioned (but invertible)
+    # fit_dot it silently returns a different, regularised answer instead
+    # of the exact one inv() gives -- and it does so ~6-12x slower (SVD
+    # vs. LU), which matters here since this runs per-pixel over a whole
+    # navigation map when lazy. Only fall back to pinv()'s approximation
+    # when the matrix is actually singular and inv() has no answer at all.
     def _safe_inv(matrix):
         try:
             return np.linalg.inv(matrix)
