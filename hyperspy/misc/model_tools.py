@@ -279,17 +279,41 @@ def _calculate_covariance(
 
     fit_dot = np.matmul(fit.swapaxes(-2, -1), fit)
 
-    # Prefer to find another way than matrix inverse
-    # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
-    # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
-    if lazy and target_signal.ndim > 1:
+    # A coefficient that is (numerically) exactly zero -- e.g. a component
+    # that doesn't contribute for a given pixel -- makes the corresponding
+    # row/column of fit_dot structurally zero, i.e. genuinely singular
+    # rather than merely ill-conditioned. np.linalg.inv() cannot invert
+    # that, so fall back to the Moore-Penrose pseudo-inverse, which is
+    # well-defined for singular matrices.
+    #
+    # Try inv() first rather than always using pinv() because the two are
+    # not interchangeable: pinv() truncates singular values below its
+    # rcond threshold, so on a merely ill-conditioned (but invertible)
+    # fit_dot it silently returns a different, regularised answer instead
+    # of the exact one inv() gives -- and it does so ~6-12x slower (SVD
+    # vs. LU), which matters here since this runs per-pixel over a whole
+    # navigation map when lazy. Only fall back to pinv()'s approximation
+    # when the matrix is actually singular and inv() has no answer at all.
+    def _safe_inv(matrix):
+        try:
+            return np.linalg.inv(matrix)
+        except np.linalg.LinAlgError:
+            return np.linalg.pinv(matrix)
+
+    # Always go through map_blocks (rather than a direct dask.array.linalg.inv)
+    # when lazy: dask's own inv() uses a QR-based solve that is more prone to
+    # hitting exact singularities than numpy's LU-based inv()/pinv(), and
+    # map_blocks lets the LinAlgError fallback above run per-chunk on
+    # materialised numpy arrays. This also sidesteps dask.array.linalg.inv's
+    # lack of support for the batched (3-D) case.
+    if lazy:
         import dask.array as da
 
         inv_fit_dot = da.map_blocks(
-            np.linalg.inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
+            _safe_inv, fit_dot, chunks=fit_dot.chunks, dtype=float, meta=fit_dot
         )
     else:
-        inv_fit_dot = np.linalg.inv(fit_dot)
+        inv_fit_dot = _safe_inv(fit_dot)
 
     n = fit.shape[-2]  # the signal axis length
     k = coefficients.shape[-1]  # the number of components
