@@ -16,6 +16,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
+from unittest import mock
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -35,6 +36,10 @@ import traits.api as t
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import BackendCapabilityError
+from hyperspy.drawing.image import ImagePlot
+from hyperspy.drawing.norm import LogNorm
 from hyperspy.drawing.utils import make_cmap, plot_RGB_map
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 
@@ -1077,3 +1082,98 @@ def test_plot_images_ax_array():
 
     fig, axes = plt.subplots(nrows=2, ncols=3)
     hs.plot.plot_images(s, ax=axes, axes_decor="off")
+
+
+def test_image_plot_axes_off():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10).astype(float))
+    s.plot(axes_off=True)
+    ip = s._plot.signal_plot
+    assert ip.axes_off is True
+
+
+def test_image_plot_replot_removes_previous_indices_text():
+    # Calling `ImagePlot.plot` a second time on the same instance (bypassing
+    # the higher-level Explorer, which only ever plots once) must remove the
+    # previously-created navigation-indices text before creating a new one.
+    s = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10).astype(float))
+    s.plot()
+    ip = s._plot.signal_plot
+    assert ip.plot_indices is True
+    old_text = ip._text
+    ip.plot()
+    assert ip._text is not old_text
+
+
+def test_image_plot_scalebar_backend_capability_error():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10).astype(float))
+    backend = get_backend()
+    with mock.patch.object(
+        backend, "create_scalebar", side_effect=BackendCapabilityError("no scalebar")
+    ):
+        s.plot(scalebar=True)
+    assert s._plot.signal_plot._scalebar_handle is None
+
+
+def test_image_plot_centre_colormap_auto_detection():
+    # The Explorer layer always injects an explicit `cmap` kwarg before
+    # calling `ImagePlot.plot`/`update`, so the "auto-detect cmap from the
+    # existing image" code path is only reachable when driving `ImagePlot`
+    # directly, bypassing that layer.
+    s = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10).astype(float))
+    s.plot()
+    ip = s._plot.signal_plot
+
+    ip2 = ImagePlot(title="direct")
+    ip2.data_function = ip.data_function
+    ip2.data_function_kwargs = ip.data_function_kwargs
+    ip2.axes_manager = ip.axes_manager
+    ip2.xaxis = ip.xaxis
+    ip2.yaxis = ip.yaxis
+    ip2.configure()
+
+    # No image yet: falls back to `preferences.Plot.cmap_signal`.
+    ip2.plot()
+    assert ip2.centre_colormap is False
+
+    # Image already exists: reads the cmap name from the existing handle.
+    ip2.centre_colormap = "auto"
+    ip2.update(data_changed=False)
+    assert ip2.centre_colormap is False
+
+    # Existing handle, but the backend can't report a cmap name.
+    backend = get_backend()
+    with mock.patch.object(
+        backend,
+        "get_image_cmap_name",
+        side_effect=BackendCapabilityError("no cmap name"),
+    ):
+        ip2.centre_colormap = "auto"
+        ip2.update(data_changed=False)
+    assert ip2.centre_colormap is False
+    ip2.close()
+
+
+def test_image_plot_norm_hypernorm_instance():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10).astype(float) + 1)
+    s.plot(norm=LogNorm())
+    assert isinstance(s._plot.signal_plot.norm, LogNorm)
+
+
+def test_image_plot_axes_ticks_off_direct():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10).astype(float))
+    s.plot()
+    ip = s._plot.signal_plot
+    ip.axes_ticks = "off"
+    # Should not raise; exercises the `axes_ticks == "off"` branch of update().
+    ip.update(data_changed=False)
+
+
+def test_image_plot_toggle_norm_removes_and_recreates_colorbar():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10).astype(float) + 1)
+    s.plot(colorbar=True)
+    ip = s._plot.signal_plot
+    assert ip._colorbar is not None
+    old_colorbar = ip._colorbar
+    ip.toggle_norm()
+    assert ip.norm == "log"
+    assert ip._colorbar is not old_colorbar

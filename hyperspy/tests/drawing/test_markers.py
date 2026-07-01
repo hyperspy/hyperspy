@@ -20,10 +20,12 @@ from pathlib import Path
 from unittest import mock
 
 import dask.array as da
+import matplotlib.collections as mpl_collections
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.collections import (
+    CircleCollection,
     PolyCollection,
     StarPolygonCollection,
 )
@@ -46,6 +48,7 @@ from hyperspy.drawing.marker_collection import (
     TextsCollection,
     VLinesCollection,
 )
+from hyperspy.drawing.markers import _is_patch
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
@@ -1189,6 +1192,61 @@ def test_collection_error():
     m = Points(offsets=[[1, 1], [2, 2]])
     with pytest.raises(ValueError):
         m._set_transform(value="test")
+
+
+class _CustomCollectionOutsideAllowedModules(mpl_collections.Collection):
+    """A real mpl Collection subclass that lives outside
+    ``matplotlib.collections``/``hyperspy.external`` on purpose, to exercise
+    the "must be implemented in matplotlib or hyperspy" validation error.
+    """
+
+
+def test_collection_error_wrong_module():
+    with pytest.raises(
+        ValueError, match="must be implemented in matplotlib or hyperspy"
+    ):
+        Markers(
+            offsets=[[1, 1], [2, 2]],
+            collection=_CustomCollectionOutsideAllowedModules,
+        )
+
+
+def test_is_patch_import_error_fallback():
+    # `_is_patch` lazily imports `matplotlib.patches`; simulate matplotlib
+    # being unavailable to exercise the `except ImportError` fallback.
+    with mock.patch.dict(sys.modules, {"matplotlib.patches": None}):
+        assert _is_patch(object()) is False
+
+
+def test_to_dictionary_hyper_collection_via_base_markers_class():
+    # Instantiating the base `Markers` class directly (not one of the
+    # `Points`/`Circles`/... subclasses) with a marker-type string still
+    # resolves to a `HyperMarkerCollection`; `_to_dictionary` must store the
+    # stable marker-type string rather than a mpl class name in that case.
+    m = Markers(collection="circles", sizes=(20,), offsets=[[1, 1], [2, 2]])
+    d = m._to_dictionary()
+    assert d["collection"] == "circles"
+
+
+def test_legacy_mpl_collection_plot_and_update():
+    # A base `Markers` instance constructed with a raw matplotlib Collection
+    # class (not a marker-type string/HyperMarkerCollection) never sets
+    # `_marker_type`, so it always takes the legacy (non-native) code path
+    # for both `plot` (`_initialize_collection`/`_get_mpl_class`) and
+    # `_update` (`collection_update`).
+    offsets = np.empty(3, dtype=object)
+    for i in range(3):
+        offsets[i] = np.array([[1, 1], [2, 2]])
+    m = Markers(offsets=offsets, sizes=(20,), collection=CircleCollection)
+    assert m._marker_type is None
+
+    s = hs.signals.Signal2D(np.zeros((3, 10, 10)))
+    s.plot()
+    s.add_marker(m)
+    assert m._using_native_markers is False
+
+    # Trigger `_update` on the iterating (per-navigation-index) offsets.
+    s.axes_manager.navigation_axes[0].index = 1
 
 
 def test_permanent_markers_close_open_cycle():

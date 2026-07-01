@@ -29,6 +29,20 @@ def test_mpl_backend_is_default():
     assert isinstance(backend, MplBackend)
 
 
+def test_get_backend_raises_when_none_registered():
+    import pytest
+
+    import hyperspy.drawing.backends as _backends
+
+    original = _backends._active_backend
+    try:
+        _backends._active_backend = None
+        with pytest.raises(RuntimeError, match="No plotting backend registered"):
+            get_backend()
+    finally:
+        _backends._active_backend = original
+
+
 def test_backend_preference_change():
     """Switching the backend preference triggers register_backend()."""
     from unittest.mock import patch
