@@ -630,25 +630,36 @@ class TestMplBackend:
     def test_simulate_pick_falls_back_when_pickevent_fails(
         self, mpl_backend, mpl_fig_ax, monkeypatch
     ):
-        """If constructing/dispatching the PickEvent raises, fall back to
-        canvas.pick_event."""
+        """If constructing/dispatching the *first* PickEvent raises, fall
+        back to canvas.pick_event(). On matplotlib versions where that
+        deprecated method still exists, it builds its own PickEvent
+        internally, so only the first construction must be forced to fail
+        (a global failure would also break the fallback, since it calls
+        the same PickEvent constructor)."""
         import matplotlib.backend_bases as mbb
         import matplotlib.patches as mpatches
+
+        real_pick_event = mbb.PickEvent
+        calls = []
+
+        def _fail_once(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 1:
+                raise RuntimeError("boom")
+            return real_pick_event(*args, **kwargs)
 
         class _ForceButtonMouseEvent(mbb.MouseEvent):
             def __init__(self, *args, **kwargs):
                 kwargs.setdefault("button", 1)
                 super().__init__(*args, **kwargs)
 
-        def _raise(*args, **kwargs):
-            raise RuntimeError("boom")
-
         monkeypatch.setattr(mbb, "MouseEvent", _ForceButtonMouseEvent)
-        monkeypatch.setattr(mbb, "PickEvent", _raise)
+        monkeypatch.setattr(mbb, "PickEvent", _fail_once)
         _, ax = mpl_fig_ax
         patch = mpatches.Rectangle((0, 0), 1, 1)
         ax.add_patch(patch)
         assert mpl_backend.simulate_pick(ax, patch) is None
+        assert len(calls) >= 1
 
     def test_simulate_pick_swallows_attribute_error(self, mpl_backend, mpl_fig_ax):
         """A patch missing get_transform() hits the outer except clause."""
