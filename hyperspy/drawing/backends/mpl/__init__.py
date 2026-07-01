@@ -265,7 +265,15 @@ class MplBackend:
         handle.set_extent(extent)
 
     def image_set_clim(self, handle, vmin, vmax):
-        handle.set_clim(vmin, vmax)
+        # Not handle.set_clim(vmin, vmax): that sets vmin then vmax as two
+        # separate attribute writes, each of which synchronously notifies any
+        # attached colorbar. On older matplotlib, the colorbar's callback
+        # recomputes norm limits via Colorbar._process_values() as soon as
+        # vmin is written (while vmax is still the stale/None value from the
+        # just-reset norm), scrambling vmin before vmax is applied. Setting
+        # vmax first, then vmin, in one tuple assignment (as the pre-refactor
+        # code did) avoids that intermediate inconsistent state.
+        handle.norm.vmax, handle.norm.vmin = vmax, vmin
 
     def image_set_norm(self, handle, norm):
         handle.set_norm(self._to_mpl_norm(norm))
