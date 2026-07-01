@@ -54,6 +54,11 @@ class SquareWidget(Widget2DBase):
         backend.connect_widget_drag(
             handle, lambda x, y: setattr(_self, "position", (x, y))
         )
+        # Cooperate with ResizersMixin (RectangleWidget) so its resizer-handle
+        # objects get created; overriding _add_patch_to instead of _set_patch
+        # (as the base widget does) would otherwise skip this entirely.
+        if hasattr(super(SquareWidget, self), "_set_patch"):
+            super(SquareWidget, self)._set_patch()
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
