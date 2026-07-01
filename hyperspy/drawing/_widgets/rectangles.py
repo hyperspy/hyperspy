@@ -45,7 +45,9 @@ class SquareWidget(Widget2DBase):
         self.blit = backend.supports_blit_from_ax(ax)
         xy = self._get_patch_xy()
         xs, ys = self.size
-        handle = backend.create_rect_pointer(ax, xy[0], xy[1], xs, ys, color=self.color)
+        handle = backend.create_rect_pointer(
+            ax, xy[0], xy[1], xs, ys, color=self.color, linewidth=self.border_thickness
+        )
         self._patch = [handle]
         backend.set_pointer_style(handle, animated=self.blit)
         _self = self

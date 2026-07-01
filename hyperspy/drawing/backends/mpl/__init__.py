@@ -230,11 +230,11 @@ class MplBackend:
     ):
         animated = ax.figure.canvas.supports_blit
         mpl_norm = self._to_mpl_norm(norm)
-        # HyperSpy displays image data unsmoothed; without this the core image
-        # path falls back to matplotlib's "auto" interpolation and blurs
-        # signals, decomposition loadings/factors, cluster centres, etc.
-        # ``kwargs`` (user-supplied) still overrides via the update below.
-        args = {"animated": animated, "cmap": cmap, "interpolation": "nearest"}
+        # Interpolation is intentionally left to the caller/matplotlib default:
+        # the main ImagePlot path relies on matplotlib's own "auto" choice,
+        # while decomposition/loadings component plots pass
+        # ``interpolation="nearest"`` explicitly via kwargs.
+        args = {"animated": animated, "cmap": cmap}
         if mpl_norm is None:
             args.update({"vmin": vmin, "vmax": vmax})
         else:
@@ -246,6 +246,11 @@ class MplBackend:
         return ax.images[-1]
 
     def plot_mesh(self, ax, x, y, data, **kwargs):
+        # Match plot_image: animate the mesh when blitting is supported so it
+        # is painted via draw_artist (the blit pass) rather than the normal
+        # composited Axes.draw(), which mis-renders the edge row of this mesh
+        # (non-uniform-axis navigators/images) as solid black.
+        kwargs.setdefault("animated", ax.figure.canvas.supports_blit)
         h = ax.pcolormesh(x, y, data, **kwargs)
         ax.invert_yaxis()
         return h
@@ -344,13 +349,13 @@ class MplBackend:
         else:
             return ax.axhline(pos, color=color, **kw)
 
-    def update_line_pointer(self, handle, pos):
-        if hasattr(handle, "set_xdata"):
+    def update_line_pointer(self, handle, axis, pos):
+        if axis == "x":
             handle.set_xdata([pos])
         else:
             handle.set_ydata([pos])
 
-    def create_rect_pointer(self, ax, x, y, w, h, color="red"):
+    def create_rect_pointer(self, ax, x, y, w, h, color="red", linewidth=2):
         import matplotlib.patches as mpatches
 
         rect = mpatches.Rectangle(
@@ -358,6 +363,7 @@ class MplBackend:
             w,
             h,
             fill=False,
+            lw=linewidth,
             color=color,
             picker=True,
         )

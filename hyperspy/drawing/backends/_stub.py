@@ -385,11 +385,11 @@ class StubBackend(BlitMixin, PointerMixin):
     #       """axis='x' → vertical line; axis='y' → horizontal line."""
     #       ...
     #
-    #   def update_line_pointer(self, handle, pos) -> None:
+    #   def update_line_pointer(self, handle, axis, pos) -> None:
     #       """Move the line to *pos* (x for axis='x', y for axis='y')."""
     #       ...
     #
-    #   def create_rect_pointer(self, ax, x, y, w, h, color="red"):
+    #   def create_rect_pointer(self, ax, x, y, w, h, color="red", linewidth=2):
     #       """Lower-left (x, y), size w×h."""
     #       ...
     #

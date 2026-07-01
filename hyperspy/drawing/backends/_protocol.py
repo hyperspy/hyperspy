@@ -98,10 +98,10 @@ class PointerMixin(Protocol):
       Single method for both vertical (``axis='x'``) and horizontal
       (``axis='y'``) draggable line widgets.
 
-    * ``update_line_pointer(handle, pos)``
+    * ``update_line_pointer(handle, axis, pos)``
       Move the line to *pos* (x-value for 'x', y-value for 'y').
 
-    * ``create_rect_pointer(ax, x, y, w, h, color)``
+    * ``create_rect_pointer(ax, x, y, w, h, color, linewidth)``
       Create a draggable rectangle widget.
 
     * ``update_rect_pointer(handle, x, y, w, h)``
@@ -136,14 +136,28 @@ class PointerMixin(Protocol):
             "create_line_pointer not supported by this backend"
         )
 
-    def update_line_pointer(self, handle: Any, pos: float) -> None:
-        """Move the line pointer to *pos* in data coordinates."""
+    def update_line_pointer(self, handle: Any, axis: str, pos: float) -> None:
+        """Move the line pointer to *pos* in data coordinates.
+
+        Parameters
+        ----------
+        handle : opaque handle returned by ``create_line_pointer``
+        axis : ``'x'`` for a vertical line, ``'y'`` for a horizontal line
+        pos : new position in data coordinates
+        """
         raise BackendCapabilityError(
             "update_line_pointer not supported by this backend"
         )
 
     def create_rect_pointer(
-        self, ax: Any, x: float, y: float, w: float, h: float, color: str = "red"
+        self,
+        ax: Any,
+        x: float,
+        y: float,
+        w: float,
+        h: float,
+        color: str = "red",
+        linewidth: float = 2,
     ) -> Any:
         """Create a draggable rectangle widget at lower-left (x, y) with size w×h."""
         raise BackendCapabilityError(
