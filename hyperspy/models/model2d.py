@@ -22,22 +22,22 @@ import numpy as np
 
 from hyperspy.model import BaseModel, ModelComponents
 
-_SIGNAL_RANGE_VALUES = """x1, x2 : None or float
-            Start and end of the range in the first axis (horizontal)
-            in units.
-        y1, y2 : None or float
-            Start and end of the range in the second axis (vertical)
-            in units.
-        """
+_SIGNAL_RANGE_VALUES = """\
+x1, x2 : None or float
+    Start and end of the range in the first axis (horizontal)
+    in units.
+y1, y2 : None or float
+    Start and end of the range in the second axis (vertical)
+    in units."""
 
 
-_SIGNAL_RANGE_PIXELS = """i1, i2 : None or float
-            Start and end of the range in the first axis (horizontal)
-            in pixels.
-        j1, j2 : None or float
-            Start and end of the range in the second axis (vertical)
-            in pixels.
-        """
+_SIGNAL_RANGE_PIXELS = """\
+i1, i2 : None or float
+    Start and end of the range in the first axis (horizontal)
+    in pixels.
+j1, j2 : None or float
+    Start and end of the range in the second axis (vertical)
+    in pixels."""
 
 
 class Model2D(BaseModel):
@@ -91,6 +91,10 @@ class Model2D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        # _residual_line is referenced by BaseModel.update_plot() and
+        # _connect_parameters2update_plot(); Model1D initializes it in its
+        # own __init__, so Model2D must do the same to avoid AttributeError.
+        self._residual_line = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis, self.axes_manager.signal_axes[1].axis
         )

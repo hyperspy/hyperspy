@@ -1436,11 +1436,11 @@ This release fixes compatibility issues with Python 3.7.
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3Av1.4+label%3A%22type%3A+bug%22+>`__,
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3Av1.4+label%3A"type%3A+bug"+>`__,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4+label%3A%22type%3A+enhancement%22>`__
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4+label%3A"type%3A+enhancement">`__
 and `new features
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4+label%3A%22type%3A+New+feature%22>`__.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4+label%3A"type%3A+New+feature">`__.
 
 NEW
 ---
@@ -1519,7 +1519,7 @@ the `bugs fixed
 `feature
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+enhancement">`__
 and `documentation
-<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed%20milestone%3Av1.3%20label%3A%22affects%3A%20documentation%22%20>`__ enhancements,
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed%20milestone%3Av1.3%20label%3A"affects%3A+documentation"%20>`__ enhancements,
 and `new features
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+New+feature">`__.
 

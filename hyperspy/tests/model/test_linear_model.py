@@ -19,10 +19,8 @@
 import importlib
 import warnings
 
-import dask
 import numpy as np
 import pytest
-from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy.component import Component
@@ -34,8 +32,7 @@ from hyperspy.signals import Signal1D, Signal2D
 
 
 def _skip_test(s):
-    if s._lazy and Version(dask.__version__) < Version("2024.12.0"):
-        pytest.skip("dask version must be >= 2024.12.0.")
+    pass  # dask >= 2024.12.0 is now a required dependency
 
 
 def test_fit_binned():
@@ -255,7 +252,20 @@ class TestLinearFitting:
 @lazifyTestClass
 class TestFitAlgorithms:
     def setup_method(self, method):
-        s = hs.signals.Signal1D(np.arange(100, dtype=float))
+        x = np.arange(100, dtype=float)
+        # A tiny Gaussian bump is added on top of the line so that g1's
+        # amplitude is actually constrained by the data (rather than being
+        # exactly unconstrained). Without it (i.e. fitting a Gaussian to
+        # pure line data) the best-fit amplitude is ~0, which makes the
+        # linear system used to estimate parameter standard errors exactly
+        # singular for some fitting backends (e.g. dask's QR-based lstsq
+        # can return a structural -0.0 where numpy's SVD-based lstsq
+        # returns a tiny nonzero value), making comparisons between
+        # optimizers numerically unstable. The amplitude is kept small
+        # enough that ridge regression's L2 bias (checked in
+        # test_compare_ridge) stays well within that test's tolerance.
+        data = x + 0.0002 * np.exp(-(x**2) / 2)
+        s = hs.signals.Signal1D(data)
         m = s.create_model()
         g1 = hs.model.components1D.Gaussian()
         g1.sigma.free = False
@@ -920,3 +930,50 @@ def test_rank_lstsq_residual():
     m.extend([p, g, o])
     m.set_parameters_not_free(only_nonlinear=True)
     m.fit(optimizer="lstsq")
+
+
+def test_calculate_covariance_singular_fit_dot_uses_pinv_fallback():
+    # A coefficient of exactly zero makes fit_dot (fit.T @ fit) structurally
+    # singular (a whole row/column of zeros), not just ill-conditioned.
+    # _calculate_covariance should fall back to pinv() instead of raising.
+    from hyperspy.misc.model_tools import _calculate_covariance
+
+    target_signal = np.array([1.0, 2.0, 3.0, 4.0])
+    coefficients = np.array([0.0, 1.0])
+    component_data = np.array(
+        [
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 2.0, 3.0, 4.0],
+        ]
+    )
+
+    covariance = _calculate_covariance(
+        target_signal, coefficients, component_data, lazy=False
+    )
+    assert covariance.shape == (2, 2)
+    assert np.all(np.isfinite(covariance))
+
+
+def test_calculate_covariance_singular_fit_dot_uses_pinv_fallback_lazy():
+    # Same as above but for the lazy code path, which routes the fallback
+    # through da.map_blocks() instead of calling it directly.
+    import dask.array as da
+
+    from hyperspy.misc.model_tools import _calculate_covariance
+
+    target_signal = da.from_array(np.array([1.0, 2.0, 3.0, 4.0]))
+    coefficients = da.from_array(np.array([0.0, 1.0]))
+    component_data = da.from_array(
+        np.array(
+            [
+                [1.0, 1.0, 1.0, 1.0],
+                [1.0, 2.0, 3.0, 4.0],
+            ]
+        )
+    )
+
+    covariance = _calculate_covariance(
+        target_signal, coefficients, component_data, lazy=True
+    ).compute()
+    assert covariance.shape == (2, 2)
+    assert np.all(np.isfinite(covariance))

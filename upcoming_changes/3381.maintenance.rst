@@ -1,0 +1,3 @@
+The minimum supported version of dask is now ``>=2024.12.0``. This removes the
+need for version-based skip guards in tests and `RuntimeError` guards for
+lazy signal model evaluation.

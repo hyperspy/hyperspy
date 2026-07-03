@@ -1,0 +1,1 @@
+Fix ``PolygonWidget`` not cleaning up its internal ``PolygonSelector`` when toggled off — ``set_on(False)`` disconnected from axes events but left the selector's event handlers and artists leaking.

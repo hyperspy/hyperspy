@@ -309,7 +309,7 @@ class TestBSS1D:
     def test_on_loadings(self):
         self.s.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=False)
         s2 = self.s.as_signal1D(0)
-        s2.decomposition()
+        s2.decomposition(output_dimension=3)
         s2.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=True)
         assert are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings()
@@ -449,7 +449,7 @@ class TestBSS2D:
     def test_on_loadings(self):
         self.s.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=False)
         s2 = self.s.as_signal1D(0)
-        s2.decomposition()
+        s2.decomposition(output_dimension=3)
         s2.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=True)
         assert are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings()
@@ -474,7 +474,7 @@ class TestBSS2D:
 
     def test_mask_diff_order_1_on_loadings(self):
         s = self.s.to_signal1D()
-        s.decomposition()
+        s.decomposition(output_dimension=3)
         if isinstance(s.learning_results.loadings, da.Array):
             s.learning_results.loadings = s.learning_results.loadings.compute()
         s.learning_results.loadings[5, :] = np.nan
@@ -482,7 +482,7 @@ class TestBSS2D:
 
     def test_mask_diff_order_1_on_loadings_diff_axes(self):
         s = self.s.to_signal1D()
-        s.decomposition()
+        s.decomposition(output_dimension=3)
         if isinstance(s.learning_results.loadings, da.Array):
             s.learning_results.loadings = s.learning_results.loadings.compute()
         s.learning_results.loadings[5, :] = np.nan
@@ -529,3 +529,62 @@ class TestReturnInfo:
     @skip_sklearn
     def test_bss_supported_return_false(self):
         assert self.s.blind_source_separation(return_info=False) is None
+
+
+class TestBSSModelCorruptionFix:
+    """Regression test: get_bss_model() should not corrupt learning_results."""
+
+    @skip_sklearn
+    @pytest.mark.parametrize("lazy_output", [True, False])
+    def test_lazy_with_numpy_bss_arrays_preserves_decomposition(self, lazy_output):
+        """#3657: get_bss_model() on lazy signal with numpy bss arrays should
+        wrap them as dask, compute, then restore original factors/loadings."""
+        rng = np.random.default_rng(42)
+        s = hs.signals.Signal1D(rng.random((20, 100))).as_lazy()
+        s.decomposition(output_dimension=3)
+        # svd_solver='randomized' (default) returns numpy arrays for lazy
+        # signals; svd_solver='full' returns dask arrays.  If the result is
+        # already numpy, skip the .compute() call.
+        if hasattr(s.learning_results.factors, "compute"):
+            s.learning_results.factors = s.learning_results.factors.compute()
+        if hasattr(s.learning_results.loadings, "compute"):
+            s.learning_results.loadings = s.learning_results.loadings.compute()
+        s.blind_source_separation(3)
+        # bss_factors/bss_loadings should now be numpy (from numpy decomposition)
+        assert isinstance(s.learning_results.bss_factors, np.ndarray)
+        assert isinstance(s.learning_results.bss_loadings, np.ndarray)
+        saved_factors = s.learning_results.factors
+        saved_loadings = s.learning_results.loadings
+        model = s.get_bss_model(lazy_output=lazy_output)
+        assert model is not None
+        if lazy_output:
+            assert isinstance(model, hs.signals.LazySignal1D)
+            assert isinstance(model.data, da.Array)
+        else:
+            assert isinstance(model, hs.signals.Signal1D)
+            assert isinstance(model.data, np.ndarray)
+        # learning_results must be unchanged
+        assert s.learning_results.factors is saved_factors
+        assert s.learning_results.loadings is saved_loadings
+
+    @skip_sklearn
+    @pytest.mark.parametrize("lazy_output", [True, False])
+    def test_non_lazy_preserves_decomposition(self, lazy_output):
+        """#3657: get_bss_model() on non-lazy signal should be a no-op
+        for learning_results (takes the else return path)."""
+        rng = np.random.default_rng(42)
+        s = hs.signals.Signal1D(rng.random((20, 100)))
+        s.decomposition()
+        s.blind_source_separation(3)
+        saved_factors = s.learning_results.factors.copy()
+        saved_loadings = s.learning_results.loadings.copy()
+        model = s.get_bss_model(lazy_output=lazy_output)
+        assert model is not None
+        if lazy_output:
+            assert isinstance(model, hs.signals.LazySignal1D)
+            assert isinstance(model.data, da.Array)
+        else:
+            assert isinstance(model, hs.signals.Signal1D)
+            assert isinstance(model.data, np.ndarray)
+        np.testing.assert_array_equal(s.learning_results.factors, saved_factors)
+        np.testing.assert_array_equal(s.learning_results.loadings, saved_loadings)

@@ -1,0 +1,4 @@
+Fix ``AttributeError`` when ``BaseModel`` code references ``_residual_line`` on
+``Model2D`` instances, which never initialized this attribute (only
+``Model1D`` did).
+

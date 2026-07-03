@@ -352,6 +352,7 @@ class BaseInteractiveROI(BaseROI):
         super(BaseInteractiveROI, self).__init__()
         self.widgets = set()
         self._applying_widget_change = False
+        self._updating_widgets = False
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -380,9 +381,12 @@ class BaseInteractiveROI(BaseROI):
             exclude = set()
         if not isinstance(exclude, set):
             exclude = set(exclude)
-        for w in self.widgets - exclude:
-            with w.events.changed.suppress_callback(self._on_widget_change):
+        self._updating_widgets = True
+        try:
+            for w in self.widgets - exclude:
                 self._apply_roi2widget(w)
+        finally:
+            self._updating_widgets = False
 
     def _get_widget_type(self, axes, signal):
         """Get the type of a widget that can represent the ROI on the given
@@ -493,6 +497,8 @@ class BaseInteractiveROI(BaseROI):
         from the widget, and triggers events (excluding connections to the
         source widget).
         """
+        if self._updating_widgets:
+            return
         with self.events.suppress():
             self._bounds_check = False
             self._applying_widget_change = True
@@ -567,7 +573,8 @@ class BaseInteractiveROI(BaseROI):
 
         # Set DataAxes
         widget.axes = axes
-        with widget.events.changed.suppress_callback(self._on_widget_change):
+        self._updating_widgets = True
+        try:
             self._apply_roi2widget(widget)
 
             if snap is None:
@@ -582,6 +589,8 @@ class BaseInteractiveROI(BaseROI):
                 widget.snap_all = snap
             else:
                 widget.snap_position = snap
+        finally:
+            self._updating_widgets = False
 
         # Connect widget changes to on_widget_change
         widget.events.changed.connect(self._on_widget_change, {"obj": "widget"})
@@ -599,11 +608,12 @@ class BaseInteractiveROI(BaseROI):
         widget.close(render_figure=render_figure)
         for signal, w in self.signal_map.items():
             if w[0] == widget:
+                # Disconnect before break: only the matching signal's handler
+                # needs cleanup, and break would skip it if placed after.
+                if self.update in signal.axes_manager.events.any_axis_changed.connected:
+                    signal.axes_manager.events.any_axis_changed.disconnect(self.update)
                 self.signal_map.pop(signal)
                 break
-            # disconnect events which has been added when
-            if self.update in signal.axes_manager.events.any_axis_changed.connected:
-                signal.axes_manager.events.any_axis_changed.disconnect(self.update)
 
     def remove_widget(self, signal=None, render_figure=True):
         """
@@ -725,7 +735,8 @@ class Point1DROI(BasePointROI):
         """
         return {"value": self.value}
 
-    def _value_changed(self, old, new):
+    @t.observe("value")
+    def _value_changed(self, event=None):
         self.update()
 
     def _get_ranges(self):
@@ -806,10 +817,12 @@ class Point2DROI(BasePointROI):
         """
         return {"x": self.x, "y": self.y}
 
-    def _x_changed(self, old, new):
+    @t.observe("x")
+    def _x_changed(self, event=None):
         self.update()
 
-    def _y_changed(self, old, new):
+    @t.observe("y")
+    def _y_changed(self, event=None):
         self.update()
 
     def _get_ranges(self):
@@ -891,17 +904,29 @@ class SpanROI(BaseInteractiveROI):
     def is_valid(self):
         return t.Undefined not in tuple(self) and self.right >= self.left
 
-    def _right_changed(self, old, new):
-        if self._bounds_check and self.left is not t.Undefined and new <= self.left:
-            self.right = old
-        else:
-            self.update()
+    @t.observe("right")
+    def _right_changed(self, event=None):
+        if event is not None:
+            new = event.new
+            old = event.old
+            if self._bounds_check and self.left is not t.Undefined and new <= self.left:
+                self.trait_setq(right=old)
+            else:
+                self.update()
 
-    def _left_changed(self, old, new):
-        if self._bounds_check and self.right is not t.Undefined and new >= self.right:
-            self.left = old
-        else:
-            self.update()
+    @t.observe("left")
+    def _left_changed(self, event=None):
+        if event is not None:
+            new = event.new
+            old = event.old
+            if (
+                self._bounds_check
+                and self.right is not t.Undefined
+                and new >= self.right
+            ):
+                self.trait_setq(left=old)
+            else:
+                self.update()
 
     def _get_ranges(self):
         ranges = ((self.left, self.right),)
@@ -1010,11 +1035,19 @@ class RectangularROI(BaseInteractiveROI):
             and self.bottom >= self.top
         )
 
-    def _top_changed(self, old, new):
-        if self._bounds_check and self.bottom is not t.Undefined and new >= self.bottom:
-            self.top = old
-        else:
-            self.update()
+    @t.observe("top")
+    def _top_changed(self, event=None):
+        if event is not None:
+            new = event.new
+            old = event.old
+            if (
+                self._bounds_check
+                and self.bottom is not t.Undefined
+                and new >= self.bottom
+            ):
+                self.trait_setq(top=old)
+            else:
+                self.update()
 
     @property
     def width(self):
@@ -1080,23 +1113,39 @@ class RectangularROI(BaseInteractiveROI):
                 self._bounds_check = True
                 self.update()
 
-    def _bottom_changed(self, old, new):
-        if self._bounds_check and self.top is not t.Undefined and new <= self.top:
-            self.bottom = old
-        else:
-            self.update()
+    @t.observe("bottom")
+    def _bottom_changed(self, event=None):
+        if event is not None:
+            new = event.new
+            old = event.old
+            if self._bounds_check and self.top is not t.Undefined and new <= self.top:
+                self.trait_setq(bottom=old)
+            else:
+                self.update()
 
-    def _right_changed(self, old, new):
-        if self._bounds_check and self.left is not t.Undefined and new <= self.left:
-            self.right = old
-        else:
-            self.update()
+    @t.observe("right")
+    def _right_changed(self, event=None):
+        if event is not None:
+            new = event.new
+            old = event.old
+            if self._bounds_check and self.left is not t.Undefined and new <= self.left:
+                self.trait_setq(right=old)
+            else:
+                self.update()
 
-    def _left_changed(self, old, new):
-        if self._bounds_check and self.right is not t.Undefined and new >= self.right:
-            self.left = old
-        else:
-            self.update()
+    @t.observe("left")
+    def _left_changed(self, event=None):
+        if event is not None:
+            new = event.new
+            old = event.old
+            if (
+                self._bounds_check
+                and self.right is not t.Undefined
+                and new >= self.right
+            ):
+                self.trait_setq(left=old)
+            else:
+                self.update()
 
     def _get_ranges(self):
         ranges = (
@@ -1180,23 +1229,33 @@ class CircleROI(BaseInteractiveROI):
     def is_valid(self):
         return t.Undefined not in tuple(self) and self.r >= self.r_inner
 
-    def _cx_changed(self, old, new):
+    @t.observe("cx")
+    def _cx_changed(self, event=None):
         self.update()
 
-    def _cy_changed(self, old, new):
+    @t.observe("cy")
+    def _cy_changed(self, event=None):
         self.update()
 
-    def _r_changed(self, old, new):
-        if self._bounds_check and new < self.r_inner:
-            self.r = old
-        else:
-            self.update()
+    @t.observe("r")
+    def _r_changed(self, event=None):
+        if event is not None:
+            new = event.new
+            old = event.old
+            if self._bounds_check and new < self.r_inner:
+                self.trait_setq(r=old)
+            else:
+                self.update()
 
-    def _r_inner_changed(self, old, new):
-        if self._bounds_check and self.r is not t.Undefined and new >= self.r:
-            self.r_inner = old
-        else:
-            self.update()
+    @t.observe("r_inner")
+    def _r_inner_changed(self, event=None):
+        if event is not None:
+            new = event.new
+            old = event.old
+            if self._bounds_check and self.r is not t.Undefined and new >= self.r:
+                self.trait_setq(r_inner=old)
+            else:
+                self.update()
 
     def _set_from_widget(self, widget):
         """Sets the internal representation of the ROI from the passed widget,
@@ -1353,19 +1412,24 @@ class Line2DROI(BaseInteractiveROI):
             "linewidth": self.linewidth,
         }
 
-    def _x1_changed(self, old, new):
+    @t.observe("x1")
+    def _x1_changed(self, event=None):
         self.update()
 
-    def _x2_changed(self, old, new):
+    @t.observe("x2")
+    def _x2_changed(self, event=None):
         self.update()
 
-    def _y1_changed(self, old, new):
+    @t.observe("y1")
+    def _y1_changed(self, event=None):
         self.update()
 
-    def _y2_changed(self, old, new):
+    @t.observe("y2")
+    def _y2_changed(self, event=None):
         self.update()
 
-    def _linewidth_changed(self, old, new):
+    @t.observe("linewidth")
+    def _linewidth_changed(self, event=None):
         self.update()
 
     def _set_from_widget(self, widget):

@@ -14,6 +14,10 @@ A few sentences and/or a bulleted list to describe and motivate the change:
 
 ### Progress of the PR
 - [ ] Change implemented (can be split into several points),
+- [ ] if AI-assisted, ``Assisted-by: <tool>:<model>`` in every commit,
+- [ ] manually tested on realistic data or a representative workflow,
+- [ ] for structural changes, change map in PR description,
+- [ ] non-obvious design choices annotated with inline comments,
 - [ ] update docstring (if appropriate),
 - [ ] update user guide (if appropriate),
 - [ ] add an changelog entry in the `upcoming_changes` folder (see [`upcoming_changes/README.rst`](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/upcoming_changes/README.rst)),

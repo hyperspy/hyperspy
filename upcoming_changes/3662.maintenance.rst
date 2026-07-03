@@ -1,0 +1,1 @@
+Modernize traits usage: migrate deprecated ``on_trait_change`` and ``_xxx_changed`` auto-discovery handlers to ``@observe`` decorator pattern, replace deprecated ``t.Unicode`` with ``t.Str``, replace deprecated ``t.Either`` with ``t.Union``, remove ``TraitPrefixList``/``TraitMap`` deprecation workaround, and bump minimum traits version to 7.0.0.

@@ -1,0 +1,2 @@
+Fix ``Polynomial.estimate_parameters`` feeding dask arrays to `numpy.polyfit`
+when estimating on a lazy signal with ``only_current=False``.

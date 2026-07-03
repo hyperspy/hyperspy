@@ -19,10 +19,8 @@
 import logging
 from unittest import mock
 
-import dask
 import numpy as np
 import pytest
-from packaging.version import Version
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -685,11 +683,7 @@ class TestAsSignal:
     def test_component_out_of_range_to_nan_old_dask_lazy(self):
         m = self.m
         m.signal = m.signal.as_lazy()
-        if Version(dask.__version__) < Version("2024.12.0"):
-            with pytest.raises(RuntimeError):
-                _ = m.as_signal()
-        else:
-            m.as_signal(out_of_range_to_nan=False)
+        m.as_signal(out_of_range_to_nan=False)
 
     def test_component_no_function_nd(self, caplog):
         from hyperspy.component import Component
@@ -715,11 +709,10 @@ class TestAsSignal:
             # out_of_range_to_nan not supported with lazy output
             _ = m.as_signal(lazy_output=True)
 
-        if Version(dask.__version__) >= Version("2024.12.0"):
-            with caplog.at_level(logging.WARNING):
-                # should warn about slow implementation
-                _ = m.as_signal(out_of_range_to_nan=False, lazy_output=True)
-            assert "don't implement the `function_nd`" in caplog.text
+        with caplog.at_level(logging.WARNING):
+            # should warn about slow implementation
+            _ = m.as_signal(out_of_range_to_nan=False, lazy_output=True)
+        assert "don't implement the `function_nd`" in caplog.text
 
     def test_value_unset(self):
         s = self.m.signal
@@ -789,6 +782,98 @@ class TestAdjustPosition:
         assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
+
+    def test_on_widget_moved_guard_prevents_reentrance(self):
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        widget = list(self.m._position_widgets.values())[0][0]
+
+        original = self.m._reverse_lookup_position_widget
+        call_count = 0
+
+        def spy(w):
+            nonlocal call_count
+            call_count += 1
+            return original(w)
+
+        self.m._reverse_lookup_position_widget = spy
+        self.m._updating_widget = True
+        self.m._on_widget_moved(widget)
+        assert call_count == 0
+
+        self.m._updating_widget = False
+        self.m._on_widget_moved(widget)
+        assert call_count == 1
+
+        self.m._reverse_lookup_position_widget = original
+        self.m._updating_widget = True
+        self.m._on_widget_moved(widget)
+        self.m._updating_widget = False
+        assert not self.m._updating_widget
+
+    def test_disable_resets_blit_background(self):
+        """disable_adjust_position resets blit cache to prevent
+        ``draw_event`` handlers from drawing removed text artists."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
+            self.m.disable_adjust_position()
+        assert sig_plot._background is None
+        mock_render.assert_called_once()
+
+    def test_disable_plot_components_resets_blit_background(self):
+        """``disable_plot_components`` resets blit cache to prevent
+        ``draw_event`` handlers from drawing removed text artists."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
+            self.m.disable_plot_components()
+        assert sig_plot._background is None
+        mock_render.assert_called_once()
+
+    def test_remove_resets_blit_background(self):
+        """``remove`` resets blit cache to prevent
+        ``draw_event`` handlers from drawing removed artists."""
+        g = hs.model.components1D.Gaussian()
+        self.m.append(g)
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot._background = object()
+        with mock.patch.object(sig_plot, "render_figure") as mock_render:
+            self.m.remove(g)
+        assert sig_plot._background is None
+        mock_render.assert_called()
+
+    def test_disable_plot_components_no_crash_when_figure_none(self):
+        """``disable_plot_components`` does not crash when figure is None
+        (guard path for detached axes)."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        self.m._plot.signal_plot.figure = None
+        self.m.disable_plot_components()
+
+    def test_remove_no_crash_when_figure_none(self):
+        """``remove`` does not crash when figure is None
+        (guard path for detached axes)."""
+        g = hs.model.components1D.Gaussian()
+        self.m.append(g)
+        self.m.enable_adjust_position()
+        sig_plot = self.m._plot.signal_plot
+        sig_plot.figure = None
+        with mock.patch.object(sig_plot, "update"):
+            self.m.remove(g)
+
+    def test_disable_adjust_position_no_crash_when_figure_none(self):
+        """``disable_adjust_position`` does not crash when figure is None
+        (innermost guard path for detached axes)."""
+        self.m.append(hs.model.components1D.Gaussian())
+        self.m.enable_adjust_position()
+        self.m._plot.signal_plot.figure = None
+        self.m.disable_adjust_position()
 
 
 class TestModel1DSetSignalRange:

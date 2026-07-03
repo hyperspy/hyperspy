@@ -165,4 +165,19 @@ LAZYSIGNAL_DOC = """
 
     >>> data = da.ones((10, 10))
     >>> s = hs.signals.__BASECLASS__(data).as_lazy()
-    """
+"""
+
+# -- shared decomposition parameter docstrings --
+
+DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC = """normalize_poissonian_noise : bool, default False
+            If True, scale the signal to normalize Poissonian noise using
+            the approach described in [Keenan2004]_."""
+
+DECOMP_PRINT_INFO_DOC = """print_info : bool, default True
+            If True, print information about the decomposition being performed.
+            In the case of sklearn.decomposition objects, this includes the
+            values of all arguments of the chosen sklearn algorithm."""
+
+DECOMP_MASK_DOC = """%s : %s
+            The %s locations marked as True are not used in the
+            decomposition."""
