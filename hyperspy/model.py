@@ -28,13 +28,14 @@ from functools import partial
 import cloudpickle
 import numpy as np
 import scipy
+from psygnal import SignalGroup
 
 from hyperspy import signals
 from hyperspy.component import Component
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
-from hyperspy.events import Event, Events, EventSuppressor
+from hyperspy.events import EventSignal, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.progressbar import progressbar
@@ -390,6 +391,12 @@ class ModelComponents(object):
         return ans
 
 
+class ModelEvents(SignalGroup):
+    """Events for :class:`BaseModel`."""
+
+    fitted = EventSignal(object, arguments=["obj"])
+
+
 @add_gui_method(toolkey="hyperspy.Model")
 class BaseModel(list):
     """Model and data fitting tools applicable to signals of both one and two
@@ -479,21 +486,7 @@ class BaseModel(list):
     _signal_dimension = None
 
     def __init__(self):
-        self.events = Events()
-        self.events.fitted = Event(
-            """
-            Event that triggers after fitting changed at least one parameter.
-
-            The event triggers after the fitting step was finished, and only of
-            at least one of the parameters changed.
-
-            Parameters
-            ----------
-            obj : Model
-                The Model that the event belongs to
-            """,
-            arguments=["obj"],
-        )
+        self.events = ModelEvents(self)
 
         # The private _binned attribute is created to store temporarily
         # axes.is_binned or not. This avoids evaluating it during call of
@@ -1069,7 +1062,7 @@ class BaseModel(list):
             for c in self:
                 position = c._position
                 if position:
-                    position.events.value_changed.trigger(
+                    position.events.value_changed.emit(
                         obj=position, value=position.value
                     )
             self.update_plot(render_figure=True, update_ylimits=False)
@@ -2376,7 +2369,7 @@ class BaseModel(list):
                 self._disable_ext_bounding()
 
         if np.any(old_p0 != self.p0):
-            self.events.fitted.trigger(self)
+            self.events.fitted.emit(self)
 
         # Print details about the fit we just performed
         if print_info:
@@ -2642,7 +2635,7 @@ class BaseModel(list):
                                     self.save_parameters2file(autosave_fn)
                 # Trigger the indices_changed event to update to current indices,
                 # since the callback was suppressed
-                self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+                self.axes_manager.events.indices_changed.emit(self.axes_manager)
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
