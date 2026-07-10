@@ -18,248 +18,602 @@
 
 import inspect
 import re
-import sys
+import threading
+import time
+import warnings
 from collections.abc import Iterable
 from contextlib import contextmanager
-from functools import wraps  # noqa: F401 Used in exec statement
+from inspect import Parameter, Signature
+
+from psygnal import Signal, SignalGroup, SignalInstance
+
+from hyperspy.exceptions import VisibleDeprecationWarning
+
+# Regex for validating Python identifier names (used in argument validation)
+_RE_ARG_NAME = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
+
+# Empty signature shared as default for SignalInstance-compatible __init__
+_EMPTY_SIGNATURE = Signature()
 
 
-class Events:
-    """
-    Events container.
+class EventSignal(Signal):
+    """Class-attribute descriptor that creates :class:`Event` instances.
 
-    All available events are attributes of this class.
+    Drop-in replacement for :class:`psygnal.Signal` on owning classes.
+    When accessed on an *instance*, returns an :class:`Event` (a psygnal
+    :class:`~psygnal.SignalInstance` subclass) that provides both the
+    native psygnal API and the deprecated HyperSpy events API.
 
-    """
-
-    def __init__(self):
-        self._events = {}
-
-    @contextmanager
-    def suppress(self):
-        """
-        Use this function with a 'with' statement to temporarily suppress
-        all callbacks of all events in the container. When the 'with' lock
-        completes, the old suppression values will be restored.
-
-        Examples
-        --------
-        >>> with obj.events.suppress(): # doctest: +SKIP
-        ...     # Any events triggered by assignments are prevented:
-        ...     obj.val_a = a
-        ...     obj.val_b = b
-        >>> # Trigger one event instead:
-        >>> obj.events.values_changed.trigger() # doctest: +SKIP
-
-        See Also
-        --------
-        Event.suppress
-        Event.suppress_callback
-        """
-
-        old = {}
-
-        try:
-            for e in self._events.values():
-                old[e] = e._suppress
-                e._suppress = True
-            yield
-        finally:
-            for e, oldval in old.items():
-                e._suppress = oldval
-
-    def _update_doc(self):
-        """
-        Updates the doc to reflect the events that are contained
-        """
-        new_doc = self.__class__.__doc__
-        new_doc += "\n\tEvents:\n\t-------\n"
-        for name, e in self._events.items():
-            edoc = inspect.getdoc(e) or ""
-            doclines = edoc.splitlines()
-            e_short = doclines[0] if len(doclines) > 0 else edoc
-            new_doc += "\t%s :\n\t\t%s\n" % (name, e_short)
-        new_doc = new_doc.replace("\t", "    ")
-        self.__doc__ = new_doc
-
-    def __setattr__(self, name, value):
-        """
-        Magic to enable having `Event`s as attributes, and keeping them
-        separate from other attributes.
-
-        If it's an `Event`, store it in self._events, otherwise set attribute
-        in normal way.
-        """
-        if isinstance(value, Event):
-            self._events[name] = value
-            self._update_doc()
-        else:
-            super(Events, self).__setattr__(name, value)
-
-    def __getattr__(self, name):
-        """
-        Magic to enable having `Event`s as attributes, and keeping them
-        separate from other attributes.
-
-        Returns Event attribute `name` (__getattr__ is only called if attribute
-        could not be found in the normal way).
-        """
-        return self._events[name]
-
-    def __delattr__(self, name):
-        """
-        Magic to enable having `Event`s as attributes, and keeping them
-        separate from other attributes.
-
-        Deletes attribute from self._events if present, otherwise delete
-        attribute in normal way.
-        """
-        if name in self._events:
-            del self._events[name]
-            self._update_doc()
-        else:
-            super(Events, self).__delattr__(name)
-
-    def __dir__(self):
-        """
-        Magic to enable having `Event`s as attributes, and keeping them
-        separate from other attributes.
-
-        Makes sure tab-completion works in IPython etc.
-        """
-        d = dir(type(self))
-        d.extend(self.__dict__.keys())
-        d.extend(self._events.keys())
-        return sorted(set(d))
-
-    def __iter__(self):
-        """
-        Allows iteration of all events in the container
-        """
-        return self._events.values().__iter__()
-
-    def __repr__(self):
-        return "<hyperspy.events.Events: " + repr(self._events) + ">"
-
-
-class Event:
-    """
-    Events class
-
+    Parameters
+    ----------
+    *types : type | Signature
+        Accepted types for the signal signature (passed to psygnal).
+    description : str
+        Optional description for the signal.
+    arguments : iterable, optional
+        Deprecated.  Declared trigger argument names (and optional defaults).
+        E.g. ``("x", ("y", 0.0))``.
+    **kwargs
+        Extra keyword arguments forwarded to :class:`psygnal.Signal`.
     """
 
-    def __init__(self, doc="", arguments=None):
-        """
-        Parameters
-        ----------
-        doc : str
-            Optional docstring for the new Event.
-        arguments : iterable
-            Pass to define the arguments of the trigger() function. Each
-            element must either be an argument name, or a tuple containing
-            the argument name and the argument's default value.
+    def __init__(self, *types, description="", arguments=None, **kwargs):
+        super().__init__(
+            *types,
+            description=description,
+            signal_instance_class=Event,
+            **kwargs,
+        )
+        self._hs_arguments = tuple(arguments) if arguments else None
 
-        Examples
-        --------
-        >>> from hyperspy.events import Event
-        >>> Event()
-        <hyperspy.events.Event: set()>
-        >>> Event(doc="This event has a docstring!").__doc__
-        'This event has a docstring!'
-        >>> e1 = Event()
-        >>> e2 = Event(arguments=('arg1', ('arg2', None)))
-        >>> e1.trigger(arg1=12, arg2=43, arg3='str', arg4=4.3)  # Can trigger with whatever
-        >>> e2.trigger(arg1=11, arg2=22, arg3=3.4) # doctest: +SKIP
-        Traceback (most recent call last):
-            ...
-        TypeError: trigger() got an unexpected keyword argument 'arg3'
+    def _create_signal_instance(self, instance, name=None):
+        ev = super()._create_signal_instance(instance, name)
+        ev._arguments = self._hs_arguments
+        return ev
 
-        """
-        self.__doc__ = doc
+
+class Event(SignalInstance):
+    """Event class.
+
+    Subclasses :class:`psygnal.SignalInstance` so that all native psygnal
+    methods (``emit``, ``connect``, ``disconnect``, ``blocked``, ``block``,
+    ``unblock``) are available directly.  The legacy HyperSpy API (``trigger``,
+    ``connect(kwargs=...)``, ``suppress``, ``suppress_callback``,
+    ``.connected``, ``arguments=``) is preserved as a deprecated shim on top
+    of the inherited psygnal machinery.
+
+    Parameters
+    ----------
+    signature : Signature
+        psygnal signal signature (default: empty).
+    doc : str, optional
+        Deprecated alias for *description*.
+    arguments : iterable, optional
+        Deprecated.  Declared trigger argument names (and optional defaults).
+    instance : Any, optional
+        Object to which this signal is bound.
+    name : str, optional
+        Optional name for the signal.
+    description : str, optional
+        Short description of the signal.
+    check_nargs_on_connect : bool
+        Whether psygnal should check argument counts on connect
+        (default: ``False`` — kwargs-based dispatch makes this unnecessary).
+    check_types_on_connect : bool
+        Whether psygnal checks types on connect (default: ``False``).
+    reemission : str
+        psygnal re-emission policy (default: ``"immediate"``).
+    """
+
+    def __init__(
+        self,
+        signature=_EMPTY_SIGNATURE,
+        *,
+        doc=None,
+        arguments=None,
+        instance=None,
+        name=None,
+        description="",
+        check_nargs_on_connect=False,
+        check_types_on_connect=False,
+        reemission="immediate",
+    ):
+        # Backward compat: doc → description
+        if doc is not None:
+            description = doc
+
+        # Validate argument names and default ordering at construction time
+        if arguments:
+            self._validate_arguments(arguments)
         self._arguments = tuple(arguments) if arguments else None
-        self._connected_all = set()
-        self._connected_some = {}
-        self._connected_map = {}
+
+        # Build the psygnal SignalInstance
+        super().__init__(
+            signature,
+            instance=instance,
+            name=name,
+            description=description,
+            check_nargs_on_connect=check_nargs_on_connect,
+            check_types_on_connect=check_types_on_connect,
+            reemission=reemission,
+        )
+
+        # Backward compat: make instance __doc__ reflect the user description
+        # so that ``__str__`` / ``__repr__`` format matches the old class.
+        self.__doc__ = description
+
+        # Legacy suppression flag — separate from psygnal's _is_blocked.
+        # Used by Event.suppress() and SignalGroup container suppression.
         self._suppress = False
+
+        # Tracking for the deprecated connect/disconnect API
+        self._connected_originals = set()  # all original callables
+        # original → (wrapper, spec) where spec is the kwargs= value
+        self._wrapper_map = {}
+        # Dereferenced slot callback → 'all' | 'some' | 'map' (for dispatch ordering)
+        self._slot_mode = {}
+
+        # Set of callables currently suppressed by suppress_callback
         self._suppressed_callbacks = set()
 
-        if arguments:
-            self._trigger_maker(arguments)
+        # Throttle state — see throttle() context manager
+        self._throttle_interval = None  # seconds; None = disabled
+        self._throttle_next_allowed = 0.0  # monotonic timestamp
+
+        # Debounce state — see debounce() context manager
+        self._debounce_interval = None  # seconds; None = disabled
+        self._debounce_timer = None  # threading.Timer or None
+        self._debounce_pending_kwargs = None
+
+        # Max listeners guard — see connect()
+        self._max_listeners = None  # None = unlimited
+
+    # -- backward-compat property ------------------------------------------
 
     @property
     def arguments(self):
+        """Declared trigger argument names (deprecated)."""
         return self._arguments
 
-    # Regex for confirming valid python identifier
-    _re_arg_name = re.compile("[a-zA-Z_][a-zA-Z0-9_]*")
+    # -- argument validation (construction time) ---------------------------
 
-    def _trigger_maker(self, arguments):
-        """
-        Dynamically creates a function with a signature equal to `arguments`.
-
-        Ensures that trigger can only be called with the correct arguments
-        """
-        orig_f = self.trigger
-        # Validate code for exec!
+    @staticmethod
+    def _validate_arguments(arguments):
+        """Validate argument names and default ordering (raises on failure)."""
         defaults = []
         for arg in arguments:
             if isinstance(arg, (tuple, list)):
                 defaults.append(arg[1])
                 arg = arg[0]
-            elif len(defaults) > 0:
+            elif defaults:
                 raise SyntaxError("non-default argument follows default argument")
-            m = self._re_arg_name.match(arg)
+            m = _RE_ARG_NAME.match(arg)
             if m is None or m.end() != len(arg):
                 raise ValueError("Argument name invalid: %s" % arg)
-        arguments = [a[0] if isinstance(a, (tuple, list)) else a for a in arguments]
-        # Create the dynamic code:
-        arglist = ", ".join(arguments)
-        arg_pass = ", ".join([a + "=" + a for a in arguments])
-        wrap_code = """
-        @wraps(f)
-        def trigger(self, %s):
-            return f(%s)
-        """ % (arglist, arg_pass)
-        wrap_code = wrap_code.replace("        ", "")  # Remove indentation
-        # Execute dynamic code:
-        gl = dict(globals())
-        gl.update(locals())
-        gl.update({"f": orig_f})  # Make sure it keeps the original!
 
-        if sys.version_info.minor >= 13:
-            locals_ = sys._getframe().f_locals
-        else:
-            locals_ = locals()
-        exec(wrap_code, gl, locals_)
-        new_f = locals()["trigger"]
-        # Replace the trigger function with the new one
-        if defaults:
-            new_f.__defaults__ = tuple(defaults)
-        new_f = new_f.__get__(self, self.__class__)  # Bind method to self
-        self.trigger = new_f
+    # -- emit (native psygnal override) ------------------------------------
+
+    def emit(self, *args, **kwargs):
+        """Emit the signal, calling every connected slot with ``**kwargs``.
+
+        Bypasses psygnal's ``_run_emit_loop`` (which expects positional
+        args) and instead iterates ``_slots`` directly.  Exceptions
+        raised by callbacks are NOT caught — they propagate immediately,
+        aborting remaining slots.
+
+        Respects :meth:`block` / :meth:`unblock` (``_is_blocked``), the
+        legacy ``_suppress`` flag, and optionally :meth:`throttle` /
+        :meth:`debounce` rate-limiters.
+
+        Positional arguments are mapped to declared argument names (via
+        ``_arguments``, if set) — matching the :meth:`trigger` behaviour
+        for backward compatibility with code like ``emit(signal)``.
+        """
+        # Map positional args to declared argument names (same as trigger())
+        if args:
+            if self._arguments:
+                for name, val in zip(self._arguments, args, strict=True):
+                    kwargs.setdefault(name, val)
+            else:
+                raise TypeError(
+                    f"{type(self).__name__}.emit() received unexpected "
+                    f"positional argument(s): {args!r}. Use keyword arguments."
+                )
+
+        if self._is_blocked or self._suppress:
+            return
+
+        # Throttle guard: skip if still within the cooldown interval
+        if self._throttle_interval is not None:
+            now = time.monotonic()
+            if now < self._throttle_next_allowed:
+                return
+            self._throttle_next_allowed = now + self._throttle_interval
+
+        # Debounce guard: defer emission, resetting timer on each call
+        if self._debounce_interval is not None:
+            self._debounce_pending_kwargs = kwargs
+            if self._debounce_timer is not None:
+                self._debounce_timer.cancel()
+            self._debounce_timer = threading.Timer(
+                self._debounce_interval, self._debounce_fire
+            )
+            self._debounce_timer.start()
+            return
+
+        self._emit_dispatch(kwargs)
+
+    def _emit_dispatch(self, kwargs):
+        """Core dispatch: validate, order, and invoke callbacks."""
+        if self._arguments:
+            kwargs = self._validate_emit_kwargs(kwargs)
+
+        # Snapshot slots so connect/disconnect during dispatch are safe.
+        # Dispatch in legacy order: "all" → "some" → "map".  This
+        # preserves exception-abort semantics — a callback in the "all"
+        # group can raise TypeError (aborting dispatch) before a "map"
+        # callback would hit KeyError on a missing kwarg.
+        all_callbacks = []
+        some_callbacks = []
+        map_callbacks = []
+
+        for slot in list(self._slots):
+            callback = slot.dereference()
+            if callback is None:
+                continue
+            mode = self._slot_mode.get(callback, "all")
+            if mode == "all":
+                all_callbacks.append(callback)
+            elif mode == "some":
+                some_callbacks.append(callback)
+            else:  # "map"
+                map_callbacks.append(callback)
+
+        for callback in all_callbacks + some_callbacks + map_callbacks:
+            original = self._find_original(callback)
+            if original in self._suppressed_callbacks:
+                continue
+            callback(**kwargs)
+
+    def _debounce_fire(self):
+        """Called by the debounce timer — fires the pending emission."""
+        kwargs = self._debounce_pending_kwargs
+        self._debounce_pending_kwargs = None
+        self._debounce_timer = None
+        if kwargs is not None:
+            self._emit_dispatch(kwargs)
 
     @contextmanager
-    def suppress(self):
-        """
-        Use this function with a 'with' statement to temporarily suppress
-        all events in the container. When the 'with' lock completes, the old
-        suppression values will be restored.
+    def throttle(self, interval):
+        """Context manager that rate-limits emissions to at most one per *interval* seconds.
+
+        While active, repeated ``emit()`` calls within the interval are
+        silently dropped — only the first emission in each window passes through.
+
+        Parameters
+        ----------
+        interval : float
+            Minimum time in seconds between allowed emissions.
 
         Examples
         --------
-        >>> with obj.events.myevent.suppress(): # doctest: +SKIP
-        ...     # These would normally both trigger myevent:
+        >>> with event.throttle(0.5):
+        ...     for _ in range(100):
+        ...         event.emit(x=1)  # only fires ~once every 0.5s
+        """
+        prev_interval = self._throttle_interval
+        prev_next = self._throttle_next_allowed
+        self._throttle_interval = interval
+        self._throttle_next_allowed = 0.0
+        try:
+            yield
+        finally:
+            self._throttle_interval = prev_interval
+            self._throttle_next_allowed = prev_next
+
+    @contextmanager
+    def debounce(self, interval):
+        """Context manager that defers emissions until *interval* seconds of silence.
+
+        Each ``emit()`` resets the internal timer.  The signal only fires
+        after *interval* seconds have passed since the last ``emit()`` call.
+
+        Parameters
+        ----------
+        interval : float
+            Quiet period in seconds before the deferred emission fires.
+
+        Examples
+        --------
+        >>> with event.debounce(0.3):
+        ...     event.emit(x=1)   # timer starts
+        ...     event.emit(x=2)   # timer resets
+        ...     # 0.3s later → callbacks receive {x: 2}
+        """
+        prev_interval = self._debounce_interval
+        self._debounce_interval = interval
+        try:
+            yield
+        finally:
+            if self._debounce_timer is not None:
+                self._debounce_timer.cancel()
+            self._debounce_interval = prev_interval
+            self._debounce_timer = None
+            self._debounce_pending_kwargs = None
+
+    def _validate_emit_kwargs(self, kwargs):
+        """Validate emit kwargs against the declared ``_arguments``.
+
+        Builds an :class:`inspect.Signature`, binds, applies defaults,
+        and returns the complete kwargs dict.  Raises ``TypeError``
+        (matching the old ``_trigger_maker`` behaviour) when arguments
+        are unexpected or required args are missing.
+        """
+        params = []
+        for arg in self._arguments:
+            if isinstance(arg, (tuple, list)):
+                name, default = arg[0], arg[1]
+                params.append(Parameter(name, Parameter.KEYWORD_ONLY, default=default))
+            else:
+                params.append(Parameter(arg, Parameter.KEYWORD_ONLY))
+        sig = Signature(params)
+        ba = sig.bind(**kwargs)
+        ba.apply_defaults()
+        return ba.arguments
+
+    def _find_original(self, callback):
+        """Look through ``_wrapper_map`` to find the original callable
+        for *callback* (the dereferenced slot).  Returns *callback*
+        itself if no wrapper entry matches.
+        """
+        for orig, (wrapper, _spec) in self._wrapper_map.items():
+            stored_deref = (
+                wrapper.dereference() if hasattr(wrapper, "dereference") else wrapper
+            )
+            if wrapper is callback or stored_deref is callback:
+                return orig
+        return callback
+
+    # -- connect (deprecated kwargs= shim + native) ------------------------
+
+    def connect(self, function, kwargs="all", **psygnal_opts):
+        """Connect a function to the event.
+
+        .. deprecated::
+            The ``kwargs=`` parameter is deprecated.  Prefer the native
+            psygnal ``connect`` and use adapter functions when filtering
+            or renaming kwargs is needed.
+
+        Parameters
+        ----------
+        function : callable
+            The function to call when the event triggers.
+        kwargs : str, dict, list, or tuple
+            If ``"all"`` (default), every trigger keyword argument is
+            forwarded to *function*.  A dictionary renames trigger kwargs
+            to function parameter names.  A list or tuple forwards only
+            the named subset.  ``"auto"`` inspects the function signature
+            to determine which parameters to forward.
+        **psygnal_opts
+            Additional keyword arguments forwarded to
+            :meth:`psygnal.SignalInstance.connect`.
+        """
+        if not callable(function):
+            raise TypeError("Only callables can be registered")
+        if function in self._connected_originals:
+            raise ValueError("Function %s already connected to %s." % (function, self))
+
+        if kwargs != "all":
+            warnings.warn(
+                "Event.connect(kwargs=...) is deprecated. "
+                "Use the native psygnal connect with adapter functions instead.",
+                VisibleDeprecationWarning,
+                stacklevel=2,
+            )
+
+        # Max-listeners guard — warn when exceeding the configured limit
+        if self._max_listeners is not None and len(self._slots) >= self._max_listeners:
+            warnings.warn(
+                f"Event {self!r} has {len(self._slots)} connected slots "
+                f"(max_listeners={self._max_listeners}).",
+                VisibleDeprecationWarning,
+                stacklevel=2,
+            )
+
+        # Resolve "auto" mode
+        if kwargs == "auto":
+            kwargs = self._auto_kwargs(function)
+
+        if kwargs == "all":
+            super().connect(function, **psygnal_opts)
+            self._connected_originals.add(function)
+            self._slot_mode[function] = "all"
+
+        elif isinstance(kwargs, dict):
+            wrapper = self._make_dict_wrapper(function, kwargs)
+            super().connect(wrapper, **psygnal_opts)
+            self._wrapper_map[function] = (wrapper, kwargs)
+            self._connected_originals.add(function)
+            self._slot_mode[wrapper] = "map"
+
+        elif isinstance(kwargs, (list, tuple)):
+            spec = tuple(kwargs)
+            wrapper = self._make_list_wrapper(function, spec)
+            super().connect(wrapper, **psygnal_opts)
+            self._wrapper_map[function] = (wrapper, spec)
+            self._connected_originals.add(function)
+            self._slot_mode[wrapper] = "some"
+
+        else:
+            raise ValueError("Invalid value passed to kwargs.")
+
+    @staticmethod
+    def _auto_kwargs(function):
+        """Inspect *function* signature and return ``"all"`` or a list of
+        normal parameter names."""
+        spec = inspect.signature(function)
+        has_var_positional = False
+        has_var_keyword = False
+        normal_params = []
+        for name, par in spec.parameters.items():
+            if par.kind == Parameter.VAR_POSITIONAL:
+                has_var_positional = True
+            elif par.kind == Parameter.VAR_KEYWORD:
+                has_var_keyword = True
+            else:
+                normal_params.append(name)
+        if has_var_positional and not has_var_keyword:
+            raise NotImplementedError(
+                "Connecting to variable argument "
+                "functions is not supported in auto "
+                "connection mode."
+            )
+        elif has_var_keyword:
+            return "all"
+        else:
+            return normal_params
+
+    @staticmethod
+    def _make_dict_wrapper(function, kwarg_map):
+        """Return a callable that renames trigger kwargs for *function*."""
+        return lambda **kw: function(
+            **{target: kw[source] for source, target in kwarg_map.items()}
+        )
+
+    @staticmethod
+    def _make_list_wrapper(function, kwarg_list):
+        """Return a callable that forwards only the named subset of kwargs."""
+        return lambda **kw: function(**{k: kw.get(k) for k in kwarg_list})
+
+    # -- disconnect (deprecated) -------------------------------------------
+
+    def disconnect(self, function):
+        """Disconnect *function* from the event (deprecated API).
+
+        .. deprecated::
+            Use :meth:`psygnal.SignalInstance.disconnect` instead.
+        """
+        # Look up wrapper if this function was connected with a kwargs map
+        if function in self._wrapper_map:
+            wrapper, _spec = self._wrapper_map.pop(function)
+        else:
+            wrapper = function
+
+        try:
+            super().disconnect(wrapper, missing_ok=False)
+            self._connected_originals.discard(function)
+            self._slot_mode.pop(wrapper, None)
+        except ValueError:
+            # psygnal raises ValueError when the slot is not found
+            if function in self._connected_originals:
+                self._connected_originals.discard(function)
+            raise ValueError(
+                "The %s function is not connected to %s." % (function, self)
+            ) from None
+
+    # -- _try_discard (weak-reference cleanup override) --------------------
+
+    def _try_discard(self, callback, missing_ok=True):
+        """Called by psygnal when a weakly-referenced slot is GC'd.
+
+        Cleans up the corresponding entries in ``_wrapper_map`` and
+        ``_connected_originals`` so they stay in sync with ``_slots``.
+        """
+        # callback is the slot wrapper (StrongFunction / WeakFunction)
+        derefed = (
+            callback.dereference() if hasattr(callback, "dereference") else callback
+        )
+
+        if derefed is not None:
+            # Walk _wrapper_map to see if this slot belongs to a wrapper entry
+            for original, (wrapper, _spec) in list(self._wrapper_map.items()):
+                # Compare slot's dereferenced callback against the stored wrapper
+                stored_deref = (
+                    wrapper.dereference()
+                    if hasattr(wrapper, "dereference")
+                    else wrapper
+                )
+                if (
+                    wrapper is callback
+                    or stored_deref is callback
+                    or stored_deref is derefed
+                ):
+                    del self._wrapper_map[original]
+                    self._connected_originals.discard(original)
+                    self._slot_mode.pop(wrapper, None)
+                    self._slot_mode.pop(stored_deref, None)
+                    break
+            else:
+                # Not a wrapper — directly connected
+                self._connected_originals.discard(derefed)
+                self._slot_mode.pop(derefed, None)
+
+        super()._try_discard(callback, missing_ok=missing_ok)
+
+    # -- deprecated trigger -------------------------------------------------
+
+    def trigger(self, *args, **kwargs):
+        """Trigger the event (legacy API — use :meth:`emit` instead).
+
+        Accepts positional arguments (mapped to declared argument names
+        in ``_arguments`` if available) and keyword arguments, then
+        delegates to :meth:`emit`.
+        """
+        warnings.warn(
+            "Event.trigger() is deprecated. Use emit() instead.",
+            VisibleDeprecationWarning,
+            stacklevel=2,
+        )
+        # Map positional args to declared argument names
+        if args:
+            if self._arguments:
+                for name, val in zip(self._arguments, args):
+                    kwargs.setdefault(name, val)
+            else:
+                # No declared arguments — pass positionally as kwargs names
+                for i, val in enumerate(args):
+                    kwargs[f"_arg{i}"] = val
+        self.emit(**kwargs)
+
+    # -- deprecated .connected property ------------------------------------
+
+    @property
+    def connected(self):
+        """Set of connected functions.
+
+        Available until HyperSpy 3.0. Prefer inspecting ``_slots`` or
+        using the native psygnal API to query connections.
+        """
+        return set(self._connected_originals)
+
+    # -- suppress / suppress_callback (deprecated context managers) --------
+
+    @contextmanager
+    def suppress(self):
+        """Context manager to temporarily suppress event emission.
+
+        .. deprecated::
+            Use :meth:`blocked` (or :meth:`block` / :meth:`unblock`)
+            instead.
+
+        Examples
+        --------
+        >>> with obj.events.myevent.suppress():  # doctest: +SKIP
         ...     obj.val_a = a
         ...     obj.val_b = b
-
-        Trigger manually once:
-        >>> obj.events.myevent.trigger() # doctest: +SKIP
+        >>> obj.events.myevent.trigger()  # doctest: +SKIP
 
         See Also
         --------
         suppress_callback
-        Events.suppress
+        SignalGroup.blocked
         """
+        warnings.warn(
+            "Event.suppress() is deprecated. "
+            "Use blocked() or block()/unblock() instead.",
+            VisibleDeprecationWarning,
+            stacklevel=2,
+        )
         old = self._suppress
         self._suppress = True
         try:
@@ -269,27 +623,29 @@ class Event:
 
     @contextmanager
     def suppress_callback(self, function):
-        """
-        Use this function with a 'with' statement to temporarily suppress
-        a single callback from being called. All other connected callbacks
-        will trigger. When the 'with' lock completes, the old suppression value
-        will be restored.
+        """Context manager to temporarily suppress a single callback.
+
+        .. deprecated::
+            Use the native psygnal ``disconnect`` / ``reconnect`` pattern
+            instead.
 
         Examples
         --------
-
-        >>> with obj.events.myevent.suppress_callback(f): # doctest: +SKIP
-        ...     # Events will trigger as normal, but `f` will not be called
+        >>> with obj.events.myevent.suppress_callback(f):  # doctest: +SKIP
         ...     obj.val_a = a
         ...     obj.val_b = b
-        >>> # Here, `f` will be called as before:
-        >>> obj.events.myevent.trigger() # doctest: +SKIP
+        >>> obj.events.myevent.trigger()  # doctest: +SKIP
 
         See Also
         --------
         suppress
-        Events.suppress
+        SignalGroup.blocked
         """
+        warnings.warn(
+            "Event.suppress_callback() is deprecated.",
+            VisibleDeprecationWarning,
+            stacklevel=2,
+        )
         was_suppressed = function in self._suppressed_callbacks
         if not was_suppressed:
             self._suppressed_callbacks.add(function)
@@ -299,140 +655,15 @@ class Event:
             if not was_suppressed:
                 self._suppressed_callbacks.discard(function)
 
-    @property
-    def connected(self):
-        """Connected functions."""
-        ret = set()
-        ret.update(self._connected_all)
-        ret.update(self._connected_some.keys())
-        ret.update(self._connected_map.keys())
-        return ret
-
-    def connect(self, function, kwargs="all"):
-        """
-        Connects a function to the event.
-
-        Parameters
-        ----------
-        function : callable
-            The function to call when the event triggers.
-        kwargs : tuple or list, dict, str {``'all' | ``'auto'``}, default ``"all"``
-            If ``"all"``, all the trigger keyword arguments are passed to the
-            function. If a list or tuple of strings, only those keyword
-            arguments that are in the tuple or list are passed. If empty,
-            no keyword argument is passed. If dictionary, the keyword arguments
-            of trigger are mapped as indicated in the dictionary. For example,
-            {"a" : "b"} maps the trigger argument "a" to the function argument
-            "b".
-
-        See Also
-        --------
-        disconnect
-
-        """
-        if not callable(function):
-            raise TypeError("Only callables can be registered")
-        if function in self.connected:
-            raise ValueError("Function %s already connected to %s." % (function, self))
-        if kwargs == "auto":
-            spec = inspect.signature(function)
-            _has_args = False
-            _has_kwargs = False
-            _normal_params = []
-            for name, par in spec.parameters.items():
-                if par.kind == par.VAR_POSITIONAL:
-                    _has_args = True
-                elif par.kind == par.VAR_KEYWORD:
-                    _has_kwargs = True
-                else:
-                    _normal_params.append(name)
-            if _has_args and not _has_kwargs:
-                raise NotImplementedError(
-                    "Connecting to variable argument "
-                    "functions is not supported in auto "
-                    "connection mode."
-                )
-            elif _has_kwargs:
-                kwargs = "all"
-            else:
-                kwargs = _normal_params
-        if kwargs == "all":
-            self._connected_all.add(function)
-        elif isinstance(kwargs, dict):
-            self._connected_map[function] = kwargs
-        elif isinstance(kwargs, (tuple, list)):
-            self._connected_some[function] = tuple(kwargs)
-        else:
-            raise ValueError("Invalid value passed to kwargs.")
-
-    def disconnect(self, function):
-        """
-        Disconnects a function from the event. The passed function will be
-        disconnected irregardless of which 'nargs' argument was passed to
-        connect().
-
-        If you only need to temporarily prevent a function from being called,
-        single callback suppression is supported by the `suppress_callback`
-        context manager.
-
-        Parameters
-        ----------
-        function: function
-        return_connection_kwargs: bool, default False
-            If True, returns the kwargs that would reconnect the function as
-            it was.
-
-        See Also
-        --------
-        connect
-        suppress_callback
-        """
-        if function in self._connected_all:
-            self._connected_all.remove(function)
-        elif function in self._connected_some:
-            self._connected_some.pop(function)
-        elif function in self._connected_map:
-            self._connected_map.pop(function)
-        else:
-            raise ValueError(
-                "The %s function is not connected to %s." % (function, self)
-            )
-
-    def trigger(self, **kwargs):
-        """
-        Triggers the event. If the event is suppressed, this does nothing.
-        Otherwise it calls all the connected functions with the arguments as
-        specified when connected.
-
-        See Also
-        --------
-        suppress
-        suppress_callback
-        Events.suppress
-        """
-        if self._suppress:
-            return
-        # Work on copies of collections of connected functions.
-        # Take copies initially, to ensure that all functions connected when
-        # event triggered are called.
-        connected_all = self._connected_all.difference(self._suppressed_callbacks)
-        connected_some = list(self._connected_some.items())
-        connected_map = list(self._connected_map.items())
-
-        # Loop over all collections
-        for function in connected_all:
-            function(**kwargs)
-        for function, kwsl in connected_some:
-            if function not in self._suppressed_callbacks:
-                function(**{kw: kwargs.get(kw, None) for kw in kwsl})
-        for function, kwsd in connected_map:
-            if function not in self._suppressed_callbacks:
-                function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.items()})
+    # -- copy / repr / str --------------------------------------------------
 
     def __deepcopy__(self, memo):
         dc = type(self)()
         memo[id(self)] = dc
         return dc
+
+    def __repr__(self):
+        return "<hyperspy.events.Event: " + repr(self._connected_originals) + ">"
 
     def __str__(self):
         if self.__doc__:
@@ -440,14 +671,15 @@ class Event:
             doclines = edoc.splitlines()
             e_short = doclines[0] if len(doclines) > 0 else edoc
             text = (
-                "<hyperspy.events.Event: " + e_short + ": " + str(self.connected) + ">"
+                "<hyperspy.events.Event: "
+                + e_short
+                + ": "
+                + str(self._connected_originals)
+                + ">"
             )
         else:
             text = self.__repr__()
         return text
-
-    def __repr__(self):
-        return "<hyperspy.events.Event: " + repr(self.connected) + ">"
 
 
 class EventSuppressor(object):
@@ -458,10 +690,10 @@ class EventSuppressor(object):
     in the constructor. Valid targets are:
 
     * `Event`: The entire Event will be suppressed
-    * `Events`: All events in th container will be suppressed
+    * ``SignalGroup``: All events in the group will be suppressed
     * (Event, callback): The callback will be suppressed in Event
-    * (Events, callback): The callback will be suppressed in each event in
-      Events where it is connected.
+    * (``SignalGroup``, callback): The callback will be suppressed in each event in
+      the SignalGroup where it is connected.
     * Any iterable collection of the above target types
 
     Examples
@@ -489,26 +721,30 @@ class EventSuppressor(object):
                 cm = target[0].suppress_callback(target[1])
                 self._cms.append(cm)
             else:
-                # Don't check for function presence in event now:
-                # suppress_callback does this when entering
-                for e in target[0]:
-                    self._cms.append(e.suppress_callback(target[1]))
+                # target[0] is SignalGroup — iterate its signal instances
+                for sig in target[0]._psygnal_instances.values():
+                    self._cms.append(sig.suppress_callback(target[1]))
         else:
-            cm = target.suppress()
+            if isinstance(target, SignalGroup):
+                cm = target.blocked()
+            else:
+                cm = target.suppress()
             self._cms.append(cm)
 
     def _is_tuple_target(self, candidate):
         v = (
             isinstance(candidate, Iterable)
-            and not isinstance(candidate, Events)
+            and not isinstance(candidate, SignalGroup)
             and len(candidate) == 2
-            and isinstance(candidate[0], (Event, Events))
+            and isinstance(candidate[0], (Event, SignalGroup))
             and callable(candidate[1])
         )
         return v
 
     def _is_target(self, candidate):
-        v = isinstance(candidate, (Event, Events)) or self._is_tuple_target(candidate)
+        v = isinstance(candidate, (Event, SignalGroup)) or self._is_tuple_target(
+            candidate
+        )
         return v
 
     def add(self, *to_suppress):
@@ -517,16 +753,16 @@ class EventSuppressor(object):
 
         Valid targets are:
          - `Event`: The entire Event will be suppressed
-         - `Events`: All events in the container will be suppressed
+         - ``SignalGroup``: All events in the group will be suppressed
          - (Event, callback): The callback will be suppressed in Event
-         - (Events, callback): The callback will be suppressed in each event
-           in Events where it is connected.
+         - (``SignalGroup``, callback): The callback will be suppressed in each event
+           in the SignalGroup where it is connected.
          - Any iterable collection of the above target types
         """
         # Remove useless layers of iterables:
         while (
             isinstance(to_suppress, Iterable)
-            and not isinstance(to_suppress, Events)
+            and not isinstance(to_suppress, SignalGroup)
             and len(to_suppress) == 1
         ):
             to_suppress = to_suppress[0]
@@ -551,9 +787,9 @@ class EventSuppressor(object):
 
         See Also
         --------
-        Events.suppress
         Event.suppress
         Event.suppress_callback
+        SignalGroup.blocked
         """
         # We don't suppress any exceptions, so we can use simple CM management:
         cms = []
