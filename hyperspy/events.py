@@ -36,13 +36,13 @@ _RE_ARG_NAME = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
 _EMPTY_SIGNATURE = Signature()
 
 
-class EventSignal(Signal):
-    """Class-attribute descriptor that creates :class:`Event` instances.
+def EventSignal(*types, description="", arguments=None, **kwargs):
+    """Return a :class:`psygnal.Signal` descriptor that creates :class:`Event` instances.
 
-    Drop-in replacement for :class:`psygnal.Signal` on owning classes.
-    When accessed on an *instance*, returns an :class:`Event` (a psygnal
-    :class:`~psygnal.SignalInstance` subclass) that provides both the
-    native psygnal API and the deprecated HyperSpy events API.
+    Use this as a class attribute on a :class:`~psygnal.SignalGroup`
+    subclass.  When accessed on an instance it returns an :class:`Event`
+    that supports both the native psygnal API and the legacy HyperSpy
+    event API.
 
     Parameters
     ----------
@@ -55,21 +55,40 @@ class EventSignal(Signal):
         E.g. ``("x", ("y", 0.0))``.
     **kwargs
         Extra keyword arguments forwarded to :class:`psygnal.Signal`.
+
+    Returns
+    -------
+    psygnal.Signal
+        A signal descriptor configured to instantiate :class:`Event`.
     """
+    # Backward-compat: if a Signature was not provided but legacy arguments
+    # were, build a keyword-only Signature from the argument declaration so
+    # psygnal's connection-time validation understands the expected kwargs.
+    if not types and arguments:
+        params = []
+        for arg in arguments:
+            if isinstance(arg, (tuple, list)):
+                name, default = arg
+                params.append(Parameter(name, Parameter.KEYWORD_ONLY, default=default))
+            else:
+                params.append(Parameter(arg, Parameter.KEYWORD_ONLY))
+        types = (Signature(params),)
 
-    def __init__(self, *types, description="", arguments=None, **kwargs):
-        super().__init__(
-            *types,
-            description=description,
-            signal_instance_class=Event,
-            **kwargs,
-        )
-        self._hs_arguments = tuple(arguments) if arguments else None
+    class _Event(Event):
+        def __init__(self, signature=None, **init_kwargs):
+            if signature is None:
+                signature = _EMPTY_SIGNATURE
+            init_kwargs.setdefault("description", description)
+            init_kwargs["arguments"] = arguments
+            super().__init__(signature, **init_kwargs)
 
-    def _create_signal_instance(self, instance, name=None):
-        ev = super()._create_signal_instance(instance, name)
-        ev._arguments = self._hs_arguments
-        return ev
+    kwargs.setdefault("check_nargs_on_connect", False)
+    return Signal(
+        *types,
+        description=description,
+        signal_instance_class=_Event,
+        **kwargs,
+    )
 
 
 class Event(SignalInstance):
