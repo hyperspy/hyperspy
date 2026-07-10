@@ -21,10 +21,11 @@ from pathlib import Path
 
 import numpy as np
 import traits.api as t
+from psygnal import SignalGroup
 from rsciio.utils import path
 from traits.trait_numeric import Array
 
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 from hyperspy.misc import utils
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
@@ -46,6 +47,56 @@ class NoneFloat(t.CFloat):  # Lazy solution, but usable
             super(NoneFloat, self).validate(object, name, 0)
             return None
         return super(NoneFloat, self).validate(object, name, value)
+
+
+class ParameterEvents(SignalGroup):
+    """Events for :class:`Parameter`."""
+
+    value_changed = EventSignal(
+        object,
+        object,
+        description="""
+            Event that triggers when the `Parameter.value` changes.
+
+            The event triggers after the internal state of the `Parameter` has
+            been updated.
+
+            Parameters
+            ----------
+            obj : Parameter
+                The `Parameter` that the event belongs to
+            value : {float | array}
+                The new value of the parameter
+            """,
+        arguments=["obj", "value"],
+    )
+
+
+class ComponentEvents(SignalGroup):
+    """Events for :class:`Component`."""
+
+    active_changed = EventSignal(
+        object,
+        description="""
+            Event that triggers when the `Component.active` changes.
+
+            The event triggers after the internal state of the `Component` has
+            been updated.
+
+            Parameters
+            ----------
+            obj : Component
+                The `Component` that the event belongs to
+            active : bool
+                The new active state
+            convolved : bool
+                Whether the `Component` is convolved or not. This enables
+                not convolving individual `Component`s in models that
+                support convolution.
+
+            """,
+        arguments=["obj", "active"],
+    )
 
 
 @add_gui_method(toolkey="hyperspy.Parameter")
@@ -104,23 +155,7 @@ class Parameter(t.HasTraits):
 
     def __init__(self):
         self._twins = set()
-        self.events = Events()
-        self.events.value_changed = Event(
-            """
-            Event that triggers when the `Parameter.value` changes.
-
-            The event triggers after the internal state of the `Parameter` has
-            been updated.
-
-            Parameters
-            ----------
-            obj : Parameter
-                The `Parameter` that the event belongs to
-            value : {float | array}
-                The new value of the parameter
-            """,
-            arguments=["obj", "value"],
-        )
+        self.events = ParameterEvents(self)
         self.std = None
         self.component = None
         self.grad = None
@@ -347,7 +382,7 @@ class Parameter(t.HasTraits):
         if self._number_of_elements != 1 and not isinstance(self.__value, tuple):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
-            self.events.value_changed.trigger(value=self.__value, obj=self)
+            self.events.value_changed.emit(value=self.__value, obj=self)
             # To update the widget connected to the value property
             self.trait_property_changed("value", old_value, self.__value)
 
@@ -377,7 +412,7 @@ class Parameter(t.HasTraits):
             return
         self._updating_twin = True
         try:
-            self.events.value_changed.trigger(value=value, obj=self)
+            self.events.value_changed.emit(value=value, obj=self)
         finally:
             self._updating_twin = False
 
@@ -781,28 +816,7 @@ class Component(t.HasTraits):
 
         """
         super().__init__(*args, **kwargs)
-        self.events = Events()
-        self.events.active_changed = Event(
-            """
-            Event that triggers when the `Component.active` changes.
-
-            The event triggers after the internal state of the `Component` has
-            been updated.
-
-            Parameters
-            ----------
-            obj : Component
-                The `Component` that the event belongs to
-            active : bool
-                The new active state
-            convolved : bool
-                Whether the `Component` is convolved or not. This enables
-                not convolving individual `Component`s in models that
-                support convolution.
-
-            """,
-            arguments=["obj", "active"],
-        )
+        self.events = ComponentEvents(self)
         self._parameters = []
         self._free_parameters = []
         self.init_parameters(parameter_name_list, linear_parameter_list)
@@ -937,7 +951,7 @@ class Component(t.HasTraits):
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
-        self.events.active_changed.trigger(active=self._active, obj=self)
+        self.events.active_changed.emit(active=self._active, obj=self)
         # To update the widget connected to the active property
         self.trait_property_changed("active", old_value, self._active)
 
