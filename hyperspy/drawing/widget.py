@@ -142,6 +142,7 @@ class WidgetBase(object):
         self.blit = None
         self.events = WidgetBaseEvents(self)
         self._navigating = False
+        self._navigate_callback = None
         super(WidgetBase, self).__init__(**kwargs)
 
     @property
@@ -281,15 +282,16 @@ class WidgetBase(object):
         """
         if self._navigating:
             self.disconnect_navigate()
-        self.axes_manager.events.indices_changed.connect(
-            self._on_navigate, {"obj": "axes_manager"}
-        )
+        self._navigate_callback = lambda obj: self._on_navigate(axes_manager=obj)
+        self.axes_manager.events.indices_changed.connect(self._navigate_callback)
         self._on_navigate(self.axes_manager)  # Update our position
         self._navigating = True
 
     def disconnect_navigate(self):
         """Disconnect a previous naivgation connection."""
-        self.axes_manager.events.indices_changed.disconnect(self._on_navigate)
+        if self._navigate_callback is not None:
+            self.axes_manager.events.indices_changed.disconnect(self._navigate_callback)
+            self._navigate_callback = None
         self._navigating = False
 
     def _on_navigate(self, axes_manager):
@@ -424,7 +426,7 @@ class DraggableWidgetBase(WidgetBase):
         relevant events, and updates the patch position.
         """
         if self._navigating:
-            with self.axes_manager.events.indices_changed.suppress():
+            with self.axes_manager.events.indices_changed.blocked():
                 for i in range(len(self.axes)):
                     self.axes[i].value = self._pos[i]
             self.axes_manager.events.indices_changed.emit(obj=self.axes_manager)
