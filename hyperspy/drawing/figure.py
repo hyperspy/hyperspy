@@ -145,21 +145,11 @@ class BlittedFigure:
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         self.events.closed.emit(obj=self)
-        for callback in list(getattr(self, "_closed_callbacks", ())):
-            try:
-                self.events.closed.disconnect(callback)
-            except ValueError:
-                pass
-        if hasattr(self, "_closed_callbacks"):
-            self._closed_callbacks.clear()
-        for _line, cb in list(getattr(self, "_line_closed_handles", {}).values()):
-            try:
-                _line.events.closed.disconnect(cb)
-            except ValueError:
-                pass
-        if hasattr(self, "_line_closed_handles"):
-            self._line_closed_handles.clear()
-        if getattr(self, "_draw_event_cid", None):
+        for callback in self._closed_callbacks:
+            self.events.closed.disconnect(callback)
+        self._closed_callbacks.clear()
+
+        if self._draw_event_cid is not None:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
             self._draw_event_cid = None
         self.figure = None

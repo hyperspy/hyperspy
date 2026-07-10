@@ -346,6 +346,7 @@ class BaseInteractiveROI(BaseROI):
         self.widgets = set()
         self._applying_widget_change = False
         self._updating_widgets = False
+        self._any_axis_changed_connected = False
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -470,7 +471,7 @@ class BaseInteractiveROI(BaseROI):
                     snap=snap,
                     axes=kwargs.get("axes", None),
                 )
-        if not getattr(self, "_any_axis_changed_connected", False):
+        if not self._any_axis_changed_connected:
             signal.axes_manager.events.any_axis_changed.connect(self.update, [])
             self._any_axis_changed_connected = True
         if out is None:

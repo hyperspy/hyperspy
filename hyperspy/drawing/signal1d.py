@@ -46,7 +46,6 @@ class Signal1DFigure(BlittedFigure):
         self.right_ax_lines = list()
         self.axes_manager = None
         self.right_axes_manager = None
-        self._line_closed_handles = {}
 
         # Labels
         self.xlabel = ""
@@ -163,13 +162,10 @@ class Signal1DFigure(BlittedFigure):
 
             def _on_line_close():
                 line.axes_manager.events.indices_changed.disconnect(f)
-                try:
-                    line.events.closed.disconnect(_on_line_close)
-                except (ValueError, AttributeError):
-                    pass
+                line.events.closed.disconnect(_on_line_close)
 
             line.events.closed.connect(_on_line_close, [])
-            self._line_closed_handles[id(line)] = (line, _on_line_close)
+
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
