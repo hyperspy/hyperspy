@@ -497,7 +497,7 @@ class LazySignal(signals.BaseSignal):
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.emit(obj=out)
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
@@ -661,7 +661,7 @@ class LazySignal(signals.BaseSignal):
         if out is None:
             return s
         else:
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     diff.__doc__ = signals.BaseSignal.diff.__doc__
 
@@ -681,7 +681,7 @@ class LazySignal(signals.BaseSignal):
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.emit(obj=out)
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
@@ -702,7 +702,7 @@ class LazySignal(signals.BaseSignal):
             return idx
         else:
             out.data = data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     valuemax.__doc__ = signals.BaseSignal.valuemax.__doc__
 
@@ -715,7 +715,7 @@ class LazySignal(signals.BaseSignal):
             return idx
         else:
             out.data = data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     valuemin.__doc__ = signals.BaseSignal.valuemin.__doc__
 
@@ -743,7 +743,7 @@ class LazySignal(signals.BaseSignal):
         if out is None:
             return hist_spec
         else:
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     get_histogram.__doc__ = signals.BaseSignal.get_histogram.__doc__
 

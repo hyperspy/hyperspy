@@ -33,6 +33,7 @@ from pathlib import Path
 import numpy as np
 import scipy
 import traits.api as t
+from psygnal import SignalGroup
 from rsciio.utils import path, rgb
 from tlz import concat
 
@@ -62,7 +63,7 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
 )
 from hyperspy.docstrings.utils import REBIN_ARGS
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 from hyperspy.exceptions import (
     DataDimensionError,
     LazyCupyConversion,
@@ -2374,6 +2375,12 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
+class SignalEvents(SignalGroup):
+    """Events for :class:`BaseSignal`."""
+
+    data_changed = EventSignal(object, arguments=["obj"])
+
+
 class BaseSignal(FancySlicing, MVA, MVATools):
     """
 
@@ -2453,24 +2460,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             self._plot = None
             self.inav = SpecialSlicersSignal(self, True)
             self.isig = SpecialSlicersSignal(self, False)
-            self.events = Events()
-            self.events.data_changed = Event(
-                """
-                Event that triggers when the data has changed
-
-                The event trigger when the data is ready for consumption by any
-                process that depend on it as input. Plotted signals automatically
-                connect this Event to its `BaseSignal.plot()`.
-
-                Note: The event only fires at certain specific times, not everytime
-                that the `BaseSignal.data` array changes values.
-
-                Parameters
-                ----------
-                    obj: The signal that owns the data.
-                """,
-                arguments=["obj"],
-            )
+            self.events = SignalEvents(self)
             self._load_dictionary(kwds)
 
         if self._signal_dimension >= 0:
@@ -3563,7 +3553,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         axis.crop(i1, i2)
         self.get_dimensions_from_data()
         self.squeeze()
-        self.events.data_changed.trigger(obj=self)
+        self.events.data_changed.emit(obj=self)
         if convert_units:
             self.axes_manager.convert_units(axis)
 
@@ -3913,7 +3903,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         if out is None:
             return s
         else:
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     rebin.__doc__ %= (REBIN_ARGS, OUT_ARG)
 
@@ -4347,7 +4337,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             )
             if data.shape == out.data.shape:
                 out.data[:] = data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.emit(obj=out)
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
@@ -4378,7 +4368,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             # still need to finished the execution of the function properly.
             if out:
                 out.data[:] = self.data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.emit(obj=out)
                 return
             else:
                 return self
@@ -4412,7 +4402,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                         "The output shape %s does not match  the shape of "
                         "`out` %s" % (data.shape, out.data.shape)
                     )
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
         else:
             s.data = np.atleast_1d(
                 function(
@@ -4802,7 +4792,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         if out is None:
             return s
         else:
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
@@ -4867,7 +4857,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             n -= 1
         if out:
             out.data = der_data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
         else:
             return self._deepcopy_with_new_data(der_data)
 
@@ -4910,7 +4900,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         )
         if out is not None:
             out.data[:] = data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
         else:
             s.data = data
             s._remove_axis(axis.index_in_axes_manager)
@@ -5256,7 +5246,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             return idx
         else:
             out.data[:] = data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
@@ -5292,7 +5282,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             return idx
         else:
             out.data[:] = data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
@@ -5378,7 +5368,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         if out is None:
             return hist_spec
         else:
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     get_histogram.__doc__ %= (
         HISTOGRAM_BIN_ARGS,
@@ -5681,7 +5671,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         if not inplace:
             return result
         else:
-            self.events.data_changed.trigger(obj=self)
+            self.events.data_changed.emit(obj=self)
 
     map.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG, IN_PLACE, LAZY_OUTPUT_ARG)
 
@@ -6476,7 +6466,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 out.data = sp.data
             else:
                 out.data[:] = sp.data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     as_signal1D.__doc__ %= (
         ONE_AXIS_PARAMETER,
@@ -6534,7 +6524,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 out.data = im.data
             else:
                 out.data[:] = im.data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG)
 
@@ -6913,8 +6903,8 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             kwargs["chunks"] = self.data.chunks
 
         self.data[:] = random_state.poisson(lam=self.data, **kwargs)
-        self.events.data_changed.trigger(obj=self)
-        self.events.data_changed.trigger(obj=self)
+        self.events.data_changed.emit(obj=self)
+        self.events.data_changed.emit(obj=self)
 
     def add_gaussian_noise(self, std, random_state=None):
         """Add Gaussian noise to the data.
@@ -6955,9 +6945,9 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         noise = random_state.normal(loc=0, scale=std, size=self.data.shape, **kwargs)
 
         self.data += noise
-        self.events.data_changed.trigger(obj=self)
+        self.events.data_changed.emit(obj=self)
 
-        self.events.data_changed.trigger(obj=self)
+        self.events.data_changed.emit(obj=self)
 
     def transpose(self, signal_axes=None, navigation_axes=None, optimize=False):
         """Transposes the signal to have the required signal and navigation
@@ -7235,7 +7225,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                     slice_w.append(None)
 
             self.data = self.data * window_nd[tuple(slice_w)]
-            self.events.data_changed.trigger(obj=self)
+            self.events.data_changed.emit(obj=self)
         else:
             return self * window_nd
 
@@ -7493,7 +7483,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         if inplace:
             self.data[:] = corrected_data
-            self.events.data_changed.trigger(obj=self)
+            self.events.data_changed.emit(obj=self)
         else:
             return self._deepcopy_with_new_data(corrected_data)
 

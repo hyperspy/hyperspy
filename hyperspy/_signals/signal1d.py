@@ -546,7 +546,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             _logger.debug("Cropping %s from index %i to %i" % (self, ilow, ihigh))
             self.crop(axis.index_in_axes_manager, ilow, ihigh)
 
-        self.events.data_changed.trigger(obj=self)
+        self.events.data_changed.emit(obj=self)
 
     shift1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
@@ -619,7 +619,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             show_progressbar=show_progressbar,
             num_workers=num_workers,
         )
-        self.events.data_changed.trigger(obj=self)
+        self.events.data_changed.emit(obj=self)
 
     interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
@@ -1527,7 +1527,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
 
         if self._lazy:
             self.data = dc
-        self.events.data_changed.trigger(obj=self)
+        self.events.data_changed.emit(obj=self)
         return channels
 
     def find_peaks1D_ohaver(
