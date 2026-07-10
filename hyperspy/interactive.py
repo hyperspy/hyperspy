@@ -23,10 +23,10 @@ def _connect_events(event, to_connect):
     try:
         for ev in event:
             # Iterable of events, connect all of them
-            ev.connect(to_connect, [])
+            ev.connect(to_connect)
     except TypeError:
         # It was not an iterable, connect the single event
-        event.connect(to_connect, [])
+        event.connect(to_connect)
 
 
 def _disconnect_events(event, to_disconnect):
