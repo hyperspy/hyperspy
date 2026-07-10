@@ -297,12 +297,14 @@ class TestEventsSignatures(EventsBase):
         self.events.a.connect(f_b, ["A", "B"])
         self.events.a.connect(f_c, {"a": "A", "b": "B"})
         self.events.a.connect(f_d, "auto")
-        assert self.events.a.connected == set([f_a, f_b, f_c, f_d])
+        with pytest.warns(VisibleDeprecationWarning):
+            assert self.events.a.connected == set([f_a, f_b, f_c, f_d])
         self.events.a.disconnect(f_a)
         self.events.a.disconnect(f_b)
         self.events.a.disconnect(f_c)
         self.events.a.disconnect(f_d)
-        assert self.events.a.connected == set([])
+        with pytest.warns(VisibleDeprecationWarning):
+            assert self.events.a.connected == set([])
 
     def test_type(self):
         with pytest.raises(TypeError):
@@ -385,7 +387,8 @@ class TestTriggerArgResolution(EventsBase):
             pass
 
         self.events.a.connect(f)
-        assert f not in copy.deepcopy(self.events.a).connected
+        with pytest.warns(VisibleDeprecationWarning):
+            assert f not in copy.deepcopy(self.events.a).connected
 
     def test_all_kwargs_resolution(self):
         def lambda1(A, B):
@@ -601,7 +604,8 @@ def test_deepcopy():
 
     e.connect(f)
     e2 = copy.deepcopy(e)
-    assert f not in e2.connected
+    with pytest.warns(VisibleDeprecationWarning):
+        assert f not in e2.connected
 
 
 # ---------------------------------------------------------------------------
@@ -693,6 +697,102 @@ def test_trigger_does_not_warn_by_default():
         e.trigger()
     assert len(w) == 1
     assert issubclass(w[0].category, VisibleDeprecationWarning)
+
+
+def test_connect_kwargs_auto_warns():
+    """connect(kwargs='auto') emits VisibleDeprecationWarning."""
+    e = Event()
+
+    def f(**k):
+        return None
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        e.connect(f, kwargs="auto")
+    assert len(w) >= 1
+    assert issubclass(w[0].category, VisibleDeprecationWarning)
+    assert "kwargs" in str(w[0].message)
+
+
+def test_connect_kwargs_dict_warns():
+    """connect(kwargs={'a': 'b'}) emits VisibleDeprecationWarning."""
+    e = Event()
+
+    def f(x):
+        return None
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        e.connect(f, kwargs={"x": "y"})
+    assert len(w) >= 1
+    assert issubclass(w[0].category, VisibleDeprecationWarning)
+    assert "kwargs" in str(w[0].message)
+
+
+def test_connect_kwargs_list_warns():
+    """connect(kwargs=['x']) emits VisibleDeprecationWarning."""
+    e = Event()
+
+    def f(x):
+        return None
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        e.connect(f, kwargs=["x"])
+    assert len(w) >= 1
+    assert issubclass(w[0].category, VisibleDeprecationWarning)
+    assert "kwargs" in str(w[0].message)
+
+
+def test_suppress_warns():
+    """Event.suppress() emits VisibleDeprecationWarning."""
+    e = Event()
+
+    def f(**k):
+        return None
+
+    e.connect(f)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        with e.suppress():
+            pass
+    assert len(w) == 1
+    assert issubclass(w[0].category, VisibleDeprecationWarning)
+    assert "suppress" in str(w[0].message)
+
+
+def test_suppress_callback_warns_message():
+    """suppress_callback emits VisibleDeprecationWarning with expected message."""
+    e = Event()
+
+    def f(**k):
+        return None
+
+    e.connect(f)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        with e.suppress_callback(f):
+            pass
+    assert len(w) == 1
+    assert issubclass(w[0].category, VisibleDeprecationWarning)
+    assert "suppress_callback" in str(w[0].message)
+
+
+def test_connected_property_warns():
+    """Event.connected emits VisibleDeprecationWarning when accessed."""
+    e = Event()
+
+    def f(**k):
+        return None
+
+    e.connect(f)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        _ = e.connected
+    assert len(w) == 1
+    assert issubclass(w[0].category, VisibleDeprecationWarning)
+    assert "connected" in str(w[0].message)
+    assert "deprecated" in str(w[0].message)
 
 
 # ---------------------------------------------------------------------------

@@ -581,9 +581,17 @@ class Event(SignalInstance):
     def connected(self):
         """Set of connected functions.
 
-        Available until HyperSpy 3.0. Prefer inspecting ``_slots`` or
-        using the native psygnal API to query connections.
+        .. deprecated::
+            Use the native psygnal API to inspect connections
+            (e.g. ``event._slots``) or ``event._connected_originals``
+            for the set of original callables.
         """
+        warnings.warn(
+            "Event.connected is deprecated. "
+            "Use the native psygnal API to inspect connections.",
+            VisibleDeprecationWarning,
+            stacklevel=2,
+        )
         return set(self._connected_originals)
 
     # -- suppress / suppress_callback (deprecated context managers) --------
