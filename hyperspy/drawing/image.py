@@ -629,21 +629,18 @@ class ImagePlot(BlittedFigure):
                 "key_press_event", self.on_key_press
             )
         if self.axes_manager:
-            if (
-                self.update
-                not in self.axes_manager.events.indices_changed._connected_originals
-            ):
+            if not getattr(self, "_indices_changed_connected", False):
                 self.axes_manager.events.indices_changed.connect(self.update, [])
-            if self.disconnect not in self.events.closed._connected_originals:
+                self._indices_changed_connected = True
+            if not getattr(self, "_closed_connected", False):
                 self.events.closed.connect(self.disconnect, [])
+                self._closed_connected = True
 
     def disconnect(self):
         if self.axes_manager:
-            if (
-                self.update
-                in self.axes_manager.events.indices_changed._connected_originals
-            ):
+            if self._indices_changed_connected:
                 self.axes_manager.events.indices_changed.disconnect(self.update)
+                self._indices_changed_connected = False
 
     def on_key_press(self, event):
         if event.key == "h":

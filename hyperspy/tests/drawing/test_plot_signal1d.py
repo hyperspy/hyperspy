@@ -392,7 +392,7 @@ def test_plot_with_non_finite_value():
 def test_plot_add_line_events(ax):
     s = hs.signals.Signal1D(np.arange(100))
     s.plot()
-    assert len(s.axes_manager.events.indices_changed._connected_originals) == 1
+    assert s.axes_manager.events.indices_changed._connected_count == 1
     plot = s._plot.signal_plot
     assert len(s._plot.signal_plot.figure.get_axes()) == 1
 
@@ -415,11 +415,11 @@ def test_plot_add_line_events(ax):
 
     assert len(s._plot.signal_plot.figure.get_axes()) == expected_axis_number
     line.plot()
-    assert len(line.events.closed._connected_originals) == 1
+    assert line.events.closed._connected_count == 1
     # expected_indices_changed_connected is 2 only when adding line on the left
     # because for the right ax, we have a deepcopy of the axes_manager
     assert (
-        len(s.axes_manager.events.indices_changed._connected_originals)
+        s.axes_manager.events.indices_changed._connected_count
         == expected_indices_changed_connected
     )
 
@@ -427,12 +427,12 @@ def test_plot_add_line_events(ax):
     plot.close_right_axis()
 
     assert len(s._plot.signal_plot.figure.get_axes()) == 1
-    assert len(line.events.closed._connected_originals) == 0
-    assert len(s.axes_manager.events.indices_changed._connected_originals) == 1
+    assert line.events.closed._connected_count == 0
+    assert s.axes_manager.events.indices_changed._connected_count == 1
 
     s._plot.close()
-    assert len(s.axes_manager.events.indices_changed._connected_originals) == 0
-    assert len(s._plot.events.closed._connected_originals) == 0
+    assert s.axes_manager.events.indices_changed._connected_count == 0
+    assert s._plot.events.closed._connected_count == 0
     assert s._plot.signal_plot is None
 
 

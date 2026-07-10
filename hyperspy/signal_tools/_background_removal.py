@@ -260,8 +260,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         super().disconnect()
         axes_manager = self.signal.axes_manager
         for f in [self._fit, self.model._on_navigating]:
-            if f in axes_manager.events.indices_changed._connected_originals:
+            try:
                 axes_manager.events.indices_changed.disconnect(f)
+            except ValueError:
+                pass
 
 
 def _get_background_estimator(background_type, polynomial_order=1):

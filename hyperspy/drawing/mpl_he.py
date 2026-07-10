@@ -64,6 +64,12 @@ class MPL_HyperExplorer:
         self._pointer_nav_dim = None
 
         self.events = MplFigureEvents(self)
+        self._closed_callbacks = []
+
+    def _connect_closed(self, callback, **connect_kwargs):
+        """Connect *callback* to self.events.closed and track for cleanup."""
+        self.events.closed.connect(callback, **connect_kwargs)
+        self._closed_callbacks.append(callback)
 
     def plot_signal(self, **kwargs):
         # This method should be implemented by the subclasses.
@@ -134,8 +140,9 @@ class MPL_HyperExplorer:
                 self._get_navigation_sliders()
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.events.index_changed.connect(sf.update, [])
-                    self.events.closed.connect(
-                        partial(axis.events.index_changed.disconnect, sf.update), []
+                    self._connect_closed(
+                        partial(axis.events.index_changed.disconnect, sf.update),
+                        kwargs=[],
                     )
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
@@ -162,9 +169,9 @@ class MPL_HyperExplorer:
                     self._get_navigation_sliders()
                     for axis in self.axes_manager.navigation_axes[2:]:
                         axis.events.index_changed.connect(imf.update, [])
-                        self.events.closed.connect(
+                        self._connect_closed(
                             partial(axis.events.index_changed.disconnect, imf.update),
-                            [],
+                            kwargs=[],
                         )
 
             if "cmap" not in kwargs.keys() or kwargs["cmap"] is None:
@@ -226,7 +233,7 @@ class MPL_HyperExplorer:
                     self.pointer.connect_navigate()
                 self.plot_navigator(**kwargs.pop("navigator_kwds", {}))
                 if pointer is not None:
-                    self.events.closed.connect(self.pointer.disconnect, [])
+                    self._connect_closed(self.pointer.disconnect, kwargs=[])
             self.plot_signal(**kwargs)
             if _is_widget_backend() and "fig" not in kwargs:
                 if plot_style not in ["vertical", "horizontal", None]:
@@ -301,13 +308,17 @@ class MPL_HyperExplorer:
         callback.
         When closing, it does the following:
         1. trigger a closed event
-        2. disconnect the closed event
+        2. disconnect all callbacks on the closed event
         3. run the close method of the signal_plot and navigator_plot
         4. reset the attribute
         """
         self.events.closed.emit(obj=self)
-        for f in list(self.events.closed._connected_originals):
-            self.events.closed.disconnect(f)
+        for callback in list(self._closed_callbacks):
+            try:
+                self.events.closed.disconnect(callback)
+            except ValueError:
+                pass
+        self._closed_callbacks.clear()
 
         for p in [self.signal_plot, self.navigator_plot]:
             if p is not None:

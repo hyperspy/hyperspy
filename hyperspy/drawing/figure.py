@@ -47,6 +47,7 @@ class BlittedFigure:
         self.ax = None
         self.title = ""
         self.ax_markers = list()
+        self._closed_callbacks = []
 
     def create_figure(self, **kwargs):
         """
@@ -110,6 +111,11 @@ class BlittedFigure:
             else:
                 return figure
 
+    def _connect_closed(self, callback, **connect_kwargs):
+        """Connect *callback* to self.events.closed and track for cleanup."""
+        self.events.closed.connect(callback, **connect_kwargs)
+        self._closed_callbacks.append(callback)
+
     def add_marker(self, marker):
         marker.ax = self.ax
         self.ax_markers.append(marker)
@@ -139,9 +145,21 @@ class BlittedFigure:
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         self.events.closed.emit(obj=self)
-        for f in list(self.events.closed._connected_originals):
-            self.events.closed.disconnect(f)
-        if self._draw_event_cid:
+        for callback in list(getattr(self, "_closed_callbacks", ())):
+            try:
+                self.events.closed.disconnect(callback)
+            except ValueError:
+                pass
+        if hasattr(self, "_closed_callbacks"):
+            self._closed_callbacks.clear()
+        for _line, cb in list(getattr(self, "_line_closed_handles", {}).values()):
+            try:
+                _line.events.closed.disconnect(cb)
+            except ValueError:
+                pass
+        if hasattr(self, "_line_closed_handles"):
+            self._line_closed_handles.clear()
+        if getattr(self, "_draw_event_cid", None):
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
             self._draw_event_cid = None
         self.figure = None

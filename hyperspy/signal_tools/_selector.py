@@ -45,10 +45,13 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
+        self._signal_plot_closed_cb = self.disconnect
 
         self.span_selector_switch(on=True)
 
-        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
+        self.signal._plot.signal_plot.events.closed.connect(
+            self._signal_plot_closed_cb, []
+        )
 
     def on_disabling_span_selector(self):
         self.disconnect()
@@ -137,8 +140,18 @@ class SpanSelectorInSignal1D(t.HasTraits):
             self.signal.events.data_changed,
             self.signal.axes_manager.events.indices_changed,
         ]:
-            if function in event._connected_originals:
+            try:
                 event.disconnect(function)
+            except ValueError:
+                pass
+        if self._signal_plot_closed_cb is not None:
+            try:
+                self.signal._plot.signal_plot.events.closed.disconnect(
+                    self._signal_plot_closed_cb
+                )
+            except ValueError:
+                pass
+            self._signal_plot_closed_cb = None
 
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):

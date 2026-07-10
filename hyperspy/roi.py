@@ -470,11 +470,9 @@ class BaseInteractiveROI(BaseROI):
                     snap=snap,
                     axes=kwargs.get("axes", None),
                 )
-        if (
-            self.update
-            not in signal.axes_manager.events.any_axis_changed._connected_originals
-        ):
+        if not getattr(self, "_any_axis_changed_connected", False):
             signal.axes_manager.events.any_axis_changed.connect(self.update, [])
+            self._any_axis_changed_connected = True
         if out is None:
             return interactive(
                 self.__call__, event=self.events.changed, signal=signal, **kwargs
@@ -606,11 +604,9 @@ class BaseInteractiveROI(BaseROI):
             if w[0] == widget:
                 # Disconnect before break: only the matching signal's handler
                 # needs cleanup, and break would skip it if placed after.
-                if (
-                    self.update
-                    in signal.axes_manager.events.any_axis_changed._connected_originals
-                ):
+                if self._any_axis_changed_connected:
                     signal.axes_manager.events.any_axis_changed.disconnect(self.update)
+                    self._any_axis_changed_connected = False
                 self.signal_map.pop(signal)
                 break
 

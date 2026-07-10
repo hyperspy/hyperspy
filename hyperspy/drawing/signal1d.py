@@ -46,6 +46,7 @@ class Signal1DFigure(BlittedFigure):
         self.right_ax_lines = list()
         self.axes_manager = None
         self.right_axes_manager = None
+        self._line_closed_handles = {}
 
         # Labels
         self.xlabel = ""
@@ -159,9 +160,16 @@ class Signal1DFigure(BlittedFigure):
         if connect_navigation:
             f = partial(line._auto_update_line, update_ylimits=True)
             line.axes_manager.events.indices_changed.connect(f, [])
-            line.events.closed.connect(
-                lambda: line.axes_manager.events.indices_changed.disconnect(f), []
-            )
+
+            def _on_line_close():
+                line.axes_manager.events.indices_changed.disconnect(f)
+                try:
+                    line.events.closed.disconnect(_on_line_close)
+                except (ValueError, AttributeError):
+                    pass
+
+            line.events.closed.connect(_on_line_close, [])
+            self._line_closed_handles[id(line)] = (line, _on_line_close)
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -194,8 +202,9 @@ class Signal1DFigure(BlittedFigure):
         )
 
         self.axes_manager.events.indices_changed.connect(self.update, [])
-        self.events.closed.connect(
-            lambda: self.axes_manager.events.indices_changed.disconnect(self.update), []
+        self._connect_closed(
+            lambda: self.axes_manager.events.indices_changed.disconnect(self.update),
+            kwargs=[],
         )
 
         if hasattr(self.figure, "tight_layout"):
@@ -307,6 +316,12 @@ class Signal1DLine(object):
         )
         self._line_properties = {}
         self.type = "line"
+        self._closed_callbacks = []
+
+    def _connect_closed(self, callback, **connect_kwargs):
+        """Connect *callback* to self.events.closed and track for cleanup."""
+        self.events.closed.connect(callback, **connect_kwargs)
+        self._closed_callbacks.append(callback)
 
     @property
     def line_properties(self):
@@ -560,8 +575,12 @@ class Signal1DLine(object):
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
         self.events.closed.emit(obj=self)
-        for f in list(self.events.closed._connected_originals):
-            self.events.closed.disconnect(f)
+        for callback in list(self._closed_callbacks):
+            try:
+                self.events.closed.disconnect(callback)
+            except ValueError:
+                pass
+        self._closed_callbacks.clear()
         try:
             self.ax.figure.canvas.draw_idle()
         except BaseException:

@@ -3108,8 +3108,8 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             return np.nan_to_num(utils.to_numpy(ind.data)).squeeze()
 
         # function to disconnect when closing the navigator
-        function_to_disconnect = None
-        connected_event_copy = self.events.data_changed._connected_originals.copy()
+        _temp_callbacks = None
+        _before = set(self.events.data_changed.connected)
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
@@ -3136,12 +3136,11 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                         s=self,
                         axis=self.axes_manager.signal_axes,
                     )
-                    # Sets are not ordered, to retrieve the function to disconnect
-                    # take the difference with the previous copy
-                    function_to_disconnect = list(
-                        self.events.data_changed._connected_originals
-                        - connected_event_copy
-                    )[0]
+                    # Collect the temporary callbacks that interactive()
+                    # connected to data_changed so they can be disconnected
+                    # when the navigator is closed.
+                    _after = set(self.events.data_changed.connected)
+                    _temp_callbacks = list(_after - _before)
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
                         f=navigator.as_signal1D,
@@ -3225,20 +3224,40 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             if self._plot.signal_plot
             else self._plot.navigator_plot
         )
-        p.events.closed.connect(
-            lambda: self.events.data_changed.disconnect(self.update_plot), []
-        )
-        # Disconnect events to the navigator when closing navigator
-        if function_to_disconnect is not None:
-            self._plot.navigator_plot.events.closed.connect(
-                lambda: self.events.data_changed.disconnect(function_to_disconnect), []
-            )
-            self._plot.navigator_plot.events.closed.connect(
-                lambda: self.axes_manager.events.any_axis_changed.disconnect(
-                    function_to_disconnect
-                ),
-                [],
-            )
+
+        def _disconnect_update_plot():
+            self.events.data_changed.disconnect(self.update_plot)
+            try:
+                p.events.closed.disconnect(_disconnect_update_plot)
+            except (ValueError, AttributeError):
+                pass
+
+        p.events.closed.connect(_disconnect_update_plot, [])
+        if _temp_callbacks is not None:
+
+            def _disconnect_nav_data():
+                for cb in _temp_callbacks:
+                    self.events.data_changed.disconnect(cb)
+                try:
+                    self._plot.navigator_plot.events.closed.disconnect(
+                        _disconnect_nav_data
+                    )
+                except (ValueError, AttributeError):
+                    pass
+
+            self._plot.navigator_plot.events.closed.connect(_disconnect_nav_data, [])
+
+            def _disconnect_nav_axes():
+                for cb in _temp_callbacks:
+                    self.axes_manager.events.any_axis_changed.disconnect(cb)
+                try:
+                    self._plot.navigator_plot.events.closed.disconnect(
+                        _disconnect_nav_axes
+                    )
+                except (ValueError, AttributeError):
+                    pass
+
+            self._plot.navigator_plot.events.closed.connect(_disconnect_nav_axes, [])
 
         if plot_markers:
             if self.metadata.has_item("Markers"):

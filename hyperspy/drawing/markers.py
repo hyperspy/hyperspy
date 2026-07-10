@@ -242,6 +242,12 @@ class Markers:
         # Events
         self.events = MarkersEvents(self)
         self._closing = False
+        self._closed_callbacks = []
+
+    def _connect_closed(self, callback, **connect_kwargs):
+        """Connect *callback* to self.events.closed and track for cleanup."""
+        self.events.closed.connect(callback, **connect_kwargs)
+        self._closed_callbacks.append(callback)
 
     @property
     def _axes_manager(self):
@@ -772,8 +778,12 @@ class Markers:
             self.ax.hspy_fig._background = None
         self.events.closed.emit(obj=self)
         self._signal = None
-        for f in list(self.events.closed._connected_originals):
-            self.events.closed.disconnect(f)
+        for callback in list(self._closed_callbacks):
+            try:
+                self.events.closed.disconnect(callback)
+            except ValueError:
+                pass
+        self._closed_callbacks.clear()
         if render_figure:
             self._render_figure()
         self._closing = False
