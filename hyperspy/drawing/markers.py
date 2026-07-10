@@ -772,7 +772,7 @@ class Markers:
             self.ax.hspy_fig._background = None
         self.events.closed.emit(obj=self)
         self._signal = None
-        for f in self.events.closed.connected:
+        for f in list(self.events.closed._connected_originals):
             self.events.closed.disconnect(f)
         if render_figure:
             self._render_figure()

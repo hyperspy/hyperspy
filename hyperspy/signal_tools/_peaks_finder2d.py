@@ -255,7 +255,7 @@ class PeaksFinder2D(t.HasTraits):
     def disconnect(self):
         # disconnect event
         am = self.signal.axes_manager
-        if self._update_peak_finding in am.events.indices_changed.connected:
+        if self._update_peak_finding in am.events.indices_changed._connected_originals:
             am.events.indices_changed.disconnect(self._update_peak_finding)
         # disconnect trait observers
         self.observe(

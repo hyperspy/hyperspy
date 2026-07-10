@@ -49,7 +49,7 @@ def test_figure_title_length():
 
 
 def _assert_figure_state_after_close(fig):
-    assert len(fig.events.closed.connected) == 0
+    assert len(fig.events.closed._connected_originals) == 0
     assert fig._draw_event_cid is None
     assert fig.figure is None
     assert fig._background is None

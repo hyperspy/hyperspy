@@ -139,7 +139,7 @@ class BlittedFigure:
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         self.events.closed.emit(obj=self)
-        for f in self.events.closed.connected:
+        for f in list(self.events.closed._connected_originals):
             self.events.closed.disconnect(f)
         if self._draw_event_cid:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)

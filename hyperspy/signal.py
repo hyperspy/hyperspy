@@ -3109,7 +3109,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         # function to disconnect when closing the navigator
         function_to_disconnect = None
-        connected_event_copy = self.events.data_changed.connected.copy()
+        connected_event_copy = self.events.data_changed._connected_originals.copy()
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
@@ -3139,7 +3139,8 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                     # Sets are not ordered, to retrieve the function to disconnect
                     # take the difference with the previous copy
                     function_to_disconnect = list(
-                        self.events.data_changed.connected - connected_event_copy
+                        self.events.data_changed._connected_originals
+                        - connected_event_copy
                     )[0]
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(

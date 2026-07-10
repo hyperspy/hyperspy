@@ -306,7 +306,7 @@ class MPL_HyperExplorer:
         4. reset the attribute
         """
         self.events.closed.emit(obj=self)
-        for f in self.events.closed.connected:
+        for f in list(self.events.closed._connected_originals):
             self.events.closed.disconnect(f)
 
         for p in [self.signal_plot, self.navigator_plot]:

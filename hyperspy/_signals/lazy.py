@@ -124,7 +124,10 @@ class LazySignal(signals.BaseSignal):
         # the NumPy array originates from.
         self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
-        if self._clear_cache_dask_data not in self.events.data_changed.connected:
+        if (
+            self._clear_cache_dask_data
+            not in self.events.data_changed._connected_originals
+        ):
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
     __init__.__doc__ = signals.BaseSignal.__init__.__doc__.replace(

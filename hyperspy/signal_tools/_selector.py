@@ -137,7 +137,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
             self.signal.events.data_changed,
             self.signal.axes_manager.events.indices_changed,
         ]:
-            if function in event.connected:
+            if function in event._connected_originals:
                 event.disconnect(function)
 
 

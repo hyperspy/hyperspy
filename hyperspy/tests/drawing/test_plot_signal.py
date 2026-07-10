@@ -144,14 +144,14 @@ def test_plot_event_close(sdim, ndim):
     nav_event = 1 if sdim + ndim >= 3 else 0
     data = np.arange(5**dim).reshape((5,) * dim)
     s = hs.signals.Signal1D(data) if sdim == 1 else hs.signals.Signal2D(data)
-    assert len(s.events.data_changed.connected) == 0
-    assert len(s.axes_manager.events.any_axis_changed.connected) == 0
+    assert len(s.events.data_changed._connected_originals) == 0
+    assert len(s.axes_manager.events.any_axis_changed._connected_originals) == 0
     s.plot()
-    assert len(s.events.data_changed.connected) == 1 + nav_event
-    assert len(s.axes_manager.events.any_axis_changed.connected) == nav_event
+    assert len(s.events.data_changed._connected_originals) == 1 + nav_event
+    assert len(s.axes_manager.events.any_axis_changed._connected_originals) == nav_event
     s._plot.close()
-    assert len(s.events.data_changed.connected) == 0
-    assert len(s.axes_manager.events.any_axis_changed.connected) == 0
+    assert len(s.events.data_changed._connected_originals) == 0
+    assert len(s.axes_manager.events.any_axis_changed._connected_originals) == 0
 
 
 def _get_figure(test_plot, data_type, plot_type):
@@ -303,7 +303,7 @@ def test_plot_slider(ndim, sdim):
         s.plot()
         assert s._plot.signal_plot is not None
         assert s._plot.navigator_plot is not None
-        assert len(s.axes_manager.events.indices_changed.connected) >= 2
+        assert len(s.axes_manager.events.indices_changed._connected_originals) >= 2
         s._plot.close()
         check_closing_plot(s, check_data_changed_close=False)
 

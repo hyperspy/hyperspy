@@ -560,7 +560,7 @@ class Signal1DLine(object):
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
         self.events.closed.emit(obj=self)
-        for f in self.events.closed.connected:
+        for f in list(self.events.closed._connected_originals):
             self.events.closed.disconnect(f)
         try:
             self.ax.figure.canvas.draw_idle()
