@@ -71,7 +71,7 @@ from hyperspy.exceptions import (
     VisibleDeprecationWarning,
 )
 from hyperspy.external.scipy.ndfilters import _get_footprint
-from hyperspy.interactive import interactive
+from hyperspy.interactive import Interactive
 from hyperspy.io import (
     _get_format_list_for_docstring,
     _is_zarr_store,
@@ -3107,9 +3107,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             )  # Get the value from the nav reverse because hyperspy
             return np.nan_to_num(utils.to_numpy(ind.data)).squeeze()
 
-        # function to disconnect when closing the navigator
-        _temp_callbacks = None
-        _before = set(self.events.data_changed.connected)
+        # Interactive instance that builds and updates the auto-generated
+        # navigator. Its close() method disconnects the temporary event
+        # callbacks when the navigator plot is closed.
+        _nav_interactive = None
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
@@ -3126,35 +3127,23 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             ):
                 navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:
-                if self.axes_manager.signal_dimension == 0:
-                    navigator = self.deepcopy()
-                else:
-                    navigator = interactive(
-                        f=sum_wrapper,
-                        event=self.events.data_changed,
-                        recompute_out_event=self.axes_manager.events.any_axis_changed,
-                        s=self,
-                        axis=self.axes_manager.signal_axes,
-                    )
-                    # Collect the temporary callbacks that interactive()
-                    # connected to data_changed so they can be disconnected
-                    # when the navigator is closed.
-                    _after = set(self.events.data_changed.connected)
-                    _temp_callbacks = list(_after - _before)
-                if navigator.axes_manager.navigation_dimension == 1:
-                    navigator = interactive(
-                        f=navigator.as_signal1D,
-                        event=navigator.events.data_changed,
-                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
-                        spectral_axis=0,
-                    )
-                else:
-                    navigator = interactive(
-                        f=navigator.as_signal2D,
-                        event=navigator.events.data_changed,
-                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
-                        image_axes=(0, 1),
-                    )
+
+                def _make_navigator():
+                    if self.axes_manager.signal_dimension == 0:
+                        nav = self.deepcopy()
+                    else:
+                        nav = sum_wrapper(self, self.axes_manager.signal_axes)
+                    if nav.axes_manager.navigation_dimension == 1:
+                        return nav.as_signal1D(spectral_axis=0)
+                    else:
+                        return nav.as_signal2D(image_axes=(0, 1))
+
+                _nav_interactive = Interactive(
+                    f=_make_navigator,
+                    event=self.events.data_changed,
+                    recompute_out_event=self.axes_manager.events.any_axis_changed,
+                )
+                navigator = _nav_interactive.out
             else:
                 navigator = None
         # Navigator properties
@@ -3233,31 +3222,18 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 pass
 
         p.events.closed.connect(_disconnect_update_plot, [])
-        if _temp_callbacks is not None:
+        if _nav_interactive is not None:
 
-            def _disconnect_nav_data():
-                for cb in _temp_callbacks:
-                    self.events.data_changed.disconnect(cb)
+            def _disconnect_navigator():
+                _nav_interactive.close()
                 try:
                     self._plot.navigator_plot.events.closed.disconnect(
-                        _disconnect_nav_data
+                        _disconnect_navigator
                     )
                 except (ValueError, AttributeError):
                     pass
 
-            self._plot.navigator_plot.events.closed.connect(_disconnect_nav_data, [])
-
-            def _disconnect_nav_axes():
-                for cb in _temp_callbacks:
-                    self.axes_manager.events.any_axis_changed.disconnect(cb)
-                try:
-                    self._plot.navigator_plot.events.closed.disconnect(
-                        _disconnect_nav_axes
-                    )
-                except (ValueError, AttributeError):
-                    pass
-
-            self._plot.navigator_plot.events.closed.connect(_disconnect_nav_axes, [])
+            self._plot.navigator_plot.events.closed.connect(_disconnect_navigator, [])
 
         if plot_markers:
             if self.metadata.has_item("Markers"):
