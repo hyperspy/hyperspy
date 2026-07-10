@@ -52,11 +52,12 @@ from functools import partial
 
 import numpy as np
 import traits.api as t
+from psygnal import SignalGroup
 
 from hyperspy import signals
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 from hyperspy.interactive import interactive
 from hyperspy.misc import utils
 from hyperspy.ui_registry import add_gui_method
@@ -83,6 +84,12 @@ PARSE_AXES_DOCSTRING = """axes : None, str, int or :class:`hyperspy.axes.DataAxi
 """
 
 
+class ROIEvents(SignalGroup):
+    """Events for :class:`BaseROI`."""
+
+    changed = EventSignal(object, arguments=["roi"])
+
+
 class BaseROI(t.HasTraits):
     """Base class for all ROIs.
 
@@ -102,21 +109,7 @@ class BaseROI(t.HasTraits):
     def __init__(self):
         """Sets up events.changed event, and inits HasTraits."""
         super(BaseROI, self).__init__()
-        self.events = Events()
-        self.events.changed = Event(
-            """
-            Event that triggers when the ROI has changed.
-
-            What constitues a change varies from ROI to ROI, but in general it
-            should correspond to the region selected by the ROI being changed.
-
-            Parameters
-            ----------
-            roi :
-                The ROI that was changed.
-            """,
-            arguments=["roi"],
-        )
+        self.events = ROIEvents(self)
         self.signal_map = dict()
 
     def __getitem__(self, *args, **kwargs):
@@ -171,7 +164,7 @@ class BaseROI(t.HasTraits):
         The base implementation simply triggers the changed event.
         """
         if self.is_valid():
-            self.events.changed.trigger(self)
+            self.events.changed.emit(self)
 
     def _get_ranges(self):
         """
@@ -363,7 +356,7 @@ class BaseInteractiveROI(BaseROI):
         if self.is_valid():
             if not self._applying_widget_change:
                 self._update_widgets()
-            self.events.changed.trigger(self)
+            self.events.changed.emit(self)
 
     def _update_widgets(self, exclude=None):
         """Internal function for updating the associated widgets to the
@@ -499,7 +492,7 @@ class BaseInteractiveROI(BaseROI):
         """
         if self._updating_widgets:
             return
-        with self.events.suppress():
+        with self.events.blocked():
             self._bounds_check = False
             self._applying_widget_change = True
             try:
@@ -508,7 +501,7 @@ class BaseInteractiveROI(BaseROI):
                 self._bounds_check = True
                 self._applying_widget_change = False
         self._update_widgets(exclude=(widget,))
-        self.events.changed.trigger(self)
+        self.events.changed.emit(self)
 
     def add_widget(
         self, signal, axes=None, widget=None, color="green", snap=None, **kwargs
@@ -1350,7 +1343,7 @@ class CircleROI(BaseInteractiveROI):
         if out is None:
             return roi
         else:
-            out.events.data_changed.trigger(out)
+            out.events.data_changed.emit(out)
 
 
 @add_gui_method(toolkey="hyperspy.Line2DROI")
@@ -1710,7 +1703,7 @@ class Line2DROI(BaseInteractiveROI):
             if axchange:
                 ax.size = len(profile)
                 ax.scale = length / len(profile)
-            out.events.data_changed.trigger(out)
+            out.events.data_changed.emit(out)
 
 
 class PolygonROI(BaseInteractiveROI):
@@ -1925,7 +1918,7 @@ class PolygonROI(BaseInteractiveROI):
         if out is None:
             return roi
         else:
-            out.events.data_changed.trigger(out)
+            out.events.data_changed.emit(out)
 
     def __call__(self, signal, inverted=False, out=None, axes=None):
         return self._apply_roi(signal, inverted=inverted, out=out, axes=axes)
