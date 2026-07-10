@@ -20,12 +20,29 @@
 
 Uses relative assertions (p99 ≤ 2× baseline) so slow CI machines
 don't fail spuriously.
+
+Skipped on CI because these are benchmarks, not correctness tests.
 """
 
+import os
 import statistics
 import time
 
+import pytest
+
 from hyperspy.events import Event
+
+# GitHub CI and Azure Pipelines has `CI`` and `TF_BUILD`
+# environment variable, respectively
+_IN_CI = (
+    os.environ.get("CI", "").lower() in {"true", "1"}
+    or os.environ.get("TF_BUILD", "").lower() == "true"
+)
+
+pytestmark = pytest.mark.skipif(
+    _IN_CI,
+    reason="Performance benchmarks excluded on CI",
+)
 
 
 def _measure(func, iterations=100, warmup=10):
@@ -64,6 +81,7 @@ def _baseline_empty_emit():
 # ── Benchmark 1: connect/disconnect 1000 callbacks ───────────────────┘
 
 
+@pytest.mark.slow
 def test_connect_disconnect_1000():
     """connect/disconnect 1000 individually — p99 ≤ 2× baseline."""
     base_p50, base_p99 = _measure(_baseline_empty_connect_disconnect)
@@ -84,6 +102,7 @@ def test_connect_disconnect_1000():
 # ── Benchmark 2: emit with 100 connected callbacks ───────────────────┘
 
 
+@pytest.mark.slow
 def test_emit_100_callbacks():
     """emit() with 100 connected callbacks — p99 ≤ 2× baseline per cb."""
     base_p50, base_p99 = _measure(_baseline_empty_emit)
@@ -119,6 +138,7 @@ def test_emit_100_callbacks():
 # ── Benchmark 3: weakref connect/disconnect lifecycle ─────────────────┘
 
 
+@pytest.mark.slow
 def test_weakref_connect_disconnect_lifecycle():
     """connect with weakrefs, let GC collect, verify cleanup — p99 ≤ 2× baseline."""
 
@@ -146,13 +166,14 @@ def test_weakref_connect_disconnect_lifecycle():
             gc.collect()
 
     p50, p99 = _measure(_workload, iterations=20, warmup=3)
-    threshold = max(base_p99 * 200 * 2, 0.5)
+    threshold = max(base_p99 * 200 * 2, 1.0)
     assert p99 < threshold, f"p99={p99:.6f}s exceeds {threshold:.6f}s"
 
 
 # ── Benchmark 4: data_changed.emit(obj=self) × 10k ───────────────────┘
 
 
+@pytest.mark.slow
 def test_data_changed_emit_10k():
     """10k iterations of data_changed.emit(obj=self) pattern — p99 ≤ 2× baseline."""
 

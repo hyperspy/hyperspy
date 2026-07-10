@@ -187,6 +187,9 @@ source = ["hyperspy"]
 
 [tool.pytest.ini_options]
 addopts = "-ra -n auto --dist loadfile"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 filterwarnings = [
     "ignore:Matplotlib is currently using agg:UserWarning",
     "ignore::hyperspy.exceptions.VisibleDeprecationWarning",
