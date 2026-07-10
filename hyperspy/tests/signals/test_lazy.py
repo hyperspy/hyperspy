@@ -307,7 +307,7 @@ class TestGetTemporaryDaskChunk:
         s._get_cache_dask_chunk(position)
         assert s._cache_dask_chunk is not None
         assert s._cache_dask_chunk_slice is not None
-        s.events.data_changed.trigger(None)
+        s.events.data_changed.emit(None)
         assert s._cache_dask_chunk is None
         assert s._cache_dask_chunk_slice is None
 

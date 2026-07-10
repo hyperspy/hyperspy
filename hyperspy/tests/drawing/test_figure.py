@@ -27,9 +27,8 @@ from packaging.version import Version
 import hyperspy.api as hs
 from hyperspy._components.polynomial import Polynomial
 from hyperspy.drawing._markers.points import Points
-from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing.figure import BlittedFigure, FigureEvents
 from hyperspy.drawing.tiles import HistogramTilePlot
-from hyperspy.events import Event, Events
 from hyperspy.misc.test_utils import check_closing_plot
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -318,8 +317,7 @@ def test_on_close_iterates_marker_copy():
     f = BlittedFigure()
     f.figure = mock.MagicMock()
     f.ax = mock.MagicMock()
-    f.events = Events()
-    f.events.closed = Event("", arguments=["obj"])
+    f.events = FigureEvents(f)
 
     marker1 = mock.MagicMock()
     marker2 = mock.MagicMock()
@@ -337,8 +335,7 @@ def test_histogram_tile_plot_close_calls_super():
     # HistogramTilePlot.__init__ bypasses super().__init__(),
     # so initialise inherited attributes manually.
     htp.ax_markers = []
-    htp.events = Events()
-    htp.events.closed = Event("", arguments=["obj"])
+    htp.events = FigureEvents(htp)
     htp._background = None
     htp.create_figure()
     htp.close()

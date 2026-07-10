@@ -563,7 +563,7 @@ class TestSyncingGuardPreventsRecursion:
         @_reentrance_guard(_syncing)
         def closure_a(**kwargs):
             calls[0] += 1
-            ev_b.trigger()
+            ev_b.emit()
 
         @_reentrance_guard(_syncing)
         def closure_b(**kwargs):
@@ -572,7 +572,7 @@ class TestSyncingGuardPreventsRecursion:
         ev_a.connect(closure_a, [])
         ev_b.connect(closure_b, [])
 
-        ev_a.trigger()
+        ev_a.emit()
 
         assert calls[0] == 1
         assert calls[1] == 0

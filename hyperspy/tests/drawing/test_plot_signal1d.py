@@ -210,9 +210,9 @@ class TestPlotSpectra:
         s2 = s / 2
         ax = hs.plot.plot_spectra([s, s2])
         s.data = -s.data
-        s.events.data_changed.trigger(s)
+        s.events.data_changed.emit(s)
         s2.data = -s2.data * 4 + 50
-        s2.events.data_changed.trigger(s2)
+        s2.events.data_changed.emit(s2)
 
         return ax.get_figure()
 
@@ -373,19 +373,19 @@ def test_plot_nav2_sig1_two_cursors_close():
 def test_plot_with_non_finite_value():
     s = hs.signals.Signal1D(np.array([np.nan, 2.0]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal1D(np.array([np.nan, np.nan]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal1D(np.array([-np.inf, 2.0]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal1D(np.array([np.inf, 2.0]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
 
 @pytest.mark.parametrize("ax", ["left", "right"])
@@ -446,7 +446,7 @@ def test_plot_autoscale(autoscale):
     ax = s._plot.signal_plot.ax
     ax.set_xlim(50.0, 70.0)
     ax.set_ylim(-50.0, 200.0)
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     return s._plot.signal_plot.figure
 
@@ -513,7 +513,7 @@ def test_plot_spectra_normalise_interactive():
 
     # Simulate data changed
     s.data = s.data * -1
-    s.events.data_changed.trigger(s)
+    s.events.data_changed.emit(s)
 
     # check the values
     assert lines[0].get_data()[1][0] == 1

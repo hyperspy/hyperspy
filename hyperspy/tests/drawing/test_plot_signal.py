@@ -132,7 +132,7 @@ def test_plot_data_changed_event(sdim):
         s = hs.signals.Signal1D(np.arange(25))
     s.plot()
     s.data *= -2
-    s.events.data_changed.trigger(obj=s)
+    s.events.data_changed.emit(obj=s)
     return plt.gcf()
 
 
