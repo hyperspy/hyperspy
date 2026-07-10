@@ -115,9 +115,9 @@ class Interactive:
         self._event = event
         self._recompute_out_event = recompute_out_event
         self._has_out = has_out
-        if recompute_out_event:
+        if recompute_out_event is not None:
             _connect_events(recompute_out_event, self.recompute_out)
-        if event:
+        if event is not None:
             if has_out:
                 _connect_events(event, self.update)
             else:
@@ -134,7 +134,7 @@ class Interactive:
         else:
             self.out.data = out.data
         self.out.axes_manager.update_axes_attributes_from(out.axes_manager._axes)
-        self.out.events.data_changed.trigger(self.out)
+        self.out.events.data_changed.emit(self.out)
 
     def update(self):
         self.f(*self.args, out=self.out, **self.kwargs)

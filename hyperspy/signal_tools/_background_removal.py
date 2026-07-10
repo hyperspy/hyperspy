@@ -254,7 +254,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         )
         new_spectra = result[0] if return_model else result
         self.signal.data = new_spectra.data
-        self.signal.events.data_changed.trigger(self)
+        self.signal.events.data_changed.emit(self)
 
     def disconnect(self):
         super().disconnect()
