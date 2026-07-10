@@ -24,10 +24,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from psygnal import SignalGroup
 
 from hyperspy.drawing import utils
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 from hyperspy.misc.test_utils import ignore_warning
 
 _logger = logging.getLogger(__name__)
@@ -244,6 +245,12 @@ class Signal1DFigure(BlittedFigure):
         self.render_figure()
 
 
+class Signal1DLineEvents(SignalGroup):
+    """Events for :class:`Signal1DLine`."""
+
+    closed = EventSignal(object, arguments=["obj"])
+
+
 class Signal1DLine(object):
     """Line that can be added to Signal1DFigure.
 
@@ -274,18 +281,7 @@ class Signal1DLine(object):
     """
 
     def __init__(self):
-        self.events = Events()
-        self.events.closed = Event(
-            """
-            Event that triggers when the line is closed.
-
-            Parameters
-            ----------
-            obj:  Signal1DLine instance
-                The instance that triggered the event.
-            """,
-            arguments=["obj"],
-        )
+        self.events = Signal1DLineEvents(self)
         self.sf_lines = None
         self.ax = None
         # Data attributes
@@ -563,7 +559,7 @@ class Signal1DLine(object):
             self.text.remove()
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
-        self.events.closed.trigger(obj=self)
+        self.events.closed.emit(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         try:

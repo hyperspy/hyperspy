@@ -21,29 +21,25 @@ import textwrap
 
 import matplotlib
 import matplotlib.pyplot as plt
+from psygnal import SignalGroup
 
 from hyperspy.drawing import utils
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 
 _logger = logging.getLogger(__name__)
+
+
+class FigureEvents(SignalGroup):
+    """Events for :class:`BlittedFigure`."""
+
+    closed = EventSignal(object, arguments=["obj"])
 
 
 class BlittedFigure:
     def __init__(self):
         self._draw_event_cid = None
         self._background = None
-        self.events = Events()
-        self.events.closed = Event(
-            """
-            Event that triggers when the figure window is closed.
-
-            Parameters
-            ----------
-            obj:  SpectrumFigure instances
-                The instance that triggered the event.
-            """,
-            arguments=["obj"],
-        )
+        self.events = FigureEvents(self)
         # The matplotlib Figure or SubFigure
         # To access the matplotlib figure, use `get_mpl_figure`
         self.figure = None
@@ -142,7 +138,7 @@ class BlittedFigure:
         # Same snapshot-copy rationale as remove_markers (see above).
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
-        self.events.closed.trigger(obj=self)
+        self.events.closed.emit(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         if self._draw_event_cid:

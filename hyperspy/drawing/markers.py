@@ -22,8 +22,9 @@ import matplotlib.collections as mpl_collections
 import numpy as np
 from matplotlib.patches import Patch
 from matplotlib.transforms import IdentityTransform
+from psygnal import SignalGroup
 
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 from hyperspy.misc import _markers, dask_utils, utils
 
 
@@ -33,6 +34,12 @@ def convert_positions(peaks, signal_axes):
         # indexes need to be reversed
         new_data[..., (-i - 1)] = ax.scale * peaks[..., i] + ax.offset
     return new_data
+
+
+class MarkersEvents(SignalGroup):
+    """Events for :class:`Markers`."""
+
+    closed = EventSignal(object, arguments=["obj"])
 
 
 class Markers:
@@ -233,18 +240,7 @@ class Markers:
         self._ScalarMappable_array = ScalarMappable_array
 
         # Events
-        self.events = Events()
-        self.events.closed = Event(
-            """
-            Event triggered when a marker is closed.
-
-            Parameters
-            ----------
-            marker : Marker
-                The marker that was closed.
-            """,
-            arguments=["obj"],
-        )
+        self.events = MarkersEvents(self)
         self._closing = False
 
     @property
@@ -774,7 +770,7 @@ class Markers:
         # instead of restoring the removed markers' pixels.
         if render_figure and hasattr(self.ax, "hspy_fig"):
             self.ax.hspy_fig._background = None
-        self.events.closed.trigger(obj=self)
+        self.events.closed.emit(obj=self)
         self._signal = None
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)

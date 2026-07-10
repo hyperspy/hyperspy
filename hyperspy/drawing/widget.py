@@ -21,10 +21,89 @@ from __future__ import division
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backend_bases import MouseEvent, PickEvent
+from psygnal import SignalGroup
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
+
+
+class WidgetBaseEvents(SignalGroup):
+    """Events for :class:`WidgetBase`."""
+
+    changed = EventSignal(
+        object,
+        description="""\
+Event that triggers when the widget has a significant change.
+
+The event triggers after the internal state of the widget has been
+updated.
+
+Parameters
+----------
+widget :
+    The widget that changed
+""",
+        arguments=["obj"],
+    )
+    closed = EventSignal(
+        object,
+        description="""\
+Event that triggers when the widget closed.
+
+The event triggers after the widget has already been closed.
+
+Parameters
+----------
+widget :
+    The widget that closed
+""",
+        arguments=["obj"],
+    )
+
+
+class DraggableWidgetBaseEvents(WidgetBaseEvents):
+    """Events for :class:`DraggableWidgetBase`."""
+
+    moved = EventSignal(
+        object,
+        description="""\
+Event that triggers when the widget was moved.
+
+The event triggers after the internal state of the widget has been
+updated. This event does not differentiate on how the position of
+the widget was changed, so it is the responsibility of the user
+to suppress events as neccessary to avoid closed loops etc.
+
+Parameters
+----------
+obj:
+    The widget that was moved.
+""",
+        arguments=["obj"],
+    )
+
+
+class ResizableWidgetBaseEvents(DraggableWidgetBaseEvents):
+    """Events for :class:`ResizableDraggableWidgetBase`."""
+
+    resized = EventSignal(
+        object,
+        description="""\
+Event that triggers when the widget was resized.
+
+The event triggers after the internal state of the widget has been
+updated. This event does not differentiate on how the size of
+the widget was changed, so it is the responsibility of the user
+to suppress events as neccessary to avoid closed loops etc.
+
+Parameters
+----------
+obj:
+    The widget that was resized.
+""",
+        arguments=["obj"],
+    )
 
 
 class WidgetBase(object):
@@ -61,34 +140,7 @@ class WidgetBase(object):
         self.alpha = alpha
         self.cids = list()
         self.blit = None
-        self.events = Events()
-        self.events.changed = Event(
-            doc="""
-            Event that triggers when the widget has a significant change.
-
-            The event triggers after the internal state of the widget has been
-            updated.
-
-            Parameters
-            ----------
-            widget :
-                The widget that changed
-            """,
-            arguments=["obj"],
-        )
-        self.events.closed = Event(
-            doc="""
-            Event that triggers when the widget closed.
-
-            The event triggers after the widget has already been closed.
-
-            Parameters
-            ----------
-            widget :
-                The widget that closed
-            """,
-            arguments=["obj"],
-        )
+        self.events = WidgetBaseEvents(self)
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
 
@@ -259,7 +311,7 @@ class WidgetBase(object):
         events.closed.
         """
         self.set_on(False, render_figure=render_figure)
-        self.events.closed.trigger(obj=self)
+        self.events.closed.emit(obj=self)
 
     def draw_patch(self, *args):
         """Update the patch drawing."""
@@ -325,22 +377,7 @@ class DraggableWidgetBase(WidgetBase):
     def __init__(self, axes_manager, **kwargs):
         super(DraggableWidgetBase, self).__init__(axes_manager, **kwargs)
         self.is_pointer = False
-        self.events.moved = Event(
-            doc="""
-            Event that triggers when the widget was moved.
-
-            The event triggers after the internal state of the widget has been
-            updated. This event does not differentiate on how the position of
-            the widget was changed, so it is the responsibility of the user
-            to suppress events as neccessary to avoid closed loops etc.
-
-            Parameters
-            ----------
-            obj:
-                The widget that was moved.
-            """,
-            arguments=["obj"],
-        )
+        self.events = DraggableWidgetBaseEvents(self)
         self._snap_position = True
 
         # Set default axes
@@ -390,9 +427,9 @@ class DraggableWidgetBase(WidgetBase):
             with self.axes_manager.events.indices_changed.suppress():
                 for i in range(len(self.axes)):
                     self.axes[i].value = self._pos[i]
-            self.axes_manager.events.indices_changed.trigger(obj=self.axes_manager)
-        self.events.moved.trigger(self)
-        self.events.changed.trigger(self)
+            self.axes_manager.events.indices_changed.emit(obj=self.axes_manager)
+        self.events.moved.emit(self)
+        self.events.changed.emit(self)
         self._update_patch_position()
 
     def _validate_pos(self, pos):
@@ -558,22 +595,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             self._size = np.array([1])
         self.size_step = 1  # = one step in index space
         self._snap_size = True
-        self.events.resized = Event(
-            doc="""
-            Event that triggers when the widget was resized.
-
-            The event triggers after the internal state of the widget has been
-            updated. This event does not differentiate on how the size of
-            the widget was changed, so it is the responsibility of the user
-            to suppress events as neccessary to avoid closed loops etc.
-
-            Parameters
-            ----------
-            obj:
-                The widget that was resized.
-            """,
-            arguments=["obj"],
-        )
+        self.events = ResizableWidgetBaseEvents(self)
         self.no_events_while_dragging = False
         self._drag_store = None
         # Re-entrance guard. When True, avoids update loop by
@@ -660,8 +682,8 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
     def _size_changed(self):
         """Triggers resize and changed events, and updates the patch."""
-        self.events.resized.trigger(self)
-        self.events.changed.trigger(self)
+        self.events.resized.emit(self)
+        self.events.changed.emit(self)
         self._update_patch_size()
 
     def get_size_in_indices(self):
@@ -754,10 +776,10 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             # Then fire events
             if not self.no_events_while_dragging or not self.picked:
                 if moved:
-                    self.events.moved.trigger(self)
+                    self.events.moved.emit(self)
                 if resized:
-                    self.events.resized.trigger(self)
-                self.events.changed.trigger(self)
+                    self.events.resized.emit(self)
+                self.events.changed.emit(self)
 
     def button_release(self, event):
         """whenever a mouse button is released."""

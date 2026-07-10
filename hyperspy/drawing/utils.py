@@ -2003,7 +2003,7 @@ def _roi_sum(signal, roi, axes, out=None):
         # ~2x (or more for larger array) faster than nansum
         f = np.nansum if np.isnan(sliced_signal.data).any() else np.sum
         out.data[:] = f(sliced_signal.data, axis=axes)
-        out.events.data_changed.trigger(obj=out)
+        out.events.data_changed.emit(obj=out)
     else:
         # we don't care if this is not optimised for speed since this is
         # expected to be called only when setting up the out signal

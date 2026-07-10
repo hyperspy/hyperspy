@@ -22,11 +22,12 @@ from functools import partial
 from threading import Lock
 
 import matplotlib
+from psygnal import SignalGroup
 from traits.api import Undefined
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.drawing import image, signal1d, widgets
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 
 _logger = logging.getLogger(__name__)
 _lock = Lock()
@@ -36,6 +37,12 @@ def _is_widget_backend():
     backend = matplotlib.get_backend()
     # in ipympl 0.9.4/ipython 8.24, the backend name changed from ipympl to widget
     return backend.lower() in ["ipympl", "widget", "module://ipympl.backend_nbagg"]
+
+
+class MplFigureEvents(SignalGroup):
+    """Events for :class:`MPL_HyperExplorer`."""
+
+    closed = EventSignal(object, arguments=["obj"])
 
 
 class MPL_HyperExplorer:
@@ -56,18 +63,7 @@ class MPL_HyperExplorer:
         self.pointer = None
         self._pointer_nav_dim = None
 
-        self.events = Events()
-        self.events.closed = Event(
-            """
-            Event that triggers when the figure window is closed.
-
-            Parameters
-            ----------
-            obj:  SpectrumFigure instances
-                The instance that triggered the event.
-            """,
-            arguments=["obj"],
-        )
+        self.events = MplFigureEvents(self)
 
     def plot_signal(self, **kwargs):
         # This method should be implemented by the subclasses.
@@ -309,7 +305,7 @@ class MPL_HyperExplorer:
         3. run the close method of the signal_plot and navigator_plot
         4. reset the attribute
         """
-        self.events.closed.trigger(obj=self)
+        self.events.closed.emit(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
 
