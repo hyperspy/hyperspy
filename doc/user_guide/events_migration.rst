@@ -112,6 +112,109 @@ After:
     # perform actions
     events.my_event.connect(f)
 
+Replacing ``.connected`` introspection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``.connected`` attribute is removed in HyperSpy 3.0. It was commonly used to inspect which callables were subscribed to an event, but psygnal expects callers to **own and manage their own connections** instead of querying the event for its subscribers.
+
+Checking membership
+^^^^^^^^^^^^^^^^^^^
+
+Before:
+
+.. code-block:: python
+
+    if my_callback not in events.my_event.connected:
+        events.my_event.connect(my_callback)
+
+After — track the connection state on the owner:
+
+.. code-block:: python
+
+    self._my_event_connected = False
+
+    def ensure_connected(self):
+        if not self._my_event_connected:
+            events.my_event.connect(my_callback)
+            self._my_event_connected = True
+
+Or use the handle returned by ``connect`` and clean it up explicitly:
+
+.. code-block:: python
+
+    self._disconnect_my_event = events.my_event.connect(my_callback)
+
+    def cleanup(self):
+        self._disconnect_my_event()
+
+Disconnecting all listeners
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before:
+
+.. code-block:: python
+
+    for f in list(events.my_event.connected):
+        events.my_event.disconnect(f)
+
+After — keep a list of disconnect handles:
+
+.. code-block:: python
+
+    class MyObject:
+        def __init__(self):
+            self._event_handles = []
+
+        def add_listener(self, callback):
+            self._event_handles.append(events.my_event.connect(callback))
+
+        def close(self):
+            for disconnect in self._event_handles:
+                disconnect()
+            self._event_handles.clear()
+
+Checking the number of listeners
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before:
+
+.. code-block:: python
+
+    assert len(events.my_event.connected) == 0
+
+After:
+
+.. code-block:: python
+
+    # In most cases you do not need to count listeners. Instead,
+    # track the callbacks you registered yourself.
+    assert len(self._event_handles) == 0
+
+Copying and diffing connection sets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before:
+
+.. code-block:: python
+
+    old = events.my_event.connected.copy()
+    # ... add temporary listeners ...
+    for f in events.my_event.connected - old:
+        events.my_event.disconnect(f)
+
+After — own the list of callbacks you added:
+
+.. code-block:: python
+
+    temp_handles = []
+    for callback in temporary_callbacks:
+        temp_handles.append(events.my_event.connect(callback))
+
+    # ... later ...
+    for disconnect in temp_handles:
+        disconnect()
+    temp_handles.clear()
+
 Group-level connections
 ~~~~~~~~~~~~~~~~~~~~~~~
 
