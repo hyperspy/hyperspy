@@ -28,6 +28,7 @@ dependencies = [
     "natsort",
     "numpy>=1.25.0", # needed for ContratEditorTool
     "packaging",
+    "psygnal>=0.11",
     "pint>=0.10",
     "prettytable>=2.3",
     "pyyaml",
@@ -188,6 +189,7 @@ source = ["hyperspy"]
 addopts = "-ra -n auto --dist loadfile"
 filterwarnings = [
     "ignore:Matplotlib is currently using agg:UserWarning",
+    "ignore::hyperspy.exceptions.VisibleDeprecationWarning",
 ]
 testpaths = ["hyperspy"]
 norecursedirs = [

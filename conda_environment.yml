@@ -12,6 +12,7 @@ dependencies:
 - numexpr >=2.8.0
 - numpy >=1.25.0
 - packaging
+- psygnal >=0.11
 - pint >=0.10
 - prettytable >=2.3
 - pyyaml
