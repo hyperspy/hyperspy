@@ -111,16 +111,27 @@ class BlittedFigure:
             else:
                 return figure
 
-    def _connect_closed(self, callback, **connect_kwargs):
+    def _connect_closed(self, callback):
         """Connect *callback* to self.events.closed and track for cleanup."""
-        self.events.closed.connect(callback, **connect_kwargs)
+        self.events.closed.connect(callback)
         self._closed_callbacks.append(callback)
 
     def add_marker(self, marker):
         marker.ax = self.ax
         self.ax_markers.append(marker)
-        # marker.close() → events.closed → this lambda → mutates ax_markers
-        marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
+
+        def _remove_marker_from_figure(obj):
+            try:
+                self.ax_markers.remove(obj)
+            except ValueError:
+                pass
+            try:
+                marker.events.closed.disconnect(_remove_marker_from_figure)
+            except ValueError:
+                pass
+
+        # marker.close() → events.closed → this callback → mutates ax_markers
+        marker.events.closed.connect(_remove_marker_from_figure)
 
     def remove_markers(self, render_figure=False):
         """Remove all markers"""

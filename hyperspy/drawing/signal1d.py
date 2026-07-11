@@ -158,13 +158,13 @@ class Signal1DFigure(BlittedFigure):
                 line.axes_manager = self.right_axes_manager
         if connect_navigation:
             f = partial(line._auto_update_line, update_ylimits=True)
-            line.axes_manager.events.indices_changed.connect(f, [])
+            line.axes_manager.events.indices_changed.connect(f)
 
-            def _on_line_close():
+            def _on_line_close(**kwargs):
                 line.axes_manager.events.indices_changed.disconnect(f)
                 line.events.closed.disconnect(_on_line_close)
 
-            line.events.closed.connect(_on_line_close, [])
+            line.events.closed.connect(_on_line_close)
 
         line.axis = self.axis
         # Automatically asign the color if not defined
@@ -197,10 +197,11 @@ class Signal1DFigure(BlittedFigure):
             min(x_axis_lower_lims, default=None), max(x_axis_upper_lims, default=None)
         )
 
-        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.axes_manager.events.indices_changed.connect(self.update)
         self._connect_closed(
-            lambda: self.axes_manager.events.indices_changed.disconnect(self.update),
-            kwargs=[],
+            lambda obj: self.axes_manager.events.indices_changed.disconnect(
+                self.update
+            ),
         )
 
         if hasattr(self.figure, "tight_layout"):
@@ -221,7 +222,7 @@ class Signal1DFigure(BlittedFigure):
         super()._on_close()
         _logger.debug("Signal1DFigure Closed.")
 
-    def update(self):
+    def update(self, *args, **kwargs):
         """
         Update lines, markers and render at the end.
         This method is connected to the `indices_changed` event of the
@@ -314,9 +315,9 @@ class Signal1DLine(object):
         self.type = "line"
         self._closed_callbacks = []
 
-    def _connect_closed(self, callback, **connect_kwargs):
+    def _connect_closed(self, callback):
         """Connect *callback* to self.events.closed and track for cleanup."""
-        self.events.closed.connect(callback, **connect_kwargs)
+        self.events.closed.connect(callback)
         self._closed_callbacks.append(callback)
 
     @property
@@ -478,7 +479,14 @@ class Signal1DLine(object):
                 kwargs["render_figure"] = len(self.ax.hspy_fig.ax_markers) == 0
             self.update(self, update_ylimits=update_ylimits, **kwargs)
 
-    def update(self, force_replot=False, render_figure=True, update_ylimits=False):
+    def update(
+        self,
+        force_replot=False,
+        render_figure=True,
+        update_ylimits=False,
+        *args,
+        **kwargs,
+    ):
         """Update the current spectrum figure
 
         Parameters

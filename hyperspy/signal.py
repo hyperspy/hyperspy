@@ -3205,7 +3205,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 )
 
         self._plot.plot(**kwargs)
-        self.events.data_changed.connect(self.update_plot, [])
+        self.events.data_changed.connect(self.update_plot)
 
         # Disconnect event when closing signal
         p = (
@@ -3214,17 +3214,17 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             else self._plot.navigator_plot
         )
 
-        def _disconnect_update_plot():
+        def _disconnect_update_plot(**kwargs):
             self.events.data_changed.disconnect(self.update_plot)
             try:
                 p.events.closed.disconnect(_disconnect_update_plot)
             except (ValueError, AttributeError):
                 pass
 
-        p.events.closed.connect(_disconnect_update_plot, [])
+        p.events.closed.connect(_disconnect_update_plot)
         if _nav_interactive is not None:
 
-            def _disconnect_navigator():
+            def _disconnect_navigator(**kwargs):
                 _nav_interactive.close()
                 try:
                     self._plot.navigator_plot.events.closed.disconnect(
@@ -3233,7 +3233,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 except (ValueError, AttributeError):
                     pass
 
-            self._plot.navigator_plot.events.closed.connect(_disconnect_navigator, [])
+            self._plot.navigator_plot.events.closed.connect(_disconnect_navigator)
 
         if plot_markers:
             if self.metadata.has_item("Markers"):
@@ -3490,7 +3490,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             if self._plot.is_active:
                 self.plot()
 
-    def update_plot(self):
+    def update_plot(self, *args, **kwargs):
         """
         If this Signal has been plotted, update the signal and navigator
         plots, as appropriate.

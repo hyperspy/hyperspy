@@ -246,7 +246,7 @@ class Model1D(BaseModel):
         self._model_line = None
         self._residual_line = None
         self.axis = self.axes_manager.signal_axes[0]
-        self.axes_manager.events.indices_changed.connect(self._on_navigating, [])
+        self.axes_manager.events.indices_changed.connect(self._on_navigating)
         self._channel_switches = np.array([True] * len(self.axis.axis))
         self._chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")

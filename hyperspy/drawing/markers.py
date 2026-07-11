@@ -244,9 +244,9 @@ class Markers:
         self._closing = False
         self._closed_callbacks = []
 
-    def _connect_closed(self, callback, **connect_kwargs):
+    def _connect_closed(self, callback):
         """Connect *callback* to self.events.closed and track for cleanup."""
-        self.events.closed.connect(callback, **connect_kwargs)
+        self.events.closed.connect(callback)
         self._closed_callbacks.append(callback)
 
     @property

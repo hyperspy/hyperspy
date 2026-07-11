@@ -276,7 +276,7 @@ class WidgetBase(object):
         if self._navigating:
             self.connect_navigate()
 
-    def connect_navigate(self):
+    def connect_navigate(self, *args):
         """Connect to the axes_manager such that changes in the widget or in
         the axes_manager are reflected in the other.
         """
@@ -287,7 +287,7 @@ class WidgetBase(object):
         self._on_navigate(self.axes_manager)  # Update our position
         self._navigating = True
 
-    def disconnect_navigate(self):
+    def disconnect_navigate(self, *args):
         """Disconnect a previous naivgation connection."""
         if self._navigate_callback is not None:
             self.axes_manager.events.indices_changed.disconnect(self._navigate_callback)
@@ -298,7 +298,7 @@ class WidgetBase(object):
         """Callback for axes_manager's change notification."""
         pass  # Implement in subclass!
 
-    def disconnect(self):
+    def disconnect(self, **kwargs):
         """Disconnect from all events (both matplotlib and navigation)."""
         for cid in self.cids:
             try:

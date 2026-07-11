@@ -1274,7 +1274,7 @@ class BaseModel(list):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
 
-    def _on_navigating(self):
+    def _on_navigating(self, *args, **kwargs):
         """Same as fetch_stored_values but without update_on_resume since
         the model plot is updated in the figure update callback.
         """

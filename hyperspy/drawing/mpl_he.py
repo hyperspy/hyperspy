@@ -18,7 +18,6 @@
 
 import logging
 import warnings
-from functools import partial
 from threading import Lock
 
 import matplotlib
@@ -66,9 +65,9 @@ class MPL_HyperExplorer:
         self.events = MplFigureEvents(self)
         self._closed_callbacks = []
 
-    def _connect_closed(self, callback, **connect_kwargs):
+    def _connect_closed(self, callback):
         """Connect *callback* to self.events.closed and track for cleanup."""
-        self.events.closed.connect(callback, **connect_kwargs)
+        self.events.closed.connect(callback)
         self._closed_callbacks.append(callback)
 
     def plot_signal(self, **kwargs):
@@ -139,10 +138,15 @@ class MPL_HyperExplorer:
             if self.axes_manager.navigation_dimension > 1:
                 self._get_navigation_sliders()
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.events.index_changed.connect(sf.update, [])
+
+                    def _update_cb_nav(*args, update=sf.update, **kwargs):
+                        update()
+
+                    axis.events.index_changed.connect(_update_cb_nav)
                     self._connect_closed(
-                        partial(axis.events.index_changed.disconnect, sf.update),
-                        kwargs=[],
+                        lambda obj: axis.events.index_changed.disconnect(
+                            _update_cb_nav
+                        ),
                     )
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
@@ -168,10 +172,15 @@ class MPL_HyperExplorer:
                 if self.axes_manager.navigation_dimension > 2:
                     self._get_navigation_sliders()
                     for axis in self.axes_manager.navigation_axes[2:]:
-                        axis.events.index_changed.connect(imf.update, [])
+
+                        def _update_cb_nav(*args, update=imf.update, **kwargs):
+                            update()
+
+                        axis.events.index_changed.connect(_update_cb_nav)
                         self._connect_closed(
-                            partial(axis.events.index_changed.disconnect, imf.update),
-                            kwargs=[],
+                            lambda obj: axis.events.index_changed.disconnect(
+                                _update_cb_nav
+                            ),
                         )
 
             if "cmap" not in kwargs.keys() or kwargs["cmap"] is None:
@@ -233,7 +242,7 @@ class MPL_HyperExplorer:
                     self.pointer.connect_navigate()
                 self.plot_navigator(**kwargs.pop("navigator_kwds", {}))
                 if pointer is not None:
-                    self._connect_closed(self.pointer.disconnect, kwargs=[])
+                    self._connect_closed(lambda obj: self.pointer.disconnect())
             self.plot_signal(**kwargs)
             if _is_widget_backend() and "fig" not in kwargs:
                 if plot_style not in ["vertical", "horizontal", None]:

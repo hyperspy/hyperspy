@@ -124,7 +124,7 @@ class Interactive:
                 #  We "simulate" out by triggering `recompute_out` instead.
                 _connect_events(event, self.recompute_out)
 
-    def recompute_out(self):
+    def recompute_out(self, *args, **kwargs):
         out = self.f(*self.args, **self.kwargs)
         if out is None:
             return
@@ -136,7 +136,7 @@ class Interactive:
         self.out.axes_manager.update_axes_attributes_from(out.axes_manager._axes)
         self.out.events.data_changed.emit(self.out)
 
-    def update(self):
+    def update(self, *args, **kwargs):
         self.f(*self.args, out=self.out, **self.kwargs)
 
     def close(self):
