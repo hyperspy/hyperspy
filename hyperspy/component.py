@@ -424,14 +424,21 @@ class Parameter(t.HasTraits):
                 twin_value = self.value
                 if self in self.twin._twins:
                     self.twin._twins.remove(self)
-                    self.twin.events.value_changed.disconnect(self._on_twin_update)
+                    self.twin.events.value_changed.disconnect(
+                        self._twin_value_changed_callback
+                    )
 
                 self.__twin = arg
                 self.value = twin_value
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                arg.events.value_changed.connect(self._on_twin_update, ["value"])
+
+                def _callback(**kwargs):
+                    self._on_twin_update(kwargs["value"])
+
+                self._twin_value_changed_callback = _callback
+                arg.events.value_changed.connect(self._twin_value_changed_callback)
             self.__twin = arg
 
         if self.component is not None:

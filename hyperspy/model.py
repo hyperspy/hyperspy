@@ -35,7 +35,7 @@ from hyperspy.component import Component
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
-from hyperspy.events import EventSignal, EventSuppressor
+from hyperspy.events import EventSignal
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.progressbar import progressbar
@@ -976,9 +976,9 @@ class BaseModel(list):
         ]
         for i, component in enumerate(components):
             for line in lines:
-                component.events.active_changed.connect(line._auto_update_line, [])
+                component.events.active_changed.connect(line._auto_update_line)
                 for parameter in component.parameters:
-                    parameter.events.value_changed.connect(line._auto_update_line, [])
+                    parameter.events.value_changed.connect(line._auto_update_line)
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
@@ -1027,36 +1027,42 @@ class BaseModel(list):
         update_plot
         """
 
-        es = EventSuppressor()
-        es.add(self.axes_manager.events.indices_changed)
+        blocked_si = set()
+
+        def _add(signal_instance):
+            blocked_si.add(signal_instance)
+
+        _add(self.axes_manager.events.indices_changed)
         if self._model_line:
-            f = self._model_line._auto_update_line
             for c in self:
-                es.add(c.events, f)
+                _add(c.events.active_changed)
                 if c._position:
-                    es.add(c._position.events)
+                    _add(c._position.events.value_changed)
                 for p in c.parameters:
-                    es.add(p.events, f)
+                    _add(p.events.value_changed)
 
         if self._residual_line:
-            f = self._residual_line._auto_update_line
             for c in self:
-                es.add(c.events, f)
+                _add(c.events.active_changed)
                 for p in c.parameters:
-                    es.add(p.events, f)
+                    _add(p.events.value_changed)
 
         for c in self:
             if hasattr(c, "_component_line"):
-                f = c._component_line._auto_update_line
-                es.add(c.events, f)
+                _add(c.events.active_changed)
                 for p in c.parameters:
-                    es.add(p.events, f)
+                    _add(p.events.value_changed)
 
         old = self._suspend_update
         self._suspend_update = True
-        with es.suppress():
+        for si in blocked_si:
+            si.block()
+        try:
             yield
-        self._suspend_update = old
+        finally:
+            for si in blocked_si:
+                si.unblock()
+            self._suspend_update = old
 
         if update_on_resume is True:
             for c in self:
@@ -1067,7 +1073,7 @@ class BaseModel(list):
                     )
             self.update_plot(render_figure=True, update_ylimits=False)
 
-    def _close_plot(self):
+    def _close_plot(self, **kwargs):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
@@ -2603,9 +2609,7 @@ class BaseModel(list):
         # Fitting in a vectorized fashion is not supported. We iterate over the
         # navigation indices and fit the dataset one by one.
         i = 0
-        with self.axes_manager.events.indices_changed.suppress_callback(
-            self.fetch_stored_values
-        ):
+        with self.axes_manager.events.indices_changed.blocked():
             with self.axes_manager.switch_iterpath(iterpath):
                 if interactive_plot:
                     outer = utils.dummy_context_manager

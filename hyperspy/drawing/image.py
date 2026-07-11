@@ -636,7 +636,7 @@ class ImagePlot(BlittedFigure):
                 self.events.closed.connect(lambda obj: self.disconnect())
                 self._closed_connected = True
 
-    def disconnect(self, *args):
+    def disconnect(self, **kwargs):
         if self.axes_manager:
             if self._indices_changed_connected:
                 self.axes_manager.events.indices_changed.disconnect(self.update)

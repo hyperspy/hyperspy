@@ -2167,7 +2167,7 @@ class AxesManager(t.HasTraits):
         # To only trigger once even with several changes, we suppress here
         # and trigger manually below if there were any changes.
         changes = False
-        with self.events.any_axis_changed.suppress():
+        with self.events.any_axis_changed.blocked():
             for axis in axes:
                 changed = self._axes[axis.index_in_array].update_from(
                     axis=axis, attributes=attributes
@@ -2485,7 +2485,7 @@ class AxesManager(t.HasTraits):
                 "navigation dimension that is %i" % self.navigation_dimension
             )
         changes = False
-        with self.events.indices_changed.suppress():
+        with self.events.indices_changed.blocked():
             for value, axis in zip(coordinates, self.navigation_axes):
                 changes = changes or (axis.value != value)
                 axis.value = value
@@ -2511,7 +2511,7 @@ class AxesManager(t.HasTraits):
                 "navigation dimension that is %i" % self.navigation_dimension
             )
         changes = False
-        with self.events.indices_changed.suppress():
+        with self.events.indices_changed.blocked():
             for index, axis in zip(indices, self.navigation_axes):
                 changes = changes or (axis.index != index)
                 axis.index = index

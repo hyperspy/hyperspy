@@ -28,6 +28,22 @@ from psygnal import SignalGroup
 from hyperspy.events import Event, EventSignal, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 
+# ============================================================================
+# This module tests the legacy (deprecated) Event API.  Tests fall into two
+# categories:
+#
+#   1. DEPRECATED API TESTS ― wrap the call site(s) in
+#      ``pytest.warns(VisibleDeprecationWarning)`` because they intentionally
+#      exercise ``Event.connect(kwargs=…)``, ``Event.suppress()``,
+#      ``Event.suppress_callback()``, ``EventSuppressor``, ``Event.trigger()``,
+#      or ``Event.connected``.
+#
+#   2. NATIVE-API TESTS ― use ``psygnal.SignalInstance.connect``,
+#      ``psygnal.SignalInstance.emit``, ``psygnal.SignalInstance.blocked``,
+#      etc. WITHOUT ``pytest.warns``.  These tests do not emit
+#      ``VisibleDeprecationWarning``.
+# ============================================================================
+
 
 class EventsSuppressionGroup(SignalGroup):
     a = EventSignal()
@@ -64,6 +80,8 @@ class EventsBase:
 
 
 class TestEventsSuppression(EventsBase):
+    """Deprecated API tests — ``Event.suppress()``, ``Event.suppress_callback()``, and ``EventSuppressor``."""
+
     def setup_method(self, method):
         self.events = EventsSuppressionGroup(self)
 
@@ -73,176 +91,196 @@ class TestEventsSuppression(EventsBase):
         self.events.c.connect(self.on_trigger)
 
     def test_simple_suppression(self):
-        with self.events.a.suppress():
-            self.trigger_check(self.events.a.trigger, False)
-            self.trigger_check(self.events.b.trigger, True)
-
-        self.trigger_check(self.events.a.trigger, True)
-        self.trigger_check(self.events.b.trigger, True)
-        self.trigger_check(self.events.c.trigger, True)
-
-    def test_suppression_single(self):
-        with self.events.b.suppress():
-            with self.events.a.suppress_callback(self.on_trigger):
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with self.events.a.suppress():
                 self.trigger_check(self.events.a.trigger, False)
-                self.trigger_check2(self.events.a.trigger, True)
-                self.trigger_check(self.events.b.trigger, False)
-                self.trigger_check(self.events.c.trigger, True)
+                self.trigger_check(self.events.b.trigger, True)
 
             self.trigger_check(self.events.a.trigger, True)
-            self.trigger_check2(self.events.a.trigger, True)
-            self.trigger_check(self.events.b.trigger, False)
-            self.trigger_check(self.events.c.trigger, True)
-
-        # Reverse order:
-        with self.events.a.suppress_callback(self.on_trigger):
-            with self.events.b.suppress():
-                self.trigger_check(self.events.a.trigger, False)
-                self.trigger_check2(self.events.a.trigger, True)
-                self.trigger_check(self.events.b.trigger, False)
-                self.trigger_check(self.events.c.trigger, True)
-
-            self.trigger_check(self.events.a.trigger, False)
-            self.trigger_check2(self.events.a.trigger, True)
             self.trigger_check(self.events.b.trigger, True)
             self.trigger_check(self.events.c.trigger, True)
 
-    def test_exception_event(self):
-        with pytest.raises(ValueError):
-            try:
-                with self.events.a.suppress():
-                    self.trigger_check(self.events.a.trigger, False)
-                    self.trigger_check(self.events.b.trigger, True)
-                    self.trigger_check(self.events.c.trigger, True)
-                    raise ValueError()
-            finally:
-                self.trigger_check(self.events.a.trigger, True)
-                self.trigger_check(self.events.b.trigger, True)
-                self.trigger_check(self.events.c.trigger, True)
-
-    def test_exception_single(self):
-        with pytest.raises(ValueError):
-            try:
+    def test_suppression_single(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with self.events.b.suppress():
                 with self.events.a.suppress_callback(self.on_trigger):
                     self.trigger_check(self.events.a.trigger, False)
                     self.trigger_check2(self.events.a.trigger, True)
-                    self.trigger_check(self.events.b.trigger, True)
+                    self.trigger_check(self.events.b.trigger, False)
                     self.trigger_check(self.events.c.trigger, True)
-                    raise ValueError()
-            finally:
+
                 self.trigger_check(self.events.a.trigger, True)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, False)
+                self.trigger_check(self.events.c.trigger, True)
+
+            # Reverse order:
+            with self.events.a.suppress_callback(self.on_trigger):
+                with self.events.b.suppress():
+                    self.trigger_check(self.events.a.trigger, False)
+                    self.trigger_check2(self.events.a.trigger, True)
+                    self.trigger_check(self.events.b.trigger, False)
+                    self.trigger_check(self.events.c.trigger, True)
+
+                self.trigger_check(self.events.a.trigger, False)
                 self.trigger_check2(self.events.a.trigger, True)
                 self.trigger_check(self.events.b.trigger, True)
                 self.trigger_check(self.events.c.trigger, True)
 
-    def test_exception_nested(self):
-        with pytest.raises(ValueError):
-            try:
-                with self.events.a.suppress_callback(self.on_trigger):
-                    try:
-                        with self.events.a.suppress():
-                            self.trigger_check(self.events.a.trigger, False)
-                            self.trigger_check2(self.events.a.trigger, False)
-                            self.trigger_check(self.events.b.trigger, True)
-                            self.trigger_check(self.events.c.trigger, True)
-                            raise ValueError()
-                    finally:
+    def test_exception_event(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with pytest.raises(ValueError):
+                try:
+                    with self.events.a.suppress():
+                        self.trigger_check(self.events.a.trigger, False)
+                        self.trigger_check(self.events.b.trigger, True)
+                        self.trigger_check(self.events.c.trigger, True)
+                        raise ValueError()
+                finally:
+                    self.trigger_check(self.events.a.trigger, True)
+                    self.trigger_check(self.events.b.trigger, True)
+                    self.trigger_check(self.events.c.trigger, True)
+
+    def test_exception_single(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with pytest.raises(ValueError):
+                try:
+                    with self.events.a.suppress_callback(self.on_trigger):
                         self.trigger_check(self.events.a.trigger, False)
                         self.trigger_check2(self.events.a.trigger, True)
                         self.trigger_check(self.events.b.trigger, True)
                         self.trigger_check(self.events.c.trigger, True)
-            finally:
-                self.trigger_check(self.events.a.trigger, True)
-                self.trigger_check2(self.events.a.trigger, True)
-                self.trigger_check(self.events.b.trigger, True)
-                self.trigger_check(self.events.c.trigger, True)
+                        raise ValueError()
+                finally:
+                    self.trigger_check(self.events.a.trigger, True)
+                    self.trigger_check2(self.events.a.trigger, True)
+                    self.trigger_check(self.events.b.trigger, True)
+                    self.trigger_check(self.events.c.trigger, True)
+
+    def test_exception_nested(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with pytest.raises(ValueError):
+                try:
+                    with self.events.a.suppress_callback(self.on_trigger):
+                        try:
+                            with self.events.a.suppress():
+                                self.trigger_check(self.events.a.trigger, False)
+                                self.trigger_check2(self.events.a.trigger, False)
+                                self.trigger_check(self.events.b.trigger, True)
+                                self.trigger_check(self.events.c.trigger, True)
+                                raise ValueError()
+                        finally:
+                            self.trigger_check(self.events.a.trigger, False)
+                            self.trigger_check2(self.events.a.trigger, True)
+                            self.trigger_check(self.events.b.trigger, True)
+                            self.trigger_check(self.events.c.trigger, True)
+                finally:
+                    self.trigger_check(self.events.a.trigger, True)
+                    self.trigger_check2(self.events.a.trigger, True)
+                    self.trigger_check(self.events.b.trigger, True)
+                    self.trigger_check(self.events.c.trigger, True)
 
     def test_suppress_wrong(self):
-        with self.events.a.suppress_callback(f_a):
-            self.trigger_check(self.events.a.trigger, True)
-            self.trigger_check2(self.events.a.trigger, True)
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with self.events.a.suppress_callback(f_a):
+                self.trigger_check(self.events.a.trigger, True)
+                self.trigger_check2(self.events.a.trigger, True)
 
     def test_suppressor_init_args(self):
-        with self.events.b.suppress():
-            es = EventSuppressor((self.events.a, self.on_trigger), self.events.c)
-            with es.suppress():
-                self.trigger_check(self.events.a.trigger, False)
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with self.events.b.suppress():
+                es = EventSuppressor((self.events.a, self.on_trigger), self.events.c)
+                with es.suppress():
+                    self.trigger_check(self.events.a.trigger, False)
+                    self.trigger_check2(self.events.a.trigger, True)
+                    self.trigger_check(self.events.b.trigger, False)
+                    self.trigger_check(self.events.c.trigger, False)
+                    with self.events.a.suppress_callback(self.on_trigger2):
+                        self.trigger_check2(self.events.a.trigger, False)
+                    self.trigger_check2(self.events.a.trigger, True)
+
+                self.trigger_check(self.events.a.trigger, True)
                 self.trigger_check2(self.events.a.trigger, True)
                 self.trigger_check(self.events.b.trigger, False)
-                self.trigger_check(self.events.c.trigger, False)
-                with self.events.a.suppress_callback(self.on_trigger2):
-                    self.trigger_check2(self.events.a.trigger, False)
-                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.c.trigger, True)
 
             self.trigger_check(self.events.a.trigger, True)
             self.trigger_check2(self.events.a.trigger, True)
-            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.b.trigger, True)
             self.trigger_check(self.events.c.trigger, True)
-
-        self.trigger_check(self.events.a.trigger, True)
-        self.trigger_check2(self.events.a.trigger, True)
-        self.trigger_check(self.events.b.trigger, True)
-        self.trigger_check(self.events.c.trigger, True)
 
     def test_suppressor_add_args(self):
-        with self.events.b.suppress():
-            es = EventSuppressor()
-            es.add((self.events.a, self.on_trigger), self.events.c)
-            with es.suppress():
-                self.trigger_check(self.events.a.trigger, False)
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with self.events.b.suppress():
+                es = EventSuppressor()
+                es.add((self.events.a, self.on_trigger), self.events.c)
+                with es.suppress():
+                    self.trigger_check(self.events.a.trigger, False)
+                    self.trigger_check2(self.events.a.trigger, True)
+                    self.trigger_check(self.events.b.trigger, False)
+                    self.trigger_check(self.events.c.trigger, False)
+                    with self.events.a.suppress_callback(self.on_trigger2):
+                        self.trigger_check2(self.events.a.trigger, False)
+                    self.trigger_check2(self.events.a.trigger, True)
+
+                self.trigger_check(self.events.a.trigger, True)
                 self.trigger_check2(self.events.a.trigger, True)
                 self.trigger_check(self.events.b.trigger, False)
-                self.trigger_check(self.events.c.trigger, False)
-                with self.events.a.suppress_callback(self.on_trigger2):
-                    self.trigger_check2(self.events.a.trigger, False)
-                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.c.trigger, True)
 
             self.trigger_check(self.events.a.trigger, True)
             self.trigger_check2(self.events.a.trigger, True)
-            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.b.trigger, True)
             self.trigger_check(self.events.c.trigger, True)
-
-        self.trigger_check(self.events.a.trigger, True)
-        self.trigger_check2(self.events.a.trigger, True)
-        self.trigger_check(self.events.b.trigger, True)
-        self.trigger_check(self.events.c.trigger, True)
 
     def test_suppressor_all_callback_in_events(self):
-        with self.events.b.suppress():
-            es = EventSuppressor()
-            es.add(
-                (self.events, self.on_trigger),
-            )
-            with es.suppress():
-                self.trigger_check(self.events.a.trigger, False)
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            with self.events.b.suppress():
+                es = EventSuppressor()
+                es.add(
+                    (self.events, self.on_trigger),
+                )
+                with es.suppress():
+                    self.trigger_check(self.events.a.trigger, False)
+                    self.trigger_check2(self.events.a.trigger, True)
+                    self.trigger_check(self.events.b.trigger, False)
+                    self.trigger_check(self.events.c.trigger, False)
+                    with self.events.a.suppress_callback(self.on_trigger2):
+                        self.trigger_check2(self.events.a.trigger, False)
+                    self.trigger_check2(self.events.a.trigger, True)
+
+                self.trigger_check(self.events.a.trigger, True)
                 self.trigger_check2(self.events.a.trigger, True)
                 self.trigger_check(self.events.b.trigger, False)
-                self.trigger_check(self.events.c.trigger, False)
-                with self.events.a.suppress_callback(self.on_trigger2):
-                    self.trigger_check2(self.events.a.trigger, False)
-                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.c.trigger, True)
 
             self.trigger_check(self.events.a.trigger, True)
             self.trigger_check2(self.events.a.trigger, True)
-            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.b.trigger, True)
             self.trigger_check(self.events.c.trigger, True)
 
-        self.trigger_check(self.events.a.trigger, True)
-        self.trigger_check2(self.events.a.trigger, True)
-        self.trigger_check(self.events.b.trigger, True)
-        self.trigger_check(self.events.c.trigger, True)
-
     def test_suppressor_events_container(self):
-        es = EventSuppressor()
-        es.add(self.events)
-        with es.suppress():
-            self.trigger_check(self.events.a.trigger, False)
-            self.trigger_check(self.events.b.trigger, False)
-            self.trigger_check(self.events.c.trigger, False)
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.suppress() / suppress_callback() / EventSuppressor
+            es = EventSuppressor()
+            es.add(self.events)
+            with es.suppress():
+                self.trigger_check(self.events.a.trigger, False)
+                self.trigger_check(self.events.b.trigger, False)
+                self.trigger_check(self.events.c.trigger, False)
 
-        self.trigger_check(self.events.a.trigger, True)
-        self.trigger_check(self.events.b.trigger, True)
-        self.trigger_check(self.events.c.trigger, True)
+            self.trigger_check(self.events.a.trigger, True)
+            self.trigger_check(self.events.b.trigger, True)
+            self.trigger_check(self.events.c.trigger, True)
 
 
 def f_a(**kwargs):
@@ -262,50 +300,58 @@ def f_d(a, b, c):
 
 
 class TestEventsSignatures(EventsBase):
+    """Deprecated API tests — ``Event.connect(kwargs=…)`` and ``Event.trigger()``."""
+
     def setup_method(self, method):
         self.events = EventSignaturesGroup(self)
 
     def test_trigger_kwarg_validity(self):
-        self.events.a.connect(lambda **kwargs: 0)
-        self.events.a.connect(lambda: 0, [])
-        self.events.a.connect(lambda one: 0, ["one"])
-        self.events.a.connect(lambda one, two: 0, ["one", "two"])
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.connect(kwargs=…) / trigger()
+            self.events.a.connect(lambda **kwargs: 0)
+            self.events.a.connect(lambda: 0, [])
+            self.events.a.connect(lambda one: 0, ["one"])
+            self.events.a.connect(lambda one, two: 0, ["one", "two"])
 
-        def lambda1(one, two=988):
-            assert two == 988
+            def lambda1(one, two=988):
+                assert two == 988
 
-        def lambda2(one, two=988):
-            assert two != 988
+            def lambda2(one, two=988):
+                assert two != 988
 
-        def lambda3(A, B=988):
-            assert A != 988
+            def lambda3(A, B=988):
+                assert A != 988
 
-        self.events.a.connect(lambda1, ["one"])
-        self.events.a.connect(lambda2, ["one", "two"])
-        self.events.a.connect(lambda3, {"one": "A", "two": "B"})
-        self.events.a.trigger(one=2, two=5)
-        self.events.a.trigger(one=2, two=5, three=8)
-        self.events.a.connect(
-            lambda one, two: 0,
-        )
-        with pytest.raises(TypeError):
-            self.events.a.trigger(three=None)
-        with pytest.raises(TypeError):
-            self.events.a.trigger(one=2)
+            self.events.a.connect(lambda1, ["one"])
+            self.events.a.connect(lambda2, ["one", "two"])
+            self.events.a.connect(lambda3, {"one": "A", "two": "B"})
+            self.events.a.trigger(one=2, two=5)
+            self.events.a.trigger(one=2, two=5, three=8)
+            self.events.a.connect(
+                lambda one, two: 0,
+            )
+            with pytest.raises(TypeError):
+                self.events.a.trigger(three=None)
+            with pytest.raises(TypeError):
+                self.events.a.trigger(one=2)
 
     def test_connected_and_disconnect(self):
-        self.events.a.connect(f_a)
-        self.events.a.connect(f_b, ["A", "B"])
-        self.events.a.connect(f_c, {"a": "A", "b": "B"})
-        self.events.a.connect(f_d, "auto")
         with pytest.warns(VisibleDeprecationWarning):
-            assert self.events.a.connected == set([f_a, f_b, f_c, f_d])
-        self.events.a.disconnect(f_a)
-        self.events.a.disconnect(f_b)
-        self.events.a.disconnect(f_c)
-        self.events.a.disconnect(f_d)
-        with pytest.warns(VisibleDeprecationWarning):
-            assert self.events.a.connected == set([])
+            # Deprecated API — exercises Event.connect(kwargs=…) / trigger()
+            self.events.a.connect(f_a)
+            self.events.a.connect(f_b, ["A", "B"])
+            self.events.a.connect(f_c, {"a": "A", "b": "B"})
+            self.events.a.connect(f_d, "auto")
+            with pytest.warns(VisibleDeprecationWarning):
+                # Deprecated API — exercises Event.connect(kwargs=…) / trigger()
+                assert self.events.a.connected == set([f_a, f_b, f_c, f_d])
+            self.events.a.disconnect(f_a)
+            self.events.a.disconnect(f_b)
+            self.events.a.disconnect(f_c)
+            self.events.a.disconnect(f_d)
+            with pytest.warns(VisibleDeprecationWarning):
+                # Deprecated API — exercises Event.connect(kwargs=…) / trigger()
+                assert self.events.a.connected == set([])
 
     def test_type(self):
         with pytest.raises(TypeError):
@@ -313,6 +359,8 @@ class TestEventsSignatures(EventsBase):
 
 
 class TestTriggerArgResolution(EventsBase):
+    """Deprecated API tests — ``Event.connect(kwargs=…)`` and ``Event.trigger()`` argument resolution."""
+
     def setup_method(self, method):
         self.events = ArgResolutionGroup(self)
 
@@ -330,46 +378,48 @@ class TestTriggerArgResolution(EventsBase):
         assert self.events.c.arguments is None
 
     def test_some_kwargs_resolution(self):
-        def lambda1(x=None):
-            assert x is None
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.connect(kwargs=…) / trigger()
+            def lambda1(x=None):
+                assert x is None
 
-        def lambda2(A):
-            assert A == "vA"
+            def lambda2(A):
+                assert A == "vA"
 
-        def lambda3(A, B):
-            assert (A, B) == ("vA", "vB")
+            def lambda3(A, B):
+                assert (A, B) == ("vA", "vB")
 
-        def lambda4(A, B):
-            assert (A, B) == ("vA", "vB")
+            def lambda4(A, B):
+                assert (A, B) == ("vA", "vB")
 
-        def lambda5(**kwargs):
-            assert (kwargs["A"], kwargs["B"]) == ("vA", "vB")
+            def lambda5(**kwargs):
+                assert (kwargs["A"], kwargs["B"]) == ("vA", "vB")
 
-        def lambda6(A, B=None, C=None):
-            assert (A, B, C) == ("vA", "vB", None)
+            def lambda6(A, B=None, C=None):
+                assert (A, B, C) == ("vA", "vB", None)
 
-        def lambda7(A, B=None, C=None):
-            assert (A, B, C) == ("vA", "vB", "vC")
+            def lambda7(A, B=None, C=None):
+                assert (A, B, C) == ("vA", "vB", "vC")
 
-        self.events.a.connect(lambda1, [])
-        self.events.a.connect(lambda2, ["A"])
-        self.events.a.connect(lambda3, ["A", "B"])
-        self.events.a.connect(lambda4, "auto")
-        with pytest.raises(NotImplementedError):
-            self.events.a.connect(function=lambda *args: 0, kwargs="auto")
+            self.events.a.connect(lambda1, [])
+            self.events.a.connect(lambda2, ["A"])
+            self.events.a.connect(lambda3, ["A", "B"])
+            self.events.a.connect(lambda4, "auto")
+            with pytest.raises(NotImplementedError):
+                self.events.a.connect(function=lambda *args: 0, kwargs="auto")
 
-        self.events.a.connect(lambda5, "auto")
-        self.events.a.connect(lambda6, ["A", "B"])
-        # Test default argument
-        self.events.b.connect(lambda7)
-        self.events.a.trigger(A="vA", B="vB")
-        self.events.b.trigger(A="vA", B="vB")
-        with pytest.raises(TypeError):
-            self.events.a.trigger(A="vA", B="vB", C="vC")
-        self.events.a.trigger(A="vA", B="vB")
-        self.events.a.trigger(B="vB", A="vA")
-        with pytest.raises(TypeError):
-            self.events.a.trigger(A="vA", C="vC", B="vB", D="vD")
+            self.events.a.connect(lambda5, "auto")
+            self.events.a.connect(lambda6, ["A", "B"])
+            # Test default argument
+            self.events.b.connect(lambda7)
+            self.events.a.trigger(A="vA", B="vB")
+            self.events.b.trigger(A="vA", B="vB")
+            with pytest.raises(TypeError):
+                self.events.a.trigger(A="vA", B="vB", C="vC")
+            self.events.a.trigger(A="vA", B="vB")
+            self.events.a.trigger(B="vB", A="vA")
+            with pytest.raises(TypeError):
+                self.events.a.trigger(A="vA", C="vC", B="vB", D="vD")
 
     def test_not_connected(self):
         with pytest.raises(ValueError):
@@ -389,18 +439,21 @@ class TestTriggerArgResolution(EventsBase):
 
         self.events.a.connect(f)
         with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.connect(kwargs=…) / trigger()
             assert f not in copy.deepcopy(self.events.a).connected
 
     def test_all_kwargs_resolution(self):
-        def lambda1(A, B):
-            assert (A, B) == ("vA", "vB")
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — exercises Event.connect(kwargs=…) / trigger()
+            def lambda1(A, B):
+                assert (A, B) == ("vA", "vB")
 
-        def lambda2(x=None, y=None, A=None, B=None):
-            assert (x, y, A, B) == (None, None, "vA", "vB")
+            def lambda2(x=None, y=None, A=None, B=None):
+                assert (x, y, A, B) == (None, None, "vA", "vB")
 
-        self.events.a.connect(lambda1)
-        self.events.a.connect(lambda2)
-        self.events.a.trigger(A="vA", B="vB")
+            self.events.a.connect(lambda1)
+            self.events.a.connect(lambda2)
+            self.events.a.trigger(A="vA", B="vB")
 
 
 # ---------------------------------------------------------------------------
@@ -447,95 +500,101 @@ def test_emit_exception_aborts_remaining_slots_no_emilooperror():
 
 # D4: Dict-rename connect
 def test_connect_dict_rename():
-    e = Event()
-    results = {}
+    with pytest.warns(VisibleDeprecationWarning):
+        e = Event()
+        results = {}
 
-    def handler(**k):
-        results.update(k)
+        def handler(**k):
+            results.update(k)
 
-    e.connect(handler, kwargs={"obj": "widget"})
-    e.trigger(obj=42)
-    assert results == {"widget": 42}
+        e.connect(handler, kwargs={"obj": "widget"})
+        e.trigger(obj=42)
+        assert results == {"widget": 42}
 
 
 # D5: List-filter connect
 def test_connect_list_filter():
-    e = Event()
-    results = {}
+    with pytest.warns(VisibleDeprecationWarning):
+        e = Event()
+        results = {}
 
-    def handler(**k):
-        results.update(k)
+        def handler(**k):
+            results.update(k)
 
-    e.connect(handler, kwargs=["obj"])
-    e.trigger(obj=42, extra="ignored")
-    assert results == {"obj": 42}
+        e.connect(handler, kwargs=["obj"])
+        e.trigger(obj=42, extra="ignored")
+        assert results == {"obj": 42}
 
 
 # D6: suppress_callback context manager
 def test_suppress_callback():
-    e = Event()
-    called = []
+    with pytest.warns(VisibleDeprecationWarning):
+        e = Event()
+        called = []
 
-    def f(**k):
-        called.append(1)
+        def f(**k):
+            called.append(1)
 
-    e.connect(f)
-    with e.suppress_callback(f):
+        e.connect(f)
+        with e.suppress_callback(f):
+            e.emit()
+        assert called == []
         e.emit()
-    assert called == []
-    e.emit()
-    assert called == [1]
+        assert called == [1]
 
 
 # D7: suppress nesting (inline)
 def test_suppress_nesting_inline():
-    e = Event()
-    called = []
+    with pytest.warns(VisibleDeprecationWarning):
+        e = Event()
+        called = []
 
-    def f(**k):
-        called.append(1)
+        def f(**k):
+            called.append(1)
 
-    e.connect(f)
-    with e.suppress():
+        e.connect(f)
         with e.suppress():
-            e.emit()
-        e.emit()  # should still be suppressed (inner exit restores True)
-    e.emit()  # now unblocked
-    assert called == [1]
+            with e.suppress():
+                e.emit()
+            e.emit()  # should still be suppressed (inner exit restores True)
+        e.emit()  # now unblocked
+        assert called == [1]
 
 
 # D8: suppress nesting (pre-created CM)
 def test_suppress_nesting_precreated_cm():
-    e = Event()
-    called = []
+    with pytest.warns(VisibleDeprecationWarning):
+        e = Event()
+        called = []
 
-    def f(**k):
-        called.append(1)
+        def f(**k):
+            called.append(1)
 
-    e.connect(f)
-    with e.suppress():
+        e.connect(f)
         with e.suppress():
+            with e.suppress():
+                e.emit()
             e.emit()
         e.emit()
-    e.emit()
-    assert called == [1]
+        assert called == [1]
 
 
 # D9: suppress_callback was_suppressed re-entrancy
 def test_suppress_callback_reentrancy():
-    e = Event()
-    called = []
+    with pytest.warns(VisibleDeprecationWarning):
+        e = Event()
+        called = []
 
-    def f(**k):
-        called.append(1)
+        def f(**k):
+            called.append(1)
 
-    e.connect(f)
-    with e.suppress_callback(f):
+        e.connect(f)
         with e.suppress_callback(f):
-            e.emit()
-        e.emit()  # still suppressed
-    e.emit()  # now called
-    assert called == [1]
+            with e.suppress_callback(f):
+                e.emit()
+            e.emit()  # still suppressed
+        e.emit()  # now called
+        assert called == [1]
 
 
 # D10: arguments validation

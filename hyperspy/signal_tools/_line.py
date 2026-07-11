@@ -78,7 +78,7 @@ class LineInSignal2D(t.HasTraits):
         self.on = True
 
         # close the tool when the plot is closed
-        self.signal._plot.signal_plot.events.closed.connect(self.close, [])
+        self.signal._plot.signal_plot.events.closed.connect(self.close)
 
     def _get_length(self):
         # length is a property that observes x0, y0, x1, y1
@@ -109,7 +109,7 @@ class LineInSignal2D(t.HasTraits):
             self._line.snap_position = self._snap_position
             # The default axis is the navigation axis; specify the signal axis instead.
             self._line.axes = (self._xaxis, self._yaxis)
-            self._line.events.changed.connect(self._update_position_from_line, [])
+            self._line.events.changed.connect(self._update_position_from_line)
             self._line.position = self._get_initial_position()
             self._line.linewidth = self._linewidth
             self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
@@ -164,7 +164,7 @@ class LineInSignal2D(t.HasTraits):
             return
         (self.x0, self.y0), (self.x1, self.y1) = self._line.position
 
-    def close(self):
+    def close(self, **kwargs):
         if self._line is not None:
             self._line.events.changed.disconnect(self._update_position_from_line)
         self.on = False
@@ -216,7 +216,7 @@ class LineInSignal1D(t.HasTraits):
         self.on = True
 
         # close the tool when the plot is closed
-        self.signal._plot.signal_plot.events.closed.connect(self.close, [])
+        self.signal._plot.signal_plot.events.closed.connect(self.close)
 
     def _get_initial_position(self, *args, **kwargs):
         # Set the position of the line in the middle of the spectral
@@ -238,7 +238,7 @@ class LineInSignal1D(t.HasTraits):
             # The default axis is the navigation axis; specify the signal axis instead.
             self._line.axes = (self._axis,)
             # connect callback to update position of the tool from the widget
-            self._line.events.changed.connect(self._update_position_from_line, [])
+            self._line.events.changed.connect(self._update_position_from_line)
             # to enable _onjumpclick
             self._line.is_pointer = True
             self._line.snap_position = self._snap_position
@@ -261,12 +261,12 @@ class LineInSignal1D(t.HasTraits):
             finally:
                 self._updating_from_line = False
 
-    def _update_position_from_line(self):
+    def _update_position_from_line(self, **kwargs):
         if self._updating_from_line:
             return
         self.position = self._line.position[0]
 
-    def close(self):
+    def close(self, **kwargs):
         if self._line is not None:
             self._line.events.changed.disconnect(self._update_position_from_line)
         self.on = False

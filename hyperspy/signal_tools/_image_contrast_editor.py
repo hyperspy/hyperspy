@@ -121,12 +121,13 @@ class ImageContrastEditor(t.HasTraits):
         self.plot_histogram()
 
         if self.image.axes_manager is not None:
-            self.image.axes_manager.events.indices_changed.connect(self._reset, [])
+            self.image.axes_manager.events.indices_changed.connect(self._reset)
             self.hspy_fig.events.closed.connect(
-                lambda: self.image.axes_manager.events.indices_changed.disconnect(
-                    self._reset
-                ),
-                [],
+                lambda **kwargs: (
+                    self.image.axes_manager.events.indices_changed.disconnect(
+                        self._reset
+                    )
+                )
             )
 
             # Disconnect update image to avoid image flickering and reconnect
@@ -391,7 +392,7 @@ class ImageContrastEditor(t.HasTraits):
             self.image.connect()
         self.hspy_fig.close()
 
-    def _reset(self, auto=None, indices_changed=True, update_histogram=True):
+    def _reset(self, auto=None, indices_changed=True, update_histogram=True, **kwargs):
         # indices_changed is used for the connection to the indices_changed
         # event of the axes_manager, which will require to update the displayed
         # image

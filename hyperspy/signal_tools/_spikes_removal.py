@@ -128,7 +128,7 @@ class SpikesRemoval:
     def find(self, back=False):
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
-        with self.signal.axes_manager.events.indices_changed.suppress():
+        with self.signal.axes_manager.events.indices_changed.blocked():
             while not spike and (
                 (self.index < ncoordinates - 1 and back is False)
                 or (self.index > 0 and back is True)

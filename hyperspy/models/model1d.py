@@ -840,7 +840,7 @@ class Model1D(BaseModel):
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
-        _plot.signal_plot.events.closed.connect(self._close_plot, [])
+        _plot.signal_plot.events.closed.connect(self._close_plot)
 
         self._model_line = l2
         self._plot = self.signal._plot
@@ -871,9 +871,9 @@ class Model1D(BaseModel):
     def _connect_component_line(component):
         if hasattr(component, "_component_line"):
             f = component._component_line._auto_update_line
-            component.events.active_changed.connect(f, [])
+            component.events.active_changed.connect(f)
             for parameter in component.parameters:
-                parameter.events.value_changed.connect(f, [])
+                parameter.events.value_changed.connect(f)
 
     @staticmethod
     def _disconnect_component_line(component):
@@ -904,7 +904,7 @@ class Model1D(BaseModel):
             del component._component_line
         self._plot_components = False
 
-    def _close_plot(self):
+    def _close_plot(self, **kwargs):
         self.disable_adjust_position()
         super()._close_plot()
 
@@ -983,6 +983,13 @@ class Model1D(BaseModel):
     def _make_position_adjuster(self, component, fix_it, show_label):
         if component._position is None or component._position.twin:
             return
+
+        def _make_position_value_changed_callback(widget):
+            def callback(**kwargs):
+                widget._set_position(position=kwargs["value"])
+
+            return callback
+
         axis = self.axes_manager.signal_axes[0]
         # Create the vertical line and labels
         widgets = [hyperspy.drawing.widgets.VerticalLineWidget(self.axes_manager)]
@@ -998,14 +1005,35 @@ class Model1D(BaseModel):
             w.snap_position = False
             w.position = (component._position.value,)
             w.set_mpl_ax(self._plot.signal_plot.ax)
+
             # Create widget -> parameter connection
-            w.events.moved.connect(self._on_widget_moved, {"obj": "widget"})
+            def _make_moved_callback(widget):
+                def _moved(**kwargs):
+                    self._on_widget_moved(widget)
+
+                return _moved
+
+            _moved = _make_moved_callback(w)
+            w._moved_callback = _moved
+            w.events.moved.connect(_moved)
             # Create parameter -> widget connection
-            component._position.events.value_changed.connect(
-                w._set_position, dict(value="position")
+            w._position_value_changed_callback = _make_position_value_changed_callback(
+                w
             )
+            component._position.events.value_changed.connect(
+                w._position_value_changed_callback
+            )
+
             # Map relation for close event
-            w.events.closed.connect(self._on_position_widget_close, {"obj": "widget"})
+            def _make_closed_callback(widget):
+                def _closed(**kwargs):
+                    self._on_position_widget_close(widget)
+
+                return _closed
+
+            _closed = _make_closed_callback(w)
+            w._widget_closed_callback = _closed
+            w.events.closed.connect(_closed)
 
     def _reverse_lookup_position_widget(self, widget):
         for parameter, widgets in self._position_widgets.items():
@@ -1024,13 +1052,15 @@ class Model1D(BaseModel):
             self._updating_widget = False
 
     def _on_position_widget_close(self, widget):
-        widget.events.closed.disconnect(self._on_position_widget_close)
+        widget.events.closed.disconnect(widget._widget_closed_callback)
         parameter = self._reverse_lookup_position_widget(widget)
         self._position_widgets[parameter].remove(widget)
         if len(self._position_widgets[parameter]) == 0:
             self._position_widgets.pop(parameter)
-        parameter.events.value_changed.disconnect(widget._set_position)
-        widget.events.moved.disconnect(self._on_widget_moved)
+        parameter.events.value_changed.disconnect(
+            widget._position_value_changed_callback
+        )
+        widget.events.moved.disconnect(widget._moved_callback)
 
     def disable_adjust_position(self):
         """Disable the interactive adjust position feature

@@ -158,7 +158,7 @@ class BaseROI(t.HasTraits):
         """
         return t.Undefined not in tuple(self)
 
-    def update(self):
+    def update(self, **kwargs):
         """Function responsible for updating anything that depends on the ROI.
         It should be called by implementors whenever the ROI changes.
         The base implementation simply triggers the changed event.
@@ -348,7 +348,7 @@ class BaseInteractiveROI(BaseROI):
         self._updating_widgets = False
         self._any_axis_changed_connected = False
 
-    def update(self):
+    def update(self, **kwargs):
         """Function responsible for updating anything that depends on the ROI.
         It should be called by implementors whenever the ROI changes.
         This implementation  updates the widgets associated with it, and
@@ -472,7 +472,7 @@ class BaseInteractiveROI(BaseROI):
                     axes=kwargs.get("axes", None),
                 )
         if not self._any_axis_changed_connected:
-            signal.axes_manager.events.any_axis_changed.connect(self.update, [])
+            signal.axes_manager.events.any_axis_changed.connect(self.update)
             self._any_axis_changed_connected = True
         if out is None:
             return interactive(
@@ -588,9 +588,18 @@ class BaseInteractiveROI(BaseROI):
             self._updating_widgets = False
 
         # Connect widget changes to on_widget_change
-        widget.events.changed.connect(self._on_widget_change, {"obj": "widget"})
+        def _changed(**kwargs):
+            self._on_widget_change(widget)
+
+        widget._changed_callback = _changed
+        widget.events.changed.connect(widget._changed_callback)
+
         # When widget closes, remove from internal list
-        widget.events.closed.connect(self._remove_widget, {"obj": "widget"})
+        def _closed(**kwargs):
+            self._remove_widget(widget)
+
+        widget._closed_callback = _closed
+        widget.events.closed.connect(widget._closed_callback)
         self.widgets.add(widget)
         self.signal_map[signal] = (widget, axes)
         return widget
@@ -598,8 +607,8 @@ class BaseInteractiveROI(BaseROI):
     add_widget.__doc__ %= PARSE_AXES_DOCSTRING
 
     def _remove_widget(self, widget, render_figure=True):
-        widget.events.closed.disconnect(self._remove_widget)
-        widget.events.changed.disconnect(self._on_widget_change)
+        widget.events.closed.disconnect(widget._closed_callback)
+        widget.events.changed.disconnect(widget._changed_callback)
         widget.close(render_figure=render_figure)
         for signal, w in self.signal_map.items():
             if w[0] == widget:
@@ -1080,7 +1089,7 @@ class RectangularROI(BaseInteractiveROI):
             try:
                 self._applying_widget_change = True
                 self._bounds_check = False
-                with self.events.changed.suppress():
+                with self.events.changed.blocked():
                     self.right += diff
                     self.left += diff
             finally:
@@ -1101,7 +1110,7 @@ class RectangularROI(BaseInteractiveROI):
             try:
                 self._applying_widget_change = True
                 self._bounds_check = False
-                with self.events.changed.suppress():
+                with self.events.changed.blocked():
                     self.top += diff
                     self.bottom += diff
             finally:

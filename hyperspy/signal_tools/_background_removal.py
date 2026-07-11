@@ -256,8 +256,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.emit(self)
 
-    def disconnect(self, *args):
-        super().disconnect()
+    def disconnect(self, *args, **kwargs):
+        super().disconnect(**kwargs)
         axes_manager = self.signal.axes_manager
         for f in [self._fit, self.model._on_navigating]:
             try:
