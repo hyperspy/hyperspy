@@ -46,7 +46,7 @@ def EventSignal(*types, description="", arguments=None, **kwargs):
 
     Parameters
     ----------
-    *types : type | Signature
+    *types : type | :class:`~inspect.Signature`
         Accepted types for the signal signature (passed to psygnal).
     description : str
         Optional description for the signal.
@@ -103,7 +103,7 @@ class Event(SignalInstance):
 
     Parameters
     ----------
-    signature : Signature
+    signature : :class:`~inspect.Signature`
         psygnal signal signature (default: empty).
     doc : str, optional
         Deprecated alias for *description*.
@@ -220,7 +220,8 @@ class Event(SignalInstance):
         raised by callbacks are NOT caught — they propagate immediately,
         aborting remaining slots.
 
-        Respects :meth:`block` / :meth:`unblock` (``_is_blocked``), the
+        Respects :func:`psygnal.SignalInstance.block` /
+        :func:`psygnal.SignalInstance.unblock` (``_is_blocked``), the
         legacy ``_suppress`` flag, and optionally :meth:`throttle` /
         :meth:`debounce` rate-limiters.
 
@@ -415,7 +416,7 @@ class Event(SignalInstance):
             to determine which parameters to forward.
         **psygnal_opts
             Additional keyword arguments forwarded to
-            :meth:`psygnal.SignalInstance.connect`.
+            :func:`psygnal.SignalInstance.connect`.
         """
         if not callable(function):
             raise TypeError("Only callables can be registered")
@@ -510,7 +511,7 @@ class Event(SignalInstance):
         """Disconnect *function* from the event (deprecated API).
 
         .. deprecated::
-            Use :meth:`psygnal.SignalInstance.disconnect` instead.
+            Use :func:`psygnal.SignalInstance.disconnect` instead.
         """
         # Look up wrapper if this function was connected with a kwargs map
         if function in self._wrapper_map:
@@ -518,17 +519,9 @@ class Event(SignalInstance):
         else:
             wrapper = function
 
-        try:
-            super().disconnect(wrapper, missing_ok=False)
-            self._connected_originals.discard(function)
-            self._slot_mode.pop(wrapper, None)
-        except ValueError:
-            # psygnal raises ValueError when the slot is not found
-            if function in self._connected_originals:
-                self._connected_originals.discard(function)
-            raise ValueError(
-                "The %s function is not connected to %s." % (function, self)
-            ) from None
+        super().disconnect(wrapper, missing_ok=False)
+        self._connected_originals.discard(function)
+        self._slot_mode.pop(wrapper, None)
 
     # -- _try_discard (weak-reference cleanup override) --------------------
 
@@ -620,8 +613,9 @@ class Event(SignalInstance):
         """Context manager to temporarily suppress event emission.
 
         .. deprecated::
-            Use :meth:`blocked` (or :meth:`block` / :meth:`unblock`)
-            instead.
+            Use :func:`psygnal.SignalInstance.blocked` (or
+            :func:`psygnal.SignalInstance.block` /
+            :func:`psygnal.SignalInstance.unblock`) instead.
 
         Examples
         --------
@@ -633,7 +627,6 @@ class Event(SignalInstance):
         See Also
         --------
         suppress_callback
-        SignalGroup.blocked
         """
         warnings.warn(
             "Event.suppress() is deprecated. "
@@ -666,7 +659,6 @@ class Event(SignalInstance):
         See Also
         --------
         suppress
-        SignalGroup.blocked
         """
         warnings.warn(
             "Event.suppress_callback() is deprecated.",
@@ -816,7 +808,6 @@ class EventSuppressor(object):
         --------
         Event.suppress
         Event.suppress_callback
-        SignalGroup.blocked
         """
         # We don't suppress any exceptions, so we can use simple CM management:
         cms = []

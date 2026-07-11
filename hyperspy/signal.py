@@ -3205,7 +3205,15 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 )
 
         self._plot.plot(**kwargs)
-        self.events.data_changed.connect(self.update_plot)
+
+        # Connect a stable wrapper closure instead of a bound method.  A lazy
+        # signal's ``__class__`` can change during ``compute()``, which breaks
+        # psygnal's bound-method slot key and prevents clean disconnect.
+        def _update_plot_callback(obj=None):
+            self.update_plot(obj)
+
+        self._update_plot_callback = _update_plot_callback
+        self.events.data_changed.connect(_update_plot_callback)
 
         # Disconnect event when closing signal
         p = (
@@ -3215,7 +3223,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         )
 
         def _disconnect_update_plot(**kwargs):
-            self.events.data_changed.disconnect(self.update_plot)
+            self.events.data_changed.disconnect(_update_plot_callback)
             try:
                 p.events.closed.disconnect(_disconnect_update_plot)
             except (ValueError, AttributeError):

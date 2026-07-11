@@ -7,7 +7,7 @@ Events
 Events are a mechanism to send notifications. HyperSpy events are
 decentralised, meaning that there is not a central events dispatcher.
 Instead, each object that can emit events has an ``events``
-attribute that is an instance of :class:`~.events.Events` and that contains
+attribute that is an instance of :external:class:`psygnal.SignalGroup` and that contains
 instances of  :class:`~.events.Event` as attributes. When triggered the
 first keyword argument, `obj` contains the object that the events belongs to.
 Different events may be triggered by other keyword arguments too.

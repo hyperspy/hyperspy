@@ -192,7 +192,6 @@ markers = [
 ]
 filterwarnings = [
     "ignore:Matplotlib is currently using agg:UserWarning",
-    "ignore::hyperspy.exceptions.VisibleDeprecationWarning",
 ]
 testpaths = ["hyperspy"]
 norecursedirs = [

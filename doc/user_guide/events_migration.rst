@@ -13,7 +13,7 @@ The deprecated Event methods and classes are removed in HyperSpy 3.0. The event 
 * **Removed methods**: ``trigger``, ``connect`` with ``kwargs=``, ``suppress``, ``suppress_callback``, ``.connected``, and ``arguments=``.
 * **Native API**: Use ``emit(**kwargs)``, ``connect(callback)``, ``disconnect(callback)``, ``blocked()``, ``block()``, and ``unblock()``.
 * **EventSuppressor**: This class is removed. Use ``SignalGroup.blocked()`` instead.
-* **Event Declaration**: Events must be declared as ``EventSignal`` class attributes on named ``SignalGroup`` subclasses.
+* **Event Declaration**: Events must be declared as :class:`psygnal.Signal` class attributes on named :class:`psygnal.SignalGroup` subclasses.
 
 2. Migration guide with code examples
 -------------------------------------
@@ -86,10 +86,11 @@ After (named SignalGroup subclass):
 
 .. code-block:: python
 
-    from hyperspy.events import SignalGroup, EventSignal
+    from psygnal import SignalGroup, Signal
+    from hyperspy.axes import AxesManager
 
     class MyEvents(SignalGroup):
-        my_event = EventSignal(argnames=("obj",))
+        my_event = Signal(AxesManager)
 
     events = MyEvents()
 
@@ -226,6 +227,47 @@ You can now connect to all events in a group using ``SignalGroup.all``.
         print(f"Event {info.signal_name} emitted with {info.args}")
 
     events.all.connect(handler)
+
+Bound methods and mutable classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In HyperSpy, a signal instance can change class during its lifetime
+(e.g. ``LazySignal.compute()`` converts a lazy signal to a regular one,
+or operations such as ``_assign_subclass`` change the concrete signal type).
+Because ``psygnal`` keys bound-method slots using the class name of the bound
+instance, ``disconnect`` may fail to find the slot after a class change.
+
+If a callback must be disconnected after a class mutation, connect a
+wrapper function instead of a bound method, keep a strong reference to that
+wrapper, and disconnect by the same wrapper object:
+
+.. code-block:: python
+
+    from hyperspy.signal import BaseSignal
+    from psygnal import Signal
+
+    class MySignal(BaseSignal):
+        changed = Signal(object)
+
+        def update_plot(self, obj=None):
+            pass
+
+    s = MySignal(data)  # data is a suitable numpy array
+
+    def make_callback(signal):
+        def callback(obj=None):
+            signal.update_plot(obj)
+        return callback
+
+    callback = make_callback(s)
+    s.changed.connect(callback)
+    s._update_callback = callback  # strong reference
+
+    # ... later, e.g. on figure close or after compute ...
+    s.changed.disconnect(callback)
+
+Do **not** rely on ``s.changed.disconnect(s.update_plot)`` for callbacks that
+must survive class mutation.
 
 3. New features available in 2.5+
 ---------------------------------

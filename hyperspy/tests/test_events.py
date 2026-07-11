@@ -20,6 +20,7 @@ import copy
 import gc
 import warnings
 
+import numpy as np
 import psygnal
 import pytest
 from psygnal import SignalGroup
@@ -793,6 +794,48 @@ def test_connected_property_warns():
     assert issubclass(w[0].category, VisibleDeprecationWarning)
     assert "connected" in str(w[0].message)
     assert "deprecated" in str(w[0].message)
+
+
+def test_native_psygnal_signal_disconnect_across_class_change():
+    """A HyperSpy 3.0-style native `psygnal.Signal` disconnects cleanly
+    after the signal instance changes class.
+
+    psygnal keys bound-method slots using the instance's current class
+    name.  When the instance class mutates (as ``LazySignal.compute()``
+    does when moving from lazy to non-lazy), ``disconnect`` may silently
+    fail to remove a bound-method slot.  Connecting a stable wrapper
+    function avoids this.
+    """
+    from hyperspy.signal import BaseSignal
+
+    class NativeSignal(BaseSignal):
+        changed = psygnal.Signal(object)
+
+        def update_plot(self, obj=None):
+            pass
+
+    class NativeLazySignal(NativeSignal):
+        pass
+
+    s = NativeLazySignal(np.random.random((2, 3, 4, 5)))
+
+    def make_callback(signal):
+        def callback(obj=None):
+            signal.update_plot(obj)
+
+        return callback
+
+    callback = make_callback(s)
+    s.changed.connect(callback)
+    # HyperSpy would keep a strong reference to the wrapper so it can be
+    # disconnected reliably in ``BaseSignal.plot``.
+    s._update_callback = callback
+
+    # Emulate ``LazySignal.compute()``, which mutates ``__class__``.
+    s.__class__ = NativeSignal
+
+    s.changed.disconnect(callback)
+    assert len(s.changed._slots) == 0
 
 
 # ---------------------------------------------------------------------------
