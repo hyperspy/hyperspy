@@ -11,8 +11,8 @@ HyperSpy 3.0 introduces a significant update to the event system, moving to a ps
 The deprecated Event methods and classes are removed in HyperSpy 3.0. The event system now uses the psygnal-native surface.
 
 * **Removed methods**: ``trigger``, ``connect`` with ``kwargs=``, ``suppress``, ``suppress_callback``, ``.connected``, and ``arguments=``.
-* **Native API**: Use ``emit(**kwargs)``, ``connect(callback)``, ``disconnect(callback)``, ``blocked()``, ``block()``, and ``unblock()``.
-* **EventSuppressor**: This class is removed. Use ``SignalGroup.blocked()`` instead.
+* **psygnal native API**: Use ``emit(**kwargs)``, ``connect(callback)``, ``disconnect(callback)``, ``blocked()``, ``block()``, and ``unblock()``.
+* **EventSuppressor**: This class is removed. Use ``psygnal.SignalGroup.blocked()`` instead.
 * **Event Declaration**: Events must be declared as :class:`psygnal.Signal` class attributes on named :class:`psygnal.SignalGroup` subclasses.
 
 2. Migration guide with code examples

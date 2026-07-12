@@ -101,6 +101,12 @@ class Event(SignalInstance):
     ``.connected``, ``arguments=``) is preserved as a deprecated shim on top
     of the inherited psygnal machinery.
 
+    .. deprecated:: 2.5
+        :class:`~.events.Event` is deprecated and will be removed in HyperSpy 3.0.
+        Use :external:class:`psygnal.Signal` instead.
+        See the :ref:`events_migration` section for guidance on migrating code
+        to the psygnal-backed event system.
+
     Parameters
     ----------
     signature : :class:`~inspect.Signature`
@@ -122,6 +128,7 @@ class Event(SignalInstance):
         Whether psygnal checks types on connect (default: ``False``).
     reemission : str
         psygnal re-emission policy (default: ``"immediate"``).
+
     """
 
     def __init__(
@@ -399,10 +406,10 @@ class Event(SignalInstance):
     def connect(self, function, kwargs="all", **psygnal_opts):
         """Connect a function to the event.
 
-        .. deprecated::
-            The ``kwargs=`` parameter is deprecated.  Prefer the native
-            psygnal ``connect`` and use adapter functions when filtering
-            or renaming kwargs is needed.
+        .. deprecated:: 2.5
+            The ``kwargs=`` parameter is deprecated and will be removed in HyperSpy 3.0.
+            See :external:func:`psygnal.SignalInstance.connect` for the new API and use adapter
+            functions when filtering or renaming kwargs is needed.
 
         Parameters
         ----------
@@ -425,8 +432,8 @@ class Event(SignalInstance):
 
         if kwargs != "all":
             warnings.warn(
-                "Event.connect(kwargs=...) is deprecated. "
-                "Use the native psygnal connect with adapter functions instead.",
+                "Event.connect(kwargs=...) is deprecated and will be removed in HyperSpy 3.0. "
+                "See the `psygnal.Signal.connect` for the new API and use adapter functions instead.",
                 VisibleDeprecationWarning,
                 stacklevel=2,
             )
@@ -508,11 +515,7 @@ class Event(SignalInstance):
     # -- disconnect (deprecated) -------------------------------------------
 
     def disconnect(self, function):
-        """Disconnect *function* from the event (deprecated API).
-
-        .. deprecated::
-            Use :func:`psygnal.SignalInstance.disconnect` instead.
-        """
+        """Disconnect *function* from the event."""
         # Look up wrapper if this function was connected with a kwargs map
         if function in self._wrapper_map:
             wrapper, _spec = self._wrapper_map.pop(function)
@@ -572,7 +575,8 @@ class Event(SignalInstance):
         delegates to :meth:`emit`.
         """
         warnings.warn(
-            "Event.trigger() is deprecated. Use emit() instead.",
+            "Event.trigger() is deprecated and will be removed in HyperSpy 3.0. "
+            "Use emit() instead.",
             VisibleDeprecationWarning,
             stacklevel=2,
         )
@@ -593,13 +597,12 @@ class Event(SignalInstance):
     def connected(self):
         """Set of connected functions.
 
-        .. deprecated::
-            Use the native psygnal API to inspect connections
-            (e.g. ``event._slots``) or ``event._connected_originals``
-            for the set of original callables.
+        .. deprecated:: 2.5
+            This will be removed in HyperSpy 3.0. The connected funtions will
+            need to be tracked by the user code when needed.
         """
         warnings.warn(
-            "Event.connected is deprecated. "
+            "Event.connected is deprecated and will be removed in HyperSpy 3.0. "
             "Use the native psygnal API to inspect connections.",
             VisibleDeprecationWarning,
             stacklevel=2,
@@ -612,7 +615,8 @@ class Event(SignalInstance):
     def suppress(self):
         """Context manager to temporarily suppress event emission.
 
-        .. deprecated::
+        .. deprecated:: 2.5
+            This will be removed in HyperSpy 3.0.
             Use :func:`psygnal.SignalInstance.blocked` (or
             :func:`psygnal.SignalInstance.block` /
             :func:`psygnal.SignalInstance.unblock`) instead.
@@ -629,7 +633,7 @@ class Event(SignalInstance):
         suppress_callback
         """
         warnings.warn(
-            "Event.suppress() is deprecated. "
+            "Event.suppress() is deprecated and will be removed in HyperSpy 3.0. "
             "Use blocked() or block()/unblock() instead.",
             VisibleDeprecationWarning,
             stacklevel=2,
@@ -645,7 +649,8 @@ class Event(SignalInstance):
     def suppress_callback(self, function):
         """Context manager to temporarily suppress a single callback.
 
-        .. deprecated::
+        .. deprecated:: 2.5
+            This will be removed in HyperSpy 3.0.
             Use the native psygnal ``disconnect`` / ``reconnect`` pattern
             instead.
 
@@ -661,7 +666,8 @@ class Event(SignalInstance):
         suppress
         """
         warnings.warn(
-            "Event.suppress_callback() is deprecated.",
+            "Event.suppress_callback() is deprecated and will be removed in HyperSpy 3.0. "
+            "Use the native psygnal ``disconnect`` / ``reconnect`` pattern instead.",
             VisibleDeprecationWarning,
             stacklevel=2,
         )
@@ -709,11 +715,17 @@ class EventSuppressor(object):
     in the constructor. Valid targets are:
 
     * `Event`: The entire Event will be suppressed
-    * ``SignalGroup``: All events in the group will be suppressed
+    * :external:class:`psygnal.SignalGroup`: All events in the group will be suppressed
     * (Event, callback): The callback will be suppressed in Event
-    * (``SignalGroup``, callback): The callback will be suppressed in each event in
+    * (:external:class:`psygnal.SignalGroup`, callback): The callback will be suppressed in each event in
       the SignalGroup where it is connected.
     * Any iterable collection of the above target types
+
+    .. deprecated:: 2.5
+        :class:`~.events.EventSuppressor` is deprecated and will be removed in HyperSpy 3.0.
+        Use the ``psygnal.SignalGroup.blocked()`` context manager instead.
+        See the :ref:`events_migration` section for guidance on migrating code
+        to the psygnal-backed event system.
 
     Examples
     --------
@@ -727,8 +739,13 @@ class EventSuppressor(object):
     >>> with es.suppress(): # doctest: +SKIP
     ...     do_something()
     """
-
     def __init__(self, *to_suppress):
+        warnings.warn(
+            "hyperspy.events.EventSuppressor is deprecated and will be removed in HyperSpy 3.0. "
+            "Use psygnal.SignalGroup.blocked() context manager instead.",
+            VisibleDeprecationWarning,
+            stacklevel=2,
+        )
         self._cms = []
         if len(to_suppress) > 0:
             self.add(*to_suppress)
