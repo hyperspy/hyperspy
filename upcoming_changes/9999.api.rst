@@ -1,1 +1,0 @@
-The ``Events`` class is removed. Events must be declared as ``EventSignal`` class attributes on named ``psygnal.SignalGroup`` subclasses. Dynamic runtime event registration is no longer supported.
