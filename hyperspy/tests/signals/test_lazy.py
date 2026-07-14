@@ -322,7 +322,18 @@ class TestGetTemporaryDaskChunk:
     def test_clear_cache_dask_data_method(self):
         s = hs.signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         s._get_current_data()
+        assert s._cache_dask_chunk is not None
+        assert s._cache_dask_chunk_slice is not None
         s._clear_cache_dask_data()
+        assert s._cache_dask_chunk is None
+        assert s._cache_dask_chunk_slice is None
+
+    def test_clear_cache_dask_data_callback(self):
+        s = hs.signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
+        s._get_current_data()
+        assert s._cache_dask_chunk is not None
+        assert s._cache_dask_chunk_slice is not None
+        s.events.data_changed.emit()
         assert s._cache_dask_chunk is None
         assert s._cache_dask_chunk_slice is None
 

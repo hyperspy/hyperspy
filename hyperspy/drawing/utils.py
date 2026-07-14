@@ -1351,7 +1351,7 @@ def plot_images(
     def _make_update_image_callback(image, ax, image_index):
         """Factory that creates a callback ignoring event args."""
 
-        def callback(**kwargs):
+        def callback(*args, **kwargs):
             update_image(image, ax, image_index)
 
         return callback
@@ -1758,7 +1758,7 @@ def plot_spectra(
         def _make_update_line_callback(spectrum, line_obj, normalise):
             """Factory that creates a callback ignoring event args."""
 
-            def callback(**kwargs):
+            def callback(*args, **kwargs):
                 update_line(spectrum, line=line_obj, normalise=normalise)
 
             return callback
@@ -2204,14 +2204,14 @@ def plot_roi_map(
             roi_sum.plot(cmap=cmap_, **kwargs)
 
             # Remove widget from signal plot when closing maps figure
-            def _make_remove_widget_callback(_roi):
-                def _cb(**kwargs):
+            def _remove_widget_callback(_roi):
+                def _cb(*args, **kwargs):
                     _roi.remove_widget()
 
                 return _cb
 
             roi_sum._plot.signal_plot.events.closed.connect(
-                _make_remove_widget_callback(roi)
+                _remove_widget_callback(roi)
             )
 
             if add_colored_frame:

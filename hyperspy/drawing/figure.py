@@ -29,12 +29,6 @@ from hyperspy.events import EventSignal
 _logger = logging.getLogger(__name__)
 
 
-class FigureEvents(SignalGroup):
-    """Events for :class:`BlittedFigure`."""
-
-    closed = EventSignal(object, arguments=["obj"])
-
-
 class BlittedFigure:
     def __init__(self):
         self._draw_event_cid = None
@@ -155,7 +149,7 @@ class BlittedFigure:
         # Same snapshot-copy rationale as remove_markers (see above).
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
-        self.events.closed.emit(obj=self)
+        self.events.closed.emit(self)
         for callback in self._closed_callbacks:
             self.events.closed.disconnect(callback)
         self._closed_callbacks.clear()
@@ -185,3 +179,17 @@ class BlittedFigure:
             self._update_animated()
         else:
             self.figure.canvas.draw_idle()
+
+
+class FigureEvents(SignalGroup):
+    """Events for :class:`BlittedFigure`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    closed = EventSignal(
+        BlittedFigure,
+        description="""\
+        Event that triggers when the figure is closed.
+
+        The figure is passed to the event handler.
+        """,
+    )

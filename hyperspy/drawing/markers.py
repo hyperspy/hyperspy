@@ -36,12 +36,6 @@ def convert_positions(peaks, signal_axes):
     return new_data
 
 
-class MarkersEvents(SignalGroup):
-    """Events for :class:`Markers`."""
-
-    closed = EventSignal(object, arguments=["obj"])
-
-
 class Markers:
     """A set of markers using Matplotlib collections."""
 
@@ -776,7 +770,7 @@ class Markers:
         # instead of restoring the removed markers' pixels.
         if render_figure and hasattr(self.ax, "hspy_fig"):
             self.ax.hspy_fig._background = None
-        self.events.closed.emit(obj=self)
+        self.events.closed.emit(self)
         self._signal = None
         for callback in list(self._closed_callbacks):
             try:
@@ -846,6 +840,20 @@ class Markers:
         cbar = self.ax.figure.colorbar(self._collection)
 
         return cbar
+
+
+class MarkersEvents(SignalGroup):
+    """Events for :class:`Markers`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    closed = EventSignal(
+        Markers,
+        description="""\
+        Event that triggers when the markers are closed.
+
+        The markers instance is passed to the event handler.
+        """,
+    )
 
 
 def is_iterating(arg):

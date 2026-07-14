@@ -237,15 +237,9 @@ class Event(SignalInstance):
         for backward compatibility with code like ``emit(signal)``.
         """
         # Map positional args to declared argument names (same as trigger())
-        if args:
-            if self._arguments:
-                for name, val in zip(self._arguments, args, strict=True):
-                    kwargs.setdefault(name, val)
-            else:
-                raise TypeError(
-                    f"{type(self).__name__}.emit() received unexpected "
-                    f"positional argument(s): {args!r}. Use keyword arguments."
-                )
+        if args and self._arguments:
+            for name, val in zip(self._arguments, args, strict=True):
+                kwargs.setdefault(name, val)
 
         if self._is_blocked or self._suppress:
             return
@@ -268,9 +262,9 @@ class Event(SignalInstance):
             self._debounce_timer.start()
             return
 
-        self._emit_dispatch(kwargs)
+        self._emit_dispatch(args, kwargs)
 
-    def _emit_dispatch(self, kwargs):
+    def _emit_dispatch(self, args, kwargs):
         """Core dispatch: validate, order, and invoke callbacks."""
         if self._arguments:
             kwargs = self._validate_emit_kwargs(kwargs)
@@ -300,7 +294,7 @@ class Event(SignalInstance):
             original = self._find_original(callback)
             if original in self._suppressed_callbacks:
                 continue
-            callback(**kwargs)
+            callback(*args, **kwargs)
 
     def _debounce_fire(self):
         """Called by the debounce timer — fires the pending emission."""
@@ -464,12 +458,14 @@ class Event(SignalInstance):
             self._slot_mode[wrapper] = "map"
 
         elif isinstance(kwargs, (list, tuple)):
-            spec = tuple(kwargs)
-            wrapper = self._make_list_wrapper(function, spec)
-            super().connect(wrapper, **psygnal_opts)
-            self._wrapper_map[function] = (wrapper, spec)
-            self._connected_originals.add(function)
-            self._slot_mode[wrapper] = "some"
+            # only make a wrapper when there are argument to pass
+            if len(kwargs) > 0:
+                spec = tuple(kwargs)
+                wrapper = self._make_list_wrapper(function, spec)
+                super().connect(wrapper, **psygnal_opts)
+                self._wrapper_map[function] = (wrapper, spec)
+                self._connected_originals.add(function)
+                self._slot_mode[wrapper] = "some"
 
         else:
             raise ValueError("Invalid value passed to kwargs.")
@@ -739,6 +735,7 @@ class EventSuppressor(object):
     >>> with es.suppress(): # doctest: +SKIP
     ...     do_something()
     """
+
     def __init__(self, *to_suppress):
         warnings.warn(
             "hyperspy.events.EventSuppressor is deprecated and will be removed in HyperSpy 3.0. "

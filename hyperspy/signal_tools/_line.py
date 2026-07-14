@@ -164,7 +164,7 @@ class LineInSignal2D(t.HasTraits):
             return
         (self.x0, self.y0), (self.x1, self.y1) = self._line.position
 
-    def close(self, **kwargs):
+    def close(self, *args, **kwargs):
         if self._line is not None:
             self._line.events.changed.disconnect(self._update_position_from_line)
         self.on = False
@@ -261,12 +261,12 @@ class LineInSignal1D(t.HasTraits):
             finally:
                 self._updating_from_line = False
 
-    def _update_position_from_line(self, **kwargs):
+    def _update_position_from_line(self, *args, **kwargs):
         if self._updating_from_line:
             return
         self.position = self._line.position[0]
 
-    def close(self, **kwargs):
+    def close(self, *args, **kwargs):
         if self._line is not None:
             self._line.events.changed.disconnect(self._update_position_from_line)
         self.on = False

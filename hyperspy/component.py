@@ -49,56 +49,6 @@ class NoneFloat(t.CFloat):  # Lazy solution, but usable
         return super(NoneFloat, self).validate(object, name, value)
 
 
-class ParameterEvents(SignalGroup):
-    """Events for :class:`Parameter`."""
-
-    value_changed = EventSignal(
-        object,
-        object,
-        description="""
-            Event that triggers when the `Parameter.value` changes.
-
-            The event triggers after the internal state of the `Parameter` has
-            been updated.
-
-            Parameters
-            ----------
-            obj : Parameter
-                The `Parameter` that the event belongs to
-            value : {float | array}
-                The new value of the parameter
-            """,
-        arguments=["obj", "value"],
-    )
-
-
-class ComponentEvents(SignalGroup):
-    """Events for :class:`Component`."""
-
-    active_changed = EventSignal(
-        object,
-        description="""
-            Event that triggers when the `Component.active` changes.
-
-            The event triggers after the internal state of the `Component` has
-            been updated.
-
-            Parameters
-            ----------
-            obj : Component
-                The `Component` that the event belongs to
-            active : bool
-                The new active state
-            convolved : bool
-                Whether the `Component` is convolved or not. This enables
-                not convolving individual `Component`s in models that
-                support convolution.
-
-            """,
-        arguments=["obj", "active"],
-    )
-
-
 @add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
     """The parameter of a component.
@@ -788,6 +738,24 @@ class Parameter(t.HasTraits):
         return view
 
 
+class ParameterEvents(SignalGroup):
+    """Events for :class:`Parameter`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    value_changed = EventSignal(
+        Parameter,
+        float,
+        description="""
+            Event that triggers when the `Parameter.value` changes.
+
+            The event triggers after the internal state of the `Parameter` has
+            been updated.
+
+            The Parameter and value are passed as parameters to the event handler.
+            """,
+    )
+
+
 COMPONENT_PARAMETERS_DOCSTRING = """Parameters
         ----------
         parameter_name_list : list
@@ -1409,6 +1377,26 @@ class Component(t.HasTraits):
         Returns 0 for most components.
         """
         return 0
+
+
+class ComponentEvents(SignalGroup):
+    """Events for :class:`Component`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    active_changed = EventSignal(
+        Component,
+        bool,
+        bool,
+        description="""
+            Event that triggers when the `Component.active` changes.
+
+            The event triggers after the internal state of the `Component` has
+            been updated.
+
+            The Component, active state and convolved state are passed as
+            parameters to the event handler.
+            """,
+    )
 
 
 def _get_scaling_factor(signal, axis, parameter):

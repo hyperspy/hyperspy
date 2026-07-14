@@ -391,12 +391,6 @@ class ModelComponents(object):
         return ans
 
 
-class ModelEvents(SignalGroup):
-    """Events for :class:`BaseModel`."""
-
-    fitted = EventSignal(object, arguments=["obj"])
-
-
 @add_gui_method(toolkey="hyperspy.Model")
 class BaseModel(list):
     """Model and data fitting tools applicable to signals of both one and two
@@ -1073,7 +1067,7 @@ class BaseModel(list):
                     )
             self.update_plot(render_figure=True, update_ylimits=False)
 
-    def _close_plot(self, **kwargs):
+    def _close_plot(self, *args, **kwargs):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
@@ -3222,6 +3216,20 @@ class BaseModel(list):
                 model=self, thresholds=thresholds, component_list=component_list
             )
         )
+
+
+class ModelEvents(SignalGroup):
+    """Events for :class:`BaseModel`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    fitted = EventSignal(
+        BaseModel,
+        description="""
+        Emitted when the model has been fitted to the data.
+
+        The BaseModel is passed as a parameter to the event handler.
+        """,
+    )
 
 
 class ModelSpecialSlicers(object):

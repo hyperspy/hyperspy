@@ -240,43 +240,6 @@ class UnitConversion:
         self._units = s
 
 
-class DataAxisEvents(SignalGroup):
-    """Events for :class:`DataAxis`."""
-
-    index_changed = EventSignal(
-        object,
-        object,
-        description="""
-            Event that triggers when the index of the `DataAxis` changes
-
-            Triggers after the internal state of the `DataAxis` has been
-            updated.
-
-            Parameters
-            ----------
-            obj : The DataAxis that the event belongs to.
-            index : The new index
-            """,
-        arguments=["obj", "index"],
-    )
-    value_changed = EventSignal(
-        object,
-        object,
-        description="""
-            Event that triggers when the value of the `DataAxis` changes
-
-            Triggers after the internal state of the `DataAxis` has been
-            updated.
-
-            Parameters
-            ----------
-            obj : The DataAxis that the event belongs to.
-            value : The new value
-            """,
-        arguments=["obj", "value"],
-    )
-
-
 @add_gui_method(toolkey="hyperspy.DataAxis")
 class BaseDataAxis(t.HasTraits):
     """Parent class defining common attributes for all DataAxis classes.
@@ -988,6 +951,37 @@ class DataAxis(BaseDataAxis):
         self.size = len(self.axis)
 
 
+class DataAxisEvents(SignalGroup):
+    """Events for :class:`DataAxis`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    index_changed = EventSignal(
+        DataAxis,
+        str,
+        description="""
+            Event that triggers when the index of the `DataAxis` changes
+
+            Triggers after the internal state of the `DataAxis` has been
+            updated.
+
+            The DataAxis and index are passed as parameters to the event handler.
+            """,
+    )
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    value_changed = EventSignal(
+        DataAxis,
+        float,
+        description="""
+            Event that triggers when the value of the `DataAxis` changes
+
+            Triggers after the internal state of the `DataAxis` has been
+            updated.
+
+            The DataAxis and value are passed as parameters to the event handler.
+            """,
+    )
+
+
 class FunctionalDataAxis(BaseDataAxis):
     """DataAxis class for a non-uniform axis defined through an ``expression``.
 
@@ -1526,13 +1520,6 @@ def _flyback_iter(shape):
     return ndindex_reversed(shape)
 
 
-class AxesManagerEvents(SignalGroup):
-    """Events for :class:`AxesManager`."""
-
-    indices_changed = EventSignal(object, arguments=["obj"])
-    any_axis_changed = EventSignal(object, arguments=["obj"])
-
-
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
@@ -2025,20 +2012,20 @@ class AxesManager(t.HasTraits):
 
     def _on_index_changed(self, event=None):
         self._update_attributes()
-        self.events.indices_changed.emit(obj=self)
+        self.events.indices_changed.emit(self)
 
     def _on_slice_changed(self, event=None):
         self._update_attributes()
 
     def _on_size_changed(self, event=None):
         self._update_attributes()
-        self.events.any_axis_changed.emit(obj=self)
+        self.events.any_axis_changed.emit(self)
 
     def _on_scale_changed(self, event=None):
-        self.events.any_axis_changed.emit(obj=self)
+        self.events.any_axis_changed.emit(self)
 
     def _on_offset_changed(self, event=None):
-        self.events.any_axis_changed.emit(obj=self)
+        self.events.any_axis_changed.emit(self)
 
     def convert_units(self, axes=None, units=None, same_units=True, factor=0.25):
         """Convert the scale and the units of the selected axes. If the unit
@@ -2491,7 +2478,7 @@ class AxesManager(t.HasTraits):
                 axis.value = value
         # Trigger only if the indices are changed
         if changes:
-            self.events.indices_changed.emit(obj=self)
+            self.events.indices_changed.emit(self)
 
     @property
     def indices(self):
@@ -2517,7 +2504,7 @@ class AxesManager(t.HasTraits):
                 axis.index = index
         # Trigger only if the indices are changed
         if changes:
-            self.events.indices_changed.emit(obj=self)
+            self.events.indices_changed.emit(self)
 
     def _get_axis_attribute_values(self, attr):
         return [getattr(axis, attr) for axis in self._axes]
@@ -2604,6 +2591,29 @@ class AxesManager(t.HasTraits):
         %s
         %s
         """
+
+
+class AxesManagerEvents(SignalGroup):
+    """Events for :class:`AxesManager`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    indices_changed = EventSignal(
+        AxesManager,
+        description="""
+            Emitted when the indices of the navigation axes are changed.
+
+            The AxesManager is passed as a parameter to the event handler.
+            """,
+    )
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    any_axis_changed = EventSignal(
+        AxesManager,
+        description="""
+            Emitted when any axis is changed.
+
+            The AxesManager is passed as a parameter to the event handler.
+            """,
+    )
 
 
 class GeneratorLen:

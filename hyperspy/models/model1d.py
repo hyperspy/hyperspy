@@ -904,7 +904,7 @@ class Model1D(BaseModel):
             del component._component_line
         self._plot_components = False
 
-    def _close_plot(self, **kwargs):
+    def _close_plot(self, *args, **kwargs):
         self.disable_adjust_position()
         super()._close_plot()
 
@@ -1026,7 +1026,7 @@ class Model1D(BaseModel):
 
             # Map relation for close event
             def _make_closed_callback(widget):
-                def _closed(**kwargs):
+                def _closed(*args, **kwargs):
                     self._on_position_widget_close(widget)
 
                 return _closed

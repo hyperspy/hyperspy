@@ -299,7 +299,7 @@ class LazySignal(signals.BaseSignal):
         except AttributeError:
             _logger.warning("Failed to close lazy signal file")
 
-    def _clear_cache_dask_data(self, obj=None):
+    def _clear_cache_dask_data(self, *args, **kwargs):
         self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
 

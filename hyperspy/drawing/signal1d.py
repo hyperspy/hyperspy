@@ -18,7 +18,6 @@
 
 import inspect
 import logging
-from functools import partial
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -157,11 +156,14 @@ class Signal1DFigure(BlittedFigure):
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
         if connect_navigation:
-            f = partial(line._auto_update_line, update_ylimits=True)
-            line.axes_manager.events.indices_changed.connect(f)
 
-            def _on_line_close(**kwargs):
-                line.axes_manager.events.indices_changed.disconnect(f)
+            def auto_update_line(*args, **kwargs):
+                line._auto_update_line(update_ylimits=True)
+
+            line.axes_manager.events.indices_changed.connect(auto_update_line)
+
+            def _on_line_close(*args, **kwargs):
+                line.axes_manager.events.indices_changed.disconnect(auto_update_line)
                 line.events.closed.disconnect(_on_line_close)
 
             line.events.closed.connect(_on_line_close)
@@ -197,12 +199,11 @@ class Signal1DFigure(BlittedFigure):
             min(x_axis_lower_lims, default=None), max(x_axis_upper_lims, default=None)
         )
 
+        def _disconnect_update(*args, **kwargs):
+            self.axes_manager.events.indices_changed.disconnect(self.update)
+
         self.axes_manager.events.indices_changed.connect(self.update)
-        self._connect_closed(
-            lambda obj: self.axes_manager.events.indices_changed.disconnect(
-                self.update
-            ),
-        )
+        self._connect_closed(_disconnect_update)
 
         if hasattr(self.figure, "tight_layout"):
             try:
@@ -249,12 +250,6 @@ class Signal1DFigure(BlittedFigure):
             update_lines(self.right_ax, self.right_ax_lines)
 
         self.render_figure()
-
-
-class Signal1DLineEvents(SignalGroup):
-    """Events for :class:`Signal1DLine`."""
-
-    closed = EventSignal(object, arguments=["obj"])
 
 
 class Signal1DLine(object):
@@ -578,7 +573,7 @@ class Signal1DLine(object):
             self.text.remove()
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
-        self.events.closed.emit(obj=self)
+        self.events.closed.emit(self)
         for callback in list(self._closed_callbacks):
             try:
                 self.events.closed.disconnect(callback)
@@ -647,3 +642,17 @@ def _plot_loading(
         ax.step(x, loadings[idx])
     else:
         raise ValueError("View not supported")
+
+
+class Signal1DLineEvents(SignalGroup):
+    """Events for :class:`Signal1DLine`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    closed = EventSignal(
+        Signal1DLine,
+        description="""\
+        Event that triggers when the Signal1DLine is closed.
+
+        The Signal1DLine instance is passed to the event handler.
+        """,
+    )

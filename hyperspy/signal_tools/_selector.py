@@ -47,9 +47,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.span_selector = None
 
         self.span_selector_switch(on=True)
-        self.signal._plot.signal_plot.events.closed.connect(
-            self.disconnect
-        )
+        self.signal._plot.signal_plot.events.closed.connect(self.disconnect)
 
     def on_disabling_span_selector(self):
         self.disconnect()
@@ -132,7 +130,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         ]:
             event.connect(self._reset_span_selector_background)
 
-    def disconnect(self, **kwargs):
+    def disconnect(self, *args, **kwargs):
         function = self._reset_span_selector_background
         for event in [
             self.signal.events.data_changed,
@@ -143,9 +141,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
             except ValueError:
                 pass
             try:
-                self.signal._plot.signal_plot.events.closed.disconnect(
-                    self.disconnect
-                    )
+                self.signal._plot.signal_plot.events.closed.disconnect(self.disconnect)
             except ValueError:
                 pass
 

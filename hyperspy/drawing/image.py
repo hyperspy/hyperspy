@@ -633,10 +633,10 @@ class ImagePlot(BlittedFigure):
                 self.axes_manager.events.indices_changed.connect(self.update)
                 self._indices_changed_connected = True
             if not getattr(self, "_closed_connected", False):
-                self.events.closed.connect(lambda obj: self.disconnect())
+                self.events.closed.connect(self.disconnect)
                 self._closed_connected = True
 
-    def disconnect(self, **kwargs):
+    def disconnect(self, *args, **kwargs):
         if self.axes_manager:
             if self._indices_changed_connected:
                 self.axes_manager.events.indices_changed.disconnect(self.update)

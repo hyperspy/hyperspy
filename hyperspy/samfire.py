@@ -570,7 +570,7 @@ class Samfire:
 
         self.model.events.fitted.connect(update_when_triggered)
 
-        def _disconnect_fitted(**kwargs):
+        def _disconnect_fitted(*args, **kwargs):
             self.model.events.fitted.disconnect(update_when_triggered)
 
         self.model._plot.signal_plot.events.closed.connect(_disconnect_fitted)

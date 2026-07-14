@@ -2375,12 +2375,6 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
-class SignalEvents(SignalGroup):
-    """Events for :class:`BaseSignal`."""
-
-    data_changed = EventSignal(object, arguments=["obj"])
-
-
 class BaseSignal(FancySlicing, MVA, MVATools):
     """
 
@@ -3209,8 +3203,8 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         # Connect a stable wrapper closure instead of a bound method.  A lazy
         # signal's ``__class__`` can change during ``compute()``, which breaks
         # psygnal's bound-method slot key and prevents clean disconnect.
-        def _update_plot_callback(obj=None):
-            self.update_plot(obj)
+        def _update_plot_callback(*args, **kwargs):
+            self.update_plot()
 
         self._update_plot_callback = _update_plot_callback
         self.events.data_changed.connect(_update_plot_callback)
@@ -3222,7 +3216,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             else self._plot.navigator_plot
         )
 
-        def _disconnect_update_plot(**kwargs):
+        def _disconnect_update_plot(*args, **kwargs):
             self.events.data_changed.disconnect(_update_plot_callback)
             try:
                 p.events.closed.disconnect(_disconnect_update_plot)
@@ -3232,7 +3226,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         p.events.closed.connect(_disconnect_update_plot)
         if _nav_interactive is not None:
 
-            def _disconnect_navigator(**kwargs):
+            def _disconnect_navigator(*args, **kwargs):
                 _nav_interactive.close()
                 try:
                     self._plot.navigator_plot.events.closed.disconnect(
@@ -7490,6 +7484,20 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             self.events.data_changed.emit(obj=self)
         else:
             return self._deepcopy_with_new_data(corrected_data)
+
+
+class SignalEvents(SignalGroup):
+    """Events for :class:`BaseSignal`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    data_changed = EventSignal(
+        BaseSignal,
+        description="""
+            Event that triggers when the signal data changes.
+
+            The signal is passed as a parameter to the event handler.
+            """,
+    )
 
 
 ARITHMETIC_OPERATORS = (

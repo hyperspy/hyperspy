@@ -84,12 +84,6 @@ PARSE_AXES_DOCSTRING = """axes : None, str, int or :class:`hyperspy.axes.DataAxi
 """
 
 
-class ROIEvents(SignalGroup):
-    """Events for :class:`BaseROI`."""
-
-    changed = EventSignal(object, arguments=["roi"])
-
-
 class BaseROI(t.HasTraits):
     """Base class for all ROIs.
 
@@ -109,7 +103,7 @@ class BaseROI(t.HasTraits):
     def __init__(self):
         """Sets up events.changed event, and inits HasTraits."""
         super(BaseROI, self).__init__()
-        self.events = ROIEvents(self)
+        self.events = BaseROIEvents(self)
         self.signal_map = dict()
 
     def __getitem__(self, *args, **kwargs):
@@ -304,6 +298,20 @@ class BaseROI(t.HasTraits):
     _parse_axes.__doc__ %= PARSE_AXES_DOCSTRING
 
 
+class BaseROIEvents(SignalGroup):
+    """Events for :class:`BaseROI`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    changed = EventSignal(
+        BaseROI,
+        description="""
+            Event that triggers when the ROI changes.
+
+            The ROI is passed as a parameter to the event handler.
+            """,
+    )
+
+
 def _get_mpl_ax(plot, axes):
     """
     Returns matplotlib Axes that contains the hyperspy axis.
@@ -348,7 +356,7 @@ class BaseInteractiveROI(BaseROI):
         self._updating_widgets = False
         self._any_axis_changed_connected = False
 
-    def update(self, **kwargs):
+    def update(self, *args, **kwargs):
         """Function responsible for updating anything that depends on the ROI.
         It should be called by implementors whenever the ROI changes.
         This implementation  updates the widgets associated with it, and
@@ -588,14 +596,14 @@ class BaseInteractiveROI(BaseROI):
             self._updating_widgets = False
 
         # Connect widget changes to on_widget_change
-        def _changed(**kwargs):
+        def _changed(*args, **kwargs):
             self._on_widget_change(widget)
 
         widget._changed_callback = _changed
         widget.events.changed.connect(widget._changed_callback)
 
         # When widget closes, remove from internal list
-        def _closed(**kwargs):
+        def _closed(*args, **kwargs):
             self._remove_widget(widget)
 
         widget._closed_callback = _closed

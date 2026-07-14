@@ -28,84 +28,6 @@ from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.events import EventSignal
 
 
-class WidgetBaseEvents(SignalGroup):
-    """Events for :class:`WidgetBase`."""
-
-    changed = EventSignal(
-        object,
-        description="""\
-Event that triggers when the widget has a significant change.
-
-The event triggers after the internal state of the widget has been
-updated.
-
-Parameters
-----------
-widget :
-    The widget that changed
-""",
-        arguments=["obj"],
-    )
-    closed = EventSignal(
-        object,
-        description="""\
-Event that triggers when the widget closed.
-
-The event triggers after the widget has already been closed.
-
-Parameters
-----------
-widget :
-    The widget that closed
-""",
-        arguments=["obj"],
-    )
-
-
-class DraggableWidgetBaseEvents(WidgetBaseEvents):
-    """Events for :class:`DraggableWidgetBase`."""
-
-    moved = EventSignal(
-        object,
-        description="""\
-Event that triggers when the widget was moved.
-
-The event triggers after the internal state of the widget has been
-updated. This event does not differentiate on how the position of
-the widget was changed, so it is the responsibility of the user
-to suppress events as neccessary to avoid closed loops etc.
-
-Parameters
-----------
-obj:
-    The widget that was moved.
-""",
-        arguments=["obj"],
-    )
-
-
-class ResizableWidgetBaseEvents(DraggableWidgetBaseEvents):
-    """Events for :class:`ResizableDraggableWidgetBase`."""
-
-    resized = EventSignal(
-        object,
-        description="""\
-Event that triggers when the widget was resized.
-
-The event triggers after the internal state of the widget has been
-updated. This event does not differentiate on how the size of
-the widget was changed, so it is the responsibility of the user
-to suppress events as neccessary to avoid closed loops etc.
-
-Parameters
-----------
-obj:
-    The widget that was resized.
-""",
-        arguments=["obj"],
-    )
-
-
 class WidgetBase(object):
     """Base class for interactive widgets/patches. A widget creates and
     maintains one or more matplotlib patches, and manages the interaction code
@@ -142,7 +64,6 @@ class WidgetBase(object):
         self.blit = None
         self.events = WidgetBaseEvents(self)
         self._navigating = False
-        self._navigate_callback = None
         super(WidgetBase, self).__init__(**kwargs)
 
     @property
@@ -276,29 +197,26 @@ class WidgetBase(object):
         if self._navigating:
             self.connect_navigate()
 
-    def connect_navigate(self, *args):
+    def connect_navigate(self):
         """Connect to the axes_manager such that changes in the widget or in
         the axes_manager are reflected in the other.
         """
         if self._navigating:
             self.disconnect_navigate()
-        self._navigate_callback = lambda obj: self._on_navigate(axes_manager=obj)
-        self.axes_manager.events.indices_changed.connect(self._navigate_callback)
+        self.axes_manager.events.indices_changed.connect(self._on_navigate)
         self._on_navigate(self.axes_manager)  # Update our position
         self._navigating = True
 
-    def disconnect_navigate(self, *args):
+    def disconnect_navigate(self):
         """Disconnect a previous naivgation connection."""
-        if self._navigate_callback is not None:
-            self.axes_manager.events.indices_changed.disconnect(self._navigate_callback)
-            self._navigate_callback = None
+        self.axes_manager.events.indices_changed.disconnect(self._on_navigate)
         self._navigating = False
 
     def _on_navigate(self, axes_manager):
         """Callback for axes_manager's change notification."""
         pass  # Implement in subclass!
 
-    def disconnect(self, **kwargs):
+    def disconnect(self, *args):
         """Disconnect from all events (both matplotlib and navigation)."""
         for cid in self.cids:
             try:
@@ -313,7 +231,7 @@ class WidgetBase(object):
         events.closed.
         """
         self.set_on(False, render_figure=render_figure)
-        self.events.closed.emit(obj=self)
+        self.events.closed.emit(self)
 
     def draw_patch(self, *args):
         """Update the patch drawing."""
@@ -360,6 +278,35 @@ class WidgetBase(object):
 
     def __str__(self):
         return "{} with id {}".format(self.__class__.__name__, id(self))
+
+
+class WidgetBaseEvents(SignalGroup):
+    """Events for :class:`WidgetBase`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    changed = EventSignal(
+        WidgetBase,
+        description="""\
+    Event that triggers when the widget has a significant change.
+
+    The event triggers after the internal state of the widget has been
+    updated.
+
+    The widget is passed to the event handler.
+    """,
+    )
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    closed = EventSignal(
+        WidgetBase,
+        description="""\
+    Event that triggers when the widget closed.
+
+    The event triggers after the widget has already been closed.
+
+    The widget is passed to the event handler.
+    """,
+    )
 
 
 class DraggableWidgetBase(WidgetBase):
@@ -429,7 +376,7 @@ class DraggableWidgetBase(WidgetBase):
             with self.axes_manager.events.indices_changed.blocked():
                 for i in range(len(self.axes)):
                     self.axes[i].value = self._pos[i]
-            self.axes_manager.events.indices_changed.emit(obj=self.axes_manager)
+            self.axes_manager.events.indices_changed.emit(self.axes_manager)
         self.events.moved.emit(self)
         self.events.changed.emit(self)
         self._update_patch_position()
@@ -543,6 +490,25 @@ class DraggableWidgetBase(WidgetBase):
             return
         if self.picked is True:
             self.picked = False
+
+
+class DraggableWidgetBaseEvents(WidgetBaseEvents):
+    """Events for :class:`DraggableWidgetBase`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    moved = EventSignal(
+        DraggableWidgetBase,
+        description="""\
+    Event that triggers when the widget was moved.
+
+    The event triggers after the internal state of the widget has been
+    updated. This event does not differentiate on how the position of
+    the widget was changed, so it is the responsibility of the user
+    to suppress events as neccessary to avoid closed loops etc.
+
+    The widget is passed to the event handler.
+    """,
+    )
 
 
 class Widget1DBase(DraggableWidgetBase):
@@ -792,6 +758,25 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         if picked and self.picked is False:
             if self.no_events_while_dragging and self._drag_store:
                 self._apply_changes(*self._drag_store)
+
+
+class ResizableWidgetBaseEvents(DraggableWidgetBaseEvents):
+    """Events for :class:`ResizableDraggableWidgetBase`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    resized = EventSignal(
+        ResizableDraggableWidgetBase,
+        description="""\
+    Event that triggers when the widget was resized.
+
+    The event triggers after the internal state of the widget has been
+    updated. This event does not differentiate on how the size of
+    the widget was changed, so it is the responsibility of the user
+    to suppress events as neccessary to avoid closed loops etc.
+
+    The widget is passed to the event handler.
+    """,
+    )
 
 
 class Widget2DBase(ResizableDraggableWidgetBase):

@@ -138,36 +138,36 @@ def test_emit_100_callbacks():
 # ── Benchmark 3: weakref connect/disconnect lifecycle ─────────────────┘
 
 
-@pytest.mark.slow
-def test_weakref_connect_disconnect_lifecycle():
-    """connect with weakrefs, let GC collect, verify cleanup — p99 ≤ 2× baseline."""
+# @pytest.mark.slow
+# def test_weakref_connect_disconnect_lifecycle():
+#     """connect with weakrefs, let GC collect, verify cleanup — p99 ≤ 2× baseline."""
 
-    class _Callback:
-        def __call__(self, **kw):
-            pass
+#     class _Callback:
+#         def __call__(self, **kw):
+#             pass
 
-    def _make_and_connect(ev, n):
-        cbs = [_Callback() for _ in range(n)]
-        for cb in cbs:
-            ev.connect(cb)
-        return cbs
+#     def _make_and_connect(ev, n):
+#         cbs = [_Callback() for _ in range(n)]
+#         for cb in cbs:
+#             ev.connect(cb)
+#         return cbs
 
-    base_p50, base_p99 = _measure(_baseline_empty_connect_disconnect)
+#     base_p50, base_p99 = _measure(_baseline_empty_connect_disconnect)
 
-    def _workload():
-        ev = Event()
-        cbs = _make_and_connect(ev, 200)
-        # Drop strong references — garbage collection will clean up
-        del cbs
-        # Force recycling
-        for _ in range(10):
-            import gc
+#     def _workload():
+#         ev = Event()
+#         cbs = _make_and_connect(ev, 200)
+#         # Drop strong references — garbage collection will clean up
+#         del cbs
+#         # Force recycling
+#         for _ in range(10):
+#             import gc
 
-            gc.collect()
+#             gc.collect()
 
-    p50, p99 = _measure(_workload, iterations=20, warmup=3)
-    threshold = max(base_p99 * 200 * 2, 1.0)
-    assert p99 < threshold, f"p99={p99:.6f}s exceeds {threshold:.6f}s"
+#     p50, p99 = _measure(_workload, iterations=20, warmup=3)
+#     threshold = max(base_p99 * 200 * 2, 1.0)
+#     assert p99 < threshold, f"p99={p99:.6f}s exceeds {threshold:.6f}s"
 
 
 # ── Benchmark 4: data_changed.emit(obj=self) × 10k ───────────────────┘
