@@ -18,8 +18,6 @@
 
 import inspect
 import re
-import threading
-import time
 import warnings
 from collections.abc import Iterable
 from contextlib import contextmanager
@@ -182,15 +180,6 @@ class Event(SignalInstance):
         # Set of callables currently suppressed by suppress_callback
         self._suppressed_callbacks = set()
 
-        # Throttle state — see throttle() context manager
-        self._throttle_interval = None  # seconds; None = disabled
-        self._throttle_next_allowed = 0.0  # monotonic timestamp
-
-        # Debounce state — see debounce() context manager
-        self._debounce_interval = None  # seconds; None = disabled
-        self._debounce_timer = None  # threading.Timer or None
-        self._debounce_pending_kwargs = None
-
         # Max listeners guard — see connect()
         self._max_listeners = None  # None = unlimited
 
@@ -228,9 +217,8 @@ class Event(SignalInstance):
         aborting remaining slots.
 
         Respects :func:`psygnal.SignalInstance.block` /
-        :func:`psygnal.SignalInstance.unblock` (``_is_blocked``), the
-        legacy ``_suppress`` flag, and optionally :meth:`throttle` /
-        :meth:`debounce` rate-limiters.
+        :func:`psygnal.SignalInstance.unblock` (``_is_blocked``) and the
+        legacy ``_suppress`` flag.
 
         Positional arguments are mapped to declared argument names (via
         ``_arguments``, if set) — matching the :meth:`trigger` behaviour
@@ -251,24 +239,6 @@ class Event(SignalInstance):
                     wrapper_kwargs[f"_arg{i}"] = val
 
         if self._is_blocked or self._suppress:
-            return
-
-        # Throttle guard: skip if still within the cooldown interval
-        if self._throttle_interval is not None:
-            now = time.monotonic()
-            if now < self._throttle_next_allowed:
-                return
-            self._throttle_next_allowed = now + self._throttle_interval
-
-        # Debounce guard: defer emission, resetting timer on each call
-        if self._debounce_interval is not None:
-            self._debounce_pending_kwargs = wrapper_kwargs
-            if self._debounce_timer is not None:
-                self._debounce_timer.cancel()
-            self._debounce_timer = threading.Timer(
-                self._debounce_interval, self._debounce_fire
-            )
-            self._debounce_timer.start()
             return
 
         self._emit_dispatch(args, kwargs, wrapper_kwargs)
@@ -326,72 +296,6 @@ class Event(SignalInstance):
             if original in self._suppressed_callbacks:
                 continue
             callback(**wrapper_kwargs)
-
-    def _debounce_fire(self):
-        """Called by the debounce timer — fires the pending emission."""
-        kwargs = self._debounce_pending_kwargs
-        self._debounce_pending_kwargs = None
-        self._debounce_timer = None
-        if kwargs is not None:
-            self._emit_dispatch((), {}, kwargs)
-
-    @contextmanager
-    def throttle(self, interval):
-        """Context manager that rate-limits emissions to at most one per *interval* seconds.
-
-        While active, repeated ``emit()`` calls within the interval are
-        silently dropped — only the first emission in each window passes through.
-
-        Parameters
-        ----------
-        interval : float
-            Minimum time in seconds between allowed emissions.
-
-        Examples
-        --------
-        >>> with event.throttle(0.5):
-        ...     for _ in range(100):
-        ...         event.emit(x=1)  # only fires ~once every 0.5s
-        """
-        prev_interval = self._throttle_interval
-        prev_next = self._throttle_next_allowed
-        self._throttle_interval = interval
-        self._throttle_next_allowed = 0.0
-        try:
-            yield
-        finally:
-            self._throttle_interval = prev_interval
-            self._throttle_next_allowed = prev_next
-
-    @contextmanager
-    def debounce(self, interval):
-        """Context manager that defers emissions until *interval* seconds of silence.
-
-        Each ``emit()`` resets the internal timer.  The signal only fires
-        after *interval* seconds have passed since the last ``emit()`` call.
-
-        Parameters
-        ----------
-        interval : float
-            Quiet period in seconds before the deferred emission fires.
-
-        Examples
-        --------
-        >>> with event.debounce(0.3):
-        ...     event.emit(x=1)   # timer starts
-        ...     event.emit(x=2)   # timer resets
-        ...     # 0.3s later → callbacks receive {x: 2}
-        """
-        prev_interval = self._debounce_interval
-        self._debounce_interval = interval
-        try:
-            yield
-        finally:
-            if self._debounce_timer is not None:
-                self._debounce_timer.cancel()
-            self._debounce_interval = prev_interval
-            self._debounce_timer = None
-            self._debounce_pending_kwargs = None
 
     def _validate_emit_kwargs(self, kwargs):
         """Validate emit kwargs against the declared ``_arguments``.

@@ -276,8 +276,8 @@ HyperSpy 2.5+ introduces several new features to the event system:
 
 * **Group-level connections**: Connect to all events in a ``SignalGroup`` via ``SignalGroup.all``.
 * **Group-level suppression**: Use ``SignalGroup.blocked()`` to suppress all events in a group at once.
-* **Throttling and debouncing**: Use ``Event.throttle(ms)`` and ``Event.debounce(ms)`` to limit the frequency of event emissions.
 * **Leak detection**: Set ``max_listeners`` to receive warnings when an event has an unusually high number of subscribers, which can help detect memory leaks.
+* **Callback rate-limiting**: Use ``psygnal.throttled`` and ``psygnal.debounced`` to limit the frequency of individual callback invocations.
 * **EventedObjectProxy**: Detection of mutation in numpy arrays (experimental/future).
 
 4. Timeline
