@@ -236,10 +236,19 @@ class Event(SignalInstance):
         ``_arguments``, if set) — matching the :meth:`trigger` behaviour
         for backward compatibility with code like ``emit(signal)``.
         """
-        # Map positional args to declared argument names (same as trigger())
-        if args and self._arguments:
-            for name, val in zip(self._arguments, args, strict=True):
-                kwargs.setdefault(name, val)
+        # Map positional args to keyword names for wrapper-based dispatch.
+        # "all"-mode callbacks (native psygnal) receive args as positional;
+        # "some"/"map" wrapper callbacks (lambda **kw) need every arg as keyword.
+        wrapper_kwargs = dict(kwargs)
+        if args:
+            if self._arguments:
+                for name, val in zip(self._arguments, args, strict=True):
+                    wrapper_kwargs.setdefault(name, val)
+            elif len(args) == 1:
+                wrapper_kwargs.setdefault("obj", args[0])
+            else:
+                for i, val in enumerate(args):
+                    wrapper_kwargs[f"_arg{i}"] = val
 
         if self._is_blocked or self._suppress:
             return
@@ -253,7 +262,7 @@ class Event(SignalInstance):
 
         # Debounce guard: defer emission, resetting timer on each call
         if self._debounce_interval is not None:
-            self._debounce_pending_kwargs = kwargs
+            self._debounce_pending_kwargs = wrapper_kwargs
             if self._debounce_timer is not None:
                 self._debounce_timer.cancel()
             self._debounce_timer = threading.Timer(
@@ -262,12 +271,28 @@ class Event(SignalInstance):
             self._debounce_timer.start()
             return
 
-        self._emit_dispatch(args, kwargs)
+        self._emit_dispatch(args, kwargs, wrapper_kwargs)
 
-    def _emit_dispatch(self, args, kwargs):
+    def _emit_dispatch(self, args, kwargs, wrapper_kwargs):
         """Core dispatch: validate, order, and invoke callbacks."""
+        # Determine which kwarg names came from positional arg mapping.
+        # These must NOT be passed as keywords to "all"-mode callbacks,
+        # since they're already passed positionally via *args.
+        pos_kwarg_names = set()
+        if args:
+            if self._arguments:
+                pos_kwarg_names = set(self._arguments[: len(args)])
+            elif len(args) == 1:
+                pos_kwarg_names = {"obj"}
+            else:
+                pos_kwarg_names = {f"_arg{i}" for i in range(len(args))}
+
         if self._arguments:
-            kwargs = self._validate_emit_kwargs(kwargs)
+            wrapper_kwargs = self._validate_emit_kwargs(wrapper_kwargs)
+            # Apply defaults back to the "all"-mode kwargs
+            for k, v in wrapper_kwargs.items():
+                if k not in pos_kwarg_names:
+                    kwargs.setdefault(k, v)
 
         # Snapshot slots so connect/disconnect during dispatch are safe.
         # Dispatch in legacy order: "all" → "some" → "map".  This
@@ -290,11 +315,17 @@ class Event(SignalInstance):
             else:  # "map"
                 map_callbacks.append(callback)
 
-        for callback in all_callbacks + some_callbacks + map_callbacks:
+        for callback in all_callbacks:
             original = self._find_original(callback)
             if original in self._suppressed_callbacks:
                 continue
             callback(*args, **kwargs)
+
+        for callback in some_callbacks + map_callbacks:
+            original = self._find_original(callback)
+            if original in self._suppressed_callbacks:
+                continue
+            callback(**wrapper_kwargs)
 
     def _debounce_fire(self):
         """Called by the debounce timer — fires the pending emission."""
@@ -302,7 +333,7 @@ class Event(SignalInstance):
         self._debounce_pending_kwargs = None
         self._debounce_timer = None
         if kwargs is not None:
-            self._emit_dispatch(kwargs)
+            self._emit_dispatch((), {}, kwargs)
 
     @contextmanager
     def throttle(self, interval):
@@ -458,14 +489,22 @@ class Event(SignalInstance):
             self._slot_mode[wrapper] = "map"
 
         elif isinstance(kwargs, (list, tuple)):
-            # only make a wrapper when there are argument to pass
-            if len(kwargs) > 0:
-                spec = tuple(kwargs)
+            spec = tuple(kwargs)
+            if len(spec) > 0:
                 wrapper = self._make_list_wrapper(function, spec)
-                super().connect(wrapper, **psygnal_opts)
-                self._wrapper_map[function] = (wrapper, spec)
-                self._connected_originals.add(function)
-                self._slot_mode[wrapper] = "some"
+            else:
+                # Empty → pass no kwargs (wrapper discards all emit args)
+                def _make_empty_wrapper(fn):
+                    def _empty_wrapper(**kw):
+                        return fn()
+
+                    return _empty_wrapper
+
+                wrapper = _make_empty_wrapper(function)
+            super().connect(wrapper, **psygnal_opts)
+            self._wrapper_map[function] = (wrapper, spec)
+            self._connected_originals.add(function)
+            self._slot_mode[wrapper] = "some"
 
         else:
             raise ValueError("Invalid value passed to kwargs.")

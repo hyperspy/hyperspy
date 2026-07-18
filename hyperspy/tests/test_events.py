@@ -455,6 +455,67 @@ class TestTriggerArgResolution(EventsBase):
             self.events.a.connect(lambda2)
             self.events.a.trigger(A="vA", B="vB")
 
+    def test_connect_empty_kwargs_connects(self):
+        # Regression: connect(callback, []) must connect a wrapper that
+        # calls callback with no arguments.  Previously, len(kwargs) > 0
+        # skipped the connection silently, so the callback never fired.
+        called = []
+
+        def callback_no_args():
+            called.append(True)
+
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — Event() and connect(kwargs=[]) both emit
+            e = Event(arguments=["A", "B"])
+            e.connect(callback_no_args, [])
+
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — trigger() emits
+            e.trigger(A="vA", B="vB")
+
+        assert len(called) == 1
+
+    def test_emit_positional_no_kwarg_duplication(self):
+        # Regression: emit(self) on an EventSignal without explicit
+        # arguments must pass the positional arg to native callbacks
+        # only as a positional arg, not also as a keyword "obj".
+        # Callbacks that accept *args but not **kwargs (like
+        # WidgetBase.disconnect) used to fail.
+        # self.events.c has _arguments is None.
+        e = self.events.c
+        received = []
+
+        def callback_starargs(*args):
+            received.append(args)
+
+        e.connect(callback_starargs)
+        sentinel = object()
+        e.emit(sentinel)
+        assert len(received) == 1
+        assert received[0][0] is sentinel
+        assert "obj" not in received[0]
+
+    def test_emit_positional_obj_for_wrapped_callback(self):
+        # When emit(self) is used on an EventSignal without explicit
+        # arguments, wrapper callbacks linked with connect(..., ["obj"])
+        # should receive the single positional arg as keyword "obj",
+        # matching the HyperSpy arg convention for events with
+        # explicit arguments=["obj"].
+        e = self.events.c
+        received = []
+
+        def callback_obj(obj):
+            received.append(obj)
+
+        with pytest.warns(VisibleDeprecationWarning):
+            # Deprecated API — connect(kwargs=["obj"])
+            e.connect(callback_obj, ["obj"])
+
+        sentinel = object()
+        e.emit(sentinel)
+        assert len(received) == 1
+        assert received[0] is sentinel
+
 
 # ---------------------------------------------------------------------------
 # Added regression tests — preserved deprecated behaviours and native API
