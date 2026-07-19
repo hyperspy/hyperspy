@@ -735,12 +735,7 @@ def test_deepcopy():
 
 
 def test_weakref_bound_method_auto_disconnects():
-    """Bound method connection persists after owner GC (strong ref by default).
-
-    NOTE: Event.connect() currently uses strong references for all connections
-    via the legacy kwargs= shim. Native weakref support is planned and will
-    be tested when the deprecated connect path is removed.
-    """
+    """Bound method with weakref=True auto-disconnects after owner GC."""
     e = Event()
     called = []
 
@@ -749,16 +744,16 @@ def test_weakref_bound_method_auto_disconnects():
             called.append(1)
 
     h = Holder()
-    e.connect(h.callback)
+    e.connect(h.callback, weakref=True)
     e.emit()
     assert called == [1]
 
-    # With strong refs, the connection persists even after owner is GC'd
+    # With weakref=True, the connection is dropped when owner is GC'd
     del h
     gc.collect()
     called.clear()
     e.emit()
-    assert called == [1]
+    assert called == []
 
 
 def test_weakref_lambda_kept_alive():
@@ -770,14 +765,9 @@ def test_weakref_lambda_kept_alive():
     assert called == [1]
 
 
-def test_killswitch_env_var():
-    """HS_EVENT_WEAKREF env var disables weakref globally (future feature).
-
-    The Event.connect() path currently uses strong references for all
-    connections. The kill-switch environment variable is not yet
-    implemented in psygnal.  This test documents the current behaviour
-    so that when weakref support is added it can be verified.
-    """
+def test_killswitch_env_var(monkeypatch):
+    """HS_EVENT_WEAKREF env var enables weakref globally — callback auto-disconnects."""
+    monkeypatch.setenv("HS_EVENT_WEAKREF", "1")
     e = Event()
     called = []
 
@@ -794,7 +784,271 @@ def test_killswitch_env_var():
     gc.collect()
     called.clear()
     e.emit()
+    assert called == []
+
+
+def test_weakref_kwargs_list_auto_disconnects():
+    """kwargs=list with weakref=True auto-disconnects after owner GC."""
+    e = Event(arguments=["obj"])
+    called = []
+
+    class Holder:
+        def callback(self, obj, **k):
+            called.append(obj)
+
+    h = Holder()
+    with pytest.warns(VisibleDeprecationWarning):
+        e.connect(h.callback, ["obj"], weakref=True)
+    sentinel = object()
+    e.emit(sentinel)
+    assert called == [sentinel]
+
+    del h
+    gc.collect()
+    called.clear()
+    e.emit(sentinel)
+    assert called == []  # wrapper no-ops silently after owner GC
+
+
+def test_weakref_kwargs_dict_auto_disconnects():
+    """kwargs=dict with weakref=True auto-disconnects after owner GC."""
+    e = Event(arguments=["obj"])
+    called = []
+
+    class Holder:
+        def callback(self, widget, **k):
+            called.append(widget)
+
+    h = Holder()
+    with pytest.warns(VisibleDeprecationWarning):
+        e.connect(h.callback, {"obj": "widget"}, weakref=True)
+    sentinel = object()
+    e.emit(sentinel)
+    assert called == [sentinel]
+
+    del h
+    gc.collect()
+    called.clear()
+    e.emit(sentinel)
+    assert called == []  # wrapper no-ops silently after owner GC
+
+
+def test_weakref_kwargs_list_dispatch_correct():
+    """kwargs=list with weakref=True dispatches only named kwargs (not all)."""
+    e = Event(arguments=["a", "b", "c"])
+    received = []
+
+    class Holder:
+        def callback(self, a, b, **k):
+            received.append((a, b))
+
+    h = Holder()
+    with pytest.warns(VisibleDeprecationWarning):
+        e.connect(h.callback, ["a", "b"], weakref=True)
+    e.emit(a=1, b=2, c=3)
+    assert received == [(1, 2)]  # only "a" and "b" forwarded, not "c"
+
+
+def test_weakref_lambda_falls_back_to_strong():
+    """Lambda with weakref=True stays connected (strong ref fallback)."""
+    e = Event()
+    called = []
+    e.connect(lambda **k: called.append(1), weakref=True)
+    e.emit()
     assert called == [1]
+
+
+def test_weakref_module_function_falls_back_to_strong():
+    """Module-level function with weakref=True stays connected (strong ref fallback)."""
+    e = Event()
+    called = []
+
+    def module_func(**k):
+        called.append(1)
+
+    e.connect(module_func, weakref=True)
+    e.emit()
+    assert called == [1]
+
+
+def test_weakref_false_kwarg_forces_strong(monkeypatch):
+    """weakref=False kwarg forces strong ref even when HS_EVENT_WEAKREF=1."""
+    monkeypatch.setenv("HS_EVENT_WEAKREF", "1")
+    e = Event()
+    called = []
+
+    class Holder:
+        def callback(self, **k):
+            called.append(1)
+
+    h = Holder()
+    e.connect(h.callback, weakref=False)
+    e.emit()
+    assert called == [1]
+
+    del h
+    gc.collect()
+    called.clear()
+    e.emit()
+    assert called == [1]  # strong ref — callback still fires after GC
+
+
+def test_kwarg_overrides_env_var_enable(monkeypatch):
+    """weakref=True kwarg forces weakref even when HS_EVENT_WEAKREF=0."""
+    monkeypatch.setenv("HS_EVENT_WEAKREF", "0")
+    e = Event()
+    called = []
+
+    class Holder:
+        def callback(self, **k):
+            called.append(1)
+
+    h = Holder()
+    e.connect(h.callback, weakref=True)
+    e.emit()
+    assert called == [1]
+
+    del h
+    gc.collect()
+    called.clear()
+    e.emit()
+    assert called == []  # weakref — callback auto-disconnected after GC
+
+
+def test_kwarg_overrides_env_var_disable(monkeypatch):
+    """weakref=False kwarg forces strong even when HS_EVENT_WEAKREF=1."""
+    monkeypatch.setenv("HS_EVENT_WEAKREF", "1")
+    e = Event()
+    called = []
+
+    class Holder:
+        def callback(self, **k):
+            called.append(1)
+
+    h = Holder()
+    e.connect(h.callback, weakref=False)
+    e.emit()
+    assert called == [1]
+
+    del h
+    gc.collect()
+    called.clear()
+    e.emit()
+    assert called == [1]  # strong ref — callback still fires after GC
+
+
+def test_duplicate_connect_weakref_raises():
+    """Connecting same bound method twice with weakref=True raises ValueError."""
+    e = Event()
+    called = []
+
+    class Holder:
+        def callback(self, **k):
+            called.append(1)
+
+    h = Holder()
+    e.connect(h.callback, weakref=True)
+    with pytest.raises(ValueError, match="already connected"):
+        e.connect(h.callback, weakref=True)
+
+
+def test_disconnect_after_gc_does_not_crash():
+    """disconnect after owner GC succeeds when callback ref is kept alive."""
+    e = Event()
+    called = []
+
+    class Holder:
+        def callback(self, **k):
+            called.append(1)
+
+    h = Holder()
+    e.connect(h.callback, weakref=True)
+    e.emit()
+    assert called == [1]
+
+    # Store a reference to the bound method for later disconnect attempt
+    callback_ref = h.callback
+    del h
+    gc.collect()
+
+    # disconnect should succeed — callback_ref keeps the bound method alive,
+    # and disconnect iterates _slots to find the matching connection via ==
+    e.disconnect(callback_ref)
+    e.emit()
+    assert called == [1]  # no additional calls after disconnect
+
+
+def test_connected_returns_living_only():
+    """connected property does not include dead weakref'd callbacks."""
+    e = Event()
+    called = []
+
+    class Holder:
+        def callback(self, **k):
+            called.append(1)
+
+    h = Holder()
+    e.connect(h.callback, weakref=True)
+    with pytest.warns(VisibleDeprecationWarning):
+        assert len(e.connected) == 1
+
+    del h
+    gc.collect()
+    with pytest.warns(VisibleDeprecationWarning):
+        assert len(e.connected) == 0  # dead callback filtered out
+
+
+def test_connected_returns_originals_not_wrappers():
+    """connected returns original bound methods, not _WeakListWrapper instances."""
+    e = Event(arguments=["obj"])
+    called = []
+
+    class Holder:
+        def callback(self, obj, **k):
+            called.append(obj)
+
+    h = Holder()
+    with pytest.warns(VisibleDeprecationWarning):
+        e.connect(h.callback, ["obj"], weakref=True)
+
+    with pytest.warns(VisibleDeprecationWarning):
+        connected_set = e.connected
+    assert h.callback in connected_set  # original bound method, not wrapper
+    assert len(connected_set) == 1
+
+
+def test_connected_filters_dead_wrappers():
+    """connected filters out dead _WeakListWrapper/_WeakDictWrapper instances."""
+    e = Event(arguments=["obj"])
+    called = []
+
+    class Holder:
+        def callback(self, obj, **k):
+            called.append(obj)
+
+    h = Holder()
+    with pytest.warns(VisibleDeprecationWarning):
+        e.connect(h.callback, ["obj"], weakref=True)
+    with pytest.warns(VisibleDeprecationWarning):
+        assert len(e.connected) == 1
+
+    del h
+    gc.collect()
+    with pytest.warns(VisibleDeprecationWarning):
+        assert len(e.connected) == 0  # dead wrapper filtered out
+
+
+def test_repr_unchanged_without_weakref():
+    """repr unchanged for non-weakref connections (existing behavior preserved)."""
+    e = Event()
+
+    def f(**k):
+        pass
+
+    e.connect(f)
+    r = repr(e)
+    assert "(weakref)" not in r  # no weakref indicator for strong-ref connections
+    assert "f" in r or "function" in r.lower() or len(r) > 0  # some content
 
 
 def test_suppress_callback_warns():

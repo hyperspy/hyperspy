@@ -17,8 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import inspect
+import os
 import re
 import warnings
+import weakref
 from collections.abc import Iterable
 from contextlib import contextmanager
 from inspect import Parameter, Signature
@@ -322,6 +324,11 @@ class Event(SignalInstance):
         for *callback* (the dereferenced slot).  Returns *callback*
         itself if no wrapper entry matches.
         """
+        # Check if this is a _WeakListWrapper/_WeakDictWrapper (weakref'd wrapper)
+        ref = getattr(callback, "_ref", None)
+        if ref is not None:
+            return ref()  # Returns original bound method if alive, None if dead
+        # Existing _wrapper_map iteration for strong-ref wrapper connections
         for orig, (wrapper, _spec) in self._wrapper_map.items():
             stored_deref = (
                 wrapper.dereference() if hasattr(wrapper, "dereference") else wrapper
@@ -330,9 +337,50 @@ class Event(SignalInstance):
                 return orig
         return callback
 
+    def _is_connected(self, function):
+        """Check if *function* is already connected, using value equality.
+
+        Bound methods are ephemeral objects (each ``h.callback`` access creates
+        a new object), so identity comparison (``is``) fails.  This helper uses
+        ``==`` (value equality) which compares ``__func__`` + ``__self__``.
+
+        Checks ``_connected_originals`` first (fast path for strong-ref
+        connections), then iterates ``self._slots`` dereferencing each to handle
+        weakref'd connections that bypass ``_connected_originals``.
+        """
+        # Fast path: strong-ref connections tracked in _connected_originals
+        if function in self._connected_originals:
+            return True
+        # Slow path: iterate slots for weakref'd connections
+        for slot in self._slots:
+            deref = slot.dereference() if hasattr(slot, "dereference") else slot
+            if deref is None:
+                continue
+            if deref == function:
+                return True
+            # Check if this is a _WeakListWrapper/_WeakDictWrapper (defensive —
+            # these classes don't exist yet but will be added in a later todo)
+            ref = getattr(deref, "_ref", None)
+            if ref is not None:
+                orig = ref()
+                if orig is not None and orig == function:
+                    return True
+        return False
+
+    def _resolve_weakref(self, weakref):
+        """Resolve the weakref tri-state into a boolean.
+
+        Returns True if weakref is explicitly True, or if weakref is None and
+        the HS_EVENT_WEAKREF environment variable is set to a truthy value
+        ("1", "true", "yes" — case-insensitive). Returns False otherwise.
+        """
+        if weakref is not None:
+            return bool(weakref)
+        return os.environ.get("HS_EVENT_WEAKREF", "0").lower() in ("1", "true", "yes")
+
     # -- connect (deprecated kwargs= shim + native) ------------------------
 
-    def connect(self, function, kwargs="all", **psygnal_opts):
+    def connect(self, function, kwargs="all", *, weakref=None, **psygnal_opts):
         """Connect a function to the event.
 
         .. deprecated:: 2.5
@@ -356,7 +404,8 @@ class Event(SignalInstance):
         """
         if not callable(function):
             raise TypeError("Only callables can be registered")
-        if function in self._connected_originals:
+        weakref = self._resolve_weakref(weakref)
+        if self._is_connected(function):
             raise ValueError("Function %s already connected to %s." % (function, self))
 
         if kwargs != "all":
@@ -381,34 +430,59 @@ class Event(SignalInstance):
             kwargs = self._auto_kwargs(function)
 
         if kwargs == "all":
-            super().connect(function, **psygnal_opts)
-            self._connected_originals.add(function)
-            self._slot_mode[function] = "all"
+            if weakref and inspect.ismethod(function):
+                # Weakref path: psygnal creates WeakMethod for bound methods.
+                # Do NOT store in _connected_originals or _slot_mode —
+                # psygnal's native WeakMethod handles the slot lifecycle,
+                # and _slot_mode.get(callback, "all") defaults to "all".
+                # unique='raise' lets psygnal detect duplicates natively.
+                super().connect(function, unique="raise", **psygnal_opts)
+            else:
+                # Strong-ref path (existing behavior): lambdas, module functions,
+                # or when weakref is False/None.
+                super().connect(function, **psygnal_opts)
+                self._connected_originals.add(function)
+                self._slot_mode[function] = "all"
 
         elif isinstance(kwargs, dict):
-            wrapper = self._make_dict_wrapper(function, kwargs)
-            super().connect(wrapper, **psygnal_opts)
-            self._wrapper_map[function] = (wrapper, kwargs)
-            self._connected_originals.add(function)
-            self._slot_mode[wrapper] = "map"
+            if weakref and inspect.ismethod(function):
+                wrapper = _WeakDictWrapper(function, kwargs)
+                super().connect(wrapper, **psygnal_opts)
+                # Do NOT store in _wrapper_map (dict key keeps function alive)
+                # Do NOT store in _connected_originals
+                self._slot_mode[wrapper] = "map"
+            else:
+                wrapper = self._make_dict_wrapper(function, kwargs)
+                super().connect(wrapper, **psygnal_opts)
+                self._wrapper_map[function] = (wrapper, kwargs)
+                self._connected_originals.add(function)
+                self._slot_mode[wrapper] = "map"
 
         elif isinstance(kwargs, (list, tuple)):
             spec = tuple(kwargs)
-            if len(spec) > 0:
-                wrapper = self._make_list_wrapper(function, spec)
+            if weakref and inspect.ismethod(function):
+                # Weakref path: use _WeakListWrapper for all list sizes
+                wrapper = _WeakListWrapper(function, spec)
+                super().connect(wrapper, **psygnal_opts)
+                # Do NOT store in _wrapper_map (dict key keeps function alive)
+                # Do NOT store in _connected_originals
+                self._slot_mode[wrapper] = "some"
             else:
-                # Empty → pass no kwargs (wrapper discards all emit args)
-                def _make_empty_wrapper(fn):
-                    def _empty_wrapper(**kw):
-                        return fn()
+                if len(spec) > 0:
+                    wrapper = self._make_list_wrapper(function, spec)
+                else:
+                    # Empty → pass no kwargs (wrapper discards all emit args)
+                    def _make_empty_wrapper(fn):
+                        def _empty_wrapper(**kw):
+                            return fn()
 
-                    return _empty_wrapper
+                        return _empty_wrapper
 
-                wrapper = _make_empty_wrapper(function)
-            super().connect(wrapper, **psygnal_opts)
-            self._wrapper_map[function] = (wrapper, spec)
-            self._connected_originals.add(function)
-            self._slot_mode[wrapper] = "some"
+                    wrapper = _make_empty_wrapper(function)
+                super().connect(wrapper, **psygnal_opts)
+                self._wrapper_map[function] = (wrapper, spec)
+                self._connected_originals.add(function)
+                self._slot_mode[wrapper] = "some"
 
         else:
             raise ValueError("Invalid value passed to kwargs.")
@@ -455,15 +529,39 @@ class Event(SignalInstance):
 
     def disconnect(self, function):
         """Disconnect *function* from the event."""
-        # Look up wrapper if this function was connected with a kwargs map
         if function in self._wrapper_map:
+            # Strong-ref wrapper path (kwargs=list/dict without weakref)
             wrapper, _spec = self._wrapper_map.pop(function)
+            super().disconnect(wrapper, missing_ok=False)
+            self._connected_originals.discard(function)
+            self._slot_mode.pop(wrapper, None)
+        elif function in self._connected_originals:
+            # Strong-ref "all" path
+            super().disconnect(function, missing_ok=False)
+            self._connected_originals.discard(function)
+            self._slot_mode.pop(function, None)
         else:
-            wrapper = function
-
-        super().disconnect(wrapper, missing_ok=False)
-        self._connected_originals.discard(function)
-        self._slot_mode.pop(wrapper, None)
+            # Weakref'd connections aren't in _wrapper_map or _connected_originals.
+            # Iterate _slots to find the matching connection.
+            # Use == (value equality) — bound methods are ephemeral.
+            for slot in self._slots:
+                deref = slot.dereference() if hasattr(slot, "dereference") else slot
+                if deref is None:
+                    continue
+                if deref == function:
+                    # kwargs="all" weakref'd connection
+                    super().disconnect(deref, missing_ok=False)
+                    self._slot_mode.pop(deref, None)
+                    return
+                ref = getattr(deref, "_ref", None)
+                if ref is not None:
+                    orig = ref()
+                    if orig is not None and orig == function:
+                        # kwargs=list/dict weakref'd connection
+                        super().disconnect(deref, missing_ok=False)
+                        self._slot_mode.pop(deref, None)
+                        return
+            raise ValueError("Function %s not connected to %s." % (function, self))
 
     # -- _try_discard (weak-reference cleanup override) --------------------
 
@@ -546,7 +644,25 @@ class Event(SignalInstance):
             VisibleDeprecationWarning,
             stacklevel=2,
         )
-        return set(self._connected_originals)
+        # Iterate _slots to return originals for both strong and weak connections.
+        # For _WeakListWrapper/_WeakDictWrapper, dereference via _ref() and skip dead.
+        result = set()
+        # First, add strong-ref connections from _connected_originals
+        result.update(self._connected_originals)
+        # Then, add weakref'd connections from _slots (not in _connected_originals)
+        for slot in self._slots:
+            deref = slot.dereference() if hasattr(slot, "dereference") else slot
+            if deref is None:
+                continue
+            ref = getattr(deref, "_ref", None)
+            if ref is not None:
+                orig = ref()
+                if orig is not None:
+                    result.add(orig)
+            elif inspect.ismethod(deref) and deref not in self._connected_originals:
+                # kwargs="all" weakref'd connection (bound method directly in slot)
+                result.add(deref)
+        return result
 
     # -- suppress / suppress_callback (deprecated context managers) --------
 
@@ -627,6 +743,10 @@ class Event(SignalInstance):
         return dc
 
     def __repr__(self):
+        # When weakref connections exist, _connected_originals doesn't reflect
+        # all connections — use _slots count instead.
+        if len(self._slots) != len(self._connected_originals):
+            return "<hyperspy.events.Event: %d connected (weakref)>" % len(self._slots)
         return "<hyperspy.events.Event: " + repr(self._connected_originals) + ">"
 
     def __str__(self):
@@ -634,16 +754,42 @@ class Event(SignalInstance):
             edoc = inspect.getdoc(self) or ""
             doclines = edoc.splitlines()
             e_short = doclines[0] if len(doclines) > 0 else edoc
-            text = (
-                "<hyperspy.events.Event: "
-                + e_short
-                + ": "
-                + str(self._connected_originals)
-                + ">"
-            )
+            if len(self._slots) != len(self._connected_originals):
+                count_str = "%d connected (weakref)" % len(self._slots)
+            else:
+                count_str = str(self._connected_originals)
+            text = "<hyperspy.events.Event: " + e_short + ": " + count_str + ">"
         else:
             text = self.__repr__()
         return text
+
+
+class _WeakListWrapper:
+    """Wrapper holding a WeakMethod to the original; forwards only named kwargs."""
+
+    def __init__(self, function, kwarg_list):
+        self._ref = weakref.WeakMethod(function)
+        self._kwarg_list = tuple(kwarg_list)
+
+    def __call__(self, **kw):
+        fn = self._ref()
+        if fn is None:
+            return
+        fn(**{k: kw.get(k) for k in self._kwarg_list})
+
+
+class _WeakDictWrapper:
+    """Wrapper holding a WeakMethod to the original; renames kwargs."""
+
+    def __init__(self, function, kwarg_map):
+        self._ref = weakref.WeakMethod(function)
+        self._kwarg_map = dict(kwarg_map)
+
+    def __call__(self, **kw):
+        fn = self._ref()
+        if fn is None:
+            return
+        fn(**{target: kw[source] for source, target in self._kwarg_map.items()})
 
 
 class EventSuppressor(object):

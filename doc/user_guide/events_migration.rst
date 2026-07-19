@@ -279,6 +279,7 @@ HyperSpy 2.5+ introduces several new features to the event system:
 * **Leak detection**: Set ``max_listeners`` to receive warnings when an event has an unusually high number of subscribers, which can help detect memory leaks.
 * **Callback rate-limiting**: Use ``psygnal.throttled`` and ``psygnal.debounced`` to limit the frequency of individual callback invocations.
 * **EventedObjectProxy**: Detection of mutation in numpy arrays (experimental/future).
+* **Weak references**: Use ``event.connect(callback, weakref=True)`` or set the ``HS_EVENT_WEAKREF=1`` environment variable to enable auto-disconnect of bound methods when the owning object is garbage-collected. Non-weakrefable callables (lambdas, module functions) silently fall back to strong references. Note: enabling ``HS_EVENT_WEAKREF=1`` globally changes the default connect behavior for ALL code, including internal HyperSpy code — the ``_connected_originals`` tracking set is no longer populated for weakref'd connections.
 
 4. Timeline
 -----------
