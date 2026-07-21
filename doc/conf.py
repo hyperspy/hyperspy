@@ -178,7 +178,7 @@ favicons = [
 # For development, we match to the dev version in `switcher.json`
 # for release version, we match to the minor increment
 
-# The old version banner used `release` to compare to the "prefered" version
+# The old version banner used `release` to compare to the "preferred" version
 # using https://www.npmjs.com/package/compare-versions
 # See https://github.com/pydata/pydata-sphinx-theme/issues/1552 for more context
 version_match = "dev" if "dev" in release else release
