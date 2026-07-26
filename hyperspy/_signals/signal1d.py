@@ -1183,43 +1183,49 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
     ):
         """
         Remove the background, either in place using a GUI or returned as a new
-        spectrum using the command line. The fast option is not accurate for
-        most background types - except Gaussian, Offset and
-        Power law - but it is useful to estimate the initial fitting parameters
-        before performing a full fit.
+        spectrum using the command line. Various functions to model the background
+        are available. The fast option is not accurate for most background types -
+        except Gaussian, Offset and Power law - but it is useful to estimate the
+        initial fitting parameters before performing a full fit. If you want to
+        subtract a background singal, use the `Scalable fixed pattern` component.
 
         Parameters
         ----------
-        signal_range : "interactive", tuple of int or float or "full", optional
+        signal_range : 'interactive', tuple of int or float or 'full', optional
             If this argument is not specified, the signal range has to be
             selected using a GUI. And the original spectrum will be replaced.
-            If tuple is given, a spectrum will be returned. If "full" is given, the
-            whole spectrum will be used.
+            If ``tuple`` is given, a spectrum will be returned. If ``'full'`` is given,
+            the whole spectrum will be used.
         background_type : str
             The type of component which should be used to fit the background.
             Possible components: Doniach, Gaussian, Lorentzian, Offset,
             Polynomial, PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt,
             Scalable fixed pattern. If Polynomial is used, the polynomial order can be
-            specified. If Scalable fixed pattern is used, the ``background_signal`` has
+            specified. If 'Scalable fixed pattern' is used, the ``background_signal`` has
             to be passed and optionally the ``yscale`` parameter.
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
         background_signal : Signal1D, optional
-            Pass the background signal object, if a Scalable fixed pattern background is
-            used. Can be used to e.g. subtract a measured "dark" background signal.
+            Pass the background signal object required for the 'Scalable fixed pattern'
+            component. Can e.g. be used to subtract a measured "dark" background signal.
+            Additional scaling is available through the yscale parameter. Unless
+            ``yscale=True``, the ``signal_range`` parameter does not have any influence
+            apart from selecting between interactive (GUI) and non-interactive (CLI)
+            mode.
         yscale : bool or float, optional
-            If True, the yscale will be estimated. If False, the yscale will be set to 1.
-            If a float is given, the yscale will be set to this value.
-            This option is only relevant for scaling background signals of the "Scalable fixed pattern" type.
+            If ``True``, the yscale will be estimated. If ``False``, the yscale will be
+            set to 1. If a ``float`` is given, the yscale will be set to this value.
+            This option is only relevant for scaling background signals of the
+            'Scalable fixed pattern' type.
         fast : bool
-            If True, perform an approximative estimation of the parameters.
-            If False, the signal is fitted using non-linear least squares
+            If ``True``, perform an approximative estimation of the parameters.
+            If ``False``, the signal is fitted using non-linear least squares
             afterwards. This is slower compared to the estimation but
             often more accurate.
         zero_fill : bool
-            If True, all spectral channels lower than the lower bound of the
+            If ``True``, all spectral channels lower than the lower bound of the
             fitting range will be set to zero (this is the default behavior
-            of Gatan's DigitalMicrograph). Setting this value to False
+            of Gatan's DigitalMicrograph). Setting this value to ``False``
             allows for inspection of the quality of background fit throughout
             the pre-fitting region.
         plot_remainder : bool
@@ -1228,7 +1234,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             so the result may be different if a NLLS calculation is finally
             performed.
         return_model : bool
-            If True, the background model is returned. The chi² can be obtained
+            If ``True``, the background model is returned. The chi² can be obtained
             from this model using
             :meth:`~hyperspy.model.BaseModel.chisq`.
         %s
