@@ -25,6 +25,7 @@ import hyperspy.api as hs
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import BackgroundRemoval
+from hyperspy.signal_tools._background_removal import _get_background_estimator
 
 
 def _skip_test(s):
@@ -292,11 +293,17 @@ def compare_axes_manager_metadata(s0, s1):
         "Split voigt",
         "SplitVoigt",
         "Voigt",
+        "Scalable fixed pattern",
     ],
 )
 def test_remove_backgound_type(background_type):
     s = hs.signals.Signal1D(np.arange(100))
-    s.remove_background(background_type=background_type, signal_range=(2, 98))
+    bkg = hs.signals.Signal1D(
+        0.2 * np.ones_like(np.arange(100)),
+    )
+    s.remove_background(
+        background_type=background_type, signal_range=(2, 98), background_signal=bkg
+    )
 
 
 @pytest.mark.parametrize("nav_dim", [0, 1])
@@ -347,3 +354,72 @@ def test_BackgroundRemoval_tool(nav_dim, fast):
     br.span_selector_changed()
     br._fit()
     assert isinstance(br.red_chisq, float)
+
+
+def test_get_background_estimator_sfp_requires_background_signal():
+    with pytest.raises(ValueError, match="background signal must be provided"):
+        _get_background_estimator("Scalable fixed pattern")
+
+
+def test_get_background_estimator_invalid_background_type():
+    with pytest.raises(ValueError, match="not recognized"):
+        _get_background_estimator("InvalidType")
+
+
+@pytest.mark.parametrize("yscale", [False, True, 3.0])
+@pytest.mark.parametrize("fast", [True, False])
+def test_remove_background_scalable_fixed_pattern(yscale, fast):
+    background_signal = hs.signals.Signal1D(np.linspace(1.0, 2.0, 50))
+
+    if yscale is True:
+        factor = 4.0
+    elif yscale is False:
+        factor = 1.0
+    else:
+        factor = yscale
+
+    signal = hs.signals.Signal1D(background_signal.data * factor)
+
+    result = signal.remove_background(
+        signal_range="full",
+        background_type="Scalable fixed pattern",
+        background_signal=background_signal,
+        yscale=yscale,
+        fast=fast,
+    )
+
+    np.testing.assert_allclose(result.data, 0.0, atol=1e-12)
+
+
+@pytest.mark.parametrize("yscale", [False, True, 7.0])
+@pytest.mark.parametrize("fast", [True, False])
+def test_background_removal_scalable_fixed_pattern_yscale(yscale, fast):
+    bkg = hs.signals.Signal1D(np.linspace(1.0, 2.0, 50))
+
+    if yscale is True:
+        factor = 4.0
+    elif yscale is False:
+        factor = 1.0
+    else:
+        factor = yscale
+
+    s = hs.signals.Signal1D(bkg.data * factor)
+
+    br = BackgroundRemoval(
+        s,
+        background_type="Scalable fixed pattern",
+        background_signal=bkg,
+        yscale=yscale,
+        fast=fast,
+    )
+
+    br.span_selector.extents = (
+        bkg.axes_manager[-1].axis.min(),
+        bkg.axes_manager[-1].axis.max(),
+    )
+    br.span_selector_changed()
+    br._fit()
+
+    np.testing.assert_allclose(br.background_estimator.yscale.value, factor, atol=1e-12)
+    np.testing.assert_allclose(br.background_estimator.xscale.value, 1.0)
+    np.testing.assert_allclose(br.background_estimator.shift.value, 0.0)

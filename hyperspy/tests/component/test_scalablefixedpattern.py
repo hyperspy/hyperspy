@@ -136,3 +136,86 @@ class TestScalableFixedPattern:
         assert m2[0].yscale._linear
         assert not m2[0].xscale._linear
         assert not m2[0].shift._linear
+
+    def test_estimate_parameters_yscale_ratio_only_current(self):
+        scale = 3.0
+
+        signal = hs.signals.Signal1D(self.pattern.data * scale)
+        signal.axes_manager[0].scale = self.pattern.axes_manager[0].scale
+
+        fp = hs.model.components1D.ScalableFixedPattern(self.pattern)
+        fp.estimate_parameters(signal, 0.0, 0.9, only_current=True, yscale=True)
+
+        assert fp.xscale.value == 1.0
+        assert fp.shift.value == 0.0
+        np.testing.assert_allclose(fp.yscale.value, scale)
+
+    def test_estimate_parameters_yscale_ratio_map(self):
+        signal = hs.signals.Signal1D(
+            np.stack([self.pattern.data * 2.0, self.pattern.data * 4.0])
+        )
+        signal.axes_manager[-1].scale = self.pattern.axes_manager[0].scale
+
+        fp = hs.model.components1D.ScalableFixedPattern(self.pattern)
+        fp.estimate_parameters(signal, 0.0, 0.9, only_current=False, yscale=True)
+
+        np.testing.assert_allclose(fp.xscale.map["values"], [1.0, 1.0])
+        np.testing.assert_allclose(fp.shift.map["values"], [0.0, 0.0])
+        np.testing.assert_allclose(fp.yscale.map["values"], [2.0, 4.0])
+
+    @pytest.mark.parametrize("only_current", [True, False])
+    @pytest.mark.parametrize(
+        ("yscale", "expected_input_scale"),
+        [
+            (False, 5.0),
+            (True, 5.0),
+            (7.0, 3.0),
+        ],
+    )
+    def test_estimate_paramters(self, only_current, yscale, expected_input_scale):
+        pattern = self.pattern
+
+        if only_current:
+            signal = hs.signals.Signal1D(pattern.data * expected_input_scale)
+            signal.axes_manager[0].scale = pattern.axes_manager[0].scale
+        else:
+            signal = hs.signals.Signal1D(
+                np.stack(
+                    [
+                        pattern.data * expected_input_scale,
+                        pattern.data * expected_input_scale,
+                    ]
+                )
+            )
+            signal.axes_manager[-1].scale = pattern.axes_manager[0].scale
+
+        fp = hs.model.components1D.ScalableFixedPattern(pattern)
+        fp.estimate_parameters(
+            signal, 0.0, 0.9, only_current=only_current, yscale=yscale
+        )
+
+        if only_current:
+            assert fp.xscale.value == 1.0
+            assert fp.shift.value == 0.0
+
+            if yscale is False:
+                np.testing.assert_allclose(fp.yscale.value, 1.0)
+            elif yscale is True:
+                np.testing.assert_allclose(fp.yscale.value, expected_input_scale)
+            else:
+                np.testing.assert_allclose(fp.yscale.value, yscale)
+        else:
+            np.testing.assert_allclose(fp.xscale.map["values"], [1.0, 1.0])
+            np.testing.assert_allclose(fp.shift.map["values"], [0.0, 0.0])
+
+            if yscale is False:
+                np.testing.assert_allclose(fp.yscale.map["values"], [1.0, 1.0])
+            elif yscale is True:
+                np.testing.assert_allclose(
+                    fp.yscale.map["values"],
+                    [expected_input_scale, expected_input_scale],
+                )
+            else:
+                np.testing.assert_allclose(fp.yscale.map["values"], [yscale, yscale])
+
+            np.testing.assert_allclose(fp.yscale.map["is_set"], [True, True])

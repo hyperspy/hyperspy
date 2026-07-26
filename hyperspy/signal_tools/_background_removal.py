@@ -39,9 +39,15 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         "Skew normal",
         "Split Voigt",
         "Voigt",
+        "Scalable fixed pattern",
         default="Power law",
     )
     polynomial_order = t.Range(1, 10)
+    background_signal = t.Instance("hyperspy.signals.Signal1D")
+    yscale = t.Union(
+        t.Bool,
+        t.Float,
+    )
     fast = t.Bool(
         True,
         desc=(
@@ -69,6 +75,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         signal,
         background_type="Power law",
         polynomial_order=2,
+        background_signal=None,
+        yscale=False,
         fast=True,
         plot_remainder=True,
         zero_fill=False,
@@ -95,6 +103,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             model = Model1D(signal)
         self.model = model
         self.polynomial_order = polynomial_order
+        self.background_signal = background_signal
+        self.yscale = yscale
         if background_type in ["Power Law", "PowerLaw"]:
             background_type = "Power law"
         if background_type in ["Skew Normal", "SkewNormal"]:
@@ -122,14 +132,29 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             for component in self.model:
                 self.model.remove(component)
         self.background_estimator, self.bg_line_range = _get_background_estimator(
-            self.background_type, self.polynomial_order
+            self.background_type, self.polynomial_order, self.background_signal
         )
         if self.model is not None and len(self.model) == 0:
             self.model.append(self.background_estimator)
         if not self.fast and self._is_valid_range:
-            self.background_estimator.estimate_parameters(
-                self.signal, self.ss_left_value, self.ss_right_value, only_current=True
-            )
+            if self.background_type == "Scalable fixed pattern":
+                yscale = _configure_scalable_fixed_pattern(
+                    self.background_estimator, self.yscale
+                )
+                self.background_estimator.estimate_parameters(
+                    self.signal,
+                    self.ss_left_value,
+                    self.ss_right_value,
+                    only_current=True,
+                    yscale=yscale,
+                )
+            else:
+                self.background_estimator.estimate_parameters(
+                    self.signal,
+                    self.ss_left_value,
+                    self.ss_right_value,
+                    only_current=True,
+                )
 
     @t.observe("polynomial_order")
     def _polynomial_order_changed(self, event=None):
@@ -213,10 +238,25 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         # Set signal range here to set correctly the _channel_switches for
         # the chisq calculation when using fast
         self.model.set_signal_range(self.ss_left_value, self.ss_right_value)
-        if self.fast:
+
+        if self.background_type == "Scalable fixed pattern":
+            yscale = _configure_scalable_fixed_pattern(
+                self.background_estimator, self.yscale
+            )
+
+            self.background_estimator.estimate_parameters(
+                self.signal,
+                self.ss_left_value,
+                self.ss_right_value,
+                only_current=True,
+                yscale=yscale,
+            )
+        else:
             self.background_estimator.estimate_parameters(
                 self.signal, self.ss_left_value, self.ss_right_value, only_current=True
             )
+
+        if self.fast:
             # Calculate chisq
             self.model._calculate_chisq()
         else:
@@ -246,6 +286,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         result = self.signal._remove_background_cli(
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_estimator=self.background_estimator,
+            yscale=self.yscale,
             fast=self.fast,
             zero_fill=self.zero_fill,
             show_progressbar=self.show_progressbar,
@@ -264,7 +305,54 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 axes_manager.events.indices_changed.disconnect(f)
 
 
-def _get_background_estimator(background_type, polynomial_order=1):
+def _configure_scalable_fixed_pattern(background_estimator, yscale):
+    """Configure a ScalableFixedPattern background estimator.
+
+    Parameters
+    ----------
+    background_estimator: ScalableFixedPattern
+        The estimator to configure.
+    yscale: bool or float
+        If ``False``, yscale and the other scale parameters are fixed to their default values.
+        If ``True``, yscale is estimated. Otherwise, ``yscale`` is converted to ``float`` and
+        used as a fixed value.
+
+    Returns
+    -------
+    bool or float
+        The value to pass to ``estimate_parameters(..., yscale=...)``.
+
+    Raises
+    ------
+    ValueError
+        If ``yscale`` is neither a bool nor convetible to float.
+
+    """
+    if yscale is False:
+        background_estimator.yscale.free = False
+        background_estimator.xscale.free = False
+        background_estimator.shift.free = False
+        return False
+    if yscale is True:
+        background_estimator.yscale.free = True
+        return True
+
+    try:
+        yscale = float(yscale)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "If yscale is not a bool, it must be convertible to float."
+        ) from exc
+
+    background_estimator.yscale.free = False
+    background_estimator.xscale.free = False
+    background_estimator.shift.free = False
+    return yscale
+
+
+def _get_background_estimator(
+    background_type, polynomial_order=1, background_signal=None
+):
     """
     Assign 1D component to specified background type.
 
@@ -274,6 +362,9 @@ def _get_background_estimator(background_type, polynomial_order=1):
         The name of the component to model the background.
     polynomial_order : int, optional
         The polynomial order used in the polynomial component
+    background_signal : Signal1D, optional
+        The background signal used for the ScalableFixedPattern component. Required
+        if background_type is ``ScalableFixedPattern``.
 
     Raises
     ------
@@ -283,7 +374,7 @@ def _get_background_estimator(background_type, polynomial_order=1):
     Returns
     -------
     background_estimator : Component1D
-        The component mdeling the background.
+        The component modeling the background.
     bg_line_range : 'full' or 'from_left_range'
         The range to draw the component (used in the BackgroundRemoval tool)
 
@@ -318,6 +409,14 @@ def _get_background_estimator(background_type, polynomial_order=1):
         bg_line_range = "full"
     elif background_type == "voigt":
         background_estimator = components1d.Voigt()
+        bg_line_range = "full"
+    elif background_type == "scalablefixedpattern":
+        if background_signal is None:
+            raise ValueError(
+                "A background signal must be provided when using the 'Scalable fixed pattern' \
+                background type."
+            )
+        background_estimator = components1d.ScalableFixedPattern(background_signal)
         bg_line_range = "full"
     else:
         raise ValueError(f"Background type '{background_type}' not recognized.")
