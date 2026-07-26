@@ -1,4 +1,1 @@
-Add ``scalable fixed pattern`` method to
-:meth:`~.api.signals.Signal1D.remove_background` to remove
-background defined from a :class:`~.api.signals.Signal1D`, see
-this lumispy `issue #124 <https://github.com/LumiSpy/lumispy/issues/124>`_ for context.
+Add ``Scalable fixed pattern`` component to :meth:`~.api.signals.Signal1D.remove_background` to allow subtracting backgrounds defined as a :class:`~.api.signals.Signal1D`, see this lumispy `issue #124 <https://github.com/LumiSpy/lumispy/issues/124>`_ for context.
