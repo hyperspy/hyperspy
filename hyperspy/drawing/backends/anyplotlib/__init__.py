@@ -94,6 +94,106 @@ def _snap(value, snap_values):
     return float(arr[np.argmin(np.abs(arr - float(value)))])
 
 
+# ---------------------------------------------------------------------------
+# Widget coordinates
+#
+# Overlay widgets on a ``Plot2D`` are positioned in *image pixel indices* —
+# ``add_rectangle_widget`` derives its defaults from ``image_width``, and the
+# renderer maps index ``i`` to ``(i + 0.5) / image_width`` of the drawn image
+# rect.  HyperSpy speaks calibrated units throughout, and the two coincide only
+# when ``scale == 1`` and ``offset == 0``.  On a calibrated image (say 0.015
+# nm/px) an ROI spanning 1.91–5.75 nm was therefore drawn at pixel 1.9 with a
+# width of 3.8 px: a few-pixel smudge in the corner, impossible to grab.
+#
+# The panel's own ``x_axis`` / ``y_axis`` arrays carry one coordinate per pixel,
+# so interpolating against them converts both ways and copes with non-uniform
+# axes for free.  1-D panels have no ``image_width`` and are already in data
+# units, so they are left alone.
+# ---------------------------------------------------------------------------
+
+
+def _pixel_centres(edge0, edge1, count):
+    """Return the coordinate of each pixel centre across an extent.
+
+    ``extent`` describes the outer *edges* of the image, so sampling it with
+    ``linspace(edge0, edge1, count)`` — as this backend used to — spaces the
+    values by ``(edge1 - edge0) / (count - 1)`` and puts the first one half a
+    pixel too far out.  On a 5-pixel axis of unit scale that is a step of 1.25
+    instead of 1, which skews both the tick labels and any widget positioned
+    against the axis.
+    """
+    size = (float(edge1) - float(edge0)) / float(count)
+    return np.linspace(float(edge0) + size / 2.0, float(edge1) - size / 2.0, int(count))
+
+
+def _pixel_axes(plot):
+    """Return ``(x, y)`` calibrations if *plot* positions widgets in pixels.
+
+    Each entry is ``(first_centre, pixel_size)`` mapping a pixel index to a
+    calibrated coordinate, or ``None`` for a panel already in data units
+    (a 1-D plot, which has no ``image_width``).
+    """
+    state = getattr(plot, "_state", None)
+    if not isinstance(state, dict) or "image_width" not in state:
+        return None, None
+    x_axis, y_axis = state.get("x_axis"), state.get("y_axis")
+    if x_axis is None or y_axis is None:
+        return None, None
+    if len(x_axis) < 2 or len(y_axis) < 2:
+        return None, None
+
+    def _calibration(axis):
+        first, last = float(axis[0]), float(axis[-1])
+        size = (last - first) / (len(axis) - 1)
+        return None if size == 0 else (first, size)
+
+    return _calibration(x_axis), _calibration(y_axis)
+
+
+def _to_pixels(axis, value):
+    """Map a calibrated coordinate onto a fractional pixel index."""
+    if axis is None or value is None:
+        return value
+    first, size = axis
+    return (float(value) - first) / size
+
+
+def _to_data(axis, pixel):
+    """Inverse of :func:`_to_pixels`."""
+    if axis is None or pixel is None:
+        return pixel
+    first, size = axis
+    return first + float(pixel) * size
+
+
+def _pixel_span(axis, length):
+    """Convert a length in calibrated units to a length in pixels."""
+    if axis is None or length is None:
+        return length
+    return abs(float(length) / axis[1])
+
+
+def _data_span(axis, pixels):
+    """Inverse of :func:`_pixel_span`."""
+    if axis is None or pixels is None:
+        return pixels
+    return abs(float(pixels) * axis[1])
+
+
+def _remember_plot(handle, plot):
+    """Tag a widget with the panel it belongs to, and return it.
+
+    ``connect_widget_drag`` and the ``update_*`` methods are handed only the
+    widget, but they need the panel's axes to convert coordinates back to
+    calibrated units.
+    """
+    try:
+        handle._hspy_plot = plot
+    except AttributeError:  # pragma: no cover - defensive
+        pass
+    return handle
+
+
 class _AplSpanSelector:
     """matplotlib ``SpanSelector`` façade over anyplotlib's native range widget.
 
@@ -217,7 +317,11 @@ class _AplPolygonSelector:
     @property
     def verts(self):
         if self._widget is not None:
-            return [tuple(v) for v in self._widget.get("vertices", [])]
+            xa, ya = _pixel_axes(self._plot)
+            return [
+                (_to_data(xa, vx), _to_data(ya, vy))
+                for vx, vy in self._widget.get("vertices", [])
+            ]
         return list(self._verts)
 
     @verts.setter
@@ -225,15 +329,36 @@ class _AplPolygonSelector:
         self._verts = [tuple(float(c) for c in v) for v in value]
         if len(self._verts) < 3:
             return
+        xa, ya = _pixel_axes(self._plot)
+        pixels = [[_to_pixels(xa, vx), _to_pixels(ya, vy)] for vx, vy in self._verts]
         if self._widget is None:
-            self._widget = self._plot.add_widget(
-                "polygon",
-                vertices=[list(v) for v in self._verts],
-                color=self._color,
-                linewidth=float(self._linewidth),
+            self._widget = _remember_plot(
+                self._plot.add_widget(
+                    "polygon",
+                    vertices=pixels,
+                    color=self._color,
+                    linewidth=float(self._linewidth),
+                ),
+                self._plot,
             )
+            self._connect_onselect()
         else:
-            self._widget.set(_notify=False, vertices=[list(v) for v in self._verts])
+            self._widget.set(_notify=False, vertices=pixels)
+
+    def _connect_onselect(self):
+        """Report browser-side polygon edits back to the ROI.
+
+        Without this the widget's new vertices live only in the JS state:
+        ``PolygonROI`` never hears about them, so nothing downstream of the
+        ROI recomputes when the polygon is dragged.
+        """
+        if self._widget is None or self._onselect is None:
+            return
+
+        def _handler(event):
+            self._onselect(self.verts)
+
+        self._widget.add_event_handler(_handler, "pointer_move")
 
     def set_props(self, **props):
         if "color" in props:
@@ -868,8 +993,8 @@ class AnyplotlibBackend:
         if extent is not None:
             x0, x1, y0, y1 = extent
             axes = [
-                np.linspace(x0, x1, arr.shape[1]),
-                np.linspace(y1, y0, arr.shape[0]),
+                _pixel_centres(x0, x1, arr.shape[1]),
+                _pixel_centres(y1, y0, arr.shape[0]),
             ]
         plot = ax.imshow(arr, axes=axes, cmap=cmap, vmin=vmin, vmax=vmax)
         if aspect not in (None, "auto", "equal", 1, 1.0):
@@ -894,7 +1019,7 @@ class AnyplotlibBackend:
         x0, x1, y0, y1 = extent
         w = handle._state["image_width"]
         h = handle._state["image_height"]
-        handle.set_extent(np.linspace(x0, x1, w), np.linspace(y1, y0, h))
+        handle.set_extent(_pixel_centres(x0, x1, w), _pixel_centres(y1, y0, h))
 
     def image_set_clim(self, handle, vmin, vmax):
         handle.set_clim(vmin, vmax)
@@ -1036,21 +1161,23 @@ class AnyplotlibBackend:
             handle.connect_drag(on_drag)
             return
         wtype = handle.get("type") if hasattr(handle, "get") else None
+        # The widget reports pixel indices; hyperspy expects calibrated units.
+        xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
 
         if wtype == "vline":
 
             def _cb(event):
-                on_drag(handle.x)
+                on_drag(_to_data(xa, handle.x))
 
         elif wtype == "hline":
 
             def _cb(event):
-                on_drag(handle.y)
+                on_drag(_to_data(ya, handle.y))
 
         elif wtype == "crosshair":
 
             def _cb(event):
-                on_drag(handle.cx, handle.cy)
+                on_drag(_to_data(xa, handle.cx), _to_data(ya, handle.cy))
 
         elif wtype == "rectangle":
             # Region widgets report their full geometry: corner plus size.
@@ -1058,12 +1185,27 @@ class AnyplotlibBackend:
             # convention (see RectangleWidget._on_widget_drag).
 
             def _cb(event):
-                on_drag(handle.x, handle.y, handle.w, handle.h)
+                on_drag(
+                    _to_data(xa, handle.x),
+                    _to_data(ya, handle.y),
+                    _data_span(xa, handle.w),
+                    _data_span(ya, handle.h),
+                )
 
         elif wtype in ("circle", "annular"):
 
             def _cb(event):
-                on_drag(handle.cx, handle.cy)
+                on_drag(_to_data(xa, handle.cx), _to_data(ya, handle.cy))
+
+        elif wtype == "polygon":
+
+            def _cb(event):
+                on_drag(
+                    [
+                        (_to_data(xa, vx), _to_data(ya, vy))
+                        for vx, vy in handle.get("vertices", [])
+                    ]
+                )
 
         else:
             return
@@ -1075,41 +1217,65 @@ class AnyplotlibBackend:
         plot = self._primary_plot(ax)
         if plot is None or not hasattr(plot, "add_widget"):
             raise BackendCapabilityError(_NOT_YET.format("create_rect_pointer"))
+        xa, ya = _pixel_axes(plot)
+        px, py = _to_pixels(xa, x), _to_pixels(ya, y)
+        pw, ph = _pixel_span(xa, w), _pixel_span(ya, h)
         if pointer:
             # The navigator pointer marks the current navigation position.  A
             # crosshair reads better than a rectangle on an interactive JS
             # panel; 0.5.0 also lets a degenerate (single-axis) navigator use a
             # real vline/hline rather than a crosshair pinned to an edge.
             if h <= 0 and hasattr(plot, "add_vline_widget"):
-                return plot.add_vline_widget(x=float(x) + float(w) / 2.0, color=color)
-            if w <= 0 and hasattr(plot, "add_hline_widget"):
-                return plot.add_hline_widget(y=float(y) + float(h) / 2.0, color=color)
-            return plot.add_widget(
-                "crosshair",
-                cx=float(x) + float(w) / 2.0,
-                cy=float(y) + float(h) / 2.0,
+                handle = plot.add_vline_widget(
+                    x=float(px) + float(pw) / 2.0, color=color
+                )
+            elif w <= 0 and hasattr(plot, "add_hline_widget"):
+                handle = plot.add_hline_widget(
+                    y=float(py) + float(ph) / 2.0, color=color
+                )
+            else:
+                handle = plot.add_widget(
+                    "crosshair",
+                    cx=float(px) + float(pw) / 2.0,
+                    cy=float(py) + float(ph) / 2.0,
+                    color=color,
+                )
+        else:
+            # Region selector (e.g. RectangularROI): a native rectangle widget
+            # with built-in JS move/resize handles.
+            handle = plot.add_widget(
+                "rectangle",
+                x=float(px),
+                y=float(py),
+                w=float(pw),
+                h=float(ph),
                 color=color,
             )
-        # Region selector (e.g. RectangularROI): a native rectangle widget
-        # with built-in JS move/resize handles.
-        return plot.add_widget(
-            "rectangle", x=float(x), y=float(y), w=float(w), h=float(h), color=color
-        )
+        return _remember_plot(handle, plot)
 
     def update_rect_pointer(self, handle, x, y, w, h):
         wtype = handle.get("type") if hasattr(handle, "get") else None
+        xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
+        px, py = _to_pixels(xa, x), _to_pixels(ya, y)
+        pw, ph = _pixel_span(xa, w), _pixel_span(ya, h)
         if wtype == "crosshair":
             handle.set(
                 _notify=False,
-                cx=float(x) + float(w) / 2.0,
-                cy=float(y) + float(h) / 2.0,
+                cx=float(px) + float(pw) / 2.0,
+                cy=float(py) + float(ph) / 2.0,
             )
         elif wtype == "vline":
-            handle.set(_notify=False, x=float(x) + float(w) / 2.0)
+            handle.set(_notify=False, x=float(px) + float(pw) / 2.0)
         elif wtype == "hline":
-            handle.set(_notify=False, y=float(y) + float(h) / 2.0)
+            handle.set(_notify=False, y=float(py) + float(ph) / 2.0)
         else:
-            handle.set(_notify=False, x=float(x), y=float(y), w=float(w), h=float(h))
+            handle.set(
+                _notify=False,
+                x=float(px),
+                y=float(py),
+                w=float(pw),
+                h=float(ph),
+            )
 
     def create_circle_pointer(
         self, ax, cx, cy, r_outer, r_inner=0.0, color="red", linewidth=2, alpha=1.0
@@ -1117,28 +1283,34 @@ class AnyplotlibBackend:
         plot = self._primary_plot(ax)
         if plot is None or not hasattr(plot, "add_widget"):
             raise BackendCapabilityError(_NOT_YET.format("create_circle_pointer"))
+        xa, ya = _pixel_axes(plot)
+        pcx, pcy = _to_pixels(xa, cx), _to_pixels(ya, cy)
+        # A radius is a length, and the widget is drawn as a true circle, so it
+        # can only follow one axis' calibration.
+        p_outer = _pixel_span(xa, r_outer)
+        p_inner = _pixel_span(xa, r_inner)
         # One native widget covers both cases, so the returned list always has
         # a single element (matplotlib needs two patches for the annulus).
         if r_inner > 0:
             handle = plot.add_widget(
                 "annular",
-                cx=float(cx),
-                cy=float(cy),
-                r_outer=float(r_outer),
-                r_inner=float(r_inner),
+                cx=float(pcx),
+                cy=float(pcy),
+                r_outer=float(p_outer),
+                r_inner=float(p_inner),
                 color=color,
                 linewidth=float(linewidth),
             )
         else:
             handle = plot.add_widget(
                 "circle",
-                cx=float(cx),
-                cy=float(cy),
-                r=float(r_outer),
+                cx=float(pcx),
+                cy=float(pcy),
+                r=float(p_outer),
                 color=color,
                 linewidth=float(linewidth),
             )
-        return [handle]
+        return [_remember_plot(handle, plot)]
 
     def update_circle_pointer(self, ax, handles, cx, cy, r_outer, r_inner=0.0):
         handle = handles[0]
@@ -1161,16 +1333,23 @@ class AnyplotlibBackend:
                 self.remove_pointer(ax, old)
             return new
 
+        xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
+        pcx, pcy = _to_pixels(xa, cx), _to_pixels(ya, cy)
         if is_annular:
             handle.set(
                 _notify=False,
-                cx=float(cx),
-                cy=float(cy),
-                r_outer=float(r_outer),
-                r_inner=float(r_inner),
+                cx=float(pcx),
+                cy=float(pcy),
+                r_outer=float(_pixel_span(xa, r_outer)),
+                r_inner=float(_pixel_span(xa, r_inner)),
             )
         else:
-            handle.set(_notify=False, cx=float(cx), cy=float(cy), r=float(r_outer))
+            handle.set(
+                _notify=False,
+                cx=float(pcx),
+                cy=float(pcy),
+                r=float(_pixel_span(xa, r_outer)),
+            )
         return handles
 
     def remove_pointer(self, ax, handle):
@@ -1595,22 +1774,25 @@ class AnyplotlibBackend:
         it on.
 
         Falls back to the generic marker-based ``ScaleBar`` when there is no
-        ``Plot2D`` yet, when ``pixel_size`` is given explicitly (an
+        ``Plot2D`` yet, or when ``pixel_size`` is given explicitly (an
         uncalibrated axis with a manual pixel size, which the native bar has
-        no equivalent for), or when ``units`` is not a real non-empty string —
-        an uncalibrated axis reports ``units`` as the ``traits.Undefined``
-        sentinel, which is not JSON-serialisable and must never reach
-        ``Plot2D._state``.
+        no equivalent for).
+
+        When the axes simply have no usable units — an uncalibrated axis
+        reports ``units`` as the ``traits.Undefined`` sentinel, which is not
+        JSON-serialisable and must never reach ``Plot2D._state`` — no bar is
+        drawn at all. anyplotlib labels such a panel in pixels and keeps its
+        ticks, whereas the generic fallback would stamp ``10 <undefined>``
+        across the image.
         """
         plot = self._primary_plot(ax)
-        native = (
-            plot is not None
-            and hasattr(plot, "set_extent")
-            and pixel_size is None
-            and isinstance(units, str)
-            and units not in ("", "px")
-        )
-        if not native:
+        has_plot = plot is not None and hasattr(plot, "set_extent")
+        usable_units = isinstance(units, str) and units not in ("", "px")
+
+        if not (has_plot and pixel_size is None and usable_units):
+            if has_plot and pixel_size is None:
+                # No units to show, so nothing worth drawing.
+                return _AplNoScalebar()
             from hyperspy.drawing._widgets.scalebar import ScaleBar
 
             return ScaleBar(ax=ax, units=units, pixel_size=pixel_size, color=color)
@@ -1659,3 +1841,17 @@ class _AplNativeScalebar:
 
     def __init__(self, plot):
         self.plot = plot
+
+
+class _AplNoScalebar:
+    """Sentinel for "this panel deliberately has no scale bar".
+
+    Used when the axes carry no usable units. anyplotlib labels such a panel
+    in pixels and draws its ticks, which says everything a bar could; the
+    generic marker-based fallback would instead stamp the image with
+    ``10 <undefined>``, since an uncalibrated axis reports ``units`` as the
+    ``traits.Undefined`` sentinel.
+    """
+
+    def remove(self):
+        pass

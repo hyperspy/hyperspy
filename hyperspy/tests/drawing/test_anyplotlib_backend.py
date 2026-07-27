@@ -539,6 +539,87 @@ class TestPolygonSelector:
         assert selector.verts == []
 
 
+class TestCalibratedWidgetCoordinates:
+    """Overlay widgets are positioned in image pixels, HyperSpy in data units.
+
+    The two coincide only for an uncalibrated axis (scale 1, offset 0). On a
+    calibrated image the backend must convert, or the widget is drawn at the
+    wrong place and size — a 0.015 nm/px image put a 3.84 nm ROI at pixel 1.9
+    with a width of 3.8 px, a smudge in the corner that could not be grabbed.
+    """
+
+    # 8 px spanning 0-16 in data units, i.e. 2.0 per pixel.
+    EXTENT = (0.0, 16.0, 16.0, 0.0)
+
+    @pytest.fixture()
+    def image_ax(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((8, 8)), extent=self.EXTENT)
+        return ax
+
+    def test_pixel_centres_span_the_extent(self, backend, image_ax):
+        """Axis arrays hold pixel centres, half a pixel inside each edge."""
+        x_axis = image_ax._plot._state["x_axis"]
+        assert x_axis[0] == pytest.approx(1.0)  # 0 + 2/2
+        assert x_axis[-1] == pytest.approx(15.0)  # 16 - 2/2
+        assert x_axis[1] - x_axis[0] == pytest.approx(2.0)
+
+    def test_rect_pointer_converts_to_pixels(self, backend, image_ax):
+        handle = backend.create_rect_pointer(image_ax, 4.0, 4.0, 8.0, 8.0)
+        # data 4.0 is the centre of pixel 1.5; 8.0 wide is 4 pixels.
+        assert handle.get("x") == pytest.approx(1.5)
+        assert handle.get("w") == pytest.approx(4.0)
+
+    def test_rect_pointer_update_converts_to_pixels(self, backend, image_ax):
+        handle = backend.create_rect_pointer(image_ax, 4.0, 4.0, 8.0, 8.0)
+        backend.update_rect_pointer(handle, 6.0, 6.0, 4.0, 4.0)
+        assert handle.get("x") == pytest.approx(2.5)
+        assert handle.get("w") == pytest.approx(2.0)
+
+    def test_drag_reports_data_units(self, backend, image_ax):
+        """A drag must arrive back in HyperSpy's units, not pixels."""
+        handle = backend.create_rect_pointer(image_ax, 4.0, 4.0, 8.0, 8.0)
+        seen = []
+        backend.connect_widget_drag(handle, lambda *args: seen.append(args))
+        handle.set(x=2.5, y=2.5, w=2.0, h=2.0)
+        assert seen, "drag callback never fired"
+        x, y, w, h = seen[-1]
+        assert x == pytest.approx(6.0)
+        assert w == pytest.approx(4.0)
+
+    def test_circle_pointer_converts_to_pixels(self, backend, image_ax):
+        (handle,) = backend.create_circle_pointer(image_ax, 8.0, 8.0, 4.0)
+        assert handle.get("cx") == pytest.approx(3.5)
+        assert handle.get("r") == pytest.approx(2.0)
+
+    def test_polygon_selector_round_trips_data_units(self, backend, image_ax):
+        selector = backend.create_polygon_selector(image_ax, props={"color": "red"})
+        selector.verts = [(4.0, 4.0), (12.0, 4.0), (8.0, 12.0)]
+        stored = selector._widget.get("vertices")
+        assert stored[0] == pytest.approx([1.5, 1.5])
+        # Reading back returns what was written, in data units.
+        assert selector.verts[0] == pytest.approx((4.0, 4.0))
+
+    def test_polygon_edit_reaches_onselect(self, backend, image_ax):
+        """Dragging a polygon must reach the ROI, not just the JS widget."""
+        seen = []
+        selector = backend.create_polygon_selector(
+            image_ax, props={"color": "red"}, onselect=seen.append
+        )
+        selector.verts = [(4.0, 4.0), (12.0, 4.0), (8.0, 12.0)]
+        selector._widget.set(vertices=[[0.5, 0.5], [5.5, 0.5], [3.5, 5.5]])
+        assert seen, "onselect never fired for a polygon edit"
+        assert seen[-1][0] == pytest.approx((2.0, 2.0))
+
+    def test_uncalibrated_axes_are_untouched(self, backend, fig_ax):
+        """scale 1 / offset 0: pixel and data coordinates already agree."""
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((10, 10)))
+        handle = backend.create_rect_pointer(ax, 2.0, 3.0, 4.0, 5.0)
+        assert handle.get("x") == pytest.approx(2.0)
+        assert handle.get("w") == pytest.approx(4.0)
+
+
 class TestEvents:
     def test_connect_disconnect_no_crash(self, backend, fig_ax):
         fig, ax = fig_ax
@@ -1722,20 +1803,25 @@ class TestScalebar:
         handle = backend.create_scalebar(ax, "nm", pixel_size=2.0)
         assert isinstance(handle, ScaleBar)
 
-    def test_undefined_units_sentinel_falls_back_without_crashing(
-        self, backend, fig_ax
-    ):
-        """traits.Undefined (an uncalibrated axis' default `.units`) must
-        never reach Plot2D._state — it isn't JSON-serialisable."""
+    def test_undefined_units_draws_no_scalebar(self, backend, fig_ax):
+        """An uncalibrated axis reports `.units` as traits.Undefined.
+
+        That sentinel must never reach Plot2D._state (it isn't
+        JSON-serialisable), and no bar is drawn: anyplotlib labels the panel
+        in pixels, while the generic fallback would render the units sentinel
+        into the label as `10 <undefined>`.
+        """
         from traits.api import Undefined
 
-        from hyperspy.drawing._widgets.scalebar import ScaleBar
+        from hyperspy.drawing.backends.anyplotlib import _AplNoScalebar
 
         _, ax = fig_ax
         backend.plot_image(ax, np.zeros((8, 8)), extent=(0.0, 16.0, 16.0, 0.0))
         handle = backend.create_scalebar(ax, Undefined)
-        assert isinstance(handle, ScaleBar)
+        assert isinstance(handle, _AplNoScalebar)
         assert ax._plot._state["units"] != Undefined
+        # Removing it must be a no-op rather than an error.
+        backend.remove_scalebar(ax, handle)
 
 
 class TestMiscBackendGaps:
