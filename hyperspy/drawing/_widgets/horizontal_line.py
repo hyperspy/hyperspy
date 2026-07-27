@@ -40,8 +40,11 @@ class HorizontalLineWidget(Widget1DBase):
         self._patch = [handle]
         backend.set_pointer_style(handle, animated=self.blit)
         _self = self
+        # A backend may report this pointer as a genuine horizontal line (one
+        # coordinate) or as a crosshair standing in for one (x, y).  Either
+        # way the y is last, and it is the only value this widget tracks.
         backend.connect_widget_drag(
-            handle, lambda x, y: setattr(_self, "position", (y,))
+            handle, lambda *vals: setattr(_self, "position", (vals[-1],))
         )
 
     def _onmousemove(self, event):
