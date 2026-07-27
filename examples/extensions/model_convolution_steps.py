@@ -13,6 +13,9 @@ convolution in model fitting.
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 from hyperspy.misc.axis_tools import calculate_convolution1D_axis
 
 #%%
@@ -21,14 +24,14 @@ from hyperspy.misc.axis_tools import calculate_convolution1D_axis
 f = hs.model.components1D.Lorentzian(centre=220)
 f_signal = hs.signals.Signal1D(f.function(np.arange(200, 300)))
 f_signal.axes_manager.signal_axes.set(offset=200)
-f_signal.plot()
+f_signal.plot()  # Interactive
 
 #%%
 # Create a second signal, for example a detector response:
 g = hs.model.components1D.Gaussian(sigma=3)
 g_signal = hs.signals.Signal1D(g.function(np.arange(-20, 20)))
 g_signal.axes_manager.signal_axes.set(offset=-20)
-g_signal.plot()
+g_signal.plot()  # Interactive
 
 
 #%%
@@ -48,4 +51,4 @@ convolved_signal.axes_manager.signal_axes.set(offset=f_signal.axes_manager[-1].o
 
 #%%
 # Display the comparison of both signals:
-hs.plot.plot_spectra([f_signal, convolved_signal])
+hs.plot.plot_spectra([f_signal, convolved_signal])  # Interactive

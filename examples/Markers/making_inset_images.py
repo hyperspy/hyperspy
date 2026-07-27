@@ -5,11 +5,17 @@ Making Inset Images
 This example shows how to make images that overlay the main images.  These can be images overlaid using
 some king of transparency or make an inset image.  It can also be useful for something like making something
 like a circular color bar to show orientation.
+
+.. note::
+    This example builds markers from a raw :class:`matplotlib.collections.QuadMesh`,
+    so it requires the matplotlib plotting backend (the default).  The marker
+    classes in :mod:`~.api.plot.markers` work with any backend.
 """
 
 import numpy as np
 import hyperspy.api as hs
 import matplotlib
+import matplotlib.collections  # noqa: F401 - registers matplotlib.collections
 
 # %%
 # Making some artificial data

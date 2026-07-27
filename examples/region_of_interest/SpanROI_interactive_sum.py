@@ -8,6 +8,9 @@ This example shows how to integrate a signal using an interactive ROI.
 
 import hyperspy.api as hs
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 #%%
 # Create a signal:
 s = hs.data.two_gaussians()
@@ -17,23 +20,27 @@ s = hs.data.two_gaussians()
 roi = hs.roi.SpanROI(left=10, right=20)
 
 #%%
-# Slice signal with roi with the ROI. By using the :meth:`~hyperspy.roi.BaseInteractiveROI.interactive`
-# function, the output signal ``s_roi`` will update automatically.
-# The ROI will be added automatically on the signal figure:
+# Now build the whole interactive chain in one go, so that the signal and the
+# integrated intensity are drawn side by side and you can watch one drive the
+# other. Activate the figures, then drag or resize the span on the left.
+#
+# The steps are:
+#
+# 1. plot the signal and slice it with the ROI — because we use
+#    :meth:`~hyperspy.roi.BaseInteractiveROI.interactive`, ``sliced_signal``
+#    re-slices itself whenever the ROI moves, and the ROI widget is added to
+#    the signal figure automatically;
+# 2. make a placeholder signal to hold the integrated intensity;
+# 3. connect the integration to the ROI with :func:`~.api.interactive`, using
+#    ``out`` so the result lands in that placeholder;
+# 4. plot the placeholder.
+
 s.plot()
 sliced_signal = roi.interactive(s, axes=s.axes_manager.signal_axes)
-# Choose the second figure as gallery thumbnail:
-# sphinx_gallery_thumbnail_number = 2
 
-#%%
-# Create a placeholder signal for the integrated signal and set metadata:
 integrated_sliced_signal = sliced_signal.sum(axis=-1).T
 integrated_sliced_signal.metadata.General.title = "Integrated intensity"
 
-#%%
-# Create the interactive computation, which will update when the ROI ``roi`` is
-# changed. wWe use the ``out`` argument to place the results of the integration
-# in the placeholder signal defined in the previous step:
 hs.interactive(
     sliced_signal.sum,
     axis=sliced_signal.axes_manager.signal_axes,
@@ -42,6 +49,6 @@ hs.interactive(
     out=integrated_sliced_signal,
 )
 
-#%%
-# Plot the integrated sum signal:
-integrated_sliced_signal.plot()
+integrated_sliced_signal.plot()  # Interactive
+
+# sphinx_gallery_thumbnail_number = 1

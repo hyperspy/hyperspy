@@ -2,6 +2,11 @@
 Star Markers
 ============
 
+.. note::
+    This example builds markers from a raw :class:`matplotlib.collections.Collection`
+    subclass, so it requires the matplotlib plotting backend (the default).
+    The marker classes in :mod:`~.api.plot.markers` work with any backend.
+
 """
 
 #%%
@@ -9,6 +14,7 @@ Star Markers
 
 import hyperspy.api as hs
 import matplotlib as mpl
+import matplotlib.collections  # noqa: F401 - registers mpl.collections
 import numpy as np
 
 # Create a Signal2D with 2 navigation dimensions

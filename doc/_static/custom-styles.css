@@ -29,3 +29,40 @@ a.downloadbutton:hover, a.downloadbutton:focus {
     color: white;
     text-decoration: none;
 }
+
+/* ---------------------------------------------------------------------------
+   Interactive gallery (see doc/_ext/hyperspy_anywidget.py)
+
+   Figures produced by the same example block are laid out in one row, so that
+   a region of interest and the plot it drives can be watched together.
+   --------------------------------------------------------------------------- */
+
+.hspy-figure-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 14px;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 12px 0;
+}
+
+.hspy-figure-row > .hspy-figure-cell {
+    /* `flex-basis: 0` plus `min-width: 0` size the cell purely by the flex
+       algorithm.  That matters because anyplotlib's resize script writes an
+       explicit pixel width onto the figure inside: with a content-based basis
+       that width feeds back into the layout and can push the row wide enough
+       to wrap, which is why figures separated on resize. */
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* Two figures side by side stop being readable on a phone, so stack them --
+   but only there, not merely because the figure inside reported a wide size. */
+@media (max-width: 700px) {
+    .hspy-figure-row {
+        flex-wrap: wrap;
+    }
+    .hspy-figure-row > .hspy-figure-cell {
+        flex: 1 1 100%;
+    }
+}

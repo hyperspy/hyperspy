@@ -9,11 +9,24 @@ When saving an RGB image to ``jpg``, only 8 bits are supported and the image
 intensity needs to be rescaled to 0-255 before converting to 8 bits,
 otherwise, the intensities will be cropped at the value of 255.
 
+.. note::
+    The figure below can be made live, but the two ``save`` steps cannot: the
+    in-browser interpreter has no file system to write to and ships without
+    RosettaSciIO's format plugins, so those calls report an error in the
+    browser console. Everything up to and including the plot works.
+
 """
 
 import hyperspy.api as hs
 import numpy as np
 import skimage as ski
+
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
+# scikit-image ships with Pyodide but is not loaded by default, so the
+# documentation's in-browser interpreter has to be told to pull it in.
+_PYODIDE_PACKAGES = ["scikit-image"]
 
 #%%
 #
@@ -31,7 +44,7 @@ print(s)
 
 #%%
 # Display the color image
-s.plot()
+s.plot()  # Interactive
 
 #%%
 # Processing is usually performed on standard dtype (e.g. ``uint8``, ``uint16``), because

@@ -12,6 +12,9 @@ parameters for markers
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 rng = np.random.default_rng()
 data = np.arange(1, 101).reshape(10, 10)*2 + rng.random((10, 10))
 signal = hs.signals.Signal1D(data)
@@ -39,7 +42,7 @@ texts = hs.plot.markers.Texts(offsets=offsets,
                               shift=0.005)  # shift in axes units for some constant displacement
 signal.plot()
 signal.add_marker(markers)
-signal.add_marker(texts)
+signal.add_marker(texts)  # Interactive
 
 #%%
 # The second example shows how to draw markers which extend to the edges of the
@@ -50,7 +53,7 @@ markers = hs.plot.markers.Lines(segments=segments,
 
 
 signal.plot()
-signal.add_marker(markers)
+signal.add_marker(markers)  # Interactive
 
 #%%
 # The third example shows how an ``offset_transform`` of ``'axes'`` can be
@@ -135,7 +138,7 @@ signal.add_marker(marker2text)
 signal.add_marker(marker3)
 signal.add_marker(marker3text)
 signal.add_marker(marker4)
-signal.add_marker(marker4text)
+signal.add_marker(marker4text)  # Interactive
 
 #%%
-#sphinx_gallery_thumbnail_number = 2
+#sphinx_gallery_thumbnail_number = 1

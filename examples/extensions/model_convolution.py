@@ -13,6 +13,9 @@ This example illustrates how to implement a model supporting convolution.
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 #%%
 # Model class implementation
 # --------------------------
@@ -95,7 +98,7 @@ class ConvolvedModel1D(Model1D):
 g = hs.model.components1D.Gaussian(sigma=3)
 g_signal = hs.signals.Signal1D(g.function(np.arange(-20, 20)))
 g_signal.axes_manager.signal_axes.set(offset=-20)
-g_signal.plot()
+g_signal.plot()  # Interactive
 
 #%%
 # Generate an example signal using the same approach as in the implementation of a convolution
@@ -113,7 +116,7 @@ f_signal.data = np.convolve(f_padded_data, g_signal.data, mode="valid") + 10
 #%%
 # Plot signal composed of the convolution of a Lorentzian and a Gaussian
 # function:
-f_signal.plot()
+f_signal.plot()  # Interactive
 
 #%%
 # Fit model with convolution
@@ -138,7 +141,7 @@ offset_component.convolved = False
 m.fit()
 m.print_current_values()
 
-m.plot()
+m.plot()  # Interactive
 
 
 #%%
@@ -154,4 +157,4 @@ m2.extend([lorentzian_component2, offset_component2])
 m2.fit()
 m2.print_current_values()
 
-m2.plot()
+m2.plot()  # Interactive

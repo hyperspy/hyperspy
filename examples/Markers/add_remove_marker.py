@@ -11,6 +11,9 @@ This is done by setting the parameters (offsets, sizes, etc.) of the collection.
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a Signal2D with 2 navigation dimensions
 rng = np.random.default_rng(0)
 data = np.arange(15*100*100).reshape((15, 100, 100))
@@ -32,7 +35,7 @@ m = hs.plot.markers.Texts(
 print(f'Number of markers is {len(m)}.')
 
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
 # Remove the last text of the collection
@@ -46,7 +49,7 @@ m.remove_items(indices=-1)
 print(f'Number of markers is {len(m)} after removing one marker.')
 
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
 # Add another text of the collection
@@ -59,7 +62,7 @@ m.add_items(offsets=np.array([[50, 50]]), texts=np.array(["new text"]))
 print(f'Number of markers is {len(m)} after adding the text {texts[-1]}.')
 
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 1

@@ -12,6 +12,9 @@ is done by passing a ragged array to the constructor of the markers.
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a Signal2D with 2 navigation dimensions
 rng = np.random.default_rng(0)
 data = np.arange(25*100*100).reshape((25, 100, 100))
@@ -32,7 +35,7 @@ m = hs.plot.markers.Points(
     )
 
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 1

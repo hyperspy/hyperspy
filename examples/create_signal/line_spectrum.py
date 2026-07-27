@@ -8,6 +8,9 @@ This example creates a line spectrum and plots it.
 import numpy as np
 import hyperspy.api as hs
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a line spectrum with random data
 s = hs.signals.Signal1D(np.random.random((100, 1024)))
 
@@ -26,4 +29,4 @@ s.axes_manager.navigation_axes[0].offset = 100
 s.metadata.General.title = 'Random line spectrum'
 
 # Plot it
-s.plot()
+s.plot()  # Interactive

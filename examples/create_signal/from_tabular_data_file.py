@@ -7,10 +7,19 @@ This example creates a signal from tabular data imported from a txt file using
 given by the first and second columns, respectively.
 
 The tabular data are taken from https://eelsdb.eu/spectra/la2nio4-structure-of-k2nif4/
+
+.. note::
+    This is the one anyplotlib example whose figure cannot be made live in the
+    browser: re-running it there would need ``La2NiO4_eels.txt`` on disk, and
+    the in-browser interpreter has no access to it. The figure below is still
+    an anyplotlib widget, so panning and zooming work as usual.
 """
 
 import numpy as np
 import hyperspy.api as hs
+
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
 
 #%%
 # Read tabular data from a text file:

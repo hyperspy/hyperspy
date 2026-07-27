@@ -9,6 +9,9 @@ Fit an arctan function.
 import numpy as np
 import hyperspy.api as hs
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Generate the data and make the spectrum
 data = np.arctan(np.arange(-500, 500))
 s = hs.signals.Signal1D(data)
@@ -34,4 +37,4 @@ m.fit()
 m.print_current_values()
 
 # Plot the spectrum and the model fitting
-m.plot()
+m.plot()  # Interactive
