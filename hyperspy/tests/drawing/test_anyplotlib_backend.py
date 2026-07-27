@@ -619,6 +619,42 @@ class TestCalibratedWidgetCoordinates:
         assert handle.get("x") == pytest.approx(2.0)
         assert handle.get("w") == pytest.approx(4.0)
 
+    def test_markers_convert_offsets(self, backend, image_ax):
+        """Markers go through the same image transform as the widgets."""
+        group = backend.create_markers(
+            image_ax, "circles", offsets=[[4.0, 4.0], [12.0, 12.0]], sizes=4.0
+        )
+        assert group._data["offsets"][0] == pytest.approx([1.5, 1.5])
+        assert group._data["offsets"][1] == pytest.approx([5.5, 5.5])
+
+    def test_arrow_components_convert_as_lengths(self, backend, image_ax):
+        """U/V are displacements, so they scale but do not shift."""
+        group = backend.create_markers(
+            image_ax, "arrows", offsets=[[4.0, 4.0]], U=[4.0], V=[4.0]
+        )
+        assert group._data["offsets"][0] == pytest.approx([1.5, 1.5])
+        # 4.0 data units over a 2.0-per-pixel axis is 2 pixels. A single
+        # value is unwrapped to a scalar on the way through.
+        assert np.atleast_1d(group._data["U"])[0] == pytest.approx(2.0)
+        assert np.atleast_1d(group._data["V"])[0] == pytest.approx(2.0)
+
+    def test_line_pointer_on_2d_navigator_converts(self, backend, image_ax):
+        """A Signal1D navigator is a 2-D image with a horizontal line pointer.
+
+        The line therefore lives in pixel rows; passing the calibrated value
+        straight through put it off the bottom of the image.
+        """
+        handle = backend.create_line_pointer(image_ax, "y", 4.0)
+        assert handle.get("y") == pytest.approx(1.5)
+        backend.update_line_pointer(handle, "y", 12.0)
+        assert handle.get("y") == pytest.approx(5.5)
+
+    def test_line_pointer_on_1d_panel_stays_in_data_units(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.linspace(100.0, 130.0, 20), np.zeros(20))
+        handle = backend.create_line_pointer(ax, "x", 115.0)
+        assert handle.get("x") == pytest.approx(115.0)
+
 
 class TestEvents:
     def test_connect_disconnect_no_crash(self, backend, fig_ax):

@@ -180,6 +180,76 @@ def _data_span(axis, pixels):
     return abs(float(pixels) * axis[1])
 
 
+#: Marker keys holding ``[x, y]`` positions, and how deeply they are nested.
+#: ``offsets`` is a list of points, ``segments`` a list of point pairs, and
+#: ``vertices_list`` a list of polygons.
+_MARKER_POSITION_KEYS = {"offsets": 1, "segments": 2, "vertices_list": 2}
+
+#: Marker keys holding a length along x or along y.
+_MARKER_LENGTH_KEYS = {
+    "U": "x",
+    "widths": "x",
+    "radius": "x",
+    "V": "y",
+    "heights": "y",
+}
+
+
+def _nested_map(value, depth, fn):
+    """Apply *fn* to every ``[x, y]`` pair *depth* levels down."""
+    if depth == 0:
+        pair = list(value)
+        return [fn(pair[0], 0)] + ([fn(pair[1], 1)] if len(pair) > 1 else [])
+    return [_nested_map(item, depth - 1, fn) for item in value]
+
+
+def _markers_to_pixels(plot, marker_type, translated):
+    """Rewrite marker geometry from calibrated units into image pixels.
+
+    Markers drawn in the ``data`` space on a ``Plot2D`` go through
+    ``_imgToCanvas2d`` exactly like the overlay widgets, so they are addressed
+    in image pixel indices, and lengths (an arrow's U/V, a rectangle's width)
+    are multiplied by the image's canvas-per-pixel scale.  HyperSpy supplies
+    calibrated units, so on a calibrated image the markers bunch up near the
+    origin — the arrows example put 1024 arrows spanning 0-6.28 into the first
+    six pixels of a 100-pixel axis.
+    """
+    if translated.get("transform") != "data":
+        return translated
+    x_cal, y_cal = _pixel_axes(plot)
+    if x_cal is None and y_cal is None:
+        return translated
+
+    if marker_type in ("vlines", "hlines"):
+        # These carry one coordinate per entry, along their own axis.
+        axis = x_cal if marker_type == "vlines" else y_cal
+        offsets = translated.get("offsets")
+        if offsets is not None:
+            translated["offsets"] = [[_to_pixels(axis, v[0])] for v in offsets]
+        return translated
+
+    def _point(value, axis_index):
+        return _to_pixels(x_cal if axis_index == 0 else y_cal, value)
+
+    for key, depth in _MARKER_POSITION_KEYS.items():
+        if key in translated and translated[key] is not None:
+            translated[key] = _nested_map(translated[key], depth, _point)
+
+    if translated.get("size_units") == "px":
+        return translated
+
+    for key, which in _MARKER_LENGTH_KEYS.items():
+        if key not in translated or translated[key] is None:
+            continue
+        axis = x_cal if which == "x" else y_cal
+        value = translated[key]
+        if np.isscalar(value):
+            translated[key] = _pixel_span(axis, value)
+        else:
+            translated[key] = [_pixel_span(axis, v) for v in np.asarray(value).ravel()]
+    return translated
+
+
 def _remember_plot(handle, plot):
     """Tag a widget with the panel it belongs to, and return it.
 
@@ -1134,27 +1204,45 @@ class AnyplotlibBackend:
         plot = self._primary_plot(ax)
         if plot is None:
             raise RuntimeError("ax has no plot; call plot_line or plot_image first")
+        # A Signal1D with one navigation axis gets a *2-D* navigator (the whole
+        # dataset as an image) with a horizontal line marking the current row,
+        # so this lands on a Plot2D and needs converting just like the region
+        # widgets do.  A genuine 1-D panel reports no calibration and is left
+        # in data units.
+        x_cal, y_cal = _pixel_axes(plot)
         if axis == "x":
+            value = _to_pixels(x_cal, pos)
             if hasattr(plot, "add_vline_widget"):
-                return plot.add_vline_widget(x=float(pos), color=color)
-            return plot.add_widget("crosshair", cx=float(pos), cy=0.0, color=color)
-        if hasattr(plot, "add_hline_widget"):
-            return plot.add_hline_widget(y=float(pos), color=color)
-        return plot.add_widget("crosshair", cx=0.0, cy=float(pos), color=color)
+                handle = plot.add_vline_widget(x=float(value), color=color)
+            else:
+                handle = plot.add_widget(
+                    "crosshair", cx=float(value), cy=0.0, color=color
+                )
+        else:
+            value = _to_pixels(y_cal, pos)
+            if hasattr(plot, "add_hline_widget"):
+                handle = plot.add_hline_widget(y=float(value), color=color)
+            else:
+                handle = plot.add_widget(
+                    "crosshair", cx=0.0, cy=float(value), color=color
+                )
+        return _remember_plot(handle, plot)
 
     def update_line_pointer(self, handle, axis, pos):
         wtype = handle.get("type") if hasattr(handle, "get") else None
+        x_cal, y_cal = _pixel_axes(getattr(handle, "_hspy_plot", None))
+        value = _to_pixels(x_cal if axis == "x" else y_cal, pos)
         # _notify=False: a Python-side update must not echo back through the
         # drag callback and feed into navigation (0.5.0; was pause_events).
         if wtype == "crosshair":
             if axis == "x":
-                handle.set(_notify=False, cx=float(pos))
+                handle.set(_notify=False, cx=float(value))
             else:
-                handle.set(_notify=False, cy=float(pos))
+                handle.set(_notify=False, cy=float(value))
         elif axis == "x":
-            handle.set(_notify=False, x=float(pos))
+            handle.set(_notify=False, x=float(value))
         else:
-            handle.set(_notify=False, y=float(pos))
+            handle.set(_notify=False, y=float(value))
 
     def connect_widget_drag(self, handle, on_drag):
         if isinstance(handle, _AplLine2DPatch):
@@ -1572,8 +1660,10 @@ class AnyplotlibBackend:
                 if size_units not in ("x", "y", "xy", "width", "height"):
                     translated["size_units"] = "px"
 
+        _markers_to_pixels(plot, marker_type, translated)
+
         try:
-            return plot.markers.add(marker_type, **translated)
+            return _remember_plot(plot.markers.add(marker_type, **translated), plot)
         except ValueError as exc:
             raise BackendCapabilityError(
                 f"anyplotlib does not support marker type '{marker_type}' "
@@ -1592,6 +1682,7 @@ class AnyplotlibBackend:
             radius = sizes / 2.0
             kwargs["radius"] = float(radius[0]) if radius.size == 1 else radius.tolist()
         translated = self._translate_marker_kwargs(marker_type, offset_space, kwargs)
+        _markers_to_pixels(getattr(handle, "_hspy_plot", None), marker_type, translated)
         if translated:
             handle.set(**translated)
 
