@@ -203,6 +203,117 @@ class TestLine1D:
         assert backend.line_get_color(h) == "#aabbcc"
 
 
+class TestLinePropTranslation:
+    """hyperspy speaks matplotlib's line vocabulary; anyplotlib does not.
+
+    See ``AnyplotlibBackend._norm_line_props``.
+    """
+
+    def test_scatter_linestyle_none_is_passed_through(self, backend):
+        """0.5.0 renders a real markers-only line; we used to fake it as solid."""
+        out = backend._norm_line_props(
+            {"linestyle": "None", "marker": "o", "markersize": 1}
+        )
+        assert out["linestyle"] == "none"
+        assert out["marker"] == "o"
+        assert out["markersize"] == 1.0
+
+    def test_marker_none_is_normalised(self, backend):
+        assert backend._norm_line_props({"marker": "None"})["marker"] == "none"
+        assert backend._norm_line_props({"marker": None})["marker"] == "none"
+
+    def test_unknown_marker_falls_back_to_circle(self, backend):
+        assert backend._norm_line_props({"marker": "1"})["marker"] == "o"
+
+    def test_drawstyle_steps_wins_over_linestyle(self, backend):
+        out = backend._norm_line_props({"linestyle": "-", "drawstyle": "steps-mid"})
+        assert out["linestyle"] == "step-mid"
+
+    def test_markeredgecolor_stands_in_for_color(self, backend):
+        # Signal1DLine.color moves the colour to markeredgecolor for scatter.
+        out = backend._norm_line_props({"markeredgecolor": "#123456"})
+        assert out["color"] == "#123456"
+
+    def test_explicit_color_wins_over_markeredgecolor(self, backend):
+        out = backend._norm_line_props(
+            {"color": "#aaaaaa", "markeredgecolor": "#123456"}
+        )
+        assert out["color"] == "#aaaaaa"
+
+    def test_absent_keys_are_not_invented(self, backend):
+        assert backend._norm_line_props({}) == {}
+
+    def test_scatter_line_plots_without_raising(self, backend, fig_ax):
+        """The end-to-end case: a model's data line is drawn as a scatter."""
+        _, ax = fig_ax
+        h = backend.plot_line(
+            ax,
+            np.arange(5, dtype=float),
+            np.zeros(5),
+            linestyle="None",
+            marker="o",
+            markersize=1,
+            markeredgecolor="#ff0000",
+        )
+        assert h._state["line_marker"] == "o"
+        assert backend.line_get_color(h) == "#ff0000"
+
+    def test_set_line_props_scatter_on_primary_plot(self, backend, fig_ax):
+        _, ax = fig_ax
+        h = backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        backend.set_line_props(h, linestyle="None", marker="o", markersize=2)
+        assert h._state["line_linestyle"] == "none"
+        assert h._state["line_marker"] == "o"
+        assert h._state["line_markersize"] == pytest.approx(2.0)
+
+
+class TestOverlayLine1D:
+    """A second plot_line() call on the same ax overlays a Line1D."""
+
+    def test_overlay_returns_line1d(self, backend, fig_ax):
+        from anyplotlib.plot1d._plot1d import Line1D
+
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        overlay = backend.plot_line(
+            ax, np.arange(5, dtype=float), np.ones(5), color="#123456"
+        )
+        assert isinstance(overlay, Line1D)
+
+    def test_overlay_get_color_and_linewidth(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        overlay = backend.plot_line(
+            ax,
+            np.arange(5, dtype=float),
+            np.ones(5),
+            color="#123456",
+            linewidth=3.0,
+        )
+        assert backend.line_get_color(overlay) == "#123456"
+        assert backend.line_get_linewidth(overlay) == pytest.approx(3.0)
+
+    def test_set_line_props_updates_overlay(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        overlay = backend.plot_line(ax, np.arange(5, dtype=float), np.ones(5))
+        backend.set_line_props(
+            overlay, color="#abcdef", linewidth=4.0, linestyle="dashed", alpha=0.5
+        )
+        assert backend.line_get_color(overlay) == "#abcdef"
+        assert backend.line_get_linewidth(overlay) == pytest.approx(4.0)
+        assert overlay.linestyle == "dashed"
+        assert overlay.alpha == pytest.approx(0.5)
+
+    def test_remove_overlay_line(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        overlay = backend.plot_line(ax, np.arange(5, dtype=float), np.ones(5))
+        backend.remove_line(ax, overlay)  # must not raise
+        with pytest.raises(KeyError):
+            overlay.color  # entry no longer exists
+
+
 class TestImage2D:
     def test_plot_image_returns_plot2d(self, backend, fig_ax):
         from anyplotlib.plot2d import Plot2D
@@ -289,6 +400,143 @@ class TestLinePointer:
         _, ax = fig_ax
         with pytest.raises(RuntimeError, match="no plot"):
             backend.create_line_pointer(ax, "x", 0.0)
+
+
+class TestCirclePointer:
+    """``create_circle_pointer`` — one native widget for circle *and* annulus."""
+
+    def test_circle_when_no_inner_radius(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((10, 10)))
+        (handle,) = backend.create_circle_pointer(ax, 5.0, 5.0, 2.0)
+        assert handle.get("type") == "circle"
+        assert handle.get("r") == pytest.approx(2.0)
+
+    def test_annulus_when_inner_radius(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((10, 10)))
+        (handle,) = backend.create_circle_pointer(ax, 5.0, 5.0, 4.0, 2.0)
+        assert handle.get("type") == "annular"
+        assert handle.get("r_inner") == pytest.approx(2.0)
+
+    def test_update_moves_and_resizes(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((10, 10)))
+        handles = backend.create_circle_pointer(ax, 5.0, 5.0, 2.0)
+        handles = backend.update_circle_pointer(ax, handles, 6.0, 7.0, 3.0)
+        assert handles[0].get("cx") == pytest.approx(6.0)
+        assert handles[0].get("r") == pytest.approx(3.0)
+
+    def test_update_swaps_circle_for_annulus(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((10, 10)))
+        handles = backend.create_circle_pointer(ax, 5.0, 5.0, 4.0)
+        assert handles[0].get("type") == "circle"
+        swapped = backend.update_circle_pointer(ax, handles, 5.0, 5.0, 4.0, 2.0)
+        assert swapped[0].get("type") == "annular"
+        # ...and back again
+        back = backend.update_circle_pointer(ax, swapped, 5.0, 5.0, 4.0, 0.0)
+        assert back[0].get("type") == "circle"
+
+    def test_raises_without_plot(self, backend, fig_ax):
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        _, ax = fig_ax
+        with pytest.raises(BackendCapabilityError):
+            backend.create_circle_pointer(ax, 0.0, 0.0, 1.0)
+
+
+class TestSpanSelector:
+    """``create_span_selector`` — the matplotlib SpanSelector façade."""
+
+    @pytest.fixture()
+    def span(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
+        return backend.create_span_selector(ax, props={"color": "red"})
+
+    def test_extents_roundtrip(self, span):
+        span.extents = (2.0, 8.0)
+        assert span.extents == pytest.approx((2.0, 8.0))
+
+    def test_extents_are_ordered(self, span):
+        span.extents = (8.0, 2.0)
+        assert span.extents == pytest.approx((2.0, 8.0))
+
+    def test_snap_values_reach_the_widget(self, span):
+        """Snapping is the widget's job as of 0.5.0.
+
+        It has to happen inside the JS drag: snapping in Python after the
+        event moves an edge the user is still holding, which reads as the
+        selection fighting back.  So the façade forwards the values rather
+        than rounding ``extents`` itself.
+        """
+        span.snap_values = np.array([0.0, 5.0, 10.0])
+        assert span._widget.get("snap_values") == [0.0, 5.0, 10.0]
+        span.extents = (1.2, 8.9)
+        assert span.extents == pytest.approx((1.2, 8.9))
+
+    def test_artists_is_the_widget(self, span):
+        assert len(span.artists) == 1
+
+    def test_set_props_changes_colour(self, span):
+        span.set_props(color="lime")
+        assert span._widget.get("color") == "lime"
+
+    def test_connect_and_disconnect_events(self, span):
+        calls = []
+        assert span.connect_event("motion_notify_event", calls.append) is not None
+        # Unknown event names are ignored rather than raising.
+        assert span.connect_event("button_press_event", calls.append) is None
+        span.disconnect_events()
+        assert span._handlers == []
+
+    def test_clear_removes_widget(self, span):
+        span.clear()
+        assert span._widget.id not in span._plot._widgets
+
+
+class TestPolygonSelector:
+    """``create_polygon_selector`` — the matplotlib PolygonSelector façade."""
+
+    @pytest.fixture()
+    def selector(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((10, 10)))
+        return backend.create_polygon_selector(ax, props={"color": "red"})
+
+    def test_starts_empty(self, selector):
+        assert selector.verts == []
+
+    def test_too_few_vertices_stay_buffered(self, selector):
+        selector.verts = [(1, 1), (2, 2)]
+        assert selector._widget is None
+        assert len(selector.verts) == 2
+
+    def test_three_vertices_create_widget(self, selector):
+        selector.verts = [(1, 1), (5, 1), (3, 4)]
+        assert selector._widget is not None
+        assert selector.verts == [(1, 1), (5, 1), (3, 4)]
+
+    def test_updating_existing_widget(self, selector):
+        selector.verts = [(1, 1), (5, 1), (3, 4)]
+        widget = selector._widget
+        selector.verts = [(0, 0), (6, 0), (3, 5)]
+        assert selector._widget is widget  # reused, not recreated
+        assert selector.verts[0] == (0, 0)
+
+    def test_set_props_before_and_after_creation(self, selector):
+        selector.set_props(color="lime")
+        selector.verts = [(1, 1), (5, 1), (3, 4)]
+        assert selector._widget.get("color") == "lime"
+        selector.set_props(color="cyan")
+        assert selector._widget.get("color") == "cyan"
+
+    def test_clear_removes_widget(self, selector):
+        selector.verts = [(1, 1), (5, 1), (3, 4)]
+        selector.clear()
+        assert selector._widget is None
+        assert selector.verts == []
 
 
 class TestEvents:
@@ -518,15 +766,19 @@ class TestNativeVlineWidget:
 
 
 class TestNativeCrosshairWidget:
-    """Native anyplotlib CrosshairWidget for 2D image navigator navigation."""
+    """Native anyplotlib widgets for 2D image navigator navigation."""
 
-    def test_crosshair_created_for_hline_widget(self):
-        """HorizontalLineWidget attaches a native crosshair on anyplotlib 2D navigator.
+    def test_hline_widget_uses_a_real_rule(self):
+        """HorizontalLineWidget attaches a native hline on an anyplotlib navigator.
 
         Signal1D(n, length) has a 2D image navigator (full spectrum stack);
         the horizontal line marks the current navigation row (y-axis).
+
+        This used to be faked with a crosshair pinned at cx=0, which left a
+        spurious full-height rule down the left edge of the navigator.
+        anyplotlib 0.5.0 has a real ``hline`` kind, so the pointer is one now.
         """
-        from anyplotlib.widgets._widgets2d import CrosshairWidget as AplCrosshair
+        from anyplotlib.widgets import HLineWidget as AplHLine
 
         from hyperspy.drawing._widgets.horizontal_line import HorizontalLineWidget
 
@@ -537,26 +789,28 @@ class TestNativeCrosshairWidget:
             f"expected HorizontalLineWidget, got {type(pointer).__name__}"
         )
         assert pointer.patch, "HorizontalLineWidget should have a patch handle"
-        assert isinstance(pointer.patch[0], AplCrosshair)
+        assert isinstance(pointer.patch[0], AplHLine), (
+            f"expected a native hline, got {type(pointer.patch[0]).__name__}"
+        )
         s._plot.close()
 
-    def test_navigate_updates_hline_crosshair_cy(self):
-        """Changing navigation index moves the crosshair cy to the new row value."""
+    def test_navigate_updates_hline_y(self):
+        """Changing navigation index moves the rule to the new row value."""
         s = hs.signals.Signal1D(np.random.rand(5, 50))
         s.plot()
         pointer = s._plot.pointer
         nav_ax = s.axes_manager.navigation_axes[0]
         nav_ax.index = 3
-        assert abs(pointer.patch[0].cy - nav_ax.value) < 1e-9
+        assert abs(pointer.patch[0].y - nav_ax.value) < 1e-9
         s._plot.close()
 
     def test_hline_drag_updates_nav(self):
-        """Dragging the crosshair (simulated via set()) updates nav index."""
+        """Dragging the rule (simulated via set()) updates nav index."""
         s = hs.signals.Signal1D(np.random.rand(5, 50))
         s.plot()
         pointer = s._plot.pointer
         nav_ax = s.axes_manager.navigation_axes[0]
-        pointer.patch[0].set(cy=float(nav_ax.axis[2]))
+        pointer.patch[0].set(y=float(nav_ax.axis[2]))
         assert nav_ax.index == 2
         s._plot.close()
 
@@ -1064,6 +1318,71 @@ class TestTextAndArtistNoops:
         assert backend.artist_set_animated(None, True) is None
 
 
+class TestTextAnnotations:
+    def test_add_text_before_plot_returns_none(self, backend, fig_ax):
+        """No panel exists yet on ax, so there is nothing to attach text to."""
+        _, ax = fig_ax
+        assert backend.add_text(ax, 0.0, 0.0, "hi") is None
+
+    def test_add_text_on_line_plot(self, backend, fig_ax):
+        from anyplotlib._base_plot import _TextHandle
+
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        handle = backend.add_text(
+            ax, 0.5, 0.9, "(0,)", transform="axes", fontsize=12, color="#ff0000"
+        )
+        assert isinstance(handle, _TextHandle)
+
+    def test_add_text_on_image_plot(self, backend, fig_ax):
+        from anyplotlib._base_plot import _TextHandle
+
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((8, 8)))
+        handle = backend.add_text(ax, 0.0, 0.0, "scale", transform="data")
+        assert isinstance(handle, _TextHandle)
+
+    def test_add_text_accepts_mpl_named_fontsize(self, backend, fig_ax):
+        """scalebar.py passes size='medium' (an MPL fontsize name)."""
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        handle = backend.add_text(ax, 0.0, 0.0, "20 nm", size="medium")
+        assert handle._group._data["fontsize"] == 12
+
+    def test_add_text_drops_unsupported_mpl_kwargs(self, backend, fig_ax):
+        """ha/bbox/picker/animated have no anyplotlib equivalent and must be
+        silently ignored rather than raising."""
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        handle = backend.add_text(
+            ax, 0.0, 0.0, "label", ha="center", bbox={}, picker=True, animated=False
+        )
+        assert handle is not None
+
+    def test_update_text_changes_string(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        handle = backend.add_text(ax, 0.0, 0.0, "old")
+        backend.update_text(handle, "new")
+        assert handle._group._data["texts"] == ["new"]
+
+    def test_text_set_and_get_color(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        handle = backend.add_text(ax, 0.0, 0.0, "x", color="#ff0000")
+        assert backend.text_get_color(handle) == "#ff0000"
+        backend.text_set_color(handle, "#00ff00")
+        assert backend.text_get_color(handle) == "#00ff00"
+
+    def test_remove_text_removes_handle(self, backend, fig_ax):
+        _, ax = fig_ax
+        h = backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        handle = backend.add_text(ax, 0.0, 0.0, "x")
+        assert h.list_markers() != []
+        backend.remove_text(ax, handle)
+        assert h.list_markers() == []
+
+
 class TestImageGaps:
     def test_plot_mesh(self, backend, fig_ax):
         _, ax = fig_ax
@@ -1119,14 +1438,17 @@ class TestEventConnectGaps:
 
 
 class TestPointerGaps:
-    def test_create_line_pointer_y_axis_raises_on_plot1d(self, backend, fig_ax):
-        """Plot1D has no add_widget, so the y-axis pointer path is unsupported."""
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+    def test_create_line_pointer_y_axis_uses_hline_on_plot1d(self, backend, fig_ax):
+        """Plot1D supports a y-axis pointer natively via add_hline_widget."""
+        from anyplotlib.widgets._widgets1d import HLineWidget as AplHLine
 
         _, ax = fig_ax
         backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
-        with pytest.raises(BackendCapabilityError):
-            backend.create_line_pointer(ax, "y", 1.0)
+        handle = backend.create_line_pointer(ax, "y", 1.0)
+        assert isinstance(handle, AplHLine)
+        assert handle.y == 1.0
+        backend.update_line_pointer(handle, "y", 3.0)
+        assert handle.y == 3.0
 
     def test_create_rect_pointer_raises_when_plot_lacks_add_widget(
         self, backend, fig_ax
@@ -1145,39 +1467,41 @@ class TestPointerGaps:
         with pytest.raises(BackendCapabilityError):
             backend.create_rect_pointer(ax, 0.0, 0.0, 1.0, 1.0)
 
-    def test_remove_pointer_success(self, backend):
-        class FakeHandle:
-            def __init__(self):
-                self.removed = False
+    def test_remove_pointer_success(self, backend, fig_ax):
+        """remove_pointer detaches the widget from its owning plot."""
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
+        handle = backend.create_line_pointer(ax, "x", 5.0)
+        assert handle.id in [w.id for w in ax._plot.list_widgets()]
+        backend.remove_pointer(ax, handle)
+        assert handle.id not in [w.id for w in ax._plot.list_widgets()]
 
-            def remove(self):
-                self.removed = True
+    def test_remove_pointer_twice_is_silent(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
+        handle = backend.create_line_pointer(ax, "x", 5.0)
+        backend.remove_pointer(ax, handle)
+        assert backend.remove_pointer(ax, handle) is None
 
-        h = FakeHandle()
-        backend.remove_pointer(None, h)
-        assert h.removed
+    def test_remove_pointer_no_plot_is_silent(self, backend, fig_ax):
+        _, ax = fig_ax
+        assert backend.remove_pointer(ax, object()) is None
 
-    def test_remove_pointer_swallows_exception(self, backend):
-        class NoRemove:
-            pass
-
-        assert backend.remove_pointer(None, NoRemove()) is None
-
-    def test_set_pointer_style_color(self, backend):
-        import types
-
-        handle = types.SimpleNamespace()
+    def test_set_pointer_style_color(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
+        handle = backend.create_line_pointer(ax, "x", 5.0)
         backend.set_pointer_style(handle, color="blue")
         assert handle.color == "blue"
 
-    def test_set_pointer_style_alpha_raises(self, backend):
-        import types
-
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        handle = types.SimpleNamespace()
-        with pytest.raises(BackendCapabilityError):
-            backend.set_pointer_style(handle, alpha=0.5)
+    def test_set_pointer_style_alpha_sets(self, backend, fig_ax):
+        """alpha is stored on the widget instead of raising."""
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
+        handle = backend.create_line_pointer(ax, "x", 5.0)
+        backend.set_pointer_style(handle, color="red", alpha=0.5)
+        assert handle.alpha == 0.5
+        assert handle.color == "red"
 
 
 class TestUnsupportedCapabilityRaises:
@@ -1231,32 +1555,61 @@ class TestUnsupportedCapabilityRaises:
         _, ax = fig_ax
         assert backend.invalidate_blit_background(ax) is None
 
-    def test_create_span_selector_raises(self, backend, fig_ax):
+    def test_create_span_selector_raises_without_plot(self, backend, fig_ax):
         from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
         _, ax = fig_ax
         with pytest.raises(BackendCapabilityError):
             backend.create_span_selector(ax)
 
-    def test_create_polygon_selector_raises(self, backend, fig_ax):
+    def test_create_polygon_selector_raises_without_plot(self, backend, fig_ax):
         from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
         _, ax = fig_ax
         with pytest.raises(BackendCapabilityError):
             backend.create_polygon_selector(ax)
 
-    def test_get_ax_transform_raises(self, backend, fig_ax):
+    def test_create_span_selector_vertical_is_supported(self, backend, fig_ax):
+        """0.5.0 added a vertical range orientation; this used to raise."""
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        sel = backend.create_span_selector(ax, direction="vertical")
+        assert sel._widget.get("orientation") == "vertical"
+
+    def test_get_ax_transform_returns_space_token(self, backend, fig_ax):
+        _, ax = fig_ax
+        for kind in ("data", "axes", "display", "xaxis", "yaxis", "relative"):
+            assert backend.get_ax_transform(ax, kind) == kind
+
+    def test_get_ax_transform_unknown_kind_raises(self, backend, fig_ax):
         from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
         _, ax = fig_ax
         with pytest.raises(BackendCapabilityError):
-            backend.get_ax_transform(ax, "data")
+            backend.get_ax_transform(ax, "polar")
 
-    def test_convert_coords_raises(self, backend, fig_ax):
+    def test_convert_coords_data_axes_roundtrip(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.arange(20, dtype=float))
+        x0, x1 = backend.get_xlim(ax)
+        y0, y1 = backend.get_ylim(ax)
+        mid = [((x0 + x1) / 2, (y0 + y1) / 2)]
+        frac = backend.convert_coords(ax, mid, "data", "axes")
+        np.testing.assert_allclose(frac, [[0.5, 0.5]])
+        back = backend.convert_coords(ax, frac, "axes", "data")
+        np.testing.assert_allclose(back, mid)
+
+    def test_convert_coords_unknown_space_raises(self, backend, fig_ax):
         from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
         _, ax = fig_ax
+        backend.plot_line(ax, np.arange(20, dtype=float), np.zeros(20))
         with pytest.raises(BackendCapabilityError):
+            backend.convert_coords(ax, [(0, 0)], "data", "polar")
+
+    def test_convert_coords_requires_plot(self, backend, fig_ax):
+        _, ax = fig_ax
+        with pytest.raises(RuntimeError):
             backend.convert_coords(ax, [(0, 0)], "data", "axes")
 
 
@@ -1290,6 +1643,100 @@ class TestMarkerTranslationGaps:
         assert out["linewidths"] == 2.0
         assert "linewidth" not in out
 
+    @pytest.mark.parametrize(
+        ("marker_type", "key"),
+        [
+            ("squares", "widths"),
+            ("squares", "angles"),
+            ("rectangles", "heights"),
+            ("ellipses", "widths"),
+            ("arrows", "U"),
+        ],
+    )
+    def test_singleton_cycling_values_flattened(self, backend, marker_type, key):
+        """hyperspy wraps a single value as ``(v,)`` so matplotlib cycles it.
+
+        anyplotlib broadcasts against the marker count instead, so a 1-element
+        sequence must be flattened or ``_broadcast`` rejects it whenever there
+        is more than one marker.
+        """
+        out = backend._translate_marker_kwargs(
+            marker_type, "data", {key: (5,), "offsets": [[1, 1], [2, 2]]}
+        )
+        assert out[key] == 5.0
+
+    def test_per_marker_values_are_preserved(self, backend):
+        out = backend._translate_marker_kwargs(
+            "squares", "data", {"widths": (1, 2), "offsets": [[1, 1], [2, 2]]}
+        )
+        assert list(out["widths"]) == [1, 2]
+
+    @pytest.mark.parametrize("marker_type", ["squares", "rectangles", "ellipses"])
+    def test_singleton_geometry_reaches_the_wire(self, backend, fig_ax, marker_type):
+        """End-to-end: a 2-marker group with one shared size must serialise."""
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((50, 50)))
+        kwargs = {"offsets": [[10, 10], [20, 20]], "widths": (5,), "angles": (0,)}
+        if marker_type in ("rectangles", "ellipses"):
+            kwargs["heights"] = (5,)
+        group = backend.create_markers(ax, marker_type, **kwargs)
+        assert group.to_wire("gid")["widths"] == [5.0, 5.0]
+
+
+class TestScalebar:
+    """create_scalebar/remove_scalebar use anyplotlib's native floating
+    scale bar (driven by Plot2D units) instead of a marker-based artist."""
+
+    def test_calibrated_image_uses_native_scalebar(self, backend, fig_ax):
+        from hyperspy.drawing.backends.anyplotlib import _AplNativeScalebar
+
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((8, 8)), extent=(0.0, 16.0, 16.0, 0.0))
+        handle = backend.create_scalebar(ax, "nm")
+        assert isinstance(handle, _AplNativeScalebar)
+        assert ax._plot._state["units"] == "nm"
+
+    def test_remove_native_scalebar_resets_units_to_px(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((8, 8)), extent=(0.0, 16.0, 16.0, 0.0))
+        handle = backend.create_scalebar(ax, "nm")
+        backend.remove_scalebar(ax, handle)
+        assert ax._plot._state["units"] == "px"
+
+    def test_no_plot_falls_back_to_generic_scalebar(self, backend, fig_ax):
+        from hyperspy.drawing._widgets.scalebar import ScaleBar
+
+        _, ax = fig_ax
+        # No plot_image() call yet, so there is no Plot2D to set units on.
+        # ScaleBar.__init__ needs a real plot for get_xlim/get_ylim though,
+        # so give it a line plot to attach the fallback markers to.
+        backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
+        handle = backend.create_scalebar(ax, "nm")
+        assert isinstance(handle, ScaleBar)
+
+    def test_explicit_pixel_size_falls_back_to_generic_scalebar(self, backend, fig_ax):
+        from hyperspy.drawing._widgets.scalebar import ScaleBar
+
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((8, 8)), extent=(0.0, 16.0, 16.0, 0.0))
+        handle = backend.create_scalebar(ax, "nm", pixel_size=2.0)
+        assert isinstance(handle, ScaleBar)
+
+    def test_undefined_units_sentinel_falls_back_without_crashing(
+        self, backend, fig_ax
+    ):
+        """traits.Undefined (an uncalibrated axis' default `.units`) must
+        never reach Plot2D._state — it isn't JSON-serialisable."""
+        from traits.api import Undefined
+
+        from hyperspy.drawing._widgets.scalebar import ScaleBar
+
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((8, 8)), extent=(0.0, 16.0, 16.0, 0.0))
+        handle = backend.create_scalebar(ax, Undefined)
+        assert isinstance(handle, ScaleBar)
+        assert ax._plot._state["units"] != Undefined
+
 
 class TestMiscBackendGaps:
     def test_get_figure_from_ax_raises_without_figure_attr(self, backend):
@@ -1314,11 +1761,16 @@ class TestMiscBackendGaps:
         _, ax = fig_ax
         assert backend.remove_scalebar(ax, None) is None
 
-    def test_get_image_cmap_name_with_cmap_attr(self, backend):
-        class HasCmap:
-            cmap = "viridis"
+    def test_get_image_cmap_name_from_colormap_name(self, backend):
+        class HasColormapName:
+            colormap_name = "viridis"
 
-        assert backend.get_image_cmap_name(HasCmap()) == "viridis"
+        assert backend.get_image_cmap_name(HasColormapName()) == "viridis"
+
+    def test_get_image_cmap_name_real_plot2d(self, backend, fig_ax):
+        _, ax = fig_ax
+        handle = backend.plot_image(ax, np.random.rand(4, 4), cmap="viridis")
+        assert backend.get_image_cmap_name(handle) == "viridis"
 
     def test_get_image_cmap_name_default_gray(self, backend):
         class NoCmap:
@@ -1333,11 +1785,17 @@ class TestMiscBackendGaps:
         )
         assert h is not None
 
-    def test_create_line2d_patch_raises(self, backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        with pytest.raises(BackendCapabilityError):
-            backend.create_line2d_patch([0, 1], [0, 1])
+    def test_create_line2d_patch_is_detached_until_added(self, backend, fig_ax):
+        _, ax = fig_ax
+        patch = backend.create_line2d_patch([0, 1], [0, 1], c="red", lw=2)
+        # No axes yet, so nothing has been drawn — but set_data still works.
+        patch.set_data([0, 2], [0, 2])
+        backend.plot_image(ax, np.zeros((4, 4)))
+        backend.add_artist(ax, patch)
+        assert patch._group is not None
+        patch.set_data([0, 3], [0, 3])
+        patch.remove()
+        assert patch._group is None
 
     def test_create_circle_patch_raises(self, backend):
         from hyperspy.drawing.backends._protocol import BackendCapabilityError
