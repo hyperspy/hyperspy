@@ -1877,7 +1877,13 @@ class AxesManager(t.HasTraits):
             with the axis passed in argument.
 
         """
-        self._axes[index_in_axes_manager] = axis
+        # ``index_in_axes_manager`` is a natural-order index (as used by
+        # ``axes_manager[i]``), which does not match the array order of
+        # ``self._axes`` when navigation/signal grouping reverses an axis
+        # group. Resolve the target axis in natural order first, then replace
+        # it at its actual position in ``self._axes`` (see gh#3294).
+        old_axis = self._get_axes_in_natural_order()[index_in_axes_manager]
+        self._axes[self._axes.index(old_axis)] = axis
 
     def _update_max_index(self):
         self._max_index = 1

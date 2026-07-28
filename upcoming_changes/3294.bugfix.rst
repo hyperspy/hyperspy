@@ -1,0 +1,1 @@
+Fix :meth:`~.axes.AxesManager.set_axis` replacing the wrong axis for signals with more than one axis: the ``index_in_axes_manager`` argument is now interpreted in natural order (as used by ``axes_manager[i]``) instead of the internal array order.

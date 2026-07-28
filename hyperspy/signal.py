@@ -3666,7 +3666,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         if new_axis is not old_axis:
             # user specifies a new_axis != "uniform"
-            s.axes_manager.set_axis(new_axis, axis_idx)
+            # ``set_axis`` takes a natural-order index (``index_in_axes_manager``);
+            # ``axis_idx`` above is the array-order index needed for the numpy
+            # interpolation, so pass the natural-order index explicitly (gh#3294).
+            s.axes_manager.set_axis(new_axis, old_axis.index_in_axes_manager)
 
         if not inplace:
             return s

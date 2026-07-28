@@ -127,6 +127,28 @@ class TestAxesManager:
         assert am[-2].offset == am[-1].offset
         assert am[-2].scale == am[-1].scale
 
+    @pytest.mark.parametrize("index", [0, 1])
+    def test_set_axis_natural_order(self, index):
+        # set_axis takes a natural-order index (as used by axes_manager[i]),
+        # which differs from the array order of _axes for multi-axis signals
+        # (gh#3294). Replacing by natural-order index must replace the axis
+        # actually located there, identified here by name -- each case starts
+        # from a fresh signal so the assertion targets a single set_axis call.
+        s = hs.signals.Signal2D(
+            np.arange(80).reshape(8, 10),
+            axes=[
+                {"name": "short", "size": 8},
+                {"name": "long", "size": 10},
+            ],
+        )
+        am = s.axes_manager
+        replacement = am[index].copy()
+        replacement.name = "replaced"
+        expected = [ax.name for ax in am._get_axes_in_natural_order()]
+        expected[index] = "replaced"
+        am.set_axis(replacement, index)
+        assert [ax.name for ax in am._get_axes_in_natural_order()] == expected
+
     def test_set_attributes(self):
         am = self.am
         am.signal_axes.set(name=("kx", "ky"), offset=(1, 2), scale=3, units="nm^{-1}")
