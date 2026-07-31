@@ -31,6 +31,7 @@ User guide
     
     region_of_interest.rst
     events.rst
+    events_migration.rst
     interactive_operations.rst
     pint_unit_registry.rst
 

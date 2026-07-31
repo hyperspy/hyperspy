@@ -133,7 +133,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self._set_span_extents(*self._get_range())
         self._patch = list(self.span.artists)
 
-    def disconnect(self):
+    def disconnect(self, *args):
         self.span.disconnect_events()
         super().disconnect()
 
@@ -159,7 +159,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         # to avoid trigger events when snap is on and the extent
         # actually didn't change.
         if self._get_range() != old_range:
-            self.events.changed.trigger(self)
+            self.events.changed.emit(self)
 
     def _get_range(self):
         p = self._pos[0]

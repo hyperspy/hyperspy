@@ -21,9 +21,10 @@ import textwrap
 
 import matplotlib
 import matplotlib.pyplot as plt
+from psygnal import SignalGroup
 
 from hyperspy.drawing import utils
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 
 _logger = logging.getLogger(__name__)
 
@@ -32,18 +33,7 @@ class BlittedFigure:
     def __init__(self):
         self._draw_event_cid = None
         self._background = None
-        self.events = Events()
-        self.events.closed = Event(
-            """
-            Event that triggers when the figure window is closed.
-
-            Parameters
-            ----------
-            obj:  SpectrumFigure instances
-                The instance that triggered the event.
-            """,
-            arguments=["obj"],
-        )
+        self.events = FigureEvents(self)
         # The matplotlib Figure or SubFigure
         # To access the matplotlib figure, use `get_mpl_figure`
         self.figure = None
@@ -51,6 +41,7 @@ class BlittedFigure:
         self.ax = None
         self.title = ""
         self.ax_markers = list()
+        self._closed_callbacks = []
 
     def create_figure(self, **kwargs):
         """
@@ -114,11 +105,27 @@ class BlittedFigure:
             else:
                 return figure
 
+    def _connect_closed(self, callback):
+        """Connect *callback* to self.events.closed and track for cleanup."""
+        self.events.closed.connect(callback)
+        self._closed_callbacks.append(callback)
+
     def add_marker(self, marker):
         marker.ax = self.ax
         self.ax_markers.append(marker)
-        # marker.close() → events.closed → this lambda → mutates ax_markers
-        marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
+
+        def _remove_marker_from_figure(obj):
+            try:
+                self.ax_markers.remove(obj)
+            except ValueError:
+                pass
+            try:
+                marker.events.closed.disconnect(_remove_marker_from_figure)
+            except ValueError:
+                pass
+
+        # marker.close() → events.closed → this callback → mutates ax_markers
+        marker.events.closed.connect(_remove_marker_from_figure)
 
     def remove_markers(self, render_figure=False):
         """Remove all markers"""
@@ -142,10 +149,12 @@ class BlittedFigure:
         # Same snapshot-copy rationale as remove_markers (see above).
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
-        self.events.closed.trigger(obj=self)
-        for f in self.events.closed.connected:
-            self.events.closed.disconnect(f)
-        if self._draw_event_cid:
+        self.events.closed.emit(self)
+        for callback in self._closed_callbacks:
+            self.events.closed.disconnect(callback)
+        self._closed_callbacks.clear()
+
+        if self._draw_event_cid is not None:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
             self._draw_event_cid = None
         self.figure = None
@@ -170,3 +179,17 @@ class BlittedFigure:
             self._update_animated()
         else:
             self.figure.canvas.draw_idle()
+
+
+class FigureEvents(SignalGroup):
+    """Events for :class:`BlittedFigure`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    closed = EventSignal(
+        BlittedFigure,
+        description="""\
+        Event that triggers when the figure is closed.
+
+        The figure is passed to the event handler.
+        """,
+    )

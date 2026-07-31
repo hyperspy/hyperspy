@@ -28,6 +28,7 @@ dependencies = [
     "natsort",
     "numpy>=1.25.0", # needed for ContratEditorTool
     "packaging",
+    "psygnal>=0.11",
     "pint>=0.10",
     "prettytable>=2.3",
     "pyyaml",
@@ -186,6 +187,9 @@ source = ["hyperspy"]
 
 [tool.pytest.ini_options]
 addopts = "-ra -n auto --dist loadfile"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 filterwarnings = [
     "ignore:Matplotlib is currently using agg:UserWarning",
 ]

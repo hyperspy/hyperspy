@@ -1,0 +1,1 @@
+The ``trigger()``, ``connect(kwargs=...)`` for non-default values, ``suppress()``, ``suppress_callback()``, and ``.connected`` methods on ``Event`` are deprecated and will be removed in HyperSpy 3.0. Use ``emit()``, native ``connect()`` with explicit wrapper functions, ``blocked()``, and ``disconnect``/``reconnect`` instead. All five now emit a ``VisibleDeprecationWarning``.

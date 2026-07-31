@@ -2,4 +2,4 @@ Events
 ------
 
 .. automodule:: hyperspy.events
-   :members: 
+   :members: Event, EventSuppressor

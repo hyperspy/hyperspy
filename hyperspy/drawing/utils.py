@@ -1348,9 +1348,17 @@ def plot_images(
         im.set_clim(vmin=_vmin, vmax=_vmax)
         ax.get_figure().canvas.draw()
 
+    def _make_update_image_callback(image, ax, image_index):
+        """Factory that creates a callback ignoring event args."""
+
+        def callback(*args, **kwargs):
+            update_image(image, ax, image_index)
+
+        return callback
+
     for i, (image, ax_) in enumerate(zip(images, axes_list)):
-        f = partial(update_image, image, ax_, i)
-        image.events.data_changed.connect(f, [])
+        f = _make_update_image_callback(image, ax_, i)
+        image.events.data_changed.connect(f)
         # disconnect event when closing figure
         disconnect = partial(image.events.data_changed.disconnect, f)
         on_figure_window_close(ax_.get_figure(), disconnect)
@@ -1747,9 +1755,17 @@ def plot_spectra(
         if style != "overlap":
             raise ValueError("auto_update=True is only supported with style='overlap'.")
 
+        def _make_update_line_callback(spectrum, line_obj, normalise):
+            """Factory that creates a callback ignoring event args."""
+
+            def callback(*args, **kwargs):
+                update_line(spectrum, line=line_obj, normalise=normalise)
+
+            return callback
+
         for s, line in zip(spectra, ax.get_lines()):
-            f = partial(update_line, s, line=line, normalise=normalise)
-            s.events.data_changed.connect(f, [])
+            f = _make_update_line_callback(s, line, normalise)
+            s.events.data_changed.connect(f)
             # disconnect event when closing figure
             disconnect = partial(s.events.data_changed.disconnect, f)
             on_figure_window_close(fig, disconnect)
@@ -2003,7 +2019,7 @@ def _roi_sum(signal, roi, axes, out=None):
         # ~2x (or more for larger array) faster than nansum
         f = np.nansum if np.isnan(sliced_signal.data).any() else np.sum
         out.data[:] = f(sliced_signal.data, axis=axes)
-        out.events.data_changed.trigger(obj=out)
+        out.events.data_changed.emit(obj=out)
     else:
         # we don't care if this is not optimised for speed since this is
         # expected to be called only when setting up the out signal
@@ -2186,8 +2202,17 @@ def plot_roi_map(
 
         if not single_figure:
             roi_sum.plot(cmap=cmap_, **kwargs)
+
             # Remove widget from signal plot when closing maps figure
-            roi_sum._plot.signal_plot.events.closed.connect(roi.remove_widget, [])
+            def _remove_widget_callback(_roi):
+                def _cb(*args, **kwargs):
+                    _roi.remove_widget()
+
+                return _cb
+
+            roi_sum._plot.signal_plot.events.closed.connect(
+                _remove_widget_callback(roi)
+            )
 
             if add_colored_frame:
                 _add_colored_frame(roi_sum._plot.signal_plot.ax, color_)

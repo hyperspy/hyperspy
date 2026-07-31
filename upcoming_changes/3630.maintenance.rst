@@ -1,0 +1,1 @@
+The ``events.py`` module no longer uses ``exec()`` or ``sys._getframe()`` for dynamic trigger signature generation. ``Event`` subclasses ``psygnal.SignalInstance``; events use named ``psygnal.SignalGroup`` subclasses.

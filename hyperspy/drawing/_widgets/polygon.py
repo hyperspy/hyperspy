@@ -63,7 +63,7 @@ class PolygonWidget(WidgetBase):
     def _complete_building(self, verts):
         self._finished_building = True
         self._cached_vertices = list(verts)
-        self.events.changed.trigger(self)
+        self.events.changed.emit(self)
 
     def set_on(self, value, render_figure=True):
         """
@@ -156,7 +156,7 @@ class PolygonWidget(WidgetBase):
     def _onmove(self, event):
         # Filter event, see matplotlib event API for more details
         if not self._widget.ignore(event) and event.button is not None:
-            self.events.changed.trigger(self)
+            self.events.changed.emit(self)
 
     @property
     def position(self):

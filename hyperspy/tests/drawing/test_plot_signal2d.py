@@ -610,7 +610,7 @@ def test_plot_images_update():
     axs = hs.plot.plot_images([s, s2])
 
     s.data = -s.data - 10
-    s.events.data_changed.trigger(s)
+    s.events.data_changed.emit(s)
 
     np.testing.assert_allclose(axs[0].images[0].get_array()[0, :2], [-10, -11])
     np.testing.assert_allclose(axs[1].images[0].get_array()[0, :2], [0, 0.5])
@@ -621,19 +621,19 @@ def test_plot_images_update():
 def test_plot_with_non_finite_value():
     s = hs.signals.Signal2D(np.array([[np.nan, 2.0] for v in range(2)]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal2D(np.array([[np.nan, np.nan] for v in range(2)]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal2D(np.array([[-np.inf, np.nan] for v in range(2)]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal2D(np.array([[np.inf, np.nan] for v in range(2)]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
 
 @pytest.mark.parametrize("cmap", ["gray", None])
@@ -680,7 +680,7 @@ def test_plot_autoscale(autoscale):
     ax.images[0].norm.vmin = imf._vmin = 10
     ax.images[0].norm.vmax = imf._vmax = 50
 
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
     # Because we are hacking the vmin, vmax with matplotlib, we need to update
     # colorbar too
     imf.figure.draw_without_rendering()
@@ -697,7 +697,7 @@ def test_plot_autoscale_data_changed(autoscale):
     _vmax = imf._vmax
 
     s.data = s.data / 2
-    s.events.data_changed.trigger(s)
+    s.events.data_changed.emit(s)
 
     if "v" in autoscale:
         np.testing.assert_allclose(imf._vmin, s.data.min())

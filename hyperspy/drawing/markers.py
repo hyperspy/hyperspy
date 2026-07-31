@@ -22,8 +22,9 @@ import matplotlib.collections as mpl_collections
 import numpy as np
 from matplotlib.patches import Patch
 from matplotlib.transforms import IdentityTransform
+from psygnal import SignalGroup
 
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 from hyperspy.misc import _markers, dask_utils, utils
 
 
@@ -233,19 +234,14 @@ class Markers:
         self._ScalarMappable_array = ScalarMappable_array
 
         # Events
-        self.events = Events()
-        self.events.closed = Event(
-            """
-            Event triggered when a marker is closed.
-
-            Parameters
-            ----------
-            marker : Marker
-                The marker that was closed.
-            """,
-            arguments=["obj"],
-        )
+        self.events = MarkersEvents(self)
         self._closing = False
+        self._closed_callbacks = []
+
+    def _connect_closed(self, callback):
+        """Connect *callback* to self.events.closed and track for cleanup."""
+        self.events.closed.connect(callback)
+        self._closed_callbacks.append(callback)
 
     @property
     def _axes_manager(self):
@@ -774,10 +770,14 @@ class Markers:
         # instead of restoring the removed markers' pixels.
         if render_figure and hasattr(self.ax, "hspy_fig"):
             self.ax.hspy_fig._background = None
-        self.events.closed.trigger(obj=self)
+        self.events.closed.emit(self)
         self._signal = None
-        for f in self.events.closed.connected:
-            self.events.closed.disconnect(f)
+        for callback in list(self._closed_callbacks):
+            try:
+                self.events.closed.disconnect(callback)
+            except ValueError:
+                pass
+        self._closed_callbacks.clear()
         if render_figure:
             self._render_figure()
         self._closing = False
@@ -840,6 +840,20 @@ class Markers:
         cbar = self.ax.figure.colorbar(self._collection)
 
         return cbar
+
+
+class MarkersEvents(SignalGroup):
+    """Events for :class:`Markers`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    closed = EventSignal(
+        Markers,
+        description="""\
+        Event that triggers when the markers are closed.
+
+        The markers instance is passed to the event handler.
+        """,
+    )
 
 
 def is_iterating(arg):

@@ -28,13 +28,14 @@ from functools import partial
 import cloudpickle
 import numpy as np
 import scipy
+from psygnal import SignalGroup
 
 from hyperspy import signals
 from hyperspy.component import Component
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
-from hyperspy.events import Event, Events, EventSuppressor
+from hyperspy.events import EventSignal
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.progressbar import progressbar
@@ -479,21 +480,7 @@ class BaseModel(list):
     _signal_dimension = None
 
     def __init__(self):
-        self.events = Events()
-        self.events.fitted = Event(
-            """
-            Event that triggers after fitting changed at least one parameter.
-
-            The event triggers after the fitting step was finished, and only of
-            at least one of the parameters changed.
-
-            Parameters
-            ----------
-            obj : Model
-                The Model that the event belongs to
-            """,
-            arguments=["obj"],
-        )
+        self.events = ModelEvents(self)
 
         # The private _binned attribute is created to store temporarily
         # axes.is_binned or not. This avoids evaluating it during call of
@@ -983,9 +970,9 @@ class BaseModel(list):
         ]
         for i, component in enumerate(components):
             for line in lines:
-                component.events.active_changed.connect(line._auto_update_line, [])
+                component.events.active_changed.connect(line._auto_update_line)
                 for parameter in component.parameters:
-                    parameter.events.value_changed.connect(line._auto_update_line, [])
+                    parameter.events.value_changed.connect(line._auto_update_line)
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
@@ -1034,47 +1021,53 @@ class BaseModel(list):
         update_plot
         """
 
-        es = EventSuppressor()
-        es.add(self.axes_manager.events.indices_changed)
+        blocked_si = set()
+
+        def _add(signal_instance):
+            blocked_si.add(signal_instance)
+
+        _add(self.axes_manager.events.indices_changed)
         if self._model_line:
-            f = self._model_line._auto_update_line
             for c in self:
-                es.add(c.events, f)
+                _add(c.events.active_changed)
                 if c._position:
-                    es.add(c._position.events)
+                    _add(c._position.events.value_changed)
                 for p in c.parameters:
-                    es.add(p.events, f)
+                    _add(p.events.value_changed)
 
         if self._residual_line:
-            f = self._residual_line._auto_update_line
             for c in self:
-                es.add(c.events, f)
+                _add(c.events.active_changed)
                 for p in c.parameters:
-                    es.add(p.events, f)
+                    _add(p.events.value_changed)
 
         for c in self:
             if hasattr(c, "_component_line"):
-                f = c._component_line._auto_update_line
-                es.add(c.events, f)
+                _add(c.events.active_changed)
                 for p in c.parameters:
-                    es.add(p.events, f)
+                    _add(p.events.value_changed)
 
         old = self._suspend_update
         self._suspend_update = True
-        with es.suppress():
+        for si in blocked_si:
+            si.block()
+        try:
             yield
-        self._suspend_update = old
+        finally:
+            for si in blocked_si:
+                si.unblock()
+            self._suspend_update = old
 
         if update_on_resume is True:
             for c in self:
                 position = c._position
                 if position:
-                    position.events.value_changed.trigger(
+                    position.events.value_changed.emit(
                         obj=position, value=position.value
                     )
             self.update_plot(render_figure=True, update_ylimits=False)
 
-    def _close_plot(self):
+    def _close_plot(self, *args, **kwargs):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
@@ -1281,7 +1274,7 @@ class BaseModel(list):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
 
-    def _on_navigating(self):
+    def _on_navigating(self, *args, **kwargs):
         """Same as fetch_stored_values but without update_on_resume since
         the model plot is updated in the figure update callback.
         """
@@ -2376,7 +2369,7 @@ class BaseModel(list):
                 self._disable_ext_bounding()
 
         if np.any(old_p0 != self.p0):
-            self.events.fitted.trigger(self)
+            self.events.fitted.emit(self)
 
         # Print details about the fit we just performed
         if print_info:
@@ -2610,9 +2603,7 @@ class BaseModel(list):
         # Fitting in a vectorized fashion is not supported. We iterate over the
         # navigation indices and fit the dataset one by one.
         i = 0
-        with self.axes_manager.events.indices_changed.suppress_callback(
-            self.fetch_stored_values
-        ):
+        with self.axes_manager.events.indices_changed.blocked():
             with self.axes_manager.switch_iterpath(iterpath):
                 if interactive_plot:
                     outer = utils.dummy_context_manager
@@ -2642,7 +2633,7 @@ class BaseModel(list):
                                     self.save_parameters2file(autosave_fn)
                 # Trigger the indices_changed event to update to current indices,
                 # since the callback was suppressed
-                self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+                self.axes_manager.events.indices_changed.emit(self.axes_manager)
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
@@ -3225,6 +3216,20 @@ class BaseModel(list):
                 model=self, thresholds=thresholds, component_list=component_list
             )
         )
+
+
+class ModelEvents(SignalGroup):
+    """Events for :class:`BaseModel`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    fitted = EventSignal(
+        BaseModel,
+        description="""
+        Emitted when the model has been fitted to the data.
+
+        The BaseModel is passed as a parameter to the event handler.
+        """,
+    )
 
 
 class ModelSpecialSlicers(object):

@@ -47,8 +47,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.span_selector = None
 
         self.span_selector_switch(on=True)
-
-        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
+        self.signal._plot.signal_plot.events.closed.connect(self.disconnect)
 
     def on_disabling_span_selector(self):
         self.disconnect()
@@ -114,7 +113,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
             and not np.isnan([self.ss_left_value, self.ss_right_value]).any()
         )
 
-    def _reset_span_selector_background(self):
+    def _reset_span_selector_background(self, *args, **kwargs):
         if self.span_selector is not None:
             # For matplotlib backend supporting blit, we need to reset the
             # background when the data displayed on the figure is changed,
@@ -129,16 +128,22 @@ class SpanSelectorInSignal1D(t.HasTraits):
             self.signal.events.data_changed,
             self.signal.axes_manager.events.indices_changed,
         ]:
-            event.connect(self._reset_span_selector_background, [])
+            event.connect(self._reset_span_selector_background)
 
-    def disconnect(self):
+    def disconnect(self, *args, **kwargs):
         function = self._reset_span_selector_background
         for event in [
             self.signal.events.data_changed,
             self.signal.axes_manager.events.indices_changed,
         ]:
-            if function in event.connected:
+            try:
                 event.disconnect(function)
+            except ValueError:
+                pass
+            try:
+                self.signal._plot.signal_plot.events.closed.disconnect(self.disconnect)
+            except ValueError:
+                pass
 
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
