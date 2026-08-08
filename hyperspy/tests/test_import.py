@@ -114,6 +114,7 @@ def test_dir_api():
         "roi",
         "samfire",
         "set_log_level",
+        "show_keybindings",
         "signals",
         "stack",
         "transpose",
@@ -144,6 +145,7 @@ def test_dir_utils():
         "print_known_signal_types",
         "roi",
         "samfire",
+        "show_keybindings",
         "stack",
         "transpose",
     ]
