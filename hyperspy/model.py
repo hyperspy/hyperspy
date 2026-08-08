@@ -38,6 +38,7 @@ from hyperspy.events import Event, Events, EventSuppressor
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.progressbar import progressbar
+from hyperspy.fit_indices import FitIndices
 from hyperspy.io import assign_signal_subclass
 from hyperspy.misc import dask_utils, utils
 from hyperspy.misc.export_dictionary import (
@@ -505,6 +506,17 @@ class BaseModel(list):
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
 
+        # Fitting navigation state — completely decoupled from the plot/widget
+        # system. Populated lazily by _ensure_fit_indices() the first time
+        # fit() or multifit() is called, once a signal is attached.
+        self.fit_indices: "FitIndices | None" = None
+
+        # Flag set to True only while multifit() is running its iteration loop.
+        # fit() reads this to reliably distinguish "called from multifit" from
+        # "standalone call whose fit_indices.current_index is stale from a
+        # previous standalone call".
+        self._multifit_active: bool = False
+
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
         # raise an exception when using windows.connect
@@ -513,6 +525,72 @@ class BaseModel(list):
     def _get_current_data(self, onlyactive=False, component_list=None, binned=None):
         """Evaluate the model numerically. Implementation requested in all sub-classes"""
         raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # FitIndices helpers
+    # ------------------------------------------------------------------
+
+    def _ensure_fit_indices(self):
+        """Create or update ``self.fit_indices`` for the current signal shape.
+
+        Called automatically at the start of :meth:`fit` and
+        :meth:`multifit`.  Safe to call multiple times — only allocates a
+        new :class:`~hyperspy.fit_indices.FitIndices` when the navigation
+        shape has changed (e.g. after folding/unfolding or slicing).
+        """
+        shape = self.signal.axes_manager.navigation_shape
+        if self.fit_indices is None or self.fit_indices.navigation_shape != shape:
+            strategy = (
+                self.fit_indices.strategy
+                if self.fit_indices is not None
+                else "serpentine"
+            )
+            self.fit_indices = FitIndices(shape, strategy=strategy)
+
+    def _get_data_slice_at(self, index):
+        """Return the signal data slice at a specific navigation *index*.
+
+        Reads directly from the underlying data array without mutating
+        ``axes_manager.indices``, so it has no side-effects on the plot
+        cursor or on any event connected to ``indices_changed``.
+
+        Parameters
+        ----------
+        index : tuple of int
+            Navigation index in HyperSpy (x-first) order.  Use ``()`` for
+            a 0-D signal.
+
+        Returns
+        -------
+        numpy.ndarray
+            The signal data at the given navigation position with only the
+            signal (channel) dimension(s) remaining.  Lazy arrays are
+            computed immediately.
+        """
+        am = self.signal.axes_manager
+        if index:
+            # Convert HyperSpy (x-first) order to numpy (C, last-axis-first)
+            nav_idx = tuple(index[::-1])
+        else:
+            nav_idx = ()
+        signal_slices = tuple(ax.slice for ax in am._axes if ax.slice is not None)
+        full_idx = nav_idx + signal_slices
+        data = self.signal.data[full_idx]
+        if hasattr(data, "compute"):  # Dask
+            data = data.compute()
+        return data
+
+    def _current_fit_index_for_storage(self):
+        """Return the numpy-order index tuple for writing results into arrays.
+
+        Uses ``fit_indices.current_index`` when available, falling back to
+        ``axes_manager.indices`` for backwards-compatibility during the
+        transition period.
+        """
+        if self.fit_indices is not None and self.fit_indices.current_index is not None:
+            idx = self.fit_indices.current_index
+            return tuple(idx[::-1]) if idx else ()
+        return tuple(self.signal.axes_manager.indices[::-1])
 
     @property
     def signal(self):
@@ -1715,10 +1793,10 @@ class BaseModel(list):
             ]
         )
         d *= d / (1.0 * variance)  # d = difference^2 / variance.
-        self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
+        self.chisq.data[self._current_fit_index_for_storage()] = d.sum()
 
     def _set_current_degrees_of_freedom(self):
-        self.dof.data[self.signal.axes_manager.indices[::-1]] = len(self.p0)
+        self.dof.data[self._current_fit_index_for_storage()] = len(self.p0)
 
     @property
     def red_chisq(self):
@@ -1785,6 +1863,7 @@ class BaseModel(list):
         print_info=False,
         return_info=True,
         fd_scheme="2-point",
+        index="auto",
         **kwargs,
     ):
         """Fits the model to the experimental data.
@@ -1824,6 +1903,46 @@ class BaseModel(list):
         multifit, fit
 
         """
+        # ------------------------------------------------------------------
+        # Resolve the target navigation index
+        # ------------------------------------------------------------------
+        self._ensure_fit_indices()
+
+        # True when fit() is called from inside multifit's pixel loop.
+        # We use the explicit _multifit_active flag instead of checking
+        # current_index is not None, because a previous standalone fit()
+        # call may have left current_index set from its resolved index,
+        # and we must not mistake that for a live multifit context.
+        _called_from_multifit = self._multifit_active and index == "auto"
+
+        if _called_from_multifit:
+            # multifit already set fit_indices.current_index — use it as-is
+            # and sync axes_manager for the transitional period.
+            resolved_index = self.fit_indices.current_index
+        elif index == "auto":
+            # Single-pixel call: prefer last-visualised position from the
+            # signal (set by the plot widget system).  Falls back to the
+            # axes_manager's current position for backwards compatibility.
+            resolved_index = getattr(self.signal, "_last_index", None)
+            if resolved_index is None:
+                nav_shape = self.signal.axes_manager.navigation_shape
+                if nav_shape:
+                    resolved_index = tuple(self.signal.axes_manager.indices)
+                else:
+                    resolved_index = ()
+            # Own the index in FitIndices for result-writing methods.
+            self.fit_indices.current_index = resolved_index
+        else:
+            resolved_index = tuple(index) if index is not None else ()
+            self.fit_indices.current_index = resolved_index
+
+        # Transitional shim: keep axes_manager.indices in sync so that
+        # component internals (fetch/store values) still work.  This
+        # shim is removed in Part 3 when DataAxis.index is deleted.
+        if resolved_index and not _called_from_multifit:
+            self.axes_manager.indices = resolved_index
+
+        # ------------------------------------------------------------------
         cm = (
             self.suspend_update
             if (update_plot != self._plot_active) and not update_plot
@@ -2410,6 +2529,8 @@ class BaseModel(list):
         show_progressbar=None,
         interactive_plot=False,
         iterpath=None,
+        resume=False,
+        show_fit_map=False,
         **kwargs,
     ):
         """Fit the data to the model at all positions of the navigation dimensions.
@@ -2442,7 +2563,14 @@ class BaseModel(list):
                 manner instead of beginning each new row at the first index.
                 Works for n-dimensional navigation space, not just 2D.
             If None:
-                Use the value of :attr:`~.axes.AxesManager.iterpath`.
+                Use the value of :attr:`~.fit_indices.FitIndices.strategy`
+                stored on ``model.fit_indices`` (default: ``"serpentine"``).
+        resume : bool, default False
+            If ``True``, skip navigation positions that are already marked
+            as fitted in ``model.fit_indices.fitted``.  Use this to
+            continue a previously interrupted ``multifit`` run without
+            re-fitting already-completed pixels.  When ``False`` (default),
+            the ``fitted`` mask is cleared and all positions are re-fitted.
         **kwargs : dict
             Any extra keyword argument will be passed to the fit method.
             See the documentation for :meth:`~hyperspy.model.BaseModel.fit`
@@ -2487,7 +2615,39 @@ class BaseModel(list):
         ]
 
         masked_elements = 0 if mask is None else mask.sum()
-        maxval = self.axes_manager._get_iterpath_size(masked_elements)
+
+        # --- FitIndices setup ---
+        self._ensure_fit_indices()
+        if iterpath is not None:
+            self.fit_indices.strategy = iterpath
+        elif self.axes_manager._iterpath != "serpentine":
+            # Backwards-compatibility: honour axes_manager.iterpath if the
+            # user had set it to control multifit (deprecated path).
+            import warnings as _warnings
+
+            _warnings.warn(
+                "Setting axes_manager.iterpath to control multifit is deprecated. "
+                "Use model.fit_indices.strategy or multifit(iterpath=...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.fit_indices.strategy = self.axes_manager._iterpath
+
+        if not resume:
+            self.fit_indices.reset(clear_fitted=True)
+
+        # Live fit-map widget (optional) — create before the loop so the
+        # initial all-grey grid is visible while fitting starts.
+        if show_fit_map:
+            self.fit_indices.display()
+
+        # Progress bar length
+        try:
+            maxval = len(self.fit_indices) - masked_elements
+            if resume:
+                maxval = max(0, maxval - self.fit_indices.fitted_count)
+        except TypeError:
+            maxval = None  # generator-based strategy — unknown length
         show_progressbar = show_progressbar and (maxval != 0)
 
         # The _binned attribute is evaluated only once in the multifit procedure
@@ -2608,12 +2768,13 @@ class BaseModel(list):
                 self._binned = None
                 return
         # Fitting in a vectorized fashion is not supported. We iterate over the
-        # navigation indices and fit the dataset one by one.
+        # navigation indices and fit the dataset one by one, driven by FitIndices.
         i = 0
-        with self.axes_manager.events.indices_changed.suppress_callback(
-            self.fetch_stored_values
-        ):
-            with self.axes_manager.switch_iterpath(iterpath):
+        self._multifit_active = True
+        try:
+            with self.axes_manager.events.indices_changed.suppress_callback(
+                self.fetch_stored_values
+            ):
                 if interactive_plot:
                     outer = utils.dummy_context_manager
                     inner = self.suspend_update
@@ -2625,24 +2786,32 @@ class BaseModel(list):
                     with progressbar(
                         total=maxval, disable=not show_progressbar, leave=True
                     ) as pbar:
-                        for index in self.axes_manager:
-                            with inner(update_on_resume=True):
-                                if mask is None or not mask[index[::-1]]:
-                                    # first check if model has set initial values in
-                                    # parameters.map['values'][indices],
-                                    # otherwise use values from previous fit
-                                    self.fetch_stored_values(
-                                        only_fixed=fetch_only_fixed
-                                    )
-                                    self.fit(**kwargs)
-                                    i += 1
-                                    pbar.update(1)
+                        for index in self.fit_indices.as_generator(
+                            mask=mask, skip_fitted=resume
+                        ):
+                            # Transitional shim: sync axes_manager so that
+                            # component fetch/store still works.  Removed in Part 3.
+                            self.axes_manager.indices = index
 
-                                if autosave and i % autosave_every == 0:
-                                    self.save_parameters2file(autosave_fn)
+                            with inner(update_on_resume=True):
+                                # Fetch initial parameter values for this pixel
+                                self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                                # fit() sees fit_indices.current_index set by
+                                # as_generator / __next__ — uses it via the
+                                # _called_from_multifit branch.
+                                self.fit(**kwargs)
+                                self.fit_indices.mark_fitted(index)
+                                i += 1
+                                pbar.update(1)
+
+                            if autosave and i % autosave_every == 0:
+                                self.save_parameters2file(autosave_fn)
+
                 # Trigger the indices_changed event to update to current indices,
-                # since the callback was suppressed
+                # since the callback was suppressed.
                 self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+        finally:
+            self._multifit_active = False
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
