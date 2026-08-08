@@ -66,12 +66,12 @@ class TestPlotDecomposition:
     @pytest.mark.parametrize("n", [3, [3, 4]])
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_decomposition_loadings_nav1(self, n):
-        return self.s.plot_decomposition_loadings(n)
+        return self.s.plot_decomposition_scores(n)
 
     @pytest.mark.parametrize("n", (3, [3, 4]))
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_decomposition_factors_nav1(self, n):
-        return self.s.plot_decomposition_factors(n)
+        return self.s.plot_decomposition_components(n)
 
     @pytest.mark.parametrize(
         ("n", "per_row", "axes_decor"),
@@ -79,7 +79,7 @@ class TestPlotDecomposition:
     )
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_decomposition_loadings_nav2(self, n, per_row, axes_decor):
-        return self.s2.plot_decomposition_loadings(
+        return self.s2.plot_decomposition_scores(
             n, per_row=per_row, title="Loading", axes_decor=axes_decor
         )
 
@@ -210,13 +210,13 @@ def test_plot_without_decomposition():
     mixmat = rng.random((100, 5))
     s = signals.Signal1D(np.dot(mixmat, sources))
     with pytest.raises(RuntimeError):
-        s.plot_decomposition_factors()
+        s.plot_decomposition_components()
     with pytest.raises(RuntimeError):
-        s.plot_decomposition_loadings()
+        s.plot_decomposition_scores()
     with pytest.raises(RuntimeError):
         s.plot_decomposition_results()
     s.decomposition()
     with pytest.raises(RuntimeError):
-        s.plot_bss_factors()
+        s.plot_bss_components()
     with pytest.raises(RuntimeError):
-        s.plot_bss_loadings()
+        s.plot_bss_scores()

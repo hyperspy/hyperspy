@@ -32,7 +32,7 @@ _logger = logging.getLogger(__name__)
 def svd_flip_signs(u, v, u_based_decision=True):
     """Sign correction to ensure deterministic output from SVD.
 
-    Adjusts the columns of u and the rows of v such that the loadings in the
+    Adjusts the columns of u and the rows of v such that the components in the
     columns in u that are largest in absolute value are always positive.
 
     Parameters
@@ -102,8 +102,8 @@ def svd_solve(
           Use truncated SVD, calling :func:`sklearn.utils.extmath.randomized_svd`
           to estimate a limited number of components
     svd_flip : bool, default True
-        If True, adjusts the signs of the loadings and factors such that
-        the loadings that are largest in absolute value are always positive.
+        If True, adjusts the signs of the components and scores such that
+        the components that are largest in absolute value are always positive.
         See :func:`~hyperspy.learn.svd_flip_signs` for more details.
     u_based_decision : bool, default True
         If True, and svd_flip is True, use the columns of u as the basis for sign-flipping.
@@ -225,14 +225,14 @@ def svd_pca(
     auto_transpose : bool, default True
         If True, automatically transposes the data to boost performance.
     svd_flip : bool, default True
-        If True, adjusts the signs of the loadings and factors such that
-        the loadings that are largest in absolute value are always positive.
+        If True, adjusts the signs of the components and scores such that
+        the components that are largest in absolute value are always positive.
         See :func:`~hyperspy.learn.svd_flip_signs` for more details.
 
     Returns
     -------
-    factors : numpy.ndarray
-    loadings : numpy.ndarray
+    components : numpy.ndarray
+    scores : numpy.ndarray
     explained_variance : numpy.ndarray
         When ``centre`` is not None (mean-centred data), this is the variance
         explained by each component (``σᵢ² / N``), consistent with PCA.
@@ -280,10 +280,10 @@ def svd_pca(
     explained_variance = S**2 / N
 
     if auto_transpose is False:
-        factors = V.T
-        loadings = U * S
+        components = V.T
+        scores = U * S
     else:
-        loadings = V.T
-        factors = U * S
+        scores = V.T
+        components = U * S
 
-    return factors, loadings, explained_variance, mean
+    return components, scores, explained_variance, mean

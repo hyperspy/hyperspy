@@ -43,7 +43,7 @@ for n in [6, 8, 10]:
 ```python
 signal.decomposition(algorithm='SVD')
 signal.blind_source_separation(number_of_components=n)
-# Results: signal.learning_results.bss_components / bss_loadings
+# Results: signal.learning_results.bss_components / bss_scores
 ```
 
 ### Data Preprocessing

@@ -28,7 +28,7 @@ from hyperspy.misc.utils import to_numpy
 
 
 def _plot_1D_component(
-    factors,
+    components,
     idx,
     axes_manager,
     ax=None,
@@ -45,14 +45,14 @@ def _plot_1D_component(
     else:
         x = np.arange(axis.size)
         plt.xlabel("Channel index")
-    ax.plot(x, to_numpy(factors[:, idx]), label=f"{idx}")
+    ax.plot(x, to_numpy(components[:, idx]), label=f"{idx}")
     if comp_label and not same_window:
         plt.title(f"{comp_label}")
     return ax
 
 
 def _plot_2D_component(
-    factors,
+    components,
     idx,
     axes_manager,
     calibrate=True,
@@ -62,7 +62,7 @@ def _plot_2D_component(
     axes_decor="all",
 ):
     shape = axes_manager._signal_shape_in_array
-    factors = to_numpy(factors[:, idx].reshape(shape))
+    components = to_numpy(components[:, idx].reshape(shape))
     if ax is None:
         ax = plt.gca()
     axes = axes_manager.signal_axes[::-1]
@@ -76,7 +76,7 @@ def _plot_2D_component(
         )
     if comp_label:
         plt.title(f"{idx}")
-    im = ax.imshow(factors, cmap=cmap, interpolation="nearest", extent=extent)
+    im = ax.imshow(components, cmap=cmap, interpolation="nearest", extent=extent)
 
     # Set axes decorations based on user input
     set_axes_decor(ax, axes_decor)
@@ -88,7 +88,7 @@ def _plot_2D_component(
 
 
 def _plot_loading(
-    loadings,
+    scores,
     idx,
     axes_manager,
     ax=None,
@@ -99,11 +99,11 @@ def _plot_loading(
     same_window=False,
     axes_decor="all",
 ):
-    loadings = to_numpy(loadings[idx])
+    scores = to_numpy(scores[idx])
     if ax is None:
         ax = plt.gca()
     if no_nans:
-        loadings = np.nan_to_num(loadings)
+        scores = np.nan_to_num(scores)
     axes = axes_manager.navigation_axes
     if axes_manager.navigation_dimension == 2:
         extent = None
@@ -117,7 +117,7 @@ def _plot_loading(
                 axes[1].low_value,
             )
         im = ax.imshow(
-            loadings.reshape(shape), cmap=cmap, extent=extent, interpolation="nearest"
+            scores.reshape(shape), cmap=cmap, extent=extent, interpolation="nearest"
         )
         if calibrate:
             plt.xlabel(axes[0].units)
@@ -142,7 +142,7 @@ def _plot_loading(
             x = axes[0].axis
         else:
             x = np.arange(axes[0].size)
-        ax.step(x, loadings, label=f"{idx}")
+        ax.step(x, scores, label=f"{idx}")
         if comp_label and not same_window:
             plt.title(f"{comp_label} #{idx}")
         plt.ylabel("Score (a. u.)")
