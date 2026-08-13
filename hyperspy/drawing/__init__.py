@@ -18,12 +18,17 @@
 
 import importlib
 
-# Register the default matplotlib backend
+# Register the backend selected by the preferences (matplotlib by default).
+# Reading the preference here — rather than hardcoding "matplotlib" — matters
+# because this module is imported lazily, on the first ``plot()`` call.  A
+# preference set before that point (``hs.preferences.Plot.backend = "..."``
+# in a script, or loaded from the user's config file) predates the observer
+# below, so this is the only place it can be picked up.
 from hyperspy.defaults_parser import preferences as _pref
 from hyperspy.drawing.backends import register_backend as _register_backend
 from hyperspy.drawing.backends._registry import load_backend as _load_backend
 
-_register_backend(_load_backend("matplotlib"))
+_register_backend(_load_backend(_pref.Plot.backend))
 
 
 def _on_backend_pref_change(change=None):
@@ -33,16 +38,11 @@ def _on_backend_pref_change(change=None):
 
 _pref.Plot.observe(_on_backend_pref_change, "backend")
 
-try:
-    from IPython import get_ipython as _get_ipython
+from hyperspy.ipython_magic import (  # noqa: E402
+    _register_if_active as _register_anyplotlib_magic_now,
+)
 
-    _ip = _get_ipython()
-    if _ip is not None:
-        from hyperspy.drawing.backends._magic import _register_anyplotlib_magic
-
-        _register_anyplotlib_magic(_ip)
-except ImportError:
-    pass
+_register_anyplotlib_magic_now()
 
 __all__ = [
     "mpl_he",

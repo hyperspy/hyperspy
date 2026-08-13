@@ -46,14 +46,18 @@ class SquareWidget(Widget2DBase):
         xy = self._get_patch_xy()
         xs, ys = self.size
         handle = backend.create_rect_pointer(
-            ax, xy[0], xy[1], xs, ys, color=self.color, linewidth=self.border_thickness
+            ax,
+            xy[0],
+            xy[1],
+            xs,
+            ys,
+            color=self.color,
+            linewidth=self.border_thickness,
+            pointer=self.is_pointer,
         )
         self._patch = [handle]
         backend.set_pointer_style(handle, animated=self.blit)
-        _self = self
-        backend.connect_widget_drag(
-            handle, lambda x, y: setattr(_self, "position", (x, y))
-        )
+        backend.connect_widget_drag(handle, self._on_widget_drag)
         # Cooperate with ResizersMixin (RectangleWidget) so its resizer-handle
         # objects get created; overriding _add_patch_to instead of _set_patch
         # (as the base widget does) would otherwise skip this entirely.
@@ -68,6 +72,10 @@ class SquareWidget(Widget2DBase):
             xs, ys = self.size
             get_backend().update_rect_pointer(self.patch[0], xy[0], xy[1], xs, ys)
             self.draw_patch()
+
+    def _on_widget_drag(self, x, y, *args):
+        """Native-widget drag callback.  SquareWidget positions are centres."""
+        self.position = (x, y)
 
     def _onjumpclick(self, event):
         if event.key == "shift" and event.inaxes and self.is_pointer:
@@ -347,6 +355,19 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         """
         offset = [a.scale for a in self.axes]
         return self._pos - 0.5 * np.array(offset)
+
+    def _on_widget_drag(self, x, y, *size):
+        """Native-widget drag callback.
+
+        The backend reports the patch corner (and, for resizable native
+        widgets, the new width/height).  Convert the corner to hyperspy's
+        top-left-pixel-centre 'position' convention.
+        """
+        scale = [a.scale for a in self.axes]
+        kwargs = {"x": x + 0.5 * scale[0], "y": y + 0.5 * scale[1]}
+        if len(size) == 2:
+            kwargs["w"], kwargs["h"] = size
+        self.set_bounds(**kwargs)
 
     def _update_patch_position(self):
         # Override to include resizer positioning

@@ -976,19 +976,28 @@ class ResizersMixin:
         if self._resizer_handles:
             self._set_resizers(False, self.ax)
         self._resizer_handles = []
-        rsize = self._get_resizer_size()
-        pos = self._get_resizer_pos()
-        for i in range(len(pos)):
-            r = get_backend().create_rect_patch(
-                pos[i],
-                rsize[0],
-                rsize[1],
-                fill=True,
-                lw=0,
-                fc=self.resize_color,
-                picker=True,
-            )
-            self._resizer_handles.append(r)
+        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+
+        try:
+            rsize = self._get_resizer_size()
+            pos = self._get_resizer_pos()
+            for i in range(len(pos)):
+                r = get_backend().create_rect_patch(
+                    pos[i],
+                    rsize[0],
+                    rsize[1],
+                    fill=True,
+                    lw=0,
+                    fc=self.resize_color,
+                    picker=True,
+                )
+                self._resizer_handles.append(r)
+        except BackendCapabilityError:
+            # Backends whose native widgets already provide resize handles
+            # (e.g. anyplotlib) do not support standalone resizer patches;
+            # fall back to a plain draggable widget.
+            self._resizer_handles = []
+            self.resizers = False
 
     def set_on(self, value):
         """Turns on/off resizers when widget is turned on/off."""

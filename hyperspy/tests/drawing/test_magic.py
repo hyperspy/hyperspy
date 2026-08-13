@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Tests for the %anyplotlib IPython magic (hyperspy.drawing.backends._magic)."""
+"""Tests for the %anyplotlib IPython magic (hyperspy.ipython_magic)."""
 
 import importlib
 
@@ -43,7 +43,7 @@ def _restore_backend_pref():
 
 def test_anyplotlib_magic_switches_backend(ip, capsys):
     from hyperspy.defaults_parser import preferences
-    from hyperspy.drawing.backends._magic import _register_anyplotlib_magic
+    from hyperspy.ipython_magic import _register_anyplotlib_magic
 
     preferences.Plot.backend = "matplotlib"
     _register_anyplotlib_magic(ip)
@@ -54,7 +54,7 @@ def test_anyplotlib_magic_switches_backend(ip, capsys):
 
 
 def test_load_ipython_extension_registers_magic(ip):
-    from hyperspy.drawing.backends._magic import load_ipython_extension
+    from hyperspy.ipython_magic import load_ipython_extension
 
     load_ipython_extension(ip)
     assert ip.find_line_magic("anyplotlib") is not None
@@ -86,3 +86,33 @@ def test_drawing_import_survives_missing_ipython(monkeypatch):
         m.setitem(sys.modules, "IPython", None)
         importlib.reload(hyperspy.drawing)  # must not raise
     importlib.reload(hyperspy.drawing)
+
+
+def test_api_registers_magic_when_ipython_active(ip, monkeypatch):
+    """%anyplotlib must be usable right after ``import hyperspy.api as hs``,
+    without first touching anything that lazily imports hyperspy.drawing
+    (e.g. signal.plot()) — see hyperspy.ipython_magic for why."""
+    import hyperspy.api
+
+    monkeypatch.setattr("IPython.get_ipython", lambda: ip)
+    importlib.reload(hyperspy.api)
+    try:
+        assert ip.find_line_magic("anyplotlib") is not None
+    finally:
+        importlib.reload(hyperspy.api)
+
+
+def test_api_import_does_not_import_drawing(monkeypatch):
+    """Registering the magic from hyperspy.api must not pull in the heavier,
+    lazily-loaded hyperspy.drawing package tree (which eagerly registers the
+    matplotlib backend) — that would defeat the point of lazy loading."""
+    import sys
+
+    for mod in list(sys.modules):
+        if mod == "hyperspy.drawing" or mod.startswith("hyperspy.drawing."):
+            monkeypatch.delitem(sys.modules, mod)
+
+    import hyperspy.api
+
+    importlib.reload(hyperspy.api)
+    assert "hyperspy.drawing" not in sys.modules
