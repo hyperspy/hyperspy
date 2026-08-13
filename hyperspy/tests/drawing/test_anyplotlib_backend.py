@@ -1936,3 +1936,245 @@ class TestMiscBackendGaps:
     def test_set_yticklabels_noop(self, backend, fig_ax):
         _, ax = fig_ax
         assert backend.set_yticklabels(ax, []) is None
+
+
+# ---------------------------------------------------------------------------
+# plot_spectra through the active backend
+# ---------------------------------------------------------------------------
+
+
+class TestPlotSpectraBackend:
+    @pytest.fixture()
+    def spectra(self):
+        s1 = hs.signals.Signal1D(np.arange(100.0))
+        s2 = hs.signals.Signal1D(np.arange(100.0)[::-1].copy())
+        for s in (s1, s2):
+            s.axes_manager[0].name = "Energy"
+            s.axes_manager[0].units = "eV"
+        return [s1, s2]
+
+    def test_overlap_returns_backend_ax_with_lines(self, spectra):
+        ax = hs.plot.plot_spectra(spectra)
+        plot = ax._plot
+        assert isinstance(plot, anyplotlib.Plot1D)
+        assert len(plot._state.get("extra_lines", [])) == 1  # + primary line
+        assert plot._state["units"] == "Energy (eV)"
+        assert plot._state["y_units"] == "Intensity"
+
+    def test_overlap_legend_becomes_line_labels(self, spectra):
+        ax = hs.plot.plot_spectra(spectra, legend=["first", "second"])
+        plot = ax._plot
+        assert plot._state["line_label"] == "first"
+        labels = [ln.get("label") for ln in plot._state["extra_lines"]]
+        assert labels == ["second"]
+
+    def test_overlap_short_legend_keeps_all_spectra(self, spectra):
+        ax = hs.plot.plot_spectra(spectra, legend=["only"])
+        plot = ax._plot
+        assert len(plot._state.get("extra_lines", [])) == 1
+
+    def test_overlap_auto_update_follows_data_changed(self, spectra):
+        ax = hs.plot.plot_spectra(spectra)
+        plot = ax._plot
+        before = np.asarray(plot._state["data"]).copy()
+        spectra[0].data = spectra[0].data * 2 + 1
+        spectra[0].events.data_changed.trigger(obj=spectra[0])
+        assert not np.allclose(before, np.asarray(plot._state["data"]))
+
+    def test_normalise(self, spectra):
+        ax = hs.plot.plot_spectra(spectra, normalise=True)
+        data = np.asarray(ax._plot._state["data"])
+        assert data.min() >= 0 and data.max() <= 1
+        assert ax._plot._state["y_units"] == "Normalised Intensity"
+
+    def test_cascade_stacks_lines(self, spectra):
+        ax = hs.plot.plot_spectra(spectra, style="cascade")
+        plot = ax._plot
+        assert isinstance(plot, anyplotlib.Plot1D)
+        assert len(plot._state.get("extra_lines", [])) == 1
+        # second spectrum is offset above the first
+        line2 = np.asarray(plot._state["extra_lines"][0]["data"])
+        assert line2.max() > 1.0
+
+    def test_heatmap_is_native_image_plot(self, spectra):
+        ax = hs.plot.plot_spectra(spectra, style="heatmap")
+        assert isinstance(ax._plot, anyplotlib.Plot2D)
+
+    def test_mosaic_still_matplotlib(self, spectra):
+        import matplotlib.axes
+
+        axs = hs.plot.plot_spectra(spectra, style="mosaic")
+        assert all(isinstance(ax, matplotlib.axes.Axes) for ax in axs)
+
+    def test_explicit_mpl_ax_forces_matplotlib(self, spectra):
+        import matplotlib.pyplot as plt
+
+        fig, mpl_ax = plt.subplots()
+        try:
+            ax = hs.plot.plot_spectra(spectra, ax=mpl_ax)
+            assert ax is mpl_ax
+        finally:
+            plt.close(fig)
+
+    def test_color_and_linestyle(self, spectra):
+        ax = hs.plot.plot_spectra(
+            spectra, color=["#ff0000", "#00ff00"], linestyle=["-", "--"]
+        )
+        plot = ax._plot
+        assert plot._state["line_color"] == "#ff0000"
+        line2 = plot._state["extra_lines"][0]
+        assert line2["color"] == "#00ff00"
+        assert line2["linestyle"] == "dashed"
+
+
+# ---------------------------------------------------------------------------
+# plot_roi_map(single_figure=True) through the active backend
+# ---------------------------------------------------------------------------
+
+
+class TestRoiMapSingleFigureBackend:
+    @pytest.fixture()
+    def signal2d_nav(self):
+        rng = np.random.default_rng(0)
+        s = hs.signals.Signal1D(rng.random((8, 8, 64)))
+        return s
+
+    def _real_figs(self, roi_sums):
+        figs = [rs._plot.signal_plot.figure for rs in roi_sums]
+        return {getattr(f, "_real_fig", f) for f in figs}
+
+    def test_maps_share_one_figure(self, signal2d_nav):
+        signal2d_nav.plot()
+        rois, roi_sums = hs.plot.plot_roi_map(signal2d_nav, rois=2, single_figure=True)
+        real = self._real_figs(roi_sums)
+        assert len(real) == 1
+        assert isinstance(real.pop(), anyplotlib.Figure)
+
+    def test_maps_get_single_color_cmaps(self, signal2d_nav):
+        signal2d_nav.plot()
+        rois, roi_sums = hs.plot.plot_roi_map(signal2d_nav, rois=2, single_figure=True)
+        names = [
+            rs._plot.signal_plot.ax._plot._state["colormap_name"] for rs in roi_sums
+        ]
+        assert all(n.startswith("single_color_") for n in names)
+        assert names[0] != names[1]
+
+    def test_map_updates_when_roi_moves(self, signal2d_nav):
+        signal2d_nav.plot()
+        rois, roi_sums = hs.plot.plot_roi_map(signal2d_nav, rois=1, single_figure=True)
+        roi = rois[0]
+        before = np.array(roi_sums[0].data)
+        roi.right = roi.left + (roi.right - roi.left) / 2
+        assert not np.allclose(before, np.array(roi_sums[0].data))
+
+    def test_colored_frame_markers(self, signal2d_nav):
+        signal2d_nav.plot()
+        rois, roi_sums = hs.plot.plot_roi_map(
+            signal2d_nav, rois=2, color=["r", "b"], cmap="gray", single_figure=True
+        )
+        for rs, expected in zip(roi_sums, ["r", "b"]):
+            markers = rs._plot.signal_plot.ax._plot._state["markers"]
+            frames = [
+                m
+                for m in markers
+                if m.get("type") == "rectangles" and m.get("transform") == "axes"
+            ]
+            assert len(frames) == 1
+            assert frames[0]["color"] == expected
+
+    def test_nav1_uses_backend_plot_spectra(self):
+        rng = np.random.default_rng(0)
+        s = hs.signals.Signal1D(rng.random((10, 64)))
+        s.plot()
+        rois, roi_sums = hs.plot.plot_roi_map(s, rois=2, single_figure=True)
+        # The profile maps are drawn via plot_spectra into one shared native
+        # panel rather than each opening its own figure.
+        assert all(rs._plot is None for rs in roi_sums)
+        # Live updating still works through the plot_spectra auto_update
+        # wiring: moving a ROI recomputes the profile sums in place.
+        before = np.array(roi_sums[0].data)
+        roi = rois[0]
+        roi.right = roi.left + (roi.right - roi.left) / 2
+        assert not np.allclose(before, np.array(roi_sums[0].data))
+
+    def test_close_callbacks_wired(self, signal2d_nav, backend):
+        signal2d_nav.plot()
+        rois, roi_sums = hs.plot.plot_roi_map(signal2d_nav, rois=2, single_figure=True)
+        fig = roi_sums[0]._plot.signal_plot.ax.figure
+        on_close = getattr(fig, "_hspy_on_close", None)
+        assert on_close is not None
+
+
+# ---------------------------------------------------------------------------
+# n-panel combined figures & close-event accumulation
+# ---------------------------------------------------------------------------
+
+
+class TestCombinedFigurePanelsN:
+    def test_three_panels_share_one_figure(self, backend):
+        panels = backend.create_combined_figure_panels(n=3)
+        assert len(panels) == 3
+        real = {p._real_fig for p in panels}
+        assert len(real) == 1
+        assert real.pop()._hspy_panels_remaining == 3
+
+    def test_single_panel(self, backend):
+        panels = backend.create_combined_figure_panels(n=1)
+        assert len(panels) == 1
+
+    def test_default_still_two(self, backend):
+        panels = backend.create_combined_figure_panels()
+        assert len(panels) == 2
+
+
+class TestConnectCloseEvent:
+    def test_callbacks_accumulate_and_run_on_close(self, backend):
+        fig = backend.create_figure()
+        calls = []
+        backend.connect_close_event(fig, lambda: calls.append("a"))
+        backend.connect_close_event(fig, lambda: calls.append("b"))
+        backend.close_figure(fig)
+        assert calls == ["a", "b"]
+
+    def test_adoption_does_not_clobber_earlier_callbacks(self, backend):
+        panels = backend.create_combined_figure_panels(n=2)
+        calls = []
+        backend.connect_close_event(panels[0], lambda: calls.append("early"))
+        backend.create_figure(fig=panels[0], on_close=lambda: calls.append("adopt"))
+        backend.close_figure(panels[0])
+        assert calls == ["early", "adopt"]
+
+
+# ---------------------------------------------------------------------------
+# Widget stroke units: hyperspy points -> anyplotlib CSS px
+# ---------------------------------------------------------------------------
+
+
+class TestWidgetStrokeUnits:
+    PX_PER_PT = 96.0 / 72.0
+
+    @pytest.fixture()
+    def image_ax(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.random.rand(32, 32))
+        return ax
+
+    def test_circle_pointer_stroke_converted(self, backend, image_ax):
+        handles = backend.create_circle_pointer(image_ax, 16, 16, 5, linewidth=2)
+        assert handles[0].get("linewidth") == pytest.approx(2 * self.PX_PER_PT)
+
+    def test_annular_pointer_stroke_converted(self, backend, image_ax):
+        handles = backend.create_circle_pointer(
+            image_ax, 16, 16, 5, r_inner=2, linewidth=2
+        )
+        assert handles[0].get("linewidth") == pytest.approx(2 * self.PX_PER_PT)
+
+    def test_rect_widget_stroke_converted(self, backend, image_ax):
+        handle = backend.create_rect_pointer(image_ax, 2, 2, 6, 6, linewidth=2)
+        assert handle.get("linewidth") == pytest.approx(2 * self.PX_PER_PT)
+
+    def test_crosshair_stroke_converted(self, backend, image_ax):
+        handle = backend.create_rect_pointer(
+            image_ax, 2, 2, 6, 6, linewidth=2, pointer=True
+        )
+        assert handle.get("linewidth") == pytest.approx(2 * self.PX_PER_PT)

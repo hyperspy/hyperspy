@@ -1,0 +1,26 @@
+Broaden anyplotlib-backend coverage so that the documentation gallery runs on
+it. :class:`~.api.roi.SpanROI`, :class:`~.api.roi.PolygonROI`,
+:class:`~.api.roi.CircleROI` and :class:`~.api.roi.Line2DROI` now render on
+anyplotlib (via new ``create_circle_pointer``/``update_circle_pointer``
+backend methods and matplotlib-selector façades over anyplotlib's native
+range and polygon widgets); ``Rectangles``, ``Squares`` and ``Ellipses``
+markers with a single shared size no longer fall back to matplotlib; and
+matplotlib line properties (``linestyle="None"`` scatter lines,
+``drawstyle="steps-mid"``, ``markeredgecolor``) are translated instead of
+being passed through and rejected.
+
+Markers built from a raw :class:`matplotlib.collections.Collection` subclass,
+and :meth:`~.api.plot.markers.Markers.set_ScalarMappable_array`, now raise a
+``BackendCapabilityError`` explaining that they are matplotlib-only, instead
+of an opaque ``AttributeError``.
+
+:func:`~.api.plot.plot_spectra` (``'overlap'``, ``'cascade'`` and
+``'heatmap'`` styles) and :func:`~.api.plot.plot_roi_map` with
+``single_figure=True`` now render natively through the active plotting
+backend instead of always building a static matplotlib figure — on
+anyplotlib the overlaid spectra and the ROI maps are live figures that keep
+updating as the data or ROIs change (legend entries become native line
+labels; ``legend_picking`` and the ``'mosaic'`` style remain
+matplotlib-only). Interactive-widget strokes (ROI outlines, crosshairs and
+line pointers) are now converted from matplotlib points to CSS pixels, so
+they render at the same visual weight as on the matplotlib backend.
