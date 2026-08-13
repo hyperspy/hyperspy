@@ -153,7 +153,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
                 backend = get_backend()
                 for p in self._width_indicator_patches:
-                    self.ax.add_artist(p)
+                    backend.add_artist(self.ax, p)
                     backend.artist_set_animated(p, self.blit)
             else:
                 self._size = np.array((value,))

@@ -1,0 +1,19 @@
+Register the ``%anyplotlib`` IPython magic as soon as ``hyperspy.api`` is
+imported, instead of only once something else lazily imports
+``hyperspy.drawing`` (e.g. a signal's first ``plot()``); ``%anyplotlib`` now
+works right after ``import hyperspy.api as hs``.
+
+Honour the ``Plot.backend`` preference when it is set *before* the first
+plot. ``hyperspy.drawing`` is imported lazily, and it used to register the
+matplotlib backend unconditionally, so
+``hs.preferences.Plot.backend = "anyplotlib"`` in a script (or a value
+restored from the user's config file) was silently ignored for the whole
+session.
+
+Fix a number of code paths that bypassed the plotting-backend abstraction and
+so only worked on matplotlib: the model plot's data-line colour
+(``Model1D.plot``), the ``Line2DWidget`` width indicators, and the
+matplotlib-native composers in ``hyperspy.drawing.utils`` (``plot_images``,
+``plot_spectra``, ``plot_roi_map``), which now always drive the matplotlib
+backend for the matplotlib figures they build rather than whichever backend
+happens to be active.

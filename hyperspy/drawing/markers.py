@@ -825,8 +825,13 @@ class Markers:
                 backend.add_collection(self.ax, self._collection)
             except BackendCapabilityError:
                 raise BackendCapabilityError(
-                    "The active backend does not support markers."
-                )
+                    f"{type(self._collection).__name__} markers are only "
+                    "supported by the matplotlib backend: they are matplotlib "
+                    "Collection artists, which the active backend cannot "
+                    "draw. Use one of the built-in marker classes in "
+                    "hs.plot.markers (Circles, Points, Rectangles, …), which "
+                    "every backend can render natively."
+                ) from None
 
         if render_figure:
             self._render_figure()
@@ -886,6 +891,15 @@ class Markers:
         """
         self._ScalarMappable_array = array
         if self._collection is not None:
+            if not hasattr(self._collection, "set_array"):
+                # A backend-native marker group, not a matplotlib
+                # ScalarMappable: there is no per-marker colour mapping to set.
+                raise BackendCapabilityError(
+                    "Colour-mapping markers with set_ScalarMappable_array() is "
+                    "only supported by the matplotlib backend; the active "
+                    "backend draws markers natively and has no ScalarMappable. "
+                    "Set the marker colours explicitly instead."
+                )
             self._collection.set_array(array)
 
     def plot_colorbar(self):

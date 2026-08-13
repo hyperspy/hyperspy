@@ -138,7 +138,9 @@ def test_markers_raise_on_unsupported_backend():
             side_effect=BackendCapabilityError("no collections"),
         ),
     ):
-        with pytest.raises(BackendCapabilityError, match="does not support markers"):
+        with pytest.raises(
+            BackendCapabilityError, match="only supported by the matplotlib backend"
+        ):
             # Force re-plot of the marker by calling plot directly
             marker.plot()
 
