@@ -115,9 +115,16 @@ dev = [
     "hyperspy[tests]",
 ]
 doc = [
+    # The interactive gallery scraper (doc/_ext/hyperspy_anywidget.py) patches
+    # anyplotlib's Pyodide bridge with exact-text rewrites, so the doc build
+    # pins the version those patches were written against instead of floating
+    # with the ">=0.5.0" backend requirement.
+    "anyplotlib==0.5.0",
     "holospy", # example gallery
     "IPython", # Needed in testing code in basic_usage.rst
     "numpydoc",
+    "playwright", # gallery thumbnails of anyplotlib widgets
+    "uv", # anyplotlib's sphinx extension shells out to `uv build` for the Pyodide wheel
     "pybaselines", # for docstring test
     "pydata_sphinx_theme",
     "scikit-image",

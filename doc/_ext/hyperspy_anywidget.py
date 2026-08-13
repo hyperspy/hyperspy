@@ -184,11 +184,29 @@ class _BrowserPool:
             from playwright.sync_api import sync_playwright
 
             self._pw = sync_playwright().start()
-            self._browser = self._pw.chromium.launch(
-                headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"]
-            )
+            try:
+                self._browser = self._launch()
+            except Exception:
+                # CI has the playwright package (doc extra) but not the
+                # browser binary, and the reusable docs workflow has no hook
+                # for `playwright install`. Fetch Chromium once and retry;
+                # the caller already treats any remaining failure as "no
+                # thumbnail" rather than a build error.
+                import subprocess
+                import sys
+
+                subprocess.run(
+                    [sys.executable, "-m", "playwright", "install", "chromium"],
+                    check=True,
+                )
+                self._browser = self._launch()
             atexit.register(self.close)
         return self._browser.new_page()
+
+    def _launch(self):
+        return self._pw.chromium.launch(
+            headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"]
+        )
 
     def close(self):
         if self._browser is not None:
