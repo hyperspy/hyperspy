@@ -363,7 +363,10 @@ class MplBackend:
         else:
             handle.set_ydata([pos])
 
-    def create_rect_pointer(self, ax, x, y, w, h, color="red", linewidth=2):
+    def create_rect_pointer(
+        self, ax, x, y, w, h, color="red", linewidth=2, pointer=False
+    ):
+        # pointer (navigator) and region rectangles render identically in MPL.
         import matplotlib.patches as mpatches
 
         rect = mpatches.Rectangle(
@@ -382,6 +385,55 @@ class MplBackend:
         handle.set_xy((x, y))
         handle.set_width(w)
         handle.set_height(h)
+
+    def create_circle_pointer(
+        self, ax, cx, cy, r_outer, r_inner=0.0, color="red", linewidth=2, alpha=1.0
+    ):
+        radii = [r_outer] + ([r_inner] if r_inner > 0 else [])
+        handles = []
+        for radius in radii:
+            circle = self.create_circle_patch(
+                (cx, cy),
+                radius=radius,
+                fill=False,
+                lw=linewidth,
+                ec=color,
+                alpha=alpha,
+                picker=True,
+            )
+            ax.add_artist(circle)
+            handles.append(circle)
+        return handles
+
+    def update_circle_pointer(self, ax, handles, cx, cy, r_outer, r_inner=0.0):
+        wanted = 2 if r_inner > 0 else 1
+        if len(handles) != wanted:
+            # Crossing the circle↔annulus boundary: rebuild both patches and
+            # invalidate the blit cache so the repaint is a full redraw rather
+            # than a restore of pixels that still hold the old geometry.
+            style = handles[0]
+            new = self.create_circle_pointer(
+                ax,
+                cx,
+                cy,
+                r_outer,
+                r_inner,
+                color=style.get_edgecolor(),
+                linewidth=style.get_linewidth(),
+                alpha=style.get_alpha() if style.get_alpha() is not None else 1.0,
+            )
+            animated = style.get_animated()
+            for patch in handles:
+                patch.remove()
+            for patch in new:
+                patch.set_animated(animated)
+            self.invalidate_blit_background(ax)
+            return new
+
+        for patch, radius in zip(handles, (r_outer, r_inner)):
+            patch.center = (cx, cy)
+            patch.radius = radius
+        return handles
 
     def remove_pointer(self, ax, handle):
         try:
@@ -428,17 +480,19 @@ class MplBackend:
 
     # ── Combined layout / lifecycle hooks ─────────────────────────────────
 
-    def create_combined_figure_panels(self, figsize=None):
+    def create_combined_figure_panels(self, figsize=None, n=2):
         from hyperspy.defaults_parser import preferences
 
         if not preferences.Plot.use_subfigure:
             return None
         import matplotlib.pyplot as plt
+        import numpy as np
 
-        figsize = figsize or (15, 7)
+        figsize = figsize or (7.5 * n, 7)
         fig = plt.figure(figsize=figsize, layout="constrained")
-        subfigs = fig.subfigures(1, 2)
-        return subfigs[0], subfigs[1]
+        # subfigures squeezes: a bare SubFigure for 1x1, a 1-D array otherwise.
+        subfigs = np.atleast_1d(fig.subfigures(1, n))
+        return tuple(subfigs)
 
     def ensure_displayed(self, fig):
         pass

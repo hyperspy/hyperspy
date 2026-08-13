@@ -158,8 +158,14 @@ class PointerMixin(Protocol):
         h: float,
         color: str = "red",
         linewidth: float = 2,
+        pointer: bool = False,
     ) -> Any:
-        """Create a draggable rectangle widget at lower-left (x, y) with size w×h."""
+        """Create a draggable rectangle widget at lower-left (x, y) with size w×h.
+
+        *pointer* is True when the widget is a navigation pointer (its centre
+        marks the current navigation position) rather than a region selector.
+        Backends may render pointers differently (e.g. as a crosshair).
+        """
         raise BackendCapabilityError(
             "create_rect_pointer not supported by this backend"
         )
@@ -170,6 +176,46 @@ class PointerMixin(Protocol):
         """Reposition/resize the rectangle pointer."""
         raise BackendCapabilityError(
             "update_rect_pointer not supported by this backend"
+        )
+
+    def create_circle_pointer(
+        self,
+        ax: Any,
+        cx: float,
+        cy: float,
+        r_outer: float,
+        r_inner: float = 0.0,
+        color: str = "red",
+        linewidth: float = 2,
+        alpha: float = 1.0,
+    ) -> list:
+        """Create a draggable circle (or annulus when *r_inner* > 0) on *ax*.
+
+        Returns a *list* of handles — matplotlib draws an annulus as two
+        separate circle patches, while a backend with a native annulus widget
+        returns a single one.  Callers must not assume a length.
+        """
+        raise BackendCapabilityError(
+            "create_circle_pointer not supported by this backend"
+        )
+
+    def update_circle_pointer(
+        self,
+        ax: Any,
+        handles: list,
+        cx: float,
+        cy: float,
+        r_outer: float,
+        r_inner: float = 0.0,
+    ) -> list:
+        """Reposition/resize a circle pointer; return the current handle list.
+
+        The returned list may differ from *handles* when the geometry crosses
+        the circle↔annulus boundary (``r_inner`` becoming non-zero, or falling
+        back to zero) and the backend has to swap the underlying artists.
+        """
+        raise BackendCapabilityError(
+            "update_circle_pointer not supported by this backend"
         )
 
     def remove_pointer(self, ax: Any, handle: Any) -> None:
@@ -493,10 +539,16 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
 
     # ── Combined multi-panel layout ───────────────────────────────────────
 
-    def create_combined_figure_panels(self, figsize=None) -> tuple[Any, Any] | None:
-        """Return (nav_fig, signal_fig) for a combined single-widget layout.
+    def create_combined_figure_panels(
+        self, figsize=None, n: int = 2
+    ) -> tuple[Any, ...] | None:
+        """Return *n* panel handles laid out side by side in one figure.
 
-        Return ``None`` to use two separate figures (the default).
+        The default ``n=2`` is the (navigator, signal) pair; composers such
+        as :func:`~.api.plot.plot_roi_map` request one panel per image.
+        Each handle is accepted as the ``fig=`` argument of a figure's
+        ``create_figure``.  Return ``None`` to use separate figures (the
+        default).
         """
         return None
 

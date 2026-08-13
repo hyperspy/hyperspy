@@ -80,6 +80,36 @@ class _AplFigureProxy:
         self._hspy_on_close = None
 
 
+def _append_on_close(fig_or_proxy, fn):
+    """Accumulate *fn* on ``_hspy_on_close`` without clobbering earlier ones.
+
+    ``close_figure`` accepts a single callable or a list on both real
+    figures and panel proxies, so normalise to a list as soon as there is
+    more than one callback.
+    """
+    existing = getattr(fig_or_proxy, "_hspy_on_close", None)
+    if existing is None:
+        fig_or_proxy._hspy_on_close = fn
+    elif isinstance(existing, list):
+        existing.append(fn)
+    else:
+        fig_or_proxy._hspy_on_close = [existing, fn]
+
+
+# hyperspy widget linewidths (``border_thickness`` etc.) are matplotlib
+# *points*; anyplotlib widget strokes are CSS *pixels*.  Convert at the
+# native-widget boundary so strokes match the matplotlib backend's weight
+# (2 pt ≈ 2.7 px) instead of silently rendering one-third thinner.
+_PX_PER_PT = 96.0 / 72.0
+
+
+def _stroke_px(linewidth, default=2.0):
+    """Convert a linewidth in points to CSS pixels for native widgets."""
+    if linewidth is None:
+        linewidth = default
+    return float(linewidth) * _PX_PER_PT
+
+
 def _snap(value, snap_values):
     """Return the entry of *snap_values* closest to *value* (identity if None).
 
@@ -407,7 +437,7 @@ class _AplPolygonSelector:
                     "polygon",
                     vertices=pixels,
                     color=self._color,
-                    linewidth=float(self._linewidth),
+                    linewidth=_stroke_px(self._linewidth),
                 ),
                 self._plot,
             )
@@ -497,14 +527,14 @@ class _AplLine2DPatch:
                 x2=float(x[-1]),
                 y2=float(y[-1]),
                 color=self._color,
-                linewidth=self._linewidth,
+                linewidth=_stroke_px(self._linewidth),
             )
         else:
             self._group = plot.markers.add(
                 "lines",
                 segments=AnyplotlibBackend._polyline_segments(x, y),
                 edgecolors=self._color,
-                linewidths=self._linewidth,
+                linewidths=_stroke_px(self._linewidth),
             )
 
     def set_data(self, x, y=None):
@@ -574,7 +604,7 @@ class AnyplotlibBackend:
         fig_kwarg = kwargs.pop("fig", None)
         if isinstance(fig_kwarg, _AplFigureProxy):
             if on_close is not None:
-                fig_kwarg._hspy_on_close = on_close
+                _append_on_close(fig_kwarg, on_close)
             return fig_kwarg
 
         figsize = kwargs.pop("figsize", (640, 480))
@@ -588,7 +618,7 @@ class AnyplotlibBackend:
         fig._hspy_ax = ax
         ax.figure = fig  # hyperspy widgets use ax.figure to reach the figure
         if on_close is not None:
-            fig._hspy_on_close = on_close
+            _append_on_close(fig, on_close)
         return fig
 
     def close_figure(self, fig):
@@ -618,30 +648,32 @@ class AnyplotlibBackend:
         except Exception:
             pass
 
-    def create_combined_figure_panels(self, figsize=None):
-        """Create a 2-panel anyplotlib Figure; return (nav_proxy, signal_proxy).
+    def create_combined_figure_panels(self, figsize=None, n=2):
+        """Create an *n*-panel anyplotlib Figure; return one proxy per panel.
 
-        Both proxies wrap the same underlying Figure widget so ``draw_idle``
-        shows the figure only once both panels have rendered (no half-drawn
-        flicker).  Pass the proxies as ``fig=`` in ``navigator_kwds`` and the
-        main ``kwargs`` respectively.
+        All proxies wrap the same underlying Figure widget so ``draw_idle``
+        shows the figure only once every panel has rendered (no half-drawn
+        flicker).  Pass the proxies as the ``fig=`` keyword of whatever
+        draws into each panel — ``navigator_kwds`` + main ``kwargs`` for the
+        default (navigator, signal) pair, or one per image for composers.
         """
         import anyplotlib as apl
 
-        figsize = tuple(figsize) if figsize else (1280, 640)
+        figsize = tuple(figsize) if figsize else (640 * n, 640)
         figsize = tuple(float(v) for v in figsize)
         if max(figsize) < 50:
             figsize = (int(figsize[0] * 96), int(figsize[1] * 96))
         else:
             figsize = (int(figsize[0]), int(figsize[1]))
 
-        fig, axes = apl.subplots(1, 2, figsize=figsize)
-        nav_ax, sig_ax = axes[0], axes[1]
-        for ax in (nav_ax, sig_ax):
+        fig, axes = apl.subplots(1, n, figsize=figsize)
+        if n == 1:
+            axes = [axes]
+        for ax in axes:
             ax.figure = fig
-        # Display is deferred until both panels have drawn.
-        fig._hspy_panels_remaining = 2
-        return _AplFigureProxy(fig, nav_ax), _AplFigureProxy(fig, sig_ax)
+        # Display is deferred until every panel has drawn.
+        fig._hspy_panels_remaining = n
+        return tuple(_AplFigureProxy(fig, ax) for ax in axes)
 
     def ensure_displayed(self, fig):
         """Force-display fig, bypassing the panel countdown.
@@ -834,6 +866,10 @@ class AnyplotlibBackend:
             out["marker"] = cls._norm_marker(props["marker"])
         if props.get("markersize") is not None:
             out["markersize"] = float(props["markersize"])
+
+        # A non-empty label makes the line a native legend entry.
+        if props.get("label"):
+            out["label"] = str(props["label"])
 
         # drawstyle="steps-mid" is matplotlib's step plot; anyplotlib folds it
         # into linestyle as "step-mid" and it must win over the plain
@@ -1210,21 +1246,34 @@ class AnyplotlibBackend:
         # widgets do.  A genuine 1-D panel reports no calibration and is left
         # in data units.
         x_cal, y_cal = _pixel_axes(plot)
+        linewidth = _stroke_px(2.0)
         if axis == "x":
             value = _to_pixels(x_cal, pos)
             if hasattr(plot, "add_vline_widget"):
-                handle = plot.add_vline_widget(x=float(value), color=color)
+                handle = plot.add_vline_widget(
+                    x=float(value), color=color, linewidth=linewidth
+                )
             else:
                 handle = plot.add_widget(
-                    "crosshair", cx=float(value), cy=0.0, color=color
+                    "crosshair",
+                    cx=float(value),
+                    cy=0.0,
+                    color=color,
+                    linewidth=linewidth,
                 )
         else:
             value = _to_pixels(y_cal, pos)
             if hasattr(plot, "add_hline_widget"):
-                handle = plot.add_hline_widget(y=float(value), color=color)
+                handle = plot.add_hline_widget(
+                    y=float(value), color=color, linewidth=linewidth
+                )
             else:
                 handle = plot.add_widget(
-                    "crosshair", cx=0.0, cy=float(value), color=color
+                    "crosshair",
+                    cx=0.0,
+                    cy=float(value),
+                    color=color,
+                    linewidth=linewidth,
                 )
         return _remember_plot(handle, plot)
 
@@ -1315,11 +1364,15 @@ class AnyplotlibBackend:
             # real vline/hline rather than a crosshair pinned to an edge.
             if h <= 0 and hasattr(plot, "add_vline_widget"):
                 handle = plot.add_vline_widget(
-                    x=float(px) + float(pw) / 2.0, color=color
+                    x=float(px) + float(pw) / 2.0,
+                    color=color,
+                    linewidth=_stroke_px(linewidth),
                 )
             elif w <= 0 and hasattr(plot, "add_hline_widget"):
                 handle = plot.add_hline_widget(
-                    y=float(py) + float(ph) / 2.0, color=color
+                    y=float(py) + float(ph) / 2.0,
+                    color=color,
+                    linewidth=_stroke_px(linewidth),
                 )
             else:
                 handle = plot.add_widget(
@@ -1327,6 +1380,7 @@ class AnyplotlibBackend:
                     cx=float(px) + float(pw) / 2.0,
                     cy=float(py) + float(ph) / 2.0,
                     color=color,
+                    linewidth=_stroke_px(linewidth),
                 )
         else:
             # Region selector (e.g. RectangularROI): a native rectangle widget
@@ -1338,6 +1392,7 @@ class AnyplotlibBackend:
                 w=float(pw),
                 h=float(ph),
                 color=color,
+                linewidth=_stroke_px(linewidth),
             )
         return _remember_plot(handle, plot)
 
@@ -1387,7 +1442,7 @@ class AnyplotlibBackend:
                 r_outer=float(p_outer),
                 r_inner=float(p_inner),
                 color=color,
-                linewidth=float(linewidth),
+                linewidth=_stroke_px(linewidth),
             )
         else:
             handle = plot.add_widget(
@@ -1396,7 +1451,7 @@ class AnyplotlibBackend:
                 cy=float(pcy),
                 r=float(p_outer),
                 color=color,
-                linewidth=float(linewidth),
+                linewidth=_stroke_px(linewidth),
             )
         return [_remember_plot(handle, plot)]
 
@@ -1415,7 +1470,9 @@ class AnyplotlibBackend:
                 r_outer,
                 r_inner,
                 color=style.get("color", "red"),
-                linewidth=style.get("linewidth", 2),
+                # The stored stroke is CSS px; create_circle_pointer expects
+                # points, so convert back to avoid compounding.
+                linewidth=style.get("linewidth", 2.0 * _PX_PER_PT) / _PX_PER_PT,
             )
             for old in handles:
                 self.remove_pointer(ax, old)
@@ -1822,8 +1879,16 @@ class AnyplotlibBackend:
         raise BackendCapabilityError(_NOT_YET.format("get_figure_from_ax"))
 
     def connect_close_event(self, fig, fn):
-        # anyplotlib close handling is done via on_close= at figure creation
-        # time; there is no post-hoc connect mechanism yet.
+        """Run *fn* when *fig* is closed through ``close_figure``.
+
+        anyplotlib has no browser-side close notification, so "close" means
+        hyperspy closing the figure programmatically; the callbacks
+        accumulate on ``_hspy_on_close``, which ``close_figure`` runs for
+        real figures and panel proxies alike.
+        """
+        if fig is None:
+            return None
+        _append_on_close(fig, fn)
         return None
 
     def get_explorer(self, signal_dim):
