@@ -64,6 +64,7 @@ anywidget_pyodide_package = "hyperspy"
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
     "https://conda.io",  # 403 Client Error: Forbidden for url
+    r"https://web\.archive\.org/web/.*",  # 498 rate limit from CI IPs
     r"https://docs\.conda\.io/.*",  # 429 rate limit from CI IPs
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
