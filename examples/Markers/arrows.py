@@ -9,6 +9,9 @@ Arrow markers
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a Signal2D with 2 navigation dimensions
 rng = np.random.default_rng(0)
 data = np.ones((50, 100, 100))
@@ -29,7 +32,7 @@ C = np.hypot(U, V)
 
 m = hs.plot.markers.Arrows(offsets, U, V, C=C)
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 1

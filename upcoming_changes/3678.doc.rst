@@ -1,0 +1,8 @@
+Render the example gallery with the ``anyplotlib`` plotting backend, so gallery
+figures are live widgets rather than static images. Readers can pan, zoom and
+read values off any figure directly, and pressing a figure's activation button
+boots a Python interpreter in the browser (Pyodide) that re-runs the example, at
+which point navigators, regions of interest and markers respond exactly as they
+do in a notebook. The seven examples that drive matplotlib objects directly
+(pre-made axes, sub-figures, raw ``matplotlib.collections`` artists) keep the
+matplotlib backend and say so on their page.

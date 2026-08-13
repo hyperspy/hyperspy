@@ -5,6 +5,13 @@ Circle Markers with Radius Dependent Coloring
 This example shows how to draw circle with the color of the circle scaling with
 the radius of the circle
 
+.. note::
+    This example colours the markers through
+    :meth:`matplotlib.cm.ScalarMappable.set_array` and draws a matplotlib
+    colorbar, so it needs the default matplotlib backend and the figures below
+    are static images. Most of the gallery renders through the interactive
+    ``anyplotlib`` backend instead.
+
 """
 #%%
 # Create a signal

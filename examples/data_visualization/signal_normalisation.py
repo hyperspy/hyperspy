@@ -8,6 +8,9 @@ Signal normalisation
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 #%%
 #
 # Default normalisation
@@ -26,12 +29,12 @@ s2 = s + hs.signals.Signal1D(s_shifted/2)
 #%%
 # Plot un-normalised signals
 
-hs.plot.plot_spectra([s1,s2])
+hs.plot.plot_spectra([s1,s2])  # Interactive
 
 #%%
 # Plot both signals with default normalisation, of min and max intensity values to 0 and 1 
 
-hs.plot.plot_spectra([s1, s2], normalise = True)
+hs.plot.plot_spectra([s1, s2], normalise = True)  # Interactive
 
 #%%
 #
@@ -51,7 +54,7 @@ def normalise_mean_range(signal):
     
 #%%
 # Plot signals with custom normalisation function passed as parameter  
-hs.plot.plot_spectra([s1,s2], normalise = normalise_mean_range)
+hs.plot.plot_spectra([s1,s2], normalise = normalise_mean_range)  # Interactive
 
 #%%
 #
@@ -71,4 +74,4 @@ def normalise_energy_value(signal):
 
 #%%
 # Plot signals with custom normalisation function passed as parameter  
-hs.plot.plot_spectra([s1,s2], normalise = normalise_energy_value)
+hs.plot.plot_spectra([s1,s2], normalise = normalise_energy_value)  # Interactive

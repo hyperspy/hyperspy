@@ -9,6 +9,9 @@ This example creates a 4D dataset, i.e. 2 navigation dimension and
 import numpy as np
 import hyperspy.api as hs
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a 2D image stack with random data
 im = hs.signals.Signal2D(np.random.random((16, 16, 32, 32)))
 
@@ -36,4 +39,4 @@ im.axes_manager.navigation_axes[1].offset = 100
 # Give a title
 im.metadata.General.title = 'Random 2D image stack'
 
-im.plot()
+im.plot()  # Interactive

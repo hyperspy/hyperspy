@@ -9,6 +9,7 @@ jobs:
     with:
       # install with speed extra to avoid warnings
       pip_extra_doc: 'doc,speed'
+      SPHINXOPTS: '--keep-going'
       # graphviz is required to build mermaid graph
       # optipng is required to optimize thumbnail
       install_package_ubuntu: graphviz optipng

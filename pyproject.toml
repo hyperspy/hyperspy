@@ -84,6 +84,7 @@ requires-python = ">=3.10"
 
 [project.optional-dependencies]
 all = [
+    "hyperspy[anyplotlib]",
     "hyperspy[dask-image]",
     "hyperspy[baseline]",
     "hyperspy[gui-jupyter]",
@@ -93,6 +94,9 @@ all = [
     "hyperspy[learning]",
     "hyperspy[odr]",
     "hyperspy[speed]",
+]
+anyplotlib = [
+    "anyplotlib>=0.5.0",
 ]
 baseline = [
     "pybaselines"
@@ -111,9 +115,16 @@ dev = [
     "hyperspy[tests]",
 ]
 doc = [
+    # The interactive gallery scraper (doc/_ext/hyperspy_anywidget.py) patches
+    # anyplotlib's Pyodide bridge with exact-text rewrites, so the doc build
+    # pins the version the patches are verified against (all 8 apply on
+    # 0.7.3) instead of floating with the ">=0.5.0" backend requirement.
+    "anyplotlib==0.7.3",
     "holospy", # example gallery
     "IPython", # Needed in testing code in basic_usage.rst
     "numpydoc",
+    "playwright", # gallery thumbnails of anyplotlib widgets
+    "uv", # anyplotlib's sphinx extension shells out to `uv build` for the Pyodide wheel
     "pybaselines", # for docstring test
     "pydata_sphinx_theme",
     "scikit-image",
@@ -161,6 +172,10 @@ tests = [
     "setuptools_scm"
 ]
 
+[project.entry-points."hyperspy.backends"]
+matplotlib = "hyperspy.drawing.backends.mpl:MplBackend"
+anyplotlib  = "hyperspy.drawing.backends.anyplotlib:AnyplotlibBackend"
+
 [project.urls]
 "Bug Reports" = "https://github.com/hyperspy/hyperspy/issues"
 Documentation = "https://hyperspy.org/hyperspy-doc/current/index.html"
@@ -179,6 +194,7 @@ omit = [
     "hyperspy/conftest.py",
     "hyperspy/tests/*",
     "hyperspy/external/scipy/*",
+    "hyperspy/drawing/backends/_stub.py",
     "prepare_release.py",
     "setup.py",
 ]

@@ -9,6 +9,9 @@ Circle Markers
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a Signal2D with 1 navigation dimension
 rng = np.random.default_rng(0)
 data = np.ones((50, 100, 100))
@@ -28,7 +31,7 @@ m = hs.plot.markers.Circles(
     )
 
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
 #
@@ -55,7 +58,7 @@ m = hs.plot.markers.Circles(
     )
 
 s2.plot()
-s2.add_marker(m)
+s2.add_marker(m)  # Interactive
 
 #%%
-# sphinx_gallery_thumbnail_number = 4
+# sphinx_gallery_thumbnail_number = 2

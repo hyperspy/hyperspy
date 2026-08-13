@@ -6,6 +6,13 @@ Interactively extract a line profile (with a certain width) from an image using
 :py:class:`~.api.roi.Line2DROI`. Use :func:`~.api.plot.plot_spectra` to plot several
 line profiles on the same figure. Save a profile data as ``msa`` file.
 
+.. note::
+    The figures below cannot be made live in the browser: the holograms come
+    from ``holospy.data``, which loads a bundled ``.hspy`` file through
+    RosettaSciIO, and the in-browser interpreter ships without RosettaSciIO's
+    format plugins. They are still anyplotlib widgets, so panning and zooming
+    work as usual.
+
 """
 
 #%%
@@ -20,6 +27,10 @@ line profiles on the same figure. Save a profile data as ``msa`` file.
 # Initialize image data as HyperSpy signal:
 import hyperspy.api as hs
 import holospy as holo
+
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 im0 = holo.data.Fe_needle_reference_hologram()
 im1 = holo.data.Fe_needle_hologram()
 
@@ -55,8 +66,8 @@ print(tuple(line_roi))
 # You can now directly access the data of the profile objects, e.g. to plot both
 # profiles in a single plot:
 hs.plot.plot_spectra([profile1, profile2])
-# Choose the fourth figure as gallery thumbnail:
-# sphinx_gallery_thumbnail_number = 4
+
+# sphinx_gallery_thumbnail_number = 2
 
 #%%
 # Since the profile is a signal object, you can use any other functionality provided

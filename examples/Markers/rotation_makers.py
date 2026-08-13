@@ -11,6 +11,9 @@ This example shows how markers are rotated.
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a Signal2D
 data = np.ones([100, 100])
 s = hs.signals.Signal2D(data)
@@ -56,7 +59,7 @@ m3 = hs.plot.markers.Squares(
 # Plot the signals and add all the markers
 
 s.plot()
-s.add_marker([m1, m2, m3])
+s.add_marker([m1, m2, m3])  # Interactive
 
 #%%
 # sphinx_gallery_thumbnail_number = 1

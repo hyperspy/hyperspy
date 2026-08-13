@@ -334,16 +334,45 @@ def test_on_close_iterates_marker_copy():
 def test_histogram_tile_plot_close_calls_super():
     """Verify HistogramTilePlot.close() delegates to BlittedFigure.close()."""
     htp = HistogramTilePlot()
-    # HistogramTilePlot.__init__ bypasses super().__init__(),
-    # so initialise inherited attributes manually.
-    htp.ax_markers = []
-    htp.events = Events()
-    htp.events.closed = Event("", arguments=["obj"])
-    htp._background = None
     htp.create_figure()
     htp.close()
-    # _draw_event_cid is disconnected only through BlittedFigure._on_close(),
-    # confirming super().close() was called.
     assert htp._draw_event_cid is None
     assert htp._background is None
     assert htp.figure is None
+
+
+def test_get_navigation_sliders_logs_warning_on_error():
+    """gui_navigation_sliders() failures (e.g. no traitsui) are caught and
+    logged rather than propagated."""
+    s = hs.signals.Signal1D(np.random.random((10, 20)))
+    s.plot()
+    explorer = s._plot
+    with mock.patch.object(
+        explorer.axes_manager,
+        "gui_navigation_sliders",
+        side_effect=ImportError("no traitsui"),
+    ):
+        with mock.patch("hyperspy.drawing.he._logger.warning") as mock_warning:
+            explorer._get_navigation_sliders()
+    mock_warning.assert_called_once()
+    assert "no traitsui" in mock_warning.call_args[0][0]
+    s._plot.close()
+
+
+def test_close_navigator_plot_closes_when_present():
+    s = hs.signals.Signal1D(np.random.random((10, 20)))
+    s.plot()
+    explorer = s._plot
+    with mock.patch.object(explorer.navigator_plot, "close") as mock_close:
+        explorer.close_navigator_plot()
+    mock_close.assert_called_once()
+    s._plot.close()
+
+
+def test_close_navigator_plot_noop_when_none():
+    from hyperspy.drawing.he import HyperExplorer
+
+    explorer = HyperExplorer()
+    assert explorer.navigator_plot is None
+    # Should not raise even though there is no navigator plot.
+    explorer.close_navigator_plot()

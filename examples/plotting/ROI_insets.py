@@ -10,6 +10,12 @@ we can create a custom layout to visualize and interact with the data.
 .. Note::
     Plotting data with subfigures is slower than using separates figures.
 
+.. note::
+    The layout is built from :class:`matplotlib.figure.SubFigure` objects, so
+    this example needs the default matplotlib backend and the figures below are
+    static images. Most of the gallery renders through the interactive
+    ``anyplotlib`` backend instead.
+
 We can connect these ROI's using the :func:`hyperspy.api.interactive` function which allows us to move the ROI's and see the sum of the underlying data.
 """
 import matplotlib.pyplot as plt

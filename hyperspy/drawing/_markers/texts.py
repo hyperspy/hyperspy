@@ -17,8 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
+from hyperspy.drawing.marker_collection import TextsCollection
 from hyperspy.drawing.markers import Markers
-from hyperspy.external.matplotlib.collections import TextCollection
 
 
 class Texts(Markers):
@@ -46,7 +46,7 @@ class Texts(Markers):
             Keyword arguments are passed to :class:`matplotlib.collections.CircleCollection`.
         """
         super().__init__(
-            collection=TextCollection,
+            collection=TextsCollection,
             offsets=offsets,
             offset_transform=offset_transform,
             transform=transform,

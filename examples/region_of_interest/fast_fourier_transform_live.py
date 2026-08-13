@@ -10,6 +10,9 @@ using RectangularROI.
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 #%%
 # Create a signal:
 s = hs.data.atomic_resolution_image()
@@ -24,19 +27,18 @@ s.data += np.random.default_rng().poisson(s.data)
 roi = hs.roi.RectangularROI()
 
 #%%
-# Slice signal with the ROI. By using the `interactive` function, the
-# output signal ``sliced_signal`` will update automatically.
-# The ROI will be added automatically on the signal plot.
+# Slice the signal with the ROI and take the FFT of the slice. Both use the
+# :func:`~.api.interactive` function, so ``sliced_signal`` and its FFT
+# recompute whenever the ROI moves. Apodization smoothens the edge of the
+# image before taking the FFT, which removes streaks from it — see the
+# :ref:`signal.fft` section of the user guide for more details.
+#
+# The two plots are drawn together so you can watch the FFT follow the ROI:
+# activate the figures, then drag or resize the green rectangle on the left.
 s.plot()
 sliced_signal = roi.interactive(s, recompute_out_event=None)
 
-# Choose the second figure as gallery thumbnail:
-# sphinx_gallery_thumbnail_number = 2
-
-#%%
-# Get the FFT of this sliced signal, and plot it
-# Apodization is used to smoothen the edge of the image before taking the FFT
-# to remove streaks from the FFT - see the :ref:`signal.fft` section of the
-# user guide for more details:
 s_fft = hs.interactive(sliced_signal.fft, apodization=True, shift=True, recompute_out_event=None)
-s_fft.plot(power_spectrum=True)
+s_fft.plot(power_spectrum=True)  # Interactive
+
+# sphinx_gallery_thumbnail_number = 1

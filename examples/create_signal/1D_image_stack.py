@@ -8,6 +8,9 @@ This example creates an image stack and plots it.
 import numpy as np
 import hyperspy.api as hs
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create an image stack with random data
 im = hs.signals.Signal2D(np.random.random((16, 32, 32)))
 
@@ -31,4 +34,4 @@ im.axes_manager.navigation_axes[0].offset = 100
 im.metadata.General.title = 'Random image stack'
 
 # Plot it
-im.plot()
+im.plot()  # Interactive

@@ -36,6 +36,12 @@ doc/auto_examples
 doc/backreferences
 doc/_build
 doc/log.txt
+# Written during the docs build by anyplotlib's sphinx_anywidget extension:
+# the hyperspy wheel served to Pyodide, the per-figure standalone widget
+# pages, and the package-name shim the Pyodide bridge reads.
+doc/_static/wheels
+doc/_static/viewer_widgets
+doc/_static/anywidget_config.js
 examples/io/*.msa
 examples/io/rgb*.jpg
 examples/region_of_interest/*.msa

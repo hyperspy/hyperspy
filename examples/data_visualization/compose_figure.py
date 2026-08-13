@@ -4,6 +4,12 @@ Composing Figure
 
 This example shows how to compose a figure using
 :func:`~.api.plot.plot_images` and :func:`~.api.plot.plot_spectra`
+
+.. note::
+    Composing a figure means handing HyperSpy pre-made
+    :class:`matplotlib.axes.Axes`, so this example needs the default
+    matplotlib backend and the figures below are static images. Most of the
+    gallery renders through the interactive ``anyplotlib`` backend instead.
 """
 
 #%%

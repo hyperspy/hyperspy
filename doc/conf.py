@@ -19,6 +19,7 @@ from datetime import datetime
 import hyperspy
 
 sys.path.append("../")
+sys.path.append(os.path.abspath("_ext"))
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -49,11 +50,21 @@ extensions = [
     "sphinx_gallery.gen_gallery",
     "sphinx_copybutton",
     "sphinx_favicon",
+    # Serves the gallery's anyplotlib figures as live widgets: builds a
+    # hyperspy wheel, boots Pyodide on demand and re-runs the example in the
+    # browser so the reader can drive the plot for real.
+    "anyplotlib.sphinx_anywidget",
+    # Must follow sphinx_anywidget: it patches that extension's Pyodide bridge.
+    "hyperspy_anywidget",
 ]
+
+# The wheel that ``sphinx_anywidget`` builds and hands to Pyodide.
+anywidget_pyodide_package = "hyperspy"
 
 linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
     "https://conda.io",  # 403 Client Error: Forbidden for url
+    r"https://web\.archive\.org/web/.*",  # 498 rate limit from CI IPs
     r"https://docs\.conda\.io/.*",  # 429 rate limit from CI IPs
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1107/S0021889899010894",  # 403 Client Error: Forbidden for url:"
@@ -433,6 +444,11 @@ numpydoc_class_members_toctree = False
 # -- Sphinx-Gallery---------------
 
 # https://sphinx-gallery.github.io
+from hyperspy_anywidget import (  # noqa: E402
+    HyperSpyAnywidgetScraper,
+    reset_widget_tracking,
+)
+
 sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
@@ -445,7 +461,17 @@ sphinx_gallery_conf = {
     "ignore_pattern": "_sgskip.py",  # pattern to define which will not be executed
     "notebook_images": "https://hyperspy.org/hyperspy-doc/current/",  # folder for loading images in gallery
     "reference_url": {"hyperspy": None},
+    # anyplotlib figures first: examples that use the anyplotlib backend
+    # produce no matplotlib figures, and vice versa, so the two scrapers
+    # never compete over the same example.
+    "image_scrapers": (HyperSpyAnywidgetScraper(), "matplotlib"),
+    "reset_modules": ("matplotlib", "seaborn", reset_widget_tracking),
 }
+
+# Restrict the gallery to a subset while iterating locally, e.g.
+# ``HYPERSPY_GALLERY_PATTERN=circles make html``.
+if os.environ.get("HYPERSPY_GALLERY_PATTERN"):
+    sphinx_gallery_conf["filename_pattern"] = os.environ["HYPERSPY_GALLERY_PATTERN"]
 
 if platform.system() != "Windows":
     # optipng is not straightforward to install on Windows

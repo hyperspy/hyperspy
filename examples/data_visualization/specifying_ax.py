@@ -2,6 +2,12 @@
 Specifying Matplotlib Axis
 ==========================
 
+.. note::
+    Targeting an existing :class:`matplotlib.axes.Axes` is by definition
+    matplotlib-specific, so this example needs the default matplotlib backend
+    and the figures below are static images. Most of the gallery renders
+    through the interactive ``anyplotlib`` backend instead.
+
 """
 
 #%%

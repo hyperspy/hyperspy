@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.defaults_parser import preferences
-from hyperspy.drawing.utils import picker_kwargs
 from hyperspy.drawing.widget import Widget1DBase
 
 
@@ -26,22 +24,28 @@ class HorizontalLineWidget(Widget1DBase):
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
-            self.patch[0].set_ydata([self._pos[0]])
+            from hyperspy.drawing.backends import get_backend
+
+            get_backend().update_line_pointer(self.patch[0], "y", float(self._pos[0]))
             self.draw_patch()
 
     def _add_patch_to(self, ax):
-        """Create and add the matplotlib patches to 'ax'"""
-        self.blit = hasattr(ax, "hspy_fig") and ax.figure.canvas.supports_blit
-        self._set_patch()
-        for p in self.patch:
-            p.set_animated(self.blit)
+        from hyperspy.drawing.backends import get_backend
 
-    def _set_patch(self):
-        ax = self.ax
-        kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
-        self._patch = [
-            ax.axhline(self._pos[0], color=self.color, alpha=self.alpha, **kwargs)
-        ]
+        backend = get_backend()
+        self.blit = backend.supports_blit_from_ax(ax)
+        handle = backend.create_line_pointer(
+            ax, "y", float(self._pos[0]), color=self.color
+        )
+        self._patch = [handle]
+        backend.set_pointer_style(handle, animated=self.blit)
+        _self = self
+        # A backend may report this pointer as a genuine horizontal line (one
+        # coordinate) or as a crosshair standing in for one (x, y).  Either
+        # way the y is last, and it is the only value this widget tracks.
+        backend.connect_widget_drag(
+            handle, lambda *vals: setattr(_self, "position", (vals[-1],))
+        )
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

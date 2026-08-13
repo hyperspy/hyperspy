@@ -9,6 +9,9 @@ from a :class:`~.api.roi.CircleROI` in signal space.
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 #%%
 # Create a signal:
 rng = np.random.default_rng(0)
@@ -20,13 +23,13 @@ s = hs.signals.Signal2D(data)
 # The ROIs are added to the plot of the signal and by default a
 # :class:`~.api.roi.RectangularROI` is used
 s.plot()
-roi = hs.plot.plot_roi_map(s, rois=2)
+roi = hs.plot.plot_roi_map(s, rois=2)  # Interactive
 
 #%%
 # Same as above but with using :class:`~.api.roi.CircleROI` with predefined position:
 roi1 = hs.roi.CircleROI(cx=25, cy=25, r=5)
 roi2 = hs.roi.CircleROI(cx=25, cy=25, r=15, r_inner=10)
 s.plot()
-roi = hs.plot.plot_roi_map(s, rois=[roi1, roi2])
+roi = hs.plot.plot_roi_map(s, rois=[roi1, roi2])  # Interactive
 # Choose this figure as gallery thumbnail:
 # sphinx_gallery_thumbnail_number = 6

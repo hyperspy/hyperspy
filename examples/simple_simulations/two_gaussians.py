@@ -10,7 +10,9 @@ simulated hyperspectrum.
 """
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
+
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
 
 
 # Create an empty spectrum
@@ -59,7 +61,5 @@ s_model = m.as_signal()
 s_model.set_signal_origin("simulation")
 s_model.add_poissonian_noise()
 
-# Plot the result
-s_model.plot()
-
-plt.show()
+# Plot the result. Move the navigator pointer to walk the 32x32 scan.
+s_model.plot()  # Interactive

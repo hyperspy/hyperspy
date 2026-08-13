@@ -8,6 +8,9 @@ Use a :class:`~.api.roi.PolygonROI` interactively on a :class:`~.api.signals.Sig
 #%%
 import hyperspy.api as hs
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 #%%
 # Create a signal:
 s = hs.data.atomic_resolution_image()
@@ -27,15 +30,15 @@ roi = hs.roi.PolygonROI()
 #
 # We can use :meth:`~hyperspy.roi.BaseInteractiveROI.interactive` to add the ROI to the
 # figure and get the signal from the ROI.
+#
+# The extracted signal is plotted next to the original, so that activating the
+# figures and dragging the polygon updates the extraction on the right.
 
 s.plot()
 roi.vertices = [(2, 4.5), (4.5, 4.5), (4.5, 2), (3, 3)]
 s_roi = roi.interactive(s, axes=s.axes_manager.signal_axes)
 
-#%%
-# Then we can extract the ROI from the signal and plot it.
-
-s_roi.plot()
+s_roi.plot()  # Interactive
 
 #%%
 # The signal will contain a lot of NaNs, so take this into consideration when
@@ -50,4 +53,4 @@ print("Mean value in ROI:", mean_value)
 # By using the ``inverted`` parameter, everything except the ROI will be retained:
 
 s_roi_inv = roi(s, inverted=True)
-s_roi_inv.plot()
+s_roi_inv.plot()  # Interactive

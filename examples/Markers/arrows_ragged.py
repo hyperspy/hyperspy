@@ -9,6 +9,9 @@ Varying number of arrows per navigation position
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a Signal2D with 2 navigation dimensions
 rng = np.random.default_rng(0)
 data = np.ones((10, 100, 100))
@@ -45,7 +48,7 @@ m = hs.plot.markers.Arrows(
     )
 
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 1

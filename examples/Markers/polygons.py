@@ -11,6 +11,9 @@ import hyperspy.api as hs
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a Signal2D with 2 navigation dimensions
 rng = np.random.default_rng(0)
 data = np.ones((25, 25, 100, 100))
@@ -36,7 +39,7 @@ m = hs.plot.markers.Polygons(
     )
 
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
 #
@@ -60,7 +63,7 @@ m = hs.plot.markers.Polygons(
     alpha=0.6
 )
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 1

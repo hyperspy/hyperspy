@@ -11,6 +11,9 @@ navigation space (linescan).
 import numpy as np
 import hyperspy.api as hs
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 #%%
 # Create a set of tabular data:
 
@@ -45,6 +48,5 @@ s.metadata.set_item("Signal.quantity", "Intensity (counts)")
 #%%
 # Plot the dataset:
 
-s.plot()
-# Choose the second figure as gallery thumbnail:
-# sphinx_gallery_thumbnail_number = 2
+s.plot()  # Interactive
+# sphinx_gallery_thumbnail_number = 1

@@ -21,16 +21,16 @@ import inspect
 import logging
 import math
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import LogNorm, Normalize, PowerNorm, SymLogNorm
-from matplotlib.figure import SubFigure
 from rsciio.utils import rgb
 from traits.api import Undefined
 
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
-from hyperspy.drawing import utils, widgets
-from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing import utils
+from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import BackendCapabilityError
+from hyperspy.drawing.figure import AbstractImageFigure
+from hyperspy.drawing.norm import HyperNorm, LogNorm, PowerNorm, SymLogNorm
 from hyperspy.misc import math_tools
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.signal_tools import ImageContrastEditor
@@ -39,7 +39,7 @@ from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 _logger = logging.getLogger(__name__)
 
 
-class ImagePlot(BlittedFigure):
+class ImagePlot(AbstractImageFigure):
     """Class to plot an image with the necessary machinery to update
     the image when the coordinates of an AxesManager change.
 
@@ -282,7 +282,7 @@ class ImagePlot(BlittedFigure):
         return vmin, vmax
 
     def create_figure(self, max_size=None, min_size=2, **kwargs):
-        """Create matplotlib figure
+        """Create figure
 
         The figure size is automatically computed by default, taking into
         account the x and y dimensions of the image. Alternatively the figure
@@ -295,39 +295,46 @@ class ImagePlot(BlittedFigure):
             no effect when passing the ``figsize`` keyword to manually set
             the figure size.
         **kwargs
-            All keyword arguments are passed to
-            :func:`matplotlib.pyplot.figure`.
+            All keyword arguments are passed to the backend's figure creation.
 
         """
         if "figsize" not in kwargs:
             if self.scalebar is True:
-                wfactor = 1.0 + plt.rcParams["font.size"] / 100
+                wfactor = 1.1
             else:
                 wfactor = 1
 
             height = abs(self._extent[3] - self._extent[2]) * self._aspect
             width = abs(self._extent[1] - self._extent[0])
+            # Matches the previous ``max(plt.rcParams["figure.figsize"])`` (the
+            # matplotlib default figsize is (6.4, 4.8)); hardcoded here to keep
+            # the size backend-agnostic without changing the rendered output.
+            default_size = 6.4
             figsize = (
                 np.array((width * wfactor, height))
-                * max(plt.rcParams["figure.figsize"])
+                * default_size
                 / max(width * wfactor, height)
             )
             kwargs["figsize"] = figsize.clip(min_size, max_size)
-        if "disable_xyscale_keys" not in kwargs:
-            kwargs["disable_xyscale_keys"] = True
+        kwargs.pop("disable_xyscale_keys", None)
         super().create_figure(**kwargs)
 
     def create_axis(self):
-        self.ax = self.figure.add_subplot(111)
-        self.ax.set_title(self.title)
-        self.ax.set_xlabel(self._xlabel)
-        self.ax.set_ylabel(self._ylabel)
+        backend = get_backend()
+        self.ax = backend.create_axes(self.figure)
+        backend.set_title(self.ax, self.title)
+        backend.set_xlabel(self.ax, self._xlabel)
+        backend.set_ylabel(self.ax, self._ylabel)
         if self.axes_ticks is False:
-            self.ax.set_xticks([])
-            self.ax.set_yticks([])
+            # Remove the ticks entirely (matches the base ``ax.set_xticks([])``).
+            # Using ``set_xticklabels([])`` only blanks the labels but leaves the
+            # tick marks, which both renders ticks the user asked to hide and
+            # reserves margin space that shifts the image layout under tight_layout.
+            backend.set_xticks(self.ax, [])
+            backend.set_yticks(self.ax, [])
         self.ax.hspy_fig = self
         if self.axes_off:
-            self.ax.axis("off")
+            backend.set_axis_off(self.ax)
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.data_function_kwargs = data_function_kwargs
@@ -341,15 +348,16 @@ class ImagePlot(BlittedFigure):
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
+            backend = get_backend()
             if self._text is not None:
-                self._text.remove()
-            self._text = self.ax.text(
+                backend.remove_text(self.ax, self._text)
+            self._text = backend.add_text(
+                self.ax,
                 *self._text_position,
                 s=str(self.axes_manager.indices),
-                transform=self.ax.transAxes,
+                transform="axes",
                 fontsize=12,
                 color="red",
-                animated=self.figure.canvas.supports_blit,
             )
         for marker in self.ax_markers:
             marker.plot()
@@ -359,26 +367,22 @@ class ImagePlot(BlittedFigure):
         self.update(data_changed=True, auto_contrast=True, **kwargs)
         if self.scalebar is True:
             if self.pixel_units is not None:
-                self.ax.scalebar = widgets.ScaleBar(
-                    ax=self.ax,
-                    units=self.pixel_units,
-                    animated=self.figure.canvas.supports_blit,
-                    color=self.scalebar_color,
-                )
+                try:
+                    self._scalebar_handle = get_backend().create_scalebar(
+                        ax=self.ax,
+                        units=self.pixel_units,
+                        animated=get_backend().supports_blit(self.figure),
+                        color=self.scalebar_color,
+                    )
+                    self.ax.scalebar = self._scalebar_handle
+                except BackendCapabilityError:
+                    self._scalebar_handle = None
 
         if self.colorbar:
             self._add_colorbar()
 
-        if hasattr(self.figure, "tight_layout"):
-            try:
-                if self.axes_ticks == "off" and not self.colorbar:
-                    plt.subplots_adjust(0, 0, 1, 1)
-                else:
-                    self.figure.tight_layout()
-            except BaseException:
-                # tight_layout is a bit brittle, we do this just in case it
-                # complains
-                pass
+        if not (self.axes_ticks == "off" and not self.colorbar):
+            get_backend().tight_layout(self.figure)
 
         self.connect()
         self.render_figure()
@@ -386,11 +390,11 @@ class ImagePlot(BlittedFigure):
     def _add_colorbar(self):
         # Bug extend='min' or extend='both' and power law norm
         # Use it when it is fixed in matplotlib
-        ims = self.ax.images if len(self.ax.images) else self.ax.collections
-        self._colorbar = self.figure.colorbar(ims[0], ax=self.ax)
+        backend = get_backend()
+        im_handle = backend.get_image_handle(self.ax)
+        self._colorbar = backend.add_colorbar(self.figure, im_handle, self.ax)
         self.set_quantity_label()
-        self._colorbar.set_label(self.quantity_label, rotation=-90, va="bottom")
-        self._colorbar.ax.yaxis.set_animated(self.figure.canvas.supports_blit)
+        backend.colorbar_set_label(self._colorbar, self.quantity_label)
 
     def _update_data(self):
         # self._current_data caches the displayed data.
@@ -443,16 +447,24 @@ class ImagePlot(BlittedFigure):
             data = self._current_data = data
             self._is_rgb = True
 
-        ims = self.ax.images if len(self.ax.images) else self.ax.collections
+        backend = get_backend()
+        handle = backend.get_image_handle(self.ax)
 
         # Turn on centre_colormap if a diverging colormap is used.
         if not self._is_rgb and self.centre_colormap == "auto":
             if "cmap" in kwargs:
                 cmap = kwargs["cmap"]
-            elif ims:
-                cmap = ims[0].get_cmap().name
+            elif handle is not None:
+                try:
+                    cmap = backend.get_image_cmap_name(handle)
+                except BackendCapabilityError:
+                    from hyperspy.defaults_parser import preferences
+
+                    cmap = preferences.Plot.cmap_signal
             else:
-                cmap = plt.cm.get_cmap().name
+                from hyperspy.defaults_parser import preferences
+
+                cmap = preferences.Plot.cmap_signal
             if cmap in utils.MPL_DIVERGING_COLORMAPS:
                 self.centre_colormap = True
             else:
@@ -479,7 +491,8 @@ class ImagePlot(BlittedFigure):
                         return f"x={x:1.4g}, y={y:1.4g}, intensity={z:1.4g}"
                 return f"x={x:1.4g}, y={y:1.4g}"
 
-            self.ax.format_coord = format_coord
+            if hasattr(self.ax, "format_coord"):
+                self.ax.format_coord = format_coord
 
             old_vmin, old_vmax = self._vmin, self._vmax
 
@@ -494,9 +507,12 @@ class ImagePlot(BlittedFigure):
 
             # If there is an image, any of the contrast bounds have changed and
             # the new contrast bounds are not the same redraw the colorbar.
-            if ims and (old_vmin != vmin or old_vmax != vmax) and vmin != vmax:
+            if (
+                handle is not None
+                and (old_vmin != vmin or old_vmax != vmax)
+                and vmin != vmax
+            ):
                 redraw_colorbar = True
-                ims[0].autoscale()
             if self.centre_colormap:
                 vmin, vmax = utils.centre_colormap_values(vmin, vmax)
 
@@ -527,16 +543,16 @@ class ImagePlot(BlittedFigure):
                     "base": 10,
                 }
                 norm = SymLogNorm(**sym_log_kwargs)
-            elif inspect.isclass(norm) and issubclass(norm, Normalize):
+            elif inspect.isclass(norm) and issubclass(norm, HyperNorm):
                 norm = norm(vmin=vmin, vmax=vmax)
+            elif isinstance(norm, HyperNorm):
+                pass  # already a concrete HyperNorm instance; pass through
             elif norm not in ["auto", "linear"]:
                 raise ValueError(
                     "`norm` parameter should be 'auto', 'linear', "
-                    "'log', 'symlog' or a matplotlib Normalize  "
-                    "instance or subclass."
+                    "'log', 'symlog', a HyperNorm subclass, or a HyperNorm instance."
                 )
             else:
-                # set back to matplotlib default
                 norm = None
 
             self._vmin, self._vmax = vmin, vmax
@@ -544,42 +560,33 @@ class ImagePlot(BlittedFigure):
         redraw_colorbar = redraw_colorbar and self.colorbar
 
         if self.plot_indices is True:
-            self._text.set_text(self.axes_manager.indices)
+            backend.update_text(self._text, str(self.axes_manager.indices))
         if self.no_nans:
             data = np.nan_to_num(data)
 
-        if ims:  # the images have already been drawn previously
-            if len(self.ax.images):  # imshow
-                ims[0].set_data(data)
-            else:  # pcolormesh
-                ims[0].set_array(data.ravel())
+        if handle is not None:  # the images have already been drawn previously
+            backend.image_set_data(handle, data)
             # update extent:
             if "x" in self.autoscale:
                 self._extent[0] = self.xaxis.axis[0] - self.xaxis.scale / 2
                 self._extent[1] = self.xaxis.axis[-1] + self.xaxis.scale / 2
-                self.ax.set_xlim(self._extent[:2])
+                backend.set_xlim(self.ax, self._extent[0], self._extent[1])
             if "y" in self.autoscale:
                 self._extent[2] = self.yaxis.axis[-1] + self.yaxis.scale / 2
                 self._extent[3] = self.yaxis.axis[0] - self.yaxis.scale / 2
-                self.ax.set_ylim(self._extent[2:])
+                backend.set_ylim(self.ax, self._extent[2], self._extent[3])
             if "x" in self.autoscale or "y" in self.autoscale:
-                ims[0].set_extent(self._extent)
+                backend.image_set_extent(handle, self._extent)
             self._calculate_aspect()
-            self.ax.set_aspect(self._aspect)
+            backend.set_aspect(self.ax, self._aspect)
             if not self._is_rgb:
-                ims[0].set_norm(norm)
-                ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
+                backend.image_set_norm(handle, norm)
+                backend.image_set_clim(handle, vmin, vmax)
             if redraw_colorbar:
-                if isinstance(self.figure, SubFigure):
-                    self.figure.canvas.draw_idle()  # draw without rendering not supported for sub-figures
-                else:
-                    self.figure.draw_without_rendering()
-                self._colorbar.solids.set_animated(self.figure.canvas.supports_blit)
-            else:
-                ims[0].changed()
+                backend.colorbar_redraw(self._colorbar, self.figure)
             self.render_figure()
         else:  # no signal have been drawn yet
-            new_args = {"animated": self.figure.canvas.supports_blit}
+            new_args = {}
             if not self._is_rgb:
                 if norm is None:
                     new_args.update({"vmin": vmin, "vmax": vmax})
@@ -590,12 +597,13 @@ class ImagePlot(BlittedFigure):
                 # pcolormesh doesn't have extent and aspect as arguments
                 # aspect is set earlier via self.ax.set_aspect() anyways
                 new_args.update({"extent": self._extent, "aspect": self._aspect})
-                self.ax.imshow(data, **new_args)
+                backend.plot_image(self.ax, data, **new_args)
             else:
-                self.ax.pcolormesh(self.xaxis.axis, self.yaxis.axis, data, **new_args)
-                self.ax.invert_yaxis()
+                backend.plot_mesh(
+                    self.ax, self.xaxis.axis, self.yaxis.axis, data, **new_args
+                )
         if self.axes_ticks == "off":
-            self.ax.set_axis_off()
+            backend.set_axis_off(self.ax)
 
     def _update(self):
         # This "wrapper" because on_trait_change fiddles with the
@@ -623,10 +631,8 @@ class ImagePlot(BlittedFigure):
     def connect(self):
         # in case the figure is not displayed
         if self.figure is not None:
-            if self._key_press_cid is not None:
-                self.figure.canvas.mpl_disconnect(self._key_press_cid)
-            self._key_press_cid = self.figure.canvas.mpl_connect(
-                "key_press_event", self.on_key_press
+            self._key_cid = get_backend().connect_key_press(
+                self.figure, self.on_key_press
             )
         if self.axes_manager:
             if self.update not in self.axes_manager.events.indices_changed.connected:
@@ -635,6 +641,8 @@ class ImagePlot(BlittedFigure):
                 self.events.closed.connect(self.disconnect, [])
 
     def disconnect(self):
+        if hasattr(self, "_key_cid"):
+            get_backend().disconnect_event(self.figure, self._key_cid)
         if self.axes_manager:
             if self.update in self.axes_manager.events.indices_changed.connected:
                 self.axes_manager.events.indices_changed.disconnect(self.update)
@@ -649,11 +657,12 @@ class ImagePlot(BlittedFigure):
         self.norm = "linear" if self.norm == "log" else "log"
         self.update(data_changed=False)
         if self.colorbar:
-            self._colorbar.remove()
+            backend = get_backend()
+            backend.colorbar_remove(self._colorbar)
             self._add_colorbar()
             # Use render_figure instead of canvas.draw_idle() to go through the
             # blit render pipeline when supported (see BlittedFigure.render_figure).
-            self.figure.render_figure()
+            self.render_figure()
 
     def set_quantity_label(self):
         if "power_spectrum" in self.data_function_kwargs.keys():

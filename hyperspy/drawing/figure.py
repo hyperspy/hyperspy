@@ -18,11 +18,9 @@
 
 import logging
 import textwrap
+from abc import ABC, abstractmethod
 
-import matplotlib
-import matplotlib.pyplot as plt
-
-from hyperspy.drawing import utils
+from hyperspy.drawing.backends import get_backend
 from hyperspy.events import Event, Events
 
 _logger = logging.getLogger(__name__)
@@ -44,33 +42,29 @@ class BlittedFigure:
             """,
             arguments=["obj"],
         )
-        # The matplotlib Figure or SubFigure
-        # To access the matplotlib figure, use `get_mpl_figure`
+        # The figure object (backend-dependent).
+        # To access the matplotlib figure, use `get_mpl_figure`.
         self.figure = None
-        # The matplotlib Axis
+        # The axes object (backend-dependent).
         self.ax = None
         self.title = ""
         self.ax_markers = list()
 
     def create_figure(self, **kwargs):
         """
-        Create matplotlib figure.
+        Create a figure via the active plotting backend.
 
         Parameters
         ----------
         **kwargs : dict
-            Keyword arguments are passed to
-            :func:`hyperspy.drawing.utils.create_figure`.
-
+            Keyword arguments forwarded to the backend's ``create_figure``.
         """
-        kwargs.setdefault("_on_figure_window_close", self.close)
-        self.figure = utils.create_figure(
-            window_title="Figure " + self.title if self.title else None,
-            **kwargs,
-        )
-        if self.figure.canvas.supports_blit:
-            self._draw_event_cid = self.figure.canvas.mpl_connect(
-                "draw_event", self._on_blit_draw
+        kwargs.setdefault("on_close", self.close)
+        backend = get_backend()
+        self.figure = backend.create_figure(title=self.title, **kwargs)
+        if backend.supports_blit(self.figure):
+            self._draw_event_cid = backend.connect_draw_event(
+                self.figure, self._on_blit_draw
             )
 
     def _on_blit_draw(self, *args):
@@ -78,41 +72,38 @@ class BlittedFigure:
         # As draw doesn't draw animated elements, in its current state the
         # canvas only contains the background. The following line simply stores
         # it for the consumption of _update_animated.
-        self._background = fig.canvas.copy_from_bbox(fig.bbox)
-        # draw does not draw animated elements, so we must draw them
-        # manually
+        self._background = get_backend().copy_background(fig)
+        # draw does not draw animated elements, so we must draw them manually
         self._draw_animated()
 
     def _draw_animated(self):
-        """Draw animated plot elements"""
-        for ax in self.figure.axes:
-            # Create a list of animated artists and draw them.
-            artists = sorted(ax.get_children(), key=lambda x: x.zorder)
-            for artist in artists:
-                if artist.get_animated() and artist.axes is not None:
-                    ax.draw_artist(artist)
+        """Draw animated plot elements."""
+        get_backend().draw_animated_artists(self.figure)
 
     def _update_animated(self):
         _logger.debug("Updating animated.")
-        canvas = self.ax.figure.canvas
-        # As the background haven't changed, we can simply restore it.
-        canvas.restore_region(self._background)
-        # Now it is when we draw the animated elements using the blit method
+        backend = get_backend()
+        # As the background hasn't changed, we can simply restore it.
+        backend.restore_background(self.figure, self._background)
+        # Now draw the animated elements using the blit method
         self._draw_animated()
-        canvas.blit(self.figure.bbox)
+        backend.blit(self.figure)
 
     def get_mpl_figure(self):
-        """Retuns the matplotlib figure"""
+        """Return the matplotlib Figure (name kept for backward compatibility).
+
+        When ``self.figure`` is a matplotlib ``SubFigure``, the parent
+        ``Figure`` is returned instead.
+        """
         if self.figure is None:
             return None
-        else:
-            # See https://github.com/matplotlib/matplotlib/pull/28177
-            figure = self.figure
-            # matplotlib SubFigure can be nested and we don't support it
-            if isinstance(figure, matplotlib.figure.SubFigure):
-                return figure.figure
-            else:
-                return figure
+        figure = self.figure
+        # SubFigure has a .figure attribute pointing to the parent Figure;
+        # a top-level Figure does not, so this duck-type check is safe.
+        parent = getattr(figure, "figure", None)
+        if parent is not None and parent is not figure:
+            return parent
+        return figure
 
     def add_marker(self, marker):
         marker.ax = self.ax
@@ -121,7 +112,7 @@ class BlittedFigure:
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 
     def remove_markers(self, render_figure=False):
-        """Remove all markers"""
+        """Remove all markers."""
         # Iterate a snapshot copy: marker.close() triggers events.closed,
         # which calls self.ax_markers.remove(obj) via the lambda registered
         # in add_marker().  Mutating the list during iteration causes
@@ -143,18 +134,19 @@ class BlittedFigure:
         for marker in list(self.ax_markers):
             marker.close(render_figure=False)
         self.events.closed.trigger(obj=self)
-        for f in self.events.closed.connected:
+        for f in list(self.events.closed.connected):
             self.events.closed.disconnect(f)
-        if self._draw_event_cid:
-            self.figure.canvas.mpl_disconnect(self._draw_event_cid)
+        if self._draw_event_cid is not None:
+            get_backend().disconnect_event(self.figure, self._draw_event_cid)
             self._draw_event_cid = None
         self.figure = None
         _logger.debug("`BlittedFigure` closed.")
 
     def close(self):
         _logger.debug("`close` `BlittedFigure` called.")
+        fig = self.get_mpl_figure()
         self._on_close()  # Needs to trigger serially for a well defined state
-        plt.close(self.get_mpl_figure())
+        get_backend().close_figure(fig)
 
     @property
     def title(self):
@@ -166,7 +158,48 @@ class BlittedFigure:
         self._title = textwrap.fill(value, 60)
 
     def render_figure(self):
-        if self.figure.canvas.supports_blit and self._background is not None:
+        backend = get_backend()
+        if backend.supports_blit(self.figure) and self._background is not None:
             self._update_animated()
         else:
-            self.figure.canvas.draw_idle()
+            backend.draw_idle(self.figure)
+
+
+class AbstractSignal1DFigure(BlittedFigure, ABC):
+    """Abstract interface every 1-D signal figure manager must satisfy.
+
+    Backends return a concrete subclass from
+    :meth:`~hyperspy.drawing.backends._protocol.PlottingBackend.create_signal1d_figure`.
+    The MPL implementation is
+    :class:`~hyperspy.drawing.signal1d.Signal1DFigure`.
+    """
+
+    @abstractmethod
+    def add_line(self, line, ax="left", connect_navigation=False):
+        """Attach a line object to the figure."""
+
+    @abstractmethod
+    def plot(self, **kwargs):
+        """Render all lines; call once configuration is complete."""
+
+    @abstractmethod
+    def update(self):
+        """Redraw all lines at the current navigation index."""
+
+
+class AbstractImageFigure(BlittedFigure, ABC):
+    """Abstract interface every 2-D image figure manager must satisfy.
+
+    Backends return a concrete subclass from
+    :meth:`~hyperspy.drawing.backends._protocol.PlottingBackend.create_image_figure`.
+    The MPL implementation is
+    :class:`~hyperspy.drawing.image.ImagePlot`.
+    """
+
+    @abstractmethod
+    def plot(self, **kwargs):
+        """Render the image; call once configuration is complete."""
+
+    @abstractmethod
+    def update(self, data_changed=True, **kwargs):
+        """Redraw the image at the current navigation index."""

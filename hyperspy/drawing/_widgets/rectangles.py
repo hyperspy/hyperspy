@@ -18,7 +18,6 @@
 
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
@@ -39,25 +38,44 @@ class SquareWidget(Widget2DBase):
     def __init__(self, axes_manager, **kwargs):
         super(SquareWidget, self).__init__(axes_manager, **kwargs)
 
-    def _set_patch(self):
-        """Sets the patch to a matplotlib Rectangle with the correct geometry.
-        The geometry is defined by _get_patch_xy, and get_size_in_axes.
-        """
+    def _add_patch_to(self, ax):
+        from hyperspy.drawing.backends import get_backend
+
+        backend = get_backend()
+        self.blit = backend.supports_blit_from_ax(ax)
         xy = self._get_patch_xy()
         xs, ys = self.size
-        self._patch = [
-            plt.Rectangle(
-                xy,
-                xs,
-                ys,
-                fill=False,
-                lw=self.border_thickness,
-                ec=self.color,
-                alpha=self.alpha,
-                picker=True,
-            )
-        ]
-        super(SquareWidget, self)._set_patch()
+        handle = backend.create_rect_pointer(
+            ax,
+            xy[0],
+            xy[1],
+            xs,
+            ys,
+            color=self.color,
+            linewidth=self.border_thickness,
+            pointer=self.is_pointer,
+        )
+        self._patch = [handle]
+        backend.set_pointer_style(handle, animated=self.blit)
+        backend.connect_widget_drag(handle, self._on_widget_drag)
+        # Cooperate with ResizersMixin (RectangleWidget) so its resizer-handle
+        # objects get created; overriding _add_patch_to instead of _set_patch
+        # (as the base widget does) would otherwise skip this entirely.
+        if hasattr(super(SquareWidget, self), "_set_patch"):
+            super(SquareWidget, self)._set_patch()
+
+    def _update_patch_position(self):
+        if self.is_on and self.patch:
+            from hyperspy.drawing.backends import get_backend
+
+            xy = self._get_patch_xy()
+            xs, ys = self.size
+            get_backend().update_rect_pointer(self.patch[0], xy[0], xy[1], xs, ys)
+            self.draw_patch()
+
+    def _on_widget_drag(self, x, y, *args):
+        """Native-widget drag callback.  SquareWidget positions are centres."""
+        self.position = (x, y)
 
     def _onjumpclick(self, event):
         if event.key == "shift" and event.inaxes and self.is_pointer:
@@ -338,17 +356,37 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         offset = [a.scale for a in self.axes]
         return self._pos - 0.5 * np.array(offset)
 
+    def _on_widget_drag(self, x, y, *size):
+        """Native-widget drag callback.
+
+        The backend reports the patch corner (and, for resizable native
+        widgets, the new width/height).  Convert the corner to hyperspy's
+        top-left-pixel-centre 'position' convention.
+        """
+        scale = [a.scale for a in self.axes]
+        kwargs = {"x": x + 0.5 * scale[0], "y": y + 0.5 * scale[1]}
+        if len(size) == 2:
+            kwargs["w"], kwargs["h"] = size
+        self.set_bounds(**kwargs)
+
     def _update_patch_position(self):
         # Override to include resizer positioning
         if self.is_on and self.patch:
-            self.patch[0].set_xy(self._get_patch_xy())
+            from hyperspy.drawing.backends import get_backend
+
+            xy = self._get_patch_xy()
+            xs, ys = self.size
+            get_backend().update_rect_pointer(self.patch[0], xy[0], xy[1], xs, ys)
             self._update_resizers()
             self.draw_patch()
 
     def _update_patch_geometry(self):
         # Override to include resizer positioning
         if self.is_on and self.patch:
-            self.patch[0].set_bounds(*self._get_patch_bounds())
+            from hyperspy.drawing.backends import get_backend
+
+            x, y, xs, ys = self._get_patch_bounds()
+            get_backend().update_rect_pointer(self.patch[0], x, y, xs, ys)
             self._update_resizers()
             self.draw_patch()
 

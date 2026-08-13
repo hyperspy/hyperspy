@@ -18,8 +18,10 @@
 import copy
 import importlib
 import os
+import sys
 from pathlib import Path
 from shutil import copyfile
+from unittest import mock
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,7 +36,7 @@ except ImportError:
     from scipy.misc import ascent, face
 
 import hyperspy.api as hs
-from hyperspy.drawing.signal1d import Signal1DLine
+from hyperspy.drawing.signal1d import Signal1DLine, _plot_component, _plot_loading
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.signals import Signal1D
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
@@ -586,3 +588,76 @@ def test_plot_spectra_ax_array():
     # axes object
     fig, axes = plt.subplots()
     hs.plot.plot_spectra(s, ax=axes, style="mosaic")
+
+
+def test_add_line_color_import_error_fallback():
+    # `Signal1DFigure.add_line` lazily imports `matplotlib.colors` to remove
+    # the newly-added line's color from the relevant color cycle. Simulate
+    # matplotlib being unavailable to exercise the `except ImportError` path.
+    s = hs.signals.Signal1D(np.arange(10).astype(float))
+    s.plot()
+    sf = s._plot.signal_plot
+
+    line = Signal1DLine()
+    line.data_function = lambda axes_manager=None, **kwargs: np.arange(10.0)
+    line.axes_manager = s.axes_manager
+    line.color = "green"
+    with mock.patch.dict(sys.modules, {"matplotlib.colors": None}):
+        sf.add_line(line)
+    assert line in sf.ax_lines
+
+
+def test_signal1d_line_plot_normalize_import_error_fallback():
+    # `Signal1DLine.plot` lazily imports `matplotlib.colors` to validate the
+    # `norm` argument. Simulate matplotlib being unavailable to exercise the
+    # `except ImportError` fallback used to skip that validation.
+    s = hs.signals.Signal1D(np.arange(10).astype(float))
+    s.plot()
+    line = s._plot.signal_plot.ax_lines[0]
+    with mock.patch.dict(sys.modules, {"matplotlib.colors": None}):
+        line.plot()
+    assert line.line is not None
+
+
+def test_signal1d_line_force_replot():
+    s = hs.signals.Signal1D(np.arange(20).reshape(2, 10).astype(float))
+    s.plot()
+    line = s._plot.signal_plot.ax_lines[0]
+    assert line.plot_indices is True
+    old_line, old_text = line.line, line.text
+    line.update(force_replot=True)
+    assert line.line is not old_line
+    assert line.text is not old_text
+
+
+def test_plot_component_helper():
+    factors = np.arange(20).reshape(10, 2).astype(float)
+
+    # ax=None and cal_axis=None: uses plt.gca() and the "Channel index" label
+    ax = _plot_component(factors, 0)
+    assert ax is not None
+    plt.close("all")
+
+    # explicit ax and cal_axis: uses cal_axis.units for the label
+    fig, ax2 = plt.subplots()
+    s = hs.signals.Signal1D(np.arange(10).astype(float))
+    cal_axis = s.axes_manager.signal_axes[0]
+    ax3 = _plot_component(factors, 1, ax=ax2, cal_axis=cal_axis)
+    assert ax3 is ax2
+    plt.close(fig)
+
+
+def test_plot_loading_helper():
+    # 2-D navigation shape: image + colorbar branch
+    s2 = hs.signals.Signal2D(np.arange(3 * 4 * 5 * 5).reshape(3, 4, 5, 5).astype(float))
+    shape = s2.axes_manager._navigation_shape_in_array
+    n = int(np.prod(shape))
+    loadings2d = np.arange(2 * n).reshape(2, n).astype(float)
+    _plot_loading(loadings2d, 0, s2.axes_manager)
+    plt.close("all")
+
+    # 1-D navigation shape: step plot branch
+    s1 = hs.signals.Signal1D(np.arange(2 * 10).reshape(2, 10).astype(float))
+    loadings1d = np.arange(2 * 2).reshape(2, 2).astype(float)
+    _plot_loading(loadings1d, 0, s1.axes_manager)
+    plt.close("all")

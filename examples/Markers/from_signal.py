@@ -10,6 +10,9 @@ that position.
 import numpy as np
 import hyperspy.api as hs
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 
 # Making some artificial data
 def find_maxima(data, scale, offset):
@@ -62,4 +65,4 @@ line_markers = hs.plot.markers.VerticalLines.from_signal(
 
 s.plot()
 s.add_marker(point_markers)
-s.add_marker(line_markers)
+s.add_marker(line_markers)  # Interactive

@@ -1,0 +1,6 @@
+Bump the minimum ``anyplotlib`` version to 0.4.0 and use its newly added
+``add_text``/``Line1D`` property APIs directly, removing the corresponding
+hyperspy-side workarounds (navigation-index text labels and overlay-line
+colour/width get/set now go through native anyplotlib calls). The scale bar
+on calibrated images now uses anyplotlib's own floating scale bar instead of
+a marker-based line-plus-text artist.

@@ -10,6 +10,12 @@ that figure instead of creating a new one. This is useful for creating custom la
 .. Note::
     Plotting data with subfigures is slower than using separates figures.
 
+.. note::
+    :class:`matplotlib.figure.SubFigure` is matplotlib-specific, so this
+    example needs the default matplotlib backend and the figures below are
+    static images. Most of the gallery renders through the interactive
+    ``anyplotlib`` backend instead.
+
 """
 
 # Creating a simple layout with two subplots

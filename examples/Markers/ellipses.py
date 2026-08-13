@@ -9,6 +9,9 @@ Ellipse markers
 import hyperspy.api as hs
 import numpy as np
 
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
+
 # Create a Signal2D with 2 navigation dimensions
 rng = np.random.default_rng(0)
 data = np.ones((25, 25, 100, 100))
@@ -29,7 +32,7 @@ m = hs.plot.markers.Ellipses(
     )
 
 s.plot()
-s.add_marker(m)
+s.add_marker(m)  # Interactive
 
 #%%
 #
@@ -62,7 +65,7 @@ m = hs.plot.markers.Ellipses(
     )
 
 s2.plot()
-s2.add_marker(m)
+s2.add_marker(m)  # Interactive
 
 #%%
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 1

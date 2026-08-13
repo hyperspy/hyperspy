@@ -8,7 +8,9 @@ signal dimension 1, and plots it.
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
+
+# Render with anyplotlib so the figures below stay live in the browser.
+hs.preferences.Plot.backend = "anyplotlib"
 
 # Create a spectrum image with random data
 s = hs.signals.Signal1D(np.random.random((64, 64, 1024)))
@@ -32,7 +34,5 @@ s.axes_manager.navigation_axes[1].offset = 100
 # Give a title
 s.metadata.General.title = 'Random spectrum image'
 
-# Plot it
-s.plot()
-
-plt.show()  # No necessary when running in the HyperSpy's IPython profile
+# Plot it. Drag the pointer across the navigator to sweep the spectrum image.
+s.plot()  # Interactive
