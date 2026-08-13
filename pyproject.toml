@@ -117,9 +117,9 @@ dev = [
 doc = [
     # The interactive gallery scraper (doc/_ext/hyperspy_anywidget.py) patches
     # anyplotlib's Pyodide bridge with exact-text rewrites, so the doc build
-    # pins the version those patches were written against instead of floating
-    # with the ">=0.5.0" backend requirement.
-    "anyplotlib==0.5.0",
+    # pins the version the patches are verified against (all 8 apply on
+    # 0.7.3) instead of floating with the ">=0.5.0" backend requirement.
+    "anyplotlib==0.7.3",
     "holospy", # example gallery
     "IPython", # Needed in testing code in basic_usage.rst
     "numpydoc",
