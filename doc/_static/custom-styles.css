@@ -51,7 +51,12 @@ a.downloadbutton:hover, a.downloadbutton:focus {
        algorithm.  That matters because anyplotlib's resize script writes an
        explicit pixel width onto the figure inside: with a content-based basis
        that width feeds back into the layout and can push the row wide enough
-       to wrap, which is why figures separated on resize. */
+       to wrap, which is why figures separated on resize.
+
+       The scraper overrides `flex-grow` inline with the figure's aspect
+       ratio, so cell widths are proportional to natural widths and every
+       figure in the row renders at the same height; the `1` here is only
+       the fallback for cells emitted without a weight. */
     flex: 1 1 0;
     min-width: 0;
 }

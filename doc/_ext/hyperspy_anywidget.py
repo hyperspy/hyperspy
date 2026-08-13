@@ -303,15 +303,32 @@ class HyperSpyAnywidgetScraper:
         # giving each figure a flex item of its own makes it scale to the
         # column it lands in, and the row re-wraps to one figure per line on
         # narrow screens.
+        #
+        # Cells are weighted by each figure's aspect ratio (via `flex-grow`,
+        # see custom-styles.css) so every figure in a row renders at the same
+        # *height*.  With equal-width cells a two-panel navigator+signal
+        # figure — twice as wide as a single-panel one — was scaled to half
+        # the height of its neighbours and became unreadably small.
         side_by_side = len(pending) > 1
-        per_figure_width = (
-            (MAX_DOC_WIDTH - 14 * (len(pending) - 1)) // len(pending)
-            if side_by_side
-            else None
-        )
+        aspects = []
+        per_figure_widths = []
+        if side_by_side:
+            from anyplotlib.sphinx_anywidget._repr_utils import _widget_px
+
+            for widget in pending:
+                try:
+                    w_px, h_px = _widget_px(widget)
+                    aspects.append(w_px / h_px if h_px else 1.0)
+                except Exception:  # pragma: no cover - build-time fallback
+                    aspects.append(1.0)
+            total_aspect = sum(aspects) or 1.0
+            row_budget = MAX_DOC_WIDTH - 14 * (len(pending) - 1)
+            per_figure_widths = [
+                max(1, int(row_budget * aspect / total_aspect)) for aspect in aspects
+            ]
 
         rst_parts = []
-        for widget in pending:
+        for widget_index, widget in enumerate(pending):
             fig_index = self._counts.get(src_file, 0)
             self._counts[src_file] = fig_index + 1
 
@@ -353,10 +370,15 @@ class HyperSpyAnywidgetScraper:
                 height,
                 fig_id=fig_id,
                 interactive=is_interactive,
-                max_width=per_figure_width,
+                max_width=per_figure_widths[widget_index] if side_by_side else None,
             )
             if side_by_side:
-                figure_html = '<div class="hspy-figure-cell">' + figure_html + "</div>"
+                figure_html = (
+                    f'<div class="hspy-figure-cell" '
+                    f'style="flex-grow: {aspects[widget_index]:.4f}">'
+                    + figure_html
+                    + "</div>"
+                )
             rst_parts.append("\n\n.. raw:: html\n\n    " + figure_html + "\n\n")
 
             if is_interactive:
