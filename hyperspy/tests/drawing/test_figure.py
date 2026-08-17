@@ -21,7 +21,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-from matplotlib.backend_bases import CloseEvent
+from matplotlib.backend_bases import CloseEvent, FigureCanvasBase
 from packaging.version import Version
 
 import hyperspy.api as hs
@@ -347,3 +347,30 @@ def test_histogram_tile_plot_close_calls_super():
     assert htp._draw_event_cid is None
     assert htp._background is None
     assert htp.figure is None
+
+
+def test_draw_event_after_canvas_without_blit_support():
+    """Verify drawing still works when the canvas loses blitting support.
+
+    matplotlib >= 3.11 replaces ``figure.canvas`` with a plain
+    ``FigureCanvasBase`` when the figure manager is destroyed. The inline
+    backend destroys the manager of all figures after every cell without
+    emitting a "close_event", so HyperSpy is unaware of it and keeps drawing
+    to the figure.
+    """
+    s = Signal1D(np.random.random((12, 25, 48)))
+    s.plot()
+    nav_plot = s._plot.navigator_plot
+    figure = nav_plot.figure
+    assert nav_plot._draw_event_cid is not None
+    # Swap in a canvas which doesn't support blitting, as matplotlib does when
+    # the figure manager is destroyed. The callback registry belongs to the
+    # figure, so the "draw_event" callback survives the swap.
+    FigureCanvasBase(figure)
+    assert not figure.canvas.supports_blit
+
+    figure.draw_without_rendering()  # emits "draw_event"
+
+    assert nav_plot._background is None
+    # Without blitting cache, rendering falls back to drawing the whole figure
+    nav_plot.render_figure()
