@@ -142,4 +142,4 @@ Replace ``<your-fork-remote>`` with the remote name pointing to your fork
 if you added the main repository as ``upstream``).  Never force-push to the
 main HyperSpy repository.
 
-See, for example, `How (and why!) to keep your Git commit history clean <https://about.gitlab.com/blog/2018/06/07/keeping-git-commit-history-clean/>`_ for a more detailed blog post on this subject.
+See, for example, `How (and why!) to keep your Git commit history clean <https://about.gitlab.com/blog/keeping-git-commit-history-clean/>`_ for a more detailed blog post on this subject.
