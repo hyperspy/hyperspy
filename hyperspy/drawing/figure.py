@@ -75,6 +75,15 @@ class BlittedFigure:
 
     def _on_blit_draw(self, *args):
         fig = self.figure
+        if not fig.canvas.supports_blit:
+            # The canvas may have been replaced by one which doesn't support
+            # blitting after this callback was connected: matplotlib >= 3.11
+            # resets `figure.canvas` to a plain `FigureCanvasBase` when the
+            # figure manager is destroyed, which the inline backend does after
+            # every cell without emitting a "close_event". Invalidate the
+            # cache, `render_figure` will then draw the whole figure instead.
+            self._background = None
+            return
         # As draw doesn't draw animated elements, in its current state the
         # canvas only contains the background. The following line simply stores
         # it for the consumption of _update_animated.

@@ -12,8 +12,9 @@ following link and poke around the code, issues, and pull requests: `HyperSpy
 on GitHub <https://github.com/hyperspy/hyperspy>`_.
 
 It is probably also worth to visit `github.com <https://github.com/>`_
-and to go through the `"boot camp" <https://help.github
-.com/categories/bootcamp/>`_ to get a feel for the terminology.
+and to go through the `Start your journey
+<https://docs.github.com/en/get-started/start-your-journey>`_ guide to get a
+feel for the terminology.
 
 In brief, to give you a hint on the terminology to search for and get
 accustomed to, the contribution pattern is:
@@ -142,4 +143,4 @@ Replace ``<your-fork-remote>`` with the remote name pointing to your fork
 if you added the main repository as ``upstream``).  Never force-push to the
 main HyperSpy repository.
 
-See, for example, `How (and why!) to keep your Git commit history clean <https://about.gitlab.com/blog/2018/06/07/keeping-git-commit-history-clean/>`_ for a more detailed blog post on this subject.
+See, for example, `How (and why!) to keep your Git commit history clean <https://about.gitlab.com/blog/keeping-git-commit-history-clean/>`_ for a more detailed blog post on this subject.
