@@ -1,0 +1,1 @@
+Fix ``AttributeError`` when updating a plot after matplotlib replaced the figure canvas by one which doesn't support blitting, for example when using the inline backend with matplotlib 3.11.
