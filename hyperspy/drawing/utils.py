@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import copy
 import itertools
 import logging
 import math
@@ -24,14 +23,8 @@ import textwrap
 import warnings
 from functools import partial
 
-import matplotlib as mpl
-import matplotlib.colors as mcolors
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
 import numpy as np
 import traits.api as t
-from matplotlib.backend_bases import key_press_handler
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from packaging.version import Version
 from rsciio.utils import rgb
 
@@ -157,6 +150,9 @@ def create_figure(
     fig : plt.figure
 
     """
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+
     if fig is None:
         fig = plt.figure(**kwargs)
     else:
@@ -189,8 +185,43 @@ def create_figure(
 
 
 def key_press_handler_custom(event, canvas):
+    from matplotlib.backend_bases import key_press_handler
+
     if event.key not in ["k", "l", "L"]:
         key_press_handler(event, canvas, canvas.manager.toolbar)
+
+
+_MPL_BACKEND = None
+
+
+def _mpl_backend():
+    """Return the matplotlib backend, whichever backend is active.
+
+    The composers in this module (:func:`plot_images`, :func:`plot_spectra`,
+    :func:`plot_roi_map`, ...) build matplotlib figures and axes directly, so
+    the artists they create must be driven by the matplotlib backend.
+    """
+    global _MPL_BACKEND
+    if _MPL_BACKEND is None:
+        from hyperspy.drawing.backends.mpl import MplBackend
+
+        _MPL_BACKEND = MplBackend()
+    return _MPL_BACKEND
+
+
+def _active_non_mpl_backend():
+    """Return the active plotting backend, or None when it is matplotlib.
+
+    Composers that can render through the backend protocol
+    (:func:`plot_spectra`'s single-panel styles, :func:`plot_roi_map` with
+    ``single_figure``) use this to decide between the native path and the
+    matplotlib one.
+    """
+    from hyperspy.drawing.backends import get_backend
+    from hyperspy.drawing.backends.mpl import MplBackend
+
+    backend = get_backend()
+    return None if isinstance(backend, MplBackend) else backend
 
 
 def on_figure_window_close(figure, function):
@@ -204,11 +235,7 @@ def on_figure_window_close(figure, function):
     function : callable
 
     """
-
-    def function_wrapper(evt):
-        function()
-
-    figure.canvas.mpl_connect("close_event", function_wrapper)
+    _mpl_backend().connect_close_event(figure, function)
 
 
 def plot_RGB_map(im_list, normalization="single", dont_plot=False):
@@ -241,12 +268,13 @@ def plot_RGB_map(im_list, normalization="single", dont_plot=False):
         rgb /= rgb.max()
     rgb = rgb.clip(0, rgb.max())
     if not dont_plot:
+        import matplotlib.pyplot as plt
+
         figure = plt.figure()
         ax = figure.add_subplot(111)
         ax.frameon = False
         ax.set_axis_off()
         ax.imshow(rgb, interpolation="nearest")
-        #        cursors.set_mpl_ax(ax)
         figure.canvas.draw_idle()
     else:
         return rgb
@@ -274,16 +302,20 @@ def subplot_parameters(fig):
 
 
 class ColorCycle:
-    _color_cycle = [
-        mcolors.to_rgba(color) for color in ("b", "g", "r", "c", "m", "y", "k")
-    ]
+    _color_names = ("b", "g", "r", "c", "m", "y", "k")
+
+    @staticmethod
+    def _make_cycle():
+        import matplotlib.colors as mcolors
+
+        return [mcolors.to_rgba(c) for c in ColorCycle._color_names]
 
     def __init__(self):
-        self.color_cycle = copy.copy(self._color_cycle)
+        self.color_cycle = self._make_cycle()
 
     def __call__(self):
         if not self.color_cycle:
-            self.color_cycle = copy.copy(self._color_cycle)
+            self.color_cycle = self._make_cycle()
         return self.color_cycle.pop(0)
 
 
@@ -712,6 +744,11 @@ def plot_images(
 
     """
 
+    import matplotlib as mpl
+    import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
     def __check_single_colorbar(cbar):
         if cbar == "single":
             raise ValueError(
@@ -1116,7 +1153,7 @@ def plot_images(
             if legend_picking:
                 animate_legend(fig=fig, ax=ax, plot_type="images")
 
-        set_axes_decor(ax, axes_decor)
+        set_axes_decor(ax, axes_decor, backend=_mpl_backend())
 
         if scalebar == "all":
             ax.scalebar = ScaleBar(
@@ -1259,7 +1296,7 @@ def plot_images(
                     ax_.set_title(textwrap.fill(title, labelwrap))
 
                 # Set axes decorations based on user input
-                set_axes_decor(ax_, axes_decor)
+                set_axes_decor(ax_, axes_decor, backend=_mpl_backend())
 
                 # If using independent colorbars, add them
                 if colorbar == "multi" and not isrgb[i]:
@@ -1384,19 +1421,29 @@ def _get_extent(xaxis, yaxis):
     ]
 
 
-def set_axes_decor(ax, axes_decor):
+def set_axes_decor(ax, axes_decor, backend=None):
+    """Apply an axes-decoration preset to *ax*.
+
+    *backend* defaults to the active plotting backend; the matplotlib-native
+    composers in this module pass :func:`_mpl_backend` explicitly because
+    their axes are matplotlib axes whatever the active backend is.
+    """
+    if backend is None:
+        from hyperspy.drawing.backends import get_backend
+
+        backend = get_backend()
     if axes_decor == "off":
-        ax.axis("off")
+        backend.set_axis_off(ax)
     elif axes_decor == "ticks":
-        ax.set_xlabel("")
-        ax.set_ylabel("")
+        backend.set_xlabel(ax, "")
+        backend.set_ylabel(ax, "")
     elif axes_decor == "all":
         pass
     elif axes_decor is None:
-        ax.set_xlabel("")
-        ax.set_ylabel("")
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
+        backend.set_xlabel(ax, "")
+        backend.set_ylabel(ax, "")
+        backend.set_xticklabels(ax, [])
+        backend.set_yticklabels(ax, [])
 
 
 def make_cmap(colors, name="my_colormap", position=None, bit=False, register=True):
@@ -1429,6 +1476,9 @@ def make_cmap(colors, name="my_colormap", position=None, bit=False, register=Tru
         with matplotlib in order to enable use by just the name string.
         Default True.
     """
+    import matplotlib as mpl
+    import matplotlib.colors as mcolors
+
     bit_rgb = np.linspace(0, 1, 256)
 
     if position is None:
@@ -1461,6 +1511,125 @@ def make_cmap(colors, name="my_colormap", position=None, bit=False, register=Tru
             # Deprecated in matplotlib 3.5
             mpl.cm.register_cmap(name, cmap)
     return cmap
+
+
+def _plot_spectra_backend(
+    backend,
+    spectra,
+    style,
+    color,
+    linestyle,
+    drawstyle,
+    padding,
+    legend,
+    normalise,
+    ylabel,
+    auto_update,
+    **kwargs,
+):
+    """Render :func:`plot_spectra` through the active non-matplotlib backend.
+
+    Covers the single-panel styles ('overlap', 'cascade') and 'heatmap' (a
+    :meth:`~.api.signals.Signal2D.plot`).  Legend entries become native line
+    labels; ``legend_picking`` is ignored.  Arguments arrive pre-normalised
+    by ``plot_spectra`` (``color`` is an infinite cycle, ``linestyle`` a
+    list, ``legend`` a list or None).
+    """
+    if style == "heatmap":
+        if not isinstance(spectra, signals.BaseSignal):
+            import hyperspy.utils
+
+            spectra = [_transpose_if_required(spectrum, 1) for spectrum in spectra]
+            spectra = hyperspy.utils.stack(spectra)
+        with spectra.unfolded():
+            ax = _make_heatmap_subplot(spectra, normalise, **kwargs)
+            backend.set_ylabel(ax, "Spectra")
+        return ax
+
+    if auto_update is None:
+        auto_update = style == "overlap"
+    if auto_update and style != "overlap":
+        raise ValueError("auto_update=True is only supported with style='overlap'.")
+
+    fig = backend.create_figure(**kwargs)
+    ax = backend.create_axes(fig)
+    # Pad with unlabeled entries so a short legend can't truncate the zip.
+    labels = itertools.chain(legend or [], itertools.repeat(None))
+
+    handles = []
+    if style == "overlap":
+        for spectrum, color_, linestyle_, label_ in zip(
+            spectra, color, linestyle, labels
+        ):
+            x_axis = spectrum.axes_manager.signal_axes[0]
+            spectrum = _transpose_if_required(spectrum, 1)
+            handles.append(
+                backend.plot_line(
+                    ax,
+                    x_axis.axis,
+                    _parse_array(spectrum, normalise),
+                    color=color_,
+                    linestyle=linestyle_,
+                    drawstyle=drawstyle,
+                    label=label_,
+                )
+            )
+        backend.set_ylabel(ax, ylabel)
+    else:  # cascade — same stacking arithmetic as _make_cascade_subplot
+        max_value = 0
+        factors = [1] * len(spectra)
+        for i, spectrum in enumerate(spectra):
+            spectrum_yrange = np.nanmax(spectrum.data) - np.nanmin(spectrum.data)
+            if spectrum_yrange > max_value:
+                max_value = spectrum_yrange
+            if normalise:
+                factors[i] = spectrum.data.max() - spectrum.data.min()
+        if normalise:
+            max_value = 1
+        for i, (spectrum, color_, linestyle_, label_) in enumerate(
+            zip(spectra, color, linestyle, labels)
+        ):
+            x_axis = spectrum.axes_manager.signal_axes[0]
+            data = _parse_array(_transpose_if_required(spectrum, 1))
+            data_to_plot = (data - data.min()) / float(max_value) / factors[i] + (
+                i * padding
+            )
+            handles.append(
+                backend.plot_line(
+                    ax,
+                    x_axis.axis,
+                    data_to_plot,
+                    color=color_,
+                    linestyle=linestyle_,
+                    drawstyle=drawstyle,
+                    label=label_,
+                )
+            )
+        backend.set_yticks(ax, [])
+
+    s_last = spectra[-1] if isinstance(spectra, (list, tuple)) else spectra
+    x_axis = s_last.axes_manager.signal_axes[0]
+    backend.set_xlabel(ax, "%s (%s)" % (x_axis.name, x_axis.units))
+    backend.set_xlim(ax, x_axis.axis[0], x_axis.axis[-1])
+
+    if auto_update:
+
+        def update_line(spectrum, handle):
+            backend.update_line(
+                handle,
+                spectrum.axes_manager[-1].axis,
+                _parse_array(spectrum, normalise),
+            )
+
+        for s, handle in zip(spectra, handles):
+            f = partial(update_line, s, handle=handle)
+            s.events.data_changed.connect(f, [])
+            backend.connect_close_event(
+                fig, partial(s.events.data_changed.disconnect, f)
+            )
+
+    backend.draw_idle(fig)
+    return ax
 
 
 def plot_spectra(
@@ -1521,16 +1690,19 @@ def plot_spectra(
        is used. Default None.
     legend_picking : bool, default True
         If True (default), a spectrum can be toggled on and off by clicking on
-        the legended line.
+        the legended line. Matplotlib backend only.
     legend_loc : str or int, optional
         This parameter controls where the legend is placed on the figure;
         see the pyplot.legend docstring for valid values. Default ``'upper right'``.
+        Matplotlib backend only.
     fig : None, matplotlib.figure.Figure, default None
         If None (default), a default figure will be created.
-        Not supported for the ``'heatmap'`` style.
+        Not supported for the ``'heatmap'`` style. Passing a figure forces
+        the matplotlib renderer even when another backend is active.
     ax : None, matplotlib.axes.Axes, default None
         If None (default), matplotlib axes will be created when necessary.
-        Not supported for the ``'heatmap'`` style.
+        Not supported for the ``'heatmap'`` style. Passing axes forces
+        the matplotlib renderer even when another backend is active.
     auto_update : bool or None, default None
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
@@ -1561,9 +1733,16 @@ def plot_spectra(
     Returns
     -------
     :class:`matplotlib.axes.Axes` or list of :class:`matplotlib.axes.Axes`
-        An array is returned when `style` is 'mosaic'.
+        An array is returned when `style` is 'mosaic'. When a
+        non-matplotlib plotting backend is active (and no ``fig``/``ax`` is
+        given), the 'overlap', 'cascade' and 'heatmap' styles render through
+        it and return that backend's axes object instead; 'mosaic' always
+        renders with matplotlib.
 
     """
+
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
 
     def _reverse_legend(ax_, legend_loc_):
         """
@@ -1625,6 +1804,26 @@ def plot_spectra(
         ylabel = "Normalised Intensity"
     else:
         ylabel = "Intensity"
+
+    # Render natively when a non-matplotlib backend is active and the caller
+    # did not pass matplotlib objects to draw into ('mosaic' is matplotlib-only).
+    if fig is None and ax is None and style in ("overlap", "cascade", "heatmap"):
+        active_backend = _active_non_mpl_backend()
+        if active_backend is not None:
+            return _plot_spectra_backend(
+                active_backend,
+                spectra,
+                style,
+                color,
+                linestyle,
+                drawstyle,
+                padding,
+                legend,
+                normalise,
+                ylabel,
+                auto_update,
+                **kwargs,
+            )
 
     # Get fig and ax
     # Try to get fig from ax
@@ -1776,6 +1975,8 @@ def animate_legend(fig=None, ax=None, plot_type="spectra"):
     Code inspired from legend_picking.py in the matplotlib gallery.
 
     """
+    import matplotlib.pyplot as plt
+
     if fig is None:
         fig = plt.gcf()
     if ax is None:
@@ -1895,6 +2096,8 @@ plot_histograms.__doc__ %= (HISTOGRAM_BIN_ARGS, HISTOGRAM_RANGE_ARGS)
 
 
 def picker_kwargs(value, kwargs=None):
+    import matplotlib as mpl
+
     if kwargs is None:
         kwargs = {}
     # picker is deprecated in favor of pickradius
@@ -1972,6 +2175,9 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
 
 
 def _make_cmaps(colors):
+    import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
+
     cmap_name = []
     for n_color, color in enumerate(colors):
         color = mcolors.to_hex(color)
@@ -1982,18 +2188,44 @@ def _make_cmaps(colors):
     return cmap_name
 
 
-def _add_colored_frame(ax, color, animated=True):
-    colored_frame = patches.Rectangle(
-        (0, 0),
-        1,
-        1,
-        linewidth=10,
-        edgecolor=color,
-        facecolor="none",
-        transform=ax.transAxes,
-        animated=animated and ax.get_figure().canvas.supports_blit,
-    )
-    ax.add_patch(colored_frame)
+def _add_colored_frame(ax, color, animated=True, backend=None):
+    """Draw a thick coloured border around the whole of *ax*.
+
+    *ax* is either a matplotlib axes (from this module's composers) or a
+    backend-native axes (a signal's own plot).
+    """
+    if hasattr(ax, "transAxes"):
+        import matplotlib.patches as patches
+
+        backend = _mpl_backend()
+        is_animated = animated and backend.supports_blit_from_ax(ax)
+        colored_frame = patches.Rectangle(
+            (0, 0),
+            1,
+            1,
+            linewidth=10,
+            edgecolor=color,
+            facecolor="none",
+            transform=ax.transAxes,
+            animated=is_animated,
+        )
+        backend.add_artist(ax, colored_frame)
+    else:
+        if backend is None:
+            from hyperspy.drawing.backends import get_backend
+
+            backend = get_backend()
+        # A unit rectangle in axes space covers the panel on any backend.
+        backend.create_markers(
+            ax,
+            "rectangles",
+            offset_space="axes",
+            offsets=[[0.5, 0.5]],
+            widths=1.0,
+            heights=1.0,
+            edgecolors=color,
+            linewidths=10,
+        )
 
 
 def _roi_sum(signal, roi, axes, out=None):
@@ -2109,6 +2341,8 @@ def plot_roi_map(
     region at each point in the scan. Therefore, regions of the
     scan where a particular spot is intense will appear bright.
     """
+    import matplotlib as mpl
+
     if signal._plot is None or not signal._plot.is_active:
         signal.plot()
 
@@ -2195,8 +2429,22 @@ def plot_roi_map(
     if single_figure:
         if single_figure_kwargs is None:
             single_figure_kwargs = {}
+        active_backend = _active_non_mpl_backend()
+        panels = None
+        if active_backend is not None and nav_dims != 1:
+            panels = active_backend.create_combined_figure_panels(n=len(roi_sums))
         if nav_dims == 1:
             axs = plot_spectra(roi_sums, color=color, **single_figure_kwargs)
+        elif panels is not None:
+            # Each map is a live hyperspy image plot in one panel of a shared
+            # backend figure.
+            axs = []
+            for roi_sum, panel, cmap_, color_ in zip(roi_sums, panels, cmap, color):
+                roi_sum.plot(fig=panel, cmap=cmap_, scalebar=False)
+                ax_ = roi_sum._plot.signal_plot.ax
+                if add_colored_frame:
+                    _add_colored_frame(ax_, color_, backend=active_backend)
+                axs.append(ax_)
         else:
             # default plot kwargs
             for k, v in zip(["scalebar", "axes_decor", "suptitle"], [0, "off", ""]):
@@ -2213,7 +2461,12 @@ def plot_roi_map(
 
         if not isinstance(axs, list):
             axs = [axs]
-        on_figure_window_close(axs[0].get_figure(), remove_widgets)
+        if active_backend is not None:
+            active_backend.connect_close_event(
+                getattr(axs[0], "figure", None), remove_widgets
+            )
+        else:
+            on_figure_window_close(axs[0].get_figure(), remove_widgets)
 
     # return all ya bits for future messing around.
     return rois, roi_sums

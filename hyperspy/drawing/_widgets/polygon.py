@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from matplotlib.widgets import PolygonSelector
-
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import WidgetBase
 
 
@@ -87,7 +86,7 @@ class PolygonWidget(WidgetBase):
                     self._widget = None
                 self.ax = None
             if render_figure:
-                existing_ax.figure.canvas.draw_idle()
+                get_backend().draw_idle(getattr(existing_ax, "figure", None))
         self._is_on = value
 
     def set_mpl_ax(self, ax):
@@ -110,18 +109,17 @@ class PolygonWidget(WidgetBase):
         handle_props = dict(color=self._color)
         line_props = dict(color=self._color)
 
-        useblit = hasattr(self.ax, "hspy_fig") and self.ax.figure.canvas.supports_blit
-
-        self._widget = PolygonSelector(
+        backend = get_backend()
+        self._widget = backend.create_polygon_selector(
             ax,
             onselect=self._complete_building,
-            useblit=useblit,
+            useblit=backend.supports_blit_from_ax(ax),
             handle_props=handle_props,
             props=line_props,
         )
         self._widget.connect_event("motion_notify_event", self._onmove)
 
-        self.ax.figure.canvas.draw_idle()
+        backend.draw_idle(getattr(self.ax, "figure", None))
 
     def set_vertices(self, vertices):
         """
@@ -139,7 +137,7 @@ class PolygonWidget(WidgetBase):
                 self._widget.verts = vertices
                 self._finished_building = True
                 self._cached_vertices = vertices.copy()
-            self.ax.figure.canvas.draw_idle()
+            get_backend().draw_idle(getattr(self.ax, "figure", None))
 
     def get_vertices(self):
         """

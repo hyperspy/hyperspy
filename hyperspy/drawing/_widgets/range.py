@@ -20,9 +20,9 @@ import inspect
 import logging
 
 import numpy as np
-from matplotlib.widgets import SpanSelector
 
 from hyperspy.defaults_parser import preferences
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
 _logger = logging.getLogger(__name__)
@@ -43,6 +43,8 @@ class RangeWidget(ResizableDraggableWidgetBase):
 
     def __init__(self, axes_manager, ax=None, color="r", alpha=0.25, **kwargs):
         # Parse all kwargs for the matplotlib SpanSelector
+        from matplotlib.widgets import SpanSelector
+
         self._SpanSelector_kwargs = {}
         for key in inspect.signature(SpanSelector).parameters.keys():
             if key in kwargs:
@@ -123,12 +125,13 @@ class RangeWidget(ResizableDraggableWidgetBase):
 
     def _add_patch_to(self, ax):
         self.ax = ax
+        backend = get_backend()
         self._SpanSelector_kwargs.update(
             props={"alpha": self.alpha, "color": self.color},
             handle_props={"alpha": min(1.0, self.alpha * 2), "color": self.color},
-            useblit=ax.figure.canvas.supports_blit,
+            useblit=backend.supports_blit_from_ax(ax),
         )
-        self.span = SpanSelector(ax, **self._SpanSelector_kwargs)
+        self.span = backend.create_span_selector(ax, **self._SpanSelector_kwargs)
         self.span.connect_event("motion_notify_event", self._span_changed)
         self._set_span_extents(*self._get_range())
         self._patch = list(self.span.artists)

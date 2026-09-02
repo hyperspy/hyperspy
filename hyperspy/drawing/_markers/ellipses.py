@@ -23,8 +23,8 @@ from hyperspy.docstrings.markers import (
     UNITS_DOCSTRING,
     WIDTHS_DOCSTRING,
 )
+from hyperspy.drawing.marker_collection import EllipsesCollection
 from hyperspy.drawing.markers import Markers
-from hyperspy.external.matplotlib.collections import EllipseCollection
 
 
 class Ellipses(Markers):
@@ -62,7 +62,7 @@ class Ellipses(Markers):
                 "sizes."
             )
         super().__init__(
-            collection=EllipseCollection,
+            collection=EllipsesCollection,
             offsets=offsets,
             offset_transform=offset_transform,
             heights=heights,

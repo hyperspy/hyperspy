@@ -12,8 +12,9 @@ following link and poke around the code, issues, and pull requests: `HyperSpy
 on GitHub <https://github.com/hyperspy/hyperspy>`_.
 
 It is probably also worth to visit `github.com <https://github.com/>`_
-and to go through the `"boot camp" <https://help.github
-.com/categories/bootcamp/>`_ to get a feel for the terminology.
+and to go through the `"Start your journey" guide
+<https://docs.github.com/en/get-started/start-your-journey>`_ to get a feel
+for the terminology.
 
 In brief, to give you a hint on the terminology to search for and get
 accustomed to, the contribution pattern is:

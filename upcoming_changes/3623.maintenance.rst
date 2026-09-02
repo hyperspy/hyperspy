@@ -1,0 +1,5 @@
+Add browser tests for the ``anyplotlib`` backend (headless Chromium driven by
+``playwright``), run in a dedicated GitHub Actions job. Install them with the
+``tests-browser`` extra followed by ``playwright install chromium``. Their PNG
+baselines live in ``baselines/<platform>/``; a platform without baselines
+primes them and skips the comparison.

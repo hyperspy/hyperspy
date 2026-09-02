@@ -1772,13 +1772,15 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         autoscale="v",
         norm="auto",
         axes_manager=None,
-        navigator_kwds={},
+        navigator_kwds=None,
         **kwargs,
     ):
         """%s
         %s
         %s
         """
+        if navigator_kwds is None:
+            navigator_kwds = {}
         for c in autoscale:
             if c not in ["x", "v"]:
                 raise ValueError(

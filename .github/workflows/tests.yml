@@ -115,3 +115,68 @@ jobs:
         uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  run_browser_test:
+    # The anyplotlib backend renders in a browser, so its figures can only be
+    # driven (and screenshotted) by one.  Chromium is too heavy to add to the
+    # matrix above, hence a job of its own.
+    name: ubuntu-latest-py3.12-browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: agg
+      PIP_ARGS: --upgrade --prefer-binary -e
+      PYTEST_ARGS: --pyargs hyperspy.tests.drawing.anyplotlib_playwright --reruns 3 --instafail
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch tags upstream
+        if: ${{ github.repository_owner != 'hyperspy' }}
+        # Needs to fetch the tags from upstream to get the
+        # correct version with setuptools_scm
+        run: |
+          git remote add upstream https://github.com/hyperspy/hyperspy.git
+          git fetch upstream --tags
+
+      - uses: actions/setup-python@v6
+        name: Install Python
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        shell: bash
+        run: |
+          pip install ${{ env.PIP_ARGS }} .'[all, tests, tests-browser, coverage]'
+
+      - name: Install Chromium
+        run: |
+          playwright install --with-deps chromium
+
+      - name: Pip list
+        run: |
+          pip list
+
+      - name: Run browser test suite
+        run: |
+          pytest ${{ env.PYTEST_ARGS }} --cov=. --cov-report=xml
+
+      - name: Upload the PNG baselines rendered on this platform
+        # Baselines are platform-specific (fonts and antialiasing differ), so a
+        # platform without them primes them and skips the comparison.  Commit
+        # this artefact to turn the comparison on for Linux.
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: anyplotlib-baselines-linux
+          path: hyperspy/tests/drawing/anyplotlib_playwright/baselines/linux/
+          if-no-files-found: ignore
+
+      - name: Upload coverage to Codecov
+        if: ${{ github.repository_owner == 'hyperspy' }}
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
