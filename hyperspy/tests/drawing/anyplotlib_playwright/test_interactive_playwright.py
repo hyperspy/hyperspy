@@ -395,8 +395,7 @@ class TestBrowserEventEmission:
             page.wait_for_timeout(80)
             assert get_events(page, "pointer_down"), "no pointer_down on 2-D panel"
 
-            # 1-D panels currently emit pointer_up only (anyplotlib quirk —
-            # see docs/anyplotlib_improvements.md).
+            # 1-D panels currently emit pointer_up only (anyplotlib quirk).
             page.mouse.move(
                 sig_box["x"] + sig_box["w"] / 2, sig_box["y"] + sig_box["h"] / 2
             )

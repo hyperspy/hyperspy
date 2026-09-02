@@ -25,9 +25,11 @@ screenshots the standalone HTML in headless Chromium, and compares the
 result bitwise against a golden PNG using the pixel comparator vendored
 from anyplotlib (``_png_utils.compare_arrays``).
 
-Baselines live in ``baselines/`` next to this file.  A missing baseline is
-written on first run (the test skips so the run that created it does not
-silently pass); set ``HSPY_UPDATE_APL_BASELINES=1`` to regenerate all.
+Baselines live in ``baselines/<platform>/`` next to this file — a browser
+renders text with the host's fonts, so a PNG only matches on the platform
+that produced it.  A missing baseline is written on first run (the test
+skips so the run that created it does not silently pass); set
+``HSPY_UPDATE_APL_BASELINES=1`` to regenerate all.
 """
 
 from __future__ import annotations

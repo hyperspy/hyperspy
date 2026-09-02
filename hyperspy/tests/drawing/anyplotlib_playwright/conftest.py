@@ -37,6 +37,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import platform
 import tempfile
 
 import numpy as np
@@ -54,7 +55,10 @@ from hyperspy.tests.drawing.anyplotlib_playwright._png_utils import (  # noqa: E
 # Layout constants for 1-D panels (match anyplotlib's figure_esm.js).
 PAD_L, PAD_R, PAD_T, PAD_B = 58, 12, 12, 42
 
-BASELINE_DIR = pathlib.Path(__file__).parent / "baselines"
+#: Golden PNGs are platform-specific — fonts and antialiasing differ between
+#: operating systems — so each platform keeps its own set, and a platform
+#: without one primes it instead of failing.
+BASELINE_DIR = pathlib.Path(__file__).parent / "baselines" / platform.system().lower()
 
 # Set HSPY_UPDATE_APL_BASELINES=1 to regenerate every golden PNG.
 UPDATE_BASELINES = os.environ.get("HSPY_UPDATE_APL_BASELINES", "") not in ("", "0")
@@ -112,8 +116,7 @@ def _refresh_panel_traits(fig):
 
     Widget ``set()`` calls push *targeted* updates that bypass the panel
     trait, so a standalone-HTML snapshot taken after widget mutations would
-    otherwise embed stale widget geometry (anyplotlib quirk — see
-    docs/anyplotlib_improvements.md).
+    otherwise embed stale widget geometry.
     """
     for ax in fig.get_axes():
         plot = getattr(ax, "_plot", None)
@@ -324,13 +327,14 @@ def drag(page, x0, y0, x1, y1, steps=12):
 
 
 def assert_matches_baseline(arr, name, tol=8, max_diff_frac=0.02):
-    """Compare *arr* against the golden PNG ``baselines/<name>.png``.
+    """Compare *arr* against ``baselines/<platform>/<name>.png``.
 
     Missing baselines are created on first run (the test is then skipped so
-    a fresh checkout is primed rather than silently passing).  Set
-    ``HSPY_UPDATE_APL_BASELINES=1`` to force-regenerate.
+    a fresh checkout, or a platform with no committed baselines, is primed
+    rather than silently passing).  Set ``HSPY_UPDATE_APL_BASELINES=1`` to
+    force-regenerate.
     """
-    BASELINE_DIR.mkdir(exist_ok=True)
+    BASELINE_DIR.mkdir(parents=True, exist_ok=True)
     path = BASELINE_DIR / f"{name}.png"
 
     if UPDATE_BASELINES or not path.exists():
