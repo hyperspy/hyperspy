@@ -18,13 +18,9 @@
 
 """IPython magic to switch the hyperspy plotting backend to anyplotlib.
 
-Deliberately kept outside the ``hyperspy.drawing`` package tree: importing
-any ``hyperspy.drawing.*`` submodule runs ``hyperspy/drawing/__init__.py``,
-which eagerly registers the (heavier) matplotlib backend — exactly the
-lazy-import cost ``hyperspy.api`` avoids paying until a signal is actually
-plotted.  This module has no such side effect, so ``hyperspy.api`` can
-register the magic immediately on import and it's ready for ``%anyplotlib``
-before the user has done anything else with hyperspy.
+Kept outside ``hyperspy.drawing`` so that ``hyperspy.api`` can register the
+magic at import time without triggering the lazy import of the drawing
+package (which registers the matplotlib backend).
 """
 
 
@@ -47,10 +43,9 @@ def _register_anyplotlib_magic(ip):
 
 
 def _register_if_active():
-    """Register %anyplotlib now if running inside an active IPython session.
+    """Register %anyplotlib if running inside an IPython session.
 
-    Safe to call multiple times (re-registering a line magic just replaces
-    it) and safe to call whether or not IPython is installed at all.
+    Safe to call repeatedly and without IPython installed.
     """
     try:
         from IPython import get_ipython

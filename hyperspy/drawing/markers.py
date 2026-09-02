@@ -27,13 +27,10 @@ from hyperspy.misc import _markers, dask_utils, utils
 
 
 def _is_patch(obj):
-    """Return True if obj is a matplotlib Patch (lazy import)."""
-    try:
-        from matplotlib.patches import Patch
+    """Return True if obj is a matplotlib Patch (imported lazily)."""
+    from matplotlib.patches import Patch
 
-        return isinstance(obj, Patch)
-    except ImportError:
-        return False
+    return isinstance(obj, Patch)
 
 
 def convert_positions(peaks, signal_axes):
@@ -170,8 +167,8 @@ class Markers:
             from hyperspy.drawing.marker_collection import HyperMarkerCollection
 
             if isinstance(collection, str):
-                # Try the HyperMarkerCollection registry first (marker_type strings
-                # like "points", "circles"), then fall back to MPL collection names.
+                # A marker type ("points", "circles", ...) or, failing that,
+                # the name of a matplotlib collection class.
                 try:
                     collection = HyperMarkerCollection.from_marker_type(collection)
                 except ValueError:
@@ -186,15 +183,12 @@ class Markers:
                         )
 
             if HyperMarkerCollection.is_hyper_collection(collection):
-                # Backend-agnostic path: derive position keys and marker type
-                # from the descriptor so subclasses don't duplicate this info.
                 self._position_key = collection._position_key
                 self._position_key_to_set = collection._position_key_to_set
                 if self._marker_type is None:
                     self._marker_type = collection._marker_type
             else:
-                # Legacy MPL-only path: validate it is a Collection subclass
-                # from a module that can be safely reconstructed on load.
+                # A raw matplotlib Collection subclass (matplotlib backend only).
                 import matplotlib.collections as mpl_collections
 
                 if not issubclass(collection, mpl_collections.Collection):
@@ -658,8 +652,6 @@ class Markers:
             from hyperspy.drawing.marker_collection import HyperMarkerCollection
 
             if HyperMarkerCollection.is_hyper_collection(self._collection_class):
-                # Store the stable marker_type string so the file can be
-                # loaded without a matplotlib import on the reading side.
                 marker_dict["collection"] = self._collection_class._marker_type
             else:
                 marker_dict["collection"] = self._collection_class.__name__
@@ -760,12 +752,7 @@ class Markers:
                 get_backend().collection_update(self._collection, **kwds)
 
     def _get_mpl_class(self):
-        """Resolve the actual MPL Collection class from ``_collection_class``.
-
-        When ``_collection_class`` is a :class:`HyperMarkerCollection` subclass,
-        returns its MPL fallback via ``mpl_collection()``.  Otherwise returns
-        ``_collection_class`` unchanged (legacy path).
-        """
+        """Return the matplotlib Collection class for ``_collection_class``."""
         from hyperspy.drawing.marker_collection import HyperMarkerCollection
 
         if HyperMarkerCollection.is_hyper_collection(self._collection_class):
@@ -892,8 +879,6 @@ class Markers:
         self._ScalarMappable_array = array
         if self._collection is not None:
             if not hasattr(self._collection, "set_array"):
-                # A backend-native marker group, not a matplotlib
-                # ScalarMappable: there is no per-marker colour mapping to set.
                 raise BackendCapabilityError(
                     "Colour-mapping markers with set_ScalarMappable_array() is "
                     "only supported by the matplotlib backend; the active "
@@ -937,9 +922,10 @@ class Markers:
         if self.ax is None:
             raise RuntimeError("The markers needs to be plotted.")
         self.set_ScalarMappable_array(self._ScalarMappable_array)
-        b = get_backend()
-        cbar = b.add_colorbar(b.get_figure_from_ax(self.ax), self._collection, self.ax)
-        return cbar
+        backend = get_backend()
+        return backend.add_colorbar(
+            backend.get_figure_from_ax(self.ax), self._collection, self.ax
+        )
 
 
 def is_iterating(arg):

@@ -16,15 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Static purity tests: generic-layer files must not import matplotlib directly (Phase 4).
+"""Static checks that the generic drawing layer does not import matplotlib.
 
-Files that route all drawing through PlottingBackend must contain zero
-``import matplotlib`` or ``from matplotlib`` statements at any nesting level.
-
-NOTE: signal.py and several _widgets/ files contain matplotlib imports in
-methods that are explicitly MPL-specific (e.g. plot_decomposition_results,
-SpanSelector, PolygonSelector).  Those files are excluded here and are
-tracked as Phase-5 work.
+Files that route all drawing through ``PlottingBackend`` must contain no
+``import matplotlib`` / ``from matplotlib`` statement at any nesting level.
+Files with deliberately matplotlib-specific methods are excluded.
 """
 
 import ast
@@ -32,7 +28,7 @@ from pathlib import Path
 
 import pytest
 
-# Files that have been cleaned in Phase 4 and must stay clean.
+# Files that must stay free of matplotlib imports.
 GENERIC_FILES = [
     "hyperspy/drawing/figure.py",
     "hyperspy/drawing/widget.py",

@@ -22,6 +22,7 @@ import numpy as np
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import BackendCapabilityError, CoordSpace
 from hyperspy.events import Event, Events
 
 
@@ -194,17 +195,14 @@ class WidgetBase(object):
         if self.is_on is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            b = get_backend()
-            b.draw_idle(b.get_figure_from_ax(ax))
+            backend = get_backend()
+            backend.draw_idle(backend.get_figure_from_ax(ax))
             self.select()
 
     set_ax = set_mpl_ax
 
     def select(self):
-        """Cause this widget to be the selected widget in its axes.
-
-        Delegates the backend-specific pick simulation to the active backend.
-        """
+        """Cause this widget to be the selected widget in its axes."""
         if not self.patch or not self.is_on or not self.ax:
             return
         get_backend().simulate_pick(self.ax, self.patch[0])
@@ -212,9 +210,10 @@ class WidgetBase(object):
 
     def connect(self, ax):
         """Connect to the axes' events."""
-        _fig = get_backend().get_figure_from_ax(ax)
-        if _fig is not None:
-            get_backend().connect_close_event(_fig, self.close)
+        backend = get_backend()
+        fig = backend.get_figure_from_ax(ax)
+        if fig is not None:
+            backend.connect_close_event(fig, self.close)
         if self._navigating:
             self.connect_navigate()
 
@@ -906,51 +905,35 @@ class ResizersMixin:
                 self.draw_patch()
             self._resizers_on = value
 
+    def _display_size_to_data(self, size):
+        """Convert an (x, y) size in display pixels to data units."""
+        pts = get_backend().convert_coords(
+            self.ax, [size, (0, 0)], CoordSpace.DISPLAY, CoordSpace.DATA
+        )
+        return abs(pts[0] - pts[1])
+
     def _get_resizer_size(self):
         """Gets the size of the resizer handles in axes coordinates. If
         'resize_pixel_size' is None, a size of one pixel will be used.
         """
         if self.resize_pixel_size is None:
             return [ax.scale for ax in self.axes]
-        from hyperspy.drawing.backends._protocol import CoordSpace
+        return self._display_size_to_data(self.resize_pixel_size)
 
-        pts = get_backend().convert_coords(
-            self.ax,
-            [self.resize_pixel_size, (0, 0)],
-            CoordSpace.DISPLAY,
-            CoordSpace.DATA,
-        )
-        return abs(pts[0] - pts[1])
+    def _get_border_offset(self):
+        """Half the border thickness, in data units."""
+        border = self.border_thickness
+        return self._display_size_to_data((border, border)) / 2
 
     def _get_resizer_offset(self):
         """Utility for getting the distance from the boundary box to the
         center of the resize handles.
         """
-        from hyperspy.drawing.backends._protocol import CoordSpace
-
-        border = self.border_thickness
-        pts = get_backend().convert_coords(
-            self.ax,
-            [(border, border), (0, 0)],
-            CoordSpace.DISPLAY,
-            CoordSpace.DATA,
-        )
-        dl = abs(pts[0] - pts[1]) / 2
-        rsize = self._get_resizer_size()
-        return rsize / 2 + dl
+        return self._get_resizer_size() / 2 + self._get_border_offset()
 
     def _get_resizer_pos(self):
         """Get the positions of the resizer handles."""
-        from hyperspy.drawing.backends._protocol import CoordSpace
-
-        border = self.border_thickness
-        pts = get_backend().convert_coords(
-            self.ax,
-            [(border, border), (0, 0)],
-            CoordSpace.DISPLAY,
-            CoordSpace.DATA,
-        )
-        dl = abs(pts[0] - pts[1]) / 2
+        dl = self._get_border_offset()
         rsize = self._get_resizer_size()
         xs, ys = self._size
 
@@ -976,8 +959,6 @@ class ResizersMixin:
         if self._resizer_handles:
             self._set_resizers(False, self.ax)
         self._resizer_handles = []
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
         try:
             rsize = self._get_resizer_size()
             pos = self._get_resizer_pos()
@@ -993,9 +974,7 @@ class ResizersMixin:
                 )
                 self._resizer_handles.append(r)
         except BackendCapabilityError:
-            # Backends whose native widgets already provide resize handles
-            # (e.g. anyplotlib) do not support standalone resizer patches;
-            # fall back to a plain draggable widget.
+            # The backend's native widgets carry their own resize handles.
             self._resizer_handles = []
             self.resizers = False
 
@@ -1026,8 +1005,8 @@ class ResizersMixin:
         elif self.picked:
             if self.resizers and not self._resizers_on:
                 self._set_resizers(True, self.ax)
-                b = get_backend()
-                b.draw_idle(b.get_figure_from_ax(self.ax))
+                backend = get_backend()
+                backend.draw_idle(backend.get_figure_from_ax(self.ax))
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
             self.pick_offset = (x - self._pos[0], y - self._pos[1])

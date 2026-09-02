@@ -1,17 +1,5 @@
-Bump the minimum ``anyplotlib`` version to 0.8.0 — the release the backend is
-tested against, and the first where pixel-sized markers survive an export to
-standalone HTML (0.7.1) and a tiled image that starts life as a placeholder
-renders at all (0.8.0) — and use its newly added
-``add_text``/``Line1D`` property APIs directly, removing the corresponding
-hyperspy-side workarounds (navigation-index text labels and overlay-line
-colour/width get/set now go through native anyplotlib calls). The scale bar
-on calibrated images now uses anyplotlib's own floating scale bar instead of
-a marker-based line-plus-text artist.
-
-The anyplotlib browser tests (headless Chromium, driven by ``playwright``) now
-run in a GitHub Actions job of their own and report their coverage, instead of
-being silently skipped everywhere: install them with the new ``tests-browser``
-extra followed by ``playwright install chromium``. Their PNG baselines moved to
-``baselines/<platform>/`` — a browser draws text with the host's fonts, so a
-golden PNG only matches on the platform that produced it, and a platform
-without baselines primes them and skips the comparison rather than failing.
+Add browser tests for the ``anyplotlib`` backend (headless Chromium driven by
+``playwright``), run in a dedicated GitHub Actions job. Install them with the
+``tests-browser`` extra followed by ``playwright install chromium``. Their PNG
+baselines live in ``baselines/<platform>/``; a platform without baselines
+primes them and skips the comparison.

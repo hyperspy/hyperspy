@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Tests for the backend entry-point registry and extensible preference (Phase 3)."""
+"""Tests for the backend entry-point registry and the ``Plot.backend`` preference."""
 
 import importlib.metadata
 import subprocess
@@ -96,15 +96,9 @@ def test_plot_config_rejects_unknown_backend():
 
 @pytest.mark.parametrize("backend_name", ["matplotlib", "anyplotlib"])
 def test_preference_set_before_drawing_import_is_honoured(backend_name):
-    """The preference must win even when set before ``hyperspy.drawing`` loads.
-
-    ``hyperspy.drawing`` is imported lazily, on the first ``plot()`` call, so a
-    preference set beforehand (in a script, or restored from the user's config
-    file) predates the traits observer that reacts to later changes.  If
-    ``drawing/__init__`` hardcoded matplotlib, the preference would be silently
-    ignored for the whole session.  Run in a subprocess because the test
-    session has already imported ``hyperspy.drawing``.
-    """
+    """A preference set before the lazy import of ``hyperspy.drawing`` must be
+    honoured.  Runs in a subprocess because the test session has already
+    imported ``hyperspy.drawing``."""
     pytest.importorskip("anyplotlib")
     script = textwrap.dedent(
         f"""

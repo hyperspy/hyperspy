@@ -19,6 +19,7 @@
 
 import numpy as np
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import ResizersMixin, Widget2DBase, WidgetBase
 
 
@@ -102,13 +103,9 @@ class CircleWidget(Widget2DBase, ResizersMixin):
     def _add_patch_to(self, ax):
         """Create the circle (or annulus) via the backend and add it to *ax*.
 
-        Overrides the base ``_add_patch_to``/``_set_patch`` split — as
-        :class:`~.drawing._widgets.rectangles.SquareWidget` does — because
-        backends with native circle widgets create the artist and attach it to
-        the panel in one step; there is no detached patch to add afterwards.
+        Overrides ``_add_patch_to`` rather than ``_set_patch`` because the
+        backend creates and attaches the widget in one step.
         """
-        from hyperspy.drawing.backends import get_backend
-
         backend = get_backend()
         self.blit = backend.supports_blit_from_ax(ax)
         xy = self._get_patch_xy()
@@ -126,10 +123,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         for p in self._patch:
             backend.set_pointer_style(p, animated=self.blit)
             backend.connect_widget_drag(p, self._on_widget_drag)
-        # Cooperate with ResizersMixin (last in the MRO) so its resizer
-        # handles are still built and, if they were already showing, re-added
-        # to the new axes — the two things the base ``_add_patch_to`` chain
-        # would have done for us.
+        # Let ResizersMixin build its handles and re-add them to the new axes.
         if hasattr(super(CircleWidget, self), "_set_patch"):
             super(CircleWidget, self)._set_patch()
         if hasattr(super(WidgetBase, self), "_add_patch_to"):
@@ -177,8 +171,6 @@ class CircleWidget(Widget2DBase, ResizersMixin):
     def _update_patch_geometry(self):
         """Push the current centre and radii to the backend handle(s)."""
         if self.is_on and self.patch:
-            from hyperspy.drawing.backends import get_backend
-
             xy = self._get_patch_xy()
             ro, ri = self.size
             self._patch = get_backend().update_circle_pointer(
@@ -187,8 +179,6 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             self._update_resizers()
             self.draw_patch()
 
-    # Position-only and size-only updates have no cheaper path than pushing
-    # the full geometry, so both reuse it.
     _update_patch_position = _update_patch_geometry
     _update_patch_size = _update_patch_geometry
 

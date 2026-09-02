@@ -66,13 +66,9 @@ def _signal1d_with_image_navigator():
 
 
 class TestNavigatorCrosshairDrag:
-    """Dragging the navigator row line updates hyperspy navigation.
-
-    A Signal1D with one navigation axis gets a 2-D image navigator whose
-    current row is marked with a native *hline* widget (0.5.0) — a real
-    crosshair only appears for genuinely 2-D navigation, covered by
-    ``TestNavigator2DCrosshairDrag``.
-    """
+    """Dragging the navigator row line (a native hline; a crosshair only
+    appears for 2-D navigation, see ``TestNavigator2DCrosshairDrag``) updates
+    hyperspy navigation."""
 
     def test_drag_moves_js_widget(self, apl_backend, interact_page):
         s = _signal1d_with_image_navigator()

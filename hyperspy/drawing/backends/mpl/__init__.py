@@ -52,10 +52,8 @@ class MplBackend:
     def create_axes(self, fig, animate_axis=False, **kwargs):
         ax = fig.add_subplot(111, **kwargs)
         if animate_axis:
-            # signal1d animates the axis so the y-scale can update during blit.
-            # Image plots leave it un-animated (matches the base behaviour) so
-            # the ticks/spine render in the static background rather than the
-            # animated pass — animating them shifts their sub-pixel rendering.
+            # Signal1D animates the axes so the y-scale can change during blit.
+            # Images keep them static: animating shifts their sub-pixel render.
             animated = fig.canvas.supports_blit
             ax.yaxis.set_animated(animated)
             ax.xaxis.set_animated(animated)
@@ -120,29 +118,18 @@ class MplBackend:
 
         if norm is None or not isinstance(norm, HyperNorm):
             return norm
-        from matplotlib.colors import (
-            LogNorm as MplLogNorm,
-        )
-        from matplotlib.colors import (
-            Normalize as MplNormalize,
-        )
-        from matplotlib.colors import (
-            PowerNorm as MplPowerNorm,
-        )
-        from matplotlib.colors import (
-            SymLogNorm as MplSymLogNorm,
-        )
+        import matplotlib.colors as mcolors
 
         if isinstance(norm, LinearNorm):
-            return MplNormalize(vmin=norm.vmin, vmax=norm.vmax, clip=norm.clip)
+            return mcolors.Normalize(vmin=norm.vmin, vmax=norm.vmax, clip=norm.clip)
         elif isinstance(norm, LogNorm):
-            return MplLogNorm(vmin=norm.vmin, vmax=norm.vmax, clip=norm.clip)
+            return mcolors.LogNorm(vmin=norm.vmin, vmax=norm.vmax, clip=norm.clip)
         elif isinstance(norm, PowerNorm):
-            return MplPowerNorm(
+            return mcolors.PowerNorm(
                 gamma=norm.gamma, vmin=norm.vmin, vmax=norm.vmax, clip=norm.clip
             )
         elif isinstance(norm, SymLogNorm):
-            return MplSymLogNorm(
+            return mcolors.SymLogNorm(
                 linthresh=norm.linthresh,
                 linscale=norm.linscale,
                 vmin=norm.vmin,
@@ -230,10 +217,8 @@ class MplBackend:
     ):
         animated = ax.figure.canvas.supports_blit
         mpl_norm = self._to_mpl_norm(norm)
-        # Interpolation is intentionally left to the caller/matplotlib default:
-        # the main ImagePlot path relies on matplotlib's own "auto" choice,
-        # while decomposition/loadings component plots pass
-        # ``interpolation="nearest"`` explicitly via kwargs.
+        # No default interpolation: ImagePlot relies on matplotlib's "auto",
+        # and the decomposition plots pass interpolation="nearest" themselves.
         args = {"animated": animated, "cmap": cmap}
         if mpl_norm is None:
             args.update({"vmin": vmin, "vmax": vmax})
@@ -246,10 +231,8 @@ class MplBackend:
         return ax.images[-1]
 
     def plot_mesh(self, ax, x, y, data, **kwargs):
-        # Match plot_image: animate the mesh when blitting is supported so it
-        # is painted via draw_artist (the blit pass) rather than the normal
-        # composited Axes.draw(), which mis-renders the edge row of this mesh
-        # (non-uniform-axis navigators/images) as solid black.
+        # Animate like plot_image: drawing the mesh in the blit pass avoids
+        # Axes.draw() rendering its edge row as solid black.
         kwargs.setdefault("animated", ax.figure.canvas.supports_blit)
         h = ax.pcolormesh(x, y, data, **kwargs)
         ax.invert_yaxis()
@@ -265,14 +248,9 @@ class MplBackend:
         handle.set_extent(extent)
 
     def image_set_clim(self, handle, vmin, vmax):
-        # Not handle.set_clim(vmin, vmax): that sets vmin then vmax as two
-        # separate attribute writes, each of which synchronously notifies any
-        # attached colorbar. On older matplotlib, the colorbar's callback
-        # recomputes norm limits via Colorbar._process_values() as soon as
-        # vmin is written (while vmax is still the stale/None value from the
-        # just-reset norm), scrambling vmin before vmax is applied. Setting
-        # vmax first, then vmin, in one tuple assignment (as the pre-refactor
-        # code did) avoids that intermediate inconsistent state.
+        # Not set_clim(): on older matplotlib an attached colorbar reacts to
+        # the vmin write while vmax is still None and scrambles the limits.
+        # Writing vmax first avoids that intermediate state.
         handle.norm.vmax, handle.norm.vmin = vmax, vmin
 
     def image_set_norm(self, handle, norm):
@@ -289,10 +267,8 @@ class MplBackend:
 
     def add_colorbar(self, fig, im_handle, ax, divider=False, size="5%", pad=0.05):
         if divider:
-            # Size the colorbar to the image — used by the multi-panel
-            # factors/loadings/cluster grids. ``fig.colorbar(ax=ax)`` would
-            # instead steal space from the axes and make a full-height bar that
-            # squishes each panel.
+            # Size the colorbar to the image rather than stealing axes space;
+            # used by the multi-panel factors/loadings grids.
             from mpl_toolkits.axes_grid1 import make_axes_locatable
 
             cax = make_axes_locatable(ax).append_axes("right", size=size, pad=pad)
@@ -408,9 +384,7 @@ class MplBackend:
     def update_circle_pointer(self, ax, handles, cx, cy, r_outer, r_inner=0.0):
         wanted = 2 if r_inner > 0 else 1
         if len(handles) != wanted:
-            # Crossing the circle↔annulus boundary: rebuild both patches and
-            # invalidate the blit cache so the repaint is a full redraw rather
-            # than a restore of pixels that still hold the old geometry.
+            # circle <-> annulus: rebuild the patches and force a full redraw.
             style = handles[0]
             new = self.create_circle_pointer(
                 ax,
@@ -486,7 +460,6 @@ class MplBackend:
         if not preferences.Plot.use_subfigure:
             return None
         import matplotlib.pyplot as plt
-        import numpy as np
 
         figsize = figsize or (7.5 * n, 7)
         fig = plt.figure(figsize=figsize, layout="constrained")
@@ -556,21 +529,7 @@ class MplBackend:
         pass  # MPL widgets fire drag via _onmousemove in the widget base class
 
     def get_ax_transform(self, ax, kind):
-        transforms = {
-            "data": ax.transData,
-            "axes": ax.transAxes,
-            "display": None,  # resolved by caller with IdentityTransform
-            "yaxis": ax.get_yaxis_transform(),
-            "xaxis": ax.get_xaxis_transform(),
-            "relative": ax.transData,
-        }
-        if kind not in transforms:
-            raise ValueError(f"Unknown transform kind: {kind!r}")
-        if kind == "display":
-            from matplotlib.transforms import IdentityTransform
-
-            return IdentityTransform()
-        return transforms[kind]
+        return self._space_transform(ax, kind)
 
     def _space_transform(self, ax, space):
         """Return the MPL transform corresponding to a CoordSpace string."""
@@ -589,8 +548,6 @@ class MplBackend:
         return mapping[space]
 
     def convert_coords(self, ax, points, from_space, to_space):
-        import numpy as np
-
         from_trans = self._space_transform(ax, from_space)
         to_trans = self._space_transform(ax, to_space)
         composite = from_trans + to_trans.inverted()
@@ -642,9 +599,7 @@ class MplBackend:
         collection = collection_cls(offset_transform=offset_transform, **kwargs)
         collection.set_transform(transform)
         ax.add_collection(collection)
-        # BlittedFigure draws markers as animated artists; without this the
-        # collection is never rendered (it is neither baked into the blit
-        # background nor drawn in the animated pass). Mirrors the fallback path.
+        # Markers are drawn in the blit pass, so they must be animated.
         self.artist_set_animated(
             collection, self.supports_blit(self.get_figure_from_ax(ax))
         )

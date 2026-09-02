@@ -32,12 +32,15 @@ Backend-agnostic interactive plotting engine.  Handles the `signal.plot()` infra
 | `backends/__init__.py` | `get_backend()` / `register_backend()` |
 | `backends/mpl/` | Matplotlib backend (default) |
 | `backends/anyplotlib/` | anyplotlib backend |
-| `backends/_magic.py` | `%anyplotlib` IPython magic |
+| `backends/_stub.py` | Template for a new backend |
+| `../ipython_magic.py` | `%anyplotlib` IPython magic (outside `drawing/` so `hyperspy.api` can register it without importing this package) |
+| `marker_collection.py` | `HyperMarkerCollection` descriptors: marker type + position keys + matplotlib fallback class |
+| `norm.py` | Backend-agnostic `HyperNorm` classes (`LogNorm`, `PowerNorm`, ...) |
 
 ### How the active backend is selected
 
-1. `hyperspy/drawing/__init__.py` loads `"matplotlib"` at import time.
-2. `preferences.Plot.backend` is an open `Str` trait; changing it fires `_on_backend_pref_change` which calls `load_backend(name)`.
+1. `hyperspy/drawing/__init__.py` loads the backend named by `preferences.Plot.backend` at import time (matplotlib by default).
+2. Changing `preferences.Plot.backend` fires `_on_backend_pref_change`, which calls `load_backend(name)`.
 3. `load_backend` looks up the `"hyperspy.backends"` entry-point group; external packages register there.
 
 ### Adding a new backend (summary)
@@ -47,19 +50,17 @@ Backend-agnostic interactive plotting engine.  Handles the `signal.plot()` infra
    [project.entry-points."hyperspy.backends"]
    mybackend = "hyperspy_mybackend.backend:MyBackend"
    ```
-2. Implement every method in `backends/_protocol.py` (76 methods).  Unsupported features should raise `BackendCapabilityError`.
-3. **Override `get_explorer`** — the Protocol default returns the abstract `HyperExplorer` base class and produces broken plots.  Subclass `HyperSignal1D_Explorer` + `HyperImage_Explorer` and implement their four abstract methods.  See `backends/anyplotlib/_explorers.py` for a full example.
-4. Set `ax.hspy_fig = <Signal1DFigure>` on your axes objects (done by `signal1d.py` automatically) — your axes must accept arbitrary attribute assignment.
-5. Verify: `isinstance(MyBackend(), PlottingBackend)` and run `pytest hyperspy/tests/drawing/`.
+2. Start from `backends/_stub.py`.  Unsupported features should raise `BackendCapabilityError`.
+3. Override `get_explorer` — the protocol default returns the bare `HyperExplorer` and produces broken plots.  Returning `HyperSignal1D_Explorer` / `HyperImage_Explorer` (or subclasses) is enough; see `backends/anyplotlib/_explorers.py`.
+4. Your axes objects must accept arbitrary attribute assignment (`ax.hspy_fig`, `ax.figure`, ...).
+5. Verify: `isinstance(MyBackend(), PlottingBackend)` and run `uv run pytest hyperspy/tests/drawing/`.
 
 ### Known remaining MPL coupling
 
-The items below have not yet been routed through the backend.  A new backend whose axes are plain Python objects (accept monkey-patching) will not hit these, but they are tracked for cleanup:
-
-- `_markers/_` — collections are matplotlib objects (`LineCollection`, `PolyCollection`, etc.); a non-MPL backend's `add_collection` should raise `BackendCapabilityError`.
-- `_widgets/line2d.py`, `_widgets/circle.py` — `plt.Line2D` / `plt.Circle` widget construction is MPL-only; these widgets are not used by anyplotlib.
-- `signal1d.py` — `ax.hspy_fig.ax_markers` accesses the parent figure's marker list (not a backend call).
-- `utils.py` — `plt.gcf()` / `plt.gca()` used by standalone plot utilities.
+- `utils.py` composers (`plot_images`, `plot_spectra` 'mosaic', `plot_histograms`, ...) build matplotlib figures directly and drive them with `_mpl_backend()`.  `plot_spectra` (other styles) and `plot_roi_map` (`single_figure`) render natively when a non-matplotlib backend is active.
+- `tiles.py` (`HistogramTilePlot`) is matplotlib-only.
+- `signal.py` / `signal1d.py` decomposition helpers fall back to `plt.gca()` when no axes is given.
+- Raw `matplotlib.collections.Collection` subclasses passed to `Markers(collection=...)` are matplotlib-only; the built-in marker classes use `HyperMarkerCollection` descriptors and render natively.
 
 ## Subdirectories
 

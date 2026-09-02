@@ -468,16 +468,6 @@ class TestPlotRangeWidget:
         self.range_widget.snap_position = True
         assert self.range_widget.snap_position
 
-    def test_init_without_matplotlib_widgets(self):
-        """If matplotlib.widgets can't be imported (lazily, to support
-        non-matplotlib backends), __init__ silently skips SpanSelector
-        kwarg parsing instead of raising."""
-        import sys
-
-        with mock.patch.dict(sys.modules, {"matplotlib.widgets": None}):
-            range_widget = widgets.RangeWidget(self.s.axes_manager)
-        assert range_widget._SpanSelector_kwargs["direction"] == "horizontal"
-
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
     )

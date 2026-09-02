@@ -18,6 +18,7 @@
 
 import numpy as np
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import Widget1DBase
 
 
@@ -86,8 +87,6 @@ class LabelWidget(Widget1DBase):
             self.draw_patch()
 
     def _set_patch(self):
-        from hyperspy.drawing.backends import get_backend
-
         self._patch = [
             get_backend().add_text(
                 self.ax,

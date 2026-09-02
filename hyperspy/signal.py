@@ -3225,11 +3225,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         self._plot.plot(**kwargs)
 
-        # Ensure the figure is displayed; for backends with deferred display
-        # (e.g. anyplotlib panel countdown) this forces the final render.
-        _apl_fig = kwargs.get("fig")
-        if _apl_fig is not None:
-            _backend.ensure_displayed(_apl_fig)
+        # Backends that defer display (anyplotlib) render the figure here.
+        fig = kwargs.get("fig")
+        if fig is not None:
+            _backend.ensure_displayed(fig)
 
         self.events.data_changed.connect(self.update_plot, [])
 

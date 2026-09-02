@@ -157,14 +157,11 @@ class Signal1DFigure(AbstractSignal1DFigure):
         # Or remove it from the color cycle if part of the cycle
         # in this round
         else:
-            try:
-                import matplotlib.colors as mpl_colors
+            import matplotlib.colors as mpl_colors
 
-                rgba_color = mpl_colors.to_rgba(line.color)
-                if rgba_color in self._color_cycles[line.type].color_cycle:
-                    self._color_cycles[line.type].color_cycle.remove(rgba_color)
-            except ImportError:
-                pass
+            rgba_color = mpl_colors.to_rgba(line.color)
+            if rgba_color in self._color_cycles[line.type].color_cycle:
+                self._color_cycles[line.type].color_cycle.remove(rgba_color)
 
     def plot(self, data_function_kwargs={}, **kwargs):
         backend = get_backend()
@@ -195,9 +192,6 @@ class Signal1DFigure(AbstractSignal1DFigure):
             lambda: self.axes_manager.events.indices_changed.disconnect(self.update), []
         )
 
-        # Restore the tight_layout the base code applied at the end of plot();
-        # without it the axes sit at the default position and every spectrum
-        # baseline shifts (the no-op default backend keeps non-MPL safe).
         backend.tight_layout(self.figure)
         self.render_figure()
 
@@ -406,14 +400,10 @@ class Signal1DLine(object):
             backend.remove_line(self.ax, self.line)
 
         norm = self.norm
-        try:
-            import matplotlib.colors as mpl_colors
+        import matplotlib.colors as mpl_colors
 
-            _mpl_norm_cls = mpl_colors.Normalize
-        except ImportError:
-            _mpl_norm_cls = type(None)
-        if isinstance(norm, _mpl_norm_cls) or (
-            inspect.isclass(norm) and issubclass(norm, _mpl_norm_cls)
+        if isinstance(norm, mpl_colors.Normalize) or (
+            inspect.isclass(norm) and issubclass(norm, mpl_colors.Normalize)
         ):
             raise ValueError(
                 "Matplotlib Normalize instance or subclass can "
@@ -623,7 +613,7 @@ def _plot_loading(
             extent=extent,
             interpolation="nearest",
         )
-        backend.add_colorbar(backend.get_figure_from_ax(ax), im, ax)
+        backend.add_colorbar(backend.get_figure_from_ax(ax), im, ax, divider=True)
     elif axes_manager.navigation_dimension == 1:
         if calibrate:
             x = axes_manager._axes[0].axis
