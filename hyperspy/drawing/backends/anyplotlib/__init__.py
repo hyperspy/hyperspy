@@ -1,7 +1,10 @@
 """anyplotlib plotting backend for hyperspy.
 
-Targets anyplotlib >= 0.5.0.  Several things that used to need a workaround
-here are native upstream as of that release and are used directly:
+Targets anyplotlib >= 0.8.0, the release this backend is tested against.
+0.7.1 is needed for pixel-sized markers to survive an export to standalone
+HTML, and 0.8.0 for tiled images that start life as a placeholder (a lazy
+signal's first frame) to render at all.  Several things that used to need a
+workaround here have been native since 0.5.0 and are used directly:
 
 * ``Widget.set(_notify=False)`` instead of wrapping every Python-initiated
   mutation in ``pause_events()``.
@@ -19,7 +22,7 @@ import numpy as np
 
 from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
-_NOT_YET = "anyplotlib does not yet support '{}'. See docs/anyplotlib_improvements.md."
+_NOT_YET = "the anyplotlib backend does not support '{}'."
 
 
 def _unwrap_cycling(value):
@@ -108,20 +111,6 @@ def _stroke_px(linewidth, default=2.0):
     if linewidth is None:
         linewidth = default
     return float(linewidth) * _PX_PER_PT
-
-
-def _snap(value, snap_values):
-    """Return the entry of *snap_values* closest to *value* (identity if None).
-
-    Only used for initial extents; once the widget exists, anyplotlib's own
-    ``snap_values`` handles snapping inside the drag.
-    """
-    if snap_values is None:
-        return value
-    arr = np.asarray(snap_values, dtype=float)
-    if arr.size == 0:
-        return value
-    return float(arr[np.argmin(np.abs(arr - float(value)))])
 
 
 # ---------------------------------------------------------------------------
@@ -250,8 +239,11 @@ def _markers_to_pixels(plot, marker_type, translated):
     if x_cal is None and y_cal is None:
         return translated
 
-    if marker_type in ("vlines", "hlines"):
+    if marker_type in ("vlines", "hlines"):  # pragma: no cover
         # These carry one coordinate per entry, along their own axis.
+        # Unreachable while anyplotlib allows vlines/hlines on 1-D panels
+        # only (a 1-D panel is already in data units, so _pixel_axes returns
+        # None above); kept so they convert correctly if that changes.
         axis = x_cal if marker_type == "vlines" else y_cal
         offsets = translated.get("offsets")
         if offsets is not None:
@@ -516,10 +508,25 @@ class _AplLine2DPatch:
         self._widget = None  # native line widget (main segment)
         self._group = None  # 'lines' marker group (width indicators)
         self._plot = None
+        self._on_drag = None  # remembered until the widget exists
+
+    def _pixel_xy(self):
+        """Return the endpoints as the panel addresses them.
+
+        An image panel positions widgets by pixel index; a 1-D panel is
+        already in data units and ``_pixel_axes`` returns ``None`` for it,
+        which makes both conversions the identity.
+        """
+        xa, ya = _pixel_axes(self._plot)
+        x, y = self._xy
+        return (
+            np.asarray([_to_pixels(xa, v) for v in x], dtype=float),
+            np.asarray([_to_pixels(ya, v) for v in y], dtype=float),
+        )
 
     def materialise(self, plot):
         self._plot = plot
-        x, y = self._xy
+        x, y = self._pixel_xy()
         if self._interactive and hasattr(plot, "add_line_widget") and len(x) >= 2:
             self._widget = plot.add_line_widget(
                 x1=float(x[0]),
@@ -529,6 +536,7 @@ class _AplLine2DPatch:
                 color=self._color,
                 linewidth=_stroke_px(self._linewidth),
             )
+            self._connect_drag()
         else:
             self._group = plot.markers.add(
                 "lines",
@@ -541,7 +549,7 @@ class _AplLine2DPatch:
         if y is None:  # Line2D.set_data accepts a single (2, N) array
             x, y = np.asarray(x, dtype=float)
         self._xy = (np.asarray(x, dtype=float), np.asarray(y, dtype=float))
-        x, y = self._xy
+        x, y = self._pixel_xy()
         if self._widget is not None and len(x) >= 2:
             self._widget.set(
                 _notify=False,
@@ -567,12 +575,22 @@ class _AplLine2DPatch:
 
     def connect_drag(self, on_drag):
         """Report endpoint moves as (x1, y1, x2, y2) in data coords."""
-        if self._widget is None:
+        self._on_drag = on_drag
+        self._connect_drag()
+
+    def _connect_drag(self):
+        if self._widget is None or self._on_drag is None:
             return
-        w = self._widget
+        w, on_drag = self._widget, self._on_drag
+        xa, ya = _pixel_axes(self._plot)
 
         def _cb(event):
-            on_drag(w.x1, w.y1, w.x2, w.y2)
+            on_drag(
+                _to_data(xa, w.x1),
+                _to_data(ya, w.y1),
+                _to_data(xa, w.x2),
+                _to_data(ya, w.y2),
+            )
 
         w.add_event_handler(AnyplotlibBackend._wrap(_cb), "pointer_move")
 
@@ -591,8 +609,8 @@ class AnyplotlibBackend:
     """Maps hyperspy drawing primitives to the anyplotlib API.
 
     Methods that raise ``BackendCapabilityError`` name a capability anyplotlib
-    does not have; see ``docs/anyplotlib_improvements.md`` for the running
-    list and which release resolved each one.
+    does not have, so that the caller can fall back — as ``Markers.plot``
+    does — or report it to the user rather than draw the wrong thing.
     """
 
     # ── Figure lifecycle ──────────────────────────────────────────────────

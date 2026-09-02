@@ -17,3 +17,11 @@ matplotlib-native composers in ``hyperspy.drawing.utils`` (``plot_images``,
 ``plot_spectra``, ``plot_roi_map``), which now always drive the matplotlib
 backend for the matplotlib figures they build rather than whichever backend
 happens to be active.
+
+Fix :class:`~.api.roi.Line2DROI` on the anyplotlib backend: its widget was
+positioned in calibrated units while an image panel addresses widgets by pixel
+index, so the line landed off the image on any calibrated signal, and the drag
+callback the widget offers was never connected, so dragging the line in the
+browser left the ROI behind. :class:`~.drawing._widgets.line2d.Line2DWidget`
+now reports native-widget drags like the other widgets do (a no-op on
+matplotlib, which drags through mouse events instead).

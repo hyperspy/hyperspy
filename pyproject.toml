@@ -96,7 +96,7 @@ all = [
     "hyperspy[speed]",
 ]
 anyplotlib = [
-    "anyplotlib>=0.5.0",
+    "anyplotlib>=0.8.0",
 ]
 baseline = [
     "pybaselines"
@@ -113,6 +113,7 @@ dev = [
     "hyperspy[coverage]",
     "hyperspy[doc]",
     "hyperspy[tests]",
+    "hyperspy[tests-browser]",
 ]
 doc = [
     "holospy", # example gallery
@@ -163,6 +164,12 @@ tests = [
     "pytest-xdist",
     "pytest>=3.6",
     "setuptools_scm"
+]
+tests-browser = [
+    # Browser tests for the anyplotlib backend: they render the figure in
+    # headless Chromium, which `playwright install chromium` provides.
+    "hyperspy[anyplotlib]",
+    "playwright",
 ]
 
 [project.entry-points."hyperspy.backends"]

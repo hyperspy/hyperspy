@@ -286,8 +286,15 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 **kwargs,
             )
         ]
+        # Backends whose widgets drag themselves (anyplotlib) report the move
+        # here; matplotlib drags through _onmousemove instead and no-ops.
+        backend.connect_widget_drag(self._patch[0], self._on_widget_drag)
         if self._size[0] > 0:
             self._set_size_patch()
+
+    def _on_widget_drag(self, x1, y1, x2, y2):
+        """Native-widget drag callback: both endpoints, in data coordinates."""
+        self.position = np.array([[x1, y1], [x2, y2]])
 
     def _set_size_patch(self):
         if self.ax is None:
