@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Integration tests for the backend abstraction (Phases 2, 5–6)."""
+"""Integration tests for the backend abstraction."""
 
 import importlib.metadata
 from unittest.mock import patch

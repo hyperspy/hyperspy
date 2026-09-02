@@ -98,8 +98,7 @@ class BlittedFigure:
         if self.figure is None:
             return None
         figure = self.figure
-        # SubFigure has a .figure attribute pointing to the parent Figure;
-        # a top-level Figure does not, so this duck-type check is safe.
+        # Only a SubFigure has a .figure attribute (its parent Figure).
         parent = getattr(figure, "figure", None)
         if parent is not None and parent is not figure:
             return parent

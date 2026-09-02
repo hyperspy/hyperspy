@@ -18,7 +18,6 @@
 
 """Unit tests for hyperspy.drawing.tiles.HistogramTilePlot (SAMFire debug plot)."""
 
-import importlib
 from unittest import mock
 
 import numpy as np
@@ -44,13 +43,6 @@ def _close_htp():
     for htp in plots:
         if htp.figure is not None:
             htp.close()
-
-
-def test_require_mpl_raises_when_matplotlib_missing():
-    htp = HistogramTilePlot()
-    with mock.patch.object(importlib.util, "find_spec", return_value=None):
-        with pytest.raises(BackendCapabilityError, match="requires matplotlib"):
-            htp._require_mpl()
 
 
 def test_require_mpl_raises_for_non_mpl_backend():

@@ -18,10 +18,8 @@
 import copy
 import importlib
 import os
-import sys
 from pathlib import Path
 from shutil import copyfile
-from unittest import mock
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -588,35 +586,6 @@ def test_plot_spectra_ax_array():
     # axes object
     fig, axes = plt.subplots()
     hs.plot.plot_spectra(s, ax=axes, style="mosaic")
-
-
-def test_add_line_color_import_error_fallback():
-    # `Signal1DFigure.add_line` lazily imports `matplotlib.colors` to remove
-    # the newly-added line's color from the relevant color cycle. Simulate
-    # matplotlib being unavailable to exercise the `except ImportError` path.
-    s = hs.signals.Signal1D(np.arange(10).astype(float))
-    s.plot()
-    sf = s._plot.signal_plot
-
-    line = Signal1DLine()
-    line.data_function = lambda axes_manager=None, **kwargs: np.arange(10.0)
-    line.axes_manager = s.axes_manager
-    line.color = "green"
-    with mock.patch.dict(sys.modules, {"matplotlib.colors": None}):
-        sf.add_line(line)
-    assert line in sf.ax_lines
-
-
-def test_signal1d_line_plot_normalize_import_error_fallback():
-    # `Signal1DLine.plot` lazily imports `matplotlib.colors` to validate the
-    # `norm` argument. Simulate matplotlib being unavailable to exercise the
-    # `except ImportError` fallback used to skip that validation.
-    s = hs.signals.Signal1D(np.arange(10).astype(float))
-    s.plot()
-    line = s._plot.signal_plot.ax_lines[0]
-    with mock.patch.dict(sys.modules, {"matplotlib.colors": None}):
-        line.plot()
-    assert line.line is not None
 
 
 def test_signal1d_line_force_replot():

@@ -195,15 +195,11 @@ _MPL_BACKEND = None
 
 
 def _mpl_backend():
-    """Return the matplotlib backend, regardless of which backend is active.
+    """Return the matplotlib backend, whichever backend is active.
 
-    The multi-signal composers in this module (:func:`plot_images`,
-    :func:`plot_spectra`, :func:`plot_roi_map`, …) build matplotlib figures
-    and axes directly — they take ``ax=`` matplotlib axes and hand back
-    matplotlib colorbars — so the artists they create must be driven by the
-    matplotlib backend even when, say, anyplotlib is the active one.  Routing
-    them through :func:`~.drawing.backends.get_backend` instead would feed
-    matplotlib ``Axes`` to a backend that cannot read them.
+    The composers in this module (:func:`plot_images`, :func:`plot_spectra`,
+    :func:`plot_roi_map`, ...) build matplotlib figures and axes directly, so
+    the artists they create must be driven by the matplotlib backend.
     """
     global _MPL_BACKEND
     if _MPL_BACKEND is None:
@@ -216,13 +212,10 @@ def _mpl_backend():
 def _active_non_mpl_backend():
     """Return the active plotting backend, or None when it is matplotlib.
 
-    The composers in this module default to building matplotlib figures
-    directly.  The ones that can express their output through the backend
-    protocol (:func:`plot_spectra`'s single-panel styles,
-    :func:`plot_roi_map`'s ``single_figure`` layout) use this to detect that
-    a different backend is active and render natively through it instead,
-    so their figures stay interactive.  ``None`` means "keep the historical
-    matplotlib path" — including when the caller passed matplotlib objects.
+    Composers that can render through the backend protocol
+    (:func:`plot_spectra`'s single-panel styles, :func:`plot_roi_map` with
+    ``single_figure``) use this to decide between the native path and the
+    matplotlib one.
     """
     from hyperspy.drawing.backends import get_backend
     from hyperspy.drawing.backends.mpl import MplBackend
@@ -1536,15 +1529,11 @@ def _plot_spectra_backend(
 ):
     """Render :func:`plot_spectra` through the active non-matplotlib backend.
 
-    Handles the styles that map onto a single panel ('overlap', 'cascade')
-    plus 'heatmap', which is a :meth:`~.api.signals.Signal2D.plot` and hence
-    already backend-generic.  'mosaic' still renders with matplotlib.
-    Legend entries become native line labels; ``legend_picking`` has no
-    backend equivalent and is ignored.
-
-    The argument values arrive pre-normalised by ``plot_spectra`` (``color``
-    is an infinite cycle, ``linestyle`` a list, ``legend`` a resolved list
-    or None).
+    Covers the single-panel styles ('overlap', 'cascade') and 'heatmap' (a
+    :meth:`~.api.signals.Signal2D.plot`).  Legend entries become native line
+    labels; ``legend_picking`` is ignored.  Arguments arrive pre-normalised
+    by ``plot_spectra`` (``color`` is an infinite cycle, ``linestyle`` a
+    list, ``legend`` a list or None).
     """
     if style == "heatmap":
         if not isinstance(spectra, signals.BaseSignal):
@@ -1816,9 +1805,8 @@ def plot_spectra(
     else:
         ylabel = "Intensity"
 
-    # Render natively through the active backend when it is not matplotlib
-    # and the caller did not pass matplotlib objects to draw into.  The
-    # 'mosaic' grid is still matplotlib-only.
+    # Render natively when a non-matplotlib backend is active and the caller
+    # did not pass matplotlib objects to draw into ('mosaic' is matplotlib-only).
     if fig is None and ax is None and style in ("overlap", "cascade", "heatmap"):
         active_backend = _active_non_mpl_backend()
         if active_backend is not None:
@@ -2203,9 +2191,8 @@ def _make_cmaps(colors):
 def _add_colored_frame(ax, color, animated=True, backend=None):
     """Draw a thick coloured border around the whole of *ax*.
 
-    *ax* is a matplotlib axes when the caller is one of this module's
-    matplotlib-native composers, and a backend-native axes when it is a
-    signal's own plot — hence the two paths.
+    *ax* is either a matplotlib axes (from this module's composers) or a
+    backend-native axes (a signal's own plot).
     """
     if hasattr(ax, "transAxes"):
         import matplotlib.patches as patches
@@ -2447,14 +2434,10 @@ def plot_roi_map(
         if active_backend is not None and nav_dims != 1:
             panels = active_backend.create_combined_figure_panels(n=len(roi_sums))
         if nav_dims == 1:
-            # Dispatches through the active backend internally, so the maps
-            # stay live on any backend (auto_update wires data_changed).
             axs = plot_spectra(roi_sums, color=color, **single_figure_kwargs)
         elif panels is not None:
-            # Native path: each map is a full hyperspy image plot adopting
-            # one panel of a shared backend figure, so the maps update live
-            # as the ROIs move — the same machinery as the separate-figures
-            # path, just laid out side by side.
+            # Each map is a live hyperspy image plot in one panel of a shared
+            # backend figure.
             axs = []
             for roi_sum, panel, cmap_, color_ in zip(roi_sums, panels, cmap, color):
                 roi_sum.plot(fig=panel, cmap=cmap_, scalebar=False)

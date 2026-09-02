@@ -167,6 +167,6 @@ class ScaleBar(object):
 
     def set_tex_bold(self):
         self.tex_bold = True
-        get_backend().update_text(self.text, self.get_units_string())
         backend = get_backend()
+        backend.update_text(self.text, self.get_units_string())
         backend.draw_idle(backend.get_figure_from_ax(self.ax))

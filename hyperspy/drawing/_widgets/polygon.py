@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import WidgetBase
 
 
@@ -85,8 +86,6 @@ class PolygonWidget(WidgetBase):
                     self._widget = None
                 self.ax = None
             if render_figure:
-                from hyperspy.drawing.backends import get_backend
-
                 get_backend().draw_idle(getattr(existing_ax, "figure", None))
         self._is_on = value
 
@@ -109,8 +108,6 @@ class PolygonWidget(WidgetBase):
         # Colors of widget. Usually set from constructor.
         handle_props = dict(color=self._color)
         line_props = dict(color=self._color)
-
-        from hyperspy.drawing.backends import get_backend
 
         backend = get_backend()
         self._widget = backend.create_polygon_selector(
@@ -140,8 +137,6 @@ class PolygonWidget(WidgetBase):
                 self._widget.verts = vertices
                 self._finished_building = True
                 self._cached_vertices = vertices.copy()
-            from hyperspy.drawing.backends import get_backend
-
             get_backend().draw_idle(getattr(self.ax, "figure", None))
 
     def get_vertices(self):

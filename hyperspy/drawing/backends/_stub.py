@@ -389,8 +389,9 @@ class StubBackend(BlitMixin, PointerMixin):
     #       """Move the line to *pos* (x for axis='x', y for axis='y')."""
     #       ...
     #
-    #   def create_rect_pointer(self, ax, x, y, w, h, color="red", linewidth=2):
-    #       """Lower-left (x, y), size w×h."""
+    #   def create_rect_pointer(self, ax, x, y, w, h, color="red", linewidth=2,
+    #                           pointer=False):
+    #       """Lower-left (x, y), size w×h; pointer=True marks a navigator."""
     #       ...
     #
     #   def update_rect_pointer(self, handle, x, y, w, h) -> None:
@@ -423,10 +424,11 @@ class StubBackend(BlitMixin, PointerMixin):
     # =========================================================================
     # Combined layout                                                 [OPTIONAL]
     # =========================================================================
-    # Return (nav_fig, signal_fig) to display navigator + signal in one window.
-    # Default returns None → two separate figures.
+    # Return *n* panel handles to lay several plots out in one window (the
+    # default n=2 is the navigator + signal pair).  Default returns None →
+    # separate figures.
     #
-    #   def create_combined_figure_panels(self, figsize=None):
+    #   def create_combined_figure_panels(self, figsize=None, n=2):
     #       ...
     #
     #   def ensure_displayed(self, fig) -> None:

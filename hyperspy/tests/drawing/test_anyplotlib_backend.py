@@ -210,7 +210,7 @@ class TestLinePropTranslation:
     """
 
     def test_scatter_linestyle_none_is_passed_through(self, backend):
-        """0.5.0 renders a real markers-only line; we used to fake it as solid."""
+        """linestyle="None" becomes a markers-only line."""
         out = backend._norm_line_props(
             {"linestyle": "None", "marker": "o", "markersize": 1}
         )
@@ -464,13 +464,8 @@ class TestSpanSelector:
         assert span.extents == pytest.approx((2.0, 8.0))
 
     def test_snap_values_reach_the_widget(self, span):
-        """Snapping is the widget's job as of 0.5.0.
-
-        It has to happen inside the JS drag: snapping in Python after the
-        event moves an edge the user is still holding, which reads as the
-        selection fighting back.  So the façade forwards the values rather
-        than rounding ``extents`` itself.
-        """
+        """Snap values are forwarded to the widget so snapping happens during
+        the JS drag."""
         span.snap_values = np.array([0.0, 5.0, 10.0])
         assert span._widget.get("snap_values") == [0.0, 5.0, 10.0]
         span.extents = (1.2, 8.9)
@@ -540,13 +535,8 @@ class TestPolygonSelector:
 
 
 class TestCalibratedWidgetCoordinates:
-    """Overlay widgets are positioned in image pixels, HyperSpy in data units.
-
-    The two coincide only for an uncalibrated axis (scale 1, offset 0). On a
-    calibrated image the backend must convert, or the widget is drawn at the
-    wrong place and size — a 0.015 nm/px image put a 3.84 nm ROI at pixel 1.9
-    with a width of 3.8 px, a smudge in the corner that could not be grabbed.
-    """
+    """Overlay widgets are positioned in image pixels, hyperspy in data units;
+    the backend must convert on a calibrated image."""
 
     # 8 px spanning 0-16 in data units, i.e. 2.0 per pixel.
     EXTENT = (0.0, 16.0, 16.0, 0.0)
@@ -639,11 +629,8 @@ class TestCalibratedWidgetCoordinates:
         assert np.atleast_1d(group._data["V"])[0] == pytest.approx(2.0)
 
     def test_line_pointer_on_2d_navigator_converts(self, backend, image_ax):
-        """A Signal1D navigator is a 2-D image with a horizontal line pointer.
-
-        The line therefore lives in pixel rows; passing the calibrated value
-        straight through put it off the bottom of the image.
-        """
+        """A Signal1D navigator is a 2-D image, so its line pointer is
+        positioned in pixel rows."""
         handle = backend.create_line_pointer(image_ax, "y", 4.0)
         assert handle.get("y") == pytest.approx(1.5)
         backend.update_line_pointer(handle, "y", 12.0)
@@ -886,15 +873,8 @@ class TestNativeCrosshairWidget:
     """Native anyplotlib widgets for 2D image navigator navigation."""
 
     def test_hline_widget_uses_a_real_rule(self):
-        """HorizontalLineWidget attaches a native hline on an anyplotlib navigator.
-
-        Signal1D(n, length) has a 2D image navigator (full spectrum stack);
-        the horizontal line marks the current navigation row (y-axis).
-
-        This used to be faked with a crosshair pinned at cx=0, which left a
-        spurious full-height rule down the left edge of the navigator.
-        anyplotlib 0.5.0 has a real ``hline`` kind, so the pointer is one now.
-        """
+        """HorizontalLineWidget attaches a native hline (not a crosshair) on
+        the 2-D image navigator of a Signal1D."""
         from anyplotlib.widgets import HLineWidget as AplHLine
 
         from hyperspy.drawing._widgets.horizontal_line import HorizontalLineWidget
@@ -1687,7 +1667,7 @@ class TestUnsupportedCapabilityRaises:
             backend.create_polygon_selector(ax)
 
     def test_create_span_selector_vertical_is_supported(self, backend, fig_ax):
-        """0.5.0 added a vertical range orientation; this used to raise."""
+        """A vertical span selector maps to a vertical range widget."""
         _, ax = fig_ax
         backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
         sel = backend.create_span_selector(ax, direction="vertical")
@@ -1771,12 +1751,7 @@ class TestMarkerTranslationGaps:
         ],
     )
     def test_singleton_cycling_values_flattened(self, backend, marker_type, key):
-        """hyperspy wraps a single value as ``(v,)`` so matplotlib cycles it.
-
-        anyplotlib broadcasts against the marker count instead, so a 1-element
-        sequence must be flattened or ``_broadcast`` rejects it whenever there
-        is more than one marker.
-        """
+        """A 1-element cycling sequence is flattened to a scalar."""
         out = backend._translate_marker_kwargs(
             marker_type, "data", {key: (5,), "offsets": [[1, 1], [2, 2]]}
         )
@@ -1840,13 +1815,8 @@ class TestScalebar:
         assert isinstance(handle, ScaleBar)
 
     def test_undefined_units_draws_no_scalebar(self, backend, fig_ax):
-        """An uncalibrated axis reports `.units` as traits.Undefined.
-
-        That sentinel must never reach Plot2D._state (it isn't
-        JSON-serialisable), and no bar is drawn: anyplotlib labels the panel
-        in pixels, while the generic fallback would render the units sentinel
-        into the label as `10 <undefined>`.
-        """
+        """traits.Undefined units (uncalibrated axis) must not reach
+        Plot2D._state, and no bar is drawn."""
         from traits.api import Undefined
 
         from hyperspy.drawing.backends.anyplotlib import _AplNoScalebar

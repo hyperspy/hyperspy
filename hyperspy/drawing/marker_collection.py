@@ -18,22 +18,16 @@
 
 """Backend-agnostic marker collection descriptors.
 
-``HyperMarkerCollection`` subclasses describe the *geometry* of a marker set
-without coupling to any rendering backend.  Each subclass bundles three
-things that were previously scattered across the ``Markers`` subclass and
-``MplBackend._marker_collection_map``:
+Each ``HyperMarkerCollection`` subclass describes one marker geometry:
 
-1. ``_marker_type`` — dispatched to ``PlottingBackend.create_markers`` so
-   backends (anyplotlib, fastplotlib, …) can render natively.
-2. ``_position_key`` / ``_position_key_to_set`` — the canonical kwarg keys
-   for position data, shared by both the storage layer and all backends.
-3. ``mpl_collection()`` — a lazy classmethod returning the MPL Collection
-   class used by ``MplBackend`` on the fallback path.
+1. ``_marker_type`` — passed to ``PlottingBackend.create_markers`` for
+   native rendering.
+2. ``_position_key`` / ``_position_key_to_set`` — the kwarg keys holding
+   position data.
+3. ``mpl_collection()`` — the matplotlib Collection class used on the
+   matplotlib fallback path.
 
-Pass a *subclass* (not an instance) to ``Markers(collection=...)``, exactly
-as you would pass a ``matplotlib.collections.Collection`` subclass today.
-The looping / navigation behaviour in ``Markers`` is purely data-side and
-does not change.
+Pass the *subclass* (not an instance) to ``Markers(collection=...)``.
 """
 
 from __future__ import annotations

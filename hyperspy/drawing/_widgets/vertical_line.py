@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import Widget1DBase
 
 
@@ -24,14 +25,10 @@ class VerticalLineWidget(Widget1DBase):
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
-            from hyperspy.drawing.backends import get_backend
-
             get_backend().update_line_pointer(self.patch[0], "x", float(self._pos[0]))
             self.draw_patch()
 
     def _add_patch_to(self, ax):
-        from hyperspy.drawing.backends import get_backend
-
         backend = get_backend()
         self.blit = backend.supports_blit_from_ax(ax)
         handle = backend.create_line_pointer(
@@ -39,8 +36,11 @@ class VerticalLineWidget(Widget1DBase):
         )
         self._patch = [handle]
         backend.set_pointer_style(handle, animated=self.blit)
-        _self = self
-        backend.connect_widget_drag(handle, lambda x: setattr(_self, "position", (x,)))
+        backend.connect_widget_drag(handle, self._on_widget_drag)
+
+    def _on_widget_drag(self, x, *args):
+        """Native-widget drag callback."""
+        self.position = (x,)
 
     def _onjumpclick(self, event):
         if event.key == "shift" and event.inaxes and self.is_pointer:

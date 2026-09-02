@@ -20,6 +20,7 @@ import logging
 
 import numpy as np
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
 
 _logger = logging.getLogger(__name__)
@@ -39,8 +40,6 @@ class SquareWidget(Widget2DBase):
         super(SquareWidget, self).__init__(axes_manager, **kwargs)
 
     def _add_patch_to(self, ax):
-        from hyperspy.drawing.backends import get_backend
-
         backend = get_backend()
         self.blit = backend.supports_blit_from_ax(ax)
         xy = self._get_patch_xy()
@@ -58,16 +57,12 @@ class SquareWidget(Widget2DBase):
         self._patch = [handle]
         backend.set_pointer_style(handle, animated=self.blit)
         backend.connect_widget_drag(handle, self._on_widget_drag)
-        # Cooperate with ResizersMixin (RectangleWidget) so its resizer-handle
-        # objects get created; overriding _add_patch_to instead of _set_patch
-        # (as the base widget does) would otherwise skip this entirely.
+        # Let ResizersMixin (RectangleWidget) build its handles.
         if hasattr(super(SquareWidget, self), "_set_patch"):
             super(SquareWidget, self)._set_patch()
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
-            from hyperspy.drawing.backends import get_backend
-
             xy = self._get_patch_xy()
             xs, ys = self.size
             get_backend().update_rect_pointer(self.patch[0], xy[0], xy[1], xs, ys)
@@ -357,12 +352,8 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         return self._pos - 0.5 * np.array(offset)
 
     def _on_widget_drag(self, x, y, *size):
-        """Native-widget drag callback.
-
-        The backend reports the patch corner (and, for resizable native
-        widgets, the new width/height).  Convert the corner to hyperspy's
-        top-left-pixel-centre 'position' convention.
-        """
+        """Native-widget drag callback: patch corner and, when the native
+        widget is resizable, the new width/height."""
         scale = [a.scale for a in self.axes]
         kwargs = {"x": x + 0.5 * scale[0], "y": y + 0.5 * scale[1]}
         if len(size) == 2:
@@ -372,8 +363,6 @@ class RectangleWidget(SquareWidget, ResizersMixin):
     def _update_patch_position(self):
         # Override to include resizer positioning
         if self.is_on and self.patch:
-            from hyperspy.drawing.backends import get_backend
-
             xy = self._get_patch_xy()
             xs, ys = self.size
             get_backend().update_rect_pointer(self.patch[0], xy[0], xy[1], xs, ys)
@@ -383,8 +372,6 @@ class RectangleWidget(SquareWidget, ResizersMixin):
     def _update_patch_geometry(self):
         # Override to include resizer positioning
         if self.is_on and self.patch:
-            from hyperspy.drawing.backends import get_backend
-
             x, y, xs, ys = self._get_patch_bounds()
             get_backend().update_rect_pointer(self.patch[0], x, y, xs, ys)
             self._update_resizers()

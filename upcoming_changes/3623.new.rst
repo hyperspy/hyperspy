@@ -1,10 +1,9 @@
-``signal.plot()`` is now backend-agnostic: rendering goes through a pluggable
-``PlottingBackend`` protocol. Matplotlib remains the default, and an
-``anyplotlib`` backend can be selected via the ``Plot.backend`` preference or
-the ``%anyplotlib`` IPython magic.
-
-Unlike ``ipympl``, which streams server-rendered images over a Jupyter comm and
-needs a live kernel for every interaction, ``anyplotlib`` (paired with the
-``anywidget`` GUI) renders in the browser — giving smoother interactivity and
-plots that work on frontends lacking ipywidgets support, such as Marimo and
-JupyterLite.
+Add a pluggable plotting-backend system: ``signal.plot()``, the interactive
+widgets/ROIs and markers now render through a ``PlottingBackend`` protocol.
+Matplotlib remains the default; an ``anyplotlib`` backend (install with
+``pip install hyperspy[anyplotlib]``) can be selected with
+``hs.preferences.Plot.backend = "anyplotlib"`` or the ``%anyplotlib`` IPython
+magic. Unlike ``ipympl``, ``anyplotlib`` renders in the browser, so plots stay
+interactive without a round trip to the kernel and work on frontends without
+ipywidgets support such as Marimo and JupyterLite. Third-party backends can
+register through the ``hyperspy.backends`` entry-point group.

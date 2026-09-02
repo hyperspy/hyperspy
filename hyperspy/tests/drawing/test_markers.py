@@ -48,7 +48,6 @@ from hyperspy.drawing.marker_collection import (
     TextsCollection,
     VLinesCollection,
 )
-from hyperspy.drawing.markers import _is_patch
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
@@ -1209,13 +1208,6 @@ def test_collection_error_wrong_module():
             offsets=[[1, 1], [2, 2]],
             collection=_CustomCollectionOutsideAllowedModules,
         )
-
-
-def test_is_patch_import_error_fallback():
-    # `_is_patch` lazily imports `matplotlib.patches`; simulate matplotlib
-    # being unavailable to exercise the `except ImportError` fallback.
-    with mock.patch.dict(sys.modules, {"matplotlib.patches": None}):
-        assert _is_patch(object()) is False
 
 
 def test_to_dictionary_hyper_collection_via_base_markers_class():

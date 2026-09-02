@@ -19,39 +19,29 @@
 
 from __future__ import division
 
-import importlib.util
-import logging
-
 import numpy as np
 
 from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.drawing.figure import BlittedFigure
 
-_logger = logging.getLogger(__name__)
-
 
 class HistogramTilePlot(BlittedFigure):
     """SAMFire histogram debug plot.
 
-    This class uses matplotlib bar/patch primitives directly and therefore
-    only works with the matplotlib backend.  Calling :meth:`plot` or
-    :meth:`update` while a different backend is active raises
-    :class:`~hyperspy.drawing.backends._protocol.BackendCapabilityError`.
+    Draws with matplotlib bar/patch primitives directly, so :meth:`plot` and
+    :meth:`update` raise ``BackendCapabilityError`` under any other backend.
     """
 
-    def __init__(self):
-        super().__init__()  # initialises events, ax_markers, _background, etc.
+    @staticmethod
+    def _require_mpl():
+        from hyperspy.drawing.backends.mpl import MplBackend
 
-    def _require_mpl(self):
         backend = get_backend()
-        if importlib.util.find_spec("matplotlib") is None:
-            raise BackendCapabilityError("HistogramTilePlot requires matplotlib.")
-        backend_name = type(backend).__name__
-        if "Mpl" not in backend_name and "matplotlib" not in backend_name.lower():
+        if not isinstance(backend, MplBackend):
             raise BackendCapabilityError(
-                f"HistogramTilePlot uses matplotlib bar/patch primitives and "
-                f"cannot run under the '{backend_name}' backend."
+                "HistogramTilePlot uses matplotlib primitives and cannot run "
+                f"under the '{type(backend).__name__}' backend."
             )
 
     def create_axis(self, ncols=1, nrows=1, number=1, title=""):
@@ -94,4 +84,4 @@ class HistogramTilePlot(BlittedFigure):
                     width = bin_edges[-1] - bin_edges[0]
                     ax.set_xlim(bin_edges[0] - width * 0.1, bin_edges[-1] + width * 0.1)
                     ax.set_ylim(0, np.max(hist) * 1.1)
-        self.render_figure()  # routes through backend (draw_idle or blit)
+        self.render_figure()

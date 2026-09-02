@@ -30,10 +30,8 @@ from hyperspy.ipython_magic import (  # noqa: E402
     _register_if_active as _register_anyplotlib_magic_now,
 )
 
-# Register %anyplotlib now (if running inside IPython) rather than waiting
-# for hyperspy.drawing to be lazily imported by the first signal.plot() call
-# — otherwise %anyplotlib typed before any plot() silently fails to switch
-# the backend for that first plot.
+# hyperspy.drawing is imported lazily, so register %anyplotlib here to make
+# it available before the first plot() call.
 _register_anyplotlib_magic_now()
 
 __doc__ = (

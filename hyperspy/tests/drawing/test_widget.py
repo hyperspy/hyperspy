@@ -166,19 +166,11 @@ def test_get_resizer_size_falls_back_to_axes_scale():
 
 
 def test_get_resizer_offset_direct_call():
-    """_get_resizer_offset() is dead code (superseded by the inline
-    computation in _get_resizer_pos()), kept only for backward
-    compatibility; call it directly to make sure the transform-conversion
-    part of it keeps working."""
     s = signals.Signal2D(np.random.random((10, 10)))
     s.plot()
     rect_roi = roi.RectangularROI(0, 0, 2, 2)
     rect_roi.interactive(s)
     widget = next(iter(rect_roi.widgets))
-    # Pre-existing bug (also present without this PR's changes): with the
-    # default (tuple) resize_pixel_size this works, but _get_resizer_size()
-    # returning a plain list when resize_pixel_size is None makes the final
-    # "rsize / 2" division raise. Exercise the reachable, non-crashing part.
     offset = widget._get_resizer_offset()
     assert len(offset) == 2
 

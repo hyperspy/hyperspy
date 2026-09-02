@@ -1,19 +1,9 @@
 """anyplotlib plotting backend for hyperspy.
 
-Targets anyplotlib >= 0.8.0, the release this backend is tested against.
-0.7.1 is needed for pixel-sized markers to survive an export to standalone
-HTML, and 0.8.0 for tiled images that start life as a placeholder (a lazy
-signal's first frame) to render at all.  Several things that used to need a
-workaround here have been native since 0.5.0 and are used directly:
-
-* ``Widget.set(_notify=False)`` instead of wrapping every Python-initiated
-  mutation in ``pause_events()``.
-* ``plot_box`` / ``data_to_display`` / ``display_to_data`` instead of
-  re-deriving the renderer's padding constants and letterbox maths here.
-* ``size_units="px"`` for markers whose sizes are display points.
-* Native ``line`` / ``vline`` / ``hline`` widget kinds.
-* ``snap_values`` and ``orientation="vertical"`` on the range widget.
-* ``set_scalebar_style`` for the scale bar's colour.
+Requires anyplotlib >= 0.8.0.  Python-initiated widget updates use
+``Widget.set(_notify=False)`` so they do not echo back through the drag
+callbacks; coordinate conversion relies on ``data_to_display`` /
+``display_to_data``.
 """
 
 from __future__ import annotations
@@ -26,12 +16,10 @@ _NOT_YET = "the anyplotlib backend does not support '{}'."
 
 
 def _unwrap_cycling(value):
-    """Return *value* unchanged, or unwrap a 1-element cycling sequence to a scalar.
+    """Unwrap a 1-element cycling sequence to a scalar.
 
-    HyperSpy stores singleton style values as ``(v,)`` tuples so that MPL
-    collections cycle through them.  anyplotlib expects either a bare scalar
-    or an array whose length matches the number of markers; a 1-element list
-    fails ``_broadcast`` when n > 1, so we flatten it here.
+    HyperSpy stores singleton style values as ``(v,)`` so matplotlib cycles
+    them; anyplotlib wants a bare scalar or one value per marker.
     """
     if hasattr(value, "__len__") and not isinstance(value, str) and len(value) == 1:
         v = value[0]
@@ -40,17 +28,15 @@ def _unwrap_cycling(value):
         try:
             return float(v)
         except (TypeError, ValueError):
-            # e.g. an RGBA tuple wrapped for cycling — hand back the element.
+            # e.g. an RGBA tuple
             return v.tolist() if hasattr(v, "tolist") else v
     if hasattr(value, "tolist"):
         return value.tolist()
     return value
 
 
-# Per-marker kwargs that anyplotlib broadcasts against the number of markers
-# (or coerces to a scalar).  HyperSpy sends any of them as a 1-element cycling
-# sequence when the user gave a single value, which ``_broadcast`` rejects
-# whenever there is more than one marker.
+# Per-marker kwargs that anyplotlib broadcasts against the number of markers;
+# a 1-element cycling sequence is rejected when there is more than one marker.
 _CYCLING_KWARGS = frozenset(
     {
         "widths",
@@ -70,26 +56,20 @@ _CYCLING_KWARGS = frozenset(
 
 
 class _AplFigureProxy:
-    """Proxy for a single axes panel within a shared anyplotlib Figure.
+    """One panel of a shared anyplotlib Figure (combined navigator/signal layout).
 
-    When signal and navigator share one anyplotlib Figure (combined layout),
-    each plot gets its own proxy. Both proxies share the same underlying
-    anyplotlib Figure widget so that ``display()`` is only called once.
+    Every proxy holds the same underlying Figure widget so ``display()`` runs
+    only once.
     """
 
     def __init__(self, real_fig, ax):
-        self._real_fig = real_fig  # shared anyplotlib Figure widget
+        self._real_fig = real_fig
         self._hspy_ax = ax
         self._hspy_on_close = None
 
 
 def _append_on_close(fig_or_proxy, fn):
-    """Accumulate *fn* on ``_hspy_on_close`` without clobbering earlier ones.
-
-    ``close_figure`` accepts a single callable or a list on both real
-    figures and panel proxies, so normalise to a list as soon as there is
-    more than one callback.
-    """
+    """Add *fn* to ``_hspy_on_close`` (a callable or a list of callables)."""
     existing = getattr(fig_or_proxy, "_hspy_on_close", None)
     if existing is None:
         fig_or_proxy._hspy_on_close = fn
@@ -99,10 +79,8 @@ def _append_on_close(fig_or_proxy, fn):
         fig_or_proxy._hspy_on_close = [existing, fn]
 
 
-# hyperspy widget linewidths (``border_thickness`` etc.) are matplotlib
-# *points*; anyplotlib widget strokes are CSS *pixels*.  Convert at the
-# native-widget boundary so strokes match the matplotlib backend's weight
-# (2 pt ≈ 2.7 px) instead of silently rendering one-third thinner.
+# hyperspy widget linewidths are matplotlib points; anyplotlib strokes are CSS
+# pixels.  Convert so the strokes match the matplotlib backend's weight.
 _PX_PER_PT = 96.0 / 72.0
 
 
@@ -116,30 +94,19 @@ def _stroke_px(linewidth, default=2.0):
 # ---------------------------------------------------------------------------
 # Widget coordinates
 #
-# Overlay widgets on a ``Plot2D`` are positioned in *image pixel indices* —
-# ``add_rectangle_widget`` derives its defaults from ``image_width``, and the
-# renderer maps index ``i`` to ``(i + 0.5) / image_width`` of the drawn image
-# rect.  HyperSpy speaks calibrated units throughout, and the two coincide only
-# when ``scale == 1`` and ``offset == 0``.  On a calibrated image (say 0.015
-# nm/px) an ROI spanning 1.91–5.75 nm was therefore drawn at pixel 1.9 with a
-# width of 3.8 px: a few-pixel smudge in the corner, impossible to grab.
-#
-# The panel's own ``x_axis`` / ``y_axis`` arrays carry one coordinate per pixel,
-# so interpolating against them converts both ways and copes with non-uniform
-# axes for free.  1-D panels have no ``image_width`` and are already in data
-# units, so they are left alone.
+# Overlay widgets and data-space markers on a ``Plot2D`` are positioned in
+# image pixel indices, whereas hyperspy uses calibrated units.  The panel's
+# ``x_axis`` / ``y_axis`` arrays give one coordinate per pixel, which is enough
+# to convert both ways.  1-D panels are already in data units and are left
+# alone (``_pixel_axes`` returns ``None`` for them).
 # ---------------------------------------------------------------------------
 
 
 def _pixel_centres(edge0, edge1, count):
     """Return the coordinate of each pixel centre across an extent.
 
-    ``extent`` describes the outer *edges* of the image, so sampling it with
-    ``linspace(edge0, edge1, count)`` — as this backend used to — spaces the
-    values by ``(edge1 - edge0) / (count - 1)`` and puts the first one half a
-    pixel too far out.  On a 5-pixel axis of unit scale that is a step of 1.25
-    instead of 1, which skews both the tick labels and any widget positioned
-    against the axis.
+    ``extent`` gives the outer *edges* of the image, so the centres are half a
+    pixel in from either end.
     """
     size = (float(edge1) - float(edge0)) / float(count)
     return np.linspace(float(edge0) + size / 2.0, float(edge1) - size / 2.0, int(count))
@@ -148,9 +115,8 @@ def _pixel_centres(edge0, edge1, count):
 def _pixel_axes(plot):
     """Return ``(x, y)`` calibrations if *plot* positions widgets in pixels.
 
-    Each entry is ``(first_centre, pixel_size)`` mapping a pixel index to a
-    calibrated coordinate, or ``None`` for a panel already in data units
-    (a 1-D plot, which has no ``image_width``).
+    Each entry is ``(first_centre, pixel_size)``, or ``None`` when the panel
+    is already in data units (a 1-D plot).
     """
     state = getattr(plot, "_state", None)
     if not isinstance(state, dict) or "image_width" not in state:
@@ -223,15 +189,11 @@ def _nested_map(value, depth, fn):
 
 
 def _markers_to_pixels(plot, marker_type, translated):
-    """Rewrite marker geometry from calibrated units into image pixels.
+    """Rewrite data-space marker geometry from calibrated units to image pixels.
 
-    Markers drawn in the ``data`` space on a ``Plot2D`` go through
-    ``_imgToCanvas2d`` exactly like the overlay widgets, so they are addressed
-    in image pixel indices, and lengths (an arrow's U/V, a rectangle's width)
-    are multiplied by the image's canvas-per-pixel scale.  HyperSpy supplies
-    calibrated units, so on a calibrated image the markers bunch up near the
-    origin — the arrows example put 1024 arrows spanning 0-6.28 into the first
-    six pixels of a 100-pixel axis.
+    Positions are converted with the axis calibration; lengths (an arrow's
+    U/V, a rectangle's width) are scaled by the pixel size unless the marker
+    is sized in display pixels (``size_units="px"``).
     """
     if translated.get("transform") != "data":
         return translated
@@ -240,10 +202,8 @@ def _markers_to_pixels(plot, marker_type, translated):
         return translated
 
     if marker_type in ("vlines", "hlines"):  # pragma: no cover
-        # These carry one coordinate per entry, along their own axis.
-        # Unreachable while anyplotlib allows vlines/hlines on 1-D panels
-        # only (a 1-D panel is already in data units, so _pixel_axes returns
-        # None above); kept so they convert correctly if that changes.
+        # One coordinate per entry along the marker's own axis.  Currently
+        # unreachable (anyplotlib only allows these on 1-D panels).
         axis = x_cal if marker_type == "vlines" else y_cal
         offsets = translated.get("offsets")
         if offsets is not None:
@@ -273,12 +233,8 @@ def _markers_to_pixels(plot, marker_type, translated):
 
 
 def _remember_plot(handle, plot):
-    """Tag a widget with the panel it belongs to, and return it.
-
-    ``connect_widget_drag`` and the ``update_*`` methods are handed only the
-    widget, but they need the panel's axes to convert coordinates back to
-    calibrated units.
-    """
+    """Tag a widget with its panel so ``update_*`` / drag callbacks can convert
+    coordinates; return the widget."""
     try:
         handle._hspy_plot = plot
     except AttributeError:  # pragma: no cover - defensive
@@ -289,18 +245,12 @@ def _remember_plot(handle, plot):
 class _AplSpanSelector:
     """matplotlib ``SpanSelector`` façade over anyplotlib's native range widget.
 
-    :class:`~.drawing._widgets.range.RangeWidget` drives the MPL selector API
-    directly — ``extents``, ``artists``, ``snap_values``, ``set_props``,
-    ``connect_event``, ``_selection_completed``.  anyplotlib's range widget
-    covers the same ground with different names, so the translation lives here
-    rather than forcing every caller to branch.
-
-    Snapping is handed to the widget (``snap_values``, 0.5.0) so it happens
-    inside the JS drag; correcting positions in Python afterwards would move
-    an edge the user is still holding.
-
-    ``set_handle_props`` folds into ``set_props``: anyplotlib draws the grab
-    handles in the widget colour and has no separate handle style.
+    :class:`~.drawing._widgets.range.RangeWidget` drives the matplotlib
+    selector API (``extents``, ``artists``, ``snap_values``, ``set_props``,
+    ``connect_event``, ``_selection_completed``); this maps it onto the
+    anyplotlib widget.  Snapping is delegated to the widget so it happens
+    during the JS drag.  anyplotlib has no separate handle style, so
+    ``set_handle_props`` is ``set_props``.
     """
 
     def __init__(self, plot, x0, x1, color="red", orientation="horizontal"):
@@ -310,8 +260,7 @@ class _AplSpanSelector:
             float(x0), float(x1), color=color, orientation=orientation
         )
         self._handlers = []
-        # hyperspy sets this to suppress matplotlib's "drag to create first"
-        # state; nothing to suppress here, but the attribute must exist.
+        # Read by RangeWidget; there is no "drag to create" state to suppress.
         self._selection_completed = True
 
     # ── geometry ─────────────────────────────────────────────────────────
@@ -333,7 +282,6 @@ class _AplSpanSelector:
 
     @snap_values.setter
     def snap_values(self, values):
-        # Native as of 0.5.0: the drag itself lands only on allowed values.
         self._widget.set(
             _notify=False,
             snap_values=None if values is None else [float(v) for v in values],
@@ -354,12 +302,7 @@ class _AplSpanSelector:
     # ── events / lifecycle ───────────────────────────────────────────────
 
     def connect_event(self, event_name, fn):
-        """Register *fn* for an MPL event name.
-
-        Only ``motion_notify_event`` is meaningful here: hyperspy uses it to
-        learn that the user moved the span.  It maps to the widget's own
-        ``pointer_move``, which fires on drag.
-        """
+        """Map ``motion_notify_event`` onto the widget's ``pointer_move``."""
         if event_name != "motion_notify_event":
             return None
 
@@ -389,13 +332,11 @@ class _AplSpanSelector:
 class _AplPolygonSelector:
     """matplotlib ``PolygonSelector`` façade over anyplotlib's polygon widget.
 
-    hyperspy's :class:`~.api.roi.PolygonROI` only needs ``verts`` (get/set),
-    an ``onselect`` callback fired when the user edits the polygon, plus the
-    ``set_props``/``disconnect_events`` lifecycle the other selectors share.
-
-    The native widget is only created once there are >= 3 vertices: anyplotlib
-    has no "draw me interactively from scratch" mode, so a polygon with fewer
-    has nothing to show yet.
+    Provides what :class:`~.api.roi.PolygonROI` uses: ``verts``, an
+    ``onselect`` callback fired on browser-side edits, and the
+    ``set_props`` / ``disconnect_events`` lifecycle.  anyplotlib cannot draw a
+    polygon interactively from scratch, so the native widget is only created
+    once there are at least three vertices.
     """
 
     def __init__(self, plot, color="red", linewidth=2, onselect=None):
@@ -438,12 +379,7 @@ class _AplPolygonSelector:
             self._widget.set(_notify=False, vertices=pixels)
 
     def _connect_onselect(self):
-        """Report browser-side polygon edits back to the ROI.
-
-        Without this the widget's new vertices live only in the JS state:
-        ``PolygonROI`` never hears about them, so nothing downstream of the
-        ROI recomputes when the polygon is dragged.
-        """
+        """Report browser-side polygon edits back to the ROI."""
         if self._widget is None or self._onselect is None:
             return
 
@@ -487,16 +423,9 @@ class _AplLine2DPatch:
     """``matplotlib.lines.Line2D`` façade over anyplotlib's line primitives.
 
     :class:`~.drawing._widgets.line2d.Line2DWidget` builds its patches before
-    it has an axes to put them on (``_set_patch`` runs ahead of
-    ``add_artist``), so this stays detached until :meth:`materialise` is
-    called with the target axes.
-
-    The main segment becomes a real two-endpoint ``line`` widget (0.5.0), so a
-    ``Line2DROI`` is draggable.  The dotted width-indicator lines are
-    decoration and become a ``'lines'`` marker group instead.
-
-    Only the slice of the ``Line2D`` API the widget actually uses is
-    provided: ``set_data``, ``remove``, and the style/animation no-ops.
+    it has an axes, so this stays detached until :meth:`materialise` is called.
+    The main (interactive) segment becomes a draggable two-endpoint ``line``
+    widget; the dotted width indicators become a ``'lines'`` marker group.
     """
 
     def __init__(self, x, y, color="red", linewidth=1.0, alpha=1.0, interactive=True):
@@ -511,12 +440,7 @@ class _AplLine2DPatch:
         self._on_drag = None  # remembered until the widget exists
 
     def _pixel_xy(self):
-        """Return the endpoints as the panel addresses them.
-
-        An image panel positions widgets by pixel index; a 1-D panel is
-        already in data units and ``_pixel_axes`` returns ``None`` for it,
-        which makes both conversions the identity.
-        """
+        """Return the endpoints in the panel's own coordinates."""
         xa, ya = _pixel_axes(self._plot)
         x, y = self._xy
         return (
@@ -605,12 +529,25 @@ class _AplLine2DPatch:
         self._group = None
 
 
+def _figsize_px(figsize, default):
+    """Normalise a figure size to integer pixels.
+
+    Values below 50 are taken to be matplotlib inches and converted at 96 dpi.
+    """
+    if figsize is None:
+        figsize = default
+    figsize = tuple(float(v) for v in figsize)
+    if max(figsize) < 50:
+        figsize = (figsize[0] * 96, figsize[1] * 96)
+    return (int(figsize[0]), int(figsize[1]))
+
+
 class AnyplotlibBackend:
     """Maps hyperspy drawing primitives to the anyplotlib API.
 
     Methods that raise ``BackendCapabilityError`` name a capability anyplotlib
-    does not have, so that the caller can fall back — as ``Markers.plot``
-    does — or report it to the user rather than draw the wrong thing.
+    does not have, so the caller can fall back (as ``Markers.plot`` does) or
+    report it rather than draw the wrong thing.
     """
 
     # ── Figure lifecycle ──────────────────────────────────────────────────
@@ -618,40 +555,23 @@ class AnyplotlibBackend:
     def create_figure(self, title=None, on_close=None, **kwargs):
         import anyplotlib as apl
 
-        # If a pre-created panel proxy is passed, adopt it (combined layout).
+        # A pre-created panel proxy (combined layout) is adopted as-is.
         fig_kwarg = kwargs.pop("fig", None)
         if isinstance(fig_kwarg, _AplFigureProxy):
             if on_close is not None:
                 _append_on_close(fig_kwarg, on_close)
             return fig_kwarg
 
-        figsize = kwargs.pop("figsize", (640, 480))
-        figsize = tuple(float(v) for v in figsize)  # normalize (handles ndarray)
-        if max(figsize) < 50:
-            # matplotlib uses inches; convert to pixels at 96 dpi
-            figsize = (int(figsize[0] * 96), int(figsize[1] * 96))
-        else:
-            figsize = (int(figsize[0]), int(figsize[1]))
+        figsize = _figsize_px(kwargs.pop("figsize", None), (640, 480))
         fig, ax = apl.subplots(1, 1, figsize=figsize)
         fig._hspy_ax = ax
-        ax.figure = fig  # hyperspy widgets use ax.figure to reach the figure
+        ax.figure = fig  # hyperspy widgets reach the figure through ax.figure
         if on_close is not None:
             _append_on_close(fig, on_close)
         return fig
 
     def close_figure(self, fig):
         if fig is None:
-            return
-        if isinstance(fig, _AplFigureProxy):
-            # Proxy: call the close callback but don't close the shared figure.
-            on_close = fig._hspy_on_close
-            fig._hspy_on_close = None
-            if on_close is not None:
-                for fn in on_close if isinstance(on_close, list) else [on_close]:
-                    try:
-                        fn()
-                    except Exception:
-                        pass
             return
         on_close = getattr(fig, "_hspy_on_close", None)
         if on_close is not None:
@@ -661,47 +581,31 @@ class AnyplotlibBackend:
                     fn()
                 except Exception:
                     pass
-        try:
-            fig.close()
-        except Exception:
-            pass
+        # A panel proxy runs its callbacks but never closes the shared figure.
+        if not isinstance(fig, _AplFigureProxy):
+            try:
+                fig.close()
+            except Exception:
+                pass
 
     def create_combined_figure_panels(self, figsize=None, n=2):
-        """Create an *n*-panel anyplotlib Figure; return one proxy per panel.
+        """Create an *n*-panel Figure and return one proxy per panel.
 
-        All proxies wrap the same underlying Figure widget so ``draw_idle``
-        shows the figure only once every panel has rendered (no half-drawn
-        flicker).  Pass the proxies as the ``fig=`` keyword of whatever
-        draws into each panel — ``navigator_kwds`` + main ``kwargs`` for the
-        default (navigator, signal) pair, or one per image for composers.
+        The proxies share one Figure widget, which ``draw_idle`` displays
+        only once every panel has drawn.
         """
         import anyplotlib as apl
 
-        figsize = tuple(figsize) if figsize else (640 * n, 640)
-        figsize = tuple(float(v) for v in figsize)
-        if max(figsize) < 50:
-            figsize = (int(figsize[0] * 96), int(figsize[1] * 96))
-        else:
-            figsize = (int(figsize[0]), int(figsize[1]))
-
-        fig, axes = apl.subplots(1, n, figsize=figsize)
+        fig, axes = apl.subplots(1, n, figsize=_figsize_px(figsize, (640 * n, 640)))
         if n == 1:
             axes = [axes]
         for ax in axes:
             ax.figure = fig
-        # Display is deferred until every panel has drawn.
         fig._hspy_panels_remaining = n
         return tuple(_AplFigureProxy(fig, ax) for ax in axes)
 
-    def ensure_displayed(self, fig):
-        """Force-display fig, bypassing the panel countdown.
-
-        Called from signal.py after plot() completes so that a figure is
-        always shown even when the navigator was skipped (slider / None).
-        """
-        real = fig._real_fig if isinstance(fig, _AplFigureProxy) else fig
-        if real is None or getattr(real, "_hspy_displayed", False):
-            return
+    @staticmethod
+    def _display(real):
         real._hspy_panels_remaining = 0
         try:
             from IPython.display import display
@@ -710,6 +614,17 @@ class AnyplotlibBackend:
             real._hspy_displayed = True
         except ImportError:
             pass
+
+    def ensure_displayed(self, fig):
+        """Display *fig* now, even if some panels have not drawn yet.
+
+        Called after ``plot()`` so a figure is shown even when the navigator
+        panel was skipped (slider / None).
+        """
+        real = fig._real_fig if isinstance(fig, _AplFigureProxy) else fig
+        if real is None or getattr(real, "_hspy_displayed", False):
+            return
+        self._display(real)
 
     def draw_idle(self, fig):
         real = fig._real_fig if isinstance(fig, _AplFigureProxy) else fig
@@ -718,17 +633,10 @@ class AnyplotlibBackend:
         real._hspy_drawn = True
         remaining = getattr(real, "_hspy_panels_remaining", 1)
         if remaining > 1:
-            # Another panel is still to draw — wait so the figure appears whole.
+            # Wait for the other panels so the figure appears whole.
             real._hspy_panels_remaining = remaining - 1
             return
-        real._hspy_panels_remaining = 0
-        try:
-            from IPython.display import display
-
-            display(real)
-            real._hspy_displayed = True
-        except ImportError:
-            pass
+        self._display(real)
 
     # ── Blitting (anyplotlib repaints natively; all no-ops) ───────────────
 
@@ -855,15 +763,9 @@ class AnyplotlibBackend:
 
     @classmethod
     def _norm_line_props(cls, props):
-        """Translate hyperspy's matplotlib line vocabulary to anyplotlib kwargs.
+        """Translate matplotlib line properties to anyplotlib kwargs.
 
-        hyperspy describes lines the way matplotlib does (``linestyle="None"``
-        for a markers-only scatter, ``drawstyle="steps-mid"`` for a step plot,
-        ``markeredgecolor`` standing in for ``color`` on scatter lines).
-        anyplotlib names some of these differently, so normalise here rather
-        than at every call site.
-
-        Only keys present in *props* are returned, so callers can distinguish
+        Only keys present in *props* are returned, so callers can tell
         "not specified" from "specified as the default".
         """
         out = {}
@@ -871,8 +773,7 @@ class AnyplotlibBackend:
         if "color" in props and props["color"] is not None:
             out["color"] = props["color"]
         elif props.get("markeredgecolor") is not None:
-            # Scatter lines carry their colour as markeredgecolor: hyperspy's
-            # Signal1DLine.color setter moves it there and drops "color".
+            # Signal1DLine.color moves the colour of scatter lines here.
             out["color"] = props["markeredgecolor"]
 
         if "linewidth" in props and props["linewidth"] is not None:
@@ -889,19 +790,17 @@ class AnyplotlibBackend:
         if props.get("label"):
             out["label"] = str(props["label"])
 
-        # drawstyle="steps-mid" is matplotlib's step plot; anyplotlib folds it
-        # into linestyle as "step-mid" and it must win over the plain
-        # linestyle that hyperspy sends alongside it.
         linestyle = props.get("linestyle")
         drawstyle = props.get("drawstyle")
         if linestyle is not None:
             if str(linestyle) in ("None", "none", "", " "):
-                # Markers-only.  Native as of 0.5.0: the renderer skips the
-                # connecting stroke instead of us faking it with 'solid'.
+                # Markers only.
                 out["linestyle"] = "none"
                 out.setdefault("marker", cls._norm_marker(props.get("marker", "o")))
             else:
                 out["linestyle"] = str(linestyle)
+        # anyplotlib expresses matplotlib's drawstyle="steps-*" as a linestyle,
+        # which overrides the plain linestyle hyperspy sends alongside it.
         if drawstyle is not None and str(drawstyle).startswith("steps"):
             out["linestyle"] = "step-mid"
 
@@ -1179,7 +1078,6 @@ class AnyplotlibBackend:
     def add_colorbar(self, fig, im_handle, ax, divider=None, size=None, pad=None):
         im_handle.set_colorbar_visible(True)
         if pad is not None and hasattr(im_handle, "set_colorbar_pad"):
-            # Native as of 0.5.0 — previously accepted and silently dropped.
             im_handle.set_colorbar_pad(pad)
         return _AplColorbar(im_handle)
 
@@ -1196,11 +1094,10 @@ class AnyplotlibBackend:
 
     @staticmethod
     def _wrap(fn):
-        """Return a plain function wrapping fn.
+        """Wrap *fn* in a plain function.
 
-        anyplotlib's add_event_handler sets fn._event_types, which fails on
-        bound methods (they have no __dict__). Wrapping guarantees a plain
-        function object that allows arbitrary attribute assignment.
+        ``add_event_handler`` sets an attribute on the handler, which fails
+        on bound methods.
         """
 
         def _handler(*args, **kwargs):
@@ -1258,11 +1155,8 @@ class AnyplotlibBackend:
         plot = self._primary_plot(ax)
         if plot is None:
             raise RuntimeError("ax has no plot; call plot_line or plot_image first")
-        # A Signal1D with one navigation axis gets a *2-D* navigator (the whole
-        # dataset as an image) with a horizontal line marking the current row,
-        # so this lands on a Plot2D and needs converting just like the region
-        # widgets do.  A genuine 1-D panel reports no calibration and is left
-        # in data units.
+        # A line pointer can land on a Plot2D (the row marker of a Signal1D
+        # image navigator), which addresses widgets in pixels.
         x_cal, y_cal = _pixel_axes(plot)
         linewidth = _stroke_px(2.0)
         if axis == "x":
@@ -1299,8 +1193,6 @@ class AnyplotlibBackend:
         wtype = handle.get("type") if hasattr(handle, "get") else None
         x_cal, y_cal = _pixel_axes(getattr(handle, "_hspy_plot", None))
         value = _to_pixels(x_cal if axis == "x" else y_cal, pos)
-        # _notify=False: a Python-side update must not echo back through the
-        # drag callback and feed into navigation (0.5.0; was pause_events).
         if wtype == "crosshair":
             if axis == "x":
                 handle.set(_notify=False, cx=float(value))
@@ -1316,7 +1208,7 @@ class AnyplotlibBackend:
             handle.connect_drag(on_drag)
             return
         wtype = handle.get("type") if hasattr(handle, "get") else None
-        # The widget reports pixel indices; hyperspy expects calibrated units.
+        # Widgets report pixel indices; hyperspy expects calibrated units.
         xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
 
         if wtype == "vline":
@@ -1335,9 +1227,8 @@ class AnyplotlibBackend:
                 on_drag(_to_data(xa, handle.cx), _to_data(ya, handle.cy))
 
         elif wtype == "rectangle":
-            # Region widgets report their full geometry: corner plus size.
-            # The hyperspy widget maps the corner back to its own position
-            # convention (see RectangleWidget._on_widget_drag).
+            # Corner plus size; RectangleWidget._on_widget_drag converts the
+            # corner to its own position convention.
 
             def _cb(event):
                 on_drag(
@@ -1376,10 +1267,8 @@ class AnyplotlibBackend:
         px, py = _to_pixels(xa, x), _to_pixels(ya, y)
         pw, ph = _pixel_span(xa, w), _pixel_span(ya, h)
         if pointer:
-            # The navigator pointer marks the current navigation position.  A
-            # crosshair reads better than a rectangle on an interactive JS
-            # panel; 0.5.0 also lets a degenerate (single-axis) navigator use a
-            # real vline/hline rather than a crosshair pinned to an edge.
+            # Navigation pointers are drawn as a crosshair, or a single line
+            # when the navigator is degenerate along one axis.
             if h <= 0 and hasattr(plot, "add_vline_widget"):
                 handle = plot.add_vline_widget(
                     x=float(px) + float(pw) / 2.0,
@@ -1401,8 +1290,7 @@ class AnyplotlibBackend:
                     linewidth=_stroke_px(linewidth),
                 )
         else:
-            # Region selector (e.g. RectangularROI): a native rectangle widget
-            # with built-in JS move/resize handles.
+            # Region selector (e.g. RectangularROI) with native resize handles.
             handle = plot.add_widget(
                 "rectangle",
                 x=float(px),
@@ -1446,12 +1334,10 @@ class AnyplotlibBackend:
             raise BackendCapabilityError(_NOT_YET.format("create_circle_pointer"))
         xa, ya = _pixel_axes(plot)
         pcx, pcy = _to_pixels(xa, cx), _to_pixels(ya, cy)
-        # A radius is a length, and the widget is drawn as a true circle, so it
-        # can only follow one axis' calibration.
+        # The widget is a true circle, so the radius follows the x calibration.
         p_outer = _pixel_span(xa, r_outer)
         p_inner = _pixel_span(xa, r_inner)
-        # One native widget covers both cases, so the returned list always has
-        # a single element (matplotlib needs two patches for the annulus).
+        # One native widget covers both circle and annulus: single-item list.
         if r_inner > 0:
             handle = plot.add_widget(
                 "annular",
@@ -1479,7 +1365,7 @@ class AnyplotlibBackend:
             handle.get("type") == "annular" if hasattr(handle, "get") else False
         )
         if is_annular != (r_inner > 0):
-            # circle ↔ annulus: the native widget kinds are distinct, so swap.
+            # circle <-> annulus are distinct widget kinds, so swap.
             style = handle._data if hasattr(handle, "_data") else {}
             new = self.create_circle_pointer(
                 ax,
@@ -1488,8 +1374,7 @@ class AnyplotlibBackend:
                 r_outer,
                 r_inner,
                 color=style.get("color", "red"),
-                # The stored stroke is CSS px; create_circle_pointer expects
-                # points, so convert back to avoid compounding.
+                # The stored stroke is CSS px; convert back to points.
                 linewidth=style.get("linewidth", 2.0 * _PX_PER_PT) / _PX_PER_PT,
             )
             for old in handles:
@@ -1518,7 +1403,6 @@ class AnyplotlibBackend:
     def remove_pointer(self, ax, handle):
         if handle is None:
             return
-        # 0.5.0: widgets remove themselves; no need to re-derive the plot.
         remove = getattr(handle, "remove", None)
         if callable(remove):
             try:
@@ -1535,7 +1419,7 @@ class AnyplotlibBackend:
             pass
 
     def set_pointer_style(self, handle, *, color=None, alpha=None, animated=None):
-        # animated is a blit concept; anyplotlib repaints natively.
+        # animated is a blit concept and is ignored.
         if isinstance(handle, _AplLine2DPatch):
             handle.set_style(color=color, alpha=alpha)
             return
@@ -1548,8 +1432,7 @@ class AnyplotlibBackend:
             handle.set(_notify=False, **updates)
 
     def add_artist(self, ax, artist):
-        # Only patches this backend itself created can be attached; any other
-        # (matplotlib) artist has no anyplotlib representation.
+        # Only patches created by this backend can be attached.
         if isinstance(artist, _AplLine2DPatch):
             plot = self._primary_plot(ax)
             if plot is not None:
@@ -1600,7 +1483,6 @@ class AnyplotlibBackend:
         direction = kwargs.get("direction", "horizontal")
         props = kwargs.get("props") or {}
         if direction == "vertical":
-            # 0.5.0: a vertical range selects on the value axis.
             lo, hi = self.get_ylim(ax)
         else:
             lo, hi = self.get_xlim(ax)
@@ -1624,8 +1506,7 @@ class AnyplotlibBackend:
 
     _COORD_SPACES = ("data", "axes", "display", "xaxis", "yaxis", "relative")
 
-    # hyperspy/MPL coordinate-space tokens -> anyplotlib's narrower transform
-    # vocabulary (markers.py._VALID_TRANSFORMS == {"data", "axes", "display"}).
+    # hyperspy coordinate spaces -> anyplotlib's {"data", "axes", "display"}.
     _SPACE_MAP = {
         "data": "data",
         "axes": "axes",
@@ -1636,11 +1517,7 @@ class AnyplotlibBackend:
     }
 
     def get_ax_transform(self, ax, kind):
-        """Return the coordinate-space token for *kind*.
-
-        anyplotlib transforms are plain space strings (the same tokens that
-        markers accept), not matplotlib ``Transform`` objects.
-        """
+        """Return *kind* itself: anyplotlib transforms are plain space strings."""
         if kind not in self._COORD_SPACES:
             raise BackendCapabilityError(_NOT_YET.format(f"get_ax_transform({kind!r})"))
         return kind
@@ -1648,10 +1525,8 @@ class AnyplotlibBackend:
     def convert_coords(self, ax, points, from_space, to_space):
         """Convert points between coordinate spaces.
 
-        Display-space maths is delegated to anyplotlib's own
-        ``data_to_display`` / ``display_to_data`` (0.5.0) rather than
-        re-deriving the renderer's padding constants and letterbox fit here —
-        upstream's version is the one verified against the renderer.
+        Display-space conversion is delegated to anyplotlib's
+        ``data_to_display`` / ``display_to_data``.
         """
         for space in (from_space, to_space):
             if space not in self._COORD_SPACES:
@@ -1721,10 +1596,8 @@ class AnyplotlibBackend:
         translated = self._translate_marker_kwargs(marker_type, offset_space, kwargs)
 
         if marker_type == "points" and hasattr(plot, "set_clim"):
-            # 2-D panels have no 'points' marker type; mirror Plot2D.add_points,
-            # which renders points as circles.  hyperspy Points sizes are
-            # display points, so ask for px sizes (0.5.0) rather than
-            # converting display->data once and letting zoom rescale them.
+            # Plot2D has no 'points' type: draw circles sized in display px
+            # so they do not rescale with zoom.
             marker_type = "circles"
             sizes = translated.pop("sizes", None)
             if sizes is not None:
@@ -1750,7 +1623,6 @@ class AnyplotlibBackend:
         if not kwargs:
             return
         marker_type = handle._type
-        # Derive the stored coordinate space so vlines/hlines un-segment correctly.
         offset_space = handle._data.get("transform", "data")
         if handle._data.get("size_units") == "px" and "sizes" in kwargs:
             sizes = np.atleast_1d(np.asarray(kwargs.pop("sizes"), dtype=float))
@@ -1783,11 +1655,8 @@ class AnyplotlibBackend:
         """
         out = {}
         out["transform"] = AnyplotlibBackend._SPACE_MAP.get(offset_space, "data")
+        work = dict(kwargs)  # pop freely without mutating the caller's dict
 
-        # Work on a shallow copy so we can pop without mutating the caller's dict.
-        work = dict(kwargs)
-
-        # ── colour / linewidth renaming ─────────────────────────────────────
         if "colors" in work:
             val = work.pop("colors")
             if isinstance(val, (list, tuple)) and len(val) == 1:
@@ -1797,10 +1666,7 @@ class AnyplotlibBackend:
         if "linewidth" in work and "linewidths" not in work:
             work["linewidths"] = work.pop("linewidth")
 
-        # ── type-specific positional key translations ───────────────────────
         if marker_type == "circles":
-            # HyperSpy passes MPL-style ``sizes`` (display-unit area);
-            # anyplotlib circles uses ``radius``.
             if "sizes" in work:
                 out["radius"] = _unwrap_cycling(work.pop("sizes"))
 
@@ -1809,39 +1675,31 @@ class AnyplotlibBackend:
                 work["sizes"] = _unwrap_cycling(work["sizes"])
 
         elif marker_type in ("vlines", "hlines"):
-            # VerticalLines/HorizontalLines expand positions into full
-            # [[x,0],[x,1]] / [[0,y],[1,y]] segments for the MPL path.
-            # anyplotlib vlines/hlines want [[x], ...] / [[y], ...].
+            # hyperspy expands positions into full [[x,0],[x,1]] segments for
+            # matplotlib; anyplotlib wants [[x], ...].
             if "segments" in work:
                 segs = np.asarray(work.pop("segments"), dtype=float)
                 if marker_type == "vlines":
                     out["offsets"] = [[float(v)] for v in segs[:, 0, 0]]
                 else:
                     out["offsets"] = [[float(v)] for v in segs[:, 0, 1]]
-            # Positions are always in data space for span-line types.
             out["transform"] = "data"
 
         elif marker_type == "polygons":
-            # MPL PolyCollection uses ``verts``; anyplotlib uses ``vertices_list``.
             if "verts" in work:
                 verts = work.pop("verts")
                 out["vertices_list"] = [
                     np.asarray(v, dtype=float).tolist() for v in verts
                 ]
 
-        # ── copy remaining compatible kwargs ────────────────────────────────
         _STRIP = {"offset_transform", "units", "patches", "drawstyle"}
         for k, v in work.items():
             if k in _STRIP:
                 continue
             if k in _CYCLING_KWARGS:
-                # Singleton style/geometry values arrive as 1-element cycling
-                # sequences; anyplotlib wants a scalar or one value per marker.
                 out[k] = _unwrap_cycling(v)
             elif hasattr(v, "tolist"):
-                # Eagerly convert numpy arrays so downstream JSON
-                # serialisation works.
-                out[k] = v.tolist()
+                out[k] = v.tolist()  # JSON-serialisable
             else:
                 out[k] = v
 
@@ -1850,16 +1708,11 @@ class AnyplotlibBackend:
     # ── Remaining protocol methods ────────────────────────────────────────
 
     def plot_step(self, ax, x, y, **props):
-        # anyplotlib renders a step plot via the "step-mid" linestyle, which
-        # _norm_line_props derives from drawstyle.
         props.setdefault("drawstyle", "steps-mid")
         return self.plot_line(ax, x, y, **props)
 
     def create_line2d_patch(self, x, y, **kwargs):
-        # Detached until add_artist supplies the axes — see _AplLine2DPatch.
-        # The main segment (Line2DWidget passes marker="s" for its draggable
-        # line) becomes a native two-endpoint widget; the dotted width
-        # indicators are decoration and become a 'lines' marker group.
+        # Line2DWidget passes marker="s" only for its draggable main segment.
         return _AplLine2DPatch(
             x,
             y,
@@ -1897,12 +1750,10 @@ class AnyplotlibBackend:
         raise BackendCapabilityError(_NOT_YET.format("get_figure_from_ax"))
 
     def connect_close_event(self, fig, fn):
-        """Run *fn* when *fig* is closed through ``close_figure``.
+        """Run *fn* from ``close_figure``.
 
-        anyplotlib has no browser-side close notification, so "close" means
-        hyperspy closing the figure programmatically; the callbacks
-        accumulate on ``_hspy_on_close``, which ``close_figure`` runs for
-        real figures and panel proxies alike.
+        anyplotlib has no browser-side close notification, so only a
+        programmatic close counts.
         """
         if fig is None:
             return None
@@ -1939,25 +1790,14 @@ class AnyplotlibBackend:
         return ImagePlot(title=title, **kwargs)
 
     def create_scalebar(self, ax, units, pixel_size=None, color="white", **kwargs):
-        """Enable anyplotlib's native floating scale bar on ax's Plot2D.
+        """Enable anyplotlib's native scale bar on the Plot2D of *ax*.
 
-        anyplotlib draws its own auto-sized, auto-positioned scale bar
-        whenever a panel has calibrated axes and ``units != 'px'`` — no
-        separate artist needed.  Re-``set_extent`` with the panel's own
-        (already calibrated) axis arrays just to flip the units string turns
-        it on.
-
-        Falls back to the generic marker-based ``ScaleBar`` when there is no
-        ``Plot2D`` yet, or when ``pixel_size`` is given explicitly (an
-        uncalibrated axis with a manual pixel size, which the native bar has
-        no equivalent for).
-
-        When the axes simply have no usable units — an uncalibrated axis
-        reports ``units`` as the ``traits.Undefined`` sentinel, which is not
-        JSON-serialisable and must never reach ``Plot2D._state`` — no bar is
-        drawn at all. anyplotlib labels such a panel in pixels and keeps its
-        ticks, whereas the generic fallback would stamp ``10 <undefined>``
-        across the image.
+        anyplotlib draws the bar itself whenever the panel has calibrated axes
+        and ``units != 'px'``, so this just sets the units string.  Without a
+        Plot2D, or with an explicit *pixel_size*, the generic marker-based
+        ``ScaleBar`` is used instead.  With no usable units (an uncalibrated
+        axis reports ``traits.Undefined``) no bar is drawn: anyplotlib already
+        labels the panel in pixels.
         """
         plot = self._primary_plot(ax)
         has_plot = plot is not None and hasattr(plot, "set_extent")
@@ -1965,7 +1805,6 @@ class AnyplotlibBackend:
 
         if not (has_plot and pixel_size is None and usable_units):
             if has_plot and pixel_size is None:
-                # No units to show, so nothing worth drawing.
                 return _AplNoScalebar()
             from hyperspy.drawing._widgets.scalebar import ScaleBar
 
@@ -1974,8 +1813,6 @@ class AnyplotlibBackend:
         x_axis = np.asarray(plot._state["x_axis"], dtype=float)
         y_axis = np.asarray(plot._state["y_axis"], dtype=float)
         plot.set_extent(x_axis, y_axis, units=str(units))
-        # 0.5.0: the native bar takes a colour, so scalebar_color is honoured
-        # on this path too — it used to work only on the fallback.
         if color is not None and hasattr(plot, "set_scalebar_style"):
             plot.set_scalebar_style(color=color)
         return _AplNativeScalebar(plot)
@@ -1996,36 +1833,22 @@ class AnyplotlibBackend:
 
 
 class _AplColorbar:
-    """Handle returned by ``add_colorbar``.
-
-    anyplotlib's colorbar is a flag on the image plot rather than a separate
-    artist, so the handle just carries the plot it belongs to.
-    """
+    """Handle returned by ``add_colorbar``; the colorbar is a flag on the plot."""
 
     def __init__(self, im_handle):
         self._im = im_handle
 
 
 class _AplNativeScalebar:
-    """Sentinel for anyplotlib's built-in floating scale bar.
-
-    Not an artist — the bar is drawn by the renderer whenever the panel has
-    calibrated axes.  ``remove_scalebar`` flips the units back to ``'px'``.
-    """
+    """Handle for anyplotlib's built-in scale bar (``remove_scalebar`` resets
+    the units to ``'px'``)."""
 
     def __init__(self, plot):
         self.plot = plot
 
 
 class _AplNoScalebar:
-    """Sentinel for "this panel deliberately has no scale bar".
-
-    Used when the axes carry no usable units. anyplotlib labels such a panel
-    in pixels and draws its ticks, which says everything a bar could; the
-    generic marker-based fallback would instead stamp the image with
-    ``10 <undefined>``, since an uncalibrated axis reports ``units`` as the
-    ``traits.Undefined`` sentinel.
-    """
+    """Handle for a panel without usable units, where no bar is drawn."""
 
     def remove(self):
         pass

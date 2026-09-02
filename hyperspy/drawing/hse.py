@@ -154,8 +154,7 @@ class HyperSignal1D_Explorer(HyperExplorer):
         if self.right_pointer is None:
             pointer_cls = self.assign_pointer()
             if pointer_cls is None:
-                # No pointer widget (e.g. slider navigator): proceed to the
-                # line only, without a right-axis pointer.
+                # No pointer widget (e.g. slider navigator): line only.
                 self._add_right_line(**kwargs)
                 self.right_pointer_on = True
                 self._redraw_signal_figure()

@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import Widget1DBase
 
 
@@ -24,14 +25,10 @@ class HorizontalLineWidget(Widget1DBase):
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
-            from hyperspy.drawing.backends import get_backend
-
             get_backend().update_line_pointer(self.patch[0], "y", float(self._pos[0]))
             self.draw_patch()
 
     def _add_patch_to(self, ax):
-        from hyperspy.drawing.backends import get_backend
-
         backend = get_backend()
         self.blit = backend.supports_blit_from_ax(ax)
         handle = backend.create_line_pointer(
@@ -39,13 +36,12 @@ class HorizontalLineWidget(Widget1DBase):
         )
         self._patch = [handle]
         backend.set_pointer_style(handle, animated=self.blit)
-        _self = self
-        # A backend may report this pointer as a genuine horizontal line (one
-        # coordinate) or as a crosshair standing in for one (x, y).  Either
-        # way the y is last, and it is the only value this widget tracks.
-        backend.connect_widget_drag(
-            handle, lambda *vals: setattr(_self, "position", (vals[-1],))
-        )
+        backend.connect_widget_drag(handle, self._on_widget_drag)
+
+    def _on_widget_drag(self, *values):
+        """Native-widget drag callback: ``(y,)`` for a line, ``(x, y)`` for a
+        crosshair standing in for one."""
+        self.position = (values[-1],)
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

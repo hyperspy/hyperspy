@@ -22,6 +22,7 @@ import logging
 import numpy as np
 
 from hyperspy.defaults_parser import preferences
+from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
 _logger = logging.getLogger(__name__)
@@ -41,17 +42,13 @@ class RangeWidget(ResizableDraggableWidgetBase):
     """
 
     def __init__(self, axes_manager, ax=None, color="r", alpha=0.25, **kwargs):
-        # Parse kwargs for the span selector — inspect lazily to avoid
-        # importing matplotlib at widget-class import time.
-        self._SpanSelector_kwargs = {}
-        try:
-            from matplotlib.widgets import SpanSelector as _SS
+        # Parse all kwargs for the matplotlib SpanSelector
+        from matplotlib.widgets import SpanSelector
 
-            for key in inspect.signature(_SS).parameters.keys():
-                if key in kwargs:
-                    self._SpanSelector_kwargs[key] = kwargs.pop(key)
-        except ImportError:
-            pass
+        self._SpanSelector_kwargs = {}
+        for key in inspect.signature(SpanSelector).parameters.keys():
+            if key in kwargs:
+                self._SpanSelector_kwargs[key] = kwargs.pop(key)
 
         self._SpanSelector_kwargs.update(
             dict(
@@ -128,8 +125,6 @@ class RangeWidget(ResizableDraggableWidgetBase):
 
     def _add_patch_to(self, ax):
         self.ax = ax
-        from hyperspy.drawing.backends import get_backend
-
         backend = get_backend()
         self._SpanSelector_kwargs.update(
             props={"alpha": self.alpha, "color": self.color},

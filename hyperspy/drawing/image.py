@@ -306,9 +306,7 @@ class ImagePlot(AbstractImageFigure):
 
             height = abs(self._extent[3] - self._extent[2]) * self._aspect
             width = abs(self._extent[1] - self._extent[0])
-            # Matches the previous ``max(plt.rcParams["figure.figsize"])`` (the
-            # matplotlib default figsize is (6.4, 4.8)); hardcoded here to keep
-            # the size backend-agnostic without changing the rendered output.
+            # max of matplotlib's default figsize (6.4, 4.8), in inches.
             default_size = 6.4
             figsize = (
                 np.array((width * wfactor, height))
@@ -326,10 +324,8 @@ class ImagePlot(AbstractImageFigure):
         backend.set_xlabel(self.ax, self._xlabel)
         backend.set_ylabel(self.ax, self._ylabel)
         if self.axes_ticks is False:
-            # Remove the ticks entirely (matches the base ``ax.set_xticks([])``).
-            # Using ``set_xticklabels([])`` only blanks the labels but leaves the
-            # tick marks, which both renders ticks the user asked to hide and
-            # reserves margin space that shifts the image layout under tight_layout.
+            # set_xticks([]), not set_xticklabels([]): the latter keeps the
+            # tick marks and the margin they reserve under tight_layout.
             backend.set_xticks(self.ax, [])
             backend.set_yticks(self.ax, [])
         self.ax.hspy_fig = self
@@ -365,18 +361,18 @@ class ImagePlot(AbstractImageFigure):
             if attribute in kwargs.keys():
                 setattr(self, attribute, kwargs.pop(attribute))
         self.update(data_changed=True, auto_contrast=True, **kwargs)
-        if self.scalebar is True:
-            if self.pixel_units is not None:
-                try:
-                    self._scalebar_handle = get_backend().create_scalebar(
-                        ax=self.ax,
-                        units=self.pixel_units,
-                        animated=get_backend().supports_blit(self.figure),
-                        color=self.scalebar_color,
-                    )
-                    self.ax.scalebar = self._scalebar_handle
-                except BackendCapabilityError:
-                    self._scalebar_handle = None
+        if self.scalebar is True and self.pixel_units is not None:
+            backend = get_backend()
+            try:
+                self._scalebar_handle = backend.create_scalebar(
+                    ax=self.ax,
+                    units=self.pixel_units,
+                    animated=backend.supports_blit(self.figure),
+                    color=self.scalebar_color,
+                )
+                self.ax.scalebar = self._scalebar_handle
+            except BackendCapabilityError:
+                self._scalebar_handle = None
 
         if self.colorbar:
             self._add_colorbar()
@@ -631,7 +627,10 @@ class ImagePlot(AbstractImageFigure):
     def connect(self):
         # in case the figure is not displayed
         if self.figure is not None:
-            self._key_cid = get_backend().connect_key_press(
+            backend = get_backend()
+            if self._key_press_cid is not None:
+                backend.disconnect_event(self.figure, self._key_press_cid)
+            self._key_press_cid = backend.connect_key_press(
                 self.figure, self.on_key_press
             )
         if self.axes_manager:
@@ -641,8 +640,9 @@ class ImagePlot(AbstractImageFigure):
                 self.events.closed.connect(self.disconnect, [])
 
     def disconnect(self):
-        if hasattr(self, "_key_cid"):
-            get_backend().disconnect_event(self.figure, self._key_cid)
+        if self._key_press_cid is not None:
+            get_backend().disconnect_event(self.figure, self._key_press_cid)
+            self._key_press_cid = None
         if self.axes_manager:
             if self.update in self.axes_manager.events.indices_changed.connected:
                 self.axes_manager.events.indices_changed.disconnect(self.update)

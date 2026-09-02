@@ -82,36 +82,13 @@ class BlitMixin(Protocol):
 
 
 class PointerMixin(Protocol):
-    """Default implementations of navigation pointer widget methods.
+    """Default implementations of the interactive widget primitives.
 
-    Backends inherit this mixin to get ``BackendCapabilityError`` defaults for
-    all pointer primitives.  Backends that support interactive widgets override
-    the relevant methods.
+    Every method raises ``BackendCapabilityError`` (or is a no-op); backends
+    that support interactive widgets override the ones they can provide.
 
-    Pointer methods are deliberately higher-level than raw patch manipulation:
-    each ``create_*`` call returns an opaque handle that is passed back to the
-    corresponding ``update_*`` and ``remove_pointer`` calls.
-
-    Consolidated API (replaces the old per-axis / per-property methods):
-
-    * ``create_line_pointer(ax, axis, pos, color)``
-      Single method for both vertical (``axis='x'``) and horizontal
-      (``axis='y'``) draggable line widgets.
-
-    * ``update_line_pointer(handle, axis, pos)``
-      Move the line to *pos* (x-value for 'x', y-value for 'y').
-
-    * ``create_rect_pointer(ax, x, y, w, h, color, linewidth)``
-      Create a draggable rectangle widget.
-
-    * ``update_rect_pointer(handle, x, y, w, h)``
-      Resize / reposition the rectangle.
-
-    * ``remove_pointer(ax, handle)``
-      Remove any pointer handle from the axes.
-
-    * ``set_pointer_style(handle, *, color, alpha, animated)``
-      Set any combination of visual style properties in one call.
+    Each ``create_*`` call returns an opaque handle that is passed back to the
+    matching ``update_*`` / ``remove_pointer`` / ``set_pointer_style`` calls.
     """
 
     # ── Pointer creation / update ─────────────────────────────────────────
@@ -231,9 +208,7 @@ class PointerMixin(Protocol):
     ) -> None:
         """Set visual style properties on a pointer handle.
 
-        Any ``None`` argument is left unchanged.  Replaces the old
-        ``set_patch_color`` / ``set_patch_alpha`` / ``set_patch_animated``
-        trio.
+        Any ``None`` argument is left unchanged.
         """
 
     # ── Artist helpers ────────────────────────────────────────────────────
@@ -263,9 +238,9 @@ class PointerMixin(Protocol):
     def connect_widget_drag(self, handle: Any, on_drag: Callable) -> None:
         """Register *on_drag* to fire when the native widget is dragged.
 
-        *on_drag* is called with the new position: ``(x,)`` for 1-D widgets,
-        ``(x, y)`` for 2-D.  MPL-based backends leave this as a no-op and
-        route drag through ``_onmousemove``.
+        *on_drag* receives the new position: ``(x,)`` for 1-D widgets,
+        ``(x, y)`` for 2-D.  Matplotlib is a no-op here: its widgets drag
+        through ``_onmousemove``.
         """
 
     # ── Interactive selectors ─────────────────────────────────────────────

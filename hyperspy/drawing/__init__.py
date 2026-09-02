@@ -18,12 +18,9 @@
 
 import importlib
 
-# Register the backend selected by the preferences (matplotlib by default).
-# Reading the preference here — rather than hardcoding "matplotlib" — matters
-# because this module is imported lazily, on the first ``plot()`` call.  A
-# preference set before that point (``hs.preferences.Plot.backend = "..."``
-# in a script, or loaded from the user's config file) predates the observer
-# below, so this is the only place it can be picked up.
+# Register the backend named by the preferences (matplotlib by default).  This
+# module is imported lazily, so a preference set before the first plot()
+# predates the observer below and is only picked up here.
 from hyperspy.defaults_parser import preferences as _pref
 from hyperspy.drawing.backends import register_backend as _register_backend
 from hyperspy.drawing.backends._registry import load_backend as _load_backend

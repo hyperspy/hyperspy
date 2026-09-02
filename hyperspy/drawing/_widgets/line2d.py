@@ -21,6 +21,8 @@ import logging
 
 import numpy as np
 
+from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import CoordSpace
 from hyperspy.drawing.utils import picker_kwargs
 from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
@@ -149,8 +151,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 self._size = np.array((value,))
                 self._set_size_patch()
                 # the size patches have been removed, we need to draw them
-                from hyperspy.drawing.backends import get_backend
-
                 backend = get_backend()
                 for p in self._width_indicator_patches:
                     backend.add_artist(self.ax, p)
@@ -264,8 +264,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """Creates the line, and also creates the width indicators if
         appropriate.
         """
-        from hyperspy.drawing.backends import get_backend
-
         backend = get_backend()
         backend.set_autoscale(self.ax, False)
         xy = np.array(self._pos)
@@ -286,8 +284,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 **kwargs,
             )
         ]
-        # Backends whose widgets drag themselves (anyplotlib) report the move
-        # here; matplotlib drags through _onmousemove instead and no-ops.
         backend.connect_widget_drag(self._patch[0], self._on_widget_drag)
         if self._size[0] > 0:
             self._set_size_patch()
@@ -304,8 +300,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             raise ValueError(
                 "linewidth is not supported for axis with different scale."
             )
-        from hyperspy.drawing.backends import get_backend
-
         backend = get_backend()
         wc = self._get_width_indicator_coords()
         kwargs = picker_kwargs(self.radius_move)
@@ -325,8 +319,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self._width_indicator_patches = []
         # Patches were removed from the axes but the blit background
         # still shows their pixels — invalidate and force a full redraw.
-        from hyperspy.drawing.backends import get_backend
-
         get_backend().invalidate_blit_background(self.ax)
         self.draw_patch()
 
@@ -344,11 +336,10 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         if not self.patch:
             return self.FUNC_NONE
 
-        from hyperspy.drawing.backends import get_backend
-        from hyperspy.drawing.backends._protocol import CoordSpace
-
-        b = get_backend()
-        p = b.convert_coords(self.ax, self._pos, CoordSpace.DATA, CoordSpace.DISPLAY)
+        backend = get_backend()
+        p = backend.convert_coords(
+            self.ax, self._pos, CoordSpace.DATA, CoordSpace.DISPLAY
+        )
 
         # Calculate the distances to the vertecies, and find nearest one
         r2 = np.sum(np.power(p - np.array((cx, cy)), 2), axis=1)
@@ -387,12 +378,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         radius = self.radius_move
         wc = self._get_width_indicator_coords()
         for i in range(2):
-            A = b.convert_coords(
-                self.ax, [wc[i][0]], CoordSpace.DATA, CoordSpace.DISPLAY
-            )[0]
-            B = b.convert_coords(
-                self.ax, [wc[i][1]], CoordSpace.DATA, CoordSpace.DISPLAY
-            )[0]
+            A, B = backend.convert_coords(
+                self.ax, wc[i], CoordSpace.DATA, CoordSpace.DISPLAY
+            )
             t = np.dot(c - A, B - A)
             bas = np.linalg.norm(B - A) ** 2
             if 0 < t < bas:
@@ -467,20 +455,19 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
         # Rotation should happen in screen position, as anything else will
         # mix units
-        from hyperspy.drawing.backends import get_backend
-        from hyperspy.drawing.backends._protocol import CoordSpace
-
-        b = get_backend()
-        scr_zero = b.convert_coords(
+        backend = get_backend()
+        scr_zero = backend.convert_coords(
             self.ax, [(0, 0)], CoordSpace.DATA, CoordSpace.DISPLAY
         )[0]
         dx = (
-            b.convert_coords(self.ax, [dx], CoordSpace.DATA, CoordSpace.DISPLAY)[0]
+            backend.convert_coords(self.ax, [dx], CoordSpace.DATA, CoordSpace.DISPLAY)[
+                0
+            ]
             - scr_zero
         )
 
         # Get center point = center of original line
-        c = b.convert_coords(
+        c = backend.convert_coords(
             self.ax,
             [np.mean(self._drag_store[0], axis=0)],
             CoordSpace.DATA,
@@ -497,7 +484,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             theta = base * round(float(theta) / base)
 
         # vector from points to center
-        w1 = c - b.convert_coords(
+        w1 = c - backend.convert_coords(
             self.ax, self._drag_store[0], CoordSpace.DATA, CoordSpace.DISPLAY
         )
         # rotate into w2 for next point
@@ -507,7 +494,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 w1[:, 1] * np.cos(theta) + w1[:, 0] * np.sin(theta),
             )
         )
-        self.position = b.convert_coords(
+        self.position = backend.convert_coords(
             self.ax, c + np.rot90(w2), CoordSpace.DISPLAY, CoordSpace.DATA
         )
 

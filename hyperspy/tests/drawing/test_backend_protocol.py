@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Unit tests for the PlottingBackend protocol (Phases 1–4)."""
+"""Unit tests for the PlottingBackend protocol and the matplotlib backend."""
 
 import inspect
 
@@ -581,7 +581,7 @@ class TestMplBackend:
 
     def test_get_ax_transform_unknown_kind_raises(self, mpl_backend, mpl_fig_ax):
         _, ax = mpl_fig_ax
-        with pytest.raises(ValueError, match="Unknown transform kind"):
+        with pytest.raises(ValueError, match="Unknown coordinate space"):
             mpl_backend.get_ax_transform(ax, "bogus")
 
     def test_space_transform_unknown_raises(self, mpl_backend, mpl_fig_ax):
