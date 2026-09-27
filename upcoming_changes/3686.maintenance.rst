@@ -1,0 +1,2 @@
+Make the unit-conversion tests independent of the micro glyph used by the
+installed pint version and replace a dead link in the developer guide.
