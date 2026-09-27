@@ -1,0 +1,2 @@
+Add a ``.mailmap`` file to consolidate duplicate author identities in the
+git history, fixing contributor attribution for tools that respect mailmap.
