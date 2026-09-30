@@ -22,6 +22,7 @@ import copy
 import numpy as np
 from traits.api import Undefined
 
+from hyperspy.defaults_parser import preferences
 from hyperspy.drawing import signal1d
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 
@@ -165,7 +166,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 )
 
     def key2switch_right_pointer(self, event):
-        if event.key == "e":
+        if event.key == preferences.Plot.key_toggle_pointer:
             self.right_pointer_on = not self.right_pointer_on
 
     def add_right_pointer(self, **kwargs):
