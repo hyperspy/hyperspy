@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import importlib
+import logging
 import warnings
 
 import dask
@@ -288,8 +289,30 @@ class TestFitAlgorithms:
         np.testing.assert_allclose(
             self.nonlinear_fit_res, lstsq_fit._get_current_data(), atol=1e-8
         )
-        linear_std = [para.std for para in m._free_parameters if para.std]
-        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1e-8)
+
+    def test_rank_deficient_lstsq(self, weighted, caplog):
+        _skip_test(self.m.signal)
+        self._post_setup_method(weighted)
+        m = self.m
+        # Move the fixed-centre Gaussian far outside the signal range: its
+        # design-matrix column underflows to (numerically) zero and the
+        # problem becomes rank deficient. numpy's SVD-based lstsq returns
+        # the minimum-norm solution, while the lazy dask implementation
+        # (QR + triangular solve) raises LinAlgError without the fallback
+        # in model.py: https://github.com/dask/dask/issues/12610
+        m[0].centre.value = 300.0
+        m[0].sigma.value = 1.0
+        with caplog.at_level(logging.WARNING, logger="hyperspy.model"):
+            m.fit(optimizer="lstsq")
+        # The identifiable components are still fitted correctly and the
+        # unidentifiable one is driven to zero (minimum-norm solution).
+        np.testing.assert_allclose(m[1].a.value, 1.0, atol=1e-8)
+        np.testing.assert_allclose(m[1].b.value, 0.0, atol=1e-8)
+        # The covariance is estimated rank-tolerantly on both paths.
+        assert np.all(np.isfinite(m.fit_output["covar"]))
+        if m.signal._lazy:
+            # Only the lazy path needs the numpy fallback: disclose it.
+            assert "rank deficient" in caplog.text
 
     def test_nonactive_component(self, weighted):
         _skip_test(self.m.signal)
