@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import importlib
+import logging
 import os
 from pathlib import Path
 
@@ -58,6 +59,23 @@ hs.preferences.Plot.use_subfigure = False
 # Don't show progressbar since it contains the runtime which
 # will make the doctest fail
 hs.preferences.General.show_progressbar = False
+
+
+@pytest.fixture(autouse=True)
+def set_hyperspy_log_level():
+    """Set the hyperspy logger to WARNING for every test.
+
+    By default ``hyperspy.api`` sets the 'hyperspy' logger level to ERROR
+    (from ``preferences.General.logging_level``), which silences WARNING
+    messages and causes any test that uses ``caplog`` to check for warnings
+    to fail.  This fixture resets the level to WARNING before each test and
+    restores the original level afterwards.
+    """
+    hyperspy_logger = logging.getLogger("hyperspy")
+    original_level = hyperspy_logger.level
+    hyperspy_logger.setLevel(logging.WARNING)
+    yield
+    hyperspy_logger.setLevel(original_level)
 
 
 @pytest.fixture(autouse=True)
