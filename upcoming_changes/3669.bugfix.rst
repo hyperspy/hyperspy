@@ -1,0 +1,3 @@
+Replace ``np.bool`` with ``bool`` in :meth:`~.signal.BaseSignal.export_decomposition_results`
+and :meth:`~.signal.BaseSignal.export_bss_results` to fix an ``AttributeError`` on
+NumPy >= 2.0, where ``np.bool`` was removed.

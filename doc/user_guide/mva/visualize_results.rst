@@ -102,16 +102,16 @@ you can combine
 Decomposition plots
 -------------------
 
-HyperSpy provides a number of methods for visualizing the factors and loadings
+HyperSpy provides a number of methods for visualizing the decomposition components and scores
 found by a decomposition analysis. To plot everything in a compact form,
 use :meth:`~.api.signals.BaseSignal.plot_decomposition_results`.
 
-You can also plot the factors and loadings separately using the following
-methods. It is recommended that you provide the number of factors or loadings
+You can also plot the decomposition components and scores separately using the following
+methods. It is recommended that you provide the number of components or scores
 you wish to visualise, since the default is to plot all of them.
 
-* :meth:`~.api.signals.BaseSignal.plot_decomposition_factors`
-* :meth:`~.api.signals.BaseSignal.plot_decomposition_loadings`
+* :meth:`~.api.signals.BaseSignal.plot_decomposition_components`
+* :meth:`~.api.signals.BaseSignal.plot_decomposition_scores`
 
 .. _mva.plot_bss:
 
@@ -122,8 +122,8 @@ Visualizing blind source separation results is much the same as decomposition.
 You can use :meth:`~.api.signals.BaseSignal.plot_bss_results` for a compact display,
 or instead:
 
-* :meth:`~.api.signals.BaseSignal.plot_bss_factors`
-* :meth:`~.api.signals.BaseSignal.plot_bss_loadings`
+* :meth:`~.api.signals.BaseSignal.plot_bss_components`
+* :meth:`~.api.signals.BaseSignal.plot_bss_scores`
 
 .. _mva.get_results:
 

@@ -108,8 +108,8 @@ class TestLazyDecomposition:
             output_dimension=3,
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        factors = self.s.learning_results.factors
-        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
         if isinstance(factors, da.Array):
             factors = factors.compute()
@@ -137,8 +137,8 @@ class TestLazyDecomposition:
             algorithm="PCA",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        factors = self.s.learning_results.factors
-        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
         if isinstance(factors, da.Array):
             factors = factors.compute()
@@ -164,8 +164,8 @@ class TestLazyDecomposition:
         sig_mask = (s.inav[0, 0].data < 1.0).compute()
 
         s.decomposition(output_dimension=3, algorithm="PCA", signal_mask=sig_mask)
-        factors = s.learning_results.factors
-        loadings = s.learning_results.loadings
+        factors = s.learning_results.components
+        loadings = s.learning_results.scores
         _ = loadings @ factors.T
 
         # Check singular values
@@ -178,8 +178,8 @@ class TestLazyDecomposition:
         nav_mask = (s.isig[0].data < 1.0).compute()
 
         s.decomposition(output_dimension=3, algorithm="PCA", navigation_mask=nav_mask)
-        factors = s.learning_results.factors
-        loadings = s.learning_results.loadings
+        factors = s.learning_results.components
+        loadings = s.learning_results.scores
         _ = loadings @ factors.T
 
         # Check singular values
@@ -196,8 +196,8 @@ class TestLazyDecomposition:
             algorithm="ORPCA",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        factors = self.s.learning_results.factors
-        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
         if isinstance(factors, da.Array):
             factors = factors.compute()
@@ -221,8 +221,8 @@ class TestLazyDecomposition:
             algorithm="ORNMF",
             normalize_poissonian_noise=normalize_poissonian_noise,
         )
-        factors = self.s.learning_results.factors
-        loadings = self.s.learning_results.loadings
+        factors = self.s.learning_results.components
+        loadings = self.s.learning_results.scores
 
         if isinstance(factors, da.Array):
             factors = factors.compute()
@@ -278,8 +278,8 @@ class TestLazyDecomposition:
             output_dimension=3,
             signal_mask=sig_mask,
         )
-        assert s.learning_results.factors is not None
-        assert s.learning_results.loadings is not None
+        assert s.learning_results.components is not None
+        assert s.learning_results.scores is not None
 
     def test_algorithm_error(self):
         with pytest.raises(ValueError, match="not recognised"):
@@ -312,8 +312,8 @@ class TestLazyDecomposition:
         data = da.from_array(X.reshape(10, 12, 128), chunks=(5, 6, 64))
         s = Signal1D(data).as_lazy()
         s.decomposition(algorithm="SVD", svd_solver="randomized", output_dimension=3)
-        assert s.learning_results.factors is not None
-        assert s.learning_results.loadings is not None
+        assert s.learning_results.components is not None
+        assert s.learning_results.scores is not None
 
     @skip_sklearn
     @pytest.mark.parametrize("centre", [None, "navigation", "signal"])
@@ -336,7 +336,7 @@ class TestLazyDecomposition:
             reproject="navigation",
         )
         lr = self.s.learning_results
-        loadings = lr.loadings
+        loadings = lr.scores
         assert loadings.shape[0] == self.s.axes_manager.navigation_size
         assert not np.any(np.isnan(loadings)), (
             "reproject='navigation' should fill all rows"
@@ -398,7 +398,7 @@ class TestPrintInfo:
             output_dimension=2,
             signal_mask=sig_mask,
         )
-        assert s.learning_results.factors is not None
+        assert s.learning_results.components is not None
 
         nav_mask = (s.isig[0].data < 0.5).compute()
         s.decomposition(
@@ -407,7 +407,7 @@ class TestPrintInfo:
             output_dimension=2,
             navigation_mask=nav_mask,
         )
-        assert s.learning_results.loadings is not None
+        assert s.learning_results.scores is not None
 
     @skip_sklearn
     def test_decomposition_mask_wrong_Shape(self):
@@ -546,8 +546,8 @@ class TestNormalizePoissonianNoise:
             normalize_poissonian_noise=True,
             print_info=False,
         )
-        factors = s.learning_results.factors  # (20, 2)
-        loadings = s.learning_results.loadings  # (10, 2)
+        factors = s.learning_results.components  # (20, 2)
+        loadings = s.learning_results.scores  # (10, 2)
         reconstruction = loadings @ factors.T  # (10, 20)
         # Loose check: reconstruction is in the original data space
         assert reconstruction.min() > -1e3
@@ -667,7 +667,7 @@ class TestLazyDecompositionParityFixes:
             navigation_mask=self.nav_mask,
             print_info=False,
         )
-        loadings = self.s.learning_results.loadings
+        loadings = self.s.learning_results.scores
         # loadings shape should be (nav_size, n_components) = (20, 2)
         assert loadings.shape == (20, n_components)
         flat_mask = self.nav_mask.ravel()
@@ -685,7 +685,7 @@ class TestLazyDecompositionParityFixes:
             signal_mask=self.sig_mask,
             print_info=False,
         )
-        factors = self.s.learning_results.factors
+        factors = self.s.learning_results.components
         # factors shape should be (sig_size, n_components) = (30, 2)
         assert factors.shape == (30, n_components)
         # Masked channels (first 3) should be NaN
@@ -716,7 +716,7 @@ class TestLazyDecompositionParityFixes:
             reproject="navigation",
             print_info=False,
         )
-        loadings = self.s.learning_results.loadings
+        loadings = self.s.learning_results.scores
         assert loadings.shape == (20, 2)
         assert not np.any(np.isnan(loadings))
 
@@ -731,7 +731,7 @@ class TestLazyDecompositionParityFixes:
             reproject="both",
             print_info=False,
         )
-        factors = self.s.learning_results.factors
+        factors = self.s.learning_results.components
         assert factors.shape[0] == 30  # full signal size
         assert not np.any(np.isnan(factors))
 
@@ -745,7 +745,7 @@ class TestLazyDecompositionParityFixes:
             reproject="signal",
             print_info=False,
         )
-        factors = self.s.learning_results.factors
+        factors = self.s.learning_results.components
         assert factors.shape[0] == 30  # full signal size
         assert not np.any(np.isnan(factors))
 
@@ -878,12 +878,12 @@ class TestLazyDecompositionBothMasks:
             print_info=False,
         )
         t = self.s.learning_results
-        assert t.loadings.shape == (20, 3)
-        assert t.factors.shape == (100, 3)
-        assert np.all(np.isnan(t.loadings[self.nav_mask, :]))
-        assert not np.any(np.isnan(t.loadings[~self.nav_mask, :]))
-        assert np.all(np.isnan(t.factors[self.sig_mask, :]))
-        assert not np.any(np.isnan(t.factors[~self.sig_mask, :]))
+        assert t.scores.shape == (20, 3)
+        assert t.components.shape == (100, 3)
+        assert np.all(np.isnan(t.scores[self.nav_mask, :]))
+        assert not np.any(np.isnan(t.scores[~self.nav_mask, :]))
+        assert np.all(np.isnan(t.components[self.sig_mask, :]))
+        assert not np.any(np.isnan(t.components[~self.sig_mask, :]))
 
     @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
     def test_both_masks_nan_pattern_online(self, algorithm):
@@ -896,10 +896,10 @@ class TestLazyDecompositionBothMasks:
             print_info=False,
         )
         t = self.s.learning_results
-        assert np.all(np.isnan(t.loadings[self.nav_mask, :]))
-        assert not np.any(np.isnan(t.loadings[~self.nav_mask, :]))
-        assert np.all(np.isnan(t.factors[self.sig_mask, :]))
-        assert not np.any(np.isnan(t.factors[~self.sig_mask, :]))
+        assert np.all(np.isnan(t.scores[self.nav_mask, :]))
+        assert not np.any(np.isnan(t.scores[~self.nav_mask, :]))
+        assert np.all(np.isnan(t.components[self.sig_mask, :]))
+        assert not np.any(np.isnan(t.components[~self.sig_mask, :]))
 
     @skip_sklearn
     def test_both_masks_reconstruction_quality(self):
@@ -916,8 +916,8 @@ class TestLazyDecompositionBothMasks:
         )
         kept_nav = ~self.nav_mask
         kept_sig = ~self.sig_mask
-        f = self.s.learning_results.factors[kept_sig, :]
-        l_ = self.s.learning_results.loadings[kept_nav, :]
+        f = self.s.learning_results.components[kept_sig, :]
+        l_ = self.s.learning_results.scores[kept_nav, :]
         rms = np.sqrt(np.mean((l_ @ f.T - self.data[kept_nav][:, kept_sig]) ** 2))
         assert rms < 1e-10
 
@@ -963,7 +963,7 @@ class TestLazyDecompositionReprojectionNumerical:
             reproject="navigation",
             print_info=False,
         )
-        loadings = self.s.learning_results.loadings
+        loadings = self.s.learning_results.scores
         assert loadings.shape == (20, 3)
         assert not np.any(np.isnan(loadings))
 
@@ -984,7 +984,7 @@ class TestLazyDecompositionReprojectionNumerical:
             print_info=False,
         )
         t = self.s.learning_results
-        recon = t.loadings @ t.factors.T
+        recon = t.scores @ t.components.T
         rms = np.sqrt(np.mean((recon - self.data) ** 2))
         assert rms < 1.0
 
@@ -1001,7 +1001,7 @@ class TestLazyDecompositionReprojectionNumerical:
             navigation_mask=self.nav_mask,
             print_info=False,
         )
-        baseline_loadings = self.s.learning_results.loadings[~self.nav_mask, :].copy()
+        baseline_loadings = self.s.learning_results.scores[~self.nav_mask, :].copy()
 
         # With reproject: should give the same values at unmasked positions
         self.s.decomposition(
@@ -1011,7 +1011,7 @@ class TestLazyDecompositionReprojectionNumerical:
             reproject="navigation",
             print_info=False,
         )
-        reproj_loadings = self.s.learning_results.loadings[~self.nav_mask, :]
+        reproj_loadings = self.s.learning_results.scores[~self.nav_mask, :]
         np.testing.assert_allclose(baseline_loadings, reproj_loadings, atol=1e-10)
 
     @skip_sklearn
@@ -1033,7 +1033,7 @@ class TestLazyDecompositionReprojectionNumerical:
                 reproject="both",
                 print_info=False,
             )
-        loadings = self.s.learning_results.loadings
+        loadings = self.s.learning_results.scores
         assert loadings.shape == (20, 3)
         assert not np.any(np.isnan(loadings))
 
@@ -1054,8 +1054,8 @@ class TestLazyDecompositionReprojectionNumerical:
         )
         t = self.s.learning_results
         kept_sig = ~self.sig_mask
-        f = t.factors[kept_sig, :]
-        recon = t.loadings @ f.T
+        f = t.components[kept_sig, :]
+        recon = t.scores @ f.T
         rms = np.sqrt(np.mean((recon - self.data[:, kept_sig]) ** 2))
         assert rms < 1.0
 
@@ -1076,11 +1076,11 @@ class TestLazyDecompositionReprojectionNumerical:
         )
         t = self.s.learning_results
         # Factors must cover the full signal (sig_size rows, no NaN)
-        assert t.factors.shape[0] == self.data.shape[1]
-        assert not np.any(np.isnan(t.factors))
+        assert t.components.shape[0] == self.data.shape[1]
+        assert not np.any(np.isnan(t.components))
         # Loadings must still have NaN at nav-masked positions
-        assert t.loadings.shape[0] == self.data.shape[0]
-        assert np.any(np.isnan(t.loadings[self.nav_mask, :]))
+        assert t.scores.shape[0] == self.data.shape[0]
+        assert np.any(np.isnan(t.scores[self.nav_mask, :]))
 
     @skip_sklearn
     def test_reproject_signal_reconstruction(self):
@@ -1098,7 +1098,7 @@ class TestLazyDecompositionReprojectionNumerical:
         t = self.s.learning_results
         kept_nav = ~self.nav_mask
         # Loadings at unmasked nav rows × full factors must reconstruct data
-        recon = t.loadings[kept_nav, :] @ t.factors.T
+        recon = t.scores[kept_nav, :] @ t.components.T
         rms = np.sqrt(np.mean((recon - self.data[kept_nav]) ** 2))
         assert rms < 1e-10, f"reproject='signal' RMS {rms:.2e} too large"
 
@@ -1118,12 +1118,12 @@ class TestLazyDecompositionReprojectionNumerical:
         # Baseline: no reproject
         self.s.decomposition(**kw)
 
-        baseline_factors = self.s.learning_results.factors[~self.sig_mask, :].copy()
+        baseline_factors = self.s.learning_results.components[~self.sig_mask, :].copy()
 
         # With reproject='signal'
         self.s.decomposition(**kw, reproject="signal")
 
-        reproj_factors = self.s.learning_results.factors[~self.sig_mask, :]
+        reproj_factors = self.s.learning_results.components[~self.sig_mask, :]
         np.testing.assert_allclose(baseline_factors, reproj_factors, atol=1e-10)
 
     @skip_sklearn
@@ -1142,10 +1142,10 @@ class TestLazyDecompositionReprojectionNumerical:
             print_info=False,
         )
         t = self.s.learning_results
-        assert t.factors.shape[0] == self.data.shape[1]
-        assert not np.any(np.isnan(t.factors)), "factors still contain NaN"
-        assert t.loadings.shape[0] == self.data.shape[0]
-        assert not np.any(np.isnan(t.loadings)), "loadings still contain NaN"
+        assert t.components.shape[0] == self.data.shape[1]
+        assert not np.any(np.isnan(t.components)), "factors still contain NaN"
+        assert t.scores.shape[0] == self.data.shape[0]
+        assert not np.any(np.isnan(t.scores)), "loadings still contain NaN"
 
     @skip_sklearn
     def test_reproject_both_svd_reconstruction(self):
@@ -1160,7 +1160,7 @@ class TestLazyDecompositionReprojectionNumerical:
             print_info=False,
         )
         t = self.s.learning_results
-        rms = np.sqrt(np.mean((t.loadings @ t.factors.T - self.data) ** 2))
+        rms = np.sqrt(np.mean((t.scores @ t.components.T - self.data) ** 2))
         assert rms < 1e-10, f"reproject='both' RMS {rms:.2e} too large"
 
     @skip_sklearn
@@ -1177,12 +1177,12 @@ class TestLazyDecompositionReprojectionNumerical:
             print_info=False,
         )
         t = self.s.learning_results
-        assert t.factors is not None
-        assert t.loadings is not None
+        assert t.components is not None
+        assert t.scores is not None
         # After signal reprojection, factors must cover all signal channels
-        assert t.factors.shape[0] == self.s.axes_manager.signal_size
-        assert not np.any(np.isnan(t.factors)), "factors must not contain NaN"
-        assert t.loadings is not None
+        assert t.components.shape[0] == self.s.axes_manager.signal_size
+        assert not np.any(np.isnan(t.components)), "factors must not contain NaN"
+        assert t.scores is not None
 
     @skip_sklearn
     @pytest.mark.parametrize("algorithm", ["ORPCA", "ORNMF"])
@@ -1197,11 +1197,11 @@ class TestLazyDecompositionReprojectionNumerical:
             print_info=False,
         )
         # Nav reproject should still have run → loadings fully filled
-        loadings = self.s.learning_results.loadings
+        loadings = self.s.learning_results.scores
         assert loadings.shape[0] == self.data.shape[0]
         assert not np.any(np.isnan(loadings)), "loadings still contain NaN"
         # Signal reproject should have run → factors fully filled
-        factors = self.s.learning_results.factors
+        factors = self.s.learning_results.components
         assert factors.shape[0] == self.s.axes_manager.signal_size
         assert not np.any(np.isnan(factors)), "factors still contain NaN"
 
@@ -1242,7 +1242,7 @@ class TestLazyVsNonLazyDecomposition:
         )
         for s, label in [(self.s_nl, "non-lazy"), (self.s_lz, "lazy")]:
             t = s.learning_results
-            rms = np.sqrt(np.mean((t.loadings @ t.factors.T - self.data) ** 2))
+            rms = np.sqrt(np.mean((t.scores @ t.components.T - self.data) ** 2))
             assert rms < 1e-10, f"{label} reconstruction RMS {rms:.2e} too large"
 
     @skip_sklearn
@@ -1256,8 +1256,8 @@ class TestLazyVsNonLazyDecomposition:
         kept_nav = ~self.nav_mask
         for s, label in [(self.s_nl, "non-lazy"), (self.s_lz, "lazy")]:
             t = s.learning_results
-            f = t.factors
-            l_ = t.loadings[kept_nav, :]
+            f = t.components
+            l_ = t.scores[kept_nav, :]
             rms = np.sqrt(np.mean((l_ @ f.T - self.data[kept_nav]) ** 2))
             assert rms < 1e-10, f"{label} nav-masked RMS {rms:.2e} too large"
 
@@ -1272,8 +1272,8 @@ class TestLazyVsNonLazyDecomposition:
         kept_sig = ~self.sig_mask
         for s, label in [(self.s_nl, "non-lazy"), (self.s_lz, "lazy")]:
             t = s.learning_results
-            f = t.factors[kept_sig, :]
-            l_ = t.loadings
+            f = t.components[kept_sig, :]
+            l_ = t.scores
             rms = np.sqrt(np.mean((l_ @ f.T - self.data[:, kept_sig]) ** 2))
             assert rms < 1e-10, f"{label} sig-masked RMS {rms:.2e} too large"
 
@@ -1294,8 +1294,8 @@ class TestLazyVsNonLazyDecomposition:
         kept_sig = ~self.sig_mask
         for s, label in [(self.s_nl, "non-lazy"), (self.s_lz, "lazy")]:
             t = s.learning_results
-            f = t.factors[kept_sig, :]
-            l_ = t.loadings[kept_nav, :]
+            f = t.components[kept_sig, :]
+            l_ = t.scores[kept_nav, :]
             rms = np.sqrt(np.mean((l_ @ f.T - self.data[kept_nav][:, kept_sig]) ** 2))
             assert rms < 1e-10, f"{label} both-masked RMS {rms:.2e} too large"
 
@@ -1313,8 +1313,8 @@ class TestLazyVsNonLazyDecomposition:
 
         t_lz = self.s_lz.learning_results
         t = self.s_nl.learning_results
-        rms_lz = np.sqrt(np.mean((t_lz.loadings @ t_lz.factors.T - self.data) ** 2))
-        rms = np.sqrt(np.mean((t.loadings @ t.factors.T - self.data) ** 2))
+        rms_lz = np.sqrt(np.mean((t_lz.scores @ t_lz.components.T - self.data) ** 2))
+        rms = np.sqrt(np.mean((t.scores @ t.components.T - self.data) ** 2))
         assert rms < 1e-10, f"non-lazy reproject RMS {rms:.2e} too large"
         assert rms_lz < 1.0, f"lazy reproject RMS {rms_lz:.2e} too large"
 
@@ -1409,7 +1409,7 @@ class TestSubSignalChunking:
             output_dimension=rank,
             print_info=False,
         )
-        assert s.learning_results.factors.shape[0] == sig_size
+        assert s.learning_results.components.shape[0] == sig_size
 
     # ------------------------------------------------------------------
     # normalize_poissonian_noise must not raise a broadcast error
@@ -1437,7 +1437,7 @@ class TestSubSignalChunking:
             normalize_poissonian_noise=True,
             print_info=False,
         )
-        assert s.learning_results.factors.shape[0] == sig_size
+        assert s.learning_results.components.shape[0] == sig_size
 
     # ------------------------------------------------------------------
     # Reconstruction quality must be preserved despite sub-signal chunking
@@ -1478,8 +1478,8 @@ class TestSubSignalChunking:
         t_sub = s_sub.learning_results
 
         flat = data.reshape(nav_size, sig_size)
-        rms_cont = np.sqrt(np.mean((t_cont.loadings @ t_cont.factors.T - flat) ** 2))
-        rms_sub = np.sqrt(np.mean((t_sub.loadings @ t_sub.factors.T - flat) ** 2))
+        rms_cont = np.sqrt(np.mean((t_cont.scores @ t_cont.components.T - flat) ** 2))
+        rms_sub = np.sqrt(np.mean((t_sub.scores @ t_sub.components.T - flat) ** 2))
         # Both chunk layouts should give the same reconstruction quality
         np.testing.assert_allclose(
             rms_sub,
@@ -1504,7 +1504,7 @@ class TestSubSignalChunking:
         rank = 3
         s, _, _ = self._make_signal(nav_shape, sig_size, sig_chunk, nav_chunk, rank)
         s.decomposition(algorithm=algorithm, output_dimension=rank, print_info=False)
-        assert s.learning_results.factors.shape[0] == sig_size
+        assert s.learning_results.components.shape[0] == sig_size
 
 
 def _make_mask_test_signal(nav_shape, sig_size, seed=123):
@@ -1631,7 +1631,7 @@ class TestLazyDecompositionMaskTypes:
             navigation_mask=nav_masks[mask_type],
             print_info=False,
         )
-        assert s.learning_results.loadings.shape[0] == nav_size
+        assert s.learning_results.scores.shape[0] == nav_size
 
     @pytest.mark.parametrize(
         "nav_shape,sig_size",
@@ -1652,7 +1652,7 @@ class TestLazyDecompositionMaskTypes:
             signal_mask=sig_masks[mask_type],
             print_info=False,
         )
-        assert s.learning_results.factors.shape[0] == sig_size
+        assert s.learning_results.components.shape[0] == sig_size
 
     @pytest.mark.parametrize(
         "nav_shape,sig_size",
@@ -1678,7 +1678,7 @@ class TestLazyDecompositionMaskTypes:
             navigation_mask=nav_masks[mask_type],
             print_info=False,
         )
-        assert s.learning_results.loadings.shape[0] == nav_size
+        assert s.learning_results.scores.shape[0] == nav_size
 
     @pytest.mark.parametrize(
         "nav_shape,sig_size",
@@ -1701,7 +1701,7 @@ class TestLazyDecompositionMaskTypes:
             signal_mask=sig_masks[mask_type],
             print_info=False,
         )
-        assert s.learning_results.factors.shape[0] == sig_size
+        assert s.learning_results.components.shape[0] == sig_size
 
     @pytest.mark.parametrize(
         "nav_shape,sig_size",
@@ -1728,8 +1728,8 @@ class TestLazyDecompositionMaskTypes:
             signal_mask=sig_masks[mask_type],
             print_info=False,
         )
-        assert s.learning_results.loadings.shape[0] == nav_size
-        assert s.learning_results.factors.shape[0] == sig_size
+        assert s.learning_results.scores.shape[0] == nav_size
+        assert s.learning_results.components.shape[0] == sig_size
 
     @pytest.mark.parametrize(
         "nav_shape,sig_size",
@@ -1759,14 +1759,14 @@ class TestLazyDecompositionMaskTypes:
             print_info=False,
         )
         t = s.learning_results
-        assert t.loadings.shape[0] == nav_size
-        assert t.factors.shape[0] == sig_size
+        assert t.scores.shape[0] == nav_size
+        assert t.components.shape[0] == sig_size
         # reproject='navigation' or 'both' → no NaN in loadings
         if reproject in ("navigation", "both"):
-            assert not np.any(np.isnan(t.loadings))
+            assert not np.any(np.isnan(t.scores))
         # reproject='signal' or 'both' → no NaN in factors
         if reproject in ("signal", "both"):
-            assert not np.any(np.isnan(t.factors))
+            assert not np.any(np.isnan(t.components))
 
     @skip_sklearn
     def test_2d_nav_mask_pca_default_reproject(self):
@@ -1784,7 +1784,7 @@ class TestLazyDecompositionMaskTypes:
             navigation_mask=nav_mask,
             print_info=False,
         )
-        assert s.learning_results.loadings.shape[0] == nav_size
+        assert s.learning_results.scores.shape[0] == nav_size
 
 
 class TestLazyCentreMaskParity:
@@ -1869,8 +1869,8 @@ class TestLazyCentreMaskParity:
             print_info=False,
         )
         t = s_lz.learning_results
-        assert t.factors.shape == (len(self.sig_mask), 3)
-        assert not np.any(np.isnan(t.factors)), (
+        assert t.components.shape == (len(self.sig_mask), 3)
+        assert not np.any(np.isnan(t.components)), (
             "factors should have no NaN after signal reproject"
         )
 
@@ -2068,17 +2068,17 @@ class TestLazyNMFAlgorithm:
     def test_nmf_runs(self):
         self.s.decomposition(algorithm="NMF", output_dimension=3, print_info=False)
         lr = self.s.learning_results
-        assert lr.factors is not None
-        assert lr.loadings is not None
-        assert lr.factors.shape[1] == 3
-        assert lr.loadings.shape[1] == 3
+        assert lr.components is not None
+        assert lr.scores is not None
+        assert lr.components.shape[1] == 3
+        assert lr.scores.shape[1] == 3
 
     def test_nmf_factors_shape(self):
         self.s.decomposition(algorithm="NMF", output_dimension=3, print_info=False)
         lr = self.s.learning_results
         # factors: (sig_size, n_components), loadings: (nav_size, n_components)
-        assert lr.factors.shape == (40, 3)
-        assert lr.loadings.shape == (6 * 8, 3)
+        assert lr.components.shape == (40, 3)
+        assert lr.scores.shape == (6 * 8, 3)
 
     def test_nmf_return_info(self):
         obj = self.s.decomposition(
@@ -2095,7 +2095,7 @@ class TestLazyNMFAlgorithm:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert lr.loadings.shape[0] == 6 * 8  # full nav
+        assert lr.scores.shape[0] == 6 * 8  # full nav
 
 
 @skip_no_sklearn
@@ -2125,9 +2125,9 @@ class TestLazyCustomSklearnObject:
             algorithm=obj, output_dimension=3, print_info=False, return_info=True
         )
         lr = self.s.learning_results
-        assert lr.factors is not None
-        assert lr.loadings is not None
-        assert lr.factors.shape[1] == 3
+        assert lr.components is not None
+        assert lr.scores is not None
+        assert lr.components.shape[1] == 3
         # return_info should give back the estimator
         assert returned is obj
 
@@ -2137,8 +2137,8 @@ class TestLazyCustomSklearnObject:
         self.s.decomposition(algorithm=obj, print_info=False)
 
         lr = self.s.learning_results
-        assert lr.factors is not None
-        assert lr.factors.shape[1] == 3
+        assert lr.components is not None
+        assert lr.components.shape[1] == 3
 
     def test_custom_estimator_missing_components_raises(self):
         """Estimator without components_ attribute must raise AttributeError."""
@@ -2201,8 +2201,8 @@ class TestLazySVDSolverAndAutoTranspose:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert lr.factors.shape == (40, 3)
-        assert lr.loadings.shape == (48, 3)
+        assert lr.components.shape == (40, 3)
+        assert lr.scores.shape == (48, 3)
 
     def test_auto_transpose_false_no_error(self):
         """auto_transpose=False is accepted without error."""
@@ -2227,8 +2227,8 @@ class TestLazySVDSolverAndAutoTranspose:
             print_info=False,
         )
         lr = s.learning_results
-        assert lr.factors.shape == (50, 3)
-        assert lr.loadings.shape == (10, 3)
+        assert lr.components.shape == (50, 3)
+        assert lr.scores.shape == (10, 3)
 
 
 class TestSVDAlgorithm:
@@ -2252,8 +2252,8 @@ class TestSVDAlgorithm:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert lr.factors is not None
-        assert lr.loadings is not None
+        assert lr.components is not None
+        assert lr.scores is not None
 
     def test_output_dimension_required(self):
         """output_dimension is required for svd_solver='randomized'."""
@@ -2272,8 +2272,8 @@ class TestSVDAlgorithm:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert lr.factors.shape == (30, k)
-        assert lr.loadings.shape == (35, k)
+        assert lr.components.shape == (30, k)
+        assert lr.scores.shape == (35, k)
 
     def test_factors_and_loadings_shapes(self):
         """Factors shape is (sig_size, k); loadings shape is (nav_size, k)."""
@@ -2285,8 +2285,8 @@ class TestSVDAlgorithm:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert lr.factors.shape == (30, k)
-        assert lr.loadings.shape == (35, k)
+        assert lr.components.shape == (30, k)
+        assert lr.scores.shape == (35, k)
 
     def test_explained_variance_set(self):
         """explained_variance is populated after SVD."""
@@ -2309,7 +2309,7 @@ class TestSVDAlgorithm:
             print_info=False,
         )
         lr = self.s.learning_results
-        recon = (lr.loadings @ lr.factors.T).reshape(7, 5, 30)
+        recon = (lr.scores @ lr.components.T).reshape(7, 5, 30)
         original = self.s.data.compute()
         rel_error = np.linalg.norm(recon - original) / np.linalg.norm(original)
         assert rel_error < 0.1
@@ -2332,8 +2332,8 @@ class TestSVDFullSolver:
             algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
         )
         lr = self.s.learning_results
-        assert lr.factors is not None
-        assert lr.loadings is not None
+        assert lr.components is not None
+        assert lr.scores is not None
 
     def test_output_dimension_optional(self):
         """svd_solver='full' accepts output_dimension=None and returns lazy arrays."""
@@ -2343,8 +2343,8 @@ class TestSVDFullSolver:
             algorithm="SVD", svd_solver="full", output_dimension=None, print_info=False
         )
         lr = self.s.learning_results
-        assert isinstance(lr.factors, da.Array)
-        assert isinstance(lr.loadings, da.Array)
+        assert isinstance(lr.components, da.Array)
+        assert isinstance(lr.scores, da.Array)
 
     def test_output_dimension_respected(self):
         """When output_dimension is given, the results are truncated accordingly."""
@@ -2357,11 +2357,11 @@ class TestSVDFullSolver:
         lr = self.s.learning_results
         # Results may be lazy; compute to check shape.
         factors = (
-            lr.factors.compute() if isinstance(lr.factors, da.Array) else lr.factors
+            lr.components.compute()
+            if isinstance(lr.components, da.Array)
+            else lr.components
         )
-        loadings = (
-            lr.loadings.compute() if isinstance(lr.loadings, da.Array) else lr.loadings
-        )
+        loadings = lr.scores.compute() if isinstance(lr.scores, da.Array) else lr.scores
         assert factors.shape == (30, k)
         assert loadings.shape == (35, k)
 
@@ -2378,11 +2378,11 @@ class TestSVDFullSolver:
         assert lr.centre == "navigation"
         assert lr.mean is not None
         factors = (
-            lr.factors.compute() if isinstance(lr.factors, da.Array) else lr.factors
+            lr.components.compute()
+            if isinstance(lr.components, da.Array)
+            else lr.components
         )
-        loadings = (
-            lr.loadings.compute() if isinstance(lr.loadings, da.Array) else lr.loadings
-        )
+        loadings = lr.scores.compute() if isinstance(lr.scores, da.Array) else lr.scores
         assert factors.shape[1] == 3
         assert loadings.shape[1] == 3
         assert not np.any(np.isnan(factors))
@@ -2398,8 +2398,8 @@ class TestSVDFullSolver:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert lr.loadings.shape == (35, 3)
-        assert not np.any(np.isnan(lr.loadings))
+        assert lr.scores.shape == (35, 3)
+        assert not np.any(np.isnan(lr.scores))
 
 
 class TestLazyGetDecompositionModel:
@@ -2420,8 +2420,8 @@ class TestLazyGetDecompositionModel:
             algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
         )
         lr = self.s.learning_results
-        assert isinstance(lr.factors, da.Array), "factors should be a dask array"
-        assert isinstance(lr.loadings, da.Array), "loadings should be a dask array"
+        assert isinstance(lr.components, da.Array), "factors should be a dask array"
+        assert isinstance(lr.scores, da.Array), "loadings should be a dask array"
 
     def test_factors_loadings_after_reproject_navigation(self):
         """svd_solver='full' with reproject='navigation': loadings computed to
@@ -2436,10 +2436,10 @@ class TestLazyGetDecompositionModel:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert isinstance(lr.loadings, np.ndarray), (
+        assert isinstance(lr.scores, np.ndarray), (
             "loadings should be numpy after reproject='navigation'"
         )
-        assert isinstance(lr.factors, da.Array), (
+        assert isinstance(lr.components, da.Array), (
             "factors should remain lazy dask array when only nav-reproject was done"
         )
 
@@ -2456,10 +2456,10 @@ class TestLazyGetDecompositionModel:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert isinstance(lr.factors, np.ndarray), (
+        assert isinstance(lr.components, np.ndarray), (
             "factors should be numpy after reproject='signal'"
         )
-        assert isinstance(lr.loadings, da.Array), (
+        assert isinstance(lr.scores, da.Array), (
             "loadings should remain lazy dask array when only signal-reproject was done"
         )
 
@@ -2475,10 +2475,10 @@ class TestLazyGetDecompositionModel:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert isinstance(lr.factors, np.ndarray), (
+        assert isinstance(lr.components, np.ndarray), (
             "factors should be numpy after reproject='both'"
         )
-        assert isinstance(lr.loadings, np.ndarray), (
+        assert isinstance(lr.scores, np.ndarray), (
             "loadings should be numpy after reproject='both'"
         )
 
@@ -2545,10 +2545,10 @@ class TestLazyGetDecompositionModel:
             print_info=False,
         )
         lr = self.s.learning_results
-        assert isinstance(lr.factors, np.ndarray), (
+        assert isinstance(lr.components, np.ndarray), (
             "factors should be numpy for randomized solver"
         )
-        assert isinstance(lr.loadings, np.ndarray), (
+        assert isinstance(lr.scores, np.ndarray), (
             "loadings should be numpy for randomized solver"
         )
 
@@ -2572,8 +2572,8 @@ class TestLazyGetDecompositionModel:
                 algorithm="SVD", svd_solver="full", output_dimension=3, print_info=False
             )
         lr = s.learning_results
-        assert isinstance(lr.factors, da.Array)
-        assert isinstance(lr.loadings, da.Array)
+        assert isinstance(lr.components, da.Array)
+        assert isinstance(lr.scores, da.Array)
         model = s.get_decomposition_model()
         assert model._lazy
         assert model.data.shape == s.data.shape
@@ -2647,7 +2647,7 @@ class TestNumChunksAutoReduce:
             num_chunks=10,
             print_info=False,
         )
-        assert s.learning_results.factors is not None
+        assert s.learning_results.components is not None
 
 
 class TestCentreWithDaskMask:
@@ -2714,7 +2714,7 @@ class TestCentreWithDaskMask:
         )
         lr = s.learning_results
         assert lr.mean is not None
-        assert lr.factors is not None
+        assert lr.components is not None
 
 
 class TestCentreWith2DNav:
@@ -2753,7 +2753,7 @@ class TestCentreWith2DNav:
             print_info=False,
         )
         assert s.learning_results.mean is not None
-        assert s.learning_results.factors.shape[1] == 3
+        assert s.learning_results.components.shape[1] == 3
 
     @skip_sklearn
     def test_centre_signal_2d_nav(self):
@@ -2788,7 +2788,7 @@ class TestCentreWith2DNav:
             signal_mask=sig_mask_da,
             print_info=False,
         )
-        assert s.learning_results.factors is not None
+        assert s.learning_results.components is not None
 
 
 class TestReprojectMaskBranches:
@@ -2816,8 +2816,8 @@ class TestReprojectMaskBranches:
             print_info=False,
         )
         lr = s.learning_results
-        assert lr.loadings.shape == (self.data.shape[0], 3)
-        assert lr.factors.shape == (self.data.shape[1], 3)
+        assert lr.scores.shape == (self.data.shape[0], 3)
+        assert lr.components.shape == (self.data.shape[1], 3)
 
     @skip_sklearn
     def test_reproject_signal_with_nav_mask_incremental(self):
@@ -2830,8 +2830,8 @@ class TestReprojectMaskBranches:
             print_info=False,
         )
         lr = s.learning_results
-        assert lr.factors.shape == (self.data.shape[1], 3)
-        assert lr.loadings.shape == (self.data.shape[0], 3)
+        assert lr.components.shape == (self.data.shape[1], 3)
+        assert lr.scores.shape == (self.data.shape[0], 3)
 
     @skip_sklearn
     def test_reproject_both_with_masks_incremental(self):
@@ -2845,8 +2845,8 @@ class TestReprojectMaskBranches:
             print_info=False,
         )
         lr = s.learning_results
-        assert lr.factors.shape == (self.data.shape[1], 3)
-        assert lr.loadings.shape == (self.data.shape[0], 3)
+        assert lr.components.shape == (self.data.shape[1], 3)
+        assert lr.scores.shape == (self.data.shape[0], 3)
 
     @skip_sklearn
     def test_reproject_both_centre_mean_subtraction(self):
@@ -2860,7 +2860,7 @@ class TestReprojectMaskBranches:
         )
         lr = s.learning_results
         assert lr.mean is not None
-        assert lr.factors.shape == (self.data.shape[1], 3)
+        assert lr.components.shape == (self.data.shape[1], 3)
 
     @skip_sklearn
     def test_reproject_navigation_centre_navigation_incremental(self):
@@ -2874,7 +2874,7 @@ class TestReprojectMaskBranches:
         )
         lr = s.learning_results
         assert lr.mean is not None
-        assert lr.loadings.shape == (self.data.shape[0], 3)
+        assert lr.scores.shape == (self.data.shape[0], 3)
 
 
 class TestReprojectFullSVDMasks:
@@ -2905,9 +2905,9 @@ class TestReprojectFullSVDMasks:
             print_info=False,
         )
         lr = s.learning_results
-        assert isinstance(lr.factors, da.Array)
-        assert isinstance(lr.loadings, np.ndarray)
-        assert lr.loadings.shape == (self.data.shape[0], 3)
+        assert isinstance(lr.components, da.Array)
+        assert isinstance(lr.scores, np.ndarray)
+        assert lr.scores.shape == (self.data.shape[0], 3)
 
     def test_full_svd_reproject_signal_with_nav_mask(self):
         """svd_solver='full', reproject='signal' + nav_mask."""
@@ -2923,9 +2923,9 @@ class TestReprojectFullSVDMasks:
             print_info=False,
         )
         lr = s.learning_results
-        assert isinstance(lr.loadings, da.Array)
-        assert isinstance(lr.factors, np.ndarray)
-        assert lr.factors.shape == (self.data.shape[1], 3)
+        assert isinstance(lr.scores, da.Array)
+        assert isinstance(lr.components, np.ndarray)
+        assert lr.components.shape == (self.data.shape[1], 3)
 
     def test_full_svd_reproject_both_with_nav_mask(self):
         """svd_solver='full', reproject='both' + nav_mask exercises L1848."""
@@ -2939,9 +2939,9 @@ class TestReprojectFullSVDMasks:
             print_info=False,
         )
         lr = s.learning_results
-        assert isinstance(lr.factors, np.ndarray)
-        assert isinstance(lr.loadings, np.ndarray)
-        assert lr.factors.shape == (self.data.shape[1], 3)
+        assert isinstance(lr.components, np.ndarray)
+        assert isinstance(lr.scores, np.ndarray)
+        assert lr.components.shape == (self.data.shape[1], 3)
 
     def test_full_svd_reproject_navigation_with_centre(self):
         """svd_solver='full', reproject='navigation' + centre='navigation'."""
@@ -2957,7 +2957,7 @@ class TestReprojectFullSVDMasks:
         )
         lr = s.learning_results
         assert lr.mean is not None
-        assert isinstance(lr.loadings, np.ndarray)
+        assert isinstance(lr.scores, np.ndarray)
 
     def test_full_svd_reproject_signal_with_centre(self):
         """svd_solver='full', reproject='signal' + centre='navigation' → L1842-1843."""
@@ -2972,7 +2972,7 @@ class TestReprojectFullSVDMasks:
         )
         lr = s.learning_results
         assert lr.mean is not None
-        assert isinstance(lr.factors, np.ndarray)
+        assert isinstance(lr.components, np.ndarray)
 
 
 class TestFullSVDBaseSignalMask:
@@ -3001,7 +3001,7 @@ class TestFullSVDBaseSignalMask:
             navigation_mask=nav_mask_sig,
             print_info=False,
         )
-        assert s.learning_results.factors is not None
+        assert s.learning_results.components is not None
 
     def test_full_svd_basesignal_sig_mask(self):
         """svd_solver='full' with BaseSignal signal_mask exercises L1523."""
@@ -3019,7 +3019,7 @@ class TestFullSVDBaseSignalMask:
             signal_mask=sig_mask_sig,
             print_info=False,
         )
-        assert s.learning_results.factors is not None
+        assert s.learning_results.components is not None
 
     def test_full_svd_dask_nav_mask(self):
         """svd_solver='full' with dask nav_mask exercises L1511+L1514 path."""
@@ -3037,7 +3037,7 @@ class TestFullSVDBaseSignalMask:
             navigation_mask=nav_mask_da,
             print_info=False,
         )
-        assert s.learning_results.factors is not None
+        assert s.learning_results.components is not None
 
     def test_full_svd_dask_sig_mask(self):
         """svd_solver='full' with dask signal_mask exercises L1526+L1527 path."""
@@ -3055,7 +3055,7 @@ class TestFullSVDBaseSignalMask:
             signal_mask=sig_mask_da,
             print_info=False,
         )
-        assert s.learning_results.factors is not None
+        assert s.learning_results.components is not None
 
 
 class TestFullSVDNavMask2DOrder:
@@ -3106,7 +3106,7 @@ class TestIncrementalNavMaskTranspose:
             navigation_mask=nav_mask,
             print_info=False,
         )
-        assert s.learning_results.factors.shape[1] == 3
+        assert s.learning_results.components.shape[1] == 3
 
 
 class TestRemainingBranches:
@@ -3165,7 +3165,7 @@ class TestRemainingBranches:
             reproject="both",
             print_info=False,
         )
-        assert s.learning_results.loadings is not None
+        assert s.learning_results.scores is not None
 
     def test_full_svd_explained_variance_ratio_computed(self):
         """svd_solver='full' triggers _compute_explained_variance_ratio (L1930)."""
@@ -3199,7 +3199,7 @@ class TestRemainingBranches:
             navigation_mask=nav_mask_sig,
             print_info=False,
         )
-        assert s.learning_results.loadings is not None
+        assert s.learning_results.scores is not None
 
 
 class TestLazyDecompositionBugfixes:
