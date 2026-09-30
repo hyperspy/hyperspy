@@ -22,16 +22,19 @@ import logging
 import math
 import textwrap
 import warnings
+import inspect
 from functools import partial
 
 import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
+import matplotlib.scale as sc
 import matplotlib.pyplot as plt
-import numpy as np
-import traits.api as t
 from matplotlib.backend_bases import key_press_handler
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import numpy as np
+import traits.api as t
 from packaging.version import Version
 from rsciio.utils import rgb
 
@@ -44,6 +47,58 @@ from hyperspy.misc import utils
 from hyperspy.misc._utils import _parse_percentile_value
 
 _logger = logging.getLogger(__name__)
+
+def _get_scale_args(scale):
+    """Retrieve parameters expected by the constructor of the
+    matplotlib.scale name given as input.
+    
+    Parameters
+    ----------
+    scale : str
+        The name of the matplotlib.scale
+        See also https://matplotlib.org/stable/gallery/scales/scales.html
+    
+    Returns
+    -------
+    Parameters : dict
+    
+    Examples
+    --------
+    >>> _get_scale_args("log")
+    {'axis': <Parameter "axis">,
+    'base': <Parameter "base=10">,
+    'subs': <Parameter "subs=None">,
+    'nonpositive': <Parameter "nonpositive='clip'">}
+    """
+    clsmembers = inspect.getmembers(sc, inspect.isclass)
+    for cl in clsmembers:
+        class_name = getattr(sc, cl[0])
+        if issubclass(class_name, sc.ScaleBase) and cl[0] != "ScaleBase":
+                if getattr(getattr(sc, cl[0]), "name") == scale:
+                    return inspect.signature(class_name).parameters
+
+def _parse_kwargs(scale, kwargs):
+    """ Extract from `kwargs` the keyword arguments that have to be passed
+    to the matplotlib.scale constructor.
+    
+    Parameters
+    ----------
+    scale : str
+        The name of the matplotlib.scale.
+    kwargs : dict
+        Kwargs dictionary to be parsed.
+        
+    Returns
+    -------
+    kwargs : a copy of input `kwargs` without the `scale` keyword arguments.
+    scale_kwargs : keyword arguments to be passed to the `matplotlib.scale` constructor.
+    """
+    common = set.intersection(set(kwargs.keys()), set(_get_scale_args(scale).keys()))
+    scale_kwargs = {k:kwargs[k] for k in common}
+    kwargs_aux = dict(kwargs)
+    for k in common:
+        kwargs_aux.pop(k, None)
+    return kwargs_aux, scale_kwargs
 
 
 def contrast_stretching(data, vmin=None, vmax=None):
@@ -390,15 +445,14 @@ def plot_signals(
             signal.plot(navigator=navigator, **kwargs)
 
 
-def _make_heatmap_subplot(spectra, normalise, **plot_kwargs):
+def _make_heatmap_subplot(spectra, normalise, norm='linear', **kwargs):
     im = signals.Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     if normalise:
         im.data = (
             (im.data.T - im.data.min(-1)) / (im.data.max(-1) - im.data.min(-1))
         ).T
-
     im.metadata.General.title = spectra.metadata.General.title
-    im.plot(**plot_kwargs)
+    im.plot(norm=norm, **kwargs)
     return im._plot.signal_plot.ax
 
 
@@ -418,7 +472,8 @@ def set_xaxis_lims(mpl_ax, hs_axis):
     mpl_ax.set_xlim(x_axis_lower_lim, x_axis_upper_lim)
 
 
-def _make_overlap_plot(spectra, ax, color, linestyle, normalise, **kwargs):
+def _make_overlap_plot(spectra, ax, color, linestyle, drawstyle, normalise, yscale='linear', **kwargs):
+    kwargs, kwargs_scale = _parse_kwargs(yscale, kwargs)
     for spectrum_index, (spectrum, color, linestyle) in enumerate(
         zip(spectra, color, linestyle)
     ):
@@ -429,16 +484,19 @@ def _make_overlap_plot(spectra, ax, color, linestyle, normalise, **kwargs):
             _parse_array(spectrum, normalise),
             color=color,
             ls=linestyle,
+            drawstyle=drawstyle,
             **kwargs,
         )
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra, ax)
+    ax.set_yscale(yscale, **kwargs_scale)
     ax.autoscale(tight=True)
 
 
 def _make_cascade_subplot(
-    spectra, ax, color, linestyle, normalise, padding=1, **kwargs
-):
+    spectra, ax, color, linestyle, drawstyle, normalise, padding=1, yscale='linear', **kwargs
+    ):
+    kwargs, kwargs_scale = _parse_kwargs(yscale, kwargs)
     max_value = 0
     factors = [1] * len(spectra)
     for i, spectrum in enumerate(spectra):
@@ -450,29 +508,47 @@ def _make_cascade_subplot(
     if normalise:
         # when using normalise, we don't use need `max_value`
         max_value = 1
+    multiplier_log = np.logspace(0, padding*(len(spectra)-1), len(spectra))
     for i, (spectrum, color, linestyle, factor) in enumerate(
         zip(spectra, color, linestyle, factors)
     ):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data = _parse_array(_transpose_if_required(spectrum, 1))
-        data_to_plot = (data - data.min()) / float(max_value) / factor + i * padding
-        ax.plot(x_axis.axis, data_to_plot, color=color, ls=linestyle, **kwargs)
+        if yscale == 'linear':
+            data_to_plot = (data - data.min()) / float(max_value) / factor + i * padding
+        elif yscale == 'log':
+            data_to_plot = (data - data.min()) / float(max_value) / factor * multiplier_log[i]
+        elif yscale == 'symlog':
+            data_to_plot = (data) / float(max_value) / factor * multiplier_log[i]
+        else:
+            text = ('Only implemented for linear and log scale in cascade mode.')
+            raise NotImplementedError(text)
+        ax.plot(x_axis.axis,
+                data_to_plot,
+                color=color,
+                ls=linestyle,
+                ds=drawstyle,
+                **kwargs)
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra, ax)
     ax.set_yticks([])
+    ax.set_yscale(yscale, **kwargs_scale)
     ax.autoscale(tight=True)
 
 
-def _plot_spectrum(spectrum, ax, normalise, color="blue", linestyle="-", **kwargs):
+def _plot_spectrum(spectrum, ax, normalise, drawstyle, color="blue", linestyle="-", yscale='linear', **kwargs):
+    kwargs, kwargs_scale =_parse_kwargs(yscale, kwargs)
     x_axis = spectrum.axes_manager.signal_axes[0]
     ax.plot(
         x_axis.axis,
         _parse_array(spectrum, normalise),
         color=color,
         ls=linestyle,
-        **kwargs,
+        ds=drawstyle,
+        **kwargs
     )
     set_xaxis_lims(ax, x_axis)
+    ax.set_yscale(yscale, **kwargs_scale)
 
 
 def _set_spectrum_xlabel(spectrum, ax):
@@ -1477,6 +1553,7 @@ def plot_spectra(
     ax=None,
     auto_update=None,
     normalise=False,
+    yscale='linear',
     **kwargs,
 ):
     r"""Plot several spectra in the same figure.
@@ -1540,12 +1617,18 @@ def plot_spectra(
         :math:`(x - \min{x}) / (\max{x} - \min{x})`.
         If a callable is provided, it should be a function that takes a
         HyperSpy signal as input and returns the normalised array.
+    yscale : str, default ``'linear'``
+        yscale type as in :meth:`matplotlib.axes.Axes.set_yscale`.
+        For ``'cascade'`` style only implemented for ``'linear'``
+        and ``'log'`` scales.
 
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 
-        - ``"overlap"``, ``"cascade"`` or ``"mosiac"``: arguments passed to :func:`matplotlib.pyplot.figure`
+        - ``"overlap"``, ``"cascade"`` or ``"mosaic"``: arguments passed to :func:`matplotlib.axes.Axes.plot`
         - ``"heatmap"``: arguments  passed to :meth:`~.api.signals.Signal2D.plot`.
+        
+        It accepts also parameters for the supported `yscales`.
 
     Examples
     --------
@@ -1564,7 +1647,6 @@ def plot_spectra(
         An array is returned when `style` is 'mosaic'.
 
     """
-
     def _reverse_legend(ax_, legend_loc_):
         """
         Reverse the ordering of a matplotlib legend (to be more consistent
@@ -1655,7 +1737,9 @@ def plot_spectra(
                 kwargs.setdefault(
                     "figsize", (default_fsize[0], default_fsize[1] * len(spectra))
                 )
-            fig = plt.figure(**kwargs)
+            fig = plt.figure(**_parse_kwargs(yscale, kwargs)[0])
+            if "figsize" in kwargs:
+                kwargs.pop("figsize")
         elif style == "heatmap":
             raise ValueError(
                 "The `fig` parameter is not supported for 'heatmap' style."
@@ -1664,10 +1748,16 @@ def plot_spectra(
             ax = fig.add_subplot(111)
         else:
             ax = fig.subplots(len(spectra), 1)
-
     if style == "overlap":
         _make_overlap_plot(
-            spectra, ax, color, linestyle, normalise, drawstyle=drawstyle
+            spectra,
+            ax,
+            color,
+            linestyle,
+            drawstyle,
+            normalise,
+            yscale=yscale,
+            **kwargs
         )
         ax.set_ylabel(ylabel)
         if legend is not None:
@@ -1681,9 +1771,11 @@ def plot_spectra(
             ax,
             color,
             linestyle,
+            drawstyle,
             normalise,
             padding=padding,
-            drawstyle=drawstyle,
+            yscale=yscale,
+            **kwargs
         )
         if legend is not None:
             ax.legend(legend, loc=legend_loc)
@@ -1705,9 +1797,11 @@ def plot_spectra(
                 spectra_,
                 ax_,
                 normalise,
+                drawstyle,
+                yscale=yscale,
                 color=color_,
                 linestyle=linestyle_,
-                drawstyle=drawstyle,
+                **kwargs
             )
             ax_.set_ylabel(ylabel)
             if legend_ is not None:
@@ -1723,11 +1817,10 @@ def plot_spectra(
     elif style == "heatmap":
         if not isinstance(spectra, signals.BaseSignal):
             import hyperspy.utils
-
             spectra = [_transpose_if_required(spectrum, 1) for spectrum in spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
-            ax = _make_heatmap_subplot(spectra, normalise, **kwargs)
+            ax = _make_heatmap_subplot(spectra, normalise, norm=yscale, **kwargs)
             ax.set_ylabel("Spectra")
 
     def update_line(spectrum, line, normalise):
