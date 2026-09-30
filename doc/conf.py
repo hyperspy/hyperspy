@@ -67,6 +67,11 @@ linkcheck_ignore = [
 
 linkcheck_exclude_documents = []
 
+# Some hosts (aur.archlinux.org, docs.scipy.org) intermittently close the
+# connection when requests come from CI runners; retry instead of adding them
+# to linkcheck_ignore, which would also hide links that are actually broken.
+linkcheck_retries = 3
+
 # Specify a standard user agent, as Sphinx default is blocked on some sites
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54"
 
