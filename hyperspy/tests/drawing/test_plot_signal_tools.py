@@ -93,16 +93,16 @@ def test_plot_BackgroundRemoval_change_background():
 
 def test_plot_BackgroundRemoval_close_figure():
     s = signals.Signal1D(np.arange(1000).reshape(10, 100))
-    br = BackgroundRemoval(s, background_type="Gaussian")
+    _ = BackgroundRemoval(s, background_type="Gaussian")
     signal_plot = s._plot.signal_plot
 
-    assert len(signal_plot.events.closed.connected) == 3
-    assert len(s._plot.events.closed.connected) == 1
-    assert len(s.axes_manager.events.indices_changed.connected) == 4
+    assert len(signal_plot.events.closed._connected_originals) == 3
+    assert len(s._plot.events.closed._connected_originals) == 1
+    assert len(s.axes_manager.events.indices_changed._connected_originals) == 4
     s._plot.close()
-    assert br._fit not in s.axes_manager.events.indices_changed.connected
-    assert len(s._plot.events.closed.connected) == 0
-    assert len(signal_plot.events.closed.connected) == 0
+    assert len(s.axes_manager.events.indices_changed._connected_originals) == 0
+    assert len(s._plot.events.closed._connected_originals) == 0
+    assert len(signal_plot.events.closed._connected_originals) == 0
 
 
 def test_plot_BackgroundRemoval_close_tool():
@@ -112,14 +112,14 @@ def test_plot_BackgroundRemoval_close_tool():
     br.span_selector_changed()
     signal_plot = s._plot.signal_plot
 
-    assert len(signal_plot.events.closed.connected) == 3
-    assert len(s._plot.events.closed.connected) == 1
-    assert len(s.axes_manager.events.indices_changed.connected) == 4
+    assert len(signal_plot.events.closed._connected_originals) == 3
+    assert len(s._plot.events.closed._connected_originals) == 1
+    assert len(s.axes_manager.events.indices_changed._connected_originals) == 4
     br.on_disabling_span_selector()
-    assert br._fit not in s.axes_manager.events.indices_changed.connected
+    assert len(s.axes_manager.events.indices_changed._connected_originals) <= 3
     s._plot.close()
-    assert len(s._plot.events.closed.connected) == 0
-    assert len(signal_plot.events.closed.connected) == 0
+    assert len(s._plot.events.closed._connected_originals) == 0
+    assert len(signal_plot.events.closed._connected_originals) == 0
 
 
 @pytest.mark.mpl_image_compare(

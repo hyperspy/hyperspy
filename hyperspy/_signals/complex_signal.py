@@ -94,7 +94,7 @@ class ComplexSignal(signals.BaseSignal):
         elif isinstance(real, signals.BaseSignal):
             real = real.data
         self.data = real + 1j * self.data.imag
-        self.events.data_changed.trigger(self)
+        self.events.data_changed.emit(self)
 
     @format_title("imag")
     def _get_imag(self):
@@ -114,7 +114,7 @@ class ComplexSignal(signals.BaseSignal):
         elif isinstance(imag, signals.BaseSignal):
             imag = imag.data
         self.data = self.data.real + 1j * imag
-        self.events.data_changed.trigger(self)
+        self.events.data_changed.emit(self)
 
     @format_title("amplitude")
     def _get_amplitude(self):
@@ -134,7 +134,7 @@ class ComplexSignal(signals.BaseSignal):
         elif isinstance(amplitude, signals.BaseSignal):
             amplitude = amplitude.data.real
         self.data = amplitude * np.exp(1j * np.angle(self.data))
-        self.events.data_changed.trigger(self)
+        self.events.data_changed.emit(self)
 
     @format_title("phase")
     def _get_phase(self):
@@ -154,7 +154,7 @@ class ComplexSignal(signals.BaseSignal):
         elif isinstance(phase, signals.BaseSignal):
             phase = phase.data
         self.data = abs(self.data) * np.exp(1j * phase)
-        self.events.data_changed.trigger(self)
+        self.events.data_changed.emit(self)
 
     def change_dtype(self, dtype):
         """Change the data type.

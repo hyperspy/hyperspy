@@ -295,14 +295,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         )
         new_spectra = result[0] if return_model else result
         self.signal.data = new_spectra.data
-        self.signal.events.data_changed.trigger(self)
+        self.signal.events.data_changed.emit(self)
 
-    def disconnect(self):
-        super().disconnect()
+    def disconnect(self, *args, **kwargs):
+        super().disconnect(**kwargs)
         axes_manager = self.signal.axes_manager
         for f in [self._fit, self.model._on_navigating]:
-            if f in axes_manager.events.indices_changed.connected:
+            try:
                 axes_manager.events.indices_changed.disconnect(f)
+            except ValueError:
+                pass
 
 
 def _configure_scalable_fixed_pattern(background_estimator, yscale):

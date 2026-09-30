@@ -328,7 +328,7 @@ def test_setting_indices_coordinates():
     s = hs.signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
 
     m = mock.Mock()
-    s.axes_manager.events.indices_changed.connect(m, [])
+    s.axes_manager.events.indices_changed.connect(m)
 
     # both indices are changed but the event is triggered only once
     s.axes_manager.indices = (5, 5)

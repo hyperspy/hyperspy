@@ -23,10 +23,10 @@ def _connect_events(event, to_connect):
     try:
         for ev in event:
             # Iterable of events, connect all of them
-            ev.connect(to_connect, [])
+            ev.connect(to_connect)
     except TypeError:
         # It was not an iterable, connect the single event
-        event.connect(to_connect, [])
+        event.connect(to_connect)
 
 
 def _disconnect_events(event, to_disconnect):
@@ -115,16 +115,16 @@ class Interactive:
         self._event = event
         self._recompute_out_event = recompute_out_event
         self._has_out = has_out
-        if recompute_out_event:
+        if recompute_out_event is not None:
             _connect_events(recompute_out_event, self.recompute_out)
-        if event:
+        if event is not None:
             if has_out:
                 _connect_events(event, self.update)
             else:
                 #  We "simulate" out by triggering `recompute_out` instead.
                 _connect_events(event, self.recompute_out)
 
-    def recompute_out(self):
+    def recompute_out(self, *args, **kwargs):
         out = self.f(*self.args, **self.kwargs)
         if out is None:
             return
@@ -134,9 +134,9 @@ class Interactive:
         else:
             self.out.data = out.data
         self.out.axes_manager.update_axes_attributes_from(out.axes_manager._axes)
-        self.out.events.data_changed.trigger(self.out)
+        self.out.events.data_changed.emit(self.out)
 
-    def update(self):
+    def update(self, *args, **kwargs):
         self.f(*self.args, out=self.out, **self.kwargs)
 
     def close(self):
