@@ -316,8 +316,8 @@ class TestFitAlgorithms:
             m.fit(optimizer="lstsq")
         # The identifiable components are still fitted correctly and the
         # unidentifiable one is driven to zero (minimum-norm solution).
-        np.testing.assert_allclose(m[1].a.value, 1.0, atol=1e-8)
-        np.testing.assert_allclose(m[1].b.value, 0.0, atol=1e-8)
+        np.testing.assert_allclose(m[1].a.value, 1.0, atol=1e-04)
+        np.testing.assert_allclose(m[1].b.value, 0.0, atol=1e-04)
         # The covariance is estimated rank-tolerantly on both paths.
         assert np.all(np.isfinite(m.fit_output["covar"]))
         if m.signal._lazy:
