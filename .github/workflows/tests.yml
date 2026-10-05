@@ -50,6 +50,10 @@ jobs:
             os_version: '15-intel'
             PYTHON_VERSION: '3.12'
             PIP_SELECTOR: '[all, tests, coverage]'
+          - os: windows
+            os_version: 11-arm
+            PYTHON_VERSION: '3.12'
+            PIP_SELECTOR: '[all, tests, coverage]'
 
     steps:
       - uses: actions/checkout@v6
