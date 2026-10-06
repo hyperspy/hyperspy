@@ -1644,7 +1644,7 @@ def plot_spectra(
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 
-        - ``"overlap"``, ``"cascade"`` or ``"mosaic"``: arguments passed to :func:`matplotlib.axes.Axes.plot`
+        - ``"overlap"``, ``"cascade"`` or ``"mosaic"``: arguments passed to :meth:`matplotlib.axes.Axes.plot`
         - ``"heatmap"``: arguments  passed to :meth:`~.api.signals.Signal2D.plot`.
 
         It accepts also parameters for the supported `yscales`.
