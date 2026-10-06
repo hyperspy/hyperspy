@@ -16,15 +16,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+import importlib
 import os
 from pathlib import Path
 from shutil import copyfile
+
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-import importlib
-
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 from matplotlib.backend_bases import MouseEvent, PickEvent
 
 try:
@@ -587,97 +587,112 @@ def test_plot_spectra_ax_array():
     fig, axes = plt.subplots()
     hs.plot.plot_spectra(s, ax=axes, style="mosaic")
 
+
 def _forward(x):
     return x**2
 
+
 def _inverse(x):
-    return x**(1/2)
+    return x ** (1 / 2)
+
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
 )
 @pytest.mark.parametrize("scale", ("linear", "log", "symlog"))
 def test_plot_spectra_heatmap_yscale(scale):
-    s = hs.signals.Signal1D(np.linspace(0.002,1,500))
-    s_shifted = s-s.data.mean()
-    if scale == 'linear' or scale =='log':
-        ax = hs.plot.plot_spectra([s,s], style='heatmap', yscale=scale)
-    elif scale == 'symlog':
-        ax = hs.plot.plot_spectra([s_shifted,s_shifted], style='heatmap',
-                                  yscale=scale, linthresh=0.02)
+    s = hs.signals.Signal1D(np.linspace(0.002, 1, 500))
+    s_shifted = s - s.data.mean()
+    if scale == "linear" or scale == "log":
+        ax = hs.plot.plot_spectra([s, s], style="heatmap", yscale=scale)
+    elif scale == "symlog":
+        ax = hs.plot.plot_spectra(
+            [s_shifted, s_shifted], style="heatmap", yscale=scale, linthresh=0.02
+        )
     ax.set_xlabel("")
     fig = ax.get_figure()
     fig.tight_layout()
     return fig
 
+
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
 )
 def test_plot_spectra_overlap_yscale():
-    s = hs.signals.Signal1D(np.linspace(0.002,1,500))
-    s_shifted = s-s.data.mean()
-    built_in_scales = ["asinh",
-                       "function",
-                       "functionlog",
-                       "linear",
-                       "log",
-                       "logit",
-                       "symlog"]
-    kwargs = [{"linear_width": 0.002},
-              {"functions": (_forward, _inverse)},
-              {"functions": (_forward, _inverse)},
-              {},
-              {},
-              {},
-              {"linthresh": 0.002}]
+    s = hs.signals.Signal1D(np.linspace(0.002, 1, 500))
+    s_shifted = s - s.data.mean()
+    built_in_scales = [
+        "asinh",
+        "function",
+        "functionlog",
+        "linear",
+        "log",
+        "logit",
+        "symlog",
+    ]
+    kwargs = [
+        {"linear_width": 0.002},
+        {"functions": (_forward, _inverse)},
+        {"functions": (_forward, _inverse)},
+        {},
+        {},
+        {},
+        {"linthresh": 0.002},
+    ]
     signal2plot = [s_shifted, s, s, s, s, s, s_shifted]
     fig = plt.figure(figsize=(6, 9))
     gs = gridspec.GridSpec(4, 2, figure=fig)
     for scale, g, sig, k in zip(built_in_scales, gs, signal2plot, kwargs):
-        if scale == "function": 
+        if scale == "function":
             title = "function: $x^2$"
         else:
             title = scale
         ax = fig.add_subplot(g)
-        hs.plot.plot_spectra(sig, style='overlap', yscale=scale, ax=ax, fig=fig, **k)
+        hs.plot.plot_spectra(sig, style="overlap", yscale=scale, ax=ax, fig=fig, **k)
         ax.set_title(title)
         ax.set_xlabel("")
     fig.tight_layout()
     return fig
 
+
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
 )
 def test_plot_spectra_mosaic_yscale():
-    s = hs.signals.Signal1D(np.linspace(0.002,1,500))
-    s_shifted = s-s.data.mean()
-    built_in_scales = ["asinh",
-                       "function",
-                       "functionlog",
-                       "linear",
-                       "log",
-                       "logit",
-                       "symlog"]
-    kwargs = [{"linear_width": 0.002},
-              {"functions": (_forward, _inverse)},
-              {"functions": (_forward, _inverse)},
-              {},
-              {},
-              {},
-              {"linthresh": 0.002}
-              ]
+    s = hs.signals.Signal1D(np.linspace(0.002, 1, 500))
+    s_shifted = s - s.data.mean()
+    built_in_scales = [
+        "asinh",
+        "function",
+        "functionlog",
+        "linear",
+        "log",
+        "logit",
+        "symlog",
+    ]
+    kwargs = [
+        {"linear_width": 0.002},
+        {"functions": (_forward, _inverse)},
+        {"functions": (_forward, _inverse)},
+        {},
+        {},
+        {},
+        {"linthresh": 0.002},
+    ]
     signal2plot = [s_shifted, s, s, s, s, s, s_shifted]
     fig = plt.figure(figsize=(9, 9))
     gs = gridspec.GridSpec(4, 2, figure=fig)
     for scale, g, sig, k in zip(built_in_scales, gs, signal2plot, kwargs):
-        if scale == "function": 
+        if scale == "function":
             title = "function: $x^2$"
         else:
             title = scale
         gs1 = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=g)
-        axl = fig.add_subplot(gs1[0,0])
-        axr = fig.add_subplot(gs1[0,1])
-        hs.plot.plot_spectra([sig,sig], style='mosaic', yscale=scale, ax=[axl,axr], fig=fig, **k)
+        axl = fig.add_subplot(gs1[0, 0])
+        axr = fig.add_subplot(gs1[0, 1])
+        hs.plot.plot_spectra(
+            [sig, sig], style="mosaic", yscale=scale, ax=[axl, axr], fig=fig, **k
+        )
         axr.set_ylabel("")
         axr.set_yticklabels([])
         for a in [axl, axr]:
@@ -686,25 +701,23 @@ def test_plot_spectra_mosaic_yscale():
     fig.tight_layout()
     return fig
 
+
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl
 )
 def test_plot_spectra_cascade_yscale():
-    s = hs.signals.Signal1D(np.linspace(0.002,1,500))
-    s_shifted = s-s.data.mean()
-    built_in_scales = ["linear",
-                       "log",
-                       "symlog"]
-    kwargs = [{},
-              {},
-              {"linthresh": 0.002}
-              ]
+    s = hs.signals.Signal1D(np.linspace(0.002, 1, 500))
+    s_shifted = s - s.data.mean()
+    built_in_scales = ["linear", "log", "symlog"]
+    kwargs = [{}, {}, {"linthresh": 0.002}]
     signal2plot = [s, s, s_shifted]
     fig = plt.figure(figsize=(4, 6))
     gs = gridspec.GridSpec(3, 1, figure=fig)
     for scale, g, sig, k in zip(built_in_scales, gs, signal2plot, kwargs):
         ax = fig.add_subplot(g)
-        hs.plot.plot_spectra([sig,sig], style='cascade', yscale=scale, ax=ax, fig=fig, **k)
+        hs.plot.plot_spectra(
+            [sig, sig], style="cascade", yscale=scale, ax=ax, fig=fig, **k
+        )
         ax.set_title(scale)
         ax.set_xlabel("")
     fig.tight_layout()
