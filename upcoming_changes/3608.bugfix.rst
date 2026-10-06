@@ -1,4 +1,0 @@
-Fix lazy signal being left permanently unfolded after SVD decomposition.
-``self._unfolded4decomposition is False`` was an identity comparison (no-op)
-instead of the assignment ``= False``, so the flag was never cleared and the
-signal remained in the unfolded state after decomposition returned.

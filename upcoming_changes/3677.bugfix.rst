@@ -1,1 +1,0 @@
-Fix an intermittent ``LinAlgError: singular matrix`` crash when estimating parameter uncertainties (standard errors) for a lazy ``lstsq`` model fit.

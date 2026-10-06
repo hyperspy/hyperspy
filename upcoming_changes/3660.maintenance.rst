@@ -1,1 +1,0 @@
-Register ``pytest.mark.slow`` marker and mark computationally expensive tests. Skip slow tests with ``pytest -m "not slow"``.

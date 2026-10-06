@@ -1,3 +1,0 @@
-Fix Poissonian noise normalisation being silently a no-op in lazy decomposition.
-``coeff.map_blocks(np.nan_to_num)`` returns a new dask array; the result was
-never assigned back, so the data was not rescaled before decomposition.

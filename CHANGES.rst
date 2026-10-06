@@ -14,6 +14,290 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 
 .. towncrier release notes start
 
+2.5.0 (2026-10-06)
+==================
+
+New features
+------------
+
+- Add ``Scalable fixed pattern`` component to :meth:`~.api.signals.Signal1D.remove_background` to allow subtracting backgrounds defined as a :class:`~.api.signals.Signal1D`, see this lumispy `issue #124 <https://github.com/LumiSpy/lumispy/issues/124>`_ for context. (`#3590 <https://github.com/hyperspy/hyperspy/issues/3590>`_)
+- Improve lazy signal decomposition:
+
+  - Rename ``svd_solver='dask'`` to ``svd_solver='randomized'`` (consistent with
+    ``sklearn`` naming conventions) and switch its backend from
+    ``dask.array.linalg.svd`` (full SVD) to ``dask.array.linalg.svd_compressed``
+    (randomised truncated SVD), which avoids materialising the full data matrix
+    in memory.  ``output_dimension`` is required for ``'randomized'``.
+  - Add ``svd_solver='full'``: reproduces pre-v2.5 behaviour using
+    ``dask.array.linalg.svd``; returns lazy dask arrays without triggering any
+    computation; ``output_dimension`` is optional.
+  - Add ``svd_solver='incremental'``: uses ``ISVD``
+    (a subclass of ``sklearn.decomposition.IncrementalPCA`` with centering
+    disabled), which streams the data in mini-batches and scales to datasets
+    larger than RAM.
+  - Add a ``centre`` parameter (``"navigation"``, ``"signal"``, or ``None``) to
+    control mean-centring before decomposition, consistent with the non-lazy
+    interface.
+  - Navigation and signal masks are now respected during lazy SVD.
+  - Add ``LazySignal.normalize_poissonian_noise()`` as
+    a dedicated method on ``LazySignal``, available
+    independently of decomposition.
+  - Implement ``reproject='signal'`` for all lazy decomposition algorithms:
+    after learning on signal-masked data, the full signal (including masked
+    channels) is reconstructed via the pseudo-inverse of the loadings, filling
+    NaN at previously masked signal positions.  ``reproject='both'`` fills both
+    navigation and signal masked positions for all algorithms.
+  - Add ``algorithm='NMF'`` support for lazy signals via
+    ``sklearn.decomposition.MiniBatchNMF`` (requires scikit-learn >= 1.1
+    for out-of-core; older versions fall back to in-memory
+    ``sklearn.decomposition.NMF``), enabling out-of-core non-negative
+    matrix factorisation.
+  - Accept any custom sklearn-like estimator object as the ``algorithm``
+    parameter.  Objects that implement ``partial_fit`` are used incrementally
+    (out-of-core); those with only ``fit`` / ``fit_transform`` fall back to
+    loading all data into memory before fitting.
+  - Add ``svd_solver`` and ``auto_transpose`` parameters to
+    ``LazySignal.decomposition()`` for API parity with
+    the non-lazy interface.
+  - Add a ``lazy`` keyword argument to
+    ``BaseSignal.get_decomposition_model()`` (and the
+    underlying ``_calculate_recmatrix``).  ``lazy=True`` forces a lazy dask-backed
+    signal even when factors/loadings are numpy arrays (they are wrapped with
+    ``da.from_array`` locally, without mutating ``learning_results``); ``lazy=False``
+    forces an eager signal even on a lazy input; ``lazy=None`` (default) auto-detects
+    based on whether the signal is lazy.
+  - The ``reproject`` steps for ``svd_solver='full'`` now use dask matmuls
+    instead of materialising the full data matrix via chunk loops.  Only the
+    small result array (``nav x k`` loadings or ``sig x k`` factors) is
+    computed eagerly; the unrequested array remains a lazy dask array, keeping
+    the end-to-end pipeline lazy even when ``reproject`` is used. (`#3614 <https://github.com/hyperspy/hyperspy/issues/3614>`_)
+- Add ``ISVD`` class, a subclass of ``sklearn.decomposition.IncrementalPCA``
+  that disables centering by overriding the ``mean_`` property to always return
+  zeros. This enables out-of-core incremental singular value decomposition. (`#3617 <https://github.com/hyperspy/hyperspy/issues/3617>`_)
+- Establish standards for AI-assisted contributions: adopt the ``Assisted-by: <tool>:<model>``
+  convention for disclosure in commit messages, add a new developer guide
+  section (:doc:`/dev_guide/coding_with_ai`) with reviewer guidance and
+  best practices, update the pull request template with new checkboxes
+  for AI disclosure and manual testing verification, and add ``AGENTS.md``
+  files documenting codebase conventions for AI tools. (`#3622 <https://github.com/hyperspy/hyperspy/issues/3622>`_)
+- Add support for the ``anywidget`` GUI toolkit via ``hyperspy_gui_anywidget``,
+  enabling interactive HyperSpy widgets on platforms that do not support
+  ipywidgets or TraitsUI, such as `Marimo <https://marimo.io/>`_.
+  Controlled by the ``enable_anywidget_gui`` preference
+  (see :ref:`configuring-hyperspy-label`). (`#3624 <https://github.com/hyperspy/hyperspy/issues/3624>`_)
+
+
+Enhancements
+------------
+
+- Add ``intervals`` parameter to :meth:`~.api.model.components1D.PowerLaw.estimate_parameters`,
+  :meth:`~.api.model.components1D.Polynomial.estimate_parameters`, and
+  :meth:`~.api.model.components1D.Offset.estimate_parameters` for estimating parameters
+  from multiple disconnected spectral ranges. See :ref:`components_parameter_estimation-label` for details. (`#3381 <https://github.com/hyperspy/hyperspy/issues/3381>`_)
+- Added `yscale` argument to :func:`~.api.plot.plot_spectra`, following :meth:`matplotlib.axes.Axes.set_yscale`.
+  For cascade only log, symlog and linear are implemented. (`#3444 <https://github.com/hyperspy/hyperspy/issues/3444>`_)
+- Lazify :func:`~.api.load` and :meth:`~.api.signals.BaseSignal.save` funtions to speed up import. (`#3586 <https://github.com/hyperspy/hyperspy/issues/3586>`_)
+- Fix deprecation warning about license specification when building package using ``python -m build``. (`#3594 <https://github.com/hyperspy/hyperspy/issues/3594>`_)
+- Add ``lazy_output`` parameter to :meth:`~.signals.BaseSignal.get_decomposition_model` and :meth:`~.signals.BaseSignal.get_bss_model` methods. (`#3603 <https://github.com/hyperspy/hyperspy/issues/3603>`_)
+- Standardise tabular data display on PrettyTable throughout HyperSpy:
+  :class:`~.axes.AxesManager` now uses PrettyTable for both terminal and
+  HTML (notebook) output instead of manual string/HTML formatting;
+  :meth:`~.api.signals.BaseSignal.print_summary_statistics` now renders
+  as a proper HTML table in Jupyter notebooks (previously text-only). (`#3621 <https://github.com/hyperspy/hyperspy/issues/3621>`_)
+- Remove dual-notification pattern in ``Parameter`` where value changes
+  fired both an :class:`~hyperspy.events.Event` and an Enthought Traits
+  notification. The Traits notification path is removed; all consumers
+  now use the events system exclusively. Suppression of circular updates
+  previously handled by :meth:`~hyperspy.events.Event.suppress_callback`
+  is replaced with re-entrance guards, reducing coupling with the internal
+  event machinery. (`#3631 <https://github.com/hyperspy/hyperspy/issues/3631>`_)
+- Add ``Interactive.close`` method to disconnect all event handlers and
+  release internal references, preventing callback leaks when an interactive
+  operation is no longer needed. (`#3645 <https://github.com/hyperspy/hyperspy/issues/3645>`_)
+- Poisson-noise normalization and centering in eager decomposition now reverse
+  their data modifications mathematically after decomposition, so the original
+  signal data is always preserved — even with ``copy=False``.  The ``copy``
+  parameter is deprecated; a backup copy is now created only when Poisson
+  noise normalization will modify the data (``copy and
+  normalize_poissonian_noise``), in which case ``undo_treatments`` restores the
+  original data bit-exactly.  For centering-only pre-treatments, restoration
+  remains mathematical.  When no pre-treatments modify the data, no copy is
+  made, reducing peak memory by one full dataset copy. (`#3653 <https://github.com/hyperspy/hyperspy/issues/3653>`_)
+- Add column-width limits and consistent ``"%.5g"`` number formatting to numbers in tables. (`#3663 <https://github.com/hyperspy/hyperspy/issues/3663>`_)
+
+
+Bug Fixes
+---------
+
+- Fix ``Polynomial.estimate_parameters`` feeding dask arrays to `numpy.polyfit`
+  when estimating on a lazy signal with ``only_current=False``. (`#3381 <https://github.com/hyperspy/hyperspy/issues/3381>`_)
+- Fix using ipywidgets progressbar, the standard tqdm progress was used instead. The regression was introduced in HyperSpy 2.4.0. (`#3592 <https://github.com/hyperspy/hyperspy/issues/3592>`_)
+- :meth:`~.api.signals.Signal1D.spikes_removal_tool`: fix updating y-limits when moving to the next detected spike. (`#3593 <https://github.com/hyperspy/hyperspy/issues/3593>`_)
+- Fix Poissonian noise normalisation being silently a no-op in lazy decomposition.
+  ``coeff.map_blocks(np.nan_to_num)`` returns a new dask array; the result was
+  never assigned back, so the data was not rescaled before decomposition. (`#3607 <https://github.com/hyperspy/hyperspy/issues/3607>`_)
+- Fix lazy signal being left permanently unfolded after SVD decomposition.
+  ``self._unfolded4decomposition is False`` was an identity comparison (no-op)
+  instead of the assignment ``= False``, so the flag was never cleared and the
+  signal remained in the unfolded state after decomposition returned. (`#3608 <https://github.com/hyperspy/hyperspy/issues/3608>`_)
+- Fix ``_block_iterator`` reading only the first signal chunk when the on-disk chunk
+  size is smaller than the full signal length (e.g. per-spectrum HDF5 chunking).
+  The signal dimension is now rechunked to a single chunk before iteration, so all
+  signal channels are always read correctly. (`#3610 <https://github.com/hyperspy/hyperspy/issues/3610>`_)
+- Fix ``ORNMF`` hanging indefinitely on data with a negative mean.
+  ``np.sqrt(X.mean() / m)`` produced ``NaN`` for negative-mean data, causing the
+  convergence check to never trigger. The absolute value of the mean is now used.
+  An off-by-three-orders-of-magnitude upper bound on the iteration count (``1e9``
+  instead of ``maxiter``) was also corrected. (`#3611 <https://github.com/hyperspy/hyperspy/issues/3611>`_)
+- Fix ``svd_solver='full'`` crashing with ``NotImplementedError`` when the
+  signal dimension of the lazy data array is chunked (e.g. when loaded from an
+  HDF5 file with a 3-D chunk layout).  ``da.linalg.svd`` (TSQR algorithm)
+  requires the input to be chunked in one dimension only; HyperSpy now
+  transparently rechunks the signal axis to a single chunk before calling SVD,
+  so users never need to manage chunking manually. (`#3614 <https://github.com/hyperspy/hyperspy/issues/3614>`_)
+- Fix ``navigation_size < 2`` raising ``AttributeError`` instead of
+  ``ValueError`` in non-lazy decomposition. Fix ``get_bss_model()``
+  permanently corrupting ``learning_results.factors`` and
+  ``learning_results.loadings`` by overwriting them with dask-wrapped BSS
+  arrays on lazy signals. (`#3616 <https://github.com/hyperspy/hyperspy/issues/3616>`_)
+- Fix ``BaseSignal._get_signal_signal`` to return a non-lazy signal when called with ``data=None`` on a lazy signal, consistent with the behavior of ``BaseSignal._get_navigation_signal``. Previously, ``BaseSignal._get_signal_signal`` would return a lazy signal class with numpy data, which is inconsistent and could cause errors when downstream code expected a dask array. (`#3619 <https://github.com/hyperspy/hyperspy/issues/3619>`_)
+- Fix ``PeaksFinder2D`` not disconnecting ``on_trait_change`` observers on close, causing parameter changes to trigger updates on a potentially stale signal. (`#3628 <https://github.com/hyperspy/hyperspy/issues/3628>`_)
+- Fix multiple blit-animation crashes when animated artists are removed while
+  a pending ``draw_event`` handler is still active (matplotlib >= 3.10 clears
+  ``axes``/``figure`` references on ``Artist.remove``). Invalidated blit caches
+  and forced full redraws in:
+
+  - ``Model1D.disable_adjust_position()``
+  - ``Model1D.disable_plot_components()``
+  - ``Model1D.remove()``
+  - ``HyperspySignalExplorer.remove_right_pointer()``
+  - ``Signal1DFigure.close_right_axis()``
+  - ``ResizersMixin._set_resizers(False)``
+  - ``WidgetBase.set_on(False)``
+  - ``MarkerBase.close()``
+  - ``BlittedFigure.remove_markers()``
+  - ``CircleWidget._update_patch_size()``
+  - ``Line2DWidget._remove_size_patch()``
+
+  Additionally fixed list-mutation-during-iteration bugs in
+  ``BlittedFigure.remove_markers()`` and ``BlittedFigure._on_close()``, added a
+  guard against removed artists in ``BlittedFigure._draw_animated()``, and made
+  ``HistogramTilePlot.close()`` call ``super().close()`` to release event
+  connections.
+
+  Also fixed leaked ``mpl_connect`` handler IDs in
+  ``MPL_HyperSignal1D_Explorer`` and ``MPL_HyperImage_Explorer`` by storing
+  connection IDs and explicitly disconnecting them in ``close()``, preventing
+  callback invocations on stale objects after figure destruction. (`#3633 <https://github.com/hyperspy/hyperspy/issues/3633>`_)
+- Fix residual line not being updated by ``update_plot`` and not having its events suppressed during ``suspend_update``, which could leave the residual stale after batched parameter changes. (`#3635 <https://github.com/hyperspy/hyperspy/issues/3635>`_)
+- Fix ``AttributeError`` when ``BaseModel`` code references ``_residual_line`` on
+  ``Model2D`` instances, which never initialized this attribute (only
+  ``Model1D`` did). (`#3637 <https://github.com/hyperspy/hyperspy/issues/3637>`_)
+- Fix ``PolygonWidget`` not cleaning up its internal ``PolygonSelector`` when toggled off — ``set_on(False)`` disconnected from axes events but left the selector's event handlers and artists leaking. (`#3639 <https://github.com/hyperspy/hyperspy/issues/3639>`_)
+- Fix duplicate ``key_press_event`` handler accumulation on repeated ``connect()`` calls in ``ImagePlot``, and use blit-aware rendering in ``toggle_norm`` instead of bypassing the blit pipeline with ``canvas.draw_idle()``. (`#3641 <https://github.com/hyperspy/hyperspy/issues/3641>`_)
+- Fix inverted disconnect logic in ``_remove_widget``: the ``any_axis_changed`` handler was disconnected from the wrong signal (non-matching ones) and never disconnected from the matching signal, due to a misplaced ``break`` in the iteration. (`#3643 <https://github.com/hyperspy/hyperspy/issues/3643>`_)
+- Fix two bugs in SAMFire plot cleanup: a lambda was missing ``()`` so ``mark._plot.close`` was never actually called (the method object was returned instead of invoked), and ``connect_other_navigation2`` was connected but never disconnected on plot close, leaking the handler. (`#3647 <https://github.com/hyperspy/hyperspy/issues/3647>`_)
+- Fix ``centre='signal'`` and ``centre='navigation'`` permanently subtracting
+  the mean from the signal's data in eager decomposition.  The mean is now
+  restored after decomposition, resolving a bug where running two
+  decompositions on the same signal with different ``centre`` values produced
+  garbage.
+
+  Fix ``ISVD`` to compute plain SVD without
+  centering (the ``mean_`` property override now also correctly skips
+  centering inside ``partial_fit``), and make its ``explained_variance``
+  and ``explained_variance_ratio`` use HyperSpy's standard :math:`S^2 / N` and
+  :math:`S^2 / \sum(S^2)` formulas instead of sklearn's PCA-specific conventions. (`#3653 <https://github.com/hyperspy/hyperspy/issues/3653>`_)
+- Fix interactive ``SpikesRemoval`` processing each navigation position twice per step, and fix ``PeaksFinder2D`` crashing when clicking the random position button as well as never reaching the last navigation position. (`#3662 <https://github.com/hyperspy/hyperspy/issues/3662>`_)
+- Fix an intermittent ``LinAlgError: singular matrix`` crash when estimating parameter uncertainties (standard errors) for a lazy ``lstsq`` model fit. (`#3677 <https://github.com/hyperspy/hyperspy/issues/3677>`_)
+- Fix ``AttributeError`` when updating a plot after matplotlib replaced the figure canvas by one which doesn't support blitting, for example when using the inline backend with matplotlib 3.11. (`#3682 <https://github.com/hyperspy/hyperspy/issues/3682>`_)
+- Fix an intermittent ``LinAlgError: singular matrix`` crash when fitting a
+  model with ``optimizer='lstsq'`` on a lazy signal whose design matrix is
+  rank deficient: the fit now falls back to the non-lazy implementation and
+  discloses it with a warning. (`#3687 <https://github.com/hyperspy/hyperspy/issues/3687>`_)
+
+
+Deprecations
+------------
+
+- Scree plot titles and axis labels now correctly reflect the decomposition
+  algorithm and whether mean-centring was applied. Labels such as
+  "Explained variance ratio" and "Principal component" are used only for
+  centred decompositions (a.k.a. PCA); uncentred SVD and other algorithms now
+  show "Proportion of total variation" and "Component" instead.
+  Additionally, ``get_explained_variance_ratio``,
+  ``plot_explained_variance_ratio`` and
+  ``plot_cumulative_explained_variance_ratio`` have been renamed to
+  ``get_scree_plot_data``, ``plot_scree_plot`` and ``plot_cumulative_scree_plot``,
+  respectively (the old names remain available but are deprecated since 2.5). (`#3606 <https://github.com/hyperspy/hyperspy/issues/3606>`_)
+- Deprecate the low-level ``ORPCA`` and ``ORNMF`` class methods ``fit()``,
+  ``project()``, and ``finish()``.  Use the new scikit-learn-compatible API
+  instead: ``partial_fit()`` replaces ``fit()``, ``transform()`` replaces
+  ``project()``, and the ``components_`` property replaces ``finish()``.
+  The deprecated methods still work but emit a ``VisibleDeprecationWarning``
+  and will be removed in a future release. (`#3613 <https://github.com/hyperspy/hyperspy/issues/3613>`_)
+- Deprecate the ``copy`` parameter in :meth:`~.learn.mva.MVA.decomposition`
+  and the :meth:`~.learn.mva.MVA.undo_treatments` method.  Pre-treatment
+  data modifications (Poisson noise normalization, centering) are now
+  reversed mathematically after decomposition, so explicit copying and
+  undo are no longer needed.  The ``copy`` parameter now defaults to
+  ``False``; passing ``copy=True`` emits a ``VisibleDeprecationWarning``. (`#3653 <https://github.com/hyperspy/hyperspy/issues/3653>`_)
+
+
+Improved Documentation
+----------------------
+
+- Add a ``mva.masks_and_reproject`` section to the User Guide documenting
+  navigation and signal masks, the ``reproject`` parameter, and how ``NaN``
+  positions are filled after decomposition.  Improve the
+  ``big_data.decomposition`` section with:
+
+  - A detailed description of the three ``svd_solver`` options
+    (``'randomized'``, ``'incremental'``, ``'full'``) with an array-type table
+    showing which solvers return lazy dask arrays vs. computed numpy arrays.
+  - Dedicated sub-sections for NMF, custom sklearn-like estimators, and
+    Poissonian noise normalisation.
+  - A ``big_data.svd.lazy_pipeline`` sub-section documenting the fully lazy
+    decompose :octicon:`arrow-right` reconstruct :octicon:`arrow-right` save pipeline, including use of ``reproject`` and
+    the ``lazy_output`` keyword argument of
+    ``BaseSignal.get_decomposition_model()``.
+  - Documentation of the ``lazy_output`` keyword argument on
+    ``BaseSignal.get_decomposition_model()`` with
+    examples for forcing lazy output from non-lazy signals and eager output from
+    lazy signals. (`#3614 <https://github.com/hyperspy/hyperspy/issues/3614>`_)
+
+
+Maintenance
+-----------
+
+- The minimum supported version of dask is now ``>=2024.12.0``. This removes the
+  need for version-based skip guards in tests and `RuntimeError` guards for
+  lazy signal model evaluation. (`#3381 <https://github.com/hyperspy/hyperspy/issues/3381>`_)
+- Improve caching of eXSpy GOS and RosettaSciIO test data files on GitHub CI by sharing cache across different jobs. (`#3591 <https://github.com/hyperspy/hyperspy/issues/3591>`_)
+- Add support for setting dimensionless quantity (requires pint 0.25.3+) and deprecate passing float as quantity to avoid ambiguity regarding the expected units, whether it is a dimensionless quantity or the current units are used. Update tests for pint 0.25.3+ compatibility. (`#3602 <https://github.com/hyperspy/hyperspy/issues/3602>`_)
+- Add pre-commit hook (``scripts/check-ai-co-author.py``) blocking
+  ``Co-authored-by:`` trailers from AI tools, CI compliance checks for
+  AI trailer adherence and changelog entries, and ``.gitignore`` entries
+  for AI tool local state files. (`#3622 <https://github.com/hyperspy/hyperspy/issues/3622>`_)
+- Add ``.github/copilot-instructions.md`` and path-scoped ``.github/instructions/``
+  files for GitHub Copilot Code Review, encoding HyperSpy-specific conventions
+  (axis ordering, parameter map patterns, event triggers, lazy evaluation, test
+  quality) mined from 30+ PR reviews (2019–2026). (`#3649 <https://github.com/hyperspy/hyperspy/issues/3649>`_)
+- Fix ``test_parallel_pool_ipyparallel_not_installed`` test that was hitting a 15-second timeout instead of testing the intended code path. (`#3659 <https://github.com/hyperspy/hyperspy/issues/3659>`_)
+- Register ``pytest.mark.slow`` marker and mark computationally expensive tests. Skip slow tests with ``pytest -m "not slow"``. (`#3660 <https://github.com/hyperspy/hyperspy/issues/3660>`_)
+- Modernize traits usage: migrate deprecated ``on_trait_change`` and ``_xxx_changed`` auto-discovery handlers to ``@observe`` decorator pattern, replace deprecated ``t.Unicode`` with ``t.Str``, replace deprecated ``t.Either`` with ``t.Union``, remove ``TraitPrefixList``/``TraitMap`` deprecation workaround, and bump minimum traits version to 7.0.0. (`#3662 <https://github.com/hyperspy/hyperspy/issues/3662>`_)
+- Add ``scripts/check-docs.py`` to run CI-equivalent documentation
+  validation locally — validates changelog fragment filenames,
+  ``towncrier --draft``, and the Sphinx build with warnings-as-errors.
+  Expand ``upcoming_changes/README.rst`` with validation instructions,
+  ``doc/dev_guide/coding_style.rst`` with a Pre-CI Validation section,
+  ``doc/dev_guide/coding_with_ai.rst`` with pre-CI validation guidance,
+  ``AGENTS.md`` with a Pre-CI Validation checklist section, and
+  ``upcoming_changes/AGENTS.md`` with common mistake examples. (`#3664 <https://github.com/hyperspy/hyperspy/issues/3664>`_)
+- Make the unit-conversion tests independent of the micro glyph used by the
+  installed pint version and replace a dead link in the developer guide. (`#3686 <https://github.com/hyperspy/hyperspy/issues/3686>`_)
+
+
 2.4.0 (2026-01-26)
 ==================
 

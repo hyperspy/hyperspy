@@ -1,1 +1,0 @@
-Add column-width limits and consistent ``"%.5g"`` number formatting to numbers in tables.
