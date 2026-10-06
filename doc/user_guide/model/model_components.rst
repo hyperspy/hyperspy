@@ -208,3 +208,63 @@ scaling it in the x and y directions using the
 and
 :attr:`~.api.model.components1D.ScalableFixedPattern.yscale`
 parameters respectively.
+
+.. _components_parameter_estimation-label:
+
+Parameter estimation
+^^^^^^^^^^^^^^^^^^^^
+
+The following components implement an ``estimate_parameters`` method to estimate the parameters
+of the component quickly:
+
+
+* :meth:`~.api.model.components1D.Doniach.estimate_parameters`
+* :meth:`~.api.model.components1D.Exponential.estimate_parameters`
+* :meth:`~.api.model.components1D.Gaussian.estimate_parameters`
+* :meth:`~.api.model.components1D.GaussianHF.estimate_parameters`
+* :meth:`~.api.model.components1D.Lorentzian.estimate_parameters`
+* :meth:`~.api.model.components1D.Offset.estimate_parameters`
+* :meth:`~.api.model.components1D.Polynomial.estimate_parameters`
+* :meth:`~.api.model.components1D.PowerLaw.estimate_parameters`
+* :meth:`~.api.model.components1D.SkewNormal.estimate_parameters`
+* :meth:`~.api.model.components1D.Voigt.estimate_parameters`
+* :meth:`~.api.model.components1D.SplitVoigt.estimate_parameters`
+
+
+.. versionchanged:: 2.5
+    The ``intervals`` parameter has been added to
+    :meth:`~.api.model.components1D.PowerLaw.estimate_parameters`,
+    :meth:`~.api.model.components1D.Polynomial.estimate_parameters`, and
+    :meth:`~.api.model.components1D.Offset.estimate_parameters`,
+    enabling estimation from multiple disconnected spectral ranges.
+    The ``intervals`` parameter accepts a list of tuples or :class:`~.api.roi.SpanROI` objects.
+
+For example, the following estimates the parameters of a power law function using data from two disconnected intervals:
+
+.. code-block:: python
+
+    import hyperspy.api as hs
+    import numpy as np
+
+    pl = hs.model.components1D.PowerLaw()
+    pl.r.value = 2
+    pl.A.value = 1e4
+    axis = np.arange(10, 20, 0.1)
+    s = hs.signals.Signal1D(pl.function(axis))
+    s.axes_manager[-1].scale = 0.1
+    s.axes_manager[-1].offset = 10
+    s.isig[15.:16.].data[:] = 0
+    s.add_poissonian_noise()
+    roi1 = hs.roi.SpanROI(11, 14)
+    roi2 = hs.roi.SpanROI(17, 19)
+
+    pl.estimate_parameters(s, intervals=[roi1, roi2], only_current=True)
+
+Similarly, a polynomial can be fitted to data from multiple intervals:
+
+.. code-block:: python
+
+    poly = hs.model.components1D.Polynomial(order=2)
+    poly.estimate_parameters(s, intervals=[roi1, roi2], only_current=True)
+
+

@@ -63,8 +63,9 @@ from :mod:`~.api.model.components1D` are fitted in a given range to estimate the
 background and substract it from the signals.
 The GUI displays an interactive preview of the remainder after background subtraction.
 Currently, the following background types are supported: Doniach, Exponential, Gaussian,
-Lorentzian, Polynomial, Power law (default), Offset, Skew normal, Split Voigt
-and Voigt. By default, the background parameters are estimated using analytical
+Lorentzian, Polynomial, Power law (default), Offset, Skew normal, Split Voigt,
+Voigt and Scalable fixed pattern. Scalable fixed pattern can be used to subtract a
+measured background signal. By default, the background parameters are estimated using analytical
 approximations (keyword argument ``fast=True``). The fast option is not accurate
 for most background types - except Gaussian, Offset and Power law -
 but it is useful to estimate the initial fitting parameters before performing a

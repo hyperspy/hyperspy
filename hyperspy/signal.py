@@ -3715,8 +3715,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         Parameters
         ----------
         axis %s The axis to roll backwards.
+
             The positions of the other axes do not change relative to one
             another.
+
         to_axis %s The axis is rolled until it lies before this other axis.
         %s
 
@@ -3925,12 +3927,14 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         Parameters
         ----------
         axis %s
+
             If ``'auto'`` and if the object has been created with
             :func:`~hyperspy.api.stack` (and ``stack_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
             If it was not created with :func:`~hyperspy.api.stack`,
             the last navigation axis will be used.
+
         number_of_parts : str or int
             Number of parts in which the spectrum image will be split. The
             splitting is homogeneous. When the axis size is not divisible
@@ -6676,18 +6680,17 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         get_histogram
 
         """
+        from hyperspy.misc.model_tools import SummaryStatistics
+        from hyperspy.misc.utils import display
+
         _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics(
             rechunk=rechunk
         )
-        print(utils.underline("Summary statistics"))
-        print("mean:\t" + formatter % _mean)
-        print("std:\t" + formatter % _std)
-        print()
-        print("min:\t" + formatter % _min)
-        print("Q1:\t" + formatter % _q1)
-        print("median:\t" + formatter % _q2)
-        print("Q3:\t" + formatter % _q3)
-        print("max:\t" + formatter % _max)
+        display(
+            SummaryStatistics(
+                _mean, _std, _min, _q1, _q2, _q3, _max, formatter=formatter
+            )
+        )
 
     print_summary_statistics.__doc__ %= RECHUNK_ARG
 

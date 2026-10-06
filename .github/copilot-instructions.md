@@ -49,3 +49,18 @@ After in-place `.data` mutation: `self.events.data_changed.trigger(obj=self)` re
 
 ## 12. Documentation & Dependencies
 **Flag:** Docstring changes without rendered output check (PR #3548, #3525). Examples misplaced between gallery and user guide (PR #3587). New dependencies without maintenance vetting (PR #3621). Changes breaking downstream extensions (pyxem, exspy, lumispy) without noting impact.
+
+## 13. Traits Patterns (Enthought `traits` >= 7.0)
+HyperSpy uses Enthought `traits` (not Jupyter `traitlets`). All trait handlers must use the modern `@observe` pattern.
+
+**Flag:**
+- `on_trait_change()` — deprecated; use `self.observe(handler, name)` or `@t.observe("name")` decorator
+- `_name_changed(self, old, new)` auto-discovery handlers — must use `@t.observe("name")` decorator with `(self, event=None)` signature
+- `_name_fired(self)` button handlers — must use `@t.observe("name")` decorator with `(self, event=None)` signature
+- `t.Unicode()` — deprecated; use `t.Str()`
+- `t.Either()` — deprecated; use `t.Union()`
+- `@t.observe("name")` decorator without corresponding signature change to `(self, event=None)` — the decorator passes an event object, not positional `(old, new)` args
+- `@t.observe("name")` on a plain class (not `HasTraits`) — decorator won't register; use `self.observe()` in `__init__` with `hasattr` guard
+- ROI validation/revert handlers using `self.trait = old` — must use `self.trait_setq(trait=old)` to prevent infinite recursion
+- `observe()` with string paths like `"_axes.items.scale"` when traits may not exist on list items — must use expression API with `optional=True`
+- Handlers that fire during `__init__` when they shouldn't — add `post_init=True` to `@t.observe`

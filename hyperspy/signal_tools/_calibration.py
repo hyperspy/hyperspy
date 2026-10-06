@@ -33,19 +33,21 @@ _logger = logging.getLogger(__name__)
 class Signal2DCalibration(LineInSignal2D):
     new_length = t.Float(t.Undefined, label="New length")
     scale = t.Float()
-    units = t.Unicode()
+    units = t.Str()
 
     def __init__(self, signal, **kwargs):
         super().__init__(signal, **kwargs)
         self.units = self.signal.axes_manager.signal_axes[0].units
         self.scale = self.signal.axes_manager.signal_axes[0].scale
 
-    def _new_length_changed(self, old, new):
-        if old != new and self._line is not None:
+    @t.observe("new_length")
+    def _new_length_changed(self, event=None):
+        if event.old != event.new and self._line is not None:
             self._calculate_scale()
 
-    def _length_changed(self, old, new):
-        if old != new and self._line is not None:
+    @t.observe("length")
+    def _length_changed(self, event=None):
+        if event.old != event.new and self._line is not None:
             self._calculate_scale()
 
     def _calculate_scale(self):
@@ -84,7 +86,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
     right_value = t.Float(t.Undefined, label="New right value")
     offset = t.Float()
     scale = t.Float()
-    units = t.Unicode()
+    units = t.Str()
 
     def __init__(self, signal):
         super().__init__(signal)
@@ -100,11 +102,13 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         self.last_calibration_stored = True
         self.span_selector.snap_values = self.axis.axis
 
-    def _left_value_changed(self, old, new):
+    @t.observe("left_value")
+    def _left_value_changed(self, event=None):
         if self._is_valid_range and self.right_value is not t.Undefined:
             self._update_calibration()
 
-    def _right_value_changed(self, old, new):
+    @t.observe("right_value")
+    def _right_value_changed(self, event=None):
         if self._is_valid_range and self.left_value is not t.Undefined:
             self._update_calibration()
 

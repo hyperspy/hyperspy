@@ -31,6 +31,7 @@ STACK_METADATA_ARG = """stack_metadata : {bool, int}
 REBIN_ARGS = """new_shape : list (of float or int) or None
             For each dimension specify the new_shape. This will internally be
             converted into a ``scale`` parameter.
+
         scale : list (of float or int) or None
             For each dimension, specify the new:old pixel ratio, e.g. a ratio
             of 1 is no binning and a ratio of 2 means that each pixel in the new
@@ -39,6 +40,7 @@ REBIN_ARGS = """new_shape : list (of float or int) or None
             Signal's underlying data array.
             *Note : Only one of ``scale`` or ``new_shape`` should be specified,
             otherwise the function will not run*
+
         crop : bool
             Whether or not to crop the resulting rebinned data (default is
             ``True``). When binning by a non-integer number of
@@ -52,6 +54,7 @@ REBIN_ARGS = """new_shape : list (of float or int) or None
             dimension may appear black if a fractional number of pixels are left
             over. It can be removed but has been left to preserve total counts
             before and after binning.*
+
         dtype : {None, numpy.dtype, "same"}
             Specify the dtype of the output. If None, the dtype will be
             determined by the behaviour of :func:`numpy.sum`, if ``"same"``,

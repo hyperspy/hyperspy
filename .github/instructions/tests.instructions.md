@@ -18,6 +18,7 @@ Test data arrays must use ALL-DIFFERENT dimensions so axis reversals are visuall
 HyperSpy uses `numpy.testing` utilities, not `pytest.approx`:
 - ✅ `np.testing.assert_allclose(actual, expected, rtol=1e-4)`
 - ✅ `np.testing.assert_array_equal(actual, expected)` for exact/int comparisons
+- ❌ `assert np.array_equal(actual, expected)` — prefer `np.testing` for consistency and better failure messages
 - ❌ `assert actual == expected` — too fragile for floats
 - ❌ `assert actual == pytest.approx(expected)` — not the HyperSpy convention
 

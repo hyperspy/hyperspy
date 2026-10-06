@@ -56,6 +56,21 @@ run the :meth:`~.api.signals.BaseSignal.blind_source_separation` method, for exa
     scikit-learn estimator:
     FastICA(tol=1e-10, whiten=False)
 
+To reconstruct a model from the separated components, run the
+:meth:`~.api.signals.BaseSignal.get_bss_model` method:
+
+.. code-block:: python
+
+   >>> # Use all BSS components to reconstruct the model
+   >>> sc = s.get_bss_model() # doctest: +SKIP
+
+   >>> # Use components [0, 2] to reconstruct the model
+   >>> sc = s.get_bss_model([0, 2]) # doctest: +SKIP
+
+As with :meth:`~.api.signals.BaseSignal.get_decomposition_model`,
+``get_bss_model()`` accepts a ``lazy`` keyword to control whether the returned
+model is eager or lazy; see :ref:`mva.model_output_laziness`.
+
 
 Available algorithms
 --------------------

@@ -1,4 +1,0 @@
-Fix an intermittent ``LinAlgError: singular matrix`` crash when fitting a
-model with ``optimizer='lstsq'`` on a lazy signal whose design matrix is
-rank deficient: the fit now falls back to the non-lazy implementation and
-discloses it with a warning.

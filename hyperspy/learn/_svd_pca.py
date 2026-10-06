@@ -234,6 +234,13 @@ def svd_pca(
     factors : numpy.ndarray
     loadings : numpy.ndarray
     explained_variance : numpy.ndarray
+        When ``centre`` is not None (mean-centred data), this is the variance
+        explained by each component (``σᵢ² / N``), consistent with PCA.
+        When ``centre`` is None (no centring), this is the mean squared
+        contribution of each component (``σᵢ² / N``), i.e. a measure of
+        signal energy rather than variance. The ratio of these values across
+        components gives the proportion of total variation (Frobenius norm
+        squared) explained by each component.
     mean : numpy.ndarray or None
         None if centre is None
 
@@ -267,6 +274,9 @@ def svd_pca(
         **kwargs,
     )
 
+    # σᵢ²/N: equals explained variance when data is mean-centred (PCA),
+    # or mean squared signal contribution (proportion of total variation)
+    # when data is not centred.
     explained_variance = S**2 / N
 
     if auto_transpose is False:

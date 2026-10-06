@@ -52,17 +52,15 @@ class TestPlotDecomposition:
         ("n", "threshold", "xaxis_type", "xaxis_labeling"), _generate_parameters()
     )
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_explained_variance_ratio(
-        self, n, threshold, xaxis_type, xaxis_labeling
-    ):
-        ax = self.s.plot_explained_variance_ratio(
+    def test_plot_scree_plot(self, n, threshold, xaxis_type, xaxis_labeling):
+        ax = self.s.plot_scree_plot(
             n, threshold=threshold, xaxis_type=xaxis_type, xaxis_labeling=xaxis_labeling
         )
         return ax.get_figure()
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_cumulative_explained_variance_ratio(self):
-        ax = self.s.plot_cumulative_explained_variance_ratio()
+    def test_plot_cumulative_scree_plot(self):
+        ax = self.s.plot_cumulative_scree_plot()
         return ax.get_figure()
 
     @pytest.mark.parametrize("n", [3, [3, 4]])

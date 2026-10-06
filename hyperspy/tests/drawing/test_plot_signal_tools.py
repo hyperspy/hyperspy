@@ -493,3 +493,27 @@ def test_signal2d_calibration_wrong_dimension():
     s1d = signals.Signal1D(np.arange(100))
     with pytest.raises(SignalDimensionError):
         Signal2DCalibration(s1d)
+
+
+class TestGuardsPreventRecursion:
+    def test_line_guard_prevents_position_sync_recursion(self):
+        s = signals.Signal2D(np.arange(100).reshape(10, 10))
+        s.axes_manager[0].name = "x"
+        s.axes_manager[1].name = "y"
+
+        line = LineInSignal2D(s)
+        assert line._updating_from_line is False
+
+        line._updating_from_line = True
+        old_x0, old_y0 = line.x0, line.y0
+
+        line._update_position_from_line(line)
+        assert line.x0 == old_x0
+        assert line.y0 == old_y0
+
+        line._updating_from_line = False
+        line.x0 = 5.0
+        line.y0 = 5.0
+
+        line._update_position_from_line(line)
+        assert line.x0 != old_x0

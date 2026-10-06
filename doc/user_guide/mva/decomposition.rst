@@ -58,6 +58,26 @@ You can perform operations on this new object ``sc`` later.
 It is a copy of the original ``s`` object, except that the data has
 been replaced by the model constructed using the chosen components.
 
+.. _mva.model_output_laziness:
+
+Controlling laziness of reconstructed models
+--------------------------------------------
+
+Both :meth:`~.api.signals.BaseSignal.get_decomposition_model` and
+:meth:`~.api.signals.BaseSignal.get_bss_model` accept a ``lazy_output`` keyword
+argument that controls whether the returned model is backed by a dask array:
+
+- ``lazy_output=None`` (default): return a lazy signal if the original signal is
+  lazy, and an eager signal otherwise.
+- ``lazy_output=True``: always return a lazy signal. This is useful when the
+  reconstructed model is too large to keep in memory; you can call
+  ``.save()`` afterwards to stream it to disk chunk by chunk.
+- ``lazy_output=False``: always return an eager signal, computing the result
+  immediately.
+
+For lazy decomposition workflows, including ``svd_solver='full'`` and
+out-of-core saving, see :ref:`big_data.svd.lazy_output_kwarg`.
+
 If you provide the ``output_dimension`` argument, which takes an integer value,
 the decomposition algorithm attempts to find the best approximation for the
 dataset :math:`X` with only a limited set of factors :math:`A` and loadings :math:`B`,
@@ -110,7 +130,9 @@ links to the appropriate documentation for more information on each one.
    +--------------------------+----------------------------------------------------------------+
    | "ORNMF"                  | :func:`~.learn.ornmf`                                          |
    +--------------------------+----------------------------------------------------------------+
-   | custom object            | An object implementing  ``fit()`` and  ``transform()`` methods |
+   | custom object            | An object implementing ``fit()`` and ``transform()`` methods   |
+   |                          | (or ``partial_fit()`` for lazy signals; see                    |
+   |                          | :ref:`big_data.custom_algorithm`)                              |
    +--------------------------+----------------------------------------------------------------+
 
 .. _mva.svd:
@@ -145,6 +167,13 @@ documentation for :func:`~.hyperspy.learn.svd_pca`.
    centering step by default. As a result, you may observe differences between
    the output of the ``"SVD"`` algorithm and, for example,
    :class:`sklearn.decomposition.PCA`, which **does** apply centering.
+
+.. note::
+
+   For lazy signals, the ``"SVD"`` algorithm supports additional parameters
+   such as ``svd_solver`` (``'randomized'``, ``'incremental'``, or ``'full'``)
+   and ``centre``.  All three solvers support ``centre``.  See
+   :ref:`big_data.svd` for the full details.
 
 .. _mva.pca:
 
@@ -345,6 +374,19 @@ i.e. the underlying low-rank component, to be tracked as it changes
 with each sample update. The default method instead assumes a fixed,
 static subspace.
 
+.. note::
+
+   The internal ``ORPCA`` class now provides a scikit-learn
+   compatible API.  If you use ``ORPCA`` directly (rather than through
+   :meth:`~.api.signals.BaseSignal.decomposition`), prefer the new methods:
+
+   - ``partial_fit(X)`` — replaces the deprecated ``fit(X)``
+   - ``transform(X)`` — replaces the deprecated ``project(X)``
+   - ``components_`` — replaces the deprecated ``finish()``
+
+   The old methods still work but emit a ``VisibleDeprecationWarning`` and
+   will be removed in a future release.
+
 .. _mva.nmf:
 
 Non-negative matrix factorization (NMF)
@@ -367,6 +409,16 @@ of components to keep. Setting this to a small number is recommended to keep
 the computation time small. Often it is useful to run a PCA decomposition first
 and use the :ref:`scree plot <mva.scree_plot>` to determine a suitable value
 for ``output_dimension``.
+
+.. note::
+
+   For lazy signals, ``algorithm="NMF"`` is implemented via
+   :class:`sklearn.decomposition.MiniBatchNMF` (requires scikit-learn ≥ 1.1
+   for the out-of-core path; older versions fall back to in-memory
+   :class:`sklearn.decomposition.NMF`),
+   which processes the data in chunks without loading the full dataset into
+   memory.  ``output_dimension`` is required in this case.  See
+   :ref:`big_data.decomposition` for the full list of available lazy algorithms.
 
 .. _mva.rnmf:
 
@@ -406,6 +458,93 @@ alternative is available, although it is typically much slower.
 .. code-block:: python
 
    >>> s.decomposition(algorithm="ORNMF", output_dimension=3, method="RobustPGD") # doctest: +SKIP
+
+.. note::
+
+   The internal ``ORNMF`` class now provides a scikit-learn
+   compatible API.  If you use ``ORNMF`` directly (rather than through
+   :meth:`~.api.signals.BaseSignal.decomposition`), prefer the new methods:
+
+   - ``partial_fit(X)`` — replaces the deprecated ``fit(X)``
+   - ``transform(X)`` — replaces the deprecated ``project(X)``
+   - ``components_`` — replaces the deprecated ``finish()``
+
+   The old methods still work but emit a ``VisibleDeprecationWarning`` and
+   will be removed in a future release.
+
+.. _mva.masks_and_reproject:
+
+Masks and reprojection
+----------------------
+
+Navigation and signal masks can be passed to
+:meth:`~.api.signals.BaseSignal.decomposition` to restrict which pixels or
+channels are used during learning.  Masked positions are excluded from the
+data matrix before the algorithm runs, and the resulting factors and loadings
+contain ``NaN`` at those positions by default.
+
+.. code-block:: python
+
+   >>> import numpy as np
+   >>> s = hs.signals.Signal1D(np.random.randn(10, 10, 200))
+
+   # Boolean array: True = exclude this navigation pixel
+   >>> nav_mask = np.zeros((10, 10), dtype=bool)
+   >>> nav_mask[0, :] = True   # mask the first row of navigation pixels
+
+   # Boolean array: True = exclude this signal channel
+   >>> sig_mask = np.zeros(200, dtype=bool)
+   >>> sig_mask[:10] = True    # mask the first 10 channels
+
+   >>> s.decomposition(
+   ...     navigation_mask=nav_mask,
+   ...     signal_mask=sig_mask,
+   ... ) # doctest: +SKIP
+
+After decomposition the masked positions contain ``NaN``:
+
+- ``learning_results.loadings`` has ``NaN`` rows for masked navigation pixels.
+- ``learning_results.factors`` has ``NaN`` rows for masked signal channels.
+
+The ``reproject`` parameter can be used to fill those ``NaN`` positions by
+projecting the *full* (unmasked) data through the learned basis after learning
+is complete:
+
+``reproject='navigation'``
+   Projects all navigation pixels (including the masked ones) through the
+   learned factors.  This fills ``NaN`` in the loadings at masked navigation
+   positions.  Factors still contain ``NaN`` at masked signal channels.
+
+``reproject='signal'``
+   Projects all signal channels (including the masked ones) through the
+   learned loadings via a pseudo-inverse.  This fills ``NaN`` in the factors
+   at masked signal channels.  Loadings still contain ``NaN`` at masked
+   navigation positions.
+
+``reproject='both'``
+   Applies both reprojections: factors and loadings are fully filled with no
+   ``NaN`` remaining.
+
+.. code-block:: python
+
+   >>> s.decomposition(
+   ...     navigation_mask=nav_mask,
+   ...     signal_mask=sig_mask,
+   ...     reproject="both",
+   ... ) # doctest: +SKIP
+
+   # loadings and factors both have no NaN after reproject='both'
+   >>> np.any(np.isnan(s.learning_results.loadings))  # doctest: +SKIP
+   False
+   >>> np.any(np.isnan(s.learning_results.factors))   # doctest: +SKIP
+   False
+
+.. note::
+
+   For lazy signals, ``reproject='signal'`` and ``reproject='both'`` are
+   supported for all algorithms, including ``"ORPCA"`` and ``"ORNMF"``,
+   via the pseudo-inverse of the loadings.
+   See :ref:`big_data.decomposition` for more details.
 
 .. _mva.custom_decomposition:
 

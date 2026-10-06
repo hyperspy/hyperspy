@@ -40,3 +40,27 @@ Interactive operations can be performed in a chain.
     >>> s.events.data_changed.trigger(obj=s)
     >>> ssum_mean.data
     array([300.,  330.,  360.,  390.])
+
+.. _interactive_cleanup-label:
+
+Cleaning up
+===========
+
+When an interactive operation is no longer needed, call the
+``Interactive.close`` method to disconnect all
+event handlers and release internal references. This prevents the
+operation from continuing to respond to changes in the original signal
+and avoids leaking memory through lingering event callbacks.
+
+.. code-block:: python
+
+    >>> from hyperspy.interactive import Interactive
+    >>> s = hs.signals.Signal1D(np.arange(10.))
+    >>> ssum = Interactive(s.sum, axis=0)
+    >>> ssum.out.data
+    array([45.])
+    >>> s.data /= 10
+    >>> ssum.close()
+    >>> s.events.data_changed.trigger(s)
+    >>> ssum.out.data  # no change after close
+    array([45.])
