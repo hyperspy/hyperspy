@@ -18,15 +18,15 @@
 
 import logging
 import warnings
-from functools import partial
 from threading import Lock
 
 import matplotlib
+from psygnal import SignalGroup
 from traits.api import Undefined
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.drawing import image, signal1d, widgets
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 
 _logger = logging.getLogger(__name__)
 _lock = Lock()
@@ -56,18 +56,13 @@ class MPL_HyperExplorer:
         self.pointer = None
         self._pointer_nav_dim = None
 
-        self.events = Events()
-        self.events.closed = Event(
-            """
-            Event that triggers when the figure window is closed.
+        self.events = MplFigureEvents(self)
+        self._closed_callbacks = []
 
-            Parameters
-            ----------
-            obj:  SpectrumFigure instances
-                The instance that triggered the event.
-            """,
-            arguments=["obj"],
-        )
+    def _connect_closed(self, callback):
+        """Connect *callback* to self.events.closed and track for cleanup."""
+        self.events.closed.connect(callback)
+        self._closed_callbacks.append(callback)
 
     def plot_signal(self, **kwargs):
         # This method should be implemented by the subclasses.
@@ -137,10 +132,16 @@ class MPL_HyperExplorer:
             if self.axes_manager.navigation_dimension > 1:
                 self._get_navigation_sliders()
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.events.index_changed.connect(sf.update, [])
-                    self.events.closed.connect(
-                        partial(axis.events.index_changed.disconnect, sf.update), []
-                    )
+
+                    def _update_cb_nav(*args, **kwargs):
+                        sf.update()
+
+                    def _disconnect_cb_nav(*args, **kwargs):
+                        axis.events.index_changed.disconnect(_update_cb_nav)
+
+                    axis.events.index_changed.connect(_update_cb_nav)
+                    (self._connect_closed(_disconnect_cb_nav),)
+
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
             # Create the figure
@@ -165,11 +166,15 @@ class MPL_HyperExplorer:
                 if self.axes_manager.navigation_dimension > 2:
                     self._get_navigation_sliders()
                     for axis in self.axes_manager.navigation_axes[2:]:
-                        axis.events.index_changed.connect(imf.update, [])
-                        self.events.closed.connect(
-                            partial(axis.events.index_changed.disconnect, imf.update),
-                            [],
-                        )
+
+                        def _update_cb_nav(*args, **kwargs):
+                            imf.update()
+
+                        def _disconnect_cb_nav(*args, **kwargs):
+                            axis.events.index_changed.disconnect(_update_cb_nav)
+
+                        axis.events.index_changed.connect(_update_cb_nav)
+                        self._connect_closed(_disconnect_cb_nav)
 
             if "cmap" not in kwargs.keys() or kwargs["cmap"] is None:
                 kwargs["cmap"] = preferences.Plot.cmap_navigator
@@ -230,7 +235,7 @@ class MPL_HyperExplorer:
                     self.pointer.connect_navigate()
                 self.plot_navigator(**kwargs.pop("navigator_kwds", {}))
                 if pointer is not None:
-                    self.events.closed.connect(self.pointer.disconnect, [])
+                    self._connect_closed(self.pointer.disconnect)
             self.plot_signal(**kwargs)
             if _is_widget_backend() and "fig" not in kwargs:
                 if plot_style not in ["vertical", "horizontal", None]:
@@ -305,13 +310,17 @@ class MPL_HyperExplorer:
         callback.
         When closing, it does the following:
         1. trigger a closed event
-        2. disconnect the closed event
+        2. disconnect all callbacks on the closed event
         3. run the close method of the signal_plot and navigator_plot
         4. reset the attribute
         """
-        self.events.closed.trigger(obj=self)
-        for f in self.events.closed.connected:
-            self.events.closed.disconnect(f)
+        self.events.closed.emit(self)
+        for callback in list(self._closed_callbacks):
+            try:
+                self.events.closed.disconnect(callback)
+            except ValueError:
+                pass
+        self._closed_callbacks.clear()
 
         for p in [self.signal_plot, self.navigator_plot]:
             if p is not None:
@@ -319,3 +328,17 @@ class MPL_HyperExplorer:
 
         self.navigator_plot = None
         self.signal_plot = None
+
+
+class MplFigureEvents(SignalGroup):
+    """Events for :class:`MPL_HyperExplorer`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    closed = EventSignal(
+        MPL_HyperExplorer,
+        description="""\
+        Event that triggers when the MPL_HyperExplorer is closed.
+
+        The MPL_HyperExplorer instance is passed to the event handler.
+        """,
+    )

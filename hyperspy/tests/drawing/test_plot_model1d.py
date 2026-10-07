@@ -82,21 +82,23 @@ class TestModelPlot:
 
         assert self.m._model_line is None
         assert self.m._residual_line is None
-        assert len(c.events.active_changed.connected) == 0
+        assert len(c.events.active_changed._connected_originals) == 0
         for p in c.parameters:
-            assert len(p.events.value_changed.connected) == 0
+            assert len(p.events.value_changed._connected_originals) == 0
 
         self.m.plot(plot_residual=plot_residual)
         assert self.m._model_line is not None
         assert (self.m._residual_line is not None) is plot_residual
-        assert len(c.events.active_changed.connected) == expected_connection
+        assert len(c.events.active_changed._connected_originals) == expected_connection
         for p in c.parameters:
-            assert len(p.events.value_changed.connected) == expected_connection
+            assert (
+                len(p.events.value_changed._connected_originals) == expected_connection
+            )
 
         self.m._plot.close()
-        assert len(c.events.active_changed.connected) == 0
+        assert len(c.events.active_changed._connected_originals) == 0
         for p in c.parameters:
-            assert len(p.events.value_changed.connected) == 0
+            assert len(p.events.value_changed._connected_originals) == 0
         assert self.m._model_line is None
         assert self.m._residual_line is None
 

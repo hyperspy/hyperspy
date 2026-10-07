@@ -329,4 +329,4 @@ class FancySlicing(object):
         if out is None:
             return _obj
         else:
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
