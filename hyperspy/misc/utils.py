@@ -60,6 +60,7 @@ __all__ = [
     "display",
     "TupleSA",
     "_get_block_pattern",
+    "grouped_editable_traits",
 ]
 
 

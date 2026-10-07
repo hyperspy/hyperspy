@@ -56,6 +56,9 @@ Functions:
 :func:`~.api.set_log_level`
     Convenience function to set HyperSpy's the log level.
 
+:func:`~.api.show_keybindings`
+    Display all keyboard shortcuts active for interactive plotting.
+
 :func:`~.api.stack`
     Stack several signals.
 
@@ -110,6 +113,7 @@ __all__ = [
     "roi",
     "samfire",
     "set_log_level",
+    "show_keybindings",
     "signals",
     "stack",
     "transpose",
@@ -127,6 +131,7 @@ _import_mapping = {
     "print_known_signal_types": ".utils",
     "roi": ".utils",
     "samfire": ".utils",
+    "show_keybindings": ".utils",
     "stack": ".utils",
     "transpose": ".utils",
     "__version__": "",
