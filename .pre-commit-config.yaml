@@ -16,13 +16,11 @@ repos:
     hooks:
       # Check if switcher.json is valid
       - id: check-json
-  - repo: local
+  - repo: https://github.com/francisco-dlp/.github   # interim; todo 21 flips to hyperspy/.github @ v1.0.0
+    rev: b1a6954ab0ba717864d66837ef6946cc0a3a9edd
     hooks:
       - id: check-ai-co-author
-        name: Block Co-authored-by AI trailers
-        entry: scripts/check-ai-co-author.py
-        language: script
-        stages: [commit-msg]
+      - id: check-agents-policy
         always_run: true
 ci:
     # Don't run automatically on PRs, instead add the comment
