@@ -3959,10 +3959,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         >>> s.split(step_sizes=[1, 2])
         [<Signal1D, title: , dimensions: (3, 1|2)>, <Signal1D, title: , dimensions: (3, 2|2)>]
 
-        Raises
-        ------
-        NotImplementedError
-            If trying to split along a non-uniform axis.
+        Notes
+        -----
+        Splitting preserves the calibration of uniform and non-uniform axes,
+        including functional axes.
 
         Returns
         -------
@@ -3992,10 +3992,6 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
-        if self.axes_manager[axis].is_uniform is False:
-            raise NotImplementedError(
-                "Splitting of signals over a non-uniform axis is not implemented"
-            )
 
         if number_of_parts == "auto" and step_sizes == "auto":
             step_sizes = 1
@@ -4015,11 +4011,11 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         cut_index = np.array([0] + step_sizes).cumsum()
 
         axes_dict = signal_dict["axes"]
+        original_axis = self.axes_manager._axes[axis]
         for i in range(len(cut_index) - 1):
-            axes_dict[axis]["offset"] = self.axes_manager._axes[axis].index2value(
-                cut_index[i]
-            )
-            axes_dict[axis]["size"] = cut_index[i + 1] - cut_index[i]
+            split_axis = original_axis.copy()
+            split_axis._slice_me(slice(cut_index[i], cut_index[i + 1]))
+            axes_dict[axis] = split_axis.get_axis_dictionary()
             data = self.data[
                 (slice(None),) * axis
                 + (slice(cut_index[i], cut_index[i + 1]), Ellipsis)

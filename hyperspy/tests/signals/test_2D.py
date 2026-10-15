@@ -278,6 +278,57 @@ class Test2D:
         np.testing.assert_array_almost_equal(result[0].data, self.data[:1, :10])
         np.testing.assert_array_almost_equal(result[1].data, self.data[1:3, :10])
 
+    @pytest.mark.parametrize("axis_type", ["data", "functional"])
+    @pytest.mark.parametrize("split_axis", ["nav", "sig"])
+    def test_split_non_uniform_axis(self, axis_type, split_axis):
+        s = self.signal.deepcopy()
+        axis = (
+            s.axes_manager.navigation_axes[0]
+            if split_axis == "nav"
+            else s.axes_manager.signal_axes[0]
+        )
+        if axis_type == "data":
+            axis.convert_to_non_uniform_axis()
+            axis.axis = np.arange(axis.size, dtype=float) ** 2
+        else:
+            axis.convert_to_functional_data_axis(expression="x**2")
+        axis.name = "position"
+        axis.units = "nm"
+        original_axis = axis.axis.copy()
+        original_data = np.asarray(s.data).copy()
+        index = axis.index_in_array
+        steps = [2, axis.size - 2]
+
+        result = s.split(axis=axis, step_sizes=steps)
+
+        assert len(result) == 2
+        start = 0
+        for part, length in zip(result, steps):
+            stop = start + length
+            np.testing.assert_array_equal(
+                np.asarray(part.data),
+                np.take(original_data, np.arange(start, stop), axis=index),
+            )
+            part_axis = part.axes_manager["position"]
+            assert type(part_axis) is type(axis)
+            np.testing.assert_array_equal(part_axis.axis, original_axis[start:stop])
+            assert part_axis.name == "position"
+            assert part_axis.units == "nm"
+            start = stop
+        np.testing.assert_array_equal(axis.axis, original_axis)
+
+    def test_split_uniform_axis_with_non_uniform_other_axis(self):
+        s = self.signal.deepcopy()
+        signal_axis = s.axes_manager.signal_axes[0]
+        signal_axis.convert_to_non_uniform_axis()
+        signal_axis.axis = np.arange(signal_axis.size, dtype=float) ** 2
+        parts = s.split(axis="x", number_of_parts=5)
+        assert len(parts) == 5
+        for part in parts:
+            np.testing.assert_array_equal(
+                part.axes_manager.signal_axes[0].axis, signal_axis.axis
+            )
+
     def test_split_error(self):
         with pytest.raises(
             ValueError,
