@@ -45,13 +45,20 @@ def use_anyplotlib(monkeypatch):
 
 
 class TestTextCapabilities:
-    def test_anyplotlib_declares_plain_no_rotation(self):
-        assert AnyplotlibBackend.text_markup == "plain"
-        assert AnyplotlibBackend.supports_text_rotation is False
+    def test_declaration_matches_installed_capability(self):
+        # The declarations are gated on the installed anyplotlib: the
+        # TeX-capable release gives tex-lite + rotation, older releases
+        # keep the safe plain-text declaration.
+        from hyperspy.drawing.backends.anyplotlib import _texts_tex_lite
+
+        supported = _texts_tex_lite()
+        assert AnyplotlibBackend.text_markup == ("tex-lite" if supported else "plain")
+        assert AnyplotlibBackend.supports_text_rotation is supported
 
 
 class TestTextCapabilityDegradation:
-    """Mathtext Texts degrade to plain text on the plain-only backend."""
+    """Text capability handling for Texts markers: native passthrough on the
+    tex-lite backend, degradation on plain-only declarations."""
 
     def _make_signal_and_marker(self):
         s = hs.signals.Signal1D(np.arange(3 * 61).reshape((3, 61)).astype(float))
@@ -75,31 +82,41 @@ class TestTextCapabilityDegradation:
         # those up instead of the marker under test.
         return m._collection.to_wire("test-group")
 
-    def test_wire_shows_plain_texts_black_colour_dropped_rotation(self, caplog):
+    def test_wire_passes_mathtext_rotation_and_colour_through(self, caplog):
+        """With the TeX-capable anyplotlib the backend declares tex-lite +
+        rotation: mathtext reaches the wire unchanged (the JS TeX engine
+        typesets it), rotation and alignment ride along, and no capability
+        warning fires."""
         import logging
 
+        from hyperspy.drawing.backends.anyplotlib import _texts_tex_lite
+
+        if not _texts_tex_lite():
+            pytest.skip("installed anyplotlib lacks TeX-capable texts markers")
         s, m, texts = self._make_signal_and_marker()
         with caplog.at_level(logging.WARNING):
             s.plot()
             s.add_marker(m)
         texts_wire = self._texts_wire(m)
-        assert texts_wire["texts"] == ["Fe_Ka", "α"]
+        assert texts_wire["texts"] == [r"$\mathrm{Fe}_{\mathrm{Ka}}$", r"$\alpha$"]
         assert texts_wire["color"] == "black"
-        assert "rotation" not in texts_wire
-        markup_warnings = [r for r in caplog.records if "text_markup" in r.message]
-        rotation_warnings = [
-            r for r in caplog.records if "supports_text_rotation" in r.message
-        ]
-        assert len(markup_warnings) == 1
-        assert len(rotation_warnings) == 1
-        # The user's marker kwargs are never mutated by degradation
+        assert texts_wire["rotation"] == pytest.approx(1.57)
+        assert texts_wire["halign"] == "left"
+        assert texts_wire["valign"] == "bottom"
+        assert not [r for r in caplog.records if r.name == "hyperspy.drawing.markers"]
+        # The user's marker kwargs are never modified
         np.testing.assert_array_equal(m.kwargs["texts"], texts)
-        assert m.kwargs["rotation"] == 1.57
         s._plot.close()
 
-    def test_warn_once_across_update_cycles(self, caplog):
+    def test_warn_once_across_update_cycles(self, caplog, monkeypatch):
+        """Forced to a plain-only declaration, the warn-once guard keeps
+        one record per capability kind across update cycles."""
         import logging
 
+        from hyperspy.drawing.backends._protocol import TextMarkup
+
+        monkeypatch.setattr(AnyplotlibBackend, "text_markup", TextMarkup.PLAIN)
+        monkeypatch.setattr(AnyplotlibBackend, "supports_text_rotation", False)
         s = hs.signals.Signal1D(np.arange(2 * 47).reshape((2, 47)).astype(float))
         texts = np.empty(2, dtype=object)
         texts[0] = [r"$\mathrm{Fe}_{\mathrm{Ka}}$", r"$\alpha$"]
@@ -124,9 +141,12 @@ class TestTextCapabilityDegradation:
         assert len(rotation_warnings) == 1
         s._plot.close()
 
-    def test_ragged_texts_degrade_elementwise(self, caplog):
+    def test_ragged_texts_degrade_elementwise(self, caplog, monkeypatch):
         import logging
 
+        from hyperspy.drawing.backends._protocol import TextMarkup
+
+        monkeypatch.setattr(AnyplotlibBackend, "text_markup", TextMarkup.PLAIN)
         s = hs.signals.Signal1D(np.arange(2 * 47).reshape((2, 47)).astype(float))
         texts = np.empty(2, dtype=object)
         texts[0] = [r"$\mathrm{Fe}_{\mathrm{Ka}}$"]
@@ -166,9 +186,12 @@ class TestTextCapabilityDegradation:
         assert len(rotation_warnings) == 1
         s._plot.close()
 
-    def test_lazy_signal_texts_degrade(self, caplog):
+    def test_lazy_signal_texts_degrade(self, caplog, monkeypatch):
         import logging
 
+        from hyperspy.drawing.backends._protocol import TextMarkup
+
+        monkeypatch.setattr(AnyplotlibBackend, "text_markup", TextMarkup.PLAIN)
         s = hs.signals.Signal1D(
             np.arange(2 * 47).reshape((2, 47)).astype(float)
         ).as_lazy()

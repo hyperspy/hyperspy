@@ -1513,15 +1513,19 @@ session declares how much of that markup it can render through two
 attributes: ``text_markup`` (one of ``"mathtext"``, ``"tex-lite"``,
 ``"html"`` or ``"plain"``) and ``supports_text_rotation``.
 
-On a backend that only renders plain text — ``text_markup="plain"``, such as
-the anyplotlib backend for marker texts — mathtext labels are automatically
-converted to readable plain text on the fly: ``$\mathrm{Fe}_{\mathrm{Ka}}$``
-becomes ``Fe_Ka`` and ``$\alpha$`` becomes ``α``, with a single warning per
-marker. When ``supports_text_rotation`` is false, the ``rotation``,
+On a backend that only renders plain text (``text_markup="plain"``),
+mathtext labels are automatically converted to readable plain text on the
+fly: ``$\mathrm{Fe}_{\mathrm{Ka}}$`` becomes ``Fe_Ka`` and ``$\alpha$``
+becomes ``α``, with a single warning per marker. When
+``supports_text_rotation`` is false, the ``rotation``,
 ``horizontalalignment`` and ``verticalalignment`` keyword arguments are
-dropped with the same warning instead of being silently ignored. The marker
-data itself is never modified, so switching back to a backend with full text
-capabilities restores the original labels:
+dropped with the same warning instead of being silently ignored. The
+anyplotlib backend renders the pragmatic TeX subset (scripts,
+``\mathrm{}`` upright groups and symbols) in ``texts`` markers and honours
+rotation when the installed version supports it, so labels typeset there
+without degradation; the matplotlib backend renders full mathtext. The
+marker data itself is never modified, so switching backends re-evaluates
+the labels cleanly:
 
 .. code-block:: python
 

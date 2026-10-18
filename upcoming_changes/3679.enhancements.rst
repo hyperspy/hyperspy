@@ -1,0 +1,6 @@
+Declare ``text_markup="tex-lite"`` and ``supports_text_rotation=True`` on
+the anyplotlib backend when the installed anyplotlib supports it (detected
+from its ``add_texts`` signature), so rotated mathtext
+:class:`~.drawing._markers.texts.Texts` marker labels typeset through
+anyplotlib's TeX engine natively instead of being degraded to plain text
+with a warning.

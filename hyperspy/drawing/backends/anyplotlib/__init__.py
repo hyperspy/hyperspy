@@ -542,6 +542,25 @@ def _figsize_px(figsize, default):
     return (int(figsize[0]), int(figsize[1]))
 
 
+def _texts_tex_lite() -> bool:
+    """Whether the installed anyplotlib typesets and rotates texts markers.
+
+    Rotation threading through ``add_texts`` marks the release that routes
+    ``$...$`` markup through the TeX engine; older releases draw raw
+    strings only.
+    """
+    try:
+        import inspect
+
+        import anyplotlib as _apl
+
+        return "rotation" in inspect.signature(_apl.Plot2D.add_texts).parameters
+    except (ImportError, AttributeError, ValueError):
+        # A missing or older anyplotlib means the capability is absent:
+        # fall back to the safe plain-text declaration.
+        return False
+
+
 class AnyplotlibBackend:
     """Maps hyperspy drawing primitives to the anyplotlib API.
 
@@ -550,11 +569,12 @@ class AnyplotlibBackend:
     report it rather than draw the wrong thing.
     """
 
-    # The marker texts path is a bare fillText: no TeX parsing and no
-    # rotation in the texts wire format.  Flip to TEX_LITE once upstream
-    # wires marker texts through the existing _drawTex JS engine.
-    text_markup = TextMarkup.PLAIN
-    supports_text_rotation = False
+    # Mathtext labels typeset through anyplotlib's TeX engine and rotation
+    # is honoured when the installed release supports it; older releases
+    # draw raw strings only, so they keep the plain-text declaration and
+    # the marker layer degrades mathtext gracefully instead.
+    text_markup = TextMarkup.TEX_LITE if _texts_tex_lite() else TextMarkup.PLAIN
+    supports_text_rotation = _texts_tex_lite()
 
     # ── Figure lifecycle ──────────────────────────────────────────────────
 
