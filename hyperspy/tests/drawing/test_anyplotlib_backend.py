@@ -1148,6 +1148,27 @@ class TestNativeMarkers:
         )
         assert "units" not in out
 
+    def test_translate_texts_facecolor_to_color(self, backend):
+        out = backend._translate_marker_kwargs(
+            "texts", "data", {"facecolor": "black", "edgecolor": "red"}
+        )
+        assert out["color"] == "black"
+        assert "facecolor" not in out
+        assert out["edgecolor"] == "red"
+
+    def test_texts_wire_colour_from_facecolor(self, backend, plot1d_ax):
+        handle = backend.create_markers(
+            plot1d_ax,
+            "texts",
+            offset_space="data",
+            transform_space="display",
+            offsets=[[10.0, 1.0]],
+            texts=["label"],
+            facecolor="black",
+        )
+        wire = handle.to_wire("test-group")
+        assert wire["color"] == "black"
+
     def test_translate_preserves_empty_array_shape(self, backend):
         """Empty position arrays must keep their ndarray shape: ``.tolist()``
         flattens an empty ``(0, 2)`` offsets array to ``[]``, which the wire

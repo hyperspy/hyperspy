@@ -1698,6 +1698,12 @@ class AnyplotlibBackend:
                     np.asarray(v, dtype=float).tolist() for v in verts
                 ]
 
+        if marker_type == "texts" and "facecolor" in work:
+            # matplotlib's text colour kwarg is `facecolor`; the texts
+            # wire format reads `color` (and would otherwise fall back
+            # to red).
+            work["color"] = work.pop("facecolor")
+
         _STRIP = {"offset_transform", "units", "patches", "drawstyle"}
         for k, v in work.items():
             if k in _STRIP:
