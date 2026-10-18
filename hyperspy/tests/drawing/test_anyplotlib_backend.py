@@ -143,6 +143,49 @@ class TestTextCapabilityDegradation:
         assert self._texts_wire(m)["texts"] == ["plain", "α"]
         s._plot.close()
 
+    def test_capability_defaults_when_backend_has_no_attributes(
+        self, caplog, monkeypatch
+    ):
+        """A backend without the capability attributes must degrade exactly
+        like an explicit plain declaration (getattr defaults, IS-7)."""
+        import logging
+
+        monkeypatch.delattr(AnyplotlibBackend, "text_markup")
+        monkeypatch.delattr(AnyplotlibBackend, "supports_text_rotation")
+        s, m, texts = self._make_signal_and_marker()
+        with caplog.at_level(logging.WARNING):
+            s.plot()
+            s.add_marker(m)
+        texts_wire = self._texts_wire(m)
+        assert texts_wire["texts"] == ["Fe_Ka", "α"]
+        markup_warnings = [r for r in caplog.records if "text_markup" in r.message]
+        rotation_warnings = [
+            r for r in caplog.records if "supports_text_rotation" in r.message
+        ]
+        assert len(markup_warnings) == 1
+        assert len(rotation_warnings) == 1
+        s._plot.close()
+
+    def test_lazy_signal_texts_degrade(self, caplog):
+        import logging
+
+        s = hs.signals.Signal1D(
+            np.arange(2 * 47).reshape((2, 47)).astype(float)
+        ).as_lazy()
+        texts = np.array([r"$\mathrm{Fe}_{\mathrm{Ka}}$", r"$\alpha$"])
+        m = hs.plot.markers.Texts(
+            offsets=np.array([[10.0, 1.0], [30.0, 1.0]]),
+            texts=texts,
+            rotation=1.57,
+        )
+        with caplog.at_level(logging.WARNING):
+            s.plot()
+            s.add_marker(m)
+        assert self._texts_wire(m)["texts"] == ["Fe_Ka", "α"]
+        markup_warnings = [r for r in caplog.records if "text_markup" in r.message]
+        assert len(markup_warnings) == 1
+        s._plot.close()
+
 
 # ---------------------------------------------------------------------------
 # Unit tests — AnyplotlibBackend directly
