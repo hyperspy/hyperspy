@@ -665,3 +665,31 @@ class TestMplBackend:
         """A patch missing get_transform() hits the outer except clause."""
         _, ax = mpl_fig_ax
         assert mpl_backend.simulate_pick(ax, None) is None
+
+
+def test_text_markup_constant_values():
+    from hyperspy.drawing.backends._protocol import TextMarkup
+
+    values = {
+        TextMarkup.MATHTTEXT,
+        TextMarkup.HTML,
+        TextMarkup.TEX_LITE,
+        TextMarkup.PLAIN,
+    }
+    assert values == {"mathtext", "html", "tex-lite", "plain"}
+
+
+def test_mpl_backend_declares_text_capabilities():
+    from hyperspy.drawing.backends._protocol import TextMarkup
+    from hyperspy.drawing.backends.mpl import MplBackend
+
+    assert MplBackend.text_markup == TextMarkup.MATHTTEXT
+    assert MplBackend.supports_text_rotation is True
+
+
+def test_backend_without_capabilities_defaults_to_plain():
+    import types
+
+    stub = types.SimpleNamespace()
+    assert getattr(stub, "text_markup", "plain") == "plain"
+    assert getattr(stub, "supports_text_rotation", False) is False

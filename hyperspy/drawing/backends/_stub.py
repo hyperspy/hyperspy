@@ -39,6 +39,21 @@ class StubBackend(BlitMixin, PointerMixin):
     """Minimal backend skeleton.  Every method marked REQUIRED must be implemented."""
 
     # =========================================================================
+    # Text capabilities                                             [OPTIONAL]
+    # =========================================================================
+    # Declare what your text renderer can parse so the marker layer can
+    # degrade gracefully.  Read via getattr() with safe defaults when absent,
+    # but declaring them documents the backend's contract:
+    #
+    #   from hyperspy.drawing.backends._protocol import TextMarkup
+    #
+    #   text_markup = TextMarkup.PLAIN        # or MATHTTEXT / TEX_LITE / HTML
+    #   supports_text_rotation = False         # True honours rotation + alignment
+    #
+    # A backend without text_markup is treated as PLAIN (raw strings only);
+    # without supports_text_rotation, rotation/alignment kwargs are dropped.
+
+    # =========================================================================
     # Figure lifecycle                                               [REQUIRED]
     # =========================================================================
 

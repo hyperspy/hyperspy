@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from hyperspy.drawing.backends._protocol import BackendCapabilityError
+from hyperspy.drawing.backends._protocol import BackendCapabilityError, TextMarkup
 
 _NOT_YET = "the anyplotlib backend does not support '{}'."
 
@@ -549,6 +549,12 @@ class AnyplotlibBackend:
     does not have, so the caller can fall back (as ``Markers.plot`` does) or
     report it rather than draw the wrong thing.
     """
+
+    # The marker texts path is a bare fillText: no TeX parsing and no
+    # rotation in the texts wire format.  Flip to TEX_LITE once upstream
+    # wires marker texts through the existing _drawTex JS engine.
+    text_markup = TextMarkup.PLAIN
+    supports_text_rotation = False
 
     # ── Figure lifecycle ──────────────────────────────────────────────────
 

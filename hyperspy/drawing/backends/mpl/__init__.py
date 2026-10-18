@@ -2,9 +2,16 @@ from __future__ import annotations
 
 import numpy as np
 
+from hyperspy.drawing.backends._protocol import TextMarkup
+
 
 class MplBackend:
     """Wraps all matplotlib calls used by the hyperspy drawing layer."""
+
+    text_markup = TextMarkup.MATHTTEXT
+    # hyperspy's TextCollection applies rotation in radians (unlike
+    # matplotlib's Text, which uses degrees).
+    supports_text_rotation = True
 
     # ── Figure lifecycle ──────────────────────────────────────────────────
 

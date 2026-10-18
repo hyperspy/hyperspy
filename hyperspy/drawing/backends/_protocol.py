@@ -33,6 +33,20 @@ class MarkerType:
     POLYGONS = "polygons"
 
 
+class TextMarkup:
+    """Markup languages a backend's text renderer can parse.
+
+    Backends declare the richest language they support via the
+    ``text_markup`` attribute; the marker layer degrades strings that need
+    a richer markup than the active backend declares.
+    """
+
+    MATHTTEXT = "mathtext"  # matplotlib mathtext ($...$ TeX subset)
+    HTML = "html"  # rich text via tags (<sub>, <sup>, <i>)
+    TEX_LITE = "tex-lite"  # pragmatic TeX subset (scripts, \mathrm, symbols)
+    PLAIN = "plain"  # raw unicode strings only
+
+
 class BackendCapabilityError(NotImplementedError):
     """Raised when the active backend does not support a requested feature.
 
@@ -384,6 +398,16 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
     calls.  The generic drawing layer never imports matplotlib or anyplotlib
     directly; it calls only these methods.
     """
+
+    # ── Text capabilities ──────────────────────────────────────────────────
+    # Annotation-only: Protocols cannot carry attribute defaults.  Backends
+    # SHOULD set these as class attributes; the generic layer reads them via
+    # getattr(backend, "text_markup", "plain") and
+    # getattr(backend, "supports_text_rotation", False) so third-party
+    # backends without them keep working and default to the safest
+    # declaration.
+    text_markup: str
+    supports_text_rotation: bool
 
     # ── Figure lifecycle ──────────────────────────────────────────────────
 

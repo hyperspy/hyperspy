@@ -44,6 +44,12 @@ def use_anyplotlib(monkeypatch):
     preferences.Plot.backend = old
 
 
+class TestTextCapabilities:
+    def test_anyplotlib_declares_plain_no_rotation(self):
+        assert AnyplotlibBackend.text_markup == "plain"
+        assert AnyplotlibBackend.supports_text_rotation is False
+
+
 # ---------------------------------------------------------------------------
 # Unit tests — AnyplotlibBackend directly
 # ---------------------------------------------------------------------------
