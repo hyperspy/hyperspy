@@ -244,7 +244,7 @@ class LineInSignal1D(t.HasTraits):
             self._line.snap_position = self._snap_position
             self._line.position = (self._get_initial_position(),)
             self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
-            self._line.patch[0].set_linewidth(self._linewidth)
+            self._line.patch[0].set(linewidth=self._linewidth)
 
         elif new is False and old is True:
             self._line.close()
