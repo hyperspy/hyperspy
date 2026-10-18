@@ -1699,7 +1699,16 @@ class AnyplotlibBackend:
             if k in _CYCLING_KWARGS:
                 out[k] = _unwrap_cycling(v)
             elif hasattr(v, "tolist"):
-                out[k] = v.tolist()  # JSON-serialisable
+                if isinstance(v, np.ndarray) and v.size == 0:
+                    # ``.tolist()`` would flatten e.g. an empty ``(0, 2)``
+                    # offsets array to ``[]`` (shape ``(0,)`` after
+                    # ``np.asarray``), which the wire format rejects as not
+                    # ``(N, 2)``.  Happens when all items of a live marker
+                    # collection are removed.  ``to_wire`` converts the raw
+                    # ndarray losslessly.
+                    out[k] = v
+                else:
+                    out[k] = v.tolist()  # JSON-serialisable
             else:
                 out[k] = v
 

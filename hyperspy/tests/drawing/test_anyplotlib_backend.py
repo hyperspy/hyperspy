@@ -1142,6 +1142,23 @@ class TestNativeMarkers:
         )
         assert "units" not in out
 
+    def test_translate_preserves_empty_array_shape(self, backend):
+        """Empty position arrays must keep their ndarray shape: ``.tolist()``
+        flattens an empty ``(0, 2)`` offsets array to ``[]``, which the wire
+        format rejects because ``np.asarray([])`` is shape ``(0,)``."""
+        out = backend._translate_marker_kwargs(
+            "texts", "data", {"offsets": np.empty((0, 2))}
+        )
+        assert isinstance(out["offsets"], np.ndarray)
+        assert out["offsets"].shape == (0, 2)
+
+    def test_translate_serialises_nonempty_array(self, backend):
+        """Non-empty arrays are still converted to JSON-friendly lists."""
+        out = backend._translate_marker_kwargs(
+            "texts", "data", {"offsets": np.array([[1.0, 2.0]])}
+        )
+        assert out["offsets"] == [[1.0, 2.0]]
+
     # ── 1-D marker types on Plot1D ────────────────────────────────────────
 
     def test_create_vlines_on_plot1d(self, backend, plot1d_ax):
@@ -1273,6 +1290,32 @@ class TestNativeMarkers:
         s.plot()
         s.add_marker(m)
         s.axes_manager[0].index = 2
+        s._plot.close()
+
+    def test_signal1d_remove_all_marker_items_no_crash(self):
+        """Removing every item of a live marker collection must update the
+        plot without raising.  Regression test: the empty offsets array was
+        flattened to a shape-losing list on the way to the wire format,
+        which crashed e.g. eXSpy's ``remove_xray_lines_markers()``."""
+        s = hs.signals.Signal1D(np.arange(3 * 61).reshape((3, 61)).astype(float))
+        s.plot()
+        m = hs.plot.markers.Texts(
+            offsets=np.array([[10.0, 1.0], [30.0, 1.0], [50.0, 1.0]]),
+            texts=["a", "b", "c"],
+            offset_transform="relative",
+        )
+        s.add_marker(m)
+        m.remove_items([0, 1, 2])
+        assert len(m) == 0
+        s._plot.close()
+
+    def test_signal1d_add_empty_marker_no_crash(self):
+        """A marker created empty (e.g. all items removed before plotting)
+        must plot without raising."""
+        s = hs.signals.Signal1D(np.arange(2 * 47).reshape((2, 47)).astype(float))
+        s.plot()
+        m = hs.plot.markers.Texts(offsets=np.empty((0, 2)), texts=np.array([]))
+        s.add_marker(m)
         s._plot.close()
 
 
