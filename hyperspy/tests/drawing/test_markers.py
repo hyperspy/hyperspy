@@ -48,6 +48,11 @@ from hyperspy.drawing.marker_collection import (
     TextsCollection,
     VLinesCollection,
 )
+from hyperspy.drawing.markers import (
+    _any_text_is_mathtext,
+    _degrade_texts,
+    _mathtext_to_plain,
+)
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
@@ -1354,3 +1359,82 @@ def test_markers_conversion_fill(marker_type):
     markers_ = markers_dict_to_markers(marker_dict)
     # default to
     assert "facecolor" not in markers_.kwargs["facecolor"]
+
+
+class TestMathtextToPlain:
+    def test_xray_line_label(self):
+        assert _mathtext_to_plain(r"$\mathrm{Fe}_{\mathrm{Ka}}$") == "Fe_Ka"
+
+    def test_superscript_with_sign(self):
+        assert _mathtext_to_plain(r"$10^{-3}$ counts") == "10^-3 counts"
+
+    def test_greek_symbol(self):
+        assert _mathtext_to_plain(r"$\alpha$") == "α"
+
+    def test_plain_text_fast_path(self):
+        assert _mathtext_to_plain("plain text") == "plain text"
+
+    def test_escaped_dollar(self):
+        assert _mathtext_to_plain("\\$5") == "$5"
+
+    def test_inline_subscript(self):
+        assert _mathtext_to_plain("E$_F$") == "E_F"
+
+    def test_mixed_segments(self):
+        assert (
+            _mathtext_to_plain(r"$\mathrm{Fe}_{\mathrm{Ka}}$ ($\alpha$)") == "Fe_Ka (α)"
+        )
+
+    def test_unknown_command_degrades_to_bare_name(self):
+        assert _mathtext_to_plain(r"$\frac{a}{b}$") == "fracab"
+
+    def test_malformed_input_returns_string(self):
+        result = _mathtext_to_plain(r"$\mathrm{Fe_{\mathrm")
+        assert isinstance(result, str)
+
+    def test_dollar_edge_cases(self):
+        assert isinstance(_mathtext_to_plain("$"), str)
+        assert _mathtext_to_plain("$$") == ""
+        assert _mathtext_to_plain("a$b") == "ab"
+
+    def test_non_string_passthrough(self):
+        assert _mathtext_to_plain(None) is None
+        assert _mathtext_to_plain(5) == 5
+
+    def test_any_text_is_mathtext(self):
+        assert _any_text_is_mathtext(["a", r"$\alpha$"])
+        assert not _any_text_is_mathtext(["a", "b"])
+        assert not _any_text_is_mathtext(["\\$5"])
+        assert not _any_text_is_mathtext(None)
+        ragged = np.empty(2, dtype=object)
+        ragged[0] = ["a"]
+        ragged[1] = ["b", r"$x$"]
+        assert _any_text_is_mathtext(ragged)
+
+    def test_degrade_texts_list(self):
+        texts = [r"$\mathrm{Fe}_{\mathrm{Ka}}$", "x", None]
+        out = _degrade_texts(texts)
+        assert out == ["Fe_Ka", "x", None]
+        assert texts == [r"$\mathrm{Fe}_{\mathrm{Ka}}$", "x", None]
+
+    def test_degrade_texts_ragged_object_array(self):
+        texts = np.empty(2, dtype=object)
+        texts[0] = [r"$\mathrm{Fe}_{\mathrm{Ka}}$", "plain"]
+        texts[1] = [r"$\alpha$"]
+        original_first = list(texts[0])
+        original_second = list(texts[1])
+        out = _degrade_texts(texts)
+        assert list(out[0]) == ["Fe_Ka", "plain"]
+        assert list(out[1]) == ["α"]
+        assert out is not texts
+        assert list(texts[0]) == original_first
+        assert list(texts[1]) == original_second
+
+    def test_degrade_texts_flat_str_array(self):
+        texts = np.array([r"$\alpha$", "E$_F$"])
+        out = _degrade_texts(texts)
+        np.testing.assert_array_equal(out, ["α", "E_F"])
+        np.testing.assert_array_equal(texts, np.array([r"$\alpha$", "E$_F$"]))
+
+    def test_degrade_texts_noop_when_plain(self):
+        assert _degrade_texts(["a", "b"]) == ["a", "b"]
