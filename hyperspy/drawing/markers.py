@@ -16,14 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
 from copy import deepcopy
 
 import numpy as np
 
 from hyperspy.drawing.backends import get_backend
-from hyperspy.drawing.backends._protocol import BackendCapabilityError
+from hyperspy.drawing.backends._protocol import (
+    BackendCapabilityError,
+    MarkerType,
+    TextMarkup,
+)
 from hyperspy.events import Event, Events
 from hyperspy.misc import _markers, dask_utils, utils
+
+_logger = logging.getLogger(__name__)
 
 
 def _is_patch(obj):
@@ -505,6 +512,9 @@ class Markers:
         # Properties
         self._collection = None
         self._using_native_markers = False
+        # Capability-gap warnings are deduplicated per kind so repeated
+        # plot/update cycles do not spam the log (see _warn_capability_once)
+        self._capability_warnings: set = set()
         # used in _initialize_collection
         self._collection_class = collection
         self._signal = None
@@ -947,6 +957,62 @@ class Markers:
 
         return current_keys
 
+    def _kwargs_for_backend(self, only_variable_length=False):
+        """Return the marker kwargs to hand to the active backend.
+
+        Applies the backend's declared text capabilities to ``texts``
+        markers: on a backend that renders plain text only, mathtext
+        labels are converted on a copy of the kwargs; when text rotation
+        is unsupported the rotation and alignment kwargs are dropped.
+        Each degradation warns once per marker instance.
+        """
+        kwds = self.get_current_kwargs(only_variable_length=only_variable_length)
+        backend = get_backend()
+        if self._marker_type != MarkerType.TEXTS:
+            return kwds
+        markup = getattr(backend, "text_markup", TextMarkup.PLAIN)
+        texts = kwds.get("texts")
+        if markup == TextMarkup.PLAIN and _any_text_is_mathtext(texts):
+            # Degrade on a copy: the user's marker kwargs stay intact so
+            # switching backend or re-plotting re-evaluates cleanly.
+            kwds = dict(kwds)
+            kwds["texts"] = _degrade_texts(texts)
+            self._warn_capability_once("text_markup", markup)
+        if not getattr(backend, "supports_text_rotation", False):
+            style_keys = [
+                key
+                for key in ("rotation", "horizontalalignment", "verticalalignment")
+                if kwds.get(key) is not None
+            ]
+            if style_keys:
+                kwds = dict(kwds)
+                for key in style_keys:
+                    kwds.pop(key)
+                self._warn_capability_once("supports_text_rotation", False, style_keys)
+        return kwds
+
+    def _warn_capability_once(self, kind, value, keys=None):
+        """Warn once per marker instance about a backend capability gap."""
+        if kind in self._capability_warnings:
+            return
+        self._capability_warnings.add(kind)
+        backend_name = type(get_backend()).__name__
+        if kind == "text_markup":
+            _logger.warning(
+                f"The {backend_name} backend renders plain text only "
+                f"(text_markup={value!r}); mathtext Texts markers are "
+                "displayed as plain text. Set "
+                "hs.preferences.Plot.backend = 'matplotlib' for full "
+                "mathtext rendering."
+            )
+        else:
+            dropped = ", ".join(repr(key) for key in keys)
+            _logger.warning(
+                f"The {backend_name} backend does not support text "
+                f"rotation (supports_text_rotation=False); dropping "
+                f"{dropped} from Texts markers."
+            )
+
     def _scale_kwarg(self, kwds, key=None):
         """
         Scale the kwarg by the current data.  This is useful for scaling the
@@ -992,7 +1058,7 @@ class Markers:
 
     def _update(self):
         if self._signal and self._collection is not None:
-            kwds = self.get_current_kwargs(only_variable_length=True)
+            kwds = self._kwargs_for_backend(only_variable_length=True)
             if self._using_native_markers:
                 get_backend().update_markers(self._collection, **kwds)
             else:
@@ -1009,7 +1075,7 @@ class Markers:
     def _initialize_collection(self):
         mpl_cls = self._get_mpl_class()
         self._collection = mpl_cls(
-            **self.get_current_kwargs(),
+            **self._kwargs_for_backend(),
             offset_transform=self.offset_transform,
         )
         self._collection.set_transform(self.transform)
@@ -1043,7 +1109,7 @@ class Markers:
                     self._marker_type,
                     offset_space=self._offset_transform,
                     transform_space=self._transform,
-                    **self.get_current_kwargs(),
+                    **self._kwargs_for_backend(),
                 )
                 self._using_native_markers = True
             except BackendCapabilityError:

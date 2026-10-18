@@ -1438,3 +1438,30 @@ class TestMathtextToPlain:
 
     def test_degrade_texts_noop_when_plain(self):
         assert _degrade_texts(["a", "b"]) == ["a", "b"]
+
+
+class TestTextsCapabilityPreservedOnMpl:
+    """The MPL backend declares full text capabilities: no degradation."""
+
+    def test_mathtext_texts_untouched_and_no_warning(self, caplog):
+        import logging
+
+        s = hs.signals.Signal1D(np.arange(2 * 47).reshape((2, 47)).astype(float))
+        texts = np.array([r"$\mathrm{Fe}_{\mathrm{Ka}}$", r"$\alpha$"])
+        m = hs.plot.markers.Texts(
+            offsets=np.array([[10.0, 1.0], [30.0, 1.0]]),
+            texts=texts,
+            rotation=1.57,
+            horizontalalignment="left",
+            verticalalignment="bottom",
+            facecolor="black",
+        )
+        with caplog.at_level(logging.WARNING):
+            s.plot()
+            s.add_marker(m)
+        np.testing.assert_array_equal(m.kwargs["texts"], texts)
+        assert m.kwargs["rotation"] == 1.57
+        assert m.kwargs["horizontalalignment"] == "left"
+        assert m.kwargs["verticalalignment"] == "bottom"
+        assert not [r for r in caplog.records if r.name == "hyperspy.drawing.markers"]
+        s._plot.close()

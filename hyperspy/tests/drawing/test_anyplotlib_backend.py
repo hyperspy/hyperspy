@@ -50,6 +50,100 @@ class TestTextCapabilities:
         assert AnyplotlibBackend.supports_text_rotation is False
 
 
+class TestTextCapabilityDegradation:
+    """Mathtext Texts degrade to plain text on the plain-only backend."""
+
+    def _make_signal_and_marker(self):
+        s = hs.signals.Signal1D(np.arange(3 * 61).reshape((3, 61)).astype(float))
+        texts = np.array([r"$\mathrm{Fe}_{\mathrm{Ka}}$", r"$\alpha$"])
+        m = hs.plot.markers.Texts(
+            offsets=np.array([[10.0, 1.0], [30.0, 1.0]]),
+            texts=texts,
+            offset_transform="relative",
+            rotation=1.57,
+            horizontalalignment="left",
+            verticalalignment="bottom",
+            facecolor="black",
+        )
+        return s, m, texts
+
+    @staticmethod
+    def _texts_wire(m):
+        # Dump the marker's own group handle: the plot's marker registry
+        # also holds UI text groups (e.g. the navigation-position
+        # readout), so scanning it for the first "texts" group picks
+        # those up instead of the marker under test.
+        return m._collection.to_wire("test-group")
+
+    def test_wire_shows_plain_texts_black_colour_dropped_rotation(self, caplog):
+        import logging
+
+        s, m, texts = self._make_signal_and_marker()
+        with caplog.at_level(logging.WARNING):
+            s.plot()
+            s.add_marker(m)
+        texts_wire = self._texts_wire(m)
+        assert texts_wire["texts"] == ["Fe_Ka", "α"]
+        assert texts_wire["color"] == "black"
+        assert "rotation" not in texts_wire
+        markup_warnings = [r for r in caplog.records if "text_markup" in r.message]
+        rotation_warnings = [
+            r for r in caplog.records if "supports_text_rotation" in r.message
+        ]
+        assert len(markup_warnings) == 1
+        assert len(rotation_warnings) == 1
+        # The user's marker kwargs are never mutated by degradation
+        np.testing.assert_array_equal(m.kwargs["texts"], texts)
+        assert m.kwargs["rotation"] == 1.57
+        s._plot.close()
+
+    def test_warn_once_across_update_cycles(self, caplog):
+        import logging
+
+        s = hs.signals.Signal1D(np.arange(2 * 47).reshape((2, 47)).astype(float))
+        texts = np.empty(2, dtype=object)
+        texts[0] = [r"$\mathrm{Fe}_{\mathrm{Ka}}$", r"$\alpha$"]
+        texts[1] = ["plain", r"$\beta$"]
+        m = hs.plot.markers.Texts(
+            offsets=np.array([[10.0, 1.0], [30.0, 1.0]]),
+            texts=texts,
+            rotation=1.57,
+            facecolor="black",
+        )
+        with caplog.at_level(logging.WARNING):
+            s.plot()
+            s.add_marker(m)
+            # Ragged texts re-run the degradation on the update path; the
+            # warn-once guard must keep the log at one record per kind.
+            s.axes_manager[0].index = 1
+        markup_warnings = [r for r in caplog.records if "text_markup" in r.message]
+        rotation_warnings = [
+            r for r in caplog.records if "supports_text_rotation" in r.message
+        ]
+        assert len(markup_warnings) == 1
+        assert len(rotation_warnings) == 1
+        s._plot.close()
+
+    def test_ragged_texts_degrade_elementwise(self, caplog):
+        import logging
+
+        s = hs.signals.Signal1D(np.arange(2 * 47).reshape((2, 47)).astype(float))
+        texts = np.empty(2, dtype=object)
+        texts[0] = [r"$\mathrm{Fe}_{\mathrm{Ka}}$"]
+        texts[1] = ["plain", r"$\alpha$"]
+        offsets = np.empty(2, dtype=object)
+        offsets[0] = np.array([[10.0, 1.0]])
+        offsets[1] = np.array([[10.0, 1.0], [30.0, 1.0]])
+        m = hs.plot.markers.Texts(offsets=offsets, texts=texts)
+        with caplog.at_level(logging.WARNING):
+            s.plot()
+            s.add_marker(m)
+        assert self._texts_wire(m)["texts"] == ["Fe_Ka"]
+        s.axes_manager[0].index = 1
+        assert self._texts_wire(m)["texts"] == ["plain", "α"]
+        s._plot.close()
+
+
 # ---------------------------------------------------------------------------
 # Unit tests — AnyplotlibBackend directly
 # ---------------------------------------------------------------------------
