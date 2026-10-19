@@ -19,9 +19,10 @@
 
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
 
+from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import CoordSpace
 from hyperspy.drawing.utils import picker_kwargs
 from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
@@ -150,9 +151,10 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 self._size = np.array((value,))
                 self._set_size_patch()
                 # the size patches have been removed, we need to draw them
+                backend = get_backend()
                 for p in self._width_indicator_patches:
-                    self.ax.add_artist(p)
-                    p.set_animated(self.blit)
+                    backend.add_artist(self.ax, p)
+                    backend.artist_set_animated(p, self.blit)
             else:
                 self._size = np.array((value,))
             self._size_changed()
@@ -262,12 +264,13 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """Creates the line, and also creates the width indicators if
         appropriate.
         """
-        self.ax.autoscale(False)  # Prevent plotting from rescaling
+        backend = get_backend()
+        backend.set_autoscale(self.ax, False)
         xy = np.array(self._pos)
         max_r = max(self.radius_move, self.radius_resize, self.radius_rotate)
         kwargs = picker_kwargs(max_r)
         self._patch = [
-            plt.Line2D(
+            backend.create_line2d_patch(
                 xy[:, 0],
                 xy[:, 1],
                 linestyle="-",
@@ -281,8 +284,13 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 **kwargs,
             )
         ]
+        backend.connect_widget_drag(self._patch[0], self._on_widget_drag)
         if self._size[0] > 0:
             self._set_size_patch()
+
+    def _on_widget_drag(self, x1, y1, x2, y2):
+        """Native-widget drag callback: both endpoints, in data coordinates."""
+        self.position = np.array([[x1, y1], [x2, y2]])
 
     def _set_size_patch(self):
         if self.ax is None:
@@ -292,10 +300,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             raise ValueError(
                 "linewidth is not supported for axis with different scale."
             )
+        backend = get_backend()
         wc = self._get_width_indicator_coords()
         kwargs = picker_kwargs(self.radius_move)
         for i in range(2):
-            wi = plt.Line2D(
+            wi = backend.create_line2d_patch(
                 *wc[i].T, linestyle=":", lw=self.linewidth, c=self.color, **kwargs
             )
             self._patch.append(wi)
@@ -310,9 +319,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self._width_indicator_patches = []
         # Patches were removed from the axes but the blit background
         # still shows their pixels — invalidate and force a full redraw.
-        if hasattr(self.ax, "hspy_fig"):
-            self.ax.hspy_fig._background = None
-            self.draw_patch()
+        get_backend().invalidate_blit_background(self.ax)
+        self.draw_patch()
 
     def _get_vertex(self, event):
         """Check bitfield on self.func, and return vertex index."""
@@ -328,8 +336,10 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         if not self.patch:
             return self.FUNC_NONE
 
-        trans = self.ax.transData
-        p = np.array(trans.transform(self._pos))
+        backend = get_backend()
+        p = backend.convert_coords(
+            self.ax, self._pos, CoordSpace.DATA, CoordSpace.DISPLAY
+        )
 
         # Calculate the distances to the vertecies, and find nearest one
         r2 = np.sum(np.power(p - np.array((cx, cy)), 2), axis=1)
@@ -368,8 +378,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         radius = self.radius_move
         wc = self._get_width_indicator_coords()
         for i in range(2):
-            A = np.array(trans.transform(wc[i][0]))
-            B = np.array(trans.transform(wc[i][1]))
+            A, B = backend.convert_coords(
+                self.ax, wc[i], CoordSpace.DATA, CoordSpace.DISPLAY
+            )
             t = np.dot(c - A, B - A)
             bas = np.linalg.norm(B - A) ** 2
             if 0 < t < bas:
@@ -444,12 +455,24 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
         # Rotation should happen in screen position, as anything else will
         # mix units
-        trans = self.ax.transData
-        scr_zero = np.array(trans.transform((0, 0)))
-        dx = np.array(trans.transform(dx)) - scr_zero
+        backend = get_backend()
+        scr_zero = backend.convert_coords(
+            self.ax, [(0, 0)], CoordSpace.DATA, CoordSpace.DISPLAY
+        )[0]
+        dx = (
+            backend.convert_coords(self.ax, [dx], CoordSpace.DATA, CoordSpace.DISPLAY)[
+                0
+            ]
+            - scr_zero
+        )
 
         # Get center point = center of original line
-        c = trans.transform(np.mean(self._drag_store[0], axis=0))
+        c = backend.convert_coords(
+            self.ax,
+            [np.mean(self._drag_store[0], axis=0)],
+            CoordSpace.DATA,
+            CoordSpace.DISPLAY,
+        )[0]
 
         # Figure out theta
         v1 = (event.x, event.y) - c  # Center to mouse
@@ -461,7 +484,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             theta = base * round(float(theta) / base)
 
         # vector from points to center
-        w1 = c - trans.transform(self._drag_store[0])
+        w1 = c - backend.convert_coords(
+            self.ax, self._drag_store[0], CoordSpace.DATA, CoordSpace.DISPLAY
+        )
         # rotate into w2 for next point
         w2 = np.array(
             (
@@ -469,7 +494,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 w1[:, 1] * np.cos(theta) + w1[:, 0] * np.sin(theta),
             )
         )
-        self.position = trans.inverted().transform(c + np.rot90(w2))
+        self.position = backend.convert_coords(
+            self.ax, c + np.rot90(w2), CoordSpace.DISPLAY, CoordSpace.DATA
+        )
 
     def _width_resize(self, event):
         if None in (event.xdata, event.ydata) or self.size[0] == 0:

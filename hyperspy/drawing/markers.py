@@ -18,13 +18,19 @@
 
 from copy import deepcopy
 
-import matplotlib.collections as mpl_collections
 import numpy as np
-from matplotlib.patches import Patch
-from matplotlib.transforms import IdentityTransform
 
+from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.events import Event, Events
 from hyperspy.misc import _markers, dask_utils, utils
+
+
+def _is_patch(obj):
+    """Return True if obj is a matplotlib Patch (imported lazily)."""
+    from matplotlib.patches import Patch
+
+    return isinstance(obj, Patch)
 
 
 def convert_positions(peaks, signal_axes):
@@ -43,10 +49,12 @@ class Markers:
     # For VerticalLines and HorizontalLines, the key to set is different from
     # `_position_key`
     _position_key_to_set = None
+    # Set to a MarkerType constant in subclasses to enable backend-native path
+    _marker_type = None
 
     def __init__(
         self,
-        collection,
+        collection=None,
         offset_transform="data",
         transform="display",
         shift=None,
@@ -150,30 +158,56 @@ class Markers:
         >>> s.add_marker(m)
 
         """
-        if isinstance(collection, str):
-            try:
-                collection = getattr(mpl_collections, collection)
-            except AttributeError:
-                raise ValueError(
-                    f"'{collection}' is not the name of a matplotlib collection class."
-                )
-
-        if not issubclass(collection, mpl_collections.Collection):
+        if collection is None and self._marker_type is None:
             raise ValueError(
-                f"{collection} is not a subclass of `matplotlib.collection.Collection`."
+                "collection must be provided when _marker_type is not set on the class."
             )
 
-        if ".".join(collection.__module__.split(".")[:2]) not in [
-            "matplotlib.collections",
-            "hyperspy.external",
-        ]:
-            # To be able to load a custom markers, we need to be able to instantiate
-            # the class and the safe way to do that is to import from
-            # `matplotlib.collections` or `hyperspy.external` (patched matplotlib collection)
-            raise ValueError(
-                "To support loading file saved with custom markers, the collection must be "
-                "implemented in matplotlib or hyperspy"
-            )
+        if collection is not None:
+            from hyperspy.drawing.marker_collection import HyperMarkerCollection
+
+            if isinstance(collection, str):
+                # A marker type ("points", "circles", ...) or, failing that,
+                # the name of a matplotlib collection class.
+                try:
+                    collection = HyperMarkerCollection.from_marker_type(collection)
+                except ValueError:
+                    import matplotlib.collections as mpl_collections
+
+                    try:
+                        collection = getattr(mpl_collections, collection)
+                    except AttributeError:
+                        raise ValueError(
+                            f"'{collection}' is not a known marker type or the name "
+                            "of a matplotlib collection class."
+                        )
+
+            if HyperMarkerCollection.is_hyper_collection(collection):
+                self._position_key = collection._position_key
+                self._position_key_to_set = collection._position_key_to_set
+                if self._marker_type is None:
+                    self._marker_type = collection._marker_type
+            else:
+                # A raw matplotlib Collection subclass (matplotlib backend only).
+                import matplotlib.collections as mpl_collections
+
+                if not issubclass(collection, mpl_collections.Collection):
+                    raise ValueError(
+                        f"{collection} is not a subclass of "
+                        "`matplotlib.collection.Collection`."
+                    )
+
+                if ".".join(collection.__module__.split(".")[:2]) not in [
+                    "matplotlib.collections",
+                    "hyperspy.external",
+                ]:
+                    # To be able to load a custom markers, we need to be able to
+                    # instantiate the class and the safe way to do that is to import
+                    # from `matplotlib.collections` or `hyperspy.external`.
+                    raise ValueError(
+                        "To support loading file saved with custom markers, the "
+                        "collection must be implemented in matplotlib or hyperspy"
+                    )
 
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
@@ -204,7 +238,7 @@ class Markers:
             elif (
                 isinstance(value, list)
                 and len(value) > 0
-                and not isinstance(value[0], Patch)
+                and not _is_patch(value[0])
                 and not key == "verts"
             ):
                 self.kwargs[key] = np.array(value)
@@ -223,6 +257,7 @@ class Markers:
         self.name = name
         # Properties
         self._collection = None
+        self._using_native_markers = False
         # used in _initialize_collection
         self._collection_class = collection
         self._signal = None
@@ -282,15 +317,7 @@ class Markers:
 
     def _get_transform(self, attr="_transform"):
         if self.ax is not None:  # return the transform
-            transforms = {
-                "data": self.ax.transData,
-                "axes": self.ax.transAxes,
-                "display": IdentityTransform(),
-                "yaxis": self.ax.get_yaxis_transform(),
-                "xaxis": self.ax.get_xaxis_transform(),
-                "relative": self.ax.transData,
-            }
-            return transforms[getattr(self, attr)]
+            return get_backend().get_ax_transform(self.ax, getattr(self, attr))
         else:  # return the string value
             return getattr(self, attr)
 
@@ -622,7 +649,12 @@ class Markers:
             "ScalarMappable_array": self._ScalarMappable_array,
         }
         if class_name == "Markers":
-            marker_dict["collection"] = self._collection_class.__name__
+            from hyperspy.drawing.marker_collection import HyperMarkerCollection
+
+            if HyperMarkerCollection.is_hyper_collection(self._collection_class):
+                marker_dict["collection"] = self._collection_class._marker_type
+            else:
+                marker_dict["collection"] = self._collection_class.__name__
 
         return marker_dict
 
@@ -712,12 +744,24 @@ class Markers:
             self._update()
 
     def _update(self):
-        if self._signal:
+        if self._signal and self._collection is not None:
             kwds = self.get_current_kwargs(only_variable_length=True)
-            self._collection.set(**kwds)
+            if self._using_native_markers:
+                get_backend().update_markers(self._collection, **kwds)
+            else:
+                get_backend().collection_update(self._collection, **kwds)
+
+    def _get_mpl_class(self):
+        """Return the matplotlib Collection class for ``_collection_class``."""
+        from hyperspy.drawing.marker_collection import HyperMarkerCollection
+
+        if HyperMarkerCollection.is_hyper_collection(self._collection_class):
+            return self._collection_class.mpl_collection()
+        return self._collection_class
 
     def _initialize_collection(self):
-        self._collection = self._collection_class(
+        mpl_cls = self._get_mpl_class()
+        self._collection = mpl_cls(
             **self.get_current_kwargs(),
             offset_transform=self.offset_transform,
         )
@@ -742,14 +786,45 @@ class Markers:
                 + "figure using `s._plot.signal_plot.add_marker(m)` or "
                 + "`s._plot.navigator_plot.add_marker(m)`"
             )
-        self._initialize_collection()
-        self._collection.set_animated(self.ax.figure.canvas.supports_blit)
-        self.ax.add_collection(self._collection)
+        backend = get_backend()
+        self._using_native_markers = False
+
+        if self._marker_type is not None:
+            try:
+                self._collection = backend.create_markers(
+                    self.ax,
+                    self._marker_type,
+                    offset_space=self._offset_transform,
+                    transform_space=self._transform,
+                    **self.get_current_kwargs(),
+                )
+                self._using_native_markers = True
+            except BackendCapabilityError:
+                pass
+
+        if not self._using_native_markers:
+            self._initialize_collection()
+            backend.artist_set_animated(
+                self._collection,
+                backend.supports_blit(backend.get_figure_from_ax(self.ax)),
+            )
+            try:
+                backend.add_collection(self.ax, self._collection)
+            except BackendCapabilityError:
+                raise BackendCapabilityError(
+                    f"{type(self._collection).__name__} markers are only "
+                    "supported by the matplotlib backend: they are matplotlib "
+                    "Collection artists, which the active backend cannot "
+                    "draw. Use one of the built-in marker classes in "
+                    "hs.plot.markers (Circles, Points, Rectangles, …), which "
+                    "every backend can render natively."
+                ) from None
+
         if render_figure:
             self._render_figure()
 
     def _render_figure(self):
-        self.ax.hspy_fig.render_figure()
+        get_backend().render_figure_from_ax(self.ax)
 
     def close(self, render_figure=True):
         """
@@ -767,13 +842,16 @@ class Markers:
         if self._closing:  # pragma: no cover
             return
         self._closing = True
-        self._collection.remove()
+        if self._using_native_markers:
+            get_backend().remove_markers(self.ax, self._collection)
+        else:
+            get_backend().collection_remove(self.ax, self._collection)
         self._collection = None
         # Collection removal leaves the blit background stale —
         # invalidate it so the next _render_figure does a full repaint
         # instead of restoring the removed markers' pixels.
-        if render_figure and hasattr(self.ax, "hspy_fig"):
-            self.ax.hspy_fig._background = None
+        if render_figure:
+            get_backend().invalidate_blit_background(self.ax)
         self.events.closed.trigger(obj=self)
         self._signal = None
         for f in self.events.closed.connected:
@@ -800,6 +878,13 @@ class Markers:
         """
         self._ScalarMappable_array = array
         if self._collection is not None:
+            if not hasattr(self._collection, "set_array"):
+                raise BackendCapabilityError(
+                    "Colour-mapping markers with set_ScalarMappable_array() is "
+                    "only supported by the matplotlib backend; the active "
+                    "backend draws markers natively and has no ScalarMappable. "
+                    "Set the marker colours explicitly instead."
+                )
             self._collection.set_array(array)
 
     def plot_colorbar(self):
@@ -837,9 +922,10 @@ class Markers:
         if self.ax is None:
             raise RuntimeError("The markers needs to be plotted.")
         self.set_ScalarMappable_array(self._ScalarMappable_array)
-        cbar = self.ax.figure.colorbar(self._collection)
-
-        return cbar
+        backend = get_backend()
+        return backend.add_colorbar(
+            backend.get_figure_from_ax(self.ax), self._collection, self.ax
+        )
 
 
 def is_iterating(arg):

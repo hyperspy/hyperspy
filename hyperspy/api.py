@@ -26,6 +26,13 @@ from hyperspy.logger import set_log_level
 set_log_level(preferences.General.logging_level)
 
 from hyperspy.docstrings import START_HSPY as _START_HSPY_DOCSTRING  # noqa: E402
+from hyperspy.ipython_magic import (  # noqa: E402
+    _register_if_active as _register_anyplotlib_magic_now,
+)
+
+# hyperspy.drawing is imported lazily, so register %anyplotlib here to make
+# it available before the first plot() call.
+_register_anyplotlib_magic_now()
 
 __doc__ = (
     """

@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from matplotlib.collections import PolyCollection
-
+from hyperspy.drawing.marker_collection import PolygonsCollection
 from hyperspy.drawing.markers import Markers
 
 
@@ -76,5 +75,5 @@ class Polygons(Markers):
             )
 
         super().__init__(
-            collection=PolyCollection, verts=verts, transform=transform, **kwargs
+            collection=PolygonsCollection, verts=verts, transform=transform, **kwargs
         )

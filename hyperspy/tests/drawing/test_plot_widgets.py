@@ -176,6 +176,92 @@ class TestPlotLine2DWidget:
         assert hspy_fig._background is None
         mock_draw.assert_called_once()
 
+    def test_color_setter_updates_existing_patch(self):
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.color = "green"
+        assert self.line2d.patch[0].get_color() == "green"
+
+    def test_alpha_setter_updates_existing_patch(self):
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.alpha = 0.3
+        assert self.line2d.patch[0].get_alpha() == 0.3
+
+    def test_get_func_from_pos_width_indicator_hit(self):
+        """Clicking near a width-indicator line returns FUNC_SIZERS."""
+        from hyperspy.drawing.backends import get_backend
+        from hyperspy.drawing.backends._protocol import CoordSpace
+
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.position = ([0.0, 0.0], [50.0, 50.0])
+        self.line2d.size = (10.0,)
+
+        backend = get_backend()
+        wc = self.line2d._get_width_indicator_coords()
+        a = backend.convert_coords(
+            self.line2d.ax, [wc[0][0]], CoordSpace.DATA, CoordSpace.DISPLAY
+        )[0]
+        b = backend.convert_coords(
+            self.line2d.ax, [wc[0][1]], CoordSpace.DATA, CoordSpace.DISPLAY
+        )[0]
+        mid = (a + b) / 2
+        func = self.line2d._get_func_from_pos(mid[0], mid[1])
+        assert func == self.line2d.FUNC_SIZERS
+
+    def test_get_func_from_pos_no_hit_returns_none(self):
+        """A click far from the line and its width indicators is FUNC_NONE."""
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.position = ([0.0, 0.0], [50.0, 50.0])
+        self.line2d.size = (10.0,)
+        func = self.line2d._get_func_from_pos(-1e6, -1e6)
+        assert func == self.line2d.FUNC_NONE
+
+    def _prime_drag(self, xdata=0.0, ydata=0.0):
+        self.line2d._drag_store = (self.line2d.position, self.line2d.size)
+        self.line2d._drag_start = [xdata, ydata]
+        self.line2d.picked = True
+
+    def test_rotate_returns_early_when_no_mouse_position(self):
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.position = ([0.0, 0.0], [50.0, 50.0])
+        self._prime_drag()
+        position_before = self.line2d.position
+        event = mock.Mock()
+        event.xdata, event.ydata = None, None
+        self.line2d._rotate(event)
+        assert self.line2d.position == position_before
+
+    def test_rotate_updates_position(self):
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.position = ([0.0, 0.0], [50.0, 50.0])
+        self._prime_drag()
+        position_before = self.line2d.position
+        event = mock.Mock()
+        event.xdata, event.ydata = 5.0, 2.0
+        event.x, event.y = 100.0, 200.0
+        event.key = None
+        self.line2d._rotate(event)
+        assert self.line2d.position != position_before
+
+    def test_rotate_snaps_to_30_degree_increments_with_shift(self):
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+        self.line2d.position = ([0.0, 0.0], [50.0, 50.0])
+        self._prime_drag()
+        event = mock.Mock()
+        event.xdata, event.ydata = 5.0, 2.0
+        event.x, event.y = 100.0, 200.0
+        event.key = "shift"
+        # Should not raise, and should still update the position.
+        position_before = self.line2d.position
+        self.line2d._rotate(event)
+        assert self.line2d.position != position_before
+
 
 class TestPlotCircleWidget:
     def setup_method(self, method):

@@ -84,6 +84,7 @@ requires-python = ">=3.10"
 
 [project.optional-dependencies]
 all = [
+    "hyperspy[anyplotlib]",
     "hyperspy[dask-image]",
     "hyperspy[baseline]",
     "hyperspy[gui-jupyter]",
@@ -93,6 +94,9 @@ all = [
     "hyperspy[learning]",
     "hyperspy[odr]",
     "hyperspy[speed]",
+]
+anyplotlib = [
+    "anyplotlib>=0.8.0",
 ]
 baseline = [
     "pybaselines"
@@ -109,6 +113,7 @@ dev = [
     "hyperspy[coverage]",
     "hyperspy[doc]",
     "hyperspy[tests]",
+    "hyperspy[tests-browser]",
 ]
 doc = [
     "holospy", # example gallery
@@ -160,6 +165,16 @@ tests = [
     "pytest>=3.6",
     "setuptools_scm"
 ]
+tests-browser = [
+    # Browser tests for the anyplotlib backend: they render the figure in
+    # headless Chromium, which `playwright install chromium` provides.
+    "hyperspy[anyplotlib]",
+    "playwright",
+]
+
+[project.entry-points."hyperspy.backends"]
+matplotlib = "hyperspy.drawing.backends.mpl:MplBackend"
+anyplotlib  = "hyperspy.drawing.backends.anyplotlib:AnyplotlibBackend"
 
 [project.urls]
 "Bug Reports" = "https://github.com/hyperspy/hyperspy/issues"
@@ -179,6 +194,7 @@ omit = [
     "hyperspy/conftest.py",
     "hyperspy/tests/*",
     "hyperspy/external/scipy/*",
+    "hyperspy/drawing/backends/_stub.py",
     "prepare_release.py",
     "setup.py",
 ]

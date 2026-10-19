@@ -20,11 +20,12 @@ from pathlib import Path
 from unittest import mock
 
 import dask.array as da
+import matplotlib.collections as mpl_collections
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.collections import (
-    LineCollection,
+    CircleCollection,
     PolyCollection,
     StarPolygonCollection,
 )
@@ -35,14 +36,18 @@ from matplotlib.transforms import (
 
 import hyperspy.api as hs
 from hyperspy.axes import UniformDataAxis
-from hyperspy.external.matplotlib.collections import (
-    CircleCollection,
-    EllipseCollection,
-    RectangleCollection,
-    SquareCollection,
-    TextCollection,
+from hyperspy.drawing.marker_collection import (
+    ArrowsCollection,
+    CirclesCollection,
+    EllipsesCollection,
+    HLinesCollection,
+    LinesCollection,
+    PointsCollection,
+    RectanglesCollection,
+    SquaresCollection,
+    TextsCollection,
+    VLinesCollection,
 )
-from hyperspy.external.matplotlib.quiver import Quiver
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
@@ -498,24 +503,24 @@ class TestInitMarkers:
     @pytest.mark.parametrize(
         "subclass",
         (
-            (Arrows, Quiver, {"offsets": [[1, 1]], "U": [1], "V": [1]}),
-            (Circles, CircleCollection, {"offsets": [[1, 1]], "sizes": [1]}),
+            (Arrows, ArrowsCollection, {"offsets": [[1, 1]], "U": [1], "V": [1]}),
+            (Circles, CirclesCollection, {"offsets": [[1, 1]], "sizes": [1]}),
             (
                 Ellipses,
-                EllipseCollection,
+                EllipsesCollection,
                 {"offsets": [1, 2], "widths": [1], "heights": [1]},
             ),
-            (HorizontalLines, LineCollection, {"offsets": [1, 2]}),
-            (Points, CircleCollection, {"offsets": [[1, 1]], "sizes": [1]}),
-            (VerticalLines, LineCollection, {"offsets": [1, 2]}),
+            (HorizontalLines, HLinesCollection, {"offsets": [1, 2]}),
+            (Points, PointsCollection, {"offsets": [[1, 1]], "sizes": [1]}),
+            (VerticalLines, VLinesCollection, {"offsets": [1, 2]}),
             (
                 Rectangles,
-                RectangleCollection,
+                RectanglesCollection,
                 {"offsets": [[1, 1]], "widths": [1], "heights": [1]},
             ),
-            (Squares, SquareCollection, {"offsets": [[1, 1]], "widths": [1]}),
-            (Texts, TextCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
-            (Lines, LineCollection, {"segments": [[0, 0], [1, 1]]}),
+            (Squares, SquaresCollection, {"offsets": [[1, 1]], "widths": [1]}),
+            (Texts, TextsCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
+            (Lines, LinesCollection, {"segments": [[0, 0], [1, 1]]}),
             (
                 Markers,
                 StarPolygonCollection,
@@ -1186,6 +1191,54 @@ def test_collection_error():
     m = Points(offsets=[[1, 1], [2, 2]])
     with pytest.raises(ValueError):
         m._set_transform(value="test")
+
+
+class _CustomCollectionOutsideAllowedModules(mpl_collections.Collection):
+    """A real mpl Collection subclass that lives outside
+    ``matplotlib.collections``/``hyperspy.external`` on purpose, to exercise
+    the "must be implemented in matplotlib or hyperspy" validation error.
+    """
+
+
+def test_collection_error_wrong_module():
+    with pytest.raises(
+        ValueError, match="must be implemented in matplotlib or hyperspy"
+    ):
+        Markers(
+            offsets=[[1, 1], [2, 2]],
+            collection=_CustomCollectionOutsideAllowedModules,
+        )
+
+
+def test_to_dictionary_hyper_collection_via_base_markers_class():
+    # Instantiating the base `Markers` class directly (not one of the
+    # `Points`/`Circles`/... subclasses) with a marker-type string still
+    # resolves to a `HyperMarkerCollection`; `_to_dictionary` must store the
+    # stable marker-type string rather than a mpl class name in that case.
+    m = Markers(collection="circles", sizes=(20,), offsets=[[1, 1], [2, 2]])
+    d = m._to_dictionary()
+    assert d["collection"] == "circles"
+
+
+def test_legacy_mpl_collection_plot_and_update():
+    # A base `Markers` instance constructed with a raw matplotlib Collection
+    # class (not a marker-type string/HyperMarkerCollection) never sets
+    # `_marker_type`, so it always takes the legacy (non-native) code path
+    # for both `plot` (`_initialize_collection`/`_get_mpl_class`) and
+    # `_update` (`collection_update`).
+    offsets = np.empty(3, dtype=object)
+    for i in range(3):
+        offsets[i] = np.array([[1, 1], [2, 2]])
+    m = Markers(offsets=offsets, sizes=(20,), collection=CircleCollection)
+    assert m._marker_type is None
+
+    s = hs.signals.Signal2D(np.zeros((3, 10, 10)))
+    s.plot()
+    s.add_marker(m)
+    assert m._using_native_markers is False
+
+    # Trigger `_update` on the iterating (per-navigation-index) offsets.
+    s.axes_manager.navigation_axes[0].index = 1
 
 
 def test_permanent_markers_close_open_cycle():

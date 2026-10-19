@@ -21,11 +21,11 @@ import copy
 import matplotlib
 import numpy as np
 import traits.api as t
+from matplotlib.widgets import SpanSelector
 
 from hyperspy import drawing
 from hyperspy.axes import UniformDataAxis
 from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
-from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy.drawing.signal1d import Signal1DFigure
 from hyperspy.misc.array_tools import numba_histogram
 from hyperspy.ui_registry import add_gui_method
