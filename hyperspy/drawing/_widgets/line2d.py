@@ -23,7 +23,6 @@ import numpy as np
 
 from hyperspy.drawing.backends import get_backend
 from hyperspy.drawing.backends._protocol import CoordSpace
-from hyperspy.drawing.utils import picker_kwargs
 from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 
 _logger = logging.getLogger(__name__)
@@ -149,12 +148,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 # width is current zero and new value is higher
                 # add the width indicators
                 self._size = np.array((value,))
+                # _set_size_patch creates the indicators on the axes.
                 self._set_size_patch()
-                # the size patches have been removed, we need to draw them
-                backend = get_backend()
-                for p in self._width_indicator_patches:
-                    backend.add_artist(self.ax, p)
-                    backend.artist_set_animated(p, self.blit)
             else:
                 self._size = np.array((value,))
             self._size_changed()
@@ -252,12 +247,13 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     def _update_patch_geometry(self):
         """Set line position, and set width indicator's if appropriate"""
         if self.is_on and self.patch:
-            self.patch[0].set_data(np.array(self._pos).T)
+            backend = get_backend()
+            backend.update_line2d_pointer(self.patch[0], *np.array(self._pos).T)
             # Update width indicator if present
             if self._width_indicator_patches:
                 wc = self._get_width_indicator_coords()
                 for i in range(2):
-                    self.patch[1 + i].set_data(wc[i].T)
+                    backend.update_line2d_pointer(self.patch[1 + i], *wc[i].T)
             self.draw_patch()
 
     def _set_patch(self):
@@ -268,20 +264,18 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         backend.set_autoscale(self.ax, False)
         xy = np.array(self._pos)
         max_r = max(self.radius_move, self.radius_resize, self.radius_rotate)
-        kwargs = picker_kwargs(max_r)
         self._patch = [
-            backend.create_line2d_patch(
+            backend.create_line2d_pointer(
+                self.ax,
                 xy[:, 0],
                 xy[:, 1],
-                linestyle="-",
-                lw=self.linewidth,
-                c=self.color,
+                color=self.color,
+                linewidth=self.linewidth,
                 alpha=self.alpha,
-                marker="s",
-                markersize=self.radius_resize,
-                mew=0.1,
-                mfc="lime",
-                **kwargs,
+                linestyle="-",
+                interactive=True,
+                pick_radius=max_r,
+                handle_size=self.radius_resize,
             )
         ]
         backend.connect_widget_drag(self._patch[0], self._on_widget_drag)
@@ -302,20 +296,27 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             )
         backend = get_backend()
         wc = self._get_width_indicator_coords()
-        kwargs = picker_kwargs(self.radius_move)
         for i in range(2):
-            wi = backend.create_line2d_patch(
-                *wc[i].T, linestyle=":", lw=self.linewidth, c=self.color, **kwargs
+            wi = backend.create_line2d_pointer(
+                self.ax,
+                *wc[i].T,
+                color=self.color,
+                linewidth=self.linewidth,
+                linestyle=":",
+                interactive=False,
+                pick_radius=self.radius_move,
             )
+            backend.set_pointer_style(wi, animated=self.blit)
             self._patch.append(wi)
             self._width_indicator_patches.append(wi)
 
     def _remove_size_patch(self):
         if not self._width_indicator_patches:
             return
+        backend = get_backend()
         for patch in self._width_indicator_patches:
             self._patch.remove(patch)
-            patch.remove()
+            backend.remove_pointer(self.ax, patch)
         self._width_indicator_patches = []
         # Patches were removed from the axes but the blit background
         # still shows their pixels — invalidate and force a full redraw.

@@ -1835,48 +1835,12 @@ class TestUnsupportedCapabilityRaises:
     """Methods that are simple BackendCapabilityError raises / no-ops for
     features anyplotlib does not (yet) implement."""
 
-    def test_add_artist_noop(self, backend, fig_ax):
-        _, ax = fig_ax
-        assert backend.add_artist(ax, None) is None
+    def test_not_an_artist_backend(self, backend):
+        """anyplotlib drives widgets natively, so it must not satisfy the
+        artist extension: the generic layer would otherwise pick widgets."""
+        from hyperspy.drawing.backends._protocol import ArtistBackend
 
-    def test_create_rect_patch_raises(self, backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        with pytest.raises(BackendCapabilityError):
-            backend.create_rect_patch((0, 0), 1.0, 1.0)
-
-    def test_get_data_transform_inverse_raises(self, backend, fig_ax):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        _, ax = fig_ax
-        with pytest.raises(BackendCapabilityError):
-            backend.get_data_transform_inverse(ax)
-
-    def test_transform_point_raises(self, backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        with pytest.raises(BackendCapabilityError):
-            backend.transform_point(None, (0.0, 0.0))
-
-    def test_add_collection_raises(self, backend, fig_ax):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        _, ax = fig_ax
-        with pytest.raises(BackendCapabilityError):
-            backend.add_collection(ax, None)
-
-    def test_collection_update_raises(self, backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        with pytest.raises(BackendCapabilityError):
-            backend.collection_update(None)
-
-    def test_collection_remove_raises(self, backend, fig_ax):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        _, ax = fig_ax
-        with pytest.raises(BackendCapabilityError):
-            backend.collection_remove(ax, None)
+        assert not isinstance(backend, ArtistBackend)
 
     def test_invalidate_blit_background_noop(self, backend, fig_ax):
         _, ax = fig_ax
@@ -1902,18 +1866,6 @@ class TestUnsupportedCapabilityRaises:
         backend.plot_line(ax, np.arange(5, dtype=float), np.zeros(5))
         sel = backend.create_span_selector(ax, direction="vertical")
         assert sel._widget.get("orientation") == "vertical"
-
-    def test_get_ax_transform_returns_space_token(self, backend, fig_ax):
-        _, ax = fig_ax
-        for kind in ("data", "axes", "display", "xaxis", "yaxis", "relative"):
-            assert backend.get_ax_transform(ax, kind) == kind
-
-    def test_get_ax_transform_unknown_kind_raises(self, backend, fig_ax):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        _, ax = fig_ax
-        with pytest.raises(BackendCapabilityError):
-            backend.get_ax_transform(ax, "polar")
 
     def test_convert_coords_data_axes_roundtrip(self, backend, fig_ax):
         _, ax = fig_ax
@@ -2107,23 +2059,29 @@ class TestMiscBackendGaps:
         )
         assert h is not None
 
-    def test_create_line2d_patch_is_detached_until_added(self, backend, fig_ax):
+    def test_line2d_pointer_passive_is_a_marker_group(self, backend, fig_ax):
         _, ax = fig_ax
-        patch = backend.create_line2d_patch([0, 1], [0, 1], c="red", lw=2)
-        # No axes yet, so nothing has been drawn — but set_data still works.
-        patch.set_data([0, 2], [0, 2])
         backend.plot_image(ax, np.zeros((4, 4)))
-        backend.add_artist(ax, patch)
-        assert patch._group is not None
-        patch.set_data([0, 3], [0, 3])
-        patch.remove()
-        assert patch._group is None
+        line = backend.create_line2d_pointer(
+            ax, [0, 1], [0, 1], linestyle=":", interactive=False
+        )
+        assert line._group is not None and line._widget is None
+        backend.update_line2d_pointer(line, [0, 3], [0, 3])
+        backend.remove_pointer(ax, line)
+        assert line._group is None
 
-    def test_create_circle_patch_raises(self, backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
+    def test_line2d_pointer_interactive_is_a_widget(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((4, 4)))
+        line = backend.create_line2d_pointer(ax, [0, 2], [0, 2], interactive=True)
+        assert line._widget is not None
+        backend.update_line2d_pointer(line, [1, 3], [1, 3])
+        assert (line._widget.x1, line._widget.x2) == (1.0, 3.0)
 
-        with pytest.raises(BackendCapabilityError):
-            backend.create_circle_patch((0, 0), 1.0)
+    def test_line2d_pointer_needs_a_plot(self, backend, fig_ax):
+        _, ax = fig_ax
+        with pytest.raises(RuntimeError):
+            backend.create_line2d_pointer(ax, [0, 1], [0, 1])
 
     def test_set_autoscale_noop(self, backend, fig_ax):
         _, ax = fig_ax

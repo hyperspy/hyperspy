@@ -426,12 +426,12 @@ class _AplPolygonSelector:
 
 
 class _AplLine2DPatch:
-    """``matplotlib.lines.Line2D`` façade over anyplotlib's line primitives.
+    """Handle returned by ``create_line2d_pointer``.
 
-    :class:`~.drawing._widgets.line2d.Line2DWidget` builds its patches before
-    it has an axes, so this stays detached until :meth:`materialise` is called.
-    The main (interactive) segment becomes a draggable two-endpoint ``line``
-    widget; the dotted width indicators become a ``'lines'`` marker group.
+    The main (interactive) segment of a
+    :class:`~.drawing._widgets.line2d.Line2DWidget` becomes a draggable
+    two-endpoint ``line`` widget; its dotted width indicators become a
+    ``'lines'`` marker group.  :meth:`materialise` attaches it to a panel.
     """
 
     def __init__(self, x, y, color="red", linewidth=1.0, alpha=1.0, interactive=True):
@@ -1210,9 +1210,6 @@ class AnyplotlibBackend:
             fn,
         )
 
-    def connect_pick(self, fig_or_ax, fn):
-        return None
-
     def _get_plot(self, fig_or_ax):
         """Return the Plot1D/Plot2D attached to the given figure or axes."""
         plot = getattr(fig_or_ax, "_plot", None)
@@ -1512,38 +1509,6 @@ class AnyplotlibBackend:
         if updates and hasattr(handle, "set"):
             handle.set(_notify=False, **updates)
 
-    def add_artist(self, ax, artist):
-        # Only patches created by this backend can be attached.
-        if isinstance(artist, _AplLine2DPatch):
-            plot = self._primary_plot(ax)
-            if plot is not None:
-                artist.materialise(plot)
-
-    def create_rect_patch(self, pos, w, h, **kwargs):
-        raise BackendCapabilityError(
-            _NOT_YET.format("create_rect_patch (resizer handles)")
-        )
-
-    def get_data_transform_inverse(self, ax):
-        raise BackendCapabilityError(_NOT_YET.format("get_data_transform_inverse"))
-
-    def transform_point(self, transform, point):
-        raise BackendCapabilityError(_NOT_YET.format("transform_point"))
-
-    def simulate_pick(self, ax, patch):
-        pass
-
-    # ── Marker collections (MPL fallback path) ────────────────────────────
-
-    def add_collection(self, ax, collection):
-        raise BackendCapabilityError(_NOT_YET.format("add_collection (markers)"))
-
-    def collection_update(self, handle, **kwargs):
-        raise BackendCapabilityError(_NOT_YET.format("collection_update (markers)"))
-
-    def collection_remove(self, ax, handle):
-        raise BackendCapabilityError(_NOT_YET.format("collection_remove (markers)"))
-
     # ── Rendering hooks ───────────────────────────────────────────────────
 
     def render_figure_from_ax(self, ax):
@@ -1596,12 +1561,6 @@ class AnyplotlibBackend:
         "yaxis": "data",
         "relative": "data",
     }
-
-    def get_ax_transform(self, ax, kind):
-        """Return *kind* itself: anyplotlib transforms are plain space strings."""
-        if kind not in self._COORD_SPACES:
-            raise BackendCapabilityError(_NOT_YET.format(f"get_ax_transform({kind!r})"))
-        return kind
 
     def convert_coords(self, ax, points, from_space, to_space):
         """Convert points between coordinate spaces.
@@ -1807,19 +1766,33 @@ class AnyplotlibBackend:
         props.setdefault("drawstyle", "steps-mid")
         return self.plot_line(ax, x, y, **props)
 
-    def create_line2d_patch(self, x, y, **kwargs):
-        # Line2DWidget passes marker="s" only for its draggable main segment.
-        return _AplLine2DPatch(
-            x,
-            y,
-            color=kwargs.get("c", kwargs.get("color", "red")),
-            linewidth=kwargs.get("lw", kwargs.get("linewidth", 1.0)),
-            alpha=kwargs.get("alpha", 1.0),
-            interactive=kwargs.get("marker") == "s",
+    def create_line2d_pointer(
+        self,
+        ax,
+        x,
+        y,
+        *,
+        color="red",
+        linewidth=1.0,
+        alpha=1.0,
+        linestyle="-",
+        interactive=True,
+        pick_radius=None,
+        handle_size=None,
+    ):
+        plot = self._primary_plot(ax)
+        if plot is None:
+            raise RuntimeError("ax has no plot; call plot_line or plot_image first")
+        # The main segment becomes a native line widget with its own endpoint
+        # handles; pick_radius/handle_size only matter to artist backends.
+        line = _AplLine2DPatch(
+            x, y, color=color, linewidth=linewidth, alpha=alpha, interactive=interactive
         )
+        line.materialise(plot)
+        return line
 
-    def create_circle_patch(self, xy, radius, **kwargs):
-        raise BackendCapabilityError(_NOT_YET.format("create_circle_patch"))
+    def update_line2d_pointer(self, handle, x, y):
+        handle.set_data(x, y)
 
     def set_autoscale(self, ax, enable):
         pass  # anyplotlib manages zoom internally
@@ -1835,9 +1808,6 @@ class AnyplotlibBackend:
 
     def set_yticks(self, ax, ticks):
         pass  # cosmetic; anyplotlib tick control not yet exposed
-
-    def tight_layout(self, fig):
-        pass  # anyplotlib uses constrained layout automatically
 
     def get_figure_from_ax(self, ax):
         fig = getattr(ax, "figure", None)

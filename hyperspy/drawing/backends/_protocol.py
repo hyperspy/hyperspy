@@ -94,6 +94,9 @@ class BlitMixin(Protocol):
         """True when ax is attached to a blitting-capable HyperSpy figure."""
         return False
 
+    def artist_set_animated(self, handle: Any, animated: bool) -> None:
+        """Mark *handle* as drawn in the blit pass rather than the background."""
+
 
 class PointerMixin(Protocol):
     """Default implementations of the interactive widget primitives.
@@ -209,6 +212,39 @@ class PointerMixin(Protocol):
             "update_circle_pointer not supported by this backend"
         )
 
+    def create_line2d_pointer(
+        self,
+        ax: Any,
+        x,
+        y,
+        *,
+        color: str = "red",
+        linewidth: float = 1.0,
+        alpha: float = 1.0,
+        linestyle: str = "-",
+        interactive: bool = True,
+        pick_radius: float | None = None,
+        handle_size: float | None = None,
+    ) -> Any:
+        """Create a polyline through *x*, *y* (data coordinates) on *ax*.
+
+        *interactive* is True for the draggable main segment of a
+        :class:`~hyperspy.drawing._widgets.line2d.Line2DWidget`, whose
+        endpoints are drawn as square handles of *handle_size* display
+        pixels; False for passive decorations (its dotted width
+        indicators).  *pick_radius* is the grab tolerance in display pixels
+        for backends that pick artists.
+        """
+        raise BackendCapabilityError(
+            "create_line2d_pointer not supported by this backend"
+        )
+
+    def update_line2d_pointer(self, handle: Any, x, y) -> None:
+        """Move the vertices of a line created by ``create_line2d_pointer``."""
+        raise BackendCapabilityError(
+            "update_line2d_pointer not supported by this backend"
+        )
+
     def remove_pointer(self, ax: Any, handle: Any) -> None:
         """Remove any pointer handle from the axes."""
 
@@ -225,36 +261,20 @@ class PointerMixin(Protocol):
         Any ``None`` argument is left unchanged.
         """
 
-    # ── Artist helpers ────────────────────────────────────────────────────
-
-    def add_artist(self, ax: Any, artist: Any) -> None:
-        """Add a pre-created artist to ax (used for MPL-native patches)."""
-
-    def create_rect_patch(self, pos, w: float, h: float, **kwargs) -> Any:
-        """Create a rectangle patch (for resizer handles)."""
-        raise BackendCapabilityError("create_rect_patch not supported by this backend")
-
-    def get_data_transform_inverse(self, ax: Any) -> Any:
-        """Return an inverse-data transform (for pixel→data conversions)."""
-        raise BackendCapabilityError(
-            "get_data_transform_inverse not supported by this backend"
-        )
-
-    def transform_point(self, transform: Any, point) -> Any:
-        """Apply transform to point."""
-        raise BackendCapabilityError("transform_point not supported by this backend")
-
     # ── Widget callbacks ──────────────────────────────────────────────────
-
-    def simulate_pick(self, ax: Any, patch: Any) -> None:
-        """Simulate a pick event on *patch* to make it the active widget."""
 
     def connect_widget_drag(self, handle: Any, on_drag: Callable) -> None:
         """Register *on_drag* to fire when the native widget is dragged.
 
-        *on_drag* receives the new position: ``(x,)`` for 1-D widgets,
-        ``(x, y)`` for 2-D.  Matplotlib is a no-op here: its widgets drag
-        through ``_onmousemove``.
+        *on_drag* receives the new geometry in data coordinates: ``(x,)`` for
+        line pointers, ``(x, y, ...)`` for 2-D pointers and
+        ``(x1, y1, x2, y2)`` for a line2d pointer.
+
+        This is one of the two ways a widget can be dragged (see
+        :class:`ArtistBackend` for the other).  A backend with native
+        widgets reports drags here and leaves ``connect_pick`` unimplemented;
+        an artist backend makes this a no-op and lets the widget drag itself
+        from pick and pointer events.
         """
 
     # ── Interactive selectors ─────────────────────────────────────────────
@@ -267,32 +287,6 @@ class PointerMixin(Protocol):
         """Create and return an interactive polygon selector on ax."""
         raise BackendCapabilityError(
             "PolygonSelector requires a matplotlib-based backend"
-        )
-
-    # ── Coordinate transforms ─────────────────────────────────────────────
-
-    def get_ax_transform(self, ax: Any, kind: str) -> Any:
-        """Return a transform for the given kind.
-
-        *kind* is one of ``'data'``, ``'axes'``, ``'xaxis'``, ``'yaxis'``,
-        ``'display'``, ``'relative'``.
-        """
-        raise BackendCapabilityError(
-            f"Transform '{kind}' not supported by this backend"
-        )
-
-    # ── Free-form patch creation ──────────────────────────────────────────
-
-    def create_line2d_patch(self, x, y, **kwargs) -> Any:
-        """Create a free-form line artist for use as a widget patch."""
-        raise BackendCapabilityError(
-            "create_line2d_patch not supported by this backend"
-        )
-
-    def create_circle_patch(self, xy, radius, **kwargs) -> Any:
-        """Create a circle artist for use as a widget patch."""
-        raise BackendCapabilityError(
-            "create_circle_patch not supported by this backend"
         )
 
     # ── Coordinate conversion ─────────────────────────────────────────────
@@ -471,11 +465,6 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
     def text_set_color(self, handle: Any, color) -> None: ...
     def text_get_color(self, handle: Any) -> str: ...
 
-    # ── Generic artist property ───────────────────────────────────────────
-
-    def artist_set_animated(self, handle: Any, animated: bool) -> None:
-        """Set the animated flag on an artist handle (used for blit pipeline)."""
-
     # ── 2-D image plotting ────────────────────────────────────────────────
 
     def plot_image(
@@ -533,19 +522,7 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
     def connect_mouse_release(self, fig_or_ax: Any, fn: Callable) -> Any:
         """Call ``fn(PointerEvent)`` with ``kind="release"`` on a release."""
 
-    def connect_pick(self, fig_or_ax: Any, fn: Callable) -> Any:
-        """Call ``fn(PickEvent)`` when a pickable artist is pressed."""
-
-    # ── Marker collections ────────────────────────────────────────────────
-
-    def add_collection(self, ax: Any, collection) -> Any: ...
-    def collection_update(self, handle: Any, **kwargs) -> None: ...
-    def collection_remove(self, ax: Any, handle: Any) -> None: ...
-
     # ── Layout helpers ────────────────────────────────────────────────────
-
-    def tight_layout(self, fig: Any) -> None:
-        """Apply tight_layout to fig (best-effort hint; no-op by default)."""
 
     def get_figure_from_ax(self, ax: Any) -> Any:
         """Return the parent figure of ax."""
@@ -652,3 +629,58 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
         raise BackendCapabilityError(
             "get_image_cmap_name not supported by this backend"
         )
+
+
+@runtime_checkable
+class ArtistBackend(Protocol):
+    """Optional extension for backends that draw widgets as pickable artists.
+
+    HyperSpy's widgets can be driven in two ways:
+
+    * **Native widgets** (the core protocol): the backend creates an
+      interactive widget with ``create_*_pointer`` and reports drags through
+      ``connect_widget_drag``.  The anyplotlib backend works this way.
+    * **Artists** (this extension): the backend draws a plain artist, picking
+      it fires ``connect_pick`` handlers, and the widget moves itself from the
+      following ``connect_mouse_move`` events.  The matplotlib backend works
+      this way.
+
+    The generic layer only calls these methods when the active backend
+    implements every one of them (``isinstance(backend, ArtistBackend)``, see
+    :func:`hyperspy.drawing.backends.get_artist_backend`).  Features that
+    exist only for artist backends degrade otherwise: widgets have no
+    separate resize handles, markers built from a raw
+    :class:`matplotlib.collections.Collection` raise
+    :class:`BackendCapabilityError`, and the coloured ROI-map frame of
+    :func:`~.api.plot.plot_roi_map` is skipped.
+
+    The handles here are the backend's own artist objects; for matplotlib
+    they are :class:`matplotlib.artist.Artist` instances.
+    """
+
+    def add_artist(self, ax: Any, artist: Any) -> None:
+        """Attach an artist created by this backend to *ax*."""
+
+    def create_rect_patch(self, pos, w: float, h: float, **kwargs) -> Any:
+        """Create an unattached rectangle artist (widget resize handles)."""
+
+    def get_ax_transform(self, ax: Any, kind: str) -> Any:
+        """Return the transform object for a :class:`CoordSpace` name."""
+
+    def simulate_pick(self, ax: Any, patch: Any) -> None:
+        """Fire the pick handlers as if *patch* had been clicked."""
+
+    def connect_pick(self, fig_or_ax: Any, fn: Callable) -> Any:
+        """Call ``fn(PickEvent)`` when a pickable artist is pressed."""
+
+    def add_collection(self, ax: Any, collection: Any) -> Any:
+        """Attach a raw artist collection (generic ``Markers``)."""
+
+    def collection_update(self, handle: Any, **kwargs) -> None:
+        """Set properties on a collection attached with ``add_collection``."""
+
+    def collection_remove(self, ax: Any, handle: Any) -> None:
+        """Detach a collection attached with ``add_collection``."""
+
+    def tight_layout(self, fig: Any) -> None:
+        """Re-pack the figure's axes after labels or colorbars change."""

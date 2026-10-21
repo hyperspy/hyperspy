@@ -21,8 +21,8 @@ from __future__ import division
 import numpy as np
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.drawing.backends import get_backend
-from hyperspy.drawing.backends._protocol import BackendCapabilityError, CoordSpace
+from hyperspy.drawing.backends import get_artist_backend, get_backend
+from hyperspy.drawing.backends._protocol import CoordSpace
 from hyperspy.events import Event, Events
 
 
@@ -170,12 +170,15 @@ class WidgetBase(object):
         # Must be provided by the subclass
 
     def _add_patch_to(self, ax):
-        """Create and add the matplotlib patches to 'ax'"""
+        """Create the widget's patches on 'ax'.
+
+        ``_set_patch`` creates them through backend calls that attach them to
+        the axes (``create_*_pointer``, ``add_text``).
+        """
         backend = get_backend()
         self.blit = backend.supports_blit_from_ax(ax)
         self._set_patch()
         for p in self.patch:
-            backend.add_artist(ax, p)
             backend.set_pointer_style(p, animated=self.blit)
         if hasattr(super(WidgetBase, self), "_add_patch_to"):
             super(WidgetBase, self)._add_patch_to(ax)
@@ -205,7 +208,10 @@ class WidgetBase(object):
         """Cause this widget to be the selected widget in its axes."""
         if not self.patch or not self.is_on or not self.ax:
             return
-        get_backend().simulate_pick(self.ax, self.patch[0])
+        artist_backend = get_artist_backend()
+        if artist_backend is not None:
+            # Selection is pick state; native widgets have none to set.
+            artist_backend.simulate_pick(self.ax, self.patch[0])
         self.picked = False
 
     def connect(self, ax):
@@ -445,7 +451,11 @@ class DraggableWidgetBase(WidgetBase):
         super(DraggableWidgetBase, self).connect(ax)
         backend = get_backend()
         self.cids.append(backend.connect_mouse_move(ax, self._onmousemove))
-        self.cids.append(backend.connect_pick(ax, self.onpick))
+        artist_backend = get_artist_backend()
+        if artist_backend is not None:
+            # Artist widgets drag themselves from pick + move events; native
+            # widgets report drags through connect_widget_drag instead.
+            self.cids.append(artist_backend.connect_pick(ax, self.onpick))
         self.cids.append(backend.connect_mouse_release(ax, self.button_release))
         self.cids.append(backend.connect_mouse_press(ax, self._onjumpclick))
 
@@ -889,11 +899,12 @@ class ResizersMixin:
         works.
         """
         if ax is not None:
-            backend = get_backend()
             if value:
+                # Handles only exist on artist backends (see _set_patch).
+                artist_backend = get_artist_backend()
                 for r in self._resizer_handles:
-                    backend.add_artist(ax, r)
-                    backend.set_pointer_style(r, animated=self.blit)
+                    artist_backend.add_artist(ax, r)
+                    artist_backend.artist_set_animated(r, self.blit)
             else:
                 for r in self._resizer_handles:
                     # check that the matplotlib patch is present before removing it
@@ -959,24 +970,24 @@ class ResizersMixin:
         if self._resizer_handles:
             self._set_resizers(False, self.ax)
         self._resizer_handles = []
-        try:
-            rsize = self._get_resizer_size()
-            pos = self._get_resizer_pos()
-            for i in range(len(pos)):
-                r = get_backend().create_rect_patch(
-                    pos[i],
-                    rsize[0],
-                    rsize[1],
-                    fill=True,
-                    lw=0,
-                    fc=self.resize_color,
-                    picker=True,
-                )
-                self._resizer_handles.append(r)
-        except BackendCapabilityError:
+        artist_backend = get_artist_backend()
+        if artist_backend is None:
             # The backend's native widgets carry their own resize handles.
-            self._resizer_handles = []
             self.resizers = False
+            return
+        rsize = self._get_resizer_size()
+        pos = self._get_resizer_pos()
+        for i in range(len(pos)):
+            r = artist_backend.create_rect_patch(
+                pos[i],
+                rsize[0],
+                rsize[1],
+                fill=True,
+                lw=0,
+                fc=self.resize_color,
+                picker=True,
+            )
+            self._resizer_handles.append(r)
 
     def set_on(self, value):
         """Turns on/off resizers when widget is turned on/off."""

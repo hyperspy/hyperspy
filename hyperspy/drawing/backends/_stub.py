@@ -6,10 +6,10 @@ methods marked REQUIRED.  Methods marked OPTIONAL have sensible defaults via
 :class:`~hyperspy.drawing.backends._protocol.PointerMixin`; override them only
 when your backend supports the feature.
 
-Registration::
+Registration — declare an entry point in your package's ``pyproject.toml``::
 
-    from hyperspy.drawing.backends import register_backend
-    register_backend("mybackend", MyBackend)
+    [project.entry-points."hyperspy.backends"]
+    mybackend = "my_package.backend:MyBackend"
 
 Then users can do::
 
@@ -24,7 +24,14 @@ Signature conventions
 * ``cid``      — whatever the ``connect_*`` call returned (for disconnection)
 
 All arguments are backend-native; HyperSpy never imports your library
-directly.
+directly.  Input reaches HyperSpy only as the neutral events of
+:mod:`hyperspy.drawing.backends._events` (see "Event connections").
+
+Widgets are driven through native widgets (``create_*_pointer`` +
+``connect_widget_drag``).  Backends whose widgets are plain pickable artists,
+like matplotlib, additionally implement
+:class:`~hyperspy.drawing.backends._protocol.ArtistBackend` (see the end of
+this file); a new backend normally should not.
 """
 
 from __future__ import annotations
@@ -290,43 +297,40 @@ class StubBackend(BlitMixin, PointerMixin):
     # Event connections                                              [REQUIRED]
     # =========================================================================
     # Each ``connect_*`` returns a *cid* token passed to ``disconnect_event``.
+    # Wrap *fn* so it receives a neutral event built from your native one,
+    # never the native event itself::
+    #
+    #   from hyperspy.drawing.backends._events import (
+    #       KeyEvent, PointerEvent, canonical_key, canonical_modifiers)
+    #
+    #   def connect_key_press(self, fig_or_ax, fn):
+    #       def handler(e):
+    #           fn(KeyEvent(key=canonical_key(e.key, e.modifiers),
+    #                       inaxes=fig_or_ax, native=e))
+    #       return my_lib.on("keydown", handler)
+    #
+    # Pointer events carry data coordinates (``xdata``/``ydata``, ``None``
+    # outside the axes), buttons numbered from 1 and canonical modifiers.
 
     def connect_key_press(self, fig_or_ax, fn):
+        """Call ``fn(KeyEvent)`` on each key press."""
         raise NotImplementedError
 
     def connect_mouse_move(self, fig_or_ax, fn):
+        """Call ``fn(PointerEvent(kind="move", ...))`` on pointer motion."""
         raise NotImplementedError
 
     def connect_mouse_press(self, fig_or_ax, fn):
+        """Call ``fn(PointerEvent(kind="press", ...))`` on a button press."""
         raise NotImplementedError
 
     def connect_mouse_release(self, fig_or_ax, fn):
-        raise NotImplementedError
-
-    def connect_pick(self, fig_or_ax, fn):
-        raise NotImplementedError
-
-    # =========================================================================
-    # Marker collections                                             [REQUIRED]
-    # =========================================================================
-
-    def add_collection(self, ax, collection):
-        """Add a pre-built marker collection to *ax*; return a handle."""
-        raise NotImplementedError
-
-    def collection_update(self, handle, **kwargs) -> None:
-        """Update collection properties (offsets, colors, …)."""
-        raise NotImplementedError
-
-    def collection_remove(self, ax, handle) -> None:
+        """Call ``fn(PointerEvent(kind="release", ...))`` on a release."""
         raise NotImplementedError
 
     # =========================================================================
     # Layout helpers                                                 [REQUIRED]
     # =========================================================================
-
-    def tight_layout(self, fig) -> None:
-        """Apply tight layout to *fig* (best-effort; no-op is fine)."""
 
     def get_figure_from_ax(self, ax):
         """Return the parent figure of *ax*."""
@@ -412,6 +416,11 @@ class StubBackend(BlitMixin, PointerMixin):
     #   def update_rect_pointer(self, handle, x, y, w, h) -> None:
     #       ...
     #
+    #   def create_circle_pointer(self, ax, cx, cy, r_outer, r_inner=0.0, ...):
+    #   def update_circle_pointer(self, ax, handles, cx, cy, r_outer, r_inner=0.0):
+    #   def create_line2d_pointer(self, ax, x, y, *, color="red", ...):
+    #   def update_line2d_pointer(self, handle, x, y) -> None:
+    #
     #   def remove_pointer(self, ax, handle) -> None:   # default is a no-op
     #       ...
     #
@@ -419,11 +428,9 @@ class StubBackend(BlitMixin, PointerMixin):
     #       """Set any combination; ignore None arguments."""
     #       ...
     #
-    #   # For MPL-native patch-based resizer handles:
-    #   def add_artist(self, ax, artist) -> None: ...
-    #   def create_rect_patch(self, pos, w, h, **kwargs): ...
-    #   def get_data_transform_inverse(self, ax): ...
-    #   def transform_point(self, transform, point): ...
+    #   def connect_widget_drag(self, handle, on_drag) -> None:
+    #       """Call on_drag(new geometry in data coordinates) on each drag."""
+    #       ...
     #
     #   # For interactive selection tools:
     #   def create_span_selector(self, ax, **kwargs): ...
@@ -453,3 +460,20 @@ class StubBackend(BlitMixin, PointerMixin):
     #   def connect_close_event(self, fig, fn):
     #       """Connect fn() to figure close; return a cid."""
     #       ...
+
+    # =========================================================================
+    # ArtistBackend extension                                     [NOT NEEDED]
+    # =========================================================================
+    # Only for backends whose widgets are plain pickable artists that HyperSpy
+    # drags itself (matplotlib).  Implement *all* of these or none: HyperSpy
+    # checks ``isinstance(backend, ArtistBackend)``.
+    #
+    #   def add_artist(self, ax, artist) -> None: ...
+    #   def create_rect_patch(self, pos, w, h, **kwargs): ...
+    #   def get_ax_transform(self, ax, kind): ...
+    #   def simulate_pick(self, ax, patch) -> None: ...
+    #   def connect_pick(self, fig_or_ax, fn): ...     # fn(PickEvent)
+    #   def add_collection(self, ax, collection): ...
+    #   def collection_update(self, handle, **kwargs) -> None: ...
+    #   def collection_remove(self, ax, handle) -> None: ...
+    #   def tight_layout(self, fig) -> None: ...

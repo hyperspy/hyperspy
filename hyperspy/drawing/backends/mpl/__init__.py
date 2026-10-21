@@ -448,8 +448,10 @@ class MplBackend:
     ):
         radii = [r_outer] + ([r_inner] if r_inner > 0 else [])
         handles = []
+        import matplotlib.patches as mpatches
+
         for radius in radii:
-            circle = self.create_circle_patch(
+            circle = mpatches.Circle(
                 (cx, cy),
                 radius=radius,
                 fill=False,
@@ -504,6 +506,38 @@ class MplBackend:
         if animated is not None:
             handle.set_animated(animated)
 
+    def create_line2d_pointer(
+        self,
+        ax,
+        x,
+        y,
+        *,
+        color="red",
+        linewidth=1.0,
+        alpha=1.0,
+        linestyle="-",
+        interactive=True,
+        pick_radius=None,
+        handle_size=None,
+    ):
+        import matplotlib.lines as mlines
+
+        from hyperspy.drawing.utils import picker_kwargs
+
+        kwargs = picker_kwargs(pick_radius) if pick_radius is not None else {}
+        if interactive:
+            # Square endpoint handles mark where the line can be resized.
+            kwargs.update(marker="s", markersize=handle_size, mew=0.1, mfc="lime")
+        line = mlines.Line2D(
+            x, y, color=color, lw=linewidth, alpha=alpha, linestyle=linestyle, **kwargs
+        )
+        # add_artist, not add_line: the widget must not grow the data limits.
+        ax.add_artist(line)
+        return line
+
+    def update_line2d_pointer(self, handle, x, y):
+        handle.set_data(x, y)
+
     def add_artist(self, ax, artist):
         ax.add_artist(artist)
 
@@ -511,12 +545,6 @@ class MplBackend:
         import matplotlib.pyplot as plt
 
         return plt.Rectangle(pos, w, h, **kwargs)
-
-    def get_data_transform_inverse(self, ax):
-        return ax.transData.inverted()
-
-    def transform_point(self, transform, point):
-        return transform.transform(point)
 
     # ── Marker collections ────────────────────────────────────────────────
 
@@ -700,18 +728,6 @@ class MplBackend:
     def plot_step(self, ax, x, y, **props):
         lines = ax.step(x, y, **props)
         return lines[0]
-
-    # ── Patch creation ────────────────────────────────────────────────────
-
-    def create_line2d_patch(self, x, y, **kwargs):
-        import matplotlib.pyplot as plt
-
-        return plt.Line2D(x, y, **kwargs)
-
-    def create_circle_patch(self, xy, radius, **kwargs):
-        import matplotlib.pyplot as plt
-
-        return plt.Circle(xy, radius=radius, **kwargs)
 
     # ── Axes control ─────────────────────────────────────────────────────
 

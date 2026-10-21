@@ -27,7 +27,7 @@ from traits.api import Undefined
 
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
 from hyperspy.drawing import utils
-from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends import _tight_layout, get_backend
 from hyperspy.drawing.backends._protocol import BackendCapabilityError
 from hyperspy.drawing.figure import AbstractImageFigure
 from hyperspy.drawing.norm import HyperNorm, LogNorm, PowerNorm, SymLogNorm
@@ -378,7 +378,7 @@ class ImagePlot(AbstractImageFigure):
             self._add_colorbar()
 
         if not (self.axes_ticks == "off" and not self.colorbar):
-            get_backend().tight_layout(self.figure)
+            _tight_layout(self.figure)
 
         self.connect()
         self.render_figure()

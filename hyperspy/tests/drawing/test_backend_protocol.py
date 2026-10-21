@@ -74,7 +74,6 @@ REQUIRED_METHODS = [
     "connect_mouse_move",
     "connect_mouse_press",
     "connect_mouse_release",
-    "connect_pick",
     # BlitMixin methods
     "draw_animated_artists",
     "render_figure_from_ax",
@@ -85,11 +84,12 @@ REQUIRED_METHODS = [
     "update_line_pointer",
     "create_rect_pointer",
     "update_rect_pointer",
+    "create_circle_pointer",
+    "update_circle_pointer",
+    "create_line2d_pointer",
+    "update_line2d_pointer",
     "remove_pointer",
     "set_pointer_style",
-    "add_artist",
-    "create_rect_patch",
-    "simulate_pick",
     "connect_widget_drag",
     "create_span_selector",
     "create_polygon_selector",
@@ -98,20 +98,14 @@ REQUIRED_METHODS = [
     "update_markers",
     "remove_markers",
     "plot_step",
-    "create_line2d_patch",
-    "create_circle_patch",
     "set_autoscale",
     "set_xticklabels",
     "set_yticklabels",
     # Core PlottingBackend
-    "add_collection",
-    "collection_update",
-    "collection_remove",
     "create_combined_figure_panels",
     "ensure_displayed",
     "connect_close_event",
     "get_explorer",
-    "tight_layout",
     "get_figure_from_ax",
     "create_signal1d_figure",
     "create_image_figure",
@@ -127,6 +121,51 @@ def test_protocol_declares_all_required_methods():
     members = {name for name, _ in inspect.getmembers(PlottingBackend)}
     for name in REQUIRED_METHODS:
         assert name in members, f"PlottingBackend missing: {name}"
+
+
+ARTIST_METHODS = [
+    "add_artist",
+    "create_rect_patch",
+    "get_ax_transform",
+    "simulate_pick",
+    "connect_pick",
+    "add_collection",
+    "collection_update",
+    "collection_remove",
+    "tight_layout",
+]
+
+
+def test_artist_methods_live_only_in_the_extension():
+    from hyperspy.drawing.backends._protocol import ArtistBackend, PlottingBackend
+
+    core = {name for name, _ in inspect.getmembers(PlottingBackend)}
+    extension = {name for name, _ in inspect.getmembers(ArtistBackend)}
+    for name in ARTIST_METHODS:
+        assert name in extension, f"ArtistBackend missing: {name}"
+        assert name not in core, f"{name} leaked back into PlottingBackend"
+
+
+def test_mpl_backend_is_an_artist_backend():
+    from hyperspy.drawing.backends._protocol import ArtistBackend
+    from hyperspy.drawing.backends.mpl import MplBackend
+
+    assert isinstance(MplBackend(), ArtistBackend)
+
+
+def test_get_artist_backend(monkeypatch):
+    from hyperspy.drawing import backends
+    from hyperspy.drawing.backends.mpl import MplBackend
+
+    mpl = MplBackend()
+    monkeypatch.setattr(backends, "_active_backend", mpl)
+    assert backends.get_artist_backend() is mpl
+
+    class NativeOnly:
+        pass
+
+    monkeypatch.setattr(backends, "_active_backend", NativeOnly())
+    assert backends.get_artist_backend() is None
 
 
 def test_mpl_backend_satisfies_protocol():
@@ -289,30 +328,6 @@ class TestPointerMixinDefaults:
     def test_set_pointer_style_noop(self, bare_backend):
         assert bare_backend.set_pointer_style(None, color="red") is None
 
-    def test_add_artist_noop(self, bare_backend):
-        assert bare_backend.add_artist(None, None) is None
-
-    def test_create_rect_patch_raises(self, bare_backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        with pytest.raises(BackendCapabilityError):
-            bare_backend.create_rect_patch((0, 0), 1.0, 1.0)
-
-    def test_get_data_transform_inverse_raises(self, bare_backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        with pytest.raises(BackendCapabilityError):
-            bare_backend.get_data_transform_inverse(None)
-
-    def test_transform_point_raises(self, bare_backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        with pytest.raises(BackendCapabilityError):
-            bare_backend.transform_point(None, (0, 0))
-
-    def test_simulate_pick_noop(self, bare_backend):
-        assert bare_backend.simulate_pick(None, None) is None
-
     def test_connect_widget_drag_noop(self, bare_backend):
         assert bare_backend.connect_widget_drag(None, lambda *a: None) is None
 
@@ -328,23 +343,13 @@ class TestPointerMixinDefaults:
         with pytest.raises(BackendCapabilityError):
             bare_backend.create_polygon_selector(None)
 
-    def test_get_ax_transform_raises(self, bare_backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
-        with pytest.raises(BackendCapabilityError, match="data"):
-            bare_backend.get_ax_transform(None, "data")
-
-    def test_create_line2d_patch_raises(self, bare_backend):
+    def test_create_line2d_pointer_raises(self, bare_backend):
         from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
         with pytest.raises(BackendCapabilityError):
-            bare_backend.create_line2d_patch([0, 1], [0, 1])
-
-    def test_create_circle_patch_raises(self, bare_backend):
-        from hyperspy.drawing.backends._protocol import BackendCapabilityError
-
+            bare_backend.create_line2d_pointer(None, [0, 1], [0, 1])
         with pytest.raises(BackendCapabilityError):
-            bare_backend.create_circle_patch((0, 0), 1.0)
+            bare_backend.update_line2d_pointer(None, [0, 1], [0, 1])
 
     def test_convert_coords_raises(self, bare_backend):
         from hyperspy.drawing.backends._protocol import BackendCapabilityError
@@ -536,14 +541,24 @@ class TestMplBackend:
         assert pointer.get_color() == "blue"
         assert pointer.get_alpha() == 0.5
 
-    def test_get_data_transform_inverse(self, mpl_backend, mpl_fig_ax):
+    def test_line2d_pointer(self, mpl_backend, mpl_fig_ax):
         _, ax = mpl_fig_ax
-        assert mpl_backend.get_data_transform_inverse(ax) is not None
-
-    def test_transform_point(self, mpl_backend, mpl_fig_ax):
-        _, ax = mpl_fig_ax
-        pt = mpl_backend.transform_point(ax.transData, (0.5, 0.5))
-        assert len(pt) == 2
+        xlim = ax.get_xlim()
+        line = mpl_backend.create_line2d_pointer(
+            ax, [0.0, 50.0], [0.0, 50.0], interactive=True, pick_radius=5, handle_size=4
+        )
+        assert line in ax.get_children()
+        assert line.get_marker() == "s"
+        assert line.get_picker()
+        # The widget line must not change the axes' data limits.
+        assert ax.get_xlim() == xlim
+        mpl_backend.update_line2d_pointer(line, [1.0, 2.0], [3.0, 4.0])
+        np.testing.assert_allclose(line.get_xdata(), [1.0, 2.0])
+        np.testing.assert_allclose(line.get_ydata(), [3.0, 4.0])
+        passive = mpl_backend.create_line2d_pointer(
+            ax, [0.0, 1.0], [0.0, 1.0], linestyle=":", interactive=False
+        )
+        assert passive.get_marker() in ("None", None, "")
 
     def test_collection_update(self, mpl_backend, mpl_fig_ax):
         from matplotlib.collections import LineCollection

@@ -114,7 +114,7 @@ def test_right_pointer_warns_on_unsupported_backend():
 
 
 def test_markers_raise_on_unsupported_backend():
-    """BackendCapabilityError from both create_markers and add_collection → raises."""
+    """No native marker type and no ArtistBackend extension → raises."""
     from hyperspy.drawing.backends import get_backend
     from hyperspy.drawing.backends._protocol import BackendCapabilityError
 
@@ -132,11 +132,7 @@ def test_markers_raise_on_unsupported_backend():
             "create_markers",
             side_effect=BackendCapabilityError("no native markers"),
         ),
-        patch.object(
-            backend,
-            "add_collection",
-            side_effect=BackendCapabilityError("no collections"),
-        ),
+        patch("hyperspy.drawing.markers.get_artist_backend", return_value=None),
     ):
         with pytest.raises(
             BackendCapabilityError, match="only supported by the matplotlib backend"

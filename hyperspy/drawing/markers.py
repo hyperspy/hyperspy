@@ -21,7 +21,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends import get_artist_backend, get_backend
 from hyperspy.drawing.backends._protocol import (
     BackendCapabilityError,
     MarkerType,
@@ -573,9 +573,10 @@ class Markers:
         self.__signal = signal
 
     def _get_transform(self, attr="_transform"):
-        if self.ax is not None:  # return the transform
-            return get_backend().get_ax_transform(self.ax, getattr(self, attr))
-        else:  # return the string value
+        artist_backend = get_artist_backend() if self.ax is not None else None
+        if artist_backend is not None:  # return the backend's transform
+            return artist_backend.get_ax_transform(self.ax, getattr(self, attr))
+        else:  # return the coordinate-space name
             return getattr(self, attr)
 
     def _set_transform(self, value, attr="_transform"):
@@ -1062,7 +1063,7 @@ class Markers:
             if self._using_native_markers:
                 get_backend().update_markers(self._collection, **kwds)
             else:
-                get_backend().collection_update(self._collection, **kwds)
+                get_artist_backend().collection_update(self._collection, **kwds)
 
     def _get_mpl_class(self):
         """Return the matplotlib Collection class for ``_collection_class``."""
@@ -1116,22 +1117,25 @@ class Markers:
                 pass
 
         if not self._using_native_markers:
-            self._initialize_collection()
-            backend.artist_set_animated(
-                self._collection,
-                backend.supports_blit(backend.get_figure_from_ax(self.ax)),
-            )
-            try:
-                backend.add_collection(self.ax, self._collection)
-            except BackendCapabilityError:
+            artist_backend = get_artist_backend()
+            if artist_backend is None:
                 raise BackendCapabilityError(
-                    f"{type(self._collection).__name__} markers are only "
+                    f"{getattr(self._collection_class, '__name__', 'Collection')} "
+                    "markers are only "
                     "supported by the matplotlib backend: they are matplotlib "
                     "Collection artists, which the active backend cannot "
                     "draw. Use one of the built-in marker classes in "
                     "hs.plot.markers (Circles, Points, Rectangles, …), which "
                     "every backend can render natively."
-                ) from None
+                )
+            self._initialize_collection()
+            artist_backend.artist_set_animated(
+                self._collection,
+                artist_backend.supports_blit(
+                    artist_backend.get_figure_from_ax(self.ax)
+                ),
+            )
+            artist_backend.add_collection(self.ax, self._collection)
 
         if render_figure:
             self._render_figure()
@@ -1158,7 +1162,7 @@ class Markers:
         if self._using_native_markers:
             get_backend().remove_markers(self.ax, self._collection)
         else:
-            get_backend().collection_remove(self.ax, self._collection)
+            get_artist_backend().collection_remove(self.ax, self._collection)
         self._collection = None
         # Collection removal leaves the blit background stale —
         # invalidate it so the next _render_figure does a full repaint

@@ -23,7 +23,7 @@ from functools import partial
 import numpy as np
 
 from hyperspy.drawing import utils
-from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.backends import _tight_layout, get_backend
 from hyperspy.drawing.figure import AbstractSignal1DFigure
 from hyperspy.events import Event, Events
 from hyperspy.misc.test_utils import ignore_warning
@@ -83,7 +83,7 @@ class Signal1DFigure(AbstractSignal1DFigure):
             self.right_ax = get_backend().add_right_axis(self.ax, color=color)
             self.right_ax.hspy_fig = self
         if adjust_layout:
-            get_backend().tight_layout(self.figure)
+            _tight_layout(self.figure)
 
     def close_right_axis(self, adjust_layout=True):
         """
@@ -109,7 +109,7 @@ class Signal1DFigure(AbstractSignal1DFigure):
             self._background = None
             self.render_figure()
         if adjust_layout:
-            get_backend().tight_layout(self.figure)
+            _tight_layout(self.figure)
 
     def add_line(self, line, ax="left", connect_navigation=False):
         """
@@ -192,7 +192,7 @@ class Signal1DFigure(AbstractSignal1DFigure):
             lambda: self.axes_manager.events.indices_changed.disconnect(self.update), []
         )
 
-        backend.tight_layout(self.figure)
+        _tight_layout(self.figure)
         self.render_figure()
 
     def _on_close(self):
