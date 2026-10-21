@@ -25,7 +25,7 @@ _NOT_YET = "the anyplotlib backend does not support '{}'."
 
 
 def _jsonable(value):
-    """Return *value* in a JSON-serialisable form for anyplotlib's wire.
+    """Return *value* (circle sizes) in a JSON-serialisable form.
 
     anyplotlib broadcasts the one-element sequences hyperspy uses for
     singleton style values (``(v,)``) itself; only numpy containers need
@@ -67,10 +67,10 @@ class _AplFigureProxy:
         self.on_close = []
 
 
-# Figure -> its single Axes.  anyplotlib links Axes -> Figure (``ax.figure``)
-# but ``Figure.get_axes()`` only lists axes that already hold a plot, and
-# hyperspy asks for the axes before plotting.
-_FIGURE_AXES = weakref.WeakKeyDictionary()
+# Figure -> its combined-panel layout, so ``draw_idle`` on the real figure
+# (``ax.figure`` of a panel) honours the panel countdown.  The value is weak:
+# the layout references the figure, which would otherwise keep the key alive.
+_FIGURE_LAYOUTS = weakref.WeakKeyDictionary()
 
 
 def _quiet(fn):
@@ -411,6 +411,19 @@ class AnyplotlibBackend:
     text_markup = TextMarkup.TEX_LITE if _texts_tex_lite() else TextMarkup.PLAIN
     supports_text_rotation = _texts_tex_lite()
 
+    def __init__(self):
+        import anyplotlib as apl
+
+        # The data-coordinate and identity API this backend relies on arrived
+        # in anyplotlib 0.11; fail clearly rather than with an AttributeError
+        # deep inside a plot call.
+        if not hasattr(apl.Axes, "primary_plot"):
+            raise ImportError(
+                "The anyplotlib plotting backend requires anyplotlib>=0.11.0; "
+                f"anyplotlib {getattr(apl, '__version__', '?')} is installed. "
+                "Upgrade with `pip install -U anyplotlib`."
+            )
+
     # ── Figure lifecycle ──────────────────────────────────────────────────
 
     def create_figure(self, title=None, on_close=None, **kwargs):
@@ -424,8 +437,7 @@ class AnyplotlibBackend:
             return fig_kwarg
 
         figsize = _figsize_px(kwargs.pop("figsize", None), (640, 480))
-        fig, ax = apl.subplots(1, 1, figsize=figsize)
-        _FIGURE_AXES[fig] = ax
+        fig, _ = apl.subplots(1, 1, figsize=figsize)
         if on_close is not None:
             fig.on_close(_quiet(on_close))
         return fig
@@ -457,6 +469,7 @@ class AnyplotlibBackend:
         if n == 1:
             axes = [axes]
         layout = _AplCombinedLayout(fig, n)
+        _FIGURE_LAYOUTS[fig] = weakref.ref(layout)
         return tuple(_AplFigureProxy(layout, ax) for ax in axes)
 
     @staticmethod
@@ -479,15 +492,21 @@ class AnyplotlibBackend:
             self._display(fig)
 
     def draw_idle(self, fig):
+        if fig is None:
+            return
         if isinstance(fig, _AplFigureProxy):
             layout = fig._layout
+        else:
+            ref = _FIGURE_LAYOUTS.get(fig)
+            layout = ref() if ref is not None else None
+        if layout is not None:
             if layout.fig.displayed:
                 return
             if layout.panels_remaining > 1:
                 # Wait for the other panels so the figure appears whole.
                 layout.panels_remaining -= 1
                 return
-        elif fig is None or fig.displayed:
+        elif fig.displayed:
             return
         self._display(fig)
 
@@ -526,7 +545,7 @@ class AnyplotlibBackend:
     def create_axes(self, fig, animate_axis=False, **kwargs):
         if isinstance(fig, _AplFigureProxy):
             return fig.ax
-        return _FIGURE_AXES[fig]
+        return fig.get_axes()[0]
 
     # Labels set before a plot is attached are kept by anyplotlib's Axes.
 
@@ -794,13 +813,17 @@ class AnyplotlibBackend:
         fontsize = kwargs.get("fontsize", kwargs.get("size", 12))
         if isinstance(fontsize, str):
             fontsize = self._MPL_FONTSIZE.get(fontsize, 12)
+        space = self._SPACE_MAP.get(transform, "data")
+        if space == "data" and hasattr(plot, "data_to_pixel"):
+            # Plot2D.add_text places data-space text in image pixels.
+            x, y = plot.data_to_pixel((float(x), float(y)))
         return plot.add_text(
             float(x),
             float(y),
             str(s),
             color=color,
             fontsize=float(fontsize),
-            transform=self._SPACE_MAP.get(transform, "data"),
+            transform=space,
         )
 
     def update_text(self, handle, s):
@@ -926,10 +949,10 @@ class AnyplotlibBackend:
         """The anyplotlib Axes for a figure, panel proxy or axes."""
         if isinstance(fig_or_ax, _AplFigureProxy):
             return fig_or_ax.ax
-        try:
-            return _FIGURE_AXES.get(fig_or_ax, fig_or_ax)
-        except TypeError:  # not weak-referenceable, so not a Figure
-            return fig_or_ax
+        get_axes = getattr(fig_or_ax, "get_axes", None)
+        if callable(get_axes):  # a Figure
+            return get_axes()[0]
+        return fig_or_ax
 
     @staticmethod
     def _to_key_event(ax, e):
@@ -1415,6 +1438,18 @@ class AnyplotlibBackend:
             # wire format reads `color` (and would otherwise fall back
             # to red).
             work["color"] = work.pop("facecolor")
+
+        # A singleton colour given as an RGB(A) tuple, ``((r, g, b, a),)``:
+        # anyplotlib only unwraps single-string colours.
+        for key in ("edgecolors", "facecolors", "hover_edgecolors", "hover_facecolors"):
+            val = work.get(key)
+            if (
+                isinstance(val, (list, tuple, np.ndarray))
+                and len(val) == 1
+                and not isinstance(val[0], str)
+                and np.ndim(val[0]) == 1
+            ):
+                work[key] = np.asarray(val[0]).tolist()
 
         _STRIP = {"offset_transform", "units", "patches", "drawstyle"}
         for k, v in work.items():

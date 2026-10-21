@@ -1535,8 +1535,6 @@ class TestNativeMarkers:
 class TestFigureLifecycleGaps:
     def test_close_figure_swallows_exception(self, backend):
         class BadFig:
-            _hspy_on_close = None
-
             def close(self):
                 raise RuntimeError("boom")
 
@@ -2352,3 +2350,68 @@ class TestWidgetStrokeUnits:
             image_ax, 2, 2, 6, 6, linewidth=2, pointer=True
         )
         assert handle.get("linewidth") == pytest.approx(2 * self.PX_PER_PT)
+
+
+class TestReviewRegressions:
+    """Behaviour pinned after review of the public-API switch-over."""
+
+    def test_closed_figure_is_collectable(self, backend):
+        import gc
+        import weakref
+
+        fig = backend.create_figure()
+        ax = backend.create_axes(fig)
+        backend.plot_line(ax, np.arange(5.0), np.zeros(5))
+        backend.close_figure(fig)
+        ref = weakref.ref(fig)
+        del fig, ax
+        gc.collect()
+        assert ref() is None
+
+    def test_create_axes_before_plotting(self, backend):
+        fig = backend.create_figure()
+        ax = backend.create_axes(fig)
+        assert ax.figure is fig
+        assert not ax.has_plot
+
+    def test_draw_idle_on_real_figure_honours_countdown(self, backend):
+        """Generic code reaches a panel's figure through ``ax.figure``."""
+        first, second = backend.create_combined_figure_panels(n=2)
+        backend.draw_idle(first.ax.figure)
+        assert not first._real_fig.displayed
+        backend.draw_idle(second.ax.figure)
+        assert first._real_fig.displayed
+
+    def test_text_on_calibrated_image_uses_data_coords(self, backend, fig_ax):
+        _, ax = fig_ax
+        # 8 px spanning 0-16 in data units: data 5.0 is pixel 2.0.
+        backend.plot_image(ax, np.zeros((8, 8)), extent=(0.0, 16.0, 16.0, 0.0))
+        handle = backend.add_text(ax, 5.0, 5.0, "label", transform="data")
+        offsets = handle._group.to_wire("t")["offsets"]
+        assert offsets[0] == pytest.approx([2.0, 2.0])
+
+    def test_single_rgba_colour_is_unwrapped(self, backend):
+        out = backend._translate_marker_kwargs(
+            "circles",
+            "data",
+            {"offsets": [[1, 1], [2, 2]], "edgecolors": ((1.0, 0.0, 0.0, 1.0),)},
+        )
+        assert out["edgecolors"] == [1.0, 0.0, 0.0, 1.0]
+
+    def test_empty_markers_on_image_panel(self, backend, fig_ax):
+        """A live marker collection can lose all its items."""
+        _, ax = fig_ax
+        backend.plot_image(ax, np.zeros((8, 8)), extent=(0.0, 16.0, 16.0, 0.0))
+        group = backend.create_markers(ax, "circles", offsets=[[4.0, 4.0]], sizes=2.0)
+        backend.update_markers(group, offsets=np.zeros((0, 2)))
+        assert group.to_wire("g")["offsets"] == []
+        empty = backend.create_markers(ax, "circles", offsets=np.zeros((0, 2)))
+        assert empty.to_wire("g")["offsets"] == []
+
+
+def test_old_anyplotlib_is_rejected_clearly(monkeypatch):
+    import anyplotlib as apl
+
+    monkeypatch.delattr(apl.Axes, "primary_plot")
+    with pytest.raises(ImportError, match="anyplotlib>=0.11.0"):
+        AnyplotlibBackend()
