@@ -10,6 +10,12 @@ from __future__ import annotations
 
 import numpy as np
 
+from hyperspy.drawing.backends._events import (
+    KeyEvent,
+    PointerEvent,
+    canonical_key,
+    canonical_modifiers,
+)
 from hyperspy.drawing.backends._protocol import BackendCapabilityError, TextMarkup
 
 _NOT_YET = "the anyplotlib backend does not support '{}'."
@@ -1131,29 +1137,78 @@ class AnyplotlibBackend:
 
         return _handler
 
-    def connect_key_press(self, fig_or_ax, fn):
+    # Handlers receive the neutral events of ``backends._events``.  anyplotlib
+    # reports browser key names ("ArrowLeft"), 0-based buttons and a modifier
+    # list; they are translated here so the generic layer sees canonical
+    # values.  ``xdata``/``ydata`` are already calibrated by anyplotlib.
+
+    @staticmethod
+    def _event_ax(fig_or_ax):
+        """The hyperspy-facing axes handle for *fig_or_ax*."""
+        return getattr(fig_or_ax, "_hspy_ax", fig_or_ax)
+
+    @staticmethod
+    def _to_key_event(ax, e):
+        return KeyEvent(
+            key=canonical_key(e.key, e.modifiers),
+            inaxes=ax,
+            xdata=e.xdata,
+            ydata=e.ydata,
+            native=e,
+        )
+
+    @staticmethod
+    def _to_pointer_event(kind, ax, e):
+        inside = e.xdata is not None and e.ydata is not None
+        return PointerEvent(
+            kind=kind,
+            xdata=e.xdata,
+            ydata=e.ydata,
+            inaxes=ax if inside else None,
+            x=e.x,
+            y=e.y,
+            button=None if e.button is None else int(e.button) + 1,
+            modifiers=canonical_modifiers(e.modifiers),
+            native=e,
+        )
+
+    def _connect(self, fig_or_ax, event_type, convert, fn):
         plot = self._get_plot(fig_or_ax)
-        if plot is not None:
-            return plot.add_event_handler(self._wrap(fn), "key_down")
-        return None
+        if plot is None:
+            return None
+        ax = self._event_ax(fig_or_ax)
+
+        def _handler(e):
+            return fn(convert(ax, e))
+
+        return plot.add_event_handler(_handler, event_type)
+
+    def connect_key_press(self, fig_or_ax, fn):
+        return self._connect(fig_or_ax, "key_down", self._to_key_event, fn)
 
     def connect_mouse_move(self, fig_or_ax, fn):
-        plot = self._get_plot(fig_or_ax)
-        if plot is not None:
-            return plot.add_event_handler(self._wrap(fn), "pointer_move")
-        return None
+        return self._connect(
+            fig_or_ax,
+            "pointer_move",
+            lambda ax, e: self._to_pointer_event("move", ax, e),
+            fn,
+        )
 
     def connect_mouse_press(self, fig_or_ax, fn):
-        plot = self._get_plot(fig_or_ax)
-        if plot is not None:
-            return plot.add_event_handler(self._wrap(fn), "pointer_down")
-        return None
+        return self._connect(
+            fig_or_ax,
+            "pointer_down",
+            lambda ax, e: self._to_pointer_event("press", ax, e),
+            fn,
+        )
 
     def connect_mouse_release(self, fig_or_ax, fn):
-        plot = self._get_plot(fig_or_ax)
-        if plot is not None:
-            return plot.add_event_handler(self._wrap(fn), "pointer_up")
-        return None
+        return self._connect(
+            fig_or_ax,
+            "pointer_up",
+            lambda ax, e: self._to_pointer_event("release", ax, e),
+            fn,
+        )
 
     def connect_pick(self, fig_or_ax, fn):
         return None

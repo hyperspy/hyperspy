@@ -514,12 +514,27 @@ class PlottingBackend(BlitMixin, PointerMixin, Protocol):
     def colorbar_redraw(self, cb: Any, fig: Any) -> None: ...
 
     # ── Event connections ─────────────────────────────────────────────────
+    # *fn* must be called with the neutral events of ``backends._events``
+    # (``KeyEvent`` / ``PointerEvent``), never with the backend's native
+    # event: convert key names with ``canonical_key``, number buttons from 1
+    # and report positions in data coordinates.  Each method returns a
+    # connection id accepted by ``disconnect_event`` (``None`` when nothing
+    # was connected).
 
-    def connect_key_press(self, fig_or_ax: Any, fn: Callable) -> Any: ...
-    def connect_mouse_move(self, fig_or_ax: Any, fn: Callable) -> Any: ...
-    def connect_mouse_press(self, fig_or_ax: Any, fn: Callable) -> Any: ...
-    def connect_mouse_release(self, fig_or_ax: Any, fn: Callable) -> Any: ...
-    def connect_pick(self, fig_or_ax: Any, fn: Callable) -> Any: ...
+    def connect_key_press(self, fig_or_ax: Any, fn: Callable) -> Any:
+        """Call ``fn(KeyEvent)`` on every key press over *fig_or_ax*."""
+
+    def connect_mouse_move(self, fig_or_ax: Any, fn: Callable) -> Any:
+        """Call ``fn(PointerEvent)`` with ``kind="move"`` on pointer motion."""
+
+    def connect_mouse_press(self, fig_or_ax: Any, fn: Callable) -> Any:
+        """Call ``fn(PointerEvent)`` with ``kind="press"`` on a button press."""
+
+    def connect_mouse_release(self, fig_or_ax: Any, fn: Callable) -> Any:
+        """Call ``fn(PointerEvent)`` with ``kind="release"`` on a release."""
+
+    def connect_pick(self, fig_or_ax: Any, fn: Callable) -> Any:
+        """Call ``fn(PickEvent)`` when a pickable artist is pressed."""
 
     # ── Marker collections ────────────────────────────────────────────────
 

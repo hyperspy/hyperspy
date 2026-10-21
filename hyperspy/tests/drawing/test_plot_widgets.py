@@ -244,7 +244,7 @@ class TestPlotLine2DWidget:
         event = mock.Mock()
         event.xdata, event.ydata = 5.0, 2.0
         event.x, event.y = 100.0, 200.0
-        event.key = None
+        event.modifiers = frozenset()
         self.line2d._rotate(event)
         assert self.line2d.position != position_before
 
@@ -256,7 +256,7 @@ class TestPlotLine2DWidget:
         event = mock.Mock()
         event.xdata, event.ydata = 5.0, 2.0
         event.x, event.y = 100.0, 200.0
-        event.key = "shift"
+        event.modifiers = frozenset({"shift"})
         # Should not raise, and should still update the position.
         position_before = self.line2d.position
         self.line2d._rotate(event)

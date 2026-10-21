@@ -397,9 +397,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """
         super(Line2DWidget, self).onpick(event)
         if self.picked:
-            me = event.mouseevent
-            self.func = self._get_func_from_pos(me.x, me.y)
-            self._drag_start = [me.xdata, me.ydata]
+            self.func = self._get_func_from_pos(event.x, event.y)
+            self._drag_start = [event.xdata, event.ydata]
 
     def _onmousemove(self, event):
         """Delegate to _move(), _resize() or _rotate()."""
@@ -479,7 +478,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         v2 = v1 - dx  # Center to start pos
         theta = angle_between(v2, v1)  # Rotation between start and mouse
 
-        if event.key is not None and "shift" in event.key:
+        if "shift" in event.modifiers:
             base = 30 * np.pi / 180
             theta = base * round(float(theta) / base)
 

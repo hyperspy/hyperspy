@@ -7,3 +7,7 @@
 :meth:`~.api.plot.markers.Markers.set_ScalarMappable_array`, raise
 ``BackendCapabilityError`` on a non-matplotlib backend instead of an opaque
 ``AttributeError``.
+Plotting backends now deliver keyboard and mouse input to HyperSpy as
+backend-neutral events with canonical key names and button numbers, so
+keyboard navigation (e.g. ``ctrl`` + arrow keys) and shift-click jumping work
+with the ``anyplotlib`` backend.

@@ -73,7 +73,7 @@ class SquareWidget(Widget2DBase):
         self.position = (x, y)
 
     def _onjumpclick(self, event):
-        if event.key == "shift" and event.inaxes and self.is_pointer:
+        if "shift" in event.modifiers and event.inaxes and self.is_pointer:
             self.position = (event.xdata, event.ydata)
 
     def _onmousemove(self, event):

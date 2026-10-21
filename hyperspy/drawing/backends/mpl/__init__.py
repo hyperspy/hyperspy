@@ -2,6 +2,12 @@ from __future__ import annotations
 
 import numpy as np
 
+from hyperspy.drawing.backends._events import (
+    KeyEvent,
+    PickEvent,
+    PointerEvent,
+    canonical_modifiers,
+)
 from hyperspy.drawing.backends._protocol import TextMarkup
 
 
@@ -305,20 +311,88 @@ class MplBackend:
     def _canvas(self, fig_or_ax):
         return getattr(fig_or_ax, "canvas", fig_or_ax.figure.canvas)
 
+    # Handlers receive the neutral events of ``backends._events``; matplotlib's
+    # own event is kept as ``native``.
+
+    @staticmethod
+    def _modifiers(mpl_event):
+        # Union of both sources: ``modifiers`` (matplotlib >= 3.7) is read
+        # from the GUI event, ``key`` is the key the canvas tracks as held.
+        # Either can be empty while the other is set (synthetic events, some
+        # GUI backends), and widgets historically relied on ``key``.
+        mods = set(getattr(mpl_event, "modifiers", None) or ())
+        key = getattr(mpl_event, "key", None) or ""
+        mods.update(k for k in key.split("+") if k)
+        return canonical_modifiers(mods)
+
+    @staticmethod
+    def _button(mpl_event):
+        button = getattr(mpl_event, "button", None)
+        # MouseButton is an IntEnum; scroll events report "up"/"down".
+        return int(button) if isinstance(button, int) else None
+
+    @classmethod
+    def _to_key_event(cls, e):
+        # matplotlib already reports canonical names ("ctrl+left", "pageup").
+        return KeyEvent(
+            key=e.key, inaxes=e.inaxes, xdata=e.xdata, ydata=e.ydata, native=e
+        )
+
+    @classmethod
+    def _to_pointer_event(cls, kind, e):
+        return PointerEvent(
+            kind=kind,
+            xdata=e.xdata,
+            ydata=e.ydata,
+            inaxes=e.inaxes,
+            x=e.x,
+            y=e.y,
+            button=cls._button(e),
+            modifiers=cls._modifiers(e),
+            dblclick=bool(getattr(e, "dblclick", False)),
+            native=e,
+        )
+
+    @classmethod
+    def _to_pick_event(cls, e):
+        me = e.mouseevent
+        return PickEvent(
+            artist=e.artist,
+            xdata=me.xdata,
+            ydata=me.ydata,
+            inaxes=me.inaxes,
+            x=me.x,
+            y=me.y,
+            button=cls._button(me),
+            modifiers=cls._modifiers(me),
+            native=e,
+        )
+
     def connect_key_press(self, fig_or_ax, fn):
-        return self._canvas(fig_or_ax).mpl_connect("key_press_event", fn)
+        return self._canvas(fig_or_ax).mpl_connect(
+            "key_press_event", lambda e: fn(self._to_key_event(e))
+        )
 
     def connect_mouse_move(self, fig_or_ax, fn):
-        return self._canvas(fig_or_ax).mpl_connect("motion_notify_event", fn)
+        return self._canvas(fig_or_ax).mpl_connect(
+            "motion_notify_event", lambda e: fn(self._to_pointer_event("move", e))
+        )
 
     def connect_mouse_press(self, fig_or_ax, fn):
-        return self._canvas(fig_or_ax).mpl_connect("button_press_event", fn)
+        return self._canvas(fig_or_ax).mpl_connect(
+            "button_press_event", lambda e: fn(self._to_pointer_event("press", e))
+        )
 
     def connect_mouse_release(self, fig_or_ax, fn):
-        return self._canvas(fig_or_ax).mpl_connect("button_release_event", fn)
+        return self._canvas(fig_or_ax).mpl_connect(
+            "button_release_event",
+            lambda e: fn(self._to_pointer_event("release", e)),
+        )
 
     def connect_pick(self, fig_or_ax, fn):
-        return self._canvas(fig_or_ax).mpl_connect("pick_event", fn)
+        return self._canvas(fig_or_ax).mpl_connect(
+            "pick_event", lambda e: fn(self._to_pick_event(e))
+        )
 
     # ── Draw animated artists ─────────────────────────────────────────────
 

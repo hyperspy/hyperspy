@@ -463,7 +463,7 @@ class DraggableWidgetBase(WidgetBase):
             self.position = p  # Use property to trigger events
 
     def onpick(self, event):
-        # Callback for MPL pick event
+        # Callback for the backend pick event (a backends._events.PickEvent)
         self.picked = event.artist in self.patch
         self._selected_artist = event.artist
         if hasattr(super(DraggableWidgetBase, self), "onpick"):
@@ -1007,8 +1007,8 @@ class ResizersMixin:
                 self._set_resizers(True, self.ax)
                 backend = get_backend()
                 backend.draw_idle(backend.get_figure_from_ax(self.ax))
-            x = event.mouseevent.xdata
-            y = event.mouseevent.ydata
+            x = event.xdata
+            y = event.ydata
             self.pick_offset = (x - self._pos[0], y - self._pos[1])
             self.resizer_picked = False
         else:
