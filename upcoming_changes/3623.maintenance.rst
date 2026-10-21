@@ -3,3 +3,6 @@ Add browser tests for the ``anyplotlib`` backend (headless Chromium driven by
 ``tests-browser`` extra followed by ``playwright install chromium``. Their PNG
 baselines live in ``baselines/<platform>/``; a platform without baselines
 primes them and skips the comparison.
+Add a behavioural conformance suite for plotting backends
+(``hyperspy/tests/drawing/backend_conformance.py``) that the matplotlib and
+``anyplotlib`` backends run and that third-party backends can subclass.
