@@ -1,10 +1,11 @@
 """Stub template for new HyperSpy plotting backends.
 
 Copy this file, rename ``StubBackend`` to ``MyBackend``, and implement the
-methods marked REQUIRED.  Methods marked OPTIONAL have sensible defaults via
-:class:`~hyperspy.drawing.backends._protocol.BlitMixin` and
-:class:`~hyperspy.drawing.backends._protocol.PointerMixin`; override them only
-when your backend supports the feature.
+methods marked REQUIRED.  Methods marked OPTIONAL have sensible defaults
+inherited from :class:`~hyperspy.drawing.backends._protocol.PlottingBackend`
+(through ``BlitMixin`` and ``PointerMixin``); override them only when your
+backend supports the feature.  Check your backend with the conformance suite
+in ``hyperspy/tests/drawing/backend_conformance.py``.
 
 Registration — declare an entry point in your package's ``pyproject.toml``::
 
@@ -36,13 +37,10 @@ this file); a new backend normally should not.
 
 from __future__ import annotations
 
-from hyperspy.drawing.backends._protocol import (
-    BlitMixin,
-    PointerMixin,
-)
+from hyperspy.drawing.backends._protocol import PlottingBackend
 
 
-class StubBackend(BlitMixin, PointerMixin):
+class StubBackend(PlottingBackend):
     """Minimal backend skeleton.  Every method marked REQUIRED must be implemented."""
 
     # =========================================================================
@@ -102,7 +100,7 @@ class StubBackend(BlitMixin, PointerMixin):
     # Axes                                                           [REQUIRED]
     # =========================================================================
 
-    def create_axes(self, fig, **kwargs):
+    def create_axes(self, fig, animate_axis=False, **kwargs):
         """Create and return a primary axes inside *fig*.
 
         Returns
@@ -125,6 +123,10 @@ class StubBackend(BlitMixin, PointerMixin):
         raise NotImplementedError
 
     def set_ylim(self, ax, ymin: float, ymax: float) -> None:
+        raise NotImplementedError
+
+    def get_xlim(self, ax) -> tuple:
+        """Return (xmin, xmax) for *ax*."""
         raise NotImplementedError
 
     def get_ylim(self, ax) -> tuple:
@@ -186,6 +188,10 @@ class StubBackend(BlitMixin, PointerMixin):
         """Return the color of *handle* as a string."""
         raise NotImplementedError
 
+    def line_get_linewidth(self, handle) -> float:
+        """Return the linewidth of *handle* in points."""
+        raise NotImplementedError
+
     # =========================================================================
     # Text annotations                                               [REQUIRED]
     # =========================================================================
@@ -216,6 +222,12 @@ class StubBackend(BlitMixin, PointerMixin):
         raise NotImplementedError
 
     def remove_text(self, ax, handle) -> None:
+        raise NotImplementedError
+
+    def text_set_color(self, handle, color) -> None:
+        raise NotImplementedError
+
+    def text_get_color(self, handle) -> str:
         raise NotImplementedError
 
     # =========================================================================
@@ -274,7 +286,7 @@ class StubBackend(BlitMixin, PointerMixin):
     # Colorbar                                                       [REQUIRED]
     # =========================================================================
 
-    def add_colorbar(self, fig, im_handle, ax):
+    def add_colorbar(self, fig, im_handle, ax, divider=False, size="5%", pad=0.05):
         """Add a colorbar for *im_handle* to *fig*.
 
         Returns

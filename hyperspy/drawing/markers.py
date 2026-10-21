@@ -1062,8 +1062,8 @@ class Markers:
             kwds = self._kwargs_for_backend(only_variable_length=True)
             if self._using_native_markers:
                 get_backend().update_markers(self._collection, **kwds)
-            else:
-                get_artist_backend().collection_update(self._collection, **kwds)
+            elif (artist_backend := get_artist_backend()) is not None:
+                artist_backend.collection_update(self._collection, **kwds)
 
     def _get_mpl_class(self):
         """Return the matplotlib Collection class for ``_collection_class``."""
@@ -1129,11 +1129,9 @@ class Markers:
                     "every backend can render natively."
                 )
             self._initialize_collection()
-            artist_backend.artist_set_animated(
+            backend.artist_set_animated(
                 self._collection,
-                artist_backend.supports_blit(
-                    artist_backend.get_figure_from_ax(self.ax)
-                ),
+                backend.supports_blit(backend.get_figure_from_ax(self.ax)),
             )
             artist_backend.add_collection(self.ax, self._collection)
 
@@ -1161,8 +1159,11 @@ class Markers:
         self._closing = True
         if self._using_native_markers:
             get_backend().remove_markers(self.ax, self._collection)
-        else:
-            get_artist_backend().collection_remove(self.ax, self._collection)
+        elif self._collection is not None:
+            # A raw Collection exists only if an artist backend drew it.
+            artist_backend = get_artist_backend()
+            if artist_backend is not None:
+                artist_backend.collection_remove(self.ax, self._collection)
         self._collection = None
         # Collection removal leaves the blit background stale —
         # invalidate it so the next _render_figure does a full repaint

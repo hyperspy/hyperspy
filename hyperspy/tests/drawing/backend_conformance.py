@@ -44,11 +44,18 @@ Every backend, built in or third party, runs the same tests by subclassing
             return MyDriver()
 
 The driver is the only backend-specific part: it emits the backend's own
-*native* events, so the tests check that ``connect_*`` hands handlers the
-neutral events of :mod:`hyperspy.drawing.backends._events`.  Features a
-backend declares unsupported by raising
+*native* events, exactly as the library would, so the tests check that
+``connect_*`` hands handlers the neutral events of
+:mod:`hyperspy.drawing.backends._events`.  ``backend_name`` must be the name
+of an installed ``hyperspy.backends`` entry point.  Features a backend
+declares unsupported by raising
 :class:`~hyperspy.drawing.backends._protocol.BackendCapabilityError` are
 skipped, not failed.
+
+So that failing assertions show their values, register this module for
+assertion rewriting before importing it (for example in ``conftest.py``)::
+
+    pytest.register_assert_rewrite("hyperspy.tests.drawing.backend_conformance")
 """
 
 import numpy as np
@@ -78,6 +85,16 @@ class BackendDriver:
         ``"release"``) at data position (*xdata*, *ydata*) of *ax*.
         *button* uses the canonical numbering (1 = left)."""
         raise NotImplementedError
+
+    def drag_pointer(self, backend, ax, handle, *geometry):
+        """Move the native widget *handle* as a user drag would.
+
+        *geometry* is the new position in data coordinates, in the order
+        ``connect_widget_drag`` reports it: ``(x,)`` or ``(y,)`` for a line
+        pointer, ``(x, y, w, h)`` for a rectangle.  Only needed by backends
+        with native widgets; the default skips the drag tests.
+        """
+        pytest.skip("driver cannot drag native widgets")
 
 
 def _capability(fn, *args, **kwargs):
@@ -123,13 +140,22 @@ class BackendConformance:
     def active(self, backend):
         """Select the backend for code that plots through ``hs``."""
         if self.backend_name is None:
-            pytest.skip("backend_name not set")
+            pytest.fail("set backend_name to the backend's entry-point name")
         from hyperspy.defaults_parser import preferences
+        from hyperspy.drawing.backends import get_backend
 
         old = preferences.Plot.backend
-        preferences.Plot.backend = self.backend_name
-        yield
-        preferences.Plot.backend = old
+        try:
+            preferences.Plot.backend = self.backend_name
+            # A bad name is only logged by the preference observer and leaves
+            # the previous backend active, which would test the wrong backend.
+            assert type(get_backend()) is type(backend), (
+                f"entry point {self.backend_name!r} did not activate "
+                f"{type(backend).__name__}"
+            )
+            yield
+        finally:
+            preferences.Plot.backend = old
 
     # ── protocol shape ────────────────────────────────────────────────────
 
@@ -184,7 +210,9 @@ class BackendConformance:
         handle = backend.add_text(line_ax, 0.5, 0.5, "label", transform="axes")
         backend.update_text(handle, "changed")
         backend.text_set_color(handle, "red")
-        assert backend.text_get_color(handle) is not None
+        from matplotlib.colors import same_color
+
+        assert same_color(backend.text_get_color(handle), "red")
         backend.remove_text(line_ax, handle)
 
     def test_image_updates(self, backend, image_ax):
@@ -194,11 +222,17 @@ class BackendConformance:
         backend.image_set_clim(handle, 0.0, 2.0)
         assert backend.get_image_cmap_name(handle) == "gray"
 
-    def test_convert_coords_round_trip(self, backend, line_ax):
+    def test_convert_coords(self, backend, line_ax):
         points = np.array([[10.0, 0.25], [30.0, 0.75]])
-        display = _capability(
-            backend.convert_coords, line_ax, points, CoordSpace.DATA, CoordSpace.DISPLAY
+        # Axes space is the fraction of the view, set to x 0-47, y 0-1.
+        axes = _capability(
+            backend.convert_coords, line_ax, points, CoordSpace.DATA, CoordSpace.AXES
         )
+        np.testing.assert_allclose(axes, [[10 / 47, 0.25], [30 / 47, 0.75]], atol=1e-6)
+        display = backend.convert_coords(
+            line_ax, points, CoordSpace.DATA, CoordSpace.DISPLAY
+        )
+        assert not np.allclose(display[0], display[1])
         back = backend.convert_coords(
             line_ax, display, CoordSpace.DISPLAY, CoordSpace.DATA
         )
@@ -249,6 +283,33 @@ class BackendConformance:
         backend.remove_pointer(image_ax, passive)
         backend.remove_pointer(image_ax, handle)
 
+    def test_native_drag_reports_data_coords(self, backend, driver, line_ax, image_ax):
+        if isinstance(backend, ArtistBackend):
+            pytest.skip("artist backends drag through pick events")
+        moves = []
+        line = _capability(backend.create_line_pointer, line_ax, "x", 10.0)
+        backend.connect_widget_drag(line, lambda *g: moves.append(g))
+        driver.drag_pointer(backend, line_ax, line, 30.0)
+        assert moves and moves[-1] == pytest.approx((30.0,))
+
+        moves.clear()
+        rect = backend.create_rect_pointer(image_ax, 2.0, 3.0, 4.0, 5.0)
+        backend.connect_widget_drag(rect, lambda *g: moves.append(g))
+        driver.drag_pointer(backend, image_ax, rect, 5.0, 7.0, 4.0, 5.0)
+        assert moves and moves[-1][:2] == pytest.approx((5.0, 7.0))
+
+    def test_pick_reports_the_artist(self, backend, driver, line_ax):
+        if not isinstance(backend, ArtistBackend):
+            pytest.skip("native-widget backends do not pick")
+        picks = []
+        backend.connect_pick(line_ax, picks.append)
+        handle = backend.create_line_pointer(line_ax, "x", 10.0)
+        driver.fire_pointer(backend, line_ax, "press", 10.0, 0.5)
+        assert any(p.artist is handle for p in picks)
+        pick = next(p for p in picks if p.artist is handle)
+        assert pick.xdata == pytest.approx(10.0, abs=0.5)
+        assert pick.button == 1
+
     # ── input events ──────────────────────────────────────────────────────
 
     @pytest.mark.parametrize(
@@ -259,6 +320,12 @@ class BackendConformance:
             ("pageup", (), "pageup"),
             ("a", (), "a"),
             ("up", ("alt", "shift"), "alt+shift+up"),
+            ("left", ("super", "shift"), "super+shift+left"),
+            # A shifted printable key reports the shifted character only.
+            ("A", ("shift",), "A"),
+            ("+", ("shift",), "+"),
+            ("f5", (), "f5"),
+            ("enter", (), "enter"),
         ],
     )
     def test_key_event_is_canonical(
@@ -271,6 +338,12 @@ class BackendConformance:
         assert len(received) == 1
         assert isinstance(received[0], KeyEvent)
         assert received[0].key == expected
+        # shift is optional for printable characters (see KeyEvent).
+        expected_mods = set(modifiers)
+        if len(key) == 1:
+            expected_mods.discard("shift")
+        assert received[0].modifiers - {"shift"} == expected_mods - {"shift"}
+        assert expected_mods <= received[0].modifiers
 
     @pytest.mark.parametrize(
         "connect, kind",
@@ -291,12 +364,25 @@ class BackendConformance:
         event = received[0]
         assert isinstance(event, PointerEvent)
         assert event.kind == kind
-        assert event.inaxes is line_ax
-        assert event.xdata == pytest.approx(12.0, abs=0.5)
-        assert event.ydata == pytest.approx(0.5, abs=0.05)
+        if kind == "press" or event.xdata is not None:
+            # A press must report where it happened; some libraries only
+            # report the position on press, in which case moves and releases
+            # carry None and inaxes is None too.
+            assert event.inaxes is line_ax
+            assert event.xdata == pytest.approx(12.0, abs=0.5)
+            assert event.ydata == pytest.approx(0.5, abs=0.05)
+        else:
+            assert event.inaxes is None
         if kind != "move":
             assert event.button == 1
-        assert "shift" in event.modifiers
+        assert event.modifiers == {"shift"}
+
+    @pytest.mark.parametrize("button", [1, 3])
+    def test_press_buttons(self, backend, driver, line_ax, button):
+        received = []
+        backend.connect_mouse_press(line_ax, received.append)
+        driver.fire_pointer(backend, line_ax, "press", 12.0, 0.5, button=button)
+        assert [e.button for e in received] == [button]
 
     def test_disconnect_stops_delivery(self, backend, driver, line_ax):
         received = []

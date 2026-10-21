@@ -20,7 +20,10 @@
 
 import pytest
 
-from hyperspy.tests.drawing.backend_conformance import (
+# Show assertion values from the shared suite, which is not a test module.
+pytest.register_assert_rewrite("hyperspy.tests.drawing.backend_conformance")
+
+from hyperspy.tests.drawing.backend_conformance import (  # noqa: E402
     BackendConformance,
     BackendDriver,
 )
@@ -38,10 +41,15 @@ class MplDriver(BackendDriver):
     def fire_key(self, backend, ax, key, modifiers=()):
         from matplotlib.backend_bases import KeyEvent
 
-        # matplotlib's own key strings are the canonical names.
-        prefix = [m for m in ("ctrl", "alt", "super", "shift") if m in modifiers]
-        if len(key) == 1:
-            prefix = [m for m in prefix if m != "shift"]
+        # The key string as matplotlib's Qt backend builds it: modifiers in
+        # the order ctrl, alt, shift, meta, with shift dropped for printable
+        # characters.  The backend must normalise it.
+        native = {"ctrl": "ctrl", "alt": "alt", "shift": "shift", "super": "meta"}
+        prefix = [
+            native[m]
+            for m in ("ctrl", "alt", "shift", "super")
+            if m in modifiers and not (m == "shift" and len(key) == 1)
+        ]
         name = "+".join(prefix + [key])
         x, y = ax.transAxes.transform((0.5, 0.5))
         self._canvas(ax).callbacks.process(
@@ -95,6 +103,8 @@ _BROWSER_KEYS = {
     "down": "ArrowDown",
     "pageup": "PageUp",
     "pagedown": "PageDown",
+    "enter": "Enter",
+    "f5": "F5",
 }
 # Canonical modifiers -> anyplotlib's modifier names.
 _BROWSER_MODIFIERS = {"ctrl": "ctrl", "alt": "alt", "shift": "shift", "super": "meta"}
@@ -123,16 +133,49 @@ class AnyplotlibDriver(BackendDriver):
             "press": "pointer_down",
             "release": "pointer_up",
         }[kind]
+        # figure_esm.js only attaches data coordinates to pointer_down;
+        # pointer_move and pointer_up carry canvas pixels alone.
+        position = {"xdata": xdata, "ydata": ydata} if kind == "press" else {}
         self._fire(
             backend,
             ax,
             event_type,
-            xdata=xdata,
-            ydata=ydata,
+            x=100.0,
+            y=100.0,
             # anyplotlib numbers buttons from 0 and reports none on a move.
             button=None if kind == "move" else button - 1,
             modifiers=[_BROWSER_MODIFIERS[m] for m in modifiers],
+            **position,
         )
+
+    def drag_pointer(self, backend, ax, handle, *geometry):
+        """Move the widget as the browser does, then fire its move event."""
+        from anyplotlib.callbacks import Event
+
+        from hyperspy.drawing.backends.anyplotlib import (
+            _pixel_axes,
+            _pixel_span,
+            _to_pixels,
+        )
+
+        xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
+        kind = handle.get("type")
+        if kind == "vline":
+            update = {"x": _to_pixels(xa, geometry[0])}
+        elif kind == "hline":
+            update = {"y": _to_pixels(ya, geometry[0])}
+        elif kind == "rectangle":
+            x, y, w, h = geometry
+            update = {
+                "x": _to_pixels(xa, x),
+                "y": _to_pixels(ya, y),
+                "w": _pixel_span(xa, w),
+                "h": _pixel_span(ya, h),
+            }
+        else:
+            pytest.skip(f"no drag emulation for {kind!r} widgets")
+        handle.set(_notify=False, **update)
+        handle.callbacks.fire(Event("pointer_move", source=handle))
 
 
 class TestAnyplotlibConformance(BackendConformance):

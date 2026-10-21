@@ -904,7 +904,7 @@ class ResizersMixin:
                 artist_backend = get_artist_backend()
                 for r in self._resizer_handles:
                     artist_backend.add_artist(ax, r)
-                    artist_backend.artist_set_animated(r, self.blit)
+                    get_backend().artist_set_animated(r, self.blit)
             else:
                 for r in self._resizer_handles:
                     # check that the matplotlib patch is present before removing it

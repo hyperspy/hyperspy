@@ -708,3 +708,21 @@ def test_backend_without_capabilities_defaults_to_plain():
     stub = types.SimpleNamespace()
     assert getattr(stub, "text_markup", "plain") == "plain"
     assert getattr(stub, "supports_text_rotation", False) is False
+
+
+def test_stub_backend_matches_protocol():
+    """The template must give a backend author every protocol method, with
+    the protocol's signature, so a filled-in copy does not crash on a
+    missing attribute."""
+    from hyperspy.drawing.backends._protocol import PlottingBackend
+    from hyperspy.drawing.backends._stub import StubBackend
+
+    stub = StubBackend()
+    assert isinstance(stub, PlottingBackend)
+    for name, proto in inspect.getmembers(PlottingBackend, inspect.isfunction):
+        if name.startswith("_"):
+            continue
+        impl = getattr(StubBackend, name)
+        assert list(inspect.signature(impl).parameters) == list(
+            inspect.signature(proto).parameters
+        ), name

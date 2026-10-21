@@ -651,8 +651,12 @@ class ArtistBackend(Protocol):
     exist only for artist backends degrade otherwise: widgets have no
     separate resize handles, markers built from a raw
     :class:`matplotlib.collections.Collection` raise
-    :class:`BackendCapabilityError`, and the coloured ROI-map frame of
-    :func:`~.api.plot.plot_roi_map` is skipped.
+    :class:`BackendCapabilityError`, and ``tight_layout`` is skipped (native
+    backends lay out their figures themselves).
+
+    A native-widget backend must not define any of these names: implementing
+    only some of them makes the ``isinstance`` check fail, so the generic
+    layer would silently ignore them.
 
     The handles here are the backend's own artist objects; for matplotlib
     they are :class:`matplotlib.artist.Artist` instances.

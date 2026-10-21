@@ -139,5 +139,7 @@ def test_markers_raise_on_unsupported_backend():
         ):
             # Force re-plot of the marker by calling plot directly
             marker.plot()
+        # Nothing was drawn, so closing must not need an artist backend.
+        marker.close()
 
     s._plot.close()

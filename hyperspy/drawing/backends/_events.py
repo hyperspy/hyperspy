@@ -167,8 +167,9 @@ class KeyEvent:
     xdata, ydata : float or None
         Pointer position in data coordinates of ``inaxes``.
     modifiers : frozenset of str
-        Held modifiers, including a ``shift`` that :func:`canonical_key`
-        leaves out of ``key`` for printable characters.
+        Held modifiers.  For a printable character ``shift`` may be missing
+        (matplotlib does not report it); the character's case already
+        reflects it.
     native : any
         The backend's own event object.
     """

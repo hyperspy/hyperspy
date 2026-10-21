@@ -443,7 +443,7 @@ class _AplLine2DPatch:
         self._widget = None  # native line widget (main segment)
         self._group = None  # 'lines' marker group (width indicators)
         self._plot = None
-        self._on_drag = None  # remembered until the widget exists
+        self._on_drag = None
 
     def _pixel_xy(self):
         """Return the endpoints in the panel's own coordinates."""

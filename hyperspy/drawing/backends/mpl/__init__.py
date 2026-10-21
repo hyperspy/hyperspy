@@ -333,8 +333,11 @@ class MplBackend:
     @staticmethod
     def _button(mpl_event):
         button = getattr(mpl_event, "button", None)
-        # MouseButton is an IntEnum; scroll events report "up"/"down".
-        return int(button) if isinstance(button, int) else None
+        # MouseButton is an IntEnum; scroll events report "up"/"down", and
+        # BACK/FORWARD (8/9) fall outside the contract's 1-3.
+        if isinstance(button, int) and 1 <= int(button) <= 3:
+            return int(button)
+        return None
 
     @classmethod
     def _to_key_event(cls, e):
