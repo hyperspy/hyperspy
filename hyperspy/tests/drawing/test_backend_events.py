@@ -67,6 +67,45 @@ class TestCanonicalKey:
         }
         assert canonical_modifiers(None) == frozenset()
 
+    @pytest.mark.parametrize(
+        "key, expected",
+        [
+            ("ctrl+alt+left", ("left", ["ctrl", "alt"])),
+            ("left", ("left", [])),
+            ("+", ("+", [])),
+            ("ctrl++", ("+", ["ctrl"])),
+            (None, (None, [])),
+        ],
+    )
+    def test_split_key(self, key, expected):
+        from hyperspy.drawing.backends._events import split_key
+
+        assert split_key(key) == expected
+
+    def test_navigation_preferences_are_canonical(self):
+        """Every modifier combination the preferences allow, prefixed to every
+        navigation key, must already be a canonical key name, or
+        AxesManager.key_navigator could never match it."""
+        from hyperspy.defaults_parser import preferences
+        from hyperspy.drawing.backends._events import split_key
+
+        plot = preferences.Plot
+        mods = plot.trait("modifier_dims_01").handler.values
+        keys = [
+            plot.dims_024_increase,
+            plot.dims_024_decrease,
+            plot.dims_135_increase,
+            plot.dims_135_decrease,
+        ]
+        for mod in mods:
+            for key in keys:
+                name = f"{mod}+{key}"
+                assert canonical_key(*split_key(name)) == name
+
+    def test_pick_event_mouseevent_compat(self):
+        event = PickEvent(artist=None, xdata=1.0)
+        assert event.mouseevent.xdata == 1.0
+
     def test_pointer_event_key_compat(self):
         event = PointerEvent("press", modifiers=frozenset({"shift", "ctrl"}))
         assert event.key == "ctrl+shift"
@@ -154,6 +193,88 @@ class TestMplAdapter:
         assert event.xdata == pytest.approx(5.0)
         assert event.button == 1
 
+    @pytest.mark.parametrize(
+        "native, expected, modifiers",
+        [
+            ("meta+left", "super+left", {"super"}),
+            ("shift+ctrl+left", "ctrl+shift+left", {"ctrl", "shift"}),
+            ("ctrl++", "ctrl++", {"ctrl"}),
+            ("A", "A", set()),
+        ],
+    )
+    def test_key_press_canonicalised(self, fig_ax, native, expected, modifiers):
+        from matplotlib.backend_bases import KeyEvent as MplKeyEvent
+
+        from hyperspy.drawing.backends.mpl import MplBackend
+
+        fig, ax = fig_ax
+        received = []
+        MplBackend().connect_key_press(fig, received.append)
+        fig.canvas.callbacks.process(
+            "key_press_event", MplKeyEvent("key_press_event", fig.canvas, native)
+        )
+        assert received[0].key == expected
+        assert received[0].modifiers == modifiers
+
+    @pytest.mark.parametrize("button", [1, 2, 3])
+    def test_buttons(self, fig_ax, button):
+        from hyperspy.drawing.backends.mpl import MplBackend
+
+        fig, ax = fig_ax
+        received = []
+        MplBackend().connect_mouse_press(ax, received.append)
+        native = self._mouse(fig, ax, "button_press_event", button=button)
+        fig.canvas.callbacks.process("button_press_event", native)
+        assert received[0].button == button
+
+    def test_scroll_has_no_button(self, fig_ax):
+        from matplotlib.backend_bases import MouseEvent
+
+        from hyperspy.drawing.backends.mpl import MplBackend
+
+        fig, ax = fig_ax
+        received = []
+        MplBackend().connect_mouse_press(ax, received.append)
+        native = MouseEvent("button_press_event", fig.canvas, 1, 1, button="up")
+        fig.canvas.callbacks.process("button_press_event", native)
+        assert received[0].button is None
+
+    def test_outside_axes(self, fig_ax):
+        from matplotlib.backend_bases import MouseEvent
+
+        from hyperspy.drawing.backends.mpl import MplBackend
+
+        fig, ax = fig_ax
+        received = []
+        MplBackend().connect_mouse_move(ax, received.append)
+        native = MouseEvent("motion_notify_event", fig.canvas, -100, -100)
+        fig.canvas.callbacks.process("motion_notify_event", native)
+        assert received[0].inaxes is None
+        assert received[0].xdata is None
+
+    def test_bound_method_held_weakly(self, fig_ax):
+        """As with a raw mpl_connect, connecting a bound method must not keep
+        its object alive."""
+        import gc
+        import weakref
+
+        from hyperspy.drawing.backends.mpl import MplBackend
+
+        class Widget:
+            def handler(self, event):
+                pass
+
+        fig, ax = fig_ax
+        widget = Widget()
+        ref = weakref.ref(widget)
+        MplBackend().connect_mouse_move(ax, widget.handler)
+        del widget
+        gc.collect()
+        assert ref() is None
+        # A dead handler is skipped, not called.
+        native = self._mouse(fig, ax, "motion_notify_event")
+        fig.canvas.callbacks.process("motion_notify_event", native)
+
     def test_disconnect(self, fig_ax):
         from hyperspy.drawing.backends.mpl import MplBackend
 
@@ -192,9 +313,23 @@ class TestAnyplotlibAdapter:
         backend.connect_key_press(ax, received.append)
         self._fire(plot, "key_down", key="ArrowLeft", modifiers=["ctrl"])
         self._fire(plot, "key_down", key="PageUp")
-        assert [e.key for e in received] == ["ctrl+left", "pageup"]
+        self._fire(plot, "key_down", key="A", modifiers=["shift"], xdata=1.0, ydata=2.0)
+        assert [e.key for e in received] == ["ctrl+left", "pageup", "A"]
         assert all(isinstance(e, KeyEvent) for e in received)
-        assert received[0].inaxes is ax
+        assert received[0].modifiers == {"ctrl"}
+        # Shift is not part of a printable key name but stays in modifiers.
+        assert received[2].modifiers == {"shift"}
+        # inaxes is only set while the pointer is over the axes.
+        assert received[0].inaxes is None
+        assert received[2].inaxes is ax
+
+    @pytest.mark.parametrize("native, expected", [(0, 1), (1, 2), (2, 3)])
+    def test_buttons(self, setup, native, expected):
+        backend, ax, plot = setup
+        received = []
+        backend.connect_mouse_press(ax, received.append)
+        self._fire(plot, "pointer_down", xdata=1.0, ydata=1.0, button=native)
+        assert received[0].button == expected
 
     @pytest.mark.parametrize(
         "connect, event_type, kind",

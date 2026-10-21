@@ -1149,11 +1149,13 @@ class AnyplotlibBackend:
 
     @staticmethod
     def _to_key_event(ax, e):
+        inside = e.xdata is not None and e.ydata is not None
         return KeyEvent(
             key=canonical_key(e.key, e.modifiers),
-            inaxes=ax,
+            inaxes=ax if inside else None,
             xdata=e.xdata,
             ydata=e.ydata,
+            modifiers=canonical_modifiers(e.modifiers),
             native=e,
         )
 

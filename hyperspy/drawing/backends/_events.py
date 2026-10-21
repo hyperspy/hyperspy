@@ -96,6 +96,22 @@ def canonical_modifiers(modifiers) -> frozenset:
     return frozenset(out)
 
 
+def split_key(key):
+    """Split a ``+``-joined key string into ``(base, modifiers)``.
+
+    ``"ctrl+alt+left"`` gives ``("left", ["ctrl", "alt"])``; a ``+`` key is
+    handled (``"ctrl++"`` gives ``("+", ["ctrl"])``).
+    """
+    if not key:
+        return None, []
+    if key == "+":
+        return "+", []
+    if key.endswith("++"):
+        return "+", [m for m in key[:-2].split("+") if m]
+    *mods, base = key.split("+")
+    return base, mods
+
+
 def canonical_key(name, modifiers=()) -> str | None:
     """Return the canonical name for a key press.
 
@@ -150,6 +166,9 @@ class KeyEvent:
         Axes handle under the pointer, or ``None``.
     xdata, ydata : float or None
         Pointer position in data coordinates of ``inaxes``.
+    modifiers : frozenset of str
+        Held modifiers, including a ``shift`` that :func:`canonical_key`
+        leaves out of ``key`` for printable characters.
     native : any
         The backend's own event object.
     """
@@ -158,6 +177,7 @@ class KeyEvent:
     inaxes: Any = None
     xdata: float | None = None
     ydata: float | None = None
+    modifiers: frozenset = frozenset()
     native: Any = field(default=None, repr=False, compare=False)
 
 
@@ -235,3 +255,13 @@ class PickEvent:
     button: int | None = None
     modifiers: frozenset = frozenset()
     native: Any = field(default=None, repr=False, compare=False)
+
+    @property
+    def mouseevent(self):
+        """The pick event itself, which carries the pointer fields.
+
+        Provided for handlers written against the older event shape, which
+        read ``event.mouseevent.xdata``; new code should read
+        ``event.xdata``.
+        """
+        return self

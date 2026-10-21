@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import inspect
+import weakref
+
 import numpy as np
 
 from hyperspy.drawing.backends._events import (
     KeyEvent,
     PickEvent,
     PointerEvent,
+    canonical_key,
     canonical_modifiers,
+    split_key,
 )
 from hyperspy.drawing.backends._protocol import TextMarkup
 
@@ -333,10 +338,40 @@ class MplBackend:
 
     @classmethod
     def _to_key_event(cls, e):
-        # matplotlib already reports canonical names ("ctrl+left", "pageup").
+        # matplotlib's names are close to canonical, but GUI toolkits differ
+        # (Qt reports "meta", modifier order varies), so re-canonicalise.
+        base, mods = split_key(e.key)
         return KeyEvent(
-            key=e.key, inaxes=e.inaxes, xdata=e.xdata, ydata=e.ydata, native=e
+            key=canonical_key(base, mods),
+            inaxes=e.inaxes,
+            xdata=e.xdata,
+            ydata=e.ydata,
+            modifiers=canonical_modifiers(mods),
+            native=e,
         )
+
+    @staticmethod
+    def _handler(fn, convert):
+        """Wrap *fn* so it receives ``convert(native_event)``.
+
+        matplotlib's callback registry only weakly references bound methods,
+        so a widget that is never disconnected can still be collected; hold
+        bound methods weakly here too to keep that lifetime.
+        """
+        if inspect.ismethod(fn):
+            ref = weakref.WeakMethod(fn)
+
+            def handler(e):
+                method = ref()
+                if method is not None:
+                    method(convert(e))
+
+        else:
+
+            def handler(e):
+                fn(convert(e))
+
+        return handler
 
     @classmethod
     def _to_pointer_event(cls, kind, e):
@@ -370,28 +405,30 @@ class MplBackend:
 
     def connect_key_press(self, fig_or_ax, fn):
         return self._canvas(fig_or_ax).mpl_connect(
-            "key_press_event", lambda e: fn(self._to_key_event(e))
+            "key_press_event", self._handler(fn, self._to_key_event)
         )
 
     def connect_mouse_move(self, fig_or_ax, fn):
         return self._canvas(fig_or_ax).mpl_connect(
-            "motion_notify_event", lambda e: fn(self._to_pointer_event("move", e))
+            "motion_notify_event",
+            self._handler(fn, lambda e: self._to_pointer_event("move", e)),
         )
 
     def connect_mouse_press(self, fig_or_ax, fn):
         return self._canvas(fig_or_ax).mpl_connect(
-            "button_press_event", lambda e: fn(self._to_pointer_event("press", e))
+            "button_press_event",
+            self._handler(fn, lambda e: self._to_pointer_event("press", e)),
         )
 
     def connect_mouse_release(self, fig_or_ax, fn):
         return self._canvas(fig_or_ax).mpl_connect(
             "button_release_event",
-            lambda e: fn(self._to_pointer_event("release", e)),
+            self._handler(fn, lambda e: self._to_pointer_event("release", e)),
         )
 
     def connect_pick(self, fig_or_ax, fn):
         return self._canvas(fig_or_ax).mpl_connect(
-            "pick_event", lambda e: fn(self._to_pick_event(e))
+            "pick_event", self._handler(fn, self._to_pick_event)
         )
 
     # ── Draw animated artists ─────────────────────────────────────────────

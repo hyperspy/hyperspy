@@ -43,7 +43,7 @@ class VerticalLineWidget(Widget1DBase):
         self.position = (x,)
 
     def _onjumpclick(self, event):
-        if "shift" in event.modifiers and event.inaxes and self.is_pointer:
+        if event.modifiers == {"shift"} and event.inaxes and self.is_pointer:
             self.position = (event.xdata,)
 
     def _onmousemove(self, event):
