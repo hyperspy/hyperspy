@@ -6,3 +6,7 @@ primes them and skips the comparison.
 Add a behavioural conformance suite for plotting backends
 (``hyperspy/tests/drawing/backend_conformance.py``) that the matplotlib and
 ``anyplotlib`` backends run and that third-party backends can subclass.
+The ``anyplotlib`` backend now uses anyplotlib's public API (data-coordinate
+widgets and markers, axes/plot identity, close and display lifecycle)
+instead of private attributes and its own pixel conversions, and requires
+``anyplotlib>=0.11.0``.

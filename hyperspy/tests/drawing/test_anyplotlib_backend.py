@@ -220,15 +220,11 @@ class TestFigureLifecycle:
         fig = backend.create_figure()
         assert fig is not None
 
-    def test_create_figure_stores_hspy_ax(self, backend):
-        fig = backend.create_figure()
-        assert hasattr(fig, "_hspy_ax")
-        assert fig._hspy_ax is not None
-
-    def test_create_axes_returns_hspy_ax(self, backend):
+    def test_create_axes_returns_the_figure_axes(self, backend):
         fig = backend.create_figure()
         ax = backend.create_axes(fig)
-        assert ax is fig._hspy_ax
+        assert ax is backend.create_axes(fig)
+        assert not ax.has_plot
 
     def test_ax_has_figure_attribute(self, backend):
         """ax.figure must be set so widget.py code doesn't crash."""
@@ -701,8 +697,10 @@ class TestPolygonSelector:
 
 
 class TestCalibratedWidgetCoordinates:
-    """Overlay widgets are positioned in image pixels, hyperspy in data units;
-    the backend must convert on a calibrated image."""
+    """Overlay widgets and markers are drawn in image pixels while hyperspy
+    works in calibrated units.  The backend creates them with
+    ``coords="data"``; these tests check what reaches the renderer (the
+    pixel frame) and what a browser drag reports back."""
 
     # 8 px spanning 0-16 in data units, i.e. 2.0 per pixel.
     EXTENT = (0.0, 16.0, 16.0, 0.0)
@@ -715,7 +713,7 @@ class TestCalibratedWidgetCoordinates:
 
     def test_pixel_centres_span_the_extent(self, backend, image_ax):
         """Axis arrays hold pixel centres, half a pixel inside each edge."""
-        x_axis = image_ax._plot._state["x_axis"]
+        x_axis = image_ax.image_plot.x_axis
         assert x_axis[0] == pytest.approx(1.0)  # 0 + 2/2
         assert x_axis[-1] == pytest.approx(15.0)  # 16 - 2/2
         assert x_axis[1] - x_axis[0] == pytest.approx(2.0)
@@ -723,21 +721,22 @@ class TestCalibratedWidgetCoordinates:
     def test_rect_pointer_converts_to_pixels(self, backend, image_ax):
         handle = backend.create_rect_pointer(image_ax, 4.0, 4.0, 8.0, 8.0)
         # data 4.0 is the centre of pixel 1.5; 8.0 wide is 4 pixels.
-        assert handle.get("x") == pytest.approx(1.5)
-        assert handle.get("w") == pytest.approx(4.0)
+        assert handle.get("x", coords="pixel") == pytest.approx(1.5)
+        assert handle.get("w", coords="pixel") == pytest.approx(4.0)
+        assert handle.x == pytest.approx(4.0)
 
     def test_rect_pointer_update_converts_to_pixels(self, backend, image_ax):
         handle = backend.create_rect_pointer(image_ax, 4.0, 4.0, 8.0, 8.0)
         backend.update_rect_pointer(handle, 6.0, 6.0, 4.0, 4.0)
-        assert handle.get("x") == pytest.approx(2.5)
-        assert handle.get("w") == pytest.approx(2.0)
+        assert handle.get("x", coords="pixel") == pytest.approx(2.5)
+        assert handle.get("w", coords="pixel") == pytest.approx(2.0)
 
     def test_drag_reports_data_units(self, backend, image_ax):
-        """A drag must arrive back in HyperSpy's units, not pixels."""
+        """A browser drag (pixel state) must arrive in HyperSpy's units."""
         handle = backend.create_rect_pointer(image_ax, 4.0, 4.0, 8.0, 8.0)
         seen = []
         backend.connect_widget_drag(handle, lambda *args: seen.append(args))
-        handle.set(x=2.5, y=2.5, w=2.0, h=2.0)
+        handle._update_from_js({"x": 2.5, "y": 2.5, "w": 2.0, "h": 2.0})
         assert seen, "drag callback never fired"
         x, y, w, h = seen[-1]
         assert x == pytest.approx(6.0)
@@ -745,13 +744,13 @@ class TestCalibratedWidgetCoordinates:
 
     def test_circle_pointer_converts_to_pixels(self, backend, image_ax):
         (handle,) = backend.create_circle_pointer(image_ax, 8.0, 8.0, 4.0)
-        assert handle.get("cx") == pytest.approx(3.5)
-        assert handle.get("r") == pytest.approx(2.0)
+        assert handle.get("cx", coords="pixel") == pytest.approx(3.5)
+        assert handle.get("r", coords="pixel") == pytest.approx(2.0)
 
     def test_polygon_selector_round_trips_data_units(self, backend, image_ax):
         selector = backend.create_polygon_selector(image_ax, props={"color": "red"})
         selector.verts = [(4.0, 4.0), (12.0, 4.0), (8.0, 12.0)]
-        stored = selector._widget.get("vertices")
+        stored = selector._widget.get("vertices", coords="pixel")
         assert stored[0] == pytest.approx([1.5, 1.5])
         # Reading back returns what was written, in data units.
         assert selector.verts[0] == pytest.approx((4.0, 4.0))
@@ -763,7 +762,9 @@ class TestCalibratedWidgetCoordinates:
             image_ax, props={"color": "red"}, onselect=seen.append
         )
         selector.verts = [(4.0, 4.0), (12.0, 4.0), (8.0, 12.0)]
-        selector._widget.set(vertices=[[0.5, 0.5], [5.5, 0.5], [3.5, 5.5]])
+        selector._widget._update_from_js(
+            {"vertices": [[0.5, 0.5], [5.5, 0.5], [3.5, 5.5]]}
+        )
         assert seen, "onselect never fired for a polygon edit"
         assert seen[-1][0] == pytest.approx((2.0, 2.0))
 
@@ -772,41 +773,58 @@ class TestCalibratedWidgetCoordinates:
         _, ax = fig_ax
         backend.plot_image(ax, np.zeros((10, 10)))
         handle = backend.create_rect_pointer(ax, 2.0, 3.0, 4.0, 5.0)
-        assert handle.get("x") == pytest.approx(2.0)
-        assert handle.get("w") == pytest.approx(4.0)
+        assert handle.get("x", coords="pixel") == pytest.approx(2.0)
+        assert handle.get("w", coords="pixel") == pytest.approx(4.0)
 
     def test_markers_convert_offsets(self, backend, image_ax):
         """Markers go through the same image transform as the widgets."""
         group = backend.create_markers(
             image_ax, "circles", offsets=[[4.0, 4.0], [12.0, 12.0]], sizes=4.0
         )
-        assert group._data["offsets"][0] == pytest.approx([1.5, 1.5])
-        assert group._data["offsets"][1] == pytest.approx([5.5, 5.5])
+        wire = group.to_wire("g")
+        assert wire["offsets"][0] == pytest.approx([1.5, 1.5])
+        assert wire["offsets"][1] == pytest.approx([5.5, 5.5])
 
     def test_arrow_components_convert_as_lengths(self, backend, image_ax):
         """U/V are displacements, so they scale but do not shift."""
         group = backend.create_markers(
             image_ax, "arrows", offsets=[[4.0, 4.0]], U=[4.0], V=[4.0]
         )
-        assert group._data["offsets"][0] == pytest.approx([1.5, 1.5])
-        # 4.0 data units over a 2.0-per-pixel axis is 2 pixels. A single
-        # value is unwrapped to a scalar on the way through.
-        assert np.atleast_1d(group._data["U"])[0] == pytest.approx(2.0)
-        assert np.atleast_1d(group._data["V"])[0] == pytest.approx(2.0)
+        wire = group.to_wire("g")
+        assert wire["offsets"][0] == pytest.approx([1.5, 1.5])
+        # 4.0 data units over a 2.0-per-pixel axis is 2 pixels.
+        assert np.atleast_1d(wire["U"])[0] == pytest.approx(2.0)
+        assert np.atleast_1d(wire["V"])[0] == pytest.approx(2.0)
+
+    def test_markers_follow_the_extent(self, backend, image_ax):
+        """Markers keep their data position when the image is recalibrated."""
+        group = backend.create_markers(image_ax, "circles", offsets=[[4.0, 4.0]])
+        backend.image_set_extent(image_ax.image_plot, (0.0, 32.0, 32.0, 0.0))
+        assert group.to_wire("g")["offsets"][0] == pytest.approx([0.5, 0.5])
 
     def test_line_pointer_on_2d_navigator_converts(self, backend, image_ax):
         """A Signal1D navigator is a 2-D image, so its line pointer is
         positioned in pixel rows."""
         handle = backend.create_line_pointer(image_ax, "y", 4.0)
-        assert handle.get("y") == pytest.approx(1.5)
+        assert handle.get("y", coords="pixel") == pytest.approx(1.5)
         backend.update_line_pointer(handle, "y", 12.0)
-        assert handle.get("y") == pytest.approx(5.5)
+        assert handle.get("y", coords="pixel") == pytest.approx(5.5)
 
     def test_line_pointer_on_1d_panel_stays_in_data_units(self, backend, fig_ax):
         _, ax = fig_ax
         backend.plot_line(ax, np.linspace(100.0, 130.0, 20), np.zeros(20))
         handle = backend.create_line_pointer(ax, "x", 115.0)
         assert handle.get("x") == pytest.approx(115.0)
+
+    def test_convert_coords_display_on_calibrated_image(self, backend, image_ax):
+        """Display conversion must go through the image calibration."""
+        points = np.array([[4.0, 4.0], [12.0, 8.0]])
+        display = backend.convert_coords(image_ax, points, "data", "display")
+        back = backend.convert_coords(image_ax, display, "display", "data")
+        np.testing.assert_allclose(back, points, atol=1e-6)
+        plot = image_ax.image_plot
+        expected = plot.data_to_display(plot.data_to_pixel(points))
+        np.testing.assert_allclose(display, expected, atol=1e-6)
 
 
 class TestEvents:
@@ -913,7 +931,7 @@ class TestCombinedFigurePanels:
 
     def test_proxies_have_distinct_axes(self, backend):
         nav_proxy, signal_proxy = backend.create_combined_figure_panels()
-        assert nav_proxy._hspy_ax is not signal_proxy._hspy_ax
+        assert nav_proxy.ax is not signal_proxy.ax
 
     def test_create_figure_adopts_proxy(self, backend):
         nav_proxy, signal_proxy = backend.create_combined_figure_panels()
@@ -924,18 +942,18 @@ class TestCombinedFigurePanels:
         nav_proxy, signal_proxy = backend.create_combined_figure_panels()
         sentinel = object()
         backend.create_figure(fig=signal_proxy, on_close=lambda: sentinel)
-        assert signal_proxy._hspy_on_close is not None
+        assert len(signal_proxy.on_close) == 1
 
     def test_create_axes_from_proxy(self, backend):
         nav_proxy, signal_proxy = backend.create_combined_figure_panels()
         backend.create_figure(fig=signal_proxy)
         ax = backend.create_axes(signal_proxy)
-        assert ax is signal_proxy._hspy_ax
+        assert ax is signal_proxy.ax
 
     def test_close_proxy_calls_callback(self, backend):
         nav_proxy, signal_proxy = backend.create_combined_figure_panels()
         called = []
-        signal_proxy._hspy_on_close = lambda: called.append(1)
+        backend.connect_close_event(signal_proxy, lambda: called.append(1))
         backend.close_figure(signal_proxy)
         assert called == [1]
         # Second call is a no-op (callback cleared)
@@ -956,26 +974,28 @@ class TestCombinedFigurePanels:
         nav_proxy, signal_proxy = backend.create_combined_figure_panels()
         # After nav draws, countdown goes 2→1 — still waiting.
         backend.draw_idle(nav_proxy)
-        assert nav_proxy._real_fig._hspy_panels_remaining == 1
-        assert not getattr(nav_proxy._real_fig, "_hspy_displayed", False)
-        # After signal draws, countdown reaches 0 — (IPython absent, no real display).
+        assert nav_proxy._layout.panels_remaining == 1
+        assert not nav_proxy._real_fig.displayed
+        # After signal draws, the countdown completes and the figure shows.
         backend.draw_idle(signal_proxy)
-        assert signal_proxy._real_fig._hspy_panels_remaining == 0
+        assert signal_proxy._layout.panels_remaining == 0
+        assert signal_proxy._real_fig.displayed
 
     def test_ensure_displayed_forces_display(self, backend):
         nav_proxy, signal_proxy = backend.create_combined_figure_panels()
         # Only nav draws (simulate slider navigator → signal draws, nav skips).
         backend.draw_idle(nav_proxy)
-        assert nav_proxy._real_fig._hspy_panels_remaining == 1
+        assert nav_proxy._layout.panels_remaining == 1
         # ensure_displayed clears countdown.
         backend.ensure_displayed(signal_proxy)
-        assert signal_proxy._real_fig._hspy_panels_remaining == 0
+        assert signal_proxy._layout.panels_remaining == 0
+        assert signal_proxy._real_fig.displayed
 
     def test_draw_idle_single_panel_immediate(self, backend):
         """Single-panel (no combined) figure should display on first draw_idle."""
         fig = backend.create_figure()
-        # No _hspy_panels_remaining set → should not block.
-        assert getattr(fig, "_hspy_panels_remaining", 0) == 0
+        backend.draw_idle(fig)
+        assert fig.displayed
 
 
 class TestNativeVlineWidget:
@@ -1239,7 +1259,7 @@ class TestNativeMarkers:
             texts=["A", "B"],
         )
         assert isinstance(handle, MarkerGroup)
-        assert handle._type == "texts"
+        assert handle.marker_type == "texts"
 
     def test_update_markers_changes_data(self, backend, plot2d_ax):
         handle = backend.create_markers(
@@ -1251,9 +1271,9 @@ class TestNativeMarkers:
             sizes=[0.5],
         )
         backend.update_markers(handle, offsets=[[9, 9]], sizes=[2.0])
-        # [2.0] is a 1-element cycling sequence → _unwrap_cycling converts to scalar
-        assert handle._data["radius"] == 2.0
-        assert handle._data["offsets"] == [[9, 9]]
+        # A 1-element sequence is broadcast by anyplotlib.
+        assert np.atleast_1d(handle.get("radius"))[0] == 2.0
+        assert handle.get("offsets") == [[9, 9]]
 
     def test_remove_markers_cleans_up(self, backend, plot2d_ax):
         handle = backend.create_markers(
@@ -1611,19 +1631,13 @@ class TestAxesSetupGaps:
             backend.remove_right_axis(ax, None)
 
 
-class TestApplyPendingLabelsGaps:
-    def test_delattr_failure_is_swallowed(self, backend):
-        """When the pending-label attribute lives on the class (not the
-        instance), delattr raises AttributeError, which must be swallowed."""
-        from unittest.mock import MagicMock
-
-        class FakeAxClassAttr:
-            _hspy_pending_xlabel = "Energy"
-
-        ax = FakeAxClassAttr()
-        plot = MagicMock()
-        backend._apply_pending_labels(ax, plot)
-        plot.set_xlabel.assert_called_once_with("Energy")
+class TestPendingLabels:
+    def test_labels_set_before_the_plot_are_applied(self, backend, fig_ax):
+        _, ax = fig_ax
+        backend.set_xlabel(ax, "Energy")
+        backend.set_title(ax, "Title")
+        plot = backend.plot_line(ax, np.arange(5.0), np.zeros(5))
+        assert plot._state["units"] == "Energy"
 
 
 class TestLineGaps:
@@ -1932,12 +1946,12 @@ class TestMarkerTranslationGaps:
             ("arrows", "U"),
         ],
     )
-    def test_singleton_cycling_values_flattened(self, backend, marker_type, key):
-        """A 1-element cycling sequence is flattened to a scalar."""
+    def test_singleton_cycling_values_pass_through(self, backend, marker_type, key):
+        """A 1-element cycling sequence is left for anyplotlib to broadcast."""
         out = backend._translate_marker_kwargs(
             marker_type, "data", {key: (5,), "offsets": [[1, 1], [2, 2]]}
         )
-        assert out[key] == 5.0
+        assert list(out[key]) == [5]
 
     def test_per_marker_values_are_preserved(self, backend):
         out = backend._translate_marker_kwargs(
@@ -2259,8 +2273,10 @@ class TestRoiMapSingleFigureBackend:
         signal2d_nav.plot()
         rois, roi_sums = hs.plot.plot_roi_map(signal2d_nav, rois=2, single_figure=True)
         fig = roi_sums[0]._plot.signal_plot.ax.figure
-        on_close = getattr(fig, "_hspy_on_close", None)
-        assert on_close is not None
+        assert all(roi.signal_map for roi in rois)
+        # Closing the shared figure must take the ROI widgets off the signal.
+        backend.close_figure(fig)
+        assert not any(roi.signal_map for roi in rois)
 
 
 # ---------------------------------------------------------------------------
@@ -2274,7 +2290,7 @@ class TestCombinedFigurePanelsN:
         assert len(panels) == 3
         real = {p._real_fig for p in panels}
         assert len(real) == 1
-        assert real.pop()._hspy_panels_remaining == 3
+        assert panels[0]._layout.panels_remaining == 3
 
     def test_single_panel(self, backend):
         panels = backend.create_combined_figure_panels(n=1)

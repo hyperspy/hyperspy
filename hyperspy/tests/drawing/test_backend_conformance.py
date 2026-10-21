@@ -149,33 +149,22 @@ class AnyplotlibDriver(BackendDriver):
         )
 
     def drag_pointer(self, backend, ax, handle, *geometry):
-        """Move the widget as the browser does, then fire its move event."""
-        from anyplotlib.callbacks import Event
-
-        from hyperspy.drawing.backends.anyplotlib import (
-            _pixel_axes,
-            _pixel_span,
-            _to_pixels,
-        )
-
-        xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
-        kind = handle.get("type")
-        if kind == "vline":
-            update = {"x": _to_pixels(xa, geometry[0])}
-        elif kind == "hline":
-            update = {"y": _to_pixels(ya, geometry[0])}
-        elif kind == "rectangle":
-            x, y, w, h = geometry
-            update = {
-                "x": _to_pixels(xa, x),
-                "y": _to_pixels(ya, y),
-                "w": _pixel_span(xa, w),
-                "h": _pixel_span(ya, h),
-            }
+        """Apply a browser-side drag: the renderer reports image pixels."""
+        if handle.kind == "vline":
+            data = {"x": geometry[0]}
+        elif handle.kind == "hline":
+            data = {"y": geometry[0]}
+        elif handle.kind == "rectangle":
+            data = dict(zip(("x", "y", "w", "h"), geometry))
         else:
-            pytest.skip(f"no drag emulation for {kind!r} widgets")
-        handle.set(_notify=False, **update)
-        handle.callbacks.fire(Event("pointer_move", source=handle))
+            pytest.skip(f"no drag emulation for {handle.kind!r} widgets")
+        # Convert to the pixel state the JS would send, through the widget's
+        # own frame conversion, and deliver it the way the browser does.
+        pixel_state = {
+            key: handle._geom_in({key: value}).get(key, value)
+            for key, value in data.items()
+        }
+        handle._update_from_js(pixel_state)
 
 
 class TestAnyplotlibConformance(BackendConformance):

@@ -1,12 +1,15 @@
 """anyplotlib plotting backend for hyperspy.
 
-Requires anyplotlib >= 0.8.0.  Python-initiated widget updates use
-``Widget.set(_notify=False)`` so they do not echo back through the drag
-callbacks; coordinate conversion relies on ``data_to_display`` /
-``display_to_data``.
+Requires anyplotlib >= 0.11.0.  Widgets and markers are created with
+``coords="data"`` so they are placed, updated and reported in hyperspy's
+calibrated units; Python-initiated widget updates use
+``Widget.set(notify=False)`` so they do not echo back through the drag
+callbacks.
 """
 
 from __future__ import annotations
+
+import weakref
 
 import numpy as np
 
@@ -21,68 +24,65 @@ from hyperspy.drawing.backends._protocol import BackendCapabilityError, TextMark
 _NOT_YET = "the anyplotlib backend does not support '{}'."
 
 
-def _unwrap_cycling(value):
-    """Unwrap a 1-element cycling sequence to a scalar.
+def _jsonable(value):
+    """Return *value* in a JSON-serialisable form for anyplotlib's wire.
 
-    HyperSpy stores singleton style values as ``(v,)`` so matplotlib cycles
-    them; anyplotlib wants a bare scalar or one value per marker.
+    anyplotlib broadcasts the one-element sequences hyperspy uses for
+    singleton style values (``(v,)``) itself; only numpy containers need
+    converting.
     """
-    if hasattr(value, "__len__") and not isinstance(value, str) and len(value) == 1:
-        v = value[0]
-        if isinstance(v, str):
-            return v
-        try:
-            return float(v)
-        except (TypeError, ValueError):
-            # e.g. an RGBA tuple
-            return v.tolist() if hasattr(v, "tolist") else v
-    if hasattr(value, "tolist"):
+    if isinstance(value, np.ndarray):
         return value.tolist()
+    if isinstance(value, (list, tuple)):
+        try:
+            return np.asarray(value).tolist()
+        except ValueError:  # ragged
+            return [_jsonable(v) for v in value]
+    if isinstance(value, np.generic):
+        return value.item()
     return value
 
 
-# Per-marker kwargs that anyplotlib broadcasts against the number of markers;
-# a 1-element cycling sequence is rejected when there is more than one marker.
-_CYCLING_KWARGS = frozenset(
-    {
-        "widths",
-        "heights",
-        "angles",
-        "sizes",
-        "radius",
-        "U",
-        "V",
-        "linewidths",
-        "edgecolors",
-        "facecolors",
-        "hover_edgecolors",
-        "hover_facecolors",
-    }
-)
+class _AplCombinedLayout:
+    """Shared state of the panels of one combined Figure."""
+
+    def __init__(self, fig, n):
+        self.fig = fig
+        # The figure is displayed once every panel has drawn.
+        self.panels_remaining = n
 
 
 class _AplFigureProxy:
     """One panel of a shared anyplotlib Figure (combined navigator/signal layout).
 
-    Every proxy holds the same underlying Figure widget so ``display()`` runs
-    only once.
+    Every proxy holds the same underlying Figure widget so it is displayed
+    only once.  Closing a panel runs its own callbacks but never closes the
+    shared figure.
     """
 
-    def __init__(self, real_fig, ax):
-        self._real_fig = real_fig
-        self._hspy_ax = ax
-        self._hspy_on_close = None
+    def __init__(self, layout, ax):
+        self._layout = layout
+        self._real_fig = layout.fig
+        self.ax = ax
+        self.on_close = []
 
 
-def _append_on_close(fig_or_proxy, fn):
-    """Add *fn* to ``_hspy_on_close`` (a callable or a list of callables)."""
-    existing = getattr(fig_or_proxy, "_hspy_on_close", None)
-    if existing is None:
-        fig_or_proxy._hspy_on_close = fn
-    elif isinstance(existing, list):
-        existing.append(fn)
-    else:
-        fig_or_proxy._hspy_on_close = [existing, fn]
+# Figure -> its single Axes.  anyplotlib links Axes -> Figure (``ax.figure``)
+# but ``Figure.get_axes()`` only lists axes that already hold a plot, and
+# hyperspy asks for the axes before plotting.
+_FIGURE_AXES = weakref.WeakKeyDictionary()
+
+
+def _quiet(fn):
+    """Wrap a zero-argument close callback as an anyplotlib handler."""
+
+    def handler(event=None):
+        try:
+            fn()
+        except Exception:
+            pass
+
+    return handler
 
 
 # hyperspy widget linewidths are matplotlib points; anyplotlib strokes are CSS
@@ -95,157 +95,6 @@ def _stroke_px(linewidth, default=2.0):
     if linewidth is None:
         linewidth = default
     return float(linewidth) * _PX_PER_PT
-
-
-# ---------------------------------------------------------------------------
-# Widget coordinates
-#
-# Overlay widgets and data-space markers on a ``Plot2D`` are positioned in
-# image pixel indices, whereas hyperspy uses calibrated units.  The panel's
-# ``x_axis`` / ``y_axis`` arrays give one coordinate per pixel, which is enough
-# to convert both ways.  1-D panels are already in data units and are left
-# alone (``_pixel_axes`` returns ``None`` for them).
-# ---------------------------------------------------------------------------
-
-
-def _pixel_centres(edge0, edge1, count):
-    """Return the coordinate of each pixel centre across an extent.
-
-    ``extent`` gives the outer *edges* of the image, so the centres are half a
-    pixel in from either end.
-    """
-    size = (float(edge1) - float(edge0)) / float(count)
-    return np.linspace(float(edge0) + size / 2.0, float(edge1) - size / 2.0, int(count))
-
-
-def _pixel_axes(plot):
-    """Return ``(x, y)`` calibrations if *plot* positions widgets in pixels.
-
-    Each entry is ``(first_centre, pixel_size)``, or ``None`` when the panel
-    is already in data units (a 1-D plot).
-    """
-    state = getattr(plot, "_state", None)
-    if not isinstance(state, dict) or "image_width" not in state:
-        return None, None
-    x_axis, y_axis = state.get("x_axis"), state.get("y_axis")
-    if x_axis is None or y_axis is None:
-        return None, None
-    if len(x_axis) < 2 or len(y_axis) < 2:
-        return None, None
-
-    def _calibration(axis):
-        first, last = float(axis[0]), float(axis[-1])
-        size = (last - first) / (len(axis) - 1)
-        return None if size == 0 else (first, size)
-
-    return _calibration(x_axis), _calibration(y_axis)
-
-
-def _to_pixels(axis, value):
-    """Map a calibrated coordinate onto a fractional pixel index."""
-    if axis is None or value is None:
-        return value
-    first, size = axis
-    return (float(value) - first) / size
-
-
-def _to_data(axis, pixel):
-    """Inverse of :func:`_to_pixels`."""
-    if axis is None or pixel is None:
-        return pixel
-    first, size = axis
-    return first + float(pixel) * size
-
-
-def _pixel_span(axis, length):
-    """Convert a length in calibrated units to a length in pixels."""
-    if axis is None or length is None:
-        return length
-    return abs(float(length) / axis[1])
-
-
-def _data_span(axis, pixels):
-    """Inverse of :func:`_pixel_span`."""
-    if axis is None or pixels is None:
-        return pixels
-    return abs(float(pixels) * axis[1])
-
-
-#: Marker keys holding ``[x, y]`` positions, and how deeply they are nested.
-#: ``offsets`` is a list of points, ``segments`` a list of point pairs, and
-#: ``vertices_list`` a list of polygons.
-_MARKER_POSITION_KEYS = {"offsets": 1, "segments": 2, "vertices_list": 2}
-
-#: Marker keys holding a length along x or along y.
-_MARKER_LENGTH_KEYS = {
-    "U": "x",
-    "widths": "x",
-    "radius": "x",
-    "V": "y",
-    "heights": "y",
-}
-
-
-def _nested_map(value, depth, fn):
-    """Apply *fn* to every ``[x, y]`` pair *depth* levels down."""
-    if depth == 0:
-        pair = list(value)
-        return [fn(pair[0], 0)] + ([fn(pair[1], 1)] if len(pair) > 1 else [])
-    return [_nested_map(item, depth - 1, fn) for item in value]
-
-
-def _markers_to_pixels(plot, marker_type, translated):
-    """Rewrite data-space marker geometry from calibrated units to image pixels.
-
-    Positions are converted with the axis calibration; lengths (an arrow's
-    U/V, a rectangle's width) are scaled by the pixel size unless the marker
-    is sized in display pixels (``size_units="px"``).
-    """
-    if translated.get("transform") != "data":
-        return translated
-    x_cal, y_cal = _pixel_axes(plot)
-    if x_cal is None and y_cal is None:
-        return translated
-
-    if marker_type in ("vlines", "hlines"):  # pragma: no cover
-        # One coordinate per entry along the marker's own axis.  Currently
-        # unreachable (anyplotlib only allows these on 1-D panels).
-        axis = x_cal if marker_type == "vlines" else y_cal
-        offsets = translated.get("offsets")
-        if offsets is not None:
-            translated["offsets"] = [[_to_pixels(axis, v[0])] for v in offsets]
-        return translated
-
-    def _point(value, axis_index):
-        return _to_pixels(x_cal if axis_index == 0 else y_cal, value)
-
-    for key, depth in _MARKER_POSITION_KEYS.items():
-        if key in translated and translated[key] is not None:
-            translated[key] = _nested_map(translated[key], depth, _point)
-
-    if translated.get("size_units") == "px":
-        return translated
-
-    for key, which in _MARKER_LENGTH_KEYS.items():
-        if key not in translated or translated[key] is None:
-            continue
-        axis = x_cal if which == "x" else y_cal
-        value = translated[key]
-        if np.isscalar(value):
-            translated[key] = _pixel_span(axis, value)
-        else:
-            translated[key] = [_pixel_span(axis, v) for v in np.asarray(value).ravel()]
-    return translated
-
-
-def _remember_plot(handle, plot):
-    """Tag a widget with its panel so ``update_*`` / drag callbacks can convert
-    coordinates; return the widget."""
-    try:
-        handle._hspy_plot = plot
-    except AttributeError:  # pragma: no cover - defensive
-        pass
-    return handle
 
 
 class _AplSpanSelector:
@@ -280,7 +129,7 @@ class _AplSpanSelector:
         left, right = value
         if right < left:
             left, right = right, left
-        self._widget.set(_notify=False, x0=float(left), x1=float(right))
+        self._widget.set(x0=float(left), x1=float(right), notify=False)
 
     @property
     def snap_values(self):
@@ -289,8 +138,8 @@ class _AplSpanSelector:
     @snap_values.setter
     def snap_values(self, values):
         self._widget.set(
-            _notify=False,
             snap_values=None if values is None else [float(v) for v in values],
+            notify=False,
         )
 
     @property
@@ -301,7 +150,7 @@ class _AplSpanSelector:
 
     def set_props(self, **props):
         if "color" in props:
-            self._widget.set(_notify=False, color=props["color"])
+            self._widget.set(color=props["color"], notify=False)
 
     set_handle_props = set_props
 
@@ -356,11 +205,7 @@ class _AplPolygonSelector:
     @property
     def verts(self):
         if self._widget is not None:
-            xa, ya = _pixel_axes(self._plot)
-            return [
-                (_to_data(xa, vx), _to_data(ya, vy))
-                for vx, vy in self._widget.get("vertices", [])
-            ]
+            return [tuple(v) for v in self._widget.get("vertices", [])]
         return list(self._verts)
 
     @verts.setter
@@ -368,21 +213,18 @@ class _AplPolygonSelector:
         self._verts = [tuple(float(c) for c in v) for v in value]
         if len(self._verts) < 3:
             return
-        xa, ya = _pixel_axes(self._plot)
-        pixels = [[_to_pixels(xa, vx), _to_pixels(ya, vy)] for vx, vy in self._verts]
+        vertices = [list(v) for v in self._verts]
         if self._widget is None:
-            self._widget = _remember_plot(
-                self._plot.add_widget(
-                    "polygon",
-                    vertices=pixels,
-                    color=self._color,
-                    linewidth=_stroke_px(self._linewidth),
-                ),
-                self._plot,
+            self._widget = self._plot.add_widget(
+                "polygon",
+                vertices=vertices,
+                color=self._color,
+                linewidth=_stroke_px(self._linewidth),
+                coords="data",
             )
             self._connect_onselect()
         else:
-            self._widget.set(_notify=False, vertices=pixels)
+            self._widget.set(vertices=vertices, notify=False)
 
     def _connect_onselect(self):
         """Report browser-side polygon edits back to the ROI."""
@@ -398,7 +240,7 @@ class _AplPolygonSelector:
         if "color" in props:
             self._color = props["color"]
             if self._widget is not None:
-                self._widget.set(_notify=False, color=self._color)
+                self._widget.set(color=self._color, notify=False)
 
     set_handle_props = set_props
 
@@ -445,18 +287,9 @@ class _AplLine2DPatch:
         self._plot = None
         self._on_drag = None
 
-    def _pixel_xy(self):
-        """Return the endpoints in the panel's own coordinates."""
-        xa, ya = _pixel_axes(self._plot)
-        x, y = self._xy
-        return (
-            np.asarray([_to_pixels(xa, v) for v in x], dtype=float),
-            np.asarray([_to_pixels(ya, v) for v in y], dtype=float),
-        )
-
     def materialise(self, plot):
         self._plot = plot
-        x, y = self._pixel_xy()
+        x, y = self._xy
         if self._interactive and hasattr(plot, "add_line_widget") and len(x) >= 2:
             self._widget = plot.add_line_widget(
                 x1=float(x[0]),
@@ -465,6 +298,7 @@ class _AplLine2DPatch:
                 y2=float(y[-1]),
                 color=self._color,
                 linewidth=_stroke_px(self._linewidth),
+                coords="data",
             )
             self._connect_drag()
         else:
@@ -473,20 +307,21 @@ class _AplLine2DPatch:
                 segments=AnyplotlibBackend._polyline_segments(x, y),
                 edgecolors=self._color,
                 linewidths=_stroke_px(self._linewidth),
+                coords="data",
             )
 
     def set_data(self, x, y=None):
         if y is None:  # Line2D.set_data accepts a single (2, N) array
             x, y = np.asarray(x, dtype=float)
         self._xy = (np.asarray(x, dtype=float), np.asarray(y, dtype=float))
-        x, y = self._pixel_xy()
+        x, y = self._xy
         if self._widget is not None and len(x) >= 2:
             self._widget.set(
-                _notify=False,
                 x1=float(x[0]),
                 y1=float(y[0]),
                 x2=float(x[-1]),
                 y2=float(y[-1]),
+                notify=False,
             )
         elif self._group is not None:
             self._group.set(segments=AnyplotlibBackend._polyline_segments(x, y))
@@ -499,7 +334,7 @@ class _AplLine2DPatch:
         if color is None:
             return
         if self._widget is not None:
-            self._widget.set(_notify=False, color=self._color)
+            self._widget.set(color=self._color, notify=False)
         elif self._group is not None:
             self._group.set(edgecolors=self._color)
 
@@ -512,17 +347,11 @@ class _AplLine2DPatch:
         if self._widget is None or self._on_drag is None:
             return
         w, on_drag = self._widget, self._on_drag
-        xa, ya = _pixel_axes(self._plot)
 
         def _cb(event):
-            on_drag(
-                _to_data(xa, w.x1),
-                _to_data(ya, w.y1),
-                _to_data(xa, w.x2),
-                _to_data(ya, w.y2),
-            )
+            on_drag(w.x1, w.y1, w.x2, w.y2)
 
-        w.add_event_handler(AnyplotlibBackend._wrap(_cb), "pointer_move")
+        w.add_event_handler(_cb, "pointer_move")
 
     def remove(self):
         for obj in (self._widget, self._group):
@@ -591,34 +420,30 @@ class AnyplotlibBackend:
         fig_kwarg = kwargs.pop("fig", None)
         if isinstance(fig_kwarg, _AplFigureProxy):
             if on_close is not None:
-                _append_on_close(fig_kwarg, on_close)
+                fig_kwarg.on_close.append(on_close)
             return fig_kwarg
 
         figsize = _figsize_px(kwargs.pop("figsize", None), (640, 480))
         fig, ax = apl.subplots(1, 1, figsize=figsize)
-        fig._hspy_ax = ax
-        ax.figure = fig  # hyperspy widgets reach the figure through ax.figure
+        _FIGURE_AXES[fig] = ax
         if on_close is not None:
-            _append_on_close(fig, on_close)
+            fig.on_close(_quiet(on_close))
         return fig
 
     def close_figure(self, fig):
         if fig is None:
             return
-        on_close = getattr(fig, "_hspy_on_close", None)
-        if on_close is not None:
-            fig._hspy_on_close = None
-            for fn in on_close if isinstance(on_close, list) else [on_close]:
-                try:
-                    fn()
-                except Exception:
-                    pass
-        # A panel proxy runs its callbacks but never closes the shared figure.
-        if not isinstance(fig, _AplFigureProxy):
-            try:
-                fig.close()
-            except Exception:
-                pass
+        if isinstance(fig, _AplFigureProxy):
+            # A panel proxy runs its callbacks but never closes the shared
+            # figure.
+            callbacks, fig.on_close = fig.on_close, []
+            for fn in callbacks:
+                _quiet(fn)()
+            return
+        try:
+            fig.close()  # fires the on_close handlers
+        except Exception:
+            pass
 
     def create_combined_figure_panels(self, figsize=None, n=2):
         """Create an *n*-panel Figure and return one proxy per panel.
@@ -631,20 +456,17 @@ class AnyplotlibBackend:
         fig, axes = apl.subplots(1, n, figsize=_figsize_px(figsize, (640 * n, 640)))
         if n == 1:
             axes = [axes]
-        for ax in axes:
-            ax.figure = fig
-        fig._hspy_panels_remaining = n
-        return tuple(_AplFigureProxy(fig, ax) for ax in axes)
+        layout = _AplCombinedLayout(fig, n)
+        return tuple(_AplFigureProxy(layout, ax) for ax in axes)
 
     @staticmethod
-    def _display(real):
-        real._hspy_panels_remaining = 0
+    def _display(fig):
+        if isinstance(fig, _AplFigureProxy):
+            fig._layout.panels_remaining = 0
+            fig = fig._real_fig
         try:
-            from IPython.display import display
-
-            display(real)
-            real._hspy_displayed = True
-        except ImportError:
+            fig.display()  # idempotent
+        except ImportError:  # pragma: no cover - IPython missing
             pass
 
     def ensure_displayed(self, fig):
@@ -653,22 +475,21 @@ class AnyplotlibBackend:
         Called after ``plot()`` so a figure is shown even when the navigator
         panel was skipped (slider / None).
         """
-        real = fig._real_fig if isinstance(fig, _AplFigureProxy) else fig
-        if real is None or getattr(real, "_hspy_displayed", False):
-            return
-        self._display(real)
+        if fig is not None:
+            self._display(fig)
 
     def draw_idle(self, fig):
-        real = fig._real_fig if isinstance(fig, _AplFigureProxy) else fig
-        if real is None or getattr(real, "_hspy_displayed", False):
+        if isinstance(fig, _AplFigureProxy):
+            layout = fig._layout
+            if layout.fig.displayed:
+                return
+            if layout.panels_remaining > 1:
+                # Wait for the other panels so the figure appears whole.
+                layout.panels_remaining -= 1
+                return
+        elif fig is None or fig.displayed:
             return
-        real._hspy_drawn = True
-        remaining = getattr(real, "_hspy_panels_remaining", 1)
-        if remaining > 1:
-            # Wait for the other panels so the figure appears whole.
-            real._hspy_panels_remaining = remaining - 1
-            return
-        self._display(real)
+        self._display(fig)
 
     # ── Blitting (anyplotlib repaints natively; all no-ops) ───────────────
 
@@ -703,36 +524,31 @@ class AnyplotlibBackend:
     # ── Axes ──────────────────────────────────────────────────────────────
 
     def create_axes(self, fig, animate_axis=False, **kwargs):
-        return fig._hspy_ax
+        if isinstance(fig, _AplFigureProxy):
+            return fig.ax
+        return _FIGURE_AXES[fig]
+
+    # Labels set before a plot is attached are kept by anyplotlib's Axes.
 
     def set_xlabel(self, ax, label):
-        if ax._plot is not None:
-            ax._plot.set_xlabel(label)
-        else:
-            ax._hspy_pending_xlabel = label
+        ax.set_xlabel(label)
 
     def set_ylabel(self, ax, label):
-        if ax._plot is not None:
-            ax._plot.set_ylabel(label)
-        else:
-            ax._hspy_pending_ylabel = label
+        ax.set_ylabel(label)
 
     def set_title(self, ax, title):
-        if ax._plot is not None:
-            ax._plot.set_title(title)
-        else:
-            ax._hspy_pending_title = title
+        ax.set_title(title)
 
     def set_xlim(self, ax, xmin, xmax):
-        if ax._plot is not None:
-            ax._plot.set_xlim(xmin, xmax)
+        if ax.primary_plot is not None:
+            ax.primary_plot.set_xlim(xmin, xmax)
 
     def set_ylim(self, ax, ymin, ymax):
-        if ax._plot is not None:
-            ax._plot.set_ylim(ymin, ymax)
+        if ax.primary_plot is not None:
+            ax.primary_plot.set_ylim(ymin, ymax)
 
     def get_xlim(self, ax):
-        plot = ax._plot
+        plot = ax.primary_plot
         if plot is None:
             return (0.0, 1.0)
         for name in ("get_xlim", "get_xbound"):
@@ -742,22 +558,24 @@ class AnyplotlibBackend:
         return (0.0, 1.0)
 
     def get_ylim(self, ax):
-        if ax._plot is not None and hasattr(ax._plot, "get_ylim"):
-            return ax._plot.get_ylim()
+        plot = ax.primary_plot
+        if plot is not None and hasattr(plot, "get_ylim"):
+            return plot.get_ylim()
         return (0.0, 1.0)
 
     def get_xbound(self, ax):
-        if ax._plot is not None:
-            return ax._plot.get_xbound()
+        if ax.primary_plot is not None:
+            return ax.primary_plot.get_xbound()
         return (0.0, 1.0)
 
     def set_axis_off(self, ax):
-        if ax._plot is not None:
-            ax._plot.set_axis_off()
+        if ax.primary_plot is not None:
+            ax.primary_plot.set_axis_off()
 
     def set_aspect(self, ax, ratio):
-        if ax._plot is not None and hasattr(ax._plot, "set_aspect"):
-            ax._plot.set_aspect(ratio)
+        plot = ax.primary_plot
+        if plot is not None and hasattr(plot, "set_aspect"):
+            plot.set_aspect(ratio)
 
     def add_right_axis(self, ax, color="black"):
         raise BackendCapabilityError(_NOT_YET.format("add_right_axis (twinx)"))
@@ -856,30 +674,26 @@ class AnyplotlibBackend:
         x_arr = np.asarray(x) if x is not None else None
         y_arr = np.asarray(y)
 
-        existing = getattr(ax, "_plot", None)
-        image_plot = getattr(ax, "_hspy_image_plot", None)
+        existing = ax.primary_plot
 
         if existing is None:
-            plot = ax.plot(
+            return ax.plot(
                 y_arr,
                 axes=[x_arr] if x_arr is not None else None,
                 color=color,
                 linewidth=linewidth,
                 **style,
             )
-            self._apply_pending_labels(ax, plot)
-            return plot
 
-        if image_plot is not None or not hasattr(existing, "add_line"):
+        if ax.image_plot is not None or not hasattr(existing, "add_line"):
             # Image panel: overlay drawn as a native 'lines' marker group.
-            target = image_plot or existing
-            group = target.markers.add(
+            return existing.markers.add(
                 "lines",
                 segments=self._polyline_segments(x_arr, y_arr),
                 edgecolors=color,
                 linewidths=linewidth,
+                coords="data",
             )
-            return group
 
         return existing.add_line(
             y_arr,
@@ -894,21 +708,6 @@ class AnyplotlibBackend:
         """Convert polyline arrays to the (N-1, 2, 2) segment list wire format."""
         pts = np.column_stack([np.asarray(x, dtype=float), np.asarray(y, dtype=float)])
         return [pts[i : i + 2].tolist() for i in range(len(pts) - 1)]
-
-    def _apply_pending_labels(self, ax, plot):
-        """Apply any labels buffered before a plot was attached to ax."""
-        for attr, method in (
-            ("_hspy_pending_xlabel", "set_xlabel"),
-            ("_hspy_pending_ylabel", "set_ylabel"),
-            ("_hspy_pending_title", "set_title"),
-        ):
-            val = getattr(ax, attr, None)
-            if val is not None:
-                getattr(plot, method)(val)
-                try:
-                    delattr(ax, attr)
-                except AttributeError:
-                    pass
 
     def update_line(self, handle, x, y):
         if hasattr(handle, "set_data"):  # Plot1D and Line1D share this API
@@ -940,7 +739,7 @@ class AnyplotlibBackend:
                     style.get("marker", handle._state.get("line_marker", "none")),
                     style.get("markersize"),
                 )
-        elif hasattr(handle, "_data"):  # 'lines' MarkerGroup
+        elif hasattr(handle, "marker_type"):  # 'lines' MarkerGroup
             updates = {}
             if "color" in style:
                 updates["edgecolors"] = style["color"]
@@ -959,17 +758,19 @@ class AnyplotlibBackend:
     def line_get_color(self, handle):
         if hasattr(handle, "color"):  # primary Plot1D or Line1D property
             return handle.color
-        if hasattr(handle, "_data"):  # 'lines' MarkerGroup
-            return handle._data.get("edgecolors", "#4fc3f7")
+        if hasattr(handle, "marker_type"):  # 'lines' MarkerGroup
+            return handle.get("edgecolors", "#4fc3f7")
         return "#4fc3f7"
 
     def line_get_linewidth(self, handle):
-        if hasattr(handle, "_state"):  # primary Plot1D
+        if hasattr(handle, "marker_type"):  # 'lines' MarkerGroup
+            return float(handle.get("linewidths", 1.5))
+        import anyplotlib as apl
+
+        if isinstance(handle, apl.Plot1D):  # primary line: no public getter yet
             return float(handle._state.get("line_linewidth", 1.5))
         if hasattr(handle, "linewidth"):  # Line1D property
             return float(handle.linewidth)
-        if hasattr(handle, "_data"):  # 'lines' MarkerGroup
-            return float(handle._data.get("linewidths", 1.5))
         return 1.5
 
     # ── Text annotations ─────────────────────────────────────────────────
@@ -1021,9 +822,9 @@ class AnyplotlibBackend:
     def text_get_color(self, handle):
         if handle is None:
             return "white"
-        group = getattr(handle, "_group", None)
+        group = getattr(handle, "_group", None)  # no public getter yet
         if group is not None:
-            return group._data.get("color", "white")
+            return group.get("color", "white")
         return "white"
 
     def artist_set_animated(self, handle, animated):
@@ -1043,19 +844,16 @@ class AnyplotlibBackend:
         **kwargs,
     ):
         aspect = kwargs.pop("aspect", None)
-        arr = np.asarray(data)
-        axes = None
-        if extent is not None:
-            x0, x1, y0, y1 = extent
-            axes = [
-                _pixel_centres(x0, x1, arr.shape[1]),
-                _pixel_centres(y1, y0, arr.shape[0]),
-            ]
-        plot = ax.imshow(arr, axes=axes, cmap=cmap, vmin=vmin, vmax=vmax)
+        # extent uses matplotlib's (left, right, bottom, top) edge convention.
+        plot = ax.imshow(
+            np.asarray(data),
+            extent=None if extent is None else tuple(float(v) for v in extent),
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+        )
         if aspect not in (None, "auto", "equal", 1, 1.0):
             plot.set_aspect(float(aspect))
-        self._apply_pending_labels(ax, plot)
-        ax._hspy_image_plot = plot
         if norm is not None:
             self.image_set_norm(plot, norm)
         return plot
@@ -1071,10 +869,7 @@ class AnyplotlibBackend:
         handle.set_data(np.asarray(data))
 
     def image_set_extent(self, handle, extent):
-        x0, x1, y0, y1 = extent
-        w = handle._state["image_width"]
-        h = handle._state["image_height"]
-        handle.set_extent(_pixel_centres(x0, x1, w), _pixel_centres(y1, y0, h))
+        handle.set_extent_edges(*(float(v) for v in extent))
 
     def image_set_clim(self, handle, vmin, vmax):
         handle.set_clim(vmin, vmax)
@@ -1102,10 +897,7 @@ class AnyplotlibBackend:
             handle.set_clim(vmin, vmax)
 
     def get_image_handle(self, ax):
-        handle = getattr(ax, "_hspy_image_plot", None)
-        if handle is not None:
-            return handle
-        return getattr(ax, "_plot", None)
+        return ax.image_plot or ax.primary_plot
 
     def add_colorbar(self, fig, im_handle, ax, divider=None, size=None, pad=None):
         im_handle.set_colorbar_visible(True)
@@ -1124,19 +916,6 @@ class AnyplotlibBackend:
 
     # ── Events ───────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _wrap(fn):
-        """Wrap *fn* in a plain function.
-
-        ``add_event_handler`` sets an attribute on the handler, which fails
-        on bound methods.
-        """
-
-        def _handler(*args, **kwargs):
-            return fn(*args, **kwargs)
-
-        return _handler
-
     # Handlers receive the neutral events of ``backends._events``.  anyplotlib
     # reports browser key names ("ArrowLeft"), 0-based buttons and a modifier
     # list; they are translated here so the generic layer sees canonical
@@ -1144,8 +923,13 @@ class AnyplotlibBackend:
 
     @staticmethod
     def _event_ax(fig_or_ax):
-        """The hyperspy-facing axes handle for *fig_or_ax*."""
-        return getattr(fig_or_ax, "_hspy_ax", fig_or_ax)
+        """The anyplotlib Axes for a figure, panel proxy or axes."""
+        if isinstance(fig_or_ax, _AplFigureProxy):
+            return fig_or_ax.ax
+        try:
+            return _FIGURE_AXES.get(fig_or_ax, fig_or_ax)
+        except TypeError:  # not weak-referenceable, so not a Figure
+            return fig_or_ax
 
     @staticmethod
     def _to_key_event(ax, e):
@@ -1213,21 +997,14 @@ class AnyplotlibBackend:
         )
 
     def _get_plot(self, fig_or_ax):
-        """Return the Plot1D/Plot2D attached to the given figure or axes."""
-        plot = getattr(fig_or_ax, "_plot", None)
-        if plot is not None:
-            return plot
-        ax = getattr(fig_or_ax, "_hspy_ax", None)
-        if ax is not None:
-            return getattr(ax, "_plot", None)
-        return None
+        """Return the plot attached to the given figure, proxy or axes."""
+        if fig_or_ax is None:
+            return None
+        return getattr(self._event_ax(fig_or_ax), "primary_plot", None)
 
     def _primary_plot(self, ax):
         """Return the primary (image or line) plot for widget creation."""
-        image_plot = getattr(ax, "_hspy_image_plot", None)
-        if image_plot is not None:
-            return image_plot
-        return getattr(ax, "_plot", None)
+        return ax.primary_plot
 
     # ── Pointers / widgets ────────────────────────────────────────────────
 
@@ -1235,107 +1012,59 @@ class AnyplotlibBackend:
         plot = self._primary_plot(ax)
         if plot is None:
             raise RuntimeError("ax has no plot; call plot_line or plot_image first")
-        # A line pointer can land on a Plot2D (the row marker of a Signal1D
-        # image navigator), which addresses widgets in pixels.
-        x_cal, y_cal = _pixel_axes(plot)
-        linewidth = _stroke_px(2.0)
+        style = {"color": color, "linewidth": _stroke_px(2.0), "coords": "data"}
         if axis == "x":
-            value = _to_pixels(x_cal, pos)
             if hasattr(plot, "add_vline_widget"):
-                handle = plot.add_vline_widget(
-                    x=float(value), color=color, linewidth=linewidth
-                )
-            else:
-                handle = plot.add_widget(
-                    "crosshair",
-                    cx=float(value),
-                    cy=0.0,
-                    color=color,
-                    linewidth=linewidth,
-                )
-        else:
-            value = _to_pixels(y_cal, pos)
-            if hasattr(plot, "add_hline_widget"):
-                handle = plot.add_hline_widget(
-                    y=float(value), color=color, linewidth=linewidth
-                )
-            else:
-                handle = plot.add_widget(
-                    "crosshair",
-                    cx=0.0,
-                    cy=float(value),
-                    color=color,
-                    linewidth=linewidth,
-                )
-        return _remember_plot(handle, plot)
+                return plot.add_vline_widget(x=float(pos), **style)
+            return plot.add_widget("crosshair", cx=float(pos), cy=0.0, **style)
+        if hasattr(plot, "add_hline_widget"):
+            return plot.add_hline_widget(y=float(pos), **style)
+        return plot.add_widget("crosshair", cx=0.0, cy=float(pos), **style)
 
     def update_line_pointer(self, handle, axis, pos):
-        wtype = handle.get("type") if hasattr(handle, "get") else None
-        x_cal, y_cal = _pixel_axes(getattr(handle, "_hspy_plot", None))
-        value = _to_pixels(x_cal if axis == "x" else y_cal, pos)
-        if wtype == "crosshair":
-            if axis == "x":
-                handle.set(_notify=False, cx=float(value))
-            else:
-                handle.set(_notify=False, cy=float(value))
-        elif axis == "x":
-            handle.set(_notify=False, x=float(value))
+        if handle.kind == "crosshair":
+            key = "cx" if axis == "x" else "cy"
         else:
-            handle.set(_notify=False, y=float(value))
+            key = "x" if axis == "x" else "y"
+        handle.set(**{key: float(pos)}, notify=False)
 
     def connect_widget_drag(self, handle, on_drag):
         if isinstance(handle, _AplLine2DPatch):
             handle.connect_drag(on_drag)
             return
-        wtype = handle.get("type") if hasattr(handle, "get") else None
-        # Widgets report pixel indices; hyperspy expects calibrated units.
-        xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
-
-        if wtype == "vline":
-
-            def _cb(event):
-                on_drag(_to_data(xa, handle.x))
-
-        elif wtype == "hline":
+        # Widgets are created with coords="data", so their geometry already
+        # reads in calibrated units.
+        kind = getattr(handle, "kind", None)
+        if kind == "vline":
 
             def _cb(event):
-                on_drag(_to_data(ya, handle.y))
+                on_drag(handle.x)
 
-        elif wtype == "crosshair":
+        elif kind == "hline":
 
             def _cb(event):
-                on_drag(_to_data(xa, handle.cx), _to_data(ya, handle.cy))
+                on_drag(handle.y)
 
-        elif wtype == "rectangle":
+        elif kind in ("crosshair", "circle", "annular"):
+
+            def _cb(event):
+                on_drag(handle.cx, handle.cy)
+
+        elif kind == "rectangle":
             # Corner plus size; RectangleWidget._on_widget_drag converts the
             # corner to its own position convention.
 
             def _cb(event):
-                on_drag(
-                    _to_data(xa, handle.x),
-                    _to_data(ya, handle.y),
-                    _data_span(xa, handle.w),
-                    _data_span(ya, handle.h),
-                )
+                on_drag(handle.x, handle.y, handle.w, handle.h)
 
-        elif wtype in ("circle", "annular"):
+        elif kind == "polygon":
 
             def _cb(event):
-                on_drag(_to_data(xa, handle.cx), _to_data(ya, handle.cy))
-
-        elif wtype == "polygon":
-
-            def _cb(event):
-                on_drag(
-                    [
-                        (_to_data(xa, vx), _to_data(ya, vy))
-                        for vx, vy in handle.get("vertices", [])
-                    ]
-                )
+                on_drag([tuple(v) for v in handle.get("vertices", [])])
 
         else:
             return
-        handle.add_event_handler(self._wrap(_cb), "pointer_move")
+        handle.add_event_handler(_cb, "pointer_move")
 
     def create_rect_pointer(
         self, ax, x, y, w, h, color="red", linewidth=2, pointer=False
@@ -1343,68 +1072,31 @@ class AnyplotlibBackend:
         plot = self._primary_plot(ax)
         if plot is None or not hasattr(plot, "add_widget"):
             raise BackendCapabilityError(_NOT_YET.format("create_rect_pointer"))
-        xa, ya = _pixel_axes(plot)
-        px, py = _to_pixels(xa, x), _to_pixels(ya, y)
-        pw, ph = _pixel_span(xa, w), _pixel_span(ya, h)
+        style = {"color": color, "linewidth": _stroke_px(linewidth), "coords": "data"}
         if pointer:
             # Navigation pointers are drawn as a crosshair, or a single line
             # when the navigator is degenerate along one axis.
+            cx, cy = float(x) + float(w) / 2.0, float(y) + float(h) / 2.0
             if h <= 0 and hasattr(plot, "add_vline_widget"):
-                handle = plot.add_vline_widget(
-                    x=float(px) + float(pw) / 2.0,
-                    color=color,
-                    linewidth=_stroke_px(linewidth),
-                )
-            elif w <= 0 and hasattr(plot, "add_hline_widget"):
-                handle = plot.add_hline_widget(
-                    y=float(py) + float(ph) / 2.0,
-                    color=color,
-                    linewidth=_stroke_px(linewidth),
-                )
-            else:
-                handle = plot.add_widget(
-                    "crosshair",
-                    cx=float(px) + float(pw) / 2.0,
-                    cy=float(py) + float(ph) / 2.0,
-                    color=color,
-                    linewidth=_stroke_px(linewidth),
-                )
-        else:
-            # Region selector (e.g. RectangularROI) with native resize handles.
-            handle = plot.add_widget(
-                "rectangle",
-                x=float(px),
-                y=float(py),
-                w=float(pw),
-                h=float(ph),
-                color=color,
-                linewidth=_stroke_px(linewidth),
-            )
-        return _remember_plot(handle, plot)
+                return plot.add_vline_widget(x=cx, **style)
+            if w <= 0 and hasattr(plot, "add_hline_widget"):
+                return plot.add_hline_widget(y=cy, **style)
+            return plot.add_widget("crosshair", cx=cx, cy=cy, **style)
+        # Region selector (e.g. RectangularROI) with native resize handles.
+        return plot.add_widget(
+            "rectangle", x=float(x), y=float(y), w=float(w), h=float(h), **style
+        )
 
     def update_rect_pointer(self, handle, x, y, w, h):
-        wtype = handle.get("type") if hasattr(handle, "get") else None
-        xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
-        px, py = _to_pixels(xa, x), _to_pixels(ya, y)
-        pw, ph = _pixel_span(xa, w), _pixel_span(ya, h)
-        if wtype == "crosshair":
-            handle.set(
-                _notify=False,
-                cx=float(px) + float(pw) / 2.0,
-                cy=float(py) + float(ph) / 2.0,
-            )
-        elif wtype == "vline":
-            handle.set(_notify=False, x=float(px) + float(pw) / 2.0)
-        elif wtype == "hline":
-            handle.set(_notify=False, y=float(py) + float(ph) / 2.0)
+        cx, cy = float(x) + float(w) / 2.0, float(y) + float(h) / 2.0
+        if handle.kind == "crosshair":
+            handle.set(cx=cx, cy=cy, notify=False)
+        elif handle.kind == "vline":
+            handle.set(x=cx, notify=False)
+        elif handle.kind == "hline":
+            handle.set(y=cy, notify=False)
         else:
-            handle.set(
-                _notify=False,
-                x=float(px),
-                y=float(py),
-                w=float(pw),
-                h=float(ph),
-            )
+            handle.set(x=float(x), y=float(y), w=float(w), h=float(h), notify=False)
 
     def create_circle_pointer(
         self, ax, cx, cy, r_outer, r_inner=0.0, color="red", linewidth=2, alpha=1.0
@@ -1412,72 +1104,52 @@ class AnyplotlibBackend:
         plot = self._primary_plot(ax)
         if plot is None or not hasattr(plot, "add_widget"):
             raise BackendCapabilityError(_NOT_YET.format("create_circle_pointer"))
-        xa, ya = _pixel_axes(plot)
-        pcx, pcy = _to_pixels(xa, cx), _to_pixels(ya, cy)
-        # The widget is a true circle, so the radius follows the x calibration.
-        p_outer = _pixel_span(xa, r_outer)
-        p_inner = _pixel_span(xa, r_inner)
+        style = {"color": color, "linewidth": _stroke_px(linewidth), "coords": "data"}
         # One native widget covers both circle and annulus: single-item list.
+        # The widget is a true circle; its radius follows the x calibration.
         if r_inner > 0:
             handle = plot.add_widget(
                 "annular",
-                cx=float(pcx),
-                cy=float(pcy),
-                r_outer=float(p_outer),
-                r_inner=float(p_inner),
-                color=color,
-                linewidth=_stroke_px(linewidth),
+                cx=float(cx),
+                cy=float(cy),
+                r_outer=float(r_outer),
+                r_inner=float(r_inner),
+                **style,
             )
         else:
             handle = plot.add_widget(
-                "circle",
-                cx=float(pcx),
-                cy=float(pcy),
-                r=float(p_outer),
-                color=color,
-                linewidth=_stroke_px(linewidth),
+                "circle", cx=float(cx), cy=float(cy), r=float(r_outer), **style
             )
-        return [_remember_plot(handle, plot)]
+        return [handle]
 
     def update_circle_pointer(self, ax, handles, cx, cy, r_outer, r_inner=0.0):
         handle = handles[0]
-        is_annular = (
-            handle.get("type") == "annular" if hasattr(handle, "get") else False
-        )
+        is_annular = handle.kind == "annular"
         if is_annular != (r_inner > 0):
             # circle <-> annulus are distinct widget kinds, so swap.
-            style = handle._data if hasattr(handle, "_data") else {}
             new = self.create_circle_pointer(
                 ax,
                 cx,
                 cy,
                 r_outer,
                 r_inner,
-                color=style.get("color", "red"),
+                color=handle.get("color", "red"),
                 # The stored stroke is CSS px; convert back to points.
-                linewidth=style.get("linewidth", 2.0 * _PX_PER_PT) / _PX_PER_PT,
+                linewidth=handle.get("linewidth", 2.0 * _PX_PER_PT) / _PX_PER_PT,
             )
             for old in handles:
                 self.remove_pointer(ax, old)
             return new
-
-        xa, ya = _pixel_axes(getattr(handle, "_hspy_plot", None))
-        pcx, pcy = _to_pixels(xa, cx), _to_pixels(ya, cy)
         if is_annular:
             handle.set(
-                _notify=False,
-                cx=float(pcx),
-                cy=float(pcy),
-                r_outer=float(_pixel_span(xa, r_outer)),
-                r_inner=float(_pixel_span(xa, r_inner)),
+                cx=float(cx),
+                cy=float(cy),
+                r_outer=float(r_outer),
+                r_inner=float(r_inner),
+                notify=False,
             )
         else:
-            handle.set(
-                _notify=False,
-                cx=float(pcx),
-                cy=float(pcy),
-                r=float(_pixel_span(xa, r_outer)),
-            )
+            handle.set(cx=float(cx), cy=float(cy), r=float(r_outer), notify=False)
         return handles
 
     def remove_pointer(self, ax, handle):
@@ -1509,7 +1181,7 @@ class AnyplotlibBackend:
         if alpha is not None:
             updates["alpha"] = float(alpha)
         if updates and hasattr(handle, "set"):
-            handle.set(_notify=False, **updates)
+            handle.set(**updates, notify=False)
 
     # ── Rendering hooks ───────────────────────────────────────────────────
 
@@ -1568,7 +1240,9 @@ class AnyplotlibBackend:
         """Convert points between coordinate spaces.
 
         Display-space conversion is delegated to anyplotlib's
-        ``data_to_display`` / ``display_to_data``.
+        ``data_to_display`` / ``display_to_data``, which take image pixels on
+        2-D panels; the panel's ``data_to_pixel`` / ``pixel_to_data`` bridge
+        those to calibrated units.
         """
         for space in (from_space, to_space):
             if space not in self._COORD_SPACES:
@@ -1587,6 +1261,8 @@ class AnyplotlibBackend:
         y0, y1 = self.get_ylim(ax)
         xspan = (x1 - x0) or 1.0
         yspan = (y1 - y0) or 1.0
+        to_pixel = getattr(plot, "data_to_pixel", None)  # 2-D panels only
+        from_pixel = getattr(plot, "pixel_to_data", None)
 
         def _to_data(vals, space):
             if space in ("data", "xaxis", "yaxis", "relative"):
@@ -1595,7 +1271,9 @@ class AnyplotlibBackend:
                 return np.column_stack(
                     [x0 + vals[:, 0] * xspan, y0 + vals[:, 1] * yspan]
                 )
-            return np.atleast_2d(plot.display_to_data(vals))  # "display"
+            # "display"
+            vals = np.atleast_2d(plot.display_to_data(vals))
+            return np.atleast_2d(from_pixel(vals)) if from_pixel else vals
 
         def _from_data(vals, space):
             if space in ("data", "xaxis", "yaxis", "relative"):
@@ -1604,7 +1282,10 @@ class AnyplotlibBackend:
                 return np.column_stack(
                     [(vals[:, 0] - x0) / xspan, (vals[:, 1] - y0) / yspan]
                 )
-            return np.atleast_2d(plot.data_to_display(vals))  # "display"
+            # "display"
+            if to_pixel:
+                vals = np.atleast_2d(to_pixel(vals))
+            return np.atleast_2d(plot.data_to_display(vals))
 
         result = np.atleast_2d(_from_data(_to_data(pts, from_space), to_space))
         return result if np.ndim(points) == 2 else result[0]
@@ -1650,10 +1331,10 @@ class AnyplotlibBackend:
                 if size_units not in ("x", "y", "xy", "width", "height"):
                     translated["size_units"] = "px"
 
-        _markers_to_pixels(plot, marker_type, translated)
-
         try:
-            return _remember_plot(plot.markers.add(marker_type, **translated), plot)
+            # Geometry is calibrated; axes/display transforms and px sizes are
+            # left alone by anyplotlib.
+            return plot.markers.add(marker_type, coords="data", **translated)
         except ValueError as exc:
             raise BackendCapabilityError(
                 f"anyplotlib does not support marker type '{marker_type}' "
@@ -1664,14 +1345,13 @@ class AnyplotlibBackend:
         """Update a ``MarkerGroup`` returned by ``create_markers``."""
         if not kwargs:
             return
-        marker_type = handle._type
-        offset_space = handle._data.get("transform", "data")
-        if handle._data.get("size_units") == "px" and "sizes" in kwargs:
+        marker_type = handle.marker_type
+        offset_space = handle.get("transform", "data")
+        if handle.get("size_units") == "px" and "sizes" in kwargs:
             sizes = np.atleast_1d(np.asarray(kwargs.pop("sizes"), dtype=float))
             radius = sizes / 2.0
             kwargs["radius"] = float(radius[0]) if radius.size == 1 else radius.tolist()
         translated = self._translate_marker_kwargs(marker_type, offset_space, kwargs)
-        _markers_to_pixels(getattr(handle, "_hspy_plot", None), marker_type, translated)
         if translated:
             handle.set(**translated)
 
@@ -1692,7 +1372,7 @@ class AnyplotlibBackend:
         - ``polygons.verts`` → ``vertices_list``
         - ``colors`` (MPL plural) → ``edgecolors``
         - ``linewidth`` (singular) → ``linewidths``
-        - Singleton cycling sequences → scalars (see ``_CYCLING_KWARGS``)
+        - numpy containers → JSON-serialisable lists
         - Strips MPL-only kwargs (``units``, ``patches``, ``drawstyle``, …)
         """
         out = {}
@@ -1710,11 +1390,7 @@ class AnyplotlibBackend:
 
         if marker_type == "circles":
             if "sizes" in work:
-                out["radius"] = _unwrap_cycling(work.pop("sizes"))
-
-        elif marker_type == "points":
-            if "sizes" in work:
-                work["sizes"] = _unwrap_cycling(work["sizes"])
+                out["radius"] = _jsonable(work.pop("sizes"))
 
         elif marker_type in ("vlines", "hlines"):
             # hyperspy expands positions into full [[x,0],[x,1]] segments for
@@ -1744,9 +1420,7 @@ class AnyplotlibBackend:
         for k, v in work.items():
             if k in _STRIP:
                 continue
-            if k in _CYCLING_KWARGS:
-                out[k] = _unwrap_cycling(v)
-            elif hasattr(v, "tolist"):
+            if hasattr(v, "tolist"):
                 if isinstance(v, np.ndarray) and v.size == 0:
                     # ``.tolist()`` would flatten e.g. an empty ``(0, 2)``
                     # offsets array to ``[]`` (shape ``(0,)`` after
@@ -1818,15 +1492,17 @@ class AnyplotlibBackend:
         raise BackendCapabilityError(_NOT_YET.format("get_figure_from_ax"))
 
     def connect_close_event(self, fig, fn):
-        """Run *fn* from ``close_figure``.
+        """Run *fn* when the figure (or panel proxy) is closed.
 
         anyplotlib has no browser-side close notification, so only a
         programmatic close counts.
         """
         if fig is None:
             return None
-        _append_on_close(fig, fn)
-        return None
+        if isinstance(fig, _AplFigureProxy):
+            fig.on_close.append(fn)
+            return None
+        return fig.on_close(_quiet(fn))
 
     def get_explorer(self, signal_dim):
         if signal_dim == 0:
@@ -1878,9 +1554,7 @@ class AnyplotlibBackend:
 
             return ScaleBar(ax=ax, units=units, pixel_size=pixel_size, color=color)
 
-        x_axis = np.asarray(plot._state["x_axis"], dtype=float)
-        y_axis = np.asarray(plot._state["y_axis"], dtype=float)
-        plot.set_extent(x_axis, y_axis, units=str(units))
+        plot.set_extent(plot.x_axis, plot.y_axis, units=str(units))
         if color is not None and hasattr(plot, "set_scalebar_style"):
             plot.set_scalebar_style(color=color)
         return _AplNativeScalebar(plot)
@@ -1892,9 +1566,7 @@ class AnyplotlibBackend:
                 remove()
             return
         plot = handle.plot
-        x_axis = np.asarray(plot._state["x_axis"], dtype=float)
-        y_axis = np.asarray(plot._state["y_axis"], dtype=float)
-        plot.set_extent(x_axis, y_axis, units="px")
+        plot.set_extent(plot.x_axis, plot.y_axis, units="px")
 
     def get_image_cmap_name(self, handle):
         return getattr(handle, "colormap_name", "gray")

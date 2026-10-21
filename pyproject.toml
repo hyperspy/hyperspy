@@ -96,7 +96,7 @@ all = [
     "hyperspy[speed]",
 ]
 anyplotlib = [
-    "anyplotlib>=0.8.0",
+    "anyplotlib>=0.11.0",
 ]
 baseline = [
     "pybaselines"
