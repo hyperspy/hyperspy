@@ -1213,7 +1213,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
         signal = _add_file_load_save_metadata("save", signal, writer)
-        signal_dic = signal._to_dictionary(add_models=True)
+        signal_dic = signal._to_dictionary(add_learning_results=False, add_models=True)
         signal_dic["package_info"] = utils.get_object_package_info(signal)
         if not _is_zarr_store(filename):
             importlib.import_module(writer["api"]).file_writer(
