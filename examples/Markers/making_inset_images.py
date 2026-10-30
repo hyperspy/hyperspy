@@ -127,7 +127,7 @@ s.add_marker(quad)
 # Circular ColorBar
 # #################
 #
-# This example shows how to create a circular Color Bar for shows orientation
+# This example shows how to create a circular color bar to show orientation.
 
 n = 360  # the number of secants for the mesh
 t = np.linspace(0, 2 * np.pi, n)  # theta values
