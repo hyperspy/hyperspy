@@ -32,7 +32,7 @@ integrated_sliced_signal.metadata.General.title = "Integrated intensity"
 
 #%%
 # Create the interactive computation, which will update when the ROI ``roi`` is
-# changed. wWe use the ``out`` argument to place the results of the integration
+# changed. We use the ``out`` argument to place the results of the integration
 # in the placeholder signal defined in the previous step:
 hs.interactive(
     sliced_signal.sum,
