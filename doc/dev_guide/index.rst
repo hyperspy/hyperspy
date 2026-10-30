@@ -26,4 +26,5 @@ HyperSpy is a community project maintained for and by its users. There are many 
     lazy_import.rst
     useful_information.rst
     coding_with_ai.rst
+    proposals.rst
     maintenance.rst
