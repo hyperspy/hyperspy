@@ -1,0 +1,10 @@
+Document keyboard shortcut system in the user guide:
+
+- Platform defaults table showing modifier mappings for Linux/Windows vs
+  macOS, with footnotes explaining backend constraints.
+- Configurable keyboard shortcuts reference table listing all 23
+  preference keys, their defaults, and descriptions.
+- Guide for configuring shortcuts when connecting to a remote HyperSpy
+  instance from macOS (includes Option A: configure on the server,
+  Option B: configure the local client).
+- ``hs.show_keybindings()`` tip for runtime shortcut discovery.

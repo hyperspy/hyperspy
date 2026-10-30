@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import sys
 from unittest import mock
 
 import numpy as np
@@ -427,6 +428,118 @@ class TestAxesHotkeys:
             self.am.key_navigator(fake_key_event(step))
 
         assert self.am.indices == (1, 1, 1, 1, 1, 1)
+
+    def test_step_increase(self):
+        key = preferences.Plot.key_step_increase
+        assert self.am._step == 1
+        self.am.key_navigator(fake_key_event(key))
+        assert self.am._step == 2
+
+    def test_step_decrease(self):
+        key = preferences.Plot.key_step_decrease
+        self.am._step = 3
+        self.am.key_navigator(fake_key_event(key))
+        assert self.am._step == 2
+
+    def test_step_decrease_min(self):
+        key = preferences.Plot.key_step_decrease
+        self.am._step = 1
+        self.am.key_navigator(fake_key_event(key))
+        assert self.am._step == 1
+
+    def test_step_combined_with_navigation(self):
+        self.am._step = 2
+        mod01 = preferences.Plot.modifier_dims_01
+        dim0_increase = mod01 + "+" + preferences.Plot.dims_024_increase
+        # Step 2 means two indices per keypress
+        self.am.key_navigator(fake_key_event(dim0_increase))
+        assert self.am.indices[0] == 2
+
+    def test_use_macos_shortcuts(self):
+        preferences.Plot.use_macos_shortcuts()
+        assert preferences.Plot.modifier_dims_01 == "ctrl+alt"
+        assert preferences.Plot.modifier_dims_23 == "shift"
+        assert preferences.Plot.modifier_dims_45 == "alt+shift"
+
+    def test_use_standard_shortcuts(self):
+        preferences.Plot.use_standard_shortcuts()
+        assert preferences.Plot.modifier_dims_01 == "ctrl"
+        assert preferences.Plot.modifier_dims_23 == "shift"
+        assert preferences.Plot.modifier_dims_45 == "alt"
+
+    def test_shortcut_presets_are_callable_anywhere(self):
+        """Presets must work regardless of the current platform."""
+        preferences.Plot.use_macos_shortcuts()
+        assert preferences.Plot.modifier_dims_45 == "alt+shift"
+        preferences.Plot.use_standard_shortcuts()
+        assert preferences.Plot.modifier_dims_45 == "alt"
+        preferences.Plot.use_macos_shortcuts()
+        assert preferences.Plot.modifier_dims_45 == "alt+shift"
+
+    def test_platform_shortcuts_macos(self):
+        preferences.Plot.platform_shortcuts = "macos"
+        assert preferences.Plot.modifier_dims_01 == "ctrl+alt"
+        assert preferences.Plot.modifier_dims_23 == "shift"
+        assert preferences.Plot.modifier_dims_45 == "alt+shift"
+
+    def test_platform_shortcuts_standard(self):
+        preferences.Plot.platform_shortcuts = "standard"
+        assert preferences.Plot.modifier_dims_01 == "ctrl"
+        assert preferences.Plot.modifier_dims_23 == "shift"
+        assert preferences.Plot.modifier_dims_45 == "alt"
+
+    def test_platform_shortcuts_auto_no_op(self):
+        """'auto' must not change current modifiers."""
+        preferences.Plot.use_macos_shortcuts()
+        saved = preferences.Plot.modifier_dims_45
+        preferences.Plot.platform_shortcuts = "auto"
+        assert preferences.Plot.modifier_dims_45 == saved
+
+    def test_platform_shortcuts_warns_on_mismatch(self):
+        # Reset to a known state before starting
+        preferences.Plot.platform_shortcuts = "auto"
+        if sys.platform == "darwin":
+            # macOS → 'macos' matches (no warn), 'standard' warns
+            preferences.Plot.platform_shortcuts = "macos"  # silent
+            with pytest.warns(UserWarning, match="macOS"):
+                preferences.Plot.platform_shortcuts = "standard"
+        else:
+            # non-macOS → 'macos' warns, 'standard' matches (no warn)
+            with pytest.warns(UserWarning, match="not macOS"):
+                preferences.Plot.platform_shortcuts = "macos"
+            preferences.Plot.platform_shortcuts = "standard"  # silent
+
+    def test_platform_shortcuts_warns_non_macos(self):
+        with mock.patch("hyperspy.defaults_parser._IS_MACOS", False):
+            with pytest.warns(UserWarning, match="not macOS"):
+                preferences.Plot.platform_shortcuts = "macos"
+
+    def test_platform_shortcuts_standard_no_warn_non_macos(self):
+        with mock.patch("hyperspy.defaults_parser._IS_MACOS", False):
+            preferences.Plot.platform_shortcuts = "auto"
+            preferences.Plot.platform_shortcuts = "standard"
+        assert preferences.Plot.modifier_dims_45 == "alt"
+
+    def test_config_ordering_individual_overrides_preset(self):
+        """Individual modifier must override the preset when set afterward.
+
+        This verifies the config2template ordering fix: platform_shortcuts
+        is applied first, then individual modifier_dims_* traits override it.
+        """
+        try:
+            preferences.Plot.platform_shortcuts = "macos"
+            assert preferences.Plot.modifier_dims_01 == "ctrl+alt"
+            preferences.Plot.trait_set(modifier_dims_01="ctrl")
+            assert preferences.Plot.modifier_dims_01 == "ctrl"
+        finally:
+            preferences.Plot.platform_shortcuts = "auto"
+
+
+class fake_key_event:
+    "Fake event handler for plot key press"
+
+    def __init__(self, key):
+        self.key = key
 
 
 class TestIterPathScanPattern:

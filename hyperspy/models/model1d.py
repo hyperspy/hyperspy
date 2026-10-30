@@ -25,6 +25,7 @@ import traits.api as t
 import hyperspy.drawing
 from hyperspy import signal_tools
 from hyperspy.decorators import interactive_range_selector
+from hyperspy.defaults_parser import preferences
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.misc import utils
 from hyperspy.model import BaseModel, ModelComponents
@@ -245,6 +246,7 @@ class Model1D(BaseModel):
         self._suspend_update = False
         self._model_line = None
         self._residual_line = None
+        self._key_press_cid = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(self._on_navigating, [])
         self._channel_switches = np.array([True] * len(self.axis.axis))
@@ -823,7 +825,7 @@ class Model1D(BaseModel):
         plot_residual : bool
             If True, add a residual line (Signal - Model) to the signal figure.
         **kwargs : dict
-            All extra keyword arguements are passed to
+            All extra keyword arguments are passed to
             :meth:`~.api.signals.Signal1D.plot`
         """
 
@@ -841,6 +843,12 @@ class Model1D(BaseModel):
         _plot.signal_plot.add_line(l2)
         l2.plot()
         _plot.signal_plot.events.closed.connect(self._close_plot, [])
+        # Disconnect previous key_press handler if plot() is called again
+        if self._key_press_cid is not None:
+            _plot.signal_plot.figure.canvas.mpl_disconnect(self._key_press_cid)
+        self._key_press_cid = _plot.signal_plot.figure.canvas.mpl_connect(
+            "key_press_event", self._on_key_press
+        )
 
         self._model_line = l2
         self._plot = self.signal._plot
@@ -906,7 +914,38 @@ class Model1D(BaseModel):
 
     def _close_plot(self):
         self.disable_adjust_position()
+        if self._key_press_cid is not None:
+            self._plot.signal_plot.figure.canvas.mpl_disconnect(self._key_press_cid)
+            self._key_press_cid = None
         super()._close_plot()
+
+    def _on_key_press(self, event):
+        """Handle keyboard shortcuts for model plot actions."""
+        if event.key == preferences.Plot.key_toggle_adjust_position:
+            if self._position_widgets:
+                self.disable_adjust_position()
+            else:
+                self.enable_adjust_position()
+        elif event.key == preferences.Plot.key_toggle_plot_components:
+            if self._plot_components:
+                self.disable_plot_components()
+            else:
+                self.enable_plot_components()
+        elif event.key == preferences.Plot.key_toggle_residual:
+            self._toggle_residual()
+
+    def _toggle_residual(self):
+        """Toggle the residual (Signal - Model) line on the model plot."""
+        if self._residual_line is not None:
+            self._residual_line.close()
+            self._residual_line = None
+        elif self._plot is not None and self._plot.is_active:
+            l3 = hyperspy.drawing.signal1d.Signal1DLine()
+            l3.data_function = self._residual_for_plot
+            l3.set_line_properties(color="green", type="line")
+            self._plot.signal_plot.add_line(l3)
+            l3.plot()
+            self._residual_line = l3
 
     def enable_plot_components(self):
         if self._plot is None or self._plot_components:  # pragma: no cover

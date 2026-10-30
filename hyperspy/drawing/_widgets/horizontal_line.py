@@ -49,5 +49,9 @@ class HorizontalLineWidget(Widget1DBase):
             self.position = (event.ydata,)
 
     def _onjumpclick(self, event):
-        if event.key == "shift" and event.inaxes and self.is_pointer:
+        if (
+            event.key == preferences.Plot.key_jump_to_click
+            and event.inaxes
+            and self.is_pointer
+        ):
             self.position = (event.ydata,)

@@ -228,3 +228,50 @@ class TestTupleSA:
         t1 = TupleSA((1, 2, 3))
         t2 = t1 * 2
         assert isinstance(t2, TupleSA)
+
+
+class TestGroupedEditableTraits:
+    """Tests for grouped_editable_traits()."""
+
+    @staticmethod
+    def test_groups_present():
+        from hyperspy.defaults_parser import preferences
+        from hyperspy.misc.utils import grouped_editable_traits
+
+        grouped = grouped_editable_traits(preferences.Plot)
+        assert "Navigation" in grouped
+        assert "Plot Interaction" in grouped
+        assert "Widget Resize" in grouped
+        assert "Model Plot" in grouped
+
+    @staticmethod
+    def test_navigation_order():
+        from hyperspy.defaults_parser import preferences
+        from hyperspy.misc.utils import grouped_editable_traits
+
+        grouped = grouped_editable_traits(preferences.Plot)
+        nav = grouped["Navigation"]
+        assert nav[:2] == ["dims_024_decrease", "dims_024_increase"]
+        assert "modifier_dims_01" in nav
+        assert "key_step_increase" in nav
+
+    @staticmethod
+    def test_ungrouped_default_label():
+        from hyperspy.defaults_parser import preferences
+        from hyperspy.misc.utils import grouped_editable_traits
+
+        grouped = grouped_editable_traits(preferences.Plot)
+        assert "General" in grouped
+        general = grouped["General"]
+        # Traits that don't have group= metadata eg widget_plot_style
+        assert "widget_plot_style" in general
+        assert "use_subfigure" in general
+
+    @staticmethod
+    def test_ungrouped_custom_label():
+        from hyperspy.defaults_parser import preferences
+        from hyperspy.misc.utils import grouped_editable_traits
+
+        grouped = grouped_editable_traits(preferences.Plot, ungrouped_label="Other")
+        assert "General" not in grouped
+        assert "Other" in grouped
