@@ -69,8 +69,8 @@ s2 = hs.signals.Signal1D(ski.data.astronaut().astype("uint16") * 100)
 
 #%%
 # To save a color image to ``jpg``, the signal needs to be converted to ``rgb8`` because
-# ``jpg`` only support 8-bit RGB
-# Rescale intensity to fit the unsigned integer 8 bits (2**8 = 256 intensity level)
+# ``jpg`` only supports 8-bit RGB.
+# Rescale intensity to fit the unsigned integer 8 bits (2**8 = 256 intensity levels)
 s2.data = ski.exposure.rescale_intensity(s2.data, out_range=(0, 255))
 
 #%%
