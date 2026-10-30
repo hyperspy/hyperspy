@@ -573,21 +573,21 @@ class Signal1DLine(object):
         _logger.debug("`Signal1DLine` closed.")
 
 
-def _plot_component(factors, idx, ax=None, cal_axis=None, comp_label="PC"):
+def _plot_component(components, idx, ax=None, cal_axis=None, comp_label="PC"):
     if ax is None:
         ax = plt.gca()
     if cal_axis is not None:
         x = cal_axis.axis
         plt.xlabel(cal_axis.units)
     else:
-        x = np.arange(factors.shape[0])
+        x = np.arange(components.shape[0])
         plt.xlabel("Channel index")
-    ax.plot(x, factors[:, idx], label="%s %i" % (comp_label, idx))
+    ax.plot(x, components[:, idx], label="%s %i" % (comp_label, idx))
     return ax
 
 
 def _plot_loading(
-    loadings,
+    scores,
     idx,
     axes_manager,
     ax=None,
@@ -599,7 +599,7 @@ def _plot_loading(
     if ax is None:
         ax = plt.gca()
     if no_nans:
-        loadings = np.nan_to_num(loadings)
+        scores = np.nan_to_num(scores)
     if axes_manager.navigation_dimension == 2:
         extent = None
         # get calibration from a passed axes_manager
@@ -612,7 +612,7 @@ def _plot_loading(
                 axes_manager._axes[1].low_value,
             )
         im = ax.imshow(
-            loadings[idx].reshape(shape),
+            scores[idx].reshape(shape),
             cmap=cmap,
             extent=extent,
             interpolation="nearest",
@@ -625,6 +625,6 @@ def _plot_loading(
             x = axes_manager._axes[0].axis
         else:
             x = np.arange(axes_manager._axes[0].size)
-        ax.step(x, loadings[idx])
+        ax.step(x, scores[idx])
     else:
         raise ValueError("View not supported")

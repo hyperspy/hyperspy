@@ -1,0 +1,4 @@
+The decomposition equation is now documented as ``X ≈ components · scores^T``
+to align with scikit-learn and IUPAC chemometrics conventions. The
+``factors``/``loadings`` terminology is deprecated in favour of
+``components``/``scores``; see the deprecation section for details.

@@ -695,16 +695,16 @@ __ plot.spectra_
     >>> si_EDS = hs.load("core_shell.hdf5") # doctest: +SKIP
     >>> si_EDS.change_dtype('float') # doctest: +SKIP
     >>> si_EDS.decomposition(True, algorithm='NMF', output_dimension=3) # doctest: +SKIP
-    >>> factors = si_EDS.get_decomposition_factors() # doctest: +SKIP
+    >>> components = si_EDS.get_decomposition_components() # doctest: +SKIP
     >>>
-    >>> # the first factor is a very strong carbon background component, so we
-    >>> # normalize factor intensities for easier qualitative comparison
-    >>> for f in factors:
-    ...     f.data /= f.data.max() # doctest: +SKIP
+    >>> # the first component is a very strong carbon background component, so we
+    >>> # normalize component intensities for easier qualitative comparison
+    >>> for c in components:
+    ...     c.data /= c.data.max() # doctest: +SKIP
     >>>
-    >>> loadings = si_EDS.get_decomposition_loadings() # doctest: +SKIP
+    >>> scores = si_EDS.get_decomposition_scores() # doctest: +SKIP
     >>>
-    >>> hs.plot.plot_spectra(factors.isig[:14.0], style='cascade', padding=-1) # doctest: +SKIP
+    >>> hs.plot.plot_spectra(components.isig[:14.0], style='cascade', padding=-1) # doctest: +SKIP
     >>>
     >>> # add some lines to nicely label the peak positions
     >>> plt.axvline(6.403, c='C2', ls=':', lw=0.5) # doctest: +SKIP
@@ -716,7 +716,7 @@ __ plot.spectra_
     >>> plt.axvline(8.040, ymax=0.8, c='k', ls=':', lw=0.5) # doctest: +SKIP
     >>> plt.text(x=8.14, y=0.35, s='Cu-K$_\\alpha$', color='k') # doctest: +SKIP
     >>>
-    >>> hs.plot.plot_images(loadings, cmap='mpl_colors',
+    >>> hs.plot.plot_images(scores, cmap='mpl_colors',
     ...             axes_decor='off', per_row=1,
     ...             label=['Background', 'Pt core', 'Fe shell'],
     ...             scalebar=[0], scalebar_color='white',

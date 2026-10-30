@@ -8,13 +8,13 @@ Obtain the results as BaseSignal instances
 
 The decomposition and BSS results are internally stored as numpy arrays in the
 :class:`~.api.signals.BaseSignal` class. Frequently it is useful to obtain the
-decomposition/BSS factors and loadings as HyperSpy signals, and HyperSpy
+decomposition/BSS components and scores as HyperSpy signals, and HyperSpy
 provides the following methods for that purpose:
 
-* :meth:`~.api.signals.BaseSignal.get_decomposition_loadings`
-* :meth:`~.api.signals.BaseSignal.get_decomposition_factors`
-* :meth:`~.api.signals.BaseSignal.get_bss_loadings`
-* :meth:`~.api.signals.BaseSignal.get_bss_factors`
+* :meth:`~.api.signals.BaseSignal.get_decomposition_scores`
+* :meth:`~.api.signals.BaseSignal.get_decomposition_components`
+* :meth:`~.api.signals.BaseSignal.get_bss_scores`
+* :meth:`~.api.signals.BaseSignal.get_bss_components`
 
 .. _mva.saving-label:
 
@@ -60,7 +60,7 @@ supported by RosettaSciIO with the following methods:
 
 These methods accept many arguments to customise the way in which the
 data is exported, so please consult the method documentation. The options
-include the choice of file format, the prefixes for loadings and factors,
+include the choice of file format, the prefixes for scores and components,
 saving figures instead of data and more.
 
 .. warning::
