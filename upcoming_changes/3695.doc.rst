@@ -1,0 +1,1 @@
+Fixed spelling and grammatical mistakes in several Python examples to improve readability.
