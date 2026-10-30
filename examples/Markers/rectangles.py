@@ -37,7 +37,7 @@ s.add_marker(m)
 # #########################
 #
 # This first example shows how to draw dynamic rectangle markers, whose
-# position, widths, heights and angles depends on the navigation coordinates
+# positions, widths, heights and angles depend on the navigation coordinates
 
 s2 = hs.signals.Signal2D(data)
 
