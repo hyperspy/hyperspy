@@ -1,0 +1,2 @@
+Render the colour of :class:`~.drawing._markers.texts.Texts` markers
+correctly on the anyplotlib backend when set with ``facecolor``.

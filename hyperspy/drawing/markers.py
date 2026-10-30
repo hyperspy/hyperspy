@@ -16,15 +16,28 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
 from copy import deepcopy
 
-import matplotlib.collections as mpl_collections
 import numpy as np
-from matplotlib.patches import Patch
-from matplotlib.transforms import IdentityTransform
 
+from hyperspy.drawing.backends import get_artist_backend, get_backend
+from hyperspy.drawing.backends._protocol import (
+    BackendCapabilityError,
+    MarkerType,
+    TextMarkup,
+)
 from hyperspy.events import Event, Events
 from hyperspy.misc import _markers, dask_utils, utils
+
+_logger = logging.getLogger(__name__)
+
+
+def _is_patch(obj):
+    """Return True if obj is a matplotlib Patch (imported lazily)."""
+    from matplotlib.patches import Patch
+
+    return isinstance(obj, Patch)
 
 
 def convert_positions(peaks, signal_axes):
@@ -35,6 +48,253 @@ def convert_positions(peaks, signal_axes):
     return new_data
 
 
+# ── Mathtext-to-plain-text degradation ──────────────────────────────────────
+# Mathtext labels (e.g. eXSpy's X-ray line markers) render natively on the
+# matplotlib backend but garble on backends that only draw raw strings.  The
+# symbol table and the unknown-command fallback (emit the bare name) mirror
+# anyplotlib's JS-side _texRuns engine so degraded labels stay consistent
+# across backends.
+
+_TEXT_SYMBOLS = {
+    "alpha": "α",
+    "beta": "β",
+    "gamma": "γ",
+    "delta": "δ",
+    "epsilon": "ε",
+    "varepsilon": "ε",
+    "zeta": "ζ",
+    "eta": "η",
+    "theta": "θ",
+    "vartheta": "ϑ",
+    "iota": "ι",
+    "kappa": "κ",
+    "lambda": "λ",
+    "mu": "μ",
+    "nu": "ν",
+    "xi": "ξ",
+    "pi": "π",
+    "rho": "ρ",
+    "sigma": "σ",
+    "tau": "τ",
+    "upsilon": "υ",
+    "phi": "φ",
+    "varphi": "φ",
+    "chi": "χ",
+    "psi": "ψ",
+    "omega": "ω",
+    "Gamma": "Γ",
+    "Delta": "Δ",
+    "Theta": "Θ",
+    "Lambda": "Λ",
+    "Xi": "Ξ",
+    "Pi": "Π",
+    "Sigma": "Σ",
+    "Upsilon": "Υ",
+    "Phi": "Φ",
+    "Psi": "Ψ",
+    "Omega": "Ω",
+    "times": "×",
+    "cdot": "·",
+    "pm": "±",
+    "mp": "∓",
+    "deg": "°",
+    "degree": "°",
+    "circ": "°",
+    "AA": "Å",
+    "angstrom": "Å",
+    "infty": "∞",
+    "propto": "∝",
+    "approx": "≈",
+    "sim": "~",
+    "le": "≤",
+    "leq": "≤",
+    "ge": "≥",
+    "geq": "≥",
+    "ne": "≠",
+    "neq": "≠",
+    "rightarrow": "→",
+    "to": "→",
+    "leftarrow": "←",
+    "leftrightarrow": "↔",
+    "partial": "∂",
+    "nabla": "∇",
+    "hbar": "ℏ",
+    "ell": "ℓ",
+    "prime": "′",
+    "sqrt": "√",
+    "sum": "Σ",
+    "int": "∫",
+    "langle": "⟨",
+    "rangle": "⟩",
+}
+
+
+def _read_command_name(s, i):
+    """Read a ``\\command`` name starting at ``s[i] == "\\"``.
+
+    Returns ``(name, index_after)``; a non-letter right after the
+    backslash yields that single character as the name.
+    """
+    j = i + 1
+    if j >= len(s) or not s[j].isalpha():
+        return (s[j] if j < len(s) else ""), j + 1
+    while j < len(s) and s[j].isalpha():
+        j += 1
+    return s[i + 1 : j], j
+
+
+def _read_brace_group(s, i):
+    """Read a brace-balanced ``{...}`` group starting at ``s[i] == "{"``.
+
+    Returns ``(content, index_after)``; an unclosed group yields the rest
+    of the string.
+    """
+    depth = 1
+    j = i + 1
+    start = j
+    while j < len(s):
+        if s[j] == "{":
+            depth += 1
+        elif s[j] == "}":
+            depth -= 1
+            if depth == 0:
+                return s[start:j], j + 1
+        j += 1
+    return s[start:], len(s)
+
+
+def _read_script_token(s, i):
+    """Read the argument of a ``_``/``^`` script starting at ``s[i]``.
+
+    Returns ``(raw_token, index_after)``: a brace group yields its
+    content, a ``\\command`` yields the command including the backslash,
+    anything else yields the single character at ``s[i]``.
+    """
+    if i >= len(s):
+        return "", i
+    if s[i] == "{":
+        return _read_brace_group(s, i)
+    if s[i] == "\\":
+        name, j = _read_command_name(s, i)
+        if name in ("mathrm", "text") and j < len(s) and s[j] == "{":
+            group, end = _read_brace_group(s, j)
+            return "\\" + name + "{" + group + "}", end
+        return ("\\" + name) if name else s[i : i + 2], j
+    return s[i], i + 1
+
+
+def _convert_math_str(seg):
+    """Convert one math segment (without ``$`` delimiters) to plain text."""
+    out = []
+    i = 0
+    n = len(seg)
+    while i < n:
+        ch = seg[i]
+        if ch == "\\" and i + 1 < n and seg[i + 1] == "$":
+            out.append("$")
+            i += 2
+        elif ch == "\\":
+            name, j = _read_command_name(seg, i)
+            if name in ("mathrm", "text") and j < n and seg[j] == "{":
+                group, j = _read_brace_group(seg, j)
+                out.append(_convert_math_str(group))
+            elif name in _TEXT_SYMBOLS:
+                out.append(_TEXT_SYMBOLS[name])
+            else:
+                out.append(name)
+            i = j
+        elif ch in "_^":
+            out.append(ch)
+            token, i = _read_script_token(seg, i + 1)
+            out.append(_convert_math_str(token))
+        elif ch in "{}":
+            # Stray braces carry no plain-text meaning
+            i += 1
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
+
+
+def _find_unescaped_dollar(s, i):
+    """Return the index of the next unescaped ``$`` at or after *i*."""
+    while i < len(s):
+        if s[i] == "\\" and i + 1 < len(s):
+            i += 2
+        elif s[i] == "$":
+            return i
+        else:
+            i += 1
+    return len(s)
+
+
+def _mathtext_to_plain(s):
+    """Convert a mathtext string to readable plain text.
+
+    Supports the pragmatic subset used by scientific labels: ``$...$``
+    segments, ``_{}``/``^{}`` scripts, ``\\mathrm{}``/``\\text{}`` upright
+    groups and the symbol table above.  Unknown ``\\commands`` degrade to
+    the bare name; strings without a ``$`` pass through unchanged, as do
+    non-string values.
+    """
+    if not isinstance(s, str) or "$" not in s:
+        return s
+    out = []
+    i = 0
+    n = len(s)
+    while i < n:
+        ch = s[i]
+        if ch == "\\" and i + 1 < n and s[i + 1] == "$":
+            out.append("$")
+            i += 2
+        elif ch == "$":
+            j = _find_unescaped_dollar(s, i + 1)
+            out.append(_convert_math_str(s[i + 1 : j]))
+            i = j + 1
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
+
+
+def _any_text_is_mathtext(texts):
+    """Return True when any string in *texts* needs mathtext rendering.
+
+    Accepts flat containers and ragged object arrays; an escaped ``\\$``
+    does not count as mathtext.
+    """
+    if texts is None:
+        return False
+    if isinstance(texts, str):
+        return "$" in texts.replace("\\$", "")
+    if isinstance(texts, np.ndarray):
+        return any(_any_text_is_mathtext(t) for t in texts.flat)
+    if isinstance(texts, (list, tuple)):
+        return any(_any_text_is_mathtext(t) for t in texts)
+    return False
+
+
+def _degrade_texts(texts):
+    """Return a NEW texts container with mathtext converted to plain text.
+
+    Handles flat lists, string ndarrays and ragged object ndarrays
+    (per-navigation lists); the input is never mutated and non-string
+    entries pass through unchanged.
+    """
+    if isinstance(texts, np.ndarray):
+        if texts.dtype == object:
+            out = texts.copy()
+            for idx in np.ndindex(texts.shape):
+                out[idx] = _degrade_texts(texts[idx])
+            return out
+        return np.array(_degrade_texts(texts.tolist())).reshape(texts.shape)
+    if isinstance(texts, list):
+        return [_degrade_texts(t) for t in texts]
+    if isinstance(texts, tuple):
+        return tuple(_degrade_texts(t) for t in texts)
+    return _mathtext_to_plain(texts)
+
+
 class Markers:
     """A set of markers using Matplotlib collections."""
 
@@ -43,10 +303,12 @@ class Markers:
     # For VerticalLines and HorizontalLines, the key to set is different from
     # `_position_key`
     _position_key_to_set = None
+    # Set to a MarkerType constant in subclasses to enable backend-native path
+    _marker_type = None
 
     def __init__(
         self,
-        collection,
+        collection=None,
         offset_transform="data",
         transform="display",
         shift=None,
@@ -150,30 +412,56 @@ class Markers:
         >>> s.add_marker(m)
 
         """
-        if isinstance(collection, str):
-            try:
-                collection = getattr(mpl_collections, collection)
-            except AttributeError:
-                raise ValueError(
-                    f"'{collection}' is not the name of a matplotlib collection class."
-                )
-
-        if not issubclass(collection, mpl_collections.Collection):
+        if collection is None and self._marker_type is None:
             raise ValueError(
-                f"{collection} is not a subclass of `matplotlib.collection.Collection`."
+                "collection must be provided when _marker_type is not set on the class."
             )
 
-        if ".".join(collection.__module__.split(".")[:2]) not in [
-            "matplotlib.collections",
-            "hyperspy.external",
-        ]:
-            # To be able to load a custom markers, we need to be able to instantiate
-            # the class and the safe way to do that is to import from
-            # `matplotlib.collections` or `hyperspy.external` (patched matplotlib collection)
-            raise ValueError(
-                "To support loading file saved with custom markers, the collection must be "
-                "implemented in matplotlib or hyperspy"
-            )
+        if collection is not None:
+            from hyperspy.drawing.marker_collection import HyperMarkerCollection
+
+            if isinstance(collection, str):
+                # A marker type ("points", "circles", ...) or, failing that,
+                # the name of a matplotlib collection class.
+                try:
+                    collection = HyperMarkerCollection.from_marker_type(collection)
+                except ValueError:
+                    import matplotlib.collections as mpl_collections
+
+                    try:
+                        collection = getattr(mpl_collections, collection)
+                    except AttributeError:
+                        raise ValueError(
+                            f"'{collection}' is not a known marker type or the name "
+                            "of a matplotlib collection class."
+                        )
+
+            if HyperMarkerCollection.is_hyper_collection(collection):
+                self._position_key = collection._position_key
+                self._position_key_to_set = collection._position_key_to_set
+                if self._marker_type is None:
+                    self._marker_type = collection._marker_type
+            else:
+                # A raw matplotlib Collection subclass (matplotlib backend only).
+                import matplotlib.collections as mpl_collections
+
+                if not issubclass(collection, mpl_collections.Collection):
+                    raise ValueError(
+                        f"{collection} is not a subclass of "
+                        "`matplotlib.collection.Collection`."
+                    )
+
+                if ".".join(collection.__module__.split(".")[:2]) not in [
+                    "matplotlib.collections",
+                    "hyperspy.external",
+                ]:
+                    # To be able to load a custom markers, we need to be able to
+                    # instantiate the class and the safe way to do that is to import
+                    # from `matplotlib.collections` or `hyperspy.external`.
+                    raise ValueError(
+                        "To support loading file saved with custom markers, the "
+                        "collection must be implemented in matplotlib or hyperspy"
+                    )
 
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
@@ -204,7 +492,7 @@ class Markers:
             elif (
                 isinstance(value, list)
                 and len(value) > 0
-                and not isinstance(value[0], Patch)
+                and not _is_patch(value[0])
                 and not key == "verts"
             ):
                 self.kwargs[key] = np.array(value)
@@ -223,6 +511,10 @@ class Markers:
         self.name = name
         # Properties
         self._collection = None
+        self._using_native_markers = False
+        # Capability-gap warnings are deduplicated per kind so repeated
+        # plot/update cycles do not spam the log (see _warn_capability_once)
+        self._capability_warnings: set = set()
         # used in _initialize_collection
         self._collection_class = collection
         self._signal = None
@@ -281,17 +573,10 @@ class Markers:
         self.__signal = signal
 
     def _get_transform(self, attr="_transform"):
-        if self.ax is not None:  # return the transform
-            transforms = {
-                "data": self.ax.transData,
-                "axes": self.ax.transAxes,
-                "display": IdentityTransform(),
-                "yaxis": self.ax.get_yaxis_transform(),
-                "xaxis": self.ax.get_xaxis_transform(),
-                "relative": self.ax.transData,
-            }
-            return transforms[getattr(self, attr)]
-        else:  # return the string value
+        artist_backend = get_artist_backend() if self.ax is not None else None
+        if artist_backend is not None:  # return the backend's transform
+            return artist_backend.get_ax_transform(self.ax, getattr(self, attr))
+        else:  # return the coordinate-space name
             return getattr(self, attr)
 
     def _set_transform(self, value, attr="_transform"):
@@ -622,7 +907,12 @@ class Markers:
             "ScalarMappable_array": self._ScalarMappable_array,
         }
         if class_name == "Markers":
-            marker_dict["collection"] = self._collection_class.__name__
+            from hyperspy.drawing.marker_collection import HyperMarkerCollection
+
+            if HyperMarkerCollection.is_hyper_collection(self._collection_class):
+                marker_dict["collection"] = self._collection_class._marker_type
+            else:
+                marker_dict["collection"] = self._collection_class.__name__
 
         return marker_dict
 
@@ -668,6 +958,62 @@ class Markers:
 
         return current_keys
 
+    def _kwargs_for_backend(self, only_variable_length=False):
+        """Return the marker kwargs to hand to the active backend.
+
+        Applies the backend's declared text capabilities to ``texts``
+        markers: on a backend that renders plain text only, mathtext
+        labels are converted on a copy of the kwargs; when text rotation
+        is unsupported the rotation and alignment kwargs are dropped.
+        Each degradation warns once per marker instance.
+        """
+        kwds = self.get_current_kwargs(only_variable_length=only_variable_length)
+        backend = get_backend()
+        if self._marker_type != MarkerType.TEXTS:
+            return kwds
+        markup = getattr(backend, "text_markup", TextMarkup.PLAIN)
+        texts = kwds.get("texts")
+        if markup == TextMarkup.PLAIN and _any_text_is_mathtext(texts):
+            # Degrade on a copy: the user's marker kwargs stay intact so
+            # switching backend or re-plotting re-evaluates cleanly.
+            kwds = dict(kwds)
+            kwds["texts"] = _degrade_texts(texts)
+            self._warn_capability_once("text_markup", markup)
+        if not getattr(backend, "supports_text_rotation", False):
+            style_keys = [
+                key
+                for key in ("rotation", "horizontalalignment", "verticalalignment")
+                if kwds.get(key) is not None
+            ]
+            if style_keys:
+                kwds = dict(kwds)
+                for key in style_keys:
+                    kwds.pop(key)
+                self._warn_capability_once("supports_text_rotation", False, style_keys)
+        return kwds
+
+    def _warn_capability_once(self, kind, value, keys=None):
+        """Warn once per marker instance about a backend capability gap."""
+        if kind in self._capability_warnings:
+            return
+        self._capability_warnings.add(kind)
+        backend_name = type(get_backend()).__name__
+        if kind == "text_markup":
+            _logger.warning(
+                f"The {backend_name} backend renders plain text only "
+                f"(text_markup={value!r}); mathtext Texts markers are "
+                "displayed as plain text. Set "
+                "hs.preferences.Plot.backend = 'matplotlib' for full "
+                "mathtext rendering."
+            )
+        else:
+            dropped = ", ".join(repr(key) for key in keys)
+            _logger.warning(
+                f"The {backend_name} backend does not support text "
+                f"rotation (supports_text_rotation=False); dropping "
+                f"{dropped} from Texts markers."
+            )
+
     def _scale_kwarg(self, kwds, key=None):
         """
         Scale the kwarg by the current data.  This is useful for scaling the
@@ -712,13 +1058,25 @@ class Markers:
             self._update()
 
     def _update(self):
-        if self._signal:
-            kwds = self.get_current_kwargs(only_variable_length=True)
-            self._collection.set(**kwds)
+        if self._signal and self._collection is not None:
+            kwds = self._kwargs_for_backend(only_variable_length=True)
+            if self._using_native_markers:
+                get_backend().update_markers(self._collection, **kwds)
+            elif (artist_backend := get_artist_backend()) is not None:
+                artist_backend.collection_update(self._collection, **kwds)
+
+    def _get_mpl_class(self):
+        """Return the matplotlib Collection class for ``_collection_class``."""
+        from hyperspy.drawing.marker_collection import HyperMarkerCollection
+
+        if HyperMarkerCollection.is_hyper_collection(self._collection_class):
+            return self._collection_class.mpl_collection()
+        return self._collection_class
 
     def _initialize_collection(self):
-        self._collection = self._collection_class(
-            **self.get_current_kwargs(),
+        mpl_cls = self._get_mpl_class()
+        self._collection = mpl_cls(
+            **self._kwargs_for_backend(),
             offset_transform=self.offset_transform,
         )
         self._collection.set_transform(self.transform)
@@ -742,14 +1100,46 @@ class Markers:
                 + "figure using `s._plot.signal_plot.add_marker(m)` or "
                 + "`s._plot.navigator_plot.add_marker(m)`"
             )
-        self._initialize_collection()
-        self._collection.set_animated(self.ax.figure.canvas.supports_blit)
-        self.ax.add_collection(self._collection)
+        backend = get_backend()
+        self._using_native_markers = False
+
+        if self._marker_type is not None:
+            try:
+                self._collection = backend.create_markers(
+                    self.ax,
+                    self._marker_type,
+                    offset_space=self._offset_transform,
+                    transform_space=self._transform,
+                    **self._kwargs_for_backend(),
+                )
+                self._using_native_markers = True
+            except BackendCapabilityError:
+                pass
+
+        if not self._using_native_markers:
+            artist_backend = get_artist_backend()
+            if artist_backend is None:
+                raise BackendCapabilityError(
+                    f"{getattr(self._collection_class, '__name__', 'Collection')} "
+                    "markers are only "
+                    "supported by the matplotlib backend: they are matplotlib "
+                    "Collection artists, which the active backend cannot "
+                    "draw. Use one of the built-in marker classes in "
+                    "hs.plot.markers (Circles, Points, Rectangles, …), which "
+                    "every backend can render natively."
+                )
+            self._initialize_collection()
+            backend.artist_set_animated(
+                self._collection,
+                backend.supports_blit(backend.get_figure_from_ax(self.ax)),
+            )
+            artist_backend.add_collection(self.ax, self._collection)
+
         if render_figure:
             self._render_figure()
 
     def _render_figure(self):
-        self.ax.hspy_fig.render_figure()
+        get_backend().render_figure_from_ax(self.ax)
 
     def close(self, render_figure=True):
         """
@@ -767,13 +1157,19 @@ class Markers:
         if self._closing:  # pragma: no cover
             return
         self._closing = True
-        self._collection.remove()
+        if self._using_native_markers:
+            get_backend().remove_markers(self.ax, self._collection)
+        elif self._collection is not None:
+            # A raw Collection exists only if an artist backend drew it.
+            artist_backend = get_artist_backend()
+            if artist_backend is not None:
+                artist_backend.collection_remove(self.ax, self._collection)
         self._collection = None
         # Collection removal leaves the blit background stale —
         # invalidate it so the next _render_figure does a full repaint
         # instead of restoring the removed markers' pixels.
-        if render_figure and hasattr(self.ax, "hspy_fig"):
-            self.ax.hspy_fig._background = None
+        if render_figure:
+            get_backend().invalidate_blit_background(self.ax)
         self.events.closed.trigger(obj=self)
         self._signal = None
         for f in self.events.closed.connected:
@@ -800,6 +1196,13 @@ class Markers:
         """
         self._ScalarMappable_array = array
         if self._collection is not None:
+            if not hasattr(self._collection, "set_array"):
+                raise BackendCapabilityError(
+                    "Colour-mapping markers with set_ScalarMappable_array() is "
+                    "only supported by the matplotlib backend; the active "
+                    "backend draws markers natively and has no ScalarMappable. "
+                    "Set the marker colours explicitly instead."
+                )
             self._collection.set_array(array)
 
     def plot_colorbar(self):
@@ -837,9 +1240,10 @@ class Markers:
         if self.ax is None:
             raise RuntimeError("The markers needs to be plotted.")
         self.set_ScalarMappable_array(self._ScalarMappable_array)
-        cbar = self.ax.figure.colorbar(self._collection)
-
-        return cbar
+        backend = get_backend()
+        return backend.add_colorbar(
+            backend.get_figure_from_ax(self.ax), self._collection, self.ax
+        )
 
 
 def is_iterating(arg):
