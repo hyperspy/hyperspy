@@ -29,7 +29,7 @@ class Dummy:
     def __init__(self):
         self.value = 1
 
-    def add_one(self):
+    def add_one(self, *args, **kwargs):
         self.value += 1
 
 
@@ -88,7 +88,7 @@ class TestParameterLen1:
 
     def test_connect_disconnect(self):
         dummy = Dummy()
-        self.par.events.value_changed.connect(dummy.add_one, [])
+        self.par.events.value_changed.connect(dummy.add_one)
         self.par.value = 1
         assert dummy.value == 2
 
@@ -181,7 +181,7 @@ class TestParameterLen2:
 
     def test_connect_disconnect(self):
         dummy = Dummy()
-        self.par.events.value_changed.connect(dummy.add_one, [])
+        self.par.events.value_changed.connect(dummy.add_one)
         self.par.value = (1, 1)
         assert dummy.value == 2
 
@@ -350,8 +350,8 @@ class TestParameterTwin:
             nonlocal p2_event_count
             p2_event_count += 1
 
-        self.p1.events.value_changed.connect(count_p1, [])
-        self.p2.events.value_changed.connect(count_p2, [])
+        self.p1.events.value_changed.connect(count_p1)
+        self.p2.events.value_changed.connect(count_p2)
         self.p1.value = 3.5
 
         assert p1_event_count == 1, (
@@ -376,7 +376,7 @@ class TestParameterTwin:
             nonlocal p2_event_count
             p2_event_count += 1
 
-        self.p2.events.value_changed.connect(count_p2, [])
+        self.p2.events.value_changed.connect(count_p2)
         self.p1.value = 1.0
         assert p2_event_count == 1
 
@@ -426,7 +426,7 @@ class TestParameterTwin:
             nonlocal event_fired
             event_fired = True
 
-        p2.events.value_changed.connect(check, [])
+        p2.events.value_changed.connect(check)
         p2._updating_twin = True
         p2._on_twin_update(value=5.0)
         assert not event_fired, "Guard should prevent event when _updating_twin is True"
@@ -437,7 +437,7 @@ class TestParameterTwin:
 
     def test_inherit_connections(self):
         dummy = Dummy()
-        self.p2.events.value_changed.connect(dummy.add_one, [])
+        self.p2.events.value_changed.connect(dummy.add_one)
         self.p2.twin = self.p1
         self.p1.value = 2
         assert dummy.value == 2

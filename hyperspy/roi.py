@@ -52,11 +52,12 @@ from functools import partial
 
 import numpy as np
 import traits.api as t
+from psygnal import SignalGroup
 
 from hyperspy import signals
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 from hyperspy.interactive import interactive
 from hyperspy.misc import utils
 from hyperspy.ui_registry import add_gui_method
@@ -102,21 +103,7 @@ class BaseROI(t.HasTraits):
     def __init__(self):
         """Sets up events.changed event, and inits HasTraits."""
         super(BaseROI, self).__init__()
-        self.events = Events()
-        self.events.changed = Event(
-            """
-            Event that triggers when the ROI has changed.
-
-            What constitues a change varies from ROI to ROI, but in general it
-            should correspond to the region selected by the ROI being changed.
-
-            Parameters
-            ----------
-            roi :
-                The ROI that was changed.
-            """,
-            arguments=["roi"],
-        )
+        self.events = BaseROIEvents(self)
         self.signal_map = dict()
 
     def __getitem__(self, *args, **kwargs):
@@ -165,13 +152,13 @@ class BaseROI(t.HasTraits):
         """
         return t.Undefined not in tuple(self)
 
-    def update(self):
+    def update(self, **kwargs):
         """Function responsible for updating anything that depends on the ROI.
         It should be called by implementors whenever the ROI changes.
         The base implementation simply triggers the changed event.
         """
         if self.is_valid():
-            self.events.changed.trigger(self)
+            self.events.changed.emit(self)
 
     def _get_ranges(self):
         """
@@ -311,6 +298,20 @@ class BaseROI(t.HasTraits):
     _parse_axes.__doc__ %= PARSE_AXES_DOCSTRING
 
 
+class BaseROIEvents(SignalGroup):
+    """Events for :class:`BaseROI`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    changed = EventSignal(
+        BaseROI,
+        description="""
+            Event that triggers when the ROI changes.
+
+            The ROI is passed as a parameter to the event handler.
+            """,
+    )
+
+
 def _get_mpl_ax(plot, axes):
     """
     Returns matplotlib Axes that contains the hyperspy axis.
@@ -353,8 +354,9 @@ class BaseInteractiveROI(BaseROI):
         self.widgets = set()
         self._applying_widget_change = False
         self._updating_widgets = False
+        self._any_axis_changed_connected = False
 
-    def update(self):
+    def update(self, *args, **kwargs):
         """Function responsible for updating anything that depends on the ROI.
         It should be called by implementors whenever the ROI changes.
         This implementation  updates the widgets associated with it, and
@@ -363,7 +365,7 @@ class BaseInteractiveROI(BaseROI):
         if self.is_valid():
             if not self._applying_widget_change:
                 self._update_widgets()
-            self.events.changed.trigger(self)
+            self.events.changed.emit(self)
 
     def _update_widgets(self, exclude=None):
         """Internal function for updating the associated widgets to the
@@ -477,8 +479,9 @@ class BaseInteractiveROI(BaseROI):
                     snap=snap,
                     axes=kwargs.get("axes", None),
                 )
-        if self.update not in signal.axes_manager.events.any_axis_changed.connected:
-            signal.axes_manager.events.any_axis_changed.connect(self.update, [])
+        if not self._any_axis_changed_connected:
+            signal.axes_manager.events.any_axis_changed.connect(self.update)
+            self._any_axis_changed_connected = True
         if out is None:
             return interactive(
                 self.__call__, event=self.events.changed, signal=signal, **kwargs
@@ -499,7 +502,7 @@ class BaseInteractiveROI(BaseROI):
         """
         if self._updating_widgets:
             return
-        with self.events.suppress():
+        with self.events.blocked():
             self._bounds_check = False
             self._applying_widget_change = True
             try:
@@ -508,7 +511,7 @@ class BaseInteractiveROI(BaseROI):
                 self._bounds_check = True
                 self._applying_widget_change = False
         self._update_widgets(exclude=(widget,))
-        self.events.changed.trigger(self)
+        self.events.changed.emit(self)
 
     def add_widget(
         self, signal, axes=None, widget=None, color="green", snap=None, **kwargs
@@ -593,9 +596,18 @@ class BaseInteractiveROI(BaseROI):
             self._updating_widgets = False
 
         # Connect widget changes to on_widget_change
-        widget.events.changed.connect(self._on_widget_change, {"obj": "widget"})
+        def _changed(*args, **kwargs):
+            self._on_widget_change(widget)
+
+        widget._changed_callback = _changed
+        widget.events.changed.connect(widget._changed_callback)
+
         # When widget closes, remove from internal list
-        widget.events.closed.connect(self._remove_widget, {"obj": "widget"})
+        def _closed(*args, **kwargs):
+            self._remove_widget(widget)
+
+        widget._closed_callback = _closed
+        widget.events.closed.connect(widget._closed_callback)
         self.widgets.add(widget)
         self.signal_map[signal] = (widget, axes)
         return widget
@@ -603,15 +615,16 @@ class BaseInteractiveROI(BaseROI):
     add_widget.__doc__ %= PARSE_AXES_DOCSTRING
 
     def _remove_widget(self, widget, render_figure=True):
-        widget.events.closed.disconnect(self._remove_widget)
-        widget.events.changed.disconnect(self._on_widget_change)
+        widget.events.closed.disconnect(widget._closed_callback)
+        widget.events.changed.disconnect(widget._changed_callback)
         widget.close(render_figure=render_figure)
         for signal, w in self.signal_map.items():
             if w[0] == widget:
                 # Disconnect before break: only the matching signal's handler
                 # needs cleanup, and break would skip it if placed after.
-                if self.update in signal.axes_manager.events.any_axis_changed.connected:
+                if self._any_axis_changed_connected:
                     signal.axes_manager.events.any_axis_changed.disconnect(self.update)
+                    self._any_axis_changed_connected = False
                 self.signal_map.pop(signal)
                 break
 
@@ -1084,7 +1097,7 @@ class RectangularROI(BaseInteractiveROI):
             try:
                 self._applying_widget_change = True
                 self._bounds_check = False
-                with self.events.changed.suppress():
+                with self.events.changed.blocked():
                     self.right += diff
                     self.left += diff
             finally:
@@ -1105,7 +1118,7 @@ class RectangularROI(BaseInteractiveROI):
             try:
                 self._applying_widget_change = True
                 self._bounds_check = False
-                with self.events.changed.suppress():
+                with self.events.changed.blocked():
                     self.top += diff
                     self.bottom += diff
             finally:
@@ -1350,7 +1363,7 @@ class CircleROI(BaseInteractiveROI):
         if out is None:
             return roi
         else:
-            out.events.data_changed.trigger(out)
+            out.events.data_changed.emit(out)
 
 
 @add_gui_method(toolkey="hyperspy.Line2DROI")
@@ -1710,7 +1723,7 @@ class Line2DROI(BaseInteractiveROI):
             if axchange:
                 ax.size = len(profile)
                 ax.scale = length / len(profile)
-            out.events.data_changed.trigger(out)
+            out.events.data_changed.emit(out)
 
 
 class PolygonROI(BaseInteractiveROI):
@@ -1925,7 +1938,7 @@ class PolygonROI(BaseInteractiveROI):
         if out is None:
             return roi
         else:
-            out.events.data_changed.trigger(out)
+            out.events.data_changed.emit(out)
 
     def __call__(self, signal, inverted=False, out=None, axes=None):
         return self._apply_roi(signal, inverted=inverted, out=out, axes=axes)

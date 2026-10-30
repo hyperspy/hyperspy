@@ -40,9 +40,9 @@ def check_closing_plot(s, check_data_changed_close=True):
     assert s._plot.signal_plot is None
     assert s._plot.navigator_plot is None
     # Ideally we should check all events
-    assert len(s.axes_manager.events.indices_changed.connected) == 0
+    assert len(s.axes_manager.events.indices_changed._connected_originals) == 0
     if check_data_changed_close:
-        assert len(s.events.data_changed.connected) == 0
+        assert len(s.events.data_changed._connected_originals) == 0
 
 
 def update_close_figure(check_data_changed_close=True):

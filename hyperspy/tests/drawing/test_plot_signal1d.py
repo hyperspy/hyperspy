@@ -210,9 +210,9 @@ class TestPlotSpectra:
         s2 = s / 2
         ax = hs.plot.plot_spectra([s, s2])
         s.data = -s.data
-        s.events.data_changed.trigger(s)
+        s.events.data_changed.emit(s)
         s2.data = -s2.data * 4 + 50
-        s2.events.data_changed.trigger(s2)
+        s2.events.data_changed.emit(s2)
 
         return ax.get_figure()
 
@@ -373,26 +373,26 @@ def test_plot_nav2_sig1_two_cursors_close():
 def test_plot_with_non_finite_value():
     s = hs.signals.Signal1D(np.array([np.nan, 2.0]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal1D(np.array([np.nan, np.nan]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal1D(np.array([-np.inf, 2.0]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     s = hs.signals.Signal1D(np.array([np.inf, 2.0]))
     s.plot()
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
 
 @pytest.mark.parametrize("ax", ["left", "right"])
 def test_plot_add_line_events(ax):
     s = hs.signals.Signal1D(np.arange(100))
     s.plot()
-    assert len(s.axes_manager.events.indices_changed.connected) == 1
+    assert len(s.axes_manager.events.indices_changed._connected_originals) == 1
     plot = s._plot.signal_plot
     assert len(s._plot.signal_plot.figure.get_axes()) == 1
 
@@ -415,11 +415,11 @@ def test_plot_add_line_events(ax):
 
     assert len(s._plot.signal_plot.figure.get_axes()) == expected_axis_number
     line.plot()
-    assert len(line.events.closed.connected) == 1
+    assert len(line.events.closed._connected_originals) == 1
     # expected_indices_changed_connected is 2 only when adding line on the left
     # because for the right ax, we have a deepcopy of the axes_manager
     assert (
-        len(s.axes_manager.events.indices_changed.connected)
+        len(s.axes_manager.events.indices_changed._connected_originals)
         == expected_indices_changed_connected
     )
 
@@ -427,12 +427,12 @@ def test_plot_add_line_events(ax):
     plot.close_right_axis()
 
     assert len(s._plot.signal_plot.figure.get_axes()) == 1
-    assert len(line.events.closed.connected) == 0
-    assert len(s.axes_manager.events.indices_changed.connected) == 1
+    assert len(line.events.closed._connected_originals) == 0
+    assert len(s.axes_manager.events.indices_changed._connected_originals) == 1
 
     s._plot.close()
-    assert len(s.axes_manager.events.indices_changed.connected) == 0
-    assert len(s._plot.events.closed.connected) == 0
+    assert len(s.axes_manager.events.indices_changed._connected_originals) == 0
+    assert len(s._plot.events.closed._connected_originals) == 0
     assert s._plot.signal_plot is None
 
 
@@ -446,7 +446,7 @@ def test_plot_autoscale(autoscale):
     ax = s._plot.signal_plot.ax
     ax.set_xlim(50.0, 70.0)
     ax.set_ylim(-50.0, 200.0)
-    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+    s.axes_manager.events.indices_changed.emit(s.axes_manager)
 
     return s._plot.signal_plot.figure
 
@@ -513,7 +513,7 @@ def test_plot_spectra_normalise_interactive():
 
     # Simulate data changed
     s.data = s.data * -1
-    s.events.data_changed.trigger(s)
+    s.events.data_changed.emit(s)
 
     # check the values
     assert lines[0].get_data()[1][0] == 1

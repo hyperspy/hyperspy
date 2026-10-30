@@ -807,7 +807,7 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
             self.crop_signal(top, bottom, left, right)
             shifts = -shifts
 
-        self.events.data_changed.trigger(obj=self)
+        self.events.data_changed.emit(obj=self)
 
         if return_shifts:
             return shifts

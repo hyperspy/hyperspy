@@ -563,16 +563,16 @@ class TestSyncingGuardPreventsRecursion:
         @_reentrance_guard(_syncing)
         def closure_a(**kwargs):
             calls[0] += 1
-            ev_b.trigger()
+            ev_b.emit()
 
         @_reentrance_guard(_syncing)
         def closure_b(**kwargs):
             calls[1] += 1
 
-        ev_a.connect(closure_a, [])
-        ev_b.connect(closure_b, [])
+        ev_a.connect(closure_a)
+        ev_b.connect(closure_b)
 
-        ev_a.trigger()
+        ev_a.emit()
 
         assert calls[0] == 1
         assert calls[1] == 0
@@ -625,12 +625,8 @@ class TestSyncingGuardPreventsRecursion:
             ):
                 ax1.value = ax2.value
 
-        s1.axes_manager.events.indices_changed.connect(
-            sync_s2_from_s1, {"obj": "axes_manager"}
-        )
-        s2.axes_manager.events.indices_changed.connect(
-            sync_s1_from_s2, {"obj": "axes_manager"}
-        )
+        s1.axes_manager.events.indices_changed.connect(sync_s2_from_s1)
+        s2.axes_manager.events.indices_changed.connect(sync_s1_from_s2)
 
         s1.axes_manager.indices = (5, 10)
         assert s2.axes_manager.indices == (5, 10)

@@ -98,7 +98,7 @@ class Model2D(BaseModel):
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis, self.axes_manager.signal_axes[1].axis
         )
-        self.axes_manager.events.indices_changed.connect(self._on_navigating, [])
+        self.axes_manager.events.indices_changed.connect(self._on_navigating)
         self._channel_switches = np.ones(
             self.axes_manager._signal_shape_in_array, dtype=bool
         )

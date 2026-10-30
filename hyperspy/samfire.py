@@ -560,17 +560,20 @@ class Samfire:
         )
         mark.metadata.General.title = "SAMFire marker"
 
-        def update_when_triggered():
+        def update_when_triggered(**kwargs):
             ind = self.model.axes_manager.indices[::-1]
             isgood = self.metadata.goodness_test.test(self.model, ind)
             self.active_strategy.update(ind, isgood, 0)
-            mark.events.data_changed.trigger(mark)
+            mark.events.data_changed.emit(mark)
 
         self.model.plot()
-        self.model.events.fitted.connect(update_when_triggered, [])
-        self.model._plot.signal_plot.events.closed.connect(
-            lambda: self.model.events.fitted.disconnect(update_when_triggered), []
-        )
+
+        self.model.events.fitted.connect(update_when_triggered)
+
+        def _disconnect_fitted(*args, **kwargs):
+            self.model.events.fitted.disconnect(update_when_triggered)
+
+        self.model._plot.signal_plot.events.closed.connect(_disconnect_fitted)
 
         mark.plot(navigator="slider")
 
@@ -599,32 +602,33 @@ class Samfire:
             ):
                 ax1.value = ax2.value
 
-        mark.axes_manager.events.indices_changed.connect(
-            connect_other_navigation2, {"obj": "axes_manager"}
-        )
-        self.model.axes_manager.events.indices_changed.connect(
-            connect_other_navigation1, {"obj": "axes_manager"}
-        )
+        def _nav2_callback(**kwargs):
+            connect_other_navigation2(kwargs["obj"])
+
+        mark.axes_manager.events.indices_changed.connect(_nav2_callback)
+
+        def _nav1_callback(**kwargs):
+            connect_other_navigation1(kwargs["obj"])
+
+        self.model.axes_manager.events.indices_changed.connect(_nav1_callback)
 
         # BUG FIX: must call close() — without parens the lambda returns the
         # method object without invoking it, so the mark plot was never closed.
         self.model._plot.signal_plot.events.closed.connect(
-            lambda: mark._plot.close(), []
+            lambda **kwargs: mark._plot.close()
         )
-        self.model._plot.signal_plot.events.closed.connect(
-            lambda: self.model.axes_manager.events.indices_changed.disconnect(
-                connect_other_navigation1
-            ),
-            [],
-        )
+
+        def _disconnect_nav1(**kwargs):
+            self.model.axes_manager.events.indices_changed.disconnect(_nav1_callback)
+
+        self.model._plot.signal_plot.events.closed.connect(_disconnect_nav1)
+
         # BUG FIX: connect_other_navigation2 was connected (line 575) but never
         # disconnected on plot close — this leaked the handler on repeated opens.
-        self.model._plot.signal_plot.events.closed.connect(
-            lambda: mark.axes_manager.events.indices_changed.disconnect(
-                connect_other_navigation2
-            ),
-            [],
-        )
+        def _disconnect_nav2(**kwargs):
+            mark.axes_manager.events.indices_changed.disconnect(_nav2_callback)
+
+        self.model._plot.signal_plot.events.closed.connect(_disconnect_nav2)
 
     def plot(self, on_count=False):
         """If possible, plot current strategy plot. Local strategies plot

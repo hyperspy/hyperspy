@@ -128,7 +128,7 @@ class SpikesRemoval:
     def find(self, back=False):
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
-        with self.signal.axes_manager.events.indices_changed.suppress():
+        with self.signal.axes_manager.events.indices_changed.blocked():
             while not spike and (
                 (self.index < ncoordinates - 1 and back is False)
                 or (self.index > 0 and back is True)
@@ -402,7 +402,7 @@ class SpikesRemovalInteractive(SpikesRemoval, signal_tools.SpanSelectorInSignal1
         if not self.interpolated_line:  # No spike selected
             return
         self.signal._get_current_data()[:] = self.get_interpolated_spectrum()
-        self.signal.events.data_changed.trigger(obj=self.signal)
+        self.signal.events.data_changed.emit(obj=self.signal)
         self.update_spectrum_line()
         self.interpolated_line.close()
         self.interpolated_line = None
