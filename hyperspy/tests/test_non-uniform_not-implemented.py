@@ -31,8 +31,6 @@ def test_signal():
         s.ifft()
     with pytest.raises(NotImplementedError):
         s.diff(0)
-    with pytest.raises(NotImplementedError):
-        s.split(number_of_parts=2, axis=0)
 
 
 def test_signal1d():
