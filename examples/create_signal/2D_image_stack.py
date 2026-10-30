@@ -2,8 +2,8 @@
 Creates a 4D image
 ==================
 
-This example creates a 4D dataset, i.e. 2 navigation dimension and
-2 signal dimension and plots it.
+This example creates a 4D dataset, i.e. 2 navigation dimensions and
+2 signal dimensions, and plots it.
 """
 
 import numpy as np

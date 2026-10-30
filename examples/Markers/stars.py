@@ -17,7 +17,7 @@ data = np.ones((25, 25, 100, 100))
 s = hs.signals.Signal2D(data)
 
 #%%
-# This first example shows how to draw static stars markers using the matplotlib
+# This first example shows how to draw static star markers using the matplotlib
 # StarPolygonCollection
 
 # Define the position of the boxes
@@ -37,7 +37,7 @@ s.add_marker(m)
 # Dynamic Star Markers
 # ######################
 #
-# This second example shows how to draw dynamic stars markers, whose position
+# This second example shows how to draw dynamic star markers, whose position
 # depends on the navigation coordinates
 
 # Create a Signal2D with 2 navigation dimensions

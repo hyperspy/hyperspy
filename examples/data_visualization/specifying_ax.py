@@ -50,7 +50,7 @@ s2 = -s
 #%%
 # Create an array of :external+matplotlib:class:`matplotlib.axis.Axis` using
 # :external+matplotlib:func:`matplotlib.pyplot.subplots` and
-# specify the two las matplotlib axis of the second line to :func:`~.api.plot.plot_spectra`
+# specify the two last matplotlib axis of the second line to :func:`~.api.plot.plot_spectra`
 
 #%%
 fig, axs = plt.subplots(ncols=3, nrows=2)

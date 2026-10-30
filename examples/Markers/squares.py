@@ -35,8 +35,8 @@ s.add_marker(m)
 # Dynamic Square Markers
 # #########################
 #
-# This first example shows how to draw dynamic squres markers, whose
-# position, widths and angles depends on the navigation coordinates
+# This first example shows how to draw dynamic square markers, whose
+# positions, widths and angles depend on the navigation coordinates
 
 s2 = hs.signals.Signal2D(data)
 

@@ -18,7 +18,7 @@ s = hs.signals.Signal1D(data)
 
 #%%
 # This first example shows how to draw 3 static (same position for all
-# navigation coordinate) vetical lines
+# navigation coordinates) vertical lines
 
 offsets = np.array([10, 20, 40])
 
@@ -36,8 +36,8 @@ s.add_marker(m)
 # Dynamic Line Markers
 # ####################
 #
-# This example shows how to draw dynamic lines markers, whose positions and
-# numbers depends on the navigation coordinates
+# This example shows how to draw dynamic line markers, whose positions and
+# numbers depend on the navigation coordinates
 
 offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
 for ind in np.ndindex(offsets.shape):

@@ -36,8 +36,8 @@ s.add_marker(m)
 # Dynamic Ellipse Markers
 # #######################
 #
-# This first example shows how to draw dynamic ellipses, whose position, widths
-# heights and angles depends on the navigation coordinates
+# This first example shows how to draw dynamic ellipses, whose positions, widths
+# heights and angles depend on the navigation coordinates
 
 s2 = hs.signals.Signal2D(data)
 

@@ -29,7 +29,7 @@ s2 = s + hs.signals.Signal1D(s_shifted/2)
 hs.plot.plot_spectra([s1,s2])
 
 #%%
-# Plot both signals with default normalisation, of min and max intensity values to 0 and 1 
+# Plot both signals using the default normalisation, which scales the minimum and maximum intensity values to 0 and 1, respectively
 
 hs.plot.plot_spectra([s1, s2], normalise = True)
 
