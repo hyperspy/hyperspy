@@ -18,7 +18,7 @@ roi = hs.roi.PolygonROI([(2, 4.5), (4.5, 4.5), (4.5, 2), (3.5, 3.5)])
 roi2 = hs.roi.PolygonROI([(0.5, 0.5), (1.2, 0.2), (1.5, 1), (0.2, 1.4)])
 
 #%%
-# We plot the signal add the ROIs to the figure using :meth:`~hyperspy.roi.BaseInteractiveROI.add_widget`.
+# We plot the signal and add the ROIs to the figure using :meth:`~hyperspy.roi.BaseInteractiveROI.add_widget`.
 
 s.plot()
 roi.add_widget(s, axes=s.axes_manager.signal_axes)
