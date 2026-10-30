@@ -2,8 +2,8 @@
 Making Inset Images
 ===================
 
-This example shows how to make images that overlay the main images.  These can be images overlaid using
-some king of transparency or make an inset image.  It can also be useful for something like making something
+This example shows how to create images that overlay the main images.  These can be images overlaid using
+some kind of transparency or make an inset image.  It can also be useful for something like making something
 like a circular color bar to show orientation.
 """
 
@@ -127,7 +127,7 @@ s.add_marker(quad)
 # Circular ColorBar
 # #################
 #
-# This example shows how to a circular Color Bar for shows orientation
+# This example shows how to create a circular Color Bar for shows orientation
 
 n = 360  # the number of secants for the mesh
 t = np.linspace(0, 2 * np.pi, n)  # theta values
