@@ -4013,9 +4013,14 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         axes_dict = signal_dict["axes"]
         original_axis = self.axes_manager._axes[axis]
         for i in range(len(cut_index) - 1):
-            split_axis = original_axis.copy()
-            split_axis._slice_me(slice(cut_index[i], cut_index[i + 1]))
-            axes_dict[axis] = split_axis.get_axis_dictionary()
+            if original_axis.is_uniform:
+                # Avoid constructing the full coordinate array for every split.
+                axes_dict[axis]["offset"] = original_axis.index2value(cut_index[i])
+                axes_dict[axis]["size"] = cut_index[i + 1] - cut_index[i]
+            else:
+                split_axis = original_axis.copy()
+                split_axis._slice_me(slice(cut_index[i], cut_index[i + 1]))
+                axes_dict[axis] = split_axis.get_axis_dictionary()
             data = self.data[
                 (slice(None),) * axis
                 + (slice(cut_index[i], cut_index[i + 1]), Ellipsis)

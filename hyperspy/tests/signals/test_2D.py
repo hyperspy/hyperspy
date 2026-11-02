@@ -278,6 +278,41 @@ class Test2D:
         np.testing.assert_array_almost_equal(result[0].data, self.data[:1, :10])
         np.testing.assert_array_almost_equal(result[1].data, self.data[1:3, :10])
 
+    @pytest.mark.parametrize("split_axis", ["x", "E"])
+    def test_split_uniform_axis_avoids_copy(self, split_axis):
+        s = self.signal.deepcopy()
+        axis = s.axes_manager[split_axis]
+        axis.offset = -2.5
+        axis.scale = 0.5
+        axis.units = "nm"
+        original_values = axis.axis.copy()
+        original_data = np.asarray(s.data).copy()
+        axis_index = axis.index_in_array
+        step_sizes = [2, axis.size - 2]
+
+        # Copying the full uniform axis for each part is unnecessarily expensive.
+        with mock.patch.object(
+            axis,
+            "copy",
+            side_effect=AssertionError("Uniform split must not copy the full axis"),
+        ):
+            parts = s.split(axis=split_axis, step_sizes=step_sizes)
+
+        assert len(parts) == len(step_sizes)
+        start = 0
+        for part, length in zip(parts, step_sizes):
+            stop = start + length
+            np.testing.assert_array_equal(
+                np.asarray(part.data),
+                np.take(original_data, np.arange(start, stop), axis=axis_index),
+            )
+            part_axis = part.axes_manager[split_axis]
+            assert part_axis.is_uniform
+            assert part_axis.units == axis.units
+            assert part_axis.scale == axis.scale
+            np.testing.assert_array_equal(part_axis.axis, original_values[start:stop])
+            start = stop
+
     @pytest.mark.parametrize("axis_type", ["data", "functional"])
     @pytest.mark.parametrize("split_axis", ["nav", "sig"])
     def test_split_non_uniform_axis(self, axis_type, split_axis):
