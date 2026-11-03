@@ -43,7 +43,7 @@ class TestInteractive:
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
         s.data += 3.2
         assert not np.allclose(ss.data, np.sum(s.data, axis=0))
-        e.trigger()
+        e.emit()
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
 
     def test_interactive_sum_no_out(self):
@@ -57,7 +57,7 @@ class TestInteractive:
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
         s.data += 3.2
         assert not np.allclose(ss.data, np.sum(s.data, axis=0))
-        e.trigger()
+        e.emit()
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
 
     def test_interactive_sum_auto_event(self):
@@ -66,7 +66,7 @@ class TestInteractive:
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=0))
         s.data += 3.2
         assert not np.allclose(ss.data, np.sum(s.data, axis=0))
-        s.events.data_changed.trigger(s)
+        s.events.data_changed.emit(s)
         np.testing.assert_array_equal(ss.data, np.sum(s.data, axis=0))
 
     def test_chained_interactive(self):
@@ -77,10 +77,10 @@ class TestInteractive:
         np.testing.assert_allclose(sss.data, np.sum(s.data, axis=(0, 1)))
         s.data += 3.2
         assert not np.allclose(ss.data, np.sum(s.data, axis=(1)))
-        e1.trigger()
+        e1.emit()
         np.testing.assert_allclose(ss.data, np.sum(s.data, axis=(1)))
         assert not np.allclose(sss.data, np.sum(s.data, axis=(0, 1)))
-        e2.trigger()
+        e2.emit()
         np.testing.assert_allclose(sss.data, np.sum(s.data, axis=(0, 1)))
 
     def test_recompute(self):
@@ -96,9 +96,9 @@ class TestInteractive:
         assert ss.data.shape != np.sum(s.data, axis=1).shape
         # Check that normal event raises an exception due to the invalid shape
         with pytest.raises(ValueError):
-            e1.trigger()
+            e1.emit()
         # Check that recompute event fixes issue
-        e2.trigger()
+        e2.emit()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
         # Finally, check that axes are updated as they should
         assert ss.axes_manager.navigation_axes[0].offset == 1
@@ -123,10 +123,10 @@ class TestInteractive:
         e2 = Event()
         ss = hs.interactive(s.sum, event=(e1, e2), recompute_out_event=None, axis=0)
         s.data[:] = 0
-        e1.trigger()
+        e1.emit()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
         s.data[:] = 1
-        e2.trigger()
+        e2.emit()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
 
     def test_two_recompute_events(self):
@@ -135,10 +135,10 @@ class TestInteractive:
         e2 = Event()
         ss = hs.interactive(s.sum, event=None, recompute_out_event=(e1, e2), axis=0)
         s.data[:] = 0
-        e1.trigger()
+        e1.emit()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
         s.data[:] = 1
-        e2.trigger()
+        e2.emit()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
 
     def test_interactive_function_return_None(self):
@@ -148,7 +148,7 @@ class TestInteractive:
             print("function called")
 
         hs.interactive(function_return_None, e)
-        e.trigger()
+        e.emit()
 
     def test_close_disconnects_explicit_event(self):
         s = self.s
@@ -157,7 +157,7 @@ class TestInteractive:
         initial_data = op.out.data.copy()
         s.data += 3.2
         op.close()
-        e.trigger()
+        e.emit()
         # After close, event should have no effect — data unchanged
         np.testing.assert_array_equal(op.out.data, initial_data)
 
@@ -170,7 +170,7 @@ class TestInteractive:
         s.crop(1, 1)
         op.close()
         # Triggering should NOT update after close
-        e1.trigger()
+        e1.emit()
         np.testing.assert_array_equal(op.out.data, initial_data)
 
     def test_close_keeps_out_accessible(self):
@@ -197,6 +197,6 @@ class TestInteractive:
         initial_data = op.out.data.copy()
         s.data += 3.2
         op.close()
-        s.events.data_changed.trigger(s)
+        s.events.data_changed.emit(s)
         # After close, data_changed should have no effect
         np.testing.assert_array_equal(op.out.data, initial_data)

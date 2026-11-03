@@ -1,0 +1,1 @@
+The ``Events`` class is deprecated and will be removed in HyperSpy 3.0. Events must be declared as ``EventSignal`` class attributes on named ``psygnal.SignalGroup`` subclasses. Dynamic runtime event registration is no longer supported.

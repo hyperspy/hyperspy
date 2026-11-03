@@ -150,9 +150,9 @@ class PeaksFinder2D(t.HasTraits):
         if self.signal.axes_manager.navigation_size > 0:
             self.show_navigation_sliders = True
             self.signal.axes_manager.events.indices_changed.connect(
-                self._update_peak_finding, []
+                self._update_peak_finding
             )
-            self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
+            self.signal._plot.signal_plot.events.closed.connect(self.disconnect)
         # Set initial parameters:
         # As a convenience, if the template argument is provided, we keep it
         # even if the method is different, to be able to use it later.
@@ -182,7 +182,7 @@ class PeaksFinder2D(t.HasTraits):
             if arg in kwargs.keys():
                 setattr(self, attr, kwargs[arg])
 
-    def _update_peak_finding(self, method=None):
+    def _update_peak_finding(self, method=None, **kwargs):
         if method is None:
             method = self.method
         self._find_peaks_current_index(method=method)
@@ -238,7 +238,7 @@ class PeaksFinder2D(t.HasTraits):
 
     def compute_navigation(self):
         method = self._normalise_method_name(self.method)
-        with self.signal.axes_manager.events.indices_changed.suppress():
+        with self.signal.axes_manager.events.indices_changed.blocked():
             self.peaks.data = self.signal.find_peaks(
                 method,
                 interactive=False,
@@ -252,11 +252,13 @@ class PeaksFinder2D(t.HasTraits):
             self.signal._plot.signal_plot.remove_markers(render_figure=True)
         self.disconnect()
 
-    def disconnect(self):
+    def disconnect(self, **kwargs):
         # disconnect event
         am = self.signal.axes_manager
-        if self._update_peak_finding in am.events.indices_changed.connected:
+        try:
             am.events.indices_changed.disconnect(self._update_peak_finding)
+        except ValueError:
+            pass
         # disconnect trait observers
         self.observe(
             self.set_random_navigation_position,

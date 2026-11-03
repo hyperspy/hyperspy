@@ -13,4 +13,5 @@ dependencies:
 - pytest-rerunfailures
 - pytest-instafail
 - pooch
+- psygnal >=0.11
 - setuptools-scm

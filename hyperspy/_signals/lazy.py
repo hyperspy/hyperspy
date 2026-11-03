@@ -124,8 +124,9 @@ class LazySignal(signals.BaseSignal):
         # the NumPy array originates from.
         self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
-        if self._clear_cache_dask_data not in self.events.data_changed.connected:
+        if not getattr(self, "_data_changed_clear_cache_connected", False):
             self.events.data_changed.connect(self._clear_cache_dask_data)
+            self._data_changed_clear_cache_connected = True
 
     __init__.__doc__ = signals.BaseSignal.__init__.__doc__.replace(
         ":class:`numpy.ndarray`", ":class:`dask.array.Array`"
@@ -298,7 +299,7 @@ class LazySignal(signals.BaseSignal):
         except AttributeError:
             _logger.warning("Failed to close lazy signal file")
 
-    def _clear_cache_dask_data(self, obj=None):
+    def _clear_cache_dask_data(self, *args, **kwargs):
         self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
 
@@ -497,7 +498,7 @@ class LazySignal(signals.BaseSignal):
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.emit(obj=out)
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
@@ -661,7 +662,7 @@ class LazySignal(signals.BaseSignal):
         if out is None:
             return s
         else:
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     diff.__doc__ = signals.BaseSignal.diff.__doc__
 
@@ -681,7 +682,7 @@ class LazySignal(signals.BaseSignal):
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.emit(obj=out)
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
@@ -702,7 +703,7 @@ class LazySignal(signals.BaseSignal):
             return idx
         else:
             out.data = data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     valuemax.__doc__ = signals.BaseSignal.valuemax.__doc__
 
@@ -715,7 +716,7 @@ class LazySignal(signals.BaseSignal):
             return idx
         else:
             out.data = data
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     valuemin.__doc__ = signals.BaseSignal.valuemin.__doc__
 
@@ -743,7 +744,7 @@ class LazySignal(signals.BaseSignal):
         if out is None:
             return hist_spec
         else:
-            out.events.data_changed.trigger(obj=out)
+            out.events.data_changed.emit(obj=out)
 
     get_histogram.__doc__ = signals.BaseSignal.get_histogram.__doc__
 

@@ -26,6 +26,7 @@ from hyperspy.drawing.figure import BlittedFigure
 
 class HistogramTilePlot(BlittedFigure):
     def __init__(self):
+        super().__init__()
         self.figure = None
         self.title = ""
         self.ax = None

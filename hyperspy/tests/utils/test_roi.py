@@ -1435,7 +1435,7 @@ class TestGuardsPreventRecursion:
         roi._updating_widgets = True
         change_count = 0
 
-        def count(*a, **kw):
+        def count(*args):
             nonlocal change_count
             change_count += 1
 

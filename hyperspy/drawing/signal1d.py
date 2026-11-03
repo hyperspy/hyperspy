@@ -18,16 +18,16 @@
 
 import inspect
 import logging
-from functools import partial
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from psygnal import SignalGroup
 
 from hyperspy.drawing import utils
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.events import Event, Events
+from hyperspy.events import EventSignal
 from hyperspy.misc.test_utils import ignore_warning
 
 _logger = logging.getLogger(__name__)
@@ -156,11 +156,18 @@ class Signal1DFigure(BlittedFigure):
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
         if connect_navigation:
-            f = partial(line._auto_update_line, update_ylimits=True)
-            line.axes_manager.events.indices_changed.connect(f, [])
-            line.events.closed.connect(
-                lambda: line.axes_manager.events.indices_changed.disconnect(f), []
-            )
+
+            def auto_update_line(*args, **kwargs):
+                line._auto_update_line(update_ylimits=True)
+
+            line.axes_manager.events.indices_changed.connect(auto_update_line)
+
+            def _on_line_close(*args, **kwargs):
+                line.axes_manager.events.indices_changed.disconnect(auto_update_line)
+                line.events.closed.disconnect(_on_line_close)
+
+            line.events.closed.connect(_on_line_close)
+
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -192,10 +199,11 @@ class Signal1DFigure(BlittedFigure):
             min(x_axis_lower_lims, default=None), max(x_axis_upper_lims, default=None)
         )
 
-        self.axes_manager.events.indices_changed.connect(self.update, [])
-        self.events.closed.connect(
-            lambda: self.axes_manager.events.indices_changed.disconnect(self.update), []
-        )
+        def _disconnect_update(*args, **kwargs):
+            self.axes_manager.events.indices_changed.disconnect(self.update)
+
+        self.axes_manager.events.indices_changed.connect(self.update)
+        self._connect_closed(_disconnect_update)
 
         if hasattr(self.figure, "tight_layout"):
             try:
@@ -215,7 +223,7 @@ class Signal1DFigure(BlittedFigure):
         super()._on_close()
         _logger.debug("Signal1DFigure Closed.")
 
-    def update(self):
+    def update(self, *args, **kwargs):
         """
         Update lines, markers and render at the end.
         This method is connected to the `indices_changed` event of the
@@ -274,18 +282,7 @@ class Signal1DLine(object):
     """
 
     def __init__(self):
-        self.events = Events()
-        self.events.closed = Event(
-            """
-            Event that triggers when the line is closed.
-
-            Parameters
-            ----------
-            obj:  Signal1DLine instance
-                The instance that triggered the event.
-            """,
-            arguments=["obj"],
-        )
+        self.events = Signal1DLineEvents(self)
         self.sf_lines = None
         self.ax = None
         # Data attributes
@@ -311,6 +308,12 @@ class Signal1DLine(object):
         )
         self._line_properties = {}
         self.type = "line"
+        self._closed_callbacks = []
+
+    def _connect_closed(self, callback):
+        """Connect *callback* to self.events.closed and track for cleanup."""
+        self.events.closed.connect(callback)
+        self._closed_callbacks.append(callback)
 
     @property
     def line_properties(self):
@@ -471,7 +474,14 @@ class Signal1DLine(object):
                 kwargs["render_figure"] = len(self.ax.hspy_fig.ax_markers) == 0
             self.update(self, update_ylimits=update_ylimits, **kwargs)
 
-    def update(self, force_replot=False, render_figure=True, update_ylimits=False):
+    def update(
+        self,
+        force_replot=False,
+        render_figure=True,
+        update_ylimits=False,
+        *args,
+        **kwargs,
+    ):
         """Update the current spectrum figure
 
         Parameters
@@ -563,9 +573,13 @@ class Signal1DLine(object):
             self.text.remove()
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
-        self.events.closed.trigger(obj=self)
-        for f in self.events.closed.connected:
-            self.events.closed.disconnect(f)
+        self.events.closed.emit(self)
+        for callback in list(self._closed_callbacks):
+            try:
+                self.events.closed.disconnect(callback)
+            except ValueError:
+                pass
+        self._closed_callbacks.clear()
         try:
             self.ax.figure.canvas.draw_idle()
         except BaseException:
@@ -628,3 +642,17 @@ def _plot_loading(
         ax.step(x, loadings[idx])
     else:
         raise ValueError("View not supported")
+
+
+class Signal1DLineEvents(SignalGroup):
+    """Events for :class:`Signal1DLine`."""
+
+    # in HyperSpy 3.0, replace `EventSignal` with `psygnal.Signal`
+    closed = EventSignal(
+        Signal1DLine,
+        description="""\
+        Event that triggers when the Signal1DLine is closed.
+
+        The Signal1DLine instance is passed to the event handler.
+        """,
+    )
