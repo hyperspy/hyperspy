@@ -18,8 +18,8 @@
 
 import numpy as np
 import traits.api as t
+from matplotlib.widgets import SpanSelector
 
-from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy.exceptions import SignalDimensionError
 
 

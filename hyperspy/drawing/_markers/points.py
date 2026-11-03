@@ -17,8 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING, UNITS_DOCSTRING
+from hyperspy.drawing.marker_collection import PointsCollection
 from hyperspy.drawing.markers import Markers
-from hyperspy.external.matplotlib.collections import CircleCollection
 
 
 class Points(Markers):
@@ -50,7 +50,7 @@ class Points(Markers):
             )
 
         super().__init__(
-            collection=CircleCollection,
+            collection=PointsCollection,
             offsets=offsets,
             sizes=sizes,
             offset_transform=offset_transform,

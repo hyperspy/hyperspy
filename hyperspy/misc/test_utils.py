@@ -150,11 +150,27 @@ def mock_event(
     inaxes=True,
     artist=None,
     mouseevent=None,
+    x=None,
+    y=None,
 ):
+    """Return a mutable stand-in for an input event.
+
+    It carries the fields of the neutral events in
+    :mod:`hyperspy.drawing.backends._events` (``xdata``, ``inaxes``,
+    ``button``, ``key``, ``modifiers``, ``artist``, ``x``/``y``), so it can be
+    passed straight to a widget handler.  For a pick event (``mouseevent``
+    given), the pointer fields are taken from ``mouseevent`` as
+    :class:`~hyperspy.drawing.backends._events.PickEvent` carries them
+    directly.
+    """
+    from hyperspy.drawing.backends._events import canonical_modifiers
+
     event = mock.Mock()
     event.button = button
     event.key = key
+    event.modifiers = canonical_modifiers(key.split("+") if key else ())
     event.xdata, event.ydata = xdata, ydata
+    event.x, event.y = x, y
     event.inaxes = inaxes
     event.fig = fig
     event.canvas = canvas
@@ -162,4 +178,7 @@ def mock_event(
     event.name = "MockEvent"
     event.artist = artist
     event.mouseevent = mouseevent
+    if mouseevent is not None:
+        for name in ("xdata", "ydata", "x", "y", "button", "modifiers", "inaxes"):
+            setattr(event, name, getattr(mouseevent, name))
     return event

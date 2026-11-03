@@ -358,7 +358,7 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         colorbar=True,
         centre_colormap="auto",
         min_aspect=0.1,
-        navigator_kwds={},
+        navigator_kwds=None,
         **kwargs,
     ):
         """%s
@@ -367,6 +367,8 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         %s
 
         """
+        if navigator_kwds is None:
+            navigator_kwds = {}
         for c in autoscale:
             if c not in ["x", "y", "v"]:
                 raise ValueError(

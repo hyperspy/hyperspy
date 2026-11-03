@@ -1,0 +1,8 @@
+Add per-backend text capability declaration (``text_markup`` and
+``supports_text_rotation``) to the plotting backend protocol.  On backends
+that only render plain text, mathtext
+:class:`~.drawing._markers.texts.Texts` marker labels are now
+automatically converted to readable plain text (for example
+``$\mathrm{Fe}_{\mathrm{Ka}}$`` becomes ``Fe_Ka``) with a one-time
+warning, instead of showing raw TeX markup; rotation and alignment
+keyword arguments are dropped with a warning when unsupported.

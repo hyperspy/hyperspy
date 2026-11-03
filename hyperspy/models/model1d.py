@@ -25,6 +25,7 @@ import traits.api as t
 import hyperspy.drawing
 from hyperspy import signal_tools
 from hyperspy.decorators import interactive_range_selector
+from hyperspy.drawing.backends import get_backend
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.misc import utils
 from hyperspy.model import BaseModel, ModelComponents
@@ -831,7 +832,7 @@ class Model1D(BaseModel):
         self.signal.plot(**kwargs)
         _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
-        color = l1.line.get_color()
+        color = get_backend().line_get_color(l1.line)
         l1.set_line_properties(color=color, type="scatter")
 
         l2 = hyperspy.drawing.signal1d.Signal1DLine()

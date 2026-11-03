@@ -1,0 +1,12 @@
+Add browser tests for the ``anyplotlib`` backend (headless Chromium driven by
+``playwright``), run in a dedicated GitHub Actions job. Install them with the
+``tests-browser`` extra followed by ``playwright install chromium``. Their PNG
+baselines live in ``baselines/<platform>/``; a platform without baselines
+primes them and skips the comparison.
+Add a behavioural conformance suite for plotting backends
+(``hyperspy/tests/drawing/backend_conformance.py``) that the matplotlib and
+``anyplotlib`` backends run and that third-party backends can subclass.
+The ``anyplotlib`` backend now uses anyplotlib's public API (data-coordinate
+widgets and markers, axes/plot identity, close and display lifecycle)
+instead of private attributes and its own pixel conversions, and requires
+``anyplotlib>=0.11.0``.

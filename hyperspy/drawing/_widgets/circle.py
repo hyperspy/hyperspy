@@ -17,10 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import matplotlib.pyplot as plt
 import numpy as np
 
-from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
+from hyperspy.drawing.backends import get_backend
+from hyperspy.drawing.widget import ResizersMixin, Widget2DBase, WidgetBase
 
 
 class CircleWidget(Widget2DBase, ResizersMixin):
@@ -100,36 +100,38 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         """
         return self.position
 
-    def _set_patch(self):
-        """Sets the patch to a matplotlib Circle with the correct geometry.
-        The geometry is defined by _get_patch_xy, and size.
+    def _add_patch_to(self, ax):
+        """Create the circle (or annulus) via the backend and add it to *ax*.
+
+        Overrides ``_add_patch_to`` rather than ``_set_patch`` because the
+        backend creates and attaches the widget in one step.
         """
-        super(CircleWidget, self)._set_patch()
+        backend = get_backend()
+        self.blit = backend.supports_blit_from_ax(ax)
         xy = self._get_patch_xy()
         ro, ri = self.size
-        self._patch = [
-            plt.Circle(
-                xy,
-                radius=ro,
-                fill=False,
-                lw=self.border_thickness,
-                ec=self.color,
-                alpha=self.alpha,
-                picker=True,
-            )
-        ]
-        if ri > 0:
-            self._patch.append(
-                plt.Circle(
-                    xy,
-                    radius=ri,
-                    fill=False,
-                    lw=self.border_thickness,
-                    ec=self.color,
-                    alpha=self.alpha,
-                    picker=True,
-                )
-            )
+        self._patch = backend.create_circle_pointer(
+            ax,
+            xy[0],
+            xy[1],
+            ro,
+            ri,
+            color=self.color,
+            linewidth=self.border_thickness,
+            alpha=self.alpha,
+        )
+        for p in self._patch:
+            backend.set_pointer_style(p, animated=self.blit)
+            backend.connect_widget_drag(p, self._on_widget_drag)
+        # Let ResizersMixin build its handles and re-add them to the new axes.
+        if hasattr(super(CircleWidget, self), "_set_patch"):
+            super(CircleWidget, self)._set_patch()
+        if hasattr(super(WidgetBase, self), "_add_patch_to"):
+            super(WidgetBase, self)._add_patch_to(ax)
+
+    def _on_widget_drag(self, x, y, *args):
+        """Native-widget drag callback: circle positions are centres."""
+        self.position = (x, y)
 
     def _validate_pos(self, value):
         """Constrict the position within bounds."""
@@ -166,44 +168,19 @@ class CircleWidget(Widget2DBase, ResizersMixin):
     def get_size_in_indices(self):
         return np.array(self._size / self.axes[0].scale)
 
-    def _update_patch_position(self):
-        if self.is_on and self.patch:
-            self.patch[0].center = self._get_patch_xy()
-            if self.size[1] > 0:
-                self.patch[1].center = self.patch[0].center
-            self._update_resizers()
-            self.draw_patch()
-
-    def _update_patch_size(self):
-        if self.is_on and self.patch:
-            ro, ri = self.size
-            self.patch[0].radius = ro
-            if ri > 0:
-                # Add the inner circle
-                if len(self.patch) == 1:
-                    # Need to remove the previous patch before using
-                    # `_add_patch_to`; invalidate the blit cache so the
-                    # repaint below does a full redraw instead of restoring
-                    # pixels from the old patch.
-                    self._patch[0].remove()
-                    self._patch = []
-                    if hasattr(self.ax, "hspy_fig"):
-                        self.ax.hspy_fig._background = None
-                    self._add_patch_to(self.ax)
-                self.patch[1].radius = ri
-            self._update_resizers()
-            self.draw_patch()
-
     def _update_patch_geometry(self):
+        """Push the current centre and radii to the backend handle(s)."""
         if self.is_on and self.patch:
+            xy = self._get_patch_xy()
             ro, ri = self.size
-            self.patch[0].center = self._get_patch_xy()
-            self.patch[0].radius = ro
-            if ri > 0:
-                self.patch[1].center = self.patch[0].center
-                self.patch[1].radius = ri
+            self._patch = get_backend().update_circle_pointer(
+                self.ax, self._patch, xy[0], xy[1], ro, ri
+            )
             self._update_resizers()
             self.draw_patch()
+
+    _update_patch_position = _update_patch_geometry
+    _update_patch_size = _update_patch_geometry
 
     def _onmousemove(self, event):
         "on mouse motion move the patch if picked"

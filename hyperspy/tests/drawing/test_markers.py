@@ -20,11 +20,12 @@ from pathlib import Path
 from unittest import mock
 
 import dask.array as da
+import matplotlib.collections as mpl_collections
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.collections import (
-    LineCollection,
+    CircleCollection,
     PolyCollection,
     StarPolygonCollection,
 )
@@ -35,14 +36,23 @@ from matplotlib.transforms import (
 
 import hyperspy.api as hs
 from hyperspy.axes import UniformDataAxis
-from hyperspy.external.matplotlib.collections import (
-    CircleCollection,
-    EllipseCollection,
-    RectangleCollection,
-    SquareCollection,
-    TextCollection,
+from hyperspy.drawing.marker_collection import (
+    ArrowsCollection,
+    CirclesCollection,
+    EllipsesCollection,
+    HLinesCollection,
+    LinesCollection,
+    PointsCollection,
+    RectanglesCollection,
+    SquaresCollection,
+    TextsCollection,
+    VLinesCollection,
 )
-from hyperspy.external.matplotlib.quiver import Quiver
+from hyperspy.drawing.markers import (
+    _any_text_is_mathtext,
+    _degrade_texts,
+    _mathtext_to_plain,
+)
 from hyperspy.misc._markers import markers_dict_to_markers
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils.markers import (
@@ -498,24 +508,24 @@ class TestInitMarkers:
     @pytest.mark.parametrize(
         "subclass",
         (
-            (Arrows, Quiver, {"offsets": [[1, 1]], "U": [1], "V": [1]}),
-            (Circles, CircleCollection, {"offsets": [[1, 1]], "sizes": [1]}),
+            (Arrows, ArrowsCollection, {"offsets": [[1, 1]], "U": [1], "V": [1]}),
+            (Circles, CirclesCollection, {"offsets": [[1, 1]], "sizes": [1]}),
             (
                 Ellipses,
-                EllipseCollection,
+                EllipsesCollection,
                 {"offsets": [1, 2], "widths": [1], "heights": [1]},
             ),
-            (HorizontalLines, LineCollection, {"offsets": [1, 2]}),
-            (Points, CircleCollection, {"offsets": [[1, 1]], "sizes": [1]}),
-            (VerticalLines, LineCollection, {"offsets": [1, 2]}),
+            (HorizontalLines, HLinesCollection, {"offsets": [1, 2]}),
+            (Points, PointsCollection, {"offsets": [[1, 1]], "sizes": [1]}),
+            (VerticalLines, VLinesCollection, {"offsets": [1, 2]}),
             (
                 Rectangles,
-                RectangleCollection,
+                RectanglesCollection,
                 {"offsets": [[1, 1]], "widths": [1], "heights": [1]},
             ),
-            (Squares, SquareCollection, {"offsets": [[1, 1]], "widths": [1]}),
-            (Texts, TextCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
-            (Lines, LineCollection, {"segments": [[0, 0], [1, 1]]}),
+            (Squares, SquaresCollection, {"offsets": [[1, 1]], "widths": [1]}),
+            (Texts, TextsCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
+            (Lines, LinesCollection, {"segments": [[0, 0], [1, 1]]}),
             (
                 Markers,
                 StarPolygonCollection,
@@ -1188,6 +1198,54 @@ def test_collection_error():
         m._set_transform(value="test")
 
 
+class _CustomCollectionOutsideAllowedModules(mpl_collections.Collection):
+    """A real mpl Collection subclass that lives outside
+    ``matplotlib.collections``/``hyperspy.external`` on purpose, to exercise
+    the "must be implemented in matplotlib or hyperspy" validation error.
+    """
+
+
+def test_collection_error_wrong_module():
+    with pytest.raises(
+        ValueError, match="must be implemented in matplotlib or hyperspy"
+    ):
+        Markers(
+            offsets=[[1, 1], [2, 2]],
+            collection=_CustomCollectionOutsideAllowedModules,
+        )
+
+
+def test_to_dictionary_hyper_collection_via_base_markers_class():
+    # Instantiating the base `Markers` class directly (not one of the
+    # `Points`/`Circles`/... subclasses) with a marker-type string still
+    # resolves to a `HyperMarkerCollection`; `_to_dictionary` must store the
+    # stable marker-type string rather than a mpl class name in that case.
+    m = Markers(collection="circles", sizes=(20,), offsets=[[1, 1], [2, 2]])
+    d = m._to_dictionary()
+    assert d["collection"] == "circles"
+
+
+def test_legacy_mpl_collection_plot_and_update():
+    # A base `Markers` instance constructed with a raw matplotlib Collection
+    # class (not a marker-type string/HyperMarkerCollection) never sets
+    # `_marker_type`, so it always takes the legacy (non-native) code path
+    # for both `plot` (`_initialize_collection`/`_get_mpl_class`) and
+    # `_update` (`collection_update`).
+    offsets = np.empty(3, dtype=object)
+    for i in range(3):
+        offsets[i] = np.array([[1, 1], [2, 2]])
+    m = Markers(offsets=offsets, sizes=(20,), collection=CircleCollection)
+    assert m._marker_type is None
+
+    s = hs.signals.Signal2D(np.zeros((3, 10, 10)))
+    s.plot()
+    s.add_marker(m)
+    assert m._using_native_markers is False
+
+    # Trigger `_update` on the iterating (per-navigation-index) offsets.
+    s.axes_manager.navigation_axes[0].index = 1
+
+
 def test_permanent_markers_close_open_cycle():
     s = hs.signals.Signal2D(np.ones((100, 100)))
     rng = np.random.default_rng(0)
@@ -1301,3 +1359,109 @@ def test_markers_conversion_fill(marker_type):
     markers_ = markers_dict_to_markers(marker_dict)
     # default to
     assert "facecolor" not in markers_.kwargs["facecolor"]
+
+
+class TestMathtextToPlain:
+    def test_xray_line_label(self):
+        assert _mathtext_to_plain(r"$\mathrm{Fe}_{\mathrm{Ka}}$") == "Fe_Ka"
+
+    def test_superscript_with_sign(self):
+        assert _mathtext_to_plain(r"$10^{-3}$ counts") == "10^-3 counts"
+
+    def test_greek_symbol(self):
+        assert _mathtext_to_plain(r"$\alpha$") == "α"
+
+    def test_plain_text_fast_path(self):
+        assert _mathtext_to_plain("plain text") == "plain text"
+
+    def test_escaped_dollar(self):
+        assert _mathtext_to_plain("\\$5") == "$5"
+
+    def test_inline_subscript(self):
+        assert _mathtext_to_plain("E$_F$") == "E_F"
+
+    def test_mixed_segments(self):
+        assert (
+            _mathtext_to_plain(r"$\mathrm{Fe}_{\mathrm{Ka}}$ ($\alpha$)") == "Fe_Ka (α)"
+        )
+
+    def test_unknown_command_degrades_to_bare_name(self):
+        assert _mathtext_to_plain(r"$\frac{a}{b}$") == "fracab"
+
+    def test_malformed_input_returns_string(self):
+        result = _mathtext_to_plain(r"$\mathrm{Fe_{\mathrm")
+        assert isinstance(result, str)
+
+    def test_dollar_edge_cases(self):
+        assert isinstance(_mathtext_to_plain("$"), str)
+        assert _mathtext_to_plain("$$") == ""
+        assert _mathtext_to_plain("a$b") == "ab"
+
+    def test_non_string_passthrough(self):
+        assert _mathtext_to_plain(None) is None
+        assert _mathtext_to_plain(5) == 5
+
+    def test_any_text_is_mathtext(self):
+        assert _any_text_is_mathtext(["a", r"$\alpha$"])
+        assert not _any_text_is_mathtext(["a", "b"])
+        assert not _any_text_is_mathtext(["\\$5"])
+        assert not _any_text_is_mathtext(None)
+        ragged = np.empty(2, dtype=object)
+        ragged[0] = ["a"]
+        ragged[1] = ["b", r"$x$"]
+        assert _any_text_is_mathtext(ragged)
+
+    def test_degrade_texts_list(self):
+        texts = [r"$\mathrm{Fe}_{\mathrm{Ka}}$", "x", None]
+        out = _degrade_texts(texts)
+        assert out == ["Fe_Ka", "x", None]
+        assert texts == [r"$\mathrm{Fe}_{\mathrm{Ka}}$", "x", None]
+
+    def test_degrade_texts_ragged_object_array(self):
+        texts = np.empty(2, dtype=object)
+        texts[0] = [r"$\mathrm{Fe}_{\mathrm{Ka}}$", "plain"]
+        texts[1] = [r"$\alpha$"]
+        original_first = list(texts[0])
+        original_second = list(texts[1])
+        out = _degrade_texts(texts)
+        assert list(out[0]) == ["Fe_Ka", "plain"]
+        assert list(out[1]) == ["α"]
+        assert out is not texts
+        assert list(texts[0]) == original_first
+        assert list(texts[1]) == original_second
+
+    def test_degrade_texts_flat_str_array(self):
+        texts = np.array([r"$\alpha$", "E$_F$"])
+        out = _degrade_texts(texts)
+        np.testing.assert_array_equal(out, ["α", "E_F"])
+        np.testing.assert_array_equal(texts, np.array([r"$\alpha$", "E$_F$"]))
+
+    def test_degrade_texts_noop_when_plain(self):
+        assert _degrade_texts(["a", "b"]) == ["a", "b"]
+
+
+class TestTextsCapabilityPreservedOnMpl:
+    """The MPL backend declares full text capabilities: no degradation."""
+
+    def test_mathtext_texts_untouched_and_no_warning(self, caplog):
+        import logging
+
+        s = hs.signals.Signal1D(np.arange(2 * 47).reshape((2, 47)).astype(float))
+        texts = np.array([r"$\mathrm{Fe}_{\mathrm{Ka}}$", r"$\alpha$"])
+        m = hs.plot.markers.Texts(
+            offsets=np.array([[10.0, 1.0], [30.0, 1.0]]),
+            texts=texts,
+            rotation=1.57,
+            horizontalalignment="left",
+            verticalalignment="bottom",
+            facecolor="black",
+        )
+        with caplog.at_level(logging.WARNING):
+            s.plot()
+            s.add_marker(m)
+        np.testing.assert_array_equal(m.kwargs["texts"], texts)
+        assert m.kwargs["rotation"] == 1.57
+        assert m.kwargs["horizontalalignment"] == "left"
+        assert m.kwargs["verticalalignment"] == "bottom"
+        assert not [r for r in caplog.records if r.name == "hyperspy.drawing.markers"]
+        s._plot.close()
