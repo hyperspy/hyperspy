@@ -20,6 +20,8 @@
 import configparser
 import logging
 import os
+import sys
+import warnings
 from pathlib import Path
 
 import traits.api as t
@@ -119,6 +121,38 @@ class GUIs(t.HasTraits):
     )
 
 
+_IS_MACOS = sys.platform == "darwin"
+
+# All valid modifier key combinations.  ``super`` is the Command key on macOS and
+# the Windows/Logo key on other platforms.
+_MODIFIER_OPTIONS = [
+    "ctrl",
+    "alt",
+    "shift",
+    "super",
+    "ctrl+alt",
+    "ctrl+shift",
+    "alt+shift",
+    "ctrl+alt+shift",
+    "super+alt",
+    "super+shift",
+    "ctrl+super",
+]
+
+
+def _modifier_list(*defaults):
+    """Return modifier options with the best platform default first."""
+    # Use the second item ("macOS default") on Darwin; the first otherwise.
+    default = defaults[1] if _IS_MACOS and len(defaults) > 1 else defaults[0]
+    options = [m for m in _MODIFIER_OPTIONS if m != default]
+    if _IS_MACOS:
+        # ``super`` (Command ⌘) is unusable on macOS for navigation:
+        # macOS captures ⌘+arrow for Mission Control and backends use
+        # inconsistent key-event prefixes ("cmd", "ctrl") — never "super".
+        options = [m for m in options if "super" not in m]
+    return [default] + options
+
+
 class PlotConfig(t.HasTraits):
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
@@ -142,55 +176,226 @@ class PlotConfig(t.HasTraits):
         label="Color map signal",
         desc="Set the default color map for the signal plot.",
     )
-    dims_024_increase = t.Str("right", label="Navigate right")
+    # ---- Navigation -------------------------------------------------------
+    dims_024_increase = t.Str("right", label="Navigate right", group="Navigation")
     dims_024_decrease = t.Str(
         "left",
         label="Navigate left",
+        group="Navigation",
     )
     dims_135_increase = t.Str(
         "down",
         label="Navigate down",
+        group="Navigation",
     )
     dims_135_decrease = t.Str(
         "up",
         label="Navigate up",
+        group="Navigation",
     )
+    # ---- Modifier Keys ----------------------------------------------------
+    # Each tuple: (linux/windows default, macOS default)
+    # macOS uses ``ctrl+alt`` (Control ⌃ + Option ⌥) for dims 0–1 arrow
+    # navigation: plain ``alt`` conflicts with macOS text-navigation
+    # (⌥+arrows = word‑by‑word), plain ``ctrl`` is captured by Mission
+    # Control.  ``ctrl+alt`` is the only chord that avoids both problems.
+    # Command (⌘) is excluded from macOS modifier choices because the OS
+    # captures ⌘+arrow for Mission Control and backends produce
+    # inconsistent key‑event prefixes for it (``cmd`` vs ``ctrl``).
     modifier_dims_01 = t.Enum(
-        [
-            "ctrl",
-            "alt",
-            "shift",
-            "ctrl+alt",
-            "ctrl+shift",
-            "alt+shift",
-            "ctrl+alt+shift",
-        ],
+        _modifier_list("ctrl", "ctrl+alt"),
         label="Modifier key for 1st and 2nd dimensions",
-    )  # 0 elem is default
+        group="Navigation",
+    )
     modifier_dims_23 = t.Enum(
-        [
-            "shift",
-            "alt",
-            "ctrl",
-            "ctrl+alt",
-            "ctrl+shift",
-            "alt+shift",
-            "ctrl+alt+shift",
-        ],
+        _modifier_list("shift", "shift"),
         label="Modifier key for 3rd and 4th dimensions",
-    )  # 0 elem is default
+        group="Navigation",
+    )
     modifier_dims_45 = t.Enum(
-        [
-            "alt",
-            "ctrl",
-            "shift",
-            "ctrl+alt",
-            "ctrl+shift",
-            "alt+shift",
-            "ctrl+alt+shift",
-        ],
+        _modifier_list("alt", "alt+shift"),
         label="Modifier key for 5th and 6th dimensions",
-    )  # 0 elem is default
+        group="Navigation",
+    )
+    # --- platform shortcut presets ---
+    # Convenience methods apply these sets atomically so users don't have
+    # to set each modifier individually — especially useful when the machine
+    # running HyperSpy (server) differs from the keyboard (client).
+    _MACOS_SHORTCUT_DEFAULTS = {
+        "modifier_dims_01": "ctrl+alt",
+        "modifier_dims_23": "shift",
+        "modifier_dims_45": "alt+shift",
+    }
+    _STANDARD_SHORTCUT_DEFAULTS = {
+        "modifier_dims_01": "ctrl",
+        "modifier_dims_23": "shift",
+        "modifier_dims_45": "alt",
+    }
+
+    def _apply_shortcut_preset(self, preset):
+        """Set *all* platform-dependent modifier traits at once."""
+        self.trait_set(True, **preset)
+
+    def use_macos_shortcuts(self):
+        """Apply macOS-friendly keyboard modifier defaults.
+
+        Useful when the HyperSpy instance runs on a non-macOS server (e.g.
+        remote Linux) but the keyboard is macOS.  Call once after import::
+
+            hs.preferences.Plot.use_macos_shortcuts()
+        """
+        self._apply_shortcut_preset(self._MACOS_SHORTCUT_DEFAULTS)
+
+    def use_standard_shortcuts(self):
+        """Apply standard (Linux/Windows) keyboard modifier defaults.
+
+        Useful when the HyperSpy instance runs on macOS but the keyboard is
+        Linux/Windows (e.g. remote desktop, X11 forwarding).  Call once
+        after import::
+
+            hs.preferences.Plot.use_standard_shortcuts()
+        """
+        self._apply_shortcut_preset(self._STANDARD_SHORTCUT_DEFAULTS)
+
+    # --- configurable platform preset ---
+    platform_shortcuts = t.Enum(
+        ["auto", "macos", "standard"],
+        default="auto",
+        label="Platform shortcut preset",
+        desc="Override platform-specific keyboard modifiers. "
+        "'auto' uses the detected platform, 'macos' and 'standard' "
+        "apply the corresponding preset regardless of platform. "
+        "Useful when the machine running HyperSpy differs from the "
+        "client machine.",
+    )
+
+    @t.observe("platform_shortcuts")
+    def _platform_shortcuts_changed(self, event):
+        new = event.new
+        if new == "auto":
+            return
+        if new == "macos":
+            self.use_macos_shortcuts()
+            if not _IS_MACOS:
+                warnings.warn(
+                    "Plot.platform_shortcuts is set to 'macos' but "
+                    "sys.platform is %r (not macOS). This is expected if "
+                    "connecting from a macOS client to a remote server." % sys.platform,
+                )
+        elif new == "standard":
+            self.use_standard_shortcuts()
+            if _IS_MACOS:
+                warnings.warn(
+                    "Plot.platform_shortcuts is set to 'standard' but "
+                    "sys.platform is %r (macOS). This is expected if "
+                    "connecting from a non-macOS client to a remote macOS "
+                    "server." % sys.platform,
+                )
+
+    # ---- Plot Interaction -------------------------------------------------
+    key_toggle_pointer = t.Str(
+        "e",
+        label="Toggle second pointer key",
+        desc="Key to toggle the second pointer on/off in 1D signal plots.",
+        group="Plot Interaction",
+    )
+    key_adjust_contrast = t.Str(
+        "h",
+        label="Adjust contrast tool key",
+        desc="Key to launch the contrast adjustment tool in 2D image plots.",
+        group="Plot Interaction",
+    )
+    key_toggle_log = t.Str(
+        "l",
+        label="Toggle log/linear key",
+        desc="Key to toggle between logarithmic and linear norm or y-scale.",
+        group="Plot Interaction",
+    )
+    key_widget_increase = t.Str(
+        "+",
+        label="Widget increase size key",
+        desc="Key to increase the size of navigator cursors.",
+        group="Widget Resize",
+    )
+    key_widget_decrease = t.Str(
+        "-",
+        label="Widget decrease size key",
+        desc="Key to decrease the size of navigator cursors.",
+        group="Widget Resize",
+    )
+    key_rectangle_x_increase = t.Str(
+        "x",
+        label="Rectangle x-size increase key",
+        desc="Key to increase the x-size of a rectangle widget.",
+        group="Widget Resize",
+    )
+    key_rectangle_x_decrease = t.Str(
+        "c",
+        label="Rectangle x-size decrease key",
+        desc="Key to decrease the x-size of a rectangle widget.",
+        group="Widget Resize",
+    )
+    key_rectangle_y_increase = t.Str(
+        "y",
+        label="Rectangle y-size increase key",
+        desc="Key to increase the y-size of a rectangle widget.",
+        group="Widget Resize",
+    )
+    key_rectangle_y_decrease = t.Str(
+        "u",
+        label="Rectangle y-size decrease key",
+        desc="Key to decrease the y-size of a rectangle widget.",
+        group="Widget Resize",
+    )
+    key_step_increase = t.Str(
+        "pageup",
+        label="Step increase key",
+        desc="Key to increase the navigation step multiplier. "
+        "On MacBooks, ``pageup`` is generated by ``fn+up``; "
+        "set to ``fn+up`` if the backend supports it.",
+        group="Navigation",
+    )
+    key_step_decrease = t.Str(
+        "pagedown",
+        label="Step decrease key",
+        desc="Key to decrease the navigation step multiplier. "
+        "On MacBooks, ``pagedown`` is generated by ``fn+down``; "
+        "set to ``fn+down`` if the backend supports it.",
+        group="Navigation",
+    )
+    key_jump_to_click = t.Str(
+        "shift",
+        label="Jump-to-click modifier key",
+        desc="Modifier key held during a click to jump the pointer "
+        "to the cursor position in 1D signal and 2D image plots.",
+        group="Widget Resize",
+    )
+    key_rotation_snap = t.Str(
+        "shift",
+        label="Rotation snap modifier key",
+        desc="Modifier key held during rotation to snap line/wire "
+        "rotation to 30-degree increments.",
+        group="Widget Resize",
+    )
+    # ---- Model Plot Shortcuts ---------------------------------------------
+    key_toggle_adjust_position = t.Str(
+        "a",
+        label="Toggle adjust position key",
+        desc="Key to toggle component position adjustment lines in 1D model plots.",
+        group="Model Plot",
+    )
+    key_toggle_plot_components = t.Str(
+        "w",
+        label="Toggle plot components key",
+        desc="Key to toggle component line visibility in 1D model plots.",
+        group="Model Plot",
+    )
+    key_toggle_residual = t.Str(
+        "d",
+        label="Toggle residual line key",
+        desc="Key to toggle the residual (Signal - Model) line in 1D model plots.",
+        group="Model Plot",
+    )
     pick_tolerance = t.CFloat(
         7.5, label="Pick tolerance", desc="The pick tolerance of ROIs in screen pixels."
     )
@@ -217,8 +422,18 @@ def template2config(template, config):
 
 def config2template(template, config):
     for section, traited_class in template.items():
+        # Apply platform_shortcuts first so the preset sets a baseline.
+        # Individual modifier_dims_* overrides are applied afterward
+        # and take precedence.  Without this ordering, alphabetical
+        # iteration would apply the preset last, silently overwriting
+        # any modifier keys the user explicitly configured.
+        if config.has_option(section, "platform_shortcuts"):
+            value = config.get(section, "platform_shortcuts")
+            traited_class.trait_set(platform_shortcuts=value)
         config_dict = {}
         for name, value in config.items(section):
+            if name == "platform_shortcuts":
+                continue  # Already applied above
             if value == "True":
                 value = True
             elif value == "False":

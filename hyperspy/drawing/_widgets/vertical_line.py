@@ -44,7 +44,11 @@ class VerticalLineWidget(Widget1DBase):
         ]
 
     def _onjumpclick(self, event):
-        if event.key == "shift" and event.inaxes and self.is_pointer:
+        if (
+            event.key == preferences.Plot.key_jump_to_click
+            and event.inaxes
+            and self.is_pointer
+        ):
             self.position = (event.xdata,)
 
     def _onmousemove(self, event):
