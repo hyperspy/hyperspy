@@ -27,9 +27,9 @@ For example, extraction of two peak positions of interest via a fitting process
 rather than clustering all spectra points.
 
 In favourable cases, matrix decomposition and related methods can decompose the
-data into a (ideally small) set of significant loadings and factors.
-The factors capture a core representation of the features in the data and the loadings
-provide the mixing ratios of these factors that best describe the original data.
+data into a (ideally small) set of significant decomposition scores and components.
+The components capture a core representation of the features in the data and the scores
+provide the mixing ratios of these components that best describe the original data.
 Overall, this usually represents a much smaller data volume compared to the original data
 and can helps to identify correlations.
 
@@ -116,7 +116,7 @@ results.
 
 For example, pre-processing can be useful to reveal clusters when
 performing cluster analysis of decomposition results. Decomposition methods
-decompose data into a set of factors and a set of loadings defining the
+decompose data into a set of components and a set of scores defining the
 mixing needed to represent the data. If signal 1 is reduced to three
 components with mixing 0.1 0.5 2.0, and signal 2 is reduced to a mixing of 0.2
 1.0 4.0, it should be clear that these represent the same signal but with a
@@ -270,15 +270,15 @@ redundancies:
 .. image:: ../images/clustering_scree_plot.png
 
 From the scree plot we deduce that, as expected, that the dataset can be reduce
-to 3 components. Let's plot their loadings:
+to 3 components. Let's plot their scores:
 
 .. code-block:: python
 
-    >>> s.plot_decomposition_loadings(comp_ids=3, axes_decor="off") # doctest: +SKIP
+    >>> s.plot_decomposition_scores(comp_ids=3, axes_decor="off") # doctest: +SKIP
 
 .. image:: ../images/clustering_decomposition_loadings.png
 
-In the SVD loading we can identify 3 regions, but they are mixed in the components.
+In the SVD scores we can identify 3 regions, but they are mixed in the components.
 Let's perform cluster analysis of decomposition results, to find similar regions
 and the representative features in those regions. Notice that this dataset does
 not require any pre-processing for cluster analysis.

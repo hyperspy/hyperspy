@@ -180,8 +180,8 @@ def test_decomposition():
 
     s.decomposition()
     s.plot_scree_plot()
-    s.plot_decomposition_loadings(3)
-    s.plot_decomposition_factors(3)
+    s.plot_decomposition_scores(3)
+    s.plot_decomposition_components(3)
 
     s.blind_source_separation(2, algorithm="orthomax")
 

@@ -92,16 +92,16 @@ class TestNdAxes:
         s2.decomposition()
         s12.decomposition()
         np.testing.assert_array_almost_equal(
-            s2.learning_results.loadings, s12.learning_results.loadings
+            s2.learning_results.scores, s12.learning_results.scores
         )
         np.testing.assert_array_almost_equal(
-            s2.learning_results.factors, s12.learning_results.factors
+            s2.learning_results.components, s12.learning_results.components
         )
         np.testing.assert_array_almost_equal(
-            s1.learning_results.loadings, s2.learning_results.factors
+            s1.learning_results.scores, s2.learning_results.components
         )
         np.testing.assert_array_almost_equal(
-            s1.learning_results.factors, s2.learning_results.loadings
+            s1.learning_results.components, s2.learning_results.scores
         )
 
     def test_consistency_poissonian(self):
@@ -113,16 +113,16 @@ class TestNdAxes:
         s2.decomposition(normalize_poissonian_noise=True)
         s12.decomposition(normalize_poissonian_noise=True)
         np.testing.assert_array_almost_equal(
-            s2.learning_results.loadings, s12.learning_results.loadings
+            s2.learning_results.scores, s12.learning_results.scores
         )
         np.testing.assert_array_almost_equal(
-            s2.learning_results.factors, s12.learning_results.factors
+            s2.learning_results.components, s12.learning_results.components
         )
         np.testing.assert_array_almost_equal(
-            s1.learning_results.loadings, s2.learning_results.factors
+            s1.learning_results.scores, s2.learning_results.components
         )
         np.testing.assert_array_almost_equal(
-            s1.learning_results.factors, s2.learning_results.loadings
+            s1.learning_results.components, s2.learning_results.scores
         )
         # Check that views of the data don't change. See #871
         np.testing.assert_allclose(s1.inav[0, 0, 0].data, s1n000.data, rtol=1e-14)
@@ -240,7 +240,7 @@ class TestGetModel:
         """
         rng = np.random.default_rng(42)
         # Signal size: 700×700 nav, 20000 energy channels.
-        # The loadings array (~157 MiB with 5 components) triggers
+        # The scores array (~157 MiB with 5 components) triggers
         # dask chunking of the flattened nav dimension, which the
         # old matmul+fold path cannot handle.
         ny, nx, sig_len = 700, 700, 20000
@@ -252,9 +252,9 @@ class TestGetModel:
         lazy_data = da.zeros((ny, nx, sig_len), chunks=(-1, -1, -1))
         s = signals.Signal1D(lazy_data).as_lazy()
 
-        # Inject factors/loadings as if decomposition had run.
-        s.learning_results.factors = rng.random((sig_len, n_comp))
-        s.learning_results.loadings = rng.random((nav_size, n_comp))
+        # Inject components/scores as if decomposition had run.
+        s.learning_results.components = rng.random((sig_len, n_comp))
+        s.learning_results.scores = rng.random((nav_size, n_comp))
 
         # Exercise the einsum path with HyperSpy's chunking convention.
         # Passing chunks=-1 forces sig_chunks=-1 (signal axes whole).
@@ -405,103 +405,108 @@ class TestEstimateElbowPosition:
 class TestReverseDecompositionComponent:
     def setup_method(self, method):
         s = signals.BaseSignal(np.zeros(1))
-        self.factors = np.ones([2, 3])
-        self.loadings = np.ones([2, 3])
-        s.learning_results.factors = self.factors.copy()
-        s.learning_results.loadings = self.loadings.copy()
+        self.components_arr = np.ones([2, 3])
+        self.scores_arr = np.ones([2, 3])
+        s.learning_results.components = self.components_arr.copy()
+        s.learning_results.scores = self.scores_arr.copy()
         self.s = s
 
-    def test_reversal_factors_one_component_reversed(self):
+    def test_reversal_components_one_component_reversed(self):
         self.s.reverse_decomposition_component(0)
         np.testing.assert_array_equal(
-            self.s.learning_results.factors[:, 0], self.factors[:, 0] * -1
+            self.s.learning_results.components[:, 0], self.components_arr[:, 0] * -1
         )
 
-    def test_reversal_loadings_one_component_reversed(self):
+    def test_reversal_scores_one_component_reversed(self):
         self.s.reverse_decomposition_component(0)
         np.testing.assert_array_equal(
-            self.s.learning_results.loadings[:, 0], self.loadings[:, 0] * -1
+            self.s.learning_results.scores[:, 0], self.scores_arr[:, 0] * -1
         )
 
-    def test_reversal_factors_one_component_not_reversed(self):
+    def test_reversal_components_one_component_not_reversed(self):
         self.s.reverse_decomposition_component(0)
         np.testing.assert_array_equal(
-            self.s.learning_results.factors[:, 1:], self.factors[:, 1:]
+            self.s.learning_results.components[:, 1:], self.components_arr[:, 1:]
         )
 
-    def test_reversal_loadings_one_component_not_reversed(self):
+    def test_reversal_scores_one_component_not_reversed(self):
         self.s.reverse_decomposition_component(0)
         np.testing.assert_array_equal(
-            self.s.learning_results.loadings[:, 1:], self.loadings[:, 1:]
+            self.s.learning_results.scores[:, 1:], self.scores_arr[:, 1:]
         )
 
-    def test_reversal_factors_multiple_components_reversed(self):
+    def test_reversal_components_multiple_components_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
         np.testing.assert_array_equal(
-            self.s.learning_results.factors[:, (0, 2)], self.factors[:, (0, 2)] * -1
+            self.s.learning_results.components[:, (0, 2)],
+            self.components_arr[:, (0, 2)] * -1,
         )
 
-    def test_reversal_loadings_multiple_components_reversed(self):
+    def test_reversal_scores_multiple_components_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
         np.testing.assert_array_equal(
-            self.s.learning_results.loadings[:, (0, 2)], self.loadings[:, (0, 2)] * -1
+            self.s.learning_results.scores[:, (0, 2)], self.scores_arr[:, (0, 2)] * -1
         )
 
-    def test_reversal_factors_multiple_components_not_reversed(self):
+    def test_reversal_components_multiple_components_not_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
         np.testing.assert_array_equal(
-            self.s.learning_results.factors[:, 1], self.factors[:, 1]
+            self.s.learning_results.components[:, 1], self.components_arr[:, 1]
         )
 
-    def test_reversal_loadings_multiple_components_not_reversed(self):
+    def test_reversal_scores_multiple_components_not_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
         np.testing.assert_array_equal(
-            self.s.learning_results.loadings[:, 1], self.loadings[:, 1]
+            self.s.learning_results.scores[:, 1], self.scores_arr[:, 1]
         )
 
 
 class TestNormalizeComponents:
     def setup_method(self, method):
         s = signals.BaseSignal(np.zeros(1))
-        self.factors = np.ones([2, 3])
-        self.loadings = np.ones([2, 3])
-        s.learning_results.factors = self.factors.copy()
-        s.learning_results.loadings = self.loadings.copy()
-        s.learning_results.bss_factors = self.factors.copy()
-        s.learning_results.bss_loadings = self.loadings.copy()
+        self.components_arr = np.ones([2, 3])
+        self.scores_arr = np.ones([2, 3])
+        s.learning_results.components = self.components_arr.copy()
+        s.learning_results.scores = self.scores_arr.copy()
+        s.learning_results.bss_components = self.components_arr.copy()
+        s.learning_results.bss_scores = self.scores_arr.copy()
         self.s = s
 
-    def test_normalize_bss_factors(self):
+    def test_normalize_bss_components(self):
         s = self.s
-        s.normalize_bss_components(target="factors", function=np.sum)
+        s.normalize_bss_components(target="components", function=np.sum)
         np.testing.assert_array_equal(
-            s.learning_results.bss_factors, self.factors / 2.0
+            s.learning_results.bss_components, self.components_arr / 2.0
         )
         np.testing.assert_array_equal(
-            s.learning_results.bss_loadings, self.loadings * 2.0
-        )
-
-    def test_normalize_bss_loadings(self):
-        s = self.s
-        s.normalize_bss_components(target="loadings", function=np.sum)
-        np.testing.assert_array_equal(
-            s.learning_results.bss_factors, self.factors * 2.0
-        )
-        np.testing.assert_array_equal(
-            s.learning_results.bss_loadings, self.loadings / 2.0
+            s.learning_results.bss_scores, self.scores_arr * 2.0
         )
 
-    def test_normalize_decomposition_factors(self):
+    def test_normalize_bss_scores(self):
         s = self.s
-        s.normalize_decomposition_components(target="factors", function=np.sum)
-        np.testing.assert_array_equal(s.learning_results.factors, self.factors / 2.0)
-        np.testing.assert_array_equal(s.learning_results.loadings, self.loadings * 2.0)
+        s.normalize_bss_components(target="scores", function=np.sum)
+        np.testing.assert_array_equal(
+            s.learning_results.bss_components, self.components_arr * 2.0
+        )
+        np.testing.assert_array_equal(
+            s.learning_results.bss_scores, self.scores_arr / 2.0
+        )
 
-    def test_normalize_decomposition_loadings(self):
+    def test_normalize_decomposition_components(self):
         s = self.s
-        s.normalize_decomposition_components(target="loadings", function=np.sum)
-        np.testing.assert_array_equal(s.learning_results.factors, self.factors * 2.0)
-        np.testing.assert_array_equal(s.learning_results.loadings, self.loadings / 2.0)
+        s.normalize_decomposition_components(target="components", function=np.sum)
+        np.testing.assert_array_equal(
+            s.learning_results.components, self.components_arr / 2.0
+        )
+        np.testing.assert_array_equal(s.learning_results.scores, self.scores_arr * 2.0)
+
+    def test_normalize_decomposition_scores(self):
+        s = self.s
+        s.normalize_decomposition_components(target="scores", function=np.sum)
+        np.testing.assert_array_equal(
+            s.learning_results.components, self.components_arr * 2.0
+        )
+        np.testing.assert_array_equal(s.learning_results.scores, self.scores_arr / 2.0)
 
 
 class TestDecompositionAlgorithm:
@@ -767,7 +772,7 @@ def test_normalize_components_errors():
     s = signals.Signal1D(generate_low_rank_matrix())
 
     with pytest.raises(ValueError, match="can only be called after s.decomposition"):
-        s.normalize_decomposition_components(target="loadings")
+        s.normalize_decomposition_components(target="scores")
 
     s.decomposition()
 
@@ -794,10 +799,10 @@ def test_decomposition_navigation_mask(mask_as_array):
     if mask_as_array:
         navigation_mask = navigation_mask
     s.decomposition(navigation_mask=navigation_mask)
-    data = s.get_decomposition_loadings().inav[0].data
+    data = s.get_decomposition_scores().inav[0].data
     # Use np.argwhere(np.isnan(data)) to get the indices
     np.testing.assert_allclose(data[[2, 5, 7, 8, 12, 13, 15, 19]], np.full(8, np.nan))
-    assert not np.isnan(s.get_decomposition_factors().data).any()
+    assert not np.isnan(s.get_decomposition_components().data).any()
 
 
 @pytest.mark.parametrize("mask_as_array", [True, False])
@@ -807,13 +812,13 @@ def test_decomposition_signal_mask(mask_as_array):
     if mask_as_array:
         signal_mask = signal_mask.data
     s.decomposition(signal_mask=signal_mask)
-    data = s.get_decomposition_factors().inav[0].data
+    data = s.get_decomposition_components().inav[0].data
     # Use np.argwhere(np.isnan(data)) to get the indices
     np.testing.assert_allclose(
         data[[5, 12, 14, 15, 18, 21, 27, 28, 32, 43, 52, 55, 57, 59, 62, 79, 83]],
         np.full(17, np.nan),
     )
-    assert not np.isnan(s.get_decomposition_loadings().data).any()
+    assert not np.isnan(s.get_decomposition_scores().data).any()
 
 
 @pytest.mark.parametrize("normalise_poissonian_noise", [True, False])
@@ -1034,9 +1039,9 @@ class TestComplexDtypePreservationWithMask:
             navigation_mask=nav_mask,
             print_info=False,
         )
-        assert s.learning_results.loadings.dtype == np.complex128, (
+        assert s.learning_results.scores.dtype == np.complex128, (
             f"Expected loadings.dtype == complex128 (nav mask), "
-            f"got {s.learning_results.loadings.dtype}"
+            f"got {s.learning_results.scores.dtype}"
         )
 
     def test_signal_mask_preserves_factors_dtype(self):
@@ -1055,9 +1060,9 @@ class TestComplexDtypePreservationWithMask:
             signal_mask=sig_mask,
             print_info=False,
         )
-        assert s.learning_results.factors.dtype == np.complex128, (
+        assert s.learning_results.components.dtype == np.complex128, (
             f"Expected factors.dtype == complex128 (signal mask), "
-            f"got {s.learning_results.factors.dtype}"
+            f"got {s.learning_results.components.dtype}"
         )
 
     def test_lazy_nav_mask_preserves_loadings_dtype(self):
@@ -1078,9 +1083,9 @@ class TestComplexDtypePreservationWithMask:
             navigation_mask=nav_mask,
             print_info=False,
         )
-        assert s.learning_results.loadings.dtype == np.complex128, (
+        assert s.learning_results.scores.dtype == np.complex128, (
             f"Expected loadings.dtype == complex128 (lazy+nav mask), "
-            f"got {s.learning_results.loadings.dtype}"
+            f"got {s.learning_results.scores.dtype}"
         )
 
     def test_lazy_signal_mask_preserves_factors_dtype(self):
@@ -1100,7 +1105,7 @@ class TestComplexDtypePreservationWithMask:
             signal_mask=sig_mask,
             print_info=False,
         )
-        assert s.learning_results.factors.dtype == np.complex128, (
+        assert s.learning_results.components.dtype == np.complex128, (
             f"Expected factors.dtype == complex128 (lazy+signal mask), "
-            f"got {s.learning_results.factors.dtype}"
+            f"got {s.learning_results.components.dtype}"
         )

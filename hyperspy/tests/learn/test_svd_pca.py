@@ -54,7 +54,7 @@ class TestSVDPCA:
     @pytest.mark.parametrize("centre", [None, "signal", "navigation"])
     @pytest.mark.parametrize("u_based_decision", [True, False])
     def test_full(self, output_dimension, auto_transpose, centre, u_based_decision):
-        factors, loadings, explained_variance, mean = svd_pca(
+        components, scores, explained_variance, mean = svd_pca(
             self.X,
             output_dimension=output_dimension,
             svd_solver="full",
@@ -62,7 +62,7 @@ class TestSVDPCA:
             centre=centre,
             u_based_decision=u_based_decision,
         )
-        X = loadings @ factors.T
+        X = scores @ components.T
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.X)
@@ -84,7 +84,7 @@ class TestSVDPCA:
     @pytest.mark.parametrize("centre", [None, "signal", "navigation"])
     @pytest.mark.parametrize("u_based_decision", [True, False])
     def test_arpack(self, output_dimension, auto_transpose, centre, u_based_decision):
-        factors, loadings, explained_variance, mean = svd_pca(
+        components, scores, explained_variance, mean = svd_pca(
             self.X,
             output_dimension=output_dimension,
             svd_solver="arpack",
@@ -92,7 +92,7 @@ class TestSVDPCA:
             centre=centre,
             u_based_decision=u_based_decision,
         )
-        X = loadings @ factors.T
+        X = scores @ components.T
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.X)
@@ -107,14 +107,14 @@ class TestSVDPCA:
     @pytest.mark.parametrize("auto_transpose", [True, False])
     @pytest.mark.parametrize("centre", [None, "signal", "navigation"])
     def test_randomized(self, output_dimension, auto_transpose, centre):
-        factors, loadings, explained_variance, mean = svd_pca(
+        components, scores, explained_variance, mean = svd_pca(
             self.X,
             output_dimension=output_dimension,
             svd_solver="randomized",
             auto_transpose=auto_transpose,
             centre=centre,
         )
-        X = loadings @ factors.T
+        X = scores @ components.T
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.X)
@@ -130,8 +130,8 @@ class TestSVDPCA:
         U = self.rng.randn(100, 5)
         V = self.rng.randn(100, 5)
         X = U @ V.T
-        factors, loadings, _, _ = svd_pca(X, output_dimension=5, svd_solver="auto")
-        Y = loadings @ factors.T
+        components, scores, _, _ = svd_pca(X, output_dimension=5, svd_solver="auto")
+        Y = scores @ components.T
         normX = np.linalg.norm(X - Y)
         assert normX < self.tol
 
@@ -139,8 +139,8 @@ class TestSVDPCA:
         U = self.rng.randn(501, 5)
         V = self.rng.randn(100, 5)
         X = U @ V.T
-        factors, loadings, _, _ = svd_pca(X, output_dimension=5, svd_solver="auto")
-        Y = loadings @ factors.T
+        components, scores, _, _ = svd_pca(X, output_dimension=5, svd_solver="auto")
+        Y = scores @ components.T
         normX = np.linalg.norm(X - Y)
         assert normX < self.tol
 
@@ -148,8 +148,8 @@ class TestSVDPCA:
         U = self.rng.randn(501, 5)
         V = self.rng.randn(100, 5)
         X = U @ V.T
-        factors, loadings, _, _ = svd_pca(X, output_dimension=81, svd_solver="auto")
-        Y = loadings @ factors.T
+        components, scores, _, _ = svd_pca(X, output_dimension=81, svd_solver="auto")
+        Y = scores @ components.T
         normX = np.linalg.norm(X - Y)
         assert normX < self.tol
 

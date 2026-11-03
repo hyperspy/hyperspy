@@ -920,7 +920,7 @@ class LazySignal(signals.BaseSignal):
 
         The square-root arrays ``sqrt(aG)`` and ``sqrt(bH)`` are stored as
         ``self._root_aG`` and ``self._root_bH`` so that
-        :py:meth:`decomposition` can rescale the factors and loadings back to
+        :py:meth:`decomposition` can rescale the components and scores back to
         the original data space after decomposition.
 
         Parameters
@@ -1011,7 +1011,7 @@ class LazySignal(signals.BaseSignal):
         Returns
         -------
         dict
-            Keys: ``loadings``, ``factors``, ``explained_variance``, ``mean``,
+            Keys: ``scores``, ``components``, ``explained_variance``, ``mean``,
             ``nav_mask_1d``, ``sig_mask_1d``, ``navigation_mask``,
             ``signal_mask``, ``_navigation_mask_for_reproject``,
             ``_D_unfolded``.
@@ -1021,8 +1021,8 @@ class LazySignal(signals.BaseSignal):
 
         # Initialise all variables that are set inside the try block so
         # the finally / return blocks never see an UnboundLocalError.
-        loadings = None
-        factors = None
+        scores = None
+        components = None
         explained_variance = None
         mean = None
         nav_mask_1d = None
@@ -1042,7 +1042,7 @@ class LazySignal(signals.BaseSignal):
                     _nm = navigation_mask.T
                 else:
                     _nm = navigation_mask
-                # Keep the shaped mask for _block_iterator/_project_loadings,
+                # Keep the shaped mask for _block_iterator/_project_scores,
                 # which expect a navigation-shaped mask; use the flattened
                 # version only where a 1-D boolean array is required.
                 _navigation_mask_for_reproject = _nm
@@ -1108,9 +1108,9 @@ class LazySignal(signals.BaseSignal):
                     U = U[:, :output_dimension]
                     S = S[:output_dimension]
                     V = V[:output_dimension]
-                factors = V.T
+                components = V.T
                 explained_variance = S**2 / D.shape[0]
-                loadings = U * S
+                scores = U * S
             else:  # randomized
                 if centre == "navigation":
                     mean = D.mean(axis=0, keepdims=True).compute()
@@ -1132,9 +1132,9 @@ class LazySignal(signals.BaseSignal):
                     U, S, V = da.linalg.svd_compressed(D, k=output_dimension)
                     U, S, V = dask.compute(U, S, V)
 
-                factors = V.T  # (n_unmasked_sig, output_dimension)
+                components = V.T  # (n_unmasked_sig, output_dimension)
                 explained_variance = S**2 / D.shape[0]
-                loadings = U * S
+                scores = U * S
         finally:
             if self._unfolded4decomposition is True:
                 self.fold()
@@ -1144,8 +1144,8 @@ class LazySignal(signals.BaseSignal):
                 self._unfolded4decomposition = False
 
         return {
-            "loadings": loadings,
-            "factors": factors,
+            "scores": scores,
+            "components": components,
             "explained_variance": explained_variance,
             "mean": mean,
             "nav_mask_1d": nav_mask_1d,
@@ -1161,8 +1161,8 @@ class LazySignal(signals.BaseSignal):
         algorithm,
         svd_solver,
         reproject,
-        loadings,
-        factors,
+        scores,
+        components,
         mean,
         centre,
         _D_unfolded,
@@ -1173,10 +1173,10 @@ class LazySignal(signals.BaseSignal):
         get,
         nblocks,
     ):
-        """Reproject factors over the full (unmasked) signal space.
+        """Reproject components over the full (unmasked) signal space.
 
-        Recomputes *factors* by projecting the full signal data through
-        the pseudo-inverse of the (unmasked-navigation) loadings.
+        Recomputes *components* by projecting the full signal data through
+        the pseudo-inverse of the (unmasked-navigation) scores.
         Supports both dask-based (``svd_solver='full'``) and eager
         (chunk-loop) paths.
 
@@ -1188,10 +1188,10 @@ class LazySignal(signals.BaseSignal):
             SVD backend (``"full"``, ``"randomized"``, ``"incremental"``).
         reproject : str
             Must be ``"signal"`` or ``"both"``.
-        loadings : ndarray or dask Array
-            Current loadings (unmasked navigation rows).
-        factors : ndarray or dask Array
-            Current factors (may be overwritten).
+        scores : ndarray or dask Array
+            Current scores (unmasked navigation rows).
+        components : ndarray or dask Array
+            Current components (may be overwritten).
         mean : ndarray or None
             Per-channel or per-pixel mean from centring.
         centre : str or None
@@ -1212,8 +1212,8 @@ class LazySignal(signals.BaseSignal):
 
         Returns
         -------
-        factors : ndarray
-            Re-projected factors covering the full signal space.
+        components : ndarray
+            Re-projected components covering the full signal space.
         """
         if algorithm == "SVD" and svd_solver == "full":
             import dask.array as da
@@ -1224,25 +1224,25 @@ class LazySignal(signals.BaseSignal):
             if mean is not None and centre == "navigation":
                 D_sig = D_sig - mean
             if reproject == "both":
-                # loadings covers all nav after nav-reproject; restrict
+                # scores covers all nav after nav-reproject; restrict
                 # to unmasked rows before computing pinv.
                 if _flat_nav_mask is not None:
-                    L = loadings[~_flat_nav_mask, :]
+                    L = scores[~_flat_nav_mask, :]
                 else:
-                    L = loadings
+                    L = scores
             else:
-                L = loadings  # already unmasked-nav only
+                L = scores  # already unmasked-nav only
             # pinv(L) is (k, n_unmasked_nav) — small; compute eagerly.
             pinv_L = np.linalg.pinv(L.compute() if isinstance(L, da.Array) else L)
             # (k, n_unmasked_nav) @ (n_unmasked_nav, sig) = (k, sig)
             # Dask streams over nav chunks; result is small.
-            factors = (da.from_array(pinv_L) @ D_sig).T.compute()
+            components = (da.from_array(pinv_L) @ D_sig).T.compute()
         else:
             from hyperspy.external.progressbar import progressbar
-            from hyperspy.learn._mva import _reproject_signal_factors
+            from hyperspy.learn._mva import _reproject_signal_components
 
             # Collect all navigation-unmasked rows with the full signal
-            # (no signal mask), then solve: factors = pinv(L) @ D_full
+            # (no signal mask), then solve: components = pinv(L) @ D_full
             D_chunks = []
             for chunk in progressbar(
                 self._block_iterator(
@@ -1272,20 +1272,20 @@ class LazySignal(signals.BaseSignal):
                     D = D - mean_1d
             if reproject == "both":
                 if _flat_nav_mask is not None:
-                    L = loadings[~_flat_nav_mask, :]
+                    L = scores[~_flat_nav_mask, :]
                 else:
-                    L = loadings
+                    L = scores
             else:
-                L = loadings  # already unmasked-nav only
-            factors = _reproject_signal_factors(D, L)
-        return factors
+                L = scores  # already unmasked-nav only
+            components = _reproject_signal_components(D, L)
+        return components
 
-    def _project_loadings(self, obj, desc, navigation_mask, signal_mask, get, nblocks):
+    def _project_scores(self, obj, desc, navigation_mask, signal_mask, get, nblocks):
         """Project data chunks through *obj.transform* and concatenate.
 
         Iterates over navigation blocks via :meth:`_block_iterator`, calls
         ``obj.transform()`` on each chunk, and returns the concatenated
-        loadings array.  Used by ISVD, PCA, NMF, ORPCA, ORNMF, and custom
+        scores array.  Used by ISVD, PCA, NMF, ORPCA, ORNMF, and custom
         estimators after fitting.
 
         Parameters
@@ -1305,7 +1305,7 @@ class LazySignal(signals.BaseSignal):
         Returns
         -------
         ndarray
-            Concatenated loadings, shape ``(n_nav, n_components)``.
+            Concatenated scores, shape ``(n_nav, n_components)``.
         """
         H = []
         for chunk in progressbar(
@@ -1327,8 +1327,8 @@ class LazySignal(signals.BaseSignal):
         reproject,
         algorithm,
         svd_solver,
-        loadings,
-        factors,
+        scores,
+        components,
         mean,
         centre,
         _D_unfolded,
@@ -1339,10 +1339,10 @@ class LazySignal(signals.BaseSignal):
         nblocks,
         _navigation_mask_for_reproject,
     ):
-        """Reproject loadings over the full (unmasked) navigation space.
+        """Reproject scores over the full (unmasked) navigation space.
 
-        Recomputes *loadings* by projecting the full navigation data through
-        the learned factors.  Supports three paths: dask matmul for
+        Recomputes *scores* by projecting the full navigation data through
+        the learned components.  Supports three paths: dask matmul for
         ``svd_solver='full'``, dask matmul for ``svd_solver='randomized'``,
         and a ``obj.transform`` chunk-loop for other algorithms.  Also
         handles the ``reproject=None`` default (project for non-SVD).
@@ -1355,10 +1355,10 @@ class LazySignal(signals.BaseSignal):
             Decomposition algorithm name.
         svd_solver : str
             SVD backend.
-        loadings : ndarray or dask Array
-            Current loadings (may be overwritten with full-nav loadings).
-        factors : ndarray or dask Array
-            Learned factors (signal × components).
+        scores : ndarray or dask Array
+            Current scores (may be overwritten with full-nav scores).
+        components : ndarray or dask Array
+            Learned components (signal × components).
         mean : ndarray or None
             Per-channel mean from centring.
         centre : str or None
@@ -1370,7 +1370,7 @@ class LazySignal(signals.BaseSignal):
         obj : estimator or None
             Fitted estimator with a ``transform`` method.
         signal_mask : various or None
-            Signal mask for ``_project_loadings``.
+            Signal mask for ``_project_scores``.
         get : dask scheduler
         nblocks : int
             Number of navigation blocks.
@@ -1379,8 +1379,8 @@ class LazySignal(signals.BaseSignal):
 
         Returns
         -------
-        loadings : ndarray or dask Array
-            Loadings covering the full navigation space.
+        scores : ndarray or dask Array
+            Scores covering the full navigation space.
         _nav_reprojected : bool
             ``True`` if navigation reprojection was performed.
         """
@@ -1389,41 +1389,45 @@ class LazySignal(signals.BaseSignal):
             if algorithm == "SVD" and svd_solver == "full":
                 import dask.array as da
 
-                from hyperspy.learn._mva import _reproject_navigation_loadings
+                from hyperspy.learn._mva import _reproject_navigation_scores
 
                 D_nav = _D_unfolded  # (nav, sig)
                 if sig_mask_1d is not None:
                     D_nav = D_nav[:, ~sig_mask_1d]
                 if mean is not None and centre == "navigation":
                     D_nav = D_nav - mean
-                _factors_da = (
-                    factors if isinstance(factors, da.Array) else da.from_array(factors)
+                _components_da = (
+                    components
+                    if isinstance(components, da.Array)
+                    else da.from_array(components)
                 )
                 # Dask matmul — streams over nav chunks without
                 # materialising the full matrix.  .compute() only
-                # materialises the small (nav × k) loadings array.
-                loadings = _reproject_navigation_loadings(D_nav, _factors_da).compute()
+                # materialises the small (nav × k) scores array.
+                scores = _reproject_navigation_scores(D_nav, _components_da).compute()
             elif algorithm == "SVD" and svd_solver == "randomized":
                 import dask.array as da
 
-                from hyperspy.learn._mva import _reproject_navigation_loadings
+                from hyperspy.learn._mva import _reproject_navigation_scores
 
                 D_nav = _D_unfolded  # (nav, sig)
                 if sig_mask_1d is not None:
                     D_nav = D_nav[:, ~sig_mask_1d]
                 if mean is not None and centre == "navigation":
                     D_nav = D_nav - mean
-                _factors_da = (
-                    factors if isinstance(factors, da.Array) else da.from_array(factors)
+                _components_da = (
+                    components
+                    if isinstance(components, da.Array)
+                    else da.from_array(components)
                 )
                 # Same least-squares formula as full SVD; only the factor
                 # matrix was computed by a different solver.
-                loadings = _reproject_navigation_loadings(D_nav, _factors_da).compute()
+                scores = _reproject_navigation_scores(D_nav, _components_da).compute()
             else:
                 # Non-SVD algorithms (PCA, NMF, ORPCA, ORNMF, custom):
                 # use the estimator's transform() on each chunk.
                 try:
-                    loadings = self._project_loadings(
+                    scores = self._project_scores(
                         obj, "Reproject", None, signal_mask, get, nblocks
                     )
                 except KeyboardInterrupt:  # pragma: no cover
@@ -1431,12 +1435,12 @@ class LazySignal(signals.BaseSignal):
             _nav_reprojected = True
         elif reproject is None:
             # Default behaviour: for non-SVD algorithms, project to get
-            # loadings (preserves the pre-existing default of
-            # reproject=True).  SVD already computed loadings during the
+            # scores (preserves the pre-existing default of
+            # reproject=True).  SVD already computed scores during the
             # learn pass, so nothing extra is needed.
             if algorithm != "SVD":
                 try:
-                    loadings = self._project_loadings(
+                    scores = self._project_scores(
                         obj,
                         "Project",
                         _navigation_mask_for_reproject,
@@ -1446,14 +1450,14 @@ class LazySignal(signals.BaseSignal):
                     )
                 except KeyboardInterrupt:  # pragma: no cover
                     pass
-        return loadings, _nav_reprojected
+        return scores, _nav_reprojected
 
     def _store_decomposition_results(
         self,
         explained_variance,
         explained_variance_ratio,
-        factors,
-        loadings,
+        components,
+        scores,
         mean,
         centre,
         navigation_mask,
@@ -1482,8 +1486,8 @@ class LazySignal(signals.BaseSignal):
         ----------
         explained_variance : ndarray or None
         explained_variance_ratio : ndarray or None
-        factors : ndarray or dask Array
-        loadings : ndarray or dask Array
+        components : ndarray or dask Array
+        scores : ndarray or dask Array
         mean : ndarray or None
         centre : str or None
         navigation_mask : various or None
@@ -1535,7 +1539,7 @@ class LazySignal(signals.BaseSignal):
         _stored_output_dim = (
             output_dimension
             if output_dimension is not None
-            else (factors.shape[1] if factors is not None else None)
+            else (components.shape[1] if components is not None else None)
         )
         target.output_dimension = _stored_output_dim
         target.poissonian_noise_normalized = normalize_poissonian_noise
@@ -1554,11 +1558,11 @@ class LazySignal(signals.BaseSignal):
             root_bH_flat = self._root_bH.ravel().compute()
             if _flat_sig_mask is not None and not _signal_reprojected:
                 root_bH_flat = root_bH_flat[~_flat_sig_mask]
-            factors = factors * root_bH_flat[:, np.newaxis]
+            components = components * root_bH_flat[:, np.newaxis]
             root_aG_flat = self._root_aG.ravel().compute()
             if _flat_nav_mask is not None and not _nav_reprojected:
                 root_aG_flat = root_aG_flat[~_flat_nav_mask]
-            loadings = loadings * root_aG_flat[:, np.newaxis]
+            scores = scores * root_aG_flat[:, np.newaxis]
 
         # store masks and NaN-fill excluded positions
         if flat_sig_mask is not None:
@@ -1566,17 +1570,17 @@ class LazySignal(signals.BaseSignal):
                 self.axes_manager._signal_shape_in_array
             )
             if not _signal_reprojected:
-                factors = _nan_expand_rows(factors, flat_sig_mask, sig_size)
+                components = _nan_expand_rows(components, flat_sig_mask, sig_size)
 
         if flat_nav_mask is not None:
             target.navigation_mask = flat_nav_mask.reshape(
                 self.axes_manager._navigation_shape_in_array
             )
             if not _nav_reprojected:
-                loadings = _nan_expand_rows(loadings, flat_nav_mask, nav_size)
+                scores = _nan_expand_rows(scores, flat_nav_mask, nav_size)
 
-        target.factors = factors
-        target.loadings = loadings
+        target.components = components
+        target.scores = scores
 
         if print_info:
             print("\n".join([str(pr) for pr in to_print]))
@@ -1621,7 +1625,7 @@ class LazySignal(signals.BaseSignal):
             are also accepted but all data will be collected into memory
             before calling ``fit_transform``.  After fitting, the estimator
             must expose a ``components_`` attribute (rows = components) to
-            supply the factors.
+            supply the components.
 
             For ``'SVD'``, the specific backend is chosen via ``svd_solver``
             (see below).
@@ -1655,11 +1659,11 @@ class LazySignal(signals.BaseSignal):
 
             * ``None``: use the default for the chosen algorithm.
               For ``"PCA"``, ``"NMF"``, ``"ORPCA"`` and ``"ORNMF"`` this is equivalent
-              to ``"navigation"``; for ``"SVD"`` loadings are computed during
+              to ``"navigation"``; for ``"SVD"`` scores are computed during
               the learn pass (reprojection is a no-op).
             * ``"navigation"``: reproject onto navigation space to get full
-              loadings (useful when a navigation mask was applied).
-            * ``"signal"``: reproject onto signal space to get full factors
+              scores (useful when a navigation mask was applied).
+            * ``"signal"``: reproject onto signal space to get full components
               (useful when a signal mask was applied).
             * ``"both"``: perform both reprojections.
         return_info : bool, default False
@@ -1727,8 +1731,8 @@ class LazySignal(signals.BaseSignal):
         -----
         **Array types stored in** ``learning_results``
 
-        After decomposition, ``learning_results.factors`` and
-        ``learning_results.loadings`` hold either **numpy** or **dask** arrays
+        After decomposition, ``learning_results.components`` and
+        ``learning_results.scores`` hold either **numpy** or **dask** arrays
         depending on the algorithm and solver:
 
         .. list-table::
@@ -1736,8 +1740,8 @@ class LazySignal(signals.BaseSignal):
            :widths: 30 35 35
 
            * - Algorithm / solver
-             - ``factors``
-             - ``loadings``
+             - ``components``
+             - ``scores``
            * - ``'SVD'``, ``svd_solver='randomized'``
              - numpy (computed)
              - numpy (computed)
@@ -1766,7 +1770,7 @@ class LazySignal(signals.BaseSignal):
         array remains lazy::
 
              s.decomposition(algorithm="SVD", svd_solver="full", output_dimension=3)
-             # learning_results.factors and .loadings are dask arrays
+             # learning_results.components and .scores are dask arrays
 
              model = s.get_decomposition_model()
              # model is a LazySignal; model.data is a dask array
@@ -1774,7 +1778,7 @@ class LazySignal(signals.BaseSignal):
              model.save("model.hspy")
              # triggers computation chunk by chunk while writing to disk
 
-             # With reproject: factors stay lazy (only loadings are computed)
+             # With reproject: components stay lazy (only scores are computed)
              s.decomposition(algorithm="SVD", svd_solver="full",
                              output_dimension=3, reproject="navigation")
              model = s.get_decomposition_model()  # still lazy
@@ -1867,8 +1871,8 @@ class LazySignal(signals.BaseSignal):
         explained_variance = None
         explained_variance_ratio = None
         mean = None
-        loadings = None
-        factors = None
+        scores = None
+        components = None
         _D_unfolded = None
         nav_mask_1d = None
         sig_mask_1d = None
@@ -2038,8 +2042,8 @@ class LazySignal(signals.BaseSignal):
                     navigation_mask,
                     signal_mask,
                 )
-                loadings = _svd_result["loadings"]
-                factors = _svd_result["factors"]
+                scores = _svd_result["scores"]
+                components = _svd_result["components"]
                 explained_variance = _svd_result["explained_variance"]
                 mean = _svd_result["mean"]
                 nav_mask_1d = _svd_result["nav_mask_1d"]
@@ -2084,10 +2088,10 @@ class LazySignal(signals.BaseSignal):
                 if method is None:
                     all_data = np.concatenate(this_data, axis=0)
                     if hasattr(obj, "fit_transform"):
-                        loadings = obj.fit_transform(all_data)
+                        scores = obj.fit_transform(all_data)
                     else:
                         obj.fit(all_data)
-                        loadings = obj.transform(all_data)
+                        scores = obj.transform(all_data)
 
             # GET ALREADY CALCULATED RESULTS
             if algorithm == "SVD" and svd_solver == "incremental":
@@ -2104,17 +2108,17 @@ class LazySignal(signals.BaseSignal):
                 explained_variance_ratio = (
                     None  # computed by _store_decomposition_results
                 )
-                factors = obj.components_.T
+                components = obj.components_.T
                 if centre is None:
                     mean = None
-                loadings = self._project_loadings(
+                scores = self._project_scores(
                     obj, "Project", navigation_mask, signal_mask, get, nblocks
                 )
 
             elif algorithm == "PCA":
                 explained_variance = obj.explained_variance_
                 explained_variance_ratio = obj.explained_variance_ratio_
-                factors = obj.components_.T
+                components = obj.components_.T
                 mean = obj.mean_
 
             elif algorithm in ("NMF", "ORPCA", "ORNMF") or _is_custom_sklearn_like:
@@ -2122,18 +2126,18 @@ class LazySignal(signals.BaseSignal):
                     raise AttributeError(
                         f"Fitted estimator {obj!r} has no attribute 'components_'"
                     )
-                factors = obj.components_.T
+                components = obj.components_.T
                 if hasattr(obj, "explained_variance_"):
                     explained_variance = obj.explained_variance_
                 if hasattr(obj, "mean_"):
                     mean = obj.mean_
                 else:
                     mean = None
-                # Compute loadings via transform if not already set
-                # (batch-only objects set loadings above during fit_transform;
+                # Compute scores via transform if not already set
+                # (batch-only objects set scores above during fit_transform;
                 # incremental objects need a project pass now).
-                if loadings is None:
-                    loadings = self._project_loadings(
+                if scores is None:
+                    scores = self._project_scores(
                         obj, "Project", navigation_mask, signal_mask, get, nblocks
                     )
 
@@ -2144,13 +2148,13 @@ class LazySignal(signals.BaseSignal):
             _flat_nav_mask = _to_flat_bool(navigation_mask)
             _flat_sig_mask = _to_flat_bool(signal_mask)
 
-            # REPROJECT NAVIGATION (recompute loadings over full nav)
-            loadings, _nav_reprojected = self._decomposition_reproject_navigation(
+            # REPROJECT NAVIGATION (recompute scores over full nav)
+            scores, _nav_reprojected = self._decomposition_reproject_navigation(
                 reproject,
                 algorithm,
                 svd_solver,
-                loadings,
-                factors,
+                scores,
+                components,
                 mean,
                 centre,
                 _D_unfolded,
@@ -2162,12 +2166,12 @@ class LazySignal(signals.BaseSignal):
                 _navigation_mask_for_reproject,
             )
 
-            # For reproject='signal', non-SVD algorithms need loadings computed
+            # For reproject='signal', non-SVD algorithms need scores computed
             # first (over masked nav + masked signal), which mirrors
-            # reproject=None.  SVD already computed loadings in the learn pass.
-            if reproject == "signal" and algorithm != "SVD" and loadings is None:
+            # reproject=None.  SVD already computed scores in the learn pass.
+            if reproject == "signal" and algorithm != "SVD" and scores is None:
                 try:
-                    loadings = self._project_loadings(
+                    scores = self._project_scores(
                         obj,
                         "Project",
                         _navigation_mask_for_reproject,
@@ -2178,18 +2182,18 @@ class LazySignal(signals.BaseSignal):
                 except KeyboardInterrupt:  # pragma: no cover
                     pass
 
-            # REPROJECT SIGNAL (recompute factors over full signal)
+            # REPROJECT SIGNAL (recompute components over full signal)
             # All algorithms support signal reprojection via the pseudo-
-            # inverse: factors = pinv(loadings) @ D_full_signal.
+            # inverse: components = pinv(scores) @ D_full_signal.
             # This mirrors the non-lazy SVD path in _mva.py.
             _signal_reprojected = False
             if reproject in ("signal", "both"):
-                factors = self._decomposition_reproject_signal(
+                components = self._decomposition_reproject_signal(
                     algorithm,
                     svd_solver,
                     reproject,
-                    loadings,
-                    factors,
+                    scores,
+                    components,
                     mean,
                     centre,
                     _D_unfolded,
@@ -2207,12 +2211,12 @@ class LazySignal(signals.BaseSignal):
             _n_comp = (
                 output_dimension
                 if output_dimension is not None
-                else (factors.shape[1] if factors is not None else None)
+                else (components.shape[1] if components is not None else None)
             )
-            if algorithm != "SVD" and loadings is not None and _n_comp is not None:
+            if algorithm != "SVD" and scores is not None and _n_comp is not None:
                 try:
-                    loadings = _reshuffle_mixed_blocks(
-                        loadings, ndim, (_n_comp,), nav_chunks
+                    scores = _reshuffle_mixed_blocks(
+                        scores, ndim, (_n_comp,), nav_chunks
                     ).reshape((-1, _n_comp))
                 except ValueError:
                     # In case the projection step was not finished, it's left
@@ -2224,8 +2228,8 @@ class LazySignal(signals.BaseSignal):
         _return_value = self._store_decomposition_results(
             explained_variance=explained_variance,
             explained_variance_ratio=explained_variance_ratio,
-            factors=factors,
-            loadings=loadings,
+            components=components,
+            scores=scores,
             mean=mean,
             centre=centre,
             navigation_mask=navigation_mask,
