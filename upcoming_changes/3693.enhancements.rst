@@ -1,0 +1,1 @@
+Splitting signals along non-uniform and functional axes now preserves their axis coordinates and calibration.
