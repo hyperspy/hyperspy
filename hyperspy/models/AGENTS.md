@@ -18,7 +18,7 @@ Signal-type-specific `Model` subclasses. `Model1D` (for `Signal1D`) and `Model2D
 ### Model Workflow
 
 ```python
-m = signal.create_model()               # returns Model1D or Model2D
+m = signal.create_model()  # returns Model1D or Model2D
 
 # Add components (see hyperspy/_components/)
 m.append(hs.model.components1D.Gaussian(name="Peak"))
@@ -52,10 +52,11 @@ centre_map[j, i]  # [y-index, x-index] — NumPy convention
 
 ```python
 if signal.axes_manager.navigation_dimension == 0:
-    m.components.Peak.centre.value = 100.0     # scalar
+    m.components.Peak.centre.value = 100.0  # scalar
 else:
     m.components.Peak.centre.map["values"] = np.full(
-        signal.axes_manager.navigation_shape[::-1], 100.0  # NumPy order
+        signal.axes_manager.navigation_shape[::-1],
+        100.0,  # NumPy order
     )
     m.components.Peak.centre.map["is_set"] = True
 ```
