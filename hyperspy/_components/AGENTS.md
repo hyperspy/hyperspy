@@ -48,6 +48,7 @@ Concrete implementations of 1D and 2D model components. Each file defines one `C
 ```python
 from hyperspy.component import Component, Parameter
 
+
 class MyComponent(Component):
     def __init__(self, A=1.0, centre=0.0, sigma=1.0):
         super().__init__(["A", "centre", "sigma"])
@@ -56,7 +57,9 @@ class MyComponent(Component):
         self.sigma.value = sigma
 
     def function(self, x):
-        return self.A.value * np.exp(-0.5 * ((x - self.centre.value) / self.sigma.value) ** 2)
+        return self.A.value * np.exp(
+            -0.5 * ((x - self.centre.value) / self.sigma.value) ** 2
+        )
 ```
 
 ### Prefer Expression for Custom Math
@@ -66,7 +69,9 @@ class MyComponent(Component):
 c = hs.model.components1D.Expression(
     "A * exp(-abs(x - centre) / decay)",
     name="Exponential_Peak",
-    A=1000, centre=100, decay=5
+    A=1000,
+    centre=100,
+    decay=5,
 )
 ```
 

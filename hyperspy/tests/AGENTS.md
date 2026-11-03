@@ -51,8 +51,8 @@ pytest hyperspy/tests/ -k "test_name"   # filter by name
 
 - **Use ALL-DIFFERENT array dimensions** so axis reversals are detectable:
   ```python
-  data = np.random.random((12, 25, 48))   # NOT (64, 64, 128)
-  s = hs.signals.Signal1D(data)           # clearly shows (25, 12 | 48)
+  data = np.random.random((12, 25, 48))  # NOT (64, 64, 128)
+  s = hs.signals.Signal1D(data)  # clearly shows (25, 12 | 48)
   ```
 - Mirror source structure: tests for `hyperspy/_signals/signal1d.py` go in `hyperspy/tests/signals/test_signal1d.py`.
 - Use the `conftest.py` fixtures for common signal creation patterns.

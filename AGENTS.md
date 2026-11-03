@@ -47,8 +47,8 @@ HyperSpy reverses ALL dimensions relative to NumPy order — both navigation AND
 
 Use ALL-DIFFERENT array dimensions when writing tests or examples so the reversal is immediately visible:
 ```python
-data = np.random.random((12, 25, 48))   # NOT (64, 64, 128)
-s = hs.signals.Signal1D(data)           # displays as (25, 12 | 48)
+data = np.random.random((12, 25, 48))  # NOT (64, 64, 128)
+s = hs.signals.Signal1D(data)  # displays as (25, 12 | 48)
 ```
 
 ### NumPy Order for Arrays and Parameter Maps
@@ -58,29 +58,29 @@ All underlying arrays (`.data`, parameter `.map`) use NumPy order, never display
 ```python
 # For a 2D spatial scan: HyperSpy shows (nx, ny | ...) but arrays are (ny, nx, ...)
 peak_centre_map = model.components.Peak.centre.map  # shape (ny, nx) — NumPy order
-mask[y_slice, x_slice] = True                        # always [y, x] indexing
+mask[y_slice, x_slice] = True  # always [y, x] indexing
 ```
 
 ### Preferred HyperSpy Patterns
 
 ```python
 # ✅ Use HyperSpy-native methods, not raw NumPy on .data
-signal.max(axis='energy')               # keeps metadata
-signal.isig[100.:300.]                  # calibrated slicing
-signal / signal.max()                   # preserves structure
+signal.max(axis="energy")  # keeps metadata
+signal.isig[100.0:300.0]  # calibrated slicing
+signal / signal.max()  # preserves structure
 
 # ✅ Name axes immediately after creation
-signal.axes_manager[0].name = 'x'
+signal.axes_manager[0].name = "x"
 
 # ✅ Batch-set axis properties
-signal.axes_manager.navigation_axes.set(units='nm', scale=0.1, name=('x', 'y'))
+signal.axes_manager.navigation_axes.set(units="nm", scale=0.1, name=("x", "y"))
 
 # ✅ Access model components by name
 model.components.Peak.centre.value = 100
-model.set_parameters_value('centre', 100, only_current=False)
+model.set_parameters_value("centre", 100, only_current=False)
 
 # ✅ Use SVD for decomposition (community standard)
-signal.decomposition(algorithm='SVD')
+signal.decomposition(algorithm="SVD")
 n = signal.learning_results.number_significant_components
 ```
 
