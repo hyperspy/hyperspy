@@ -65,9 +65,9 @@ The core Python package. Contains the `BaseSignal` class hierarchy, `AxesManager
 
 ```python
 if signal.axes_manager.navigation_dimension == 0:
-    component.param.value = scalar_value          # single position
+    component.param.value = scalar_value  # single position
 else:
-    component.param.map["values"] = array         # shape (ny, nx, ...)
+    component.param.map["values"] = array  # shape (ny, nx, ...)
     component.param.map["is_set"] = True
 ```
 

@@ -25,7 +25,7 @@ Matrix decomposition, blind source separation (BSS), and machine learning algori
 
 ```python
 # ✅ Use SVD — HyperSpy community standard
-signal.decomposition(algorithm='SVD')
+signal.decomposition(algorithm="SVD")
 
 # ✅ Let HyperSpy estimate the number of significant components
 n = signal.learning_results.number_significant_components
@@ -41,7 +41,7 @@ for n in [6, 8, 10]:
 ### BSS Pattern
 
 ```python
-signal.decomposition(algorithm='SVD')
+signal.decomposition(algorithm="SVD")
 signal.blind_source_separation(number_of_components=n)
 # Results: signal.learning_results.bss_components / bss_loadings
 ```
