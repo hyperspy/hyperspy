@@ -68,7 +68,6 @@ class Parameter(t.HasTraits):
     value : float or array
         The value of the parameter for the current location. The value
         for other locations is stored in map.
-
     """
 
     __number_of_elements = 1
@@ -407,7 +406,7 @@ class Parameter(t.HasTraits):
         If it is not None, the value of the current parameter is
         a function of the given Parameter. The function is by default
         the identity function, but it can be defined by
-        :attr:`twin_function_expr`
+        :attr:`twin_function_expr`.
         """
         return self.__twin
 
@@ -510,7 +509,6 @@ class Parameter(t.HasTraits):
         See Also
         --------
         fetch, assign_current_value_to_all
-
         """
         indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
@@ -532,7 +530,6 @@ class Parameter(t.HasTraits):
         See Also
         --------
         store_current_value_in_array, assign_current_value_to_all
-
         """
         indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
@@ -557,14 +554,13 @@ class Parameter(t.HasTraits):
 
         Parameters
         ----------
-        mask: {None, boolean numpy array}
+        mask : {None, boolean numpy array}
             Set only the indices that are not masked i.e. where
             mask is False.
 
         See Also
         --------
         store_current_value_in_array, fetch
-
         """
         if mask is None:
             mask = np.zeros(self.map.shape, dtype="bool")
@@ -615,7 +611,6 @@ class Parameter(t.HasTraits):
         ----------
         field : {'values', 'std', 'is_set'}
             Field to return as signal.
-
         """
         from hyperspy.signal import BaseSignal
 
@@ -677,12 +672,11 @@ class Parameter(t.HasTraits):
             by the Parameter `name` attributes will be used by default.
             If a file with the same name exists the name will be
             modified by appending a number to the file path.
-        save_std : bool
-            If True, also the standard deviation will be saved
-        format: str
+        format : str
             The extension of any file format supported by RosettaSciIO, default
             ``hspy``.
-
+        save_std : bool
+            If True, also the standard deviation will be saved.
         """
         if format is None:
             format = "hspy"
@@ -696,15 +690,15 @@ class Parameter(t.HasTraits):
             self.as_signal(field="std").save(path.append2pathname(filename, "_std"))
 
     def as_dictionary(self, fullcopy=True):
-        """Returns parameter as a dictionary, saving all attributes from
+        """Return parameter as a dictionary, saving all attributes from
         self._whitelist.keys() For more information see
-        py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+        py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
 
         Parameters
         ----------
         fullcopy : bool, optional False
             Copies of objects are stored, not references. If any found,
-            functions will be pickled and signals converted to dictionaries
+            functions will be pickled and signals converted to dictionaries.
 
         Returns
         -------
@@ -718,7 +712,6 @@ class Parameter(t.HasTraits):
               with the parameter attributes. For more information see
               :func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
-
         """
         dic = {"_twins": [id(t) for t in self._twins]}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)

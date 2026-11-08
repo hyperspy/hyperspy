@@ -22,7 +22,7 @@ from hyperspy._components.expression import Expression
 class RC(Expression):
     r"""
     RC function component (based on the time-domain capacitor voltage response
-    of an RC-circuit)
+    of an RC-circuit).
 
     .. math::
 
@@ -37,20 +37,18 @@ class RC(Expression):
     :math:`\tau`            tau
     ====================== =============
 
-
     Parameters
     ----------
     Vmax : float
-        maximum voltage, asymptote of the function for
-        :math:`\mathrm{lim}_{x\to\infty}`
+        Maximum voltage, asymptote of the function for
+        :math:`\mathrm{lim}_{x\to\infty}`.
     V0 : float
-        vertical offset
+        Vertical offset.
     tau : float
-        tau=RC is the RC circuit time constant (voltage rise time)
+        Tau=RC is the RC circuit time constant (voltage rise time).
     **kwargs
         Extra keyword arguments are passed to the
         :class:`~.api.model.components1D.Expression` component.
-
     """
 
     def __init__(self, Vmax=1.0, V0=0.0, tau=1.0, module=None, **kwargs):

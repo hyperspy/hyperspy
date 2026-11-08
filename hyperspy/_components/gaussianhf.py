@@ -50,17 +50,16 @@ class GaussianHF(Expression):
      :math:`c`     centre
     ============= =============
 
-
     Parameters
     ----------
-    height: float
+    height : float
         The height of the peak. If there is no binning, this corresponds
         directly to the maximum, otherwise the maximum divided by
-        signal_axis.scale
-    fwhm: float
+        signal_axis.scale.
+    fwhm : float
         The full width half maximum value, i.e. the width of the gaussian
         at half the value of gaussian peak (at centre).
-    centre: float
+    centre : float
         Location of the gaussian maximum, also the mean position.
     **kwargs
         Extra keyword arguments are passed to the
@@ -78,7 +77,6 @@ class GaussianHF(Expression):
     See Also
     --------
     Gaussian
-
     """
 
     def __init__(self, height=1.0, fwhm=1.0, centre=0.0, module=None, **kwargs):
@@ -110,6 +108,7 @@ class GaussianHF(Expression):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -122,6 +121,7 @@ class GaussianHF(Expression):
         Returns
         -------
         bool
+            ``True`` if the parameters estimation is successful.
 
         Notes
         -----
@@ -187,6 +187,6 @@ class GaussianHF(Expression):
 
     def integral_as_signal(self):
         """
-        Utility function to get gaussian integral as Signal1D
+        Utility function to get gaussian integral as Signal1D.
         """
         return self.height.as_signal() * self.fwhm.as_signal() * sqrt2pi / sigma2fwhm

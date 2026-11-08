@@ -36,21 +36,20 @@ class Logistic(Expression):
     :math:`x_0`     origin
     ============== =============
 
-
     Parameters
     ----------
     a : float
         The curve's maximum y-value,
-        :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`
+        :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`.
     b : float
         Additional parameter:
         b>1 shifts origin to larger values;
         0<b<1 shifts origin to smaller values;
-        b<0 introduces an asymptote
+        b<0 introduces an asymptote.
     c : float
-        Logistic growth rate or steepness of the curve
+        Logistic growth rate or steepness of the curve.
     origin : float
-        Position of the sigmoid's midpoint
+        Position of the sigmoid's midpoint.
     **kwargs : dict
         Extra keyword arguments are passed to the
         :class:`~.api.model.components1D.Expression` component.

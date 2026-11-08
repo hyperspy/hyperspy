@@ -27,7 +27,7 @@ _logger = logging.getLogger(__name__)
 
 
 class Polynomial(Expression):
-    """n-order polynomial component.
+    """N-order polynomial component.
 
     Polynomial component consisting of order + 1 parameters.
     The parameters are named "a" followed by the corresponding order,
@@ -47,7 +47,6 @@ class Polynomial(Expression):
         Keyword arguments can be used to initialise the value of the
         parameters, i.e. a2=2, a1=3, a0=1. Extra keyword arguments are passed
         to the :class:`~.api.model.components1D.Expression` component.
-
     """
 
     def __init__(self, order=2, module=None, **kwargs):
@@ -82,25 +81,26 @@ class Polynomial(Expression):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float, optional
             Defines the left limit of the spectral range to use for the
             estimation. Deprecated, use ``intervals`` instead.
         x2 : float, optional
             Defines the right limit of the spectral range to use for the
             estimation. Deprecated, use ``intervals`` instead.
+        only_current : bool
+            If False estimates the parameters for the full dataset.
         intervals : list of tuple or :class:`~.api.roi.SpanROI`, optional
             List of intervals for estimation. Each interval can be a tuple
             ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
             Data from all intervals is concatenated for the fit.
             If ``None``, the ``x1``, ``x2`` arguments are used for backward
             compatibility.
-        only_current : bool
-            If False estimates the parameters for the full dataset.
 
         Returns
         -------
         bool
-
+            ``True`` if the parameters estimation is successful.
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]

@@ -47,7 +47,7 @@ class ScalableFixedPattern(Component):
     xscale : float
         The scaling factor in x.
     shift : float
-        The shift of the component
+        The shift of the component.
     interpolate : bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
@@ -59,7 +59,7 @@ class ScalableFixedPattern(Component):
     xscale : :class:`~.component.Parameter`
         The scaling factor in x.
     shift : :class:`~.component.Parameter`
-        The shift of the component
+        The shift of the component.
     interpolate : bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
@@ -76,7 +76,6 @@ class ScalableFixedPattern(Component):
 
     >>> s = hs.load('data.hspy') # doctest: +SKIP
     >>> my_fixed_pattern = hs.model.components1D.ScalableFixedPattern(s) # doctest: +SKIP
-
     """
 
     def __init__(self, signal1D, yscale=1.0, xscale=1.0, shift=0.0, interpolate=True):
@@ -113,10 +112,10 @@ class ScalableFixedPattern(Component):
         Parameters
         ----------
         x : array
-            The spectral axis of the fixed pattern
+            The spectral axis of the fixed pattern.
         **kwargs : dict
             Keywords argument are passed to
-            :func:`scipy.interpolate.make_interp_spline`
+            :func:`scipy.interpolate.make_interp_spline`.
         """
 
         self.f = scipy.interpolate.make_interp_spline(
