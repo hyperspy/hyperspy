@@ -16,6 +16,9 @@ import platform
 import sys
 from datetime import datetime
 
+import numpydoc
+from packaging.version import Version
+
 import hyperspy
 
 sys.path.append("../")
@@ -424,8 +427,26 @@ numpydoc_xref_ignore = {
     "prettytable",
 }
 
-# if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
-#     numpydoc_validation_checks = {"all", "ES01", "EX01", "GL02", "GL03", "SA01", "SS06"}
+if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
+    # Codes: https://numpydoc.readthedocs.io/en/stable/validation.html#built-in-validation-checks
+    numpydoc_validation_checks = {
+        "all",  # All but the following:
+        "ES01",  # Not all docstrings need an extend summary
+        "EX01",  # Not all docstrings need "Examples"
+        "GL01",  # Contradicts numpydoc examples
+        "GL02",
+        "GL07",
+        "GL08",  # Methods can be documented in super class
+        "PR01",  # Parameters can be documented in super class
+        "PR02",  # Properties with setters might have docstrings w/"Returns"
+        "PR04",  # Doesn't seem to work with type hints
+        "PR07",  # Not all parameters have descriptions, although they should
+        "RT01",  # Abstract classes might not have return sections
+        "SA01",  # Not all docstrings need a "See Also"
+        "SA04",  # "See Also" section does not need descriptions
+        "SS06",  # Not possible to make all summaries one line
+        "YD01",  # Not all docstrings need "Yields"
+    }
 
 autoclass_content = "both"
 
