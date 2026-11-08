@@ -1,0 +1,1 @@
+Make docstrings adhere to all numpydoc rules except ES01, EX01, GL01,2,7,8, PR01,2,4,7, RT01, SA01,4, SS06, and YD01
