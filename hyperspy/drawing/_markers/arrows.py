@@ -40,6 +40,8 @@ class Arrows(Markers):
         V : array-like
             The change in y (vertical) diraction for the arrows.
         C : array-like or None
+            Values used to map the colors of the arrows with the colormap.
+            If None, the arrows are drawn with a single color.
         kwargs : dict
             Keyword arguments are passed to :class:`matplotlib.quiver.Quiver`.
         """

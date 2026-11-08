@@ -389,7 +389,6 @@ class Markers:
         >>> m.remove_items(indices=[1, 2])
         >>> print(m)
         <Texts, length: 8>
-
         """
         if keys is None:
             keys = self._iterable_argument_keys + [self._position_key]
@@ -437,7 +436,7 @@ class Markers:
             navigation coordinates.
 
         **kwargs : dict
-            Mapping of keys:values to add to the markers
+            Mapping of keys:values to add to the markers.
 
         Examples
         --------
@@ -553,13 +552,13 @@ class Markers:
 
         Parameters
         ----------
-        signal: :class:`~.api.signals.BaseSignal`
-            A value passed to the Collection as ``{key:signal.data}``
-        key: str or None
+        signal : :class:`~.api.signals.BaseSignal`
+            A value passed to the Collection as ``{key:signal.data}``.
+        key : str or None
             The key used to create a key value pair to create the subclass of
             :class:`matplotlib.collections.Collection`. If ``None`` (default)
             the key is set to ``"offsets"``.
-        signal_axes: str, tuple of :class:`~.axes.UniformDataAxis` or None
+        signal_axes : str, tuple of :class:`~.axes.UniformDataAxis` or None
             If ``"metadata"`` look for signal_axes saved in metadata under
             ``s.metadata.Peaks.signal_axes`` and convert from pixel positions
             to real units before creating the collection. If a ``tuple`` of
@@ -638,7 +637,7 @@ class Markers:
 
         Returns
         -------
-        kwargs : dict
+        dict
             The argument at the current navigation position.
         """
         current_keys = {}

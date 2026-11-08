@@ -28,7 +28,7 @@ from hyperspy.external.matplotlib.collections import RectangleCollection
 
 
 class Rectangles(Markers):
-    """A Collection of Rectangles Markers"""
+    """A Collection of Rectangles Markers."""
 
     _position_key = "offsets"
 
@@ -51,7 +51,7 @@ class Rectangles(Markers):
         %s
         %s
         %s
-        kwargs:
+        kwargs : dict
             Additional keyword arguments are passed to
             :class:`hyperspy.external.matplotlib.collections.RectangleCollection`.
         """

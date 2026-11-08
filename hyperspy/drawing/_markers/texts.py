@@ -23,7 +23,7 @@ from hyperspy.external.matplotlib.collections import TextCollection
 
 class Texts(Markers):
     """
-    A set of text markers
+    A set of text markers.
     """
 
     _position_key = "offsets"

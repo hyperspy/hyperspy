@@ -357,8 +357,7 @@ def plot_signals(
         If True (default), the signals will share navigation. All the signals
         must have the same navigation shape for this to work, but not
         necessarily the same signal shape.
-    navigator : None, :class:`~.api.signals.BaseSignal` or str
-    {``'auto'`` | ``'spectrum'`` | ``'slider'`` }, default ``"auto"``
+    navigator : None, :class:`~.api.signals.BaseSignal` or str {``'auto'`` | ``'spectrum'`` | ``'slider'`` }, default ``"auto"``
         See signal.plot docstring for full description.
     navigator_list : None, list of :class:`~.api.signals.BaseSignal` or list of str, default None
         Set different navigator options for the signals. Must use valid
@@ -386,7 +385,6 @@ def plot_signals(
     >>> hs.plot.plot_signals(
     ...    [s1, s2, s3], navigator_list=["slider", None, s_nav]
     ...    ) # doctest: +SKIP
-
     """
     if navigator_list:
         if not (len(signal_list) == len(navigator_list)):
@@ -745,7 +743,7 @@ def plot_images(
         The matplotlib axes to use to display the images.
         When using `overlay=True`, `ax` must be a matplotlib axis.
         If None, new matplotlib axes will be created as required.
-    vmin, vmax: scalar, str, None
+    vmin, vmax : scalar, str, None
         If str, formatted as 'xth', use this value to calculate the percentage
         of pixels that are left out of the lower and upper bounds.
         For example, for a vmin of '1th', 1% of the lowest will be ignored to
@@ -765,12 +763,12 @@ def plot_images(
     alphas : float or list of float, optional
         Float value or a list of floats corresponding to the alpha value of
         each color.
-    legend_picking: bool, optional
+    legend_picking : bool, optional
         If True (default), an image can be toggled on and off by clicking on
         the legended line. For ``overlay=True`` only.
     legend_loc : str, int, optional
         This parameter controls where the legend is placed on the figure
-        see the :func:`matplotlib.pyplot.legend` docstring for valid values
+        see the :func:`matplotlib.pyplot.legend` docstring for valid values.
     pixel_size_factor : None, int or float, optional
         If ``None`` (default), the size of the figure is taken from the
         matplotlib ``rcParams``. Otherwise sets the size of the figure when
@@ -782,14 +780,14 @@ def plot_images(
 
     Returns
     -------
-    axes_list : list
+    list
         A list of subplot axes that hold the images.
 
     See Also
     --------
-    plot_spectra : Plotting of multiple spectra
-    plot_signals : Plotting of multiple signals
-    plot_histograms : Compare signal histograms
+    plot_spectra : Plotting of multiple spectra.
+    plot_signals : Plotting of multiple signals.
+    plot_histograms : Compare signal histograms.
 
     References
     ----------
@@ -804,7 +802,6 @@ def plot_images(
     `tight_layout` is known to be quite brittle, so an option is provided
     to disable it. Turn this option off if output is not as expected,
     or try adjusting `label`, `labelwrap`, or `per_row`.
-
     """
 
     def __check_single_colorbar(cbar):
@@ -1637,7 +1634,7 @@ def plot_spectra(
         If a callable is provided, it should be a function that takes a
         HyperSpy signal as input and returns the normalised array.
     yscale : str, default ``'linear'``
-        yscale type as in :meth:`matplotlib.axes.Axes.set_yscale`.
+        Yscale type as in :meth:`matplotlib.axes.Axes.set_yscale`.
         For ``'cascade'`` style only implemented for ``'linear'``
         and ``'log'`` scales.
 
@@ -1664,7 +1661,6 @@ def plot_spectra(
     -------
     :class:`matplotlib.axes.Axes` or list of :class:`matplotlib.axes.Axes`
         An array is returned when `style` is 'mosaic'.
-
     """
 
     def _reverse_legend(ax_, legend_loc_):
@@ -1968,7 +1964,7 @@ def plot_histograms(
     fig : None, matplotlib.figure.Figure, default None
         If None (default), a default figure will be created.
     **kwargs
-        other keyword arguments (weight and density) are described in
+        Other keyword arguments (weight and density) are described in
         :func:`numpy.histogram`.
 
     Examples
@@ -1984,7 +1980,6 @@ def plot_histograms(
     -------
     matplotlib.axes.Axes or list of matplotlib.axes.Axes
         An array is returned when ``style='mosaic'``.
-
     """
     hists = []
     for obj in signal_list:
