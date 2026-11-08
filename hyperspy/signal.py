@@ -160,7 +160,7 @@ def _obj_in_dict2hspy(dic, lazy):
 
 
 class ModelManager(object):
-    """Container for models"""
+    """Container for models."""
 
     class ModelStub(object):
         def __init__(self, mm, name):
@@ -232,21 +232,20 @@ class ModelManager(object):
         setattr(self, name, self.ModelStub(self, name))
 
     def store(self, model, name=None):
-        """If the given model was created from this signal, stores it
+        """If the given model was created from this signal, stores it.
 
         Parameters
         ----------
         model : :class:`~hyperspy.model.BaseModel` (or subclass)
-            The model to store in the signal
+            The model to store in the signal.
         name : str or None
-            The name for the model to be stored with
+            The name for the model to be stored with.
 
         See Also
         --------
         remove
         restore
         pop
-
         """
         if model.signal is self._signal:
             self._save(name, model.as_dictionary())
@@ -270,38 +269,36 @@ class ModelManager(object):
         return name
 
     def remove(self, name):
-        """Removes the given model
+        """Remove the given model.
 
         Parameters
         ----------
         name : str
-            The name of the model to remove
+            The name of the model to remove.
 
         See Also
         --------
         restore
         store
         pop
-
         """
         name = self._check_name(name, True)
         delattr(self, name)
         self._models.__delattr__(name)
 
     def pop(self, name):
-        """Returns the restored model and removes it from storage
+        """Return the restored model and remove it from storage.
 
         Parameters
         ----------
         name : str
-            The name of the model to restore and remove
+            The name of the model to restore and remove.
 
         See Also
         --------
         restore
         store
         remove
-
         """
         name = self._check_name(name, True)
         model = self.restore(name)
@@ -309,19 +306,18 @@ class ModelManager(object):
         return model
 
     def restore(self, name):
-        """Returns the restored model
+        """Return the restored model.
 
         Parameters
         ----------
         name : str
-            The name of the model to restore
+            The name of the model to restore.
 
         See Also
         --------
         remove
         store
         pop
-
         """
         name = self._check_name(name, True)
         d = self._models.get_item(name + "._dict").as_dictionary()

@@ -343,7 +343,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
 
     def spikes_diagnosis(self, signal_mask=None, navigation_mask=None, **kwargs):
         """
-        Plots a histogram to help in choosing the threshold for
+        Plot a histogram to help in choosing the threshold for
         spikes removal.
 
         Parameters
@@ -352,13 +352,12 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         %s
         ``**kwargs`` : dict
             Keyword arguments pass to
-            :meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
+            :meth:`~hyperspy.api.signals.BaseSignal.get_histogram`.
 
         See Also
         --------
         hyperspy.api.signals.Signal1D.spikes_removal_tool,
         hyperspy.api.signals.BaseSignal.remove_spikes
-
         """
         self._spikes_diagnosis(
             signal_mask=signal_mask,
@@ -413,8 +412,8 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        model : `Model1D` instance.
-
+        hyperspy.models.model1d.Model1D
+            The model created from the signal.
         """
         from hyperspy.models.model1d import Model1D
 
@@ -662,8 +661,8 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             accuracy.
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number
-            too big can saturate the memory
-        mask : :class:`~.api.signals.BaseSignal` of bool.
+            too big can saturate the memory.
+        mask : :class:`~.api.signals.BaseSignal` of bool
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -780,7 +779,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             accuracy.
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number
-            too big can saturate the memory
+            too big can saturate the memory.
         interpolation_method : str or int
             Specifies the kind of interpolation as a string ('linear',
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an
@@ -856,6 +855,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
     def calibrate(self, display=True, toolkit=None):
         """
         Calibrate the spectral dimension using a gui.
+
         It displays a window where the new calibration can be set by:
 
         * setting the values of offset, units and scale directly
@@ -906,7 +906,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         window_length : int, optional
             The length of the filter window (i.e. the number of coefficients).
             `window_length` must be a positive odd integer.
-        differential_order: int, optional
+        differential_order : int, optional
             The order of the derivative to compute.  This must be a
             nonnegative integer.  The default is 0, which means to filter
             the data without differentiating.
@@ -968,10 +968,10 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        smoothing_parameter: float or None
+        smoothing_parameter : float or None
             Between 0 and 1. The fraction of the data used
             when estimating each y-value.
-        number_of_iterations: int or None
+        number_of_iterations : int or None
             The number of residual-based reweightings
             to perform.
         %s
@@ -983,7 +983,6 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
-
         """
         self._check_signal_dimension_equals_one()
         if smoothing_parameter is None or number_of_iterations is None:
@@ -1025,7 +1024,7 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        smoothing_parameter: float or None
+        smoothing_parameter : float or None
            Denoising weight relative to L2 minimization. If None the method
            is run in interactive mode.
         %s
@@ -1233,11 +1232,11 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             background removal. This preview is obtained from a Fast calculation
             so the result may be different if a NLLS calculation is finally
             performed.
+        %s
         return_model : bool
             If ``True``, the background model is returned. The chi² can be obtained
             from this model using
             :meth:`~hyperspy.model.BaseModel.chisq`.
-        %s
         %s
         %s
 
@@ -1462,13 +1461,13 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         )
 
     def gaussian_filter(self, FWHM):
-        """Applies a Gaussian filter in the spectral dimension in place.
+        """Apply a Gaussian filter in the spectral dimension in place.
 
         Parameters
         ----------
         FWHM : float
             The Full Width at Half Maximum of the gaussian in the
-            spectral axis units
+            spectral axis units.
 
         Raises
         ------
@@ -1502,10 +1501,13 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
             The number of channels to taper. If None 5% of the total
             number of channels are tapered.
         offset : int
+            Number of channels at the edge(s) of the signal that are set to
+            zero before the taper starts.
 
         Returns
         -------
         int
+            The number of channels tapered.
 
         Raises
         ------
@@ -1687,9 +1689,8 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         Returns
         -------
         float or list of float
-            width or [width, left, right], depending on the value of
+            Width or [width, left, right], depending on the value of
             `return_interval`.
-
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar

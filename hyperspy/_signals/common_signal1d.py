@@ -25,7 +25,7 @@ class CommonSignal1D:
     """Common functions for 1-dimensional signals."""
 
     def to_signal2D(self, optimize=True):
-        """Returns the one dimensional signal as a two dimensional signal.
+        """Return the one dimensional signal as a two dimensional signal.
 
         By default ensures the data is stored optimally, hence often making a
         copy of the data. See `transpose` for a more general method with more
@@ -43,8 +43,6 @@ class CommonSignal1D:
         ------
         DataDimensionError
             When data.ndim < 2
-
-
         """
         if self.data.ndim < 2:
             raise DataDimensionError(

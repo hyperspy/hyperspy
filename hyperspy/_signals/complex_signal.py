@@ -205,7 +205,6 @@ class ComplexSignal(signals.BaseSignal):
         and Munther A. Gdeisat, “Fast two-dimensional phase-unwrapping algorithm based on sorting
         by reliability following a noncontinuous path”, Journal Applied Optics,
         Vol. 41, No. 35, pp. 7437, 2002
-
         """
         import skimage
         from skimage.restoration import unwrap_phase
@@ -255,7 +254,6 @@ class ComplexSignal(signals.BaseSignal):
         %s
         %s
         %s
-
         """
         if norm == "auto":
             norm = "log" if power_spectrum else "linear"
@@ -323,7 +321,6 @@ class ComplexSignal(signals.BaseSignal):
         :class:`~hyperspy.api.signals.BaseSignal`
             The counterclockwise angle from the positive real axis on the complex plane,
             with dtype as numpy.float64.
-
         """
         angle = self._deepcopy_with_new_data(np.angle(self.data, deg))
         angle.set_signal_type("")
@@ -346,7 +343,7 @@ class ComplexSignal(signals.BaseSignal):
         Returns
         -------
         :class:`~hyperspy.api.signals.Signal2D`
-            The Argand diagram
+            The Argand diagram.
 
         Examples
         --------
@@ -355,7 +352,6 @@ class ComplexSignal(signals.BaseSignal):
         >>> ref = holo.data.Fe_needle_reference_hologram() # doctest: +SKIP
         >>> w = hologram.reconstruct_phase(ref) # doctest: +SKIP
         >>> w.argand_diagram(range=[-3, 3]).plot() # doctest: +SKIP
-
         """
         if self._lazy:
             raise NotImplementedError(
