@@ -2665,8 +2665,8 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         Returns
         -------
-        res : :class:`~hyperspy.api.signals.LazySignal`
-            The same signal, converted to be lazy
+        hyperspy.api.signals.LazySignal
+            The same signal, converted to be lazy.
         """
 
         res = self._deepcopy_with_new_data(
@@ -3525,7 +3525,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
-        """Crops the data in a given axis. The range is given in pixels.
+        """Crop the data in a given axis. The range is given in pixels.
 
         Parameters
         ----------
@@ -3878,7 +3878,6 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         >>> s4 = s.rebin(scale=(5, 2, 1))
         >>> print(s4.data.dtype) # doctest: +SKIP
         uint32
-
         """
         # TODO: Adapt so that it works if a non_uniform_axis exists, but is not
         # changed; for new_shape, a non_uniform_axis should be interpolated to a
@@ -6639,7 +6638,6 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         >>> s.set_signal_type()
         >>> s
         <Signal1D, title: , dimensions: (|4)>
-
         """
         if signal_type is None:
             raise TypeError("The `signal_type` argument must be of string type.")
