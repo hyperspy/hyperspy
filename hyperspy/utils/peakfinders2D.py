@@ -123,7 +123,6 @@ def clean_peaks(peaks):
         (x-coordinate), of found peaks.
     NO_PEAKS : str
         Flag indicating no peaks found.
-
     """
     if len(peaks) == 0:
         return NO_PEAKS
@@ -150,7 +149,6 @@ def find_local_max(z, **kwargs):
     -------
     :class:`numpy.ndarray`
         Peak pixel coordinates with shape (n_peaks, 2).
-
     """
     peaks = peak_local_max(z, **kwargs)
     return clean_peaks(peaks)
@@ -171,9 +169,8 @@ def find_peaks_minmax(z, distance=5.0, threshold=10.0):
 
     Returns
     -------
-    peaks : :class:`numpy.ndarray`
+    :class:`numpy.ndarray`
         Peak pixel coordinates with shape (n_peaks, 2).
-
     """
     data_max = ndi.maximum_filter(z, distance)
     maxima = z == data_max
@@ -201,9 +198,8 @@ def find_peaks_max(z, alpha=3.0, distance=10):
 
     Returns
     -------
-    peaks : :class:`numpy.ndarray`
+    :class:`numpy.ndarray`
         Peak pixel coordinates with shape (n_peaks, 2).
-
     """
     # preallocate lots of peak storage
     k_arr = []
@@ -252,7 +248,7 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40, distance_cutoff=
 
     Returns
     -------
-    peaks : :class:`numpy.ndarray`
+    :class:`numpy.ndarray`
         Peak pixel coordinates with shape (n_peaks, 2).
 
     Notes
@@ -353,7 +349,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
 
     Returns
     -------
-    peaks : :class:`numpy.ndarray`
+    :class:`numpy.ndarray`
         Peak pixel coordinates with with shape (n_peaks, 2).
 
     Notes
@@ -495,21 +491,20 @@ def find_peaks_dog(
     Parameters
     ----------
     z : :class:`numpy.ndarray`
-        2-d array of intensities
+        2-d array of intensities.
     min_sigma, max_sigma, sigma_ratio, threshold, overlap, exclude_border :
         Additional parameters to be passed to the
-        :func:`skimage.feature.blob_dog` function
+        :func:`skimage.feature.blob_dog` function.
 
     Returns
     -------
-    peaks : :class:`numpy.ndarray`
+    :class:`numpy.ndarray`
         Peak pixel coordinates with shape (n_peaks, 2).
 
     Notes
     -----
     While highly effective at finding even very faint peaks, this method is
         sensitive to fluctuations in intensity near the edges of the image.
-
     """
     z = z / np.max(z)
     blobs = blob_dog(
@@ -563,9 +558,8 @@ def find_peaks_log(
 
     Returns
     -------
-    peaks : :class:`numpy.ndarray`
+    :class:`numpy.ndarray`
         Peak pixel coordinates with shape (n_peaks, 2).
-
     """
     z = z / np.max(z)
     if isinstance(num_sigma, float):
@@ -612,7 +606,7 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
 
     Returns
     -------
-    peaks : :class:`numpy.ndarray`
+    :class:`numpy.ndarray`
         Array of peak coordinates with shape (n_peaks, 2).
     """
     pad_input = kwargs.pop("pad_input", True)

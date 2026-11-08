@@ -38,7 +38,7 @@ import importlib
 
 
 def print_known_signal_types(style=None):
-    r"""Print all known `signal_type`\s
+    r"""Print all known `signal_type`\s.
 
     This includes `signal_type`\s from all installed packages that
     extend HyperSpy.
@@ -61,7 +61,6 @@ def print_known_signal_types(style=None):
     |      hologram      |                     |   HologramImage    | holospy  |
     |      MySignal      |                     |      MySignal      | hspy_ext |
     +--------------------+---------------------+--------------------+----------+
-
     """
     from prettytable import PrettyTable
 
