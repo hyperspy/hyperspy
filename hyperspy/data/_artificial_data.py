@@ -90,13 +90,13 @@ def atomic_resolution_image(
     Returns
     -------
     :class:`~.api.signals.Signal2D`
+        The atomic resolution image.
 
     Examples
     --------
     >>> import hyperspy.api as hs
     >>> s = hs.data.atomic_resolution_image()
     >>> s.plot()
-
     """
     if isinstance(size, int):
         size = (size,) * 2
@@ -172,7 +172,7 @@ def luminescence_signal(
         The navigation dimension(s) of the signal. 0 = single spectrum,
         1 = linescan, 2 = spectral map etc...
     uniform : bool
-        return uniform (wavelength) or non-uniform (energy) spectrum
+        Return uniform (wavelength) or non-uniform (energy) spectrum.
     add_baseline : bool
         If true, adds a constant baseline to the spectrum. Conversion to
         energy representation will turn the constant baseline into inverse
@@ -210,6 +210,7 @@ def luminescence_signal(
     Returns
     -------
     :class:`~.api.signals.Signal1D`
+        The luminescence signal.
     """
 
     # Initialisation of random number generator
@@ -289,14 +290,14 @@ def wave_image(
     angle=45, wavelength=10, shape=(256, 256), add_noise=True, random_state=None
 ):
     """
-    Returns a wave image generated using the sinus function.
+    Return a wave image generated using the sinus function.
 
     Parameters
     ----------
     angle : float, optional
         The angle in degree.
     wavelength : float, optional
-        The wavelength the wave in pixel. The default is 10
+        The wavelength the wave in pixel. The default is 10.
     shape : tuple of float, optional
         The shape of the data. The default is (256, 256).
     %s
@@ -304,6 +305,7 @@ def wave_image(
     Returns
     -------
     :class:`~.api.signals.Signal2D`
+        The wave image.
     """
 
     x = np.arange(0, shape[0], 1)

@@ -25,7 +25,7 @@ import hyperspy.api as hs
 def two_gaussians(add_noise=True, return_model=False):
     """
     Create synthetic data consisting of two Gaussian functions with
-    random centers and area
+    random centers and area.
 
     Parameters
     ----------
