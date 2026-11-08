@@ -90,8 +90,8 @@ class SamfirePool(ParallelPool):
     """
 
     def __init__(self, **kwargs):
-        """Creates a ParallelPool with additional methods for SAMFire. All
-        arguments are passed to ParallelPool"""
+        """Create a ParallelPool with additional methods for SAMFire. All
+        arguments are passed to ParallelPool."""
         super().__init__(**kwargs)
         self.samf = None
         self.ping = {}
@@ -181,7 +181,7 @@ class SamfirePool(ParallelPool):
                 )
 
     def update_parameters(self):
-        """Updates various worker parameters.
+        """Update various worker parameters.
 
         Currently updates:
             - Optional components (that can be switched off by the worker)
@@ -223,9 +223,9 @@ class SamfirePool(ParallelPool):
 
         Parameters
         ----------
-        timeout: {None, flaot}
-            the time to wait when collecting results after sending out the
-            ping. If None, the default timeout is used
+        timeout : {None, flaot}
+            The time to wait when collecting results after sending out the
+            ping. If None, the default timeout is used.
         """
         if self.samf is None:
             _logger.error("Have to add samfire to the pool first")
@@ -256,11 +256,11 @@ class SamfirePool(ParallelPool):
             return self.shared_queue.qsize()
 
     def add_jobs(self, needed_number=None):
-        """Adds jobs to the job queue that is consumed by the workers.
+        """Add jobs to the job queue that is consumed by the workers.
 
         Parameters
         ----------
-        needed_number: {None, int}
+        needed_number : {None, int}
             The number of jobs to add. If None (default), adds `need_pixels`
         """
 
@@ -285,11 +285,12 @@ class SamfirePool(ParallelPool):
 
         Parameters
         ----------
-        value: tuple of the form (keyword, the_rest)
-            Keyword currently can be one of ['pong', 'Error', 'result']. For
-            each of the keywords, "the_rest" is a tuple of different elements,
-            but generally the first one is always the worker_id that the result
-            came from. In particular:
+        value : tuple
+            Tuple of the form (keyword, the_rest). Keyword currently can be
+            one of ['pong', 'Error', 'result']. For each of the keywords,
+            "the_rest" is a tuple of different elements, but generally the
+            first one is always the worker_id that the result came from.
+            In particular:
 
             * ('pong', (worker_id, pid, pong_time, optional_message_str))
             * ('Error', (worker_id, error_message_string))
@@ -330,15 +331,14 @@ class SamfirePool(ParallelPool):
             )
 
     def collect_results(self, timeout=None):
-        """Collects and parses all results, currently not processed due to
+        """Collect and parses all results, currently not processed due to
         being in the queue.
 
         Parameters
         ----------
-        timeout: {None, flaot}
-            the time to wait when collecting results. If None, the default
-            timeout is used
-
+        timeout : {None, flaot}
+            The time to wait when collecting results. If None, the default
+            timeout is used.
         """
         if timeout is None:
             timeout = self.timeout
@@ -417,7 +417,7 @@ class SamfirePool(ParallelPool):
                 self._last_time = time.time()
 
     def stop(self):
-        """Stops the appropriate pool and (if ipyparallel) clears the memory
+        """Stop the appropriate pool and (if ipyparallel) clears the memory
         and history.
         """
         if self.is_multiprocessing:

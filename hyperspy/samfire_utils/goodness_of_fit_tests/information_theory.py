@@ -36,7 +36,7 @@ notexp = np.vectorize(notexp_o)
 
 
 class AIC_test:
-    """Akaike information criterion test"""
+    """Akaike information criterion test."""
 
     def __init__(self, tolerance):
         self.name = "Akaike information criterion test"
@@ -59,7 +59,7 @@ class AIC_test:
 
 
 class AICc_test:
-    """Akaike information criterion (with a correction) test"""
+    """Akaike information criterion (with a correction) test."""
 
     def __init__(self, tolerance):
         self.name = "Akaike information criterion (with a correction) test"
@@ -82,7 +82,7 @@ class AICc_test:
 
 
 class BIC_test:
-    """Bayesian information criterion test"""
+    """Bayesian information criterion test."""
 
     def __init__(self, tolerance):
         self.name = "Bayesian information criterion test"

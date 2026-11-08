@@ -96,14 +96,14 @@ class SamfireStrategy:
     name = ""
 
     def update(self, ind, isgood):
-        """Updates the database and marker with the given pixel results
+        """Update the database and marker with the given pixel results.
 
         Parameters
         ----------
         ind : tuple
-            the index with new results
+            The index with new results.
         isgood : bool
-            if the fit was successful.
+            If the fit was successful.
         """
         count = self.samf.count
         if isgood:
@@ -114,7 +114,7 @@ class SamfireStrategy:
         return self.name
 
     def remove(self):
-        """Removes this strategy from its SAMFire"""
+        """Remove this strategy from its SAMFire."""
         self.samf.strategies.remove(self)
 
 
@@ -162,14 +162,14 @@ class LocalStrategy(SamfireStrategy):
             value.model = self.samf.model
 
     def clean(self):
-        """Purges the currently saved values."""
+        """Purge the currently saved values."""
         self._untruncated = None
         self._mask_all = None
         self._radii_changed = True
 
     @property
     def radii(self):
-        """A tuple of >=0 floats that show the "radii of relevance" """
+        """A tuple of >=0 floats that show the "radii of relevance"."""
         return self._radii
 
     @radii.setter
@@ -187,7 +187,7 @@ class LocalStrategy(SamfireStrategy):
         pass
 
     def refresh(self, overwrite, given_pixels=None):
-        """Refreshes the marker - recalculates with the current values from
+        """Refresh the marker - recalculates with the current values from
         scratch.
 
         Parameters
@@ -338,22 +338,21 @@ class LocalStrategy(SamfireStrategy):
         marker[ind] = -scale
 
     def values(self, ind):
-        """Returns the current starting value estimates for the given pixel.
+        """Return the current starting value estimates for the given pixel.
         Calculated as the weighted local average. Only returns components that
         are active, and parameters that are free.
 
         Parameters
         ----------
         ind : tuple
-            the index of the pixel of interest.
+            The index of the pixel of interest.
 
         Returns
         -------
-        values : dict
+        dict
             A dictionary of estimates, structured as
             {component_name: {parameter_name: value, ...}, ...}
             for active components and free parameters.
-
         """
         marker = self.samf.metadata.marker
         shape = marker.shape
@@ -387,12 +386,12 @@ class LocalStrategy(SamfireStrategy):
         return ans
 
     def plot(self, fig=None):
-        """Plots the current marker in a flat image
+        """Plot the current marker in a flat image.
 
         Parameters
         ----------
         fig : :class:`hyperspy.api.signals.Signal2D` or numpy.ndarray
-            if an already plotted image, then updates. Otherwise creates a new
+            If an already plotted image, then updates. Otherwise creates a new
             one.
 
         Returns
@@ -431,14 +430,14 @@ class GlobalStrategy(SamfireStrategy):
     _saved_values = None
 
     def clean(self):
-        """Purges the currently saved values (not the database)."""
+        """Purge the currently saved values (not the database)."""
         self._saved_values = None
 
     def __init__(self, name):
         self.name = name
 
     def refresh(self, overwrite, given_pixels=None):
-        """Refreshes the database (i.e. constructs it again from scratch)"""
+        """Refresh the database (i.e. constructs it again from scratch)."""
         scale = self.samf._scale
         mark = self.samf.metadata.marker
         mark = np.where(np.isnan(mark), np.inf, mark)
@@ -490,15 +489,15 @@ class GlobalStrategy(SamfireStrategy):
             self.segmenter.update(self._package_values())
 
     def values(self, ind=None):
-        """Returns the saved most frequent values that should be used for
-        prediction
+        """Return the saved most frequent values that should be used for
+        prediction.
         """
         if self._saved_values is None:
             self._saved_values = self.segmenter.most_frequent()
         return self._saved_values
 
     def plot(self, fig=None):
-        """Plots the current database of histograms
+        """Plot the current database of histograms.
 
         Parameters
         ----------
