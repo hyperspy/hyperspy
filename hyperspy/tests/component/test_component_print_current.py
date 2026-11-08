@@ -68,7 +68,7 @@ class TestSetParameters:
     def test_component_current_component_values_only_free(
         self, only_free=True, only_active=False
     ):
-        """ "Parameters with free=False values should not be present in repr"""
+        """Parameters with free=False values should not be present in repr"""
         string_representation = str(
             CurrentComponentValues(
                 self.component_not_free, only_free, only_active

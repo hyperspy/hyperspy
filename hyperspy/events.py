@@ -29,7 +29,6 @@ class Events:
     Events container.
 
     All available events are attributes of this class.
-
     """
 
     def __init__(self):
@@ -144,12 +143,13 @@ class Events:
 
 class Event:
     """
-    Events class
-
+    Events class.
     """
 
     def __init__(self, doc="", arguments=None):
         """
+        Create an event.
+
         Parameters
         ----------
         doc : str
@@ -173,7 +173,6 @@ class Event:
         Traceback (most recent call last):
             ...
         TypeError: trigger() got an unexpected keyword argument 'arg3'
-
         """
         self.__doc__ = doc
         self._arguments = tuple(arguments) if arguments else None
@@ -310,7 +309,7 @@ class Event:
 
     def connect(self, function, kwargs="all"):
         """
-        Connects a function to the event.
+        Connect a function to the event.
 
         Parameters
         ----------
@@ -328,7 +327,6 @@ class Event:
         See Also
         --------
         disconnect
-
         """
         if not callable(function):
             raise TypeError("Only callables can be registered")
@@ -367,7 +365,7 @@ class Event:
 
     def disconnect(self, function):
         """
-        Disconnects a function from the event. The passed function will be
+        Disconnect a function from the event. The passed function will be
         disconnected irregardless of which 'nargs' argument was passed to
         connect().
 
@@ -377,8 +375,9 @@ class Event:
 
         Parameters
         ----------
-        function: function
-        return_connection_kwargs: bool, default False
+        function : callable
+            The function to disconnect from the event.
+        return_connection_kwargs : bool, default False
             If True, returns the kwargs that would reconnect the function as
             it was.
 
@@ -400,7 +399,7 @@ class Event:
 
     def trigger(self, **kwargs):
         """
-        Triggers the event. If the event is suppressed, this does nothing.
+        Trigger the event. If the event is suppressed, this does nothing.
         Otherwise it calls all the connected functions with the arguments as
         specified when connected.
 
@@ -452,7 +451,7 @@ class Event:
 
 class EventSuppressor(object):
     """
-    Object to enforce a variety of suppression types simultaneously
+    Object to enforce a variety of suppression types simultaneously.
 
     Targets to be suppressed can be added by the function `add()`, or given
     in the constructor. Valid targets are:
@@ -513,7 +512,7 @@ class EventSuppressor(object):
 
     def add(self, *to_suppress):
         """
-        Add one or more targets to be suppressed
+        Add one or more targets to be suppressed.
 
         Valid targets are:
          - `Event`: The entire Event will be suppressed

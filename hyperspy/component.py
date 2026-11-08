@@ -769,9 +769,9 @@ class Component(t.HasTraits):
     def __init__(
         self, parameter_name_list, linear_parameter_list=None, *args, **kwargs
     ):
-        """
-        %s
+        """Initialise the component.
 
+        %s
         """
         super().__init__(*args, **kwargs)
         self.events = Events()
@@ -939,7 +939,6 @@ class Component(t.HasTraits):
         Initialise the parameters of the component.
 
         %s
-
         """
         if linear_parameter_list is None:
             linear_parameter_list = []
@@ -1002,10 +1001,9 @@ class Component(t.HasTraits):
         Parameters
         ----------
         p : array
-            array containing new values for the parameters in a component
+            Array containing new values for the parameters in a component.
         p_std : array, optional
-            array containing the corresponding standard deviation.
-
+            Array containing the corresponding standard deviation.
         """
         if onlyfree is True:
             parameters = self.free_parameters
@@ -1066,14 +1064,13 @@ class Component(t.HasTraits):
             parameter.fetch()
 
     def plot(self, only_free=True):
-        """Plot the value of the parameters of the model
+        """Plot the value of the parameters of the model.
 
         Parameters
         ----------
         only_free : bool
             If True, only the value of the parameters that are free will
              be plotted
-
         """
         if only_free:
             parameters = self.free_parameters
@@ -1085,7 +1082,7 @@ class Component(t.HasTraits):
             parameter.plot()
 
     def export(self, folder=None, format="hspy", save_std=False, only_free=True):
-        """Plot the value of the parameters of the model
+        """Plot the value of the parameters of the model.
 
         Parameters
         ----------
@@ -1105,7 +1102,6 @@ class Component(t.HasTraits):
         The name of the files will be determined by each the Component
         and each Parameter name attributes. Therefore, it is possible to
         customise the file names modify the name attributes.
-
         """
         if only_free:
             parameters = self.free_parameters
@@ -1161,7 +1157,7 @@ class Component(t.HasTraits):
         self, parameter_name_list=None, only_linear=False, only_nonlinear=False
     ):
         """
-        Sets parameters in a component to free.
+        Set parameters in a component to free.
 
         Parameters
         ----------
@@ -1170,9 +1166,9 @@ class Component(t.HasTraits):
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to free.
         only_linear : bool
-            If True, only sets a parameter free if it is linear
+            If True, only sets a parameter free if it is linear.
         only_nonlinear : bool
-            If True, only sets a parameter free if it is nonlinear
+            If True, only sets a parameter free if it is nonlinear.
 
         Examples
         --------
@@ -1214,7 +1210,7 @@ class Component(t.HasTraits):
         self, parameter_name_list=None, only_linear=False, only_nonlinear=False
     ):
         """
-        Sets parameters in a component to not free.
+        Set parameters in a component to not free.
 
         Parameters
         ----------
@@ -1223,9 +1219,9 @@ class Component(t.HasTraits):
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
         only_linear : bool
-            If True, only sets a parameter not free if it is linear
+            If True, only sets a parameter not free if it is linear.
         only_nonlinear : bool
-            If True, only sets a parameter not free if it is nonlinear
+            If True, only sets a parameter not free if it is nonlinear.
 
         Examples
         --------
@@ -1233,7 +1229,6 @@ class Component(t.HasTraits):
         >>> v1.set_parameters_not_free()
         >>> v1.set_parameters_not_free(parameter_name_list=['area','centre'])
         >>> v1.set_parameters_not_free(only_linear=True)
-
 
         See Also
         --------
@@ -1271,7 +1266,7 @@ class Component(t.HasTraits):
 
     def as_dictionary(self, fullcopy=True):
         """
-        Returns component as a dictionary. For more information on method
+        Return component as a dictionary. For more information on method
         and conventions, see
         :meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
 
@@ -1279,11 +1274,11 @@ class Component(t.HasTraits):
         ----------
         fullcopy : bool, optional False
             Copies of objects are stored, not references. If any found,
-            functions will be pickled and signals converted to dictionaries
+            functions will be pickled and signals converted to dictionaries.
 
         Returns
         -------
-        dic : dict
+        dict
             A dictionary, containing at least the following fields:
 
             * parameters: a list of dictionaries of the parameters, one per
@@ -1291,7 +1286,6 @@ class Component(t.HasTraits):
             * _whitelist: a dictionary with keys used as references saved
               attributes, for more information, see :func:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
             * any field from _whitelist.keys().
-
         """
         dic = {"parameters": [p.as_dictionary(fullcopy) for p in self.parameters]}
         dic.update(utils.get_object_package_info(self))
@@ -1365,7 +1359,7 @@ class Component(t.HasTraits):
 
     def print_current_values(self, only_free=False):
         """
-        Prints the current values of the component's parameters.
+        Print the current values of the component's parameters.
 
         Parameters
         ----------

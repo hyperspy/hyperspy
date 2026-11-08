@@ -1107,6 +1107,7 @@ def stack(
     Returns
     -------
     :class:`~.api.signals.BaseSignal`
+        The stacked signal.
 
     Examples
     --------
@@ -1119,7 +1120,6 @@ def stack(
     >>> s.data
     array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
-
     """
     from numbers import Number
 
@@ -1298,7 +1298,7 @@ def shorten_name(name, req_l):
 
 
 def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
-    """Transposes all passed signals according to the specified options.
+    """Transpose all passed signals according to the specified options.
 
     For parameters see ``BaseSignal.transpose``.
 
@@ -1316,7 +1316,6 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     [<Signal1D, title: , dimensions: (|2)>,
     <Signal1D, title: , dimensions: (2|2)>,
     <Signal1D, title: , dimensions: (2, 2|2)>]
-
     """
     if not all(map(isinstance, args, (signals.BaseSignal for _ in args))):
         raise ValueError("Not all pased objects are signals")

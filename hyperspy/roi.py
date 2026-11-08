@@ -340,6 +340,7 @@ def _get_mpl_ax(plot, axes):
 
 class BaseInteractiveROI(BaseROI):
     """Base class for interactive ROIs, i.e. ROIs with widget interaction.
+
     The base class defines a lot of the common code for interacting with
     widgets, but inheritors need to implement the following functions:
 
@@ -423,7 +424,7 @@ class BaseInteractiveROI(BaseROI):
         snap=True,
         **kwargs,
     ):
-        """Creates an interactively sliced Signal (sliced by this ROI) via
+        """Create an interactively sliced Signal (sliced by this ROI) via
         :func:`~hyperspy.api.interactive`.
 
         Parameters
@@ -455,7 +456,6 @@ class BaseInteractiveROI(BaseROI):
         :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             Signal updated with the current ROI selection
             when the ROI is changed.
-
         """
         if hasattr(signal, "_plot_kwargs"):
             kwargs.update({"_plot_kwargs": signal._plot_kwargs})
@@ -617,7 +617,9 @@ class BaseInteractiveROI(BaseROI):
 
     def remove_widget(self, signal=None, render_figure=True):
         """
-        Removing a widget from a signal consists of two tasks:
+        Remove a widget from a signal.
+
+        This consists of two tasks:
 
         1. Disconnect the interactive operations associated with this ROI
            and the specified signal ``signal``.
@@ -631,7 +633,6 @@ class BaseInteractiveROI(BaseROI):
         render_figure : bool, default True
             If False, the figure will not be rendered after removing the widget
             in order to save redraw events.
-
         """
         if signal is None:
             signal = list(self.signal_map.keys())
@@ -688,7 +689,6 @@ class Point1DROI(BasePointROI):
 
     ``Point1DROI`` can be used in place of a tuple containing the value of ``value``.
 
-
     Examples
     --------
 
@@ -696,7 +696,6 @@ class Point1DROI(BasePointROI):
     >>> value, = roi
     >>> print(value)
     0.5
-
     """
 
     value = t.CFloat(t.Undefined)
@@ -715,8 +714,7 @@ class Point1DROI(BasePointROI):
 
     @property
     def parameters(self):
-        """dict : ROI parameters
-        Dictionary containing the parameters that define the current ROI.
+        """Dictionary containing the parameters that define the current ROI.
 
         For a ``Point1DROI``, the dictionary contains:
 
@@ -767,7 +765,6 @@ class Point2DROI(BasePointROI):
     ``Point2DROI`` can be used in place of a tuple containing the coordinates
     of the point (x, y).
 
-
     Examples
     --------
 
@@ -775,7 +772,6 @@ class Point2DROI(BasePointROI):
     >>> x, y = roi
     >>> print(x, y)
     3.0 5.0
-
     """
 
     x, y = (t.CFloat(t.Undefined),) * 2
@@ -796,8 +792,7 @@ class Point2DROI(BasePointROI):
 
     @property
     def parameters(self):
-        """dict : ROI parameters
-        Dictionary containing the parameters that define the current ROI.
+        """Dictionary containing the parameters that define the current ROI.
 
         For a ``Point2DROI``, the dictionary contains:
 
@@ -856,7 +851,6 @@ class SpanROI(BaseInteractiveROI):
     >>> left, right = roi
     >>> print(left, right)
     -3.0 5.0
-
     """
 
     left, right = (t.CFloat(t.Undefined),) * 2
@@ -880,8 +874,7 @@ class SpanROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
-        """dict : ROI parameters
-        Dictionary containing the parameters that define the current ROI.
+        """Dictionary containing the parameters that define the current ROI.
 
         For a ``SpanROI``, the dictionary contains:
 
@@ -1000,8 +993,7 @@ class RectangularROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
-        """dict : ROI parameters
-        Dictionary containing the parameters that define the current ROI.
+        """Dictionary containing the parameters that define the current ROI.
 
         For a ``RectangularROI``, the dictionary contains:
 
@@ -1051,7 +1043,7 @@ class RectangularROI(BaseInteractiveROI):
 
     @property
     def width(self):
-        """Returns / sets the width of the ROI"""
+        """Returns / sets the width of the ROI."""
         return self.right - self.left
 
     @width.setter
@@ -1062,7 +1054,7 @@ class RectangularROI(BaseInteractiveROI):
 
     @property
     def height(self):
-        """Returns / sets the height of the ROI"""
+        """Returns / sets the height of the ROI."""
         return self.bottom - self.top
 
     @height.setter
@@ -1074,7 +1066,7 @@ class RectangularROI(BaseInteractiveROI):
     @property
     def x(self):
         """Returns / sets the x coordinate of the ROI without changing its
-        width"""
+        width."""
         return self.left
 
     @x.setter
@@ -1095,7 +1087,7 @@ class RectangularROI(BaseInteractiveROI):
     @property
     def y(self):
         """Returns / sets the y coordinate of the ROI without changing its
-        height"""
+        height."""
         return self.top
 
     @y.setter
@@ -1203,8 +1195,7 @@ class CircleROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
-        """dict : ROI parameters
-        Dictionary containing the parameters that define the current CircleROI.
+        """Dictionary containing the parameters that define the current CircleROI.
 
         For a ``CircleROI``, the dictionary contains:
 
@@ -1382,8 +1373,7 @@ class Line2DROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
-        """dict : ROI parameters
-        Dictionary containing the parameters that define the current Line2DROI.
+        """Dictionary containing the parameters that define the current Line2DROI.
 
         For a ``Line2DROI``, the dictionary contains:
 
@@ -1508,7 +1498,7 @@ class Line2DROI(BaseInteractiveROI):
         return np.hypot(d_row, d_col)
 
     def angle(self, axis="horizontal", units="degrees"):
-        """ "Angle between ROI line and selected axis
+        """Angle between ROI line and selected axis.
 
         Parameters
         ----------
@@ -1522,7 +1512,8 @@ class Line2DROI(BaseInteractiveROI):
 
         Returns
         -------
-        angle : float
+        float
+            The angle between the ROI line and the selected axis.
 
         Examples
         --------
@@ -1569,7 +1560,7 @@ class Line2DROI(BaseInteractiveROI):
         dst : tuple of float, tuple of int
             The end point of the scan line. Length of tuple is 2.
         linewidth : int, optional
-            Width of the scan, perpendicular to the line
+            Width of the scan, perpendicular to the line.
         order : {0, 1, 2, 3, 4, 5}, optional
             The order of the spline interpolation to compute image values at
             non-integer coordinates. 0 means nearest-neighbor interpolation.
@@ -1589,7 +1580,6 @@ class Line2DROI(BaseInteractiveROI):
         -----
         The destination point is included in the profile, in contrast to
         standard numpy indexing. Requires uniform navigation axes.
-
         """
         for axis in axes:
             if not axis.is_uniform:
@@ -1727,6 +1717,8 @@ class PolygonROI(BaseInteractiveROI):
 
     def __init__(self, vertices=None):
         """
+        Initialize the polygon ROI.
+
         Parameters
         ----------
         vertices : list of tuple
@@ -1738,8 +1730,7 @@ class PolygonROI(BaseInteractiveROI):
 
     @property
     def parameters(self):
-        """dict : ROI parameters
-        Dictionary containing the parameters that define the current ROI.
+        """Dictionary containing the parameters that define the current ROI.
 
         For a ``PolygonROI``, the dictionary contains:
 
@@ -2191,7 +2182,7 @@ def combine_rois(signal, rois, inverted=False, out=None, axes=None):
     rois : list of :class:`~.api.roi.PolygonROI`
         List containing the ROIs to be sliced, making it possible
         to combine several ROI shapes.
-    inverted : boolean, default = False
+    inverted : bool, default = False
         If ``True``, everything outside of the ROIs supplied will be
         retained, with the insides of the ROIs becoming numpy.nan.
     out : :class:`~.api.signals.BaseSignal`, default = None
@@ -2266,8 +2257,8 @@ def mask_from_rois(
 
     Returns
     -------
-    return_value : numpy.ndarray
-        boolean numpy array of the rasterized ROIs. Depending on the limits set for
+    numpy.ndarray
+        Boolean numpy array of the rasterized ROIs. Depending on the limits set for
         the rasterization, parts of the ROIs may be outside of this.
     """
 

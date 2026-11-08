@@ -74,7 +74,6 @@ class Interactive:
         Arguments to be passed to ``f``.
     **kwargs : dict
         Keyword arguments to be passed to ``f``.
-
     """
 
     def __init__(self, f, event="auto", recompute_out_event="auto", *args, **kwargs):
@@ -172,13 +171,11 @@ class Interactive:
 
 def interactive(f, event="auto", recompute_out_event="auto", *args, **kwargs):
     """%s
-
     Returns
     -------
     :class:`~hyperspy.signal.BaseSignal` or subclass
         Signal updated with the operation result when a given event is
         triggered.
-
     """
     cls = Interactive(f, event, recompute_out_event, *args, **kwargs)
     return cls.out
