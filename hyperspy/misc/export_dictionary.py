@@ -49,13 +49,13 @@ def parse_flag_string(flags):
 
 def export_to_dictionary(target, whitelist, dic, fullcopy=True):
     """
-    Exports attributes of target from whitelist.keys() to dictionary dic
+    Export attributes of target from whitelist.keys() to dictionary dic
     All values are references only by default.
 
     Parameters
     ----------
     target : object
-        must contain the (nested) attributes of the whitelist.keys()
+        Must contain the (nested) attributes of the whitelist.keys().
     whitelist : dict
         A dictionary, keys of which are used as attributes for exporting.
         Key 'self' is only available with tag 'id', when the id of the
@@ -80,11 +80,10 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
           dictionary if fullcopy=True
 
     dict
-        A dictionary where the object will be exported
+        A dictionary where the object will be exported.
     bool
         Copies of objects are stored, not references. If any found,
-        functions will be pickled and signals converted to dictionaries
-
+        functions will be pickled and signals converted to dictionaries.
     """
     whitelist_flags = {}
     for key, value in whitelist.items():

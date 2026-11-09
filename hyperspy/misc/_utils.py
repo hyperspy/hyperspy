@@ -246,7 +246,6 @@ class DictionaryTreeBrowser:
     >>> "Leaf3" in tree.Branch
     False
     >>>
-
     """
 
     def __init__(self, dictionary=None, double_lines=False, lazy=True):
@@ -295,16 +294,15 @@ class DictionaryTreeBrowser:
 
     def export(self, filename, encoding="utf8"):
         """
-        Export the dictionary to a text file
+        Export the dictionary to a text file.
 
         Parameters
         ----------
         filename : str
             The name of the file without the extension that is
-            txt by default
+            txt by default.
         encoding : str
             The encoding to be used.
-
         """
         self.process_lazy_attributes()
         with open(filename, "wt", encoding=encoding) as f:
@@ -514,11 +512,11 @@ class DictionaryTreeBrowser:
         return len([key for key in d.keys() if not key.startswith("_")])
 
     def keys(self):
-        """Returns a list of non-private keys."""
+        """Return a list of non-private keys."""
         return sorted([key for key in self.__dict__.keys() if not key.startswith("_")])
 
     def as_dictionary(self):
-        """Returns its dictionary representation."""
+        """Return its dictionary representation."""
 
         if len(self._lazy_attributes) > 0:
             return copy.deepcopy(self._lazy_attributes)
@@ -615,6 +613,8 @@ class DictionaryTreeBrowser:
         item_path : str
             A string describing the path with each item separated by
             full stops (periods).
+        default :
+            The value to return for path if the item does not exist (default is ``None``).
         full_path : bool, default True
             If True, the full path to the item has to be given. If
             False, a search for the item key is performed (can include
@@ -628,8 +628,6 @@ class DictionaryTreeBrowser:
             value is returned. If True, the full path to the item is returned,
             a list of paths for multiple matches, or default value if it does
             not exist.
-        default :
-            The value to return for path if the item does not exist (default is ``None``).
 
         Examples
         --------
@@ -646,7 +644,6 @@ class DictionaryTreeBrowser:
         True
         >>> dict_browser.has_item('be', full_path=False, return_path=True)
         'To.be'
-
         """
         if full_path:
             if isinstance(item_path, str):
@@ -691,7 +688,9 @@ class DictionaryTreeBrowser:
         ----------
         item_path : str
             A string describing the path with each item separated by
-            full stops (periods)
+            full stops (periods).
+        default : None or object, default None
+            The value to return if the path or item does not exist.
         full_path : bool, default True
             If True, the full path to the item has to be given. If
             False, a search for the item key is performed (can include
@@ -703,8 +702,6 @@ class DictionaryTreeBrowser:
         return_path : bool
             Only applies if ``full_path=False``. Default False. If True,
             returns an additional list of paths to the item(s) that match ``key``.
-        default : None or object, default None
-            The value to return if the path or item does not exist.
 
         Examples
         --------
@@ -718,7 +715,6 @@ class DictionaryTreeBrowser:
         'default_value'
         >>> dict_browser.get_item('be', full_path=False)
         True
-
         """
         if full_path:
             if isinstance(item_path, str):
@@ -756,23 +752,23 @@ class DictionaryTreeBrowser:
         return self.has_item(item_path=item)
 
     def copy(self):
-        """Returns a shallow copy using :func:`copy.copy`."""
+        """Return a shallow copy using :func:`copy.copy`."""
         return copy.copy(self)
 
     def deepcopy(self):
-        """Returns a deep copy using :func:`copy.deepcopy`."""
+        """Return a deep copy using :func:`copy.deepcopy`."""
         return copy.deepcopy(self)
 
     def set_item(self, item_path, value):
         """
-        iven the path and value, create the missing nodes in
+        Given the path and value, create the missing nodes in
         the path and assign the given value.
 
         Parameters
         ----------
         item_path : str
             A string describing the path with each item separated by a
-            full stop (periods)
+            full stop (periods).
         value : object
             The value to assign to the given path.
 
@@ -785,7 +781,6 @@ class DictionaryTreeBrowser:
         └── First
            └── Second
                 └── Third = 3
-
         """
         if not self.has_item(item_path):
             self.add_node(item_path)
@@ -797,11 +792,11 @@ class DictionaryTreeBrowser:
             self.__setattr__(item_path.pop(), value)
 
     def add_node(self, node_path):
-        """Adds all the nodes in the given path if they don't exist.
+        """Add all the nodes in the given path if they don't exist.
 
         Parameters
         ----------
-        node_path: str
+        node_path : str
             The nodes must be separated by full stops (periods).
 
         Examples
@@ -813,7 +808,6 @@ class DictionaryTreeBrowser:
         >>> dict_browser
         └── First
             └── Second = 3
-
         """
         keys = node_path.split(".")
         dtb = self
@@ -1521,7 +1515,7 @@ def display(obj):
 
 
 class TupleSA(tuple):
-    """A tuple that can set the attributes of its items"""
+    """A tuple that can set the attributes of its items."""
 
     def __getitem__(self, *args, **kwargs):
         item = super().__getitem__(*args, **kwargs)
@@ -1532,7 +1526,7 @@ class TupleSA(tuple):
             return item
 
     def set(self, **kwargs):
-        """Set the attributes of its items
+        """Set the attributes of its items.
 
         Parameters
         ----------
@@ -1553,7 +1547,7 @@ class TupleSA(tuple):
                         setattr(item, key, value)
 
     def get(self, *args):
-        """Get the attributes of its items
+        """Get the attributes of its items.
 
         Parameters
         ----------
@@ -1562,7 +1556,7 @@ class TupleSA(tuple):
 
         Returns
         -------
-        output : dict
+        dict
             The name of the attributes and their values.
         """
         output = dict()
