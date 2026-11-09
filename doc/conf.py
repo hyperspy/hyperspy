@@ -447,6 +447,24 @@ if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
         "SS06",  # Not possible to make all summaries one line
         "YD01",  # Not all docstrings need "Yields"
     }
+    numpydoc_validation_exclude = {
+        # Templated docstrings
+        r"\.gui$",
+        r"\.function_nd$",
+        r"\.init_parameters$",
+        r"\.gui_navigation_sliders$",
+        r"\.signals\.\w+\.plot$",
+        r"\.signals\.Signal1D\.spikes_removal_tool$",
+        r"\.data\.(atomic_resolution_image|luminescence_signal|wave_image)$",
+        r"\.markers\.(Ellipses|Rectangles|Squares)$",
+        r"\.Model1D\.(set_signal_range|fit_component|remove)$",
+        r"\.BaseModel\.fit$",
+        # Use of builtin property(), which should be replaced by a decorator
+        r"\.ComplexSignal\.(real|imag|amplitude|phase)",
+        # Docstrings of third-party functions, documented through our namespace
+        r"\.events\.wraps$",
+        r"\.peakfinders2D\.(blob_dog|blob_log|match_template|peak_local_max)$",
+    }
 
 autoclass_content = "both"
 
