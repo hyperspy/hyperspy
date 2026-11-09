@@ -60,7 +60,6 @@ def whiten_data(X, centre=True, method="PCA", epsilon=1e-10):
     .. [Kessy2015] A. Kessy, A. Lewin, and K. Strimmer, "Optimal
         Whitening and Decorrelation", arXiv:1512.00809, (2015),
         https://arxiv.org/pdf/1512.00809.pdf
-
     """
     Y = X
 

@@ -446,7 +446,7 @@ def ornmf(
     X : numpy.ndarray
         The [n_samples, n_features] input data.
     rank : int
-        The rank of the representation (number of components/factors)
+        The rank of the representation (number of components/factors).
     store_error : bool, default False
         If True, stores the sparse error matrix.
     project : bool, default False
@@ -464,7 +464,7 @@ def ornmf(
         * ``'MomentumSGD'`` - Stochastic gradient descent with momentum
     subspace_learning_rate : float, default 1.0
         Learning rate for the 'MomentumSGD' method. Should be a
-        float > 0.0
+        float > 0.0.
     subspace_momentum : float, default 0.5
         Momentum parameter for 'MomentumSGD' method, should be
         a float between 0 and 1.
@@ -483,7 +483,6 @@ def ornmf(
         The non-negative factors matrix with shape (n_features, rank).
     H : numpy.ndarray
         The non-negative loadings matrix with shape (rank, n_samples).
-
     """
     X = X.T
 

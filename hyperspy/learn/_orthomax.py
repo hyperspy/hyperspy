@@ -33,7 +33,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
     Parameters
     ----------
     A : numpy array
-        Input data to unmix
+        Input data to unmix.
     gamma : float
         If gamma in range [0, 1], use SVD approach, otherwise
         solve with a sequence of bivariate rotations.
@@ -45,10 +45,9 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
     Returns
     -------
     B : numpy array
-        Rotated data matrix
+        Rotated data matrix.
     W : numpy array
-        The unmixing matrix
-
+        The unmixing matrix.
     """
 
     d, m = A.shape

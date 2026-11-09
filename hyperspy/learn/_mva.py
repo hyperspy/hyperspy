@@ -3283,12 +3283,11 @@ class LearningResults(object):
 
         Parameters
         ----------
-        filename : string
+        filename : str
             Path to save the results to.
         overwrite : {True, False, None}, default None
             If True, overwrite the file if it exists.
             If None (default), prompt user if file exists.
-
         """
         kwargs = {}
         for attribute in [
@@ -3311,9 +3310,8 @@ class LearningResults(object):
 
         Parameters
         ----------
-        filename : string
+        filename : str
             Path to load the results from.
-
         """
         decomposition = np.load(filename, allow_pickle=True)
 
@@ -3377,7 +3375,6 @@ class LearningResults(object):
         -------
         str
             String summarizing the learning parameters.
-
         """
 
         summary_str = (
@@ -3413,7 +3410,6 @@ class LearningResults(object):
         compute : bool, default False
            If True and the decomposition results are lazy,
            also compute the results.
-
         """
         _logger.info(f"Trimming results to {n} dimensions")
         self.loadings = self.loadings[:, :n]

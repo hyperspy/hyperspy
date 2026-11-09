@@ -38,7 +38,7 @@ def svd_flip_signs(u, v, u_based_decision=True):
     Parameters
     ----------
     u, v : numpy.ndarray
-        u and v are the outputs of a singular value decomposition.
+        The outputs ``u`` and ``v`` of a singular value decomposition.
     u_based_decision : bool, default True
         If True, use the columns of u as the basis for sign flipping.
         Otherwise, use the rows of v. The choice of which variable to base the
@@ -46,9 +46,10 @@ def svd_flip_signs(u, v, u_based_decision=True):
 
     Returns
     -------
-    u, v : numpy.ndarray
-        Adjusted outputs with same dimensions as inputs.
-
+    u : numpy.ndarray
+        Adjusted ``u`` with same dimensions as the input.
+    v : numpy.ndarray
+        Adjusted ``v`` with same dimensions as the input.
     """
     # Derived from `sklearn.utils.extmath.svd_flip`.
     # Copyright (c) 2007-2020 The scikit-learn developers.
@@ -80,9 +81,9 @@ def svd_solve(
     Parameters
     ----------
     data : numpy.ndarray
-        Input data array with shape (m, n)
+        Input data array with shape (m, n).
     output_dimension : None or int
-        Number of components to keep/calculate
+        Number of components to keep/calculate.
     svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
         - If ``"auto"``:
           The solver is selected by a default policy based on `data.shape` and
@@ -112,9 +113,8 @@ def svd_solve(
 
     Returns
     -------
-    U, S, V : numpy.ndarray
-        Output of SVD such that X = U*S*V.T
-
+    tuple of numpy.ndarray
+        The arrays ``(U, S, V)`` of the SVD such that X = U*S*V.T.
     """
     # Derived from `sklearn.decomposition.PCA`.
     # Copyright (c) 2007-2020 The scikit-learn developers.
@@ -197,9 +197,9 @@ def svd_pca(
     Parameters
     ----------
     data : numpy array
-        MxN array of input data (M features, N samples)
+        MxN array of input data (M features, N samples).
     output_dimension : None or int
-        Number of components to keep/calculate
+        Number of components to keep/calculate.
     svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
         If auto:
             The solver is selected by a default policy based on `data.shape` and
@@ -232,7 +232,9 @@ def svd_pca(
     Returns
     -------
     factors : numpy.ndarray
+        The factors of the decomposition.
     loadings : numpy.ndarray
+        The loadings of the decomposition.
     explained_variance : numpy.ndarray
         When ``centre`` is not None (mean-centred data), this is the variance
         explained by each component (``σᵢ² / N``), consistent with PCA.
@@ -242,8 +244,7 @@ def svd_pca(
         components gives the proportion of total variation (Frobenius norm
         squared) explained by each component.
     mean : numpy.ndarray or None
-        None if centre is None
-
+        None if centre is None.
     """
     N, M = data.shape
 

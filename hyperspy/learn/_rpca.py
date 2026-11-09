@@ -52,35 +52,34 @@ def rpca_godec(
     Parameters
     ----------
     X : numpy.ndarray
-        The matrix of observations with shape (n_features, n_samples)
+        The matrix of observations with shape (n_features, n_samples).
     rank : int
         The model dimensionality.
     lambda1 : None or float
         Regularization parameter.
-        If None, set to 1 / sqrt(n_features)
+        If None, set to 1 / sqrt(n_features).
     power : int, default 0
-        The number of power iterations used in the initialization
+        The number of power iterations used in the initialization.
     tol : float, default 1e-3
-        Convergence tolerance
+        Convergence tolerance.
     maxiter : int, default 1000
-        Maximum number of iterations
+        Maximum number of iterations.
     random_state : None, int or RandomState, default None
         Used to initialize the subspace on the first iteration.
 
     Returns
     -------
     Xhat : numpy.ndarray
-        The low-rank matrix with shape (n_features, n_samples)
+        The low-rank matrix with shape (n_features, n_samples).
     Ehat : numpy.ndarray
-        The sparse error matrix with shape (n_features, n_samples)
+        The sparse error matrix with shape (n_features, n_samples).
     U, S, V : numpy.ndarray
-        The results of an SVD on Xhat
+        The results of an SVD on Xhat.
 
     References
     ----------
     .. [Zhou2011] Tianyi Zhou and Dacheng Tao, "GoDec: Randomized Low-rank &
         Sparse Matrix Decomposition in Noisy Case", ICML-11, (2011), pp. 33-40.
-
     """
     # Get shape
     m, n = X.shape
@@ -567,7 +566,7 @@ def orpca(
         The matrix of observations with shape (n_features x n_samples)
         or an iterator that yields samples, each with n_features elements.
     rank : int
-        The rank of the representation (number of components/factors)
+        The rank of the representation (number of components/factors).
     store_error : bool, default False
         If True, stores the sparse error matrix.
     project : bool, default False
@@ -593,7 +592,7 @@ def orpca(
         the 'qr' initialization.
     subspace_learning_rate : float, default 1.0
         Learning rate for the 'SGD' and 'MomentumSGD' methods.
-        Should be a float > 0.0
+        Should be a float > 0.0.
     subspace_momentum : float, default 0.5
         Momentum parameter for 'MomentumSGD' method, should be
         a float between 0 and 1.
@@ -607,7 +606,6 @@ def orpca(
         * Otherwise, returns the low-rank and sparse error matrices, as well
           as the results of a singular value decomposition (SVD) applied to
           the low-rank matrix.
-
     """
 
     X = X.T
