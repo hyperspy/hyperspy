@@ -364,7 +364,6 @@ class ModelComponents(object):
     """Container for model components.
 
     Useful to provide tab completion when running in IPython.
-
     """
 
     def __init__(self, model):
@@ -472,7 +471,6 @@ class BaseModel(list):
     See Also
     --------
     hyperspy.models.model1d.Model1D, hyperspy.models.model2d.Model2D
-
     """
 
     # Defined in subclass
@@ -535,7 +533,7 @@ class BaseModel(list):
 
     @property
     def dof(self):
-        """Degrees of freedom of the signal (0 if not yet fit)"""
+        """Degrees of freedom of the signal (0 if not yet fit)."""
         return self._dof
 
     @property
@@ -563,7 +561,7 @@ class BaseModel(list):
 
     def set_signal_range_from_mask(self, mask):
         """
-        Use the signal ranges as defined by the mask
+        Use the signal ranges as defined by the mask.
 
         Parameters
         ----------
@@ -585,7 +583,6 @@ class BaseModel(list):
         >>> mask = (s.sum() > 5)
         >>> m = s.create_model()
         >>> m.set_signal_range_from_mask(mask.data)
-
         """
         if mask.dtype != bool:
             raise ValueError("`mask` argument must be an array with boolean dtype.")
@@ -596,7 +593,7 @@ class BaseModel(list):
         self._channel_switches[:] = mask
 
     def store(self, name=None):
-        """Stores current model in the original signal
+        """Store current model in the original signal.
 
         Parameters
         ----------
@@ -609,16 +606,16 @@ class BaseModel(list):
         s.models.store(self, name)
 
     def save(self, file_name, name=None, **kwargs):
-        """Saves signal and its model to a file
+        """Save signal and its model to a file.
 
         Parameters
         ----------
-            file_name : str
-                Name of the file
-            name : {None, str}
-                Stored model name. Auto-generated if left empty
-            **kwargs :
-                Other keyword arguments are passed onto `BaseSignal.save()`
+        file_name : str
+            Name of the file.
+        name : {None, str}
+            Stored model name. Auto-generated if left empty.
+        **kwargs :
+            Other keyword arguments are passed onto `BaseSignal.save()`.
         """
         if self.signal is None:
             raise ValueError("Currently cannot save models with no signal")
@@ -743,7 +740,8 @@ class BaseModel(list):
 
         Parameters
         ----------
-        iterable: iterable of `Component` instances.
+        iterable : iterable of :class:`~hyperspy.component.Component`
+            The components to append to the model.
         """
         for object in iterable:
             self.append(object)
@@ -771,7 +769,6 @@ class BaseModel(list):
         Or like this:
 
         >>> m.remove(0)
-
         """
         thing = self._get_component(thing)
         if not np.iterable(thing):
@@ -801,7 +798,7 @@ class BaseModel(list):
         block_size_limit=None,
         **kwargs,
     ):
-        """Returns a recreation of the dataset using the model.
+        """Return a recreation of the dataset using the model.
 
         By default, the signal range outside of the fitted range is filled with nans.
 
@@ -835,7 +832,6 @@ class BaseModel(list):
         >>> m.append(l2)
         >>> s1 = m.as_signal()
         >>> s2 = m.as_signal(component_list=[l1])
-
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -1007,7 +1003,6 @@ class BaseModel(list):
         See Also
         --------
         suspend_update
-
         """
         if self._plot_active is True and self._suspend_update is False:
             try:
@@ -1027,7 +1022,7 @@ class BaseModel(list):
 
     @contextmanager
     def suspend_update(self, update_on_resume=True):
-        """Prevents plot from updating until 'with' clause completes.
+        """Prevent plot from updating until 'with' clause completes.
 
         See Also
         --------
@@ -1274,7 +1269,6 @@ class BaseModel(list):
         See Also
         --------
         store_current_values
-
         """
         cm = self.suspend_update if self._plot_active else utils.dummy_context_manager
         with cm(update_on_resume=update_on_resume):
@@ -1299,7 +1293,7 @@ class BaseModel(list):
         Parameters
         ----------
         array : array
-            array with the parameter values
+            Array with the parameter values.
         array_std : {None, array}
             array with the standard deviations of parameters
         """
@@ -1818,17 +1812,13 @@ class BaseModel(list):
         fd_scheme="2-point",
         **kwargs,
     ):
-        """Fits the model to the experimental data.
+        """Fit the model to the experimental data.
 
         Read more in the :ref:`User Guide <model.fitting>`.
 
         Parameters
         ----------
         %s
-
-        Returns
-        -------
-        None
 
         Notes
         -----
@@ -1853,7 +1843,6 @@ class BaseModel(list):
         See Also
         --------
         multifit, fit
-
         """
         cm = (
             self.suspend_update
@@ -2479,14 +2468,9 @@ class BaseModel(list):
             See the documentation for :meth:`~hyperspy.model.BaseModel.fit`
             for a list of valid arguments.
 
-        Returns
-        -------
-        None
-
         See Also
         --------
         fit
-
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -2709,7 +2693,6 @@ class BaseModel(list):
         Actually, as of HyperSpy 0.8 this is the only way to do so.
         However, this is known to be brittle. For example see
         https://github.com/hyperspy/hyperspy/issues/341.
-
         """
         kwds = {}
         i = 0
@@ -2722,7 +2705,7 @@ class BaseModel(list):
         np.savez(filename, **kwds)
 
     def load_parameters_from_file(self, filename):
-        """Loads the parameters array from a binary file written with the
+        """Load the parameters array from a binary file written with the
         :meth:`~hyperspy.model.BaseModel.save_parameters2file` function.
 
         Parameters
@@ -2740,7 +2723,6 @@ class BaseModel(list):
         this method can be used to recreate a model stored in a file. Actually,
         before HyperSpy 0.8 this is the only way to do so. However, this is known
         to be brittle. For example see https://github.com/hyperspy/hyperspy/issues/341.
-
         """
         f = np.load(filename)
         i = 0
@@ -2765,7 +2747,6 @@ class BaseModel(list):
             If ``None`` (default), the active components will be considered.
         mask : numpy.ndarray of bool or None, optional
             The operation won't be performed where mask is True.
-
         """
         if components_list is None:
             components_list = self.active_components
@@ -2824,7 +2805,6 @@ class BaseModel(list):
         The name of the files will be determined by each the Component and
         each Parameter name attributes. Therefore, it is possible to customise
         the file names modify the name attributes.
-
         """
         component_list = self.active_components if only_active else self
         for component in component_list:
@@ -2833,7 +2813,7 @@ class BaseModel(list):
             )
 
     def plot_results(self, only_free=True, only_active=True):
-        """Plot the value of the parameters of the model
+        """Plot the value of the parameters of the model.
 
         Parameters
         ----------
@@ -2848,7 +2828,6 @@ class BaseModel(list):
         The name of the files will be determined by each the Component and
         each Parameter name attributes. Therefore, it is possible to customise
         the file names modify the name attributes.
-
         """
         component_list = self.active_components if only_active else self
         for component in component_list:
@@ -2857,7 +2836,7 @@ class BaseModel(list):
     def print_current_values(
         self, only_free=False, only_active=False, component_list=None
     ):
-        """Prints the current values of the parameters of all components.
+        """Print the current values of the parameters of all components.
 
         Parameters
         ----------
@@ -2865,7 +2844,7 @@ class BaseModel(list):
             If True, only components with free parameters will be printed. Within these,
             only parameters which are free will be printed.
         only_active : bool
-            If True, only values of active components will be printed
+            If True, only values of active components will be printed.
         component_list : None or list of :class:`~hyperspy.component.Component`
             If None, print all components.
         """
@@ -2886,7 +2865,7 @@ class BaseModel(list):
         only_nonlinear=False,
     ):
         """
-        Sets the parameters in a component in a model to not free.
+        Set the parameters in a component in a model to not free.
 
         Parameters
         ----------
@@ -2917,7 +2896,6 @@ class BaseModel(list):
         ... )
         >>> m.set_parameters_not_free(only_linear=True)
 
-
         See Also
         --------
         set_parameters_free
@@ -2947,7 +2925,7 @@ class BaseModel(list):
         only_nonlinear=False,
     ):
         """
-        Sets the parameters in a component in a model to free.
+        Set the parameters in a component in a model to free.
 
         Parameters
         ----------
@@ -3004,15 +2982,15 @@ class BaseModel(list):
         self, parameter_name, value, component_list=None, only_current=False
     ):
         """
-        Sets the value of a parameter in components in a model to a specified
-        value
+        Set the value of a parameter in components in a model to a specified
+        value.
 
         Parameters
         ----------
         parameter_name : str
-            Name of the parameter whose value will be changed
+            Name of the parameter whose value will be changed.
         value : float or int
-            The new value of the parameter
+            The new value of the parameter.
         component_list : None or list of :class:`~hyperspy.component.Component`, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves. If None, use all
@@ -3035,7 +3013,6 @@ class BaseModel(list):
         >>> m.set_parameters_value(
         ...    'area', 5, component_list=[v1], only_current=True
         ... )
-
         """
 
         if not component_list:
@@ -3056,18 +3033,18 @@ class BaseModel(list):
                         _parameter.assign_current_value_to_all()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns a dictionary of the model, including all components, degrees
+        """Return a dictionary of the model, including all components, degrees
         of freedom (dof) and chi-squared (chisq) with values.
 
         Parameters
         ----------
         fullcopy : bool, optional True
             Copies of objects are stored, not references. If any found,
-            functions will be pickled and signals converted to dictionaries
+            functions will be pickled and signals converted to dictionaries.
 
         Returns
         -------
-        dictionary : dict
+        dict
             A dictionary including at least the following fields:
 
             * components: a list of dictionaries of components, one per
@@ -3087,7 +3064,6 @@ class BaseModel(list):
         >>> m.append(l2)
         >>> d = m.as_dictionary()
         >>> m2 = s.create_model(dictionary=d)
-
         """
         dic = {"components": [c.as_dictionary(fullcopy) for c in self]}
 
@@ -3115,12 +3091,12 @@ class BaseModel(list):
         self, value, component_list=None, only_current=False
     ):
         """
-        Sets the component ``'active'`` parameter to a specified value.
+        Set the component ``'active'`` parameter to a specified value.
 
         Parameters
         ----------
         value : bool
-            The new value of the ``'active'`` parameter
+            The new value of the ``'active'`` parameter.
         component_list : list of :class:`~hyperspy.component.Component`, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
@@ -3142,7 +3118,6 @@ class BaseModel(list):
         >>> m.set_component_active_value(
         ...    False, component_list=[v1], only_current=True
         ... )
-
         """
         if component_list is None:
             component_list = self
@@ -3183,17 +3158,17 @@ class BaseModel(list):
             return list.__getitem__(self, value)
 
     def create_samfire(self, workers=None, setup=True, **kwargs):
-        """Creates a SAMFire object.
+        """Create a SAMFire object.
 
         Parameters
         ----------
         workers : None or int
-            the number of workers to initialise.
+            The number of workers to initialise.
             If zero, all computations will be done serially.
             If None (default), will attempt to use (number-of-cores - 1),
             however if just one core is available, will use one worker.
         setup : bool
-            if the setup should be run upon initialization.
+            If the setup should be run upon initialization.
         **kwargs
             Any that will be passed to the _setup and in turn SamfirePool.
         """
@@ -3203,7 +3178,7 @@ class BaseModel(list):
 
     def print_model_statistics(self, thresholds=None, component_list=None):
         """
-        Computes and prints summary statistics (mean, standard deviation, min, max)
+        Compute and print summary statistics (mean, standard deviation, min, max)
         for all parameters of each component in a given model.
 
         Parameters

@@ -76,7 +76,6 @@ class Model2D(BaseModel):
     See Also
     --------
     hyperspy.model.BaseModel, hyperspy.models.model1d.Model1D
-
     """
 
     _signal_dimension = 2
@@ -244,8 +243,8 @@ class Model2D(BaseModel):
 
     def remove_signal_range(self, x1=None, x2=None, y1=None, y2=None):
         """
-        Removes the data in the given range (calibrated values) from
-        the data range that will be used by the fitting rountine
+        Remove the data in the given range (calibrated values) from
+        the data range that will be used by the fitting rountine.
 
         Parameters
         ----------
@@ -266,7 +265,7 @@ class Model2D(BaseModel):
 
     def reset_signal_range(self):
         """
-        Resets the data range.
+        Reset the data range.
 
         See Also
         --------
@@ -295,7 +294,7 @@ class Model2D(BaseModel):
 
     def add_signal_range(self, x1=None, x2=None, y1=None, y2=None):
         """
-        Adds the data in the given range from the data range
+        Add the data in the given range from the data range
         (calibrated values) that will be used by the fitting rountine.
 
         Parameters

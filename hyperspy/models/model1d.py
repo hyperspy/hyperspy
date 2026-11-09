@@ -225,7 +225,6 @@ class Model1D(BaseModel):
     See Also
     --------
     hyperspy.model.BaseModel, hyperspy.models.model2d.Model2D
-
     """
 
     _signal_dimension = 1
@@ -456,6 +455,7 @@ class Model1D(BaseModel):
         Parameters
         ----------
         x1, x2 : None or float
+            Start and end of the range, in the units of the signal axis.
 
         See Also
         --------
@@ -482,12 +482,13 @@ class Model1D(BaseModel):
     @interactive_range_selector
     def remove_signal_range(self, x1=None, x2=None):
         """
-        Removes the data in the given range from the data range that
+        Remove the data in the given range from the data range that
         will be used by the fitting rountine.
 
         Parameters
         ----------
         x1, x2 : None or float
+            Start and end of the range, in the units of the signal axis.
 
         See Also
         --------
@@ -499,7 +500,7 @@ class Model1D(BaseModel):
 
     def reset_signal_range(self):
         """
-        Resets the data range
+        Reset the data range.
 
         See Also
         --------
@@ -524,12 +525,13 @@ class Model1D(BaseModel):
     @interactive_range_selector
     def add_signal_range(self, x1=None, x2=None):
         """
-        Adds the data in the given range from the data range that
+        Add the data in the given range from the data range that
         will be used by the fitting rountine.
 
         Parameters
         ----------
         x1, x2 : None or float
+            Start and end of the range, in the units of the signal axis.
 
         See Also
         --------
@@ -824,7 +826,7 @@ class Model1D(BaseModel):
             If True, add a residual line (Signal - Model) to the signal figure.
         **kwargs : dict
             All extra keyword arguements are passed to
-            :meth:`~.api.signals.Signal1D.plot`
+            :meth:`~.api.signals.Signal1D.plot`.
         """
 
         # If new coordinates are assigned
@@ -938,7 +940,7 @@ class Model1D(BaseModel):
 
     def enable_adjust_position(self, components=None, fix_them=True, show_label=True):
         """Allow changing the *x* position of component by dragging
-        a vertical line that is plotted in the signal model figure
+        a vertical line that is plotted in the signal model figure.
 
         Parameters
         ----------
@@ -961,7 +963,6 @@ class Model1D(BaseModel):
         See Also
         --------
         disable_adjust_position
-
         """
         if self._plot is None or not self._plot.is_active:
             self.plot()
@@ -1033,12 +1034,11 @@ class Model1D(BaseModel):
         widget.events.moved.disconnect(self._on_widget_moved)
 
     def disable_adjust_position(self):
-        """Disable the interactive adjust position feature
+        """Disable the interactive adjust position feature.
 
         See Also
         --------
         enable_adjust_position
-
         """
         self._adjust_position_all = False
         for pws in list(self._position_widgets.values()):
