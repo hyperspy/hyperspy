@@ -17,11 +17,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+import inspect
 
 import numpy as np
 
 from hyperspy.model import BaseModel, ModelComponents
 
+# The host docstring is dedented with ``inspect.cleandoc`` before the
+# substitution: Python >= 3.13 strips the docstring indentation at compile time,
+# so the snippets are written flush-left.
 _SIGNAL_RANGE_VALUES = """\
 x1, x2 : None or float
     Start and end of the range in the first axis (horizontal)
@@ -199,7 +203,9 @@ class Model2D(BaseModel):
         self._channel_switches[slice(i1, i2), slice(j1, j2)] = True
         self.update_plot(render_figure=True)
 
-    _set_signal_range_in_pixels.__doc__ %= _SIGNAL_RANGE_PIXELS
+    _set_signal_range_in_pixels.__doc__ = (
+        inspect.cleandoc(_set_signal_range_in_pixels.__doc__) % _SIGNAL_RANGE_PIXELS
+    )
 
     def set_signal_range(self, x1=None, x2=None, y1=None, y2=None):
         """
@@ -221,7 +227,9 @@ class Model2D(BaseModel):
         j_indices = yaxis.value_range_to_indices(y1, y2)
         self._set_signal_range_in_pixels(*(i_indices + j_indices))
 
-    set_signal_range.__doc__ %= _SIGNAL_RANGE_VALUES
+    set_signal_range.__doc__ = (
+        inspect.cleandoc(set_signal_range.__doc__) % _SIGNAL_RANGE_VALUES
+    )
 
     def _remove_signal_range_in_pixels(self, i1=None, i2=None, j1=None, j2=None):
         """
@@ -239,7 +247,9 @@ class Model2D(BaseModel):
         self._channel_switches[slice(i1, i2), slice(j1, j2)] = False
         self.update_plot()
 
-    _remove_signal_range_in_pixels.__doc__ %= _SIGNAL_RANGE_PIXELS
+    _remove_signal_range_in_pixels.__doc__ = (
+        inspect.cleandoc(_remove_signal_range_in_pixels.__doc__) % _SIGNAL_RANGE_PIXELS
+    )
 
     def remove_signal_range(self, x1=None, x2=None, y1=None, y2=None):
         """
@@ -261,7 +271,9 @@ class Model2D(BaseModel):
         j_indices = yaxis.value_range_to_indices(y1, y2)
         self._remove_signal_range_in_pixels(*i_indices, *j_indices)
 
-    remove_signal_range.__doc__ %= _SIGNAL_RANGE_VALUES
+    remove_signal_range.__doc__ = (
+        inspect.cleandoc(remove_signal_range.__doc__) % _SIGNAL_RANGE_VALUES
+    )
 
     def reset_signal_range(self):
         """
@@ -290,7 +302,9 @@ class Model2D(BaseModel):
         self._channel_switches[slice(i1, i2), slice(j1, j2)] = True
         self.update_plot()
 
-    _add_signal_range_in_pixels.__doc__ %= _SIGNAL_RANGE_PIXELS
+    _add_signal_range_in_pixels.__doc__ = (
+        inspect.cleandoc(_add_signal_range_in_pixels.__doc__) % _SIGNAL_RANGE_PIXELS
+    )
 
     def add_signal_range(self, x1=None, x2=None, y1=None, y2=None):
         """
@@ -312,7 +326,9 @@ class Model2D(BaseModel):
         j_indices = yaxis.value_range_to_indices(y1, y2)
         self._add_signal_range_in_pixels(*(i_indices + j_indices))
 
-    add_signal_range.__doc__ %= _SIGNAL_RANGE_VALUES
+    add_signal_range.__doc__ = (
+        inspect.cleandoc(add_signal_range.__doc__) % _SIGNAL_RANGE_VALUES
+    )
 
     def _check_analytical_jacobian(self):
         """Check all components have analytical gradients.
