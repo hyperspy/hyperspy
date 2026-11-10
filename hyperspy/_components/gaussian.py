@@ -85,7 +85,6 @@ class Gaussian(Expression):
     :math:`x_0`     centre
     ============== ===========
 
-
     Parameters
     ----------
     A : float
@@ -106,7 +105,6 @@ class Gaussian(Expression):
         Convenience attribute to get and set the full width at half maximum.
     height : float
         Convenience attribute to get and set the height.
-
 
     See Also
     --------
@@ -143,6 +141,7 @@ class Gaussian(Expression):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -156,6 +155,7 @@ class Gaussian(Expression):
         Returns
         -------
         bool
+            ``True`` if the parameters estimation is successful.
 
         Notes
         -----

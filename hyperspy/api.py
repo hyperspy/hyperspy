@@ -90,7 +90,7 @@ For more details see their doctrings.
 
 
 def get_configuration_directory_path():
-    """Return configuration path"""
+    """Return configuration path."""
     from hyperspy.defaults_parser import config_path
 
     return config_path

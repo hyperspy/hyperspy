@@ -46,7 +46,6 @@ class Voigt(Expression):
         w(z) &= \frac{e^{-z^2} \text{erfc}(-i z)}{\sqrt{2 \pi} \sigma} \\
         f(x) &= A \cdot \Re\left\{ w \left[ z(x - x_0) \right] \right\}
 
-
     ============== =============
     Variable        Parameter
     ============== =============
@@ -56,7 +55,6 @@ class Voigt(Expression):
     :math:`\sigma`  sigma
     ============== =============
 
-
     Parameters
     ----------
     centre : float
@@ -65,7 +63,7 @@ class Voigt(Expression):
         Intensity below the peak.
     gamma : float
         :math:`\gamma` = HWHM of the Lorentzian distribution.
-    sigma: float
+    sigma : float
         :math:`2 \sigma \sqrt{(2 \log(2))}` = FWHM of the Gaussian distribution.
     **kwargs
         Extra keyword arguments are passed to the
@@ -125,6 +123,7 @@ class Voigt(Expression):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -155,7 +154,6 @@ class Voigt(Expression):
         >>> s.axes_manager[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
         True
-
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]

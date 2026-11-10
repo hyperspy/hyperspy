@@ -36,7 +36,6 @@ class SplitVoigt(Component):
         + \eta L(x,centre,\sigma)
         \]
 
-
         \[
         f(x) =
         \begin{cases}
@@ -61,7 +60,6 @@ class SplitVoigt(Component):
     sigma is allowed to vary to create an asymmetric profile
     In this case the voigt is a pseudo voigt consisting of a
     mixed gaussian and lorentzian sum
-
     """
 
     def __init__(self, A=1.0, sigma1=1.0, sigma2=1.0, fraction=0.0, centre=0.0):
@@ -104,22 +102,22 @@ class SplitVoigt(Component):
         return np.where(x <= centre, p1, p2)
 
     def function(self, x):
-        """Split pseudo voigt - a linear combination  of gaussian and lorentzian
+        """Split pseudo voigt - a linear combination  of gaussian and lorentzian.
 
         Parameters
         ----------
         x : array
-            independent variable
+            Independent variable.
         A : float
-            area of pvoigt peak
+            Area of pvoigt peak.
         center : float
-            center position
+            Center position.
         sigma1 : float
-            standard deviation <= center position
+            Standard deviation <= center position.
         sigma2 : float
-            standard deviation > center position
+            Standard deviation > center position.
         fraction : float
-            weight for lorentzian peak in the linear combination,
+            Weight for lorentzian peak in the linear combination,
             and (1-fraction) is the weight for gaussian peak.
         """
         parameters_value = [p.value for p in self.parameters]
@@ -157,6 +155,7 @@ class SplitVoigt(Component):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -170,6 +169,7 @@ class SplitVoigt(Component):
         Returns
         -------
         bool
+            ``True`` if the parameters estimation is successful.
 
         Notes
         -----
@@ -187,7 +187,6 @@ class SplitVoigt(Component):
         >>> s.axes_manager[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
         True
-
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]

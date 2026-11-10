@@ -39,13 +39,12 @@ class Exponential(Expression):
     :math:`\tau`   tau
     ============= =============
 
-
     Parameters
     ----------
-    A: float
-        Maximum intensity
-    tau: float
-        Scale parameter (time constant)
+    A : float
+        Maximum intensity.
+    tau : float
+        Scale parameter (time constant).
     **kwargs
         Extra keyword arguments are passed to the
         :class:`~.api.model.components1D.Expression` component.
@@ -66,11 +65,12 @@ class Exponential(Expression):
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters for the exponential component by splitting
-        the signal window into two regions and using their geometric means
+        the signal window into two regions and using their geometric means.
 
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -84,7 +84,7 @@ class Exponential(Expression):
         Returns
         -------
         bool
-
+            ``True`` if the parameters estimation is successful.
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]

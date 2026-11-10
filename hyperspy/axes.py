@@ -584,6 +584,7 @@ class BaseDataAxis(t.HasTraits):
         Parameters
         ----------
         value : float or numpy.ndarray
+            The value(s) for which to find the closest index/indices.
         rounding : callable
             Handling of values between two axis points:
 
@@ -594,6 +595,7 @@ class BaseDataAxis(t.HasTraits):
         Returns
         -------
         int or numpy array
+            The closest index/indices to the given value(s).
 
         Raises
         ------
@@ -675,8 +677,10 @@ class BaseDataAxis(t.HasTraits):
 
         Returns
         -------
-        i2, i2 : float
-            The indices corresponding to the interval [v1, v2]
+        i1 : int
+            The index corresponding to the start of the interval [v1, v2].
+        i2 : int
+            The index corresponding to the end of the interval [v1, v2].
         """
         i1, i2 = 0, self.size - 1
         error_message = "Wrong order of the values: for axis with"
@@ -720,7 +724,6 @@ class BaseDataAxis(t.HasTraits):
         -------
         bool
             True if any changes were made, otherwise False.
-
         """
         any_changes = False
         changed = {}
@@ -789,7 +792,6 @@ class BaseDataAxis(t.HasTraits):
         ---------------- | ------ | ------ | ------- | ------- | ------
                   Energy |   1024 |      0 |     1.1 |  0.0033 |     eV
 
-
         See Also
         --------
         hyperspy.api.signals.BaseSignal.interpolate_on_axis
@@ -799,7 +801,6 @@ class BaseDataAxis(t.HasTraits):
         The function only converts the axis type and doesn't interpolate
         the data itself - see :meth:`~.api.signals.BaseSignal.interpolate_on_axis`
         to interpolate data on a uniform axis.
-
         """
         indices = np.arange(self.size)
         if keep_bounds:
@@ -918,7 +919,6 @@ class DataAxis(BaseDataAxis):
         ------
         ValueError
             If the axis values are not ordered.
-
         """
         if len(self.axis) > 1:
             if isinstance(self.axis, list):
@@ -951,7 +951,6 @@ class DataAxis(BaseDataAxis):
         -------
         bool
             True if any changes were made, otherwise False.
-
         """
         if attributes is None:
             attributes = ["axis"]
@@ -997,7 +996,7 @@ class FunctionalDataAxis(BaseDataAxis):
 
     Parameters
     ----------
-    expression: str
+    expression : str
         SymPy mathematical expression defining the axis.
     x : BaseDataAxis
         Defines x-values at which `expression` is evaluated.
@@ -1107,10 +1106,11 @@ class FunctionalDataAxis(BaseDataAxis):
             A list of the name of the attribute to update. If an attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised. If None, the parameters of `expression` are updated.
+
         Returns
         -------
-        A boolean indicating whether any changes were made.
-
+        bool
+            A boolean indicating whether any changes were made.
         """
         if attributes is None:
             attributes = self.parameters_list + ["_expression", "x"]
@@ -1311,6 +1311,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         Returns
         -------
         int or numpy.ndarray
+            The closest index/indices to the given value(s).
 
         Raises
         ------
@@ -1385,10 +1386,11 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised. If `None`, `scale`, `offset` and `units` are updated.
+
         Returns
         -------
-        A boolean indicating whether any changes were made.
-
+        bool
+            A boolean indicating whether any changes were made.
         """
         if attributes is None:
             attributes = ["scale", "offset", "size"]
@@ -1592,7 +1594,6 @@ class AxesManager(t.HasTraits):
     (2, 0, 1) (2, 0, 1)
     (1, 0, 1) (1, 0, 1)
     (0, 0, 1) (0, 0, 1)
-
     """
 
     _axes = t.List(BaseDataAxis)
@@ -1787,7 +1788,7 @@ class AxesManager(t.HasTraits):
             return True
 
     def remove(self, axes):
-        """Remove one or more axes"""
+        """Remove one or more axes."""
         axes = self[axes]
         if not np.iterable(axes):
             axes = (axes,)
@@ -1846,7 +1847,6 @@ class AxesManager(t.HasTraits):
         ----------
         axes_list : list of dict
             The list of axes to create.
-
         """
         # Reorder axes_list using index_in_array if it is defined
         # for all axes and the indices are not repeated.
@@ -1875,7 +1875,6 @@ class AxesManager(t.HasTraits):
         index_in_axes_manager : int
             The index of the axis in current signal to replace
             with the axis passed in argument.
-
         """
         self._axes[index_in_axes_manager] = axis
 
@@ -2168,11 +2167,10 @@ class AxesManager(t.HasTraits):
 
         Parameters
         ----------
-        axes: iterable of :class:`~hyperspy.axes.DataAxis`.
+        axes : iterable of :class:`~hyperspy.axes.DataAxis`
             The axes to copy the attributes from.
-        attributes: iterable of strings.
+        attributes : iterable of str
             The attributes to copy.
-
         """
 
         # To only trigger once even with several changes, we suppress here
@@ -2301,7 +2299,7 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def key_navigator(self, event):
-        """Set hotkeys for controlling the indices of the navigator plot"""
+        """Set hotkeys for controlling the indices of the navigator plot."""
 
         if self.navigation_dimension == 0:
             # No hotkeys exist that do anything in this case
@@ -2577,7 +2575,6 @@ class AxesManager(t.HasTraits):
         Returns
         -------
         aligned : bool
-
         """
         nav_iia_r = self.navigation_indices_in_array[::-1]
         sig_iia_r = self.signal_indices_in_array[::-1]

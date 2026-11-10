@@ -77,7 +77,6 @@ class Lorentzian(Expression):
     :math:`x_0`     centre
     ============== =============
 
-
     Parameters
     ----------
     A : float
@@ -92,7 +91,8 @@ class Lorentzian(Expression):
         Extra keyword arguments are passed to the
         :class:`~.api.model.components1D.Expression` component.
 
-
+    Notes
+    -----
     For convenience the `fwhm` and `height` attributes can be used to get and set
     the full-with-half-maximum and height of the distribution, respectively.
     """
@@ -133,6 +133,7 @@ class Lorentzian(Expression):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -146,6 +147,7 @@ class Lorentzian(Expression):
         Returns
         -------
         bool
+            ``True`` if the parameters estimation is successful.
 
         Notes
         -----

@@ -28,7 +28,7 @@ from hyperspy.external.matplotlib.collections import EllipseCollection
 
 
 class Ellipses(Markers):
-    """A set of Ellipse Markers"""
+    """A set of Ellipse Markers."""
 
     _position_key = "offsets"
 
@@ -51,7 +51,7 @@ class Ellipses(Markers):
         %s
         %s
         %s
-        kwargs:
+        kwargs : dict
             Additional keyword arguments are passed to :class:`matplotlib.collections.EllipseCollection`.
         """
         if kwargs.setdefault("transform", "display") != "display":

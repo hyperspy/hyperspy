@@ -22,7 +22,7 @@ from hyperspy.drawing.markers import Markers
 
 
 class Polygons(Markers):
-    """A Collection of Rectangles Markers"""
+    """A Collection of Rectangles Markers."""
 
     _position_key = "verts"
 
@@ -39,7 +39,7 @@ class Polygons(Markers):
             In the form [[[x1,y1], [x2,y2], ... [xn, yn]],[[x1,y1], [x2,y2], ...[xm,ym]], ...].
         **kwargs : dict
             Additional keyword arguments are passed to
-            :class:`matplotlib.collections.PolyCollection`
+            :class:`matplotlib.collections.PolyCollection`.
 
         Examples
         --------

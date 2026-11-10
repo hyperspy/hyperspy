@@ -16,6 +16,9 @@ import platform
 import sys
 from datetime import datetime
 
+import numpydoc
+from packaging.version import Version
+
 import hyperspy
 
 sys.path.append("../")
@@ -358,6 +361,13 @@ intersphinx_mapping = {
     "traits": ("https://docs.enthought.com/traits/", None),
 }
 
+# The cards in ``intro.rst`` use the legacy ``^^^`` separator, which newer
+# versions of sphinx-design deprecate in favour of the ``card-header``
+# directive. That directive does not exist in older versions, so keep the
+# legacy syntax and silence the warning until the minimum supported
+# sphinx-design version provides it.
+suppress_warnings = ["design.card_legacy"]
+
 # Check links to API when building documentation
 nitpicky = True
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
@@ -424,8 +434,44 @@ numpydoc_xref_ignore = {
     "prettytable",
 }
 
-# if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
-#     numpydoc_validation_checks = {"all", "ES01", "EX01", "GL02", "GL03", "SA01", "SS06"}
+if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
+    # Codes: https://numpydoc.readthedocs.io/en/stable/validation.html#built-in-validation-checks
+    numpydoc_validation_checks = {
+        "all",  # All but the following:
+        "ES01",  # Not all docstrings need an extend summary
+        "EX01",  # Not all docstrings need "Examples"
+        "GL01",  # Contradicts numpydoc examples
+        "GL02",
+        "GL07",
+        "GL08",  # Methods can be documented in super class
+        "PR01",  # Parameters can be documented in super class
+        "PR02",  # Properties with setters might have docstrings w/"Returns"
+        "PR04",  # Doesn't seem to work with type hints
+        "PR07",  # Not all parameters have descriptions, although they should
+        "RT01",  # Abstract classes might not have return sections
+        "SA01",  # Not all docstrings need a "See Also"
+        "SA04",  # "See Also" section does not need descriptions
+        "SS06",  # Not possible to make all summaries one line
+        "YD01",  # Not all docstrings need "Yields"
+    }
+    numpydoc_validation_exclude = {
+        # Templated docstrings
+        r"\.gui$",
+        r"\.function_nd$",
+        r"\.init_parameters$",
+        r"\.gui_navigation_sliders$",
+        r"\.signals\.\w+\.plot$",
+        r"\.signals\.Signal1D\.spikes_removal_tool$",
+        r"\.data\.(atomic_resolution_image|luminescence_signal|wave_image)$",
+        r"\.markers\.(Ellipses|Rectangles|Squares)$",
+        r"\.Model1D\.(set_signal_range|fit_component|remove)$",
+        r"\.BaseModel\.fit$",
+        # Docstrings of third-party functions, documented through our namespace
+        r"\.events\.wraps$",
+        r"\.peakfinders2D\.(blob_dog|blob_log|match_template|peak_local_max)$",
+        # Use of builtin property(), which should be replaced by a decorator
+        r"\.ComplexSignal\.(real|imag|amplitude|phase)",
+    }
 
 autoclass_content = "both"
 

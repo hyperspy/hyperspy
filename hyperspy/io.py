@@ -447,10 +447,6 @@ def load(
         Supported formats:
     %s
     reader : None, str, module, optional
-        .. deprecated:: 2.4.0
-            The ``reader`` parameter is deprecated and will be removed in
-            HyperSpy v3.0. Use ``file_format`` instead.
-
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
         appropriate reader. If str, will select the appropriate file reader
@@ -458,6 +454,10 @@ def load(
         implement the ``file_reader`` function, which returns
         a dictionary containing the data and metadata for conversion to
         a HyperSpy signal.
+
+        .. deprecated:: 2.4.0
+            The ``reader`` parameter is deprecated and will be removed in
+            HyperSpy v3.0. Use ``file_format`` instead.
     print_info : bool, optional
         For SEMPER unf- and EMD (Berkeley)-files. If True, additional
         information read during loading is printed for a quick overview.
@@ -581,7 +581,6 @@ def load(
 
     >>> s[0] # doctest: +SKIP
     <Signal1D, title: spam, dimensions: (32,32|1024)>
-
     """
 
     # Handle both file_format and reader parameters

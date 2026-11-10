@@ -35,7 +35,7 @@ _logger = logging.getLogger(__name__)
 def mlpca(
     X, varX, output_dimension, svd_solver="auto", tol=1e-10, max_iter=50000, **kwargs
 ):
-    """Performs maximum likelihood PCA with missing data and/or heteroskedastic noise.
+    """Perform maximum likelihood PCA with missing data and/or heteroskedastic noise.
 
     Standard PCA based on a singular value decomposition (SVD) approach assumes
     that the data is corrupted with Gaussian, or homoskedastic noise. For many
@@ -94,7 +94,6 @@ def mlpca(
         of maximum likelihood principal component analysis: incomplete
         data sets and calibration transfer", Analytica Chimica Acta 350,
         no. 3 (September 19, 1997): 341-352.
-
     """
     m, n = X.shape
 

@@ -93,7 +93,7 @@ class StrategyList(list):
 
 
 class Samfire:
-    """Smart Adaptive Multidimensional Fitting (SAMFire) object
+    """Smart Adaptive Multidimensional Fitting (SAMFire) object.
 
     SAMFire is a more robust way of fitting multidimensional datasets. By
     extracting starting values for each pixel from already fitted pixels,
@@ -138,7 +138,6 @@ class Samfire:
         found.
     random_state : None or int or numpy.random.Generator, default None
         Random seed used to select the next pixels.
-
     """
 
     __active_strategy_ind = 0
@@ -232,7 +231,7 @@ class Samfire:
         ----------
         **kwargs : dict
             Any keyword arguments to be passed to
-            :meth:`~.model.BaseModel.fit`
+            :meth:`~.model.BaseModel.fit`.
         """
         self._setup()
         if self._workers and self.pool is not None:
@@ -262,17 +261,17 @@ class Samfire:
                 self.pool.collect_results()
 
     def append(self, strategy):
-        """Append the given strategy to the end of the strategies list
+        """Append the given strategy to the end of the strategies list.
 
         Parameters
         ----------
         strategy : strategy
-            The samfire strategy to use
+            The samfire strategy to use.
         """
         self.strategies.append(strategy)
 
     def extend(self, iterable):
-        """Extend the strategies list by the given iterable
+        """Extend the strategies list by the given iterable.
 
         Parameters
         ----------
@@ -282,7 +281,7 @@ class Samfire:
         self.strategies.extend(iterable)
 
     def remove(self, thing):
-        """Remove given strategy from the strategies list
+        """Remove given strategy from the strategies list.
 
         Parameters
         ----------
@@ -315,7 +314,7 @@ class Samfire:
 
     @property
     def pixels_done(self):
-        """Returns the number of pixels that have been solved"""
+        """Return the number of pixels that have been solved."""
         return np.sum(self.metadata.marker <= -self._scale)
 
     def _run_active_strategy_one(self):
@@ -346,10 +345,10 @@ class Samfire:
         Parameters
         ----------
         filename : str, None, default None
-            the filename. If None, a default value of ``backup_`` + signal_title
+            The filename. If None, a default value of ``backup_`` + signal_title
             is used.
         on_count : bool, default True
-            if True, only saves on the required count of steps
+            If True, only saves on the required count of steps.
         """
         if filename is None:
             title = self.model.signal.metadata.General.title
@@ -360,18 +359,18 @@ class Samfire:
             self.model.signal.models.remove("samfire_backup")
 
     def update(self, ind, results=None, isgood=None):
-        """Updates the current model with the results, received from the
-        workers. Results are only stored if the results are good enough
+        """Update the current model with the results, received from the
+        workers. Results are only stored if the results are good enough.
 
         Parameters
         ----------
         ind : tuple
-            contains the index of the pixel of the results
+            Contains the index of the pixel of the results.
         results : dict or None, default None
-            dictionary of the results. If None, means we are updating in-place
+            Dictionary of the results. If None, means we are updating in-place
             (e.g. refreshing the marker or strategies).
         isgood : bool or None, default None
-            if it is known if the results are good according to the
+            If it is known if the results are good according to the
             goodness-of-fit test. If None, the pixel is tested.
         """
         if results is not None and (isgood is None or isgood):
@@ -405,7 +404,9 @@ class Samfire:
         self.active_strategy.refresh(True, calculated_pixels)
 
     def change_strategy(self, new_strat):
-        """Changes current strategy to a new one. Certain rules apply:
+        """Change current strategy to a new one.
+
+        Certain rules apply:
         diffusion -> diffusion : resets all "ignored" pixels
         diffusion -> segmenter : saves already calculated pixels to be ignored
         when(if) subsequently diffusion strategy is run
@@ -413,8 +414,8 @@ class Samfire:
         Parameters
         ----------
         new_strat : int or strategy
-            index of the new strategy from the strategies list or the
-            strategy object itself
+            Index of the new strategy from the strategies list or the
+            strategy object itself.
         """
         from numbers import Number
 
@@ -455,13 +456,13 @@ class Samfire:
         self._active_strategy_ind = new_strat
 
     def generate_values(self, need_inds):
-        """Returns an iterator that yields the index of the pixel and the
+        """Return an iterator that yields the index of the pixel and the
         value dictionary to be sent to the workers.
 
         Parameters
         ----------
         need_inds : int
-            the number of pixels to be returned in the generator
+            The number of pixels to be returned in the generator.
         """
         if need_inds:
             # get pixel index
@@ -635,7 +636,7 @@ class Samfire:
         Parameters
         ----------
         on_count : bool
-            if True, only tries to plot every speficied count, otherwise
+            If True, only tries to plot every speficied count, otherwise
             (default) always plots if possible.
         """
         count_test = self.plot_every and (self.count % self.plot_every == 0)
@@ -648,7 +649,7 @@ class Samfire:
                     self._figure = self.active_strategy.plot(self._figure)
 
     def log(self, *args):
-        """If has a list named "_log" as attribute, appends the arguments there"""
+        """If has a list named "_log" as attribute, appends the arguments there."""
         if hasattr(self, "_log") and isinstance(self._log, list):
             self._log.append(args)
 

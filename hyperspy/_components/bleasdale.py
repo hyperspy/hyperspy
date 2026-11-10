@@ -46,7 +46,6 @@ class Bleasdale(Expression):
     Notes
     -----
     For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
-
     """
 
     def __init__(self, a=1.0, b=1.0, c=1.0, module=None, **kwargs):
@@ -72,7 +71,7 @@ class Bleasdale(Expression):
 
     def grad_a(self, x):
         """
-        Returns d(function)/d(parameter_1)
+        Return d(function)/d(parameter_1).
         """
         a = self.a.value
         b = self.b.value
@@ -82,7 +81,7 @@ class Bleasdale(Expression):
 
     def grad_b(self, x):
         """
-        Returns d(function)/d(parameter_1)
+        Return d(function)/d(parameter_1).
         """
         a = self.a.value
         b = self.b.value
@@ -92,7 +91,7 @@ class Bleasdale(Expression):
 
     def grad_c(self, x):
         """
-        Returns d(function)/d(parameter_1)
+        Return d(function)/d(parameter_1).
         """
         a = self.a.value
         b = self.b.value

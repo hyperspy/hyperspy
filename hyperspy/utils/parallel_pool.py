@@ -36,8 +36,8 @@ _logger = logging.getLogger(__name__)
 
 
 class ParallelPool:
-    """Creates a ParallelPool by either looking for a ipyparallel client and
-    then creating a load_balanced_view, or by creating a multiprocessing pool
+    """Create a ParallelPool by either looking for a ipyparallel client and
+    then creating a load_balanced_view, or by creating a multiprocessing pool.
 
     Attributes
     ----------
@@ -53,7 +53,6 @@ class ParallelPool:
     timestep : float
         Can be used as "ticks" to adjust CPU load when building upon this
         class.
-
     """
 
     _timestep = 0
@@ -66,12 +65,12 @@ class ParallelPool:
         num_workers : None or int, default None
             The (max) number of workers to create. If less are available,
             smaller number is actually created.
-        ipyparallel : None or bool, default None
-            Which pool to set up. True - ipyparallel. False - multiprocessing.
-            None - try ipyparallel, then multiprocessing if failed.
         ipython_kwargs : None or dict, default None
             Arguments that will be passed to the ipyparallel.Client when
             creating. Not None implies ipyparallel=True.
+        ipyparallel : None or bool, default None
+            Which pool to set up. True - ipyparallel. False - multiprocessing.
+            None - try ipyparallel, then multiprocessing if failed.
         """
         if ipython_kwargs is None:
             ipython_kwargs = {}
@@ -129,7 +128,7 @@ class ParallelPool:
         return True
 
     def setup(self, ipyparallel=None):
-        """Sets up the pool.
+        """Set up the pool.
 
         Parameters
         ----------
@@ -163,7 +162,7 @@ class ParallelPool:
                 raise ValueError("ipyparallel has to be True, False or None type")
 
     def sleep(self, howlong=None):
-        """Sleeps for the required number of seconds.
+        """Sleep for the required number of seconds.
 
         Parameters
         ----------

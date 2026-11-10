@@ -365,7 +365,6 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         %s
         %s
         %s
-
         """
         for c in autoscale:
             if c not in ["x", "y", "v"]:
@@ -403,18 +402,18 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
     )
 
     def create_model(self, dictionary=None):
-        """Create a model for the current signal
+        """Create a model for the current signal.
 
         Parameters
         ----------
         dictionary : None or dict, optional
             A dictionary to be used to recreate a model. Usually generated
-            using :meth:`hyperspy.model.BaseModel.as_dictionary`
+            using :meth:`hyperspy.model.BaseModel.as_dictionary`.
 
         Returns
         -------
         hyperspy.models.model2d.Model2D
-
+            The model created from the signal.
         """
         from hyperspy.models.model2d import Model2D
 
@@ -470,11 +469,11 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
             If True, use phase correlation to align the images, otherwise
             use cross correlation.
         sobel : bool, default True
-            Apply a Sobel filter for edge enhancement
+            Apply a Sobel filter for edge enhancement.
         medfilter : bool, default True
-            Apply a median filter for noise reduction
+            Apply a median filter for noise reduction.
         hanning : bool, default True
-            Apply a 2D hanning filter
+            Apply a 2D hanning filter.
         plot : bool or str
             If True plots the images after applying the filters and
             the phase correlation. If 'reuse', it will also plot the images,
@@ -508,7 +507,6 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         See Also
         --------
         align2D
-
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -659,7 +657,7 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         ----------
         crop : bool
             If True, the data will be cropped not to include regions
-            with missing data
+            with missing data.
         fill_value : int, float, np.nan
             The areas with missing data are filled with the given value.
             Default is np.nan.
@@ -671,7 +669,7 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides ``crop``.
-        interpolation_order: int
+        interpolation_order : int
             The order of the spline interpolation. Default is 1, linear
             interpolation.
         %s
@@ -683,7 +681,7 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         Returns
         -------
         numpy.ndarray
-            The estimated shifts are returned only if ``shifts`` is None
+            The estimated shifts are returned only if ``shifts`` is None.
 
         Raises
         ------
@@ -693,7 +691,6 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         See Also
         --------
         estimate_shift2D
-
         """
         self._check_signal_dimension_equals_two()
 
@@ -839,13 +836,13 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
             integer and float input works when slicing using isig and inav.
         new_length : scalar, optional
             If interactive is False, this must be set.
-        units : string, optional
+        units : str, optional
             If interactive is False, this is used to set the axes units.
         interactive : bool, default True
             If True, will use a plot with an interactive line for calibration.
             If False, x0, y0, x1, y1 and new_length must be set.
         display : bool, default True
-        toolkit : string, optional
+        toolkit : str, optional
 
         Examples
         --------
@@ -857,7 +854,6 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
         >>> s.calibrate(x0=10, y0=10, x1=60, y1=10, new_length=100,
         ...     interactive=False, units="nm")
-
         """
         self._check_signal_dimension_equals_two()
         if interactive:
@@ -906,7 +902,7 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         self, top=None, bottom=None, left=None, right=None, convert_units=False
     ):
         """
-        Crops in signal space and in place.
+        Crop in signal space and in place.
 
         Parameters
         ----------
@@ -921,7 +917,6 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         See Also
         --------
         hyperspy.api.signals.BaseSignal.crop
-
         """
         self._check_signal_dimension_equals_two()
         self.crop(self.axes_manager.signal_axes[1].index_in_axes_manager, top, bottom)
@@ -934,11 +929,11 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
 
         Parameters
         ----------
-        ramp_x: float
+        ramp_x : float
             Slope of the ramp in x-direction.
-        ramp_y: float
+        ramp_y : float
             Slope of the ramp in y-direction.
-        offset: float, optional
+        offset : float, optional
             Offset of the ramp at the signal fulcrum.
 
         Notes
@@ -946,7 +941,6 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
             The fulcrum of the linear ramp is at the origin and the slopes are
             given in units of the axis with the according scale taken into
             account. Both are available via the `axes_manager` of the signal.
-
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
         ramp = offset * np.ones_like(self.data)
@@ -1015,13 +1009,13 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
             If False, the results will be returned.
         current_index : bool
             If True, the computation will be performed for the current index.
+        %s
+        %s
+        %s
+        %s
         get_intensity : bool
             If True, the intensity of the peak will be returned as an additional column,
             the last one.
-        %s
-        %s
-        %s
-        %s
 
         **kwargs : dict
             Keywords parameters associated with above methods, see the
@@ -1036,8 +1030,8 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
 
         Returns
         -------
-        peaks : :class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
-            numpy.ndarray if current_index=True.
+        :class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
+            A numpy.ndarray if current_index=True.
             Ragged signal with shape (npeaks, 2) that contains the `x, y`
             pixel coordinates of peaks found in each image sorted
             first along `y` and then along `x`.

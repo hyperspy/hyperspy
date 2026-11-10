@@ -158,7 +158,6 @@ class Expression(Component):
     >>> comp.parameters
     (<Parameter one of my function component>,
      <Parameter two of my function component>)
-
     """
 
     def __init__(

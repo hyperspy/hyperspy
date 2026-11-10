@@ -63,7 +63,6 @@ def set_log_level(level):
     DEBUG:hyperspy.gui:Current MPL backend: TkAgg
     DEBUG:hyperspy.gui:Current ETS toolkit: qt4
     DEBUG:hyperspy.gui:Current ETS toolkit set to: null
-
     """
     logger = initialize_logger("hyperspy")
     logger.setLevel(level)

@@ -24,7 +24,7 @@ class CommonSignal2D:
     """Common functions for 2-dimensional signals."""
 
     def to_signal1D(self, optimize=True):
-        """Returns the image as a spectrum.
+        """Return the image as a spectrum.
 
         %s
 
@@ -33,7 +33,6 @@ class CommonSignal2D:
         hyperspy.api.signals.BaseSignal.as_signal1D,
         hyperspy.api.signals.BaseSignal.transpose,
         hyperspy.api.transpose
-
         """
         return self.as_signal1D(0 + 3j, optimize=optimize)
 

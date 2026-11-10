@@ -111,7 +111,6 @@ class SkewNormal(Expression):
                    \alpha~t(x)}{\sqrt{2}}\right)\right] \\
         t(x) &= \frac{x-x_0}{\omega}
 
-
     ============== =============
     Variable        Parameter
     ============== =============
@@ -120,7 +119,6 @@ class SkewNormal(Expression):
     :math:`\omega`  scale
     :math:`\alpha`  shape
     ============== =============
-
 
     Parameters
     ----------
@@ -131,7 +129,7 @@ class SkewNormal(Expression):
         Height parameter of the peak.
     scale : float
         Width (sigma) parameter.
-    shape: float
+    shape : float
         Skewness (asymmetry) parameter. For shape=0, the normal
         distribution (Gaussian) is obtained. The distribution is
         right skewed (longer tail to the right) if shape>0 and is
@@ -181,6 +179,7 @@ class SkewNormal(Expression):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -194,6 +193,7 @@ class SkewNormal(Expression):
         Returns
         -------
         bool
+            ``True`` if the parameters estimation is successful.
 
         Notes
         -----

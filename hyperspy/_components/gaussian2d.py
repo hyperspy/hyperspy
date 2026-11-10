@@ -33,7 +33,6 @@ class Gaussian2D(Expression):
         f(x,y) = \frac{A}{2\pi s_x s_y}\exp\left[-\frac{\left(x-x_0\right)
         ^{2}}{2s_{x}^{2}}\frac{\left(y-y_0\right)^{2}}{2s_{y}^{2}}\right]
 
-
     =============== =============
     Variable         Parameter
     =============== =============
@@ -41,7 +40,6 @@ class Gaussian2D(Expression):
     :math:`s_x,s_y`  sigma_x/y
     :math:`x_0,y_0`  centre_x/y
     =============== =============
-
 
     Parameters
     ----------
@@ -123,7 +121,7 @@ class Gaussian2D(Expression):
 
     @property
     def height(self):
-        """float: Height of the Gaussian"""
+        """Height of the Gaussian."""
         return self.A.value / (2 * np.pi * self.sigma_x.value * self.sigma_y.value)
 
     @height.setter
@@ -132,7 +130,7 @@ class Gaussian2D(Expression):
 
     @property
     def sigma_major(self):
-        """float: The sigma value of the major axis (axis with the largest
+        """The sigma value of the major axis (axis with the largest
         sigma value).
         """
         if self.sigma_x.value >= self.sigma_y.value:
@@ -142,7 +140,7 @@ class Gaussian2D(Expression):
 
     @property
     def sigma_minor(self):
-        """float: The sigma value of the minor axis (axis with the smallest
+        """The sigma value of the minor axis (axis with the smallest
         sigma value).
         """
         if self.sigma_x.value >= self.sigma_y.value:
@@ -152,19 +150,19 @@ class Gaussian2D(Expression):
 
     @property
     def ellipticity(self):
-        """float: Ratio between the major and minor axis."""
+        """Ratio between the major and minor axis."""
         return self.sigma_major / self.sigma_minor
 
     @property
     def rotation_angle_wrapped(self):
-        """float: Rotation angle in radian wrapped to [0, 2*pi].
+        """Rotation angle in radian wrapped to [0, 2*pi].
         Only for Gaussian2D component created with `add_rotation=True`.
         """
         return math.fmod(self.rotation_angle.value, 2 * np.pi)
 
     @property
     def rotation_major_axis(self):
-        """float: Rotation angle in radian between the major axis (axis with
+        """Rotation angle in radian between the major axis (axis with
         the largest sigma value) and the horizontal axis.
         Only for Gaussian2D component created with `add_rotation=True`.
         """

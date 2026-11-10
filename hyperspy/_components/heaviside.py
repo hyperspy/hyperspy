@@ -36,14 +36,12 @@ class HeavisideStep(Expression):
         A & x>n
         \end{cases}
 
-
     ============== =============
     Variable        Parameter
     ============== =============
     :math:`n`       centre
     :math:`A`       height
     ============== =============
-
 
     Parameters
     ----------

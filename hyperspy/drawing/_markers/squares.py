@@ -45,7 +45,7 @@ class Squares(Markers):
         %s
         %s
         %s
-        kwargs:
+        kwargs : dict
             Additional keyword arguments are passed to
             :class:`hyperspy.external.matplotlib.collections.SquareCollection`.
         """

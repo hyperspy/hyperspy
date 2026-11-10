@@ -568,7 +568,7 @@ class MVA:
         reproject : None or str {"signal", "navigation", "both"}, default None
             If not None, the results of the decomposition will be projected in
             the selected masked area.
-        return_info: bool, default False
+        return_info : bool, default False
             The result of the decomposition is stored internally. However,
             some algorithms generate some extra information that is not
             stored. If True, return any extra information if available.
@@ -623,7 +623,6 @@ class MVA:
         --------
         plot_decomposition_factors, plot_decomposition_loadings,
         plot_decomposition_results, plot_scree_plot
-
         """
         if utils.is_cupy_array(self.data):  # pragma: no cover
             if algorithm == "SVD":
@@ -1160,7 +1159,7 @@ class MVA:
             How to whiten the data prior to blind source separation.
             If None, no whitening is applied. See :func:`~.learn.whiten_data`
             for more details.
-        return_info: bool, default False
+        return_info : bool, default False
             The result of the decomposition is stored internally. However,
             some algorithms generate some extra information that is not
             stored. If True, return any extra information if available.
@@ -1182,7 +1181,6 @@ class MVA:
         See Also
         --------
         plot_bss_factors, plot_bss_loadings, plot_bss_results
-
         """
         from hyperspy.signal import BaseSignal
 
@@ -1469,7 +1467,6 @@ class MVA:
             Each target component is divided by the output of ``function(target)``.
             The function must return a scalar when operating on numpy arrays and
             must have an ``axis`` argument.
-
         """
         if target == "factors":
             target = self.learning_results.factors
@@ -1496,7 +1493,6 @@ class MVA:
             Each target component is divided by the output of ``function(target)``.
             The function must return a scalar when operating on numpy arrays and
             must have an ``axis`` argument.
-
         """
         if target == "factors":
             target = self.learning_results.bss_factors
@@ -1520,7 +1516,7 @@ class MVA:
         Parameters
         ----------
         component_number : list or int
-            component index/es
+            Component index/es.
 
         Examples
         --------
@@ -1534,7 +1530,6 @@ class MVA:
         Reverse components 0 and 2
 
         >>> s.reverse_decomposition_component((0, 2)) # doctest: +SKIP
-
         """
         if hasattr(self.learning_results.factors, "compute"):
             _logger.warning(
@@ -1555,7 +1550,7 @@ class MVA:
         Parameters
         ----------
         component_number : list or int
-            component index/es
+            Component index/es.
 
         Examples
         --------
@@ -1570,7 +1565,6 @@ class MVA:
         Reverse components 0 and 2
 
         >>> s.reverse_bss_component((0, 2)) # doctest: +SKIP
-
         """
         if hasattr(self.learning_results.bss_factors, "compute"):
             _logger.warning(
@@ -1812,7 +1806,6 @@ class MVA:
         -------
         :class:`~hyperspy.api.signals.BaseSignal` or subclass
             A model built from the given components.
-
         """
         rec = self._calculate_recmatrix(
             components=components,
@@ -1835,7 +1828,7 @@ class MVA:
         components : None, int or list of int, default None
             If None, rebuilds signal instance from all components
             If int, rebuilds signal instance from components in range 0-given int
-            If list of ints, rebuilds signal instance from only components in given list
+            If list of ints, rebuilds signal instance from only components in given list.
         %s
         %s
 
@@ -1843,7 +1836,6 @@ class MVA:
         -------
         :class:`~hyperspy.api.signals.BaseSignal` or subclass
             A model built from the given components.
-
         """
         rec = self._calculate_recmatrix(
             components=components,
@@ -1868,7 +1860,7 @@ class MVA:
 
         Returns
         -------
-        s : Signal1D
+        Signal1D
             Explained variance ratio (centred decomposition) or proportion of
             total variation (uncentred decomposition).
 
@@ -1876,7 +1868,6 @@ class MVA:
         --------
         decomposition, plot_scree_plot,
         get_decomposition_loadings, get_decomposition_factors
-
         """
         target = self.learning_results
         if target.explained_variance_ratio is None:
@@ -1929,7 +1920,7 @@ class MVA:
         Parameters
         ----------
         n : int or None
-            Number of components to plot. If None, all components will be plot
+            Number of components to plot. If None, all components will be plot.
         log : bool, default True
             If True, the y axis uses a log scale.
         threshold : float or int
@@ -1942,8 +1933,8 @@ class MVA:
             automatically determined by the cutoff value.
             If an int, ``threshold`` is interpreted as the number of
             components to highlight as signal (and no cutoff line will be
-            drawn)
-        hline: {'auto', True, False}
+            drawn).
+        hline : {'auto', True, False}
             Whether or not to draw a horizontal line illustrating the variance
             cutoff for signal/noise determination. Default is to draw the line
             at the value given in ``threshold`` (if it is a float) and not
@@ -1951,7 +1942,7 @@ class MVA:
             If True, (and ``threshold`` is an int), the line will be drawn
             through the last component defined as signal.
             If False, the line will not be drawn in any circumstance.
-        vline: bool, default False
+        vline : bool, default False
             Whether or not to draw a vertical line illustrating an estimate of
             the number of significant components. If True, the line will be
             drawn at the the knee or elbow position of the curve indicating the
@@ -1969,22 +1960,22 @@ class MVA:
             selected.
         signal_fmt : dict
             Dictionary of matplotlib formatting values for the signal
-            components
+            components.
         noise_fmt : dict
             Dictionary of matplotlib formatting values for the noise
-            components
+            components.
         fig : matplotlib.figure.Figure or None
             If None, a default figure will be created, otherwise will plot
-            into fig
+            into fig.
         ax : matplotlib.axes.Axes or None
-            If None, a default ax will be created, otherwise will plot into ax
+            If None, a default ax will be created, otherwise will plot into ax.
         **kwargs
-            remaining keyword arguments are passed to :class:`matplotlib.figure.Figure`
+            Remaining keyword arguments are passed to :class:`matplotlib.figure.Figure`.
 
         Returns
         -------
         matplotlib.axes.Axes
-            Axes object containing the scree plot
+            Axes object containing the scree plot.
 
         Examples
         --------
@@ -2004,7 +1995,6 @@ class MVA:
         --------
         decomposition, get_scree_plot_data, get_decomposition_loadings,
         get_decomposition_factors
-
         """
         import matplotlib.pyplot as plt
         from matplotlib.ticker import FuncFormatter, MaxNLocator
@@ -2178,13 +2168,12 @@ class MVA:
 
         Returns
         -------
-        ax : matplotlib.axes
+        matplotlib.axes
             Axes object containing the cumulative plot.
 
         See Also
         --------
         plot_scree_plot
-
         """
         import matplotlib.pyplot as plt
 
@@ -2224,7 +2213,6 @@ class MVA:
             Optional mask applied in the navigation axis.
         signal_mask : {None, boolean numpy array}, default None
             Optional mask applied in the signal axis.
-
         """
         _logger.info("preprocessing the data to normalize Poissonian noise")
         with self.unfolded():
@@ -2388,14 +2376,13 @@ class MVA:
 
     def plot_cluster_metric(self):
         """Plot the cluster metrics calculated using the
-        :meth:`~hyperspy.api.signals.BaseSignal.estimate_number_of_clusters` method
+        :meth:`~hyperspy.api.signals.BaseSignal.estimate_number_of_clusters` method.
 
         See Also
         --------
         estimate_number_of_clusters, cluster_analysis, get_cluster_labels,
         get_cluster_signals, plot_cluster_results, plot_cluster_signals,
         plot_cluster_labels
-
         """
         import matplotlib.pyplot as plt
 
@@ -2596,7 +2583,7 @@ class MVA:
             details. If ``object``, must be :mod:`sklearn.preprocessing`-like.
         preprocessing_kwargs : dict or None, default None
             Additional parameters passed to the supported sklearn preprocessing methods.
-            See sklearn.preprocessing scaling methods for further details
+            See sklearn.preprocessing scaling methods for further details.
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
             results (cluster_source_for_centers="decomposition") you can define how
@@ -2611,7 +2598,7 @@ class MVA:
             The signal locations marked as True are not used in the
             clustering for "signal" or Signals supplied as cluster source.
             This is not applied to decomposition results or source_for_centers
-            (as it may be a different shape to the cluster source)
+            (as it may be a different shape to the cluster source).
         algorithm : {``"kmeans"`` | ``"agglomerative"`` | ``"minibatchkmeans"`` | ``"spectralclustering"``}
             See scikit-learn documentation. Default "kmeans"
         return_info : bool, default False
@@ -2630,7 +2617,7 @@ class MVA:
         int
             Number of clusters to find using the one of the pre-defined methods
             "kmeans", "agglomerative", "minibatchkmeans", "spectralclustering"
-            See sklearn.cluster for details
+            See sklearn.cluster for details.
 
         See Also
         --------
@@ -2643,7 +2630,6 @@ class MVA:
         None or object
             If ``'return_info'`` is True returns the Scikit-learn cluster object
             used for clustering. Useful if you wish to examine inertia or other outputs.
-
         """
         if not SKLEARN_INSTALLED:
             raise ImportError("Clustering requires scikit-learn.")
@@ -2880,14 +2866,13 @@ class MVA:
         show_progressbar=None,
         **kwargs,
     ):
-        """Performs cluster analysis of a signal for cluster sizes ranging from
+        """Perform cluster analysis of a signal for cluster sizes ranging from
         n_clusters =2 to max_clusters ( default 12)
         Note that this can be a slow process for large datasets so please
         consider reducing max_clusters in this case.
         For each cluster it evaluates the silhouette score which is a metric of
         how well separated the clusters are. Maximima or peaks in the scores
         indicate good choices for cluster sizes.
-
 
         Parameters
         ----------
@@ -2915,7 +2900,7 @@ class MVA:
             details. If ``object``, must be :mod:`sklearn.preprocessing`-like.
         preprocessing_kwargs : dict or None, default None
             Additional parameters passed to the cluster preprocessing algorithm.
-            See sklearn.preprocessing preprocessing methods for further details
+            See sklearn.preprocessing preprocessing methods for further details.
         number_of_components : int, default None
             If you are getting the cluster centers using the decomposition
             results (cluster_source_for_centers="decomposition") you can define how
@@ -2923,7 +2908,7 @@ class MVA:
             estimate of significant components found in the decomposition step
             using the elbow method and stored in the
             ``learning_results.number_significant_components`` attribute.
-        navigation_mask : boolean numpy array, default : None
+        navigation_mask : bool numpy array, default : None
             The navigation locations marked as True are not used in the
             clustering.
         signal_mask : numpy.ndarray of bool, default None
@@ -2955,7 +2940,7 @@ class MVA:
         n_clusters : int
             Number of clusters to find using the one of the pre-defined methods
             "kmeans","agglomerative","minibatchkmeans","spectralclustering"
-            See sklearn.cluster for details
+            See sklearn.cluster for details.
 
         Returns
         -------
@@ -2967,7 +2952,6 @@ class MVA:
         cluster_analysis, get_cluster_labels, get_cluster_signals,
         get_cluster_distances, plot_cluster_metric, plot_cluster_results,
         plot_cluster_signals, plot_cluster_labels
-
         """
         import sklearn
 
@@ -3216,7 +3200,6 @@ class MVA:
         See Also
         --------
         get_scree_plot_data, plot_scree_plot
-
         """
         if explained_variance_ratio is None:
             if self.learning_results.explained_variance_ratio is None:
@@ -3300,12 +3283,11 @@ class LearningResults(object):
 
         Parameters
         ----------
-        filename : string
+        filename : str
             Path to save the results to.
         overwrite : {True, False, None}, default None
             If True, overwrite the file if it exists.
             If None (default), prompt user if file exists.
-
         """
         kwargs = {}
         for attribute in [
@@ -3328,9 +3310,8 @@ class LearningResults(object):
 
         Parameters
         ----------
-        filename : string
+        filename : str
             Path to load the results from.
-
         """
         decomposition = np.load(filename, allow_pickle=True)
 
@@ -3394,7 +3375,6 @@ class LearningResults(object):
         -------
         str
             String summarizing the learning parameters.
-
         """
 
         summary_str = (
@@ -3430,7 +3410,6 @@ class LearningResults(object):
         compute : bool, default False
            If True and the decomposition results are lazy,
            also compute the results.
-
         """
         _logger.info(f"Trimming results to {n} dimensions")
         self.loadings = self.loadings[:, :n]

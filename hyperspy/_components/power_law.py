@@ -40,7 +40,6 @@ class PowerLaw(Expression):
      :math:`x_0`   origin
     ============= =============
 
-
     Parameters
     ----------
     A : float
@@ -106,13 +105,14 @@ class PowerLaw(Expression):
         out=False,
         intervals=None,
     ):
-        """Estimate the parameters for the power law component
+        """Estimate the parameters for the power law component.
 
         The two area method is used to estimate the parameters.
 
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float, optional
             The left endpoint of the signal interval.
         x2 : float, optional
@@ -134,7 +134,6 @@ class PowerLaw(Expression):
         -------
         bool
             Exit status required for the :meth:`~.api.signals.Signal1D.remove_background` function.
-
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]

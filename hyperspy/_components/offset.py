@@ -39,8 +39,7 @@ class Offset(Component):
     Parameters
     ----------
     offset : float
-        The offset to be fitted
-
+        The offset to be fitted.
     """
 
     def __init__(self, offset=0.0):
@@ -77,25 +76,26 @@ class Offset(Component):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float, optional
             Defines the left limit of the spectral range to use for the
             estimation. Deprecated, use ``intervals`` instead.
         x2 : float, optional
             Defines the right limit of the spectral range to use for the
             estimation. Deprecated, use ``intervals`` instead.
+        only_current : bool
+            If False estimates the parameters for the full dataset.
         intervals : list of tuple or :class:`~.api.roi.SpanROI`, optional
             List of intervals for estimation. Each interval can be a tuple
             ``(left, right)`` or a :class:`~.api.roi.SpanROI` instance.
             Data from all intervals is concatenated before averaging.
             If ``None``, the ``x1``, ``x2`` arguments are used for backward
             compatibility.
-        only_current : bool
-            If False estimates the parameters for the full dataset.
 
         Returns
         -------
         bool
-
+            ``True`` if the parameters estimation is successful.
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]

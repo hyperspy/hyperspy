@@ -211,10 +211,6 @@ class LazySignal(signals.BaseSignal):
             Any other keyword arguments for :meth:`dask.array.Array.compute`.
             For example `scheduler` or `num_workers`.
 
-        Returns
-        -------
-        None
-
         Notes
         -----
         For alternative ways to set the compute settings see
@@ -242,7 +238,6 @@ class LazySignal(signals.BaseSignal):
 
         >>> s3 = s.deepcopy()
         >>> s3.compute(scheduler='single-threaded')
-
         """
         self.data = dask_utils._compute(
             self.data, show_progressbar=show_progressbar, **kwargs
@@ -257,7 +252,7 @@ class LazySignal(signals.BaseSignal):
 
     def rechunk(self, nav_chunks="auto", sig_chunks=-1, inplace=True, **kwargs):
         """
-        Rechunks the data using the same rechunking formula from Dask
+        Rechunk the data using the same rechunking formula from Dask
         expect that the navigation and signal chunks are defined seperately.
         Note, for most functions sig_chunks should remain ``None`` so that it
         spans the entire signal axes.
@@ -287,11 +282,10 @@ class LazySignal(signals.BaseSignal):
             return self._deepcopy_with_new_data(data_)
 
     def close_file(self):
-        """Closes the associated data file if any.
+        """Close the associated data file if any.
 
         Currently it only supports closing the file associated with a dask
         array created from an h5py DataSet (default HyperSpy hdf5 reader).
-
         """
         try:
             file.get_file_handle(self.data).close()
@@ -380,7 +374,7 @@ class LazySignal(signals.BaseSignal):
 
     def get_chunk_size(self, axes=None):
         """
-        Returns the chunk size as tuple for a set of given axes. The order
+        Return the chunk size as tuple for a set of given axes. The order
         of the returned tuple follows the order of the dask array.
 
         Parameters
@@ -1638,17 +1632,17 @@ class LazySignal(signals.BaseSignal):
             algorithms; incompatible with ``normalize_poissonian_noise=True``.
         auto_transpose : bool, default True
             Deprecated and has no effect. Kept for API compatibility.
+        %s
+        %s
         get : dask scheduler or None
             The dask scheduler to use for computations. If ``None``,
             ``dask.threaded.get`` will be used if possible, otherwise
             ``dask.get`` will be used, for example in pyodide interpreter.
         num_chunks : int or None, default None
-            the number of dask chunks to pass to the decomposition model.
+            The number of dask chunks to pass to the decomposition model.
             More chunks require more memory, but should run faster. Will be
             increased to contain at least ``output_dimension`` signals.
             Not used for ``'SVD'`` with ``svd_solver='randomized'``.
-        %s
-        %s
         reproject : {None, "navigation", "signal", "both"}, default None
             If not None, the decomposition results will be projected onto the
             full (unmasked) data after learning:
@@ -1715,7 +1709,7 @@ class LazySignal(signals.BaseSignal):
               which gives identical results for truncated SVD with
               substantially lower memory usage.
         **kwargs
-            passed to the partial_fit/fit functions.
+            Passed to the partial_fit/fit functions.
 
         References
         ----------
@@ -1792,7 +1786,6 @@ class LazySignal(signals.BaseSignal):
             Online robust PCA.
         hyperspy.learn.ornmf :
             Online robust NMF.
-
         """
         from hyperspy.learn._mva import _to_flat_bool
 
@@ -2250,15 +2243,15 @@ class LazySignal(signals.BaseSignal):
         DECOMP_NORMALIZE_POISSONIAN_NOISE_DOC,
         DECOMP_MASK_DOC
         % (
-            "navigation_mask",
-            ":class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array",
-            "navigation",
-        ),
-        DECOMP_MASK_DOC
-        % (
             "signal_mask",
             ":class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array",
             "signal",
+        ),
+        DECOMP_MASK_DOC
+        % (
+            "navigation_mask",
+            ":class:`~.api.signals.BaseSignal`, numpy.ndarray or dask.array.Array",
+            "navigation",
         ),
         DECOMP_PRINT_INFO_DOC,
     )
@@ -2293,7 +2286,7 @@ class LazySignal(signals.BaseSignal):
         index : (int, float, None) or iterable, optional
             Specified where to take the sum, follows HyperSpy indexing syntax
             for integer and float. If None, the index is the centre of the
-            signal_space
+            signal_space.
         chunks_number : (int, None) or iterable, optional
             Define the number of chunks in the signal space used for rechunk
             the when calculating of the navigator. Useful to define the range
@@ -2302,17 +2295,12 @@ class LazySignal(signals.BaseSignal):
             chunk used in the navigator calculation.
         %s
 
-        Returns
-        -------
-        None.
-
         Notes
         -----
         The number of chunks will affect where the sum is taken. If the sum
         needs to be taken in the centre of the signal space (for example, in
         the case of diffraction pattern), the number of chunk needs to be an
         odd number, so that the middle is centered.
-
         """
         import dask.array as da
 

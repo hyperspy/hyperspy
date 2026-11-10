@@ -22,6 +22,8 @@ For use in things like docstrings or to test HyperSpy functionalities.
 
 """
 
+import inspect
+
 import numpy as np
 import scipy
 
@@ -37,12 +39,14 @@ except ImportError:
     prange = range
 
 
+# Indentation is relative to the parameter name: the host docstring is
+# dedented with ``inspect.cleandoc`` before the substitution, because Python
+# >= 3.13 already strips the docstring indentation at compile time.
 ADD_NOISE_DOCSTRING = """add_noise : bool
-        If True, add noise to the signal. Use ``random_state`` to seed
-        the noise to generate reproducible noise.
-    random_state : None, int or numpy.random.Generator, default None
-        Random seed used to generate the data.
-    """
+    If True, add noise to the signal. Use ``random_state`` to seed
+    the noise to generate reproducible noise.
+random_state : None, int or numpy.random.Generator, default None
+    Random seed used to generate the data."""
 
 
 @jit_ifnumba(cache=True, parallel=True)
@@ -90,13 +94,13 @@ def atomic_resolution_image(
     Returns
     -------
     :class:`~.api.signals.Signal2D`
+        The atomic resolution image.
 
     Examples
     --------
     >>> import hyperspy.api as hs
     >>> s = hs.data.atomic_resolution_image()
     >>> s.plot()
-
     """
     if isinstance(size, int):
         size = (size,) * 2
@@ -150,7 +154,9 @@ def atomic_resolution_image(
     return s
 
 
-atomic_resolution_image.__doc__ %= ADD_NOISE_DOCSTRING
+atomic_resolution_image.__doc__ = (
+    inspect.cleandoc(atomic_resolution_image.__doc__) % ADD_NOISE_DOCSTRING
+)
 
 
 def luminescence_signal(
@@ -172,7 +178,7 @@ def luminescence_signal(
         The navigation dimension(s) of the signal. 0 = single spectrum,
         1 = linescan, 2 = spectral map etc...
     uniform : bool
-        return uniform (wavelength) or non-uniform (energy) spectrum
+        Return uniform (wavelength) or non-uniform (energy) spectrum.
     add_baseline : bool
         If true, adds a constant baseline to the spectrum. Conversion to
         energy representation will turn the constant baseline into inverse
@@ -210,6 +216,7 @@ def luminescence_signal(
     Returns
     -------
     :class:`~.api.signals.Signal1D`
+        The luminescence signal.
     """
 
     # Initialisation of random number generator
@@ -282,21 +289,23 @@ def luminescence_signal(
     return sig
 
 
-luminescence_signal.__doc__ %= ADD_NOISE_DOCSTRING
+luminescence_signal.__doc__ = (
+    inspect.cleandoc(luminescence_signal.__doc__) % ADD_NOISE_DOCSTRING
+)
 
 
 def wave_image(
     angle=45, wavelength=10, shape=(256, 256), add_noise=True, random_state=None
 ):
     """
-    Returns a wave image generated using the sinus function.
+    Return a wave image generated using the sinus function.
 
     Parameters
     ----------
     angle : float, optional
         The angle in degree.
     wavelength : float, optional
-        The wavelength the wave in pixel. The default is 10
+        The wavelength the wave in pixel. The default is 10.
     shape : tuple of float, optional
         The shape of the data. The default is (256, 256).
     %s
@@ -304,6 +313,7 @@ def wave_image(
     Returns
     -------
     :class:`~.api.signals.Signal2D`
+        The wave image.
     """
 
     x = np.arange(0, shape[0], 1)
@@ -325,7 +335,7 @@ def wave_image(
     return s
 
 
-wave_image.__doc__ %= ADD_NOISE_DOCSTRING
+wave_image.__doc__ = inspect.cleandoc(wave_image.__doc__) % ADD_NOISE_DOCSTRING
 
 
 def _get_largest_rectangle_from_rotation(width, height, angle):

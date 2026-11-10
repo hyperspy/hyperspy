@@ -25,7 +25,7 @@ from hyperspy.drawing.markers import Markers
 
 
 class VerticalLines(Markers):
-    """A set of Vertical Line Markers"""
+    """A set of Vertical Line Markers."""
 
     _position_key = "offsets"
     _position_key_to_set = "segments"
@@ -36,9 +36,9 @@ class VerticalLines(Markers):
 
         Parameters
         ----------
-        x: [n]
-            Positions of the markers
-        kwargs: dict
+        x : array-like
+            Positions of the markers, with shape (n,).
+        kwargs : dict
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.

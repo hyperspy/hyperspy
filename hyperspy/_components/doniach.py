@@ -42,11 +42,9 @@ class Doniach(Expression):
         {(\sigma^2 + (x-centre+dx)^2)^{\frac{(1-\alpha)}{2}}}
         \]
 
-
         \[
         dx = \frac{2.354820\sigma}{2 tan[\frac{\pi}{2-\alpha}]}
         \]
-
 
     =============== ===========
     Variable         Parameter
@@ -60,11 +58,11 @@ class Doniach(Expression):
     Parameters
     ----------
     A : float
-        Height
+        Height.
     sigma : float
-        Variance parameter of the distribution
+        Variance parameter of the distribution.
     alpha : float
-        Tail or asymmetry parameter
+        Tail or asymmetry parameter.
     centre : float
         Location of the maximum (peak position).
     **kwargs
@@ -78,7 +76,6 @@ class Doniach(Expression):
     See Doniach S. and Sunjic M., J. Phys. 4C31, 285 (1970)
     or https://web.archive.org/web/20260220110441/http://www.casaxps.com/help_manual/line_shapes.htm for a more detailed
     description
-
     """
 
     def __init__(
@@ -121,6 +118,7 @@ class Doniach(Expression):
         Parameters
         ----------
         signal : :class:`~.api.signals.Signal1D`
+            The signal used to estimate the parameters.
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -133,7 +131,7 @@ class Doniach(Expression):
         Returns
         -------
         bool
-            Returns True when the parameters estimation is successful
+            Returns True when the parameters estimation is successful.
 
         Examples
         --------

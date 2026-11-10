@@ -43,19 +43,19 @@ class ComplexSignal2D(signals.ComplexSignal, CommonSignal2D):
 
         Parameters
         ----------
-        ramp_x: float
+        ramp_x : float
             Slope of the ramp in x-direction.
-        ramp_y: float
+        ramp_y : float
             Slope of the ramp in y-direction.
-        offset: float, optional
+        offset : float, optional
             Offset of the ramp at the fulcrum.
+
         Notes
         -----
         The fulcrum of the linear ramp is at the origin and the slopes are
         given in units of the axis with the corresponding scale taken into
         account. Both are available via the
-        :attr:`~hyperspy.api.signals.BaseSignal.axes_manager`.
-
+        :attr:`~.api.signals.BaseSignal.axes_manager`.
         """
         phase = self.phase
         phase.add_ramp(ramp_x, ramp_y, offset)
@@ -90,7 +90,6 @@ class ComplexSignal2D(signals.ComplexSignal, CommonSignal2D):
         %s
         %s
         %s
-
         """
         super().plot(
             power_spectrum=power_spectrum,
