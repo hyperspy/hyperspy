@@ -223,7 +223,7 @@ class SamfirePool(ParallelPool):
 
         Parameters
         ----------
-        timeout : {None, flaot}
+        timeout : {None, float}
             The time to wait when collecting results after sending out the
             ping. If None, the default timeout is used.
         """
@@ -336,7 +336,7 @@ class SamfirePool(ParallelPool):
 
         Parameters
         ----------
-        timeout : {None, flaot}
+        timeout : {None, float}
             The time to wait when collecting results. If None, the default
             timeout is used.
         """
