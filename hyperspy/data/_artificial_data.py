@@ -22,6 +22,8 @@ For use in things like docstrings or to test HyperSpy functionalities.
 
 """
 
+import inspect
+
 import numpy as np
 import scipy
 
@@ -37,12 +39,14 @@ except ImportError:
     prange = range
 
 
+# Indentation is relative to the parameter name: the host docstring is
+# dedented with ``inspect.cleandoc`` before the substitution, because Python
+# >= 3.13 already strips the docstring indentation at compile time.
 ADD_NOISE_DOCSTRING = """add_noise : bool
-        If True, add noise to the signal. Use ``random_state`` to seed
-        the noise to generate reproducible noise.
-    random_state : None, int or numpy.random.Generator, default None
-        Random seed used to generate the data.
-    """
+    If True, add noise to the signal. Use ``random_state`` to seed
+    the noise to generate reproducible noise.
+random_state : None, int or numpy.random.Generator, default None
+    Random seed used to generate the data."""
 
 
 @jit_ifnumba(cache=True, parallel=True)
@@ -150,7 +154,9 @@ def atomic_resolution_image(
     return s
 
 
-atomic_resolution_image.__doc__ %= ADD_NOISE_DOCSTRING
+atomic_resolution_image.__doc__ = (
+    inspect.cleandoc(atomic_resolution_image.__doc__) % ADD_NOISE_DOCSTRING
+)
 
 
 def luminescence_signal(
@@ -283,7 +289,9 @@ def luminescence_signal(
     return sig
 
 
-luminescence_signal.__doc__ %= ADD_NOISE_DOCSTRING
+luminescence_signal.__doc__ = (
+    inspect.cleandoc(luminescence_signal.__doc__) % ADD_NOISE_DOCSTRING
+)
 
 
 def wave_image(
@@ -327,7 +335,7 @@ def wave_image(
     return s
 
 
-wave_image.__doc__ %= ADD_NOISE_DOCSTRING
+wave_image.__doc__ = inspect.cleandoc(wave_image.__doc__) % ADD_NOISE_DOCSTRING
 
 
 def _get_largest_rectangle_from_rotation(width, height, angle):
