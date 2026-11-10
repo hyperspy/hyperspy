@@ -55,7 +55,7 @@ class ComplexSignal2D(signals.ComplexSignal, CommonSignal2D):
         The fulcrum of the linear ramp is at the origin and the slopes are
         given in units of the axis with the corresponding scale taken into
         account. Both are available via the
-        :attr:`~hyperspy.api.signals.BaseSignal.axes_manager`.
+        :attr:`~.api.signals.BaseSignal.axes_manager`.
         """
         phase = self.phase
         phase.add_ramp(ramp_x, ramp_y, offset)
