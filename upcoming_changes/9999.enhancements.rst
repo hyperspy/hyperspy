@@ -1,0 +1,6 @@
+Stop writing ``learning_results`` to ``.hspy`` files. When loading
+old ``.hspy`` files that contain ML results, a warning is now emitted
+advising to convert using
+:func:`~hyperspy_ml.results.io.extract_results`. The
+``:meth:`~.learn._mva.LearningResults.to_results`` method provides a
+convenient migration path for legacy code.

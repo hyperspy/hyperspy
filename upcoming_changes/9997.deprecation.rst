@@ -1,0 +1,4 @@
+MDP-based blind source separation (BSS) algorithms (JADE, CuBICA, TDSEP,
+FastICA via MDP) are no longer supported. Using them now raises a
+``ValueError``. Use ``"sklearn_fastica"`` or ``"orthomax"`` as the
+algorithm instead.
