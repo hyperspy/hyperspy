@@ -361,6 +361,13 @@ intersphinx_mapping = {
     "traits": ("https://docs.enthought.com/traits/", None),
 }
 
+# The cards in ``intro.rst`` use the legacy ``^^^`` separator, which newer
+# versions of sphinx-design deprecate in favour of the ``card-header``
+# directive. That directive does not exist in older versions, so keep the
+# legacy syntax and silence the warning until the minimum supported
+# sphinx-design version provides it.
+suppress_warnings = ["design.card_legacy"]
+
 # Check links to API when building documentation
 nitpicky = True
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
