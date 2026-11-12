@@ -1,0 +1,2 @@
+Fix docstring parameter names that did not match the arguments the methods
+accept, so a name copied from the documentation no longer raises ``TypeError``.
