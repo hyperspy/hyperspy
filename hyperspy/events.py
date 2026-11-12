@@ -377,9 +377,6 @@ class Event:
         ----------
         function : callable
             The function to disconnect from the event.
-        return_connection_kwargs : bool, default False
-            If True, returns the kwargs that would reconnect the function as
-            it was.
 
         See Also
         --------
