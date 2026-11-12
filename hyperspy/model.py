@@ -2758,7 +2758,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : list of :class:`~hyperspy.component.Component`, optional
+        components_list : list of :class:`~hyperspy.component.Component`, optional
             If a list of components is given, the operation will be performed
             only in the value of the parameters of the given components.
             The components can be specified by name, index or themselves.
