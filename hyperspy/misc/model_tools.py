@@ -194,7 +194,7 @@ class CurrentModelValues:
 
     Parameters
     ----------
-    component : hyperspy component instance
+    model : hyperspy model instance
     only_free : bool, default False
         If True: Only include the free parameters in the view
     only_active : bool, default False

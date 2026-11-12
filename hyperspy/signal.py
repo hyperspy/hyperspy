@@ -1487,11 +1487,11 @@ class MVATools(object):
         center_format : str
             The extension of the format that you wish to save to. Default is
             "hspy". See `loading format` for more details.
-        label_prefix : str
+        membership_prefix : str
             The prefix that any exported filenames for
             cluster labels
             begin with
-        label_format : str
+        membership_format : str
             The extension of the format that you wish to save to. default
             is "hspy". The format determines the kind of output.
 
@@ -2299,7 +2299,7 @@ class MVATools(object):
             ``"smart_auto"`` displays sliders if the navigation
             dimension is less than 3. For a description of the other options
             see ``plot`` documentation for details.
-        labels_dim, centers_dims : int, default 2
+        labels_dim, centers_dim : int, default 2
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the clustering results when the
             centers or the labels have signal dimension greater than 2
