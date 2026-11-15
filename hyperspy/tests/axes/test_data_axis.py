@@ -783,3 +783,20 @@ def test_rounding_consistency_axis_type_half(shift):
     nuaxis_indices = super(type(axis), axis).value2index(test_vals)
 
     np.testing.assert_allclose(uaxis_indices, nuaxis_indices)
+
+
+def test_convert_to_functional_data_axis_rejected_expression_attack():
+    axis = UniformDataAxis(size=11, scale=2.0, offset=1.0, name="energy", units="eV")
+    expected_axis = axis.axis.copy()
+    with pytest.raises(ValueError) as info:
+        axis.convert_to_functional_data_axis("a * x + 2**1025", a=1)
+    assert info.value.rule == "R-CONST-POW"
+    assert type(axis) is UniformDataAxis
+    assert "scale" in axis.trait_names()
+    assert "offset" in axis.trait_names()
+    assert axis.scale == 2.0
+    assert axis.offset == 1.0
+    assert axis.name == "energy"
+    assert axis.units == "eV"
+    assert axis.size == 11
+    np.testing.assert_allclose(axis.axis, expected_axis)

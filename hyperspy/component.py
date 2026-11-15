@@ -26,6 +26,7 @@ from traits.trait_numeric import Array
 
 from hyperspy.events import Event, Events
 from hyperspy.misc import utils
+from hyperspy.misc._sympy_parse import lambdify_ordered, parse_expression
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,
@@ -205,7 +206,6 @@ class Parameter(t.HasTraits):
     @twin_function_expr.setter
     def twin_function_expr(self, value):
         import sympy
-        from sympy.utilities.lambdify import lambdify
 
         if not value:
             self._twin_function = None
@@ -213,30 +213,42 @@ class Parameter(t.HasTraits):
             self._twin_function_expr = ""
             self._twin_inverse_sympy = None
             return
-        expr = sympy.sympify(value)
+        expr = parse_expression(value, allow_substitutions=False)
         if len(expr.free_symbols) > 1:
             raise ValueError("The expression must contain only one variable.")
         elif len(expr.free_symbols) == 0:
             raise ValueError("The expression must contain one variable.")
         x = tuple(expr.free_symbols)[0]
-        self._twin_function = lambdify(x, expr.evalf())
-        self._twin_function_expr = value
+        function = lambdify_ordered([x], expr.evalf())
+        inverse_sympy = self._twin_inverse_sympy
+        inverse_function = self.__twin_inverse_function
         if not self._twin_inverse_function:
             y = sympy.Symbol(x.name + "2")
             try:
-                inv = list(sympy.solveset(sympy.Eq(y, expr), x))
-                self._twin_inverse_sympy = lambdify(y, inv)
-                self.__twin_inverse_function = None
+                sol = sympy.solveset(sympy.Eq(y, expr), x)
             except BaseException:
                 # Not all may have a suitable solution.
-                self.__twin_inverse_function = None
-                self._twin_inverse_sympy = None
+                sol = None
+            inverse_function = None
+            if isinstance(sol, sympy.FiniteSet) and len(sol) <= 8:
+                inv = list(sol)
+                inverse = lambdify_ordered([y], sympy.Tuple(*inv))
+
+                def inverse_sympy(value):
+                    return list(inverse(value))
+            else:
+                inverse_sympy = None
+            if inverse_sympy is None:
                 _logger.warning(
                     f"The function {value} is not invertible. Setting the "
                     f"value of {self} will raise an AttributeError unless "
                     "you manually set ``twin_inverse_function_expr``. "
                     "Otherwise, set the value of its twin parameter instead."
                 )
+        self._twin_function = function
+        self._twin_function_expr = value
+        self._twin_inverse_sympy = inverse_sympy
+        self.__twin_inverse_function = inverse_function
 
     @property
     def twin_inverse_function_expr(self):
@@ -255,14 +267,11 @@ class Parameter(t.HasTraits):
 
     @twin_inverse_function_expr.setter
     def twin_inverse_function_expr(self, value):
-        import sympy
-        from sympy.utilities.lambdify import lambdify
-
         if not value:
             self.__twin_inverse_function = None
             self._twin_inverse_function_expr = ""
             return
-        expr = sympy.sympify(value)
+        expr = parse_expression(value, allow_substitutions=False)
         if len(expr.free_symbols) > 1:
             raise ValueError("The expression must contain only one variable.")
         elif len(expr.free_symbols) == 0:
@@ -270,7 +279,8 @@ class Parameter(t.HasTraits):
                 "The expression must contain one variable, it contains none."
             )
         x = tuple(expr.free_symbols)[0]
-        self.__twin_inverse_function = lambdify(x, expr.evalf())
+        function = lambdify_ordered([x], expr.evalf())
+        self.__twin_inverse_function = function
         self._twin_inverse_function_expr = value
 
     @property
