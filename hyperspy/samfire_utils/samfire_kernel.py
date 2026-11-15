@@ -177,7 +177,7 @@ def multi_kernel(ind, m_dic, values, optional_components, _args, result_q, test_
 
     sig = Signal(**m_dic)
     sig._assign_subclass()
-    model = sig.models.z.restore()
+    model = sig.models.z.restore(trusted=True)
     for combination in comb:
         # iterate all component combinations
         for component in combination:

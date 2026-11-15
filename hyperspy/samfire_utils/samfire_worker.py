@@ -53,7 +53,7 @@ class Worker:
         _logger.debug("Creating model in worker {}".format(self.identity))
         sig = BaseSignal(**signal_dict)
         sig._assign_subclass()
-        self.model = sig.models[model_letter].restore()
+        self.model = sig.models[model_letter].restore(trusted=True)
         for component in self.model:
             component.active_is_multidimensional = False
             component.active = True

@@ -42,6 +42,7 @@ from hyperspy.docstrings.signal import (
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc import utils
 from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
+from hyperspy.misc.export_dictionary import _trust_scope
 from hyperspy.misc.math_tools import antisymmetrize, optimal_fft_size, symmetrize
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
@@ -401,7 +402,7 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         PLOT2D_KWARGS_DOCSTRING,
     )
 
-    def create_model(self, dictionary=None):
+    def create_model(self, dictionary=None, *, trusted=False):
         """Create a model for the current signal.
 
         Parameters
@@ -409,6 +410,9 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         dictionary : None or dict, optional
             A dictionary to be used to recreate a model. Usually generated
             using :meth:`hyperspy.model.BaseModel.as_dictionary`.
+        trusted : bool, default False
+            Allow restoring pickled legacy content. This executes Python
+            stored in the file and is not a sandbox.
 
         Returns
         -------
@@ -417,7 +421,8 @@ class Signal2D(signals.BaseSignal, CommonSignal2D):
         """
         from hyperspy.models.model2d import Model2D
 
-        return Model2D(self, dictionary=dictionary)
+        with _trust_scope(trusted):
+            return Model2D(self, dictionary=dictionary)
 
     def estimate_shift2D(
         self,

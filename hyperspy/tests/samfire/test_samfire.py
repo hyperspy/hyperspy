@@ -24,10 +24,51 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
+from hyperspy.component import Component
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.samfire_utils.samfire_worker import create_worker
 
 N_WORKERS = 1
+
+
+class SamfireCustomComponent(Component):
+    """Benign unregistered component; a stored model pickles its class."""
+
+    def __init__(self, scale=1.0):
+        Component.__init__(self, ("scale",))
+        self.scale.value = scale
+
+    def function(self, x):
+        return self.scale.value * x
+
+
+class SamfireOldSignal1D(hs.signals.Signal1D):
+    """Downstream signal with a fixed-signature create_model (eXSpy EELS
+    shape): it accepts no trust keyword at all."""
+
+    def create_model(self, dictionary=None):
+        from hyperspy.models.model1d import Model1D
+
+        m = Model1D(self)
+        if dictionary is not None:
+            m._load_dictionary(dictionary)
+        return m
+
+
+class SentinelRestore(Exception):
+    pass
+
+
+def _worker_model_dictionary(signal, name):
+    """Build the signal+models dictionary a SAMFire worker consumes."""
+
+    m = signal.create_model()
+    m.append(hs.model.components1D.Gaussian())
+    m.append(SamfireCustomComponent(scale=2.0))
+    m.store(name)
+    m_dict = m.signal._to_dictionary(False)
+    m_dict["models"] = signal.models._models.as_dictionary()
+    return m_dict
 
 
 class Mock_queue(object):
@@ -638,3 +679,82 @@ class TestSyncingGuardPreventsRecursion:
         s2.axes_manager.indices = (3, 7)
         assert s1.axes_manager.indices == (3, 7)
         assert s2.axes_manager.indices == (3, 7)
+
+
+class TestSamfireTrustedRestore:
+    """SAMFire regenerates model dictionaries in process, so its worker and
+    kernel restore calls run inside an explicitly trusted scope."""
+
+    def teardown_method(self, method):
+        gc.collect()
+
+    def test_worker_restores_custom_component(self):
+        from hyperspy.model import BaseModel
+        from hyperspy.signals import Signal1D
+
+        s = Signal1D(np.arange(2 * 50, dtype=float).reshape(2, 50))
+        m_dict = _worker_model_dictionary(s, "custom")
+        worker = create_worker("worker")
+        worker.create_model(m_dict, "custom")
+        assert isinstance(worker.model, BaseModel)
+        assert any(isinstance(c, SamfireCustomComponent) for c in worker.model)
+        del worker
+
+    def test_worker_old_signal_shape_restores_custom(self, monkeypatch):
+        import hyperspy.signal
+        from hyperspy.signals import Signal1D
+
+        # the worker re-assigns the signal class from the file-controlled
+        # dictionary; a downstream class with a fixed create_model signature
+        # (the eXSpy EELS shape) must still restore under the worker's
+        # trusted scope
+        monkeypatch.setattr(
+            hyperspy.signal,
+            "assign_signal_subclass",
+            lambda *a, **k: SamfireOldSignal1D,
+        )
+        s = Signal1D(np.arange(2 * 50, dtype=float).reshape(2, 50))
+        m_dict = _worker_model_dictionary(s, "custom")
+        worker = create_worker("worker")
+        worker.create_model(m_dict, "custom")
+        assert isinstance(worker.model.signal, SamfireOldSignal1D)
+        assert any(isinstance(c, SamfireCustomComponent) for c in worker.model)
+        del worker
+
+    def test_multi_kernel_forwards_trusted(self, monkeypatch):
+        import hyperspy.signal
+        from hyperspy.signal import BaseSignal, ModelManager
+        from hyperspy.signals import Signal1D
+
+        # pre-existing gap, not touched here: samfire_kernel imports `Signal`
+        # from hyperspy.signal, a name this module no longer exports (the
+        # kernel has no in-repository caller); provide it for the check
+        monkeypatch.setattr(hyperspy.signal, "Signal", BaseSignal, raising=False)
+        s = Signal1D(np.arange(2 * 50, dtype=float).reshape(2, 50))
+        m = s.create_model()
+        m.append(hs.model.components1D.Gaussian())
+        m.store("z")
+        m_dic = m.signal._to_dictionary(False)
+        m_dic["models"] = s.models._models.as_dictionary()
+        calls = []
+
+        def recorder(self, name, **kwargs):
+            calls.append(kwargs)
+            raise SentinelRestore("stop before fitting")
+
+        monkeypatch.setattr(ModelManager, "restore", recorder)
+        from hyperspy.samfire_utils.samfire_kernel import multi_kernel
+
+        with pytest.raises(SentinelRestore):
+            multi_kernel(
+                (0,),
+                m_dic,
+                {},
+                [],
+                {},
+                Mock_queue(),
+                cloudpickle.dumps(object()),
+            )
+        # the kernel's restore call is the one guarded entry: it must ask
+        # for trust explicitly, never rely on a default
+        assert calls == [{"trusted": True}]

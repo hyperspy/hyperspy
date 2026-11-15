@@ -146,6 +146,24 @@ class VisibleDeprecationWarning(UserWarning):
     pass
 
 
+class UnsafeLegacyContent(ValueError):
+    """Stored content that would run pickled Python code was not loaded.
+
+    The content is only loaded inside an explicit ``trusted=True`` restore
+    scope. The message explains how to proceed without enabling that.
+    """
+
+    def __init__(self, item):
+        super().__init__(
+            f"Cannot restore {item}: it is stored as pickled Python content, "
+            "which HyperSpy does not run by default. Pass `trusted=True` only "
+            "if the source of the file is trusted: this executes the Python "
+            "code stored in the file and is not a sandbox. Otherwise register "
+            "the component with the extension mechanism or re-create it as an "
+            "`Expression`."
+        )
+
+
 class LazyCupyConversion(Exception):
     def __init__(self):
         self.error = (
