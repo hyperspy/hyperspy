@@ -3278,6 +3278,35 @@ class LearningResults(object):
     navigation_mask = None
     signal_mask = None
 
+    # Legacy attribute names kept for compatibility with old files
+    _LEGACY_ALIASES = (
+        "algorithm",
+        "V",
+        "w",
+        "variance2one",
+        "centered",
+        "pca_algorithm",
+        "ica_algorithm",
+        "ica_scores",
+        "ica_factors",
+        "v",
+        "scores",
+        "pc",
+    )
+
+    @classmethod
+    def _declared_field_names(cls):
+        """Return the declared public, non-callable class field names.
+
+        Uses ``dir(cls)`` (not ``dir(self)``) so that attributes added
+        dynamically to an instance are not treated as declared fields.
+        """
+        return {
+            name
+            for name in dir(cls)
+            if not name.startswith("_") and not callable(getattr(cls, name))
+        }
+
     def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis.
 
@@ -3313,15 +3342,29 @@ class LearningResults(object):
         filename : str
             Path to load the results from.
         """
-        decomposition = np.load(filename, allow_pickle=True)
-
-        for key, value in decomposition.items():
-            if value.dtype == np.dtype("object"):
-                value = None
-            # Unwrap values stored as 0D numpy arrays to raw datatypes
-            if isinstance(value, np.ndarray) and value.ndim == 0:
-                value = value.item()
-            setattr(self, key, value)
+        field_names = self._declared_field_names() | set(self._LEGACY_ALIASES)
+        with np.load(filename, allow_pickle=False) as decomposition:
+            # Iterate over names only: ``decomposition[key]`` reads each
+            # member separately, so an object member (which raises with
+            # ``allow_pickle=False``) does not prevent reading other members.
+            for key in decomposition.files:
+                if key not in field_names:
+                    warnings.warn(
+                        f"Skipping unknown field {key!r} while loading {filename}"
+                    )
+                    continue
+                try:
+                    value = decomposition[key]
+                except ValueError:
+                    # Object arrays cannot be loaded with allow_pickle=False
+                    _logger.info(
+                        f"Skipped object-valued field {key!r} while loading {filename}"
+                    )
+                    value = None
+                # Unwrap values stored as 0D numpy arrays to raw datatypes
+                if isinstance(value, np.ndarray) and value.ndim == 0:
+                    value = value.item()
+                setattr(self, key, value)
 
         _logger.info(f"Loaded results from {filename}")
 
