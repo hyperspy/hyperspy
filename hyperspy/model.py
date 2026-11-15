@@ -59,8 +59,13 @@ SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 _logger = logging.getLogger(__name__)
 
-_COMPONENTS = ALL_EXTENSIONS["components1D"]
-_COMPONENTS.update(ALL_EXTENSIONS["components1D"])
+# Merge 1D and 2D components into one lookup; 1D entries win on a
+# duplicate id (the only shipped duplicate is `Expression`, with an
+# identical spec). `ALL_EXTENSIONS` itself must not be mutated.
+_COMPONENTS = {
+    **ALL_EXTENSIONS["components2D"],
+    **ALL_EXTENSIONS["components1D"],
+}
 EXSPY_HSPY_COMPONENTS = (
     "EELSArctan",
     "EELSCLEdge",

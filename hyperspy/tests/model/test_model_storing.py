@@ -18,14 +18,20 @@
 
 
 import gc
+import pickle
 from os import remove
+from pathlib import Path
 from unittest import mock
 
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
+import hyperspy.model
 from hyperspy.components1d import Expression, Gaussian, GaussianHF
+from hyperspy.components2d import Expression as Expression2D
+from hyperspy.components2d import Gaussian2D
+from hyperspy.extensions import ALL_EXTENSIONS
 
 
 def clean_model_dictionary(d):
@@ -198,3 +204,93 @@ def test_EELSModel_saving(tmp_path):
     assert hasattr(s2.models, "a")
     n = s2.models.restore("a")
     assert n[0].fine_structure_width == 50
+
+
+MARKER_NAME = "hs3699_marker.txt"
+
+
+def _pickle_marker(marker_path) -> bytes:
+    """Pickle of a benign object whose unpickling writes the marker file.
+
+    Kept in this model-storing test module because this branch does not carry
+    the expression-security test module; the cloudpickle tests that need the
+    helper import it from here.
+    """
+
+    class _Marker:
+        def __reduce__(self):
+            return (Path(str(marker_path)).write_text, ("hs3699",))
+
+    return pickle.dumps(_Marker())
+
+
+def _assert_component_params_equal(model, expected):
+    for component, reference in zip(model, expected):
+        assert component._id_name == reference._id_name
+        np.testing.assert_allclose(
+            [p.value for p in component.parameters],
+            [p.value for p in reference.parameters],
+            rtol=1e-6,
+        )
+
+
+class Test2DComponentStoring:
+    """Built-in 2D components are registered, so storing does not pickle
+    their class and stored models restore without any flag."""
+
+    def setup_method(self, method):
+        self.s = hs.signals.Signal2D(
+            np.arange(3 * 12 * 25, dtype=float).reshape(3, 12, 25)
+        )
+        m = self.s.create_model()
+        m.append(
+            Gaussian2D(A=2.5, sigma_x=1.5, sigma_y=2.5, centre_x=5.0, centre_y=7.0)
+        )
+        m.append(Expression2D(name="Plane", expression="a*x + b*y", a=1.0, b=2.0))
+        self.m = m
+
+    def test_2d_builtins_not_pickled_and_restore(self):
+        m = self.m
+        m.store("b")
+        components = m.as_dictionary()["components"]
+        assert len(components) == 2
+        for comp in components:
+            assert "_class_dump" not in comp
+        m1 = self.s.create_model(dictionary=m.as_dictionary())
+        _assert_component_params_equal(m1, m)
+        m2 = self.s.models.restore("b")
+        _assert_component_params_equal(m2, m)
+
+    def test_legacy_2d_dump_file_restores(self, tmp_path, monkeypatch):
+        m = self.m
+        legacy_registry = {
+            key: value
+            for key, value in hyperspy.model._COMPONENTS.items()
+            if key in ALL_EXTENSIONS["components1D"]
+        }
+        with monkeypatch.context() as mp:
+            mp.setattr("hyperspy.model._COMPONENTS", legacy_registry)
+            m.store("a")
+            d = m.as_dictionary()
+            path = tmp_path / "legacy2d.hspy"
+            self.s.save(path)
+        # the genuine writer produced a real `_class_dump` for Gaussian2D
+        assert "_class_dump" in d["components"][0]
+        restored = hs.load(path).models.restore("a")
+        _assert_component_params_equal(restored, m)
+
+    def test_registered_id_marker_class_dump_ignored(self, tmp_path):
+        m = self.m
+        marker = tmp_path / MARKER_NAME
+        d = m.as_dictionary()
+        d["components"][0]["_class_dump"] = _pickle_marker(marker)
+        self.s.models._save("a", d)
+        path = tmp_path / "marker2d.hspy"
+        self.s.save(path)
+        restored = hs.load(path).models.restore("a")
+        _assert_component_params_equal(restored, m)
+        assert not marker.exists()
+        # control: the payload is armed - unpickling it creates the marker
+        pickle.loads(_pickle_marker(marker))
+        assert marker.exists()
+        marker.unlink()
