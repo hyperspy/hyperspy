@@ -16,7 +16,9 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
+import pytest
 
+import hyperspy.api as hs
 from hyperspy.axes import AxesManager
 from hyperspy.signal import BaseSignal, _obj_in_dict2hspy
 
@@ -68,3 +70,46 @@ def test_signal_containers():
     np.testing.assert_allclose(signal_container[0].data, [4, 5, 6])
     isinstance(signal_container[1], BaseSignal)
     np.testing.assert_allclose(signal_container[1].data, [7, 8, 9])
+
+
+# --- Task 7: dunder keys in the loaded-attributes dict are rejected ---
+
+
+def _assert_no_class_mutation():
+    # the rejection must leave the signal machinery untouched
+    assert BaseSignal.__name__ == "BaseSignal"
+    s = BaseSignal(np.arange(12))
+    np.testing.assert_allclose(s.data, np.arange(12))
+    assert isinstance(s.axes_manager, AxesManager)
+    assert type(s.metadata).__name__ == "DictionaryTreeBrowser"
+
+
+def test_load_dictionary_top_level_dunder_rejected():
+    d = {
+        "data": np.arange(12, dtype=float),
+        "attributes": {"__class__": {"marker_attr": 1}},
+    }
+    with pytest.raises(ValueError, match="__class__"):
+        hs.signals.Signal1D(**d)
+    _assert_no_class_mutation()
+
+
+def test_load_dictionary_nested_dunder_rejected():
+    d = {
+        "data": np.arange(12, dtype=float),
+        "attributes": {"axes_manager": {"__class__": {"a": 1}}},
+    }
+    with pytest.raises(ValueError, match="__class__"):
+        hs.signals.Signal1D(**d)
+    _assert_no_class_mutation()
+
+
+def test_load_dictionary_legitimate_keys_unchanged():
+    d = {
+        "data": np.arange(12, dtype=float),
+        "attributes": {"_lazy": False, "ragged": False, "metadata": {"x": 1}},
+    }
+    s = hs.signals.Signal1D(**d)
+    assert not s._lazy
+    assert not s.axes_manager._ragged
+    assert s.metadata.x == 1

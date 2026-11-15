@@ -533,3 +533,31 @@ class TestStoredInitKeys:
         from hyperspy.misc.export_dictionary import _is_trusted
 
         assert _is_trusted() is False
+# --- Task 7: dunder whitelist keys are rejected before traversal ---
+
+
+def test_whitelist_dunder_key_rejected():
+    from hyperspy.misc.export_dictionary import load_from_dictionary
+
+    key = "__class__.__base__.__getattribute__"
+    d = {"_whitelist": {key: ""}, key: "payload"}
+    with pytest.raises(ValueError, match="__class__"):
+        load_from_dictionary(Gaussian(), d)
+    # Parameter/Component access still works in the same process
+    p = Parameter()
+    p.value = 2.5
+    assert p.value == 2.5
+    g = Gaussian()
+    g.A.value = 1.0
+    assert g.A.value == 1.0
+    assert isinstance(g, Component)
+
+
+def test_whitelist_ordinary_key_control():
+    from hyperspy.misc.export_dictionary import load_from_dictionary
+
+    g = Gaussian()
+    g.A.value = 1.0
+    d = {"_whitelist": {"A.value": ""}, "A.value": 3.0}
+    load_from_dictionary(g, d)
+    assert g.A.value == 3.0

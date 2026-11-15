@@ -492,6 +492,12 @@ class DictionaryTreeBrowser:
 
             value = signals.BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
+        # Key names are file-controlled (metadata/original_metadata). A
+        # dunder name that collides with a real class-level attribute would
+        # replace or corrupt it (for example `__dict__`); reject those while
+        # vendor keys such as `__custom__` keep loading.
+        if slugified_key.startswith("__") and hasattr(type(self), slugified_key):
+            raise ValueError(f"Refusing to set the class-colliding dunder key {key!r}")
         if isinstance(value, dict):
             if slugified_key in self.__dict__.keys() and keep_existing:
                 self.__dict__[slugified_key]["_dtb_value_"].add_dictionary(

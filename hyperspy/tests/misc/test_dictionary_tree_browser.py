@@ -19,9 +19,11 @@
 import os.path
 import tempfile
 
+import h5py
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.utils import (
     DictionaryTreeBrowser,
@@ -30,6 +32,13 @@ from hyperspy.misc.utils import (
     replace_html_symbols,
 )
 from hyperspy.signal import BaseSignal
+
+EXPERIMENT = "Experiments/__unnamed__"
+
+
+def _children(path, group):
+    with h5py.File(path, "r") as f:
+        return set(f[group])
 
 
 @pytest.fixture(params=[True, False], ids=["lazy", "not_lazy"])
@@ -572,3 +581,71 @@ def test_nested_dictionary_merge():
     }
     nested_dictionary_merge(a, b)
     assert a == b
+
+
+# --- Task 7: class-colliding dunder keys are rejected in _setattr ---
+
+
+@pytest.mark.parametrize(
+    "key", ("__dict__", "__class__", "__init__", "__setattr__", "__module__")
+)
+def test_dunder_class_collision_rejected(key):
+    # lazy=False processes immediately; the deferred lazy path is covered
+    # by the file-level metadata load tests
+    with pytest.raises(ValueError, match=key):
+        DictionaryTreeBrowser({key: {"a": 1}}, lazy=False)
+    # ordinary assignment still works afterwards in the same process
+    b = DictionaryTreeBrowser({"Node": {"leaf": 1}})
+    b.a = 1
+    assert b.a == 1
+    assert b.Node.leaf == 1
+
+
+def test_dunder_vendor_key_control():
+    b = DictionaryTreeBrowser({"__custom__": 1})
+    assert b["__custom__"] == 1
+
+
+def test_ordinary_nested_keys_control():
+    b = DictionaryTreeBrowser({"Node1": {"leaf11": 11}, "Node2": {"leaf21": 21}})
+    assert b.Node1.leaf11 == 11
+    assert b.Node2.leaf21 == 21
+
+
+# Metadata dunder groups from loaded HSPY files are rejected at the
+# DictionaryTreeBrowser boundary. Relocated from the root-owned
+# test_io_expression_security.py module, which does not exist on this base.
+
+
+def _build_metadata_dunder_file(tmp_path, key, parent):
+    path = tmp_path / f"meta_{parent}_{key.strip('_')}.hspy"
+    hs.signals.Signal1D(np.arange(12 * 25, dtype=float).reshape(12, 25)).save(path)
+    with h5py.File(path, "r+") as f:
+        group = f[EXPERIMENT + "/" + parent]
+        assert key not in group
+        group.create_group(key)
+    # assert the tamper happened first
+    assert key in _children(path, EXPERIMENT + "/" + parent)
+    return path
+
+
+@pytest.mark.parametrize("lazy", (False, True))
+@pytest.mark.parametrize("parent", ("metadata", "original_metadata"))
+@pytest.mark.parametrize("key", ("__dict__", "__class__"))
+def test_metadata_dunder_group_rejected(tmp_path, lazy, parent, key):
+    path = _build_metadata_dunder_file(tmp_path, key, parent)
+    with pytest.raises(ValueError, match=key):
+        hs.load(path, lazy=lazy)
+
+
+@pytest.mark.parametrize("lazy", (False, True))
+def test_metadata_custom_group_control(tmp_path, lazy):
+    path = tmp_path / "meta_custom.hspy"
+    hs.signals.Signal1D(np.arange(12 * 25, dtype=float).reshape(12, 25)).save(path)
+    with h5py.File(path, "r+") as f:
+        f[EXPERIMENT + "/metadata"].create_group("__custom__")
+        f[EXPERIMENT + "/original_metadata"].create_group("__custom__")
+    assert "__custom__" in _children(path, EXPERIMENT + "/metadata")
+    sig = hs.load(path, lazy=lazy)
+    assert "__custom__" in sig.metadata.as_dictionary()
+    assert "__custom__" in sig.original_metadata.as_dictionary()
