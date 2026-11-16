@@ -85,6 +85,39 @@ model can be saved with one signal.
 
     >>> m = l.models.model_name.restore() # doctest: +SKIP
 
+Trust and legacy files
+^^^^^^^^^^^^^^^^^^^^^^
+
+Restoring a stored model does not run pickled Python content by default. If a
+model requires this legacy content, restoration raises
+``UnsafeLegacyContent``, which is a subclass of ``ValueError``. Models made from registered components, including built-in
+2D components, restore without this opt-in, including older files that contain
+a legacy class dump for a registered component.
+
+If you trust the source of a legacy model and intend to run the Python code it
+contains, pass the keyword-only argument ``trusted=True`` to
+:meth:`~.signal.ModelManager.restore` or :meth:`~.signal.ModelManager.pop`:
+
+.. code-block:: python
+
+    >>> m = l.models.restore('model_name', trusted=True) # doctest: +SKIP
+
+This executes Python code stored in the file. It is not a sandbox, and HyperSpy
+gives no safety assurance about content loaded with ``trusted=True``. Don't use
+this option as a general way to open ordinary data files. ``hs.load`` has no
+``trusted`` parameter, and stored models are restored separately through
+``models.restore`` or ``models.pop``. Lazy loading changes when data is read;
+it doesn't change these trust rules. No file-loading option bounds CPU or
+memory use.
+
+For a custom component, prefer registering it with HyperSpy's extension
+mechanism or recreating it as an ``Expression``. These approaches avoid pickled
+class content and allow default restoration.
+
+Learning-results ``.npz`` files are loaded with pickle disabled. Numeric and
+string members load without unpickling, while members that require pickle
+aren't restored.
+
 For older versions of HyperSpy (before 0.9), the instructions were as follows:
 
     Note that this method is known to be brittle i.e. there is no

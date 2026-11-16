@@ -411,14 +411,20 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
     def create_model(self, dictionary=None, *, trusted=False):
         """Create a model for the current data.
 
+        When ``dictionary`` contains pickled legacy content, restoration is
+        denied by default with ``UnsafeLegacyContent``, a subclass of
+        ``ValueError``.
+
         Parameters
         ----------
         dictionary : None or dict, optional
             A dictionary to be used to recreate a model. Usually generated
             using :meth:`hyperspy.model.BaseModel.as_dictionary`.
         trusted : bool, default False
-            Allow restoring pickled legacy content. This executes Python
-            stored in the file and is not a sandbox.
+            Allow restoring pickled legacy content only when the source is
+            trusted. This keyword-only option executes Python code stored in
+            the file and isn't a sandbox. HyperSpy gives no safety assurance
+            about content loaded with ``trusted=True``.
 
         Returns
         -------

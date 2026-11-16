@@ -173,15 +173,19 @@ class ModelManager(object):
             self.remove = lambda: mm.remove(self._name)
             self.pop = lambda *, trusted=False: mm.pop(self._name, trusted=trusted)
             self.restore.__doc__ = (
-                "Returns the stored model. Pass trusted=True only for trusted "
-                "sources; this executes Python stored in the file and is not "
-                "a sandbox."
+                "Returns the stored model. Pickled legacy content is denied "
+                "by default with UnsafeLegacyContent, a ValueError. The "
+                "keyword-only trusted=True option executes Python code stored "
+                "in the file and is not a sandbox. HyperSpy gives no safety "
+                "assurance about content loaded with trusted=True."
             )
             self.remove.__doc__ = "Removes the stored model"
             self.pop.__doc__ = (
-                "Returns the stored model and removes it from storage. Pass "
-                "trusted=True only for trusted sources; this executes Python "
-                "stored in the file and is not a sandbox."
+                "Returns the stored model and removes it from storage. Pickled "
+                "legacy content is denied by default with UnsafeLegacyContent, "
+                "a ValueError. The keyword-only trusted=True option executes "
+                "Python code stored in the file and is not a sandbox. HyperSpy "
+                "gives no safety assurance about content loaded with trusted=True."
             )
 
         def __repr__(self):
@@ -300,13 +304,19 @@ class ModelManager(object):
     def pop(self, name, *, trusted=False):
         """Return the restored model and remove it from storage.
 
+        Pickled legacy content is denied by default. If restoration requires
+        this content, ``UnsafeLegacyContent``, a subclass of ``ValueError``, is
+        raised and the model remains stored.
+
         Parameters
         ----------
         name : str
             The name of the model to restore and remove.
         trusted : bool, default False
-            Allow restoring pickled legacy content. This executes Python
-            stored in the file and is not a sandbox.
+            Allow restoring pickled legacy content only when the source is
+            trusted. This keyword-only option executes Python code stored in
+            the file and isn't a sandbox. HyperSpy gives no safety assurance
+            about content loaded with ``trusted=True``.
 
         See Also
         --------
@@ -322,13 +332,20 @@ class ModelManager(object):
     def restore(self, name, *, trusted=False):
         """Return the restored model.
 
+        Pickled legacy content is denied by default. If restoration requires
+        this content, ``UnsafeLegacyContent``, a subclass of ``ValueError``, is
+        raised. Models using registered components
+        restore without this option.
+
         Parameters
         ----------
         name : str
             The name of the model to restore.
         trusted : bool, default False
-            Allow restoring pickled legacy content. This executes Python
-            stored in the file and is not a sandbox.
+            Allow restoring pickled legacy content only when the source is
+            trusted. This keyword-only option executes Python code stored in
+            the file and isn't a sandbox. HyperSpy gives no safety assurance
+            about content loaded with ``trusted=True``.
 
         See Also
         --------
