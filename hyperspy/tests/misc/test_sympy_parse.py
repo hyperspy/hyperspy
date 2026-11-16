@@ -27,6 +27,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 import sympy as s
+from packaging.version import Version
 from scipy.special import wofz
 from sympy.parsing import sympy_parser
 
@@ -240,6 +241,10 @@ def test_corpus_differential(name, text, names):
     result = parser.parse_expression(text)
     assert result.free_symbols == set(symbols), name
     values = [CORPUS_VALUES[name] for name in names.split()]
+    if name == "Min-Max" and Version(s.__version__) < Version("1.14"):
+        # Before SymPy 1.14, lambdify generates ragged amin/amax calls that
+        # NumPy 1.24+ rejects, so feed a scalar input to avoid that upstream bug.
+        values = [0.6]
     expected = s.lambdify(symbols, reference, modules=["numpy", "scipy"])(*values)
     actual = s.lambdify(symbols, result, modules=["numpy", "scipy"])(*values)
     np.testing.assert_allclose(actual, expected, rtol=1e-12)
