@@ -293,6 +293,19 @@ class TestFunctionalDataAxis:
         assert axis.power == 2
         np.testing.assert_allclose(axis.axis, np.arange(10) ** 2)
 
+    @pytest.mark.parametrize(
+        "args, kwargs",
+        [
+            ((np.arange(3), 3), {}),
+            ((), {"x": np.arange(3), "power": 3}),
+            ((np.arange(3),), {"power": 3}),
+        ],
+        ids=["positional", "keyword", "mixed"],
+    )
+    def test_function_call_conventions(self, args, kwargs):
+        result = self.axis._function(*args, **kwargs)
+        np.testing.assert_allclose(result, np.arange(3) ** 3)
+
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)

@@ -1078,9 +1078,20 @@ class FunctionalDataAxis(BaseDataAxis):
             )
         expr_parameters.sort(key=lambda symbol: symbol.name)
         self._function_parameter_names = tuple(p.name for p in expr_parameters)
-        self._function = lambdify_ordered(
-            [sympy.Symbol("x")] + expr_parameters, expr.evalf()
+        function = lambdify_ordered([sympy.Symbol("x")] + expr_parameters, expr.evalf())
+        function_signature = inspect.Signature(
+            [
+                inspect.Parameter(name, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                for name in ("x",) + self._function_parameter_names
+            ]
         )
+
+        def _function(*args, **kwargs):
+            """Evaluate the compiled function with user-facing argument names."""
+            bound = function_signature.bind(*args, **kwargs)
+            return function(*bound.args)
+
+        self._function = _function
         for parameter in parameters.keys():
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
