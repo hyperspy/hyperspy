@@ -493,12 +493,14 @@ class DictionaryTreeBrowser:
             value = signals.BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         # Key names are file-controlled (metadata/original_metadata). These
-        # dunders either reject instance assignment or corrupt attribute access;
-        # harmless dunders such as `__doc__` remain valid metadata keys.
+        # dunders either reject instance assignment or corrupt attribute access
+        # or copy protocols; harmless dunders such as `__doc__` remain valid.
         if slugified_key in {
             "__class__",
             "__dict__",
             "__getattribute__",
+            "__getstate__",
+            "__reduce_ex__",
             "__setattr__",
             "__weakref__",
         }:

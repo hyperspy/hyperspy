@@ -588,7 +588,15 @@ def test_nested_dictionary_merge():
 
 @pytest.mark.parametrize(
     "key",
-    ("__dict__", "__class__", "__getattribute__", "__setattr__", "__weakref__"),
+    (
+        "__dict__",
+        "__class__",
+        "__getattribute__",
+        "__getstate__",
+        "__reduce_ex__",
+        "__setattr__",
+        "__weakref__",
+    ),
 )
 def test_unsafe_dunder_rejected(key):
     # lazy=False processes immediately; the deferred lazy path is covered
@@ -638,7 +646,9 @@ def _build_metadata_dunder_file(tmp_path, key, parent):
 
 @pytest.mark.parametrize("lazy", (False, True))
 @pytest.mark.parametrize("parent", ("metadata", "original_metadata"))
-@pytest.mark.parametrize("key", ("__dict__", "__class__"))
+@pytest.mark.parametrize(
+    "key", ("__dict__", "__class__", "__getstate__", "__reduce_ex__")
+)
 def test_metadata_dunder_group_rejected(tmp_path, lazy, parent, key):
     path = _build_metadata_dunder_file(tmp_path, key, parent)
     with pytest.raises(ValueError, match=key):
