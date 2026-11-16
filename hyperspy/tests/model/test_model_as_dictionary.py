@@ -561,3 +561,24 @@ def test_whitelist_ordinary_key_control():
     d = {"_whitelist": {"A.value": ""}, "A.value": 3.0}
     load_from_dictionary(g, d)
     assert g.A.value == 3.0
+
+
+@pytest.mark.parametrize(
+    "key, flags", [(5, "id"), (5, ""), (b"evil", "id"), (b"evil", "")]
+)
+def test_whitelist_non_string_key_rejected(key, flags):
+    from hyperspy.misc.export_dictionary import load_from_dictionary
+
+    # the id-flag shape reaches the boundary without attrsetter; the plain
+    # shape would traverse: both must stop at the key check
+    d = {"_whitelist": {key: flags}, key: "payload"}
+    with pytest.raises(ValueError, match="non-string whitelist key"):
+        load_from_dictionary(Gaussian(), d)
+    # Parameter/Component access still works in the same process
+    p = Parameter()
+    p.value = 2.5
+    assert p.value == 2.5
+    g = Gaussian()
+    g.A.value = 1.0
+    assert g.A.value == 1.0
+    assert isinstance(g, Component)

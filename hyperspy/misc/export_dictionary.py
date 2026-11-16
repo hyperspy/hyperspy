@@ -286,8 +286,11 @@ def load_from_dictionary(target, dic):
     new_whitelist = {}
     for key, flags_str in dic["_whitelist"].items():
         # Whitelist keys are file-controlled dotted attribute paths: reject
-        # dunder parts before any traversal or mutation to prevent
-        # class pollution (for example `__class__.__base__.__getattribute__`).
+        # non-string and dunder parts before any traversal or mutation to
+        # prevent class pollution (for example
+        # `__class__.__base__.__getattribute__`).
+        if not isinstance(key, str):
+            raise ValueError(f"Refusing to set the non-string whitelist key {key!r}")
         if any(part.startswith("__") for part in key.split(".")):
             raise ValueError(f"Refusing to set the dunder whitelist key {key!r}")
         value = dic[key]

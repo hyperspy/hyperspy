@@ -2841,9 +2841,14 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             )
         self.axes_manager = AxesManager(file_data_dict["axes"])
         # Setting `ragged` attributes requires the `axes_manager`.
-        # Attribute names are file-controlled: reject dunder names before
-        # any mutation to prevent class/instance corruption.
+        # Attribute names are file-controlled: reject non-string and dunder
+        # names before any mutation to prevent class/instance corruption.
         for key in attributes:
+            if not isinstance(key, str):
+                raise ValueError(
+                    f"Refusing to set the non-string attribute key {key!r} "
+                    "from the loaded dictionary"
+                )
             if key.startswith("__"):
                 raise ValueError(
                     f"Refusing to set the dunder attribute {key!r} from the "
@@ -2853,6 +2858,11 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             if hasattr(self, key):
                 if isinstance(value, dict):
                     for k, v in value.items():
+                        if not isinstance(k, str):
+                            raise ValueError(
+                                f"Refusing to set the non-string attribute "
+                                f"key {k!r} on {key} from the loaded dictionary"
+                            )
                         if k.startswith("__"):
                             raise ValueError(
                                 f"Refusing to set the dunder attribute {k!r} "

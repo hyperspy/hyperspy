@@ -113,3 +113,42 @@ def test_load_dictionary_legitimate_keys_unchanged():
     assert not s._lazy
     assert not s.axes_manager._ragged
     assert s.metadata.x == 1
+
+
+@pytest.mark.parametrize("key", [5, b"evil"])
+def test_load_dictionary_non_string_top_level_key_rejected(key):
+    d = {"data": np.arange(12, dtype=float), "attributes": {key: 1}}
+    with pytest.raises(ValueError, match="non-string attribute key"):
+        hs.signals.Signal1D(**d)
+    _assert_no_class_mutation()
+
+
+def test_load_dictionary_non_string_nested_key_rejected():
+    d = {
+        "data": np.arange(12, dtype=float),
+        "attributes": {"axes_manager": {5: 1}},
+    }
+    with pytest.raises(ValueError, match="non-string attribute key"):
+        hs.signals.Signal1D(**d)
+    _assert_no_class_mutation()
+
+
+def test_load_yaml_non_string_attribute_key_via_hs_load(tmp_path):
+    # F4's real surface: a custom YAML reader handed to hs.load through the
+    # supported file_format object, producing an integer attribute key
+    import yaml
+
+    path = tmp_path / "custom.yaml"
+    path.write_text("data: [0, 1, 2, 3]\nmetadata: {}\nattributes:\n  1: crafted\n")
+
+    class YamlReader:
+        @staticmethod
+        def file_reader(filename, **kwds):
+            with open(filename) as f:
+                signal_dict = yaml.safe_load(f)
+            signal_dict["data"] = np.asarray(signal_dict["data"], dtype=float)
+            return [signal_dict]
+
+    with pytest.raises(ValueError, match="non-string attribute key"):
+        hs.load(path, file_format=YamlReader)
+    _assert_no_class_mutation()
