@@ -583,13 +583,14 @@ def test_nested_dictionary_merge():
     assert a == b
 
 
-# --- Task 7: class-colliding dunder keys are rejected in _setattr ---
+# Unsafe dunder keys are rejected in _setattr.
 
 
 @pytest.mark.parametrize(
-    "key", ("__dict__", "__class__", "__init__", "__setattr__", "__module__")
+    "key",
+    ("__dict__", "__class__", "__getattribute__", "__setattr__", "__weakref__"),
 )
-def test_dunder_class_collision_rejected(key):
+def test_unsafe_dunder_rejected(key):
     # lazy=False processes immediately; the deferred lazy path is covered
     # by the file-level metadata load tests
     with pytest.raises(ValueError, match=key):
@@ -599,6 +600,12 @@ def test_dunder_class_collision_rejected(key):
     b.a = 1
     assert b.a == 1
     assert b.Node.leaf == 1
+
+
+def test_dunder_doc_allowed():
+    b = DictionaryTreeBrowser(lazy=False)
+    b.__doc__ = "Database of element properties"
+    assert b.__doc__ == "Database of element properties"
 
 
 def test_dunder_vendor_key_control():
