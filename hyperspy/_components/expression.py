@@ -26,6 +26,7 @@ import sympy
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy.misc._validation import validate_finite_real
 
 _logger = logging.getLogger(__name__)
 
@@ -234,6 +235,7 @@ class Expression(Component):
         # Set the initial value of the parameters
         if kwargs:
             for kwarg, value in kwargs.items():
+                value = validate_finite_real(value, kwarg)
                 setattr(getattr(self, kwarg), "value", value)
 
         if autodoc:
