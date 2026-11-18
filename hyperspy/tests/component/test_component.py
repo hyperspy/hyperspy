@@ -364,6 +364,23 @@ def test_init_parameters_canonical_object_generator_input():
     assert not c.two._linear
 
 
+def test_parameter_name_list_generator_with_linear_list():
+    # Regression: validating a non-None linear_parameter_list must not drain a
+    # one-shot parameter_name_list, otherwise no parameters are created.
+    class GenNames(Component):
+        def __init__(self):
+            Component.__init__(
+                self,
+                parameter_name_list=iter(["a", "b"]),
+                linear_parameter_list=["a"],
+            )
+
+    c = GenNames()
+    assert [p.name for p in c.parameters] == ["a", "b"]
+    assert c.a._linear is True
+    assert c.b._linear is False
+
+
 def test_init_parameters_canonical_object_set_input():
     # Re-iterable container types are preserved as-is in storage.
     class SetIn(Component):

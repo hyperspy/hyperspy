@@ -950,6 +950,9 @@ class Component(t.HasTraits):
 
         %s
         """
+        # Drain once: a generator parameter_name_list must survive validation
+        # (validation iterates it) and still be iterable for parameter creation.
+        parameter_name_list = list(parameter_name_list)
         self._linear_parameter_list = self._validate_linear_parameter_list(
             parameter_name_list, linear_parameter_list
         )
