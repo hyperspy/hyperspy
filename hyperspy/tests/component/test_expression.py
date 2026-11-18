@@ -16,8 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import decimal
+from fractions import Fraction
+
 import numpy as np
 import pytest
+import sympy
 
 import hyperspy.api as hs
 
@@ -142,3 +146,57 @@ def test_constant_term_rename_parameters():
         fwhm=1.0,
     )
     assert g._constant_term == 10.0
+
+
+REJECTED_KWARGS = [
+    True,
+    np.bool_(True),
+    float("nan"),
+    float("inf"),
+    float("-inf"),
+    1 + 2j,
+    np.complex64(1 + 2j),
+    b"x",
+    None,
+    [1, 2],
+    ((1,), (2,)),
+    2**1100,
+    Fraction(2**1100, 3),
+    np.float64("nan"),
+    decimal.Decimal("NaN"),
+    sympy.I,
+    sympy.Symbol("t"),
+]
+
+
+@pytest.mark.parametrize("value", REJECTED_KWARGS)
+def test_expression_kwarg_rejected(value):
+    with pytest.raises(ValueError, match="must be a finite real number"):
+        hs.model.components1D.Expression("a*x", name="t", a=value)
+
+
+ACCEPTED_KWARGS = [
+    Fraction(1, 2),
+    np.int8(3),
+    np.uint64(2**63),
+    np.float32(1.25),
+    np.longdouble(1.25),
+    2**64,
+    decimal.Decimal("1.25"),
+    sympy.pi,
+]
+
+
+@pytest.mark.parametrize("value", ACCEPTED_KWARGS)
+def test_expression_kwarg_accepted(value):
+    comp = hs.model.components1D.Expression("a*x", name="t", a=value)
+    assert isinstance(comp.a.value, float)
+    np.testing.assert_allclose(comp.a.value, float(value))
+
+
+def test_expression_shipped_component_decimal_kwarg():
+    comp = hs.model.components1D.Gaussian(A=decimal.Decimal("1.25"))
+    assert isinstance(comp.A.value, float)
+    np.testing.assert_allclose(comp.A.value, 1.25)
+    result = float(comp.function(0.3))
+    assert np.isfinite(result)
