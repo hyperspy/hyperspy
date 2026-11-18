@@ -950,14 +950,18 @@ class Component(t.HasTraits):
 
         %s
         """
-        if linear_parameter_list is None:
-            linear_parameter_list = []
+        self._linear_parameter_list = self._validate_linear_parameter_list(
+            parameter_name_list, linear_parameter_list
+        )
 
         for name in parameter_name_list:
             parameter = Parameter()
             self._parameters.append(parameter)
             parameter.name = name
-            if name in linear_parameter_list:
+            if (
+                self._linear_parameter_list is not None
+                and name in self._linear_parameter_list
+            ):
                 parameter._linear = True
             parameter._id_name = name
             setattr(self, name, parameter)
@@ -965,6 +969,50 @@ class Component(t.HasTraits):
                 parameter.grad = getattr(self, "grad_" + name)
             parameter.component = self
             self.add_trait(name, t.Instance(Parameter))
+
+    @staticmethod
+    def _validate_linear_parameter_list(parameter_name_list, linear_parameter_list):
+        """Validate the ``linear_parameter_list`` argument of ``init_parameters``.
+
+        Returns the canonical iterable to store in
+        ``self._linear_parameter_list``: the original input when it is a
+        re-iterable container (list, tuple, set, frozenset or dict, preserving
+        the round-trip type stored in the Expression whitelist), or a new
+        materialized list when the input is a non-re-iterable iterable (e.g. a
+        generator), or None when the input is None. Raises ValueError for a
+        bare string (which would iterate character by character), a
+        non-iterable, or any item that is not a string naming a parameter of
+        the component.
+        """
+        if linear_parameter_list is None:
+            return None
+        if isinstance(linear_parameter_list, str):
+            raise ValueError(
+                "linear_parameter_list must not be a string; pass a list of "
+                "parameter names instead, e.g. ['name1', 'name2']"
+            )
+        try:
+            items = list(linear_parameter_list)
+        except TypeError:
+            raise ValueError(
+                "linear_parameter_list must be an iterable of parameter names, "
+                f"got {linear_parameter_list!r}"
+            ) from None
+        parameter_names = list(parameter_name_list)
+        invalid = [
+            item
+            for item in items
+            if not isinstance(item, str) or item not in parameter_names
+        ]
+        if invalid:
+            raise ValueError(
+                "linear_parameter_list items must be strings naming parameters "
+                f"of the component {parameter_names}, got invalid items {invalid!r}"
+            )
+        if isinstance(linear_parameter_list, (list, tuple, set, frozenset, dict)):
+            return linear_parameter_list
+        # Non-re-iterable iterable: materialize once and reuse everywhere.
+        return items
 
     init_parameters.__doc__ %= COMPONENT_PARAMETERS_DOCSTRING
 
