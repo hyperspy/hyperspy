@@ -118,7 +118,7 @@ doc = [
     "scikit-image",
     "setuptools_scm",
     "sphinx-copybutton",
-    "sphinx-design",
+    "sphinx-design>=0.8.0",  # card-header/card-footer directives used in doc/intro.rst
     "sphinx-favicon",
     "sphinx-gallery",
     "sphinx>=1.7",
