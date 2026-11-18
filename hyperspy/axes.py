@@ -1081,7 +1081,18 @@ class FunctionalDataAxis(BaseDataAxis):
         self._function = sympy.utilities.lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False
         )
+        # Deferred (function-local) import to avoid import cycles: axes.py
+        # is imported very early and _validation pulls in sympy lazily.
+        from hyperspy.misc._validation import validate_finite_real
+
         for parameter in parameters.keys():
+            # Assign the returned float: numpy/Decimal/Fraction inputs are
+            # validated and coerced to a plain finite float before the trait
+            # default is set. This also closes the file-load route because
+            # create_axis dispatches here with values read from disk.
+            parameters[parameter] = validate_finite_real(
+                parameters[parameter], parameter
+            )
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
         self.update_axis()
