@@ -140,10 +140,33 @@ class Expression(Component):
 
     **kwargs : dict
         Keyword arguments can be used to initialise the value of the
-        parameters.
+        parameters. Each value must be a finite real number.
+
+    Raises
+    ------
+    ValueError
+        If a parameter keyword value is not a finite real number or cannot
+        be represented as a finite float64 value. The error message names
+        the parameter.
 
     Notes
     -----
+    Parameter keyword values are converted to float at construction. Boolean
+    and NumPy boolean values, NaN and infinite values, complex values, strings
+    and bytes, None, non-numeric objects, and ragged or nested sequences are
+    rejected. :class:`fractions.Fraction`, NumPy real scalars, finite
+    :class:`decimal.Decimal` values, and finite SymPy real-number constants
+    are accepted, although ``Decimal`` and SymPy ``NumberSymbol`` objects are
+    not registered with Python's numeric abstract base classes. Integers above
+    ``2**53`` can lose precision during float64 conversion, while integers or
+    fractions too large for float64 are rejected.
+
+    Direct assignment to :attr:`~.component.Parameter.value` still accepts
+    NaN and infinite values to support deliberate NaN-masking workflows.
+    Values restored from stored models also pass through this setter and stay
+    permissive. Invalid value types continue to raise the informative Traits
+    :class:`traits.trait_errors.TraitError`.
+
     As of version 1.4, Sympy's lambdify function, that the
     :class:`~.api.model.components1D.Expression`
     components uses internally, does not support the differentiation of

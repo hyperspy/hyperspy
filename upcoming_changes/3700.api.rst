@@ -1,0 +1,1 @@
+Loading ``.hspy`` or ``.zspy`` files whose functional-axis parameters contain boolean, NaN, or complex values now raises ``ValueError`` instead of loading an invalid axis.

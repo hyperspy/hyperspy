@@ -1013,6 +1013,33 @@ class FunctionalDataAxis(BaseDataAxis):
         SymPy mathematical expression defining the axis.
     x : BaseDataAxis
         Defines x-values at which `expression` is evaluated.
+    **parameters : dict
+        Values for the variables in ``expression``. Each value must be a
+        finite real number.
+
+    Raises
+    ------
+    ValueError
+        If a value in ``parameters`` is not a finite real number or cannot
+        be represented as a finite float64 value. The error message names
+        the parameter.
+
+    Notes
+    -----
+    Parameter values are converted to float at construction. Boolean and
+    NumPy boolean values, NaN and infinite values, complex values, strings
+    and bytes, None, non-numeric objects, and ragged or nested sequences are
+    rejected. :class:`fractions.Fraction`, NumPy real scalars, finite
+    :class:`decimal.Decimal` values, and finite SymPy real-number constants
+    are accepted, although ``Decimal`` and SymPy ``NumberSymbol`` objects are
+    not registered with Python's numeric abstract base classes. Integers above
+    ``2**53`` can lose precision during float64 conversion, while integers or
+    fractions too large for float64 are rejected.
+
+    Invalid objects passed as ``x`` continue to raise the informative Traits
+    ``TraitError``. Direct assignment to :attr:`~.component.Parameter.value`
+    likewise retains its Traits type validation, while still accepting NaN
+    and infinite values for deliberate NaN-masking workflows.
 
     Examples
     --------
