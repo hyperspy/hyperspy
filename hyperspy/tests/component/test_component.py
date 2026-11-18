@@ -387,6 +387,37 @@ def test_expression_linear_parameter_list_end_to_end():
     assert comp.b._linear is False
 
 
+def test_expression_linear_parameter_list_generator_input():
+    # A one-shot iterable passed to Expression must be consumed ONCE: the
+    # canonical object stored by Component.init_parameters is the materialized
+    # list, and every Expression.__init__ consumer (whitelist, _linear
+    # marking, linearity check) reads that stored object, not the raw
+    # (already exhausted) generator kwarg.
+    comp = hs.model.components1D.Expression(
+        "a*x+b",
+        name="t",
+        linear_parameter_list=iter(["a"]),
+        check_parameter_linearity=False,
+    )
+    assert comp.a._linear is True
+    assert comp.b._linear is False
+    assert list(comp._linear_parameter_list) == ["a"]
+    # The whitelist must reference the canonical stored object, not the
+    # exhausted generator that was passed in.
+    assert comp._whitelist["linear_parameter_list"] == (
+        "init",
+        comp._linear_parameter_list,
+    )
+    # With the default check_parameter_linearity=True, membership is tested
+    # against the canonical object: b is not linear-listed and a*x+b IS
+    # linear in b, so it is confirmed linear; a is exempted from the check.
+    comp2 = hs.model.components1D.Expression(
+        "a*x+b", name="t", linear_parameter_list=iter(["a"])
+    )
+    assert comp2.a._linear is True
+    assert comp2.b._linear is True
+
+
 def test_set_name():
     c = Component(["one", "two"], ["one"])
     c.name = "test"
