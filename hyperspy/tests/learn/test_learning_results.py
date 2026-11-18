@@ -17,12 +17,17 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+import hashlib
 import importlib
+import shutil
 from pathlib import Path
 
+import dask.array as da
+import h5py
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.learn._mva import LearningResults
 from hyperspy.signals import Signal1D
 
@@ -160,3 +165,230 @@ def test_load_legacy_alias_V(tmp_path):
     lr.load(path)
     np.testing.assert_allclose(lr.explained_variance, [1.5, 2.5])
     assert not hasattr(lr, "V")
+
+
+# --- Learning-results restoration from real HSPY/ZSPY files -----------------
+# Relocated from hyperspy/tests/test_io_expression_security.py, which is not
+# part of the RELEASE_next_minor base for this split.
+
+EXPERIMENT = "Experiments/__unnamed__"
+
+
+def _sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _zarr_tree_hash(path):
+    digest = hashlib.sha256()
+    for child in sorted(Path(path).rglob("*")):
+        if child.is_file():
+            digest.update(str(child.relative_to(path)).encode())
+            digest.update(child.read_bytes())
+    return digest.hexdigest()
+
+
+LR_GROUP = EXPERIMENT + "/learning_results"
+LR_ATTRIBUTES = EXPERIMENT + "/attributes"
+LR_FACTORS = np.arange(24.0).reshape(12, 2)
+LR_LOADINGS = np.arange(50.0).reshape(25, 2)
+LR_EXPLAINED_VARIANCE = np.array([3.5, 1.25])
+LR_CLUSTER_SUM = np.arange(3.0)
+LR_CLUSTER_CENTROID = np.arange(4.0)
+LR_CLUSTER_DISTANCES = np.arange(5.0)
+LR_CLUSTER_CENTROIDS = np.arange(6.0)
+LR_ALIAS_V = np.array([7.5, 8.5])
+
+
+def _lr_match(*parts):
+    # Match the route and the offending name independent of message ordering.
+    import re
+
+    return "".join(
+        f"(?=.*{re.escape(str(part))})" for part in ("learning_results", *parts)
+    )
+
+
+def _build_learning_results_file(tmp_path, suffix):
+    data = np.arange(12 * 25 * 48, dtype=float).reshape(12, 25, 48)
+    s = hs.signals.Signal1D(data)
+    lr = s.learning_results
+    lr.factors = LR_FACTORS.copy()
+    lr.loadings = LR_LOADINGS.copy()
+    lr.explained_variance = LR_EXPLAINED_VARIANCE.copy()
+    lr.decomposition_algorithm = "SVD"
+    lr.output_dimension = 2
+    lr.original_shape = (12, 25, 48)
+    lr.cluster_sum_signals = LR_CLUSTER_SUM.copy()
+    lr.cluster_centroid_signals = LR_CLUSTER_CENTROID.copy()
+    lr.cluster_distances = LR_CLUSTER_DISTANCES.copy()
+    lr.cluster_centroids = LR_CLUSTER_CENTROIDS.copy()
+    lr.custom_public = "kept"
+    lr._object = "serializable-private"
+    lr.algorithm = "legacy-algorithm"
+    lr.V = LR_ALIAS_V.copy()
+    # Shape (1,) with chunks (1,) is required for lazy HDF5 access to reach
+    # HyperSpy instead of failing inside dask chunk handling.
+    lr.custom_lazy = da.ones(1, chunks=(1,))
+    path = tmp_path / f"learning_results{suffix}"
+    s.save(path)
+    assert path.exists()
+    return path
+
+
+def _copy_learning_results_file(src, dst, suffix):
+    if suffix == ".zspy":
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy2(src, dst)
+
+
+def _lr_file_hash(path, suffix):
+    if suffix == ".zspy":
+        return _zarr_tree_hash(path)
+    return _sha256(path)
+
+
+def _tamper_learning_results_key(src, dst, suffix, key):
+    _copy_learning_results_file(src, dst, suffix)
+    values = np.arange(1.0, dtype=float)
+    if suffix == ".hspy":
+        with h5py.File(dst, "r+") as f:
+            group = f[LR_GROUP]
+            assert key not in group
+            group.create_dataset(key, data=values, chunks=(1,))
+        with h5py.File(dst, "r") as f:
+            assert key in f[LR_GROUP]
+    else:
+        import zarr
+
+        root = zarr.open_group(str(dst), mode="r+")
+        assert key not in root[LR_GROUP]
+        root[LR_GROUP].create_dataset(key, data=values, chunks=(1,))
+        check = zarr.open_group(str(dst), mode="r")
+        assert key in check[LR_GROUP]
+
+
+def _tamper_learning_results_container(src, dst, suffix):
+    marker = "not-a-mapping"
+    _copy_learning_results_file(src, dst, suffix)
+    if suffix == ".hspy":
+        with h5py.File(dst, "r+") as f:
+            exp = f[EXPERIMENT]
+            assert "learning_results" in exp
+            del exp["learning_results"]
+            exp["attributes"].attrs["learning_results"] = marker
+            assert "learning_results" not in exp
+            assert exp["attributes"].attrs["learning_results"] == marker
+    else:
+        import zarr
+
+        root = zarr.open_group(str(dst), mode="r+")
+        assert LR_GROUP in root
+        del root[LR_GROUP]
+        root[LR_ATTRIBUTES].attrs["learning_results"] = marker
+        check = zarr.open_group(str(dst), mode="r")
+        assert LR_GROUP not in check
+        assert check[LR_ATTRIBUTES].attrs["learning_results"] == marker
+
+
+@pytest.mark.parametrize("suffix", (".hspy", ".zspy"))
+@pytest.mark.parametrize("lazy", (False, True))
+@pytest.mark.parametrize("key", ("summary", "save"))
+def test_learning_results_file_method_rejected(tmp_path, suffix, lazy, key):
+    if suffix == ".zspy":
+        pytest.importorskip("zarr")
+    src = _build_learning_results_file(tmp_path, suffix)
+    dst = tmp_path / f"method_{key}{suffix}"
+    _tamper_learning_results_key(src, dst, suffix, key)
+    loaded = None
+    try:
+        with pytest.raises(ValueError, match=_lr_match(key)):
+            loaded = hs.load(dst, lazy=lazy)
+    finally:
+        if loaded is not None and lazy:
+            loaded.close_file()
+
+
+@pytest.mark.parametrize("suffix", (".hspy", ".zspy"))
+@pytest.mark.parametrize("lazy", (False, True))
+def test_learning_results_file_container_rejected(tmp_path, suffix, lazy):
+    if suffix == ".zspy":
+        pytest.importorskip("zarr")
+    src = _build_learning_results_file(tmp_path, suffix)
+    dst = tmp_path / f"container{suffix}"
+    _tamper_learning_results_container(src, dst, suffix)
+    loaded = None
+    try:
+        with pytest.raises(ValueError, match=_lr_match("non-mapping", "str")):
+            loaded = hs.load(dst, lazy=lazy)
+    finally:
+        if loaded is not None and lazy:
+            loaded.close_file()
+
+
+@pytest.mark.parametrize("suffix", (".hspy", ".zspy"))
+@pytest.mark.parametrize("lazy", (False, True))
+def test_learning_results_file_legitimate_roundtrip(tmp_path, suffix, lazy):
+    if suffix == ".zspy":
+        pytest.importorskip("zarr")
+    path = _build_learning_results_file(tmp_path, suffix)
+    digest = _lr_file_hash(path, suffix)
+    loaded = None
+    try:
+        loaded = hs.load(path, lazy=lazy)
+        assert loaded._lazy is lazy
+        lr = loaded.learning_results
+        expected_arrays = {
+            "factors": LR_FACTORS,
+            "loadings": LR_LOADINGS,
+            "explained_variance": LR_EXPLAINED_VARIANCE,
+            "cluster_sum_signals": LR_CLUSTER_SUM,
+            "cluster_centroid_signals": LR_CLUSTER_CENTROID,
+            "cluster_distances": LR_CLUSTER_DISTANCES,
+            "cluster_centroids": LR_CLUSTER_CENTROIDS,
+            "V": LR_ALIAS_V,
+        }
+        for name, expected in expected_arrays.items():
+            actual = getattr(lr, name)
+            if lazy:
+                assert isinstance(actual, da.Array), name
+                actual = actual.compute()
+            else:
+                assert isinstance(actual, np.ndarray), name
+            np.testing.assert_allclose(actual, expected)
+        assert lr.explained_variance is not lr.V
+        assert lr.decomposition_algorithm == "SVD"
+        assert lr.algorithm == "legacy-algorithm"
+        assert lr.custom_public == "kept"
+        assert lr._object == "serializable-private"
+        assert tuple(lr.original_shape) == (12, 25, 48)
+        lazy_field = lr.custom_lazy
+        if lazy:
+            assert isinstance(lazy_field, da.Array)
+            assert lazy_field.chunks == ((1,),)
+            lazy_field = lazy_field.compute()
+        else:
+            assert isinstance(lazy_field, np.ndarray)
+        np.testing.assert_allclose(lazy_field, np.ones(1))
+    finally:
+        if loaded is not None and lazy:
+            loaded.close_file()
+        assert _lr_file_hash(path, suffix) == digest
+
+
+@pytest.mark.parametrize("suffix", (".hspy", ".zspy"))
+@pytest.mark.parametrize("lazy", (False, True))
+def test_learning_results_file_dunder_control(tmp_path, suffix, lazy):
+    if suffix == ".zspy":
+        pytest.importorskip("zarr")
+    key = "__getstate__"
+    src = _build_learning_results_file(tmp_path, suffix)
+    dst = tmp_path / f"dunder{suffix}"
+    _tamper_learning_results_key(src, dst, suffix, key)
+    loaded = None
+    try:
+        with pytest.raises(ValueError, match=_lr_match(key)):
+            loaded = hs.load(dst, lazy=lazy)
+    finally:
+        if loaded is not None and lazy:
+            loaded.close_file()

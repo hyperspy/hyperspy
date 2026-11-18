@@ -20,6 +20,7 @@ import importlib
 import logging
 import types
 import warnings
+from collections.abc import Mapping
 
 import numpy as np
 from rsciio.utils import path
@@ -3306,6 +3307,57 @@ class LearningResults(object):
             for name in dir(cls)
             if not name.startswith("_") and not callable(getattr(cls, name))
         }
+
+    def _validated_dictionary(self, mapping):
+        """Validate and snapshot a mapping before restoring learning results.
+
+        Parameters
+        ----------
+        mapping : collections.abc.Mapping
+            Candidate learning-results fields, typically read from a saved
+            file or supplied through a signal dictionary.
+
+        Returns
+        -------
+        dict
+            A plain-dictionary snapshot of ``mapping`` taken immediately
+            after the type check.
+
+        Raises
+        ------
+        ValueError
+            If ``mapping`` is not a mapping, or if a key is not a string,
+            starts with ``__``, or names a ``LearningResults`` class
+            attribute that is not a declared field or legacy alias.
+
+        Notes
+        -----
+        Field values are returned untouched: restoration must not evaluate,
+        compute, unwrap, or otherwise transform them. Non-reserved dynamic
+        names, including single-underscore names such as ``_object``, remain
+        valid extension state.
+        """
+        if not isinstance(mapping, Mapping):
+            raise ValueError(
+                "Refusing to restore learning_results from a non-mapping "
+                f"{type(mapping).__name__} value"
+            )
+        fields = dict(mapping)
+        allowed = self._declared_field_names() | set(self._LEGACY_ALIASES)
+        for key in fields:
+            if not isinstance(key, str):
+                raise ValueError(
+                    f"Refusing to restore the non-string learning_results field {key!r}"
+                )
+            if key.startswith("__"):
+                raise ValueError(
+                    f"Refusing to restore the dunder learning_results field {key!r}"
+                )
+            if key not in allowed and hasattr(type(self), key):
+                raise ValueError(
+                    f"Refusing to restore the reserved learning_results field {key!r}"
+                )
+        return fields
 
     def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis.

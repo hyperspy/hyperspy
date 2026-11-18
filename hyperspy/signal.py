@@ -2867,6 +2867,22 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                     f"Refusing to set the dunder attribute {key!r} from the "
                     "loaded dictionary"
                 )
+        # Validate both learning-results mappings before either restoration
+        # route mutates the existing results. Each snapshot is applied only at
+        # its original restoration point: the nested attributes route first and
+        # the top-level route later, so precedence and timing are unchanged.
+        nested_learning_results = (
+            self.learning_results._validated_dictionary(attributes["learning_results"])
+            if "learning_results" in attributes
+            else None
+        )
+        top_level_learning_results = (
+            self.learning_results._validated_dictionary(
+                file_data_dict["learning_results"]
+            )
+            if "learning_results" in file_data_dict
+            else None
+        )
         # Validate every restorable entry before applying any of them so
         # that a partly-invalid attributes mapping cannot leave the signal
         # half-updated.
@@ -2893,7 +2909,9 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             pending_attributes.append((key, value))
         # Apply the validated attributes in their original order.
         for key, value in pending_attributes:
-            if isinstance(value, dict):
+            if key == "learning_results":
+                self.learning_results.__dict__.update(nested_learning_results)
+            elif isinstance(value, dict):
                 target = getattr(self, key)
                 for k, v in value.items():
                     setattr(target, k, v)
@@ -2916,7 +2934,7 @@ class BaseSignal(FancySlicing, MVA, MVATools):
         if self._signal_type or not self.metadata.has_item("Signal.signal_type"):
             self.metadata.Signal.signal_type = self._signal_type
         if "learning_results" in file_data_dict:
-            self.learning_results.__dict__.update(file_data_dict["learning_results"])
+            self.learning_results.__dict__.update(top_level_learning_results)
         if self._lazy is not oldlazy:
             self._assign_subclass()
 

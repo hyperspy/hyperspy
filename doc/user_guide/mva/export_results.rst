@@ -28,7 +28,10 @@ If you save the dataset on which you've performed machine learning analysis in
 the :external+rsciio:ref:`HSpy-HDF5 <hspy-format>` format (the default in HyperSpy, see
 :ref:`saving_files`), the result of the analysis is also saved in the same
 file automatically, and it is loaded along with the rest of the data when you
-next open the file.
+next open the file. Malformed learning-results containers and names reserved
+by HyperSpy are rejected with a ``ValueError``; individual field values are not
+validated, and this is not a guarantee that files from untrusted sources are
+safe to open.
 
 .. note::
    This approach currently supports storing one decomposition and one BSS
