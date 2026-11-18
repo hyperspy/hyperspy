@@ -398,7 +398,7 @@ class TestFunctionalDataAxis:
             hs.load(tampered, lazy=True)
 
     def test_load_tampered_zspy(self, tmp_path):
-        import zarr
+        zarr = pytest.importorskip("zarr")
 
         s = hs.signals.Signal1D(
             np.random.random((25, 12, 48)),
