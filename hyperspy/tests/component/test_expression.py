@@ -164,6 +164,9 @@ REJECTED_KWARGS = [
     Fraction(2**1100, 3),
     np.float64("nan"),
     decimal.Decimal("NaN"),
+    np.array(True),
+    np.array(1 + 2j),
+    np.array([1.5, 2.5]),
     sympy.I,
     sympy.Symbol("t"),
 ]
@@ -181,6 +184,8 @@ ACCEPTED_KWARGS = [
     np.uint64(2**63),
     np.float32(1.25),
     np.longdouble(1.25),
+    np.array(1.25),
+    np.asarray(3),
     2**64,
     decimal.Decimal("1.25"),
     sympy.pi,
@@ -192,6 +197,14 @@ def test_expression_kwarg_accepted(value):
     comp = hs.model.components1D.Expression("a*x", name="t", a=value)
     assert isinstance(comp.a.value, float)
     np.testing.assert_allclose(comp.a.value, float(value))
+
+
+def test_expression_zero_dimensional_array_kwarg():
+    # np.asarray-wrapped scalars reached ``Parameter.value`` before constructor
+    # validation existed and must keep working; the setter still accepts them.
+    comp = hs.model.components1D.Expression("a*x", name="t", a=np.array(2.5))
+    assert isinstance(comp.a.value, float)
+    np.testing.assert_allclose(comp.a.value, 2.5)
 
 
 def test_expression_shipped_component_decimal_kwarg():
