@@ -990,6 +990,13 @@ class FunctionalDataAxis(BaseDataAxis):
     defined as additional attributes of the axis. The property ``is_uniform``
     is automatically set to ``False``.
 
+    .. note::
+
+       If you use HyperSpy ``<2.6.0``, do not load files containing untrusted
+       expressions. In affected versions, these expressions can execute Python
+       during axis construction, including with ``lazy=True``. Upgrade to
+       HyperSpy 2.6.0 or newer.
+
     ``x`` itself is an instance of `BaseDataAxis`. By default, it will be a
     `UniformDataAxis` with ``offset = 0`` and ``scale = 1`` of the given
     ``size``. However, it can also be initialized with custom ``offset`` and
