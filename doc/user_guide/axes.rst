@@ -326,6 +326,19 @@ it will be a :class:`~.axes.UniformDataAxis` with ``offset = 0`` and
 custom ``offset`` and ``scale`` values. Alternatively, it can be a non
 uniform :class:`~.axes.DataAxis`.
 
+Parameter values passed to :class:`~.axes.FunctionalDataAxis`, or as parameter
+keyword arguments to :class:`~._components.expression.Expression`, are
+validated as finite real numbers when the object is constructed. Malformed
+values raise ``ValueError`` naming the parameter instead of failing later with
+low-level NumPy or Traits errors or silently producing NaN axes or functions.
+Valid coercible numeric values, including :class:`fractions.Fraction`, NumPy
+scalars, :class:`decimal.Decimal`, and SymPy constants, are accepted and
+converted to float. This validation also applies when loading ``.hspy`` or
+``.zspy`` files, so files whose functional-axis parameters contain boolean,
+NaN, or complex values now raise ``ValueError`` at :func:`~.api.load`. Direct
+assignment to :attr:`~.component.Parameter.value` still permits nonfinite
+values for deliberate NaN-masking workflows.
+
 Sample dictionary for a :class:`~.axes.FunctionalDataAxis`:
 
 .. code-block:: python
