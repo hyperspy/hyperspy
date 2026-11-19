@@ -98,6 +98,10 @@ _IMAG_LIMITS = {
     sympy.erf: 50,
     sympy.erfc: 50,
 }
+# erf and erfc saturate for real arguments beyond a few units; bounding the real
+# part keeps oversized arguments out without relying on a backend-specific
+# overflow during evaluation.
+_REAL_LIMITS = {sympy.erf: 50, sympy.erfc: 50}
 _GAMMA_FUNCTIONS = {sympy.gamma, sympy.beta, sympy.zeta}
 
 
@@ -492,6 +496,13 @@ def _check_before(function, children):
         if _exceeds_magnitude(imaginary, _IMAG_LIMITS[function]):
             raise UnsafeExpressionError(
                 "R-CONST-ARG", "Imaginary argument exceeds its bound."
+            )
+    if function in _REAL_LIMITS and not children[0].free_symbols:
+        # Reject here rather than during evaluation: with the gmpy2 backend the
+        # overflow that used to signal this case never occurs.
+        if _exceeds_magnitude(children[0].as_real_imag()[0], _REAL_LIMITS[function]):
+            raise UnsafeExpressionError(
+                "R-EVAL-DOMAIN", "Real argument exceeds its bound."
             )
     if function in _GAMMA_FUNCTIONS:
         for child in children:

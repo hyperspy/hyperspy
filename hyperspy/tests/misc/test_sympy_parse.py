@@ -992,8 +992,13 @@ def test_evaluation_overflow_conversion(stage):
     # Isolate each conversion so outer handlers cannot hide a missing one.
     with pytest.raises(parser.UnsafeExpressionError) as caught, ExitStack() as stack:
         if stage == "magnitude":
-            value = s.erfc(s.Integer(10) ** 300, evaluate=False)
-            parser._magnitude(value)
+            # Injecting the failure keeps this stage independent of the numerical
+            # backend: with gmpy2 the real overflow that used to raise here does
+            # not occur for erfc of a huge constant.
+            stack.enter_context(
+                patch.object(parser.sympy, "Abs", side_effect=OverflowError("probe"))
+            )
+            parser._magnitude(s.erfc(s.Symbol("x"), evaluate=False))
         elif stage == "comparison":
             stack.enter_context(
                 patch.object(parser, "_magnitude", side_effect=OverflowError("probe"))
