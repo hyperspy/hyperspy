@@ -25,10 +25,21 @@ import numbers
 import numpy as np
 
 
+def _safe_repr(value):
+    # ``repr`` itself can fail: Python 3.11+ refuses to stringify integers
+    # above ``sys.get_int_max_str_digits()``, and a user object may raise from
+    # ``__repr__``. Never let building the diagnostic replace the validation
+    # error being reported.
+    try:
+        return repr(value)
+    except Exception:
+        return f"<{type(value).__name__} value not representable>"
+
+
 def _error_message(name, value):
     return (
         f"The '{name}' parameter must be a finite real number, got "
-        f"{value!r} of type {type(value).__name__}."
+        f"{_safe_repr(value)} of type {type(value).__name__}."
     )
 
 
@@ -39,8 +50,9 @@ def validate_finite_real(value, name):
     Accepts instances of ``numbers.Rational``, ``numbers.Real``, ``decimal.Decimal``
     and numpy integer/floating scalars (excluding ``bool`` and ``np.bool_``), plus
     finite SymPy number-like expressions (``Expr`` with ``is_number`` truthy, e.g.
-    ``sympy.pi``). Everything else is rejected with a ``ValueError`` naming the
-    parameter.
+    ``sympy.pi``). Zero-dimensional real numeric arrays (e.g. ``np.asarray(2.5)``)
+    are accepted as the scalar they wrap. Everything else is rejected with a
+    ``ValueError`` naming the parameter.
 
     This module must not import from ``hyperspy.signals`` or ``hyperspy.misc.utils``
     (import-cycle hazard: ``hyperspy.misc.utils`` is a deprecation shim that pulls
@@ -65,7 +77,17 @@ def validate_finite_real(value, name):
     # ``np.floating`` not covering it.
     if isinstance(value, (bool, np.bool_)):
         raise ValueError(_error_message(name, value))
-    if not isinstance(
+    if isinstance(value, np.ndarray) and value.ndim == 0:
+        # 0-d numeric arrays reach these boundaries from ``np.asarray`` and from
+        # values loaded out of NumPy files; they wrap a scalar and were accepted
+        # through the ``CFloat`` coercion that predates constructor validation.
+        # ``np.bool_`` is not a ``np.number`` subtype, so boolean arrays are
+        # rejected here too, as are complex and non-numeric dtypes.
+        if not np.issubdtype(value.dtype, np.number) or np.issubdtype(
+            value.dtype, np.complexfloating
+        ):
+            raise ValueError(_error_message(name, value))
+    elif not isinstance(
         value,
         (
             numbers.Rational,

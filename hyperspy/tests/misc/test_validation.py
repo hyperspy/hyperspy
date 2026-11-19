@@ -64,6 +64,8 @@ def test_rejected(value):
         np.uint64(2**63),
         np.float32(1.25),
         np.longdouble(1.25),
+        np.array(1.25),
+        np.asarray(3),
         sympy.pi,
     ],
 )
@@ -76,6 +78,32 @@ def test_accepted(value):
 def test_overflow_raises_valueerror():
     with pytest.raises(ValueError, match="must be a finite real number"):
         validate_finite_real(2**1100, "t")
+
+
+def test_huge_int_error_message_names_parameter():
+    # ``repr`` of an integer above ``sys.get_int_max_str_digits()`` raises on
+    # Python 3.11+, so the diagnostic must fall back instead of surfacing
+    # Python's string-conversion limit in place of the parameter name.
+    with pytest.raises(ValueError, match="'t' parameter"):
+        validate_finite_real(2**20000, "t")
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        np.array(True),
+        np.array(1 + 2j),
+        np.array(np.nan),
+        np.array(np.inf),
+        np.array([1.5, 2.5]),
+        np.array([[1.5]]),
+        np.array("2.5"),
+        np.array(None),
+    ],
+)
+def test_rejected_arrays(value):
+    with pytest.raises(ValueError, match="must be a finite real number"):
+        validate_finite_real(value, "t")
 
 
 def test_nan_rejected():
