@@ -16,11 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Compile a bounded scientific expression, without a Python namespace.
+"""Compile a validated scientific expression, without a Python namespace.
 
 Token and AST validation precede every SymPy call. Construction is unevaluated;
 arithmetic is enabled one node at a time, after checking its evaluated operands.
 Substitutions follow the same path, so folding cannot hide a large argument.
+
+The bounds are best effort. They reject oversized literals and obvious
+constant-magnitude blowups, they are not a resource bound, and nothing is
+isolated in a separate process, so an expression this module accepts can still
+consume unbounded time or memory. Parse text from files you trust only.
 """
 
 import ast

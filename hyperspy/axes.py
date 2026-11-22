@@ -995,7 +995,9 @@ class FunctionalDataAxis(BaseDataAxis):
        If you use HyperSpy ``<2.6.0``, do not load files containing untrusted
        expressions. In affected versions, these expressions can execute Python
        during axis construction, including with ``lazy=True``. Upgrade to
-       HyperSpy 2.6.0 or newer.
+       HyperSpy 2.6.0 or newer. Upgrading closes the code-execution issue; it
+       does not bound the time or memory an expression may consume.
+       See :ref:`trust-and-resource-limits`.
 
     ``x`` itself is an instance of `BaseDataAxis`. By default, it will be a
     `UniformDataAxis` with ``offset = 0`` and ``scale = 1`` of the given
