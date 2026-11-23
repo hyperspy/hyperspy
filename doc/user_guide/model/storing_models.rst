@@ -94,6 +94,8 @@ Trust and legacy files
    untrusted stored models, or load untrusted learning-results files. Upgrade
    to HyperSpy 2.6.0 or newer. The identified issues affect HyperSpy
    2.0.0-2.5.0 and affected 1.x releases. ``lazy=True`` is not a mitigation.
+   Upgrading closes the code-execution issues; it does not bound the resources
+   a stored model can consume. See :ref:`trust-and-resource-limits`.
 
 Restoring a stored model does not run pickled Python content by default. If a
 model requires this legacy content, restoration raises
