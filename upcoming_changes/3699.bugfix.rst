@@ -1,1 +1,3 @@
 Fix arbitrary code execution when loading, restoring or fitting files that contain crafted functional-axis, ``Expression`` or twin expressions; these expressions are now parsed with a restricted, bounded parser.
+Reject file-controlled dunder and non-string attribute paths before they can mutate models, signals or metadata during loading and model restoration.
+
