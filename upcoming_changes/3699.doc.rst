@@ -1,3 +1,6 @@
+
 Add a security policy with the scope and threat model and the private vulnerability reporting path.
 Link the README and the loading guide to the HyperSpy security guidance and to the RosettaSciIO security guide covering the readers' own residual risks.
 Document expression trust handling and resource-exhaustion limitations, and warn users of affected releases to upgrade to HyperSpy 2.6.0.
+Document stored-model trust handling and resource-exhaustion limitations, and warn users of affected releases to upgrade to HyperSpy 2.6.0.
+
