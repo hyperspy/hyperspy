@@ -88,6 +88,13 @@ model can be saved with one signal.
 Trust and legacy files
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. note::
+
+   If you use HyperSpy ``<2.6.0``, do not open untrusted files, restore
+   untrusted stored models, or load untrusted learning-results files. Upgrade
+   to HyperSpy 2.6.0 or newer. The identified issues affect HyperSpy
+   2.0.0-2.5.0 and affected 1.x releases. ``lazy=True`` is not a mitigation.
+
 Restoring a stored model does not run pickled Python content by default. If a
 model requires this legacy content, restoration raises
 ``UnsafeLegacyContent``, which is a subclass of ``ValueError``. Models made from registered components, including built-in
