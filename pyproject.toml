@@ -10,7 +10,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -31,7 +30,7 @@ dependencies = [
     "pint>=0.10",
     "prettytable>=2.3",
     "pyyaml",
-    "rosettasciio[hdf5,image]>=0.12.0",
+    "rosettasciio[hdf5,image]>=0.16.0",
     "scipy>=1.10.0", # for compatibility with numpy version
     "sympy>=1.10",
     "tqdm>=4.59.0",
@@ -80,7 +79,7 @@ license = "GPL-3.0-or-later"
 license-files = ["COPYING.txt"]
 name = "hyperspy"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.optional-dependencies]
 all = [
@@ -239,7 +238,7 @@ where = ["."]
 "*" = ["*.png"]
 
 [tool.setuptools_scm]
-fallback_version = "2.5.1.dev0"
+fallback_version = "2.6.0.dev0"
 
 [tool.towncrier]
 directory = "upcoming_changes/"
