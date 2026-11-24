@@ -2874,7 +2874,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                 continue
             if hasattr(self, key):
                 if isinstance(value, dict):
-                    for k, v in value.items():
+                    # Validate every nested key before setting any of them so
+                    # that a partly-invalid mapping is never applied before
+                    # the guard rejects it.
+                    for k in value:
                         if not isinstance(k, str):
                             raise ValueError(
                                 f"Refusing to set the non-string attribute "
@@ -2885,7 +2888,9 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                                 f"Refusing to set the dunder attribute {k!r} "
                                 f"on {key} from the loaded dictionary"
                             )
-                        setattr(getattr(self, key), k, v)
+                    target = getattr(self, key)
+                    for k, v in value.items():
+                        setattr(target, k, v)
                 else:
                     setattr(self, key, value)
         if "models" in file_data_dict:

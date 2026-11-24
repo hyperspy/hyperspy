@@ -107,6 +107,36 @@ def test_load_dictionary_nested_dunder_rejected():
     _assert_no_class_mutation()
 
 
+@pytest.mark.parametrize("carrier", ["_lazy", "ragged"])
+def test_load_dictionary_nested_invalid_key_after_valid_rejected(carrier):
+    # A valid-looking nested key ordered before the invalid one must not
+    # reach the setters: the guard rejects the whole mapping first.
+    for bad in ({"good": 1, "__class__": {"a": 1}}, {"good": 1, 5: 2}):
+        d = {
+            "data": np.arange(12, dtype=float),
+            "attributes": {carrier: dict(bad)},
+        }
+        with pytest.raises(ValueError):
+            hs.signals.Signal1D(**d)
+        _assert_no_class_mutation()
+
+
+def test_load_dictionary_learning_results_no_partial_mutation():
+    # A benign nested key ordered before a rejected one must not land on
+    # the learning results before the guard raises.
+    s = hs.signals.Signal1D(np.arange(12, dtype=float))
+    before = s.learning_results.factors
+    for bad_key in ("__class__", 5):
+        d = {
+            "data": np.arange(12, dtype=float),
+            "attributes": {"learning_results": {"factors": "mutated", bad_key: "bad"}},
+        }
+        with pytest.raises(ValueError):
+            s._load_dictionary(d)
+        assert s.learning_results.factors == before
+    _assert_no_class_mutation()
+
+
 def test_load_dictionary_legitimate_keys_unchanged():
     d = {
         "data": np.arange(12, dtype=float),
