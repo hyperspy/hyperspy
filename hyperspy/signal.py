@@ -2441,7 +2441,9 @@ class BaseSignal(FancySlicing, MVA, MVATools):
             the documentation of the :class:`~hyperspy.axes.AxesManager`
             class for more details).
         attributes : dict, optional
-            A dictionary whose items are stored as attributes.
+            A dictionary whose items are stored as attributes. Only the
+            ``_lazy``, ``ragged`` and learning-results keys are restored;
+            other keys are ignored.
         metadata : dict, optional
             A dictionary containing a set of parameters
             that will to stores in the ``metadata`` attribute.
@@ -2802,6 +2804,15 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
         self.axes_manager._ragged = value
 
+    # Attribute names that files legitimately carry in the "attributes"
+    # mapping: written by ``_to_dictionary`` ("_lazy" and "ragged") and
+    # added by the HDF5 readers when learning results are stored alongside
+    # the signal ("learning_results" and the legacy "peak_learning_results").
+    # Any other file-controlled name is ignored instead of being set.
+    _FILE_ATTRIBUTE_KEYS = frozenset(
+        {"_lazy", "ragged", "learning_results", "peak_learning_results"}
+    )
+
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
 
@@ -2816,7 +2827,9 @@ class BaseSignal(FancySlicing, MVA, MVATools):
 
             * axes: a dictionary to define the axes (see the documentation of
               the :class:`~hyperspy.axes.AxesManager` class for more details).
-            * attributes: a dictionary whose items are stored as attributes.
+            * attributes: a dictionary whose items are stored as
+              attributes. Only the ``_lazy``, ``ragged`` and
+              learning-results keys are restored; other keys are ignored.
 
             * metadata: a dictionary containing a set of parameters that will
               to stores in the `metadata` attribute. Some parameters might be
@@ -2855,6 +2868,10 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                     "loaded dictionary"
                 )
         for key, value in attributes.items():
+            if key not in self._FILE_ATTRIBUTE_KEYS:
+                # File-controlled name that no written format restores:
+                # ignore it instead of writing it onto the signal.
+                continue
             if hasattr(self, key):
                 if isinstance(value, dict):
                     for k, v in value.items():

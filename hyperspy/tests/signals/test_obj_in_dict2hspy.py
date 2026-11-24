@@ -15,12 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import h5py
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
 from hyperspy.axes import AxesManager
-from hyperspy.signal import BaseSignal, _obj_in_dict2hspy
+from hyperspy.signal import BaseSignal, ModelManager, _obj_in_dict2hspy
 
 
 def test_obj_in_dict2hspy_signal():
@@ -95,9 +96,11 @@ def test_load_dictionary_top_level_dunder_rejected():
 
 
 def test_load_dictionary_nested_dunder_rejected():
+    # "_lazy" is an allowlisted attributes key, so its nested mapping still
+    # reaches the setter guard; unknown keys are ignored before it.
     d = {
         "data": np.arange(12, dtype=float),
-        "attributes": {"axes_manager": {"__class__": {"a": 1}}},
+        "attributes": {"_lazy": {"__class__": {"a": 1}}},
     }
     with pytest.raises(ValueError, match="__class__"):
         hs.signals.Signal1D(**d)
@@ -112,7 +115,10 @@ def test_load_dictionary_legitimate_keys_unchanged():
     s = hs.signals.Signal1D(**d)
     assert not s._lazy
     assert not s.axes_manager._ragged
-    assert s.metadata.x == 1
+    # metadata is restored from the top-level "metadata" mapping only;
+    # a "metadata" key inside the file-controlled "attributes" mapping is
+    # ignored like any other non-allowlisted name
+    assert not s.metadata.has_item("x")
 
 
 @pytest.mark.parametrize("key", [5, b"evil"])
@@ -124,9 +130,10 @@ def test_load_dictionary_non_string_top_level_key_rejected(key):
 
 
 def test_load_dictionary_non_string_nested_key_rejected():
+    # same carrier rule as the nested dunder test above
     d = {
         "data": np.arange(12, dtype=float),
-        "attributes": {"axes_manager": {5: 1}},
+        "attributes": {"_lazy": {5: 1}},
     }
     with pytest.raises(ValueError, match="non-string attribute key"):
         hs.signals.Signal1D(**d)
@@ -151,4 +158,62 @@ def test_load_yaml_non_string_attribute_key_via_hs_load(tmp_path):
 
     with pytest.raises(ValueError, match="non-string attribute key"):
         hs.load(path, file_format=YamlReader)
+    _assert_no_class_mutation()
+
+
+# --- File-controlled "attributes" cannot clobber signal attributes ---
+
+_FILE_ATTRIBUTE_ATTACK_KEYS = (
+    "models",
+    "axes_manager",
+    "metadata",
+    "original_metadata",
+    "inav",
+    "isig",
+    "events",
+    "plot",
+    "tmp_parameters",
+)
+
+
+@pytest.mark.parametrize("key", _FILE_ATTRIBUTE_ATTACK_KEYS)
+def test_load_dictionary_unknown_attribute_key_ignored(key):
+    # Only the keys written by this library are restored; anything else in
+    # the file-controlled mapping is ignored instead of being set on the
+    # signal (reported privately 2026-11-24: "models" as a plain string
+    # clobbered the ModelManager on a plain load).
+    d = {
+        "data": np.arange(12, dtype=float),
+        "attributes": {key: "pwned-string"},
+    }
+    s = hs.signals.Signal1D(**d)
+    assert not isinstance(getattr(s, key), str)
+    assert isinstance(s.models, ModelManager)
+    assert isinstance(s.axes_manager, AxesManager)
+    _assert_no_class_mutation()
+
+
+def test_load_dictionary_nested_unknown_attribute_injection_ignored():
+    d = {
+        "data": np.arange(12, dtype=float),
+        "attributes": {"axes_manager": {"pwn": 1}, "metadata": {"x": 1}},
+    }
+    s = hs.signals.Signal1D(**d)
+    assert not hasattr(s.axes_manager, "pwn")
+    assert not s.metadata.has_item("x")
+    _assert_no_class_mutation()
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+def test_load_hspy_attributes_group_models_clobber_ignored(tmp_path, lazy):
+    # Real-file variant of the reported sink: a tampered
+    # Experiments/<name>/attributes group stores a string under "models".
+    s = hs.signals.Signal1D(np.arange(12, dtype=float))
+    path = tmp_path / "c.hspy"
+    s.save(path)
+    with h5py.File(path, "r+") as f:
+        attributes = f["Experiments/__unnamed__"]["attributes"]
+        attributes.attrs["models"] = "pwned-string"
+    s2 = hs.load(path, lazy=lazy)
+    assert isinstance(s2.models, ModelManager)
     _assert_no_class_mutation()
