@@ -2867,32 +2867,38 @@ class BaseSignal(FancySlicing, MVA, MVATools):
                     f"Refusing to set the dunder attribute {key!r} from the "
                     "loaded dictionary"
                 )
+        # Validate every restorable entry before applying any of them so
+        # that a partly-invalid attributes mapping cannot leave the signal
+        # half-updated.
+        pending_attributes = []
         for key, value in attributes.items():
             if key not in self._FILE_ATTRIBUTE_KEYS:
                 # File-controlled name that no written format restores:
                 # ignore it instead of writing it onto the signal.
                 continue
-            if hasattr(self, key):
-                if isinstance(value, dict):
-                    # Validate every nested key before setting any of them so
-                    # that a partly-invalid mapping is never applied before
-                    # the guard rejects it.
-                    for k in value:
-                        if not isinstance(k, str):
-                            raise ValueError(
-                                f"Refusing to set the non-string attribute "
-                                f"key {k!r} on {key} from the loaded dictionary"
-                            )
-                        if k.startswith("__"):
-                            raise ValueError(
-                                f"Refusing to set the dunder attribute {k!r} "
-                                f"on {key} from the loaded dictionary"
-                            )
-                    target = getattr(self, key)
-                    for k, v in value.items():
-                        setattr(target, k, v)
-                else:
-                    setattr(self, key, value)
+            if not hasattr(self, key):
+                continue
+            if isinstance(value, dict):
+                for k in value:
+                    if not isinstance(k, str):
+                        raise ValueError(
+                            f"Refusing to set the non-string attribute "
+                            f"key {k!r} on {key} from the loaded dictionary"
+                        )
+                    if k.startswith("__"):
+                        raise ValueError(
+                            f"Refusing to set the dunder attribute {k!r} "
+                            f"on {key} from the loaded dictionary"
+                        )
+            pending_attributes.append((key, value))
+        # Apply the validated attributes in their original order.
+        for key, value in pending_attributes:
+            if isinstance(value, dict):
+                target = getattr(self, key)
+                for k, v in value.items():
+                    setattr(target, k, v)
+            else:
+                setattr(self, key, value)
         if "models" in file_data_dict:
             self.models._add_dictionary(file_data_dict["models"])
         if "metadata" not in file_data_dict:

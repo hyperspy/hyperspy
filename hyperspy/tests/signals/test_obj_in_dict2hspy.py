@@ -137,6 +137,43 @@ def test_load_dictionary_learning_results_no_partial_mutation():
     _assert_no_class_mutation()
 
 
+@pytest.mark.parametrize("bad", [{"__class__": {"a": 1}}, {5: 2}])
+def test_load_dictionary_no_attribute_applied_before_rejected(bad):
+    # An earlier allowlisted entry must not be applied when a later nested
+    # mapping is rejected: the whole attributes mapping is validated before
+    # any attribute is set.
+    d = {
+        "data": np.arange(12, dtype=float),
+        "attributes": {"_lazy": True, "ragged": {"good": 1, **bad}},
+    }
+    with pytest.raises(ValueError):
+        hs.signals.Signal1D(**d)
+    s = hs.signals.Signal1D(np.arange(12, dtype=float))
+    with pytest.raises(ValueError):
+        s._load_dictionary(d)
+    assert s._lazy is False
+    _assert_no_class_mutation()
+
+
+def test_load_dictionary_learning_results_not_applied_before_rejected():
+    # The nested learning-results route is deferred until every attributes
+    # entry is validated, so a later invalid entry cannot leave the
+    # learning results half-restored.
+    s = hs.signals.Signal1D(np.arange(12, dtype=float))
+    factors_before = s.learning_results.factors
+    d = {
+        "data": np.arange(12, dtype=float),
+        "attributes": {
+            "learning_results": {"factors": "mutated"},
+            "ragged": {"good": 1, "__class__": "bad"},
+        },
+    }
+    with pytest.raises(ValueError):
+        s._load_dictionary(d)
+    assert s.learning_results.factors == factors_before
+    _assert_no_class_mutation()
+
+
 def test_load_dictionary_legitimate_keys_unchanged():
     d = {
         "data": np.arange(12, dtype=float),
