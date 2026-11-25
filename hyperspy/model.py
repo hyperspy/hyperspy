@@ -150,6 +150,10 @@ def reconstruct_component(comp_dictionary, init_args=None):
                 "Legacy Arctan component converted to EELSArctan during file reading."
             )
     _id = comp_dictionary["_id_name"]
+    if not isinstance(_id, str):
+        # An unhashable `_id_name` (e.g. a list) would fail the registry
+        # lookup below with an unhandled TypeError.
+        raise ValueError(f"Invalid component `_id_name` {_id!r}: expected a string")
     if _id in _COMPONENTS:
         _class = getattr(
             importlib.import_module(_COMPONENTS[_id]["module"]),

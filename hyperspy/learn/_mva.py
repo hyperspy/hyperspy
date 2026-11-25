@@ -22,6 +22,7 @@ import types
 import warnings
 import zipfile
 from collections.abc import Mapping
+import zipfile
 
 import numpy as np
 from rsciio.utils import path
