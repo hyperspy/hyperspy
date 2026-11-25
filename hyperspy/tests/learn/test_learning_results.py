@@ -432,6 +432,8 @@ def test_learning_results_file_dunder_control(tmp_path, suffix, lazy):
     finally:
         if loaded is not None and lazy:
             loaded.close_file()
+
+
 class TestLearningResultsLoad:
     # Loading a malformed archive must fail with a clear ValueError
     # instead of an unhandled BadZipFile or EOFError.

@@ -42,6 +42,7 @@ from hyperspy.misc import dask_utils, utils
 from hyperspy.misc.export_dictionary import (
     _loads,
     _preflight_pickled_content,
+    check_that_flags_make_sense,
     export_to_dictionary,
     load_from_dictionary,
     parse_flag_string,
@@ -123,6 +124,13 @@ def reconstruct_component(comp_dictionary, init_args=None):
     init_args : dict or None
         Initialisation arguments for the component class.
     """
+    _id = comp_dictionary["_id_name"]
+    if not isinstance(_id, str):
+        # Validate before the legacy comparisons below: a non-string
+        # `_id_name` (e.g. a list or a NumPy array) would otherwise fail
+        # the `==` comparisons or the registry lookup with an unhandled
+        # error instead of naming the bad field.
+        raise ValueError(f"Invalid component `_id_name` {_id!r}: expected a string")
     # Restoring of Voigt and Arctan components saved with Hyperspy <v1.6
     if (
         comp_dictionary["_id_name"] == "Voigt"
@@ -142,10 +150,6 @@ def reconstruct_component(comp_dictionary, init_args=None):
                 "Legacy Arctan component converted to EELSArctan during file reading."
             )
     _id = comp_dictionary["_id_name"]
-    if not isinstance(_id, str):
-        # An unhashable `_id_name` (e.g. a list) would fail the registry
-        # lookup below with an unhandled TypeError.
-        raise ValueError(f"Invalid component `_id_name` {_id!r}: expected a string")
     if _id in _COMPONENTS:
         _class = getattr(
             importlib.import_module(_COMPONENTS[_id]["module"]),
@@ -687,9 +691,23 @@ class BaseModel(list):
             id_dict = {}
 
             for comp in dic["components"]:
+                # Validate before the first use: the whitelist is read below
+                # and the twin wiring after it, so a malformed whitelist
+                # must fail here rather than as a raw AttributeError.
+                if not isinstance(comp, dict) or not isinstance(
+                    comp.get("_whitelist"), dict
+                ):
+                    raise ValueError(
+                        f"Invalid component dictionary {comp!r}: expected a "
+                        "dictionary with a `_whitelist` dictionary of flags"
+                    )
                 init_args = {}
                 for k, flags_str in comp["_whitelist"].items():
                     flags = parse_flag_string(flags_str)
+                    # An incompatible pair (e.g. `id,init`) would otherwise
+                    # pass the saved value into the component constructor as
+                    # a duplicate keyword before any later check.
+                    check_that_flags_make_sense(flags)
                     if not flags[0]:
                         continue
                     if "init" in flags:
@@ -733,7 +751,13 @@ class BaseModel(list):
                         id_dict[tw].twin = id_dict[self_id]
 
         if "_whitelist" in dic:
-            channel_switches = dic["_whitelist"].pop("channel_switches", None)
+            # Validate before the `.pop()` below reads it.
+            whitelist = dic["_whitelist"]
+            if not isinstance(whitelist, dict):
+                raise ValueError(
+                    f"Invalid `_whitelist` {whitelist!r}: expected a dictionary of flags"
+                )
+            channel_switches = whitelist.pop("channel_switches", None)
             if channel_switches:
                 # Before channel_switches was privatised
                 dic["_whitelist"]["_channel_switches"] = channel_switches

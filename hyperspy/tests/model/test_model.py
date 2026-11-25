@@ -1034,7 +1034,7 @@ class TestModelLoadDictionaryRobustness:
         with pytest.raises(ValueError, match='"fn" flag'):
             s.create_model(dictionary=dic)
 
-    @pytest.mark.parametrize("identifier", [[], {}])
+    @pytest.mark.parametrize("identifier", [[], {}, np.array(["G", "Voigt"])])
     def test_component_id_name_type_rejected(self, identifier):
         s, dic = self._dictionary()
         dic["components"][0]["_id_name"] = identifier
@@ -1057,4 +1057,24 @@ class TestModelLoadDictionaryRobustness:
         parameter = self._twinned_parameter(dic)
         parameter["_twins"] = [parameter["self"]]
         with pytest.raises(ValueError, match="twinned to itself"):
+            s.create_model(dictionary=dic)
+
+    def test_component_whitelist_not_a_dictionary_rejected(self):
+        s, dic = self._dictionary()
+        dic["components"][0]["_whitelist"] = None
+        with pytest.raises(ValueError, match="_whitelist"):
+            s.create_model(dictionary=dic)
+
+    def test_model_whitelist_not_a_dictionary_rejected(self):
+        s, dic = self._dictionary()
+        dic["_whitelist"] = None
+        with pytest.raises(ValueError, match="_whitelist"):
+            s.create_model(dictionary=dic)
+
+    def test_incompatible_component_flags_rejected_before_constructor(self):
+        s, dic = self._dictionary()
+        # `id,init` would pass the saved value into the constructor as a
+        # duplicate keyword; it must fail as an incompatible pair first.
+        dic["components"][0]["_whitelist"]["name"] = "id,init"
+        with pytest.raises(ValueError, match="not compatible"):
             s.create_model(dictionary=dic)
