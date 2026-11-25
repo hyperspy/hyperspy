@@ -21,6 +21,7 @@ import logging
 import types
 import warnings
 from collections.abc import Mapping
+import zipfile
 
 import numpy as np
 from rsciio.utils import path
@@ -3423,11 +3424,22 @@ class LearningResults(object):
                     _logger.info(
                         f"Skipped object-valued field {key!r} while loading {filename}"
                     )
+        # The archive is validated lazily, when each member is read, so
+        # the member iteration has to run inside the guard as well.
+        try:
+            decomposition = np.load(filename, allow_pickle=True)
+            for key, value in decomposition.items():
+                if value.dtype == np.dtype("object"):
                     value = None
                 # Unwrap values stored as 0D numpy arrays to raw datatypes
                 if isinstance(value, np.ndarray) and value.ndim == 0:
                     value = value.item()
                 setattr(self, key, value)
+        except (zipfile.BadZipFile, EOFError) as error:
+            raise ValueError(
+                f"Failed to load the learning results: {filename} is corrupt "
+                "or not a valid NumPy archive"
+            ) from error
 
         _logger.info(f"Loaded results from {filename}")
 
