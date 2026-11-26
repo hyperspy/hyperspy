@@ -3267,6 +3267,12 @@ class LearningResults(object):
     cluster_metric_data = None
     cluster_metric_index = None
     cluster_metric = None
+    # Set on instances by cluster_analysis(); declared so that load()
+    # restores the members save() writes.
+    cluster_sum_signals = None
+    cluster_centroid_signals = None
+    cluster_distances = None
+    cluster_centroids = None
     # Unmixing
     bss_algorithm = None
     unmixing_matrix = None
@@ -3407,8 +3413,13 @@ class LearningResults(object):
                     continue
                 try:
                     value = decomposition[key]
-                except ValueError:
-                    # Object arrays cannot be loaded with allow_pickle=False
+                except ValueError as exc:
+                    # Object arrays cannot be loaded with allow_pickle=False;
+                    # that specific failure is skippable, but a corrupt member
+                    # (for example a broken array header) must not be silenced
+                    # into a skipped field.
+                    if "allow_pickle" not in str(exc):
+                        raise
                     _logger.info(
                         f"Skipped object-valued field {key!r} while loading {filename}"
                     )

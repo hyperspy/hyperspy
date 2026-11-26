@@ -20,6 +20,7 @@
 import hashlib
 import importlib
 import shutil
+import zipfile
 from pathlib import Path
 
 import dask.array as da
@@ -122,9 +123,30 @@ def test_load_npz_benign_object_member_skipped(tmp_path):
     lr = LearningResults()
     lr.load(path)
     np.testing.assert_array_equal(lr.factors, factors)
-    assert lr.mean == 7.0
+    assert lr.mean == pytest.approx(7.0)
     assert lr.unmixing_matrix is None
     assert not marker_path.exists()
+
+
+def test_load_restores_clustering_fields(tmp_path):
+    # cluster_analysis() sets these attributes on the instance instead of
+    # the class, so load() needs them declared to restore what save()
+    # writes.
+    lr = LearningResults()
+    lr.cluster_sum_signals = np.arange(12.0).reshape(6, 2)
+    lr.cluster_centroid_signals = np.arange(12.0).reshape(6, 2) + 1.0
+    lr.cluster_distances = np.arange(5.0)
+    lr.cluster_centroids = np.arange(6.0).reshape(3, 2)
+    path = tmp_path / "learning_results.npz"
+    lr.save(path, overwrite=True)
+    restored = LearningResults()
+    restored.load(path)
+    np.testing.assert_allclose(restored.cluster_sum_signals, lr.cluster_sum_signals)
+    np.testing.assert_allclose(
+        restored.cluster_centroid_signals, lr.cluster_centroid_signals
+    )
+    np.testing.assert_allclose(restored.cluster_distances, lr.cluster_distances)
+    np.testing.assert_allclose(restored.cluster_centroids, lr.cluster_centroids)
 
 
 def test_load_ignores_unknown_and_dunder_keys(tmp_path):
@@ -143,6 +165,23 @@ def test_load_ignores_unknown_and_dunder_keys(tmp_path):
     assert lr.__class__ is LearningResults
     assert not hasattr(lr, "unknown_field")
     np.testing.assert_array_equal(lr.factors, factors)
+
+
+def test_load_corrupt_member_propagates(tmp_path):
+    # A member with a valid npy magic but a corrupt header must raise out
+    # of load() instead of being silently skipped as if it were an
+    # object-valued member that only needs pickle.
+    factors = np.arange(6.0).reshape(2, 3)
+    path = tmp_path / "learning_results.npz"
+    factors_path = tmp_path / "factors.npy"
+    np.save(factors_path, factors)
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.write(factors_path, "factors.npy")
+        archive.writestr("mean.npy", b"\x93NUMPY\x01\x00garbage-header-bytes!!")
+
+    lr = LearningResults()
+    with pytest.raises(ValueError, match="array header"):
+        lr.load(path)
 
 
 def test_load_keeps_dynamic_instance_attribute(tmp_path):
