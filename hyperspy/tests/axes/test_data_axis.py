@@ -293,6 +293,19 @@ class TestFunctionalDataAxis:
         assert axis.power == 2
         np.testing.assert_allclose(axis.axis, np.arange(10) ** 2)
 
+    @pytest.mark.parametrize(
+        "args, kwargs",
+        [
+            ((np.arange(3), 3), {}),
+            ((), {"x": np.arange(3), "power": 3}),
+            ((np.arange(3),), {"power": 3}),
+        ],
+        ids=["positional", "keyword", "mixed"],
+    )
+    def test_function_call_conventions(self, args, kwargs):
+        result = self.axis._function(*args, **kwargs)
+        np.testing.assert_allclose(result, np.arange(3) ** 3)
+
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
@@ -783,3 +796,20 @@ def test_rounding_consistency_axis_type_half(shift):
     nuaxis_indices = super(type(axis), axis).value2index(test_vals)
 
     np.testing.assert_allclose(uaxis_indices, nuaxis_indices)
+
+
+def test_convert_to_functional_data_axis_rejected_expression_attack():
+    axis = UniformDataAxis(size=11, scale=2.0, offset=1.0, name="energy", units="eV")
+    expected_axis = axis.axis.copy()
+    with pytest.raises(ValueError) as info:
+        axis.convert_to_functional_data_axis("a * x + 2**1025", a=1)
+    assert info.value.rule == "R-CONST-POW"
+    assert type(axis) is UniformDataAxis
+    assert "scale" in axis.trait_names()
+    assert "offset" in axis.trait_names()
+    assert axis.scale == 2.0
+    assert axis.offset == 1.0
+    assert axis.name == "energy"
+    assert axis.units == "eV"
+    assert axis.size == 11
+    np.testing.assert_allclose(axis.axis, expected_axis)

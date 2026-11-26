@@ -34,6 +34,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.events import Event, Events
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc import array_tools, utils
+from hyperspy.misc._sympy_parse import lambdify_ordered, parse_expression
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 
@@ -985,9 +986,21 @@ class FunctionalDataAxis(BaseDataAxis):
     evaluated to yield the axis points. The `expression` is a function defined
     as a ``string`` using the `SymPy <https://docs.sympy.org/latest/tutorial/intro.html>`_
     text expression format. An example would be ``expression = a / x + b``.
+    Expressions are parsed with a restricted parser that accepts arithmetic,
+    comparison and boolean operators and a subset of SymPy functions; any
+    other function name raises an error.
     Any variables in the expression, in this case ``a`` and ``b`` must be
     defined as additional attributes of the axis. The property ``is_uniform``
     is automatically set to ``False``.
+
+    .. note::
+
+       If you use HyperSpy ``<2.6.0``, do not load files containing untrusted
+       expressions. In affected versions, these expressions can execute Python
+       during axis construction, including with ``lazy=True``. Upgrade to
+       HyperSpy 2.6.0 or newer. Upgrading closes the code-execution issue; it
+       does not bound the time or memory an expression may consume.
+       See :ref:`trust-and-resource-limits`.
 
     ``x`` itself is an instance of `BaseDataAxis`. By default, it will be a
     `UniformDataAxis` with ``offset = 0`` and ``scale = 1`` of the given
@@ -1049,8 +1062,6 @@ class FunctionalDataAxis(BaseDataAxis):
         )
         import sympy
 
-        from hyperspy._components.expression import _parse_substitutions
-
         # These trait needs to added dynamically to be removed when necessary
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
@@ -1067,7 +1078,7 @@ class FunctionalDataAxis(BaseDataAxis):
         if "_type" in parameters:
             del parameters["_type"]
         # Compile function
-        expr = _parse_substitutions(self._expression)
+        expr = parse_expression(self._expression)
         variables = ["x"]
         expr_parameters = [
             symbol for symbol in expr.free_symbols if symbol.name not in variables
@@ -1077,9 +1088,22 @@ class FunctionalDataAxis(BaseDataAxis):
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}"
             )
-        self._function = sympy.utilities.lambdify(
-            variables + expr_parameters, expr.evalf(), dummify=False
+        expr_parameters.sort(key=lambda symbol: symbol.name)
+        self._function_parameter_names = tuple(p.name for p in expr_parameters)
+        function = lambdify_ordered([sympy.Symbol("x")] + expr_parameters, expr.evalf())
+        function_signature = inspect.Signature(
+            [
+                inspect.Parameter(name, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                for name in ("x",) + self._function_parameter_names
+            ]
         )
+
+        def _function(*args, **kwargs):
+            """Evaluate the compiled function with user-facing argument names."""
+            bound = function_signature.bind(*args, **kwargs)
+            return function(*bound.args)
+
+        self._function = _function
         for parameter in parameters.keys():
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
@@ -1087,10 +1111,10 @@ class FunctionalDataAxis(BaseDataAxis):
         self.observe(self.update_axis, self.parameters_list)
 
     def update_axis(self, event=None):
-        kwargs = {}
-        for kwarg in self.parameters_list:
-            kwargs[kwarg] = getattr(self, kwarg)
-        self.axis = self._function(x=self.x.axis, **kwargs)
+        self.axis = self._function(
+            self.x.axis,
+            *[getattr(self, name) for name in self._function_parameter_names],
+        )
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
         self.size = len(self.axis)
@@ -1464,10 +1488,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             d["name"] = name
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
+        d["_type"] = "FunctionalDataAxis"
+        # Validate the complete conversion before mutating this axis or its traits.
+        FunctionalDataAxis(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
         self.remove_trait("scale")
         self.remove_trait("offset")
         self.__class__ = FunctionalDataAxis
-        d["_type"] = "FunctionalDataAxis"
         self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
         self.axes_manager = axes_manager
 

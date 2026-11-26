@@ -20,6 +20,6 @@ dependencies:
 - scikit-image >=0.19.0
 - scikit-learn >=1.6.0
 - scipy >=1.10.0
-- sympy >=1.10
+- sympy >=1.14
 - tqdm >=4.59.0
 - traits >=7.0.0

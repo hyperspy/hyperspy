@@ -32,7 +32,7 @@ dependencies = [
     "pyyaml",
     "rosettasciio[hdf5,image]>=0.16.0",
     "scipy>=1.10.0", # for compatibility with numpy version
-    "sympy>=1.10",
+    "sympy>=1.14",
     "tqdm>=4.59.0",
     "traits>=7.0.0",
 ]

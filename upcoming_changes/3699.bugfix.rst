@@ -1,0 +1,1 @@
+Fix arbitrary code execution when loading, restoring or fitting files that contain crafted functional-axis, ``Expression`` or twin expressions; these expressions are now parsed with a restricted, bounded parser.

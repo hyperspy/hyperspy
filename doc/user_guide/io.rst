@@ -90,6 +90,27 @@ whose :external+rsciio:ref:`Security and untrusted files
 risks, including the HDF5 external references that can disclose local files
 even when loading succeeds.
 
+.. _trust-and-resource-limits:
+
+Trust and resource limits
+--------------------------
+
+HyperSpy 2.6.0 and newer reject files that could execute Python through
+file-derived expressions. This closes the code-execution issues of the
+affected releases. It does not make untrusted files safe.
+
+File loading and expression evaluation are not sandboxed. A crafted or merely
+very large file can still exhaust memory or CPU while it is read, and an
+expression can still consume unbounded time or memory while it is evaluated.
+File-declared sizes, compression and array shapes are not bounded as a security
+measure, and ``lazy=True`` is not a mitigation: lazy loading still opens the
+file and parses its metadata.
+
+Open files, stored models and learning-results files only from sources you
+trust. If you must process files from untrusted sources, read them in a
+separate process or environment that you can terminate and that holds no
+credentials.
+
 Specifying file format
 ----------------------
 
