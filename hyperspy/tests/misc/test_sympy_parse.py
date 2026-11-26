@@ -21,6 +21,7 @@
 import ast
 import importlib.util
 import math
+import sys
 import unicodedata
 from contextlib import ExitStack, contextmanager
 from unittest.mock import patch
@@ -1153,6 +1154,13 @@ def test_boundary_numeric_fixture_truth():
         assert exponent + bits == expected
 
 
+# CPython 3.12 replaced the pure-Python scanner in `tokenize` with the C
+# tokenizer, so full-width underscore identifiers tokenize as NAME and an
+# unmatched ")" as OP only from there; on Python <= 3.11 `tokenize` rejects
+# those inputs first. Both paths reject the input, only the rule differs.
+_C_TOKENIZER = sys.version_info >= (3, 12)
+
+
 MALICIOUS_CASES = [
     ("import-string", "__import__('os')", "R-TOKEN", True),
     ("import-name", "__import__(x)", "R-IDENT-DUNDER", True),
@@ -1178,8 +1186,18 @@ MALICIOUS_CASES = [
     ("keyword-call", "sin(x=1)", "R-KEYWORD", True),
     ("kwargs-call", "sin(**k)", "R-KEYWORD", True),
     ("star-call", "sin(*a)", "R-KEYWORD", True),
-    ("fullwidth-dunder", "\uff3f\uff3fimport\uff3f\uff3f", "R-IDENT-UNICODE", True),
-    ("nfkc-dunder", "_\uff3fx\uff3f\uff3f", "R-IDENT-DUNDER", True),
+    (
+        "fullwidth-dunder",
+        "\uff3f\uff3fimport\uff3f\uff3f",
+        "R-IDENT-UNICODE" if _C_TOKENIZER else "R-TOKEN",
+        True,
+    ),
+    (
+        "nfkc-dunder",
+        "_\uff3fx\uff3f\uff3f",
+        "R-IDENT-DUNDER" if _C_TOKENIZER else "R-TOKEN",
+        True,
+    ),
     ("nfkc-lambda", "\uff4c\uff41\uff4d\uff42\uff44\uff41", "R-IDENT-KEYWORD", True),
     ("nfkc-import", "\uff49\uff4d\uff50\uff4f\uff52\uff54", "R-IDENT-KEYWORD", True),
     ("builtins", "__builtins__", "R-IDENT-DUNDER", True),
@@ -1250,7 +1268,12 @@ MALICIOUS_CASES = [
     ("parse-incomplete", "x+", "R-PARSE", True),
     ("parse-operand", "(x+)", "R-PARSE", True),
     ("token-unclosed", "(x", "R-TOKEN", True),
-    ("token-extra-close", "x)", "R-PARSE", True),
+    (
+        "token-extra-close",
+        "x)",
+        "R-PARSE" if _C_TOKENIZER else "R-TOKEN",
+        True,
+    ),
     ("And-domain", "And(I,1)", "R-PARSE", False),
     ("Or-domain", "Or(I,1)", "R-PARSE", False),
     ("division-zero", "1/0", "R-NONFINITE", False),
