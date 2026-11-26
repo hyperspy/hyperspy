@@ -1,7 +1,6 @@
 channels:
 - conda-forge
 dependencies:
-- python >=3.11
 - dask-core >=2024.12.0
 - dill
 - importlib-metadata
