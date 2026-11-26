@@ -1,0 +1,1 @@
+Link the README and the loading guide to the HyperSpy security guidance and to the RosettaSciIO security guide covering the readers' own residual risks.

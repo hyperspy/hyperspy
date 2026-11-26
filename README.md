@@ -40,3 +40,12 @@ Contributing
 Everyone is welcome to contribute. Please read our [contributing 
 guidelines](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md) 
 and get started!
+
+Security
+--------
+
+Report security vulnerabilities privately through [GitHub private vulnerability
+reporting](https://github.com/hyperspy/hyperspy/security/advisories/new). Files,
+stored models and learning-results files are untrusted input: open them only
+from sources you trust. See [SECURITY.md](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/SECURITY.md)
+for the scope and threat model.
