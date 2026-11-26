@@ -90,8 +90,8 @@ Trust and legacy files
 
 .. note::
 
-   If you use HyperSpy ``<2.6.0``, do not open untrusted files, restore
-   untrusted stored models, or load untrusted learning-results files. Upgrade
+   If you use HyperSpy ``<2.6.0``, do not open untrusted files or restore
+   untrusted stored models. Upgrade
    to HyperSpy 2.6.0 or newer. The identified issues affect HyperSpy
    2.0.0-2.5.0 and affected 1.x releases. ``lazy=True`` is not a mitigation.
    Upgrading closes the code-execution issues; it does not bound the resources
@@ -122,10 +122,6 @@ memory use.
 For a custom component, prefer registering it with HyperSpy's extension
 mechanism or recreating it as an ``Expression``. These approaches avoid pickled
 class content and allow default restoration.
-
-Learning-results ``.npz`` files are loaded with pickle disabled. Numeric and
-string members load without unpickling, while members that require pickle
-aren't restored.
 
 For older versions of HyperSpy (before 0.9), the instructions were as follows:
 
