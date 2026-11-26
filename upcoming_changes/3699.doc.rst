@@ -1,0 +1,1 @@
+Add a security policy with the scope and threat model and the private vulnerability reporting path.
