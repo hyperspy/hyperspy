@@ -25,6 +25,7 @@ import cloudpickle
 
 from hyperspy.exceptions import UnsafeLegacyContent
 from hyperspy.misc import utils
+from hyperspy.misc._utils import slugify
 
 
 def check_that_flags_make_sense(flags):
@@ -288,10 +289,16 @@ def load_from_dictionary(target, dic):
         # Whitelist keys are file-controlled dotted attribute paths: reject
         # non-string and dunder parts before any traversal or mutation to
         # prevent class pollution (for example
-        # `__class__.__base__.__getattribute__`).
+        # `__class__.__base__.__getattribute__`). Attribute traversal
+        # slugifies each part, so a part such as `!__class__` still reaches a
+        # dunder: reject the normalized parts too.
         if not isinstance(key, str):
             raise ValueError(f"Refusing to set the non-string whitelist key {key!r}")
-        if any(part.startswith("__") for part in key.split(".")):
+        if any(
+            part.startswith("__")
+            or slugify(part, valid_variable_name=True).startswith("__")
+            for part in key.split(".")
+        ):
             raise ValueError(f"Refusing to set the dunder whitelist key {key!r}")
         value = dic[key]
         flags = parse_flag_string(flags_str)

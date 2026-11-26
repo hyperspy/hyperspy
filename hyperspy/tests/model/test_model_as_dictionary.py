@@ -546,10 +546,10 @@ def test_whitelist_dunder_key_rejected():
     # Parameter/Component access still works in the same process
     p = Parameter()
     p.value = 2.5
-    assert p.value == 2.5
+    assert p.value == pytest.approx(2.5)
     g = Gaussian()
     g.A.value = 1.0
-    assert g.A.value == 1.0
+    assert g.A.value == pytest.approx(1.0)
     assert isinstance(g, Component)
 
 
@@ -560,7 +560,7 @@ def test_whitelist_ordinary_key_control():
     g.A.value = 1.0
     d = {"_whitelist": {"A.value": ""}, "A.value": 3.0}
     load_from_dictionary(g, d)
-    assert g.A.value == 3.0
+    assert g.A.value == pytest.approx(3.0)
 
 
 @pytest.mark.parametrize(
@@ -577,8 +577,26 @@ def test_whitelist_non_string_key_rejected(key, flags):
     # Parameter/Component access still works in the same process
     p = Parameter()
     p.value = 2.5
-    assert p.value == 2.5
+    assert p.value == pytest.approx(2.5)
     g = Gaussian()
     g.A.value = 1.0
-    assert g.A.value == 1.0
+    assert g.A.value == pytest.approx(1.0)
     assert isinstance(g, Component)
+
+
+def test_whitelist_bang_dunder_key_rejected():
+    from hyperspy.misc._utils import DictionaryTreeBrowser
+    from hyperspy.misc.export_dictionary import load_from_dictionary
+
+    # `!__class__` traverses to `__class__` after slugification, so the
+    # dunder check must reject the normalized parts or attrsetter writes
+    # onto the class itself.
+    key = "signal.metadata.!__class__.process_lazy_attributes"
+    d = {"_whitelist": {key: ""}, key: "payload"}
+    s = hs.signals.Signal1D(np.arange(12))
+    m = s.create_model()
+    with pytest.raises(ValueError, match="dunder whitelist key"):
+        load_from_dictionary(m, d)
+    # The traversal must not have overwritten the class method with the
+    # file-controlled payload
+    assert callable(DictionaryTreeBrowser.process_lazy_attributes)
