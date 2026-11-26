@@ -89,12 +89,15 @@ class Expression(Component):
     ----------
     expression : str
         Component function in SymPy text expression format with
-        substitutions separated by `;`. See examples and the SymPy
-        documentation for details. In order to vary the components along the
-        signal dimensions, the variables `x` and `y` must be included for 1D
-        or 2D components. Also, if `module` is "numexpr" the
-        functions are limited to those that numexpr support. See its
-        documentation for details.
+        substitutions separated by `;`. See examples for details. In order
+        to vary the components along the signal dimensions, the variables
+        `x` and `y` must be included for 1D or 2D components. Expressions
+        are parsed with a restricted parser that accepts arithmetic,
+        comparison and boolean operators and a subset of SymPy functions;
+        any other function name raises an error, so expressions that use
+        unsupported SymPy functions must be rewritten. Also, if `module` is
+        "numexpr" the functions are limited to those that numexpr support.
+        See its documentation for details.
     name : str
         Name of the component.
     position : str, optional

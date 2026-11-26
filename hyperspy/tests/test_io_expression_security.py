@@ -1346,6 +1346,7 @@ def assert_zspy_route_file_truth(path, route):
 @pytest.mark.parametrize("lazy", (False, True))
 @pytest.mark.parametrize("route", ROUTE_CASES)
 def test_zspy_route_control(tmp_path, lazy, route):
+    pytest.importorskip("zarr")
     sentinel = tmp_path / SENTINEL
     assert not sentinel.exists()
     control = _route_builders[route](tmp_path, suffix=".zspy")
@@ -1369,6 +1370,7 @@ def test_zspy_route_control(tmp_path, lazy, route):
 @pytest.mark.parametrize("lazy", (False, True))
 @pytest.mark.parametrize("route", ROUTE_CASES)
 def test_zspy_route_attack(tmp_path, lazy, route):
+    pytest.importorskip("zarr")
     sentinel = tmp_path / SENTINEL
     assert not sentinel.exists()
     control = _route_builders[route](tmp_path, suffix=".zspy")
@@ -1462,6 +1464,7 @@ def build_zspy_stored_model_file(tmp_path):
 
 @pytest.mark.parametrize("lazy", (False, True))
 def test_zspy_stored_model_control(tmp_path, lazy):
+    pytest.importorskip("zarr")
     sentinel = tmp_path / SENTINEL
     assert not sentinel.exists()
     control = build_zspy_stored_model_file(tmp_path)
@@ -1487,6 +1490,7 @@ def test_zspy_stored_model_control(tmp_path, lazy):
     "case", ZSPY_MODEL_CASES, ids=[case[0] for case in ZSPY_MODEL_CASES]
 )
 def test_zspy_stored_model_attack(tmp_path, lazy, case):
+    pytest.importorskip("zarr")
     sentinel = tmp_path / SENTINEL
     assert not sentinel.exists()
     control = build_zspy_stored_model_file(tmp_path)
@@ -1534,6 +1538,7 @@ def assert_zspy_position_file_truth(path):
 
 @pytest.mark.parametrize("lazy", (False, True))
 def test_zspy_position_control(tmp_path, lazy):
+    pytest.importorskip("zarr")
     sentinel = tmp_path / SENTINEL
     assert not sentinel.exists()
     control = build_position_model_file(tmp_path, suffix=".zspy")
@@ -1564,6 +1569,7 @@ def test_zspy_position_control(tmp_path, lazy):
 
 @pytest.mark.parametrize("lazy", (False, True))
 def test_zspy_position_attack(tmp_path, lazy):
+    pytest.importorskip("zarr")
     import zarr
 
     sentinel = tmp_path / SENTINEL

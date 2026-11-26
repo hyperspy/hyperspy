@@ -19,6 +19,7 @@
 """Independent corpus, grammar, and resource checks for the expression gate."""
 
 import ast
+import importlib.util
 import math
 import unicodedata
 from contextlib import ExitStack, contextmanager
@@ -1536,7 +1537,21 @@ def test_lambdify_ordered_collision(name):
     )
 
 
-@pytest.mark.parametrize("modules", [None, "numpy", "scipy", "numexpr"])
+@pytest.mark.parametrize(
+    "modules",
+    [
+        None,
+        "numpy",
+        "scipy",
+        pytest.param(
+            "numexpr",
+            marks=pytest.mark.skipif(
+                importlib.util.find_spec("numexpr") is None,
+                reason="numexpr is not installed",
+            ),
+        ),
+    ],
+)
 def test_lambdify_ordered_numerical_backends(modules):
     function = parser.lambdify_ordered([x], x * x + 1, modules=modules)
     np.testing.assert_allclose(function(np.array([1, 2, 4])), [2, 5, 17], rtol=1e-12)

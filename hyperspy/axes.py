@@ -986,6 +986,9 @@ class FunctionalDataAxis(BaseDataAxis):
     evaluated to yield the axis points. The `expression` is a function defined
     as a ``string`` using the `SymPy <https://docs.sympy.org/latest/tutorial/intro.html>`_
     text expression format. An example would be ``expression = a / x + b``.
+    Expressions are parsed with a restricted parser that accepts arithmetic,
+    comparison and boolean operators and a subset of SymPy functions; any
+    other function name raises an error.
     Any variables in the expression, in this case ``a`` and ``b`` must be
     defined as additional attributes of the axis. The property ``is_uniform``
     is automatically set to ``False``.
