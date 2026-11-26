@@ -84,6 +84,12 @@ allows to select a single file through your OS file manager, e.g.:
 It is also possible to load multiple files at once or even stack multiple
 files. For more details read :ref:`load-multiple-label`.
 
+The file readers themselves live in :external+rsciio:doc:`RosettaSciIO <index>`,
+whose :external+rsciio:ref:`Security and untrusted files
+<security-untrusted-files>` guide documents the reader-specific residual
+risks, including the HDF5 external references that can disclose local files
+even when loading succeeds.
+
 Specifying file format
 ----------------------
 
