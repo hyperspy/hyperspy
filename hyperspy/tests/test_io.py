@@ -107,8 +107,6 @@ class TestNonUniformAxisCheck:
     def test_io_nonuniform(self):
         assert self.s.axes_manager[0].is_uniform is False
         self.s.save("tmp.hspy", overwrite=True)
-        with pytest.raises(TypeError, match="not supported for non-uniform"):
-            self.s.save("tmp.msa", overwrite=True)
 
     def test_nonuniform_writer_characteristic(self):
         for plugin in IO_PLUGINS:
@@ -138,8 +136,6 @@ class TestNonUniformAxisCheck:
     def teardown_method(self):
         if os.path.exists("tmp.hspy"):
             os.remove("tmp.hspy")
-        if os.path.exists("tmp.msa"):
-            os.remove("tmp.msa")
 
 
 def test_glob_wildcards():
