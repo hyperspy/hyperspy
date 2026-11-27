@@ -1,3 +1,0 @@
-HyperSpy now requires SymPy 1.14 or newer, and expressions from files, stored models and saved axes are parsed with a restricted parser that accepts a subset of SymPy functions and rejects unsupported function names.
-Stored models no longer unpickle legacy content by default: restoring a stored model that contains a pickled custom component or function raises ``UnsafeLegacyContent`` unless keyword-only ``trusted=True`` is passed; this executes Python stored in the file and is not a sandbox.
-

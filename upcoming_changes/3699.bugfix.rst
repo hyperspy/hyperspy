@@ -1,5 +1,0 @@
-Fix arbitrary code execution when loading, restoring or fitting files that contain crafted functional-axis, ``Expression`` or twin expressions; these expressions are now parsed with a restricted, bounded parser.
-Reject file-controlled dunder and non-string attribute paths before they can mutate models, signals or metadata during loading and model restoration, and restore only the ``_lazy``, ``ragged`` and learning-results keys of a signal ``attributes`` mapping.
-Load learning-results NPZ archives without pickle and validate dictionary restoration before updating learning results.
-
-Model titles and component names are now escaped in the HTML representations of current model values, current component values, model statistics and lazy signals, so markup stored in files is displayed as text.

@@ -14,6 +14,62 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 
 .. towncrier release notes start
 
+2.6.0 (2026-11-27)
+==================
+
+Enhancements
+------------
+
+- Splitting signals along non-uniform and functional axes now preserves their axis coordinates and calibration. (`#3693 <https://github.com/hyperspy/hyperspy/issues/3693>`_)
+- Built-in 2D components are restored from the component registry so stored models no longer embed a pickled copy of their class. (`#3699 <https://github.com/hyperspy/hyperspy/issues/3699>`_)
+
+
+Bug Fixes
+---------
+
+- Fix a ``SyntaxError`` on Python 3.15 when importing the polygon ROI by replacing a ``return`` inside a ``finally`` block, which Python 3.15 rejects, with an explicit ``except`` that keeps the invalid-polygon reporting behaviour. (`#3688 <https://github.com/hyperspy/hyperspy/issues/3688>`_)
+- Fix arbitrary code execution when loading, restoring or fitting files that contain crafted functional-axis, ``Expression`` or twin expressions; these expressions are now parsed with a restricted, bounded parser.
+  Reject file-controlled dunder and non-string attribute paths before they can mutate models, signals or metadata during loading and model restoration, and restore only the ``_lazy``, ``ragged`` and learning-results keys of a signal ``attributes`` mapping.
+  Load learning-results NPZ archives without pickle and validate dictionary restoration before updating learning results.
+
+  Model titles and component names are now escaped in the HTML representations of current model values, current component values, model statistics and lazy signals, so markup stored in files is displayed as text. (`#3699 <https://github.com/hyperspy/hyperspy/issues/3699>`_)
+- Validate parameter values as finite real numbers when constructing :class:`~._components.expression.Expression` and :class:`~.axes.FunctionalDataAxis`, including functional axes loaded from files, and raise ``ValueError`` naming invalid parameters instead of failing later or producing invalid results. Also validate ``linear_parameter_list`` during component construction so unknown parameter names, bare strings, and non-iterable values raise ``ValueError``. (`#3700 <https://github.com/hyperspy/hyperspy/issues/3700>`_)
+- Loading a model or learning results from a malformed saved dictionary (a non-string, unknown or incompatible whitelist flag, a whitelist naming a missing key or not being a dictionary, a malformed pickled-function container or twin reference, a non-string component name, or a corrupt or empty NumPy archive) now raises a ``ValueError`` describing the problem instead of an unhandled ``KeyError``, ``TypeError``, ``AttributeError``, ``RecursionError``, ``zipfile.BadZipFile`` or ``EOFError``. (`#3702 <https://github.com/hyperspy/hyperspy/issues/3702>`_)
+- Fixed expression parsing with `SymPy` 1.15, which requires exposing the `isinstance` builtin in the restricted namespace used to evaluate expressions. (`#3711 <https://github.com/hyperspy/hyperspy/issues/3711>`_)
+
+
+API changes
+-----------
+
+- HyperSpy now requires SymPy 1.14 or newer, and expressions from files, stored models and saved axes are parsed with a restricted parser that accepts a subset of SymPy functions and rejects unsupported function names.
+  Stored models no longer unpickle legacy content by default: restoring a stored model that contains a pickled custom component or function raises ``UnsafeLegacyContent`` unless keyword-only ``trusted=True`` is passed; this executes Python stored in the file and is not a sandbox. (`#3699 <https://github.com/hyperspy/hyperspy/issues/3699>`_)
+- Loading ``.hspy`` or ``.zspy`` files whose functional-axis parameters contain boolean, NaN, or complex values now raises ``ValueError`` instead of loading an invalid axis. (`#3700 <https://github.com/hyperspy/hyperspy/issues/3700>`_)
+
+
+Improved Documentation
+----------------------
+
+- Fixed spelling and grammatical mistakes in several Python examples to improve readability. (`#3695 <https://github.com/hyperspy/hyperspy/issues/3695>`_)
+- Make docstrings adhere to all numpydoc rules except ES01, EX01, GL01,2,7,8, PR01,2,4,7, RT01, SA01,4, SS06, and YD01 (`#3697 <https://github.com/hyperspy/hyperspy/issues/3697>`_)
+- Fix docstring parameter names that did not match the arguments the methods
+  accept, so a name copied from the documentation no longer raises ``TypeError``. (`#3698 <https://github.com/hyperspy/hyperspy/issues/3698>`_)
+- Add a security policy with the scope and threat model and the private vulnerability reporting path.
+  Link the README and the loading guide to the HyperSpy security guidance and to the RosettaSciIO security guide covering the readers' own residual risks.
+  Document expression trust handling and resource-exhaustion limitations, and warn users of affected releases to upgrade to HyperSpy 2.6.0.
+  Document stored-model trust handling and resource-exhaustion limitations, and warn users of affected releases to upgrade to HyperSpy 2.6.0. (`#3699 <https://github.com/hyperspy/hyperspy/issues/3699>`_)
+- Migrate the legacy ``^^^`` card separators in the landing page to
+  ``card-header`` directives and require ``sphinx-design>=0.8.0`` to build
+  the documentation. (`#3700 <https://github.com/hyperspy/hyperspy/issues/3700>`_)
+
+
+Maintenance
+-----------
+
+- Add support for Python 3.15 and require scikit-image 0.20 or newer for the image features. (`#3688 <https://github.com/hyperspy/hyperspy/issues/3688>`_)
+- Add testing for Hyperspy on Windows ARM64 on GitHub Actions. (`#3694 <https://github.com/hyperspy/hyperspy/issues/3694>`_)
+- Require Python 3.11 or newer and RosettaSciIO 0.16.0 or newer for the coordinated security release. (`#3701 <https://github.com/hyperspy/hyperspy/issues/3701>`_)
+
+
 2.5.0 (2026-10-06)
 ==================
 

@@ -1,3 +1,0 @@
-Migrate the legacy ``^^^`` card separators in the landing page to
-``card-header`` directives and require ``sphinx-design>=0.8.0`` to build
-the documentation.
