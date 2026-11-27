@@ -1047,7 +1047,10 @@ def test_evaluation_overflow_conversion(stage):
 @pytest.mark.parametrize(
     "text,expected_rule",
     [
-        ("Mod(Abs(I),acos(pi))", _expected_rule("Mod(Abs(I),acos(pi))", "R-EVAL-DOMAIN")),
+        (
+            "Mod(Abs(I),acos(pi))",
+            _expected_rule("Mod(Abs(I),acos(pi))", "R-EVAL-DOMAIN"),
+        ),
         ("And(q,x>0); q=1+I", "R-EVAL-DOMAIN"),
         ("zeta(1e-300,0.0)", "R-EVAL-DOMAIN"),
         ("Mod(atanh(10**9),2)", _expected_rule("Mod(atanh(10**9),2)", "R-EVAL-DOMAIN")),

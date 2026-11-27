@@ -492,6 +492,19 @@ class DictionaryTreeBrowser:
 
             value = signals.BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
+        # Key names are file-controlled (metadata/original_metadata). These
+        # dunders either reject instance assignment or corrupt attribute access
+        # or copy protocols; harmless dunders such as `__doc__` remain valid.
+        if slugified_key in {
+            "__class__",
+            "__dict__",
+            "__getattribute__",
+            "__getstate__",
+            "__reduce_ex__",
+            "__setattr__",
+            "__weakref__",
+        }:
+            raise ValueError(f"Refusing to set unsafe dunder key {key!r}")
         if isinstance(value, dict):
             if slugified_key in self.__dict__.keys() and keep_existing:
                 self.__dict__[slugified_key]["_dtb_value_"].add_dictionary(

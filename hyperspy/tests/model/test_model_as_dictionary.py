@@ -533,3 +533,72 @@ class TestStoredInitKeys:
         from hyperspy.misc.export_dictionary import _is_trusted
 
         assert _is_trusted() is False
+
+
+# --- Task 7: dunder whitelist keys are rejected before traversal ---
+
+
+def test_whitelist_dunder_key_rejected():
+    from hyperspy.misc.export_dictionary import load_from_dictionary
+
+    key = "__class__.__base__.__getattribute__"
+    d = {"_whitelist": {key: ""}, key: "payload"}
+    with pytest.raises(ValueError, match="__class__"):
+        load_from_dictionary(Gaussian(), d)
+    # Parameter/Component access still works in the same process
+    p = Parameter()
+    p.value = 2.5
+    assert p.value == pytest.approx(2.5)
+    g = Gaussian()
+    g.A.value = 1.0
+    assert g.A.value == pytest.approx(1.0)
+    assert isinstance(g, Component)
+
+
+def test_whitelist_ordinary_key_control():
+    from hyperspy.misc.export_dictionary import load_from_dictionary
+
+    g = Gaussian()
+    g.A.value = 1.0
+    d = {"_whitelist": {"A.value": ""}, "A.value": 3.0}
+    load_from_dictionary(g, d)
+    assert g.A.value == pytest.approx(3.0)
+
+
+@pytest.mark.parametrize(
+    "key, flags", [(5, "id"), (5, ""), (b"evil", "id"), (b"evil", "")]
+)
+def test_whitelist_non_string_key_rejected(key, flags):
+    from hyperspy.misc.export_dictionary import load_from_dictionary
+
+    # the id-flag shape reaches the boundary without attrsetter; the plain
+    # shape would traverse: both must stop at the key check
+    d = {"_whitelist": {key: flags}, key: "payload"}
+    with pytest.raises(ValueError, match="non-string whitelist key"):
+        load_from_dictionary(Gaussian(), d)
+    # Parameter/Component access still works in the same process
+    p = Parameter()
+    p.value = 2.5
+    assert p.value == pytest.approx(2.5)
+    g = Gaussian()
+    g.A.value = 1.0
+    assert g.A.value == pytest.approx(1.0)
+    assert isinstance(g, Component)
+
+
+def test_whitelist_bang_dunder_key_rejected():
+    from hyperspy.misc._utils import DictionaryTreeBrowser
+    from hyperspy.misc.export_dictionary import load_from_dictionary
+
+    # `!__class__` traverses to `__class__` after slugification, so the
+    # dunder check must reject the normalized parts or attrsetter writes
+    # onto the class itself.
+    key = "signal.metadata.!__class__.process_lazy_attributes"
+    d = {"_whitelist": {key: ""}, key: "payload"}
+    s = hs.signals.Signal1D(np.arange(12))
+    m = s.create_model()
+    with pytest.raises(ValueError, match="dunder whitelist key"):
+        load_from_dictionary(m, d)
+    # The traversal must not have overwritten the class method with the
+    # file-controlled payload
+    assert callable(DictionaryTreeBrowser.process_lazy_attributes)
