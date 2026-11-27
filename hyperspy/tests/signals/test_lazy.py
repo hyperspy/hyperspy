@@ -391,6 +391,13 @@ class TestHTMLRep:
     def test_html_rep(self, signal):
         signal._repr_html_()
 
+    def test_html_rep_escapes_title(self, signal):
+        """Markup stored in the signal title renders as text, not live HTML."""
+        signal.metadata.General.title = "<b>UNTRUSTED_TITLE</b>"
+        html = signal._repr_html_()
+        assert "&lt;b&gt;UNTRUSTED_TITLE&lt;/b&gt;" in html
+        assert "<b>UNTRUSTED_TITLE</b>" not in html
+
     def test_html_rep_zero_dim_nav(self):
         s = hs.signals.BaseSignal(da.random.random((500, 1000))).as_lazy()
         s._repr_html_()
