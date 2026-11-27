@@ -20,6 +20,7 @@ import importlib
 import logging
 import types
 import warnings
+from collections.abc import Mapping
 
 import numpy as np
 from rsciio.utils import path
@@ -3266,6 +3267,12 @@ class LearningResults(object):
     cluster_metric_data = None
     cluster_metric_index = None
     cluster_metric = None
+    # Set on instances by cluster_analysis(); declared so that load()
+    # restores the members save() writes.
+    cluster_sum_signals = None
+    cluster_centroid_signals = None
+    cluster_distances = None
+    cluster_centroids = None
     # Unmixing
     bss_algorithm = None
     unmixing_matrix = None
@@ -3277,6 +3284,86 @@ class LearningResults(object):
     # Masks
     navigation_mask = None
     signal_mask = None
+
+    # Legacy attribute names kept for compatibility with old files
+    _LEGACY_ALIASES = (
+        "algorithm",
+        "V",
+        "w",
+        "variance2one",
+        "centered",
+        "pca_algorithm",
+        "ica_algorithm",
+        "ica_scores",
+        "ica_factors",
+        "v",
+        "scores",
+        "pc",
+    )
+
+    @classmethod
+    def _declared_field_names(cls):
+        """Return the declared public, non-callable class field names.
+
+        Uses ``dir(cls)`` (not ``dir(self)``) so that attributes added
+        dynamically to an instance are not treated as declared fields.
+        """
+        return {
+            name
+            for name in dir(cls)
+            if not name.startswith("_") and not callable(getattr(cls, name))
+        }
+
+    def _validated_dictionary(self, mapping):
+        """Validate and snapshot a mapping before restoring learning results.
+
+        Parameters
+        ----------
+        mapping : collections.abc.Mapping
+            Candidate learning-results fields, typically read from a saved
+            file or supplied through a signal dictionary.
+
+        Returns
+        -------
+        dict
+            A plain-dictionary snapshot of ``mapping`` taken immediately
+            after the type check.
+
+        Raises
+        ------
+        ValueError
+            If ``mapping`` is not a mapping, or if a key is not a string,
+            starts with ``__``, or names a ``LearningResults`` class
+            attribute that is not a declared field or legacy alias.
+
+        Notes
+        -----
+        Field values are returned untouched: restoration must not evaluate,
+        compute, unwrap, or otherwise transform them. Non-reserved dynamic
+        names, including single-underscore names such as ``_object``, remain
+        valid extension state.
+        """
+        if not isinstance(mapping, Mapping):
+            raise ValueError(
+                "Refusing to restore learning_results from a non-mapping "
+                f"{type(mapping).__name__} value"
+            )
+        fields = dict(mapping)
+        allowed = self._declared_field_names() | set(self._LEGACY_ALIASES)
+        for key in fields:
+            if not isinstance(key, str):
+                raise ValueError(
+                    f"Refusing to restore the non-string learning_results field {key!r}"
+                )
+            if key.startswith("__"):
+                raise ValueError(
+                    f"Refusing to restore the dunder learning_results field {key!r}"
+                )
+            if key not in allowed and hasattr(type(self), key):
+                raise ValueError(
+                    f"Refusing to restore the reserved learning_results field {key!r}"
+                )
+        return fields
 
     def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis.
@@ -3313,15 +3400,34 @@ class LearningResults(object):
         filename : str
             Path to load the results from.
         """
-        decomposition = np.load(filename, allow_pickle=True)
-
-        for key, value in decomposition.items():
-            if value.dtype == np.dtype("object"):
-                value = None
-            # Unwrap values stored as 0D numpy arrays to raw datatypes
-            if isinstance(value, np.ndarray) and value.ndim == 0:
-                value = value.item()
-            setattr(self, key, value)
+        field_names = self._declared_field_names() | set(self._LEGACY_ALIASES)
+        with np.load(filename, allow_pickle=False) as decomposition:
+            # Iterate over names only: ``decomposition[key]`` reads each
+            # member separately, so an object member (which raises with
+            # ``allow_pickle=False``) does not prevent reading other members.
+            for key in decomposition.files:
+                if key not in field_names:
+                    warnings.warn(
+                        f"Skipping unknown field {key!r} while loading {filename}"
+                    )
+                    continue
+                try:
+                    value = decomposition[key]
+                except ValueError as exc:
+                    # Object arrays cannot be loaded with allow_pickle=False;
+                    # that specific failure is skippable, but a corrupt member
+                    # (for example a broken array header) must not be silenced
+                    # into a skipped field.
+                    if "allow_pickle" not in str(exc):
+                        raise
+                    _logger.info(
+                        f"Skipped object-valued field {key!r} while loading {filename}"
+                    )
+                    value = None
+                # Unwrap values stored as 0D numpy arrays to raw datatypes
+                if isinstance(value, np.ndarray) and value.ndim == 0:
+                    value = value.item()
+                setattr(self, key, value)
 
         _logger.info(f"Loaded results from {filename}")
 
