@@ -1,1 +1,0 @@
-Require Python 3.11 or newer and RosettaSciIO 0.16.0 or newer for the coordinated security release.

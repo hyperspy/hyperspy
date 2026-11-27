@@ -1,1 +1,0 @@
-Built-in 2D components are restored from the component registry so stored models no longer embed a pickled copy of their class.
