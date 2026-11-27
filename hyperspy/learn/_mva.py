@@ -20,8 +20,8 @@ import importlib
 import logging
 import types
 import warnings
-from collections.abc import Mapping
 import zipfile
+from collections.abc import Mapping
 
 import numpy as np
 from rsciio.utils import path
