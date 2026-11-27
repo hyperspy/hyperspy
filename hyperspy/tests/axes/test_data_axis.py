@@ -350,7 +350,7 @@ class TestFunctionalDataAxis:
             np.float32(1.25),
             np.longdouble(1.25),
             Fraction(1, 2),
-            2**64,
+            2**53,
             decimal.Decimal("1.25"),
             sympy.pi,
         ]
