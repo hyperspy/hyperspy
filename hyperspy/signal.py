@@ -2317,7 +2317,7 @@ class MVATools(object):
             ``"smart_auto"`` displays sliders if the navigation
             dimension is less than 3. For a description of the other options
             see ``plot`` documentation for details.
-        labels_dim, centers_dim : int, default 2
+        centers_dim, labels_dim : int, default 2
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the clustering results when the
             centers or the labels have signal dimension greater than 2
