@@ -29,6 +29,7 @@ A few sentences and/or a bulleted list to describe and motivate the change:
 ```python
 import hyperspy.api as hs
 import numpy as np
+
 s = hs.signals.Signal1D(np.arange(10))
 # Your new feature...
 ```
