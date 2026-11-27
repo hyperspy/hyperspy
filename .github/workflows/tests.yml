@@ -78,6 +78,16 @@ jobs:
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
 
+      - name: Install HDF5 development library
+        # Prebuilt wheels for release-candidate Pythons do not exist yet, so
+        # h5py has to be built from source; the wheel build needs the HDF5
+        # development headers and library that the runner image does not
+        # ship with.
+        if: ${{ matrix.PYTHON_VERSION == '3.15.0-rc.3' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libhdf5-dev
+
       - name: Get the number of CPUs
         id: cpus
         run: |
