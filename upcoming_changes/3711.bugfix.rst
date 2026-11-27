@@ -1,0 +1,1 @@
+Fixed expression parsing with `SymPy` 1.15, which requires exposing the `isinstance` builtin in the restricted namespace used to evaluate expressions.
