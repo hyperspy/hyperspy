@@ -51,6 +51,28 @@ CLASSIFICATION = {
 }
 
 
+# SymPy 1.15 rejects some inputs at a different stage than 1.14: its
+# unevaluated-parse rewrite checks boolean function domains (And, Or) at
+# evaluation instead of parse, and pre-checks Mod arguments for
+# rational-bit growth before the evaluation-domain guard. Every input
+# below is still rejected on both versions; only the firing rule moves.
+_SYMPY_115_RULE_SHIFTS = {
+    "And(I,1)": "R-EVAL-DOMAIN",
+    "Or(I,1)": "R-EVAL-DOMAIN",
+    "Mod(Abs(I),acos(pi))": "R-RATIONAL-BITS",
+    "Mod(atanh(10**9),2)": "R-RATIONAL-BITS",
+}
+_SYMPY_AT_LEAST_115 = tuple(
+    int(part) for part in s.__version__.split(".")[:2] if part.isdigit()
+) >= (1, 15)
+
+
+def _expected_rule(text, default_rule):
+    if _SYMPY_AT_LEAST_115:
+        return _SYMPY_115_RULE_SHIFTS.get(text, default_rule)
+    return default_rule
+
+
 def _function_tripwire(function, bound):
     """Catch unsafe concrete arguments without blocking symbolic construction."""
     original = function.eval.__func__
@@ -1025,10 +1047,10 @@ def test_evaluation_overflow_conversion(stage):
 @pytest.mark.parametrize(
     "text,expected_rule",
     [
-        ("Mod(Abs(I),acos(pi))", "R-EVAL-DOMAIN"),
+        ("Mod(Abs(I),acos(pi))", _expected_rule("Mod(Abs(I),acos(pi))", "R-EVAL-DOMAIN")),
         ("And(q,x>0); q=1+I", "R-EVAL-DOMAIN"),
         ("zeta(1e-300,0.0)", "R-EVAL-DOMAIN"),
-        ("Mod(atanh(10**9),2)", "R-EVAL-DOMAIN"),
+        ("Mod(atanh(10**9),2)", _expected_rule("Mod(atanh(10**9),2)", "R-EVAL-DOMAIN")),
         ("1e" + "9" * 4301, "R-FLOAT-EXP"),
         ("1.5e" + "0" * 5000, "R-FLOAT-EXP"),
     ],
@@ -1309,7 +1331,7 @@ for _name, _text in [
     ids=[row[2] + "-reject-" + row[0] for row in MALICIOUS_CASES],
 )
 def test_malicious(case, text, rule, preparse):
-    _assert_rejected(text, rule, preparse)
+    _assert_rejected(text, _expected_rule(text, rule), preparse)
 
 
 @pytest.mark.parametrize(
@@ -1462,10 +1484,11 @@ def test_post_validate_node_count(count):
 
 
 def test_rejection_has_no_raw_fallback():
+    text = "And(I,1)"
     with patch.object(s, "sympify", side_effect=AssertionError("raw fallback")):
         with pytest.raises(parser.UnsafeExpressionError) as caught:
-            parser.parse_expression("And(I,1)")
-    assert caught.value.rule == "R-PARSE"
+            parser.parse_expression(text)
+    assert caught.value.rule == _expected_rule(text, "R-PARSE")
 
 
 @pytest.mark.parametrize(
@@ -1610,7 +1633,7 @@ def test_determinism_and_no_module_cache():
     assert {name: id(value) for name, value in vars(parser).items()} == keys
     assert parser.NS == namespace
     assert parser.GD == globals_before
-    assert parser.GD["__builtins__"] == {}
+    assert parser.GD["__builtins__"] == {"isinstance": isinstance}
 
 
 @pytest.mark.parametrize(

@@ -90,7 +90,9 @@ GD = {
         "And Or Not Xor"
     ).split()
 }
-GD["__builtins__"] = {}
+# SymPy >= 1.15 rewrites unevaluated divisions into a lambda that calls
+# isinstance; expose that single builtin so the restricted eval can run it.
+GD["__builtins__"] = {"isinstance": isinstance}
 _OPERATORS = set("+ - * / ** ^ ( ) , < > <= >= == != & | ~ ; =".split())
 _BINARY = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow, ast.BitAnd, ast.BitOr)
 _UNARY = (ast.UAdd, ast.USub, ast.Invert)
