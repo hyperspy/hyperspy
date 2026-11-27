@@ -17,6 +17,18 @@ https://hyperspy.readthedocs.io/en/latest/changes.html
 2.6.0 (2026-11-27)
 ==================
 
+This release fixes several security vulnerabilities, reported privately and coordinated
+with the reporters. Loading signal or model files crafted by an attacker could execute
+arbitrary code on the machine opening the file, and displaying crafted files in a
+notebook could run attacker-supplied markup. These risks only arise when opening files
+from untrusted sources; loading files from a trusted source remains safe. Users of the
+affected releases should upgrade, and open files from untrusted sources only in an
+isolated environment, as described in the `security policy
+<https://github.com/hyperspy/hyperspy/security/policy>`_ and the `security guidance
+<https://hyperspy.org/rosettasciio/user_guide/security.html>`_. The corresponding
+security advisories are published on the `GitHub security advisories page
+<https://github.com/hyperspy/hyperspy/security/advisories>`_.
+
 Enhancements
 ------------
 
