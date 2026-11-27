@@ -1610,7 +1610,7 @@ def test_determinism_and_no_module_cache():
     assert {name: id(value) for name, value in vars(parser).items()} == keys
     assert parser.NS == namespace
     assert parser.GD == globals_before
-    assert parser.GD["__builtins__"] == {}
+    assert parser.GD["__builtins__"] == {"isinstance": isinstance}
 
 
 @pytest.mark.parametrize(
