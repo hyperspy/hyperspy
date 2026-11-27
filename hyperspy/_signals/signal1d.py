@@ -48,6 +48,7 @@ from hyperspy.docstrings.signal1d import (
 )
 from hyperspy.misc import lowess_smooth, utils
 from hyperspy.misc._utils import lazy_signal_import_deprecation_warning
+from hyperspy.misc.export_dictionary import _trust_scope
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
@@ -407,8 +408,23 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         TOOLKIT_DT,
     )
 
-    def create_model(self, dictionary=None):
+    def create_model(self, dictionary=None, *, trusted=False):
         """Create a model for the current data.
+
+        When ``dictionary`` contains pickled legacy content, restoration is
+        denied by default with ``UnsafeLegacyContent``, a subclass of
+        ``ValueError``.
+
+        Parameters
+        ----------
+        dictionary : None or dict, optional
+            A dictionary to be used to recreate a model. Usually generated
+            using :meth:`hyperspy.model.BaseModel.as_dictionary`.
+        trusted : bool, default False
+            Allow restoring pickled legacy content only when the source is
+            trusted. This keyword-only option executes Python code stored in
+            the file and isn't a sandbox. HyperSpy gives no safety assurance
+            about content loaded with ``trusted=True``.
 
         Returns
         -------
@@ -417,8 +433,8 @@ class Signal1D(signals.BaseSignal, CommonSignal1D):
         """
         from hyperspy.models.model1d import Model1D
 
-        model = Model1D(self, dictionary=dictionary)
-        return model
+        with _trust_scope(trusted):
+            return Model1D(self, dictionary=dictionary)
 
     def shift1D(
         self,

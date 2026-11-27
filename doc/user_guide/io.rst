@@ -65,7 +65,6 @@ see :ref:`load_specify_signal_type-label` for more details.
       >>> s[0] # doctest: +SKIP
       <Signal1D, title: spam, dimensions: (32,32|1024)>
 
-
 .. HINT::
 
    The load function returns an object that contains data read from the file.
@@ -96,8 +95,9 @@ Trust and resource limits
 --------------------------
 
 HyperSpy 2.6.0 and newer reject files that could execute Python through
-file-derived expressions. This closes the code-execution issues of the
-affected releases. It does not make untrusted files safe.
+file-derived expressions, and reject stored models whose content carries
+legacy pickled classes or functions without explicit trust. This closes the
+code-execution issues of the affected releases. It does not make untrusted files safe.
 
 File loading and expression evaluation are not sandboxed. A crafted or merely
 very large file can still exhaust memory or CPU while it is read, and an

@@ -17,12 +17,59 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+import pickle
+from copy import deepcopy
+
+import cloudpickle
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
 from hyperspy.component import Component, Parameter
-from hyperspy.components1d import Gaussian, Lorentzian, ScalableFixedPattern
+from hyperspy.components1d import Expression, Gaussian, Lorentzian, ScalableFixedPattern
+from hyperspy.tests.model.test_model_storing import _pickle_marker
+
+
+class StoredInitComponent(Component):
+    """Benign unregistered component; stored files pickle its class."""
+
+    def __init__(self, scale=1.0):
+        Component.__init__(self, ("scale",))
+        self.scale.value = scale
+
+    def function(self, x):
+        return self.scale.value * x
+
+
+class TrustedInitComponent(Component):
+    """Registered-legitimate component with an init argument named trusted."""
+
+    def __init__(self, scale=1.0, trusted=False):
+        Component.__init__(self, ("scale",))
+        self.scale.value = scale
+        self.trusted = trusted
+
+    def function(self, x):
+        return self.scale.value * x
+
+
+MARKER_NAME = "hs3699_marker.txt"
+
+
+def _unsafe_legacy_content():
+    """Imported lazily: the exception class does not exist before the fix."""
+
+    from hyperspy.exceptions import UnsafeLegacyContent
+
+    return UnsafeLegacyContent
+
+
+def _assert_no_marker(marker):
+    assert not marker.exists()
+    # control: the payload is armed - unpickling it creates the marker
+    pickle.loads(_pickle_marker(marker))
+    assert marker.exists()
+    marker.unlink()
 
 
 def remove_empty_numpy_strings(dic):
@@ -240,3 +287,249 @@ class TestModelDictionary:
                 np.testing.assert_allclose(po.map["is_set"], pn.map["is_set"])
 
         assert mn[0].A.twin is mn[1].A
+
+
+class TestPickledContentTrust:
+    """Stored pickled content (a custom component class or a pickled
+    function) is rejected on restore unless the call runs inside an
+    explicitly trusted scope."""
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.arange(4 * 7 * 48, dtype=float).reshape(4, 7, 48))
+        m = s.create_model()
+        m.append(Gaussian(A=2.0, sigma=1.5, centre=10.0))
+        self.s = s
+        self.m = m
+        self.d = m.as_dictionary()
+
+    def _marker_component(self, marker, class_dump=None):
+        comp = deepcopy(self.d["components"][0])
+        comp["_id_name"] = "UnregisteredCustom"
+        comp["_class_dump"] = class_dump if class_dump else _pickle_marker(marker)
+        comp["parameters"] = []
+        return comp
+
+    def test_reconstruct_component_class_dump_denied(self, tmp_path):
+        from hyperspy.misc.export_dictionary import _trust_scope
+        from hyperspy.model import reconstruct_component
+
+        marker = tmp_path / MARKER_NAME
+        comp = self._marker_component(marker)
+        with pytest.raises(_unsafe_legacy_content()):
+            reconstruct_component(comp)
+        _assert_no_marker(marker)
+        # control: inside a trusted scope the benign custom class is built
+        comp = self._marker_component(marker, cloudpickle.dumps(StoredInitComponent))
+        with _trust_scope(True):
+            instance = reconstruct_component(comp)
+        assert isinstance(instance, StoredInitComponent)
+
+    def test_reconstruct_object_pickled_fn_denied(self, tmp_path):
+        from hyperspy.misc.export_dictionary import reconstruct_object
+
+        marker = tmp_path / MARKER_NAME
+        with pytest.raises(_unsafe_legacy_content()):
+            reconstruct_object("fn", (True, _pickle_marker(marker)))
+        _assert_no_marker(marker)
+        # control: the (None, obj) form passes through without unpickling
+        obj = {"a": 1}
+        assert reconstruct_object("fn", (None, obj)) is obj
+
+    def test_load_from_dictionary_pickled_fn_denied(self, tmp_path):
+        from hyperspy.misc.export_dictionary import load_from_dictionary
+
+        marker = tmp_path / MARKER_NAME
+        d = self.d["components"][0]
+        d = deepcopy(d)
+        d["_whitelist"]["special_fn"] = "fn"
+        d["special_fn"] = (True, _pickle_marker(marker))
+        target = Gaussian()
+        with pytest.raises(_unsafe_legacy_content()):
+            load_from_dictionary(target, d)
+        _assert_no_marker(marker)
+        assert not hasattr(target, "special_fn")
+
+    def test_parameter_load_dictionary_fn_denied(self, tmp_path):
+        marker = tmp_path / MARKER_NAME
+        par = Parameter()
+        par._id_name = "newone"
+        par.twin_function_expr = "x * x"
+        par.twin_inverse_function_expr = "sqrt(x)"
+        par._axes_manager = DummyAxesManager()
+        par._create_array()
+        d = par.as_dictionary()
+        d["_whitelist"]["extra_fn"] = "fn"
+        d["extra_fn"] = (True, _pickle_marker(marker))
+        target = Parameter()
+        target._id_name = "newone"
+        with pytest.raises(_unsafe_legacy_content()):
+            target._load_dictionary(d)
+        _assert_no_marker(marker)
+
+    def test_component_load_dictionary_fn_denied(self, tmp_path):
+        marker = tmp_path / MARKER_NAME
+        d = deepcopy(self.d["components"][0])
+        d["_whitelist"]["special_fn"] = "fn"
+        d["special_fn"] = (True, _pickle_marker(marker))
+        target = Gaussian()
+        with pytest.raises(_unsafe_legacy_content()):
+            target._load_dictionary(d)
+        _assert_no_marker(marker)
+
+    def test_base_model_preflight_preserves_components(self, tmp_path):
+        marker = tmp_path / MARKER_NAME
+        d = deepcopy(self.d)
+        d["components"].append(self._marker_component(marker))
+        m2 = self.s.create_model()
+        m2.append(Gaussian())
+        with pytest.raises(_unsafe_legacy_content()):
+            m2._load_dictionary(d)
+        # the tolerant preflight runs before anything is removed
+        assert len(m2) == 1
+        _assert_no_marker(marker)
+
+    def test_forged_trusted_keys_inert(self, tmp_path):
+        from hyperspy.misc.export_dictionary import _is_trusted
+
+        marker = tmp_path / MARKER_NAME
+        d = deepcopy(self.d)
+        comp = self._marker_component(marker)
+        comp["trusted"] = True
+        comp["parameters"] = [{"trusted": True}]
+        d["components"] = [comp]
+        d["trusted"] = True
+        m2 = self.s.create_model()
+        # trust is never read from the file: all three forged keys are inert
+        try:
+            with pytest.raises(_unsafe_legacy_content()):
+                m2._load_dictionary(d)
+        finally:
+            _assert_no_marker(marker)
+            assert _is_trusted() is False
+
+    def test_preflight_malformed_shapes_tolerated(self):
+        from hyperspy.misc.export_dictionary import _preflight_pickled_content
+
+        # the tolerant preflight skips shapes it does not recognize; the
+        # guarded sinks still protect whatever it skips
+        _preflight_pickled_content({"components": "not a list"})
+        _preflight_pickled_content([None, 42, "a string"])
+        _preflight_pickled_content(
+            [
+                {
+                    "_id_name": None,
+                    "_class_dump": b"junk",
+                    "_whitelist": None,
+                }
+            ]
+        )
+        # a registered id with a broken whitelist is skipped, not raised
+        _preflight_pickled_content(
+            [
+                {
+                    "_id_name": "Gaussian",
+                    "_class_dump": b"junk",
+                    "_whitelist": {"k": 123},
+                }
+            ]
+        )
+        _preflight_pickled_content(
+            [
+                {
+                    "_id_name": None,
+                    "_class_dump": b"junk",
+                    "_whitelist": {},
+                    "parameters": [None, 42],
+                }
+            ]
+        )
+
+
+class TestStoredInitKeys:
+    """File-controlled component init keys can never enable trust, collide
+    with a loader argument or pollute a class: they are rejected with
+    ``ValueError`` before reaching the component constructor."""
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.arange(4 * 7 * 48, dtype=float).reshape(4, 7, 48))
+        m = s.create_model()
+        m.append(Expression("a * x + b", name="Line", a=1.0, b=2.0))
+        self.s = s
+        self.d = m.as_dictionary()
+
+    def _comp_with_init_key(self, key, value):
+        d = deepcopy(self.d)
+        comp = d["components"][0]
+        comp["_whitelist"][key] = "init"
+        comp[key] = value
+        return d
+
+    def test_init_key_trusted_on_expression(self):
+        d = self._comp_with_init_key("trusted", True)
+        m2 = self.s.create_model()
+        with pytest.raises(ValueError) as excinfo:
+            m2._load_dictionary(d)
+        assert type(excinfo.value) is not TypeError
+        from hyperspy.misc.export_dictionary import _is_trusted
+
+        assert _is_trusted() is False
+
+    def test_init_key_trusted_on_class_dump_denied(self, tmp_path):
+        marker = tmp_path / MARKER_NAME
+        d = deepcopy(self.d)
+        comp = d["components"][0]
+        comp["_id_name"] = "UnregisteredCustom"
+        comp["_class_dump"] = _pickle_marker(marker)
+        comp["parameters"] = []
+        comp["_whitelist"]["trusted"] = "init"
+        comp["trusted"] = True
+        m2 = self.s.create_model()
+        with pytest.raises(ValueError):
+            m2._load_dictionary(d)
+        _assert_no_marker(marker)
+
+    def test_init_key_comp_dictionary_collision(self):
+        d = self._comp_with_init_key("comp_dictionary", {})
+        m2 = self.s.create_model()
+        with pytest.raises(ValueError):
+            m2._load_dictionary(d)
+
+    def test_init_key_dunder_class_rejected(self):
+        d = self._comp_with_init_key("__class__", 12345.0)
+        m2 = self.s.create_model()
+        try:
+            with pytest.raises(ValueError):
+                m2._load_dictionary(d)
+            assert "value" not in vars(Expression)
+        finally:
+            # must not leak into other tests if the guard is ever missing
+            if "value" in vars(Expression):
+                del Expression.value
+
+    def test_init_param_named_trusted_legitimate(self, monkeypatch):
+        from hyperspy.model import _COMPONENTS
+
+        monkeypatch.setitem(
+            _COMPONENTS,
+            "TrustedInitComponent",
+            {
+                "module": TrustedInitComponent.__module__,
+                "class": "TrustedInitComponent",
+            },
+        )
+        s = hs.signals.Signal1D(np.arange(4 * 7 * 48, dtype=float).reshape(4, 7, 48))
+        m = s.create_model()
+        m.append(TrustedInitComponent(scale=3.0))
+        d = m.as_dictionary()
+        comp = d["components"][0]
+        # a legacy file may legitimately store an init argument literally
+        # named `trusted`; it reaches the component but enables no trust
+        comp["_whitelist"]["trusted"] = "init"
+        comp["trusted"] = True
+        m2 = s.create_model()
+        m2._load_dictionary(d)
+        assert isinstance(m2[0], TrustedInitComponent)
+        assert m2[0].trusted is True
+        from hyperspy.misc.export_dictionary import _is_trusted
+
+        assert _is_trusted() is False

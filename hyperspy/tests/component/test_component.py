@@ -369,7 +369,7 @@ def test_loading_non_expression_custom_component(tmp_path):
     s.save(tmp_path / "hs2.0_custom_component.hspy")
 
     s = hs.load(tmp_path / "hs2.0_custom_component.hspy")
-    _ = s.models.restore("a")
+    _ = s.models.restore("a", trusted=True)
 
 
 def test_load_component_previous_python():
@@ -378,4 +378,4 @@ def test_load_component_previous_python():
 
     if sys.version_info[0] == 3.11:
         with pytest.raises(TypeError):
-            _ = s.models.restore("a")
+            _ = s.models.restore("a", trusted=True)

@@ -21,6 +21,20 @@ import importlib
 from hyperspy.extensions import ALL_EXTENSIONS
 
 
+def test_component_registry_merges_1D_and_2D():
+    from hyperspy.model import _COMPONENTS
+
+    assert "Gaussian2D" in _COMPONENTS
+    assert "Expression" in _COMPONENTS
+    assert "Gaussian" in _COMPONENTS
+    # 1D entries win on a duplicate id; the only shipped duplicate is
+    # `Expression` with an identical spec.
+    assert _COMPONENTS["Expression"] == ALL_EXTENSIONS["components1D"]["Expression"]
+    # The extension dictionary itself is not mutated.
+    assert "Gaussian2D" not in ALL_EXTENSIONS["components1D"]
+    assert _COMPONENTS is not ALL_EXTENSIONS["components1D"]
+
+
 def test_signal_registry():
     signals = {
         key: value

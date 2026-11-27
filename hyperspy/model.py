@@ -25,7 +25,6 @@ import warnings
 from contextlib import contextmanager
 from functools import partial
 
-import cloudpickle
 import numpy as np
 import scipy
 
@@ -41,6 +40,8 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.io import assign_signal_subclass
 from hyperspy.misc import dask_utils, utils
 from hyperspy.misc.export_dictionary import (
+    _loads,
+    _preflight_pickled_content,
     export_to_dictionary,
     load_from_dictionary,
     parse_flag_string,
@@ -59,8 +60,13 @@ SKLEARN_INSTALLED = importlib.util.find_spec("sklearn") is not None
 
 _logger = logging.getLogger(__name__)
 
-_COMPONENTS = ALL_EXTENSIONS["components1D"]
-_COMPONENTS.update(ALL_EXTENSIONS["components1D"])
+# Merge 1D and 2D components into one lookup; 1D entries win on a
+# duplicate id (the only shipped duplicate is `Expression`, with an
+# identical spec). `ALL_EXTENSIONS` itself must not be mutated.
+_COMPONENTS = {
+    **ALL_EXTENSIONS["components2D"],
+    **ALL_EXTENSIONS["components1D"],
+}
 EXSPY_HSPY_COMPONENTS = (
     "EELSArctan",
     "EELSCLEdge",
@@ -103,7 +109,20 @@ def _twinned_parameter(parameter):
         return None
 
 
-def reconstruct_component(comp_dictionary, **init_args):
+def reconstruct_component(comp_dictionary, init_args=None):
+    """Reconstruct a component from its stored dictionary.
+
+    Pickled content is only loaded when this function runs inside a public
+    restore call made with ``trusted=True``; otherwise
+    :class:`~hyperspy.exceptions.UnsafeLegacyContent` is raised.
+
+    Parameters
+    ----------
+    comp_dictionary : dict
+        The component dictionary stored in the model dictionary.
+    init_args : dict or None
+        Initialisation arguments for the component class.
+    """
     # Restoring of Voigt and Arctan components saved with Hyperspy <v1.6
     if (
         comp_dictionary["_id_name"] == "Voigt"
@@ -132,7 +151,10 @@ def reconstruct_component(comp_dictionary, **init_args):
         # When a component is not registered using the extension mechanism,
         # it is serialized using cloudpickle.
         try:
-            _class = cloudpickle.loads(comp_dictionary["_class_dump"])
+            _class = _loads(
+                comp_dictionary["_class_dump"],
+                f"the stored class of component {_id!r}",
+            )
         except TypeError:  # pragma: no cover
             # https://github.com/cloudpipe/cloudpickle/blob/master/README.md
             raise TypeError(
@@ -151,7 +173,20 @@ def reconstruct_component(comp_dictionary, **init_args):
             + f"`{comp_dictionary['package']}` Python package, but "
             + f"{comp_dictionary['package']} is not installed."
         )
-    return _class(**init_args)
+    init_args = {} if init_args is None else init_args
+    for key in init_args:
+        if not isinstance(key, str) or key.startswith("__"):
+            raise ValueError(
+                f"The stored arguments of component '{_id}' are not valid "
+                f"for the installed class: invalid argument name {key!r}."
+            )
+    try:
+        return _class(**init_args)
+    except (TypeError, AttributeError) as e:
+        raise ValueError(
+            f"The stored arguments of component '{_id}' are not valid for "
+            "the installed class."
+        ) from e
 
 
 def _check_parameter_values_are_set(component, nav_slices):
@@ -641,6 +676,7 @@ class BaseModel(list):
             * any field from _whitelist.keys()
         """
 
+        _preflight_pickled_content(dic.get("components", []))
         if "components" in dic:
             while len(self) != 0:
                 self.remove(self[0])
@@ -654,7 +690,7 @@ class BaseModel(list):
                     if "init" in parse_flag_string(flags_str):
                         init_args[k] = reconstruct_object(flags_str, comp[k])
 
-                self.append(reconstruct_component(comp, **init_args))
+                self.append(reconstruct_component(comp, init_args))
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
             for comp in dic["components"]:

@@ -81,6 +81,7 @@ from hyperspy.io import save as io_save
 from hyperspy.learn._mva import MVA
 from hyperspy.misc import array_tools, dask_utils, signal_tools, utils
 from hyperspy.misc._markers import markers_dict_to_markers
+from hyperspy.misc.export_dictionary import _trust_scope
 from hyperspy.misc.hist_tools import _set_histogram_metadata, histogram
 from hyperspy.misc.math_tools import check_random_state, hann_window_nth_order, outer_nd
 from hyperspy.misc.slicing import FancySlicing, SpecialSlicers
@@ -166,12 +167,26 @@ class ModelManager(object):
         def __init__(self, mm, name):
             self._name = name
             self._mm = mm
-            self.restore = lambda: mm.restore(self._name)
+            self.restore = lambda *, trusted=False: mm.restore(
+                self._name, trusted=trusted
+            )
             self.remove = lambda: mm.remove(self._name)
-            self.pop = lambda: mm.pop(self._name)
-            self.restore.__doc__ = "Returns the stored model"
+            self.pop = lambda *, trusted=False: mm.pop(self._name, trusted=trusted)
+            self.restore.__doc__ = (
+                "Returns the stored model. Pickled legacy content is denied "
+                "by default with UnsafeLegacyContent, a ValueError. The "
+                "keyword-only trusted=True option executes Python code stored "
+                "in the file and is not a sandbox. HyperSpy gives no safety "
+                "assurance about content loaded with trusted=True."
+            )
             self.remove.__doc__ = "Removes the stored model"
-            self.pop.__doc__ = "Returns the stored model and removes it from storage"
+            self.pop.__doc__ = (
+                "Returns the stored model and removes it from storage. Pickled "
+                "legacy content is denied by default with UnsafeLegacyContent, "
+                "a ValueError. The keyword-only trusted=True option executes "
+                "Python code stored in the file and is not a sandbox. HyperSpy "
+                "gives no safety assurance about content loaded with trusted=True."
+            )
 
         def __repr__(self):
             return repr(self._mm._models[self._name])
@@ -286,13 +301,22 @@ class ModelManager(object):
         delattr(self, name)
         self._models.__delattr__(name)
 
-    def pop(self, name):
+    def pop(self, name, *, trusted=False):
         """Return the restored model and remove it from storage.
+
+        Pickled legacy content is denied by default. If restoration requires
+        this content, ``UnsafeLegacyContent``, a subclass of ``ValueError``, is
+        raised and the model remains stored.
 
         Parameters
         ----------
         name : str
             The name of the model to restore and remove.
+        trusted : bool, default False
+            Allow restoring pickled legacy content only when the source is
+            trusted. This keyword-only option executes Python code stored in
+            the file and isn't a sandbox. HyperSpy gives no safety assurance
+            about content loaded with ``trusted=True``.
 
         See Also
         --------
@@ -301,17 +325,27 @@ class ModelManager(object):
         remove
         """
         name = self._check_name(name, True)
-        model = self.restore(name)
+        model = self.restore(name, trusted=trusted)
         self.remove(name)
         return model
 
-    def restore(self, name):
+    def restore(self, name, *, trusted=False):
         """Return the restored model.
+
+        Pickled legacy content is denied by default. If restoration requires
+        this content, ``UnsafeLegacyContent``, a subclass of ``ValueError``, is
+        raised. Models using registered components
+        restore without this option.
 
         Parameters
         ----------
         name : str
             The name of the model to restore.
+        trusted : bool, default False
+            Allow restoring pickled legacy content only when the source is
+            trusted. This keyword-only option executes Python code stored in
+            the file and isn't a sandbox. HyperSpy gives no safety assurance
+            about content loaded with ``trusted=True``.
 
         See Also
         --------
@@ -333,7 +367,8 @@ class ModelManager(object):
             ):
                 c["_whitelist"]["order"] = "init"
                 c["order"] = len(c["parameters"]) - 1
-        return self._signal.create_model(dictionary=copy.deepcopy(d))
+        with _trust_scope(trusted):
+            return self._signal.create_model(dictionary=copy.deepcopy(d))
 
     def __repr__(self):
         return repr(self._models)

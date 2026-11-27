@@ -383,6 +383,17 @@ def load(
     about supported formats, format-specific parameters, and examples, see the
     :ref:`RosettaSciIO documentation <supported-formats>`.
 
+    Notes
+    -----
+    Stored models are restored separately through ``models.restore`` or
+    ``models.pop``, not by this function. Restoration denies pickled legacy
+    content by default. Their keyword-only ``trusted=True`` option executes
+    Python code stored in the file and isn't a sandbox; HyperSpy gives no
+    safety assurance about content loaded with it. There is no ``trusted``
+    parameter on ``load``. HyperSpy makes no general safety claim about opening
+    an untrusted file and doesn't bound CPU or memory use. Lazy loading isn't
+    a security boundary.
+
     Parameters
     ----------
     filenames : None, (list of) str or (list of) pathlib.Path, default None
