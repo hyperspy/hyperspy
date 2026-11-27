@@ -1026,15 +1026,18 @@ class FunctionalDataAxis(BaseDataAxis):
 
     Notes
     -----
-    Parameter values are converted to float at construction. Boolean and
-    NumPy boolean values, NaN and infinite values, complex values, strings
-    and bytes, None, non-numeric objects, and ragged or nested sequences are
-    rejected. :class:`fractions.Fraction`, NumPy real scalars, finite
-    :class:`decimal.Decimal` values, and finite SymPy real-number constants
-    are accepted, although ``Decimal`` and SymPy ``NumberSymbol`` objects are
-    not registered with Python's numeric abstract base classes. Integers above
-    ``2**53`` can lose precision during float64 conversion, while integers or
-    fractions too large for float64 are rejected.
+    Parameter values are validated at construction. Integers and NumPy
+    real scalars are kept as given, so integer parameters keep their type
+    through save/load round-trips; other accepted numerics
+    (:class:`fractions.Fraction`, finite :class:`decimal.Decimal` values, and
+    finite SymPy real-number constants) are converted to ``float``. Boolean
+    and NumPy boolean values, NaN and infinite values, complex values,
+    strings and bytes, None, non-numeric objects, and ragged or nested
+    sequences are rejected. :class:`fractions.Fraction`, NumPy real scalars,
+    finite :class:`decimal.Decimal` values, and finite SymPy real-number
+    constants are accepted, although ``Decimal`` and SymPy ``NumberSymbol``
+    objects are not registered with Python's numeric abstract base classes.
+    Integers or fractions too large for float64 are rejected.
 
     Invalid objects passed as ``x`` continue to raise the informative Traits
     ``TraitError``. Direct assignment to :attr:`~.component.Parameter.value`
@@ -1136,13 +1139,19 @@ class FunctionalDataAxis(BaseDataAxis):
         from hyperspy.misc._validation import validate_finite_real
 
         for parameter in parameters.keys():
-            # Assign the returned float: numpy/Decimal/Fraction inputs are
-            # validated and coerced to a plain finite float before the trait
-            # default is set. This also closes the file-load route because
-            # create_axis dispatches here with values read from disk.
-            parameters[parameter] = validate_finite_real(
-                parameters[parameter], parameter
-            )
+            # Validate every value, then keep integers and NumPy real
+            # scalars unchanged so that integer parameters keep their type
+            # through save/load round-trips (the saved dictionary reads this
+            # trait default raw). The remaining accepted numerics (Fraction,
+            # Decimal, SymPy constants) cannot be broadcast by the compiled
+            # expression, so they are converted to ``float``. Validation still
+            # closes the file-load route because create_axis dispatches here
+            # with values read from disk.
+            original = parameters[parameter]
+            validate_finite_real(original, parameter)
+            if not isinstance(original, (int, float, np.integer, np.floating)):
+                original = float(original)
+            parameters[parameter] = original
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
         self.update_axis()

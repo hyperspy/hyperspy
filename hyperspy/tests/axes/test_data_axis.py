@@ -356,8 +356,10 @@ class TestFunctionalDataAxis:
         ]
         for value in accepted:
             axis = FunctionalDataAxis(expression="a * x", a=value, size=3)
-            assert isinstance(axis.a, float)
-            np.testing.assert_allclose(axis.a, float(value))
+            # The value is validated but integers and NumPy real scalars are
+            # stored unchanged: they keep their type through save/load
+            # round-trips, so only the numeric value is asserted here.
+            np.testing.assert_allclose(float(axis.a), float(value))
 
     def test_functional_axis_evaluation(self):
         # Evaluation spot check: axis values are a * x
