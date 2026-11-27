@@ -33,6 +33,7 @@ from hyperspy.misc._sympy_parse import (
     validate_identifier,
     validate_modules,
 )
+from hyperspy.misc._validation import validate_finite_real
 
 _logger = logging.getLogger(__name__)
 
@@ -139,10 +140,33 @@ class Expression(Component):
 
     **kwargs : dict
         Keyword arguments can be used to initialise the value of the
-        parameters.
+        parameters. Each value must be a finite real number.
+
+    Raises
+    ------
+    ValueError
+        If a parameter keyword value is not a finite real number or cannot
+        be represented as a finite float64 value. The error message names
+        the parameter.
 
     Notes
     -----
+    Parameter keyword values are converted to float at construction. Boolean
+    and NumPy boolean values, NaN and infinite values, complex values, strings
+    and bytes, None, non-numeric objects, and ragged or nested sequences are
+    rejected. :class:`fractions.Fraction`, NumPy real scalars, finite
+    :class:`decimal.Decimal` values, and finite SymPy real-number constants
+    are accepted, although ``Decimal`` and SymPy ``NumberSymbol`` objects are
+    not registered with Python's numeric abstract base classes. Integers above
+    ``2**53`` can lose precision during float64 conversion, while integers or
+    fractions too large for float64 are rejected.
+
+    Direct assignment to :attr:`~.component.Parameter.value` still accepts
+    NaN and infinite values to support deliberate NaN-masking workflows.
+    Values restored from stored models also pass through this setter and stay
+    permissive. Invalid value types continue to raise the informative Traits
+    :class:`traits.trait_errors.TraitError`.
+
     As of version 1.4, Sympy's lambdify function, that the
     :class:`~.api.model.components1D.Expression`
     components uses internally, does not support the differentiation of
@@ -258,13 +282,18 @@ class Expression(Component):
         else:
             self.compile_function(module=module, position=rotation_center)
 
-        # Initialise component
+        # Initialise component. Component.init_parameters validates the kwarg
+        # and stores the CANONICAL object in self._linear_parameter_list
+        # (original container for re-iterable types, materialized list for
+        # one-shot iterables). All consumers below must read that stored
+        # object — re-reading the raw kwarg would double-consume generators.
         Component.__init__(self, self._parameter_strings, linear_parameter_list)
         original_symbols = {symbol.name: symbol for symbol in parsed_expr.free_symbols}
         self._parameter_symbols = {
             parameter: original_symbols.get(name, sympy.Symbol(name))
             for parameter, name in zip(self.parameters, self._symbol_names)
         }
+        linear_parameter_list = self._linear_parameter_list
         # When creating components using Expression (for example GaussianHF)
         # we shouldn't add anything else to the _whitelist as the
         # component should be initizialized with its own kwargs.
@@ -293,17 +322,18 @@ class Expression(Component):
         # Set the initial value of the parameters
         if kwargs:
             for kwarg, value in kwargs.items():
+                value = validate_finite_real(value, kwarg)
                 setattr(getattr(self, kwarg), "value", value)
 
         if autodoc:
             self.__doc__ = _CLASS_DOC % (name, sympy.latex(self._parsed_expr))
 
-        for parameter_name in linear_parameter_list:
+        for parameter_name in self._linear_parameter_list:
             setattr(getattr(self, parameter_name), "_linear", True)
 
         if check_parameter_linearity:
             for p in self.parameters:
-                if p.name not in linear_parameter_list:
+                if p.name not in self._linear_parameter_list:
                     # _parsed_expr used "non public" parameter name and we
                     # need to use the correct parameter name by using
                     # _rename_pars_inv

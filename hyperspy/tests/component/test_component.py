@@ -318,6 +318,123 @@ def test_linear_parameter_initialisation():
     assert not P._linear
 
 
+@pytest.mark.parametrize(
+    "linear_parameter_list",
+    [1, 1.5, float("nan"), True, b"x", object(), "a", ["unknown"], [1], [None]],
+)
+def test_linear_parameter_initialisation_malformed(linear_parameter_list):
+    with pytest.raises(ValueError):
+        Component(["one", "two"], linear_parameter_list)
+
+
+@pytest.mark.parametrize(
+    "linear_parameter_list", [None, [], ["one"], ("one",), {"one"}]
+)
+def test_linear_parameter_initialisation_valid_containers(linear_parameter_list):
+    C = Component(["one", "two"], linear_parameter_list)
+    assert C.one._linear is (
+        linear_parameter_list is not None and bool(linear_parameter_list)
+    )
+    assert not C.two._linear
+
+
+def test_linear_parameter_initialisation_set_container():
+    # sets are valid containers and must yield correct _linear flags
+    C = Component(["one", "two"], {"one"})
+    assert C.one._linear
+    assert not C.two._linear
+
+
+def test_init_parameters_direct_call_malformed():
+    # The public init_parameters method validates its argument deliberately.
+    c = Component.__new__(Component)
+    with pytest.raises(ValueError):
+        c.init_parameters(["one", "two"], 1)
+
+
+def test_init_parameters_canonical_object_generator_input():
+    # A one-shot iterable is materialized once: the STORED canonical object
+    # is a list, not the exhausted generator.
+    class Gen(Component):
+        pass
+
+    c = Gen(["one", "two"], (x for x in ["one"]))
+    assert c._linear_parameter_list == ["one"]
+    assert c.one._linear
+    assert not c.two._linear
+
+
+def test_parameter_name_list_generator_with_linear_list():
+    # Regression: validating a non-None linear_parameter_list must not drain a
+    # one-shot parameter_name_list, otherwise no parameters are created.
+    class GenNames(Component):
+        def __init__(self):
+            Component.__init__(
+                self,
+                parameter_name_list=iter(["a", "b"]),
+                linear_parameter_list=["a"],
+            )
+
+    c = GenNames()
+    assert [p.name for p in c.parameters] == ["a", "b"]
+    assert c.a._linear is True
+    assert c.b._linear is False
+
+
+def test_init_parameters_canonical_object_set_input():
+    # Re-iterable container types are preserved as-is in storage.
+    class SetIn(Component):
+        pass
+
+    c = SetIn(["one", "two"], {"one"})
+    assert isinstance(c._linear_parameter_list, set)
+    assert c._linear_parameter_list is c.__dict__["_linear_parameter_list"]
+    assert c.one._linear
+    assert not c.two._linear
+
+
+def test_expression_linear_parameter_list_end_to_end():
+    comp = hs.model.components1D.Expression(
+        "a*x+b",
+        name="t",
+        linear_parameter_list=["a"],
+        check_parameter_linearity=False,
+    )
+    assert comp.a._linear is True
+    assert comp.b._linear is False
+
+
+def test_expression_linear_parameter_list_generator_input():
+    # A one-shot iterable passed to Expression must be consumed ONCE: the
+    # canonical object stored by Component.init_parameters is the materialized
+    # list, and every Expression.__init__ consumer (whitelist, _linear
+    # marking, linearity check) reads that stored object, not the raw
+    # (already exhausted) generator kwarg.
+    comp = hs.model.components1D.Expression(
+        "a*x+b",
+        name="t",
+        linear_parameter_list=iter(["a"]),
+        check_parameter_linearity=False,
+    )
+    assert comp.a._linear is True
+    assert comp.b._linear is False
+    assert list(comp._linear_parameter_list) == ["a"]
+    # The whitelist must reference the canonical stored object, not the
+    # exhausted generator that was passed in.
+    assert comp._whitelist["linear_parameter_list"] == (
+        "init",
+        comp._linear_parameter_list,
+    )
+    # With the default check_parameter_linearity=True, membership is tested
+    # against the canonical object: b is not linear-listed and a*x+b IS
+    # linear in b, so it is confirmed linear; a is exempted from the check.
+    comp2 = hs.model.components1D.Expression(
+        "a*x+b", name="t", linear_parameter_list=iter(["a"])
+    )
+    assert comp2.a._linear is True
+    assert comp2.b._linear is True
+
+
 def test_set_name():
     c = Component(["one", "two"], ["one"])
     c.name = "test"

@@ -992,3 +992,89 @@ class TestPrintModelStatistics:
         html = ModelStatistics(self.m)._repr_html_()
         assert "&lt;b&gt;UNTRUSTED_COMPONENT&lt;/b&gt;" in html
         assert "<h4><b>UNTRUSTED_COMPONENT</b></h4>" not in html
+
+
+class TestModelLoadDictionaryRobustness:
+    # Restoring a model from a malformed dictionary must fail with a clear
+    # ValueError instead of an unhandled KeyError, TypeError, AttributeError
+    # or a delayed RecursionError.
+
+    def _dictionary(self, twinned=False):
+        s = hs.signals.Signal1D(np.arange(12.0))
+        m = s.create_model()
+        m.append(hs.model.components1D.Gaussian())
+        if twinned:
+            m.append(hs.model.components1D.Gaussian())
+            m[0].A.twin = m[1].A
+        return s, m.as_dictionary()
+
+    def _twinned_parameter(self, dic):
+        for comp in dic["components"]:
+            for parameter in comp["parameters"]:
+                if parameter["_twins"]:
+                    return parameter
+        raise AssertionError("The saved model has no twin reference")
+
+    def test_valid_twins_roundtrip(self):
+        s, dic = self._dictionary(twinned=True)
+        restored = s.create_model(dictionary=dic)
+        assert restored[0].A.twin is restored[1].A
+
+    @pytest.mark.parametrize("flags", [None, b"", 1, []])
+    def test_component_whitelist_flags_type_rejected(self, flags):
+        s, dic = self._dictionary()
+        dic["components"][0]["_whitelist"]["name"] = flags
+        with pytest.raises(ValueError, match="flag"):
+            s.create_model(dictionary=dic)
+
+    def test_component_fn_none_value_rejected(self):
+        s, dic = self._dictionary()
+        dic["components"][0]["_whitelist"]["special_fn"] = "fn"
+        dic["components"][0]["special_fn"] = None
+        with pytest.raises(ValueError, match='"fn" flag'):
+            s.create_model(dictionary=dic)
+
+    @pytest.mark.parametrize("identifier", [[], {}, np.array(["G", "Voigt"])])
+    def test_component_id_name_type_rejected(self, identifier):
+        s, dic = self._dictionary()
+        dic["components"][0]["_id_name"] = identifier
+        with pytest.raises(ValueError, match="_id_name"):
+            s.create_model(dictionary=dic)
+
+    @pytest.mark.parametrize(
+        "twins",
+        [[0], None, [[]]],
+    )
+    def test_malformed_twin_references_rejected(self, twins):
+        s, dic = self._dictionary(twinned=True)
+        parameter = self._twinned_parameter(dic)
+        parameter["_twins"] = twins
+        with pytest.raises(ValueError, match="twin"):
+            s.create_model(dictionary=dic)
+
+    def test_self_twin_reference_rejected(self):
+        s, dic = self._dictionary(twinned=True)
+        parameter = self._twinned_parameter(dic)
+        parameter["_twins"] = [parameter["self"]]
+        with pytest.raises(ValueError, match="twinned to itself"):
+            s.create_model(dictionary=dic)
+
+    def test_component_whitelist_not_a_dictionary_rejected(self):
+        s, dic = self._dictionary()
+        dic["components"][0]["_whitelist"] = None
+        with pytest.raises(ValueError, match="_whitelist"):
+            s.create_model(dictionary=dic)
+
+    def test_model_whitelist_not_a_dictionary_rejected(self):
+        s, dic = self._dictionary()
+        dic["_whitelist"] = None
+        with pytest.raises(ValueError, match="_whitelist"):
+            s.create_model(dictionary=dic)
+
+    def test_incompatible_component_flags_rejected_before_constructor(self):
+        s, dic = self._dictionary()
+        # `id,init` would pass the saved value into the constructor as a
+        # duplicate keyword; it must fail as an incompatible pair first.
+        dic["components"][0]["_whitelist"]["name"] = "id,init"
+        with pytest.raises(ValueError, match="not compatible"):
+            s.create_model(dictionary=dic)

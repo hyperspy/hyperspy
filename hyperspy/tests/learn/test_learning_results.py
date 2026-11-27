@@ -19,6 +19,7 @@
 
 import hashlib
 import importlib
+import io
 import shutil
 import zipfile
 from pathlib import Path
@@ -431,3 +432,45 @@ def test_learning_results_file_dunder_control(tmp_path, suffix, lazy):
     finally:
         if loaded is not None and lazy:
             loaded.close_file()
+
+
+class TestLearningResultsLoad:
+    # Loading a malformed archive must fail with a clear ValueError
+    # instead of an unhandled BadZipFile or EOFError.
+
+    def test_valid_npz_accepted(self, tmp_path):
+        path = tmp_path / "results.npz"
+        np.savez(path, factors=np.arange(4.0))
+        results = LearningResults()
+        results.load(path)
+        np.testing.assert_allclose(results.factors, np.arange(4.0))
+
+    def test_corrupt_npz_rejected(self, tmp_path):
+        path = tmp_path / "corrupt.npz"
+        _write_corrupt_npz(path)
+        with pytest.raises(ValueError, match="corrupt"):
+            LearningResults().load(path)
+
+    def test_empty_npz_rejected(self, tmp_path):
+        path = tmp_path / "empty.npz"
+        path.write_bytes(b"")
+        with pytest.raises(ValueError, match="corrupt"):
+            LearningResults().load(path)
+
+
+def _write_corrupt_npz(path):
+    # Flip one bit of the stored array data of a valid ``.npz`` member so
+    # that its CRC no longer matches.
+    buffer = io.BytesIO()
+    np.save(buffer, np.arange(4.0))
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("factors.npy", buffer.getvalue())
+    with zipfile.ZipFile(path) as archive:
+        info = archive.getinfo("factors.npy")
+        filename_length = len(info.filename.encode())
+        extra_length = len(info.extra)
+        data_offset = info.header_offset + 30 + filename_length + extra_length
+        data_size = info.file_size
+    contents = bytearray(path.read_bytes())
+    contents[data_offset + data_size - 1] ^= 1
+    path.write_bytes(bytes(contents))

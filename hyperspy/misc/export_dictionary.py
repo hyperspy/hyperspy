@@ -47,8 +47,25 @@ def check_that_flags_make_sense(flags):
     # all sig cases already covered
 
 
+VALID_FLAGS = ("", "init", "fn", "id", "sig")
+
+
 def parse_flag_string(flags):
-    return flags.replace(" ", "").split(",")
+    """Parse a whitelist flag string into a list of flags.
+
+    Reject flags that are not a string or that name no known flag, so that
+    a malformed saved dictionary fails with a clear error instead of an
+    unhandled error from the string methods or a silent default.
+    """
+    if not isinstance(flags, str):
+        raise ValueError(f"Invalid flags {flags!r}: expected a flag string")
+    parsed = flags.replace(" ", "").split(",")
+    unknown = [flag for flag in parsed if flag not in VALID_FLAGS]
+    if unknown:
+        raise ValueError(
+            f"Invalid flags {flags!r}: unknown flag(s) {', '.join(map(repr, unknown))}"
+        )
+    return parsed
 
 
 _TRUSTED = contextvars.ContextVar("hyperspy_trusted_restore", default=False)
@@ -285,7 +302,12 @@ def load_from_dictionary(target, dic):
 
     """
     new_whitelist = {}
-    for key, flags_str in dic["_whitelist"].items():
+    whitelist = dic["_whitelist"]
+    if not isinstance(whitelist, dict):
+        raise ValueError(
+            f"Invalid `_whitelist` {whitelist!r}: expected a dictionary of flags"
+        )
+    for key, flags_str in whitelist.items():
         # Whitelist keys are file-controlled dotted attribute paths: reject
         # non-string and dunder parts before any traversal or mutation to
         # prevent class pollution (for example
@@ -300,8 +322,13 @@ def load_from_dictionary(target, dic):
             for part in key.split(".")
         ):
             raise ValueError(f"Refusing to set the dunder whitelist key {key!r}")
+        if key not in dic:
+            raise ValueError(
+                f"Invalid `_whitelist`: key {key!r} is missing from the dictionary"
+            )
         value = dic[key]
         flags = parse_flag_string(flags_str)
+        check_that_flags_make_sense(flags)
         if "id" not in flags:
             value = reconstruct_object(flags, value)
             if "init" in flags:
@@ -337,6 +364,11 @@ def reconstruct_object(flags, value):
             value._assign_subclass()
         return value
     if "fn" in flags:
+        if not isinstance(value, (list, tuple)) or len(value) != 2:
+            raise ValueError(
+                f'Invalid value for the "fn" flag {value!r}: expected a '
+                "(cloudpickle marker, pickled function) pair"
+            )
         ifcloudpickle, thing = value
         if ifcloudpickle is None:
             return thing

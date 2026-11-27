@@ -21,8 +21,16 @@ from unittest import mock
 
 import numpy as np
 import pytest
+from traits.api import TraitError
 
 from hyperspy.component import Parameter
+
+
+def test_value_rejects_complex_number():
+    # The Parameter.value trait boundary intentionally rejects complex
+    # numbers; Expression constructor kwargs are validated before this point.
+    with pytest.raises(TraitError):
+        Parameter().value = 1 + 2j
 
 
 class Dummy:

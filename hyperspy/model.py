@@ -42,6 +42,7 @@ from hyperspy.misc import dask_utils, utils
 from hyperspy.misc.export_dictionary import (
     _loads,
     _preflight_pickled_content,
+    check_that_flags_make_sense,
     export_to_dictionary,
     load_from_dictionary,
     parse_flag_string,
@@ -123,6 +124,13 @@ def reconstruct_component(comp_dictionary, init_args=None):
     init_args : dict or None
         Initialisation arguments for the component class.
     """
+    _id = comp_dictionary["_id_name"]
+    if not isinstance(_id, str):
+        # Validate before the legacy comparisons below: a non-string
+        # `_id_name` (e.g. a list or a NumPy array) would otherwise fail
+        # the `==` comparisons or the registry lookup with an unhandled
+        # error instead of naming the bad field.
+        raise ValueError(f"Invalid component `_id_name` {_id!r}: expected a string")
     # Restoring of Voigt and Arctan components saved with Hyperspy <v1.6
     if (
         comp_dictionary["_id_name"] == "Voigt"
@@ -683,23 +691,73 @@ class BaseModel(list):
             id_dict = {}
 
             for comp in dic["components"]:
+                # Validate before the first use: the whitelist is read below
+                # and the twin wiring after it, so a malformed whitelist
+                # must fail here rather than as a raw AttributeError.
+                if not isinstance(comp, dict) or not isinstance(
+                    comp.get("_whitelist"), dict
+                ):
+                    raise ValueError(
+                        f"Invalid component dictionary {comp!r}: expected a "
+                        "dictionary with a `_whitelist` dictionary of flags"
+                    )
                 init_args = {}
                 for k, flags_str in comp["_whitelist"].items():
-                    if not len(flags_str):
+                    flags = parse_flag_string(flags_str)
+                    # An incompatible pair (e.g. `id,init`) would otherwise
+                    # pass the saved value into the component constructor as
+                    # a duplicate keyword before any later check.
+                    check_that_flags_make_sense(flags)
+                    if not flags[0]:
                         continue
-                    if "init" in parse_flag_string(flags_str):
-                        init_args[k] = reconstruct_object(flags_str, comp[k])
+                    if "init" in flags:
+                        if k not in comp:
+                            raise ValueError(
+                                f"Invalid component `_whitelist`: key {k!r} is "
+                                "missing from the dictionary"
+                            )
+                        init_args[k] = reconstruct_object(flags, comp[k])
 
                 self.append(reconstruct_component(comp, init_args))
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
             for comp in dic["components"]:
                 for par in comp["parameters"]:
-                    for tw in par["_twins"]:
-                        id_dict[tw].twin = id_dict[par["self"]]
+                    twins = par["_twins"]
+                    if not isinstance(twins, (list, tuple)):
+                        raise ValueError(
+                            f"Invalid `_twins` {twins!r}: expected a list of "
+                            "parameter ids"
+                        )
+                    self_id = par["self"]
+                    for tw in twins:
+                        if not isinstance(tw, int):
+                            raise ValueError(
+                                f"Invalid twin reference {tw!r}: expected a "
+                                "parameter id (int)"
+                            )
+                        if tw == self_id:
+                            # A parameter twinned to itself would recurse
+                            # without bound when its value is read.
+                            raise ValueError(
+                                "Invalid twin reference: a parameter cannot "
+                                "be twinned to itself"
+                            )
+                        if tw not in id_dict:
+                            raise ValueError(
+                                f"Invalid twin reference {tw}: no parameter "
+                                "with this id exists in the model"
+                            )
+                        id_dict[tw].twin = id_dict[self_id]
 
         if "_whitelist" in dic:
-            channel_switches = dic["_whitelist"].pop("channel_switches", None)
+            # Validate before the `.pop()` below reads it.
+            whitelist = dic["_whitelist"]
+            if not isinstance(whitelist, dict):
+                raise ValueError(
+                    f"Invalid `_whitelist` {whitelist!r}: expected a dictionary of flags"
+                )
+            channel_switches = whitelist.pop("channel_switches", None)
             if channel_switches:
                 # Before channel_switches was privatised
                 dic["_whitelist"]["_channel_switches"] = channel_switches

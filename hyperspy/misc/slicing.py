@@ -98,6 +98,8 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav, order=None):
         If given in the object, _slicing_order is looked up.
     """
 
+    _VALID_SLICING_FLAGS = ("isig", "inav")
+
     def make_slice_navigation_decision(flags, isnav):
         if isnav:
             if "inav" in flags:
@@ -132,7 +134,14 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav, order=None):
             flags = parse_flag_string(flags_str)
 
         if swl is not None and key in swl:
-            flags.extend(parse_flag_string(swl[key]))
+            flag = swl[key]
+            if flag not in _VALID_SLICING_FLAGS:
+                raise ValueError(
+                    f"Invalid slicing flag {flag!r} for key {key!r}: expected "
+                    "one of the slicing markers "
+                    + ", ".join(map(repr, _VALID_SLICING_FLAGS))
+                )
+            flags.append(flag)
 
         if "init" in flags:
             continue

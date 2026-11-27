@@ -20,6 +20,7 @@ import importlib
 import logging
 import types
 import warnings
+import zipfile
 from collections.abc import Mapping
 
 import numpy as np
@@ -3401,33 +3402,48 @@ class LearningResults(object):
             Path to load the results from.
         """
         field_names = self._declared_field_names() | set(self._LEGACY_ALIASES)
-        with np.load(filename, allow_pickle=False) as decomposition:
-            # Iterate over names only: ``decomposition[key]`` reads each
-            # member separately, so an object member (which raises with
-            # ``allow_pickle=False``) does not prevent reading other members.
-            for key in decomposition.files:
-                if key not in field_names:
-                    warnings.warn(
-                        f"Skipping unknown field {key!r} while loading {filename}"
-                    )
-                    continue
-                try:
-                    value = decomposition[key]
-                except ValueError as exc:
-                    # Object arrays cannot be loaded with allow_pickle=False;
-                    # that specific failure is skippable, but a corrupt member
-                    # (for example a broken array header) must not be silenced
-                    # into a skipped field.
-                    if "allow_pickle" not in str(exc):
-                        raise
-                    _logger.info(
-                        f"Skipped object-valued field {key!r} while loading {filename}"
-                    )
-                    value = None
-                # Unwrap values stored as 0D numpy arrays to raw datatypes
-                if isinstance(value, np.ndarray) and value.ndim == 0:
-                    value = value.item()
-                setattr(self, key, value)
+        # The archive is validated lazily, when each member is read, so the
+        # member iteration has to run inside the guard. Members are read with
+        # allow_pickle=False only: unpickling a file-controlled member is
+        # never safe, so object-valued members are skipped rather than
+        # loaded.
+        try:
+            with np.load(filename, allow_pickle=False) as decomposition:
+                # Iterate over names only: ``decomposition[key]`` reads each
+                # member separately, so an object member (which raises with
+                # ``allow_pickle=False``) does not prevent reading other
+                # members.
+                for key in decomposition.files:
+                    if key not in field_names:
+                        warnings.warn(
+                            f"Skipping unknown field {key!r} while loading {filename}"
+                        )
+                        continue
+                    try:
+                        value = decomposition[key]
+                    except ValueError as exc:
+                        # Object arrays cannot be loaded with
+                        # allow_pickle=False; that specific failure is
+                        # skippable, but a corrupt member (for example a
+                        # broken array header) must not be silenced into a
+                        # skipped field.
+                        if "allow_pickle" not in str(exc):
+                            raise
+                        _logger.info(
+                            f"Skipped object-valued field {key!r} "
+                            f"while loading {filename}"
+                        )
+                        continue
+                    # Unwrap values stored as 0D numpy arrays to raw
+                    # datatypes
+                    if isinstance(value, np.ndarray) and value.ndim == 0:
+                        value = value.item()
+                    setattr(self, key, value)
+        except (zipfile.BadZipFile, EOFError) as error:
+            raise ValueError(
+                f"Failed to load the learning results: {filename} is corrupt "
+                "or not a valid NumPy archive"
+            ) from error
 
         _logger.info(f"Loaded results from {filename}")
 

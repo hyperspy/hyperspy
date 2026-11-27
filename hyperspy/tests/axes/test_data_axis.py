@@ -17,12 +17,16 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+import decimal
 import math
 import platform
+import shutil
+from fractions import Fraction
 from unittest import mock
 
 import numpy as np
 import pytest
+import sympy
 import traits.api as t
 from numpy.testing import assert_allclose
 
@@ -317,6 +321,133 @@ class TestFunctionalDataAxis:
                 size=10,
                 expression=expression,
             )
+
+    def test_malformed_parameter_values(self):
+        malformed = [
+            True,
+            np.bool_(True),
+            float("nan"),
+            float("inf"),
+            float("-inf"),
+            1 + 2j,
+            np.complex64(1 + 2j),
+            b"x",
+            None,
+            [1, 2],
+            ((1,), (2,)),
+            2**1100,
+            Fraction(2**1100, 3),
+            np.float64("nan"),
+        ]
+        for value in malformed:
+            with pytest.raises(ValueError, match="must be a finite real number"):
+                FunctionalDataAxis(expression="a * x", a=value, size=3)
+
+    def test_accepted_parameter_value_types(self):
+        accepted = [
+            np.int8(3),
+            np.uint64(2**63),
+            np.float32(1.25),
+            np.longdouble(1.25),
+            Fraction(1, 2),
+            2**53,
+            decimal.Decimal("1.25"),
+            sympy.pi,
+        ]
+        for value in accepted:
+            axis = FunctionalDataAxis(expression="a * x", a=value, size=3)
+            # The value is validated but integers and NumPy real scalars are
+            # stored unchanged: they keep their type through save/load
+            # round-trips, so only the numeric value is asserted here.
+            np.testing.assert_allclose(float(axis.a), float(value))
+
+    def test_functional_axis_evaluation(self):
+        # Evaluation spot check: axis values are a * x
+        axis = FunctionalDataAxis(expression="a * x", a=1.25, size=48)
+        np.testing.assert_allclose(axis.axis, 1.25 * np.arange(48))
+
+    def test_create_axis_malformed_parameter(self):
+        # create_axis dispatches straight into FunctionalDataAxis
+        with pytest.raises(ValueError, match="must be a finite real number"):
+            create_axis(expression="a * x", a=float("nan"), size=48)
+
+    def test_x_must_be_data_axis(self):
+        # Pin the intentional x boundary: a raw number is not a BaseDataAxis
+        with pytest.raises(t.TraitError):
+            FunctionalDataAxis(expression="a * x", a=1, x=1.25, size=3)
+        with pytest.raises(t.TraitError):
+            create_axis(expression="a * x", a=1, x=1.25, size=3)
+
+    def test_load_tampered_hspy(self, tmp_path):
+        import h5py
+
+        s = hs.signals.Signal1D(
+            np.random.random((25, 12, 48)),
+            axes=[
+                {"size": 25},
+                {"size": 12},
+                {"size": 48, "expression": "a * x", "a": 1.25},
+            ],
+        )
+        ok = tmp_path / "ok.hspy"
+        s.save(ok)
+        tampered = tmp_path / "tampered.hspy"
+        shutil.copyfile(ok, tampered)
+
+        def set_nan(name, obj):
+            if "expression" in obj.attrs:
+                obj.attrs["a"] = float("nan")
+
+        with h5py.File(tampered, "r+") as f:
+            f.visititems(set_nan)
+
+        # Control: the untouched copy loads and really holds a=1.25
+        s_loaded = hs.load(ok)
+        np.testing.assert_allclose(s_loaded.axes_manager[-1].a, 1.25)
+        np.testing.assert_allclose(s_loaded.axes_manager[-1].axis, 1.25 * np.arange(48))
+        # The tampered copy must be rejected at load time
+        with pytest.raises(ValueError, match="must be a finite real number"):
+            hs.load(tampered)
+        # ... including through the lazy parsing route
+        with pytest.raises(ValueError, match="must be a finite real number"):
+            hs.load(tampered, lazy=True)
+
+    def test_load_tampered_zspy(self, tmp_path):
+        zarr = pytest.importorskip("zarr")
+
+        s = hs.signals.Signal1D(
+            np.random.random((25, 12, 48)),
+            axes=[
+                {"size": 25},
+                {"size": 12},
+                {"size": 48, "expression": "a * x", "a": 1.25},
+            ],
+        )
+        ok = tmp_path / "ok.zspy"
+        s.save(ok)
+        tampered = tmp_path / "tampered.zspy"
+        shutil.copytree(ok, tampered)
+
+        def tamper(grp):
+            for key in grp:
+                node = grp[key]
+                if hasattr(node, "attrs") and "expression" in node.attrs:
+                    node.attrs["a"] = float("nan")
+                if hasattr(node, "keys"):
+                    tamper(node)
+
+        root = zarr.open_group(tampered, mode="r+")
+        tamper(root)
+
+        # Control: the untouched copy loads and really holds a=1.25
+        s_loaded = hs.load(ok)
+        np.testing.assert_allclose(s_loaded.axes_manager[-1].a, 1.25)
+        np.testing.assert_allclose(s_loaded.axes_manager[-1].axis, 1.25 * np.arange(48))
+        # The tampered copy must be rejected at load time
+        with pytest.raises(ValueError, match="must be a finite real number"):
+            hs.load(tampered)
+        with pytest.raises(ValueError, match="must be a finite real number"):
+            hs.load(tampered, lazy=True)
 
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
