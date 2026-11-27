@@ -533,6 +533,8 @@ class TestStoredInitKeys:
         from hyperspy.misc.export_dictionary import _is_trusted
 
         assert _is_trusted() is False
+
+
 # --- Task 7: dunder whitelist keys are rejected before traversal ---
 
 
