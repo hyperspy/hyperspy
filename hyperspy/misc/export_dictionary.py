@@ -302,7 +302,12 @@ def load_from_dictionary(target, dic):
 
     """
     new_whitelist = {}
-    for key, flags_str in dic["_whitelist"].items():
+    whitelist = dic["_whitelist"]
+    if not isinstance(whitelist, dict):
+        raise ValueError(
+            f"Invalid `_whitelist` {whitelist!r}: expected a dictionary of flags"
+        )
+    for key, flags_str in whitelist.items():
         # Whitelist keys are file-controlled dotted attribute paths: reject
         # non-string and dunder parts before any traversal or mutation to
         # prevent class pollution (for example
