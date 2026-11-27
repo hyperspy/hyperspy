@@ -23,7 +23,6 @@ import io
 import shutil
 import zipfile
 from pathlib import Path
-import io
 
 import dask.array as da
 import h5py
