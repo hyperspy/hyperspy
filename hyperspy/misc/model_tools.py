@@ -20,6 +20,7 @@
 import numbers
 from collections import defaultdict
 from collections.abc import Iterable
+from html import escape
 
 import numpy as np
 from prettytable import PrettyTable
@@ -170,10 +171,15 @@ class CurrentComponentValues:
 
     def _repr_html_(self):
         if self.only_active:
-            header = "<p><b>{0}: {1}</b></p>".format(self.component_type, self.name)
+            header = "<p><b>{0}: {1}</b></p>".format(
+                escape(str(self.component_type), quote=True),
+                escape(str(self.name), quote=True),
+            )
         else:
             header = "<p><b>{0}: {1}</b><br />Active: {2}</p>".format(
-                self.component_type, self.name, self.active
+                escape(str(self.component_type), quote=True),
+                escape(str(self.name), quote=True),
+                self.active,
             )
 
         table = self._build_table()
@@ -226,7 +232,8 @@ class CurrentModelValues:
 
     def _repr_html_(self):
         html = "<h4>{}: {}</h4>".format(
-            self.model.__class__.__name__, self.model.signal.metadata.General.title
+            escape(str(self.model.__class__.__name__), quote=True),
+            escape(str(self.model.signal.metadata.General.title), quote=True),
         )
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
@@ -515,7 +522,7 @@ class ModelStatistics:
     def _repr_html_(self):
         html = ""
         for comp_type, params in self.stats.items():
-            html += f"<h4>{comp_type}</h4>"
+            html += f"<h4>{escape(str(comp_type), quote=True)}</h4>"
             table = self._build_table(params)
             html += table.get_html_string(
                 attributes={

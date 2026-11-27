@@ -20,6 +20,7 @@ import importlib
 import logging
 import os
 from functools import partial
+from html import escape
 from itertools import product
 
 import numpy as np
@@ -165,7 +166,7 @@ class LazySignal(signals.BaseSignal):
                 signal_type=self._signal_type,
                 nbytes=nbytes,
                 cbytes=cbytes,
-                title=self.metadata.General.title,
+                title=escape(str(self.metadata.General.title), quote=True),
             )
 
         except ModuleNotFoundError:

@@ -984,3 +984,11 @@ class TestPrintModelStatistics:
 
         """Ensure that html print is giving sensible output"""
         assert "<td>centre</td>" in ModelStatistics(self.m)._repr_html_()
+
+    def test_html_print_escapes_component_name(self):
+        from hyperspy.misc.model_tools import ModelStatistics
+
+        self.m[0].name = "<b>UNTRUSTED_COMPONENT</b>"
+        html = ModelStatistics(self.m)._repr_html_()
+        assert "&lt;b&gt;UNTRUSTED_COMPONENT&lt;/b&gt;" in html
+        assert "<h4><b>UNTRUSTED_COMPONENT</b></h4>" not in html

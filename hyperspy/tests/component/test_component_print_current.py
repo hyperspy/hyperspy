@@ -158,6 +158,41 @@ class TestSetParameters:
         assert "Twinned" in table
 
 
+class TestHtmlEscaping:
+    def setup_method(self):
+        s = hs.signals.Signal1D(np.zeros((12, 25, 48)))
+        s.metadata.General.title = "<b>UNTRUSTED_TITLE</b>"
+        model = s.create_model()
+        component = hs.model.components1D.Gaussian()
+        component.name = "<b>UNTRUSTED_COMPONENT</b>"
+        model.append(component)
+        self.model = model
+        self.component = component
+
+    def test_current_model_values_html_escapes_title_and_component(self):
+        """Markup in the signal title and component name is rendered as text."""
+        html = CurrentModelValues(self.model)._repr_html_()
+        assert "&lt;b&gt;UNTRUSTED_TITLE&lt;/b&gt;" in html
+        assert "&lt;b&gt;UNTRUSTED_COMPONENT&lt;/b&gt;" in html
+        assert "<b>UNTRUSTED_" not in html
+
+    @pytest.mark.parametrize("only_active", [True, False])
+    def test_current_component_values_html_escapes_name(self, only_active):
+        """Markup in the component name is rendered as text in both headers."""
+        html = CurrentComponentValues(
+            self.component, only_active=only_active
+        )._repr_html_()
+        assert "&lt;b&gt;UNTRUSTED_COMPONENT&lt;/b&gt;" in html
+        assert "<b>UNTRUSTED_COMPONENT" not in html
+
+    def test_current_component_values_html_escapes_parameter_cell(self):
+        """The parameter table cell escapes markup (PrettyTable control)."""
+        self.component.A.name = "<i>UNTRUSTED_PARAM</i>"
+        html = CurrentComponentValues(self.component)._repr_html_()
+        assert "&lt;i&gt;UNTRUSTED_PARAM&lt;/i&gt;" in html
+        assert "<i>UNTRUSTED_PARAM" not in html
+
+
 def test_format_string():
     assert _format_string(None) == ""
     assert _format_string(5) == "5"
