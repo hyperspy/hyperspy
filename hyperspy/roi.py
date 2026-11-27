@@ -1767,9 +1767,8 @@ class PolygonROI(BaseInteractiveROI):
         The polygon is defined as valid if either zero or more than two
         vertices are fully defined.
         """
-        valid = False
         try:
-            valid = (
+            return (
                 len(self._vertices) == 0
                 or len(self._vertices) > 2
                 and all(
@@ -1777,8 +1776,12 @@ class PolygonROI(BaseInteractiveROI):
                     for vertex in self._vertices
                 )
             )
-        finally:
-            return valid
+        except Exception:
+            # A ``return`` in ``finally`` (the pattern this replaces) is a
+            # hard ``SyntaxError`` on Python 3.15 (PEP 765); the explicit
+            # ``except`` keeps the old behaviour of reporting an invalid
+            # polygon when inspecting malformed vertices raises.
+            return False
 
     @property
     def vertices(self):

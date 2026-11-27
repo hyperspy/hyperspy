@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu, windows, macos]
         os_version: [latest]
-        PYTHON_VERSION: ['3.11', '3.13']
+        PYTHON_VERSION: ['3.12', '3.14']
         PIP_SELECTOR: ['[all, tests, coverage]']
         include:
           # test oldest supported version of main dependencies on python 3.11
@@ -35,16 +35,24 @@ jobs:
           # test minimum requirement
           - os: ubuntu
             os_version: latest
-            PYTHON_VERSION: '3.14'
+            PYTHON_VERSION: '3.15.0-rc.3'
             PIP_SELECTOR: '[tests, coverage]'
             LABEL: -minimum
           - os: ubuntu
             os_version: latest
             PYTHON_VERSION: '3.12'
             PIP_SELECTOR: '[all, tests, coverage]'
+          - os: ubuntu
+            os_version: latest
+            PYTHON_VERSION: '3.11'
+            PIP_SELECTOR: '[all, tests, coverage]'
+          - os: ubuntu
+            os_version: latest
+            PYTHON_VERSION: '3.13'
+            PIP_SELECTOR: '[all, tests, coverage]'
           - os: macos
             os_version: '15-intel'
-            PYTHON_VERSION: '3.12'
+            PYTHON_VERSION: '3.13'
             PIP_SELECTOR: '[all, tests, coverage]'
           - os: windows
             os_version: 11-arm
@@ -69,6 +77,16 @@ jobs:
         name: Install Python
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
+
+      - name: Install HDF5 development library
+        # Prebuilt wheels for release-candidate Pythons do not exist yet, so
+        # h5py has to be built from source; the wheel build needs the HDF5
+        # development headers and library that the runner image does not
+        # ship with.
+        if: ${{ matrix.PYTHON_VERSION == '3.15.0-rc.3' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libhdf5-dev
 
       - name: Get the number of CPUs
         id: cpus
